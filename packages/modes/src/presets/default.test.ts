@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_MODES, byId } from './default';
+import { DEFAULT_MODES, defaultModeById } from './default';
 import { shortcutOn } from '../modeDefinition';
 
 describe('default mode preset', () => {
@@ -9,7 +9,7 @@ describe('default mode preset', () => {
   });
 
   it('path-edit is soft, scoping, blue', () => {
-    const m = byId('path-edit');
+    const m = defaultModeById('path-edit');
     expect(m.kind).toBe('soft');
     expect(m.scoping).toBe(true);
     expect(m.workspace?.tint).toBe('#3b82f6');
@@ -17,7 +17,7 @@ describe('default mode preset', () => {
   });
 
   it('free-transform is strict, non-scoping, amber, with commit/cancel shortcuts', () => {
-    const m = byId('free-transform');
+    const m = defaultModeById('free-transform');
     expect(m.kind).toBe('strict');
     expect(m.scoping).toBe(false);
     expect(m.workspace?.tint).toBe('#f59e0b');
@@ -26,7 +26,7 @@ describe('default mode preset', () => {
   });
 
   it('free-transform is entered on Mod+Alt+T and abandoned on Escape', () => {
-    const m = byId('free-transform');
+    const m = defaultModeById('free-transform');
     expect(m.entry?.shortcut).toBe('Mod+Alt+T');
     expect(m.cancel?.shortcut).toBe('Escape');
     expect(m.discard).toBeUndefined();
@@ -34,20 +34,20 @@ describe('default mode preset', () => {
 
   it('path-edit and text-edit discard on Cmd+Escape on a Mac, and on no key elsewhere', () => {
     for (const id of ['path-edit', 'text-edit']) {
-      const discard = byId(id).discard?.shortcut;
+      const discard = defaultModeById(id).discard?.shortcut;
       expect(shortcutOn(discard, true), id).toBe('Meta+Escape');
       expect(shortcutOn(discard, false), id).toBeUndefined();
-      expect(shortcutOn(byId(id).exit?.shortcut, false), id).toBe('Escape');
+      expect(shortcutOn(defaultModeById(id).exit?.shortcut, false), id).toBe('Escape');
     }
   });
 
   it('normal has no workspace tint', () => {
-    const m = byId('normal');
+    const m = defaultModeById('normal');
     expect(m.workspace).toBeUndefined();
   });
 
-  it('byId throws for unknown id', () => {
-    expect(() => byId('nope')).toThrow();
+  it('defaultModeById throws for unknown id', () => {
+    expect(() => defaultModeById('nope')).toThrow();
   });
 });
 

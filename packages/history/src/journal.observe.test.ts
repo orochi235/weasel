@@ -19,7 +19,7 @@ describe('Journal subscribe / getVersion', () => {
     const listener = vi.fn();
     j.subscribe(listener);
     const v0 = j.getVersion();
-    j.applyBatch([setOp(t, 0, 1)], 'a');
+    j.applyOps([setOp(t, 0, 1)], 'a');
     j.undo();
     j.redo();
     expect(listener).toHaveBeenCalledTimes(3);
@@ -43,7 +43,7 @@ describe('Journal subscribe / getVersion', () => {
     const j = createHistory(t).beginJournal({ label: 's' });
     const listener = vi.fn();
     j.subscribe(listener)();
-    j.applyBatch([setOp(t, 0, 1)], 'a');
+    j.applyOps([setOp(t, 0, 1)], 'a');
     expect(listener).not.toHaveBeenCalled();
   });
 });
@@ -53,11 +53,11 @@ describe('Journal coalescing', () => {
     const t = { v: 0 };
     let clock = 0;
     const j = createHistory(t, { coalesceWindowMs: 500, now: () => clock }).beginJournal({ label: 's' });
-    j.applyBatch([setOp(t, 0, 1, 'k')], 'type');
+    j.applyOps([setOp(t, 0, 1, 'k')], 'type');
     clock = 100;
-    j.applyBatch([setOp(t, 1, 2, 'k')], 'type');
+    j.applyOps([setOp(t, 1, 2, 'k')], 'type');
     clock = 900;
-    j.applyBatch([setOp(t, 2, 3, 'k')], 'type');
+    j.applyOps([setOp(t, 2, 3, 'k')], 'type');
     expect(j.entries().undo.map((e) => e.pushes)).toEqual([2, 1]);
     j.undo();
     j.undo();
@@ -69,18 +69,18 @@ describe('Journal coalescing', () => {
     let clock = 0;
     const h = createHistory(t, { coalesceWindowMs: 500, now: () => clock });
     const j = h.beginJournal({ label: 's', coalesceWindowMs: 0 });
-    j.applyBatch([setOp(t, 0, 1, 'k')], 'type');
+    j.applyOps([setOp(t, 0, 1, 'k')], 'type');
     clock = 100;
-    j.applyBatch([setOp(t, 1, 2, 'k')], 'type');
+    j.applyOps([setOp(t, 1, 2, 'k')], 'type');
     expect(j.entries().undo).toHaveLength(2);
   });
 
   it('seal ends the run inside the journal', () => {
     const t = { v: 0 };
     const j = createHistory(t, { coalesceWindowMs: 500, now: () => 0 }).beginJournal({ label: 's' });
-    j.applyBatch([setOp(t, 0, 1, 'k')], 'type');
+    j.applyOps([setOp(t, 0, 1, 'k')], 'type');
     j.seal();
-    j.applyBatch([setOp(t, 1, 2, 'k')], 'type');
+    j.applyOps([setOp(t, 1, 2, 'k')], 'type');
     expect(j.entries().undo).toHaveLength(2);
   });
 });

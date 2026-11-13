@@ -16,15 +16,15 @@ import { useActionsRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import { containerScrollAction } from 'interactions/actions/defaults/containerScroll';
 import {
-  makeViewportWheelPanAction,
+  createViewportWheelPanAction,
   type WheelPanOptions,
 } from 'interactions/actions/defaults/viewportWheelPan';
 import {
-  makeViewportZoomAction,
+  createViewportZoomAction,
   type ViewportZoomOptions,
 } from 'interactions/actions/defaults/viewportZoom';
 import {
-  makePinchZoomAction,
+  createPinchZoomAction,
   type PinchZoomOptions,
 } from 'interactions/actions/defaults/pinchZoom';
 
@@ -60,13 +60,13 @@ export function useViewportActions(args: {
     const unregisters: Array<() => void> = [r.register(containerScrollAction)];
     if (pan) {
       unregisters.push(
-        r.register(makeViewportWheelPanAction(typeof pan === 'object' ? pan : {})),
+        r.register(createViewportWheelPanAction(typeof pan === 'object' ? pan : {})),
       );
     }
     if (zoom) unregisters.push(r.register(liveZoomAction(zoom, () => zoomRef.current)));
     if (pinchZoom) {
       unregisters.push(
-        r.register(makePinchZoomAction(typeof pinchZoom === 'object' ? pinchZoom : {})),
+        r.register(createPinchZoomAction(typeof pinchZoom === 'object' ? pinchZoom : {})),
       );
     } else {
       unregisters.push(r.mute('viewport.pinchZoom'));
@@ -80,13 +80,13 @@ export function useViewportActions(args: {
  *  and the action keeps nothing between runs. */
 function liveZoomAction(zoom: true | ViewportZoomOptions, latest: () => boolean | ViewportZoomOptions): Action {
   const optionsOf = (z: boolean | ViewportZoomOptions) => (typeof z === 'object' ? z : {});
-  const action = makeViewportZoomAction(optionsOf(zoom));
+  const action = createViewportZoomAction(optionsOf(zoom));
   return {
     ...action,
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const now = makeViewportZoomAction(optionsOf(latest())).invoker;
+        const now = createViewportZoomAction(optionsOf(latest())).invoker;
         return now?.timing === 'immediate' ? now.run(deps, params) : undefined;
       },
     },

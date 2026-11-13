@@ -53,7 +53,7 @@ function applyEdit(
 ): void {
   env.labeled(label, () => env.runArrivalEdit(ops, (all) => {
     env.applying(() => {
-      if (journal) journal.applyBatch(all.map(env.causing), label);
+      if (journal) journal.applyOps(all.map(env.causing), label);
       else if (one && all.length === 1) env.engine.apply(env.causing(all[0]!), one.given);
       else env.engine.applyOps(all.map(env.causing), label);
     });
@@ -164,7 +164,7 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     serialize: methods.serializeHistory,
     allForwardOps: () => engine.allForwardOps(),
     seal: () => { engine.seal(); journals.target()?.seal(); },
-    currentEntryId: () => engine.currentEntryId(),
+    nextEntryId: () => engine.nextEntryId(),
     beginJournal: journals.begin,
     resumeJournal: journals.resume,
     activeJournal: () => env.activeJournal(),

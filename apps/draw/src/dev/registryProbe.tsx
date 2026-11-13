@@ -251,7 +251,7 @@ const CHANNEL_FOR_KIND: Readonly<Record<string, string>> = {
   drag: 'drag',
   wheel: 'wheel',
   key: 'key',
-  'key-held': 'keyHeld',
+  'keyHeld': 'keyHeld',
   contextMenu: 'contextMenu',
   multiTouchTap: 'multiTouchTap',
 };

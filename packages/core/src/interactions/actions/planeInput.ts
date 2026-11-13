@@ -20,7 +20,7 @@
  * a plane whose factors are being animated, moves the node with the pointer.
  */
 import type {
-  Action, ActionDeps, AffordanceHit, BindingOpts, DragSample, InvocationCtx, OngoingHandle,
+  Action, ActionDeps, AffordanceHit, BindingOptions, DragSample, InvocationCtx, OngoingHandle,
   OngoingOverlay, WorldPoint,
 } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
@@ -120,7 +120,7 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
     requires,
     invoker: {
       ...inner,
-      start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+      start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
         // A press that is no finite number lands nowhere: nothing is under it to drag.
         if (!finiteThroughout(ctx.world) || !finiteThroughout(ctx.drag?.start)) return {};
         const plane = livePlane(

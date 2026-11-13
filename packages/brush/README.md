@@ -7,9 +7,9 @@ across its brushes.
 ```ts
 import { shareBrushSize } from '@weasel-js/brush';
 
-const share = shareBrushSize(SMUDGE_BRUSH_OPTIONS); // { radiusPx: 'brushSizePx' }
+const share = shareBrushSize(SMUDGE_BRUSH_TOOL_OPTIONS); // { radiusPx: 'brushSizePx' }
 const smudge = useSmudgeBrushTool({ share });
-const simplify = useSimplifyBrushTool({ share: shareBrushSize(SIMPLIFY_BRUSH_OPTIONS) });
+const simplify = useSimplifyBrushTool({ share: shareBrushSize(SIMPLIFY_BRUSH_TOOL_OPTIONS) });
 ```
 
 A shared option is an ordinary tool option kept under a shared key (`ToolOptions.share`), so the tunings, the step

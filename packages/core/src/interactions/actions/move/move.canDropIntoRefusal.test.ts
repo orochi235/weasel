@@ -4,7 +4,7 @@
  * A silent `false` still passes the container over.
  */
 import { describe, it, expect, vi } from 'vitest';
-import type { BindingOpts, InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
 import { asNodeId, type RectPose } from 'core/scene/types';
@@ -45,7 +45,7 @@ function drag(canDropInto: (parent: string) => DropVerdict, deps: object = {}, p
   };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-  const handle = invoker.start(base as unknown as InvocationCtx, { params: { onGestureEnd, ...params } } as BindingOpts);
+  const handle = invoker.start(base as unknown as InvocationCtx, { params: { onGestureEnd, ...params } } as BindingOptions);
   const d = { start: { x: 5, y: 5 }, current: { x: 200, y: 200 }, delta: { x: 195, y: 195 } };
   const at = { ...base, world: d.current, drag: d } as unknown as InvocationCtx;
   handle.onMove!(at);

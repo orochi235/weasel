@@ -7,7 +7,7 @@ type SpecKind = GestureSpec['kind'];
  *  kind, so the reverse direction is not total. */
 const SPEC_KIND_TO_GESTURE: Record<SpecKind, GestureName | undefined> = {
   key: 'keyDown',
-  'key-held': 'keyHeld',
+  'keyHeld': 'keyHeld',
   wheel: 'wheel',
   pinch: 'pinch',
   click: 'click',

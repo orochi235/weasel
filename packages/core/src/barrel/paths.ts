@@ -241,7 +241,7 @@ export { livePathEdit, type LivePathEditSpec } from '../interactions/actions/pat
 export {
   anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,
 } from '../interactions/actions/defaults/anchorEditing';
-export { makeHandleCommand, type HandleEdit, type HandleScope } from '../interactions/actions/defaults/anchorHandles';
+export { createHandleCommand, type HandleEdit, type HandleScope } from '../interactions/actions/defaults/anchorHandles';
 export { joinSelectedAnchors, type AnchorEdit } from '../interactions/actions/defaults/anchorJoin';
 export { deleteSelectedMark, editTargetOf, markUnder } from '../interactions/actions/defaults/pathEditMarks';
 export { segmentUnder } from '../interactions/actions/defaults/segmentUnder';

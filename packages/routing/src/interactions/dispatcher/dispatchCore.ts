@@ -35,7 +35,7 @@ export interface DispatchCore {
   /** Dispatch on the routed view's dispatcher, or on `on` for an event that
    *  belongs to the one an earlier event ran on. */
   dispatch(ev: InputEvent, on?: Dispatcher, reach?: KeyReach): 'handled' | 'unhandled';
-  /** Run `fn`'s dispatches as one raw input — the `key` and `key-held` forms
+  /** Run `fn`'s dispatches as one raw input — the `key` and `keyHeld` forms
    *  of one keystroke — so a keymap rules on them together. */
   batch<T>(fn: () => T): T;
   /** The keymaps open on this surface, if it has any. */

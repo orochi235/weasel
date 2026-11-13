@@ -4,7 +4,7 @@
  * action or on a contribution alike; adding a key beside the defaults is
  * `tune`'s job.
  */
-import { bindingSpec, type BindingOverrideInput, type GestureSpec } from '@weasel-js/gestures';
+import { bindingSpec, key, type BindingOverrideInput, type GestureSpec } from '@weasel-js/gestures';
 import type { Action } from './action';
 import { actionBindings, type BoundGesture, type GestureBinding } from './binding';
 
@@ -24,6 +24,17 @@ export function bindingId(b: GestureBinding, ownerId: string | null, index: numb
   return b.opts?.id ?? (ownerId === null ? `${b.actionId}@${index}` : `${ownerId}#${index}`);
 }
 
+/** What to write instead of an override string that is not a route. */
+function routeHint(input: BindingOverrideInput): string {
+  if (typeof input === 'string' && /^[^\s[\]()]+$/.test(input)) {
+    try {
+      key(input);
+      return `For the keystroke ${input}, pass key('${input}') (or held('${input}') for a held key).`;
+    } catch { /* not a shortcut either */ }
+  }
+  return 'Pass a route such as \'[*:*] keyDown(z) +mod\', a spec such as key(\'Mod+Z\'), or unbound().';
+}
+
 /** Merge override maps into one, a later map winning per id. A route string
  *  that does not parse is skipped with a warning, leaving the binding as it was. */
 export function resolveBindingOverrides(maps: readonly BindingOverrides[]): ResolvedBindingOverrides {
@@ -34,7 +45,7 @@ export function resolveBindingOverrides(maps: readonly BindingOverrides[]): Reso
       try {
         out.set(id, bindingSpec(input));
       } catch (err) {
-        console.warn(`weasel: binding override "${id}" is not a route: ${(err as Error).message}`);
+        console.warn(`weasel: binding override "${id}" is not a route: ${(err as Error).message}. ${routeHint(input)}`);
       }
     }
   }

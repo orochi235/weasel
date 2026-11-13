@@ -24,8 +24,8 @@ describe('Journal.cancel', () => {
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'session' });
 
-    j.applyBatch([pushOp(1)], 'a');
-    j.applyBatch([pushOp(2)], 'b');
+    j.applyOps([pushOp(1)], 'a');
+    j.applyOps([pushOp(2)], 'b');
     expect(adapter.values).toEqual([10, 1, 2]);
 
     j.cancel();
@@ -39,7 +39,7 @@ describe('Journal.cancel', () => {
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'session' });
 
-    j.applyBatch([pushOp(1)], 'a');
+    j.applyOps([pushOp(1)], 'a');
     j.cancel();
 
     expect(j.isActive()).toBe(false);

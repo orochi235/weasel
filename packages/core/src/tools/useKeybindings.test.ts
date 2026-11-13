@@ -173,7 +173,7 @@ describe('useKeybindings', () => {
     }>;
     expect(bindings).toHaveLength(1);
     expect(bindings[0].opts.params.toolId).toBe('hand');
-    expect(bindings[0].spec).toMatchObject({ kind: 'key-held', key: ' ' });
+    expect(bindings[0].spec).toMatchObject({ kind: 'keyHeld', key: ' ' });
   });
 
   it('does not register tool.offhand when no tool declares a held key', () => {

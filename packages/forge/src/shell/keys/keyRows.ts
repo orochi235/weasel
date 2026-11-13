@@ -14,7 +14,7 @@ import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 /** What a binding's chip says: the keys for a keystroke, a word for any other gesture. */
 export function describeBinding(spec: GestureSpec): string {
   const chip = keySpecShortcut(spec);
-  if (chip) return spec.kind === 'key-held' ? `Hold ${formatShortcut(chip)}` : (formatShortcut(chip) ?? '');
+  if (chip) return spec.kind === 'keyHeld' ? `Hold ${formatShortcut(chip)}` : (formatShortcut(chip) ?? '');
   switch (spec.kind) {
     case 'wheel': return 'Wheel';
     case 'hover': return 'Hover';

@@ -225,12 +225,12 @@ describe('createDispatcher', () => {
     it('key-held down starts a handle; up calls onEnd("commit") and clears', () => {
       const handle = { onEnd: vi.fn() };
       const startFn = vi.fn().mockReturnValue(handle);
-      const action = ongoingAction('space-held', { kind: 'key-held', key: ' ' }, startFn);
+      const action = ongoingAction('space-held', { kind: 'keyHeld', key: ' ' }, startFn);
       const registry = makeRegistry([action]);
       const dispatcher = createDispatcher();
 
       const downEvent: InputEvent = {
-        kind: 'key-held',
+        kind: 'keyHeld',
         key: ' ',
         phase: 'down',
         altKey: false,
@@ -239,7 +239,7 @@ describe('createDispatcher', () => {
         shiftKey: false,
       };
       const upEvent: InputEvent = {
-        kind: 'key-held',
+        kind: 'keyHeld',
         key: ' ',
         phase: 'up',
         altKey: false,

@@ -37,7 +37,7 @@ const ROTATABLE: CursorGlyphName[] = ['resize', 'rotate'];
 /** The `url("…")` payload of a baked cursor, for showing the asset as an image. */
 function assetOf(v: CursorVariant | CursorGlyphName, size: number, angle = 0): string {
   const { glyph, mark } = typeof v === 'string' ? { glyph: v, mark: undefined } : v;
-  const css = bakeCursor(cursorGlyph(glyph, mark), { size, angle });
+  const css = bakeCursor(cursorGlyph(glyph, { mark }), { size, angle });
   return css.slice(css.indexOf('url("') + 5, css.indexOf('") '));
 }
 
@@ -105,7 +105,7 @@ export const Hotspots: StoryObj = {
     // Baked at runtime, so the value cannot be authored in the stylesheet.
     // One generated rule per glyph rather than an inline style per cell.
     const css = VARIANTS.map(
-      (n) => `.${cls(n)} { cursor: ${bakeCursor(cursorGlyph(n.glyph, n.mark), { fallback: 'crosshair' })}; }`,
+      (n) => `.${cls(n)} { cursor: ${bakeCursor(cursorGlyph(n.glyph, { mark: n.mark }), { fallback: 'crosshair' })}; }`,
     ).join('\n');
     return (
       <div className={s.wrap}>

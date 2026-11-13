@@ -27,7 +27,7 @@ export interface HistoryEntry {
   /** Set of node ids touched by any op in this entry, as `touchedIdsFromOps`
    *  reads them from each op's `args`. A restored entry has it too: `restore`
    *  derives it from the rebuilt ops. */
-  touchedIds?: ReadonlySet<string>;
+  touchedIds: ReadonlySet<string>;
   /** Selection restored when this entry is undone. */
   selectionBefore?: readonly string[];
   /** Selection restored when this entry is redone. */
@@ -118,16 +118,16 @@ export interface History {
    *  nothing — both start from where the history stands. Throws when no branch
    *  of that id forks from the current entry. */
   switchBranch(id: number): void;
-  /** Monotonic counter bumped on every push/undo/redo/clear/coalesce.
-   *  Cheap to read; callers use it as a React dep to detect changes. */
+  /** Monotonic counter bumped on every change to the stacks: each step `observe`
+   *  reports. Cheap to read; callers use it as a React dep to detect changes. */
   getVersion(): number;
   /** End the current coalescing run: the next entry is pushed fresh even if
    *  its keys match the top entry and it lands inside the window. For a
    *  caller that changed state the stack does not know about, so an entry
    *  coalesced across that change would undo past it. */
   seal(): void;
-  /** Subscribe to history changes. Fires after every push/undo/redo/
-   *  clear/coalesce. Returns an unsubscribe fn. */
+  /** Subscribe to history changes. Fires whenever `getVersion` bumps.
+   *  Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
   /** Hear what each change was, after the stacks have changed and before
    *  `subscribe`'s listeners run. A step that changed nothing reports
@@ -159,7 +159,7 @@ export interface History {
   allForwardOps(): Op[];
   /** The id that will be assigned to the *next* pushed entry. Stable
    *  monotonic counter; callers use it to tag a fork point (see Journal). */
-  currentEntryId(): number;
+  nextEntryId(): number;
   /** Open a scoped sub-history. All apply/undo/redo on the returned Journal
    *  affect the same adapter; on commit, the Journal's net forward ops are
    *  flushed to this History as one entry. */
@@ -169,7 +169,7 @@ export interface History {
    *  active — at most one journal writes to the adapter at a time, on resume
    *  as well as on open. Staleness checking is the caller's
    *  responsibility — consult `journal.forkedAtEntryId` against
-   *  `currentEntryId()` and your own op-semantic rules to decide whether
+   *  `nextEntryId()` and your own op-semantic rules to decide whether
    *  to resume or discard before calling this. */
   resumeJournal(journal: Journal): void;
   /** The journal open on this history now, which applies and undoes in its place, or null. Optional, so a

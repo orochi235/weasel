@@ -22,14 +22,14 @@ const STRETCH_PARAMS = pref.group('Stretch', { factor: pref.number('Factor', 1, 
 /** Apply `ops` where a scene would: the open journal, else the history. */
 function push(history: History, ops: Op[]): void {
   const journal = history.activeJournal?.();
-  if (journal) journal.applyBatch(ops, 'Stretch');
+  if (journal) journal.applyOps(ops, 'Stretch');
   else history.applyOps(ops, 'Stretch');
 }
 
 /** A drag that sets the width to its travel times `factor`, live through coalescing pushes when `live`. */
-interface StretchOpts { replays: boolean; live?: boolean; reports?: number; journals?: boolean }
+interface StretchOptions { replays: boolean; live?: boolean; reports?: number; journals?: boolean }
 
-function stretch(doc: Doc, history: History, opts: StretchOpts): Action {
+function stretch(doc: Doc, history: History, opts: StretchOptions): Action {
   return {
     id: 'stretch',
     label: 'Stretch',
@@ -69,7 +69,7 @@ function stretch(doc: Doc, history: History, opts: StretchOpts): Action {
 
 const ctxAt = (x: number): InvocationCtx => ({ world: { x, y: 0 }, modifiers: { shift: false, alt: false, ctrl: false, meta: false }, deps: {} });
 
-function setup(opts: StretchOpts) {
+function setup(opts: StretchOptions) {
   const doc: Doc = { width: 10, selected: ['a'], ranOn: [] };
   const history = createHistory(doc, { coalesceWindowMs: 1000 });
   let registry: ActionsRegistry | null = null;

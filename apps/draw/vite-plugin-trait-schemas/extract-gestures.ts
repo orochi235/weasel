@@ -14,7 +14,7 @@ import { srcRef, sourceFileOrThrow, propertiesOfTypeNode } from './extract.ts';
 const GESTURE_IDS: readonly string[] = [
   'click', 'pointerDown', 'dblTap', 'drag', 'wheel', 'pinch',
   'keyDown', 'keyUp',
-  'doubleClick', 'key', 'key-held', 'multiTouch', 'multiTouchTap', 'pointerdown',
+  'doubleClick', 'key', 'keyHeld', 'multiTouch', 'multiTouchTap', 'pointerdown',
 ];
 
 type Found = { payload: readonly PropertyDescriptor[]; source?: SourceRef };
@@ -79,7 +79,7 @@ function resolveGesture(
     case 'key':
     case 'keyDown':
     case 'keyUp':
-    case 'key-held':
+    case 'keyHeld':
       return {
         payload: [
           { name: 'code', type: 'string', optional: false },

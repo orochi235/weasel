@@ -395,7 +395,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       }
       return out;
     },
-    currentEntryId: () => nextEntryId,
+    nextEntryId: () => nextEntryId,
     beginJournal(opts: BeginJournalOptions): Journal {
       refuseWhileActive(activeJournal);
       // `adapter` is the closure-captured adapter passed to createHistory.

@@ -8,7 +8,7 @@ import { GestureReason } from './GestureReason';
 function fakeDispatcher(overlays: () => readonly OngoingOverlay[]) {
   const subs = new Set<() => void>();
   const dispatcher = {
-    getInFlightHandles: () => [{ overlay: () => overlays() }],
+    inFlight: () => new Map([['g', { overlay: () => overlays() }]]),
     subscribe: (fn: () => void) => {
       subs.add(fn);
       return () => subs.delete(fn);

@@ -48,7 +48,7 @@ describe('cursorFor, through any sequence of calls', () => {
           ...(c.angle !== undefined ? { angle: c.angle } : {}),
           ...(c.fallback !== undefined ? { fallback: c.fallback } : {}),
         };
-        const fresh = outcome(() => bakeCursor(cursorGlyph(c.name, opts.mark), opts));
+        const fresh = outcome(() => bakeCursor(cursorGlyph(c.name, { mark: opts.mark }), opts));
         expect(outcome(() => cursorFor(c.name, opts))).toEqual(fresh);
         t.count('threw' in fresh ? 'threw' : 'baked');
       }

@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
 import { snapToContainer } from './behaviors/snapToContainer';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
 import { unionOfChildren } from 'core/scene/kitRegistry';
@@ -40,7 +40,7 @@ describe('moveAction with snapToContainer — a derived node with no slot of its
       dependsOn: 'children', derivePose: unionOfChildren,
     });
     const inside = scene.add({ kind: 'mark', parent: envelope, layer: 'main', data: {}, pose: box(10, 60) });
-    const opts: BindingOpts = {
+    const opts: BindingOptions = {
       behaviors: [
         snapToContainer<RectPose>({
           dwellMs: 0,

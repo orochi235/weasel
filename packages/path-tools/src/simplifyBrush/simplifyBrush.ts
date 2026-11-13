@@ -17,7 +17,7 @@ export const SIMPLIFY_BRUSH_RADIUS_PX = 12;
 const LABEL = 'Simplify brush';
 
 /** The brush's size and tolerance as a form: the last-operation panel's after a stroke, and the tool's options
- *  (`SIMPLIFY_BRUSH_OPTIONS`), which are one setting. */
+ *  (`SIMPLIFY_BRUSH_TOOL_OPTIONS`), which are one setting. */
 export const SIMPLIFY_BRUSH_PARAMS = pref.group(LABEL, {
   radiusPx: pref.number('Size', SIMPLIFY_BRUSH_RADIUS_PX, {
     description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider',

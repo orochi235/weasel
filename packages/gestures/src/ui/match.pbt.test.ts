@@ -113,7 +113,7 @@ describe('key sugar', () => {
   });
   const phase = fc.option(fc.oneof(fc.constantFrom('initial' as const, 'engaged' as const, '*' as const), fc.array(atom, { maxLength: 2 })), { nil: undefined });
   const keySpec: fc.Arbitrary<KeySpec | KeyHeldSpec> = fc.record({
-    kind: fc.constantFrom('key' as const, 'key-held' as const),
+    kind: fc.constantFrom('key' as const, 'keyHeld' as const),
     key: fc.oneof({ weight: 4, arbitrary: keyName }, { weight: 1, arbitrary: fc.array(keyName, { minLength: 1, maxLength: 2 }) }),
     code: fc.option(fc.constantFrom('KeyZ', 'Digit2'), { nil: undefined, freq: 4 }),
     mods: modSpec,

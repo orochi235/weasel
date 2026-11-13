@@ -23,7 +23,7 @@ function mount(): { root: Dispatcher; panel: Dispatcher; log: string[]; endedIn:
   const log: string[] = [];
   const endedIn: unknown[] = [];
   const hold: Action = {
-    id: 'test.hold', label: 'hold', defaultBinding: { kind: 'key-held', key: 'h' },
+    id: 'test.hold', label: 'hold', defaultBinding: { kind: 'keyHeld', key: 'h' },
     invoker: {
       timing: 'ongoing',
       start: () => { log.push('start'); return { onEnd: (ctx) => { log.push('end'); endedIn.push(ctx.viewId); } }; },

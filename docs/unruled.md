@@ -1934,3 +1934,36 @@ Calls the lanes made without a ruling:
   conic gradient's `angle`, `SymmetrySpec.angle`, `RepeatStation.angle`, a marker's) turns clockwise, from +x toward
   +y. Flipping it changes every saved nib and the panel's reading. Whether the nib follows the geometry rule, or
   stays with the readout.
+
+## Audit round twenty-one (2026-11-12): the interaction layer
+
+- 2026-11-12 (the lane's call): an action factory is `create…Action`, as `createResizeAction` and
+  `createDeleteAction` were; the six spelled `make…Action` moved. Action constants named for what they do
+  (`makeBooleanGroupAction`, `makeHandlesSymmetricAction`) keep their names: there `make` is the verb.
+- 2026-11-12 (the lane's call): the held-key spec kind is `keyHeld`; the gesture ids built from it keep the
+  `key-held-<code>` form, kebab like `pointer-<id>`, since they are ids and not kinds.
+- 2026-11-12 (the lane's call): a journal's `commit()` with no label uses the `label` it was opened with, which
+  that option's doc already promised, rather than the option being dropped.
+- 2026-11-12 (the lane's call): the text and image tools reposition on a held Space mid-draw, as every other
+  drag-to-insert tool does.
+- 2026-11-12 (the lane's call), left as they are: `History.goto` ignoring a depth out of range or not whole (its
+  tests ask for that, and the scene's `jumpToHistoryIndex` clamps before it), `History.activeJournal` staying
+  optional (documented so a history that never journals need not answer), `detectPlatform` answering `'macos'` with
+  no `navigator` where `isApplePlatform` answers false (documented as the docs convention), and lookups such as
+  `pickMenu` returning `undefined` where others return `null` (routing has no rule, and the `find`-shaped ones
+  follow `Array.find`).
+- Sticky keeps S, the smudge brush moves to U, and Extend moves from U to Shift+U, on the maintainer's call
+  (2026-11-12). The star tool has no default key at all.
+- Open: two tool sets are not named for their tools' palette group, which `BUILTIN_TOOL_GROUPS` says each set is:
+  `RESHAPE_TOOLS` (`reshape`) holds tools in the `path` group, and `RIG_TOOLS` (`rig`) tools in `shape`. Renaming
+  the groups moves where the tools sit on a palette; renaming the sets does not.
+- Open: most tool hooks outside the drag-to-insert tools take a `keybinding` option (`null` to drop the key):
+  lasso, slice, measure, the stroke, warp and rig tools. The drag-to-insert tools, spiro, the simplify brush and
+  lengthen do not, and a binding override of `tool.activate.<id>` rebinds any tool's key.
+  Whether every tool hook takes the option, or none does and overrides are the one way.
+- Open: `Action.enabled(deps, at, carried, params, viewId)` takes `params` fourth where `active`, `preview` and an
+  invoker's `run` take it second. Moving it to `enabled(deps, params, where)` touches every action that declares
+  `enabled`.
+- Open: which platform a key is read for is spelled `platform` (`formatShortcut`, `describeKeymap`), `apple`
+  (`captureKey`, `captureGesture`, `browserReservedChord`) and `isMac` (the matchers, `DispatcherContext`). Which
+  one name these take.

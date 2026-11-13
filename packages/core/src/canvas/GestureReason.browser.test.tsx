@@ -22,7 +22,7 @@ afterEach(() => {
 
 function fakeDispatcher(overlays: readonly OngoingOverlay[]): Dispatcher {
   return {
-    getInFlightHandles: () => [{ overlay: () => overlays }],
+    inFlight: () => new Map([['g', { overlay: () => overlays }]]),
     subscribe: () => () => {},
   } as unknown as Dispatcher;
 }

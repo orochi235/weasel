@@ -45,7 +45,7 @@ export type { ActionParamSchema } from './actionParamSchema';
 export {
   SIMPLIFY_BRUSH_PARAMS, SIMPLIFY_BRUSH_RADIUS_PX, simplifyBrushAction, type SimplifyBrushParams,
 } from './simplifyBrush/simplifyBrush';
-export { SIMPLIFY_BRUSH_OPTIONS, useSimplifyBrushTool, type UseSimplifyBrushToolOptions } from './simplifyBrush/useSimplifyBrushTool';
+export { SIMPLIFY_BRUSH_TOOL_OPTIONS, useSimplifyBrushTool, type UseSimplifyBrushToolOptions } from './simplifyBrush/useSimplifyBrushTool';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 export {
   BRIDGE_PARAMS, bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,
@@ -98,7 +98,7 @@ export {
 // ─── Tools ─────────────────────────────────────────────────────────────────
 export { useTrimTool, type UseTrimToolOptions } from './trim/useTrimTool';
 export { useExtendTool, type UseExtendToolOptions } from './extend/useExtendTool';
-export { SMUDGE_BRUSH_OPTIONS, useSmudgeBrushTool, type UseSmudgeBrushToolOptions } from './smudge/useSmudgeBrushTool';
+export { SMUDGE_BRUSH_TOOL_OPTIONS, useSmudgeBrushTool, type UseSmudgeBrushToolOptions } from './smudge/useSmudgeBrushTool';
 export type { StrokeClickToolOptions } from './shared/strokeClickTool';
 export {
   useDistortTool, useEnvelopeTool, usePuppetTool,

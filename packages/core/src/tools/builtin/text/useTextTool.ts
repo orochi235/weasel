@@ -9,6 +9,7 @@ import { shareToolOptions } from '@weasel-js/routing';
 import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
+import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 
 const PRESENTATION = {
   label: 'Text',
@@ -46,6 +47,7 @@ export function useTextTool(options: InsertToolOptions = {}): Tool {
         bindings: [
           { spec: { kind: 'drag', mods: INSERT_DRAG_MODS }, actionId: 'insert', opts: { id: 'text.drag', params: { kind: 'text' }, ...insertBindingBehaviors(behaviors) } },
           { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit', opts: { id: 'text.editText' } },
+          INSERT_REPOSITION_BINDING,
         ],
       }),
     [behaviors, share],

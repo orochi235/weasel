@@ -19,9 +19,9 @@ function wrapJournal(raw: Journal, env: SceneHistoryEnv, open: OpenJournals): Jo
   const wrapped: Journal = {
     targetId: raw.targetId,
     forkedAtEntryId: raw.forkedAtEntryId,
-    applyBatch(ops, label) {
+    applyOps(ops, label) {
       env.labeled(label, () => env.runArrivalEdit(ops, (all) => {
-        env.applying(() => raw.applyBatch(all.map(env.causing), label));
+        env.applying(() => raw.applyOps(all.map(env.causing), label));
         notify();
       }));
     },

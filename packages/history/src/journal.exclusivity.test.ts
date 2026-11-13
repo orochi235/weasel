@@ -47,14 +47,14 @@ describe('journal exclusivity', () => {
     const adapter = { values: [] as number[] };
     const h = createHistory(adapter);
     const j1 = h.beginJournal({ label: 'a' });
-    j1.applyBatch([pushOp(1)], 'one');
+    j1.applyOps([pushOp(1)], 'one');
     j1.suspend();
     const j2 = h.beginJournal({ label: 'b' });
-    j2.applyBatch([pushOp(2)], 'two');
+    j2.applyOps([pushOp(2)], 'two');
     j2.commit('b');
     h.resumeJournal(j1);
     expect(j1.isActive()).toBe(true);
-    j1.applyBatch([pushOp(3)], 'three');
+    j1.applyOps([pushOp(3)], 'three');
     j1.commit('a');
     expect(adapter.values).toEqual([1, 2, 3]);
     expect(h.entries().undo.map((e) => e.label)).toEqual(['b', 'a']);
@@ -63,11 +63,11 @@ describe('journal exclusivity', () => {
   it('still refuses every mutating call on a committed journal', () => {
     const h = createHistory({ values: [] as number[] });
     const j = h.beginJournal({ label: 'a' });
-    j.applyBatch([pushOp(0)], 'zero');
+    j.applyOps([pushOp(0)], 'zero');
     j.commit('a');
     expect(j.isActive()).toBe(false);
     expect(() => h.resumeJournal(j)).toThrow(/not resumable/);
-    expect(() => j.applyBatch([pushOp(1)], 'x')).toThrow(/not active/);
+    expect(() => j.applyOps([pushOp(1)], 'x')).toThrow(/not active/);
   });
 
   it('refuses to walk the parent under an active journal, and leaves both as they were', () => {
@@ -77,7 +77,7 @@ describe('journal exclusivity', () => {
     h.applyOps([pushOp(2)], 'two');
     h.undo();
     const j = h.beginJournal({ label: 'j' });
-    j.applyBatch([pushOp(3)], 'three');
+    j.applyOps([pushOp(3)], 'three');
     expect(() => h.undo()).toThrow(/journal is already active/);
     expect(() => h.redo()).toThrow(/journal is already active/);
     expect(() => h.goto(0)).toThrow(/journal is already active/);

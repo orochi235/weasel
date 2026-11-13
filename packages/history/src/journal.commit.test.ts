@@ -24,8 +24,8 @@ describe('Journal.commit', () => {
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'session' });
 
-    j.applyBatch([pushOp(1)], 'a');
-    j.applyBatch([pushOp(2), pushOp(3)], 'b');
+    j.applyOps([pushOp(1)], 'a');
+    j.applyOps([pushOp(2), pushOp(3)], 'b');
     expect(adapter.values).toEqual([1, 2, 3]);
 
     j.commit('Edit Path');
@@ -42,12 +42,20 @@ describe('Journal.commit', () => {
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'session' });
 
-    j.applyBatch([pushOp(1)], 'a');
-    j.applyBatch([pushOp(2)], 'b');
+    j.applyOps([pushOp(1)], 'a');
+    j.applyOps([pushOp(2)], 'b');
     j.commit('Edit');
 
     parent.undo();
     expect(adapter.values).toEqual([]);
+  });
+
+  it('labels the entry with the label the journal opened with when commit names none', () => {
+    const parent = createHistory({ values: [] as number[] });
+    const j = parent.beginJournal({ label: 'session' });
+    j.applyOps([pushOp(1)], 'a');
+    j.commit();
+    expect(parent.entries().undo[0].label).toBe('session');
   });
 
   it('committing an empty journal pushes nothing to parent', () => {

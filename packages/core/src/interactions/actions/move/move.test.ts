@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { stubDeps, heldPose } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { moveAction } from './action';
-import type { InvocationCtx, BindingOpts } from '@weasel-js/routing';
+import type { InvocationCtx, BindingOptions } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, PoseOverrides, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -422,7 +422,7 @@ describe('moveAction — reparentOnDrop', () => {
     selectionIds: string[],
     drop: { x: number; y: number },
     delta: { x: number; y: number },
-    opts: BindingOpts | undefined,
+    opts: BindingOptions | undefined,
     nodeAtPoint?: NodeAtPointDep,
   ): void {
     const invoker = moveAction.invoker;
@@ -608,7 +608,7 @@ describe('moveAction — reparentOnDrop', () => {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps,
     };
-    const opts: BindingOpts = { params: { reparentOnDrop: 'top' } };
+    const opts: BindingOptions = { params: { reparentOnDrop: 'top' } };
     const drag = { start: { x: 0, y: 0 }, current: { x: 105, y: 105 }, delta: { x: 105, y: 105 } };
     const handle = invoker.start(baseCtx as InvocationCtx, opts);
     handle.onMove!({ ...baseCtx, drag } as InvocationCtx);

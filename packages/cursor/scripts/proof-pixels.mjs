@@ -29,7 +29,7 @@ const VARIANTS = new Map(cursorVariants().map((v) => [v.key, v]));
 const glyphOf = (key) => {
   const v = VARIANTS.get(key);
   if (!v) throw new Error(`no cursor ${key}; one of ${[...VARIANTS.keys()].join(', ')}`);
-  return cursorGlyph(v.glyph, v.mark);
+  return cursorGlyph(v.glyph, { mark: v.mark });
 };
 
 const raster = (name, css, dpr, angle) => {

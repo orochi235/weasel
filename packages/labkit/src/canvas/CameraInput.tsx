@@ -9,8 +9,8 @@ import {
   contextMenuAction,
   type ImmediateParams,
   InputScope,
-  makePinchZoomAction,
-  makeViewportZoomAction,
+  createPinchZoomAction,
+  createViewportZoomAction,
   PointerContextProvider,
   type PointerWorldPos,
   screenToWorld,
@@ -267,7 +267,7 @@ function CameraDispatch({
     // Unclamped here: `camera.set` clamps, to a range widened around the
     // zooms it was placed at, and anchors the clamp where the wheel was.
     const unclamped = { min: 1e-9, max: Number.POSITIVE_INFINITY };
-    const zoom = makeViewportZoomAction({ wheel: wheel || 'plain', ...unclamped });
+    const zoom = createViewportZoomAction({ wheel: wheel || 'plain', ...unclamped });
     // The wheel and the trackpad's two pinch forms (ctrl+wheel, WebKit's
     // gesture events), in that order: the zoom keys listen on the window, and
     // every trial on a page would take them at once.
@@ -300,7 +300,7 @@ function CameraDispatch({
       ...(zoomBindings.length > 0
         ? [{ ...zoom, defaultBinding: zoomBindings as Action['defaultBinding'] }]
         : []),
-      ...(touchPinch ? [makePinchZoomAction(unclamped)] : []),
+      ...(touchPinch ? [createPinchZoomAction(unclamped)] : []),
       ...(taps ? [tap] : []),
       ...(homes ? [goHome] : []),
     ];

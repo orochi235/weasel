@@ -40,6 +40,14 @@ describe('resolveBindingOverrides', () => {
     expect(resolved.has('bad')).toBe(false);
     expect(resolved.get('good')).toEqual(key('G'));
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('"bad"'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("Pass a route such as '[*:*] keyDown(z) +mod'"));
+    warn.mockRestore();
+  });
+
+  it('names key() in the warning when the string is a shortcut', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(resolveBindingOverrides([{ undo: 'Mod+Z' }]).has('undo')).toBe(false);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("pass key('Mod+Z')"));
     warn.mockRestore();
   });
 });

@@ -28,7 +28,7 @@ export interface ViewportZoomAnimateOptions extends ViewAnimationOptions {
 }
 
 /**
- * Tuning for {@link makeViewportZoomAction}.
+ * Tuning for {@link createViewportZoomAction}.
  */
 export interface ViewportZoomOptions {
   /**
@@ -110,7 +110,7 @@ function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture[] {
  * pinch bindings are fixed. A wheel or pinch sample zooms about its focal
  * point, which `zoomAt` expects in canvas-local pixels.
  */
-export function makeViewportZoomAction(
+export function createViewportZoomAction(
   opts: ViewportZoomOptions = {},
 ): Action & { requires: string[] } {
   const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
@@ -221,6 +221,6 @@ export function makeViewportZoomAction(
 
 /**
  * Default `viewport.zoom` descriptor: Cmd/Ctrl+wheel zoom with the kit's
- * default 0.1–8 scale clamp. Equivalent to `makeViewportZoomAction()`.
+ * default 0.1–8 scale clamp. Equivalent to `createViewportZoomAction()`.
  */
-export const viewportZoomAction: Action & { requires: string[] } = makeViewportZoomAction();
+export const viewportZoomAction: Action & { requires: string[] } = createViewportZoomAction();

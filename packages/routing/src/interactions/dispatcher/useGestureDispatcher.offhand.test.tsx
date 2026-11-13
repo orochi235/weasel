@@ -6,7 +6,7 @@ import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider'
 import { DepRegistryProvider, useDepSource } from '../actions/depRegistry';
 import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '../actions/activeToolContext';
 import { useGestureDispatcher } from './useGestureDispatcher';
-import { makeToolOffhandAction, buildToolOffhandBindings } from '../../index';
+import { createToolOffhandAction, buildToolOffhandBindings } from '../../index';
 
 describe('tool.offhand integration via gesture dispatcher', () => {
   it('Space keydown pushes hand to hotkeyStack; keyup pops it', () => {
@@ -25,7 +25,7 @@ describe('tool.offhand integration via gesture dispatcher', () => {
 
     function RegisterToolHold() {
       const r = useActionsRegistry();
-      r?.register(makeToolOffhandAction(buildToolOffhandBindings([
+      r?.register(createToolOffhandAction(buildToolOffhandBindings([
         { toolId: 'hand', key: ' ' },
       ])));
       return null;
@@ -83,7 +83,7 @@ describe('tool.offhand integration via gesture dispatcher', () => {
 
     function RegisterToolHold() {
       const r = useActionsRegistry();
-      r?.register(makeToolOffhandAction(buildToolOffhandBindings([
+      r?.register(createToolOffhandAction(buildToolOffhandBindings([
         { toolId: 'hand', key: ' ' },
       ])));
       return null;

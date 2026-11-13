@@ -29,7 +29,7 @@ describe('journal — selection snapshots', () => {
 
     const journal = history.beginJournal({ label: 'text edit' });
     selection.set(['mid-session']);
-    journal.applyBatch([addOp(store, 'c')], 'keystroke');
+    journal.applyOps([addOp(store, 'c')], 'keystroke');
     selection.set(['after']);
     journal.commit('text edit');
 
@@ -43,7 +43,7 @@ describe('journal — selection snapshots', () => {
     const history = createHistory(undefined, { selection });
 
     const journal = history.beginJournal({ label: 'session' });
-    journal.applyBatch([addOp(store, 'c')], 'keystroke');
+    journal.applyOps([addOp(store, 'c')], 'keystroke');
     selection.set(['moved-on']);
     journal.undo();
 

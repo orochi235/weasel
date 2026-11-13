@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
 import type { NodeId, RectPose } from 'core/scene/types';
@@ -29,7 +29,7 @@ function fixture(deps: Record<string, unknown> = {}) {
     drag: dx === undefined ? undefined : { start: { x: 0, y: 0 }, current: { x: dx, y: 0 }, delta: { x: dx, y: 0 } },
   }) as unknown as InvocationCtx;
   const start = (...behaviors: MoveBehavior<unknown>[]): OngoingHandle =>
-    (moveAction.invoker as OngoingInvoker).start(ctx(), { behaviors } as BindingOpts) as OngoingHandle;
+    (moveAction.invoker as OngoingInvoker).start(ctx(), { behaviors } as BindingOptions) as OngoingHandle;
   const shown = (id: NodeId) => effectivePose(scene, scene.get(id)!);
   return { scene, dragged, near, far, ctx, start, shown };
 }
@@ -138,7 +138,7 @@ describe('BehaviorResult.opaque', () => {
     const drag = { start: { x: 5, y: 5 }, current: { x: 200, y: 200 }, delta: { x: 195, y: 195 } };
     const handle = (moveAction.invoker as OngoingInvoker).start(
       base as unknown as InvocationCtx,
-      { behaviors: [scripted({ opaque: [other] })] } as BindingOpts,
+      { behaviors: [scripted({ opaque: [other] })] } as BindingOptions,
     ) as OngoingHandle;
     handle.onMove!({ ...base, world: drag.current, drag } as unknown as InvocationCtx);
     expect(new Set(handle.previewOpaqueIds!())).toEqual(new Set([sibling, other]));

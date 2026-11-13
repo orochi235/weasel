@@ -3,7 +3,7 @@ import {
   ActionDisabledReason,
   type ActionsRegistry,
   type ImmediateInvoker,
-  makeViewportZoomAction,
+  createViewportZoomAction,
   useActionsRegistry,
   useLatest,
   type ViewApi,
@@ -32,7 +32,7 @@ interface KeyBinding {
 
 // Core's zoom with only its keys: the wheel and pinch belong to each trial's
 // own dispatcher. The clamp is left to the camera, which knows its range.
-const BASE = makeViewportZoomAction({ min: 1e-9, max: Number.POSITIVE_INFINITY });
+const BASE = createViewportZoomAction({ min: 1e-9, max: Number.POSITIVE_INFINITY });
 const VARIANTS = [
   { key: 'in', label: 'Zoom in', params: { kind: 'in' } },
   { key: 'out', label: 'Zoom out', params: { kind: 'out' } },

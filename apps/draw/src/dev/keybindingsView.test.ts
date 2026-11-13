@@ -49,7 +49,7 @@ describe('lookupShortcutByToolId', () => {
       {
         id: 'tool.activate',
         defaultBinding: [
-          { spec: { kind: 'key-held', key: ' ' }, opts: { params: { toolId: 'weird' } } },
+          { spec: { kind: 'keyHeld', key: ' ' }, opts: { params: { toolId: 'weird' } } },
         ],
       },
     ];

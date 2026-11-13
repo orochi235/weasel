@@ -24,7 +24,7 @@ function describeGestureSpec(spec: { kind?: string } | undefined): string {
  *  translating between phase-channel names and spec kinds in both
  *  directions, because a route could be authored in either grammar. */
 export const CHANNEL_FOR_KIND: Readonly<Record<string, string>> = {
-  'key-held': 'keyHeld',
+  'keyHeld': 'keyHeld',
 };
 
 export interface ActionBindingRow {

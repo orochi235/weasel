@@ -6,7 +6,7 @@ import { SMUDGE_BRUSH_PARAMS } from './smudgeBrush';
 
 /** The Smudge brush's size and strength: the `smudgeBrush` action's params, the same form its last-operation
  *  panel shows. */
-export const SMUDGE_BRUSH_OPTIONS = {
+export const SMUDGE_BRUSH_TOOL_OPTIONS = {
   actionId: 'smudgeBrush',
   prefs: SMUDGE_BRUSH_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },
@@ -15,21 +15,21 @@ export const SMUDGE_BRUSH_OPTIONS = {
 
 /** Options for `useSmudgeBrushTool`. */
 export interface UseSmudgeBrushToolOptions {
-  /** Override the default keybinding (`{ key: 'S' }`). Pass `null` to omit. */
+  /** Override the default keybinding (`{ key: 'U' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
   /** Laid over its options' shares: `{ radiusPx: BRUSH_SIZE_PX }` (`@weasel-js/brush`) gives it the size every
    *  brush naming that key shares. Keep it stable across renders. */
   share?: ToolOptionShare;
 }
 
-const SMUDGE_KEY: ToolKeybinding = { key: 'S' };
+const SMUDGE_KEY: ToolKeybinding = { key: 'U' };
 
 /**
  * Smudge brush tool. A round brush that pushes the outline of the selected
  * paths, or of every path while none is selected, along with the pointer — a declarative shell whose one binding routes a
  * drag to the `smudgeBrush` action, which owns the stroke, its preview, its ring
  * cursor, and its one undo entry. The brush's radius (screen px) and strength are
- * its options ({@link SMUDGE_BRUSH_OPTIONS}): `[` and `]` resize it, `Shift+[` and
+ * its options ({@link SMUDGE_BRUSH_TOOL_OPTIONS}): `[` and `]` resize it, `Shift+[` and
  * `Shift+]` weaken and strengthen it, and a host keeps their values in the
  * `toolOptionValues` dep.
  */
@@ -43,6 +43,6 @@ export function useSmudgeBrushTool(options: UseSmudgeBrushToolOptions = {}): Too
     cursor: 'crosshair',
     presentation: { label: 'Smudge brush', group: 'path', icon: icon('smudgeBrush') },
     bindings: [{ spec: { kind: 'drag' }, actionId: 'smudgeBrush', opts: { id: 'smudgeBrush.drag' } }],
-    options: shareToolOptions(SMUDGE_BRUSH_OPTIONS, share),
+    options: shareToolOptions(SMUDGE_BRUSH_TOOL_OPTIONS, share),
   }), [keybinding, share]);
 }

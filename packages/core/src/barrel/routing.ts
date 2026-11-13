@@ -62,13 +62,13 @@ export { viewportDragPanAction } from '../interactions/actions/defaults/viewport
 export type { DragPanParams } from '../interactions/actions/defaults/viewportDragPan';
 export {
   viewportZoomAction,
-  makeViewportZoomAction,
+  createViewportZoomAction,
   type ViewportZoomOptions,
   type ViewportZoomAnimateOptions,
 } from '../interactions/actions/defaults/viewportZoom';
 export {
   viewportWheelPanAction,
-  makeViewportWheelPanAction,
+  createViewportWheelPanAction,
   type WheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
 export {
@@ -90,7 +90,7 @@ export {
 export { reachesLocked } from '../interactions/actions/defaults/lockedReach';
 export {
   pinchZoomAction,
-  makePinchZoomAction,
+  createPinchZoomAction,
   type PinchZoomOptions,
 } from '../interactions/actions/defaults/pinchZoom';
 export {
@@ -114,7 +114,7 @@ export { defaultCommitAdapter } from '../interactions/actions/defaultCommitAdapt
 
 // ─── Invoker / GestureBinding / ActiveToolContext ───
 export { overlaysOf, resolveParams } from '@weasel-js/routing';
-export type { Point2, WorldPoint, ImmediateParams, DragSample, InvocationCtx, BindingOpts, ActionDeps, AffordanceHit, OngoingHandle, OngoingOverlay, OverlayRole, ImmediateInvoker, OngoingInvoker, Invoker } from '@weasel-js/routing';
+export type { Point2, WorldPoint, ImmediateParams, DragSample, InvocationCtx, BindingOptions, ActionDeps, AffordanceHit, OngoingHandle, OngoingOverlay, OverlayRole, ImmediateInvoker, OngoingInvoker, Invoker } from '@weasel-js/routing';
 export type { GestureBinding } from '@weasel-js/routing';
 export { ActiveToolContextProvider, ActiveToolContextProviderIfRoot, useActiveToolContext, useOptionalActiveToolContext } from '@weasel-js/routing/react';
 export type { ActiveToolContextValue, ActiveToolContextProviderProps } from '@weasel-js/routing/react';

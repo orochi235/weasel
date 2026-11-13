@@ -3,10 +3,10 @@ import { type Tool } from '@weasel-js/core';
 import { useStrokeClickTool, type StrokeClickToolOptions } from '../shared/strokeClickTool';
 import { icon } from '../icons.gen';
 
-/** Options for `useExtendTool`; the default keybinding is `{ key: 'U' }`. */
+/** Options for `useExtendTool`; the default keybinding is `{ key: 'U', shift: true }` (Shift+U). */
 export type UseExtendToolOptions = StrokeClickToolOptions;
 
-const EXTEND_KEY: ToolKeybinding = { key: 'U' };
+const EXTEND_KEY: ToolKeybinding = { key: 'U', shift: true };
 
 /**
  * Extend to next path tool. A click near an open end of a stroke carries

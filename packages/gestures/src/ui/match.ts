@@ -5,6 +5,7 @@ import type { InputEvent } from './inputEvent';
 import type { PhaseAtom } from '../grammar/routeGrammar';
 import { matchIngestTypes } from './ingestTypes';
 import { matchTarget } from './matchTarget';
+import { isApplePlatform } from './platform';
 import { chordKey, codeLetter } from '@weasel-js/ui-input';
 
 export { matchTarget, parseTargetSpec } from './matchTarget';
@@ -35,7 +36,7 @@ function resolveSpecValue(value: boolean | 'optional' | undefined): KeyRequireme
 export function matchModifiers(
   e: ModifiersEvent,
   mods: ModSpec | undefined,
-  isMac: boolean,
+  isMac: boolean = isApplePlatform(),
 ): boolean {
   // Start strict: every modifier is forbidden unless the spec opts in.
   let alt: KeyRequirement = 'forbidden';
@@ -200,13 +201,13 @@ function matchPress(
 /**
  * Match a single GestureSpec against an InputEvent.
  *
- * For `key-held`, only `phase: 'down'` returns true. The dispatcher tracks the
+ * For `keyHeld`, only `phase: 'down'` returns true. The dispatcher tracks the
  * held state independently and handles `phase: 'up'` itself.
  */
 export function matchSpec(
   e: InputEvent,
   spec: GestureSpec,
-  isMac: boolean,
+  isMac: boolean = isApplePlatform(),
   phaseCtx?: PhaseContext,
 ): boolean {
   // With no phase ctx nothing is engaged and the spec has no owner: an
@@ -223,8 +224,8 @@ export function matchSpec(
       return matchModifiers(e, spec.mods, isMac);
     }
 
-    case 'key-held': {
-      if (e.kind !== 'key-held') return false;
+    case 'keyHeld': {
+      if (e.kind !== 'keyHeld') return false;
       if (e.phase !== 'down') return false; // only match the down phase
       if (!matchKeyOrCode(e, spec)) return false;
       return matchModifiers(e, spec.mods, isMac);

@@ -6,7 +6,7 @@ import { SIMPLIFY_BRUSH_PARAMS } from './simplifyBrush';
 
 /** The Simplify brush's size and tolerance: the `simplifyBrush` action's params, the same form its
  *  last-operation panel shows. */
-export const SIMPLIFY_BRUSH_OPTIONS = {
+export const SIMPLIFY_BRUSH_TOOL_OPTIONS = {
   actionId: 'simplifyBrush',
   prefs: SIMPLIFY_BRUSH_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },
@@ -24,7 +24,7 @@ export interface UseSimplifyBrushToolOptions {
  * The Simplify brush, a path-edit tool: a declarative shell whose one binding
  * routes a drag to the `simplifyBrush` action, which owns the stroke, its
  * preview, its ring cursor, and its one undo entry. Its radius and tolerance
- * are its options ({@link SIMPLIFY_BRUSH_OPTIONS}), stepped by `[` `]` and
+ * are its options ({@link SIMPLIFY_BRUSH_TOOL_OPTIONS}), stepped by `[` `]` and
  * `Shift+[` `Shift+]`. It carries `edits-anchors`, so it is usable only
  * where the mode allows anchor editing.
  */
@@ -36,6 +36,6 @@ export function useSimplifyBrushTool(options: UseSimplifyBrushToolOptions = {}):
     hookName: 'useSimplifyBrushTool',
     presentation: { label: 'Simplify brush', group: 'path-edit', icon: icon('core:simplifyBrush') },
     bindings: [{ spec: { kind: 'drag' }, actionId: 'simplifyBrush', opts: { id: 'simplifyBrush.drag' } }],
-    options: shareToolOptions(SIMPLIFY_BRUSH_OPTIONS, share),
+    options: shareToolOptions(SIMPLIFY_BRUSH_TOOL_OPTIONS, share),
   }), [share]);
 }

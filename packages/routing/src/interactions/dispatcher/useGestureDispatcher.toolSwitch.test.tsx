@@ -44,7 +44,7 @@ function mount(opts: { enabled?: boolean } = {}) {
   };
   const held: Action = {
     id: 'held', label: 'held',
-    defaultBinding: { kind: 'key-held', key: ' ' },
+    defaultBinding: { kind: 'keyHeld', key: ' ' },
     invoker: {
       timing: 'ongoing',
       start: () => { log.push('start:held'); return { onEnd: (_ctx, reason) => { log.push(`end:held:${reason}`); } }; },

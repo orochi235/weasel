@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useTextTool } from './useTextTool';
+import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 
 /**
  * useTextTool is now a thin declarative wrapper. The
@@ -25,7 +26,7 @@ describe('useTextTool surface', () => {
   it('declares insert (kind=text) and enterTextEdit bindings', () => {
     const { result } = renderHook(() => useTextTool());
     const bindings = result.current.bindings;
-    expect(bindings).toHaveLength(2);
+    expect(bindings).toHaveLength(3);
     expect(bindings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -35,6 +36,11 @@ describe('useTextTool surface', () => {
         expect.objectContaining({ actionId: 'enterTextEdit' }),
       ]),
     );
+  });
+
+  it('repositions a text box mid-draw, as the shape tools do', () => {
+    const { result } = renderHook(() => useTextTool());
+    expect(result.current.bindings).toContain(INSERT_REPOSITION_BINDING);
   });
 
   it('is dispatcher-only — bindings and nothing else', () => {

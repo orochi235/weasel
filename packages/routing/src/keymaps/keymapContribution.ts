@@ -16,7 +16,7 @@ export interface KeymapDef<TOverlay = never> {
   id: string;
   /** What the hint and a shortcut chip call it: `Loupe ▸ 2`. */
   label: string;
-  /** The keystroke, or keystrokes, that open it. A `key-held` spec is read as
+  /** The keystroke, or keystrokes, that open it. A `keyHeld` spec is read as
    *  its `key` form: holding the key is what holds the keymap open. */
   leader: GestureSpec | readonly GestureSpec[];
   /** The keymap's own bindings. Escape is not one: it cancels a gesture in flight, or else closes the keymap. */
@@ -41,7 +41,7 @@ export const keymapLeaderBindingId = (id: string, index = 0): string =>
 /** The leader keystrokes of `def` as its leader action binds them, each with its binding id. */
 export function leaderBindings(def: Pick<KeymapDef, 'id' | 'leader'>): BoundGesture[] {
   return [def.leader].flat().map((spec, i) => ({
-    spec: spec.kind === 'key-held' ? { ...spec, kind: 'key' } : spec,
+    spec: spec.kind === 'keyHeld' ? { ...spec, kind: 'key' } : spec,
     opts: { id: keymapLeaderBindingId(def.id, i) },
   }));
 }

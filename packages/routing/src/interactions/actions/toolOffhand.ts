@@ -1,6 +1,6 @@
 import type { Action } from './action';
 import type { BoundGesture } from './binding';
-import { resolveParams, type InvocationCtx, type BindingOpts } from './invoker';
+import { resolveParams, type InvocationCtx, type BindingOptions } from './invoker';
 import type { HotkeyTrigger } from '../../contributions/types';
 import type { KeyHeldSpec, ModSpec } from '@weasel-js/gestures';
 import { BETWEEN_GESTURES } from './betweenGestures';
@@ -31,7 +31,7 @@ export function offhandKeyFor(trigger: HotkeyTrigger): string {
 }
 
 /** Build the per-tool `BoundGesture` list for the consolidated action's
- *  `defaultBinding`. Each entry pairs a `key-held` spec with
+ *  `defaultBinding`. Each entry pairs a `keyHeld` spec with
  *  `opts.params.toolId`, so the invoker's `start` can pick out which tool
  *  to engage, and is overridden as `tool.offhand.<toolId>`.
  *
@@ -47,14 +47,14 @@ export function buildToolOffhandBindings(
   }));
 }
 
-/** The `key-held` spec for holding `key` (a `KeyboardEvent.key`, or several).
+/** The `keyHeld` spec for holding `key` (a `KeyboardEvent.key`, or several).
  *  A modifier key gets every modifier optional, since its own keydown reports
  *  its flag set. Any other key engages with Shift or Alt already down and not
  *  with Cmd or Ctrl, so a letter trigger leaves its browser chord alone.
  *  Every hold-a-key binding builds its spec here, so that rule has one home. */
 export function heldKeySpec(key: string | string[]): KeyHeldSpec {
   const isModifier = [key].flat().some((k) => MODIFIER_KEYS.has(k));
-  return { kind: 'key-held', key, mods: { ...(isModifier ? ANY_MODS : SHIFT_OR_ALT) } };
+  return { kind: 'keyHeld', key, mods: { ...(isModifier ? ANY_MODS : SHIFT_OR_ALT) } };
 }
 
 const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Alt', 'Control', 'Meta', 'Shift']);
@@ -71,7 +71,7 @@ const SHIFT_OR_ALT: ModSpec = { alt: 'optional', shift: 'optional' };
  *  reads `params.toolId` from the matched binding, pushes the tool id onto
  *  the active-tool context's hotkey stack on `start`, and pops it on `onEnd`.
  *  Mirrors the parametric shape of `tool.activate`. */
-export function makeToolOffhandAction(bindings: BoundGesture[]): Action {
+export function createToolOffhandAction(bindings: BoundGesture[]): Action {
   return {
     id: TOOL_OFFHAND_ID,
     label: 'Engage tool (offhand)',
@@ -79,7 +79,7 @@ export function makeToolOffhandAction(bindings: BoundGesture[]): Action {
     scope: 'hotkey',
     invoker: {
       timing: 'ongoing',
-      start: (ctx: InvocationCtx, opts?: BindingOpts) => {
+      start: (ctx: InvocationCtx, opts?: BindingOptions) => {
         const activeTool = ctx.deps.activeTool;
         const toolId = resolveParams(opts?.params)?.toolId as string | undefined;
         if (!activeTool || !toolId) return {};

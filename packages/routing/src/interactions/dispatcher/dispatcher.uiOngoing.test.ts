@@ -63,7 +63,7 @@ describe('Dispatcher.beginUiOngoing', () => {
     expect(onEnd.mock.calls[0][1]).toBe('commit');
   });
 
-  it('registers the handle in inFlight so getInFlightHandles reports it', () => {
+  it('registers the handle in inFlight so inFlight reports it', () => {
     const action = makeOngoingAction('test', {
       onMove: vi.fn(),
       onEnd: vi.fn(),
@@ -73,9 +73,9 @@ describe('Dispatcher.beginUiOngoing', () => {
 
     const ctrl = d.beginUiOngoing('test', {}, {});
     expect(ctrl).not.toBeNull();
-    expect([...d.getInFlightHandles()].length).toBe(1);
+    expect([...d.inFlight().values()].length).toBe(1);
     ctrl!.end('commit');
-    expect([...d.getInFlightHandles()].length).toBe(0);
+    expect([...d.inFlight().values()].length).toBe(0);
   });
 
   it('end is idempotent', () => {
@@ -127,13 +127,13 @@ describe('Dispatcher.beginUiOngoing', () => {
 
     // Start a UI-driven handle.
     d.beginUiOngoing('test', {}, { v: 1 });
-    expect([...d.getInFlightHandles()].length).toBe(1);
+    expect([...d.inFlight().values()].length).toBe(1);
 
     // cancelAll should fire onEnd with 'cancel' and clear internal state.
     d.cancelAll('cancel');
     expect(onEnd).toHaveBeenCalledOnce();
     expect(onEnd.mock.calls[0][1]).toBe('cancel');
-    expect([...d.getInFlightHandles()].length).toBe(0);
+    expect([...d.inFlight().values()].length).toBe(0);
 
     // Starting the same actionId again must NOT double-fire onEnd (no stale
     // uiOngoingByAction entry) and must succeed cleanly.
@@ -167,7 +167,7 @@ describe('Dispatcher.beginUiOngoing', () => {
     ctrl.update({ v: 2 });
 
     expect(onMove).not.toHaveBeenCalled();
-    expect([...d.getInFlightHandles()].length).toBe(0);
+    expect([...d.inFlight().values()].length).toBe(0);
   });
 
   it('a control auto-committed by a later begin does not fire onEnd again', () => {

@@ -103,7 +103,7 @@ export interface DevtoolsBinding {
   spec: SerializedValue;
   /** The spec in the route grammar, one string per route it expands to. */
   routes: string[];
-  /** The binding's `BindingOpts`: params, roles, views. */
+  /** The binding's `BindingOptions`: params, roles, views. */
   opts: SerializedValue;
 }
 

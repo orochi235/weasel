@@ -31,7 +31,7 @@ export function GestureReason({ dispatcher, canvasRef, viewRef }: GestureReasonP
   useEffect(() => {
     if (!dispatcher) return;
     const read = () => {
-      const all = [...dispatcher.getInFlightHandles()].flatMap((h) => [...overlaysOf(h)]);
+      const all = [...dispatcher.inFlight().values()].flatMap((h) => [...overlaysOf(h)]);
       const reason = resolveOverlays(all).find((o) => o.kind === 'reason');
       const canvas = canvasRef.current;
       const view = viewRef.current;

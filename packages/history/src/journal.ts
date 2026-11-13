@@ -35,7 +35,8 @@ export function _resumeJournalInternal(j: Journal): void {
 
 /** Options for `history.beginJournal()`. */
 export interface BeginJournalOptions {
-  /** Label for the single parent-history entry the journal flushes on commit. */
+  /** Label for the single parent-history entry the journal flushes on commit, unless
+   *  `commit` names another. */
   label: string;
   /** Caller-supplied tag naming what this journal is scoped to — typically the
    *  id of the node being edited. The history layer only carries it; callers
@@ -66,8 +67,8 @@ export interface Journal {
   readonly targetId: string | undefined;
   readonly forkedAtEntryId: number;
 
-  // Same operational surface as History
-  applyBatch(ops: Op[], label: string): void;
+  /** As `History.applyOps`, for the journal's own entries. */
+  applyOps(ops: Op[], label: string): void;
   /** As `History.recordEntry`, for the journal's own entries: ops that have already applied. */
   recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void;
   undo(): void;
@@ -91,8 +92,9 @@ export interface Journal {
   subscribe(listener: () => void): () => void;
 
   // Lifecycle
-  /** Throws while a journal opened inside this one is still active or suspended. */
-  commit(label: string): void;
+  /** Flushes the journal to its parent as one entry labelled `label`, or the label it was
+   *  opened with. Throws while a journal opened inside this one is still active or suspended. */
+  commit(label?: string): void;
   /** Cancels every journal still open inside this one first, suspended ones included. */
   cancel(): void;
   suspend(): void;
@@ -121,7 +123,7 @@ export function createJournalInternal(
     changed.emit();
   }
   inner.subscribe(bump);
-  const forkedAtEntryId = parent.currentEntryId();
+  const forkedAtEntryId = parent.nextEntryId();
   // The whole session collapses to one parent entry, so the selection that
   // entry restores is the one the session opened under — not whatever the
   // last keystroke left.
@@ -137,7 +139,7 @@ export function createJournalInternal(
     targetId,
     forkedAtEntryId,
 
-    applyBatch(ops: Op[], label: string): void {
+    applyOps(ops: Op[], label: string): void {
       if (state !== 'active') throw new Error('Journal is not active');
       inner.applyOps(ops, label);
     },
@@ -176,7 +178,7 @@ export function createJournalInternal(
     },
     getVersion: () => version,
     subscribe: changed.subscribe,
-    commit(label: string): void {
+    commit(label: string = opts.label): void {
       if (state !== 'active') throw new Error('Journal is not active');
       // Its ops are applied but recorded nowhere this commit reads.
       if (openChildren().length > 0) throw new Error('A journal inside this one is still active or suspended — commit or cancel it first');

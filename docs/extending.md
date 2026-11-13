@@ -352,7 +352,7 @@ that names them all — that one wants the `isAnchor` predicate.
 
 ## Custom gesture behaviors
 
-A behavior plugs into an action's behavior chain — via `BindingOpts.behaviors`
+A behavior plugs into an action's behavior chain — via `BindingOptions.behaviors`
 on the binding that reaches it, or via the options `<SceneCanvas>` forwards
 (`selectTool.move.behaviors`, `selectTool.resize.behaviors`, …). Snapping is
 not a behavior; a custom snap target is a snap source ([snapping.md](./snapping.md)):

@@ -1,6 +1,6 @@
 /** An Alt-drag clone running a move's container behaviors through their `clone` parts. */
 import { describe, it, expect } from 'vitest';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
 import type { MoveBehavior } from '../../gestures/types';
@@ -35,7 +35,7 @@ function fixture() {
     }),
     snapBackOrDelete<RectPose>({ radius: 30, onFreeRelease: 'snap-back' }),
   ];
-  const opts = { behaviors: moveBehaviors.flatMap((b) => (b.clone ? [b.clone] : [])) } as BindingOpts;
+  const opts = { behaviors: moveBehaviors.flatMap((b) => (b.clone ? [b.clone] : [])) } as BindingOptions;
   const start = () => (cloneAction.invoker as OngoingInvoker).start(at(5, 5), opts) as OngoingHandle;
   const copies = () => [...scene.nodesOnLayer('main')].filter((n) => n.id !== token && n.id !== bin);
   return { scene, bin, token, start, at, copies, selected: () => selected };

@@ -19,7 +19,7 @@ export interface InFlightGestures {
    * Put `handle` in flight. `ownerId` is the entry whose binding opened it,
    * `null` for an ambient action or a UI-driven handle; `action` is whose
    * handle it is, where a cursor may be read from it. `over`: its binding
-   * is live only while the pointer is over the surface (`BindingOpts.over`).
+   * is live only while the pointer is over the surface (`BindingOptions.over`).
    */
   open(gestureId: string, handle: OngoingHandle, ownerId: string | null, action?: Action, over?: boolean): void;
   /** Whether the gesture in flight under `gestureId` was opened by an `over` binding. */

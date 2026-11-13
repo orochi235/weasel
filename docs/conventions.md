@@ -140,6 +140,13 @@ A bounds function given nothing to bound returns `null` (`boundsOfCoords`,
 `unionRects`, `unionBoundsPath`, `aabbOfPoints`); one given a path that draws
 nothing returns a zero-size box.
 
+## Factories are `create…`
+
+A function that builds and returns a fresh object, store or descriptor is `create…`: `createDispatcher`,
+`createEmitter`, `createResizeAction`. A React hook that builds one for the life of a component is `use…`, and
+a pair keeps the same stem (`createGroupEntryContribution`, `useGroupEntryContribution`). `make…` names nothing
+public; an action named for what it does keeps its verb (`makeBooleanGroupAction` makes a boolean group).
+
 ## Stores notify through `createEmitter`
 
 A store keeps its subscribers in `createEmitter()` from `@weasel-js/registry`,

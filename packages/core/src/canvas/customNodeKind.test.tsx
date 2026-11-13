@@ -1,7 +1,7 @@
 /** docs/extending.md's "Custom node kinds" example, written as a consumer writes it, through an insert. */
 import { afterEach, describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import { buildDepsFromRequires, type BindingOpts, type GestureBinding, type InvocationCtx } from '@weasel-js/routing';
+import { buildDepsFromRequires, type BindingOptions, type GestureBinding, type InvocationCtx } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import {
   createScene, defineTool, findNodeShape, insertAction, registerNodeShape, shapeCoversPoint, solid,
@@ -51,7 +51,7 @@ function drawGem(from: { x: number; y: number }, to: { x: number; y: number }) {
     world: from, screen: from, modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: buildDepsFromRequires(insertAction, reg),
   } as unknown as InvocationCtx;
-  const handle = invoker.start(ctx, binding.opts as BindingOpts);
+  const handle = invoker.start(ctx, binding.opts as BindingOptions);
   handle.onMove!({ ...ctx, world: to });
   handle.onEnd!({ ...ctx, world: to }, 'commit');
   return [...scene.nodes.values()].find((n) => n.kind === 'mark')!;

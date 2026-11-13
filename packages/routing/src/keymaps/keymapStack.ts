@@ -2,7 +2,7 @@
  * The keymaps open on one surface, innermost last. A level opened by a held
  * leader stays open until that leader comes up; any other closes on the next
  * input. Closes made during one raw input apply when it ends, so the `key` and
- * `key-held` forms of a keystroke both see the keymap they arrived to.
+ * `keyHeld` forms of a keystroke both see the keymap they arrived to.
  */
 import { createEmitter } from '@weasel-js/registry';
 import type { GestureBinding } from '../interactions/actions/binding';

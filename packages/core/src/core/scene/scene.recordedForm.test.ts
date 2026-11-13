@@ -313,7 +313,7 @@ describe('Scene — what an applyBatch entry holds', () => {
   it('names the node a delete took in touchedIds', () => {
     const { scene, adapter } = fixture();
     scene.applyBatch([createDeleteOp({ node: scene.get(A)! })], 'Delete', adapter);
-    expect([...(scene.history.entries().undo[0]!.touchedIds ?? [])]).toEqual([A]);
+    expect([...(scene.history.entries().undo[0]!.touchedIds)]).toEqual([A]);
   });
 
   it('serializes the scene writes its ops made, as a direct call does', () => {

@@ -57,7 +57,7 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
     const def = registry.byId(id);
     const tid = args.targetId ?? null;
     if (def.kind === 'soft' && opts.journalSoftModes?.() === false) {
-      firstEntryId = history.currentEntryId();
+      firstEntryId = history.nextEntryId();
     } else {
       activeJournal = history.beginJournal({ targetId: tid ?? undefined, label: def.id });
     }

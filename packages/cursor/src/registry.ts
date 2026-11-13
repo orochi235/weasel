@@ -8,11 +8,18 @@ import type { CursorGlyph, CursorMark } from './types';
 const cache = new Map<string, string>();
 const composed = new Map<string, CursorGlyph>();
 
+/** What {@link cursorGlyph} sets in a glyph. */
+export interface CursorGlyphOptions {
+  /** A mark set in the glyph's slot: what the tool does, as `mark: 'rect'` on a crosshair. */
+  readonly mark?: CursorMarkName;
+}
+
 /**
  * A named glyph, carrying a named mark in its slot when `mark` is given, memoized. Throws for a name the set lacks,
  * and for a mark on a glyph with no slot.
  */
-export function cursorGlyph(name: CursorGlyphName, mark?: CursorMarkName): CursorGlyph {
+export function cursorGlyph(name: CursorGlyphName, opts: CursorGlyphOptions = {}): CursorGlyph {
+  const { mark } = opts;
   // Widened deliberately: the key types say these are always defined, but the
   // guard is what makes a bad name from untyped JS throw instead of baking
   // `undefined` into a cursor string that silently does nothing.
@@ -50,10 +57,7 @@ export function cursorVariants(): readonly CursorVariant[] {
 }
 
 /** What {@link cursorFor} bakes: {@link BakeOptions}, and the mark the glyph carries. */
-export interface CursorForOptions extends BakeOptions {
-  /** A mark set in the glyph's slot: what the tool does, as `mark: 'rect'` on a crosshair. */
-  readonly mark?: CursorMarkName;
-}
+export type CursorForOptions = BakeOptions & CursorGlyphOptions;
 
 /**
  * The baked cursor string for a named glyph, memoized.
@@ -70,7 +74,7 @@ export function cursorFor(name: CursorGlyphName, opts: CursorForOptions = {}): s
   const key = `${name}${opts.mark === undefined ? '' : `+${opts.mark}`}|${size}|${step}|${fallback}`;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
-  const css = bakeCursor(cursorGlyph(name, opts.mark), { size, fallback, angle: opts.angle ?? 0 });
+  const css = bakeCursor(cursorGlyph(name, { mark: opts.mark }), { size, fallback, angle: opts.angle ?? 0 });
   cache.set(key, css);
   return css;
 }

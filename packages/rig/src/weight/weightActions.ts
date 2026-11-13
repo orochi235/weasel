@@ -12,7 +12,7 @@ import { dataRestPath } from '@weasel-js/core';
 import { brushWeights, jointShares, setWeights } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from '../bone/placedRig';
 import type { RigEditState } from '../bone/rigEditState';
-import { resolveParams, type BindingOpts, type ImmediateParams } from '@weasel-js/routing';
+import { resolveParams, type BindingOptions, type ImmediateParams } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 import { brushRing } from '@weasel-js/cursor';
 
@@ -72,7 +72,7 @@ export const WEIGHT_BRUSH_PARAMS = pref.group('Weight brush', {
 
 /** The weight tool's options: its brush size, stepped by `[` `]` and Shift+wheel, which a drag and a click's dab
  *  both read. */
-export const WEIGHT_BRUSH_OPTIONS = {
+export const WEIGHT_TOOL_OPTIONS = {
   actionId: ['weight.paint', 'weight.click'],
   prefs: WEIGHT_BRUSH_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },
@@ -130,7 +130,7 @@ export function createWeightActions(env: WeightEnv): Action[] {
       enabled: () => (activeJoint(env) !== null ? true : ActionDisabledReason.NotApplicable),
       invoker: {
         timing: 'ongoing',
-        start: ({ deps, drag, world, modifiers }: InvocationCtx, opts?: BindingOpts) => {
+        start: ({ deps, drag, world, modifiers }: InvocationCtx, opts?: BindingOptions) => {
           const joint = activeJoint(env);
           if (joint === null) return {};
           let radiusPx = radiusOf(resolveParams(opts?.params));

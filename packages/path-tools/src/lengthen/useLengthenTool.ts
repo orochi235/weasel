@@ -19,7 +19,7 @@ export function useLengthenTool(): Tool {
     bindings: [{
       spec: { kind: 'drag', target: { kindOf: isAnchor }, mods: { shift: 'optional' } },
       actionId: 'lengthenPath',
-      opts: { id: 'lengthenPath.drag' },
+      opts: { id: 'lengthen.drag' },
     }],
   }), []);
 }

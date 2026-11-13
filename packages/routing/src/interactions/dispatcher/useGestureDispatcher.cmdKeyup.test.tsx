@@ -15,7 +15,7 @@ import type { Action } from '../actions/action';
 function mount(): string[] {
   const log: string[] = [];
   const hold: Action = {
-    id: 'test.cmdHold', label: 'hold', defaultBinding: { kind: 'key-held', key: 'h', mods: { meta: true } },
+    id: 'test.cmdHold', label: 'hold', defaultBinding: { kind: 'keyHeld', key: 'h', mods: { meta: true } },
     invoker: {
       timing: 'ongoing',
       start: () => { log.push('start'); return { onEnd: () => { log.push('end'); } }; },

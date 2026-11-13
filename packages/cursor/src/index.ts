@@ -1,7 +1,7 @@
 export { bakeCursor, quantizeCursorAngle } from './bake';
 export type { BakeOptions } from './bake';
 export { cursorFor, cursorGlyph, cursorVariants } from './registry';
-export type { CursorForOptions, CursorVariant } from './registry';
+export type { CursorForOptions, CursorGlyphOptions, CursorVariant } from './registry';
 export { markedGlyph, placeCursorPath } from './mark';
 export { resolveCursor, resolveCursorTier } from './resolve';
 export { brushRing } from './brushRing';

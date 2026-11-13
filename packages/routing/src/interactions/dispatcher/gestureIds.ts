@@ -1,6 +1,6 @@
 /**
  * The slot an in-flight ongoing handle is keyed by:
- * - `key-held`: `key-held-<code>` (`key-held-Space`), so two keys that share a
+ * - `keyHeld`: `key-held-<code>` (`key-held-Space`), so two keys that share a
  *   `key`, such as the two Shifts, hold separately. An event with no code keys
  *   by `key`.
  * - `pointerdown` and the drag that follows: `pointer-<pointerId>`. An event
@@ -45,7 +45,7 @@ export function isKeyHeldGestureId(gestureId: string): boolean {
 }
 
 export function gestureIdFor(event: InputEvent): string {
-  if (event.kind === 'key-held') {
+  if (event.kind === 'keyHeld') {
     return `key-held-${event.code ?? event.key}`;
   }
   if (

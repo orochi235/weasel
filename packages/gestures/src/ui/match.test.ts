@@ -172,13 +172,13 @@ describe('matchSpec', () => {
   });
 
   it('KeyHeldSpec matches on phase: down', () => {
-    const down: InputEvent = { kind: 'key-held', key: ' ', phase: 'down', ...noMods };
-    expect(matchSpec(down, { kind: 'key-held', key: ' ' }, false)).toBe(true);
+    const down: InputEvent = { kind: 'keyHeld', key: ' ', phase: 'down', ...noMods };
+    expect(matchSpec(down, { kind: 'keyHeld', key: ' ' }, false)).toBe(true);
   });
 
   it('KeyHeldSpec does NOT match on phase: up (dispatcher gates phase independently)', () => {
-    const up: InputEvent = { kind: 'key-held', key: ' ', phase: 'up', ...noMods };
-    expect(matchSpec(up, { kind: 'key-held', key: ' ' }, false)).toBe(false);
+    const up: InputEvent = { kind: 'keyHeld', key: ' ', phase: 'up', ...noMods };
+    expect(matchSpec(up, { kind: 'keyHeld', key: ' ' }, false)).toBe(false);
   });
 
   it('WheelSpec matches wheel events with matching modifiers', () => {
@@ -282,9 +282,9 @@ describe('matchSpec', () => {
     // The key still matches: a layout that types `]` on another key, or an event with no code.
     expect(matchSpec({ kind: 'key', key: ']', code: 'Equal', ...mods }, spec, true)).toBe(true);
     expect(matchSpec({ kind: 'key', key: ']', ...mods }, spec, true)).toBe(true);
-    const held: GestureSpec = { kind: 'key-held', key: 'F13', code: ['ShiftLeft'] };
-    expect(matchSpec({ kind: 'key-held', phase: 'down', key: 'Shift', code: 'ShiftLeft', ...noMods }, held, false)).toBe(true);
-    expect(matchSpec({ kind: 'key-held', phase: 'down', key: 'Shift', code: 'ShiftRight', ...noMods }, held, false)).toBe(false);
+    const held: GestureSpec = { kind: 'keyHeld', key: 'F13', code: ['ShiftLeft'] };
+    expect(matchSpec({ kind: 'keyHeld', phase: 'down', key: 'Shift', code: 'ShiftLeft', ...noMods }, held, false)).toBe(true);
+    expect(matchSpec({ kind: 'keyHeld', phase: 'down', key: 'Shift', code: 'ShiftRight', ...noMods }, held, false)).toBe(false);
   });
 
   it('a Latin letter or digit matches its key when a layout or Option types something else on it', () => {

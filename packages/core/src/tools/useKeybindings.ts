@@ -4,11 +4,11 @@ import { useActionsRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import { eligibleForMode, type ModeRegistry } from '@weasel-js/modes';
 import {
-  makeToolActivateAction,
+  createToolActivateAction,
   buildToolActivateBindings,
   type ToolActivateBindingSpec,
 } from 'interactions/actions/defaults/toolActivate';
-import { makeToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
+import { createToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 import type { ToolsApi } from './overlayBinding';
 
 /** Options for `useKeybindings`. */
@@ -82,7 +82,7 @@ export function useKeybindings(
 
     if (specs.length > 0) {
       const bindings = buildToolActivateBindings(specs);
-      unregisters.push(registry.register(makeToolActivateAction(
+      unregisters.push(registry.register(createToolActivateAction(
         bindings,
         (toolId) => {
           // `setActive` refuses an id it does not hold; a trigger with one is refused too.
@@ -98,9 +98,9 @@ export function useKeybindings(
     // Escape-returns-to-default. Registered here rather than in the deleted
     // document listener so it competes in the dispatcher's Escape ladder
     // instead of firing in parallel with it — see
-    // `makeToolResetToDefaultAction` for the ordering and the behavior
+    // `createToolResetToDefaultAction` for the ordering and the behavior
     // change that implies.
-    unregisters.push(registry.register(makeToolResetToDefaultAction(() => {
+    unregisters.push(registry.register(createToolResetToDefaultAction(() => {
       const opt = optionsRef.current.defaultTool;
       if (opt === null) return null;
       const target = opt ?? initialActiveRef.current;

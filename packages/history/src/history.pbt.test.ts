@@ -121,7 +121,7 @@ class Apply implements Cmd {
     // Each key once: two writes to one key in a batch would make "from" ambiguous.
     const sets = this.sets.filter((s, i) => this.sets.findIndex((o) => o.key === s.key) === i);
     const ops = sets.map((s) => setOp(s.key, before[s.key]!, s.to, s.keyed));
-    if (r.journal) r.journal.applyBatch(ops, 'set'); else r.history.applyOps(ops, 'set');
+    if (r.journal) r.journal.applyOps(ops, 'set'); else r.history.applyOps(ops, 'set');
     const after = stateOf(r.store);
     const changed = sets.some((s) => before[s.key] !== s.to);
     const l = active(m);

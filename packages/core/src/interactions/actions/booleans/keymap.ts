@@ -13,7 +13,7 @@ export const PATHFINDER_LEADER: KeySpec = { kind: 'key', key: 'p', code: 'KeyP',
 
 // Alt is optional so the keys work with the leader held down as well as tapped.
 const heldKey = (letter: string): KeyHeldSpec =>
-  ({ kind: 'key-held', key: letter, code: `Key${letter.toUpperCase()}`, mods: { alt: 'optional' } });
+  ({ kind: 'keyHeld', key: letter, code: `Key${letter.toUpperCase()}`, mods: { alt: 'optional' } });
 
 const KEYS: readonly (readonly [Action, string])[] = [
   [pathfinderUnionAction, 'u'],

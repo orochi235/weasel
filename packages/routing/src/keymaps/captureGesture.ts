@@ -7,7 +7,7 @@ export type { CaptureKind, CapturedSpec } from './captureSpec';
 /** Options for {@link captureGesture}. */
 export interface CaptureGestureOptions extends CaptureThresholds {
   /** The kinds to take; input of any other kind is waited past. A keystroke
-   *  is taken as `key` when both `key` and `key-held` are listed. Defaults to
+   *  is taken as `key` when both `key` and `keyHeld` are listed. Defaults to
    *  `key`, `click`, `doubleClick`, `drag` and `contextMenu`. */
   kinds?: readonly CaptureKind[];
   /** Stop listening and resolve `null`. */
@@ -41,7 +41,7 @@ const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Shift', 'Control', 'Alt', '
 export function captureGesture(target: EventTarget, opts: CaptureGestureOptions = {}): Promise<CapturedSpec | null> {
   const apple = opts.apple ?? isApplePlatform();
   const kinds = new Set(opts.kinds ?? DEFAULT_KINDS);
-  const keyKind = kinds.has('key') ? 'key' : kinds.has('key-held') ? 'key-held' : null;
+  const keyKind = kinds.has('key') ? 'key' : kinds.has('keyHeld') ? 'keyHeld' : null;
   const pointer = POINTER_KINDS.some((k) => kinds.has(k));
 
   return new Promise((resolve) => {

@@ -168,7 +168,7 @@ spec('[initial] wheel(up)');
 Wildcards become omitted fields, so an unconstrained route produces the
 smallest spec. Most gesture names are also the spec kind. The exceptions:
 `dblTap` becomes `'doubleClick'`, `keyDown` becomes `'key'`, and `keyHeld`
-becomes `'key-held'`.
+becomes `'keyHeld'`.
 
 `routeToSpec` throws for a route no spec can express: any `keyUp` route, a key
 or finger-count gesture with no concrete argument, or a target that is not one
@@ -217,7 +217,7 @@ Each spec kind matches one event kind:
 | Spec `kind` | Event `kind` |
 |---|---|
 | `'key'` | `'key'` |
-| `'key-held'` | `'key-held'` with `phase: 'down'` |
+| `'keyHeld'` | `'keyHeld'` with `phase: 'down'` |
 | `'click'` | `'click'` |
 | `'doubleClick'` | `'doubleclick'` |
 | `'drag'` | `'pointerdown'` without a `stage` |

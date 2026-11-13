@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
-import type { BindingOpts, Dispatcher, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { BindingOptions, Dispatcher, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { ON_PAGE, pagedScene } from 'core/pages/pagedFixture';
 import type { Node, RectPose } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
@@ -35,7 +35,7 @@ describe('a page\'s child mid-drag', () => {
     const base = { world: { x: 95, y: 15 }, modifiers: MODS, deps: { selection: { get: () => [ON_PAGE] }, scene } };
     const invoker = moveAction.invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-    const handle: OngoingHandle = invoker.start(base as unknown as InvocationCtx, {} as BindingOpts);
+    const handle: OngoingHandle = invoker.start(base as unknown as InvocationCtx, {} as BindingOptions);
     const to = { x: 135, y: 15 };
     handle.onMove!({ ...base, world: to, drag: { start: base.world, current: to, delta: { x: 40, y: 0 } } } as unknown as InvocationCtx);
 

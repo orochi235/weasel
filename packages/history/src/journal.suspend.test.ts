@@ -24,7 +24,7 @@ describe('Journal.suspend', () => {
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'session' });
 
-    j.applyBatch([pushOp(1)], 'a');
+    j.applyOps([pushOp(1)], 'a');
     j.suspend();
 
     expect(j.isActive()).toBe(false);
@@ -39,7 +39,7 @@ describe('Journal.suspend', () => {
 
     j.suspend();
 
-    expect(() => j.applyBatch([pushOp(1)], 'x')).toThrow();
+    expect(() => j.applyOps([pushOp(1)], 'x')).toThrow();
     expect(() => j.undo()).toThrow();
     expect(() => j.redo()).toThrow();
   });

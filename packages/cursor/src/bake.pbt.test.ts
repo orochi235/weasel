@@ -33,7 +33,7 @@ describe('bakeCursor', () => {
   it('draws a finite image at any size up to the cap, its whole-pixel hotspot inside it where the turned glyph puts it', () => {
     const t = tally();
     fc.assert(fc.property(variant, fc.oneof(bakedSize, anyNumber.filter((n) => !(n > CURSOR_MAX_CSS_PX))), angle, (v, size, a) => {
-      const glyph = cursorGlyph(v.glyph, v.mark);
+      const glyph = cursorGlyph(v.glyph, { mark: v.mark });
       const css = bakeCursor(glyph, { size, angle: a });
       const got = parse(css);
       const s = Number.isFinite(size) && size > 0 ? size : 24;
@@ -60,7 +60,7 @@ describe('bakeCursor', () => {
 
   it('refuses a size past the cap with a RangeError', () => {
     fc.assert(fc.property(variant, fc.double({ min: CURSOR_MAX_CSS_PX, max: 1e300, noNaN: true }).filter((n) => n > CURSOR_MAX_CSS_PX), (v, size) => {
-      expect(() => bakeCursor(cursorGlyph(v.glyph, v.mark), { size })).toThrow(RangeError);
+      expect(() => bakeCursor(cursorGlyph(v.glyph, { mark: v.mark }), { size })).toThrow(RangeError);
     }), runs(RUNS));
   });
 
@@ -81,7 +81,7 @@ describe('bakeCursor', () => {
 describe('the painted tier', () => {
   it('puts the hotspot on the pointer, and every glyph point where the baked image draws it', () => {
     fc.assert(fc.property(variant, bakedSize, fc.integer({ min: 0, max: CURSOR_ANGLE_STEPS - 1 }), fc.double({ min: -2000, max: 2000, noNaN: true }), fc.double({ min: -2000, max: 2000, noNaN: true }), fc.tuple(fc.double({ min: 0, max: 24, noNaN: true }), fc.double({ min: 0, max: 24, noNaN: true })), (v, size, step, x, y, [px, py]) => {
-      const glyph = cursorGlyph(v.glyph, v.mark);
+      const glyph = cursorGlyph(v.glyph, { mark: v.mark });
       const angle = (step / CURSOR_ANGLE_STEPS) * 2 * Math.PI;
       const m = cursorPaintMatrix(glyph, { size, angle, at: { x, y } });
       expect(m.every(Number.isFinite)).toBe(true);
@@ -125,7 +125,7 @@ describe('the painted tier', () => {
 
   it('paints each layer halos first, then ink, every width scaled by the line-width scale', () => {
     fc.assert(fc.property(variant, fc.double({ min: 1e-3, max: 1e3, noNaN: true }), (v, k) => {
-      const glyph = cursorGlyph(v.glyph, v.mark);
+      const glyph = cursorGlyph(v.glyph, { mark: v.mark });
       const one = cursorPaintOps(glyph);
       const scaled = cursorPaintOps(glyph, { lineWidthScale: k });
       expect(scaled.map((o) => o.d)).toEqual(one.map((o) => o.d));

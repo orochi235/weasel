@@ -5,7 +5,7 @@
  * message, or note is claimed by that layer and reaches only bindings that
  * name it.
  */
-import { defineTool, toolSet, useLatest, type BindingOpts, type GestureBinding, type Tool, type ToolSet } from '@weasel-js/core';
+import { defineTool, toolSet, useLatest, type BindingOptions, type GestureBinding, type Tool, type ToolSet } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { icon } from '../icons.gen';
 import {
@@ -47,7 +47,7 @@ export interface SequenceToolsOptions extends SequenceAuthorOptions {
 const ON_SEQUENCE = `affordance:${SEQUENCE_AFFORDANCE_KIND}` as const;
 
 /** `kind` bound to `actionId`, plain and on the sequence layer. */
-function both(tool: string, kind: 'click' | 'drag', actionId: string, params?: BindingOpts['params']): GestureBinding[] {
+function both(tool: string, kind: 'click' | 'drag', actionId: string, params?: BindingOptions['params']): GestureBinding[] {
   const at = (id: string) => ({ id: `${tool}.${id}`, ...(params ? { params } : {}) });
   return [
     { spec: { kind }, actionId, opts: at(kind) },

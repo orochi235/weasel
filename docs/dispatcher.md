@@ -41,7 +41,7 @@ The example routes are written in the route grammar that `parseRoute` and
 [`packages/gestures/src/grammar/routeGrammar.ts`](../packages/gestures/src/grammar/routeGrammar.ts).
 
 Read it top to bottom, the order the candidate list ends up in.
-Naming the routed view outranks the scope tier (see `BindingOpts.views`), so
+Naming the routed view outranks the scope tier (see `BindingOptions.views`), so
 it comes first. The two examples show the usual pattern: a step decides the
 order, and `enabled()` still gets the last word as the walk moves
 down the list.

@@ -79,23 +79,23 @@ describe('History entries touchedIds', () => {
     h.applyOps([idOp('node-1'), idOp('node-2')], 'Move two');
     const { undo } = h.entries();
     expect(undo).toHaveLength(1);
-    expect(undo[0].touchedIds?.has('node-1')).toBe(true);
-    expect(undo[0].touchedIds?.has('node-2')).toBe(true);
+    expect(undo[0].touchedIds.has('node-1')).toBe(true);
+    expect(undo[0].touchedIds.has('node-2')).toBe(true);
   });
 
   it('recordEntry also populates touchedIds', () => {
     const h = createHistory({});
     h.recordEntry([idOp('n'), nodeOp('m')], 'batch');
     const { undo } = h.entries();
-    expect(undo[0].touchedIds?.has('n')).toBe(true);
-    expect(undo[0].touchedIds?.has('m')).toBe(true);
+    expect(undo[0].touchedIds.has('n')).toBe(true);
+    expect(undo[0].touchedIds.has('m')).toBe(true);
   });
 
   it('entries without recognisable ids have an empty touchedIds set', () => {
     const h = createHistory({});
     h.applyOps([noIdOp()], 'no-id batch');
     const { undo } = h.entries();
-    expect(undo[0].touchedIds?.size).toBe(0);
+    expect(undo[0].touchedIds.size).toBe(0);
   });
 
   it('keeps a coalesced entry\'s touchedIds across serialize and restore', () => {
@@ -105,9 +105,9 @@ describe('History entries touchedIds', () => {
     h.applyOps([keyed('a')], 'nudge');
     t = 10;
     h.applyOps([keyed('b')], 'nudge');
-    const before = [...h.entries().undo[0]!.touchedIds!].sort();
+    const before = [...h.entries().undo[0]!.touchedIds].sort();
     expect(before).toEqual(['a', 'b']);
     h.restore(h.serialize());
-    expect([...h.entries().undo[0]!.touchedIds!].sort()).toEqual(before);
+    expect([...h.entries().undo[0]!.touchedIds].sort()).toEqual(before);
   });
 });

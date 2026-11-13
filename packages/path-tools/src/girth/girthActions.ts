@@ -1,4 +1,4 @@
-import type { Action, ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { Action, ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 import { meanScale, pathToAnchors, pxReach, type PolygonPath, type Point } from '@weasel-js/geom';
@@ -142,7 +142,7 @@ function planClear(deps: ActionDeps, env: GirthEnv, params: unknown): { target: 
 function dragAction(env: GirthEnv): Action['invoker'] {
   return {
     timing: 'ongoing',
-    start: ({ deps, drag, world }: InvocationCtx, opts?: BindingOpts) => {
+    start: ({ deps, drag, world }: InvocationCtx, opts?: BindingOptions) => {
       const press = drag?.start ?? world;
       const read = () => resolveParams(opts?.params) as GirthDragParams | undefined;
       const grip = gripFor(deps, env, press, read());

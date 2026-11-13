@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { transformPreview } from '../transformFinish';
 import { finiteFrame } from '../finiteFrame';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
@@ -33,7 +33,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
   requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       const begun = beginRotate(ctx, opts);
       if (!begun) return {};
       const { session, readers } = begun;

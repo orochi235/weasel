@@ -75,7 +75,7 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
     case 'pinch':
       return withMods({ kind, ...(arg ? { direction: arg as 'in' | 'out' } : {}), ...t });
     case 'key':
-    case 'key-held': {
+    case 'keyHeld': {
       if (arg === undefined) return fail('a key spec needs a concrete key');
       const keyRoute = parseKeyRoute(arg);
       const twice = keyRoute.optionalMods.find((m) => parsed.modifiers[m] !== undefined);

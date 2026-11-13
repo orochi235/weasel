@@ -151,11 +151,11 @@ export type { ImmediateParams } from './interactions/dispatcher/inputFacts';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from './interactions/actions/modifierRoles';
 
 export type {
-  Point2, WorldPoint, AffordanceHit, DragSample, InvocationCtx, BindingOpts, ActionDeps,
+  Point2, WorldPoint, AffordanceHit, DragSample, InvocationCtx, BindingOptions, ActionDeps,
   OverlayRole, OngoingOverlay, OngoingHandle, ImmediateInvoker, OngoingInvoker, Invoker,
 } from './interactions/actions/invoker';
 export {
-  TOOL_OFFHAND_ID, buildToolOffhandBindings, heldKeySpec, makeToolOffhandAction, offhandKeyFor,
+  TOOL_OFFHAND_ID, buildToolOffhandBindings, heldKeySpec, createToolOffhandAction, offhandKeyFor,
 } from './interactions/actions/toolOffhand';
 export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand';
 export { BETWEEN_GESTURES } from './interactions/actions/betweenGestures';

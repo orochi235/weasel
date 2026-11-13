@@ -52,7 +52,7 @@ describe('an op that names what it caused', () => {
     const { decide } = fixture();
     const history = createHistory(null);
     history.applyOps([decide(() => 5)], 'edit');
-    expect([...history.entries().undo[0]!.touchedIds!]).toEqual(['to-5']);
+    expect([...history.entries().undo[0]!.touchedIds]).toEqual(['to-5']);
   });
 
   it('coalesces on the keys of what it caused', () => {
@@ -87,7 +87,7 @@ describe('an op that names what it caused', () => {
     const { cell, decide } = fixture();
     const history = createHistory(null);
     const journal = history.beginJournal({ label: 'mode' });
-    journal.applyBatch([decide(() => 5)], 'edit');
+    journal.applyOps([decide(() => 5)], 'edit');
     journal.undo();
     expect(cell.v).toBe(0);
     journal.redo();

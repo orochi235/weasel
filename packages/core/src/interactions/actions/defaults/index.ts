@@ -41,7 +41,7 @@ export {
 } from './anchorNudge';
 export { setAnchorFieldAction, type SetAnchorFieldParams } from './anchorFields';
 export {
-  retractHandlesAction, makeHandlesSymmetricAction, makeHandleCommand, type HandleEdit, type HandleScope,
+  retractHandlesAction, makeHandlesSymmetricAction, createHandleCommand, type HandleEdit, type HandleScope,
 } from './anchorHandles';
 export { averageAnchorsAction, joinAnchorsAction, joinSelectedAnchors } from './anchorJoin';
 export { editTargetOf } from './pathEditMarks';
@@ -50,9 +50,9 @@ export {
 } from '../pathCommands';
 export { undoAction, redoAction } from './undoRedo';
 export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from '../clipboard/action';
-export { makeToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';
+export { createToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';
 export {
-  makeToolActivateAction,
+  createToolActivateAction,
   buildToolActivateBindings,
   TOOL_ACTIVATE_ID,
   type ToolActivateKeyOpts,
@@ -71,6 +71,6 @@ export { pinchZoomAction } from './pinchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';
 export { containerScrollAction, scrollRange, scrollableAt } from './containerScroll';
 export type { ScrollRange } from './containerScroll';
-export { viewportZoomAction, makeViewportZoomAction, type ViewportZoomOptions } from './viewportZoom';
+export { viewportZoomAction, createViewportZoomAction, type ViewportZoomOptions } from './viewportZoom';
 export { viewportDragPanAction } from './viewportDragPan';
 export { enterTextEditAction } from './enterTextEdit';

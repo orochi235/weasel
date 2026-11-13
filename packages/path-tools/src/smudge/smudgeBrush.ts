@@ -3,7 +3,7 @@
  * text included once the brush reaches it, as one undo entry per stroke.
  */
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type BindingOpts, type InvocationCtx, type OngoingHandle, resolveParams,
+  type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 import { pxReach, smudgePath, type PolygonPath } from '@weasel-js/geom';
@@ -24,7 +24,7 @@ export const DEFAULT_SMUDGE_STRENGTH = 0.6;
 const LABEL = 'Smudge brush';
 
 /** The brush's size and strength as a form: the last-operation panel's after a stroke, and the tool's options
- *  (`SMUDGE_BRUSH_OPTIONS`), which are one setting. */
+ *  (`SMUDGE_BRUSH_TOOL_OPTIONS`), which are one setting. */
 export const SMUDGE_BRUSH_PARAMS = pref.group(LABEL, {
   radiusPx: pref.number('Size', DEFAULT_SMUDGE_RADIUS_PX, {
     description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider',
@@ -131,7 +131,7 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
   params: SMUDGE_BRUSH_PARAMS,
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       const { deps } = ctx;
       const start = { x: ctx.drag?.start.x ?? ctx.world.x, y: ctx.drag?.start.y ?? ctx.world.y };
       const live = strokeFrom(deps, start);

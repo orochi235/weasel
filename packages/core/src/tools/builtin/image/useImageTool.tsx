@@ -4,6 +4,7 @@ import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
+import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 
 /** Options for `useImageTool`. */
 export interface UseImageToolOptions extends InsertToolOptions {
@@ -51,6 +52,7 @@ export function useImageTool(options: UseImageToolOptions): Tool {
             actionId: 'insert',
             opts: { id: 'image.drag', params: { kind: 'image', src, preview }, ...insertBindingBehaviors(behaviors) },
           },
+          INSERT_REPOSITION_BINDING,
         ],
       }),
     [src, label, preview, behaviors],

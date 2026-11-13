@@ -3,7 +3,7 @@ import type {
 } from '@weasel-js/gestures';
 
 /** A spec kind a binding editor can capture. */
-export type CaptureKind = 'key' | 'key-held' | 'click' | 'doubleClick' | 'drag' | 'contextMenu';
+export type CaptureKind = 'key' | 'keyHeld' | 'click' | 'doubleClick' | 'drag' | 'contextMenu';
 
 /** What `captureGesture` resolves to. */
 export type CapturedSpec = KeySpec | KeyHeldSpec | ClickSpec | DoubleClickSpec | DragSpec | ContextMenuSpec;

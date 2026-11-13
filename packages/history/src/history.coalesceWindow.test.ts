@@ -39,9 +39,9 @@ describe('coalesceWindowMs as a function', () => {
     const { history, live, tick } = open(0);
     const journal = history.beginJournal({ label: 'session' });
     live.windowMs = 100;
-    journal.applyBatch([setOp(0, 1)], 'set');
+    journal.applyOps([setOp(0, 1)], 'set');
     tick(50);
-    journal.applyBatch([setOp(1, 2)], 'set');
+    journal.applyOps([setOp(1, 2)], 'set');
     expect(journal.entries().undo).toHaveLength(1);
   });
 

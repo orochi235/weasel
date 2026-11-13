@@ -7,7 +7,7 @@
  * selected corner the same radius. The release commits one undo step.
  */
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type BindingOpts, type InvocationCtx, isCornerWidget,
+  type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type InvocationCtx, isCornerWidget,
   type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
@@ -101,7 +101,7 @@ export const editCornerAction: Action & { requires: string[] } = inPlane({
   params: EDIT_CORNER_PARAMS,
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       const dep = ctx.deps.editAnchors;
       const index = cornerIndexOf(ctx.drag?.affordance?.kind ?? '');
       if (!dep?.editingId || index === null) return {};

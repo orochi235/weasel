@@ -39,7 +39,7 @@ const MOD_ORDER: readonly LogicalMod[] = ['mod', 'ctrl', 'meta', 'alt', 'shift']
 
 /** A pointer gesture in words, modifiers first and named as `platform`'s keyboard prints them: `Cmd-click`. */
 function gestureWords(spec: GestureSpec, platform: Platform): string | undefined {
-  if (spec.kind === 'key-held') {
+  if (spec.kind === 'keyHeld') {
     const chip = keySpecShortcut(spec);
     return chip ? `Hold ${formatShortcut(chip, { platform })}` : undefined;
   }

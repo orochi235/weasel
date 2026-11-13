@@ -105,7 +105,7 @@ describe('useGestureDispatcher', () => {
     const action: Action = {
       id: 'demo.held',
       label: 'Demo held',
-      defaultBinding: { kind: 'key-held', key: ' ' },
+      defaultBinding: { kind: 'keyHeld', key: ' ' },
       invoker: { timing: 'ongoing', start: () => ({ onEnd: (_c, reason) => endSpy(reason) }) },
     };
     /** Window key listeners a mount-then-unmount attaches and never removes. */

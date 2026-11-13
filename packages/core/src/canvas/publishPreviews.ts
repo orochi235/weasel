@@ -42,7 +42,7 @@ interface ShownData<TData> {
  */
 export function publishPreviews<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
-  dispatcher: Pick<Dispatcher, 'getInFlightHandles' | 'subscribe'>,
+  dispatcher: Pick<Dispatcher, 'inFlight' | 'subscribe'>,
 ): () => void {
   const hold = scene.overrides.hold();
   const shownData = new Map<NodeId, ShownData<TData>>();
@@ -58,7 +58,7 @@ export function publishPreviews<TData, TLayer extends string, TPose>(
 
   const publish = (): void => {
     const frame = new Map<NodeId, ShownOverride<TPose, TData>>();
-    for (const handle of dispatcher.getInFlightHandles()) {
+    for (const handle of dispatcher.inFlight().values()) {
       if (handle.previewHidesSource === false) continue;
       collect(handle, frame, (id) => scene.get(id) !== undefined, dataFor);
     }

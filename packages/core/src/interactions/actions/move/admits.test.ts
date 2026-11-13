@@ -1,6 +1,6 @@
 /** Drop admission: with no `canDropInto` dep a group takes a drop and a mark does not. */
 import { describe, it, expect } from 'vitest';
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
 import { moveAction } from './action';
@@ -26,7 +26,7 @@ function dropOnto(target: string, deps: object = {}) {
   const base = { world: { x: 5, y: 5 }, modifiers: MODS, deps: { selection: { get: () => [A] }, scene, nodeAtPoint: () => target, ...deps } };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-  const handle = invoker.start(base as unknown as InvocationCtx, { params: { reparentOnDrop: 'top' } } as BindingOpts);
+  const handle = invoker.start(base as unknown as InvocationCtx, { params: { reparentOnDrop: 'top' } } as BindingOptions);
   const d = { start: { x: 5, y: 5 }, current: { x: 200, y: 200 }, delta: { x: 195, y: 195 } };
   const at = { ...base, world: d.current, drag: d } as unknown as InvocationCtx;
   handle.onMove!(at);

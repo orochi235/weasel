@@ -27,7 +27,7 @@ export type ActionShortcut = MenuShortcut;
  * carries only `mod`.
  */
 export function keySpecShortcut(spec: GestureSpec): ActionShortcut | undefined {
-  if (spec.kind !== 'key' && spec.kind !== 'key-held') return undefined;
+  if (spec.kind !== 'key' && spec.kind !== 'keyHeld') return undefined;
   const key = Array.isArray(spec.key) ? spec.key[0] : spec.key;
   if (typeof key !== 'string' || key.length === 0) return undefined;
   const mods = 'mods' in spec ? spec.mods : undefined;

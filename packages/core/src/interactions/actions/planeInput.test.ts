@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type {
-  Action, BindingOpts, DepRegistry, InvocationCtx, OngoingHandle, OngoingInvoker, OngoingOverlay,
+  Action, BindingOptions, DepRegistry, InvocationCtx, OngoingHandle, OngoingInvoker, OngoingOverlay,
 } from '@weasel-js/routing';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
@@ -77,7 +77,7 @@ function drag(
   from: { x: number; y: number },
   to: { x: number; y: number },
   extra: Parameters<typeof ctxOf>[3] = {},
-  opts?: BindingOpts,
+  opts?: BindingOptions,
 ): OngoingHandle {
   const handle = (action.invoker as OngoingInvoker).start(ctxOf(scene, from, from, extra), opts);
   handle.onMove!(ctxOf(scene, from, to, extra));

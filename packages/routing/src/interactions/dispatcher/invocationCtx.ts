@@ -134,7 +134,7 @@ export function buildInvocationCtx(
 
   if (event.kind === 'key') {
     base.key = { key: event.key, repeat: event.repeat ?? false };
-  } else if (event.kind === 'key-held') {
+  } else if (event.kind === 'keyHeld') {
     base.key = { key: event.key, repeat: false };
   } else if (event.kind === 'wheel') {
     base.wheel = { deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: 0 };

@@ -18,14 +18,14 @@ export function liveInView(binding: GestureBinding, view: string | null): boolea
 }
 
 /** Whether `binding` is live for a key that reached `reach`. See
- *  `BindingOpts.over`. */
+ *  `BindingOptions.over`. */
 export function liveForKeys(binding: GestureBinding, reach: KeyReach | undefined): boolean {
   if (reach === undefined) return true;
   return binding.opts?.over ? reach.over : reach.held;
 }
 
 /** Stable partition: matches whose binding names `view` first. See
- *  `BindingOpts.views` for why naming the view outranks the scope tier. */
+ *  `BindingOptions.views` for why naming the view outranks the scope tier. */
 export function namesView(binding: GestureBinding, view: string | null): boolean {
   return binding.opts?.views?.includes(view) ?? false;
 }
