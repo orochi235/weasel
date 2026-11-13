@@ -138,7 +138,7 @@ export function WeaselDemos() {
         </PageBoundary>
       </main>
 
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <CommandPalette isOpen={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );
 }

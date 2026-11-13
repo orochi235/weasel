@@ -190,7 +190,11 @@ A kit component's props use the DOM's and React Aria's names where one exists
   (`collapsedIds`/`onCollapsedChange`, `window`/`onWindowChange`). A selection
   reports through `onSelectionChange`, as React Aria's does, whatever its prop
   is called. `onSelect` is left for a pick that is not a held selection, such
-  as a row clicked with how it was clicked.
+  as a row clicked with how it was clicked. A modal surface is held by
+  `isOpen`/`onOpenChange`, as `Dialog` is.
+- **Live and committed**: a value that moves through a gesture reports each
+  step through `onInput` and the finished gesture through `onChange`
+  (`Slider`, `Timeline`, `DetentSlider`).
 
 ## Design tokens
 

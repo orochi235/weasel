@@ -146,7 +146,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
             )}
           >
             <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
-              <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+              <CommandPalette isOpen={paletteOpen} onOpenChange={setPaletteOpen} />
               <StripDock className="wd-dock">
                 <div className="wd-dock-main">
                   <div ref={optionsRef}>
