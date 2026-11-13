@@ -92,9 +92,9 @@ export interface PrefBase<K extends string, Value> {
    *  shows the longest of them that fits. `name` stays the accessible name, so
    *  these abbreviate without costing anything. */
   short?: readonly string[];
-  /** Whether the leaf can be auto, left for its owner to decide (weasel-ui
-   *  `PrefsForm`'s `onAutoChange`, labkit's `ControlPanel`). Unset, it can, and
-   *  starts pinned at `default`; `false`, never; an object, as it says. */
+  /** Whether the leaf can be auto: unpinned, reading a computed value (`prefAutoValue`). Unset, it can, and
+   *  starts pinned at `default`; `false`, never, and it is always pinned; an object, as it says. A store and
+   *  every surface honor it alike. */
   auto?: false | PrefAuto<Value>;
   /** The name of the type this leaf was made from, set by `prefType`. A
    *  schema editor shows such a leaf as one closed thing and prints the name
@@ -119,9 +119,9 @@ export interface PrefBase<K extends string, Value> {
 
 /** How a leaf that can be auto is auto. */
 export interface PrefAuto<Value = unknown> {
-  /** Starts auto, where it would start pinned at `default`. */
+  /** Starts auto, unpinned, where it would start pinned at `default`; a reset puts it back so. */
   on?: boolean;
-  /** What it reads while auto, where its owner computes nothing. Unset, none. */
+  /** What it reads while auto, where its owner computes nothing. Unset, its `default`. */
   value?: Value;
 }
 

@@ -81,6 +81,9 @@ export interface PrefGroup {
   /** Everything under it is disabled while this does not hold, except a leaf directly in it that this reads: that
    *  leaf is the group's switch, often the one marked `heading`, and stays live so the group can be turned back on. */
   enableIf?: PrefCondition;
+  /** Its heading offers a reset of every leaf under it, back to what the schema says (`prefResets`). Every
+   *  leaf's row offers its own reset whether or not this is set. */
+  resettable?: boolean;
   children: Record<string, PrefLeaf | PrefGroup>;
 }
 
@@ -116,6 +119,8 @@ export interface PrefSection {
   showIf?: PrefCondition;
   /** As a {@link PrefGroup}'s. */
   enableIf?: PrefCondition;
+  /** As a {@link PrefGroup}'s. */
+  resettable?: boolean;
   members: Record<string, PrefLeaf | PrefSection>;
 }
 

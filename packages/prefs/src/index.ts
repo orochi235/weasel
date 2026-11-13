@@ -67,6 +67,17 @@ export {
 export { prefShownReader, prefShownValue } from './shown';
 export { prefLeafValue, prefValueAbsent } from './leafValue';
 export {
+  prefAutoValue,
+  prefCanAuto,
+  prefIsReset,
+  prefResetOf,
+  prefResets,
+  prefStartsAuto,
+  prefStoredReset,
+  type PrefReset,
+  type PrefResetEntry,
+} from './autoReset';
+export {
   isPrefScope,
   scopeSelectors as prefScopeSelectors,
   memberAt as prefScopeValue,

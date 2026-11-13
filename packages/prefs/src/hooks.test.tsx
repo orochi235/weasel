@@ -64,14 +64,17 @@ describe('usePrefsValues', () => {
     expect(result.current.values.grid).toBe(true);
   });
 
-  it("returns setAuto for PrefsForm's onAutoChange: false pins a leaf at its value, true unpins it", () => {
+  it("returns setAuto for PrefsForm's onAutoChange: true unpins a leaf, false pins it at its value", () => {
     const store = open();
     const { result } = renderHook(() => usePrefsValues(store));
+    expect(result.current.auto.has('density')).toBe(false);
+    act(() => result.current.setAuto('density', true));
+    expect(result.current.auto.has('density')).toBe(true);
     act(() => result.current.setAuto('density', false));
-    expect(result.current.unset.has('density')).toBe(false);
+    expect(result.current.auto.has('density')).toBe(false);
     expect(store.stored()).toEqual({ density: 72 });
     act(() => result.current.set('density', 90));
-    act(() => result.current.setAuto('density', true));
+    act(() => result.current.reset('density'));
     expect(result.current.unset.has('density')).toBe(true);
     expect(result.current.values.density).toBe(72);
   });
@@ -129,8 +132,12 @@ describe('usePrefsValues', () => {
     expect(store.get('density')).toBe(90);
     act(() => result.current.form.onAutoChange('density', true));
     expect(result.current.form.auto.has('density')).toBe(true);
+    act(() => result.current.form.onAutoChange('grid', true));
     act(() => result.current.form.onAutoChange('grid', false));
+    expect(store.isAuto('grid')).toBe(false);
     expect(store.isSet('grid')).toBe(true);
+    act(() => result.current.form.onReset('grid'));
+    expect(store.isSet('grid')).toBe(false);
     const held = result.current.form;
     rerender();
     expect(result.current.form).toBe(held);
