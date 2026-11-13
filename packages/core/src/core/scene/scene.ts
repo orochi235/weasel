@@ -29,7 +29,6 @@ import {
   type AddNodeSpec,
   type LayerRecord,
   type NodeId,
-  type RegisteredOp,
   type Scene,
   type SceneRegistry,
   type SavedScene,
@@ -202,6 +201,13 @@ function buildScene<TData, TLayer extends string, TPose>(
   return scene;
 }
 
+/** Options for {@link sceneFromJSON}: the scene settings a snapshot does not
+ *  carry, and how its nodes are read back. */
+export type SceneFromJSONOptions<TData, TLayer extends string, TPose> = Pick<
+  SceneOptions<TData, TLayer, TPose>,
+  'registry' | 'historyLimit' | 'coalesceWindowMs' | 'generateId' | 'ops' | 'composition' | 'layoutFrame' | 'quantize'
+> & SpecsFromSerializedOptions<TData, TLayer, TPose>;
+
 /** Reconstruct a Scene from a JSON snapshot produced by `scene.toJSON()`.
  *  Function fields (e.g., `clipFromPose`) are resolved by string key via the
  *  registry passed in `options`. Throws on unknown version, unknown registry
@@ -209,16 +215,7 @@ function buildScene<TData, TLayer extends string, TPose>(
  *  The scene starts with empty history. */
 export function sceneFromJSON<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
-  options: {
-    registry?: SceneRegistry<TPose, TData, TLayer>;
-    historyLimit?: number;
-    coalesceWindowMs?: number;
-    generateId?: () => NodeId;
-    ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
-    composition?: SceneOptions<TData, TLayer, TPose>['composition'];
-    layoutFrame?: SceneOptions<TData, TLayer, TPose>['layoutFrame'];
-    quantize?: SceneOptions<TData, TLayer, TPose>['quantize'];
-  } & SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
+  options: SceneFromJSONOptions<TData, TLayer, TPose> = {},
 ): Scene<TData, TLayer, TPose> {
   assertSnapshotShape(json);
   return buildScene(

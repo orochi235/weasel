@@ -1100,6 +1100,7 @@
     "SceneEditPass": "type",
     "SceneEditPassOptions": "type",
     "SceneEditSummary": "type",
+    "SceneFromJSONOptions": "type",
     "SceneNode": "type",
     "SceneNodeClientRectOptions": "type",
     "SceneOptions": "type",

@@ -133,6 +133,7 @@ export type {
   SystemLayerRecord,
   SystemLayerSpec,
   UserLayerRecord,
+  SceneFromJSONOptions,
   SceneOptions,
   UseSceneOptions,
 } from '../core/scene';
