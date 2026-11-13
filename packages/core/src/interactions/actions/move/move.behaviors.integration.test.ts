@@ -4,7 +4,7 @@ import { moveAction } from './action';
 import { snapToContainer } from './behaviors/snapToContainer';
 import { snapBackOrDelete } from './behaviors/snapBackOrDelete';
 import type { MoveBehavior } from '../../gestures/types';
-import type { InvocationCtx, BindingOpts, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { InvocationCtx, BindingOptions, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -53,7 +53,7 @@ describe('moveAction behavior pipeline', () => {
   it('snapToContainer reparents the dragged node on commit', () => {
     const { scene, box, leaf } = fixture();
     const target: SnapTarget<P> = { parentId: box, slotPose: { x: 210, y: 10, width: 20, height: 20 } };
-    const opts: BindingOpts = {
+    const opts: BindingOptions = {
       behaviors: [
         snapToContainer<P>({
           dwellMs: 0,
@@ -77,7 +77,7 @@ describe('moveAction behavior pipeline', () => {
       [leaf]: { x: 210, y: 10, width: 20, height: 20 },
       [second]: { x: 240, y: 10, width: 20, height: 20 },
     };
-    const opts: BindingOpts = {
+    const opts: BindingOptions = {
       behaviors: [
         snapToContainer<P>({
           dwellMs: 0,
@@ -103,7 +103,7 @@ describe('moveAction behavior pipeline', () => {
     const group = scene.add({ kind: 'group', layer: 'main', data: { color: '#ccc' }, pose: { x: 0, y: 0, width: 100, height: 100 } }) as string;
     const child = scene.add({ kind: 'mark', layer: 'main', parent: asNodeId(group), data: { color: '#0f0' }, pose: { x: 10, y: 10, width: 20, height: 20 } }) as string;
     const target: SnapTarget<P> = { parentId: box, slotPose: { x: 210, y: 30, width: 100, height: 100 } };
-    const opts: BindingOpts = {
+    const opts: BindingOptions = {
       behaviors: [
         snapToContainer<P>({ dwellMs: 0, isInstant: () => true, findTarget: (_id, wx) => (wx > 200 ? target : null) }) as never,
       ],
@@ -122,7 +122,7 @@ describe('moveAction behavior pipeline', () => {
   it('snapBackOrDelete aborts (no pose change) within radius', () => {
     const { scene, leaf } = fixture();
     const before = scene.get(asNodeId(leaf))!.pose;
-    const opts: BindingOpts = { behaviors: [snapBackOrDelete<P>({ radius: 100, onFreeRelease: 'snap-back' }) as never] };
+    const opts: BindingOptions = { behaviors: [snapBackOrDelete<P>({ radius: 100, onFreeRelease: 'snap-back' }) as never] };
     const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leaf]), opts) as OngoingHandle;
     handle.onMove!(ctx(scene, [leaf], { start: { x: 10, y: 10 }, current: { x: 15, y: 12 }, delta: { x: 5, y: 2 } }));
     handle.onEnd!(ctx(scene, [leaf], { start: { x: 10, y: 10 }, current: { x: 15, y: 12 }, delta: { x: 5, y: 2 } }), 'commit');
@@ -131,7 +131,7 @@ describe('moveAction behavior pipeline', () => {
 
   it('a grid snap quantizes the committed delta', () => {
     const { scene, leaf } = fixture();
-    const opts: BindingOpts = { behaviors: [grid20() as never] };
+    const opts: BindingOptions = { behaviors: [grid20() as never] };
     const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leaf]), opts) as OngoingHandle;
     handle.onMove!(ctx(scene, [leaf], { start: { x: 0, y: 0 }, current: { x: 23, y: 19 }, delta: { x: 23, y: 19 } }));
     handle.onEnd!(ctx(scene, [leaf], { start: { x: 0, y: 0 }, current: { x: 23, y: 19 }, delta: { x: 23, y: 19 } }), 'commit');
@@ -154,7 +154,7 @@ describe('moveAction behavior pipeline', () => {
     // commit. The container snap should win regardless of ordering.
     const { scene, box, leaf } = fixture();
     const target: SnapTarget<P> = { parentId: box, slotPose: { x: 210, y: 10, width: 20, height: 20 } };
-    const opts: BindingOpts = {
+    const opts: BindingOptions = {
       behaviors: [
         grid20() as never,
         snapToContainer<P>({
@@ -183,7 +183,7 @@ describe('moveAction behavior pipeline', () => {
     const poseABefore = { ...scene.get(asNodeId(leafA))!.pose };
     const poseBBefore = { ...scene.get(asNodeId(leafB))!.pose };
 
-    const opts: BindingOpts = { behaviors: [grid20() as never] };
+    const opts: BindingOptions = { behaviors: [grid20() as never] };
     const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leafA, leafB]), opts) as OngoingHandle;
     const delta = { x: 40, y: 60 };
     handle.onMove!(ctx(scene, [leafA, leafB], { start: { x: 0, y: 0 }, current: { x: delta.x, y: delta.y }, delta }));
@@ -206,7 +206,7 @@ describe('moveAction behavior pipeline', () => {
     const poseBefore = { ...scene.get(asNodeId(leaf))!.pose };
     const parentBefore = scene.get(asNodeId(leaf))!.parent;
     const target: SnapTarget<P> = { parentId: box, slotPose: { x: 210, y: 10, width: 20, height: 20 } };
-    const opts: BindingOpts = {
+    const opts: BindingOptions = {
       behaviors: [
         snapToContainer<P>({
           dwellMs: 0,

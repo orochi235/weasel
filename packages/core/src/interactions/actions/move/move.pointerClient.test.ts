@@ -3,7 +3,7 @@
  * dispatcher handed the action, or absent when the event carried none.
  */
 import { describe, it, expect } from 'vitest';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
 import type { MoveBehavior, PointerState } from '../../gestures/types';
@@ -20,7 +20,7 @@ function fixture() {
     onStart: (ctx) => { seen.push({ ...ctx.pointer }); },
     onMove: (ctx) => { seen.push({ ...ctx.pointer }); },
   };
-  const opts = { behaviors: [spy] } as BindingOpts;
+  const opts = { behaviors: [spy] } as BindingOptions;
   const at = (x: number, screen?: { x: number; y: number }): InvocationCtx => ({
     ...base,
     world: { x, y: 0 },

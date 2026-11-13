@@ -1,4 +1,4 @@
-import type { BindingOpts, InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
 import { isPathEditPart, resolveParams } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -110,7 +110,7 @@ function verdictOf(
  *  behaviors appended to the binding's own. */
 export function beginMove(
   ctx: InvocationCtx,
-  opts: BindingOpts | undefined,
+  opts: BindingOptions | undefined,
   frame: () => MoveFrame,
 ): { session: MoveSession; readers: GestureReaders } | null {
   const selection = ctx.deps.selection;

@@ -91,7 +91,7 @@
     "BendAlongPathOptions": "type",
     "BezierEasing": "type",
     "BindRigOptions": "type",
-    "BindingOpts": "type",
+    "BindingOptions": "type",
     "BindingOverrideInput": "type",
     "BindingOverrides": "type",
     "BindingScope": "type",

@@ -1,4 +1,4 @@
-import type { BindingOpts, DragSample, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, DragSample, InvocationCtx } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import { SNAP_ANGLE_STEP, snapMods } from 'domains/snap/roles';
 import { spanSnap, type SpanSnap } from 'domains/snap/spanSnap';
@@ -29,7 +29,7 @@ export interface InsertSession {
   readonly snap: SpanSnap;
   /** The active binding's opts — re-resolved on every read so thunked
    *  params see the latest tool state (e.g. polygon `sides` after ArrowUp). */
-  readonly opts: BindingOpts | undefined;
+  readonly opts: BindingOptions | undefined;
   /** What was selected before the draw cleared it, to put back on cancel. */
   readonly priorSelection: readonly NodeId[];
   /** Behaviors from `opts.behaviors`; empty when none were bound. */
@@ -70,7 +70,7 @@ export interface InsertFrame {
  *  selection and runs each behavior's `onStart`. */
 export function beginInsert(
   ctx: InvocationCtx,
-  opts: BindingOpts | undefined,
+  opts: BindingOptions | undefined,
 ): { session: InsertSession; readers: GestureReaders; frame: InsertFrame } | null {
   const dep = ctx.deps.insert;
   if (!dep) return null;

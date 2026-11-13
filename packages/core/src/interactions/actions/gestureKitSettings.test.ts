@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createKitSettingsStore, type KitSettingsStore } from '@weasel-js/react';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
 import type { MoveBehavior } from '../gestures/types';
@@ -26,7 +26,7 @@ describe('GestureContext.kitSettings', () => {
     const spy: MoveBehavior<RectPose> = { onMove: (ctx) => { seen = ctx.kitSettings; } };
     const base = { world: { x: 0, y: 0 }, modifiers: MODS, deps: { selection: { get: () => [s] as NodeId[] }, scene, kitSettings } };
     const handle = (moveAction.invoker as OngoingInvoker)
-      .start(base as unknown as InvocationCtx, { behaviors: [spy] } as BindingOpts) as OngoingHandle;
+      .start(base as unknown as InvocationCtx, { behaviors: [spy] } as BindingOptions) as OngoingHandle;
     handle.onMove!({ ...base, world: { x: 5, y: 0 }, drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 0 }, delta: { x: 5, y: 0 } } } as unknown as InvocationCtx);
     expect(seen).toBe(kitSettings);
   });

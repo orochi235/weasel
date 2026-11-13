@@ -3,7 +3,7 @@
  * text included once the brush reaches it, as one undo entry per stroke.
  */
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type BindingOpts, type InvocationCtx, type OngoingHandle, resolveParams,
+  type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 import { pxReach, smudgePath, type PolygonPath } from '@weasel-js/geom';
@@ -131,7 +131,7 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
   params: SMUDGE_BRUSH_PARAMS,
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       const { deps } = ctx;
       const start = { x: ctx.drag?.start.x ?? ctx.world.x, y: ctx.drag?.start.y ?? ctx.world.y };
       const live = strokeFrom(deps, start);

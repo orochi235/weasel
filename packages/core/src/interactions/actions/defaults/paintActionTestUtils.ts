@@ -4,7 +4,7 @@ import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { Action } from '@weasel-js/routing';
-import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, BindingOptions } from '@weasel-js/routing';
 
 /**
  * The fake scene / selection / ctx trio the four paint-action suites run
@@ -97,7 +97,7 @@ export function makeCtx(opts: {
 /** The action's ongoing invoker, narrowed — every paint action has one. */
 export function ongoingInvoker(
   action: Action,
-): { start: (ctx: InvocationCtx, opts?: BindingOpts) => OngoingHandle } {
+): { start: (ctx: InvocationCtx, opts?: BindingOptions) => OngoingHandle } {
   if (action.invoker?.timing !== 'ongoing') throw new Error('not ongoing');
   return action.invoker;
 }

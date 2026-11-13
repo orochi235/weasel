@@ -84,7 +84,7 @@ export function createUiOngoing(
       let handle: OngoingHandle;
       try {
         // Params go through both `ctx.params` (the UI-driven channel) and
-        // `BindingOpts.params` (the gesture-driven channel).
+        // `BindingOptions.params` (the gesture-driven channel).
         handle = action.invoker.start(uiInvocationCtx(deps, params), { params });
       } catch (e) {
         console.error(`weasel dispatcher: action "${actionId}" threw on start`, e);

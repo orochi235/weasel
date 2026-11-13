@@ -7,7 +7,7 @@
  */
 
 import type { Action } from '@weasel-js/routing';
-import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { defaultCommitAdapter, selectionMethods } from '../defaultCommitAdapter';
@@ -125,7 +125,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
   requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       const selection = ctx.deps.selection;
       const scene = ctx.deps.scene;
       const applyOps = ctx.deps.applyOps;

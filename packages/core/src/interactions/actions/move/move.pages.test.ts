@@ -1,6 +1,6 @@
 /** A move in a paged scene: a page's child dropped on another page, on the pasteboard, or off every page. */
 import { describe, expect, it } from 'vitest';
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId, type AddNodeSpec, type NodeId, type RectPose } from 'core/scene/types';
 import { PAGE_A, PAGE_B, ON_PAGE, pagedScene } from 'core/pages/pagedFixture';
 import { moveAction } from './action';
@@ -39,7 +39,7 @@ function drag(dx: number, options: {
   const base = { world: from, modifiers: MODS, deps };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-  const handle = invoker.start(base as unknown as InvocationCtx, { params: options.params ?? {} } as BindingOpts);
+  const handle = invoker.start(base as unknown as InvocationCtx, { params: options.params ?? {} } as BindingOptions);
   const to = { x: from.x + dx, y: from.y };
   const at = { ...base, world: to, drag: { start: from, current: to, delta: { x: dx, y: 0 } } } as unknown as InvocationCtx;
   handle.onMove!(at);
@@ -297,7 +297,7 @@ describe('a node following others, when a drop into a container moves what it fo
     const entries = scene.historyEntries().length;
     const handle = invoker.start(base as unknown as InvocationCtx, {
       behaviors: [snapToContainer<RectPose>({ dwellMs: 0, isInstant: () => true, findTarget: () => target }) as never],
-    } as BindingOpts);
+    } as BindingOptions);
     handle.onMove!(at);
     handle.onEnd!(at, 'commit');
     expect(scene.get(N)!.parent).toBe(G2);
@@ -329,7 +329,7 @@ describe('a node following others, when a drop into a container moves what it fo
     };
     const to = { x: 140, y: 15 };
     const drag = { start: base.world, current: to, delta: { x: 130, y: 0 } };
-    const handle = invoker.start(base as unknown as InvocationCtx, { params: {} } as BindingOpts);
+    const handle = invoker.start(base as unknown as InvocationCtx, { params: {} } as BindingOptions);
     handle.onMove!({ ...base, world: to, drag } as unknown as InvocationCtx);
     handle.onEnd!({ ...base, world: to, drag } as unknown as InvocationCtx, 'commit');
     expect(scene.get(N)!.parent).toBe(G2);

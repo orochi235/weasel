@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
-import type { InvocationCtx, BindingOpts } from '@weasel-js/routing';
+import type { InvocationCtx, BindingOptions } from '@weasel-js/routing';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -18,7 +18,7 @@ function drag(
   ids: string[],
   delta: { x: number; y: number },
   deps: Record<string, unknown> = {},
-  opts?: BindingOpts,
+  opts?: BindingOptions,
 ): void {
   const invoker = moveAction.invoker;
   if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');

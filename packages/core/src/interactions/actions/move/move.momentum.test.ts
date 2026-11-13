@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { moveAction } from './action';
 import { createScene } from 'core/scene/scene';
 import { documentPose, effectivePose } from 'core/scene/effectivePose';
@@ -32,7 +32,7 @@ function setup(deps: Record<string, unknown> = {}) {
   const clock = makeClock();
   const { result } = renderHook(() => useAnimator(clock));
   const animator = result.current;
-  const opts: BindingOpts = {
+  const opts: BindingOptions = {
     behaviors: [
       momentum<Pose>({ animator, threshold: 0, now: clock.now }) as unknown as MoveBehavior<unknown>,
     ],

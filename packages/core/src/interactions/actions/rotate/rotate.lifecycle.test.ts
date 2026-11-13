@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { rotateAction } from './action';
 import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
@@ -40,7 +40,7 @@ function invoker() {
 
 function turn(
   s: ReturnType<typeof setup>,
-  opts: BindingOpts | undefined,
+  opts: BindingOptions | undefined,
   reason: 'commit' | 'cancel' = 'commit',
 ) {
   const handle = invoker().start(s.base as InvocationCtx, opts);

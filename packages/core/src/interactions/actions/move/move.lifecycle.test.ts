@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { moveAction } from './action';
 import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
@@ -63,7 +63,7 @@ function invoker() {
   return inv;
 }
 
-function drag(base: object, opts: BindingOpts | undefined, dx: number, reason: 'commit' | 'cancel' = 'commit') {
+function drag(base: object, opts: BindingOptions | undefined, dx: number, reason: 'commit' | 'cancel' = 'commit') {
   const handle = invoker().start(base as InvocationCtx, opts);
   handle.onMove?.(frame(base, dx));
   handle.onEnd?.(frame(base, dx), reason);

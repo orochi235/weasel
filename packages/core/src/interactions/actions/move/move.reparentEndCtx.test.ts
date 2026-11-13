@@ -6,7 +6,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import type { NodeAtPointDep } from '../depSchema';
 import { moveAction } from './action';
 
@@ -24,7 +24,7 @@ function makeScene(): Scene<unknown, string, unknown> {
 function startAndMove(
   scene: Scene<unknown, string, unknown>,
   nodeAtPoint: NodeAtPointDep,
-  params: BindingOpts['params'] = { reparentOnDrop: 'top' },
+  params: BindingOptions['params'] = { reparentOnDrop: 'top' },
 ) {
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');

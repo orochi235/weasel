@@ -6,7 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import type { Action, ActionDeps, BindingOpts } from '@weasel-js/routing';
+import type { Action, ActionDeps, BindingOptions } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { RectPose } from 'core/geometry/rectPose';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
@@ -199,7 +199,7 @@ describe('the marquee and insert, metamorphic properties', () => {
   function insert(kind: string, t: Pt, start: Pt, path: readonly Pt[], reason: 'commit' | 'cancel'): unknown[] {
     const calls: unknown[] = [];
     const deps = { insert: { commit: (bounds: unknown) => { calls.push(bounds); return 'n' as NodeId; } } } as unknown as ActionDeps;
-    const opts: BindingOpts = { params: { kind } };
+    const opts: BindingOptions = { params: { kind } };
     drive(insertAction, deps, { start: shift(start, t), path: path.map((p) => shift(p, t)), reason, opts });
     return calls;
   }

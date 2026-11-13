@@ -1,6 +1,6 @@
 /** An alt-drag clone snapping through the `snap` dep's session, as a move does. */
 import { describe, expect, it } from 'vitest';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import type { Point } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
@@ -49,7 +49,7 @@ function rig(sources: readonly SnapSource[]) {
     world: p, screen: p, modifiers: { ...KEYS, ...mods }, deps,
     drag: { start: from, current: p, delta: { x: p.x - from.x, y: p.y - from.y } },
   }) as unknown as InvocationCtx;
-  const press = (p: Point, opts: BindingOpts = {}): OngoingHandle => {
+  const press = (p: Point, opts: BindingOptions = {}): OngoingHandle => {
     from = p;
     return (cloneAction.invoker as OngoingInvoker).start(at(p), opts);
   };

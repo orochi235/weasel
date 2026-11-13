@@ -1,6 +1,6 @@
 /** Insert admission through the deps bag the dispatcher builds, which surfaces only what an action `requires`. */
 import { describe, it, expect } from 'vitest';
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
@@ -36,7 +36,7 @@ describe('an insert into a mark that canDropInto admits', () => {
     const invoker = insertAction.invoker!;
     if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
     const ctx = { world: { x: 5, y: 5 }, screen: { x: 5, y: 5 }, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps };
-    invoker.start(ctx as unknown as InvocationCtx, { params: { kind: 'rect' } } as BindingOpts);
+    invoker.start(ctx as unknown as InvocationCtx, { params: { kind: 'rect' } } as BindingOptions);
     expect(begun.at(-1)?.parent).toBe(MARK);
   });
 

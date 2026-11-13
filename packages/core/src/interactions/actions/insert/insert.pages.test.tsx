@@ -1,7 +1,7 @@
 /** An insert in a paged scene, through the insert dep `<SceneCanvas>` sources. */
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import { buildDepsFromRequires, type BindingOpts, type InvocationCtx } from '@weasel-js/routing';
+import { buildDepsFromRequires, type BindingOptions, type InvocationCtx } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { useInsertDepSource } from 'canvas/deps/insert';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
@@ -27,7 +27,7 @@ function draw(from: { x: number; y: number }, to: { x: number; y: number }, past
   const invoker = insertAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const ctx = { world: from, screen: from, modifiers: MODS, deps } as unknown as InvocationCtx;
-  const handle = invoker.start(ctx, { params: { kind: 'rect' } } as BindingOpts);
+  const handle = invoker.start(ctx, { params: { kind: 'rect' } } as BindingOptions);
   handle.onMove!({ ...ctx, world: to });
   handle.onEnd!({ ...ctx, world: to }, 'commit');
   const made = [...scene.nodes.values()].find((n) => n.kind === 'mark' && n.id !== ON_PAGE)!;

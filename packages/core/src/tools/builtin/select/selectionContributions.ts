@@ -5,7 +5,7 @@
  * gesture itself. `<SceneCanvas features>` installs them as the `move`,
  * `resize` and `rotate` presets.
  */
-import type { BindingOpts, GestureBinding } from '@weasel-js/routing';
+import type { BindingOptions, GestureBinding } from '@weasel-js/routing';
 import { isResizeHandle, isRotateHandle, isPathEditPart } from '@weasel-js/routing';
 import { hitPredicate } from '@weasel-js/gestures';
 import { SNAP_ROLE_MODS } from 'domains/snap/roles';
@@ -42,7 +42,7 @@ export function selectionMoveBindings<TPose>(
   // Shared move-binding opts (params + behaviors). Applied to
   // both the selected-body and unselected-body move bindings so a
   // first-touch drag and a re-drag commit identically.
-  const moveOpts: BindingOpts = (() => {
+  const moveOpts: BindingOptions = (() => {
     const move = options.move ?? {};
     const params: Record<string, unknown> = gestureLifecycleParams({ ...move, label: move.moveLabel });
     if (options.reparentOnDrop && options.reparentOnDrop !== 'off') params.reparentOnDrop = options.reparentOnDrop;
@@ -50,13 +50,13 @@ export function selectionMoveBindings<TPose>(
     return {
       ...(Object.keys(params).length > 0 ? { params } : {}),
       ...(move.dragThresholdPx !== undefined ? { dragThresholdPx: move.dragThresholdPx } : {}),
-      ...(move.behaviors?.length ? { behaviors: move.behaviors as BindingOpts['behaviors'] } : {}),
+      ...(move.behaviors?.length ? { behaviors: move.behaviors as BindingOptions['behaviors'] } : {}),
     };
   })();
   const cloneBehaviors = (options.move?.behaviors ?? []).flatMap((b) => (b.clone ? [b.clone] : []));
-  const cloneOpts = (id: string): BindingOpts => ({
+  const cloneOpts = (id: string): BindingOptions => ({
     id,
-    ...(cloneBehaviors.length ? { behaviors: cloneBehaviors as BindingOpts['behaviors'] } : {}),
+    ...(cloneBehaviors.length ? { behaviors: cloneBehaviors as BindingOptions['behaviors'] } : {}),
   });
 
   return [
@@ -130,10 +130,10 @@ export function selectionRotateBindings<TPose>(
   const rotate = options.rotate ?? {};
   const params: Record<string, unknown> = gestureLifecycleParams({ ...rotate, label: rotate.rotateLabel });
   if (rotate.pivot) params.pivot = rotate.pivot;
-  const opts: BindingOpts = {
+  const opts: BindingOptions = {
     id: 'selection.rotate.handle',
     ...(Object.keys(params).length > 0 ? { params } : {}),
-    ...(rotate.behaviors?.length ? { behaviors: rotate.behaviors as BindingOpts['behaviors'] } : {}),
+    ...(rotate.behaviors?.length ? { behaviors: rotate.behaviors as BindingOptions['behaviors'] } : {}),
   };
   return [{
     spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle }, mods: SNAP_ROLE_MODS },

@@ -7,7 +7,7 @@
 import type { GestureSpec } from '@weasel-js/gestures';
 import type { Action } from './action';
 import type { BoundGesture } from './binding';
-import { resolveParams, type BindingOpts, type Invoker } from './invoker';
+import { resolveParams, type BindingOptions, type Invoker } from './invoker';
 import { rebindRoles, type RoleRebinds } from './modifierRoles';
 
 /** An action's params, or a thunk read each time the action asks for them. */
@@ -17,7 +17,7 @@ export type ActionParams<P = Record<string, unknown>> = Partial<P> | (() => Part
  *  options it passes — the {@link BoundGesture} shape, its params typed. */
 export type TunedBinding<P = Record<string, unknown>> =
   | GestureSpec
-  | { spec: GestureSpec; opts?: Omit<BindingOpts, 'params'> & { params?: ActionParams<P> } };
+  | { spec: GestureSpec; opts?: Omit<BindingOptions, 'params'> & { params?: ActionParams<P> } };
 
 /** What a host changes about one action. */
 export interface ActionTuning<P = Record<string, unknown>> {
@@ -41,7 +41,7 @@ export interface ActionTuning<P = Record<string, unknown>> {
   keep?(params: Readonly<Record<string, unknown>>): void;
 }
 
-type Params = BindingOpts['params'];
+type Params = BindingOptions['params'];
 
 /** Each wrapped invoker's inner one, and the params a tuning wrapped it with: none for a wrapper that adds none. */
 const WRAPS = new WeakMap<Invoker, { inner: Invoker; params?: ActionParams }>();

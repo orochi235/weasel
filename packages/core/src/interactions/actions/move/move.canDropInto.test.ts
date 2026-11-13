@@ -4,7 +4,7 @@
  * or a layout exit landing on the plain container under the drop.
  */
 import { describe, it, expect } from 'vitest';
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
 import { asNodeId, type NodeId, type RectPose } from 'core/scene/types';
@@ -35,7 +35,7 @@ function drag(
   const base = { world: { x: 5, y: 5 }, modifiers: MODS, deps: { selection: { get: () => [A] }, scene, ...deps } };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
-  const handle = invoker.start(base as unknown as InvocationCtx, { params } as BindingOpts);
+  const handle = invoker.start(base as unknown as InvocationCtx, { params } as BindingOptions);
   const d = { start: { x: 5, y: 5 }, current: { x: to, y: to }, delta: { x: to - 5, y: to - 5 } };
   const at = { ...base, world: d.current, drag: d } as unknown as InvocationCtx;
   handle.onMove!(at);

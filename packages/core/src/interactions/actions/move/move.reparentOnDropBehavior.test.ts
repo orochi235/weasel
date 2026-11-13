@@ -3,7 +3,7 @@
  * answers before it keeps the commit, and silent on a drag that went nowhere.
  */
 import { describe, it, expect, vi } from 'vitest';
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
 import { asNodeId, type RectPose } from 'core/scene/types';
@@ -32,7 +32,7 @@ function drop(dx: number, more: { behaviors?: MoveBehavior<unknown>[]; deps?: ob
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const handle = invoker.start(
     base as unknown as InvocationCtx,
-    { behaviors: more.behaviors ?? [], params: { reparentOnDrop: 'top', onGestureEnd } } as BindingOpts,
+    { behaviors: more.behaviors ?? [], params: { reparentOnDrop: 'top', onGestureEnd } } as BindingOptions,
   );
   const drag = { start: { x: 5, y: 5 }, current: { x: 5 + dx, y: 5 + dx }, delta: { x: dx, y: dx } };
   const at = { ...base, world: drag.current, drag } as unknown as InvocationCtx;

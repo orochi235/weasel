@@ -1,4 +1,4 @@
-import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
 import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import { sceneGestureFrames } from '../gestureFrames';
@@ -179,7 +179,7 @@ function beginSnap(ctx: InvocationCtx, ids: readonly string[], pivot: { x: numbe
  *  behavior's `onStart`. */
 export function beginRotate(
   ctx: InvocationCtx,
-  opts: BindingOpts | undefined,
+  opts: BindingOptions | undefined,
 ): { session: RotateSession; readers: GestureReaders } | null {
   const selection = ctx.deps.selection;
   const scene = ctx.deps.scene;

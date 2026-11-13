@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import {
-  type Action, type BindingOpts, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineTool, ellipsePath,
+  type Action, type BindingOptions, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineTool, ellipsePath,
   type InvocationCtx, type RectPose, resolveParams, SceneCanvas, setToolOption, shareToolOptions, solid, type Tool,
   type ToolOptions, type ToolOptionShare, type ToolOptionValues, type ToolsApi, useScene, useSelection,
   useToolOptionParams, useToolOptionValues,
@@ -31,7 +31,7 @@ function brushTool(id: string, label: string, act: Act, share?: ToolOptionShare)
     cursor: (params) => brushRing(radiusOf(params)),
     invoker: {
       timing: 'ongoing',
-      start(ctx: InvocationCtx, opts?: BindingOpts) {
+      start(ctx: InvocationCtx, opts?: BindingOptions) {
         const radiusPx = radiusOf(resolveParams(opts?.params));
         const trail: Point[] = [ctx.world];
         return {

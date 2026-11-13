@@ -13,7 +13,7 @@ import type { Point } from '@weasel-js/geom';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { DepSchema } from '../../index';
 import type { OngoingOverlay } from './overlay';
-import type { BindingOpts } from './bindingOpts';
+import type { BindingOptions } from './bindingOpts';
 
 export type { ModifierState } from '../../vocabulary';
 
@@ -178,7 +178,7 @@ export interface InvocationCtx {
    * Per-invocation parameters. Populated by `ActionsRegistry.begin()` for
    * UI-driven ongoing actions (color picker, opacity slider). The gesture
    * dispatcher does not populate this field; gesture-driven actions receive
-   * params via `BindingOpts.params` on `start` (the `opts` arg).
+   * params via `BindingOptions.params` on `start` (the `opts` arg).
    */
   params?: Record<string, unknown>;
   /**
@@ -190,7 +190,7 @@ export interface InvocationCtx {
   roles?: Readonly<Record<string, boolean>>;
 }
 
-export { resolveParams, type BindingOpts } from './bindingOpts';
+export { resolveParams, type BindingOptions } from './bindingOpts';
 
 /** The deps an action receives, composed per call from what it `requires`.
  *  Each name resolves to its {@link DepSchema} entry, and is absent when no
@@ -340,7 +340,7 @@ export interface ImmediateInvoker {
  *  the dispatcher pumps. */
 export interface OngoingInvoker {
   timing: 'ongoing';
-  start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle;
+  start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle;
   /**
    * Screen travel, in CSS pixels, a pointer drag makes before the dispatcher calls `start`; a
    * binding's own `dragThresholdPx` wins over it. Until then the gesture is held for this action and

@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOpts } from '@weasel-js/routing';
+import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOptions } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';
@@ -73,7 +73,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
   requires: ['view', 'debug'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       const view = ctx.deps.view;
       if (!view) return {};
 

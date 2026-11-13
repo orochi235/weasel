@@ -5,7 +5,7 @@
  * anchor, `onPath` on the segment. The drag itself is `editAnchors`'.
  */
 import {
-  type Action, type ActionDeps, type BindingOpts, type InvocationCtx, isAnchor, type OngoingHandle,
+  type Action, type ActionDeps, type BindingOptions, type InvocationCtx, isAnchor, type OngoingHandle,
   type OngoingInvoker, resolveParams,
 } from '@weasel-js/routing';
 import {
@@ -169,7 +169,7 @@ export const linkAnchorAction: Action & { requires: string[] } = {
   params: LINK_ANCHOR_PARAMS,
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       const dep = ctx.deps.editAnchors;
       const anchor = pressedAnchor(ctx);
       if (!dep?.editingId || !ctx.deps.scene || anchor < 0) return {};
