@@ -25,6 +25,7 @@ export { axisAlignedBounds, positiveBox, unionAABB, unionBounds } from '../core/
 export type { Dims, LayerDims } from '../core/layers/dims';
 export { createArrangeOp } from '../core/ops/arrange';
 export type { ArrangeArgs, ArrangedPose } from '../core/ops/arrange';
+export { createInsertOp } from '../core/ops/create';
 export { createHistory } from '../core/ops/createHistory';
 export { opFactoryRegistry, rebuildOp, registerOpFactory, registeredOpNames } from '../core/ops/registry';
 export type { OpFactory } from '../core/ops/registry';

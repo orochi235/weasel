@@ -38,6 +38,24 @@ Owner tags, after the priority (2026-10-26):
   way `useSceneTextEdit` measures its overlay box) or portaled out, and either changes how it clips and stacks
   against the page. Closes when the tag sits beside the pointer on a canvas inside `transform: scale(0.5)`.
 
+- **(P2) [recheck] A kernel3d host has no way to drag a node up or down, or along one axis.** kernel3d's
+  `translate` keeps a node at its height (`movedOnLevel` in `packages/kernel3d/src/deps.ts`), and the kernel
+  ships no translate gizmo: an editor building one writes its own action, chrome, hit test and snap plane
+  (found building a z-up scene editor, audit round 20, 2026-11-12). New API of real size: an axis-constrained
+  move action whose plane faces the camera along the dragged axis, handles a `PoseDescriptor` or pick can
+  report, and chrome drawn in screen space. Whether the handles' look is the maintainer's call is the open
+  question. Closes when a kernel3d host can drag a selected node along each world axis, up included, with
+  the kernel's own action and handles.
+
+- **(P3) [agent] A 3D snap stores a coordinate a few ulps off where it snapped.** kernel3d's snap session
+  resolves an exact world delta, then hands the move or insert back a screen point (`SnapOutcome.point`),
+  which `PoseDescriptor.translate` and `createInsert` cast onto the plane again: a box snapped to a
+  ground-grid line at y = 0.5 is stored at 0.4999999999999929 (measured 2026-11-12, audit round 20). Not
+  fixed in the pass: the exact delta has no way through core's move and insert actions, whose outcome and
+  `translate(pose, dx, dy)` are 2D points, so the fix is a core contract that carries a host's own snapped
+  position (or delta) from the session to the commit. Closes when a ground-grid snap in kernel3d stores
+  `k * step` exactly.
+
 - **(P2) [agent] A key pressed right after a click acts before the click's selection lands.** Measured in
   collego (2026-11-10): its `watch.spec` clicks a node and presses Backspace at once. On 1.17.3 the node was
   deleted; on 1.18.2 nothing is deleted, though the node shows as selected within 100 ms. The selection comes
@@ -372,6 +390,13 @@ Owner tags, after the priority (2026-10-26):
   helper renders a timeline span at a given rate to a sequence of rasters, with a site demo that
   saves the frames.
 
+- **(P3) [agent] `<SceneCanvas scene={json}>` cannot load a scene that needs its own composition.**
+  `useBakedScene` bakes through `sceneFromJSON(json, {})`, and `<SceneCanvas>` has no prop naming a
+  composition, so a serialized scene with nested non-rect poses (a kernel3d `Pose3` scene with groups) is
+  refused there; `sceneFromJSON` throws on one rather than fold it under `RIGID_POSE_COMPOSITION` (audit
+  round 20, 2026-11-12). It never worked: before the throw it loaded with `NaN` in every nested pose. Pass a
+  live `Scene` instead. Closes when the serialized `scene` prop can be given a composition, or is documented
+  as rect-only and refuses with that message.
 - **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids
   stops painting.** `scenePickIds` numbers each node on its first paint and keeps the number for the
   scene's life, so an id learned from an id frame stays good. Nodes removed keep theirs, and once a scene

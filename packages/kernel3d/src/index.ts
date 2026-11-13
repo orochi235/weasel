@@ -45,6 +45,7 @@ export {
   orbitAction, panAction, dollyAction, pinchDollyAction, homeAction, useOrbitTool,
 } from './tools';
 export type { Camera3dDep } from './cameraDep';
+export { createCameraDep, type CameraDepOptions } from './createCameraDep';
 export { kernel3dKitSettingsSchema, type Orbit3dKitSettings } from './kitSettings';
 // Reaches the `declare module '@weasel-js/core'` block that adds `camera3d` to
 // `DepSchema`. Type-only: the module has no runtime side effect, and a bare

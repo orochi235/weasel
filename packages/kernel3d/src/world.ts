@@ -46,13 +46,13 @@ export interface World3d<TData, TLayer extends string> {
 export const DEFAULT_UP: Vec3 = { x: 0, y: 1, z: 0 };
 
 /** `viewport` seen in `world`: its camera turning about the world's up. */
-export function inWorld<TData, TLayer extends string>(world: World3d<TData, TLayer>, viewport: Viewport3d): Viewport3d {
+export function inWorld<TData, TLayer extends string>(world: Pick<World3d<TData, TLayer>, 'up'>, viewport: Viewport3d): Viewport3d {
   return { ...viewport, up: world.up ?? DEFAULT_UP };
 }
 
 /** The viewport the view `viewId` looks through in `world`, its camera turning about the world's up. */
 export function viewportOf<TData, TLayer extends string>(
-  world: World3d<TData, TLayer>,
+  world: Pick<World3d<TData, TLayer>, 'viewport' | 'up'>,
   viewId: string | null | undefined,
 ): Viewport3d {
   return inWorld(world, world.viewport(viewId));

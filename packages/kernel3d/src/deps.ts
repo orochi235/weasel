@@ -201,7 +201,8 @@ function warnGestureSources(): void {
  * `sources` are not asked. A move snaps its subject's world box on the
  * plane it already moves on; an insert snaps the pointer on the ground. Both
  * answer in screen points, which `translate` and `createInsert` cast back
- * onto the same plane, landing exactly where the snap put them.
+ * onto the same plane, landing where the snap put them to within rounding: a
+ * grid snap can store a coordinate a few ulps off the line (docs/TODO.md).
  */
 export function createSnap<TData, TLayer extends string>(
   world: World3d<TData, TLayer>, opts: Snap3dOptions = {},

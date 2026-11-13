@@ -20,7 +20,7 @@ const OUT = join(SRC, ENTRY);
 
 /** Exports outside the engine files a host binds: each must load no 2D code, which the check verifies. */
 export const HOST = [
-  'moveAction', 'insertAction', 'areaSelectAction',
+  'moveAction', 'insertAction', 'areaSelectAction', 'createInsertOp',
   'useSelectToolWith', 'selectionMoveContribution', 'useGroupEntryContribution',
   'useActionSet', 'useStandardDeps', 'StandardDeps', 'ENGINE_STANDARD_ACTIONS',
   'createPoseFeed', 'FeedDelta', 'createEnteredGroupScope', 'useEnteredGroup',

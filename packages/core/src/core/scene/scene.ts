@@ -16,6 +16,7 @@ import { createSceneState } from './sceneState';
 import { systemLayerRecord } from './layerStack';
 import { layerFromSerialized, specsFromSerialized, type SpecsFromSerializedOptions } from './serialization';
 import { assertSnapshotShape } from './snapshotShape';
+import { foldable } from './rigidFoldable';
 import { resolveLayoutFrame, runLayoutPass, sceneLayoutSource } from './layoutPass';
 import type { PoseComposition } from './composeFrame';
 import { RIGID_POSE_COMPOSITION } from './composePose';
@@ -166,7 +167,7 @@ function buildScene<TData, TLayer extends string, TPose>(
 
     loadState(json, opts) {
       // Validate + map up front: throws on a bad version or registry key before live state is touched.
-      const specs = quantizedSpecs(specsFromSerialized(json, registry, { composition: scene.composition, ...opts }), options.quantize, json.doc);
+      const specs = quantizedSpecs(foldable(specsFromSerialized(json, registry, { composition: scene.composition, ...opts }), options.composition), options.quantize, json.doc);
       if (mode.open()) {
         throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
       }
@@ -214,7 +215,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
   return buildScene(
     options,
     json.systemLayers.map(layerFromSerialized),
-    (registry) => specsFromSerialized(json, registry, options),
+    (registry) => foldable(specsFromSerialized(json, registry, options), options.composition),
     json.doc,
   );
 }

@@ -1,10 +1,12 @@
-import type { NodeId } from '@weasel-js/core';
+import { createScene, type NodeId } from '@weasel-js/core';
 import type { Vec3 } from '@weasel-js/geom/3d';
 import { describe, expect, it } from 'vitest';
 import { aimSpace3d } from './aim';
 import { createCamera, MAX_PITCH } from './camera';
 import { createInsert, type Footprint } from './insert';
 import type { Viewport3d } from './project';
+import { POSE3_COMPOSITION } from './composePose3';
+import { pose3, type Pose3 } from './pose3';
 
 const VP: Viewport3d = { camera: createCamera({}), width: 200, height: 100 };
 const DRAG = { x: 50, y: 25, width: 100, height: 50 };
@@ -90,5 +92,60 @@ describe('createInsert', () => {
     expect(insert.commit(across, { kind: 'rect' } as never, ends)).toBeNull();
     expect(insert.commit(across, { kind: 'rect' } as never)).toBeNull();
     expect(minted).toEqual([]);
+  });
+});
+
+describe('createInsert with a node factory', () => {
+  const up = { x: 0, y: 0, z: 1 };
+  const scene = () => createScene<{ tag: string }, 'solids', Pose3>({
+    composition: POSE3_COMPOSITION, systemLayers: [{ id: 'solids' }],
+  });
+  const boxOn = (f: Footprint) => ({ data: { tag: 'box' }, pose: pose3({ ...f.center, z: 0.5 }, { x: f.width, y: f.depth, z: 1 }) });
+
+  it('commits the node with the selection change as one undo step', () => {
+    const sc = scene();
+    const insert = createInsert({ world: { scene: sc, viewport: () => TOP, up }, node: boxOn });
+    const id = insert.commit(DRAG, { kind: 'rect' }, undefined, { from: [], selectNode: true })!;
+    expect(sc.get(id)).toMatchObject({ layer: 'solids', parent: null, data: { tag: 'box' } });
+    expect(sc.get(id)!.pose.position.z).toBe(0.5);
+    expect(sc.getSelection()).toEqual([id]);
+    sc.history.undo();
+    expect(sc.get(id)).toBeUndefined();
+    expect(sc.getSelection()).toEqual([]);
+    sc.history.redo();
+    expect(sc.getSelection()).toEqual([id]);
+  });
+
+  it('builds the ops without applying them, and declines where the factory does', () => {
+    const sc = scene();
+    const insert = createInsert({ world: { scene: sc, viewport: () => TOP, up }, node: (f) => (f.width > 100 ? boxOn(f) : null) });
+    expect(insert.build!(DRAG, { kind: 'rect' })).toBeNull();
+    expect(insert.commit(DRAG, { kind: 'rect' })).toBeNull();
+    const wide = createInsert({ world: { scene: sc, viewport: () => TOP, up }, node: boxOn });
+    const built = wide.build!(DRAG, { kind: 'rect' })!;
+    expect(built.ops).toHaveLength(1);
+    expect(sc.get(built.id)).toBeUndefined();
+  });
+
+  it('says what it needs when the world carries no scene', () => {
+    expect(() => createInsert({ world: { viewport: () => TOP }, node: boxOn })).toThrow(/needs `world.scene`/);
+  });
+});
+
+describe('createInsert with a node factory and a selection of its own', () => {
+  it('commits the selection change to that selection, and undo puts it back there', () => {
+    const sc = createScene<{ tag: string }, 'solids', Pose3>({ composition: POSE3_COMPOSITION, systemLayers: [{ id: 'solids' }] });
+    let held: readonly NodeId[] = ['before' as NodeId];
+    const selection = { get: () => held, set: (ids: NodeId[]) => { held = ids; } };
+    const insert = createInsert({
+      world: { scene: sc, viewport: () => TOP, up: { x: 0, y: 0, z: 1 } },
+      selection,
+      node: (f) => ({ data: { tag: 'box' }, pose: pose3(f.center) }),
+    });
+    const id = insert.commit(DRAG, { kind: 'rect' }, undefined, { from: held, selectNode: true })!;
+    expect(held).toEqual([id]);
+    expect(sc.getSelection()).toEqual([]);
+    sc.history.undo();
+    expect(held).toEqual(['before']);
   });
 });
