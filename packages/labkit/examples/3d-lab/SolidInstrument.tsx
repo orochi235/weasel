@@ -212,7 +212,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       // A marquee sweep and a box-drag, read off the same handles the ghosts
       // come from. `resolveOverlays` hands back world geometry, which this
       // lab's identity `clientToWorld` leaves as the client rect.
-      chrome.push(...collectOverlayBoxes(dispatcher.getInFlightHandles(), originRef.current));
+      chrome.push(...collectOverlayBoxes(dispatcher.inFlight().values(), originRef.current));
 
       // Projected without the pane's origin, so they land in the tile as drawn.
       const snap = projectSnapMarks(snapMarks.get(), { camera: cameraRef.current, width: rect.w, height: rect.h });

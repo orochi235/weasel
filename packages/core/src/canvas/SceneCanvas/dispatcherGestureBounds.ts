@@ -24,7 +24,7 @@ import { insertPreviewExtent } from '../insertPreviewExtent';
 export function dispatcherGestureIds(dispatcher: Dispatcher | null | undefined): string[] {
   const out: string[] = [];
   if (!dispatcher) return out;
-  for (const handle of dispatcher.getInFlightHandles()) {
+  for (const handle of dispatcher.inFlight().values()) {
     const ids = handle.previewIds?.();
     if (!ids) continue;
     for (const id of ids) out.push(id);
@@ -44,7 +44,7 @@ export function dispatcherGestureIds(dispatcher: Dispatcher | null | undefined):
 export function dispatcherInsertBounds(dispatcher: Dispatcher | null | undefined): Bounds[] {
   const out: Bounds[] = [];
   if (!dispatcher) return out;
-  for (const handle of dispatcher.getInFlightHandles()) {
+  for (const handle of dispatcher.inFlight().values()) {
     for (const ov of overlaysOf(handle)) {
       if (ov.kind !== 'insertPreview') continue;
       const b = insertPreviewExtent(ov).bounds;
@@ -73,10 +73,10 @@ export function createGestureSource(
     bounds: () => dispatcherInsertBounds(getDispatcher()),
     subscribe: (fn) => getDispatcher()?.subscribe(fn) ?? NO_OP_UNSUBSCRIBE,
     getVersion: () => getDispatcher()?.getVersion() ?? 0,
-    previewSources: () => [...(getDispatcher()?.getInFlightHandles() ?? [])],
+    previewSources: () => [...(getDispatcher()?.inFlight().values() ?? [])],
     overlays: () => {
       const out: OngoingOverlay[] = [];
-      for (const handle of getDispatcher()?.getInFlightHandles() ?? []) out.push(...overlaysOf(handle));
+      for (const handle of getDispatcher()?.inFlight().values() ?? []) out.push(...overlaysOf(handle));
       return out;
     },
   };
@@ -97,7 +97,7 @@ export function createDispatcherPreviewSources(
     // their ghost still paints, but the source stays at its committed home.
     previewIdsExtra: () => {
       const out: string[] = [];
-      for (const handle of getDispatcher()?.getInFlightHandles() ?? []) {
+      for (const handle of getDispatcher()?.inFlight().values() ?? []) {
         if (handle.previewHidesSource === false) continue;
         const ids = handle.previewIds?.();
         if (!ids) continue;
@@ -106,7 +106,7 @@ export function createDispatcherPreviewSources(
       return out;
     },
     previewPoseExtra: (id: string) => {
-      for (const handle of getDispatcher()?.getInFlightHandles() ?? []) {
+      for (const handle of getDispatcher()?.inFlight().values() ?? []) {
         const p = handle.previewPose?.(id);
         if (p != null) return p;
       }

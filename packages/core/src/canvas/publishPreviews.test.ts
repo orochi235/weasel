@@ -13,7 +13,7 @@ describe('publishPreviews', () => {
       data: { valueOf: 1, keep: 2 },
     });
     const handle = { previewIds: () => [id], previewData: () => ({ keep: 3 }) } as unknown as OngoingHandle;
-    const stop = publishPreviews(scene, { getInFlightHandles: () => [handle].values(), subscribe: () => () => {} });
+    const stop = publishPreviews(scene, { inFlight: () => new Map([['g', handle]]), subscribe: () => () => {} });
     scene.update(id, { data: { valueOf: 1, keep: 2, other: 4 } });
     expect(nodeAsShown(scene.overrides, scene.get(id)!).data).toStrictEqual({ keep: 3, other: 4 });
     stop();

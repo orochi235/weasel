@@ -149,7 +149,7 @@ function edgePan(read: () => EdgePanInputs) {
 }
 
 function autoPanning(dispatcher: Dispatcher): boolean {
-  for (const handle of dispatcher.getInFlightHandles()) if (handle.autoPan) return true;
+  for (const handle of dispatcher.inFlight().values()) if (handle.autoPan) return true;
   return false;
 }
 

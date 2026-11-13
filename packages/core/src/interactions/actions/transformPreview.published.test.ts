@@ -45,7 +45,7 @@ function fixture() {
   const listeners = new Set<() => void>();
   const notify = () => { for (const fn of listeners) fn(); };
   const stop = publishPreviews(scene, {
-    getInFlightHandles: () => handles.values(),
+    inFlight: () => new Map([...handles].map((h, i) => [`gid-${i}`, h])),
     subscribe: (fn) => {
       listeners.add(fn);
       return () => listeners.delete(fn);

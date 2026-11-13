@@ -228,8 +228,9 @@ export interface Dispatcher {
   cancelAll(reason: 'commit' | 'cancel'): void;
 
   /**
-   * Read-only view of currently in-flight ongoing handles, keyed by gestureId.
-   * For debug/testing.
+   * The ongoing handles in flight, keyed by gesture id: `.has(gestureId)` asks whether a gesture is
+   * mid-run, and `.values()` walks the handles, as a preview layer does for each one's `previewIds()`
+   * and `previewPose(id)`.
    */
   inFlight(): ReadonlyMap<string, OngoingHandle>;
 
@@ -240,13 +241,6 @@ export interface Dispatcher {
    * prediction once a gesture starts, which is how `grab` becomes `grabbing`.
    */
   inFlightCursor(): CursorSpec | null;
-
-  /**
-   * Read-only iterator over currently in-flight `OngoingHandle` instances,
-   * for a preview layer to walk each handle's `previewIds()` /
-   * `previewPose(id)`.
-   */
-  getInFlightHandles(): Iterable<OngoingHandle>;
 
   /**
    * Subscribe to in-flight state changes. The callback fires after handle
@@ -286,7 +280,7 @@ export interface Dispatcher {
 
   /**
    * Start an ongoing action driven by UI (not a gesture), and register its
-   * handle in the in-flight map so `getInFlightHandles()` reports it.
+   * handle in the in-flight map so `inFlight()` reports it.
    *
    * Returns `null` if `actionId` is unknown, the action's invoker is not
    * ongoing, or `start` returned an empty handle.

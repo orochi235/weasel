@@ -49,7 +49,7 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
     cancelAll: () => {},
     inFlightCursor: () => null,
   inFlight: () => map,
-    getInFlightHandles: () => map.values(),
+    inFlight: () => map,
     subscribe: () => () => {},
     getVersion: () => 0,
     getActiveAction: () => ({ kind: null, id: null }),

@@ -55,7 +55,7 @@ export function createDispatcher(opts?: {
   const facts = createGestureFacts();
 
   /** Subscribers fired after every state mutation. Layers that read from
-   *  `getInFlightHandles()` use this to know when to re-render. */
+   *  `inFlight()` use this to know when to re-render. */
   const changed = createEmitter();
   /** Bumped before the callbacks run, so a subscriber that re-reads
    *  `getVersion()` synchronously inside its callback already sees the new
@@ -155,7 +155,6 @@ export function createDispatcher(opts?: {
     cancelAll: cancelAllWithNotify,
     inFlight: () => inFlight.handles,
     inFlightCursor: inFlight.cursor,
-    getInFlightHandles: () => inFlight.handles.values(),
     subscribe: changed.subscribe,
     getVersion: () => version,
     getActiveAction: inFlight.latest,
