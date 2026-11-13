@@ -33,6 +33,8 @@ export interface LabBaseProps {
    *  `clock: 'lab'` plays on, and that `useTrialClock` falls back to outside
    *  any trial. A stored lab keeps where it stands. Read once, at mount. */
   clock?: ClockCapability;
+  /** The color mode the lab opens in: `'light'`, `'dark'`, or `'auto'` to follow the system. Default `'auto'`; a
+   *  stored lab keeps the mode it was last switched to over this. Read once, at mount. */
   mode?: LabMode;
   /** How much room the lab's chrome takes. Default `'comfortable'`; a lab whose
    *  window is the whole app, rather than a panel beside one, reads better at
@@ -52,6 +54,7 @@ export interface LabBaseProps {
    * Ignored unless the resolved mode is dark.
    */
   nebula?: ColorList;
+  /** The lab's name, in its header. */
   title?: string;
   /** Set as `document.title` while the lab is mounted. */
   documentTitle?: string;
