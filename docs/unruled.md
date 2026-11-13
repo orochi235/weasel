@@ -1904,3 +1904,7 @@ Calls the lanes made without a ruling:
   (and `WheelPanOpts` beside an unrelated `WheelPanOptions` in `viewportWheelPan.ts`, which wants one name
   each); text's `LayoutRunsOpts`, `PaintRunsOpts`, `TextLineBoxesOpts`, `PointInTextPoseOpts` and
   `MeasureTextBoundsOpts`; renderer's `TilePatternOpts`; ui's `GradientTrackOpts`.
+- 2026-11-12: Layer factories are named `create*Layer` (now in `docs/conventions.md`); core's `pagesLayer`,
+  `workspaceTintLayer` and `modeDecorationLayer` were renamed to it.
+- Open: diagram's `edgeEndLayer`, `labelDragLayer`, `laneLayer`, `portLayer`, `seamLayer`, `sequenceLayer`
+  and `waypointLayer`, and guides' `rulersHitLayer`, are bare-named layer factories outside this lane.

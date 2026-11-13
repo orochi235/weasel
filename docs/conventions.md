@@ -130,6 +130,13 @@ The type of a function's or a factory's trailing settings object ends in
 layer is built from, a `Props` a component takes, an op's `Args` — keeps its
 own suffix.
 
+## A layer factory is named `create*Layer`
+
+A function that builds a `RenderLayer` is `create<What>Layer`
+(`createPathLayer`, `createPagesLayer`). One that takes a layer and returns
+it changed is named for what it does to it (`gateLayer`,
+`composeAffordanceLayer`).
+
 ## Stores notify through `createEmitter`
 
 A store keeps its subscribers in `createEmitter()` from `@weasel-js/registry`,
