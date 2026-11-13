@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import type { BidiResolver } from './bidiSeam';
+import type { BidiEngine } from './bidiSeam';
 import { layoutRuns, type LaidOutLineBox } from './layoutRuns';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
@@ -27,7 +27,7 @@ const RUN: ResolvedRun = {
 };
 
 /** An engine whose every line comes back in `order`, all left to right. */
-const engine = (order: readonly number[]): BidiResolver => ({
+const engine = (order: readonly number[]): BidiEngine => ({
   analyze: () => null,
   reorder: () => ({ order, levels: [0, 0, 0] }),
   mirror: () => null,

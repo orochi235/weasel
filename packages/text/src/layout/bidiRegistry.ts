@@ -4,18 +4,18 @@
  * never touches, so the consumer registers it once and every layout finds it.
  */
 import { bumpTextEngineGeneration } from './engineGeneration';
-import type { BidiResolver } from './bidiSeam';
+import type { BidiEngine } from './bidiSeam';
 import { isParagraphSeparator } from './bidiLines';
 import type { TextDirection } from '../textStyle';
 
-let registered: BidiResolver | null = null;
+let registered: BidiEngine | null = null;
 
 /**
  * Give every text layout a bidi engine: `registerBidi(bidi)`, with `bidi`
  * from `@weasel-js/bidi`. `layoutRuns` uses it whenever its options carry
  * none. Pass `null`, or call the function returned, to take it out again.
  */
-export function registerBidi(engine: BidiResolver | null): () => void {
+export function registerBidi(engine: BidiEngine | null): () => void {
   if (registered !== engine) bumpTextEngineGeneration();
   registered = engine;
   return () => {
@@ -26,7 +26,7 @@ export function registerBidi(engine: BidiResolver | null): () => void {
 }
 
 /** The engine {@link registerBidi} was last given, or null. */
-export function registeredBidi(): BidiResolver | null {
+export function registeredBidi(): BidiEngine | null {
   return registered;
 }
 
@@ -43,7 +43,7 @@ export function directionOfLevel(level: number): TextDirection {
 export function paragraphDirection(
   text: string,
   direction: TextDirection | 'auto' = 'auto',
-  engine: BidiResolver | null = registered,
+  engine: BidiEngine | null = registered,
 ): TextDirection {
   if (direction !== 'auto') return direction;
   if (engine === null) return 'ltr';

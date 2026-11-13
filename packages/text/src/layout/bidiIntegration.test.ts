@@ -1,7 +1,7 @@
 /**
  * The seam against the real algorithm.
  *
- * `layoutRuns` declares `BidiResolver` and `@weasel-js/bidi` satisfies it, with
+ * `layoutRuns` declares `BidiEngine` and `@weasel-js/bidi` satisfies it, with
  * neither package importing the other. Types lining up is not evidence that the
  * semantics do, so this drives actual right-to-left strings through the actual
  * engine — which is why `@weasel-js/bidi` is a devDependency here and appears
@@ -14,11 +14,11 @@ import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
 import { layoutAndPaint } from './testing/layoutAndPaint';
 import type { LayoutRunsOpts } from './layoutOpts';
-import type { BidiResolver } from './bidiSeam';
+import type { BidiEngine } from './bidiSeam';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 /** The compile-time half of the claim: the engine *is* a resolver. */
-const engine: BidiResolver = bidi;
+const engine: BidiEngine = bidi;
 
 function stubFetch() {
   const encoder = new TextEncoder();

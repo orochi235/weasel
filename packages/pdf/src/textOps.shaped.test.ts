@@ -9,7 +9,7 @@ import {
 import { __setGlyphRasterizerForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
 import type { TextDrawCommand } from '@weasel-js/renderer';
-import { loadShaper, type Shaper } from '@weasel-js/text-shaping';
+import { loadShaper, type TextShaper } from '@weasel-js/text-shaping';
 import { registerBidi, registerShaper, type ResolvedRun } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
@@ -37,7 +37,7 @@ const ARABIC = fixture('noto-sans-arabic-subset.ttf');
 const DEVANAGARI = fixture('noto-sans-devanagari-subset.ttf');
 const FACES = [['pdf-shaped-ar', ARABIC], ['pdf-shaped-deva', DEVANAGARI]] as const;
 
-let shaper: Shaper;
+let shaper: TextShaper;
 let unregister: () => void;
 let unregisterBidi: () => void;
 beforeAll(async () => {

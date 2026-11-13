@@ -5,12 +5,12 @@ import {
   layoutRuns, paintRuns, registerShaper, resolveRuns, resolveTextStyle, DEFAULT_TEXT_FILL,
   type LayoutRunsOpts,
 } from '@weasel-js/text';
-import { loadShaper, type Shaper } from './index';
+import { loadShaper, type TextShaper } from './index';
 import { ARABIC, DEVANAGARI, LATIN } from './__fixtures__/fonts';
 
 /** Text laid out end to end through weasel's layout with HarfBuzz registered. */
 
-let shaper: Shaper;
+let shaper: TextShaper;
 let unregister: () => void;
 beforeAll(async () => {
   shaper = await loadShaper();

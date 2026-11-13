@@ -1,5 +1,5 @@
 import type { TextAlign, TextDirection } from '../textStyle';
-import type { BidiResolver } from './bidiSeam';
+import type { BidiEngine } from './bidiSeam';
 import { registeredBidi } from './bidiRegistry';
 import type { TextShaper } from './shaperSeam';
 import { registeredShaper } from './shaperRegistry';
@@ -37,7 +37,7 @@ export interface LayoutRunsOpts {
    * and wrong for right-to-left text — see the warning this emits when it
    * detects the latter without one.
    */
-  bidi?: BidiResolver;
+  bidi?: BidiEngine;
   /**
    * Shaping engine. Default: the one given to `registerShaper`. With neither,
    * each code point is laid out as its own glyph and pairs are kerned, which
@@ -67,7 +67,7 @@ export interface ResolvedLayoutOpts {
   lineHeight: number;
   align: TextAlign;
   justify: boolean;
-  bidi: BidiResolver | null;
+  bidi: BidiEngine | null;
   shaper: TextShaper | null;
   direction: TextDirection | 'auto';
   tabSize: number;
@@ -102,7 +102,7 @@ export function storeAlignWidth(out: { alignWidth: number }, opts: LayoutRunsOpt
 }
 
 /** The bidi engine `opts` lays out with: its own, else the registered one. */
-export function layoutBidi(opts: LayoutRunsOpts): BidiResolver | null {
+export function layoutBidi(opts: LayoutRunsOpts): BidiEngine | null {
   return opts.bidi ?? registeredBidi();
 }
 

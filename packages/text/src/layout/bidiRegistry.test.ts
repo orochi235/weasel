@@ -7,7 +7,7 @@ import type { LayoutRunsOpts } from './layoutOpts';
 import { cachedLayoutRuns, _resetLayoutCacheForTests } from './layoutCache';
 import { layoutTextPose } from './textPoseLayout';
 import { registerBidi, paragraphDirection, _resetBidiWarningForTests } from './bidiRegistry';
-import type { BidiResolver } from './bidiSeam';
+import type { BidiEngine } from './bidiSeam';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 beforeEach(async () => {
@@ -51,7 +51,7 @@ describe('registerBidi', () => {
   });
 
   it('yields to an engine passed in the options', () => {
-    const logical: BidiResolver = {
+    const logical: BidiEngine = {
       analyze: () => null,
       reorder: (_a, start, end) => ({
         order: Array.from({ length: end - start }, (_, i) => start + i),

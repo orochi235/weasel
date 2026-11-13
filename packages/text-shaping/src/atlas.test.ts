@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/font/test-seams';
 import { layoutRuns, paintRuns, registerShaper, type PaintRunsOpts, type ResolvedRun } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { loadShaper, type Shaper } from './index';
+import { loadShaper, type TextShaper } from './index';
 import { DEVANAGARI } from './__fixtures__/fonts';
 
 const FAMILY = 'deva-canvas';
@@ -35,7 +35,7 @@ const box = (width: number, height: number) =>
 
 /** Every path the canvas tier was asked to fill. */
 let filled: string[] = [];
-let shaper: Shaper;
+let shaper: TextShaper;
 let unregister: () => void;
 
 beforeAll(async () => {

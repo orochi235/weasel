@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { loadShaper, type Shaper } from './index';
+import { loadShaper, type TextShaper } from './index';
 import { ARABIC, DEVANAGARI, LATIN } from './__fixtures__/fonts';
 
-let shaper: Shaper;
+let shaper: TextShaper;
 beforeAll(async () => {
   shaper = await loadShaper();
 });

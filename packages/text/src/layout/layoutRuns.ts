@@ -40,7 +40,7 @@ import { measureRuns, mirrorEntries, type Entry } from './layoutEntries';
 import { breakLines, placeLine, type LineOpts } from './layoutLines';
 import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
 import { rejoinSplitPairs } from '../runs/codePointCuts';
-import type { BidiResolver } from './bidiSeam';
+import type { BidiEngine } from './bidiSeam';
 import type { ShapedCluster } from './shaperSeam';
 
 /**
@@ -208,7 +208,7 @@ const LINE_OPTS: LineOpts = { maxWidth: 0.5, alignWidth: 0.5, lineHeight: 0.5, j
 const paragraphBreakAt = (i: number): boolean => isParagraphSeparator(CPS[i]);
 
 function mirrorLine(
-  bidi: BidiResolver, entries: readonly Entry[], levels: readonly number[], runs: readonly ResolvedRun[],
+  bidi: BidiEngine, entries: readonly Entry[], levels: readonly number[], runs: readonly ResolvedRun[],
 ): Entry[] {
   return mirrorEntries(entries, levels, (cp) => bidi.mirror(cp), runs);
 }
