@@ -2,7 +2,7 @@
  * The `slice` dep `sliceAction` and `useSliceTool` commit their cuts through.
  *
  * `<SceneCanvas>` publishes `useSliceDepSource` over its own scene. A consumer
- * replaces it with `useSliceDep` (or `useDepSource('slice', …)`) from under
+ * replaces it with `useDepSource('slice', …)` from under
  * the canvas; the newest registration wins, and a canvas child registers
  * after the canvas's own.
  */
@@ -20,14 +20,6 @@ import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import { documentOf } from 'core/scene/documentOf';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';
 import { indexedCandidates } from 'canvas/pickIndex/scenePickIndex';
-
-/** Publish how a slice (knife cut) is performed, so the `slice` action can
- *  run against the consumer's geometry. */
-export function useSliceDep(dep: SliceDep): void {
-  const depRef = useLatest(dep);
-
-  useDepSource('slice', (): SliceDep => depRef.current);
-}
 
 /** What the `slice` dep writes its batch through. An adapter satisfies it. */
 export interface OpsApplier {

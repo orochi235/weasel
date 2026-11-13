@@ -7,9 +7,8 @@ import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react
 import type { ReactNode } from 'react';
 import { reportRouteConflicts, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from 'core/layers/render';
-import { createPointerStore } from '@weasel-js/routing/react';
+import { createPointerStore, useDepSource } from '@weasel-js/routing/react';
 import { SceneCanvas } from 'canvas/SceneCanvas';
-import { useSliceDep } from 'canvas/deps/slice';
 import { createScene } from 'core/scene/scene';
 
 type Pt = { x: number; y: number };
@@ -260,7 +259,7 @@ describe('useSliceTool — through <SceneCanvas>', () => {
   });
 
   function SliceDep({ commit }: { commit: (cut: ReadonlyArray<Pt>) => void }) {
-    useSliceDep({ commit });
+    useDepSource('slice', () => ({ commit }));
     return null;
   }
 

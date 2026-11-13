@@ -2635,7 +2635,6 @@
     "useSelection": "function",
     "useSelectionContext": "function",
     "useSimulation": "function",
-    "useSliceDep": "function",
     "useSliceDepSource": "function",
     "useSliceTool": "function",
     "useSnapSource": "function",

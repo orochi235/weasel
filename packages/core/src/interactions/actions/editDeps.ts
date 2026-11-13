@@ -52,7 +52,7 @@ export interface ClipboardDep {
  * cut, its whole trail for a freehand one, the placed points for a
  * click-by-click one, whose last point equals its first when it closes into
  * a loop. `<SceneCanvas>` publishes one over its scene (`useSliceDepSource`);
- * a consumer replaces it with `useSliceDep`.
+ * a consumer replaces it with `useDepSource('slice', …)`.
  */
 export interface SliceDep {
   commit(cut: ReadonlyArray<Point2>): void;

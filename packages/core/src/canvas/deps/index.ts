@@ -16,7 +16,7 @@ export { useSelectionSnapshotDepSource } from './selectionSnapshot';
 export { useInsertDepSource, type InsertNodeFactory } from './insert';
 export { useSnapDepSource } from './snap';
 export { useTransformFollower } from './transformFollowers';
-export { useSliceDep, useSliceDepSource } from './slice';
+export { useSliceDepSource } from './slice';
 export { useBooleansAdapterSource } from './booleans';
 export { usePathLeafDepSources } from './pathLeafDeps';
 export { useDebugDepSource } from './debug';

@@ -5,14 +5,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
+import { useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
 import { boundsOfPath, rectPath, type Path } from '@weasel-js/geom';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import { useSliceTool } from 'tools/builtin/slice';
-import { useSliceDep } from './slice';
 import { RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import type { SliceDep } from 'interactions/actions/depSchema';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -51,7 +50,7 @@ function mount(scene: S, opts: {
     return null;
   }
   function Override({ dep }: { dep: SliceDep }) {
-    useSliceDep(dep);
+    useDepSource('slice', () => dep);
     return null;
   }
   function Harness() {
