@@ -4,9 +4,6 @@ import { checkFinite, checkPoint } from './param';
  *  in a 2D scene and read as 0. */
 export interface SpatialPoint { x: number; y: number; z?: number }
 
-/** @deprecated Use `SpatialPoint`, which also takes an optional `z`. */
-export type Vec2 = SpatialPoint;
-
 /** Distance and pan model for `spatialize`, in the same units as the
  *  positions. */
 export interface SpatialOptions {
