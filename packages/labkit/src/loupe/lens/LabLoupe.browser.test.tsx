@@ -3,7 +3,7 @@ import 'windease/styles.css';
 import '../../styles.less';
 import { cleanup, waitFor } from '@testing-library/react';
 import { defineInstrument, Lab } from '@weasel-js/labkit';
-import { labLoupe } from '@weasel-js/labkit/loupe';
+import { labLoupe, QUICK_TAP_MS } from '@weasel-js/labkit/loupe';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
@@ -67,7 +67,7 @@ test('a lab without labLoupe has no lens layer', async () => {
   expect(document.querySelector('.lk-lens-layer')).toBeNull();
 });
 
-test('F2 opens a lens on its own, and the next F2 closes it', async () => {
+test('F2 opens a lens over the pointer, carries it while held, and a tap closes it', async () => {
   mount();
   const text = await waitFor(() => {
     const el = document.querySelector('.lk-trial__body .lk-loupe-test-probe');
@@ -77,7 +77,24 @@ test('F2 opens a lens on its own, and the next F2 closes it', async () => {
   const at = text.getBoundingClientRect();
   await userEvent.hover(text, { position: { x: at.width / 2, y: at.height / 2 } });
   await userEvent.keyboard('{F2}');
-  await waitFor(() => expect(document.querySelector('.lk-lens-copy')).not.toBeNull());
+  const lens = () => document.querySelector('.lk-lens-interior');
+  const centerOf = (el: Element) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  };
+  await waitFor(() => expect(lens()).not.toBeNull());
+  const opened = centerOf(lens()!);
+  expect(opened.x).toBeCloseTo(at.left + at.width / 2, -1);
+  expect(opened.y).toBeCloseTo(at.top + at.height / 2, -1);
+  // Held, it follows the pointer; let go, it stays.
+  await userEvent.keyboard('{F2>}');
+  // The lens covers the pointer now, so the move lands on its body's hit box.
+  const hit = document.querySelector('.lk-lens-hit[data-role="lens-body"]') as Element;
+  const box = hit.getBoundingClientRect();
+  await userEvent.hover(hit, { position: { x: box.width / 2 + 40, y: box.height / 2 } });
+  await new Promise((r) => setTimeout(r, QUICK_TAP_MS));
+  await userEvent.keyboard('{/F2}');
+  await waitFor(() => expect(centerOf(lens()!).x).toBeCloseTo(opened.x + 40, -1));
   await userEvent.keyboard('{F2}');
-  await waitFor(() => expect(document.querySelector('.lk-lens-copy')).toBeNull());
+  await waitFor(() => expect(lens()).toBeNull());
 });

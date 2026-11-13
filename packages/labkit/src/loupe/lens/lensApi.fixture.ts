@@ -1,7 +1,7 @@
 import { type Op, type PoseHold, type RectPose, sceneToAdapter } from '@weasel-js/core';
 import { vi } from 'vitest';
 import { type LensActionApi, MAX_LENSES } from './lensActionDefs';
-import { addLensOps, createLensScene, lensesOf, reticleAt } from './lensScene';
+import { addLensOps, aimAt, createLensScene, lensesOf, settingsOf } from './lensScene';
 import type { LensScene, LoupePoint } from './lensTypes';
 
 export const PIXELS_MISSING = 'needs Playwright';
@@ -15,7 +15,7 @@ export function lensApiFixture(): LensActionApi<string> & {
   const scene = createLensScene<string>();
   let n = 0;
   let focused: string | null = null;
-  const holds = new Map<string, PoseHold<RectPose>>();
+  const holds = new Map<string, { hold: PoseHold<RectPose>; aim: string | undefined }>();
   const apply = (ops: readonly Op[]) => {
     if (ops.length > 0) sceneToAdapter(scene).applyOps([...ops], 'lens');
   };
@@ -34,17 +34,20 @@ export function lensApiFixture(): LensActionApi<string> & {
       return lensId;
     },
     apply,
-    follow: (client: LoupePoint) => {
-      const lensId = api.current();
+    follow: (client: LoupePoint, named?: string) => {
+      const lensId = named ?? api.current();
       if (lensId === null) return;
-      const pose = reticleAt(scene, lensId, client);
-      if (pose === null) return;
-      const hold = holds.get(lensId) ?? scene.overrides.hold();
-      holds.set(lensId, hold);
-      hold.set([[`${lensId}:reticle` as never, pose]]);
+      const aimed = aimAt(scene, lensId, client);
+      if (aimed === null) return;
+      const held = holds.get(lensId) ?? {
+        hold: scene.overrides.hold(),
+        aim: settingsOf(scene, lensId)?.aim,
+      };
+      holds.set(lensId, held);
+      held.hold.set([[aimed.id as never, aimed.pose]]);
     },
     unfollow: (lensId: string) => {
-      holds.get(lensId)?.drop();
+      holds.get(lensId)?.hold.drop();
       holds.delete(lensId);
     },
     sourceAvailable: (kind: string) => (kind === 'pixels' ? PIXELS_MISSING : true) as true | string,

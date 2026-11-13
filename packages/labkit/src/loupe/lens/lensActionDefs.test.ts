@@ -1,10 +1,17 @@
-import { type Action, type ActionDeps, ActionDisabledReason } from '@weasel-js/core';
-import { beforeEach, describe, expect, it } from 'vitest';
+import {
+  type Action,
+  type ActionDeps,
+  ActionDisabledReason,
+  effectivePose,
+  type InvocationCtx,
+} from '@weasel-js/core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createLensActions,
   createLoupeKeymap,
   LENS_ACTION_IDS,
   MAX_LENSES,
+  QUICK_TAP_MS,
 } from './lensActionDefs';
 import { lensApiFixture, PIXELS_MISSING } from './lensApi.fixture';
 import { lensesOf, settingsOf } from './lensScene';
@@ -29,7 +36,27 @@ function trigger(id: string, params?: Record<string, unknown>): boolean {
   return true;
 }
 
+/** As a held binding runs one: started on the press; the returned function is the release. */
+function press(id: string): () => void {
+  const invoker = actionOf(id).invoker;
+  if (!invoker || !('start' in invoker)) throw new Error(`${id} is not ongoing`);
+  const ctx = { deps } as InvocationCtx;
+  const { onEnd } = invoker.start(ctx, undefined) ?? {};
+  return () => onEnd?.(ctx, 'commit');
+}
+
+/** The center a node is drawn at. */
+function centerOf(id: string) {
+  const p = effectivePose(api.scene, api.scene.get(id as never)!);
+  return { x: p.x + p.width / 2, y: p.y + p.height / 2 };
+}
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 beforeEach(() => {
+  vi.useFakeTimers();
   api = lensApiFixture();
   actions = createLensActions(api, { opposite: () => 'dark' });
 });
@@ -117,14 +144,51 @@ describe('lens actions', () => {
     expect(api.scene.overrides.read('l0:reticle' as never)).toBeUndefined();
   });
 
-  it('opens a Follow lens on the quick key and closes that one on the next', () => {
+  it('opens a Glass lens on the quick key, centered where its reticle lands, and keeps it when let go', () => {
+    const release = press(LENS_ACTION_IDS.quick);
+    const lensId = api.current()!;
+    expect(settingsOf(api.scene, lensId)!.aim).toBe('glass');
+    expect(centerOf(`${lensId}:body`)).toEqual({ x: 100, y: 100 });
+    release();
+    expect(lensesOf(api.scene)).toHaveLength(1);
+  });
+
+  it('carries the quick lens with the pointer while its key is held, and leaves it where it was let go', () => {
     trigger(LENS_ACTION_IDS.add);
-    trigger(LENS_ACTION_IDS.quick);
+    const release = press(LENS_ACTION_IDS.quick);
+    const lensId = api.current()!;
+    api.focus('l0');
+    expect(trigger(LENS_ACTION_IDS.followMove, { clientX: 400, clientY: 250 })).toBe(true);
+    // The body moves, and the reticle Glass derives from it with it: no source circle apart from the lens.
+    expect(centerOf(`${lensId}:body`)).toEqual({ x: 400, y: 250 });
+    expect(centerOf(`${lensId}:reticle`)).toEqual({ x: 400, y: 250 });
+    expect(centerOf('l0:reticle')).toEqual({ x: 100, y: 100 });
+    release();
+    expect(api.scene.overrides.read(`${lensId}:body` as never)).toBeUndefined();
+    expect(centerOf(`${lensId}:body`)).toEqual({ x: 400, y: 250 });
+    // Let go, the pointer no longer moves it.
+    api.focus(lensId);
+    expect(trigger(LENS_ACTION_IDS.followMove, { clientX: 10, clientY: 10 })).toBe(false);
+  });
+
+  it('closes the quick lens on a tap of its key, and only that lens', () => {
+    trigger(LENS_ACTION_IDS.add);
+    press(LENS_ACTION_IDS.quick)();
     expect(lensesOf(api.scene)).toHaveLength(2);
-    expect(settingsOf(api.scene, api.current()!)!.aim).toBe('follow');
-    trigger(LENS_ACTION_IDS.quick);
+    press(LENS_ACTION_IDS.quick)();
     expect(lensesOf(api.scene)).toHaveLength(1);
     expect(settingsOf(api.scene, 'l0')).not.toBeNull();
+  });
+
+  it('picks the open quick lens up on a long press instead of closing it', () => {
+    press(LENS_ACTION_IDS.quick)();
+    const lensId = api.current()!;
+    const release = press(LENS_ACTION_IDS.quick);
+    trigger(LENS_ACTION_IDS.followMove, { clientX: 300, clientY: 300 });
+    vi.advanceTimersByTime(QUICK_TAP_MS);
+    release();
+    expect(lensesOf(api.scene)).toHaveLength(1);
+    expect(centerOf(`${lensId}:body`)).toEqual({ x: 300, y: 300 });
   });
 
   it('opens the compare menu on the current lens', () => {
@@ -157,7 +221,7 @@ describe('createLoupeKeymap', () => {
     // The quick key binds outside it too, with no leader before it.
     const quick = leader!.actions!.find((a) => a.id === LENS_ACTION_IDS.quick)!;
     expect(quick.defaultBinding).toEqual([
-      expect.objectContaining({ spec: { kind: 'key', key: 'F2' } }),
+      expect.objectContaining({ spec: { kind: 'keyHeld', key: 'F2' } }),
     ]);
     expect(keymap!.bindings!.some((b) => b.actionId === LENS_ACTION_IDS.quick)).toBe(false);
   });
