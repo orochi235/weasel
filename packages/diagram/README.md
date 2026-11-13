@@ -632,6 +632,9 @@ The action rebuilds the graph from the scene on each press and writes the whole
 move as one undo entry. Three rules keep a re-layout from scrambling a diagram
 someone has arranged: no RNG anywhere, within-rank order seeded from where the
 nodes already sit, and a node carrying `pinned: true` that nothing moves.
+A container or pool is laid out as one node of its box and carries what it
+holds, as `diagramScene` lays out a boxed region, and an edge with an end inside
+one ranks against the outermost region holding it.
 
 The first pinned node anchors the layout. Under `layered`, every other pin
 keeps its place across its rank, with the rest of the rank moved clear of it,
