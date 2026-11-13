@@ -157,7 +157,7 @@ function recognizerOf(core: PointerDispatchCore, opts: PointerInputOptions, cloc
     },
     clock,
     toWorld: core.toWorld,
-    toSurface: (p) => core.toCanvasLocal(p.x, p.y),
+    toSurface: (p) => core.toViewLocal(p.x, p.y),
     longPressMs: () => opts.longPress()?.duration ?? opts.kitSettings().get('gestures.longPressMs'),
     doubleClickMs: () => opts.kitSettings().get('gestures.doubleClickMs'),
     doubleClickPx: () => opts.kitSettings().get('gestures.doubleClickPx'),

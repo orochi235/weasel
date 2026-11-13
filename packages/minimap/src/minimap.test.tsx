@@ -146,14 +146,32 @@ describe('input in the minimap', () => {
     expect((400 - next.y) * next.scale.y).toBeCloseTo(400);
   });
 
-  it('clamps a wheel zoom to the limits it is given, and leaves the main camera alone with wheelZoom: false', () => {
+  it('zooms the main camera on a two-finger touch pinch, about the world point between the fingers', () => {
+    // Away from the canvas origin, so the fingers are read in the minimap's own space: its (50, 40) is world (500, 400).
+    const h = mount(undefined, { rect: { ...RECT, x: 200, y: 100 } });
+    const touch = (type: string, pointerId: number, x: number) => act(() => {
+      h.canvas.dispatchEvent(new PointerEvent(type, {
+        bubbles: true, cancelable: true, pointerId, pointerType: 'touch', clientX: x, clientY: 140, button: 0, buttons: 1,
+      }));
+    });
+    touch('pointerdown', 1, 240);
+    touch('pointerdown', 2, 260);
+    // Spread 20 → 30, centroid minimap x 50 → 55, world 500 → 562.5, which takes world 500's place in the main view.
+    touch('pointermove', 2, 270);
+    const next = last(h.onViewChange);
+    expect(next.scale.x).toBeCloseTo(1.5);
+    expect((562.5 - next.x) * next.scale.x).toBeCloseTo(500);
+    expect((400 - next.y) * next.scale.y).toBeCloseTo(400);
+  });
+
+  it('clamps a wheel zoom to the limits it is given, and leaves the main camera alone with zoom: false', () => {
     const wheel = (canvas: HTMLCanvasElement) => act(() => {
       canvas.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: 50, clientY: 40, deltaY: -5000 }));
     });
-    const clamped = mount(undefined, { wheelZoom: { max: 2.5 } });
+    const clamped = mount(undefined, { zoom: { max: 2.5 } });
     wheel(clamped.canvas);
     expect(last(clamped.onViewChange).scale.x).toBe(2.5);
-    const off = mount(undefined, { wheelZoom: false });
+    const off = mount(undefined, { zoom: false });
     wheel(off.canvas);
     expect(off.onViewChange.mock.calls.every(([v]) => (v as View).scale.x === 1)).toBe(true);
   });

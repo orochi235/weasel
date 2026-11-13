@@ -1,8 +1,8 @@
 /**
  * The minimap's math and actions: the fit frames every mark and stays finite for any scene, empty and huge
  * included; minimap and world points round-trip through the fit; a press centers the main view on the point
- * under it, so the indicator sits there; a drag keeps it there; and a wheel zoom keeps the point under the
- * cursor where it was.
+ * under it, so the indicator sits there; a drag keeps it there; a wheel zoom keeps the point under the
+ * cursor where it was; and a touch pinch keeps the point between the fingers where the first one sat.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -10,7 +10,7 @@ import { createScene, normalizeView, RECT_POSE_DESCRIPTOR, viewportWorldRect, ty
 import { viewScreenToWorld, viewWorldToScreen } from '@weasel-js/core';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { computeFitView, computeIndicatorCommand, FALLBACK_FIT_VIEW } from './minimapMath';
-import { minimapCenterAction, minimapPanAction, minimapZoomAction } from './actions';
+import { minimapCenterAction, minimapPanAction, minimapPinchAction, minimapZoomAction } from './actions';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
 interface Pose { x: number; y: number; width: number; height: number }
@@ -228,6 +228,44 @@ describe('minimap actions, property', () => {
         expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1e-6 * mag);
         expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1e-6 * mag);
         if (deltaY !== 0 && main.scale.x !== start.scale.x) seen.count('zoomed');
+      }), runs(300));
+    seen.atLeast('zoomed', 100);
+  }, timeoutFor(300, 1));
+
+  it('a touch pinch holds the point between the fingers where the first one sat, within the clamp', () => {
+    const seen = tally();
+    const coord = fc.double({ min: -1e4, max: 1e4, noNaN: true });
+    const step = fc.record({ spread: fc.double({ min: 1, max: 500, noNaN: true }), x: coord, y: coord });
+    // Scales inside the clamp: a camera far outside it lands on it at the first step, and only then holds its point.
+    const k = fc.double({ min: 0.01, max: 100, noNaN: true });
+    const cam = fc.record({ x: coord, y: coord, scale: fc.record({ x: k, y: k }) });
+    fc.assert(fc.property(cam, measured, cam, step, fc.array(step, { minLength: 1, maxLength: 5 }),
+      (start, host, minimap, first, moves) => {
+        let main = start;
+        const root = rootOf(() => main, (v) => { main = v; }, host);
+        const camera = rootOf(() => minimap, () => {}, host);
+        const deps = { rootView: root, view: camera } as unknown as ActionDeps;
+        const inv = minimapPinchAction({ min: 0.01, max: 100 }).invoker;
+        if (inv?.timing !== 'ongoing') throw new Error('not ongoing');
+        const at = (s: { spread: number; x: number; y: number }, pinch: boolean): InvocationCtx => ({
+          world: { x: 0, y: 0 }, modifiers: MODS, deps,
+          multiTouch: { centroid: s, spread: s.spread, rotation: 0, ...(pinch ? { pinch: { startSpread: first.spread, currentSpread: s.spread, centroid: s } } : {}) },
+        });
+        const handle = inv.start(at(first, false), undefined);
+        const anchor = viewWorldToScreen(start, viewScreenToWorld(minimap, first));
+        for (const m of moves) {
+          handle.onMove?.(at(m, true));
+          expect(finiteView(main)).toBe(true);
+          const inClamp = (k: number) => k >= 0.01 - 1e-12 && k <= 100 + 1e-12;
+          expect(inClamp(main.scale.x) && inClamp(main.scale.y)).toBe(true);
+          const held = viewWorldToScreen(main, viewScreenToWorld(minimap, m));
+          const w = viewScreenToWorld(minimap, m);
+          const mag = Math.abs(anchor.x) + Math.abs(anchor.y) + (Math.abs(w.x) + Math.abs(w.y)) * Math.max(main.scale.x, main.scale.y) + 1;
+          expect(Math.abs(held.x - anchor.x)).toBeLessThanOrEqual(1e-6 * mag);
+          expect(Math.abs(held.y - anchor.y)).toBeLessThanOrEqual(1e-6 * mag);
+        }
+        handle.onEnd?.(at(moves.at(-1)!, true), 'commit');
+        if (main.scale.x !== start.scale.x) seen.count('zoomed');
       }), runs(300));
     seen.atLeast('zoomed', 100);
   }, timeoutFor(300, 1));

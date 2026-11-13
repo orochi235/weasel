@@ -143,9 +143,10 @@ export interface InvocationCtx {
    *  `rotation` degrees since it. See `PinchEvent`. */
   pinch?: { scale: number; rotation: number };
   multiTouch?: {
-    /** Canvas-local CSS pixels — see `MultiTouchEvent.centroid`. Neither
-     *  `world` nor `screen`: it is the space `zoomAt` anchors in, so passing
-     *  it through `clientToWorld` removes the canvas origin twice. */
+    /** CSS pixels from the top-left of the view the gesture runs in — the
+     *  canvas, or a `<CanvasView>`'s rect. Neither `world` nor `screen`: it is
+     *  the space that view's camera (`view`) anchors `zoomAt` in, so passing it
+     *  through `clientToWorld` removes the origin twice. */
     centroid: Point2;
     /** Distance between the two primary pointers, in CSS pixels. */
     spread: number;
@@ -160,7 +161,7 @@ export interface InvocationCtx {
     pinch?: {
       startSpread: number;
       currentSpread: number;
-      /** Canvas-local, same as the enclosing `centroid`. */
+      /** View-local, same as the enclosing `centroid`. */
       centroid: Point2;
     };
   };

@@ -74,12 +74,13 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> extends
   /** The view id this minimap publishes its pointer under. Default
    *  `'minimap'`. */
   id?: string;
-  /** Wheel (and trackpad pinch) over the minimap zooms the main view about
-   *  the world point under the cursor, which keeps its place in the main
-   *  view. Default `true`, clamped to the kit's default zoom limits; pass the
-   *  main view's own `{ min, max }` when it zooms further, or `false` to leave
-   *  the wheel to the page. */
-  wheelZoom?: boolean | ZoomClampOptions;
+  /** The wheel, a trackpad pinch and a two-finger touch pinch over the
+   *  minimap zoom the main view about the world point under the cursor or
+   *  between the fingers, which keeps its place in the main view. Default
+   *  `true`, clamped to the kit's default zoom limits; pass the main view's own
+   *  `{ min, max }` when it zooms further, or `false` to bind none of them and
+   *  leave the wheel to the page. */
+  zoom?: boolean | ZoomClampOptions;
 }
 
 const NO_ELEMENT: RefObject<HTMLElement | null> = { current: null };
@@ -105,7 +106,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     canvasRef,
     id = 'minimap',
     onResize,
-    wheelZoom = true,
+    zoom = true,
   } = props;
   const localCanvasRef = useRef<HTMLCanvasElement | null>(null);
   // Measured as `<SceneViewCanvas>` measures it, in the resize callback, so the frame that paints a new size
@@ -131,7 +132,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   }, [mainView, mainViewDims, indicatorStyle, fitView, accent]);
 
   const clientToWorld = useMinimapInput({
-    canvasRef: localCanvasRef, mainView, mainViewDims, onMainViewChange, fitView, wheelZoom,
+    canvasRef: localCanvasRef, mainView, mainViewDims, onMainViewChange, fitView, size: { width, height }, zoom,
   });
 
   usePublishPointer(localCanvasRef, (_pointer, cx, cy) => ({ world: clientToWorld(cx, cy), viewId: id }));
@@ -180,7 +181,8 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
  * main canvas is showing through a derived "fit" view, and overlays a dashed
  * indicator of where the main canvas is looking. Press anywhere in it to
  * recenter the main view on that world point; drag to pan continuously;
- * wheel to zoom the main view about the point under the cursor.
+ * wheel or pinch to zoom the main view about the point under the cursor or
+ * between the fingers.
  *
  * Its dispatcher, actions and deps are its own, so it never competes with
  * the main canvas for input. Put one `<PointerContextProvider>` around it and

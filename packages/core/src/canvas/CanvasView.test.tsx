@@ -127,7 +127,10 @@ describe('<CanvasView>', () => {
       pointer(canvas, 'pointermove', 2, 170, 'touch');
     });
 
-    expect(panel.mock.calls.at(-1)?.[0]).toMatchObject({ scale: { x: 1.5, y: 1.5 } });
+    // About the centroid in the panel's own space, x = 50 then 55: zoom about 50, pan by 5 screen px.
+    const next = panel.mock.calls.at(-1)?.[0] as View;
+    expect(next.scale).toEqual({ x: 1.5, y: 1.5 });
+    expect(next.x).toBeCloseTo(50 - 50 / 1.5 - 5 / 1.5);
     expect(outer).not.toHaveBeenCalled();
   });
 

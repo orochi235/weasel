@@ -2143,8 +2143,23 @@ Calls the lanes made without a ruling:
   WebKit's `pinch` (`<id>.pinch`), as `viewport.zoom` and `camera.dolly` do, and its dispatcher now listens for
   WebKit's gesture events when wheel zoom is on. A WebKit pinch carries the world point under its focal point, as a
   wheel does, so an action can zoom about it without its own client-to-world map.
-- Open: the minimap takes no two-finger touch pinch; one finger pans it. A pinch there needs the minimap's own camera
-  at the action, which `<MinimapCanvas>` keeps in its hook rather than as a dep.
+- 2026-11-13 (maintainer-approved; the lane's calls on the shape): the minimap takes a two-finger touch pinch,
+  `minimap.pinch` bound as `<id>.multiTouch`. It zooms the main camera about the world point between the fingers,
+  read through the minimap's own camera, and that point keeps its place in the main view as the fingers move, so the
+  main view follows them the way a one-finger pan does (the opposite sign to `viewport.pinchZoom`, whose content
+  follows the fingers). It clamps as the wheel does. The minimap's camera reaches the action as the `view` dep, which
+  `<MinimapCanvas>` now publishes beside `rootView`: the pair a `<CanvasView>` answers on a surface, so one action
+  runs in both hosts, and any secondary view with a dispatcher of its own answers the same pair. Its `set` drops the
+  write, as a derived `<CanvasView>` camera's does.
+- 2026-11-13 (the lane's call): a finger panning the minimap keeps its drag when a second finger lands (the
+  recognizer's rule), and the pan sits still while a pinch steers the same main camera; when the second finger lifts,
+  it resumes from where the pinch left the view rather than jumping back to center on the finger. Lifting the pan's own
+  finger first ends both, and the finger left pans nothing: its press went to the pinch.
+- 2026-11-13 (the lane's call): `wheelZoom` on `<MinimapCanvas>` and `createMinimapContribution` is renamed `zoom`,
+  since it now switches and clamps the touch pinch too.
+- 2026-11-13 (the lane's call): a multitouch centroid is in the CSS pixels of the view the gesture runs in, not the
+  canvas's. A pinch inside a `<CanvasView>` zoomed about a point offset by the view's rect origin (measured: a
+  pinch at the panel's x = 50 left the panel camera at x = 46.67 where 13.33 holds the point).
 - 2026-11-13 (the lane's call): `Select`'s opening click ends at the `gestures.longPressMs` kit setting: held longer,
   the release picks a row. The insert action's own 8 px drag threshold stays its own: it only ever raises the bar the
   `gestures.dragPx` setting sets, since the recognizer opens no drag before that setting is crossed.
