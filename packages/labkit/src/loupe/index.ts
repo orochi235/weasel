@@ -36,6 +36,7 @@ export {
   createLoupeKeymap,
   LENS_ACTION_IDS,
   LENS_KEYS,
+  QUICK_KEY,
   LOUPE_LEADER,
   MAX_LENSES,
 } from './lens/lensActionDefs';

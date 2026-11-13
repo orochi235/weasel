@@ -74,3 +74,18 @@ test('a lab without labLoupe has no lens layer', async () => {
   await waitFor(() => expect(document.querySelector('.lk-loupe-test-art')).not.toBeNull());
   expect(document.querySelector('.lk-lens-layer')).toBeNull();
 });
+
+test('F2 opens a lens on its own, and the next F2 closes it', async () => {
+  mount();
+  const text = await waitFor(() => {
+    const el = document.querySelector('.lk-trial__body .lk-loupe-test-probe');
+    expect(el).not.toBeNull();
+    return el as Element;
+  });
+  const at = text.getBoundingClientRect();
+  await userEvent.hover(text, { position: { x: at.width / 2, y: at.height / 2 } });
+  await userEvent.keyboard('{F2}');
+  await waitFor(() => expect(document.querySelector('.lk-lens-copy')).not.toBeNull());
+  await userEvent.keyboard('{F2}');
+  await waitFor(() => expect(document.querySelector('.lk-lens-copy')).toBeNull());
+});

@@ -51,6 +51,7 @@ export const MAX_LENSES = 8;
 /** Every lens action's id, by short name. */
 export const LENS_ACTION_IDS = {
   add: 'loupe.add',
+  quick: 'loupe.quick',
   close: 'loupe.close',
   pinned: 'loupe.aim.pinned',
   follow: 'loupe.aim.follow',
@@ -76,6 +77,9 @@ export const LENS_ACTION_IDS = {
 type LensActionId = (typeof LENS_ACTION_IDS)[keyof typeof LENS_ACTION_IDS];
 
 /** The Loupe keymap's keys, by action. */
+/** The key, outside the Loupe keymap, that opens a lens following the pointer and closes it again. */
+export const QUICK_KEY = 'F2';
+
 export const LENS_KEYS: Partial<Record<LensActionId, string>> = {
   'loupe.add': 'l',
   'loupe.close': 'Shift+L',
@@ -210,6 +214,18 @@ function pinOps<C>(scene: LensScene<C>, lensId: string, from: LensSettings<C>): 
   return ops;
 }
 
+/** Closes a lens: its leader, reticle and body as one undo step, and any pose a Follow reticle holds. */
+export function closeLens<C>(api: LensActionApi<C>, lensId: string): void {
+  const { scene } = api;
+  const s = settingsOf(scene, lensId);
+  // Leader first: it depends on both of the others.
+  const ids = lensClosure(scene, [`${lensId}:body`]).reverse();
+  const nodes = ids.flatMap((id) => scene.get(id as NodeId) ?? []);
+  api.apply(nodes.map((node) => createDeleteOp({ node, label: 'close lens' })));
+  // A Follow reticle's held pose would otherwise outlive the node.
+  if (s?.aim === 'follow') api.unfollow(lensId);
+}
+
 /** Add, close, and the aims. */
 function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
   const { scene } = api;
@@ -222,14 +238,7 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
       lensesOf(scene).length >= MAX_LENSES ? `At most ${MAX_LENSES} lenses at once` : true,
     invoker: { timing: 'immediate', run: () => void api.add() },
   };
-  const close = on(LENS_ACTION_IDS.close, 'Close lens', (lensId, s) => {
-    // Leader first: it depends on both of the others.
-    const ids = lensClosure(scene, [`${lensId}:body`]).reverse();
-    const nodes = ids.flatMap((id) => scene.get(id as NodeId) ?? []);
-    api.apply(nodes.map((node) => createDeleteOp({ node, label: 'close lens' })));
-    // A Follow reticle's held pose would otherwise outlive the node.
-    if (s.aim === 'follow') api.unfollow(lensId);
-  });
+  const close = on(LENS_ACTION_IDS.close, 'Close lens', (lensId) => closeLens(api, lensId));
   const pinned = on(LENS_ACTION_IDS.pinned, 'Aim: pinned', (lensId, s) => {
     api.apply(pinOps(scene, lensId, s));
     // After the write lands, or the scene answers with the old pose in between.
@@ -260,7 +269,30 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
       },
     },
   };
-  return [add, close, pinned, follow, glass, followMove];
+  // The lens F2 opened, which the next F2 closes; one per host.
+  let quickLens: string | null = null;
+  const quick: Action = {
+    id: LENS_ACTION_IDS.quick,
+    label: 'Quick lens',
+    group: 'loupe',
+    scope: 'hotkey',
+    defaultBinding: [{ spec: key(QUICK_KEY), opts: { id: LENS_ACTION_IDS.quick } }],
+    invoker: {
+      timing: 'immediate',
+      run() {
+        if (quickLens !== null && settingsOf(scene, quickLens)) {
+          closeLens(api, quickLens);
+          quickLens = null;
+          return;
+        }
+        const lensId = api.add();
+        if (lensId === null) return;
+        api.apply(setAimOps(scene, lensId, 'follow'));
+        quickLens = lensId;
+      },
+    },
+  };
+  return [add, close, pinned, follow, glass, followMove, quick];
 }
 
 /** The lens actions over `api`; `comparisons.opposite` is what the opposite-mode preset compares against. */
