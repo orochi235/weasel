@@ -1298,6 +1298,7 @@
     "TextEditCommit": "type",
     "TextEditDep": "type",
     "TextEditDoubleClick": "type",
+    "TextEditDraft": "type",
     "TextEditScreenPose": "type",
     "TextEditSelection": "type",
     "TextFit": "type",

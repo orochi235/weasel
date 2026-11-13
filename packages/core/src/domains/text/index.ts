@@ -5,6 +5,7 @@ export type {
   TextEditScreenPose,
   TextEditClipRect,
   TextEditCommit,
+  TextEditDraft,
   TextEditSelection,
   StartEditOptions,
   UseTextEditOptions,
