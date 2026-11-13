@@ -2125,8 +2125,28 @@ Calls the lanes made without a ruling:
   binds X to swap fill and stroke and Shift+X to swap focus, D to reset the colors, and / to toggle the focused
   paint to none; crop mode holds C. Free in draw, unmodified: J, Q, W, Z (rig's Bone J and Weight W are not in draw,
   so kit-wide only Q and Z are free). Free in draw with Shift: A, B, D, E, G, I, J, K, L, N, O, Q, R, S, T, Y, Z.
-- Open: `@weasel-js/hud`'s long-press binding is tested for its target and kind, not by a touch held on a widget
-  through the dispatcher; core's long-press tests drive the gesture itself. Pinch dolly is now driven by two touch
-  pointers (`pinchDolly.integration.test.tsx`).
+- Pinch dolly is driven by two touch pointers (`pinchDolly.integration.test.tsx`), and `@weasel-js/hud`'s long-press
+  by a touch or pen held on a widget (`longPress.integration.test.tsx`, round twenty-three).
 - Chart's command keys (grid, undo and redo, group and ungroup, the page keys) take `<action>.key` ids, as draw's do
   (2026-11-13, in the batch).
+
+## Audit round twenty-three (2026-11-13): input modalities
+
+- 2026-11-13 (the lane's call): a HUD press that neither a click nor a drag closes (a long-press took it, a second
+  finger took it for a pinch, the browser canceled the pointer) ends in `cancel`, sent a task after that pointer's
+  release, cancel or a window blur. It is not sent when the long-press fires: a held stepper chip keeps repeating
+  until the finger lifts, which is what holding a stepper asks for. The HUD tracks this itself
+  (`openPresses.ts`) because the dispatcher has no gesture for "a press ended without a click", and a `pointerDown`
+  binding is the only one that hears a press before it settles.
+- 2026-11-13 (the lane's call): a HUD widget treats any `move` as the end of its click, since the dispatcher sends
+  `move` only once a press crossed the `gestures.dragPx` kit setting. The window widget no longer restates the
+  threshold as `DRAG_THRESHOLD_PX`, which under a smaller kit setting let a drag of a few pixels also click.
+- 2026-11-13 (the lane's call): the minimap zooms on both forms of trackpad pinch, ctrl+wheel (`<id>.trackpad`) and
+  WebKit's `pinch` (`<id>.pinch`), as `viewport.zoom` and `camera.dolly` do, and its dispatcher now listens for
+  WebKit's gesture events when wheel zoom is on. A WebKit pinch carries the world point under its focal point, as a
+  wheel does, so an action can zoom about it without its own client-to-world map.
+- Open: the minimap takes no two-finger touch pinch; one finger pans it. A pinch there needs the minimap's own camera
+  at the action, which `<MinimapCanvas>` keeps in its hook rather than as a dep.
+- 2026-11-13 (the lane's call): `Select`'s opening click ends at the `gestures.longPressMs` kit setting: held longer,
+  the release picks a row. The insert action's own 8 px drag threshold stays its own: it only ever raises the bar the
+  `gestures.dragPx` setting sets, since the recognizer opens no drag before that setting is crossed.

@@ -59,6 +59,9 @@ export interface PinchEvent extends EventModifiers {
    *  the canvas's bounding rect. */
   clientX: number;
   clientY: number;
+  /** The world point under the focal point, when the source knows it. */
+  x?: number;
+  y?: number;
   affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;

@@ -97,7 +97,7 @@
     "longestFunction": 212
   },
   "packages/hud/src/widgets/window/window.ts": {
-    "longestFunction": 228
+    "longestFunction": 224
   },
   "packages/kernel3d/src/deps.ts": {
     "longestFunction": 139

@@ -61,7 +61,7 @@ export const LONG_PRESS_HAPTIC_MS = 15;
 
 /** How `useGestureDispatcher` times, publishes and signals a long-press. */
 export interface LongPressOptions {
-  /** Hold time in ms. Default {@link LONG_PRESS_MS}. */
+  /** Hold time in ms. Default the `gestures.longPressMs` kit setting, else {@link LONG_PRESS_MS}. */
   duration?: number;
   /**
    * Where the press being held is published: position, start time, progress,

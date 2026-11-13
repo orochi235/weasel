@@ -50,6 +50,8 @@ export function webkitPinchInput(core: DispatchCore): {
       rotation,
       clientX: local.x,
       clientY: local.y,
+      x: hitPoint.x,
+      y: hitPoint.y,
       ...underPointer(target(), mods, hitPoint),
     };
   };

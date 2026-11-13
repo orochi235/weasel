@@ -36,6 +36,7 @@ export function worldPointOf(event: InputEvent): { x: number; y: number } | unde
     case 'carry':
       return { x: event.x, y: event.y };
     case 'wheel':
+    case 'pinch':
       return event.x !== undefined && event.y !== undefined ? { x: event.x, y: event.y } : undefined;
     default:
       return undefined;
@@ -107,6 +108,7 @@ export function immediateParams(
       return {
         scale: event.scale, rotation: event.rotation,
         clientX: event.clientX, clientY: event.clientY,
+        ...at(event),
         affordance: event.affordance,
         ...resolved,
       };

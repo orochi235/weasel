@@ -14,6 +14,6 @@ export interface SceneCanvasLongPress {
   /** Default true. A long-press some binding handled pulses
    *  `navigator.vibrate` briefly, for touch and pen, where the API exists. */
   haptics?: boolean;
-  /** Hold time in ms. Default `LONG_PRESS_MS` (500). */
+  /** Hold time in ms. Default the `gestures.longPressMs` kit setting, else `LONG_PRESS_MS` (500). */
   duration?: number;
 }
