@@ -122,6 +122,24 @@ geom's `cubicBezierEasing` (via core). The scalar `Math.max(lo, Math.min(hi, v))
 scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
 and modes do no geometry at all.
 
+## Tolerances, angles and bounds in geometry
+
+An options bag names a curve-flattening tolerance `flattenTolerance`: how far
+the chords a curve is cut into may stray from it. `tolerance` is how far a
+result may stray from what it stands for: a refit, a resample, a warp, a snap
+locus. A function that flattens to produce a fitted result can take both.
+
+Angles are radians measured from +x toward +y, which is clockwise on a y-down
+screen. The track family (`arcShape`, `ellipseShape`, `TrackPlace.angle`) is
+the stated exception: CSS degrees from 12 o'clock, because what it places is
+laid out with CSS rotations. `StrokeNib.angle` turns counterclockwise, as the
+measure readout does; whether it should follow the rule is open in
+`docs/unruled.md`.
+
+A bounds function given nothing to bound returns `null` (`boundsOfCoords`,
+`unionRects`, `unionBoundsPath`, `aabbOfPoints`); one given a path that draws
+nothing returns a zero-size box.
+
 ## Stores notify through `createEmitter`
 
 A store keeps its subscribers in `createEmitter()` from `@weasel-js/registry`,

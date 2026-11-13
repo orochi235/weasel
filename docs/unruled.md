@@ -1893,3 +1893,11 @@ Calls the lanes made without a ruling:
   snapshot of the same instrument into any trial. So a snapshot cannot be loaded into a clone to compare it with
   the trial that saved it, and a lab wanting presets shared across trials lists `useLabContext().savedSnapshots`
   itself. Whether the menu offers every snapshot of the instrument, groups them by trial, or stays per trial.
+
+## Audit round twenty-one (2026-11-12): geometry and drawing
+
+- Open: `StrokeNib.angle` turns counterclockwise on a y-down screen, as the measure readout and the Nib panel
+  ("counterclockwise from level") read angles, where every other angle in geom, paint, stroke and symmetry (a
+  conic gradient's `angle`, `SymmetrySpec.angle`, `RepeatStation.angle`, a marker's) turns clockwise, from +x toward
+  +y. Flipping it changes every saved nib and the panel's reading. Whether the nib follows the geometry rule, or
+  stays with the readout.
