@@ -1908,3 +1908,14 @@ Calls the lanes made without a ruling:
   `workspaceTintLayer` and `modeDecorationLayer` were renamed to it.
 - Open: diagram's `edgeEndLayer`, `labelDragLayer`, `laneLayer`, `portLayer`, `seamLayer`, `sequenceLayer`
   and `waypointLayer`, and guides' `rulersHitLayer`, are bare-named layer factories outside this lane.
+- 2026-11-12: `useSliceDep` was removed rather than given siblings: it was `useDepSource('slice', () => dep)`
+  under another name, and no other dep had one.
+- 2026-11-12: `<SceneCanvas initialActiveTool>` became `defaultActiveTool`, the prefix `defaultView` and
+  `defaultPathEdit` use for a read-once starting value.
+- Open: `Scene.update(id, { data })` is the one node-field mutator not named `setX`; the adapter and the op
+  already say `setData`. Renaming it reaches `packages/export`'s tests, which this round leaves alone.
+- Open: `<SceneCanvas onHover>` reports an id where `onClick` and `onDoubleClick` report a `SceneCanvasHit`
+  (`id`, `kind`, `world`); `DiagramView`'s `onHover` follows it.
+- Open: `ActiveToolContextProvider`'s `initialActive` (tools lane) still uses `initial` where `<SceneCanvas>`
+  now says `defaultActiveTool`.
+
