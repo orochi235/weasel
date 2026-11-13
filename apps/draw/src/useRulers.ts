@@ -17,7 +17,7 @@ export function useRulers() {
     () => createGuidesLayer({ getGuides: () => rulers.settled(getGuides()), subscribe, extent: 'full' }),
     [rulers, getGuides, subscribe],
   );
-  const snapSource = useMemo(() => guideSnapSource(getGuides), [getGuides]);
+  const snapSource = useMemo(() => guideSnapSource({ getGuides }), [getGuides]);
 
   const commands: Pick<AppCommands, 'rulersVisible' | 'toggleRulers'> = {
     rulersVisible: visible,

@@ -30,9 +30,9 @@ describe('snap sources at the edges, property', () => {
   it('a pointer snaps to guides alike with guides at offsets that are not finite, and copies of each, among them', () => {
     const t = tally();
     fc.assert(fc.property(goodGuides, badGuides, view, eighth(60), eighth(60), (good, bad, v, x, y) => {
-      const want = drive({ sources: [guideSnapSource(() => good)], ...v }).at({ x, y }).point;
+      const want = drive({ sources: [guideSnapSource({ getGuides: () => good })], ...v }).at({ x, y }).point;
       const mixed: Guide[] = [...bad, ...good, ...good.map((g) => ({ ...g })), ...bad];
-      const got = drive({ sources: [guideSnapSource(() => mixed)], ...v }).at({ x, y }).point;
+      const got = drive({ sources: [guideSnapSource({ getGuides: () => mixed })], ...v }).at({ x, y }).point;
       expect(got).toEqual(want);
       expect(Number.isFinite(got.x) && Number.isFinite(got.y)).toBe(true);
       t.count(want.x !== x || want.y !== y ? 'snapped' : 'free');
@@ -45,9 +45,9 @@ describe('snap sources at the edges, property', () => {
       const ids = [...new Set(gs.map((g) => g.id))];
       for (const id of ids) {
         const rest = gs.filter((g) => g.id !== id);
-        const without = drive({ sources: [guideSnapSource(() => rest)], ...v }).at({ x, y }).point;
+        const without = drive({ sources: [guideSnapSource({ getGuides: () => rest })], ...v }).at({ x, y }).point;
         // `ids` names what a gesture excludes: a guide being moved.
-        const excluded = drive({ sources: [guideSnapSource(() => gs)], ids: [id], ...v }).at({ x, y }).point;
+        const excluded = drive({ sources: [guideSnapSource({ getGuides: () => gs })], ids: [id], ...v }).at({ x, y }).point;
         expect(excluded).toEqual(without);
       }
     }), RUNS);
@@ -55,8 +55,8 @@ describe('snap sources at the edges, property', () => {
 
   it('a grid whose spacing is no length snaps nothing, and leaves the guides to snap as alone', () => {
     fc.assert(fc.property(goodGuides, fc.constantFrom(0, -0, -2, NaN, Infinity, -Infinity), view, eighth(60), eighth(60), (gs, spacing, v, x, y) => {
-      const want = drive({ sources: [guideSnapSource(() => gs)], ...v }).at({ x, y }).point;
-      const got = drive({ sources: [guideSnapSource(() => gs), gridSnapSource({ spacing })], ...v }).at({ x, y }).point;
+      const want = drive({ sources: [guideSnapSource({ getGuides: () => gs })], ...v }).at({ x, y }).point;
+      const got = drive({ sources: [guideSnapSource({ getGuides: () => gs }), gridSnapSource({ spacing })], ...v }).at({ x, y }).point;
       expect(got).toEqual(want);
     }), RUNS);
   }, TIMEOUT);
@@ -67,7 +67,7 @@ describe('snap sources at the edges, property', () => {
     fc.assert(fc.property(far, eighth(20), eighth(20), posEighth(8), view, (base, gx, px, pitch, v) => {
       const gs: Guide[] = [{ id: 'g', axis: 'x', offset: base + gx + 1 / 16 }];
       const p = { x: base + px, y: base + px };
-      const out = drive({ sources: [guideSnapSource(() => gs), gridSnapSource({ spacing: pitch })], ...v }).at(p).point;
+      const out = drive({ sources: [guideSnapSource({ getGuides: () => gs }), gridSnapSource({ spacing: pitch })], ...v }).at(p).point;
       expect(Number.isFinite(out.x) && Number.isFinite(out.y)).toBe(true);
       const reach = v.reachPx / v.scale;
       const inReach = Math.abs(gs[0]!.offset - p.x) <= reach;

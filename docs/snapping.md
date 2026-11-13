@@ -100,7 +100,7 @@ in `@weasel-js/editor`).
 | `measureEndSource(opts)` | core | target | measurement ends |
 | `rotationSnapSource()` | core | target | quarter turns and other nodes' angles, for a rotate |
 | `gridSnapSource({ spacing, origin?, unitSystem?, scopes? })` | guides | fallback | the grid line either side of each box or pointer probe, on each axis (the origin probe, on a turned container's lattice); with `scopes`, on the pitch of the unit scope the subject sits in, or for an insert the scope of its `parent` |
-| `guideSnapSource(getGuides)` | guides | target | ruler guides |
+| `guideSnapSource({ getGuides })` | guides | target | ruler guides |
 | `alignmentSnapSource(opts)` | guides | target | siblings' edges and centers, and an optional page box |
 | `spacingSnapSource(opts)` | guides | target | positions that repeat a gap already between siblings, or center between two |
 | `handleSnapSource(opts)` | path-tools | target | a control handle's angle steps and its partner's angle |

@@ -40,8 +40,12 @@ describe('createSpacingHintsPreset', () => {
     expect(fixture().preset.moveBehaviors).toBeUndefined();
   });
 
-  it('gives its sources its tolerance as their reach', () => {
-    expect(fixture({ align: true, tolerance: 12 }).preset.snapSources!.map((s) => s.reachPx)).toEqual([12, 12]);
+  it('names its sources after its own id when given one, so two presets can share a canvas', () => {
+    expect(fixture({ id: 'hints', align: true }).preset.snapSources!.map((s) => s.id)).toEqual(['hints.spacing', 'hints.alignment']);
+  });
+
+  it('gives its sources its reachPx', () => {
+    expect(fixture({ align: true, reachPx: 12 }).preset.snapSources!.map((s) => s.reachPx)).toEqual([12, 12]);
     expect(fixture().preset.snapSources![0].reachPx).toBeUndefined();
   });
 

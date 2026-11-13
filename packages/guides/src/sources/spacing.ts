@@ -31,6 +31,8 @@ export interface SpacingSnapSourceOptions {
   filter?: TargetFilter;
   /** The color of the gaps it marks. Default: the readout layer's. */
   color?: string;
+  /** The source's id, so two of them can snap on one canvas. Default `'spacing'`. */
+  id?: string;
   /** Overrides the canvas's reach for these targets, in screen px. */
   reachPx?: number;
 }
@@ -61,7 +63,7 @@ function gapMark(g: SpacingGap, color: string | undefined, magnification: number
 export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSource {
   const fromScene = cachedPerScene(measureAll, opts.filter);
   return {
-    id: 'spacing',
+    id: opts.id ?? 'spacing',
     ...(opts.reachPx === undefined ? {} : { reachPx: opts.reachPx }),
     roles: ['box'],
     gestures: ['move', 'resize'],

@@ -57,7 +57,7 @@ describe('snap sources through a session, property', () => {
   it('a pointer lands on the nearest guide in reach on each axis, and stays put on an axis with none', () => {
     const t = tally();
     fc.assert(fc.property(guides, view, eighth(60), eighth(60), (gs, { scale, reachPx }, x, y) => {
-      const out = drive({ sources: [guideSnapSource(() => gs)], scale, reachPx }).at({ x, y });
+      const out = drive({ sources: [guideSnapSource({ getGuides: () => gs })], scale, reachPx }).at({ x, y });
       expectLanding(gs, { x, y }, out.point, reachPx / scale, (axis) => [axis === 'x' ? x : y], t);
       expect(Math.hypot(out.point.x - x, out.point.y - y)).toBeLessThanOrEqual(reachPx / scale + 1e-9);
     }), RUNS);
@@ -69,7 +69,7 @@ describe('snap sources through a session, property', () => {
   it('the grid holds every axis a guide in reach does not, and never displaces one', () => {
     const t = tally();
     fc.assert(fc.property(guides, view, posEighth(10), eighth(60), eighth(60), (gs, { scale, reachPx }, pitch, x, y) => {
-      const out = drive({ sources: [guideSnapSource(() => gs), gridSnapSource({ spacing: pitch })], scale, reachPx }).at({ x, y });
+      const out = drive({ sources: [guideSnapSource({ getGuides: () => gs }), gridSnapSource({ spacing: pitch })], scale, reachPx }).at({ x, y });
       // The grid line nearest, either on a tie.
       const grid = (axis: Axis): number[] => {
         const v = axis === 'x' ? x : y;
@@ -117,7 +117,7 @@ describe('snap sources through a session, property', () => {
   it('keeps a guide in reach when the grid line across it would carry the pointer past reach (shrunk counterexample)', () => {
     // The grid took both axes, (0.875, -0.875), displacing the guide.
     const gs: Guide[] = [{ id: 'g0', axis: 'y', offset: 0.0625 }];
-    const out = drive({ sources: [guideSnapSource(() => gs), gridSnapSource({ spacing: 0.875 })], scale: 2, reachPx: 2 }).at({ x: 1.25, y: -0.875 });
+    const out = drive({ sources: [guideSnapSource({ getGuides: () => gs }), gridSnapSource({ spacing: 0.875 })], scale: 2, reachPx: 2 }).at({ x: 1.25, y: -0.875 });
     expect(out.point).toEqual({ x: 0.875, y: 0.0625 });
   });
 });

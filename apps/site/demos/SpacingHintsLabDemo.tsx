@@ -54,7 +54,7 @@ function SpacingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selection = useSelection({ scene, mode: 'multi', initial: [STRAY_ID] });
   const { spacing, align, tolerance, readout, modifier } = ctx.config;
   const spacingHints = useMemo(
-    () => createSpacingHintsPreset({ spacing, align, tolerance, readout: readout && { modifier }, color: HINT_COLOR }),
+    () => createSpacingHintsPreset({ spacing, align, reachPx: tolerance, readout: readout && { modifier }, color: HINT_COLOR }),
     [spacing, align, tolerance, readout, modifier],
   );
 

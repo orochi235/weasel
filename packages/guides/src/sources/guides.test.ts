@@ -9,13 +9,13 @@ const ORIGIN = { x: 0, y: 0, width: 10, height: 10 };
 
 describe('guideSnapSource', () => {
   it('is a target over box and pointer probes', () => {
-    const s = guideSnapSource(() => X100);
+    const s = guideSnapSource({ getGuides: () => X100 });
     expect(s.tier).toBeUndefined();
     expect(s.roles).toEqual(['box', 'pointer']);
   });
 
   it('lands a moved box\'s edge on a guide in reach', () => {
-    const out = moveBy({ sources: [guideSnapSource(() => X100)], box: ORIGIN, reachPx: 5 }).by(102, 50);
+    const out = moveBy({ sources: [guideSnapSource({ getGuides: () => X100 })], box: ORIGIN, reachPx: 5 }).by(102, 50);
     expectNear(out.point, { x: 100, y: 50 });
     expect(out.held).toBe(true);
   });
@@ -24,19 +24,19 @@ describe('guideSnapSource', () => {
     // A 10-wide stroke reaches 5 past the rect, so its drawn left edge starts at 95.
     const stroked = { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#f00' }, width: 10 } };
     const { scene, ids } = sceneOf([{ x: 100, y: 0, width: 40, height: 40, data: stroked }]);
-    const out = moveBy({ sources: [guideSnapSource(() => [{ id: 'g', axis: 'x', offset: 200 }])], scene, ids }).by(103, 0);
+    const out = moveBy({ sources: [guideSnapSource({ getGuides: () => [{ id: 'g', axis: 'x', offset: 200 }] })], scene, ids }).by(103, 0);
     // The drawn edge, at 198, meets the guide; the rect's own edge sits at 205.
     expectNear(out.point, { x: 105, y: 0 });
   });
 
   it('leaves a move alone past reach', () => {
-    const out = moveBy({ sources: [guideSnapSource(() => X100)], box: ORIGIN, reachPx: 5 }).by(110, 50);
+    const out = moveBy({ sources: [guideSnapSource({ getGuides: () => X100 })], box: ORIGIN, reachPx: 5 }).by(110, 50);
     expect(out).toMatchObject({ point: { x: 110, y: 50 }, held: false });
   });
 
   it('reaches the canvas\'s 8px by default, read through the view', () => {
     const at = (x: number, scale: number) =>
-      moveBy({ sources: [guideSnapSource(() => X100)], box: ORIGIN, scale }).by(x, 0).point.x;
+      moveBy({ sources: [guideSnapSource({ getGuides: () => X100 })], box: ORIGIN, scale }).by(x, 0).point.x;
     expect(at(107, 1)).toBeCloseTo(100, 9);
     expect(at(109, 1)).toBe(109);
     // 4.5 world units is 9px at 2x; 4 is 2px at 0.5x.
@@ -46,7 +46,7 @@ describe('guideSnapSource', () => {
 
   it('reads the live guide list every frame', () => {
     let guides: Guide[] = [];
-    const m = moveBy({ sources: [guideSnapSource(() => guides)], box: ORIGIN });
+    const m = moveBy({ sources: [guideSnapSource({ getGuides: () => guides })], box: ORIGIN });
     expectNear(m.by(102, 50).point, { x: 102, y: 50 });
     guides = X100;
     expectNear(m.by(102, 50).point, { x: 100, y: 50 });
@@ -54,23 +54,23 @@ describe('guideSnapSource', () => {
 
   it('snaps a pointer on each axis independently', () => {
     const guides: Guide[] = [{ id: 'vx', axis: 'x', offset: 100 }, { id: 'hy', axis: 'y', offset: 50 }];
-    expectNear(drive({ sources: [guideSnapSource(() => guides)] }).at({ x: 102, y: 48 }).point, { x: 100, y: 50 });
+    expectNear(drive({ sources: [guideSnapSource({ getGuides: () => guides })] }).at({ x: 102, y: 48 }).point, { x: 100, y: 50 });
   });
 
   it('takes the nearer of two guides on one axis', () => {
     const guides: Guide[] = [{ id: 'a', axis: 'x', offset: 100 }, { id: 'b', axis: 'x', offset: 106 }];
-    expect(drive({ sources: [guideSnapSource(() => guides)] }).at({ x: 104, y: 0 }).point.x).toBeCloseTo(106, 9);
+    expect(drive({ sources: [guideSnapSource({ getGuides: () => guides })] }).at({ x: 104, y: 0 }).point.x).toBeCloseTo(106, 9);
   });
 
   it('beats the grid on its axis while the grid holds the other', () => {
-    const sources = [gridSnapSource({ spacing: 10 }), guideSnapSource(() => [{ id: 'g', axis: 'x', offset: 103 }])];
+    const sources = [gridSnapSource({ spacing: 10 }), guideSnapSource({ getGuides: () => [{ id: 'g', axis: 'x', offset: 103 }] })];
     expectNear(drive({ sources }).at({ x: 101, y: 17 }).point, { x: 103, y: 20 });
   });
 
   it('meets a guide a move brings the box\'s edge near', () => {
     // A 10.5 drag puts the left edge at 110.5, inside reach of the guide at 111.
     const box = { x: 100, y: 50, width: 20, height: 20 };
-    const out = moveBy({ sources: [guideSnapSource(() => [{ id: 'g', axis: 'x', offset: 111 }])], box }).by(10.5, 0);
+    const out = moveBy({ sources: [guideSnapSource({ getGuides: () => [{ id: 'g', axis: 'x', offset: 111 }] })], box }).by(10.5, 0);
     expectNear(out.point, { x: 11, y: 0 });
   });
 
@@ -79,13 +79,13 @@ describe('guideSnapSource', () => {
     // the canvas's 8px reach is 16 plane units at zoom 1.
     const plane = { scale: { x: 2, y: 2 }, offset: { x: -100, y: 0 } };
     const at = (dx: number) =>
-      moveBy({ sources: [guideSnapSource(() => [{ id: 'g', axis: 'x', offset: 60 }])], box: ORIGIN, plane }).by(dx, 5).point;
+      moveBy({ sources: [guideSnapSource({ getGuides: () => [{ id: 'g', axis: 'x', offset: 60 }] })], box: ORIGIN, plane }).by(dx, 5).point;
     expectNear(at(32), { x: 20, y: 5 });
     expectNear(at(37), { x: 37, y: 5 });
   });
 
   it('offers nothing for a guide the gesture excludes: the one being moved', () => {
-    const source = guideSnapSource(() => [{ id: 'g', axis: 'x', offset: 100 }, { id: 'h', axis: 'x', offset: 102 }]);
+    const source = guideSnapSource({ getGuides: () => [{ id: 'g', axis: 'x', offset: 100 }, { id: 'h', axis: 'x', offset: 102 }] });
     const q = { probes: [{ id: 'p', at: { x: 101, y: 0 } }], reachWorld: (px: number) => px, reachPx: 8, exclude: ['g'] };
     const offered = [...source.collect(q as never)].map((c) => (c as { locus: unknown }).locus);
     expect(offered).toHaveLength(1);

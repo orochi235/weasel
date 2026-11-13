@@ -19,6 +19,8 @@ export interface AlignmentSnapSourceOptions {
   filter?: TargetFilter;
   /** The color of the lines it marks. Default: the readout layer's. */
   color?: string;
+  /** The source's id, so two of them can snap on one canvas. Default `'alignment'`. */
+  id?: string;
   /** Overrides the canvas's reach for these targets, in screen px. */
   reachPx?: number;
 }
@@ -72,7 +74,7 @@ export function alignmentSnapSource(opts: AlignmentSnapSourceOptions = {}): Snap
     return [...(own ? [own] : []), ...(pageBox ? [indexLines(deriveAlignmentGuides([], { page: pageBox }))] : [])];
   };
   return {
-    id: 'alignment',
+    id: opts.id ?? 'alignment',
     ...(opts.reachPx === undefined ? {} : { reachPx: opts.reachPx }),
     roles: ['box', 'pointer'],
     *collect(q) {

@@ -35,7 +35,7 @@ export function RulersDemo() {
     () => createGuidesLayer({ getGuides: () => rulers.settled(getGuides()), subscribe, extent: 'full' }),
     [rulers, getGuides, subscribe],
   );
-  const snap = useMemo(() => ({ sources: [guideSnapSource(getGuides)] }), [getGuides]);
+  const snap = useMemo(() => ({ sources: [guideSnapSource({ getGuides })] }), [getGuides]);
 
   return (
     <DemoStage width={W} height={H}>

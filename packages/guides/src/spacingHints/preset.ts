@@ -6,7 +6,8 @@ import { distanceReadout, type DistanceReadoutOptions } from './distanceReadout'
 
 /** Options for `createSpacingHintsPreset`. */
 export interface SpacingHintsOptions {
-  /** Preset id. Default `'spacingHints'`. */
+  /** Preset id. Default `'spacingHints'`. Given, its snap sources are `<id>.spacing` and `<id>.alignment`, so two
+   *  presets can share a canvas; otherwise they keep the sources' own ids. */
   id?: string;
   /** Snap a move so its gap to a neighbor equals one already between its
    *  siblings, and mark the equal gaps. Default true. */
@@ -15,7 +16,7 @@ export interface SpacingHintsOptions {
    *  Default false. */
   align?: boolean;
   /** Snap distance in screen px. Default the canvas's reach. */
-  tolerance?: number;
+  reachPx?: number;
   /** Which nodes the snap sources take as siblings to line up or space against. */
   filter?: TargetFilter;
   /** The Alt-hover distance readout, configured, or `false` for none. Default
@@ -24,6 +25,9 @@ export interface SpacingHintsOptions {
   /** The color of the marks and the readout. */
   color?: string;
 }
+
+const sourceId = (preset: string | undefined, kind: string): { id?: string } =>
+  (preset === undefined ? {} : { id: `${preset}.${kind}` });
 
 /**
  * Spacing hints as one `<SceneCanvas features>` preset: snap sources for
@@ -37,11 +41,11 @@ export function createSpacingHintsPreset(opts: SpacingHintsOptions = {}): Featur
   const own = {
     ...color,
     ...(opts.filter === undefined ? {} : { filter: opts.filter }),
-    ...(opts.tolerance === undefined ? {} : { reachPx: opts.tolerance }),
+    ...(opts.reachPx === undefined ? {} : { reachPx: opts.reachPx }),
   };
   const snapSources: SnapSource[] = [
-    ...((opts.spacing ?? true) ? [spacingSnapSource(own)] : []),
-    ...((opts.align ?? false) ? [alignmentSnapSource(own)] : []),
+    ...((opts.spacing ?? true) ? [spacingSnapSource({ ...own, ...sourceId(opts.id, 'spacing') })] : []),
+    ...((opts.align ?? false) ? [alignmentSnapSource({ ...own, ...sourceId(opts.id, 'alignment') })] : []),
   ];
   const contributions: SurfaceContribution[] = [];
   if (opts.readout !== false) contributions.push(distanceReadout({ ...opts.readout, ...color }));
