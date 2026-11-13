@@ -38,7 +38,7 @@ const pin = () => screen.getByRole('button', { name: /Count/ });
 
 describe('an instrument reporting an auto value', () => {
   it('has its settings row quote the report, never storing it', async () => {
-    await renderSettled(<Lab instruments={[counted]} defaultInstrument="Counted" />, {
+    await renderSettled(<Lab instruments={[counted]} />, {
       wrapper: withIcons,
     });
     expect(quoted()).toBeNull();
@@ -50,7 +50,7 @@ describe('an instrument reporting an auto value', () => {
   });
 
   it('drops the report once the path is pinned, and ignores one made while pinned', async () => {
-    await renderSettled(<Lab instruments={[counted]} defaultInstrument="Counted" />, {
+    await renderSettled(<Lab instruments={[counted]} />, {
       wrapper: withIcons,
     });
     fireEvent.click(screen.getByText('report seven'));

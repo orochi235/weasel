@@ -35,7 +35,6 @@ function Controls() {
 const orbit = defineInstrument({
   name: 'Orbit',
   initialState: () => ({}),
-  defaultConfig: () => ({}),
   clock: { duration: 4000, loop: true },
   canvas: {
     initialView: (size) => ({ zoom: 1, pan: { x: size.width / 2, y: size.height / 2 } }),
@@ -69,7 +68,7 @@ const orbit = defineInstrument({
 export function TrialClockDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Trial clock" instruments={[orbit]} defaultInstrument="Orbit" />
+      <Lab title="Trial clock" instruments={[orbit]} />
     </div>
   );
 }

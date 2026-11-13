@@ -19,14 +19,13 @@ function Board() {
 
 const instrument = defineInstrument<null, Record<string, never>>({
   name: 'Plain board',
-  defaultConfig: () => ({}),
   initialState: () => null,
   render: () => <Board />,
 });
 
 describe('a trial and devtools', () => {
   it("lists a plain canvas in a trial by the trial's title, not by the pane it sits in", async () => {
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Plain board" />, {
+    await renderSettled(<Lab instruments={[instrument]} />, {
       wrapper: withIcons,
     });
     const labels = window.__weaselDevtools__?.roots().map((r) => r.label);

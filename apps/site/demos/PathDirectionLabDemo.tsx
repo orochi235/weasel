@@ -102,7 +102,7 @@ const directionInstrument = defineInstrument<State, Config>({
 export function PathDirectionLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Path start and direction" instruments={[directionInstrument]} defaultInstrument="Direction" />
+      <Lab title="Path start and direction" instruments={[directionInstrument]} />
     </div>
   );
 }

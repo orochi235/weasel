@@ -1,7 +1,6 @@
 import { createScene, pathFromD } from '@weasel-js/core';
-import type { ConfigField } from '@weasel-js/labkit';
 import type { Path, RectPose, Scene, Stroke } from '@weasel-js/core';
-import { defineInstrument, type RenderContext } from '@weasel-js/labkit';
+import { defineInstrument, f, type RenderContext } from '@weasel-js/labkit';
 import { useEffect, useRef } from 'react';
 import { SceneFrame } from './SceneHost';
 
@@ -29,56 +28,32 @@ const DASHES: Record<string, number[] | undefined> = {
 /** Hand-written from `Stroke` in `@weasel-js/core` (paint-types.ts). Two of its
  *  fields have no control kind to map onto: `paint` is a `Paint` union, and
  *  `dash` is a `number[]` — a preset list stands in for the latter. */
-const STROKE_SCHEMA: ConfigField[] = [
-  { key: 'color', label: 'Paint', type: 'color', default: '#a48bd4' },
-  { key: 'width', label: 'Width', type: 'slider', min: 1, max: 48, step: 1, default: 18 },
-  {
-    key: 'cap',
-    label: 'Cap',
-    type: 'select',
-    default: 'butt',
-    options: [
-      { value: 'butt', label: 'Butt' },
-      { value: 'round', label: 'Round' },
-      { value: 'square', label: 'Square' },
-    ],
-  },
-  {
-    key: 'join',
-    label: 'Join',
-    type: 'select',
-    default: 'miter',
-    options: [
-      { value: 'miter', label: 'Miter' },
-      { value: 'round', label: 'Round' },
-      { value: 'bevel', label: 'Bevel' },
-    ],
-  },
-  { key: 'miterLimit', label: 'Miter limit', type: 'slider', min: 1, max: 20, step: 0.5, default: 4 },
-  {
-    key: 'dash',
-    label: 'Dash',
-    type: 'select',
-    default: 'solid',
-    options: [
-      { value: 'solid', label: 'Solid' },
-      { value: 'dashed', label: 'Dashed' },
-      { value: 'dotted', label: 'Dotted' },
-      { value: 'dash-dot', label: 'Dash-dot' },
-    ],
-  },
-  {
-    key: 'align',
-    label: 'Align',
-    type: 'select',
-    default: 'center',
-    options: [
-      { value: 'center', label: 'Center' },
-      { value: 'inner', label: 'Inner' },
-      { value: 'outer', label: 'Outer' },
-    ],
-  },
-];
+const STROKE_SCHEMA = f.schema({
+  color: f.color('#a48bd4').label('Paint'),
+  width: f.number(18).range(1, 48).step(1),
+  cap: f.enum('butt', [
+    { value: 'butt', label: 'Butt' },
+    { value: 'round', label: 'Round' },
+    { value: 'square', label: 'Square' },
+  ]),
+  join: f.enum('miter', [
+    { value: 'miter', label: 'Miter' },
+    { value: 'round', label: 'Round' },
+    { value: 'bevel', label: 'Bevel' },
+  ]),
+  miterLimit: f.number(4).range(1, 20).step(0.5).label('Miter limit'),
+  dash: f.enum('solid', [
+    { value: 'solid', label: 'Solid' },
+    { value: 'dashed', label: 'Dashed' },
+    { value: 'dotted', label: 'Dotted' },
+    { value: 'dash-dot', label: 'Dash-dot' },
+  ]),
+  align: f.enum('center', [
+    { value: 'center', label: 'Center' },
+    { value: 'inner', label: 'Inner' },
+    { value: 'outer', label: 'Outer' },
+  ]),
+});
 
 interface StrokeConfig {
   color: string;
@@ -133,16 +108,7 @@ function StrokeBody({ config }: { config: StrokeConfig }) {
 
 export const StrokeInstrument = defineInstrument<Record<string, never>, StrokeConfig>({
   name: 'Stroke',
-  defaultConfig: () => ({
-    color: '#a48bd4',
-    width: 18,
-    cap: 'butt',
-    join: 'miter',
-    miterLimit: 4,
-    dash: 'solid',
-    align: 'center',
-  }),
+  config: STROKE_SCHEMA,
   initialState: () => ({}),
-  configSchema: () => STROKE_SCHEMA,
   render: (ctx) => <StrokeBody config={(ctx as RenderContext<Record<string, never>, StrokeConfig>).config} />,
 });

@@ -36,7 +36,6 @@ export function documentInstrument(options: DocumentInstrumentOptions): Instrume
     name: entry.id,
     ...crumbTitle(entry),
     config,
-    defaultConfig: () => config.defaults(),
     initialState: (c) => initialState?.(storyConfig(c)) ?? null,
     render: (ctx) => (
       <>
@@ -108,7 +107,6 @@ export function pendingInstrument(options: PendingInstrumentOptions): Instrument
     name: entry.id,
     ...crumbTitle(entry),
     config,
-    defaultConfig: () => config.defaults(),
     initialState: () => null,
     render: () => <StoryLoad key={options.generation ?? 0} {...options} />,
   };
@@ -121,7 +119,6 @@ export function missingInstrument(id: string, globals: GlobalDeclarations = {}):
     name: id,
     title: `No story ${id}`,
     config,
-    defaultConfig: () => config.defaults(),
     initialState: () => null,
     render: () => (
       <div className="fg-story fg-story--loading" data-fg-layout="fullscreen">

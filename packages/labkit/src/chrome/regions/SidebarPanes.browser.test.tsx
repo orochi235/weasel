@@ -14,7 +14,6 @@ afterEach(cleanup);
 
 const Stub: Instrument = {
   name: 'Stub',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div>stub</div>,
 };
@@ -43,12 +42,7 @@ const frames = (n: number) =>
 test('a lab with sidebar sections loads without a ResizeObserver loop error', async () => {
   const { container } = renderWithIcons(
     <div className="lk-present-frame">
-      <Lab
-        instruments={[Stub]}
-        defaultInstrument="Stub"
-        chrome={[controls]}
-        labChrome={[stories]}
-      />
+      <Lab instruments={[Stub]} chrome={[controls]} labChrome={[stories]} />
     </div>,
   );
   await expect.poll(() => container.querySelectorAll('.lk-sidebar-section__bar').length).toBe(2);

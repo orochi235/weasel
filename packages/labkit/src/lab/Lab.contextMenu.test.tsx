@@ -17,7 +17,6 @@ beforeAll(() => {
 
 const Staged = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Staged',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
   stage: {
@@ -38,7 +37,7 @@ function Grab() {
 
 function mount(props: Partial<LabProps> = {}) {
   return renderSettled(
-    <Lab {...({ instruments: [Staged], defaultInstrument: 'Staged', ...props } as LabProps)}>
+    <Lab {...({ instruments: [Staged], ...props } as LabProps)}>
       <Grab />
     </Lab>,
     { wrapper: withIcons },

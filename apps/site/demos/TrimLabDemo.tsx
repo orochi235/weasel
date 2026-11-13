@@ -68,7 +68,7 @@ const trimInstrument = defineInstrument<State, Config>({
 export function TrimLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Trim segment" instruments={[trimInstrument]} defaultInstrument="Trim segment" />
+      <Lab title="Trim segment" instruments={[trimInstrument]} />
     </div>
   );
 }

@@ -81,7 +81,6 @@ function underPixelAt(x: number, y: number): [number, number, number] {
 
 const Marked = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Marked',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: (ctx) => (
     <>
@@ -163,7 +162,7 @@ test('an expanded trial keeps its marks over it and takes new ones', {
 }, async () => {
   renderWithIcons(
     <div className="lk-lightbox-lab-host">
-      <Lab instruments={[Marked]} defaultInstrument="Marked" />
+      <Lab instruments={[Marked]} />
     </div>,
   );
   fireEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));

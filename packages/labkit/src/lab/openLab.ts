@@ -20,8 +20,7 @@ export interface OpenedLab extends OpenedLabStore {
 /** What opening a lab reads from `<Lab>`'s props. */
 export interface OpenLabOptions {
   instruments: InstrumentList;
-  defaultInstrument: string;
-  opening?: readonly string[] | undefined;
+  opening: readonly string[];
   mode?: LabMode | undefined;
 }
 
@@ -29,7 +28,7 @@ export interface OpenLabOptions {
  *  instrument's defaults the way `addTrial`'s is, so Reset returns to it;
  *  `state` and `view` replace what that config would give. */
 export interface PresentationSeed<TC = Record<string, unknown>, TS = unknown, TV = unknown> {
-  /** Default: the lab's `defaultInstrument`. */
+  /** Default: the first of the lab's `opening`. */
   instrument?: string;
   config?: Partial<TC>;
   state?: TS;
@@ -50,10 +49,10 @@ const SEED_RECORD = valueRecord(null, 'lk-present-seed');
 function seedPresentedTrial(
   store: LabStore,
   records: RecordCache,
-  { instruments, defaultInstrument }: OpenLabOptions,
+  { instruments, opening }: OpenLabOptions,
   seed: PresentationSeed,
 ): void {
-  const instrument = seed.instrument ?? defaultInstrument;
+  const instrument = seed.instrument ?? opening[0] ?? '';
   const fingerprint = stableStringify({ ...seed, instrument });
   const trials = store.getState().trials;
   if (instruments.length === 0 || (trials.length > 0 && records.get(SEED_RECORD) === fingerprint))
@@ -69,13 +68,10 @@ function seedPresentedTrial(
   records.set(SEED_RECORD, fingerprint);
 }
 
-function seedDefaultTrials(
-  store: LabStore,
-  { instruments, defaultInstrument, opening }: OpenLabOptions,
-): void {
+function seedDefaultTrials(store: LabStore, { instruments, opening }: OpenLabOptions): void {
   if (instruments.length === 0 || store.getState().trials.length > 0) return;
   let trials: ReturnType<typeof addTrialOp> = [];
-  for (const name of opening ?? [defaultInstrument]) trials = addTrialOp(trials, instruments, name);
+  for (const name of opening) trials = addTrialOp(trials, instruments, name);
   for (const record of trials) store.getState().addTrial(record);
 }
 

@@ -40,7 +40,7 @@ const gated = defineInstrument({
 });
 
 const mount = (over?: Parameters<typeof Lab>[0]['over']) =>
-  renderSettled(<Lab instruments={[gated]} defaultInstrument="Gated" over={over} />, {
+  renderSettled(<Lab instruments={[gated]} over={over} />, {
     wrapper: withIcons,
   });
 
@@ -73,7 +73,6 @@ describe("an instrument's config drawn over another schema", () => {
       return (
         <Lab
           instruments={[gated]}
-          defaultInstrument="Gated"
           over={{ values, set: (p, v) => setValues((prev) => withValueAtPath(prev, p, v)) }}
         />
       );

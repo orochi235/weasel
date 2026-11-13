@@ -24,7 +24,7 @@ test('a floating sidebar leaves the body its whole box, open or closed, and floa
   await page.viewport(1024, 768);
   const { container, getByRole, queryByRole } = renderWithIcons(
     <div className="lk-present-frame">
-      <Lab instruments={[Gridded]} defaultInstrument="Gridded" sidebar="float" />
+      <Lab instruments={[Gridded]} sidebar="float" />
     </div>,
   );
   const box = (selector: string) =>

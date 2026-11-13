@@ -18,7 +18,6 @@ const Glyph = icon('ui:add');
 
 const stubInstrument: Instrument = {
   name: 'Stub',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 };
@@ -351,10 +350,7 @@ describe('<TrialChrome>', () => {
 
 describe('chrome regions in a mounted lab', () => {
   async function renderLabWith(instrument: Instrument) {
-    return renderSettled(
-      <Lab title="T" instruments={[instrument]} defaultInstrument={instrument.name} />,
-      { wrapper: withIcons },
-    );
+    return renderSettled(<Lab title="T" instruments={[instrument]} />, { wrapper: withIcons });
   }
 
   it('puts zoom in the viewport region and not in the toolbar', async () => {
@@ -478,7 +474,6 @@ describe('<TrialChrome> — state that outlives a mount', () => {
 describe('state undo in a mounted lab', () => {
   const counter: Instrument<{ n: number }> = {
     name: 'Counter',
-    defaultConfig: () => ({}),
     initialState: () => ({ n: 0 }),
     undo: { snapshotOn: ['bump'] },
     render: (ctx) => (
@@ -495,7 +490,7 @@ describe('state undo in a mounted lab', () => {
   };
 
   it('undoes and redoes a change through the trial history', async () => {
-    await renderSettled(<Lab title="T" instruments={[counter]} defaultInstrument="Counter" />, {
+    await renderSettled(<Lab title="T" instruments={[counter]} />, {
       wrapper: withIcons,
     });
     const undo = screen.getByRole('button', { name: 'Undo' });

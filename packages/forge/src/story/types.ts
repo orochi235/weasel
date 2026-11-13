@@ -80,11 +80,12 @@ export interface IndexStoryProps {
 /** A custom index page for a component, given as `MetaSpec.index`. */
 export type IndexRender = (ctx: IndexContext) => ReactNode;
 
-/** What `story()` takes. `config` declares the story's controls; `state`, given, seeds its state from the config. */
+/** What `story()` takes. `config` declares the story's controls; `initialState`, given, seeds its state from the config. */
 export interface StorySpec<C = Record<string, never>, S = undefined> {
   name?: string;
   config?: ConfigSchema<C>;
-  state?: (config: C) => S;
+  /** The state a trial of this story opens on, from its config. */
+  initialState?: (config: C) => S;
   render: (ctx: StoryContext<C, S>) => ReactNode;
   decorators?: Decorator[];
   layout?: Layout;

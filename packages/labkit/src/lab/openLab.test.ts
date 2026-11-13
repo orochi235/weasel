@@ -16,7 +16,7 @@ const other: Instrument<{ k: string }, { k: string }> = {
   render: () => null,
 };
 const instruments = [counter, other] as unknown as InstrumentList;
-const base = { instruments, defaultInstrument: 'Counter' };
+const base = { instruments, opening: ['Counter'] };
 
 describe('presentStorageKey', () => {
   it('keeps a presented lab apart from the full one', () => {

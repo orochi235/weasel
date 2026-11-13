@@ -96,12 +96,7 @@ async function mount(backing: Map<string, unknown>, which: InstrumentList[number
   scene = null;
   marks = null;
   return renderSettled(
-    <Lab
-      instruments={[which]}
-      defaultInstrument={which.name}
-      storage={createMemoryAdapter(backing)}
-      storageKey={KEY}
-    />,
+    <Lab instruments={[which]} storage={createMemoryAdapter(backing)} storageKey={KEY} />,
     { wrapper: withIcons },
   );
 }

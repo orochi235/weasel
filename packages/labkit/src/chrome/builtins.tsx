@@ -203,7 +203,7 @@ export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
 export function builtinContributions(
   instrument: Instrument,
   ctx: TrialChromeContext,
-  controls?: Record<string, ControlRenderer>,
+  renderers?: Record<string, ControlRenderer>,
 ): TrialContribution[] {
   const out: TrialContribution[] = [];
   const zoom = ctx.zoom;
@@ -342,7 +342,7 @@ export function builtinContributions(
             config={settingsConfig(ctx)}
             {...settingsAuto(ctx)}
             {...settingsWrites(ctx)}
-            renderers={controls}
+            renderers={renderers}
             collapsed={groupFolds(ctx.collapsedSections, 'settings')}
             onCollapse={(label, next) => ctx.setSectionCollapsed(`settings/${label}`, next)}
           />

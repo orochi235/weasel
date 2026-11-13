@@ -5,7 +5,6 @@ export function WeaselLab() {
   return (
     <Lab
       instruments={[SceneInstrument]}
-      defaultInstrument="WeaselScene"
       storageKey="weasel-lab"
       mode="dark"
       title="Weasel Lab"

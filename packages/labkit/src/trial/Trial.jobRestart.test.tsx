@@ -53,7 +53,7 @@ const items = () => screen.getByTestId('items').textContent;
 describe('a job running when its trial starts afresh', () => {
   it('runs again from the start on Reset when the job is auto', async () => {
     const { instrument, release } = stepped(true);
-    renderWithIcons(<Lab instruments={[instrument]} defaultInstrument="Stepped" />);
+    renderWithIcons(<Lab instruments={[instrument]} />);
     await waitFor(() => expect(screen.getByTestId('items')).toBeInTheDocument());
     await release();
     await release();
@@ -66,7 +66,7 @@ describe('a job running when its trial starts afresh', () => {
 
   it('stops on Reset when the job is started by hand', async () => {
     const { instrument, release } = stepped(false);
-    renderWithIcons(<Lab instruments={[instrument]} defaultInstrument="Stepped" />);
+    renderWithIcons(<Lab instruments={[instrument]} />);
     await waitFor(() => expect(screen.getByTestId('items')).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'Run' }));
     await release();

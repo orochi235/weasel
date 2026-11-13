@@ -89,7 +89,7 @@ const distortInstrument = defineInstrument<State, Config>({
 export function DistortLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Perspective and free distort" instruments={[distortInstrument]} defaultInstrument="Distort" />
+      <Lab title="Perspective and free distort" instruments={[distortInstrument]} />
     </div>
   );
 }

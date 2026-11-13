@@ -9,7 +9,6 @@ import type { TrialContribution } from '../chrome/types';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { OverAccess } from '../config/over';
 import type { ConfigPath, ConfigSchema } from '../config/types';
-import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
 import type { TrialInfo } from '../state/types';
 import type { ToolCapability } from '../tools/types';
@@ -230,15 +229,13 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
    *  title the trial reads, which a rename may have changed, and the trial's config as its instrument reads it, so
    *  it redraws as that changes; the text still names the trial everywhere else. */
   renderTitle?: (title: string, trial: { config: TC }) => ReactNode;
-  defaultConfig: () => TC;
+  /** The config a new trial starts from. Default: `config`'s defaults, or `{}` where the instrument declares no
+   *  `config`. Read it through `defaultConfigOf`. */
+  defaultConfig?: () => TC;
   initialState: (config: TC) => TS;
   /** The instrument's config, declared once: values, types and controls.
-   *  Supplying this makes `defaultConfig` optional — `defineInstrument`
-   *  synthesizes it. Prefer it over `defaultConfig` + `configSchema`. */
+   *  Without it the instrument has no settings panel. */
   config?: ConfigSchema<TC>;
-  /** @deprecated Declare `config` instead; this repeats what `TC` already
-   *  says and nothing holds the two to one answer. */
-  configSchema?: () => ConfigField[];
   /** The instrument's DOM. With `canvas`, this renders as an overlay above the
    *  layers rather than instead of them; return `null` for canvas only. */
   render: (ctx: RenderContext<TS, TC>) => ReactNode;

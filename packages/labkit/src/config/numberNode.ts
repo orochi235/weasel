@@ -32,6 +32,7 @@ export class NumberNode<T extends number | undefined = number> extends BaseNode<
     return this.ann({ placeholder });
   }
 
+  /** The increment the slider, the arrow keys and the field's stepper move by, in the stored unit. */
   step(step: number): this {
     return this.ann({ step });
   }
@@ -100,5 +101,3 @@ export class NumberNode<T extends number | undefined = number> extends BaseNode<
     return this.ann({ control: 'input' });
   }
 }
-
-/** A true/false leaf, built by `f.boolean`; a checkbox unless `.toggle()`. */

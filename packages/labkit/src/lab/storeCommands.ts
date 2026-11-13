@@ -25,7 +25,7 @@ export interface StoreCommandsOptions {
   /** Move the focus to a trial: one a command opened, or put in the focused one's place. */
   focus(id: string): void;
   configRules?: readonly ConfigRule[] | undefined;
-  controls?: Record<string, ControlRenderer> | undefined;
+  renderers?: Record<string, ControlRenderer> | undefined;
   marks: LabMarks;
 }
 
@@ -38,7 +38,7 @@ export function useStoreCommands(
     focusedTrialId,
     focus,
     configRules,
-    controls,
+    renderers,
     marks,
   }: StoreCommandsOptions,
 ): LabCommands {
@@ -111,7 +111,7 @@ export function useStoreCommands(
       setMarks: set,
       holdMarks: hold,
       configRules,
-      controls,
+      renderers,
     };
   }, [
     clocks,
@@ -123,7 +123,7 @@ export function useStoreCommands(
     mode,
     store,
     configRules,
-    controls,
+    renderers,
     shown,
     set,
     hold,

@@ -20,7 +20,7 @@ export function SchemaLab() {
   return (
     <Lab
       instruments={[ShapeInstrument, StrokeInstrument]}
-      defaultInstrument="ShapeProperties"
+      opening={['ShapeProperties']}
       mode="dark"
       title="Schema-driven controls"
     >

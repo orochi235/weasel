@@ -140,7 +140,7 @@ const rectPathEditInstrument = defineInstrument<State, unknown>({
 export function RectPathEditLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Rectangle path edit" instruments={[rectPathEditInstrument]} defaultInstrument="Rectangle path edit" />
+      <Lab title="Rectangle path edit" instruments={[rectPathEditInstrument]} />
     </div>
   );
 }

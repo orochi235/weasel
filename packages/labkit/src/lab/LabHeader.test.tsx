@@ -7,7 +7,6 @@ import { Lab } from './Lab';
 
 const Stub: Instrument = {
   name: 'Stub',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div>stub</div>,
 };
@@ -15,14 +14,14 @@ const Other: Instrument = { ...Stub, name: 'Other' };
 
 describe('<LabHeader>', () => {
   it('offers an add-trial button when the lab has one instrument', async () => {
-    await renderSettled(<Lab instruments={[Stub]} defaultInstrument="Stub" />, {
+    await renderSettled(<Lab instruments={[Stub]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByRole('button', { name: /add trial/i })).toBeInTheDocument();
   });
 
   it('offers a menu instead when the lab has several', async () => {
-    await renderSettled(<Lab instruments={[Stub, Other]} defaultInstrument="Stub" />, {
+    await renderSettled(<Lab instruments={[Stub, Other]} opening={['Stub']} />, {
       wrapper: withIcons,
     });
     // Which instrument to add is now a choice, so the button opens a list.
@@ -32,7 +31,7 @@ describe('<LabHeader>', () => {
   it('adds a trial of the instrument chosen from the menu', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
-    await renderSettled(<Lab instruments={[Stub, Other]} defaultInstrument="Stub" />, {
+    await renderSettled(<Lab instruments={[Stub, Other]} opening={['Stub']} />, {
       wrapper: withIcons,
     });
     expect(screen.queryAllByLabelText(/^Trial Other$/)).toHaveLength(0);
@@ -45,7 +44,7 @@ describe('<LabHeader>', () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
     const titled: Instrument = { ...Other, title: 'Other / Titled' };
-    await renderSettled(<Lab instruments={[Stub, titled]} defaultInstrument="Stub" />, {
+    await renderSettled(<Lab instruments={[Stub, titled]} opening={['Stub']} />, {
       wrapper: withIcons,
     });
     await user.click(screen.getByRole('button', { name: 'Add trial' }));
@@ -57,7 +56,7 @@ describe('<LabHeader>', () => {
   it('adds a trial when the button is used', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
-    await renderSettled(<Lab instruments={[Stub]} defaultInstrument="Stub" />, {
+    await renderSettled(<Lab instruments={[Stub]} />, {
       wrapper: withIcons,
     });
     expect(screen.getAllByLabelText(/^Trial Stub$/)).toHaveLength(1);
@@ -67,13 +66,13 @@ describe('<LabHeader>', () => {
 
   it('leaves the add-trial control out when the lab says so', async () => {
     const { unmount } = await renderSettled(
-      <Lab instruments={[Stub, Other]} defaultInstrument="Stub" addTrial={false} />,
+      <Lab instruments={[Stub, Other]} opening={['Stub']} addTrial={false} />,
       { wrapper: withIcons },
     );
     expect(screen.queryByRole('button', { name: /add trial/i })).toBeNull();
     expect(screen.getByRole('button', { name: /^Theme: Auto/ })).toBeInTheDocument();
     unmount();
-    await renderSettled(<Lab instruments={[Stub]} defaultInstrument="Stub" addTrial={false} />, {
+    await renderSettled(<Lab instruments={[Stub]} addTrial={false} />, {
       wrapper: withIcons,
     });
     expect(screen.queryByRole('button', { name: /add trial/i })).toBeNull();
@@ -82,7 +81,7 @@ describe('<LabHeader>', () => {
   it('rotates the color mode from one button', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = userEvent.setup();
-    await renderSettled(<Lab instruments={[Stub]} defaultInstrument="Stub" />, {
+    await renderSettled(<Lab instruments={[Stub]} />, {
       wrapper: withIcons,
     });
     expect(screen.queryByRole('radiogroup')).toBeNull();
@@ -101,7 +100,7 @@ describe('<LabHeader>', () => {
 
   it('puts the theme switch after the header content a consumer passes', async () => {
     await renderSettled(
-      <Lab instruments={[Stub]} defaultInstrument="Stub">
+      <Lab instruments={[Stub]}>
         <button type="button">Consumer</button>
       </Lab>,
       { wrapper: withIcons },

@@ -19,7 +19,6 @@ function NoClock() {
 
 const mixed: Instrument = {
   name: 'Mixed',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   clock: { duration: 60_000, mix: () => ({ sync() {}, seek() {}, now: 0 }) },
   render: (ctx) => {
@@ -30,7 +29,7 @@ const mixed: Instrument = {
 
 describe('a trialId of null', () => {
   it('resolves no clock, mix or frames inside a trial that has all three', async () => {
-    await renderSettled(<Lab instruments={[mixed]} defaultInstrument="Mixed" />, {
+    await renderSettled(<Lab instruments={[mixed]} />, {
       wrapper: withIcons,
     });
     const clock = trialClock as TrialClock | null;

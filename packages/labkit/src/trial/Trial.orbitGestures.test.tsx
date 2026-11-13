@@ -88,7 +88,6 @@ function Body({ withCanvas }: { withCanvas: boolean }) {
 const orbitOnly = (withCanvas: boolean) =>
   defineInstrument<Record<string, never>, Record<string, never>>({
     name: withCanvas ? 'WithCanvas' : 'Bare',
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     orbit: {
       initialView: { distance: 20, pitch: 0.4 },
@@ -106,7 +105,7 @@ function Capture() {
 async function mount(withCanvas: boolean) {
   const instrument = orbitOnly(withCanvas);
   const out = await renderSettled(
-    <Lab instruments={[instrument]} defaultInstrument={instrument.name}>
+    <Lab instruments={[instrument]}>
       <Capture />
     </Lab>,
     { wrapper: withIcons },

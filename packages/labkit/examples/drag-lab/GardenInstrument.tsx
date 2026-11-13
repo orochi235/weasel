@@ -4,6 +4,7 @@ import { createGridLayer } from '@weasel-js/guides';
 import { useMemo, useRef } from 'react';
 import {
   defineInstrument,
+  f,
   type RenderContext,
   type SceneTrialState,
   TrialSceneCanvas,
@@ -159,13 +160,7 @@ function GardenBody({ ctx }: { ctx: RenderContext<GardenState, GardenConfig> }) 
 
 export const GardenInstrument = defineInstrument<GardenState, GardenConfig>({
   name: 'Garden',
-  defaultConfig: () => ({ showGrid: true }),
+  config: f.schema({ showGrid: f.boolean(true) }),
   initialState: () => ({ scene: null }),
-  // Kept on the legacy defaultConfig + configSchema path on purpose, so both
-  // ways of declaring config keep live coverage. SceneInstrument shows the
-  // builder.
-  configSchema: () => [
-    { type: 'checkbox', key: 'showGrid', label: 'Show grid', default: true },
-  ],
   render: (ctx) => <GardenBody ctx={ctx} />,
 });

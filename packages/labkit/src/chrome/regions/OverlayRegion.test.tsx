@@ -7,7 +7,6 @@ import { Lab } from '../../lab/Lab';
 
 const bare: Instrument = {
   name: 'Bare',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div data-testid="trial-content" />,
 };
@@ -18,7 +17,6 @@ describe('the lab overlay region', () => {
       <Lab
         title="T"
         instruments={[bare]}
-        defaultInstrument="Bare"
         labChrome={[{ id: 'x', region: 'overlay', render: () => <i data-testid="o" /> }]}
       />,
       { wrapper: withIcons },
@@ -36,7 +34,6 @@ describe('the lab overlay region', () => {
       <Lab
         title="T"
         instruments={[bare]}
-        defaultInstrument="Bare"
         labChrome={[
           {
             id: 'x',

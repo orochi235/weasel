@@ -13,7 +13,6 @@ import { LabContext, type LabContextValue } from './LabContext';
 
 const stub: Instrument = {
   name: 'Stub',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div data-testid="stub-content">stub</div>,
 };
@@ -56,13 +55,7 @@ describe('<Lab> with a storageKey', () => {
   it('renders its fallback until the lab has loaded', async () => {
     const { storage, release } = gated();
     renderWithIcons(
-      <Lab
-        instruments={[stub]}
-        defaultInstrument="Stub"
-        storageKey="gate"
-        storage={storage}
-        fallback={<p>loading</p>}
-      />,
+      <Lab instruments={[stub]} storageKey="gate" storage={storage} fallback={<p>loading</p>} />,
     );
     expect(screen.getByText('loading')).toBeInTheDocument();
     expect(screen.queryByTestId('stub-content')).toBeNull();
@@ -74,13 +67,7 @@ describe('<Lab> with a storageKey', () => {
   it("falls back to the lab's empty shell by default", () => {
     const { storage } = gated();
     const { container } = renderWithIcons(
-      <Lab
-        instruments={[stub]}
-        defaultInstrument="Stub"
-        storageKey="gate"
-        storage={storage}
-        title="Waiting"
-      />,
+      <Lab instruments={[stub]} storageKey="gate" storage={storage} title="Waiting" />,
     );
     expect(container.querySelector('.lk-lab .lk-shell')).not.toBeNull();
     expect(screen.getByText('Waiting')).toBeInTheDocument();
@@ -92,7 +79,7 @@ describe('<Lab> with a storageKey', () => {
     const list = vi.spyOn(storage, 'list');
     renderWithIcons(
       <StrictMode>
-        <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="strict" storage={storage} />
+        <Lab instruments={[stub]} storageKey="strict" storage={storage} />
       </StrictMode>,
     );
     await screen.findByTestId('stub-content');
@@ -101,7 +88,7 @@ describe('<Lab> with a storageKey', () => {
 
   it('persists to IndexedDB when given no storage', async () => {
     const view = renderWithIcons(
-      <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="idb-lab">
+      <Lab instruments={[stub]} storageKey="idb-lab">
         <CaptureLab />
       </Lab>,
     );
@@ -119,13 +106,13 @@ describe('<Lab> with a storageKey', () => {
     const backing = new Map<string, unknown>();
     const storage = createMemoryAdapter(backing);
     const view = renderWithIcons(
-      <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="one" storage={storage}>
+      <Lab instruments={[stub]} storageKey="one" storage={storage}>
         <CaptureLab />
       </Lab>,
     );
     await screen.findByTestId('stub-content');
     view.rerender(
-      <Lab instruments={[stub]} defaultInstrument="Stub" storageKey="two" storage={storage}>
+      <Lab instruments={[stub]} storageKey="two" storage={storage}>
         <CaptureLab />
       </Lab>,
     );
@@ -159,12 +146,7 @@ describe('<Lab> with a storageKey', () => {
       },
     };
     renderWithIcons(
-      <Lab
-        instruments={[picky]}
-        defaultInstrument="Stub"
-        storageKey="bad"
-        storage={createMemoryAdapter(backing)}
-      />,
+      <Lab instruments={[picky]} storageKey="bad" storage={createMemoryAdapter(backing)} />,
     );
     await screen.findByTestId('stub-content');
     const list = screen.getByRole('list', { name: 'Stored records that failed to load' });
@@ -184,12 +166,7 @@ describe('<Lab> with a storageKey', () => {
   it('closes the lab on unmount, sending what was queued', async () => {
     const backing = new Map<string, unknown>();
     const view = renderWithIcons(
-      <Lab
-        instruments={[stub]}
-        defaultInstrument="Stub"
-        storageKey="close"
-        storage={createMemoryAdapter(backing)}
-      >
+      <Lab instruments={[stub]} storageKey="close" storage={createMemoryAdapter(backing)}>
         <CaptureLab />
       </Lab>,
     );

@@ -41,7 +41,7 @@ function CaptureLab({ children }: { children?: ReactNode }) {
 async function mountLab(props: Partial<Record<keyof LabProps, unknown>> = {}) {
   labRef = null;
   return renderSettled(
-    <Lab {...({ instruments: [stub, stubB], defaultInstrument: 'Stub', ...props } as LabProps)}>
+    <Lab {...({ instruments: [stub, stubB], opening: ['Stub'], ...props } as LabProps)}>
       <CaptureLab />
     </Lab>,
     { wrapper: withIcons },
@@ -101,7 +101,7 @@ describe('<Lab>', () => {
       return null;
     }
     await renderSettled(
-      <Lab instruments={[stub]} defaultInstrument="Stub">
+      <Lab instruments={[stub]}>
         <CaptureLab>
           <CaptureStore />
         </CaptureLab>
@@ -129,7 +129,7 @@ describe('<Lab>', () => {
       return null;
     }
     await renderSettled(
-      <Lab instruments={[stub]} defaultInstrument="Stub">
+      <Lab instruments={[stub]}>
         <CaptureLab>
           <CaptureStore />
         </CaptureLab>
@@ -172,8 +172,8 @@ describe('<Lab>', () => {
     expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toBe('light');
   });
 
-  it('throws when defaultInstrument does not match any instrument', () => {
-    expect(() => renderWithIcons(<Lab instruments={[stub]} defaultInstrument="Missing" />)).toThrow(
+  it('throws when opening names an unknown instrument', () => {
+    expect(() => renderWithIcons(<Lab instruments={[stub]} opening={['Missing']} />)).toThrow(
       /Unknown instrument/,
     );
   });
@@ -194,7 +194,7 @@ describe('<Lab>', () => {
     const storage = () => createMemoryAdapter(backing);
 
     const first = await renderSettled(
-      <Lab instruments={[mapped]} defaultInstrument="Mapped" storage={storage()} storageKey="s" />,
+      <Lab instruments={[mapped]} storage={storage()} storageKey="s" />,
       { wrapper: withIcons },
     );
     await waitFor(() => expect(JSON.stringify([...backing.values()])).toContain('"seen":["a"]'));
@@ -202,7 +202,7 @@ describe('<Lab>', () => {
 
     await mountLab({
       instruments: [mapped],
-      defaultInstrument: 'Mapped',
+      opening: ['Mapped'],
       storage: storage(),
       storageKey: 's',
     });
@@ -231,13 +231,13 @@ describe('instruments that change while mounted', () => {
       },
     };
     const view = await renderSettled(
-      <Lab instruments={[v1]} defaultInstrument="Grow">
+      <Lab instruments={[v1]}>
         <CaptureLab />
       </Lab>,
       { wrapper: withIcons },
     );
     view.rerender(
-      <Lab instruments={[v2]} defaultInstrument="Grow">
+      <Lab instruments={[v2]}>
         <CaptureLab />
       </Lab>,
     );
@@ -249,13 +249,13 @@ describe('instruments that change while mounted', () => {
   it('opens a trial of an instrument added after mount', async () => {
     const later: Instrument = { ...stub, name: 'Later' };
     const view = await renderSettled(
-      <Lab instruments={[stub]} defaultInstrument="Stub">
+      <Lab instruments={[stub]}>
         <CaptureLab />
       </Lab>,
       { wrapper: withIcons },
     );
     view.rerender(
-      <Lab instruments={[stub, later]} defaultInstrument="Stub">
+      <Lab instruments={[stub, later]} opening={['Stub']}>
         <CaptureLab />
       </Lab>,
     );
@@ -274,15 +274,14 @@ describe('instruments that change while mounted', () => {
     }
     const v1: Instrument = {
       name: 'Keep',
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => <Probe />,
     };
     const v2: Instrument = { ...v1, defaultConfig: () => ({ extra: 1 }) };
-    const view = await renderSettled(<Lab instruments={[v1]} defaultInstrument="Keep" />, {
+    const view = await renderSettled(<Lab instruments={[v1]} />, {
       wrapper: withIcons,
     });
-    view.rerender(<Lab instruments={[v2]} defaultInstrument="Keep" />);
+    view.rerender(<Lab instruments={[v2]} />);
     expect(mounts).toBe(1);
   });
 });
@@ -320,7 +319,7 @@ describe('focused trial', () => {
   });
 
   it('moves to a trial whose frame takes focus, which fires nothing in the lab’s document', async () => {
-    await mountLab({ instruments: [framed, stubB], defaultInstrument: 'Framed' });
+    await mountLab({ instruments: [framed, stubB], opening: ['Framed'] });
     await act(async () => labRef?.addTrial('StubB'));
     await act(async () => screen.getByTitle('story frame').focus());
     fireEvent.blur(window);

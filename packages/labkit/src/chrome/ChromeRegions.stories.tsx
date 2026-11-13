@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Lab } from '@weasel-js/labkit';
-import type { ConfigField } from '../controls/types';
+import { f } from '../config/builder';
 import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 
@@ -13,18 +13,17 @@ interface DemoState extends Record<string, unknown> {
   spokes: number;
 }
 
-const fields: ConfigField[] = [
-  { key: 'radius', label: 'Radius', type: 'slider', default: 60, min: 10, max: 120, step: 1 },
-  { key: 'filled', label: 'Filled', type: 'checkbox', default: true },
-];
+const config = f.schema({
+  radius: f.number(60).range(10, 120).step(1),
+  filled: f.boolean(true),
+});
 
 /** Declares every capability that contributes chrome, so all five trial
  *  regions render at once. */
 const FullInstrument: Instrument<DemoState, DemoConfig> = {
   name: 'Every Region',
-  defaultConfig: () => ({ radius: 60, filled: true }),
+  config,
   initialState: () => ({ spokes: 7 }),
-  configSchema: () => fields,
   undo: {},
   layers: { ids: ['wheel'] },
   tools: {
@@ -75,7 +74,7 @@ export const EveryRegion: Story = {
   tags: ['gallery'],
   args: {
     instruments: [FullInstrument],
-    defaultInstrument: 'Every Region',
+    opening: ['Every Region'],
     title: 'Chrome Regions',
   },
 };
@@ -84,7 +83,7 @@ export const EveryRegion: Story = {
 export const SuppressedAndReplaced: Story = {
   args: {
     instruments: [FullInstrument],
-    defaultInstrument: 'Every Region',
+    opening: ['Every Region'],
     title: 'Suppress + Replace',
     suppress: ['snapshot'],
     chrome: [
@@ -113,7 +112,7 @@ const SUBJECTS = ['Ash', 'Birch', 'Cedar'];
 export const SubjectTitleAndLead: Story = {
   args: {
     instruments: [FullInstrument],
-    defaultInstrument: 'Every Region',
+    opening: ['Every Region'],
     title: 'Title Bar Lead',
     suppress: ['snapshot'],
     chrome: [

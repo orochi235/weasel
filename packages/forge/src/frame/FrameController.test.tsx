@@ -30,7 +30,7 @@ const counter = loadNativeModule(
     default: meta({ title: 'Test/Counter' }),
     Counter: story({
       config: f.schema({ label: f.string('clicks'), gated: f.number(1).showIf((c) => c.label !== 'off') }),
-      state: () => ({ n: 0 }),
+      initialState: () => ({ n: 0 }),
       render: ({ config, state, setState, setConfig }) => (
         <div>
           <p data-testid="out">{`${config.label}:${state.n}`}</p>

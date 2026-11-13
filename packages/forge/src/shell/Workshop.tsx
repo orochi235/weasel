@@ -211,14 +211,14 @@ export function Workshop(props: WorkshopProps) {
                 density={LAB_DENSITY}
                 {...(labTheme ? { theme: labTheme } : {})}
                 instruments={instruments}
-                defaultInstrument={readRoute() ?? first.id}
+                opening={[readRoute() ?? first.id]}
                 storageKey={storageKey ?? 'weaselforge'}
                 {...(storage ? { storage } : {})}
                 labChrome={labChrome}
                 addTrial={false}
                 marks={false}
                 {...(menus ? { menus } : {})}
-                {...(config?.controls ? { controls: config.controls } : {})}
+                {...(config?.renderers ? { renderers: config.renderers } : {})}
                 {...(config?.pages ? { pages: config.pages } : {})}
                 {...(config?.path !== undefined ? { path: config.path } : {})}
               >

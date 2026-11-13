@@ -3,11 +3,25 @@ import { cssColorLiteral } from '@weasel-js/paint';
 import { assert, describe, expect, it, vi } from 'vitest';
 
 // CurveEditor uses weasel's own bundled React and fails in jsdom.
-// Mock it out — these tests only assert on readouts and the flip button.
+// Mock it out, keeping the props it was handed so a test can play a drag through them.
+const editor = vi.hoisted(() => ({ props: null as null | Record<string, unknown> }));
 vi.mock('../CurveEditor', async (importOriginal) => {
   const real = await importOriginal<typeof import('../CurveEditor')>();
-  return { ...real, CurveEditor: () => null };
+  return {
+    ...real,
+    CurveEditor: (props: Record<string, unknown>) => {
+      editor.props = props;
+      return null;
+    },
+  };
 });
+
+type Points = { x: number; y: number }[];
+const drag = (moves: Points[], settled: Points) => {
+  const props = editor.props as { onInput: (p: Points) => void; onChange: (p: Points) => void };
+  for (const move of moves) props.onInput(move);
+  props.onChange(settled);
+};
 
 import { CurveField } from './CurveField';
 import s from './CurveField.module.css';
@@ -125,5 +139,30 @@ describe('CurveField', () => {
       />,
     );
     expect(container.querySelector(`.${s.marks}`)).toBeNull();
+  });
+
+  it('reports every move of a drag through onChange when given no onInput', () => {
+    const onChange = vi.fn();
+    render(<CurveField values={[0, 0, 1, 1]} min={0} max={1} step={0.5} width={200} onChange={onChange} />);
+    drag([[{ x: 0, y: 0.2 }, { x: 1, y: 1 }], [{ x: 0, y: 0.4 }, { x: 1, y: 1 }]], [{ x: 0, y: 0.4 }, { x: 1, y: 1 }]);
+    expect(onChange.mock.calls.map((c) => c[0])).toEqual([[0, 0, 1, 1], [0, 0.5, 1, 1]]);
+  });
+
+  it('sends the moves to onInput and the settled curve to onChange, once, when given onInput', () => {
+    const onChange = vi.fn();
+    const onInput = vi.fn();
+    render(
+      <CurveField values={[0, 0, 1, 1]} min={0} max={1} step={0.5} width={200} onChange={onChange} onInput={onInput} />,
+    );
+    drag([[{ x: 0, y: 0.2 }, { x: 1, y: 1 }], [{ x: 0, y: 0.4 }, { x: 1, y: 1 }]], [{ x: 0, y: 0.4 }, { x: 1, y: 1 }]);
+    expect(onInput).toHaveBeenCalledTimes(2);
+    expect(onChange.mock.calls).toEqual([[[0, 0.5, 1, 1]]]);
+  });
+
+  it('disables its buttons while disabled', () => {
+    render(
+      <CurveField values={[0, 0, 1, 1]} min={0} max={1} step={0.01} width={200} defaults={[0, 0, 1, 1]} onChange={() => {}} disabled />,
+    );
+    for (const button of screen.getAllByRole('button')) expect(button).toBeDisabled();
   });
 });

@@ -99,7 +99,7 @@ const grid = defineInstrument({
 export function AutoControlsDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Auto controls" instruments={[grid]} defaultInstrument="Grid" />
+      <Lab title="Auto controls" instruments={[grid]} />
     </div>
   );
 }

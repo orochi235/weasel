@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { auto } from '../config/auto';
 import { f } from '../config/builder';
-import { defineInstrument } from '../instrument/defineInstrument';
+import { defaultConfigOf, defineInstrument } from '../instrument/defineInstrument';
 import type { Instrument } from '../instrument/types';
 import { LabStoreProvider, TrialIdProvider } from './context';
 import { createLabStore } from './store';
@@ -119,7 +119,7 @@ function makeAutoWrapper(trialId: string) {
   store.getState().addTrial({
     id: trialId,
     instrumentName: 'Auto',
-    config: autoInstrument.defaultConfig(),
+    config: defaultConfigOf(autoInstrument),
     state: { count: 0 },
     view: { zoom: 1, pan: { x: 0, y: 0 } },
   });

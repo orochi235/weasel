@@ -22,7 +22,7 @@ export function loadNativeModule(mod: Record<string, unknown>, title: string): L
       name: spec.name ?? storyNameFromExport(exportName),
       exportName,
       config: spec.config ?? f.schema({}),
-      initialState: spec.state ?? null,
+      initialState: spec.initialState ?? null,
       render: spec.render,
       decorators: [...(spec.decorators ?? []), ...(metaSpec.decorators ?? [])],
       layout: spec.layout ?? metaSpec.layout ?? DEFAULT_LAYOUT,

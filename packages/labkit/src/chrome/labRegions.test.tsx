@@ -13,7 +13,6 @@ import { ToolbarRegion } from './regions/ToolbarRegion';
 const Glyph = icon('ui:add');
 const bare: Instrument = {
   name: 'Bare',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 };
@@ -43,10 +42,9 @@ describe('lab-level chrome', () => {
         entries: (c) => [{ kind: 'item', key: 'a', label: c.instruments[0]?.name ?? '', run }],
       },
     };
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[contribution]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} labChrome={[contribution]} />, {
+      wrapper: withIcons,
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Recent' }), { detail: 1 });
     fireEvent.click(screen.getByRole('menuitem', { name: 'Bare' }));
     expect(run).toHaveBeenCalledOnce();
@@ -58,10 +56,9 @@ describe('lab-level chrome', () => {
       region: 'header',
       item: { icon: Glyph, label: 'Publish', onActivate: () => {} },
     };
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[contribution]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} labChrome={[contribution]} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByRole('button', { name: 'Publish' })).toBeInTheDocument();
   });
 
@@ -75,10 +72,9 @@ describe('lab-level chrome', () => {
         onActivate: (ctx) => ctx.addTrial('Bare'),
       },
     };
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[contribution]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} labChrome={[contribution]} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getAllByLabelText(/^Trial Bare/)).toHaveLength(1);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Another' }));
@@ -92,10 +88,9 @@ describe('lab-level chrome', () => {
       region: 'palette',
       item: { icon: Glyph, label: 'Measure' },
     };
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[contribution]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} labChrome={[contribution]} />, {
+      wrapper: withIcons,
+    });
     const button = screen.getByRole('button', { name: 'Measure' });
     fireEvent.click(button);
     expect(screen.getByRole('button', { name: 'Measure' })).toHaveAttribute('aria-current', 'true');
@@ -113,10 +108,9 @@ describe('lab-level chrome', () => {
         return <span>{`${ctx.trials.length} trial(s), mode ${ctx.mode}`}</span>;
       },
     };
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[contribution]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} labChrome={[contribution]} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByText('1 trial(s), mode auto')).toBeInTheDocument();
     expect(seen[0]?.activeToolId).toBeNull();
     expect(typeof seen[0]?.saveSnapshot).toBe('function');
@@ -128,10 +122,9 @@ describe('lab-level chrome', () => {
       region: 'footer',
       item: { text: 'idle' },
     };
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[contribution]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} labChrome={[contribution]} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByText('idle')).toBeInTheDocument();
   });
 
@@ -141,11 +134,9 @@ describe('lab-level chrome', () => {
       { id: 'same', region: 'header', item: { icon: Glyph, label: 'One', onActivate: () => {} } },
       { id: 'same', region: 'footer', item: { text: 'two' } },
     ];
-    expect(() =>
-      renderWithIcons(
-        <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={clash} />,
-      ),
-    ).toThrow(/duplicate contribution id "same"/);
+    expect(() => renderWithIcons(<Lab title="T" instruments={[bare]} labChrome={clash} />)).toThrow(
+      /duplicate contribution id "same"/,
+    );
   });
 
   it('keeps the lab tool slot and lab palette contributions in one namespace', async () => {
@@ -160,7 +151,6 @@ describe('lab-level chrome', () => {
         <Lab
           title="T"
           instruments={[bare]}
-          defaultInstrument="Bare"
           tools={[{ id: 'pick', label: 'Pick', icon: Glyph }]}
           labChrome={[clash]}
         />,
@@ -178,7 +168,7 @@ describe('lab sidebar region', () => {
 
   it('renders a section beside the workspace', async () => {
     const { container } = await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[tree]} />,
+      <Lab title="T" instruments={[bare]} labChrome={[tree]} />,
       { wrapper: withIcons },
     );
     expect(screen.getByText('story list')).toBeInTheDocument();
@@ -187,19 +177,17 @@ describe('lab sidebar region', () => {
   });
 
   it('folds a section', async () => {
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[tree]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} labChrome={[tree]} />, {
+      wrapper: withIcons,
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Stories' }));
     expect(screen.queryByText('story list')).toBeNull();
   });
 
   it('offers no tear-out at lab level', async () => {
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[tree]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} labChrome={[tree]} />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByRole('button', { name: 'Undock Stories' })).toBeNull();
   });
 
@@ -213,19 +201,17 @@ describe('lab sidebar region', () => {
         return <p>probe</p>;
       },
     };
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[probe]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} labChrome={[probe]} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByText('probe')).toBeInTheDocument();
     expect(seen[0]?.trials).toHaveLength(1);
   });
 
   it('adds no strip to a lab without sidebar chrome', async () => {
-    const { container } = await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab title="T" instruments={[bare]} />, {
+      wrapper: withIcons,
+    });
     expect(container.querySelector('.lk-lab__panes')).toBeNull();
   });
 });

@@ -264,7 +264,6 @@ export function GardenLab() {
   return (
     <Lab
       instruments={[Garden]}
-      defaultInstrument="Garden"
       storageKey="garden"
     />
   );
@@ -328,7 +327,6 @@ By default, the trial snapshots state on `'state.change'`. To make a non-state o
 ```tsx
 const Editor = defineInstrument<{ items: Item[] }, {}>({
   name: "Editor",
-  defaultConfig: () => ({}),
   initialState: () => ({ items: [] }),
   render: (ctx) => (
     <button
@@ -527,7 +525,7 @@ const chrome: TrialContribution[] = [
   },
 ];
 
-<Lab chrome={chrome} suppress={["fps"]} instruments={[…]} defaultInstrument="…" />;
+<Lab chrome={chrome} suppress={["fps"]} instruments={[…]} />;
 ```
 
 Groups sort by first appearance and items sort within a group by declaration

@@ -67,7 +67,7 @@ function CaptureLab() {
 
 async function mountTwoTrials(): Promise<[string, string]> {
   await renderSettled(
-    <Lab instruments={[subject]} defaultInstrument="Subject">
+    <Lab instruments={[subject]}>
       <CaptureLab />
     </Lab>,
     { wrapper: withIcons },

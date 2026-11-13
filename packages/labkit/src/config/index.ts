@@ -7,6 +7,7 @@ export {
   BaseNode,
   BooleanNode,
   ColorNode,
+  CurveNode,
   CustomNode,
   EnumNode,
   f,
@@ -23,7 +24,6 @@ export {
   ValueNode,
 } from './builder';
 export type { Fields, FieldValues, Variants, VariantValues } from './compound';
-export { fromConfigFields } from './fromConfigField';
 export { configFromPrefs } from './fromPrefs';
 export type { LabOver, OverAccess } from './over';
 export {

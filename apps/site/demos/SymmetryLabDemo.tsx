@@ -196,7 +196,7 @@ const symmetryInstrument = defineInstrument<State, Config>({
 export function SymmetryLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Symmetry" instruments={[symmetryInstrument]} defaultInstrument="Symmetry" />
+      <Lab title="Symmetry" instruments={[symmetryInstrument]} />
     </div>
   );
 }

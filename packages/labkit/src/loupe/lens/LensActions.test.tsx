@@ -26,7 +26,6 @@ beforeAll(() => {
 
 const Story = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Story',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <input aria-label="Story text" />,
 });
@@ -57,7 +56,6 @@ async function mount(overrides?: BindingOverrides): Promise<HTMLElement> {
   const { container } = await renderSettled(
     <Lab
       instruments={[Story]}
-      defaultInstrument="Story"
       labChrome={[
         {
           id: 'loupe',

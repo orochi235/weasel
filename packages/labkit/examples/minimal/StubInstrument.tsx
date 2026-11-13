@@ -4,6 +4,7 @@ import { createGridLayer } from '@weasel-js/guides';
 import { useMemo } from 'react';
 import {
   defineInstrument,
+  f,
   type RenderContext,
   type SceneTrialState,
   TrialSceneCanvas,
@@ -65,10 +66,7 @@ function Body({ ctx }: { ctx: RenderContext<StubState, StubConfig> }) {
 
 export const StubInstrument = defineInstrument<StubState, StubConfig>({
   name: 'Stub',
-  defaultConfig: () => ({ showGrid: true }),
+  config: f.schema({ showGrid: f.boolean(true) }),
   initialState: () => ({ scene: null }),
-  configSchema: () => [
-    { key: 'showGrid', label: 'Show grid', type: 'checkbox', default: true },
-  ],
   render: (ctx) => <Body ctx={ctx} />,
 });

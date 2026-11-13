@@ -21,7 +21,7 @@ const stories = loadNativeModule(
     default: meta({ title: 'Kit/Button' }),
     Primary: story({
       config: f.schema({ label: f.string('Save'), disabled: f.boolean(false) }),
-      state: () => ({ n: 0 }),
+      initialState: () => ({ n: 0 }),
       render: ({ config, state, setState }) => (
         <button type="button" disabled={config.disabled} onClick={() => setState((s) => ({ n: s.n + 1 }))}>
           {`${config.label}:${state.n}`}

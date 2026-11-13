@@ -21,7 +21,6 @@ const Gridded = defineInstrument({
 
 const Bare = defineInstrument({
   name: 'Bare',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 });
@@ -31,12 +30,9 @@ const toggle = () => screen.getByRole('button', { name: 'Trial settings', hidden
 
 describe('a floating trial sidebar', () => {
   it('lays no sidebar pane out beside the body, and offers a closed toggle in the title bar', async () => {
-    await renderSettled(
-      <Lab instruments={[Gridded]} defaultInstrument="Gridded" sidebar="float" />,
-      {
-        wrapper: withIcons,
-      },
-    );
+    await renderSettled(<Lab instruments={[Gridded]} sidebar="float" />, {
+      wrapper: withIcons,
+    });
     expect(document.querySelector('.lk-trial__sidebar')).toBeNull();
     expect(toggle().closest('.lk-trial__titlebar')).not.toBeNull();
     expect(toggle()).toHaveAttribute('aria-expanded', 'false');
@@ -44,12 +40,9 @@ describe('a floating trial sidebar', () => {
   });
 
   it('opens the sections in a dialog that writes the trial, and closes on Escape', async () => {
-    await renderSettled(
-      <Lab instruments={[Gridded]} defaultInstrument="Gridded" sidebar="float" />,
-      {
-        wrapper: withIcons,
-      },
-    );
+    await renderSettled(<Lab instruments={[Gridded]} sidebar="float" />, {
+      wrapper: withIcons,
+    });
     fireEvent.click(toggle());
     const dialog = screen.getByRole('dialog', { name: 'Gridded settings' });
     expect(toggle()).toHaveAttribute('aria-expanded', 'true');
@@ -64,12 +57,9 @@ describe('a floating trial sidebar', () => {
   });
 
   it('closes on a press outside it, and the toggle closes what it opened', async () => {
-    await renderSettled(
-      <Lab instruments={[Gridded]} defaultInstrument="Gridded" sidebar="float" />,
-      {
-        wrapper: withIcons,
-      },
-    );
+    await renderSettled(<Lab instruments={[Gridded]} sidebar="float" />, {
+      wrapper: withIcons,
+    });
     const user = userEvent.setup();
     await user.click(toggle());
     expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -85,29 +75,21 @@ describe('a floating trial sidebar', () => {
   });
 
   it('offers no toggle to a trial with no sections, and none once suppressed', async () => {
-    const { unmount } = await renderSettled(
-      <Lab instruments={[Bare]} defaultInstrument="Bare" sidebar="float" />,
-      { wrapper: withIcons },
-    );
+    const { unmount } = await renderSettled(<Lab instruments={[Bare]} sidebar="float" />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByRole('button', { name: 'Trial settings' })).toBeNull();
     unmount();
-    await renderSettled(
-      <Lab
-        instruments={[Gridded]}
-        defaultInstrument="Gridded"
-        sidebar="float"
-        suppress={['panel']}
-      />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab instruments={[Gridded]} sidebar="float" suppress={['panel']} />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByRole('button', { name: 'Trial settings' })).toBeNull();
   });
 
   it('docks the sidebar by default, with no toggle, and suppressing the toggle there is no error', async () => {
-    await renderSettled(
-      <Lab instruments={[Gridded]} defaultInstrument="Gridded" suppress={['panel']} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab instruments={[Gridded]} suppress={['panel']} />, {
+      wrapper: withIcons,
+    });
     expect(document.querySelector('.lk-trial__sidebar')).not.toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Trial settings' })).toBeNull();
@@ -120,7 +102,7 @@ describe('a floating trial sidebar', () => {
       item: { title: 'Notes', body: <p data-testid="notes-body">jot</p> },
     };
     const { container } = await renderSettled(
-      <Lab instruments={[Gridded]} defaultInstrument="Gridded" sidebar="float" chrome={[notes]} />,
+      <Lab instruments={[Gridded]} sidebar="float" chrome={[notes]} />,
       { wrapper: withIcons },
     );
     const user = userEvent.setup();

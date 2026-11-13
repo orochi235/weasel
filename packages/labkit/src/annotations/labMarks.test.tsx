@@ -42,7 +42,6 @@ function theLab(): LabContextValue {
 
 const annotating = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Annotating',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <Pane />,
   // Undo stays only while the marks need it.
@@ -71,7 +70,7 @@ describe("a lab's Marks switch", () => {
 
   it('shows marks by default', async () => {
     await renderSettled(
-      <Lab instruments={[annotating]} defaultInstrument="Annotating">
+      <Lab instruments={[annotating]}>
         <CaptureLab />
       </Lab>,
       { wrapper: withIcons },
@@ -82,7 +81,7 @@ describe("a lab's Marks switch", () => {
 
   it('starts hidden under marks={false}, keeping the marks and the api, and shows them when flipped', async () => {
     await renderSettled(
-      <Lab instruments={[annotating]} defaultInstrument="Annotating" marks={false}>
+      <Lab instruments={[annotating]} marks={false}>
         <CaptureLab />
       </Lab>,
       { wrapper: withIcons },
@@ -108,7 +107,6 @@ describe("a lab's Marks switch", () => {
     const tree = (held: boolean) => (
       <Lab
         instruments={[annotating]}
-        defaultInstrument="Annotating"
         marks={false}
         storage={createMemoryAdapter(backing)}
         storageKey="hold-test"
@@ -133,7 +131,6 @@ describe("a lab's Marks switch", () => {
       renderSettled(
         <Lab
           instruments={[annotating]}
-          defaultInstrument="Annotating"
           marks={false}
           storage={createMemoryAdapter(backing)}
           storageKey="marks-test"

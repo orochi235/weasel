@@ -88,7 +88,7 @@ const envelopeInstrument = defineInstrument<State, Config>({
 export function EnvelopeLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Envelope mesh" instruments={[envelopeInstrument]} defaultInstrument="Envelope" />
+      <Lab title="Envelope mesh" instruments={[envelopeInstrument]} />
     </div>
   );
 }

@@ -6,6 +6,6 @@ export const Grouped = story({
     label: f.string('clicks'),
     grid: f.group({ on: f.boolean(true), mode: f.enum('a', ['a', 'b']) }).label('Grid'),
   }),
-  state: () => ({ n: 0 }),
+  initialState: () => ({ n: 0 }),
   render: ({ config, state }) => `${config.label}${config.grid.on}${config.grid.mode}${state.n}`,
 });

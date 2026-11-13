@@ -65,7 +65,6 @@ let loads = 0;
 let gate: Promise<void> = Promise.resolve();
 const selfStoring = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'SelfStoring',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <Pane />,
   annotations: {
@@ -86,12 +85,7 @@ const selfStoring = defineInstrument<Record<string, never>, Record<string, never
 async function mount(backing: Map<string, unknown>, which: InstrumentList[number] = inspector) {
   api = null;
   const view = await renderSettled(
-    <Lab
-      instruments={[which]}
-      defaultInstrument={which.name}
-      storage={createMemoryAdapter(backing)}
-      storageKey="persist-test"
-    >
+    <Lab instruments={[which]} storage={createMemoryAdapter(backing)} storageKey="persist-test">
       <CaptureLab />
     </Lab>,
     { wrapper: withIcons },
@@ -212,7 +206,6 @@ describe('a trial that persists its marks', () => {
     await renderSettled(
       <Lab
         instruments={[selfStoring]}
-        defaultInstrument="SelfStoring"
         storage={createMemoryAdapter(backing)}
         storageKey="persist-test"
       >

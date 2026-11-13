@@ -18,7 +18,6 @@ const cells = Array.from({ length: COUNT }, () => ({ current: null as HTMLDivEle
 
 const Grid = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Grid',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => (
     <div className="lk-many-lab-grid">
@@ -41,7 +40,7 @@ test(`${COUNT} targets mounted in one commit all take marks`, async () => {
   try {
     renderWithIcons(
       <div className="lk-many-lab-host">
-        <Lab instruments={[Grid]} defaultInstrument="Grid" />
+        <Lab instruments={[Grid]} />
       </div>,
     );
     await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
@@ -70,7 +69,6 @@ function Targets() {
 // Two targets stacked in a window one target tall: scrolled by one, the lower sits where the upper was.
 const Stacked = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Stacked',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => (
     <>
@@ -108,7 +106,7 @@ const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
 test('a stroke begun in the frame a pane scrolls lands on the target now under it', async () => {
   renderWithIcons(
     <div className="lk-many-lab-host">
-      <Lab instruments={[Stacked]} defaultInstrument="Stacked" />
+      <Lab instruments={[Stacked]} />
     </div>,
   );
   await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));

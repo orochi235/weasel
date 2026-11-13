@@ -14,9 +14,7 @@ interface DropState {
 
 const testInstrument = defineInstrument<DropState, Record<string, never>>({
   name: 'TestDrop',
-  defaultConfig: () => ({}),
   initialState: () => ({ items: [] }),
-  configSchema: () => [],
   render: () => null,
   canvas: {
     initialView: { zoom: 1, pan: { x: 0, y: 0 } },
@@ -55,9 +53,7 @@ const centredInstrument = defineInstrument<DropState, Record<string, never>>({
 
 async function renderLab(probe?: (state: DropState) => void, instrument = testInstrument) {
   return renderSettled(
-    <Lab instruments={[instrument]} defaultInstrument={instrument.name}>
-      {probe ? <StateProbe onState={probe} /> : null}
-    </Lab>,
+    <Lab instruments={[instrument]}>{probe ? <StateProbe onState={probe} /> : null}</Lab>,
     { wrapper: withIcons },
   );
 }

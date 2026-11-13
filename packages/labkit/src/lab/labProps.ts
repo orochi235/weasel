@@ -26,15 +26,15 @@ export interface LabBaseProps {
    *  trials: `children` are its body, and a history the body hands over with
    *  `useTrialHistory` gets the lab's Undo and Redo and their keys. */
   instruments?: InstrumentList;
-  /** The instrument a lab with no trials opens. Default the first of `instruments`. */
-  defaultInstrument?: string;
-  /** The instruments a lab with no trials opens, a trial of each, in order.
-   *  Default `[defaultInstrument]`. */
+  /** The instruments a lab with no trials opens, a trial of each, in order. Default: the first of
+   *  `instruments`. A presented lab whose `seed` names no instrument opens the first of these. */
   opening?: readonly string[];
   /** The lab's own clock: one time that every trial whose instrument declares
    *  `clock: 'lab'` plays on, and that `useTrialClock` falls back to outside
    *  any trial. A stored lab keeps where it stands. Read once, at mount. */
   clock?: ClockCapability;
+  /** The color mode the lab opens in: `'light'`, `'dark'`, or `'auto'` to follow the system. Default `'auto'`; a
+   *  stored lab keeps the mode it was last switched to over this. Read once, at mount. */
   mode?: LabMode;
   /** How much room the lab's chrome takes. Default `'comfortable'`; a lab whose
    *  window is the whole app, rather than a panel beside one, reads better at
@@ -54,6 +54,7 @@ export interface LabBaseProps {
    * Ignored unless the resolved mode is dark.
    */
   nebula?: ColorList;
+  /** The lab's name, in its header. */
   title?: string;
   /** Set as `document.title` while the lab is mounted. */
   documentTitle?: string;
@@ -123,7 +124,7 @@ export interface LabBaseProps {
   configRules?: readonly ConfigRule[];
   /** Control overrides and app-defined kinds for every trial's settings panel.
    *  Keys are config paths (checked first) or leaf kinds. Memoize or hoist. */
-  controls?: Record<string, ControlRenderer>;
+  renderers?: Record<string, ControlRenderer>;
   /** The values of the schemas instruments' configs are drawn over (`f.schema(nodes, { over })`), and
    *  their writer: the app's, which its own surfaces for that schema read too. Omitted, the lab keeps
    *  them in memory, shared by every trial. */

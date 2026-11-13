@@ -37,7 +37,7 @@ function makeInstrument(name: string, n: number, delay: number) {
 describe('a trial whose instrument declares a job', () => {
   it('shows progress in the trial chrome', async () => {
     const fast = makeInstrument('fast', 3, 1);
-    renderWithIcons(<Lab instruments={[fast]} defaultInstrument="fast" />);
+    renderWithIcons(<Lab instruments={[fast]} />);
     const bar = await waitFor(() => screen.getByRole('progressbar', { name: /job progress/i }));
     await waitFor(() => {
       // A job that reported a total drives a determinate bar, so the count and
@@ -50,7 +50,7 @@ describe('a trial whose instrument declares a job', () => {
 
   it('offers a cancel control while running, and drops it once cancelled', async () => {
     const slow = makeInstrument('slow', 40, 20);
-    renderWithIcons(<Lab instruments={[slow]} defaultInstrument="slow" />);
+    renderWithIcons(<Lab instruments={[slow]} />);
     const cancel = await waitFor(() => screen.getByRole('button', { name: /cancel/i }));
     await userEvent.click(cancel);
     await waitFor(() => {
@@ -65,7 +65,7 @@ describe('a trial whose instrument declares a job', () => {
       initialState: () => ({ items: [] }),
       render: () => null,
     });
-    renderWithIcons(<Lab instruments={[plain]} defaultInstrument="plain" />);
+    renderWithIcons(<Lab instruments={[plain]} />);
     await waitFor(() => {
       expect(document.querySelector('.lk-trial')).toBeInTheDocument();
     });

@@ -67,7 +67,6 @@ function Mark() {
 
 const Story = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Story',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => (
     <div className="lk-lens-test-floor" onWheel={(e) => wheels.push(e.deltaY)}>
@@ -110,7 +109,6 @@ async function mount(props: Partial<LensOverlayProps<string>> = {}): Promise<HTM
     <div className="lk-lens-test-host">
       <Lab
         instruments={[Story]}
-        defaultInstrument="Story"
         labChrome={[
           {
             id: 'loupe',

@@ -2005,3 +2005,16 @@ Calls the lanes made without a ruling:
   before, it drew a static title. labkit's sidebar sections pass `collapsible` so theirs stay static (2026-11-12).
 - The schema editor's inline `PrefsDialog` preview keeps a do-nothing `onOpenChange`, so the preview still draws
   the close button a real one has (2026-11-12).
+
+## Audit round twenty-one (2026-11-12): the developer tools
+
+- `<Lab defaultInstrument>` is folded into `opening`, which already defaulted to it; a presented lab with no seed
+  instrument opens `opening[0]` (2026-11-12).
+- A boolean leaf's switch is `.switch()`, named for the control it sets, and boolean leaves have no `.toggle()`;
+  the `toggle` boolean control draws as a checkbox in a lab, so no builder method asks for it (2026-11-12).
+- `f.string().textarea()` and `f.enum().menu()` are the builder names for those controls, after the control
+  values they set (2026-11-12).
+- `f.curve`'s y range defaults to 0 to 1 and its step to 0.01; its row is a block row across the panel's width,
+  label above, with no label beside it (2026-11-12).
+- A disabled `CurveField` dims its plot and buttons the way a disabled `Button` does (half opacity and
+  `--wzl-disabled-filter`) and ignores the pointer (2026-11-12).

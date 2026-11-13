@@ -1,19 +1,18 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { f } from '../config/builder';
 import type { ConfigOf } from '../config/types';
-import { defineInstrument } from './defineInstrument';
+import { defaultConfigOf, defineInstrument } from './defineInstrument';
 import type { Instrument } from './types';
 
 describe('defineInstrument', () => {
-  it('returns a legacy spec by reference', () => {
+  it('returns the spec by reference', () => {
     const spec: Instrument<{ n: number }, { x: number }> = {
       name: 'Test',
       defaultConfig: () => ({ x: 1 }),
       initialState: (c) => ({ n: c.x }),
       render: () => null,
     };
-    const result = defineInstrument(spec);
-    expect(result).toBe(spec);
+    expect(defineInstrument(spec)).toBe(spec);
   });
 
   it('infers TS and TC from the literal', () => {
@@ -23,18 +22,8 @@ describe('defineInstrument', () => {
       initialState: (c) => ({ count: c.flag ? 1 : 0 }),
       render: () => null,
     });
-    expectTypeOf(inst.defaultConfig()).toEqualTypeOf<{ flag: boolean }>();
+    expectTypeOf(defaultConfigOf(inst)).toEqualTypeOf<{ flag: boolean }>();
     expectTypeOf(inst.initialState({ flag: true })).toEqualTypeOf<{ count: number }>();
-  });
-
-  it('synthesizes defaultConfig from a builder schema', () => {
-    const inst = defineInstrument({
-      name: 'Schema',
-      config: f.schema({ showGrid: f.boolean(true), cellSize: f.number(20) }),
-      initialState: () => ({}),
-      render: () => null,
-    });
-    expect(inst.defaultConfig()).toEqual({ showGrid: true, cellSize: 20 });
   });
 
   it('infers TC from the schema', () => {
@@ -45,13 +34,25 @@ describe('defineInstrument', () => {
       initialState: () => ({ n: 0 }),
       render: () => null,
     });
-    expectTypeOf(inst.defaultConfig()).toEqualTypeOf<{
+    expectTypeOf(defaultConfigOf(inst)).toEqualTypeOf<{
       showGrid: boolean;
       mode: 'fast' | 'slow';
     }>();
   });
+});
 
-  it('leaves an explicit defaultConfig alone even alongside a schema', () => {
+describe('defaultConfigOf', () => {
+  it("reads a builder schema's defaults", () => {
+    const inst = defineInstrument({
+      name: 'Schema',
+      config: f.schema({ showGrid: f.boolean(true), cellSize: f.number(20) }),
+      initialState: () => ({}),
+      render: () => null,
+    });
+    expect(defaultConfigOf(inst)).toEqual({ showGrid: true, cellSize: 20 });
+  });
+
+  it('prefers an explicit defaultConfig to the schema beside it', () => {
     const inst = defineInstrument({
       name: 'Both',
       config: f.schema({ a: f.number(1) }),
@@ -59,6 +60,11 @@ describe('defineInstrument', () => {
       initialState: () => ({}),
       render: () => null,
     });
-    expect(inst.defaultConfig()).toEqual({ a: 99 });
+    expect(defaultConfigOf(inst)).toEqual({ a: 99 });
+  });
+
+  it('is an empty config for an instrument declaring neither', () => {
+    const inst = defineInstrument({ name: 'Bare', initialState: () => ({}), render: () => null });
+    expect(defaultConfigOf(inst)).toEqual({});
   });
 });

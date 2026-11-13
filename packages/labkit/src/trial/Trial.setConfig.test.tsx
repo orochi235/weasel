@@ -34,7 +34,7 @@ const counting = (snapshotOn: string[]) =>
   });
 
 const mount = (snapshotOn: string[] = ['config.change']) =>
-  renderSettled(<Lab instruments={[counting(snapshotOn)]} defaultInstrument="Counting" />, {
+  renderSettled(<Lab instruments={[counting(snapshotOn)]} />, {
     wrapper: withIcons,
   });
 const changes = () => screen.getByLabelText('changes').textContent;
@@ -77,7 +77,7 @@ describe('a trial config write', () => {
 
   it('records a settings change by default', async () => {
     await renderSettled(
-      <Lab instruments={[{ ...counting([]), undo: undefined }]} defaultInstrument="Counting" />,
+      <Lab instruments={[{ ...counting([]), undo: undefined }]} opening={['Counting']} />,
       { wrapper: withIcons },
     );
     fireEvent.click(screen.getByLabelText('Show grid'));
@@ -123,10 +123,10 @@ describe('a trial config write', () => {
     await renderSettled(
       <>
         <div data-testid="lab-a">
-          <Lab instruments={[counting(['config.change'])]} defaultInstrument="Counting" />
+          <Lab instruments={[counting(['config.change'])]} />
         </div>
         <div data-testid="lab-b">
-          <Lab instruments={[counting(['config.change'])]} defaultInstrument="Counting" />
+          <Lab instruments={[counting(['config.change'])]} />
         </div>
       </>,
       { wrapper: withIcons },
@@ -170,7 +170,7 @@ describe("a trial's other writes", () => {
         </>
       ),
     };
-    await renderSettled(<Lab instruments={[withKnob]} defaultInstrument="Counting" />, {
+    await renderSettled(<Lab instruments={[withKnob]} />, {
       wrapper: withIcons,
     });
     click('knob');

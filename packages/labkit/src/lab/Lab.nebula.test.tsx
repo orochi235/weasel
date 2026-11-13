@@ -8,7 +8,6 @@ import { Lab } from './Lab';
 
 const bare: Instrument = {
   name: 'Bare',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 };
@@ -21,12 +20,7 @@ const backdrop = (container: HTMLElement) =>
 describe('<Lab nebula>', () => {
   it('draws one blob per literal color', async () => {
     const { container } = await renderSettled(
-      <Lab
-        instruments={[bare]}
-        defaultInstrument="Bare"
-        mode="dark"
-        nebula={['#ff0000', '#00ff00']}
-      />,
+      <Lab instruments={[bare]} mode="dark" nebula={['#ff0000', '#00ff00']} />,
       { wrapper: withIcons },
     );
     expect(backdrop(container).match(/radial-gradient/g)).toHaveLength(3);
@@ -34,7 +28,7 @@ describe('<Lab nebula>', () => {
 
   it('resolves a theme ramp against the lab’s theme', async () => {
     const { container } = await renderSettled(
-      <Lab instruments={[bare]} defaultInstrument="Bare" mode="dark" nebula={{ ramp: 'swatch' }} />,
+      <Lab instruments={[bare]} mode="dark" nebula={{ ramp: 'swatch' }} />,
       { wrapper: withIcons },
     );
     const sky = resolveTheme(interstellarTheme, { mode: 'dark' })['--wzl-swatch-sky'];
@@ -43,12 +37,7 @@ describe('<Lab nebula>', () => {
 
   it('resolves a color source against the lab’s theme', async () => {
     const { container } = await renderSettled(
-      <Lab
-        instruments={[bare]}
-        defaultInstrument="Bare"
-        mode="dark"
-        nebula={[{ ref: 'swatch', index: 2 }]}
-      />,
+      <Lab instruments={[bare]} mode="dark" nebula={[{ ref: 'swatch', index: 2 }]} />,
       { wrapper: withIcons },
     );
     const ctx = {

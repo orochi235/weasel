@@ -124,7 +124,7 @@ const measureInstrument = defineInstrument<State, Config>({
 export function MeasureLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Measure, then transform" instruments={[measureInstrument]} defaultInstrument="Measure" />
+      <Lab title="Measure, then transform" instruments={[measureInstrument]} />
     </div>
   );
 }

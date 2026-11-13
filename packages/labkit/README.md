@@ -72,7 +72,6 @@ export function App() {
   return (
     <Lab
       instruments={[Histogram]}
-      defaultInstrument="Histogram"
       title="Histogram"
       storageKey="histogram-lab"
     />
@@ -475,7 +474,7 @@ outside closes it, and the body keeps the trial's whole box. For a lab of many
 small trials:
 
 ```tsx
-<Lab sidebar="float" hide={['undo', 'redo']} instruments={instruments} defaultInstrument="panel" />
+<Lab sidebar="float" hide={['undo', 'redo']} instruments={instruments} opening={['panel']} />
 ```
 
 `header={false}` drops the lab's own header bar — title, add-trial, zoom, and

@@ -1,4 +1,4 @@
-import { Lab } from '@weasel-js/labkit';
+import { defaultConfigOf, Lab } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
@@ -19,7 +19,7 @@ const [counter] = loadNativeModule(
     default: meta({ title: 'Test/Counter' }),
     Counter: story({
       config: f.schema({ label: f.string('clicks') }),
-      state: (config) => ({ n: config.label.length }),
+      initialState: (config) => ({ n: config.label.length }),
       render: ({ config, state, setState, setConfig, globals }) => (
         <>
           <button type="button" onClick={() => setState({ n: state.n + 1 })}>
@@ -144,7 +144,7 @@ describe('StoryTrial', () => {
     const instrument = documentInstrument({ entry, loaded: { kind: 'story', story: local! }, setup: {} });
     renderWithIcons(
       <StoryGlobalsContext.Provider value={{}}>
-        <Lab instruments={[instrument]} defaultInstrument={entry.id} />
+        <Lab instruments={[instrument]} />
       </StoryGlobalsContext.Provider>,
     );
     const button = await screen.findByRole('button', { name: 'off' });
@@ -162,14 +162,14 @@ describe('StoryTrial', () => {
     const [seeded] = loadNativeModule(
       {
         default: meta({ title: 'Test/Seeded' }),
-        Seeded: story({ config: f.schema({ n: f.number(1) }), state: (config) => seen(config), render: () => null }),
+        Seeded: story({ config: f.schema({ n: f.number(1) }), initialState: (config) => seen(config), render: () => null }),
       },
       'Test/Seeded',
     );
     const entry = { id: 'test-seeded--seeded', title: 'Test/Seeded', name: 'Seeded', exportName: 'Seeded', file: '/seeded.stories.tsx' };
     const globals = { mode: { label: 'Mode', default: 'light', options: [{ value: 'light', label: 'Light' }] } };
     const instrument = documentInstrument({ entry, loaded: { kind: 'story', story: seeded! }, setup: {}, globals });
-    instrument.initialState(instrument.defaultConfig());
+    instrument.initialState(defaultConfigOf(instrument));
     expect(seen).toHaveBeenCalledWith({ n: 1 });
   });
 

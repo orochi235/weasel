@@ -85,7 +85,7 @@ const spacingInstrument = defineInstrument<State, Config>({
 export function SpacingHintsLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Spacing hints" instruments={[spacingInstrument]} defaultInstrument="Spacing hints" />
+      <Lab title="Spacing hints" instruments={[spacingInstrument]} />
     </div>
   );
 }

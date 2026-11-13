@@ -34,7 +34,6 @@ function marks(): AnnotationsApi {
 
 const annotating = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Annotating',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: (ctx) => <Pane tool={ctx.trial.activeToolId} />,
   annotations: {
@@ -49,14 +48,13 @@ function PlainPane() {
 
 const plain = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Plain',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <PlainPane />,
 });
 
 describe('an instrument that declares annotations', () => {
   it('gets a drawing palette', async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+    await renderSettled(<Lab instruments={[annotating]} />, {
       wrapper: withIcons,
     });
     for (const label of [
@@ -82,7 +80,7 @@ describe('an instrument that declares annotations', () => {
         tools: ['pointer', 'select'],
       },
     });
-    await renderSettled(<Lab instruments={[narrow]} defaultInstrument="Narrow" />, {
+    await renderSettled(<Lab instruments={[narrow]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByRole('button', { name: 'Interact' })).toBeTruthy();
@@ -92,14 +90,14 @@ describe('an instrument that declares annotations', () => {
   });
 
   it('puts the store in reach of its own render', async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+    await renderSettled(<Lab instruments={[annotating]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByTestId('pane').dataset.marks).toBe('0');
   });
 
   it('starts in interact, so a first click reaches the instrument', async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+    await renderSettled(<Lab instruments={[annotating]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByRole('button', { name: 'Interact' }).getAttribute('aria-current')).toBe(
@@ -123,7 +121,7 @@ function CaptureLab() {
 
 describe('the annotation tool', () => {
   it("is offered in the lab's rail, not in a trial's", async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+    await renderSettled(<Lab instruments={[annotating]} />, {
       wrapper: withIcons,
     });
     expect(screen.getAllByRole('button', { name: 'Rectangle' })).toHaveLength(1);
@@ -136,7 +134,7 @@ describe('the annotation tool', () => {
     // Rectangle once has to arm it wherever the next mark is drawn.
     labRef = null;
     await renderSettled(
-      <Lab instruments={[annotating]} defaultInstrument="Annotating">
+      <Lab instruments={[annotating]}>
         <CaptureLab />
       </Lab>,
       { wrapper: withIcons },
@@ -157,7 +155,7 @@ describe('the trial undo chrome over marks', () => {
   it('gets undo and redo without the instrument declaring `undo`', async () => {
     // Weasel history is the authority for marks, so the capability that
     // creates them is what earns the buttons.
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+    await renderSettled(<Lab instruments={[annotating]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByRole('button', { name: 'Undo' })).toBeTruthy();
@@ -165,7 +163,7 @@ describe('the trial undo chrome over marks', () => {
   });
 
   it('takes back a mark, and puts it back', async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+    await renderSettled(<Lab instruments={[annotating]} />, {
       wrapper: withIcons,
     });
     const undo = screen.getByRole('button', { name: 'Undo' });
@@ -188,7 +186,7 @@ describe('the trial undo chrome over marks', () => {
   });
 
   it('lists the marks in a sidebar panel', async () => {
-    await renderSettled(<Lab instruments={[annotating]} defaultInstrument="Annotating" />, {
+    await renderSettled(<Lab instruments={[annotating]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByText('Marks')).toBeTruthy();
@@ -214,7 +212,6 @@ describe('targets that follow the trial state', () => {
     // pass as the change sees the one before; the trial tells it to read again.
     const growing = defineInstrument<{ n: number }, Record<string, never>>({
       name: 'Growing',
-      defaultConfig: () => ({}),
       initialState: () => ({ n: 1 }),
       render: (ctx) => (
         <GrowingPane n={ctx.state.n} grow={() => ctx.setState((s) => ({ n: s.n + 1 }))} />
@@ -228,7 +225,7 @@ describe('targets that follow the trial state', () => {
           })),
       },
     });
-    await renderSettled(<Lab instruments={[growing]} defaultInstrument="Growing" />, {
+    await renderSettled(<Lab instruments={[growing]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByTestId('growing').dataset.targets).toBe('1');
@@ -265,7 +262,7 @@ describe("the capability's selection mode", () => {
   };
 
   it('keeps the selection to one target by default', async () => {
-    await renderSettled(<Lab instruments={[twoTargets()]} defaultInstrument="Two" />, {
+    await renderSettled(<Lab instruments={[twoTargets()]} />, {
       wrapper: withIcons,
     });
     const [onA] = await selectBoth();
@@ -273,7 +270,7 @@ describe("the capability's selection mode", () => {
   });
 
   it("reaches the trial's store when the instrument asks for per-target", async () => {
-    await renderSettled(<Lab instruments={[twoTargets('per-target')]} defaultInstrument="Two" />, {
+    await renderSettled(<Lab instruments={[twoTargets('per-target')]} />, {
       wrapper: withIcons,
     });
     expect(marks().selection()).toEqual([]);
@@ -284,7 +281,7 @@ describe("the capability's selection mode", () => {
 
 describe('an instrument that declares none', () => {
   it('gets no store and no palette', async () => {
-    await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />, {
+    await renderSettled(<Lab instruments={[plain]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByTestId('plain').dataset.hasApi).toBe('false');

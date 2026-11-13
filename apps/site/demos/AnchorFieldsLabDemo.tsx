@@ -89,7 +89,7 @@ const fieldsInstrument = defineInstrument<State, Config>({
 export function AnchorFieldsLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Anchor numbers" instruments={[fieldsInstrument]} defaultInstrument="Anchor fields" />
+      <Lab title="Anchor numbers" instruments={[fieldsInstrument]} />
     </div>
   );
 }

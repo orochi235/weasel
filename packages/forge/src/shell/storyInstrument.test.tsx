@@ -1,4 +1,4 @@
-import { Lab, LabContext, type LabContextValue, type InstrumentList, type RenderContext } from '@weasel-js/labkit';
+import { defaultConfigOf, Lab, LabContext, type LabContextValue, type InstrumentList, type RenderContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
@@ -45,7 +45,7 @@ describe('storyInstrument', () => {
     const instrument = storyInstrument(base);
     expect(instrument.name).toBe(entry.id);
     expect(instrument.config?.defaults()).toEqual({});
-    expect(instrument.defaultConfig()).toEqual({});
+    expect(defaultConfigOf(instrument)).toEqual({});
     expect(instrument.initialState({})).toBeNull();
     expect(instrument.stage).toBeUndefined();
   });
@@ -115,7 +115,7 @@ function labWith(
   };
   return (
     <StoryGlobalsContext.Provider value={labGlobals}>
-      <Lab instruments={[capturing]} defaultInstrument={entry.id}>
+      <Lab instruments={[capturing]}>
         {captureLab()}
       </Lab>
     </StoryGlobalsContext.Provider>
@@ -414,7 +414,7 @@ describe('FrameView', () => {
     lab = null;
     const view = await renderSettled(
       <StoryGlobalsContext.Provider value={globals}>
-        <Lab instruments={[instrument(entry), instrument(other)]} defaultInstrument={entry.id}>
+        <Lab instruments={[instrument(entry), instrument(other)]} opening={[entry.id]}>
           {captureLab()}
         </Lab>
       </StoryGlobalsContext.Provider>,
@@ -523,7 +523,7 @@ describe('FrameView with declared globals', () => {
     };
     const view = await renderSettled(
       <StoryGlobalsContext.Provider value={globals}>
-        <Lab instruments={[capturing]} defaultInstrument={entry.id}>
+        <Lab instruments={[capturing]}>
           {captureLab()}
         </Lab>
       </StoryGlobalsContext.Provider>,
@@ -575,7 +575,7 @@ describe('FrameView under a story registry', () => {
     lists.push(registry.instruments);
     return (
       <StoryGlobalsContext.Provider value={labGlobals}>
-        <Lab instruments={registry.instruments} defaultInstrument={story.id}>
+        <Lab instruments={registry.instruments} opening={[story.id]}>
           {captureLab()}
         </Lab>
       </StoryGlobalsContext.Provider>

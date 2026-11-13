@@ -82,7 +82,7 @@ const puppetInstrument = defineInstrument<State, Config>({
 export function PuppetLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Puppet warp" instruments={[puppetInstrument]} defaultInstrument="Puppet Warp" />
+      <Lab title="Puppet warp" instruments={[puppetInstrument]} />
     </div>
   );
 }

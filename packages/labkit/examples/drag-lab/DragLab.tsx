@@ -5,7 +5,6 @@ export function DragLab() {
   return (
     <Lab
       instruments={[GardenInstrument]}
-      defaultInstrument="Garden"
       storageKey="drag-lab"
       mode="dark"
       title="Drag Lab"

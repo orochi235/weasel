@@ -217,7 +217,7 @@ export function LabLoupeDemo() {
       <Lab
         title="Loupe"
         instruments={[drawn, written, foreign]}
-        defaultInstrument="Drawn detail"
+        opening={['Drawn detail']}
       />
     </div>
   );

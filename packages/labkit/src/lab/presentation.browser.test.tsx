@@ -22,7 +22,6 @@ afterEach(cleanup);
 
 const Painted: Instrument = {
   name: 'Painted',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   canvas: {
     layers: [
@@ -55,7 +54,7 @@ function Capture() {
 function mount(present: boolean) {
   return renderWithIcons(
     <div className="lk-present-frame">
-      <Lab instruments={[Painted]} defaultInstrument="Painted" present={present}>
+      <Lab instruments={[Painted]} present={present}>
         <Capture />
       </Lab>
     </div>,
@@ -129,12 +128,7 @@ const Timed: Instrument = { ...Painted, name: 'Timed', clock: { duration: 1000 }
 function mountTimed(frame: string, transport?: { minWidth: number }) {
   return renderWithIcons(
     <div className={frame}>
-      <Lab
-        instruments={[Timed]}
-        defaultInstrument="Timed"
-        present
-        {...(transport ? { transport } : {})}
-      >
+      <Lab instruments={[Timed]} present {...(transport ? { transport } : {})}>
         <Capture />
       </Lab>
     </div>,
@@ -192,7 +186,7 @@ test('a new trial places its view once, in the room its status strip leaves', as
   }
   const { container } = renderWithIcons(
     <div className="lk-present-frame">
-      <Lab instruments={[Centered]} defaultInstrument="Centered">
+      <Lab instruments={[Centered]}>
         <Capture />
         <Views />
       </Lab>
@@ -210,7 +204,7 @@ test('a new trial places its view once, in the room its status strip leaves', as
 test('entering refits the view to the presented box, and leaving gives the tile its own back', async () => {
   const { container } = renderWithIcons(
     <div className="lk-present-frame">
-      <Lab instruments={[Centered]} defaultInstrument="Centered">
+      <Lab instruments={[Centered]}>
         <Capture />
       </Lab>
     </div>,

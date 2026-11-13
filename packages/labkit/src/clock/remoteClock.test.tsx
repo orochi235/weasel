@@ -22,7 +22,6 @@ function Readout() {
 
 const timed: Instrument = {
   name: 'Timed',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   clock: { duration: 3000 },
   render: (ctx) => (
@@ -67,7 +66,6 @@ describe("a trial clock whose record another tab's write replaces", () => {
     await renderSettled(
       <Lab
         instruments={[timed]}
-        defaultInstrument="Timed"
         storage={createMemoryAdapter(backing)}
         storageKey="remote-clock"
       />,

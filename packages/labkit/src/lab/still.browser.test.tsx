@@ -26,7 +26,6 @@ afterEach(() => {
 
 const Timed: Instrument = {
   name: 'Timed',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   clock: { duration: 4000, rate: 1 },
   canvas: {
@@ -51,7 +50,7 @@ const Timed: Instrument = {
 function mount(props: Partial<LabProps>, instrument: Instrument = Timed) {
   return renderWithIcons(
     <div className="lk-present-frame">
-      <Lab {...({ instruments: [instrument], defaultInstrument: 'Timed', ...props } as LabProps)} />
+      <Lab {...({ instruments: [instrument], ...props } as LabProps)} />
     </div>,
   );
 }

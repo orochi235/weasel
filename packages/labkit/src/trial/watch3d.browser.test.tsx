@@ -42,7 +42,6 @@ let made = 0;
 function threeLab(kind: Kind, orbit?: Orbit): Instrument {
   return {
     name: `Three${++made}`,
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: () => <ThreeScene kind={kind} />,
     ...(orbit !== undefined ? { orbit } : {}),
@@ -52,7 +51,7 @@ function threeLab(kind: Kind, orbit?: Orbit): Instrument {
 const mount = (instrument: Instrument, mode: LabMode = 'dark') =>
   renderWithIcons(
     <div className="lk-present-frame">
-      <Lab instruments={[instrument]} defaultInstrument={instrument.name} mode={mode} />
+      <Lab instruments={[instrument]} mode={mode} />
     </div>,
   );
 
@@ -153,7 +152,6 @@ function RawGl({ depth }: { depth: boolean }) {
 function rawLab(depth: boolean): Instrument {
   return {
     name: `Raw${++made}`,
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: () => <RawGl depth={depth} />,
   } as Instrument;
@@ -225,7 +223,6 @@ describe.skipIf(!gpu || !adapter)('raw WebGPU in a trial with no `orbit`', () =>
   const gpuLab = (depth: boolean): Instrument =>
     ({
       name: `RawGpu${++made}`,
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => <RawGpu depth={depth} gpu={gpu as Gpu} />,
     }) as Instrument;

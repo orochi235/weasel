@@ -51,7 +51,6 @@ async function mount() {
   }
   const marked = defineInstrument<Record<string, never>, Record<string, never>>({
     name: 'Marked',
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: () => <Body />,
     stage: {
@@ -70,7 +69,7 @@ async function mount() {
   restore = () => {
     HTMLElement.prototype.getBoundingClientRect = original;
   };
-  const r = await renderSettled(<Lab instruments={[marked]} defaultInstrument="Marked" />, {
+  const r = await renderSettled(<Lab instruments={[marked]} />, {
     wrapper: withIcons,
   });
   return { ...r, api: () => api as AnnotationsApi };

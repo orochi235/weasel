@@ -111,7 +111,7 @@ const lengthenInstrument = defineInstrument<State, Config>({
 export function LengthenLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Lengthen" instruments={[lengthenInstrument]} defaultInstrument="Lengthen" />
+      <Lab title="Lengthen" instruments={[lengthenInstrument]} />
     </div>
   );
 }

@@ -55,7 +55,6 @@ function Body({ ctx }: { ctx: RenderContext<State, Record<string, never>> }) {
 
 const instrument = defineInstrument<State, Record<string, never>>({
   name: 'Scene',
-  defaultConfig: () => ({}),
   initialState: () => ({ scene: null }),
   undo: {},
   tools: {
@@ -69,7 +68,7 @@ const instrument = defineInstrument<State, Record<string, never>>({
 
 async function mount(which = instrument) {
   live = { scene: null as never, tools: null };
-  return renderSettled(<Lab instruments={[which]} defaultInstrument="Scene" />, {
+  return renderSettled(<Lab instruments={[which]} />, {
     wrapper: withIcons,
   });
 }

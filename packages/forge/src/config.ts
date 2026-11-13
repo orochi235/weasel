@@ -14,8 +14,10 @@ export interface ShellConfig {
   title?: string;
   /** Whether the lab offers the CSS Vars panel and its header toggle. Default true; the panel starts hidden. */
   cssVars?: boolean;
+  /** Contributions to the lab's own chrome, after the workshop's: `<Lab labChrome>`. */
   labChrome?: readonly LabContribution[];
-  controls?: Record<string, ControlRenderer>;
+  /** Rows the lab's settings panels draw for config paths or leaf kinds: `<Lab renderers>`. */
+  renderers?: Record<string, ControlRenderer>;
   /** Globals the lab's header sets for every story, each pinnable per trial. Frames apply them with `applyGlobals`. */
   globals?: GlobalDeclarations;
   /** The theme the workshop's own chrome takes at the lab's current globals, so a global can restyle the workshop

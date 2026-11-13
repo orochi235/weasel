@@ -4,7 +4,6 @@ import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { ReactNode } from 'react';
 import type { AutoReports } from '../config/autoReports';
 import type { ResolvedConfig } from '../config/types';
-import type { ConfigField } from '../controls/types';
 import type { SavedSnapshot } from '../state/types';
 
 /** A named position in a trial's chrome. Content is not a region — that is
@@ -101,20 +100,9 @@ export interface SidebarSection extends AppearanceProps {
 }
 
 /** A control acting on the view of the trial, not on the trial. */
-export interface ViewportControl<TCtx = TrialChromeContext> {
-  icon: IconSpec;
-  label: string;
-  /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
-  shortcut?: string;
-  disabled?: boolean;
-  /** Why it is disabled, read in its tooltip while it is. */
-  disabledReason?: string;
-  /** A toggle rather than a command: reads as held down while true. */
-  pressed?: boolean;
+export interface ViewportControl<TCtx = TrialChromeContext> extends CommandItem<TCtx> {
   /** Reddens on hover. For actions that discard work. */
   danger?: boolean;
-  /** Handed the trial's chrome context, as `ToolbarItem.onActivate` is. */
-  onActivate: (ctx: TCtx) => void;
 }
 
 /** A readout in the status bar. */
@@ -233,12 +221,8 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
   expanded: boolean;
   toggleExpanded: () => void;
 
-  /** The instrument's controls, resolved against the lab's rules. Always
-   *  populated: a legacy `configSchema()` is adapted into the same shape. */
+  /** The instrument's controls, resolved against the lab's rules. Empty for an instrument declaring no `config`. */
   configSchema: ResolvedConfig;
-  /** @deprecated Read `configSchema`. Empty for an instrument declaring
-   *  `config`, since a builder schema has no `ConfigField[]` form. */
-  configFields: ConfigField[];
   config: unknown;
   /** The trial's unpinned paths. `config` stays raw, so a control drawn from
    *  it sits at the value un-pinning writes back. */

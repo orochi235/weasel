@@ -85,7 +85,7 @@ const sceneInstrument = defineInstrument<State, Config>({
 export function SceneLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Scene in a lab" instruments={[sceneInstrument]} defaultInstrument="Scene" />
+      <Lab title="Scene in a lab" instruments={[sceneInstrument]} />
     </div>
   );
 }

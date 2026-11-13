@@ -86,14 +86,13 @@ describe('a lab’s actions registry', () => {
     const run = vi.fn();
     const binds = defineInstrument<Record<string, never>, Record<string, never>>({
       name: 'Binds',
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => <BindsX run={run} />,
       stage: STAGE,
     });
     const { container } = await renderSettled(
       <>
-        <Lab instruments={[binds]} defaultInstrument="Binds" />
+        <Lab instruments={[binds]} />
         <ElsewhereCanvas />
       </>,
       { wrapper: withIcons },
@@ -128,7 +127,6 @@ describe('a lab’s actions registry', () => {
     const run = vi.fn();
     const plain = defineInstrument<Record<string, never>, Record<string, never>>({
       name: 'Plain',
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => null,
     });
@@ -137,7 +135,7 @@ describe('a lab’s actions registry', () => {
       return null;
     }
     await renderSettled(
-      <Lab instruments={[plain]} defaultInstrument="Plain">
+      <Lab instruments={[plain]}>
         <Cmd />
       </Lab>,
       { wrapper: withIcons },
@@ -191,7 +189,6 @@ describe('a lab’s actions registry', () => {
   it('one zoom action, lab.zoom, lists in, out and actual size with their shortcuts', async () => {
     const staged = defineInstrument<Record<string, never>, Record<string, never>>({
       name: 'Staged',
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => null,
       stage: STAGE,
@@ -202,7 +199,7 @@ describe('a lab’s actions registry', () => {
       return null;
     }
     await renderSettled(
-      <Lab instruments={[staged]} defaultInstrument="Staged">
+      <Lab instruments={[staged]}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },

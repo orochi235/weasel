@@ -35,7 +35,7 @@ const pin = () => screen.getByRole('button', { name: /Count/ });
 
 describe('a report made in the commit that turns its path auto', () => {
   it('reads out again after the path is pinned and unpinned', async () => {
-    await renderSettled(<Lab instruments={[counted(48)]} defaultInstrument="Counted" />, {
+    await renderSettled(<Lab instruments={[counted(48)]} />, {
       wrapper: withIcons,
     });
     expect(readout()).toHaveTextContent(/^auto · 48$/);
@@ -47,7 +47,7 @@ describe('a report made in the commit that turns its path auto', () => {
   });
 
   it('withdraws a report of null, as it does undefined', async () => {
-    await renderSettled(<Lab instruments={[counted(null)]} defaultInstrument="Counted" />, {
+    await renderSettled(<Lab instruments={[counted(null)]} />, {
       wrapper: withIcons,
     });
     expect(readout()).toHaveTextContent(/^auto$/);

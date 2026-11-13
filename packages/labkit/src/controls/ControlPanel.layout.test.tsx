@@ -1,5 +1,4 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import type { PrefSection } from '@weasel-js/prefs';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
@@ -63,29 +62,15 @@ describe('<ControlPanel> packing', () => {
 
   it('gives a segmented toggle and a textarea the whole width under pairs', () => {
     const wide = resolveConfigSchema(
-      f.prefs({
-        name: '',
-        members: {
-          mode: {
-            kind: 'enum',
-            name: 'Mode',
-            description: '',
-            default: 'a',
-            options: [
-              { value: 'a', label: 'A' },
-              { value: 'b', label: 'B' },
-            ],
-            control: 'toggle',
-          },
-          notes: {
-            kind: 'string',
-            name: 'Notes',
-            description: '',
-            default: '',
-            control: 'textarea',
-          },
-          count: { kind: 'number', name: 'Count', description: '', default: 1 },
-        } as PrefSection['members'],
+      f.schema({
+        mode: f
+          .enum('a', [
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+          ])
+          .toggle(),
+        notes: f.string('').textarea(),
+        count: f.number(1),
       }),
       [],
     );
@@ -146,7 +131,7 @@ describe('<ControlPanel> pair', () => {
           .radio()
           .label('')
           .pair({ with: 'hold', label: 'Camera' }),
-        hold: f.boolean(true).toggle().label('Hold front'),
+        hold: f.boolean(true).switch().label('Hold front'),
       }),
       [],
     );

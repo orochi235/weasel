@@ -70,7 +70,7 @@ const extendInstrument = defineInstrument<State, Config>({
 export function ExtendLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Extend to next path" instruments={[extendInstrument]} defaultInstrument="Extend to next path" />
+      <Lab title="Extend to next path" instruments={[extendInstrument]} />
     </div>
   );
 }

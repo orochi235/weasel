@@ -36,7 +36,7 @@ test('a trial scrolled far out of view drops its frame, and on return reloads it
     <StoryGlobalsContext.Provider value={{}}>
       <div style={{ height: SPACER }} />
       <div style={{ width: 900, height: 600 }}>
-        <Lab instruments={[instrument]} defaultInstrument={entry.id}>
+        <Lab instruments={[instrument]}>
           <LabContext.Consumer>
             {(value) => {
               lab = value;

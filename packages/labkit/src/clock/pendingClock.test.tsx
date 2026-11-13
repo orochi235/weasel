@@ -38,7 +38,7 @@ const switched = defineInstrument({
 
 describe('a trial whose clock is on its way', () => {
   it("never resolves the focused trial's clock in its place", async () => {
-    await renderSettled(<Lab title="T" instruments={[switched]} defaultInstrument="Switched" />, {
+    await renderSettled(<Lab title="T" instruments={[switched]} />, {
       wrapper: withIcons,
     });
     const first = lab?.trials[0]?.id as string;

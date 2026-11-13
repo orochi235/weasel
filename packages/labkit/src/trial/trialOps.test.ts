@@ -293,7 +293,6 @@ describe('reorderTrials', () => {
 describe('a size-aware initial view', () => {
   const sized = {
     name: 'Sized',
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: () => null,
     canvas: {

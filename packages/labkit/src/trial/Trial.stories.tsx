@@ -9,7 +9,6 @@ const noop = () => {};
 
 const stub: Instrument = {
   name: 'Stub',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div className="lk-stub-display">stub experiment area</div>,
 };

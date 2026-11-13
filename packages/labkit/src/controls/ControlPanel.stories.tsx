@@ -7,8 +7,7 @@ import { type PrefGroup, type PrefNumberUnit, prefUnit } from '@weasel-js/prefs'
 import { compact } from '@weasel-js/quantity';
 import { PropertyRow } from '@weasel-js/ui/components/Properties';
 import { useState } from 'react';
-import type { ConfigRule } from '../config/types';
-import type { ConfigField } from './types';
+import type { ConfigRule, ConfigSchema } from '../config/types';
 
 const meta: Meta<typeof ControlPanel> = {
   title: 'labkit/Controls/ControlPanel',
@@ -19,53 +18,32 @@ export default meta;
 
 type Story = StoryObj<typeof ControlPanel>;
 
-const allFields: ConfigField[] = [
-  {
-    key: 'frequency',
-    label: 'Frequency',
-    type: 'slider',
-    min: 0.1,
-    max: 10,
-    step: 0.1,
-    default: 2,
-  },
-  {
-    key: 'amplitude',
-    label: 'Amplitude',
-    type: 'slider',
-    min: 0,
-    max: 1,
-    step: 0.05,
-    default: 0.5,
-  },
-  { key: 'showGrid', label: 'Show grid', type: 'checkbox', default: true },
-  {
-    key: 'wave',
-    label: 'Wave',
-    type: 'select',
-    default: 'sine',
-    options: [
-      { value: 'sine', label: 'Sine' },
-      { value: 'square', label: 'Square' },
-      { value: 'triangle', label: 'Triangle' },
-    ],
-  },
-  { key: 'samples', label: 'Samples', type: 'number', default: 256, min: 16, max: 4096, step: 16 },
-  { key: 'title', label: 'Title', type: 'text', default: 'My experiment', placeholder: 'Title…' },
-  { key: 'tint', label: 'Tint', type: 'color', default: '#3a86ff' },
-];
+const everyKind = f.schema({
+  frequency: f.number(2).range(0.1, 10).step(0.1),
+  amplitude: f.number(0.5).range(0, 1).step(0.05),
+  showGrid: f.boolean(true),
+  wave: f.enum('sine', [
+    { value: 'sine', label: 'Sine' },
+    { value: 'square', label: 'Square' },
+    { value: 'triangle', label: 'Triangle' },
+  ]),
+  samples: f.number(256).range(16, 4096).step(16).input(),
+  title: f.string('My experiment').placeholder('Title…'),
+  tint: f.color('#3a86ff'),
+});
 
 function Harness({
-  fields,
+  built,
   ...args
-}: Partial<ControlPanelProps<Record<string, unknown>>> & { fields: ConfigField[] }) {
-  const initial: Record<string, unknown> = {};
-  for (const f of fields) initial[f.key] = f.default;
-  const [config, setConfig] = useState<Record<string, unknown>>(initial);
+}: Partial<ControlPanelProps<Record<string, unknown>>> & {
+  built: ConfigSchema<Record<string, unknown>>;
+}) {
+  const schema = resolveConfigSchema(built, []);
+  const [config, setConfig] = useState<Record<string, unknown>>(built.defaults());
   return (
     <ControlPanel
       {...args}
-      fields={fields}
+      schema={schema}
       config={config}
       setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
     />
@@ -73,17 +51,14 @@ function Harness({
 }
 
 export const Default: Story = {
-  render: (args) => <Harness {...args} fields={allFields} />,
+  render: (args) => <Harness {...args} built={everyKind} />,
 };
 
 export const Minimal: Story = {
   render: (args) => (
     <Harness
       {...args}
-      fields={[
-        { key: 'speed', label: 'Speed', type: 'slider', min: 0, max: 10, default: 5 },
-        { key: 'enabled', label: 'Enabled', type: 'checkbox', default: true },
-      ]}
+      built={f.schema({ speed: f.number(5).range(0, 10), enabled: f.boolean(true) })}
     />
   ),
 };
@@ -372,13 +347,13 @@ const inline = f.schema({
     .list(['**/node_modules/**', '**/dist/**', 'package-lock.json'])
     .label('Draw as icons'),
   detail: f.number(1200).range(0, 4000).suffix('nodes'),
-  showCameraRoute: f.boolean(false).toggle().label('Show camera route'),
+  showCameraRoute: f.boolean(false).switch().label('Show camera route'),
   routeColor: f.enum('sweep', ['sweep', 'depth']).label('Route color'),
-  minimap: f.boolean(true).toggle(),
+  minimap: f.boolean(true).switch(),
   minimapSize: f.number(280).range(80, 600).label('Minimap size'),
-  pickHud: f.boolean(true).toggle().label('Pick HUD'),
-  pickOutlines: f.boolean(true).toggle().label('Pick outlines'),
-  markOverlay: f.boolean(false).toggle().label('Mark overlay'),
+  pickHud: f.boolean(true).switch().label('Pick HUD'),
+  pickOutlines: f.boolean(true).switch().label('Pick outlines'),
+  markOverlay: f.boolean(false).switch().label('Mark overlay'),
 });
 
 /** The shape a lab's sidebar draws: `layout="inline"` paired two to a row, in a

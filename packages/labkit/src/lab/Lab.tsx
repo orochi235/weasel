@@ -145,7 +145,7 @@ function LabRuntime({
   contextMenus,
   tools,
   configRules,
-  controls,
+  renderers,
   over,
   gestures,
   transport = true,
@@ -197,7 +197,7 @@ function LabRuntime({
     focusedTrialId,
     focus: setFocusPick,
     configRules,
-    controls,
+    renderers,
     marks: labMarks,
   });
 

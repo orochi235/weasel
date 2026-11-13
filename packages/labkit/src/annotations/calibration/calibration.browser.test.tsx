@@ -154,7 +154,7 @@ function expectScored(ex: Exercise): void {
 async function mount(config: CalibrationConfig): Promise<void> {
   renderWithIcons(
     <div className="lk-cal-test-host">
-      <Lab instruments={[calibrationInstrument(config)]} defaultInstrument="Calibration">
+      <Lab instruments={[calibrationInstrument(config)]}>
         <HoldToolOptions />
       </Lab>
     </div>,

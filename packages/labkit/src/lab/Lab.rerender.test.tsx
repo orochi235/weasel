@@ -16,7 +16,6 @@ let lab: LabContextValue | null = null;
 
 const counter: Instrument<{ n: number }> = {
   name: 'Counter',
-  defaultConfig: () => ({}),
   initialState: () => ({ n: 0 }),
   render: (ctx) => {
     renders[ctx.trial.id] = (renders[ctx.trial.id] ?? 0) + 1;
@@ -59,7 +58,7 @@ beforeEach(() => {
 describe('a lab with two trials', () => {
   it('renders only the trial whose record changed, chrome and all', async () => {
     await renderSettled(
-      <Lab instruments={[counter]} defaultInstrument="Counter" chrome={CHROME}>
+      <Lab instruments={[counter]} chrome={CHROME}>
         <CaptureLab />
       </Lab>,
       { wrapper: withIcons },
@@ -81,7 +80,7 @@ describe('a lab with two trials', () => {
 
   it('still hands a reader of the lab context every trial as it changes', async () => {
     await renderSettled(
-      <Lab instruments={[counter]} defaultInstrument="Counter">
+      <Lab instruments={[counter]}>
         <CaptureLab />
       </Lab>,
       { wrapper: withIcons },

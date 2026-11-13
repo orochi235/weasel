@@ -89,7 +89,7 @@ const shapeBuilderInstrument = defineInstrument<State, Config>({
 export function ShapeBuilderLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Shape builder" instruments={[shapeBuilderInstrument]} defaultInstrument="Shape builder" />
+      <Lab title="Shape builder" instruments={[shapeBuilderInstrument]} />
     </div>
   );
 }

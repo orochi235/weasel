@@ -33,7 +33,6 @@ function marks(): AnnotationsApi {
 
 const inspector = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Inspector',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <Pane />,
   annotations: {
@@ -46,7 +45,6 @@ async function mount(backing: Map<string, unknown>) {
   const view = await renderSettled(
     <Lab
       instruments={[inspector]}
-      defaultInstrument="Inspector"
       storage={createMemoryAdapter(backing)}
       storageKey="remote-test"
     />,

@@ -209,7 +209,7 @@ it('backs a copy of an isolated story with the compared mode’s background, not
     <LiveLensesContext.Provider value={lenses}>
       <StoryGlobalsContext.Provider value={{ mode: 'light' }}>
         <div className="fg-live-test-host" data-wzl-mode="light">
-          <Lab instruments={[instrument]} defaultInstrument={isolated.id} />
+          <Lab instruments={[instrument]} />
         </div>
       </StoryGlobalsContext.Provider>
       <div className="fg-live-test-slot" />

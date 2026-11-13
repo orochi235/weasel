@@ -13,6 +13,7 @@ import {
   SeparatorNode,
   UnionNode,
 } from './compound';
+import { CurveNode } from './curveNode';
 import { configFromPrefs } from './fromPrefs';
 import { NumberNode } from './numberNode';
 import { copyTree, setOwn } from './path';
@@ -35,6 +36,7 @@ export {
   ActionNode,
   AliasNode,
   BaseNode,
+  CurveNode,
   LabelNode,
   ListNode,
   MapNode,
@@ -49,26 +51,33 @@ export function isConfigBranch(entry: ConfigEntry): entry is ConfigBranch {
   return 'children' in entry;
 }
 
-/** A boolean leaf, built by `f.boolean`. It draws as a checkbox, or a switch after {@link BooleanNode.toggle}. */
+/** A boolean leaf, built by `f.boolean`. It draws as a checkbox, or a switch after {@link BooleanNode.switch}. */
 export class BooleanNode extends BaseNode<boolean> {
   readonly kind = 'boolean';
 
   /** Ask for a switch rather than a checkbox. */
-  toggle(): this {
+  switch(): this {
     return this.ann({ control: 'switch' });
   }
 }
 
-/** A text leaf, built by `f.string`. */
+/** A text leaf, built by `f.string`; a one-line field unless `.textarea()`. */
 export class StringNode extends BaseNode<string> {
   readonly kind = 'string';
 
+  /** What an empty field shows. */
   placeholder(placeholder: string): this {
     return this.ann({ placeholder });
   }
 
+  /** The most characters the field takes. */
   maxLength(maxLength: number): this {
     return this.ann({ maxLength });
+  }
+
+  /** Edit the text in a box of several lines, across the whole row. */
+  textarea(): this {
+    return this.ann({ control: 'textarea' });
   }
 
   /** Milliseconds to debounce live writes. 0 commits every keystroke. */
@@ -88,7 +97,7 @@ export class ColorNode extends BaseNode<string> {
   }
 }
 
-/** A fixed-choice leaf, built by `f.enum`; a select unless `.radio()` or `.toggle()`. */
+/** A fixed-choice leaf, built by `f.enum`; a select unless `.radio()`, `.toggle()` or `.menu()`. */
 export class EnumNode<T extends string> extends BaseNode<T> {
   readonly kind = 'enum';
 
@@ -100,6 +109,11 @@ export class EnumNode<T extends string> extends BaseNode<T> {
   /** Every option at once, as segments wherever the leaf is drawn. */
   toggle(): this {
     return this.ann({ control: 'toggle' });
+  }
+
+  /** A button reading the chosen option, which opens the options as a menu. */
+  menu(): this {
+    return this.ann({ control: 'menu' });
   }
 
   /** Relabel the choices. Named `labels` rather than `options` because
@@ -272,9 +286,15 @@ function enumLeaf<T extends string>(
 export const f = {
   /** A number. Given no default, it starts unset and is {@link NumberNode.clearable}. */
   number: numberLeaf,
+  /** On or off: a checkbox, or a switch after `.switch()`. */
   boolean: (def: boolean): BooleanNode => new BooleanNode(def),
+  /** Text: a one-line field, or several lines after `.textarea()`. */
   string: (def: string): StringNode => new StringNode(def),
+  /** A color, held as a hex string: `#rrggbb`, or `#rrggbbaa` after `.alpha()`. */
   color: (def: string): ColorNode => new ColorNode(def),
+  /** A curve y = f(x) over x in [0, 1], held flat as `[x0, y0, x1, y1, …]`: `f.curve([0, 0, 1, 1]).range(-1, 1)`.
+   *  A drag along it is one undo step. */
+  curve: (def: readonly number[]): CurveNode => new CurveNode([...def]),
   ...compound,
 
   /** A fixed set of choices. The choices' literal types flow into the config

@@ -19,7 +19,6 @@ beforeAll(() => {
 
 const counter = defineInstrument<{ n: number }, Record<string, never>>({
   name: 'Counter',
-  defaultConfig: () => ({}),
   initialState: () => ({ n: 0 }),
   // A state storage cannot hold as it is, so the saved history has to go through these too.
   serialize: (s) => ({ count: s.n }),
@@ -38,12 +37,7 @@ const KEY = 'undo-persist-test';
 
 function mount(backing: Map<string, unknown>) {
   return renderSettled(
-    <Lab
-      instruments={[counter]}
-      defaultInstrument="Counter"
-      storage={createMemoryAdapter(backing)}
-      storageKey={KEY}
-    />,
+    <Lab instruments={[counter]} storage={createMemoryAdapter(backing)} storageKey={KEY} />,
     { wrapper: withIcons },
   );
 }

@@ -14,6 +14,12 @@
   width: 100%;
 }
 
+.disabled .plot {
+  pointer-events: none;
+  opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
+}
+
 .marks {
   position: absolute;
   inset: 0;
@@ -37,6 +43,12 @@
   cursor: pointer;
 }
 
-.action:hover {
+.action:disabled {
+  opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
+  cursor: not-allowed;
+}
+
+.action:hover:not(:disabled) {
   background: var(--wzl-surface-raised);
 }
