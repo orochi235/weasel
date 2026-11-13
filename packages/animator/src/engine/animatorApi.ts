@@ -38,6 +38,8 @@ export interface ApiHost {
   hub: AnimatorEventHub;
   /** Whether an animation's own tick is running. */
   ticking(): boolean;
+  /** Whether a frame is running, its ticks or the showing after them. */
+  framing(): boolean;
   /** Runs a callback once the frame's ticks are done. */
   afterTicks(cb: () => void): void;
   subscribers: Pick<Emitter, 'subscribe'>;
@@ -76,8 +78,18 @@ function startTimeline(host: ApiHost, o: TimelineOptions): ReturnType<Animator['
     const a = table.animations.get(id);
     return a && table.infoOf(a);
   };
-  const hold: OpenTrackHold = (target, value, weight, axes, fixed) =>
-    openHold(ctx, { target: stateOf(target), value, weight, axes, fixed });
+  // A seek or an edit between frames shows its targets before it returns, as it calls a track's
+  // `onTick`: an export that seeks and renders each frame draws the pose it seeked to.
+  const hold: OpenTrackHold = (target, value, weight, axes, fixed) => {
+    const s = stateOf(target);
+    const show = (): void => { if (!host.framing()) ctx.targets.showNow(s); };
+    const held = openHold(ctx, { target: s, value, weight, axes, fixed });
+    show();
+    return {
+      touch() { held.touch(); show(); },
+      leave(commit) { held.leave(commit); show(); },
+    };
+  };
   return createTimeline(table.register, id, o, {
     get watched() { return hub.watched; },
     fire: (track, path, event, lateBy) => {

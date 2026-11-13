@@ -3,7 +3,7 @@ import { act, fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import type { SampledTrack, TimelineHandle, Track } from '@weasel-js/animator';
 import { useLayoutEffect } from 'react';
-import { AnimatedTimeline } from './AnimatedTimeline';
+import { AnimatedTimeline, AnimatedTransport } from './AnimatedTimeline';
 
 const TRACK_WIDTH = 500;
 
@@ -35,7 +35,7 @@ function fakeHandle(over: Partial<TimelineHandle> = {}): TimelineHandle & { live
     live,
     id: 1,
     cancel: vi.fn(), pause: vi.fn(() => { paused = true; changed(); }), resume: vi.fn(() => { paused = false; changed(); }),
-    setTimeScale: vi.fn((s: number) => { scale = s; }),
+    setTimeScale: vi.fn((s: number) => { scale = s; changed(); }),
     timeScale: () => scale,
     isPaused: () => paused,
     seek: vi.fn((to: number) => { t = to; changed(); }),
@@ -45,7 +45,7 @@ function fakeHandle(over: Partial<TimelineHandle> = {}): TimelineHandle & { live
     edit: vi.fn((fn: () => void) => { fn(); for (const cb of subscribers) cb(); }),
     subscribe: (cb: () => void) => { subscribers.add(cb); return () => { subscribers.delete(cb); }; },
     subscribePlayback: (cb: () => void) => { playback.add(cb); return () => { playback.delete(cb); }; },
-    setLoop: vi.fn((next: boolean | number) => { loop = next; }),
+    setLoop: vi.fn((next: boolean | number) => { loop = next; changed(); }),
     loop: () => loop,
     ...over,
   } as TimelineHandle & { live: Track[] };
@@ -217,5 +217,25 @@ describe('AnimatedTimeline', () => {
       frames.turn();
       expect(frames.queued()).toBe(1);
     });
+  });
+});
+
+describe('AnimatedTransport', () => {
+  it('plays, loops, and scrubs the handle it is given, and shows where it stands', () => {
+    const h = fakeHandle();
+    renderWithIcons(<AnimatedTransport handle={h} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    expect(h.resume).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('switch', { name: 'Loop' }));
+    expect(h.setLoop).toHaveBeenCalledWith(true);
+    expect(screen.getByRole('switch', { name: 'Loop' }).getAttribute('aria-checked')).toBe('true');
+    act(() => { h.seek(250); });
+    expect(screen.getByTestId('timeline-time').textContent).toBe('0.25s / 1.00s');
+  });
+
+  it('leaves out the scrub bar given scrub={false}', () => {
+    renderWithIcons(<AnimatedTransport handle={fakeHandle()} scrub={false} />);
+    expect(screen.queryByRole('slider', { name: 'Position' })).toBeNull();
   });
 });

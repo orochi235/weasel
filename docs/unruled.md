@@ -1863,3 +1863,13 @@ Calls the lanes made without a ruling:
 - Open: `Slider` now follows the number fields' locale, but number text that only displays does not:
   `QuantityText` defaults to `en-US` as its JSDoc says, and `MeasureReadout`, the timeline's `Transport` and ruler,
   and the gradient editor's stop positions write `en-US` always. Whether the 2026-11-12 locale ruling reaches them.
+
+## Audit round twenty (2026-11-12): an animated presentation
+
+- 2026-11-12 (the lane's call): a timeline's `seek` or `edit` between frames shows the targets its tracks hold
+  before it returns, as it already called a track's `onTick`; a seek inside a frame still shows with that frame.
+  Before, the target read the new value at once but showed it at the next frame, so a render right after a seek drew
+  the frame before.
+- Open: scrubbing `<AnimatedTransport>` or `<AnimatedTimeline>` seeks a playing timeline and leaves it playing, as
+  `<AnimatedTimeline>` always has. The timeline demo, which wired `<Transport>` by hand until 2026-11-12, paused on a
+  scrub. Whether a scrub pauses playback.

@@ -36,10 +36,20 @@ Both stylesheets are required: component styles ship as one bundled file, and re
 family shares one: `PrefsForm` and `PrefsDialog` come from `components/Prefs`, and `PropertyPanel`, `PropertyField`
 and `PropertyRow` from `components/Properties`.
 
-Components that draw glyphs — `ThemeSwitcher`, the paint and stroke rows of `SelectionPanel`, tool palettes — look
-them up by name in the icon registry. Register ui's table, and core's where a panel shows scene properties, as
-`@weasel-js/icons` describes: `<IconRegistryProvider icons={[coreIcons, uiIcons]}>`, with `uiIcons` from
-`@weasel-js/ui/icons`. In development a glyph left unregistered draws a question mark and warns once in the console.
+Components that draw glyphs (`Transport`'s play and pause buttons, `ThemeSwitcher`, the paint and stroke rows of
+`SelectionPanel`, tool palettes) look them up by name in the icon registry. Mount one at the app's root; `kitIcons`
+holds core's, the shapes' and ui's tables (`@weasel-js/ui/icons` has ui's alone):
+
+```tsx
+import { IconRegistryProvider } from '@weasel-js/core';
+import { kitIcons } from '@weasel-js/ui/kit-icons';
+
+<IconRegistryProvider icons={kitIcons}><App /></IconRegistryProvider>
+```
+
+In development a glyph left unregistered draws a question mark and warns once in the console. The build plugin that
+trims the tables to the glyphs an app uses is in
+[icons](https://github.com/orochi235/weasel/blob/main/docs/icons.md).
 
 A `Slider` or `BandEditor` that maps values onto its track non-linearly takes a
 scale from `@weasel-js/plot/scales`: `<Slider scale={logScale} … />`. `Plot2D`'s
