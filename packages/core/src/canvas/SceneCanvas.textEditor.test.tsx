@@ -3,7 +3,7 @@
  * no host wiring, and the editor stands down for a host's own.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, renderHook } from '@testing-library/react';
 import { useState } from 'react';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
@@ -11,7 +11,7 @@ import { asNodeId } from 'core/scene/types';
 import { useSceneTextEdit } from 'domains/text/useSceneTextEdit';
 import { SceneCanvas } from './SceneCanvas';
 import type { Feature } from './SceneCanvas/features';
-import { layersWhileEditing, type SceneCanvasTextEditor } from './SceneCanvas/defaultTextEditor';
+import { layersWhileEditing, useCanvasTextEditor, type SceneCanvasTextEditor } from './SceneCanvas/defaultTextEditor';
 import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
 
 beforeAll(() => {
@@ -98,6 +98,26 @@ describe("SceneCanvas's own text editor", () => {
     act(() => startEdit!('t'));
     expect(hostEditing()).toBe('t');
     warn.mockRestore();
+  });
+
+  it("leaves out the glyphs of the node a host's editor has open", () => {
+    const scene = sceneWithText();
+    const container = document.createElement('div');
+    const element = container.appendChild(document.createElement('canvas'));
+    document.body.appendChild(container);
+    const host = renderHook(() => useSceneTextEdit(scene, container));
+    const canvas = renderHook(() => useCanvasTextEditor(scene, { current: element }, { textEditor: false }));
+    const node = scene.get(asNodeId('t'))!;
+    const drawn = () => {
+      const slot = canvas.result.current.layers?.scene as { drawOne: typeof defaultDrawOne } | undefined;
+      return (slot?.drawOne ?? defaultDrawOne)(node, node.pose).map((c) => c.kind);
+    };
+    expect(drawn()).toContain('text');
+    act(() => host.result.current.startEdit('t'));
+    expect(drawn()).not.toContain('text');
+    act(() => host.result.current.cancelEdit());
+    expect(drawn()).toContain('text');
+    container.remove();
   });
 
   it('commits what was typed as the node text', () => {
