@@ -86,13 +86,13 @@ export function LayerList(props: LayerListProps) {
     return (id: string) => ids.has(id);
   };
   const press = (item: LayerListItem, mods: PressModifiers) => {
-    const { selectedIds = [], onSelect } = live.current;
-    if (!onSelect) return;
+    const { selectedIds = [], onSelectionChange } = live.current;
+    if (!onSelectionChange) return;
     const next = select({ ids: selectedIds, anchor: anchor.current }, item.id, intentOf(selectModifiers(mods), PRESS_POLICY), {
       order: order.current, forceSingle: fixed(),
     });
     anchor.current = next.anchor;
-    onSelect([...next.ids]);
+    onSelectionChange([...next.ids]);
   };
 
   const bodies = new Map<string, ReactNode>();
@@ -125,12 +125,12 @@ export function LayerList(props: LayerListProps) {
     const before = { ids: live.current.selectedIds ?? [], anchor: anchor.current };
     const next = select(before, to, 'range', { order: order.current, forceSingle: fixed() });
     anchor.current = next.anchor;
-    if (next !== before) live.current.onSelect?.([...next.ids]);
+    if (next !== before) live.current.onSelectionChange?.([...next.ids]);
   };
   const nav = useRowNavigation<HTMLElement>({
     rows: visible.map((v) => ({ id: v.item.id, parentId: v.parentId })),
     isSelected: (id) => selectedIds.includes(id),
-    ...(props.onSelect ? { onExtend: selectRange } : {}),
+    ...(props.onSelectionChange ? { onExtend: selectRange } : {}),
     onNudge: (id, delta) => nudgers.get(byId.get(id)?.parentId ?? null)?.(id, delta) ?? false,
     onActivate: (id, mods) => {
       const v = byId.get(id);
@@ -341,7 +341,7 @@ function Level({ items, parentId, shared, path, level, grid, name }: LevelProps)
   const gridProps = {
     role: 'treegrid',
     'aria-label': name,
-    ...(props.onSelect ? { 'aria-multiselectable': true } : {}),
+    ...(props.onSelectionChange ? { 'aria-multiselectable': true } : {}),
   };
   const entries = items.map((it, i) => entry(it, i, false));
 

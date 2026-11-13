@@ -41,7 +41,7 @@ export interface UseSceneLayerListArgs<TData, TLayer extends string, TPose> {
 }
 
 /** The `<LayerList>` props `useSceneLayerList` answers. */
-export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelect' | 'onReorder' | 'onVisibilityChange' | 'onLockChange'>>
+export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelectionChange' | 'onReorder' | 'onVisibilityChange' | 'onLockChange'>>
   & Pick<LayerListProps, 'onRemove' | 'onRename'>;
 
 /**
@@ -114,7 +114,7 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
   return {
     items: [...annotationRows, ...content],
     selectedIds: [...selection.current.map(String), ...(picked !== null ? [picked] : [])],
-    onSelect: (ids) => {
+    onSelectionChange: (ids) => {
       const notes = ids.filter(isAnnotation);
       if (notes.length > 0) {
         annotations?.pick(notes.at(-1)!);

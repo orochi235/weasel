@@ -48,7 +48,7 @@ export interface TimelineProps {
    *  Graph switch alone; `false` hides the row. */
   transport?: Omit<TransportProps, 'playhead' | 'duration'> | false;
   selection?: KeySelection | null;
-  onSelect?: (sel: KeySelection | null) => void;
+  onSelectionChange?: (sel: KeySelection | null) => void;
   renderKeyEditor?: (ctx: KeyEditorCtx) => ReactNode;
 
   window?: TimeWindow;
@@ -71,7 +71,7 @@ export function Timeline(props: TimelineProps): ReactElement {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
   // Null until the user zooms in, so the window follows a duration that changes.
   const [ownWindow, setOwnWindow] = useState<TimeWindow | null>(null);
-  const [selection, setSelection] = useHeld<KeySelection | null>(props.selection, null, props.onSelect);
+  const [selection, setSelection] = useHeld<KeySelection | null>(props.selection, null, props.onSelectionChange);
   const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
   // By key index, so an edit that renumbers a track's keys drops it.
   const [segmentSelection, setSegmentSelection] = useState<KeySelection | null>(null);

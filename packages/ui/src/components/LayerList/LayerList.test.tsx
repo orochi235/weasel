@@ -95,105 +95,105 @@ describe('LayerList rows', () => {
 
 describe('LayerList selection', () => {
   it('selects the clicked row', () => {
-    const onSelect = vi.fn();
-    list({ selectedIds: [], onSelect });
+    const onSelectionChange = vi.fn();
+    list({ selectedIds: [], onSelectionChange });
     click('Beta');
-    expect(onSelect).toHaveBeenLastCalledWith(['b']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['b']);
   });
 
   it('selects from the committed props, not an abandoned render\'s', () => {
-    const committed = { selectedIds: ['a'], onSelect: vi.fn() };
-    const abandoned = { selectedIds: ['c'], onSelect: vi.fn() };
+    const committed = { selectedIds: ['a'], onSelectionChange: vi.fn() };
+    const abandoned = { selectedIds: ['c'], onSelectionChange: vi.fn() };
     renderThenAbandon(committed, abandoned, (p) => <LayerList items={FLAT} {...p} />);
     click('Beta', { metaKey: true });
-    expect(abandoned.onSelect).not.toHaveBeenCalled();
-    expect(committed.onSelect).toHaveBeenLastCalledWith(['a', 'b']);
+    expect(abandoned.onSelectionChange).not.toHaveBeenCalled();
+    expect(committed.onSelectionChange).toHaveBeenLastCalledWith(['a', 'b']);
   });
 
   it('adds and removes a row on Cmd-click and on Ctrl-click', () => {
-    const onSelect = vi.fn();
-    const { rerender } = list({ selectedIds: ['a'], onSelect });
+    const onSelectionChange = vi.fn();
+    const { rerender } = list({ selectedIds: ['a'], onSelectionChange });
     click('Gamma', { metaKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['a', 'c']);
-    rerender(<LayerList items={FLAT} selectedIds={['a', 'c']} onSelect={onSelect} />);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'c']);
+    rerender(<LayerList items={FLAT} selectedIds={['a', 'c']} onSelectionChange={onSelectionChange} />);
     click('Alpha', { ctrlKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['c']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['c']);
   });
 
   it('selects every row from the last click to a shift-click', () => {
-    const onSelect = vi.fn();
-    const { rerender } = list({ selectedIds: [], onSelect });
+    const onSelectionChange = vi.fn();
+    const { rerender } = list({ selectedIds: [], onSelectionChange });
     click('Alpha');
-    rerender(<LayerList items={FLAT} selectedIds={['a']} onSelect={onSelect} />);
+    rerender(<LayerList items={FLAT} selectedIds={['a']} onSelectionChange={onSelectionChange} />);
     click('Gamma', { shiftKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['a', 'b', 'c']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'b', 'c']);
   });
 
   it('ranges over a card between the two rows it runs between', () => {
-    const onSelect = vi.fn();
+    const onSelectionChange = vi.fn();
     const renderBody = (item: LayerListItem) => (item.id === 'b' ? <div>body of b</div> : null);
-    const { rerender } = list({ selectedIds: [], onSelect, renderBody });
+    const { rerender } = list({ selectedIds: [], onSelectionChange, renderBody });
     click('Alpha');
-    rerender(<LayerList items={FLAT} selectedIds={['a']} onSelect={onSelect} renderBody={renderBody} />);
+    rerender(<LayerList items={FLAT} selectedIds={['a']} onSelectionChange={onSelectionChange} renderBody={renderBody} />);
     click('Gamma', { shiftKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['a', 'b', 'c']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'b', 'c']);
   });
 
   it('ranges over the rows that are showing, not a collapsed branch\'s children', () => {
-    const onSelect = vi.fn();
-    const { rerender } = list({ items: TREE, collapsedIds: ['g'], selectedIds: [], onSelect });
+    const onSelectionChange = vi.fn();
+    const { rerender } = list({ items: TREE, collapsedIds: ['g'], selectedIds: [], onSelectionChange });
     click('Group');
-    rerender(<LayerList items={TREE} collapsedIds={['g']} selectedIds={['g']} onSelect={onSelect} />);
+    rerender(<LayerList items={TREE} collapsedIds={['g']} selectedIds={['g']} onSelectionChange={onSelectionChange} />);
     click('Beta', { shiftKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['g', 'b']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['g', 'b']);
   });
 
   it('selects a fixed row alone, even on Cmd-click', () => {
-    const onSelect = vi.fn();
-    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: ['a'], onSelect });
+    const onSelectionChange = vi.fn();
+    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: ['a'], onSelectionChange });
     click('Background', { metaKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['bg']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['bg']);
   });
 
   it('selects a fixed row alone on Shift-click', () => {
-    const onSelect = vi.fn();
+    const onSelectionChange = vi.fn();
     const items = [...FLAT, { id: 'bg', label: 'Background', fixed: true }];
-    const { rerender } = list({ items, selectedIds: [], onSelect });
+    const { rerender } = list({ items, selectedIds: [], onSelectionChange });
     click('Alpha');
-    rerender(<LayerList items={items} selectedIds={['a']} onSelect={onSelect} />);
+    rerender(<LayerList items={items} selectedIds={['a']} onSelectionChange={onSelectionChange} />);
     click('Background', { shiftKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['bg']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['bg']);
   });
 
   it('drops a fixed row from the selection a Cmd-click builds on', () => {
-    const onSelect = vi.fn();
-    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: ['bg'], onSelect });
+    const onSelectionChange = vi.fn();
+    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: ['bg'], onSelectionChange });
     click('Beta', { metaKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['b']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['b']);
   });
 
   it('passes over a fixed row inside a shift-click range', () => {
-    const onSelect = vi.fn();
+    const onSelectionChange = vi.fn();
     const items = [FLAT[0]!, { id: 'bg', label: 'Background', fixed: true }, FLAT[2]!];
-    const { rerender } = list({ items, selectedIds: [], onSelect });
+    const { rerender } = list({ items, selectedIds: [], onSelectionChange });
     click('Alpha');
-    rerender(<LayerList items={items} selectedIds={['a']} onSelect={onSelect} />);
+    rerender(<LayerList items={items} selectedIds={['a']} onSelectionChange={onSelectionChange} />);
     click('Gamma', { shiftKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['a', 'c']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'c']);
   });
 
   it('marks the selected row', () => {
-    const { container } = list({ selectedIds: ['b'], onSelect: vi.fn() });
+    const { container } = list({ selectedIds: ['b'], onSelectionChange: vi.fn() });
     const rows = container.querySelectorAll('[data-selected="true"]');
     expect(Array.from(rows).some((r) => r.textContent === 'Beta')).toBe(true);
   });
 
   it('does not select a row when a press lands on its checkbox', () => {
-    const onSelect = vi.fn();
-    list({ selectedIds: [], onSelect, onVisibilityChange: vi.fn() });
+    const onSelectionChange = vi.fn();
+    list({ selectedIds: [], onSelectionChange, onVisibilityChange: vi.fn() });
     fireEvent.pointerDown(screen.getByLabelText('Show Beta'), { pointerId: 1, isPrimary: true, buttons: 1 });
     pointer(document, 'pointerup', { buttons: 0 });
-    expect(onSelect).not.toHaveBeenCalled();
+    expect(onSelectionChange).not.toHaveBeenCalled();
   });
 });
 
@@ -208,7 +208,7 @@ describe('LayerList reordering', () => {
 
   it('drags every selected sibling, in list order', () => {
     const onReorder = vi.fn();
-    list({ onReorder, selectedIds: ['c', 'a'], onSelect: vi.fn() });
+    list({ onReorder, selectedIds: ['c', 'a'], onSelectionChange: vi.fn() });
     drag('Alpha', 3 * ROW_H + 1);
     expect(onReorder).toHaveBeenCalledWith({ ids: ['a', 'c'], parentId: null, index: 1 });
   });
@@ -228,11 +228,11 @@ describe('LayerList reordering', () => {
   });
 
   it('does not drag at all without onReorder', () => {
-    const onSelect = vi.fn();
-    list({ selectedIds: [], onSelect });
+    const onSelectionChange = vi.fn();
+    list({ selectedIds: [], onSelectionChange });
     drag('Alpha', 3 * ROW_H + 1);
     // The press was never a drag, so its release is a click.
-    expect(onSelect).toHaveBeenLastCalledWith(['a']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['a']);
   });
 });
 
@@ -444,7 +444,7 @@ describe('LayerList keyboard', () => {
   const row = (label: string) => screen.getByText(label).closest('[role="row"]') as HTMLElement;
 
   it('is a treegrid with one row in the tab order', () => {
-    list({ items: TREE, selectedIds: ['b'], onSelect: vi.fn() });
+    list({ items: TREE, selectedIds: ['b'], onSelectionChange: vi.fn() });
     expect(screen.getByRole('treegrid', { name: 'Layers' })).toBeInTheDocument();
     const tabbable = screen.getAllByRole('row').filter((r) => r.tabIndex === 0);
     expect(tabbable.map((r) => r.textContent)).toEqual(['Beta']);
@@ -485,32 +485,32 @@ describe('LayerList keyboard', () => {
   });
 
   it('selects on Enter and Space, and adds with Cmd', () => {
-    const onSelect = vi.fn();
-    list({ selectedIds: ['a'], onSelect });
+    const onSelectionChange = vi.fn();
+    list({ selectedIds: ['a'], onSelectionChange });
     fireEvent.keyDown(row('Beta'), { key: 'Enter' });
-    expect(onSelect).toHaveBeenLastCalledWith(['b']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['b']);
     fireEvent.keyDown(row('Gamma'), { key: ' ', metaKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['a', 'c']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'c']);
   });
 
   it('selects a range with Shift+arrows, passing over a fixed row', () => {
-    const onSelect = vi.fn();
-    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: [], onSelect });
+    const onSelectionChange = vi.fn();
+    list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: [], onSelectionChange });
     act(() => row('Beta').focus());
     fireEvent.keyDown(row('Beta'), { key: 'ArrowDown', shiftKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['b', 'c']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['b', 'c']);
     fireEvent.keyDown(row('Gamma'), { key: 'End', shiftKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['b', 'c']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['b', 'c']);
   });
 
   it('selects the row Shift+arrow reaches when the anchor is hidden in a collapsed branch', () => {
-    const onSelect = vi.fn();
-    list({ items: TREE, selectedIds: [], onSelect });
+    const onSelectionChange = vi.fn();
+    list({ items: TREE, selectedIds: [], onSelectionChange });
     act(() => row('One').focus());
     fireEvent.keyDown(row('Group'), { key: 'ArrowLeft' });
     expect(screen.queryByText('One')).toBeNull();
     fireEvent.keyDown(row('Group'), { key: 'ArrowDown', shiftKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['b']);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['b']);
   });
 
   it('moves a row with Alt+arrows, as a drag of it would', () => {
@@ -535,10 +535,10 @@ describe('LayerList keyboard', () => {
   });
 
   it('leaves keys on a control inside a row to the control', () => {
-    const onSelect = vi.fn();
-    list({ selectedIds: [], onSelect, onVisibilityChange: vi.fn() });
+    const onSelectionChange = vi.fn();
+    list({ selectedIds: [], onSelectionChange, onVisibilityChange: vi.fn() });
     fireEvent.keyDown(screen.getByLabelText('Show Beta'), { key: 'Enter' });
-    expect(onSelect).not.toHaveBeenCalled();
+    expect(onSelectionChange).not.toHaveBeenCalled();
   });
 });
 

@@ -158,13 +158,13 @@ describe('Timeline', () => {
     expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('100%');
   });
 
-  it('still selects a key itself when onSelect only observes', () => {
-    const onSelect = vi.fn();
+  it('still selects a key itself when onSelectionChange only observes', () => {
+    const onSelectionChange = vi.fn();
     const editor = () => <span data-testid="key-editor" />;
-    renderWithIcons(<Timeline {...base} tracks={tracks()} onSelect={onSelect} renderKeyEditor={editor} />);
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onSelectionChange={onSelectionChange} renderKeyEditor={editor} />);
     fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
     fireEvent.pointerUp(document, { clientX: 250 });
-    expect(onSelect).toHaveBeenLastCalledWith({ trackPath: [0], keyIndex: 1 });
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ trackPath: [0], keyIndex: 1 });
     expect(screen.getByTestId('key-editor')).toBeInTheDocument();
   });
 
@@ -342,10 +342,10 @@ describe('Timeline', () => {
     });
 
     it('tells a consumer holding the selection that a segment took it', () => {
-      const onSelect = vi.fn();
-      renderWithIcons(<Timeline {...base} tracks={threeKeys()} selection={{ trackPath: [0], keyIndex: 2 }} onSelect={onSelect} />);
+      const onSelectionChange = vi.fn();
+      renderWithIcons(<Timeline {...base} tracks={threeKeys()} selection={{ trackPath: [0], keyIndex: 2 }} onSelectionChange={onSelectionChange} />);
       fireEvent.click(screen.getAllByTestId('timeline-segment')[0]);
-      expect(onSelect).toHaveBeenLastCalledWith(null);
+      expect(onSelectionChange).toHaveBeenLastCalledWith(null);
     });
 
     it('closes on a press on empty lane', () => {

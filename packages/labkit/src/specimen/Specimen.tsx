@@ -768,7 +768,7 @@ function EditorsAndPlots() {
           value={bands}
           onChange={setBands}
           selectedIndex={band}
-          onSelect={setBand}
+          onSelectionChange={setBand}
           renderBand={(b) => b.data.name}
           ticks={[1 / 24, 1 / 12, 1 / 6].map((at) => ({ at, label: `1/${Math.round(1 / at)}` }))}
         />

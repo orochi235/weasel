@@ -65,7 +65,7 @@ export interface LayerListProps {
    *  or removes one, shift-click selects every row from the last click to this
    *  one, and dragging a selected row drags its selected siblings. */
   selectedIds?: readonly string[];
-  onSelect?: (ids: string[]) => void;
+  onSelectionChange?: (ids: string[]) => void;
   /** Adds a visibility checkbox to every layer that is not fixed. */
   onVisibilityChange?: (id: string, visible: boolean) => void;
   /** Adds a lock toggle to every layer that is not fixed. */

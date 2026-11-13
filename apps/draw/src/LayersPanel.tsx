@@ -109,7 +109,7 @@ export function LayersContent(props: LayersContentProps): ReactElement {
       selection.set([]);
     } else {
       setDocSelected(false);
-      base.onSelect(ids);
+      base.onSelectionChange(ids);
     }
   };
   const selectedIds = docSelected ? [BACKGROUND_ROW_ID] : base.selectedIds;
@@ -128,7 +128,7 @@ export function LayersContent(props: LayersContentProps): ReactElement {
         {...base}
         items={items}
         selectedIds={selectedIds}
-        onSelect={onSelect}
+        onSelectionChange={onSelect}
         onRowContextMenu={onRowContextMenu}
         empty="No nodes"
       />

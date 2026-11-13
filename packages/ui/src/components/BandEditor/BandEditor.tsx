@@ -79,7 +79,7 @@ export interface BandEditorProps<T, F extends Quantity = number> {
   snap?: boolean;
   renderBand?: (band: Band<T, F>, index: number) => ReactNode;
   selectedIndex?: number | null;
-  onSelect?: (index: number) => void;
+  onSelectionChange?: (index: number) => void;
   /** Payload for a band split off an existing one. Default duplicates `from`. */
   splitBand?: (at: number, from: T) => T;
   label?: ReactNode;
@@ -141,7 +141,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     ticks,
     renderBand,
     selectedIndex,
-    onSelect,
+    onSelectionChange,
     label,
     className,
   } = props;
@@ -224,11 +224,11 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
 
   const onBandPointerDown = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>): void => {
     if (!isPrimaryPress(e)) return;
-    if (index !== selectedIndex) onSelect?.(index);
+    if (index !== selectedIndex) onSelectionChange?.(index);
   };
 
   const onBandFocus = (index: number) => (): void => {
-    if (index !== selectedIndex) onSelect?.(index);
+    if (index !== selectedIndex) onSelectionChange?.(index);
   };
 
   const rangeInput = (edge: RangeEdge, edit: RangeEdit<T>): void => {
@@ -276,7 +276,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     onChange(next);
     // The new band takes the next index, so a selection to its right moves up one to stay on its band.
     const split = committed.filter((b) => b.from < at).length - 1;
-    if (selectedIndex !== null && selectedIndex !== undefined && selectedIndex > split) onSelect?.(selectedIndex + 1);
+    if (selectedIndex !== null && selectedIndex !== undefined && selectedIndex > split) onSelectionChange?.(selectedIndex + 1);
     return true;
   };
 
@@ -306,7 +306,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     onChange(next);
     // Focusing a band selects it, so a merged band that held focus hands over both at once.
     if (absorbing && merged?.contains(root.ownerDocument.activeElement)) absorbing.focus();
-    else onSelect?.(selectedIndex - 1);
+    else onSelectionChange?.(selectedIndex - 1);
   };
 
   return (
