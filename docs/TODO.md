@@ -177,7 +177,8 @@ Owner tags, after the priority (2026-10-26):
   every unlocked, shown path and text node while nothing is selected (only the selection otherwise, a ruling of 2026-10-31), that text converts to outlines the moment the brush's disc meets
   its drawn box, the conversion and the smudge landing as one undo entry (ruled 2026-10-31;
   `packages/path-tools/src/shared/outlineSession.ts`), and its tool key, S
-  (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`).
+  (`packages/path-tools/src/smudge/useSmudgeBrushTool.ts`), which is also the sticky tool's, so a canvas mounting
+  both `TYPE_TOOLS` and `usePathToolsTools` has two tools on one key; Shift+S is free.
   Closes when the maintainer has driven the Smudge brush hands-on and the defaults and keys he picks
   are committed.
 - **(P2) [maintainer] Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
