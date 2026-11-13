@@ -33,7 +33,6 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
     explain: () => { throw new Error('explain is not stubbed'); },
     cancelAll: () => {},
     inFlightCursor: () => null,
-  inFlight: () => map,
     inFlight: () => map,
     subscribe: () => () => {},
     getVersion: () => 0,

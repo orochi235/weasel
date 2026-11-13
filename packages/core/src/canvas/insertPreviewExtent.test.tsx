@@ -34,7 +34,6 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
     cancelAll: () => {},
     inFlightCursor: () => null,
     inFlight: () => map,
-    inFlight: () => map,
     subscribe: () => () => {},
     getVersion: () => 0,
     getActiveAction: () => ({ kind: null, id: null }),
