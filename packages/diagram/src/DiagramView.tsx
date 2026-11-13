@@ -69,23 +69,23 @@ const adoptViewRule = (el: HTMLElement | null) => {
  *  written: change the specs to keep it. Labels paint only in a registered
  *  font family; `diagramScene` defaults to sans-serif, so call
  *  `registerCanvasFont('sans-serif')` or text renders blank. */
-export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function DiagramView(props, ref) {
+export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function DiagramView({ onEdit, ...props }, ref) {
+  const reports = useBatchedEdits(props.onMove, props.onEditContainer, onEdit);
   return (
     <WeaselProvider>
-      <Inner {...props} apiRef={ref} />
+      <Inner {...props} {...reports} apiRef={ref} />
     </WeaselProvider>
   );
 });
 
 function Inner({
-  specs: given, router, labels, hops, width, height, selectionMode = 'single', selected, onSelect, onHeaderClick, onHover, onMove: givenOnMove, onEdit, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
+  specs: given, router, labels, hops, width, height, selectionMode = 'single', selected, onSelect, onHeaderClick, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
   onEditSequence,
-  onReorder, onEditContainer: givenOnEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
+  onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, tools, onToolsCreated, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, bounded, refit, background, animator, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
-  const { onMove, onEditContainer } = useBatchedEdits(givenOnMove, givenOnEditContainer, onEdit);
   const edgeEdits = onReconnect !== undefined || onEditRoute !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined;
   const edgesPick = pickEdges ?? (edgeEdits || onDelete !== undefined);
   const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
