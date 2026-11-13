@@ -159,7 +159,10 @@ async function mount(config: CalibrationConfig): Promise<void> {
       </Lab>
     </div>,
   );
-  await screen.findByTestId('calibration-picture');
+  const picture = await screen.findByTestId('calibration-picture');
+  // The pointer starts where the last case left it, often on a toolbar button whose tooltip covers this one.
+  await userEvent.hover(picture);
+  await waitFor(() => expect(document.querySelector('[role="tooltip"]')).toBeNull());
   await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
   await waitFor(() => expect(document.querySelector('.lk-annotate__input')).not.toBeNull());
   await frames(2);
