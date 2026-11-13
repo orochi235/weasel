@@ -115,7 +115,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       // Modifier matching is strict, so Shift must be absent here — listing
       // the shifted `'}'` on this binding would be dead weight, since you
       // can't type it without the Shift this spec forbids.
-      spec: { kind: 'key', key: [']'], mods: { mod: true }, phase: BETWEEN_GESTURES },
+      spec: { kind: 'key', key: ']', mods: { mod: true }, phase: BETWEEN_GESTURES },
       opts: { id: 'reorder.forward.adjacent', params: { distance: 'adjacent' } },
     },
     {
@@ -168,7 +168,7 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
   ],
   defaultBinding: [
     {
-      spec: { kind: 'key', key: ['['], mods: { mod: true }, phase: BETWEEN_GESTURES },
+      spec: { kind: 'key', key: '[', mods: { mod: true }, phase: BETWEEN_GESTURES },
       opts: { id: 'reorder.backward.adjacent', params: { distance: 'adjacent' } },
     },
     {
