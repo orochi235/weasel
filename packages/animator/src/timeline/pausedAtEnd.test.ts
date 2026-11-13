@@ -24,7 +24,7 @@ describe('a paused looping timeline seeked to its duration', () => {
     const end: EventTrack = { kind: 'event', events: [{ t: 100, fire }] };
     const onDone = vi.fn();
     const { handle, advance } = makeTimeline({
-      loop: 1,
+      loop: 2,
       duration: 100,
       onDone,
       tracks: [end],
@@ -33,7 +33,7 @@ describe('a paused looping timeline seeked to its duration', () => {
     handle.pause();
     handle.seek(100);
     advance(40);
-    expect(handle.loop()).toBe(1);
+    expect(handle.loop()).toBe(2);
     expect(fire).not.toHaveBeenCalled();
     expect(onDone).not.toHaveBeenCalled();
 

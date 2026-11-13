@@ -132,7 +132,7 @@ export interface NestedTimeline {
 
 /** What `animator.timeline` takes: a root timeline, which owns playback. */
 export interface TimelineOptions extends NestedTimeline {
-  /** `true` loops forever, `n` loops n additional times. Default false. */
+  /** Passes, as a clock counts them: `true` endless, `false` one, `n` that many. Default false. */
   loop?: boolean | number;
   /** Default true. When false the timeline registers but holds at t=0 until resumed. */
   autoplay?: boolean;
@@ -157,14 +157,14 @@ export interface TimelineHandle extends AnimationHandle {
    *  0 lands on 0, and one past `duration` on `duration` unless laps are left. Throws on a `t`
    *  that is not finite. */
   seek(t: number): void;
-  /** Change the loop policy. `true` loops forever, `n` allows n more laps,
-   *  `false` stops at `duration`. Sets policy only — a timeline already parked
+  /** Change the loop policy. `true` loops forever, `n` allows n passes counting
+   *  the one under way, `false` stops at `duration`. Sets policy only — a timeline already parked
    *  at `duration` does not restart, because `rearm` declines to revive one.
    *  Rewind it with `seek(0)` and `resume()` to play it again. */
   setLoop(loop: boolean | number): void;
   /** The loop policy as it now stands: `true` endless, `false` stopping at
-   *  `duration`, `n` for n laps still allowed. A finite count falls as laps
-   *  are consumed, matching what `setLoop` takes. */
+   *  `duration`, `n` for n passes left counting the one under way. A finite
+   *  count falls as passes end, matching what `setLoop` takes. */
   loop(): boolean | number;
   /** Current playhead in ms. */
   time(): number;

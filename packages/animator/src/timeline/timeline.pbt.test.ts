@@ -31,7 +31,7 @@ describe('timeline, property', () => {
       const b = build(p);
       const h = clocked();
       let done = 0;
-      const tl = h.animator.timeline({ tracks: b.tracks, duration: p.duration, loop: loops, onDone: () => { done++; } });
+      const tl = h.animator.timeline({ tracks: b.tracks, duration: p.duration, loop: loops + 1, onDone: () => { done++; } });
       const d = tl.duration();
       h.at(0);
       play(h, 0, ws, Math.max(1, d - 1), () => done > 0, 4000);
