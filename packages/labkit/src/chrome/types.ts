@@ -100,20 +100,9 @@ export interface SidebarSection extends AppearanceProps {
 }
 
 /** A control acting on the view of the trial, not on the trial. */
-export interface ViewportControl<TCtx = TrialChromeContext> {
-  icon: IconSpec;
-  label: string;
-  /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
-  shortcut?: string;
-  disabled?: boolean;
-  /** Why it is disabled, read in its tooltip while it is. */
-  disabledReason?: string;
-  /** A toggle rather than a command: reads as held down while true. */
-  pressed?: boolean;
+export interface ViewportControl<TCtx = TrialChromeContext> extends CommandItem<TCtx> {
   /** Reddens on hover. For actions that discard work. */
   danger?: boolean;
-  /** Handed the trial's chrome context, as `ToolbarItem.onActivate` is. */
-  onActivate: (ctx: TCtx) => void;
 }
 
 /** A readout in the status bar. */
