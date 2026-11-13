@@ -92,8 +92,10 @@ export function minimapZoomAction(clamp?: ZoomClampOptions | (() => ZoomClampOpt
         const p = params as ImmediateParams | undefined;
         const root = rootOf(deps);
         if (!root || !p?.world) return;
-        const factor = p.scale !== undefined ? p.scale : wheelZoomFactor(p.deltaY ?? 0);
-        if (!(factor > 0) || !Number.isFinite(factor) || factor === 1) return;
+        // An extreme wheel delta still zooms, to the clamp; a pinch scale that is not a positive step does nothing.
+        const pinch = p.scale !== undefined;
+        if (pinch ? !(p.scale! > 0 && Number.isFinite(p.scale) && p.scale !== 1) : !p.deltaY) return;
+        const factor = pinch ? p.scale! : wheelZoomFactor(p.deltaY!);
         const v = root.get();
         root.set(zoomAt(v, viewWorldToScreen(v, p.world), factor, typeof clamp === 'function' ? clamp() : clamp));
       },
