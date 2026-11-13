@@ -127,10 +127,10 @@ export {
   reconnectBinding,
 } from './reconnect';
 export type { EndChange, ReconnectOptions } from './reconnect';
-export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, reorderPreset, sequenceSlots } from './reorder';
+export { REORDER_ACTION_ID, createReorderAction, reorderBinding, reorderContribution, createReorderPreset, sequenceSlots } from './reorder';
 export type { ReorderGap, ReorderItem, ReorderMove, ReorderOptions, ReorderSlots } from './reorder';
 export {
-  STEP_REORDER_ACTION_ID, createStepReorderAction, groupReorderContribution, groupReorderPreset, groupReorderSlots,
+  STEP_REORDER_ACTION_ID, createStepReorderAction, groupReorderContribution, createGroupReorderPreset, groupReorderSlots,
 } from './groupReorder';
 export {
   DIAGRAM_EDGE,

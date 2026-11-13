@@ -26,7 +26,7 @@ import type { DiagramSpec } from './dataTypes';
 import type { ParticipantSource } from './portAffordance';
 import { portLayer } from './portLayer';
 import { diagramEdgeEnds, type EndChange } from './reconnect';
-import { groupReorderPreset } from './groupReorder';
+import { createGroupReorderPreset } from './groupReorder';
 import { regionEditing } from './regionEditing';
 import type { ContainerEdit } from './regionSync';
 import { dataKeyReader } from './trait';
@@ -219,7 +219,7 @@ export function useDiagramEditing(
       }
     : null, [labels, report]);
   const reorder = useMemo(
-    () => (reorders ? groupReorderPreset((change) => report.current.onReorder?.(change)) : null),
+    () => (reorders ? createGroupReorderPreset((change) => report.current.onReorder?.(change)) : null),
     [reorders, report],
   );
   const regions = useMemo(() => (regionEdits ? regionEditing(scene, selected, report) : null), [regionEdits, scene, selected, report]);

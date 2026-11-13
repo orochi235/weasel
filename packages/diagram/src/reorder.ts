@@ -262,7 +262,7 @@ export function reorderContribution(opts: ReorderOptions & { on?: TargetPredicat
  * and one anywhere else moves, and a drag carried out of `region` hands off
  * to the move. Passed as `ambient` instead, the move takes every press first.
  */
-export function reorderPreset(opts: ReorderOptions & { on?: TargetPredicate }): FeaturePreset {
+export function createReorderPreset(opts: ReorderOptions & { on?: TargetPredicate }): FeaturePreset {
   const { actions = [], ...entry } = reorderContribution(opts);
   return {
     id: entry.id,

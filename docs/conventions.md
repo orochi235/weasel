@@ -122,6 +122,13 @@ geom's `cubicBezierEasing` (via core). The scalar `Math.max(lo, Math.min(hi, v))
 scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
 and modes do no geometry at all.
 
+## Preset names
+
+A ready-made `FeaturePreset` is a constant named `xPreset` (`reorderPreset`,
+`balancePreset`); a function that builds one from options is `createXPreset`
+(`createBalancePreset`, `createGridPreset`). A package's factory never takes a
+name core already gives a constant, so the two can be imported side by side.
+
 ## Stores notify through `createEmitter`
 
 A store keeps its subscribers in `createEmitter()` from `@weasel-js/registry`,
