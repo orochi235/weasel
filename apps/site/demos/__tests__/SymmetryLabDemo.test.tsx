@@ -99,4 +99,24 @@ describe('SymmetryLabDemo', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Glide rows' }));
     expect(node(GROUP_ID).data.symmetry?.glideRows ?? false).toBe(false);
   });
+
+  it('takes back a panel edit, panel and group together, in one Undo', async () => {
+    await mount();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Glide rows' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(screen.getByRole('checkbox', { name: 'Glide rows' })).not.toBeChecked();
+    expect(node(GROUP_ID).data.symmetry?.glideRows ?? false).toBe(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(screen.getByRole('checkbox', { name: 'Glide rows' })).toBeChecked();
+    expect(node(GROUP_ID).data.symmetry?.glideRows).toBe(true);
+  });
+
+  it('takes back a canvas edit in one Undo', async () => {
+    const canvas = await mount();
+    const before = JSON.stringify(node(PETAL_ID).data.path!.coords);
+    drag(canvas, [435, 275], [470, 300]);
+    expect(JSON.stringify(node(PETAL_ID).data.path!.coords)).not.toBe(before);
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(JSON.stringify(node(PETAL_ID).data.path!.coords)).toBe(before);
+  });
 });
