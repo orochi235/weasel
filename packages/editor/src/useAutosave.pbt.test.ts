@@ -26,15 +26,15 @@ const delay = fc.constantFrom<number | undefined>(undefined, 0, 1, 300, 2 ** 31,
 describe('useAutosave', () => {
   it('writes each change once, with the latest document, after its delay or when the page goes away', () => {
     const seen = tally();
-    fc.assert(fc.property(delay, fc.boolean(), fc.array(op, { maxLength: 25 }), (delayMs, tracked, ops) => {
+    fc.assert(fc.property(delay, fc.boolean(), fc.array(op, { maxLength: 25 }), (debounceMs, tracked, ops) => {
       vi.useFakeTimers();
       localStorage.clear();
-      const ms = delayMs ?? 300;
+      const ms = debounceMs ?? 300;
       const writes: string[] = [];
       const reports: boolean[] = [];
       let doc = 'a';
       const props = (d: string): { d: string; o: AutosaveOptions } => ({
-        d, o: { ...(delayMs !== undefined ? { delayMs } : {}), ...(tracked ? { revision: d } : {}), onSaved: (ok) => reports.push(ok) },
+        d, o: { ...(debounceMs !== undefined ? { debounceMs } : {}), ...(tracked ? { revision: d } : {}), onSaved: (ok) => reports.push(ok) },
       });
       const hook = renderHook(({ d, o }) => useAutosave(() => { writes.push(d); return { primary: ['doc', d] }; }, o), { initialProps: props(doc) });
       // The model: when the pending save is due (Infinity for never), or null for none.

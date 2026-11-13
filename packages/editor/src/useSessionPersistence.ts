@@ -12,6 +12,8 @@ export interface SessionPersistenceOptions {
   historyKey: string;
   /** Read the saved undo snapshot; defaults to the parsed `historyKey` entry. Return null for none. */
   loadHistory?: () => unknown;
+  /** How long after a change the save runs, as `useAutosave` takes it. Defaults to 300 ms. */
+  debounceMs?: number;
   /** Called after every save attempt with whether the scene was written. */
   onSaved?: (ok: boolean) => void;
   /** The pages the scene's load gives a snapshot saved without any (`SnapshotLoadOptions.pages`). */
@@ -83,5 +85,8 @@ export function useSessionPersistence<D, L extends string, P>(
       primary: [sceneKey, JSON.stringify(scene.toJSON(), serializeReplacer)],
       dependents: [[historyKey, JSON.stringify(scene.serializeHistory(), serializeReplacer)]],
     };
-  }, { onSaved: (ok) => optsRef.current.onSaved?.(ok) });
+  }, {
+    onSaved: (ok) => optsRef.current.onSaved?.(ok),
+    ...(opts.debounceMs !== undefined ? { debounceMs: opts.debounceMs } : {}),
+  });
 }

@@ -14,7 +14,7 @@ export interface SessionWrite {
 export interface AutosaveOptions {
   /** How long after a change the save runs. Defaults to 300 ms. An infinite delay saves only on unmount or when
    *  the page goes away or turns hidden. */
-  delayMs?: number;
+  debounceMs?: number;
   /** When given, a save is scheduled on mount and then only when it changes. Without it, every
    *  render schedules one. */
   revision?: unknown;
@@ -49,7 +49,7 @@ export function useAutosave(write: () => SessionWrite | null, opts: AutosaveOpti
       }
     };
     pendingRef.current = save;
-    return after(optsRef.current.delayMs ?? 300, save);
+    return after(optsRef.current.debounceMs ?? 300, save);
     // With a revision, only its change reschedules; a render that leaves it alone must not clear the timer.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, tracksRevision ? [opts.revision] : undefined);

@@ -33,7 +33,7 @@ describe('useAutosave', () => {
   it('writes a pending save at once when the page turns hidden', () => {
     vi.useFakeTimers();
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
-    renderHook(() => useAutosave(write('a'), { delayMs: Infinity }));
+    renderHook(() => useAutosave(write('a'), { debounceMs: Infinity }));
     document.dispatchEvent(new Event('visibilitychange'));
     expect(localStorage.getItem('doc')).toBe('a');
   });
