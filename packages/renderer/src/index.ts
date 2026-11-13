@@ -109,7 +109,7 @@ export {
 export { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPoseFrame';
 export { commandFill, commandPaint, commandStroke } from './patterns/commandPaint';
 export { dropShadowCommand, dropShadowLayers, spreadRadius, type DropShadow } from './dropShadow';
-export { createTilePattern, type TilePatternOpts } from './patterns';
+export { createTilePattern, type TilePatternOptions } from './patterns';
 export { resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
 export { textCommand, textCommandFromPose, textCommandFromRuns, textCommandFromRunsInto } from './textCommand';
 export {

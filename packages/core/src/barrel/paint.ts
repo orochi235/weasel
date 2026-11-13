@@ -6,7 +6,7 @@
 
 // ─── Tile / pattern fills ───────────────────────────────────────────────────
 export { createTilePattern } from '@weasel-js/renderer';
-export type { TilePatternOpts } from '@weasel-js/renderer';
+export type { TilePatternOptions } from '@weasel-js/renderer';
 
 // Mesh gradients live on `@weasel-js/core/mesh`, off the root barrel.
 export {

@@ -1327,7 +1327,7 @@
     "TileExtent": "type",
     "TileKind": "type",
     "TilePaint": "type",
-    "TilePatternOpts": "type",
+    "TilePatternOptions": "type",
     "TilePatternSpec": "type",
     "Tool": "type",
     "ToolDef": "type",
