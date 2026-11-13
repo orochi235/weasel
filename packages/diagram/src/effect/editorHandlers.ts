@@ -3,7 +3,7 @@
 import { RIGID_POSE_COMPOSITION, worldPosesOf, type PlacedSpec, type RectPose } from '@weasel-js/core';
 import type { CanConnect } from '../connect';
 import { isBodyEnd } from '../connectTargets';
-import type { ContainerEdit, DeleteReport, LabelMove, NodeMove, ReconnectChange, RouteChange } from '../DiagramView';
+import type { DeleteReport, DiagramEdit, LabelMove, ReconnectChange, RouteChange } from '../DiagramView';
 import type { DataEdge, DiagramSpec } from '../dataTypes';
 import {
   addWire, canWire, ensureWireIds, reconnectWire, removeStages, removeWires, setWireLabel, setWireRoute,
@@ -68,8 +68,7 @@ export interface EditorNow {
 
 /** DiagramView's edit callbacks, each turning a report into an edit of the
  *  latest doc. Nothing is read back out of the scene. A drag's moves and box
- *  edits arrive as separate reports in one go, so they are gathered and made
- *  one edit once the current task is done. A double-click on a group's title
+ *  edits come together through `onEdit`, as one edit. A double-click on a group's title
  *  goes to `rename`. */
 export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (group: string) => void = () => {}) {
   const commit = (label: string, edit: (d: EffectDoc, b: EditorScene) => EffectDoc | null) => {
@@ -77,20 +76,6 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
     const d = ensureWireIds(doc);
     const next = edit(d, built);
     if (next !== null) onChange(next, label);
-  };
-  const drag: DragReports = { moves: [], boxes: [] };
-  let held = false;
-  const hold = () => {
-    if (held) return;
-    held = true;
-    queueMicrotask(() => {
-      held = false;
-      const reports = { moves: drag.moves.splice(0), boxes: drag.boxes.splice(0) };
-      const { doc, built, specs, onChange } = now();
-      const boxes = worldPosesOf(specs, RIGID_POSE_COMPOSITION) as Map<string, Box>;
-      const out = dragEdit(pinShown(ensureWireIds(doc), specs), built, reports, (id) => boxes.get(id));
-      if (out !== null) onChange(out.doc, out.label);
-    });
   };
   // A wire whose end is being moved does not count as feeding its own input.
   const canConnect: CanConnect = (from, to, moving) => {
@@ -138,18 +123,18 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
       const wires = r.edges.flatMap((e) => b.wireOf(e) ?? []);
       return stages.length === 0 && wires.length === 0 ? null : removeWires(removeStages(d, stages), wires);
     }),
-    onMove: (moves: readonly NodeMove[]) => {
-      drag.moves.push(...moves);
-      hold();
-    },
-    onEditContainer: (edit: ContainerEdit) => {
-      if (edit.kind === 'title') {
-        const group = now().built.groupOf(edit.id);
+    onEdit: (edit: DiagramEdit) => {
+      for (const e of edit.containers) {
+        if (e.kind !== 'title') continue;
+        const group = now().built.groupOf(e.id);
         if (group !== undefined) rename(group);
-      } else if (edit.kind === 'box') {
-        drag.boxes.push(edit);
-        hold();
       }
+      const reports: DragReports = { moves: [...edit.moves], boxes: edit.containers.filter((e) => e.kind === 'box') };
+      if (reports.moves.length === 0 && reports.boxes.length === 0) return;
+      const { doc, built, specs, onChange } = now();
+      const boxes = worldPosesOf(specs, RIGID_POSE_COMPOSITION) as Map<string, Box>;
+      const out = dragEdit(pinShown(ensureWireIds(doc), specs), built, reports, (id) => boxes.get(id));
+      if (out !== null) onChange(out.doc, out.label);
     },
   };
 }

@@ -30,6 +30,7 @@ import { useItemDrop } from './itemDrop';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
 import { DEFAULT_FIT_PADDING, diagramViewBounds, useDiagramFit } from './diagramFit';
+import { useBatchedEdits } from './batchedEdits';
 import { useMirroredSelection } from './mirrorSelection';
 import { useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
@@ -42,6 +43,7 @@ import { useSequenceTextEdit } from './sequence/textEdit';
 const SHAPE_OUTLINE = { outline: { follow: 'shape' as const } };
 
 export type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
+export type { DiagramEdit } from './batchedEdits';
 export type {
   DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, LabelMove, NodeResize, ReconnectChange, RouteChange,
 } from './diagramViewProps';
@@ -76,13 +78,14 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs: given, router, labels, hops, width, height, selectionMode = 'single', selected, onSelect, onHeaderClick, onHover, onMove, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
+  specs: given, router, labels, hops, width, height, selectionMode = 'single', selected, onSelect, onHeaderClick, onHover, onMove: givenOnMove, onEdit, onResize, onConnect, onReconnect, onEditRoute, onDelete, onEditLabel, onMoveLabel,
   onEditSequence,
-  onReorder, onEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
+  onReorder, onEditContainer: givenOnEditContainer, connectBodies, canReparent, onDropItem, canDropItem,
   pickEdges, overlays = NO_OVERLAYS,
   ambient: extraAmbient, tools, onToolsCreated, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, bounded, refit, background, animator, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
+  const { onMove, onEditContainer } = useBatchedEdits(givenOnMove, givenOnEditContainer, onEdit);
   const edgeEdits = onReconnect !== undefined || onEditRoute !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined;
   const edgesPick = pickEdges ?? (edgeEdits || onDelete !== undefined);
   const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);

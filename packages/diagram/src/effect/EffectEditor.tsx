@@ -196,8 +196,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       onEditRoute={handlers.onEditRoute}
       onMoveLabel={handlers.onMoveLabel}
       onDelete={handlers.onDelete}
-      {...(look === 'nodeGraph' ? { onMove: handlers.onMove } : { ambient })}
-      {...(look === 'nodeGraph' ? { onEditContainer: handlers.onEditContainer } : {})}
+      {...(look === 'nodeGraph' ? { onEdit: handlers.onEdit } : { ambient })}
       selectionMode="multiple"
       onSelect={picks.pick}
       {...(picks.shown !== undefined ? { selected: picks.shown } : {})}

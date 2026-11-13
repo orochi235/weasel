@@ -11,6 +11,7 @@ import type { LayoutFn, LayoutPlanner } from './layout';
 import type { LiveLayout, UseLiveLayoutOptions } from './live';
 import type { DiagramOverlay } from './overlays';
 import type { ReorderChange } from './groupReorder';
+import type { DiagramEdit } from './batchedEdits';
 import type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
 import type { SequenceEdit } from './sequence/commit';
 
@@ -111,6 +112,13 @@ export interface DiagramViewProps {
    *  the data edge's `routed` and `routedPorts`, or the next `diagramScene`
    *  lays them out again. */
   onMove?: (moves: readonly NodeMove[], routes: readonly EdgeRoute[]) => void;
+  /** Hears what `onMove` and `onEditContainer` hear, one gesture or layout
+   *  run at a time: a container dragged with its members, or a lane resized
+   *  with the shapes it shifts, is one edit rather than several reports, so a
+   *  host can keep it as one undo entry. It arrives once the gesture is done
+   *  reporting, a microtask after the last of them. Setting it turns on what
+   *  setting both of those does. */
+  onEdit?: (edit: DiagramEdit) => void;
   /** Set to give a selected node resize handles. The box resizes live while
    *  a handle is dragged; on release the new box is reported and the view
    *  draws it only once the specs do. Store it as the data node's `width`,

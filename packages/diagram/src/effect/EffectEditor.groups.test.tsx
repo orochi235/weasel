@@ -40,13 +40,10 @@ function mount(doc: EffectDoc = DOC, extra: { selectedGroup?: string | null } = 
   return { onChange, onSelectGroup, api, view: () => seen[seen.length - 1]! };
 }
 
-const settle = () => act(async () => {});
-
 describe('EffectEditor groups under nodeGraph', () => {
-  it('moves a stage dropped into a group into it, as one Move', async () => {
+  it('moves a stage dropped into a group into it, as one Move', () => {
     const { onChange, view } = mount();
-    view().onMove!([{ id: 'c', x: 300, y: 150, parent: 'g' }], []);
-    await settle();
+    view().onEdit!({ moves: [{ id: 'c', x: 300, y: 150, parent: 'g' }], routes: [], containers: [] });
     expect(onChange).toHaveBeenCalledTimes(1);
     const [next, label] = onChange.mock.calls[0]! as [EffectDoc, string];
     expect(label).toBe('Move');
@@ -54,18 +51,19 @@ describe('EffectEditor groups under nodeGraph', () => {
     expect(next.places.c).toEqual({ x: 300, y: 150 });
   });
 
-  it('moves a stage dragged out to the top level', async () => {
+  it('moves a stage dragged out to the top level', () => {
     const { onChange, view } = mount();
-    view().onMove!([{ id: 'b', x: 700, y: 300, parent: null }], []);
-    await settle();
+    view().onEdit!({ moves: [{ id: 'b', x: 700, y: 300, parent: null }], routes: [], containers: [] });
     expect((onChange.mock.calls[0]![0] as EffectDoc).pipeline.groups![0]!.members).toEqual(['a']);
   });
 
-  it('turns a dragged box and what it carried into one moveGroup', async () => {
+  it('turns a dragged box and what it carried into one moveGroup', () => {
     const { onChange, view } = mount();
-    view().onMove!([{ id: 'a', x: 50, y: 80 }, { id: 'b', x: 250, y: 80 }], []);
-    view().onEditContainer!({ kind: 'box', id: 'g', box: { x: 10, y: 20, width: 480, height: 240 } });
-    await settle();
+    view().onEdit!({
+      moves: [{ id: 'a', x: 50, y: 80 }, { id: 'b', x: 250, y: 80 }],
+      routes: [],
+      containers: [{ kind: 'box', id: 'g', box: { x: 10, y: 20, width: 480, height: 240 } }],
+    });
     expect(onChange).toHaveBeenCalledTimes(1);
     const [next, label] = onChange.mock.calls[0]! as [EffectDoc, string];
     expect(label).toBe('Move');
@@ -74,10 +72,9 @@ describe('EffectEditor groups under nodeGraph', () => {
     expect(next.routes).toEqual({ w1: [{ x: 210, y: 220 }] });
   });
 
-  it('stores a resized box as the group\'s box', async () => {
+  it('stores a resized box as the group\'s box', () => {
     const { onChange, view } = mount();
-    view().onEditContainer!({ kind: 'box', id: 'g', box: { x: 0, y: 0, width: 520, height: 300 } });
-    await settle();
+    view().onEdit!({ moves: [], routes: [], containers: [{ kind: 'box', id: 'g', box: { x: 0, y: 0, width: 520, height: 300 } }] });
     const [next, label] = onChange.mock.calls[0]! as [EffectDoc, string];
     expect(label).toBe('Resize group');
     expect(next.groupBoxes).toEqual({ g: { x: 0, y: 0, width: 520, height: 300 } });
@@ -108,9 +105,9 @@ describe('EffectEditor groups under nodeGraph', () => {
     expect(view().selected).toBe('g');
   });
 
-  it('opens a field over the title on a title double-click, and reports the new name', async () => {
+  it('opens a field over the title on a title double-click, and reports the new name', () => {
     const { onChange, view } = mount();
-    act(() => view().onEditContainer!({ kind: 'title', id: 'g' }));
+    act(() => view().onEdit!({ moves: [], routes: [], containers: [{ kind: 'title', id: 'g' }] }));
     const overlay = view().overlays?.[0];
     expect(overlay?.target).toBe('g/title');
     expect(isValidElement(overlay!.content)).toBe(true);
@@ -143,6 +140,7 @@ describe('EffectEditor groups under rack', () => {
     const onSelectGroup = vi.fn();
     render(<EffectEditor doc={DOC} onChange={() => {}} onSelectGroup={onSelectGroup} look="rack" width={800} height={600} />);
     const view = seen.at(-1)!;
+    expect(view.onEdit).toBeUndefined();
     expect(view.onEditContainer).toBeUndefined();
     act(() => view.onSelect!('g', ['g']));
     expect(onSelectGroup).toHaveBeenLastCalledWith('g');

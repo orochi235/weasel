@@ -944,6 +944,18 @@ Move ids between `members` lists on a move's `parent`, and store a `box` as the
 region's `box` with `pinned: true`. `onDelete` reports a deleted region with
 everything inside it. The view lets shapes drop only into containers and
 lanes, and lanes only into pools (`diagramCanDropInto`).
+
+One gesture can report several times: a container dragged with its members is
+an `onMove` and a `box` edit, a lane resized is a `lanes` edit and the moves of
+the shapes it shifts. `onEdit` hears them as one `DiagramEdit`
+(`{ moves, routes, containers }`), a microtask after the gesture's last report,
+so a host can keep it as one undo entry. Setting it turns on what `onMove` and
+`onEditContainer` do, with or without them.
+
+```tsx
+<DiagramView specs={specs} onEdit={(edit) => commit('Move', (doc) => applyEdit(doc, edit))} />
+```
+
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
 through the ports the run will commit.
@@ -1415,9 +1427,8 @@ between them (`'Move'`), drag a picked box's handles to resize it
 over the title (`'Rename group'`). A resized box is kept in
 `EffectDoc.groupBoxes`, by group id; a group with no box fits its members.
 Under `rack` and `lanes` groups draw as boxes around their members, and
-membership does not drag. A drag's moves and box edits come in as separate
-reports, so the editor gathers them and reports one edit once the drag is done
-reporting, a microtask later.
+membership does not drag. A drag's moves and box edits are reported as one
+edit, a microtask after the drag is done reporting.
 
 `selectedGroup` and `onSelectGroup` are the group pick, beside `selected` and
 `onSelect`, under every look. Cmd-click (Ctrl off macOS) adds a stage or group to the

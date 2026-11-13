@@ -119,21 +119,18 @@ describe('EffectEditor', () => {
     expect(onChange.mock.calls[0]![0].pipeline.wires).toEqual([]);
   });
 
-  it('stores a move as the stage place, once the drag is done reporting', async () => {
+  it('stores a move as the stage place', () => {
     const { onChange, view } = mount();
-    view().onMove!([{ id: 'blur', x: 210, y: 30 }], []);
-    expect(onChange).not.toHaveBeenCalled();
-    await act(async () => {});
+    view().onEdit!({ moves: [{ id: 'blur', x: 210, y: 30 }], routes: [], containers: [] });
     const [next, label] = onChange.mock.calls[0]!;
     expect(label).toBe('Move');
     expect(next.places.blur).toEqual({ x: 210, y: 30 });
     expect(next.places.src).toEqual({ x: 0, y: 0 });
   });
 
-  it('pins every stage where it shows on a move, as adding a stage does', async () => {
+  it('pins every stage where it shows on a move, as adding a stage does', () => {
     const { onChange, view } = mount({ ...doc, places: {} });
-    view().onMove!([{ id: 'blur', x: 210, y: 30 }], []);
-    await act(async () => {});
+    view().onEdit!({ moves: [{ id: 'blur', x: 210, y: 30 }], routes: [], containers: [] });
     const next = onChange.mock.calls[0]![0] as EffectDoc;
     expect(Object.keys(next.places).sort()).toEqual(['blur', 'mix', 'src']);
     expect(next.places.blur).toEqual({ x: 210, y: 30 });

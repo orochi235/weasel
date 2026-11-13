@@ -327,7 +327,7 @@ export { isBodyOrRegion, isDiagramBody } from './bodyNode';
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView, fitDiagram } from './DiagramView';
 export type {
-  ContainerEdit, DeleteReport, DiagramFit, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, LabelMove, NodeMove, NodeResize,
+  ContainerEdit, DeleteReport, DiagramEdit, DiagramFit, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, LabelMove, NodeMove, NodeResize,
   ReconnectChange, ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
