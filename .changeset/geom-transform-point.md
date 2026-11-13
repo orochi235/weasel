@@ -2,7 +2,7 @@
 '@weasel-js/geom': major
 ---
 
-geom's `applyToPoint` is renamed `transformPoint`, the name `@weasel-js/geom/3d` gives the same operation, beside `transformCoords` and `transformPath`.
+geom's `applyToPoint` is renamed `transformPoint`, as `@weasel-js/geom/3d` names it, beside `transformCoords` and `transformPath`.
 
 ```ts
 // before
