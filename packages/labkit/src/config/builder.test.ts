@@ -40,9 +40,18 @@ describe('builder', () => {
     expect(f.enum('a', ['a', 'b']).menu().annotations.control).toBe('menu');
   });
 
-  it('annotates a number with a display suffix', () => {
-    const n = f.number(20).suffix('px');
-    expect(n.annotations.suffix).toBe('px');
+  it('gives a number a display suffix as the unit a prefs leaf shows', () => {
+    expect(f.number(20).suffix('px').annotations.unit).toEqual({ scale: 1, suffix: 'px' });
+  });
+
+  it('lets the last of `.suffix` and `.unit` name the suffix, and keeps the unit’s scale', () => {
+    const deg = { scale: Math.PI / 180, suffix: '°' };
+    expect(f.number(0).unit(deg).suffix('deg').annotations.unit).toEqual({ ...deg, suffix: 'deg' });
+    expect(f.number(0).suffix('deg').unit(deg).annotations.unit).toEqual(deg);
+    expect(f.number(0).suffix('deg').unit({ scale: 2 }).annotations.unit).toEqual({
+      scale: 2,
+      suffix: 'deg',
+    });
   });
 
   it('annotates a number with a display format', () => {
@@ -222,7 +231,7 @@ describe('auto on a node', () => {
   it('keeps the subclass, so kind-specific methods still chain after', () => {
     const n = f.number(3).initial(auto).range(0, 10).suffix('px');
     expect(n.annotations.min).toBe(0);
-    expect(n.annotations.suffix).toBe('px');
+    expect(n.annotations.unit?.suffix).toBe('px');
     expect(n.options.auto).toEqual({ on: true });
   });
 

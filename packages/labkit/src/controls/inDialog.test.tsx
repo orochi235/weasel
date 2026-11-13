@@ -169,9 +169,7 @@ describe('summarizeLeaf', () => {
   });
 
   it('writes a number with a suffix as its field shows it', () => {
-    // `suffix` is a labkit extra, which no `PrefLeaf` type names.
-    expect(summarizeLeaf(Object.assign({ suffix: 'px' }, plain), 12)).toBe('12px');
-    expect(summarizeLeaf(Object.assign({ suffix: 'ticks' }, angle), Math.PI)).toBe('180ticks');
+    expect(summarizeLeaf({ ...plain, unit: { scale: 1, suffix: 'px' } }, 12)).toBe('12px');
   });
 
   it("writes a number through its display, and infinity as its endless end's word", () => {

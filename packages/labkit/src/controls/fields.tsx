@@ -96,7 +96,6 @@ export function labField(
       // handed a value outside the range it asked for.
       return {
         ...field,
-        unit: extra<string>(leaf, 'suffix') ?? field.unit,
         placeholder: extra<string>(leaf, 'placeholder'),
       };
     case 'string':
