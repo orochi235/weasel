@@ -3,6 +3,7 @@ import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { useShallow } from 'zustand/react/shallow';
+import { AnnotationOptions } from '../annotations/AnnotationOptions';
 import { useLabMarks } from '../annotations/labMarks';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { CameraGesturesContext } from '../canvas/cameraGestures';
@@ -183,9 +184,8 @@ function LabRuntime({
   const resolvedMode = useResolvedColorMode(modeValue);
 
   const labMarks = useLabMarks(opened.records, marks);
-  const labChromeAll = useLabChromeAll(instruments, labMarks.shown, tools, lone.labChrome);
-  const hasFooterChrome = labChromeAll.some((c) => c.region === 'footer');
-  const hasPaneChrome = labChromeAll.some((c) => c.region === 'sidebar' || c.region === 'aside');
+  const chromeAll = useLabChromeAll(instruments, labMarks.shown, tools, lone.labChrome);
+  const labChromeAll = chromeAll.all;
 
   useEffect(() => {
     if (mode && mode !== store.getState().mode) store.getState().setMode(mode);
@@ -250,7 +250,7 @@ function LabRuntime({
                       {...(pages ? { pages } : {})}
                       {...(path !== undefined ? { path } : {})}
                       footer={
-                        hasFooterChrome ? (
+                        chromeAll.hasFooter ? (
                           <>
                             {footer}
                             <LabFooterRegion contributions={labChromeAll} />
@@ -264,7 +264,8 @@ function LabRuntime({
                       <UnreadableRecords />
                       <PanelHostContext.Provider value={panelHosts}>
                         <LabSurface bodyRef={setLabBody} contributions={labChromeAll}>
-                          {hasPaneChrome ? (
+                          <AnnotationOptions tools={chromeAll.tools} />
+                          {chromeAll.hasPanes ? (
                             <LabPanes contributions={labChromeAll}>
                               <LabPalette contributions={labChromeAll} />
                               {body}

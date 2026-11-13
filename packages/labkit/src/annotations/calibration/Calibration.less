@@ -1,0 +1,88 @@
+// The calibration lab: the picture to trace on the left, how each exercise scored on the right.
+.lk-cal {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wzl-space-md);
+  padding: var(--wzl-space-md);
+  height: 100%;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.lk-cal__frame {
+  flex: none;
+  border: 1px solid var(--wzl-border);
+}
+
+// A window onto part of the picture, which marks have to follow as it scrolls.
+.lk-cal__frame--scrolled {
+  height: var(--lk-cal-frame-h);
+  overflow: auto;
+}
+
+.lk-cal__picture {
+  width: max-content;
+  line-height: 0;
+}
+
+.lk-cal__svg {
+  display: block;
+}
+
+.lk-cal__results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-sm);
+  min-width: 0;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.lk-cal__table {
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 2px var(--wzl-space-sm);
+    text-align: start;
+    border-bottom: 1px solid var(--wzl-border);
+  }
+
+  thead th {
+    color: var(--wzl-fg-muted);
+    font-weight: var(--wzl-font-weight-medium);
+  }
+}
+
+.lk-cal__instruction {
+  font-weight: inherit;
+}
+
+// Read down the column: digits of one width, every cell to two places.
+.lk-cal__table .lk-cal__num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  min-width: 7ch;
+}
+
+.lk-cal__status--pass {
+  color: var(--wzl-success);
+}
+
+.lk-cal__status--fail {
+  color: var(--wzl-danger);
+}
+
+.lk-cal__status--missing {
+  color: var(--wzl-fg-muted);
+}
+
+.lk-cal__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+}
+
+.lk-cal__summary {
+  color: var(--wzl-fg-muted);
+  font-variant-numeric: tabular-nums;
+}

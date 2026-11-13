@@ -2,6 +2,7 @@ import { useLatest } from '@weasel-js/core';
 import { createEmitter, deepEqual } from '@weasel-js/registry';
 import { onLeave } from '@weasel-js/storage';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useRegisterTrialMarks } from '../annotations/labMarkStores';
 import { annotationsFromJSON } from '../annotations/store';
 import type {
   AnnotationsApi,
@@ -130,6 +131,7 @@ export function useTrialMarks({
     return annotations.subscribe(read);
   }, [annotations, annotationsCap]);
 
+  useRegisterTrialMarks(record.id, annotationsCap ? provided : null);
   return { annotations, provided, moves: markMoves };
 }
 

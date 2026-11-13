@@ -73,8 +73,9 @@ describe('a mark as vector', () => {
     expect(node).toMatchObject({ kind: 'text', text: 'missing edge', x: 10, y: 12 });
   });
 
-  it('emits nothing for a text mark with no words', () => {
-    expect(markSvgNodes(mark('text'))).toEqual([]);
+  it('emits a text mark with no words as its dashed box, not an empty text node', () => {
+    const [node] = markSvgNodes(mark('text'));
+    expect(node).toMatchObject({ kind: 'path', stroke: { dash: [3, 3] } });
   });
 
   // Why `composeCaptureSvg` and `<OverviewMarks>` serialize without awaiting

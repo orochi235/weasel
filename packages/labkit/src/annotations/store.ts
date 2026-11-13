@@ -15,6 +15,7 @@ import {
   worldToFrac,
 } from './frac';
 import { MarkHistory, markHistoryOf, markUndo, restoreSceneHistory } from './history';
+import { markDataFrom } from './markData';
 import { markIdOf, splitMarkId } from './markId';
 import { migrateLegacyPoints, type SerializedMarks, shapeFor } from './markShape';
 import { matchesQuery } from './query';
@@ -302,16 +303,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       const target = targetOf(init.target);
       const frac = roundFrac(init.frac);
       const shape = shapeFor(init.kind, init.points, frac);
-      const data: AnnotationData = {
-        target: init.target,
-        kind: init.kind,
-        ...(shape ? { shape } : {}),
-        ...(init.title !== undefined ? { title: init.title } : {}),
-        ...(init.status !== undefined ? { status: init.status } : {}),
-        ...(init.tags !== undefined ? { tags: init.tags } : {}),
-        ...(init.meta !== undefined ? { meta: init.meta } : {}),
-        seen: seenFrom(config, target?.positionDependsOn ?? []),
-      };
+      const data = markDataFrom(init, shape, seenFrom(config, target?.positionDependsOn ?? []));
       const node = sceneFor(init.target).add({
         kind: 'mark',
         layer: 'marks',
@@ -321,7 +313,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       return markIdOf(init.target, node);
     },
 
-    update(id, patch: AnnotationPatch) {
+    update(id, patch: AnnotationPatch, opts) {
       const found = nodeOf(id);
       if (!found) return;
       const { frac: fracPatch, points, ...meaning } = patch;
@@ -331,10 +323,16 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       const bounds = roundFrac(frac ?? worldToFrac(found.node.pose as MarkPose, content));
       const shape = points ? shapeFor(found.node.data.kind, points, bounds) : undefined;
       const data = { ...found.node.data, ...meaning, ...(shape ? { shape } : {}) };
-      found.scene.batch('update mark', () => {
-        if (Object.keys(meaning).length > 0 || shape) found.scene.update(nid, { data });
-        if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
-      });
+      const coalesce =
+        opts?.coalesceKey === undefined ? undefined : { coalesceKey: opts.coalesceKey };
+      found.scene.batch(
+        'update mark',
+        () => {
+          if (Object.keys(meaning).length > 0 || shape) found.scene.update(nid, { data });
+          if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
+        },
+        coalesce,
+      );
     },
 
     setMeta(id, meta) {

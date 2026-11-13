@@ -8,6 +8,7 @@ import {
   type View,
   WeaselProvider,
 } from '@weasel-js/core';
+import type { ToolOptionValues } from '@weasel-js/routing';
 import {
   type CSSProperties,
   useCallback,
@@ -27,10 +28,12 @@ import {
 } from '../surface/useSurfaceTile';
 import { createMarkDrawOne } from './drawOne';
 import { boundsOf, roundPoints, toShape, type WorldRect } from './frac';
+import { markStyleFrom } from './options';
+import { useOverlayTile } from './overlayTile';
 import { POINT_MARK_SHAPE } from './paint';
 import { seenFrom } from './staleness';
 import type { MarkScene } from './store';
-import { ANNOTATION_WEASEL_TOOLS, annotationToolInfo } from './toolMap';
+import { ANNOTATION_WEASEL_TOOLS, annotationToolInfo, annotationToolOptions } from './toolMap';
 import type {
   AnnotationData,
   AnnotationKind,
@@ -38,6 +41,7 @@ import type {
   AnnotationTarget,
   FracPoint,
 } from './types';
+import { useLabToolOptionValues } from './useLabToolOptions';
 import { fitView, toWeaselView } from './view';
 import { useWheelHandOff } from './wheelScroll';
 
@@ -109,6 +113,7 @@ function insertFactories(
   target: AnnotationTarget,
   toolRef: { readonly current: string | null },
   configRef: { readonly current: unknown },
+  values: ToolOptionValues,
 ): Record<string, InsertNodeFactory> {
   const id = target.id;
   const factories: Record<string, InsertNodeFactory> = {};
@@ -118,9 +123,11 @@ function insertFactories(
       const kind: AnnotationKind | undefined = info?.kind;
       if (!kind) return null;
       const seen = seenFrom(configRef.current, target.positionDependsOn ?? []);
+      const tool = toolRef.current ?? '';
+      const style = markStyleFrom(tool, annotationToolOptions(tool), values);
       const geometry = insertedGeometry(extras as unknown as Record<string, unknown>);
-      if (!geometry) return { data: { target: id, kind, seen } satisfies AnnotationData };
-      const data: AnnotationData = { target: id, kind, shape: geometry.shape, seen };
+      if (!geometry) return { data: { target: id, kind, ...style, seen } satisfies AnnotationData };
+      const data: AnnotationData = { target: id, kind, shape: geometry.shape, ...style, seen };
       return { data, pose: geometry.pose };
     };
   }
@@ -166,6 +173,7 @@ export function AnnotationOverlay({
   // `line` and `pencil` at the weasel end.
   const toolRef = useLatest(activeToolId);
   const configRef = useLatest(config);
+  const optionValues = useLabToolOptionValues();
 
   const id = target.id;
   // The surface's tile namespace is the whole lab's, and every trial of an
@@ -175,23 +183,7 @@ export function AnnotationOverlay({
   // Out of scope while another trial is expanded: nothing paints this tile
   // then, and its box would sit over the expanded one.
   const inScope = useTileInScope(tileId);
-  const lastTile = useRef<HTMLElement | null>(null);
-  useEffect(() => {
-    const el = target.ref.current ?? null;
-    if (el === lastTile.current) return;
-    lastTile.current = el;
-    surface?.registerTile(tileId, el);
-  });
-  useEffect(
-    () => () => {
-      // Clearing this is what lets the effect above re-register on the next
-      // commit. StrictMode's mount / unmount / mount would otherwise take the
-      // tile out and never put it back, and the surface would measure nothing.
-      lastTile.current = null;
-      surface?.registerTile(tileId, null);
-    },
-    [surface, tileId],
-  );
+  useOverlayTile(surface, tileId, target.ref);
 
   // Erases the whole shared buffer when the tiles move: a tile that moved took
   // its scissor with it, and what it painted last frame stays where it was.
@@ -266,7 +258,7 @@ export function AnnotationOverlay({
     meaning,
   });
 
-  const factories = insertFactories(target, toolRef, configRef);
+  const factories = insertFactories(target, toolRef, configRef, optionValues);
 
   // A measured rect has nowhere to live but the element's own style. Set as
   // custom properties, which the stylesheet reads — the sanctioned use.

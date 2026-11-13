@@ -92,8 +92,13 @@ describe('markCommands', () => {
     expect(runs.map((r) => r.text).join('')).toBe('missing edge');
   });
 
-  it('draws an untitled text mark as nothing rather than an empty run', () => {
-    expect(markCommands(mark('text'))).toEqual([]);
+  it('draws an untitled text mark as its dashed box rather than an empty run', () => {
+    const [cmd] = markCommands(mark('text'));
+    expect(cmd).toMatchObject({
+      kind: 'path',
+      path: { kind: 'rect', ...POSE },
+      stroke: { dash: [3, 3] },
+    });
   });
 
   it('draws a point as a small unfilled ring centered on its position', () => {
@@ -204,5 +209,28 @@ describe('markCommands styling', () => {
     const [cmd] = markCommands(mark('text', { title: 'x' }), { color: '#30a46c' });
     const runs = (cmd as { runs: { fill?: { paint?: { color?: string } } }[] }).runs;
     expect(runs[0]?.fill?.paint?.color).toBe('#30a46c');
+  });
+
+  it("draws a line at the mark's own width and color", () => {
+    const [cmd] = markCommands(mark('rect', { width: 8, color: '#0090ff' }));
+    const stroke = (cmd as { stroke: { width: number; paint: { color: string } } }).stroke;
+    expect(stroke.width).toBe(8);
+    expect(stroke.paint.color).toBe('#0090ff');
+  });
+
+  it("lets a status's color win over the mark's own", () => {
+    const [cmd] = markCommands(mark('line', { color: '#0090ff' }), { color: '#30a46c' });
+    expect((cmd as { stroke: { paint: { color: string } } }).stroke.paint.color).toBe('#30a46c');
+  });
+
+  it("sizes an arrow's head with its width", () => {
+    const [cmd] = markCommands(mark('arrow', { width: 6 }));
+    const stroke = (cmd as { stroke: { markerEnd: { size: unknown } } }).stroke;
+    expect(stroke.markerEnd.size).toEqual({ px: 6 });
+  });
+
+  it("sets text at the mark's own size", () => {
+    const [cmd] = markCommands(mark('text', { title: 'x', fontSize: 30 }));
+    expect((cmd as { style: { fontSize: number } }).style.fontSize).toBe(30);
   });
 });
