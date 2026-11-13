@@ -27,7 +27,7 @@ export interface HistoryEntry {
   /** Set of node ids touched by any op in this entry, as `touchedIdsFromOps`
    *  reads them from each op's `args`. A restored entry has it too: `restore`
    *  derives it from the rebuilt ops. */
-  touchedIds?: ReadonlySet<string>;
+  touchedIds: ReadonlySet<string>;
   /** Selection restored when this entry is undone. */
   selectionBefore?: readonly string[];
   /** Selection restored when this entry is redone. */
