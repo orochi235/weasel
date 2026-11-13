@@ -53,14 +53,14 @@ describe('modifier roles', () => {
   });
 
   it('reads mod as Cmd on a Mac and Ctrl elsewhere', () => {
-    for (const isMac of [true, false]) {
+    for (const apple of [true, false]) {
       const { seen, start } = recorder();
-      const ctx = makeCtx({ actions: makeRegistry([holdAction(start)]), isMac });
+      const ctx = makeCtx({ actions: makeRegistry([holdAction(start)]), apple });
       const d = createDispatcher();
       d.handleInput(pointer('pointerdown'), ctx);
       d.handleInput(pointer('pointermove', { meta: true }), ctx);
       d.handleInput(pointer('pointermove', { ctrl: true }), ctx);
-      expect(seen.map((r) => r?.['handle.holdLength'])).toEqual([false, isMac, !isMac]);
+      expect(seen.map((r) => r?.['handle.holdLength'])).toEqual([false, apple, !apple]);
     }
   });
 

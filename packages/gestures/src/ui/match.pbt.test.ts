@@ -23,31 +23,31 @@ const modSpec: fc.Arbitrary<ModSpec> = fc.tuple(...MOD_KEYS.map(() => value)).ma
 });
 
 /** The modifier states `mods` accepts, as indexes into {@link ALL_MODIFIER_STATES}. */
-const accepted = (mods: ModSpec | undefined, isMac: boolean): number[] =>
-  ALL_MODIFIER_STATES.flatMap((e, i) => (matchModifiers(e, mods, isMac) ? [i] : []));
+const accepted = (mods: ModSpec | undefined, apple: boolean): number[] =>
+  ALL_MODIFIER_STATES.flatMap((e, i) => (matchModifiers(e, mods, apple) ? [i] : []));
 
 const FIELDS = ['altKey', 'ctrlKey', 'metaKey', 'shiftKey'] as const;
 
 describe('matchModifiers', () => {
   it('a spec naming exactly the held keys accepts that state alone', () => {
-    fc.assert(fc.property(fc.integer({ min: 0, max: 15 }), fc.boolean(), (i, isMac) => {
+    fc.assert(fc.property(fc.integer({ min: 0, max: 15 }), fc.boolean(), (i, apple) => {
       const e = ALL_MODIFIER_STATES[i]!;
       const exact: ModSpec = { alt: e.altKey, ctrl: e.ctrlKey, meta: e.metaKey, shift: e.shiftKey };
-      expect(accepted(exact, isMac)).toEqual([i]);
+      expect(accepted(exact, apple)).toEqual([i]);
     }), runs(RUNS));
   });
 
   it('loosening any one key to optional accepts a superset', () => {
-    fc.assert(fc.property(modSpec, fc.constantFrom(...MOD_KEYS), fc.boolean(), (mods, k, isMac) => {
-      const before = accepted(mods, isMac);
-      const after = new Set(accepted({ ...mods, [k]: 'optional' }, isMac));
+    fc.assert(fc.property(modSpec, fc.constantFrom(...MOD_KEYS), fc.boolean(), (mods, k, apple) => {
+      const before = accepted(mods, apple);
+      const after = new Set(accepted({ ...mods, [k]: 'optional' }, apple));
       for (const i of before) expect(after.has(i)).toBe(true);
     }), runs(RUNS));
   });
 
   it('accepts at least one state, and its own keys are independent: each is required, forbidden, or free', () => {
-    fc.assert(fc.property(modSpec, fc.boolean(), (mods, isMac) => {
-      const ok = accepted(mods, isMac).map((i) => ALL_MODIFIER_STATES[i]!);
+    fc.assert(fc.property(modSpec, fc.boolean(), (mods, apple) => {
+      const ok = accepted(mods, apple).map((i) => ALL_MODIFIER_STATES[i]!);
       expect(ok.length).toBeGreaterThan(0);
       const free = FIELDS.filter((f) => ok.some((e) => e[f]) && ok.some((e) => !e[f])).length;
       expect(ok.length).toBe(2 ** free);
@@ -55,21 +55,21 @@ describe('matchModifiers', () => {
   });
 
   it('reads mod as meta on a Mac and as ctrl elsewhere', () => {
-    fc.assert(fc.property(modSpec, fc.boolean(), (mods, isMac) => {
+    fc.assert(fc.property(modSpec, fc.boolean(), (mods, apple) => {
       const { mod, ...rest } = mods;
-      const own = isMac ? 'meta' : 'ctrl';
+      const own = apple ? 'meta' : 'ctrl';
       const strongest = [rest[own], mod].includes(true) ? true : [rest[own], mod].includes('optional') ? 'optional' : undefined;
-      expect(accepted(mods, isMac)).toEqual(accepted({ ...rest, [own]: strongest }, isMac));
+      expect(accepted(mods, apple)).toEqual(accepted({ ...rest, [own]: strongest }, apple));
     }), runs(RUNS));
   });
 });
 
 describe('specificity', () => {
   it('counts the keys every state its modifiers accept holds', () => {
-    fc.assert(fc.property(modSpec, fc.boolean(), (mods, isMac) => {
-      const ok = accepted(mods, isMac).map((i) => ALL_MODIFIER_STATES[i]!);
+    fc.assert(fc.property(modSpec, fc.boolean(), (mods, apple) => {
+      const ok = accepted(mods, apple).map((i) => ALL_MODIFIER_STATES[i]!);
       const always = FIELDS.filter((f) => ok.every((e: EventModifiers) => e[f])).length;
-      expect(specificity({ kind: 'click', mods }, isMac)[1]).toBe(always);
+      expect(specificity({ kind: 'click', mods }, apple)[1]).toBe(always);
     }), runs(RUNS));
   });
 });
@@ -126,7 +126,7 @@ describe('key sugar', () => {
   it('writes a key spec as a route that reads back to a spec matching the same keystrokes, or as null', () => {
     let spelled = 0;
     let refused = 0;
-    fc.assert(fc.property(keySpec, fc.boolean(), (spec, isMac) => {
+    fc.assert(fc.property(keySpec, fc.boolean(), (spec, apple) => {
       const route = keySpecRoute(spec);
       const one = [spec.key].flat().length === 1;
       if (spec.code !== undefined || !one || (Array.isArray(spec.phase) && spec.phase.length === 0)) {
@@ -140,7 +140,7 @@ describe('key sugar', () => {
       expect(atomsOf(back!.phase)).toEqual(atomsOf(spec.phase));
       const press = (e: EventModifiers) => ({ kind: spec.kind, key: [spec.key].flat()[0]!, phase: 'down' as const, ...e });
       for (const e of ALL_MODIFIER_STATES) {
-        expect(matchSpec(press(e), back!, isMac), JSON.stringify(e)).toBe(matchSpec(press(e), spec, isMac));
+        expect(matchSpec(press(e), back!, apple), JSON.stringify(e)).toBe(matchSpec(press(e), spec, apple));
       }
     }), runs(RUNS));
     expect(spelled).toBeGreaterThan(0);

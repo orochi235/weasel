@@ -53,7 +53,7 @@ accepts, with whether each takes a target and what argument it carries.
 An `InputEvent` is one normalized input: a union keyed by `kind`, each arm
 carrying the modifier state and whatever that kind of input reports.
 
-`matchSpec(event, spec, isMac)` returns whether an event satisfies a spec.
+`matchSpec(event, spec, apple)` returns whether an event satisfies a spec.
 Its parts are exported too: `matchModifiers`, `matchKey`, `matchTarget`, and
 `matchPhase`. When several specs match one event, `specificity(spec)` gives a
 tuple to rank them by, so the narrower description wins.

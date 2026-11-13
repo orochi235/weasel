@@ -26,7 +26,7 @@ export function buildDispatchRecord(
         scope: m.scope,
         ownerId: m.ownerId,
         namesView: namesView(m.binding, view),
-        specificity: specificity(m.binding.spec, r.isMac),
+        specificity: specificity(m.binding.spec, r.apple),
         ...(eligible !== undefined ? { eligible: describeEligible(eligible) } : {}),
       };
       candidates.set(m, c);
@@ -51,7 +51,7 @@ export function buildDispatchRecord(
     const prev = walked.steps[i - 1]?.match;
     return {
       candidate: candidateOf(match),
-      placedBy: prev ? placedBy(prev, match, view, r.ruleCtx !== undefined && gated(prev) && !gated(match), r.isMac) : { step: 'first' },
+      placedBy: prev ? placedBy(prev, match, view, r.ruleCtx !== undefined && gated(prev) && !gated(match), r.apple) : { step: 'first' },
       walk: step,
     };
   });

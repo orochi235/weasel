@@ -34,7 +34,7 @@ const SIZE = 56;
 const COLORS = 4;
 const LOG_LINES = 6;
 const MODIFIER_KEYS = new Set(['Shift', 'Alt', 'Control', 'Meta']);
-const IS_MAC = isApplePlatform();
+const APPLE = isApplePlatform();
 
 const nodeId = (id: string) => id as NodeId;
 
@@ -264,7 +264,7 @@ export function RoutingDemo() {
       activeToolId: f.hand ? HAND.id : null,
       hotkeyStack: f.space ? [HAND.id] : [],
       entriesById: TOOLS,
-      isMac: IS_MAC,
+      apple: APPLE,
       getRuleCtx: () => buildRuleCtx({
         focused: true,
         selection: boardRef.current.selected,

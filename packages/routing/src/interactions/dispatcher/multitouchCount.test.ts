@@ -56,7 +56,7 @@ describe('a multitouch handle ends when the finger count moves on', () => {
     };
     const ctx: DispatcherContext = {
       depRegistry, actions, activeToolId: 'select', hotkeyStack: [],
-      entriesById: new Map([['gestures', tool]]), isMac: false,
+      entriesById: new Map([['gestures', tool]]), apple: false,
     };
     const d = createDispatcher({
       getAction: (id) => (id === 'zoom' ? zoom : id === 'swipe' ? swipe : undefined),

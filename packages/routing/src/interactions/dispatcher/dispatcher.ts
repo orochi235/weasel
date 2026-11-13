@@ -71,11 +71,11 @@ export function createDispatcher(opts?: {
   // The view the input being handled landed in. Set per `handleInput`, so a
   // pump of an in-flight gesture reports the view it is pinned to.
   let routedView: string | null | undefined;
-  let routedIsMac = false;
+  let routedApple = false;
   let routedToLocal: DispatcherContext['toLocal'];
 
   const run: GestureRun = {
-    inFlight, facts, viewId: () => routedView, isMac: () => routedIsMac, toLocal: () => routedToLocal, opened: new Map(),
+    inFlight, facts, viewId: () => routedView, apple: () => routedApple, toLocal: () => routedToLocal, opened: new Map(),
     endings: 0,
   };
   const invoking = (event: InputEvent): Attempt =>
@@ -83,7 +83,7 @@ export function createDispatcher(opts?: {
 
   function handleInput(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled' {
     routedView = ctx.viewId;
-    routedIsMac = ctx.isMac;
+    routedApple = ctx.apple;
     routedToLocal = ctx.toLocal;
     const pumped = pumpGesture(run, event, ctx.keyReach);
     if (pumped === 'pass') return handOff(run, event, ctx, invoking, inFlight.engagedOwners);

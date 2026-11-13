@@ -85,7 +85,7 @@ export function rank(
 ): Ranking {
   const view = ctx.viewId ?? null;
   const outcome = matchSortedWithBarred(
-    event, assembleScopedBindings(ctx), ctx.isMac, engaged, { collectBarred },
+    event, assembleScopedBindings(ctx), ctx.apple, engaged, { collectBarred },
   );
   const sorted = preferViewScoped(outcome.matches, view);
   const actionMap = buildActionMap(ctx.actions);
@@ -102,7 +102,7 @@ export function rank(
   // order ranking them alone would: `preferContextual` only reorders within
   // a run of ties, and every tie's members sit together.
   const ordered = ruleCtx
-    ? preferContextual(sorted, (id) => actionMap.get(id), holds, view, ctx.isMac)
+    ? preferContextual(sorted, (id) => actionMap.get(id), holds, view, ctx.apple)
     : sorted;
   return {
     ordered,
@@ -110,7 +110,7 @@ export function rank(
     ...(outcome.claimOwner !== undefined ? { claimOwner: outcome.claimOwner } : {}),
     actionMap,
     ruleCtx,
-    isMac: ctx.isMac,
+    apple: ctx.apple,
     eligible: (m) => {
       const a = actionMap.get(m.binding.actionId);
       return a === undefined || holds(a);
@@ -220,7 +220,7 @@ export function verdictsOf(r: Ranking, walked: Walked, evaluateShadowed: boolean
       binding: match.binding,
       scope: match.scope,
       ownerId: match.ownerId,
-      specificity: specificity(match.binding.spec, r.isMac),
+      specificity: specificity(match.binding.spec, r.apple),
       verdict,
     });
   }

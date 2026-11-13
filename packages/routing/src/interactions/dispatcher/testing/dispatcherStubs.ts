@@ -44,7 +44,7 @@ export function makeCtx(
     activeToolId: 'select',
     hotkeyStack: [],
     entriesById: new Map(),
-    isMac: false,
+    apple: false,
     ...overrides,
   };
 }

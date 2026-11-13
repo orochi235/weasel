@@ -12,8 +12,8 @@ const TEXT_INPUT_TYPES = new Set([
  * (Ctrl+A to the line's start, Ctrl+B back a character, Ctrl+K to cut to the line's end), so it belongs to the text:
  * no kit shortcut claims it and nothing prevents its default. Off Apple, Ctrl is `mod` and this is always false.
  */
-export function textOwnsChord(e: { ctrlKey: boolean; metaKey: boolean }, isMac = isApplePlatform()): boolean {
-  return isMac && e.ctrlKey && !e.metaKey;
+export function textOwnsChord(e: { ctrlKey: boolean; metaKey: boolean }, apple = isApplePlatform()): boolean {
+  return apple && e.ctrlKey && !e.metaKey;
 }
 
 /** Returns true when the target takes typed text: a text-entry input, a textarea, or a contenteditable element. */

@@ -1954,9 +1954,7 @@ Calls the lanes made without a ruling:
 - Open: `Action.enabled(deps, at, carried, params, viewId)` takes `params` fourth where `active`, `preview` and an
   invoker's `run` take it second. Moving it to `enabled(deps, params, where)` touches every action that declares
   `enabled`.
-- Open: which platform a key is read for is spelled `platform` (`formatShortcut`, `describeKeymap`), `apple`
-  (`captureKey`, `captureGesture`, `browserReservedChord`) and `isMac` (the matchers, `DispatcherContext`). Which
-  one name these take.
+- 2026-11-13: The platform flag's spelling is settled under round twenty-two's gesture-system section.
 
 ## Audit round twenty-one (2026-11-12): core's canvas and scene surface
 
@@ -2034,3 +2032,13 @@ Calls the lanes made without a ruling:
 - Open: audio's reverb and impulse lengths are seconds (`impulseResponse(ctx, seconds)`, the reverb insert's
   `seconds`) where every other audio duration is ms, and the animator's `slew` steps in seconds where its tweens take
   ms. Changing either is a unit change inside an option that keeps its name, which a caller would not see break.
+
+## Audit round twenty-two (2026-11-13): the gesture system
+
+- 2026-11-13: Whether `mod` is Command is one boolean named `apple` everywhere, after `isApplePlatform()` and
+  `ModeShortcut.apple`. `DispatcherContext.isMac` is now `DispatcherContext.apple`, and the matchers' parameter
+  (`matchSpec`, `matchModifiers`, `specificity`, `historyKey`, `textOwnsChord`, `matchesKeyBinding`) is `apple`,
+  as `captureKey`'s and `browserReservedChord`'s already were. `isMac` was wrong on its face: iPhone and iPad
+  count. `platform` stays the name of a `Platform` (`'macos' | 'windows' | 'linux'`), which `formatShortcut` and
+  `describeKeymap` take because a legend tells Windows from Linux (`⊞` against Super) and a matcher does not. The
+  two are different types, not two spellings of one.

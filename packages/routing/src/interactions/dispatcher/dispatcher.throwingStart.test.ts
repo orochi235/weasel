@@ -26,7 +26,7 @@ function setup() {
   const actions = { list: () => [drag] } as unknown as ActionsRegistry;
   const depRegistry: DepRegistry = { register: vi.fn().mockReturnValue(() => {}), get: vi.fn() as DepRegistry['get'] };
   const ctx: DispatcherContext = {
-    depRegistry, actions, activeToolId: null, hotkeyStack: [], entriesById: new Map(), isMac: false,
+    depRegistry, actions, activeToolId: null, hotkeyStack: [], entriesById: new Map(), apple: false,
   };
   const d = createDispatcher({ getAction: (id) => (id === 'drag' ? drag : undefined) });
   const pointer = (kind: 'pointerdown' | 'pointerup'): InputEvent =>

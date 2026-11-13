@@ -30,8 +30,8 @@ export interface DispatcherContext {
   hotkeyStack: readonly string[];
   /** Every registered entry, tools and ambient contributions alike, by id. */
   entriesById: ReadonlyMap<string, Contribution<unknown>>;
-  /** Platform flag for `mod` shorthand resolution. */
-  isMac: boolean;
+  /** Whether `mod` is Command (`isApplePlatform()`), not Ctrl. */
+  apple: boolean;
   /**
    * Thunk returning a fresh `RuleCtx` for the current frame — the routed
    * view's, when the surface hosts several. When it answers, the dispatcher

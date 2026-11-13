@@ -35,7 +35,7 @@ function setup() {
   };
   const ctx: DispatcherContext = {
     depRegistry, actions, activeToolId: 'select', hotkeyStack: [],
-    entriesById: new Map([['tool', tool]]), isMac: false,
+    entriesById: new Map([['tool', tool]]), apple: false,
   };
   return { d: createDispatcher({ getAction: (id) => (id === 'take' ? take : undefined) }), ctx, ran };
 }

@@ -44,9 +44,9 @@ const ownOf = <V>(record: Readonly<Record<string, V>> | undefined, id: string): 
   record && Object.hasOwn(record, id) ? record[id] : undefined;
 
 /** Whether any of `keys` is held. */
-export function keysHeld(keys: RoleKeys, modifiers: ModifierState, isMac: boolean): boolean {
+export function keysHeld(keys: RoleKeys, modifiers: ModifierState, apple: boolean): boolean {
   return keys.some((k) => {
-    if (k === 'mod') return isMac ? modifiers.meta : modifiers.ctrl;
+    if (k === 'mod') return apple ? modifiers.meta : modifiers.ctrl;
     return modifiers[k];
   });
 }
@@ -67,10 +67,10 @@ export function roleKeysOf(
 /** `keys` with each `'mod'` written as the key it is on this platform. */
 export function platformRoleKeys(
   keys: Readonly<Record<string, RoleKeys>>,
-  isMac: boolean,
+  apple: boolean,
 ): Readonly<Record<string, RoleKeys>> {
   const out: Record<string, RoleKeys> = {};
-  for (const id of Object.keys(keys)) setOwn(out, id, keys[id].map((k) => (k === 'mod' ? (isMac ? 'meta' : 'ctrl') : k)));
+  for (const id of Object.keys(keys)) setOwn(out, id, keys[id].map((k) => (k === 'mod' ? (apple ? 'meta' : 'ctrl') : k)));
   return out;
 }
 
@@ -78,10 +78,10 @@ export function platformRoleKeys(
 export function resolveRoles(
   keys: Readonly<Record<string, RoleKeys>>,
   modifiers: ModifierState,
-  isMac: boolean,
+  apple: boolean,
 ): Record<string, boolean> {
   const out: Record<string, boolean> = {};
-  for (const id of Object.keys(keys)) setOwn(out, id, keysHeld(keys[id], modifiers, isMac));
+  for (const id of Object.keys(keys)) setOwn(out, id, keysHeld(keys[id], modifiers, apple));
   return out;
 }
 

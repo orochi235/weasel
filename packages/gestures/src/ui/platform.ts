@@ -3,7 +3,7 @@
  * not Ctrl. iPhone and iPad count: with a keyboard attached their shortcuts
  * are Command shortcuts. False where there is no `navigator`.
  *
- * The default `isMac` of {@link matchModifiers}, {@link matchSpec} and `specificity`;
+ * The default `apple` of {@link matchModifiers}, {@link matchSpec} and `specificity`;
  * read it wherever a `mod` shortcut is drawn, so a label names the key
  * the matcher listens for.
  */

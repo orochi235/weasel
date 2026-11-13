@@ -36,7 +36,7 @@ const bindings = fc.array(fc.record({
 // Mostly no modifier or Alt alone, which the common specs above match.
 const held = fc.oneof({ weight: 4, arbitrary: fc.constantFrom(0, 1) }, fc.nat(15));
 const event = fc.tuple(fc.constantFrom('a', 'A', 'Enter'), held).map(([key, i]) => ({ kind: 'key' as const, ...keyEvents(key)[i]! }));
-const rankOf = (m: MatchResult, isMac: boolean) => `${SCOPES.indexOf(m.scope)}|${specificity(m.binding.spec, isMac).join()}`;
+const rankOf = (m: MatchResult, apple: boolean) => `${SCOPES.indexOf(m.scope)}|${specificity(m.binding.spec, apple).join()}`;
 
 describe('ranking', () => {
   it('orders matches by tier, then specificity, and moves only ties when the bindings are shuffled', () => {
@@ -44,18 +44,18 @@ describe('ranking', () => {
     fc.assert(fc.property(
       bindings.chain((bs) => fc.tuple(fc.constant(bs), fc.shuffledSubarray(bs, { minLength: bs.length, maxLength: bs.length }))),
       event, fc.boolean(),
-      ([bs, shuffled], e, isMac) => {
+      ([bs, shuffled], e, apple) => {
         const quiet = () => {};
-        const a = matchSorted(e, bs, isMac, undefined, quiet);
-        const b = matchSorted(e, shuffled, isMac, undefined, quiet);
+        const a = matchSorted(e, bs, apple, undefined, quiet);
+        const b = matchSorted(e, shuffled, apple, undefined, quiet);
         expect(b.map((m) => m.binding.actionId).sort()).toEqual(a.map((m) => m.binding.actionId).sort());
-        expect(b.map((m) => rankOf(m, isMac))).toEqual(a.map((m) => rankOf(m, isMac)));
+        expect(b.map((m) => rankOf(m, apple))).toEqual(a.map((m) => rankOf(m, apple)));
         for (let i = 1; i < a.length; i++) {
           const [p, c] = [a[i - 1]!, a[i]!];
           const tier = SCOPES.indexOf(p.scope) - SCOPES.indexOf(c.scope);
           expect(tier).toBeLessThanOrEqual(0);
           if (tier === 0) {
-            const [sp, sc] = [specificity(p.binding.spec, isMac), specificity(c.binding.spec, isMac)];
+            const [sp, sc] = [specificity(p.binding.spec, apple), specificity(c.binding.spec, apple)];
             const k = sp.findIndex((v, j) => v !== sc[j]);
             if (k >= 0) expect(sp[k]).toBeGreaterThan(sc[k]!);
             else {
@@ -72,20 +72,20 @@ describe('ranking', () => {
 
   it('lifts gated bindings only within a tie, and placedBy names the step that parts each pair', () => {
     const t = tally();
-    fc.assert(fc.property(bindings, event, fc.boolean(), fc.constantFrom<string | null>(null, 'v'), (bs, e, isMac, view) => {
+    fc.assert(fc.property(bindings, event, fc.boolean(), fc.constantFrom<string | null>(null, 'v'), (bs, e, apple, view) => {
       const gated = new Set(bs.filter((b) => b.gated).map((b) => b.binding.actionId));
       const lookup = (id: string): Action | undefined =>
         ({ id, label: id, ...(gated.has(id) ? { eligible: { always: true } } : {}) }) as Action;
-      const matched = preferViewScoped(matchSorted(e, bs, isMac, undefined, () => {}), view);
-      const ranked = preferContextual(matched, lookup, () => true, view, isMac);
+      const matched = preferViewScoped(matchSorted(e, bs, apple, undefined, () => {}), view);
+      const ranked = preferContextual(matched, lookup, () => true, view, apple);
       expect(ranked.map((m) => m.binding.actionId).sort()).toEqual(matched.map((m) => m.binding.actionId).sort());
-      const key = (m: MatchResult) => `${m.binding.opts?.views?.includes(view) ?? false}|${rankOf(m, isMac)}`;
+      const key = (m: MatchResult) => `${m.binding.opts?.views?.includes(view) ?? false}|${rankOf(m, apple)}`;
       // The contextual step moves nothing out of its tie.
       expect(ranked.map(key)).toEqual(matched.map(key));
       for (let i = 1; i < ranked.length; i++) {
         const [p, c] = [ranked[i - 1]!, ranked[i]!];
         const contextual = gated.has(p.binding.actionId) && !gated.has(c.binding.actionId);
-        const step = placedBy(p, c, view, contextual, isMac).step;
+        const step = placedBy(p, c, view, contextual, apple).step;
         if (key(p) === key(c)) {
           expect(gated.has(c.binding.actionId) && !gated.has(p.binding.actionId), 'an ungated binding above a gated one').toBe(false);
           expect(step).toBe(contextual ? 'context' : 'order');

@@ -125,7 +125,7 @@ export function ResolutionWidget({
         activeToolId,
         hotkeyStack: [],
         entriesById: new Map(tools.map((t) => [t.id, t])),
-        isMac: false,
+        apple: false,
       },
       // On the default walk everything below the winner reads `shadowed`. Evaluating past the
       // winner distinguishes "outranked" from "outranked AND disabled".

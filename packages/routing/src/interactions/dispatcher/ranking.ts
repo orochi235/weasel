@@ -106,7 +106,7 @@ export function preferContextual<M extends { binding: GestureBinding; scope: str
   /** The routed view: a binding naming it is never tied with one that does not. */
   view: string | null,
   /** Whether `mod` is Cmd, for reading specificity as the matcher ranked it. */
-  isMac: boolean,
+  apple: boolean,
 ): M[] {
   const out: M[] = [];
   let run: M[] = [];
@@ -124,7 +124,7 @@ export function preferContextual<M extends { binding: GestureBinding; scope: str
       head
       && (head.scope !== m.scope
         || namesView(head.binding, view) !== namesView(m.binding, view)
-        || !sameSpecificity(head.binding.spec, m.binding.spec, isMac))
+        || !sameSpecificity(head.binding.spec, m.binding.spec, apple))
     ) flush();
     run.push(m);
   }
@@ -142,20 +142,20 @@ export function placedBy(
   cur: MatchResult,
   view: string | null,
   contextual: boolean,
-  isMac: boolean,
+  apple: boolean,
 ): PlacedBy {
   if (namesView(prev.binding, view) !== namesView(cur.binding, view)) return { step: 'view' };
   if (prev.scope !== cur.scope) return { step: 'tier' };
-  const sp = specificity(prev.binding.spec, isMac);
-  const sc = specificity(cur.binding.spec, isMac);
+  const sp = specificity(prev.binding.spec, apple);
+  const sc = specificity(cur.binding.spec, apple);
   const i = sp.findIndex((v, k) => v !== sc[k]);
   if (i >= 0) return { step: 'specificity', part: SPECIFICITY_PARTS[i]! };
   return contextual ? { step: 'context' } : { step: 'order' };
 }
 
-function sameSpecificity(a: GestureSpec, b: GestureSpec, isMac: boolean): boolean {
-  const sa = specificity(a, isMac);
-  const sb = specificity(b, isMac);
+function sameSpecificity(a: GestureSpec, b: GestureSpec, apple: boolean): boolean {
+  const sa = specificity(a, apple);
+  const sb = specificity(b, apple);
   return sa.every((v, i) => v === sb[i]);
 }
 
@@ -170,7 +170,7 @@ export interface Ranking {
   actionMap: Map<string, Action>;
   ruleCtx: RuleCtx | undefined;
   /** Whether `mod` was Cmd when this ranking was made. */
-  isMac: boolean;
+  apple: boolean;
   /** Whether a match survives the eligibility filter. */
   eligible(m: MatchResult): boolean;
 }

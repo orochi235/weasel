@@ -34,27 +34,27 @@ describe('modifier roles', () => {
     const t = tally();
     fc.assert(fc.property(
       roles.chain((r) => fc.tuple(fc.constant(r), rebinds(Object.keys(r)))), modifiers, fc.boolean(),
-      ([declared, given], mods, isMac) => {
+      ([declared, given], mods, apple) => {
         const ids = Object.keys(declared);
         if (ids.some((id) => PROTO_IDS.includes(id))) t.hit('prototype id');
         const keys = roleKeysOf(declared, given)!;
         expect(Object.keys(keys).sort()).toEqual([...ids].sort());
         const rebound = rebindRoles(declared, given);
         expect(Object.keys(rebound).sort()).toEqual([...ids].sort());
-        const platform = platformRoleKeys(keys, isMac);
-        const held = resolveRoles(keys, mods, isMac);
+        const platform = platformRoleKeys(keys, apple);
+        const held = resolveRoles(keys, mods, apple);
         expect(Object.keys(held).sort()).toEqual([...ids].sort());
         for (const id of ids) {
           const want = Object.hasOwn(given, id) ? given[id] : declared[id].keys;
           expect(Object.getOwnPropertyDescriptor(keys, id)?.value).toEqual(want);
           expect((Object.getOwnPropertyDescriptor(rebound, id)?.value as ModifierRole).keys)
             .toEqual(want);
-          expect(Object.getOwnPropertyDescriptor(held, id)?.value).toBe(keysHeld(want, mods, isMac));
+          expect(Object.getOwnPropertyDescriptor(held, id)?.value).toBe(keysHeld(want, mods, apple));
           const plain = Object.getOwnPropertyDescriptor(platform, id)?.value as RoleKeys;
           expect(plain).not.toContain('mod');
-          expect(keysHeld(plain, mods, isMac)).toBe(keysHeld(want, mods, isMac));
+          expect(keysHeld(plain, mods, apple)).toBe(keysHeld(want, mods, apple));
           const read = roleReader(declared);
-          expect(read({ roles: held, modifiers: mods }, id)).toBe(keysHeld(want, mods, isMac));
+          expect(read({ roles: held, modifiers: mods }, id)).toBe(keysHeld(want, mods, apple));
           expect(read({ roles: {}, modifiers: mods }, id)).toBe(keysHeld(declared[id].keys, mods, isApplePlatform()));
         }
       },
@@ -63,13 +63,13 @@ describe('modifier roles', () => {
   });
 
   it('lets every key a role names be held or not from the press', () => {
-    fc.assert(fc.property(roles, modifiers, fc.boolean(), (declared, mods, isMac) => {
+    fc.assert(fc.property(roles, modifiers, fc.boolean(), (declared, mods, apple) => {
       const spec = roleMods(declared);
       const named = new Set(Object.values(declared).flatMap((r) => r.keys)
         .flatMap((k) => (k === 'mod' ? ['meta', 'ctrl'] : [k])));
       const free = { ...mods };
       for (const k of ['alt', 'ctrl', 'meta', 'shift'] as const) if (!named.has(k)) free[k] = false;
-      expect(matchModifiers({ altKey: free.alt, ctrlKey: free.ctrl, metaKey: free.meta, shiftKey: free.shift }, spec, isMac))
+      expect(matchModifiers({ altKey: free.alt, ctrlKey: free.ctrl, metaKey: free.meta, shiftKey: free.shift }, spec, apple))
         .toBe(true);
     }), runs(300));
   });

@@ -128,9 +128,9 @@ function reportDeadClaim(owner: string | undefined, warn: (message: string) => v
 
 /** Sort callback: negative when `a` is MORE specific than `b`, so `a` sorts
  *  first. */
-function compareSpecificity(a: GestureSpec, b: GestureSpec, isMac: boolean): number {
-  const sa = specificity(a, isMac);
-  const sb = specificity(b, isMac);
+function compareSpecificity(a: GestureSpec, b: GestureSpec, apple: boolean): number {
+  const sa = specificity(a, apple);
+  const sb = specificity(b, apple);
   for (let i = 0; i < sa.length; i++) {
     if (sa[i] !== sb[i]) return sb[i] - sa[i];
   }
@@ -141,10 +141,10 @@ function compareSpecificity(a: GestureSpec, b: GestureSpec, isMac: boolean): num
 export function matchBest(
   e: InputEvent,
   bindings: readonly ScopedBinding[],
-  isMac: boolean,
+  apple: boolean,
   engagedChannels?: ReadonlySet<string>,
 ): MatchResult | null {
-  const sorted = matchSorted(e, bindings, isMac, engagedChannels);
+  const sorted = matchSorted(e, bindings, apple, engagedChannels);
   return sorted.length > 0 ? sorted[0] : null;
 }
 
@@ -160,11 +160,11 @@ export function matchBest(
 export function matchSorted(
   e: InputEvent,
   bindings: readonly ScopedBinding[],
-  isMac: boolean,
+  apple: boolean,
   engagedChannels?: ReadonlySet<string>,
   warn: (message: string) => void = (m) => console.warn(m),
 ): MatchResult[] {
-  return matchSortedWithBarred(e, bindings, isMac, engagedChannels, { warn }).matches;
+  return matchSortedWithBarred(e, bindings, apple, engagedChannels, { warn }).matches;
 }
 
 /** {@link matchSorted}, plus what an exclusive claim on the event barred. */
@@ -185,7 +185,7 @@ export interface MatchOutcome {
 export function matchSortedWithBarred(
   e: InputEvent,
   bindings: readonly ScopedBinding[],
-  isMac: boolean,
+  apple: boolean,
   engagedChannels?: ReadonlySet<string>,
   opts: { collectBarred?: boolean; warn?: (message: string) => void } = {},
 ): MatchOutcome {
@@ -207,15 +207,15 @@ export function matchSortedWithBarred(
       const admitted = admits(sb);
       if (!admitted && !opts.collectBarred) continue;
       const phaseCtx: PhaseContext = { selfChannel: sb.ownerId, engagedChannels: engaged };
-      if (matchSpec(e, sb.binding.spec, isMac, phaseCtx)) {
+      if (matchSpec(e, sb.binding.spec, apple, phaseCtx)) {
         (admitted ? scopeMatches : scopeBarred)
           .push({ binding: sb.binding, scope, ownerId: sb.ownerId });
       }
     }
     // Stable sort by specificity descending. Identical-specificity entries
     // keep their registration order (Array.prototype.sort is stable per ES2019).
-    scopeMatches.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec, isMac));
-    scopeBarred.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec, isMac));
+    scopeMatches.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec, apple));
+    scopeBarred.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec, apple));
     out.push(...scopeMatches);
     barred.push(...scopeBarred);
   }

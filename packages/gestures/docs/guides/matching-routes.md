@@ -333,7 +333,7 @@ import {
   type GestureSpec, type InputEvent, type PointerSample,
 } from '@weasel-js/gestures';
 
-const isMac = isApplePlatform();
+const apple = isApplePlatform();
 
 const bindings: { spec: GestureSpec; run: (event: InputEvent) => void }[] = [
   { spec: routeToSpec(parseRoute('[*:*] click => empty')), run: () => console.log('clicked empty canvas') },
@@ -348,7 +348,7 @@ const recognizer = createPointerRecognizer({
   },
   sink: {
     dispatch(event) {
-      const hit = bindings.find((b) => matchSpec(event, b.spec, isMac));
+      const hit = bindings.find((b) => matchSpec(event, b.spec, apple));
       if (!hit) return 'unhandled';
       hit.run(event);
       return 'handled';

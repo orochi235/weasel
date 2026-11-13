@@ -117,15 +117,15 @@ describe('withHeldModifier', () => {
       const held = withHeldModifier(b, m);
       expect(withHeldModifier(b, m)).toBe(held);
       const mods = spec.mods ?? {};
-      for (const isMac of [true, false]) {
-        const modIsM = mods.mod !== undefined && m === (isMac ? 'meta' : 'ctrl');
+      for (const apple of [true, false]) {
+        const modIsM = mods.mod !== undefined && m === (apple ? 'meta' : 'ctrl');
         const refusedByMod = mods.mod === false && (m === 'ctrl' || m === 'meta');
         const names = mods[m] !== undefined || modIsM || refusedByMod;
         t.hit(names ? 'names' : 'loosened');
         for (const e of keyEvents('a')) {
           const ev = { kind: 'key' as const, ...e };
           const as = names ? ev : { ...ev, [field[m]]: false };
-          expect(matchSpec(ev, held.spec, isMac), `${JSON.stringify(spec)} held on ${m}, ${JSON.stringify(e)}`).toBe(matchSpec(as, spec, isMac));
+          expect(matchSpec(ev, held.spec, apple), `${JSON.stringify(spec)} held on ${m}, ${JSON.stringify(e)}`).toBe(matchSpec(as, spec, apple));
         }
       }
     }), runs(300));

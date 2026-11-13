@@ -36,7 +36,7 @@ function resolveSpecValue(value: boolean | 'optional' | undefined): KeyRequireme
 export function matchModifiers(
   e: ModifiersEvent,
   mods: ModSpec | undefined,
-  isMac: boolean = isApplePlatform(),
+  apple: boolean = isApplePlatform(),
 ): boolean {
   // Start strict: every modifier is forbidden unless the spec opts in.
   let alt: KeyRequirement = 'forbidden';
@@ -54,7 +54,7 @@ export function matchModifiers(
     // key's own field. The other key reads its own field.
     if (mods.mod !== undefined) {
       const modReq = resolveSpecValue(mods.mod);
-      if (isMac) meta = strongest(meta, modReq);
+      if (apple) meta = strongest(meta, modReq);
       else ctrl = strongest(ctrl, modReq);
     }
   }
@@ -178,7 +178,7 @@ function matchPhaseAtom(a: PhaseAtom, ctx: PhaseContext): boolean {
 function matchPress(
   e: InputEvent,
   spec: Extract<GestureSpec, { kind: 'drag' | 'pointerDown' }>,
-  isMac: boolean,
+  apple: boolean,
 ): boolean {
   if (e.kind !== 'pointerdown') return false;
   const button = e.pointerButton ?? 'primary';
@@ -192,7 +192,7 @@ function matchPress(
   } else if (e.stage !== 'press') {
     return false;
   }
-  if (!matchModifiers(e, spec.mods, isMac)) return false;
+  if (!matchModifiers(e, spec.mods, apple)) return false;
   // Pass the affordance hit as the `target` for `kindOf` predicates.
   // Pass `bodyTarget` for string-form TargetSpec values.
   return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
@@ -207,7 +207,7 @@ function matchPress(
 export function matchSpec(
   e: InputEvent,
   spec: GestureSpec,
-  isMac: boolean = isApplePlatform(),
+  apple: boolean = isApplePlatform(),
   phaseCtx?: PhaseContext,
 ): boolean {
   // With no phase ctx nothing is engaged and the spec has no owner: an
@@ -221,19 +221,19 @@ export function matchSpec(
     case 'key': {
       if (e.kind !== 'key') return false;
       if (!matchKeyOrCode(e, spec)) return false;
-      return matchModifiers(e, spec.mods, isMac);
+      return matchModifiers(e, spec.mods, apple);
     }
 
     case 'keyHeld': {
       if (e.kind !== 'keyHeld') return false;
       if (e.phase !== 'down') return false; // only match the down phase
       if (!matchKeyOrCode(e, spec)) return false;
-      return matchModifiers(e, spec.mods, isMac);
+      return matchModifiers(e, spec.mods, apple);
     }
 
     case 'wheel': {
       if (e.kind !== 'wheel') return false;
-      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      if (!matchModifiers(e, spec.mods, apple)) return false;
       const direction = spec.direction ?? '*';
       if (direction === 'up' && !(e.deltaY < 0)) return false;
       if (direction === 'down' && !(e.deltaY > 0)) return false;
@@ -242,7 +242,7 @@ export function matchSpec(
 
     case 'pinch': {
       if (e.kind !== 'pinch') return false;
-      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      if (!matchModifiers(e, spec.mods, apple)) return false;
       const direction = spec.direction ?? '*';
       if (direction === 'out' && !(e.scale > 1)) return false;
       if (direction === 'in' && !(e.scale < 1)) return false;
@@ -251,7 +251,7 @@ export function matchSpec(
 
     case 'click': {
       if (e.kind !== 'click') return false;
-      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      if (!matchModifiers(e, spec.mods, apple)) return false;
       // A `kindOf` predicate gets the affordance the press landed on — the
       // same value it would get on a drag — NOT the DOM target, which is what
       // lets `hit == null` mean "not chrome".
@@ -260,7 +260,7 @@ export function matchSpec(
 
     case 'doubleClick': {
       if (e.kind !== 'doubleclick') return false;
-      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      if (!matchModifiers(e, spec.mods, apple)) return false;
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
@@ -270,13 +270,13 @@ export function matchSpec(
     case 'longPress': {
       if (e.kind !== 'contextmenu' && e.kind !== 'longpress') return false;
       if (e.kind !== spec.kind.toLowerCase()) return false;
-      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      if (!matchModifiers(e, spec.mods, apple)) return false;
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
     case 'hover': {
       if (e.kind !== 'hover') return false;
-      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      if (!matchModifiers(e, spec.mods, apple)) return false;
       if (!e.off && (e.held === true ? spec.held === undefined : spec.held === true)) return false;
       const on = !e.off && matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
       if (spec.motion !== 'leave') return on;
@@ -285,24 +285,24 @@ export function matchSpec(
 
     case 'drag':
     case 'pointerDown':
-      return matchPress(e, spec, isMac);
+      return matchPress(e, spec, apple);
 
     case 'multiTouch': {
       if (e.kind !== 'multitouch') return false;
       if (e.fingers !== spec.fingers) return false;
-      return matchModifiers(e, spec.mods, isMac);
+      return matchModifiers(e, spec.mods, apple);
     }
 
     case 'multiTouchTap': {
       if (e.kind !== 'multitouchtap') return false;
       if (e.fingers !== spec.fingers) return false;
-      return matchModifiers(e, spec.mods, isMac);
+      return matchModifiers(e, spec.mods, apple);
     }
 
     case 'drop':
     case 'carry':
     case 'paste':
-      return matchArrival(e, spec, isMac);
+      return matchArrival(e, spec, apple);
 
     default: {
       // Exhaustiveness guard — new spec kinds are a compile error here.
@@ -318,7 +318,7 @@ export function matchSpec(
  *  taken on release; its leave belongs to the handle in flight. A move with
  *  none in flight is offered to a spec with a target, which waits for the
  *  carry to reach it. */
-function matchArrival(e: InputEvent, spec: DropSpec | CarrySpec | PasteSpec, isMac: boolean): boolean {
+function matchArrival(e: InputEvent, spec: DropSpec | CarrySpec | PasteSpec, apple: boolean): boolean {
   if (e.kind !== spec.kind) return false;
   if (e.kind === 'carry') {
     const target = 'target' in spec ? spec.target : undefined;
@@ -328,7 +328,7 @@ function matchArrival(e: InputEvent, spec: DropSpec | CarrySpec | PasteSpec, isM
   } else if (e.kind === 'drop' || e.kind === 'paste') {
     if (!matchIngestTypes(e.items, spec.types)) return false;
   }
-  return matchModifiers(e, spec.mods, isMac);
+  return matchModifiers(e, spec.mods, apple);
 }
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();

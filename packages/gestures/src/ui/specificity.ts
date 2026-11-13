@@ -4,16 +4,16 @@ import type { GestureSpec, ModSpec, PhaseSpec, TargetSpec } from './spec';
 import type { PhaseAtom } from '../grammar/routeGrammar';
 
 /** Count the physical keys a spec requires held (`true`), as `matchModifiers`
- *  resolves them on `isMac`: `mod` is the same key as `meta` on a Mac and as
+ *  resolves them for `apple`: `mod` is the same key as `meta` on a Mac and as
  *  `ctrl` elsewhere, so naming both requires one key. `'optional'`, `false`,
  *  and `undefined` do NOT discriminate — they don't count. */
-function modsCount(mods: ModSpec | undefined, isMac: boolean): number {
+function modsCount(mods: ModSpec | undefined, apple: boolean): number {
   if (!mods) return 0;
   const mod = mods.mod === true;
   let n = 0;
   if (mods.alt === true) n++;
-  if (mods.ctrl === true || (mod && !isMac)) n++;
-  if (mods.meta === true || (mod && isMac)) n++;
+  if (mods.ctrl === true || (mod && !apple)) n++;
+  if (mods.meta === true || (mod && apple)) n++;
   if (mods.shift === true) n++;
   return n;
 }
@@ -88,7 +88,7 @@ function phaseRank(spec: PhaseSpec | undefined): number {
  *
  *    [0] target — how much the spec's target narrows; see `targetRank`.
  *    [1] mods   — count of required modifier keys (shift/alt/ctrl/meta), with
- *                 `mod` read as the key it is on `isMac` (default: this
+ *                 `mod` read as the key it is for `apple` (default: this
  *                 platform), as the matcher reads it. `'optional'` does NOT count.
  *    [2] phase  — how much the spec's `phase` narrows; see `phaseRank`.
  *    [3] exact  — per-kind tiebreak: 2 for a drop/carry/paste spec with a
@@ -98,11 +98,11 @@ function phaseRank(spec: PhaseSpec | undefined): number {
  *  stable sort. */
 export function specificity(
   spec: GestureSpec,
-  isMac: boolean = isApplePlatform(),
+  apple: boolean = isApplePlatform(),
 ): readonly [number, number, number, number] {
   const t = targetRank(specTargetOf(spec));
   const mods = ('mods' in spec ? spec.mods : undefined) as ModSpec | undefined;
-  const m = modsCount(mods, isMac);
+  const m = modsCount(mods, apple);
   const p = phaseRank(('phase' in spec ? spec.phase : undefined) as PhaseSpec | undefined);
   // A consumer's `types: ['text/csv']` binding should win over the kit's
   // catch-all ingest binding.

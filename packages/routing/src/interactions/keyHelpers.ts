@@ -54,9 +54,9 @@ export interface KeyBinding {
  * `preventDefault`. Shared by the tool dispatcher (`useKeybindings`) and the
  * gesture dispatcher so the rules can't drift.
  */
-export function matchesKeyBinding(e: KeyBindingEvent, b: KeyBinding, isMac = isApplePlatform()): boolean {
+export function matchesKeyBinding(e: KeyBindingEvent, b: KeyBinding, apple = isApplePlatform()): boolean {
   if (!matchKeyEvent(e, b.key)) return false;
-  return matchModifiers(e, { mod: b.mod === true, alt: b.alt === true, shift: b.shift ?? false }, isMac);
+  return matchModifiers(e, { mod: b.mod === true, alt: b.alt === true, shift: b.shift ?? false }, apple);
 }
 
 /** The fields of a keyboard event {@link matchesKeyBinding} reads, so a React event passes as readily as a DOM one. */
@@ -69,9 +69,9 @@ export type KeyBindingEvent = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' 
  */
 export function undoKeyStep(
   e: KeyBindingEvent & Pick<KeyboardEvent, 'defaultPrevented' | 'target'>,
-  isMac = isApplePlatform(),
+  apple = isApplePlatform(),
 ): 'undo' | 'redo' | null {
   if (e.defaultPrevented) return null;
-  const step = historyKey(e, isMac);
+  const step = historyKey(e, apple);
   return step && !isEditableTarget(e.target) ? step : null;
 }

@@ -51,15 +51,15 @@ const entries = fc.array(fc.array(keySpec, { minLength: 1, maxLength: 2 }), { mi
 /** Whether some keystroke fires both at the same rank. */
 function tie(a: Bound, b: Bound): boolean {
   const engagedSets = subsets([...new Set([a.owner, b.owner, 'o0', 'o1', 'other'])]);
-  for (const isMac of [true, false]) {
-    const same = specificity(a.spec, isMac).join() === specificity(b.spec, isMac).join();
+  for (const apple of [true, false]) {
+    const same = specificity(a.spec, apple).join() === specificity(b.spec, apple).join();
     if (!same) continue;
     for (const engaged of engagedSets) {
       const channels = new Set(engaged);
       for (const e of KEYSTROKES) {
         const ev = { kind: 'key' as const, ...e };
-        if (matchSpec(ev, a.spec, isMac, { selfChannel: a.owner, engagedChannels: channels })
-          && matchSpec(ev, b.spec, isMac, { selfChannel: b.owner, engagedChannels: channels })) return true;
+        if (matchSpec(ev, a.spec, apple, { selfChannel: a.owner, engagedChannels: channels })
+          && matchSpec(ev, b.spec, apple, { selfChannel: b.owner, engagedChannels: channels })) return true;
       }
     }
   }
@@ -70,11 +70,11 @@ const keysOf = (b: Bound) => [b.spec.key].flat().map((k) => k.toLowerCase());
 const sharesKey = (a: Bound, b: Bound) => keysOf(a).some((k) => keysOf(b).includes(k));
 /** Whether they tie with both owners engaged or both idle, which the detector once read as the only states. */
 function tieOnKeysTogether(a: Bound, b: Bound): boolean {
-  return [new Set<string>(), new Set([a.owner, b.owner])].some((channels) => KEYSTROKES.some((e) => [true, false].some((isMac) => {
+  return [new Set<string>(), new Set([a.owner, b.owner])].some((channels) => KEYSTROKES.some((e) => [true, false].some((apple) => {
     const ev = { kind: 'key' as const, ...e };
-    return specificity(a.spec, isMac).join() === specificity(b.spec, isMac).join()
-      && matchSpec(ev, a.spec, isMac, { selfChannel: a.owner, engagedChannels: channels })
-      && matchSpec(ev, b.spec, isMac, { selfChannel: b.owner, engagedChannels: channels });
+    return specificity(a.spec, apple).join() === specificity(b.spec, apple).join()
+      && matchSpec(ev, a.spec, apple, { selfChannel: a.owner, engagedChannels: channels })
+      && matchSpec(ev, b.spec, apple, { selfChannel: b.owner, engagedChannels: channels });
   })));
 }
 

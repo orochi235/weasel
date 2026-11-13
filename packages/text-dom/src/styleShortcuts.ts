@@ -31,8 +31,8 @@ const UNSHIFT: Readonly<Record<string, string>> = { '+': '=', _: '-' };
 
 /** The styling `e` toggles, or null when it isn't a styling shortcut. A Mac's
  *  Ctrl chords are its text editing ({@link textOwnsChord}), so there only Cmd styles. */
-export function toggleForKey(e: KeyboardEvent, isMac?: boolean): StyleToggle | null {
-  if ((!e.metaKey && !e.ctrlKey) || textOwnsChord(e, isMac)) return null;
+export function toggleForKey(e: KeyboardEvent, apple?: boolean): StyleToggle | null {
+  if ((!e.metaKey && !e.ctrlKey) || textOwnsChord(e, apple)) return null;
   const unshifted = UNSHIFT[e.key];
   const named = (key: string): boolean => unshifted === key || matchKeyEvent(e, key);
   return STYLE_SHORTCUTS.find((s) => s.shift === e.shiftKey && named(s.key))?.toggle ?? null;

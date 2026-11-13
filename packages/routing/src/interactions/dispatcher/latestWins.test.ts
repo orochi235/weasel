@@ -44,7 +44,7 @@ function ctxOf(actions: ActionsRegistry, tools: [string, Tool][], hotkeyStack: s
   };
   return {
     depRegistry, actions, activeToolId: 'select', hotkeyStack,
-    entriesById: new Map(tools), isMac: false,
+    entriesById: new Map(tools), apple: false,
   };
 }
 

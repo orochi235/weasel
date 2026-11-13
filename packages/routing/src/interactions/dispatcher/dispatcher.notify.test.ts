@@ -44,7 +44,7 @@ function setup() {
   };
   const ctx: DispatcherContext = {
     depRegistry, actions, activeToolId: 'select', hotkeyStack: [],
-    entriesById: new Map([['tool', tool]]), isMac: false,
+    entriesById: new Map([['tool', tool]]), apple: false,
   };
   const d = createDispatcher({ getAction: (id) => byId.get(id) });
   const seen = vi.fn();

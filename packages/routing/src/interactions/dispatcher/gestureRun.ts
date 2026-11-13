@@ -24,7 +24,7 @@ export interface GestureRun {
    *  gesture reports the view it is pinned to. */
   viewId(): string | null | undefined;
   /** Whether `'mod'` is Cmd, for the input being handled. */
-  isMac(): boolean;
+  apple(): boolean;
   /** The host's client-to-surface mapping, for the input being handled. */
   toLocal(): DispatcherContext['toLocal'];
   /** Each pointer drag in flight: the press that opened it, the action running it, and those that passed it on. */
@@ -247,7 +247,7 @@ export function invokeAction(
     // A gesture no later input continues (a key, a click, a wheel) is ended by nothing else.
     endGesture(run, gestureId, event, 'commit');
     const roleKeys = roleKeysOf(action.modifierRoles, match.binding.opts?.roles);
-    run.facts.begin(gestureId, event, roleKeys && platformRoleKeys(roleKeys, run.isMac()));
+    run.facts.begin(gestureId, event, roleKeys && platformRoleKeys(roleKeys, run.apple()));
     const { invoker } = action;
     const pressCtx = ctxFor(run, event, deps, gestureId);
     const begin = () => invoker.start(pressCtx, match.binding.opts);

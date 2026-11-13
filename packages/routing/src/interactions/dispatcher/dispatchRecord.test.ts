@@ -59,7 +59,7 @@ function ctxOf(actions: Action[], extra: Partial<DispatcherContext> = {}): Dispa
     activeToolId: null,
     hotkeyStack: [],
     entriesById: new Map(),
-    isMac: false,
+    apple: false,
     ...extra,
   };
 }

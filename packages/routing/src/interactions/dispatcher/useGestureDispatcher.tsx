@@ -46,7 +46,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const onDoubleClickRef = useLatest(onDoubleClick);
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
-  const [isMac] = useState(isApplePlatform);
+  const [apple] = useState(isApplePlatform);
 
   const [keymaps] = useState(createKeymapStack);
   useEffect(() => depRegistry.register('keymaps', () => keymaps), [depRegistry, keymaps]);
@@ -72,7 +72,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
     entriesById,
-    isMac,
+    apple,
     trace,
     bindingOverrides: () => registryRef.current.bindingOverrides(),
     keymaps,

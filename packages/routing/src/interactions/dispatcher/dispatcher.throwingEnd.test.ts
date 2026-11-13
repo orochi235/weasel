@@ -55,7 +55,7 @@ function setup(log: string[]) {
   };
   const ctx: DispatcherContext = {
     depRegistry, actions, activeToolId: 'select', hotkeyStack: [],
-    entriesById: new Map([['tool', tool]]), isMac: false,
+    entriesById: new Map([['tool', tool]]), apple: false,
   };
   const d = createDispatcher({ getAction: (id) => byId.get(id) });
   const pointer = (kind: 'pointerdown' | 'pointerup' | 'pointercancel', pointerId: number, affordance?: string): InputEvent => ({
