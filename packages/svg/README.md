@@ -15,11 +15,12 @@ npm install @weasel-js/svg
 ## Usage
 
 ```ts
+import { addOnPages } from '@weasel-js/core';
 import { parseSvg, serializeSvg, svgDraftSpecs, svgNodesFromKit, svgNodesToKitDrafts, warmSvg } from '@weasel-js/svg';
 
-// In: a document's nodes added to a scene.
+// In: a document's nodes added to a scene, each root onto the page it lands on when the scene has pages.
 const drafts = svgNodesToKitDrafts(parseSvg(text), () => scene.mintId());
-for (const spec of svgDraftSpecs(drafts, { layer: 'main', composition: scene.composition })) scene.add(spec);
+addOnPages(scene, svgDraftSpecs(drafts, { layer: 'main', composition: scene.composition }));
 
 // Out: the scene as a document.
 const nodes = svgNodesFromKit(scene);
