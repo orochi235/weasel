@@ -92,8 +92,13 @@ describe('markCommands', () => {
     expect(runs.map((r) => r.text).join('')).toBe('missing edge');
   });
 
-  it('draws an untitled text mark as nothing rather than an empty run', () => {
-    expect(markCommands(mark('text'))).toEqual([]);
+  it('draws an untitled text mark as its dashed box rather than an empty run', () => {
+    const [cmd] = markCommands(mark('text'));
+    expect(cmd).toMatchObject({
+      kind: 'path',
+      path: { kind: 'rect', ...POSE },
+      stroke: { dash: [3, 3] },
+    });
   });
 
   it('draws a point as a small unfilled ring centered on its position', () => {

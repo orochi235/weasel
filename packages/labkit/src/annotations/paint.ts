@@ -18,6 +18,7 @@ export const MARK_COLOR = '#e5484d';
 export const MARK_WIDTH = 2;
 export const MARK_TEXT_SIZE = 14;
 const STALE_DASH = [6, 4];
+const UNTITLED_DASH = [3, 3];
 /** Screen pixels: a point marks a place rather than a region of the picture,
  *  so it holds its size like a selection handle. */
 const POINT_RADIUS_PX = HANDLE_BASE_PX / 2;
@@ -118,7 +119,12 @@ export function markCommands(
     }
     case 'text': {
       const text = m.data.title;
-      if (!text) return [];
+      // A label the text tool just placed has no words yet: its box shows where it is until it gets some.
+      if (!text) {
+        const { x, y, width, height } = m.pose;
+        const box = { ...stroke, width: { px: 1 }, dash: UNTITLED_DASH };
+        return [{ kind: 'path', path: rectPath(x, y, width, height), stroke: box }];
+      }
       return [
         textCommand(
           m.pose.x,
