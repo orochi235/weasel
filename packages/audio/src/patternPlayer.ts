@@ -204,7 +204,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     stop() {
       if (!running) return;
       running = false;
-      engine.stopKey(key);
+      engine.cancelKey(key);
       for (const v of voices) v.release();
       voices.clear();
     },
@@ -215,7 +215,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       bpm = next;
       // From inside `onStep` the step after this one is about to be booked.
       if (!running || lastAt === null || inStep) return;
-      engine.stopKey(key);
+      engine.cancelKey(key);
       nextAt = Math.max(lastAt + stepMs(), engine.now());
       book();
     },

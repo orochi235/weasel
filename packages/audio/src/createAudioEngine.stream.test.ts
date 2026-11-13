@@ -151,7 +151,7 @@ describe('engine.stream', () => {
     const el = createFakeMediaElement();
     const voice = engine.stream(el as never, { cancelKey: 'bed' });
     tick();
-    engine.stopKey('bed');
+    engine.cancelKey('bed');
     expect([voice.isPlaying(), el.paused]).toEqual([false, true]);
   });
 

@@ -1,6 +1,6 @@
 /**
  * Stateful test of an engine's voices through notes, noises, and buffer plays booked now or ahead, stops with and
- * without a fade, releases, gain writes, `stopKey`, `stopAll`, the context suspending and resuming, clock advances
+ * without a fade, releases, gain writes, `cancelKey`, `stopAll`, the context suspending and resuming, clock advances
  * at any pace, and a dispose. After every step each voice has had at most one of `onDone` and `onDrop`, once; a
  * voice that has had one reads as not playing; and `activeVoices()` counts no more than the voices still playing.
  * At the end, once the clock has run past everything and the engine is disposed, every voice has had exactly one.
@@ -20,7 +20,7 @@ type Cmd =
   | { kind: 'stop'; i: number; fade?: number }
   | { kind: 'release'; i: number }
   | { kind: 'gain'; i: number; value: number }
-  | { kind: 'stopKey'; key: string }
+  | { kind: 'cancelKey'; key: string }
   | { kind: 'stopAll' }
   | { kind: 'advance'; ms: number; pace: number }
   | { kind: 'state'; to: 'running' | 'suspended' }
@@ -37,7 +37,7 @@ const cmd: fc.Arbitrary<Cmd> = fc.oneof(
   { weight: 2, arbitrary: fc.record({ kind: fc.constant('stop' as const), i: fc.nat(20), fade: fc.option(fc.integer({ min: 0, max: 300 }), { nil: undefined }) }, { requiredKeys: ['kind', 'i'] }) },
   fc.record({ kind: fc.constant('release' as const), i: fc.nat(20) }),
   fc.record({ kind: fc.constant('gain' as const), i: fc.nat(20), value: fc.oneof(fc.double({ min: 0, max: 2, noNaN: true }), fc.constantFrom(NaN, Infinity)) }),
-  fc.record({ kind: fc.constant('stopKey' as const), key: fc.constantFrom('a', 'b') }),
+  fc.record({ kind: fc.constant('cancelKey' as const), key: fc.constantFrom('a', 'b') }),
   fc.constant({ kind: 'stopAll' as const }),
   { weight: 4, arbitrary: fc.record({ kind: fc.constant('advance' as const), ms: fc.integer({ min: 1, max: 1500 }), pace: fc.oneof(fc.constant(25), fc.integer({ min: 26, max: 1000 })) }) },
   fc.record({ kind: fc.constant('state' as const), to: fc.constantFrom('running' as const, 'suspended' as const) }),
@@ -101,7 +101,7 @@ describe('an engine\'s voices', () => {
             if (Number.isFinite(c.value)) v.handle.setGain(c.value);
             else expect(() => v.handle.setGain(c.value)).toThrow(RangeError);
             break;
-          case 'stopKey': engine.stopKey(c.key); break;
+          case 'cancelKey': engine.cancelKey(c.key); break;
           case 'stopAll': engine.stopAll(); break;
           case 'advance': await advance(c.ms, c.pace); break;
           case 'state': ctx._setState(c.to); break;

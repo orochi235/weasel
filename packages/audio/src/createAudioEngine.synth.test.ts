@@ -167,7 +167,7 @@ describe('engine.playNote', () => {
     const voice = engine.playNote({ pitch: 220, cancelKey: 'lead' });
     engine.playNote({ pitch: 330, cancelKey: 'lead', when: 5_000 });
     tick();
-    engine.stopKey('lead');
+    engine.cancelKey('lead');
     ctx._advance(5_000);
     tick();
     expect(voice.isPlaying()).toBe(false);
@@ -216,12 +216,12 @@ describe('engine.playNote', () => {
 });
 
 describe('engine.schedule', () => {
-  it('fires a callback at its engine time, and stopKey cancels it', async () => {
+  it('fires a callback at its engine time, and cancelKey cancels it', async () => {
     const { ctx, engine, tick } = await harness();
     const seen: number[] = [];
     engine.schedule(50, (when) => seen.push(when));
     engine.schedule(60, (when) => seen.push(when), 'k');
-    engine.stopKey('k');
+    engine.cancelKey('k');
     tick();
     expect(seen).toEqual([50]);
     ctx._advance(1_000);

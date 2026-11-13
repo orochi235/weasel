@@ -16,7 +16,7 @@ export interface Voices {
   launch(common: VoiceOptions, starter: Starter): VoiceHandle;
   stopAll(reason: VoiceDropReason): void;
   /** Stop every voice booked under `key`. */
-  stopKey(key: string): void;
+  cancelKey(key: string): void;
   /** Re-spatialize every voice with a position, after the listener moved. */
   respatialize(): void;
 }
@@ -312,7 +312,7 @@ export function createVoices(deps: VoicesDeps): Voices {
     stopAll(reason) {
       for (const voice of [...live.values()]) teardown(voice, reason);
     },
-    stopKey(key) {
+    cancelKey(key) {
       for (const voice of [...live.values()]) {
         if (voice.key !== key) continue;
         voice.catchUp?.();

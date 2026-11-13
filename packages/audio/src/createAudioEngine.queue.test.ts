@@ -37,7 +37,7 @@ describe('createAudioEngine queue hygiene', () => {
     const sound = await engine.load('/a.wav');
     engine.play(sound, { when: 10_000, cancelKey: 'late' });
     expect(queue.pending()).toBe(1);
-    engine.stopKey('late');
+    engine.cancelKey('late');
     expect(queue.pending()).toBe(0);
   });
 

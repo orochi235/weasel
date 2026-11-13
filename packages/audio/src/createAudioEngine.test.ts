@@ -111,7 +111,7 @@ describe('createAudioEngine', () => {
     const a = engine.play(sound, { cancelKey: 'steps' });
     const b = engine.play(sound, { cancelKey: 'steps' });
     tick();
-    engine.stopKey('steps');
+    engine.cancelKey('steps');
     expect(a.isPlaying()).toBe(false);
     expect(b.isPlaying()).toBe(false);
   });
@@ -121,7 +121,7 @@ describe('createAudioEngine', () => {
     await engine.unlock();
     const sound = await engine.load('/a.wav');
     engine.play(sound, { when: 10_000, cancelKey: 'late' });
-    engine.stopKey('late');
+    engine.cancelKey('late');
     ctx._advance(10_000);
     tick();
     expect(ctx._sources).toHaveLength(0);
