@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, BindingOptions } from '@weasel-js/routing';
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -82,7 +82,7 @@ export function createPaintAction<TState, TValue, K extends string>(
     requires: ['selection', 'scene', 'applyOps'],
     invoker: {
       timing: 'ongoing',
-      start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+      start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
         const selection = ctx.deps.selection;
         const scene = ctx.deps.scene as Scene<Data, string, unknown> | undefined;
 

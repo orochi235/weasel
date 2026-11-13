@@ -69,7 +69,7 @@ export {
 export {
   viewportWheelPanAction,
   makeViewportWheelPanAction,
-  type WheelPanOptions,
+  type ViewportWheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
 export {
   containerScrollAction, scrollRange, scrollableAt, type ScrollRange,
@@ -114,7 +114,7 @@ export { defaultCommitAdapter } from '../interactions/actions/defaultCommitAdapt
 
 // ─── Invoker / GestureBinding / ActiveToolContext ───
 export { overlaysOf, resolveParams } from '@weasel-js/routing';
-export type { Point2, WorldPoint, ImmediateParams, DragSample, InvocationCtx, BindingOpts, ActionDeps, AffordanceHit, OngoingHandle, OngoingOverlay, OverlayRole, ImmediateInvoker, OngoingInvoker, Invoker } from '@weasel-js/routing';
+export type { Point2, WorldPoint, ImmediateParams, DragSample, InvocationCtx, BindingOptions, ActionDeps, AffordanceHit, OngoingHandle, OngoingOverlay, OverlayRole, ImmediateInvoker, OngoingInvoker, Invoker } from '@weasel-js/routing';
 export type { GestureBinding } from '@weasel-js/routing';
 export { ActiveToolContextProvider, ActiveToolContextProviderIfRoot, useActiveToolContext, useOptionalActiveToolContext } from '@weasel-js/routing/react';
 export type { ActiveToolContextValue, ActiveToolContextProviderProps } from '@weasel-js/routing/react';

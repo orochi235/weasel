@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { insertAction } from './action';
 
-import { overlaysOf, type InvocationCtx, type BindingOpts } from '@weasel-js/routing';
+import { overlaysOf, type InvocationCtx, type BindingOptions } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { InsertDep, SnapDep } from '../depSchema';
 import { SHAPE_KINDS, shapeKindsWhere } from 'core/shapeKinds';
@@ -121,7 +121,7 @@ describe('insertAction descriptor', () => {
     const invoker = getOngoingInvoker(insertAction);
     const dep = makeInsertDep();
     const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
-    const opts: BindingOpts = { params: { kind: 'ellipse' } };
+    const opts: BindingOptions = { params: { kind: 'ellipse' } };
     const handle = invoker.start(ctx, opts);
     handle.onMove!({ ...ctx, world: { x: 100, y: 100 } });
     handle.onEnd!({ ...ctx, world: { x: 100, y: 100 } }, 'commit');
@@ -182,7 +182,7 @@ describe('insertAction descriptor', () => {
     // diagonal would go from (10, 10) to (100, 50), so a line-from-AABB would
     // slope downward. Asserting a/b match the actual gesture proves the fix.
     const ctx = makeCtx({ world: { x: 10, y: 50 }, dep });
-    const opts: BindingOpts = { params: { kind: 'line' } };
+    const opts: BindingOptions = { params: { kind: 'line' } };
     const handle = invoker.start(ctx, opts);
     handle.onMove!({ ...ctx, world: { x: 100, y: 10 } });
     handle.onEnd!({ ...ctx, world: { x: 100, y: 10 } }, 'commit');
@@ -199,7 +199,7 @@ describe('insertAction descriptor', () => {
     const dep = makeInsertDep();
     const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
     let sides = 5;
-    const opts: BindingOpts = { params: () => ({ kind: 'polygon', sides, rotation: 0.25 }) };
+    const opts: BindingOptions = { params: () => ({ kind: 'polygon', sides, rotation: 0.25 }) };
     const handle = invoker.start(ctx, opts);
     handle.onMove!({ ...ctx, world: { x: 100, y: 100 } });
     // Simulate ArrowUp mid-drag: the ref the thunk closes over mutates.
@@ -215,7 +215,7 @@ describe('insertAction descriptor', () => {
     const invoker = getOngoingInvoker(insertAction);
     const dep = makeInsertDep();
     const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
-    const opts: BindingOpts = {
+    const opts: BindingOptions = {
       params: { kind: 'star', points: 7, innerRadiusRatio: 0.4, rotation: 0 },
     };
     const handle = invoker.start(ctx, opts);
@@ -238,7 +238,7 @@ describe('insertAction descriptor', () => {
       deps: { insert: dep },
       drag: { start: { x: 0, y: 0 }, current: { x: 40, y: 30 }, delta: { x: 40, y: 30 }, points: trail },
     };
-    const opts: BindingOpts = { params: { kind: 'pencil' } };
+    const opts: BindingOptions = { params: { kind: 'pencil' } };
     const handle = invoker.start(ctx, opts);
     handle.onMove!({ ...ctx, world: { x: 40, y: 30 } });
     handle.onEnd!({ ...ctx, world: { x: 40, y: 30 } }, 'commit');
@@ -386,7 +386,7 @@ describe('insertAction descriptor', () => {
       deps: { insert: dep },
       drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, points: trail },
     };
-    const opts: BindingOpts = { params: { kind: 'pencil' } };
+    const opts: BindingOptions = { params: { kind: 'pencil' } };
     const handle = invoker.start(ctx, opts);
     // No onMove — start ≈ end.
     handle.onEnd!(ctx, 'commit');
@@ -528,7 +528,7 @@ describe('insertAction — text', () => {
     const ctx = makeCtx({ dep });
     Object.assign(ctx.deps as Record<string, unknown>, deps);
     const invoker = getOngoingInvoker(insertAction);
-    const handle = invoker.start(ctx, { params: { kind } } as BindingOpts);
+    const handle = invoker.start(ctx, { params: { kind } } as BindingOptions);
     const end: InvocationCtx = { ...ctx, world: { x: 105, y: 60 }, deps: {} };
     handle.onMove?.(end);
     handle.onEnd?.(end, 'commit');

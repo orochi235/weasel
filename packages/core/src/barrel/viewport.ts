@@ -87,7 +87,7 @@ export { addOnPages, placeOnPages, type PlaceOnPagesOptions } from '../core/page
 export { followerHome, pasteboardOn } from '../core/pages/pagePlacement';
 export { zoomAt, axisZoomFactor } from '../core/viewport/zoomAt';
 export { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, ZOOM_FLOOR, normalizeZoom } from '../core/viewport/zoomBounds';
-export type { ZoomClampOpts, ZoomAxis } from '../core/viewport/zoomAt';
+export type { ZoomClampOptions, ZoomAxis } from '../core/viewport/zoomAt';
 export { clampView } from '../core/viewport/clampView';
 export { viewportWorldRect } from '../core/viewport/viewportWorldRect';
 export type { ClampBounds, CanvasSize } from '../core/viewport/clampView';

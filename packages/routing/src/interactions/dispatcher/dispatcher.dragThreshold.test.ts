@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { BindingOpts, InvocationCtx, OngoingInvoker } from '../actions/invoker';
+import type { BindingOptions, InvocationCtx, OngoingInvoker } from '../actions/invoker';
 import { createDispatcher } from './dispatcher';
 import type { InputEvent } from './matcher';
 import { makeCtx, makeRegistry, ongoingAction } from './testing/dispatcherStubs';
@@ -9,7 +9,7 @@ const at = (kind: 'pointerdown' | 'pointermove' | 'pointerup', clientX: number):
 } as InputEvent);
 
 /** A drag action declaring `actionPx`, bound with `bindingOpts`, run through a dispatcher. */
-function setup(actionPx: number | undefined, bindingOpts?: BindingOpts) {
+function setup(actionPx: number | undefined, bindingOpts?: BindingOptions) {
   const handle = { kind: 'probe', onMove: vi.fn(), onEnd: vi.fn(), overlay: vi.fn(() => null) };
   const start = vi.fn((_ctx: InvocationCtx) => handle);
   const action = ongoingAction('probe', bindingOpts ? [{ spec: { kind: 'drag' }, opts: bindingOpts }] : { kind: 'drag' }, start);

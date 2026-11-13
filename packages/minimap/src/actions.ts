@@ -4,7 +4,7 @@
  * minimap's own view answers the minimap's camera.
  */
 import type { Action, InvocationCtx, OngoingHandle, Tool } from '@weasel-js/routing';
-import { viewWorldToScreen, wheelZoom, type ViewApi, type ZoomClampOpts } from '@weasel-js/core';
+import { viewWorldToScreen, wheelZoom, type ViewApi, type ZoomClampOptions } from '@weasel-js/core';
 import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Action id for `minimapCenterAction`. */
@@ -81,7 +81,7 @@ export function minimapPanAction(): Action {
  *  cursor, which keeps its place in the main view. `clamp` is the main view's
  *  zoom limits, or a getter read on each sample; omitted, the kit defaults
  *  `viewport.zoom` also uses. */
-export function minimapZoomAction(clamp?: ZoomClampOpts | (() => ZoomClampOpts | undefined)): Action {
+export function minimapZoomAction(clamp?: ZoomClampOptions | (() => ZoomClampOptions | undefined)): Action {
   return {
     id: MINIMAP_ZOOM,
     label: 'Minimap — zoom the view',

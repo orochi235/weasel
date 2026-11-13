@@ -4,7 +4,7 @@
  * stored pose and a world pose are one value and nothing here could fail.
  */
 import { describe, it, expect } from 'vitest';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { expectSamePose } from 'core/scene/frameFixture';
@@ -43,7 +43,7 @@ function fixture(view?: unknown) {
     ...base, world: { x, y: 0 }, drag: { start: { x: 0, y: 0 }, current: { x, y: 0 }, delta: { x, y: 0 } },
   }) as unknown as InvocationCtx;
   const start = () => (moveAction.invoker as OngoingInvoker)
-    .start(base as unknown as InvocationCtx, { behaviors: [spy] } as BindingOpts) as OngoingHandle;
+    .start(base as unknown as InvocationCtx, { behaviors: [spy] } as BindingOptions) as OngoingHandle;
   return { scene, s, seen, at, start };
 }
 

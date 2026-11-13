@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import type { DragSample, InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '@weasel-js/routing';
+import type { DragSample, InvocationCtx, OngoingHandle, BindingOptions, OngoingOverlay } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import type { ModSpec } from '@weasel-js/gestures';
 import { shapeKindInfo } from 'core/shapeKinds';
@@ -55,7 +55,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     dragThresholdPx: INSERT_DRAG_THRESHOLD_PX,
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       const begun = beginInsert(ctx, opts);
       if (!begun) return {};
       const { session, readers } = begun;

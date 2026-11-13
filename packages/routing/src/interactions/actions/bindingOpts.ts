@@ -5,7 +5,7 @@ import type { RoleRebinds } from './modifierRoles';
 
 /** Per-invocation options the dispatcher reads from a `GestureBinding`'s
  *  `opts` field and passes to `OngoingInvoker.start`. */
-export interface BindingOpts {
+export interface BindingOptions {
   /** The id a binding override names this binding by, `<owner>.<role>`:
    *  `undo.key`, `rect.drag`, `nudge.left.big`. Without one it is its owner and
    *  its position (`<entry>#<n>`, `<action>@<n>`), which moves when the defaults
@@ -59,10 +59,10 @@ export interface BindingOpts {
   dragThresholdPx?: number;
 }
 
-/** Resolve `BindingOpts.params` to a concrete record (calling the thunk if
+/** Resolve `BindingOptions.params` to a concrete record (calling the thunk if
  *  needed). Returns `undefined` for absent params. */
 export function resolveParams(
-  params: BindingOpts['params'],
+  params: BindingOptions['params'],
 ): Record<string, unknown> | undefined {
   if (params === undefined) return undefined;
   return typeof params === 'function' ? params() : params;

@@ -1,6 +1,6 @@
 /** `cloneAction` runs its binding's behaviors: they shape the drag and decide the commit. */
 import { describe, it, expect } from 'vitest';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
 import type { CloneBehavior } from '../../gestures/types';
@@ -19,7 +19,7 @@ function fixture(behavior: CloneBehavior<RectPose>) {
     world: { x, y: 0 },
     drag: { start: { x: 0, y: 0 }, current: { x, y: 0 }, delta: { x, y: 0 } },
   }) as unknown as InvocationCtx;
-  const opts = { behaviors: [behavior] } as BindingOpts;
+  const opts = { behaviors: [behavior] } as BindingOptions;
   const start = () => (cloneAction.invoker as OngoingInvoker).start(base as unknown as InvocationCtx, opts) as OngoingHandle;
   const copies = () => [...scene.renderOrder()].filter((id) => id !== a).map((id) => scene.get(id)!.pose);
   return { scene, a, start, at, copies };

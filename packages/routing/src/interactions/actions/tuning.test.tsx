@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { actionBindings } from './binding';
-import { resolveParams, type BindingOpts, type InvocationCtx } from './invoker';
+import { resolveParams, type BindingOptions, type InvocationCtx } from './invoker';
 import type { Action } from './action';
 import { invokedParams, tuneAction } from './tuning';
 import { actionShortcuts } from './actionShortcuts';
@@ -44,7 +44,7 @@ describe('tuneAction', () => {
   });
 
   it("hands an ongoing action a thunk that stays live through the gesture", () => {
-    let seen: BindingOpts | undefined;
+    let seen: BindingOptions | undefined;
     const ongoing: Action = {
       id: 'extend', label: 'Extend',
       invoker: { timing: 'ongoing', start: (_c, opts) => { seen = opts; return {}; } },
@@ -71,7 +71,7 @@ describe('tuneAction', () => {
   });
 
   it('keeps a record a record when nothing involved is a thunk', () => {
-    let seen: BindingOpts | undefined;
+    let seen: BindingOptions | undefined;
     const ongoing: Action = {
       id: 'paint', label: 'Paint',
       invoker: { timing: 'ongoing', start: (_c, opts) => { seen = opts; return {}; } },

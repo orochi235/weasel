@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
@@ -138,7 +138,7 @@ describe('insertAction — sticky', () => {
       deps: { insert, textEdit } as never,
     };
     if (insertAction.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
-    const handle = insertAction.invoker.start(ctx, { params: { kind: 'sticky' } } as BindingOpts);
+    const handle = insertAction.invoker.start(ctx, { params: { kind: 'sticky' } } as BindingOptions);
     const end: InvocationCtx = { ...ctx, world: { x: 60, y: 40 }, deps: {} };
     handle.onMove?.(end);
     handle.onEnd?.(end, 'commit');

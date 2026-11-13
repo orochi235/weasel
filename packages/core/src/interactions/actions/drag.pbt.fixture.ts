@@ -2,7 +2,7 @@
  * Driving the ongoing (drag) actions through their invokers, for the property tests. Test-only: nothing in the
  * package imports it.
  */
-import type { Action, ActionDeps, BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { Action, ActionDeps, BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { RESIZE_HANDLE_ANCHORS } from './resize/cornerHandles';
 import type { TestScene } from './pbt.fixture';
 
@@ -26,7 +26,7 @@ export interface Gesture {
   reason: 'commit' | 'cancel';
   /** A resize handle's index in `RESIZE_HANDLE_ANCHORS`. */
   handle?: number;
-  opts?: BindingOpts;
+  opts?: BindingOptions;
 }
 
 /** The affordance a press on resize handle `i` reports. */

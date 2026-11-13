@@ -5,7 +5,7 @@
  * the `paths` preset.
  */
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type BindingOpts, type ImmediateInvoker, type InvocationCtx, type OngoingHandle, resolveParams,
+  type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type ImmediateInvoker, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { createEmitter } from '@weasel-js/registry';
 import { applyToPoint, invert, type Point } from '@weasel-js/geom';
@@ -142,7 +142,7 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
     params: warpDragParams(kind),
     invoker: {
       timing: 'ongoing',
-      start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+      start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
         const scratch = warpHandleScratchOf(ctx.drag?.affordance);
         if (!scratch) return {};
         const deps = ctx.deps;

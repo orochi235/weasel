@@ -1,5 +1,5 @@
 import {
-  type Action, ActionDisabledReason, type ActionDeps, type BindingOpts, type InvocationCtx,
+  type Action, ActionDisabledReason, type ActionDeps, type BindingOptions, type InvocationCtx,
   type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
@@ -89,7 +89,7 @@ export const lengthenPathAction: Action & { requires: string[] } = inPlane({
   params: LENGTHEN_PATH_PARAMS,
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       const edited = editedPath(ctx.deps);
       if (!edited) return {};
       const { dep, path: originPath } = edited;

@@ -1,4 +1,4 @@
-import type { Action, BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { Action, BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
@@ -48,7 +48,7 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
     requires: ['selection', 'scene', 'applyOps'],
     invoker: {
       timing: 'ongoing',
-      start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+      start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
         const nodes = selectedPathNodes(ctx.deps);
         if (nodes.length === 0) return {};
         const read = (params: Record<string, unknown> | undefined): number | null => {

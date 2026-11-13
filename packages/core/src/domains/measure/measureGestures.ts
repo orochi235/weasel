@@ -1,4 +1,4 @@
-import type { Action, BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { Action, BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
@@ -46,7 +46,7 @@ export function measureCreateAction(ms: Measurements): Action {
     invoker: {
       timing: 'ongoing',
       // The dispatcher builds deps once, for `start`; later events carry none.
-      start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+      start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
         const deps = ctx.deps;
         // Read on every event, so a step changed mid-drag reaches it.
         const snap = spanSnap(deps.snap, () => {

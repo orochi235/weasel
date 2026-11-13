@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { createScene, RECT_POSE_DESCRIPTOR, wheelZoomFactor, DEFAULT_MAX_ZOOM } from '@weasel-js/core';
-import type { DrawCommand, PoseDescriptor, Scene, View, ZoomClampOpts } from '@weasel-js/core';
+import type { DrawCommand, PoseDescriptor, Scene, View, ZoomClampOptions } from '@weasel-js/core';
 import { MinimapCanvas } from './MinimapCanvas';
 import { computeFitView } from './minimapMath';
 
@@ -39,7 +39,7 @@ const drawOne = (): DrawCommand[] => [];
 const MAIN: View = { x: 10, y: 20, scale: { x: 2, y: 2 } };
 const MAIN_DIMS = { width: 400, height: 300 };
 
-function mount(wheelZoom?: boolean | ZoomClampOpts, mainView: View = MAIN) {
+function mount(wheelZoom?: boolean | ZoomClampOptions, mainView: View = MAIN) {
   const scene = makeScene();
   const onChange = vi.fn<(v: View) => void>();
   const { container } = render(

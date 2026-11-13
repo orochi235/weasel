@@ -1,5 +1,5 @@
 import type { Action } from '@weasel-js/routing';
-import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, BindingOptions } from '@weasel-js/routing';
 import { transformPreview } from '../transformFinish';
 import { finiteFrame } from '../finiteFrame';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
@@ -40,7 +40,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'canDropInto', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       let frame: MoveFrame = { delta: { dx: 0, dy: 0 }, previews: new Map(), opaque: new Set(), overlays: [] };
       const begun = beginMove(ctx, opts, () => frame);
       if (!begun) return {};

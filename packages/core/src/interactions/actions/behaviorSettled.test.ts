@@ -3,7 +3,7 @@
  * or the cancel has run, from every action that runs behaviors.
  */
 import { describe, it, expect, vi } from 'vitest';
-import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { createSetSelectionOp } from 'core/ops/select';
 import { createTransformOp } from 'core/ops/transform';
@@ -22,8 +22,8 @@ type Reason = 'commit' | 'cancel';
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };
 const REFUSE = { applyOps: () => { throw new Error('refused'); } };
 
-function start(action: { invoker?: unknown }, ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
-  const inv = action.invoker as { timing: string; start(c: InvocationCtx, o?: BindingOpts): OngoingHandle };
+function start(action: { invoker?: unknown }, ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+  const inv = action.invoker as { timing: string; start(c: InvocationCtx, o?: BindingOptions): OngoingHandle };
   if (inv.timing !== 'ongoing') throw new Error('expected ongoing');
   return inv.start(ctx, opts);
 }
@@ -63,7 +63,7 @@ describe('moveAction — onSettled', () => {
       drag: { start: { x: 0, y: 0 }, current: { x: dx, y: 0 }, delta: { x: dx, y: 0 }, screenDelta: { x: dx, y: 0 } },
     }) as unknown as InvocationCtx;
     /** `dx` null ends the gesture with no move at all. */
-    const drag = (opts: BindingOpts, dx: number | null, reason: Reason = 'commit'): void => {
+    const drag = (opts: BindingOptions, dx: number | null, reason: Reason = 'commit'): void => {
       const handle = start(moveAction, base as unknown as InvocationCtx, opts);
       if (dx !== null) handle.onMove?.(at(dx));
       handle.onEnd?.(at(dx ?? 0), reason);
@@ -208,7 +208,7 @@ describe('resizeAction — onSettled', () => {
 describe('rotateAction — onSettled', () => {
   function setup() {
     const { scene, a } = sceneWithLeaf();
-    const turn = (opts: BindingOpts, reason: Reason = 'commit', deps: object = {}): void => {
+    const turn = (opts: BindingOptions, reason: Reason = 'commit', deps: object = {}): void => {
       // The pointer starts due east of the leaf's center and goes a quarter turn round.
       const base = { world: { x: 60, y: 50 }, screen: { x: 0, y: 0 }, modifiers: MODS, deps: { selection: { get: () => [a] as NodeId[] }, scene, ...deps } };
       const quarter = { ...base, world: { x: 50, y: 60 } } as unknown as InvocationCtx;

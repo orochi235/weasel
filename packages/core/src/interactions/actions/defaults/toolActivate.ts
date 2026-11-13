@@ -9,7 +9,7 @@ export const TOOL_ACTIVATE_ID = 'tool.activate';
 
 /** Per-tool key spec consumed by `makeToolActivateAction`. `mod/alt/shift`
  *  sit at the top level, mirroring the `KeyBinding` shape tools declare. */
-export interface ToolActivateKeyOpts {
+export interface ToolActivateKeyOptions {
   key: string;
   mod?: boolean;
   alt?: boolean;
@@ -19,7 +19,7 @@ export interface ToolActivateKeyOpts {
 /** Single entry pairing a tool id with the key spec that activates it. */
 export interface ToolActivateBindingSpec {
   toolId: string;
-  keyOpts: ToolActivateKeyOpts;
+  keyOpts: ToolActivateKeyOptions;
 }
 
 /** Build the per-tool `BoundGesture` list for the consolidated action's

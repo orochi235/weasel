@@ -5,7 +5,7 @@
  */
 
 import type { GestureSpec } from '@weasel-js/gestures';
-import type { BindingOpts } from './invoker';
+import type { BindingOptions } from './invoker';
 
 /** An interaction: a gesture spec composed with the id of the action it
  *  invokes. Tools declare arrays of these; the dispatcher matches an incoming
@@ -13,18 +13,18 @@ import type { BindingOpts } from './invoker';
 export interface GestureBinding {
   spec: GestureSpec;
   actionId: string;
-  opts?: BindingOpts;
+  opts?: BindingOptions;
 }
 
 /**
  * A single entry in `Action.defaultBinding[]`. Either a bare `GestureSpec`
  * (no per-binding opts) or an object form that pairs a spec with
- * `BindingOpts` for parametric actions (e.g. `{ params: { axis: 'x' } }`).
+ * `BindingOptions` for parametric actions (e.g. `{ params: { axis: 'x' } }`).
  * Use the object form when two bindings for the same action differ only in
  * a runtime parameter — the dispatcher extracts `opts.params` and passes
  * them to `ImmediateInvoker.run` as its second argument.
  */
-export type BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOpts };
+export type BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOptions };
 
 /**
  * The whole of an action `actionBindings` reads. Routing needs this much and
@@ -54,7 +54,7 @@ export function actionBindings(action: BindingSource): GestureBinding[] {
   return raw.map((entry) => {
     const isBoundObj = !('kind' in entry);
     const spec = isBoundObj ? (entry as { spec: GestureSpec }).spec : (entry as GestureSpec);
-    const opts = isBoundObj ? (entry as { opts: BindingOpts }).opts : undefined;
+    const opts = isBoundObj ? (entry as { opts: BindingOptions }).opts : undefined;
     return { spec, actionId: action.id, ...(opts !== undefined ? { opts } : {}) };
   });
 }

@@ -3,7 +3,7 @@
  * `onEnd` is told it.
  */
 import { describe, it, expect } from 'vitest';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, RectPose } from 'core/scene/types';
 import type { MoveBehavior, MoveEnd } from '../../gestures/types';
@@ -17,7 +17,7 @@ function fixture() {
   const base = { world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: MODS, deps: { selection: { get: () => [a] as NodeId[] }, scene } };
   const seen: MoveEnd['pointer'][] = [];
   const spy: MoveBehavior<unknown> = { onEnd: (_ctx, end) => { seen.push(end.pointer); } };
-  const opts = { behaviors: [spy] } as BindingOpts;
+  const opts = { behaviors: [spy] } as BindingOptions;
   const at = (x: number, y: number, dx: number): InvocationCtx => ({
     ...base,
     world: { x, y },

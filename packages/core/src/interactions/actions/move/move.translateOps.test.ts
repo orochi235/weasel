@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './action';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
@@ -41,7 +41,7 @@ function fixture() {
 /** Drag `ids` by `DRAG` and commit, with `onEnd` deciding the commit. */
 function commit(scene: S, ids: NodeId[], onEnd: (end: MoveEnd) => Op[], shape?: MoveBehavior<unknown>): void {
   const claims: MoveBehavior<unknown> = { onEnd: (_ctx, end) => onEnd(end) };
-  const opts: BindingOpts = { behaviors: (shape ? [shape, claims] : [claims]) as never };
+  const opts: BindingOptions = { behaviors: (shape ? [shape, claims] : [claims]) as never };
   const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, ids), opts) as OngoingHandle;
   handle.onMove!(ctx(scene, ids, DRAG));
   handle.onEnd!(ctx(scene, ids, DRAG), 'commit');

@@ -14,7 +14,7 @@
  */
 
 import type { View } from './view';
-import { zoomAt, type ZoomClampOpts } from './zoomAt';
+import { zoomAt, type ZoomClampOptions } from './zoomAt';
 
 /** Multiplicative zoom applied per 100 px of wheel `deltaY`. */
 export const WHEEL_ZOOM_STEP = 1.1;
@@ -33,7 +33,7 @@ export interface WheelInput {
 
 /** Which axes a wheel pan is allowed to move, and whether `deltaY` is routed
  *  into the x axis (shift+wheel). An axis lock outranks `swapAxis`. */
-export interface WheelPanOpts {
+export interface WheelPanOptions {
   axis?: 'both' | 'x' | 'y';
   swapAxis?: boolean;
 }
@@ -49,7 +49,7 @@ export function wheelZoom(
   view: View,
   anchor: { x: number; y: number },
   deltaY: number,
-  clamp?: ZoomClampOpts,
+  clamp?: ZoomClampOptions,
 ): View {
   return zoomAt(view, anchor, wheelZoomFactor(deltaY), clamp);
 }
@@ -58,7 +58,7 @@ export function wheelZoom(
 export function wheelPan(
   view: View,
   delta: { deltaX: number; deltaY: number },
-  opts: WheelPanOpts = {},
+  opts: WheelPanOptions = {},
 ): View {
   const axis = opts.axis ?? 'both';
   const swapped = opts.swapAxis === true;
@@ -82,8 +82,8 @@ function panned(at: number, by: number): number {
 export function computeWheelAction(
   view: View,
   input: WheelInput,
-  clamp?: ZoomClampOpts,
-  opts: Pick<WheelPanOpts, 'axis'> = {},
+  clamp?: ZoomClampOptions,
+  opts: Pick<WheelPanOptions, 'axis'> = {},
 ): View {
   if (input.ctrlKey || input.metaKey) {
     return wheelZoom(view, { x: input.x, y: input.y }, input.deltaY, clamp);

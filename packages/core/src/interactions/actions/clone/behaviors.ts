@@ -1,4 +1,4 @@
-import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
@@ -28,7 +28,7 @@ export interface CloneBehaviors {
  */
 export function startCloneBehaviors(
   ctx: InvocationCtx,
-  opts: BindingOpts | undefined,
+  opts: BindingOptions | undefined,
   scene: Scene<unknown, string, unknown>,
   roots: readonly NodeId[],
   origins: ReadonlyMap<NodeId, unknown>,

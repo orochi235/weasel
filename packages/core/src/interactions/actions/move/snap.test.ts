@@ -1,7 +1,7 @@
 /** A move snapping through the `snap` dep's session. */
 import { heldPose } from '../testUtils';
 import { describe, expect, it } from 'vitest';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { pathFromD, type Point } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
@@ -68,7 +68,7 @@ function rig(sources: readonly SnapSource[], build: (scene: AnyScene) => string[
     world: p, screen: p, modifiers: { ...KEYS, ...mods }, deps,
     drag: { start: from, current: p, delta: { x: p.x - from.x, y: p.y - from.y } },
   }) as unknown as InvocationCtx;
-  const press = (p: Point, opts: BindingOpts = {}): OngoingHandle => {
+  const press = (p: Point, opts: BindingOptions = {}): OngoingHandle => {
     from = p;
     return (moveAction.invoker as OngoingInvoker).start(at(p), opts);
   };
@@ -121,7 +121,7 @@ describe('a move snapping through the snap session', () => {
     const slot: MoveBehavior<Point> = {
       onMove: (_ctx, proposed) => { seen.push(proposed); return { transform: { kind: 'translate', dx: 100, dy: 0 } }; },
     };
-    const h = r.press({ x: 5, y: 5 }, { behaviors: [slot] } as unknown as BindingOpts);
+    const h = r.press({ x: 5, y: 5 }, { behaviors: [slot] } as unknown as BindingOptions);
     h.onMove!(r.at({ x: 52, y: 9 }));
     expect(seen[0]).toMatchObject({ kind: 'translate', dx: expect.closeTo(49, 9), dy: expect.closeTo(4, 9) });
     h.onEnd!(r.at({ x: 52, y: 9 }), 'commit');
@@ -180,7 +180,7 @@ describe('a move snapping through the snap session', () => {
     const target: SnapTarget<unknown> = { parentId: box, slotPose: { x: 210, y: 10, width: 20, height: 20 } };
     const opts = {
       behaviors: [snapToContainer({ dwellMs: 0, isInstant: () => true, findTarget: (_id, wx) => (wx > 200 ? target : null) })],
-    } as unknown as BindingOpts;
+    } as unknown as BindingOptions;
     const h = r.press({ x: 10, y: 10 }, opts);
     h.onMove!(r.at({ x: 260, y: 10 }));
     h.onEnd!(r.at({ x: 260, y: 10 }), 'commit');

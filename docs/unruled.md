@@ -1899,11 +1899,11 @@ Calls the lanes made without a ruling:
 - 2026-11-12: Options bags are named `*Options` (now in `docs/conventions.md`), and 19 `*Opts` types in
   core, guides and parallax were renamed to it: the layer factories', `ParallaxOpts`, `NestedHitOpts`,
   `SceneNodeClientRectOpts`, `CreateViewResolverOpts`, `ComposeSelectionPoseOpts`, `UseViewHelpersOpts`.
-- Open: the rest of the `*Opts` types sit in other lanes' code and were left for them: routing's
-  `BindingOpts` and core's `ToolActivateKeyOpts`; core's viewport input `WheelPanOpts` and `ZoomClampOpts`
-  (and `WheelPanOpts` beside an unrelated `WheelPanOptions` in `viewportWheelPan.ts`, which wants one name
-  each); text's `LayoutRunsOpts`, `PaintRunsOpts`, `TextLineBoxesOpts`, `PointInTextPoseOpts` and
-  `MeasureTextBoundsOpts`; renderer's `TilePatternOpts`; ui's `GradientTrackOpts`.
+- 2026-11-12: The rest of core's `*Opts` types went to `*Options` too, with routing's `BindingOpts` and
+  renderer's `TilePatternOpts` that core re-exports. Core's `wheelPan()` options and
+  `makeViewportWheelPanAction`'s were `WheelPanOpts` and `WheelPanOptions`: the first is now `WheelPanOptions`,
+  named for `wheelPan`, and the second `ViewportWheelPanOptions`, named for its action. Text's five `*Opts`
+  types, which core's barrel re-exports, are the text lane's.
 - 2026-11-12: Layer factories are named `create*Layer` (now in `docs/conventions.md`); core's `pagesLayer`,
   `workspaceTintLayer` and `modeDecorationLayer` were renamed to it.
 - Open: diagram's `edgeEndLayer`, `labelDragLayer`, `laneLayer`, `portLayer`, `seamLayer`, `sequenceLayer`

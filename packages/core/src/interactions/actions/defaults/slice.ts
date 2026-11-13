@@ -1,6 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import { pathOperationTags } from '../pathGestureTags';
 
 /**
@@ -22,7 +22,7 @@ export const sliceAction: Action & { requires: string[] } = {
   requires: ['slice'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
       const dep = ctx.deps.slice;
       const a: Point2 = ctx.drag?.start ?? ctx.world;
       let current: Point2 = ctx.drag?.current ?? ctx.world;

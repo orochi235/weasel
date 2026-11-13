@@ -4,7 +4,7 @@
  * nothing to write.
  */
 import { describe, it, expect, vi } from 'vitest';
-import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
@@ -52,7 +52,7 @@ function fixture(hooks: Partial<Hooks>, more: { behaviors?: MoveBehavior<unknown
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const handle = invoker.start(
     base as unknown as InvocationCtx,
-    { behaviors: more.behaviors ?? [], params: { onGestureEnd } } as BindingOpts,
+    { behaviors: more.behaviors ?? [], params: { onGestureEnd } } as BindingOptions,
   );
   const dragTo = (x: number, y: number): InvocationCtx => ({
     ...base,

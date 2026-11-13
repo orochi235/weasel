@@ -39,7 +39,7 @@
  */
 
 import type { Action } from '@weasel-js/routing';
-import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay, WorldPoint } from '@weasel-js/routing';
+import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingOverlay, WorldPoint } from '@weasel-js/routing';
 import type { EditAnchorsDep, SnapDep } from '../depSchema';
 import type { SnapBegin, SnapMods, SnapSession } from '../snapDep';
 import { inputSession } from 'domains/snap/session2d';
@@ -170,7 +170,7 @@ function anchorDragSnap(
   };
 }
 
-const paramsOf = (opts: BindingOpts | undefined): EditAnchorsParams =>
+const paramsOf = (opts: BindingOptions | undefined): EditAnchorsParams =>
   (resolveParams(opts?.params) ?? {}) as EditAnchorsParams;
 
 /** Take `next` as the frame to show, finished by the dep. A frame it cannot
