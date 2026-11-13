@@ -3,7 +3,9 @@
 '@weasel-js/core': major
 ---
 
-`@weasel-js/text`'s option types all end in `Options`, as `FitTextPoseOptions` and `TextToPathOptions` already did: `LayoutRunsOpts`, `PaintRunsOpts`, `MeasureTextBoundsOpts`, `TextLineBoxesOpts` and `PointInTextPoseOpts` are renamed.
+`@weasel-js/text`'s option types all end in `Options`, as `FitTextPoseOptions` already did.
+
+`LayoutRunsOpts`, `PaintRunsOpts`, `MeasureTextBoundsOpts`, `TextLineBoxesOpts` and `PointInTextPoseOpts` are renamed.
 
 ```ts
 // before

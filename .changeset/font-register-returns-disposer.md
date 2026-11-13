@@ -3,7 +3,9 @@
 '@weasel-js/core': minor
 ---
 
-`registerFontOutlines` and `registerCanvasFont` return a function that takes the registration out again, as `registerBidi`, `registerShaper` and `registerDisplayKind` do.
+`registerFontOutlines` and `registerCanvasFont` return a function that takes the registration out again.
+
+So do `registerBidi`, `registerShaper` and `registerDisplayKind`.
 
 A registration a later one replaced is left alone, so the function is safe to call from an effect's cleanup:
 

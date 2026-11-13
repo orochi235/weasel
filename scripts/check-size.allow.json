@@ -60,7 +60,7 @@
     "longestFunction": 335
   },
   "packages/font/src/registerFont.ts": {
-    "lines": 722
+    "lines": 708
   },
   "packages/forge/src/frame/FrameController.tsx": {
     "longestFunction": 135
@@ -155,7 +155,7 @@
     "longestFunction": 200
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 520
+    "lines": 519
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 457

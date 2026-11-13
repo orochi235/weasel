@@ -3,7 +3,9 @@
 '@weasel-js/text-shaping': major
 ---
 
-The engine contracts share their names across packages: `@weasel-js/text`'s `BidiResolver` is now `BidiEngine`, as `@weasel-js/bidi` calls it, and `@weasel-js/text-shaping`'s `Shaper` is now `TextShaper`, as `@weasel-js/text` calls it.
+`BidiResolver` is renamed `BidiEngine`, and text-shaping's `Shaper` is renamed `TextShaper`.
+
+Each engine contract now has one name across packages: `@weasel-js/bidi` already called the first `BidiEngine`, and `@weasel-js/text` already called the second `TextShaper`.
 
 ```ts
 // before

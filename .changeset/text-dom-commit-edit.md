@@ -3,7 +3,9 @@
 '@weasel-js/core': major
 ---
 
-`useTextEdit` and `useSceneTextEdit` return `commitEdit` where they returned `commit`, beside `startEdit` and `cancelEdit`; the `commit` option, which receives the edit, keeps its name.
+`useTextEdit` and `useSceneTextEdit` return `commitEdit` where they returned `commit`.
+
+It sits beside `startEdit` and `cancelEdit`. The `commit` option, which receives the edit, keeps its name.
 
 ```ts
 // before

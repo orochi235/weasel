@@ -4,7 +4,9 @@
 '@weasel-js/renderer': major
 ---
 
-`cssFontFamily` and `cssFontFamilyLoading` take a weight and a style after the family, like `getFont`, `fontPending` and the other face lookups, instead of a `{ weight, style }` object.
+`cssFontFamily` and `cssFontFamilyLoading` take a weight and a style after the family, instead of an object.
+
+That is how `getFont`, `fontPending` and the other face lookups take them.
 
 ```ts
 // before
