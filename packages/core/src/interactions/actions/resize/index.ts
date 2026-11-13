@@ -10,7 +10,6 @@ export {
   cornerResizeHandles,
   hitCornerHandle,
   fixedCornerOf,
-  cornerPoint,
   handlePoint,
   resizeHandlesFor,
   isCornerHandle,

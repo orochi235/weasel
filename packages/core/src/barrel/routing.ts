@@ -169,7 +169,7 @@ export {
 } from '../canvas/deps/resizePolicy';
 export { usePoseDescriptorDepSource } from '../canvas/deps/poseDescriptor';
 export {
-  CORNER_ANCHORS, RESIZE_HANDLE_ANCHORS, EDGE_HANDLE_MIN_RADII, cornerPoint, handlePoint, isCornerHandle, resizeHandlesFor,
+  CORNER_ANCHORS, RESIZE_HANDLE_ANCHORS, EDGE_HANDLE_MIN_RADII, handlePoint, isCornerHandle, resizeHandlesFor,
 } from '../interactions/actions/resize/cornerHandles';
 export type {
   CornerAnchor, CornerEdge, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout,

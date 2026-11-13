@@ -129,13 +129,6 @@ export function handlePoint(
 
 const EDGE_FRACTION: Record<HandleEdge, number> = { min: 0, mid: 0.5, max: 1 };
 
-/** A corner handle's position for the given bounds, in the bounds' frame.
- *  @deprecated Use {@link handlePoint}, which also places edge handles. */
-export const cornerPoint: (
-  bounds: Bounds,
-  entry: Pick<CornerAnchor, 'xEdge' | 'yEdge'>,
-) => { x: number; y: number } = handlePoint;
-
 /** Standard 4-corner resize-handle layout: each corner pins the opposite
  *  corner via an anchor of `{x: 'min'|'max', y: 'min'|'max'}` so dragging it
  *  scales the box from the fixed opposite corner. Decodes {@link CORNER_ANCHORS}

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   CORNER_ANCHORS,
-  cornerPoint,
   cornerResizeHandles,
   fixedCornerOf,
   handlePoint,
@@ -94,7 +93,7 @@ describe('CORNER_ANCHORS round-trip', () => {
       'handle:bottom-right': { dragged: [40, 60], fixed: [10, 20] },
     };
     for (const c of CORNER_ANCHORS) {
-      const draggedW = rot(cornerPoint(b, c).x, cornerPoint(b, c).y);
+      const draggedW = rot(handlePoint(b, c).x, handlePoint(b, c).y);
       const fixedW = rot(fixedCornerOf(b, c.anchor).x, fixedCornerOf(b, c.anchor).y);
       const exp = EXPECT[c.kind];
       const expDragged = rot(exp.dragged[0], exp.dragged[1]);
