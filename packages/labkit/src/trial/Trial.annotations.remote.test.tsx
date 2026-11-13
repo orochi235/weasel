@@ -46,7 +46,6 @@ async function mount(backing: Map<string, unknown>) {
   const view = await renderSettled(
     <Lab
       instruments={[inspector]}
-      defaultInstrument="Inspector"
       storage={createMemoryAdapter(backing)}
       storageKey="remote-test"
     />,

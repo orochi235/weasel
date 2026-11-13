@@ -110,7 +110,6 @@ async function mount(props: Partial<LensOverlayProps<string>> = {}): Promise<HTM
     <div className="lk-lens-test-host">
       <Lab
         instruments={[Story]}
-        defaultInstrument="Story"
         labChrome={[
           {
             id: 'loupe',

@@ -26,10 +26,8 @@ export interface LabBaseProps {
    *  trials: `children` are its body, and a history the body hands over with
    *  `useTrialHistory` gets the lab's Undo and Redo and their keys. */
   instruments?: InstrumentList;
-  /** The instrument a lab with no trials opens. Default the first of `instruments`. */
-  defaultInstrument?: string;
-  /** The instruments a lab with no trials opens, a trial of each, in order.
-   *  Default `[defaultInstrument]`. */
+  /** The instruments a lab with no trials opens, a trial of each, in order. Default: the first of
+   *  `instruments`. A presented lab whose `seed` names no instrument opens the first of these. */
   opening?: readonly string[];
   /** The lab's own clock: one time that every trial whose instrument declares
    *  `clock: 'lab'` plays on, and that `useTrialClock` falls back to outside

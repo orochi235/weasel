@@ -85,7 +85,7 @@ const snapInstrument = defineInstrument<State, Config>({
 export function PathSnapLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Path snapping" instruments={[snapInstrument]} defaultInstrument="Path snapping" />
+      <Lab title="Path snapping" instruments={[snapInstrument]} />
     </div>
   );
 }

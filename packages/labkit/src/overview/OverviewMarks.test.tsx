@@ -70,7 +70,7 @@ async function mount() {
   restore = () => {
     HTMLElement.prototype.getBoundingClientRect = original;
   };
-  const r = await renderSettled(<Lab instruments={[marked]} defaultInstrument="Marked" />, {
+  const r = await renderSettled(<Lab instruments={[marked]} />, {
     wrapper: withIcons,
   });
   return { ...r, api: () => api as AnnotationsApi };

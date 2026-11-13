@@ -65,7 +65,6 @@ async function mount(): Promise<HTMLElement> {
     <div className="lk-lens-test-host">
       <Lab
         instruments={[Story]}
-        defaultInstrument="Story"
         labChrome={[
           {
             id: 'loupe',

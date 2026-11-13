@@ -12,15 +12,16 @@ import type { LabProps } from './labProps';
 
 const NO_INSTRUMENTS: InstrumentList = [];
 
-/** `props` with `instruments` and `defaultInstrument` filled in: none, and the first of them. */
+/** `props` with `instruments` and `opening` filled in: none, and the first of them. */
 export function withInstruments(
   props: LabProps,
-): LabProps & { instruments: InstrumentList; defaultInstrument: string } {
+): LabProps & { instruments: InstrumentList; opening: readonly string[] } {
   const instruments = props.instruments ?? NO_INSTRUMENTS;
+  const first = instruments[0]?.name;
   return {
     ...props,
     instruments,
-    defaultInstrument: props.defaultInstrument ?? instruments[0]?.name ?? '',
+    opening: props.opening ?? (first === undefined ? [] : [first]),
   };
 }
 

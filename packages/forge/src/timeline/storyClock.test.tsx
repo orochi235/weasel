@@ -136,7 +136,6 @@ describe('a story clock inside a lab', () => {
     await renderSettled(
       <Lab
         instruments={[timed]}
-        defaultInstrument="Timed"
         labChrome={[{ id: 'index', region: 'header', render: index }]}
       />,
       { wrapper: withIcons },

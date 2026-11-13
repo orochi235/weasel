@@ -29,13 +29,7 @@ describe('a stored lab remounted in one commit', () => {
   it('opens on the edits the lab it replaced made', async () => {
     const storage = createMemoryAdapter();
     const lab = (key: string) => (
-      <Lab
-        key={key}
-        instruments={[stub]}
-        defaultInstrument="Stub"
-        storageKey="re"
-        storage={storage}
-      >
+      <Lab key={key} instruments={[stub]} storageKey="re" storage={storage}>
         <CaptureLab />
       </Lab>
     );

@@ -97,7 +97,7 @@ const segmentInstrument = defineInstrument<State, Config>({
 export function SegmentTypeLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Segment type" instruments={[segmentInstrument]} defaultInstrument="Segments" />
+      <Lab title="Segment type" instruments={[segmentInstrument]} />
     </div>
   );
 }

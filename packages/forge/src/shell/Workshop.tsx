@@ -211,7 +211,7 @@ export function Workshop(props: WorkshopProps) {
                 density={LAB_DENSITY}
                 {...(labTheme ? { theme: labTheme } : {})}
                 instruments={instruments}
-                defaultInstrument={readRoute() ?? first.id}
+                opening={[readRoute() ?? first.id]}
                 storageKey={storageKey ?? 'weaselforge'}
                 {...(storage ? { storage } : {})}
                 labChrome={labChrome}

@@ -88,7 +88,7 @@ describe('FrameView audits its frame', () => {
     });
     const view = renderWithIcons(
       <TrialFramesContext.Provider value={frames}>
-        <Lab instruments={[instrument]} defaultInstrument={entry.id}>
+        <Lab instruments={[instrument]}>
           <LabContext.Consumer>
             {(value) => {
               lab = value;

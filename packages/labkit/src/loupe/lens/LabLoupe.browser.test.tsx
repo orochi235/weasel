@@ -36,14 +36,7 @@ const Glyphs = defineInstrument<Record<string, never>, Record<string, never>>({
 });
 
 function mount() {
-  renderWithIcons(
-    <Lab
-      instruments={[Glyphs]}
-      defaultInstrument="Glyphs"
-      addTrial={false}
-      labChrome={[labLoupe]}
-    />,
-  );
+  renderWithIcons(<Lab instruments={[Glyphs]} addTrial={false} labChrome={[labLoupe]} />);
 }
 
 test('a lab with labLoupe opens a lens on Alt+L, L that shows a copy of the trial under it', async () => {
@@ -70,7 +63,7 @@ test('a lab with labLoupe opens a lens on Alt+L, L that shows a copy of the tria
 });
 
 test('a lab without labLoupe has no lens layer', async () => {
-  renderWithIcons(<Lab instruments={[Glyphs]} defaultInstrument="Glyphs" addTrial={false} />);
+  renderWithIcons(<Lab instruments={[Glyphs]} addTrial={false} />);
   await waitFor(() => expect(document.querySelector('.lk-loupe-test-art')).not.toBeNull());
   expect(document.querySelector('.lk-lens-layer')).toBeNull();
 });

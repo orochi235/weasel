@@ -20,26 +20,24 @@ const tools = [
 
 describe('the lab palette', () => {
   it('does not render when the lab declares no tools', async () => {
-    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" />, {
+    await renderSettled(<Lab title="T" instruments={[bare]} />, {
       wrapper: withIcons,
     });
     expect(screen.queryByRole('toolbar', { name: 'Tools' })).toBeNull();
   });
 
   it('renders one button per declared tool', async () => {
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" tools={tools} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} tools={tools} />, {
+      wrapper: withIcons,
+    });
     expect(screen.getByRole('button', { name: 'Pick' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Pan' })).toBeInTheDocument();
   });
 
   it('marks the chosen tool current after a click', async () => {
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" tools={tools} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} tools={tools} />, {
+      wrapper: withIcons,
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Pan' }));
     expect(screen.getByRole('button', { name: 'Pan' })).toHaveAttribute('aria-current', 'true');
   });

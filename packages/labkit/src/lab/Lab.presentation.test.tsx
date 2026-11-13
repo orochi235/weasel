@@ -33,7 +33,7 @@ function Capture() {
 
 function mountLab(props: Partial<LabProps> = {}) {
   return renderSettled(
-    <Lab {...({ instruments: [stub], defaultInstrument: 'Stub', ...props } as LabProps)}>
+    <Lab {...({ instruments: [stub], ...props } as LabProps)}>
       <Capture />
     </Lab>,
     { wrapper: withIcons },
@@ -97,7 +97,7 @@ const timed: Instrument = { ...stub, name: 'Timed', clock: { duration: 3_600_000
 
 describe('a presented trial’s play controls', () => {
   const mountTimed = (props: Partial<LabProps> = {}) =>
-    mountLab({ instruments: [timed], defaultInstrument: 'Timed', ...props });
+    mountLab({ instruments: [timed], ...props });
 
   it('show for a trial with a clock, and answer Space', async () => {
     const { getByRole } = await mountTimed({ present: true });

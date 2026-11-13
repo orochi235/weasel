@@ -114,10 +114,9 @@ function stageZoom(container: HTMLElement, index = 0): number {
 
 describe("the lab header's zoom controls", () => {
   it('step the focused trial through its camera and read its zoom back', async () => {
-    const { container } = await renderSettled(
-      <Lab instruments={[staged]} defaultInstrument="Staged" />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab instruments={[staged]} />, {
+      wrapper: withIcons,
+    });
     expect(readout()).toHaveTextContent('100%');
     await press('Zoom in');
     expect(stageZoom(container)).toBeCloseTo(1.25);
@@ -129,10 +128,9 @@ describe("the lab header's zoom controls", () => {
   });
 
   it('reset to actual size from the readout', async () => {
-    const { container } = await renderSettled(
-      <Lab instruments={[staged]} defaultInstrument="Staged" />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab instruments={[staged]} />, {
+      wrapper: withIcons,
+    });
     await press('Zoom out');
     await press('Zoom out');
     await act(async () => {
@@ -143,10 +141,9 @@ describe("the lab header's zoom controls", () => {
   });
 
   it("stop at the camera's own limit, and say so", async () => {
-    const { container } = await renderSettled(
-      <Lab instruments={[staged]} defaultInstrument="Staged" />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab instruments={[staged]} />, {
+      wrapper: withIcons,
+    });
     await press('Zoom in');
     await press('Zoom in');
     expect(stageZoom(container)).toBe(1.5);
@@ -155,10 +152,9 @@ describe("the lab header's zoom controls", () => {
   });
 
   it('answer Mod+=, Mod+- and Mod+0, claiming the key from the browser', async () => {
-    const { container } = await renderSettled(
-      <Lab instruments={[staged]} defaultInstrument="Staged" />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab instruments={[staged]} />, {
+      wrapper: withIcons,
+    });
     expect(await key('=')).toBe(true);
     expect(stageZoom(container)).toBeCloseTo(1.25);
     await key('-');
@@ -169,10 +165,9 @@ describe("the lab header's zoom controls", () => {
   });
 
   it('are gone with the header, and leave their keys to the browser', async () => {
-    const { container } = await renderSettled(
-      <Lab instruments={[staged]} defaultInstrument="Staged" header={false} />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab instruments={[staged]} header={false} />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByRole('toolbar', { name: 'Zoom' })).toBeNull();
     expect(container.querySelector('header')).toBeNull();
     expect(await key('=')).toBe(false);
@@ -180,7 +175,7 @@ describe("the lab header's zoom controls", () => {
   });
 
   it('go inert over a trial with no camera, and leave its keys to the browser', async () => {
-    await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />, {
+    await renderSettled(<Lab instruments={[plain]} />, {
       wrapper: withIcons,
     });
     for (const name of ['Zoom out', 'Zoom in']) {
@@ -198,10 +193,9 @@ describe("the lab header's zoom controls", () => {
       name: 'Zooming',
       render: () => <StoryZoomKey run={story} />,
     });
-    const { container } = await renderSettled(
-      <Lab instruments={[zooming]} defaultInstrument="Zooming" />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab instruments={[zooming]} />, {
+      wrapper: withIcons,
+    });
     await key('=');
     expect(stageZoom(container)).toBeCloseTo(1.25);
     expect(story).not.toHaveBeenCalled();
@@ -214,7 +208,7 @@ describe("the lab header's zoom controls", () => {
       name: 'ZoomingPlain',
       render: () => <StoryZoomKey run={story} />,
     });
-    await renderSettled(<Lab instruments={[zooming]} defaultInstrument="ZoomingPlain" />, {
+    await renderSettled(<Lab instruments={[zooming]} />, {
       wrapper: withIcons,
     });
     await key('=');
@@ -223,7 +217,7 @@ describe("the lab header's zoom controls", () => {
 
   it('follow the focus from trial to trial', async () => {
     const { container } = await renderSettled(
-      <Lab instruments={[staged, plain]} defaultInstrument="Staged">
+      <Lab instruments={[staged, plain]} opening={['Staged']}>
         <Capture />
       </Lab>,
       { wrapper: withIcons },
@@ -250,7 +244,7 @@ describe("the lab header's zoom controls", () => {
   });
 
   it('are left out when the lab says so', async () => {
-    await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" zoom={false} />, {
+    await renderSettled(<Lab instruments={[staged]} zoom={false} />, {
       wrapper: withIcons,
     });
     expect(screen.queryByRole('toolbar', { name: 'Zoom' })).toBeNull();

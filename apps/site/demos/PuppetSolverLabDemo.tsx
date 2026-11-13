@@ -96,7 +96,7 @@ const solverInstrument = defineInstrument<State, Config>({
 export function PuppetSolverLabDemo() {
   return (
     <div className={s.frame}>
-      <Lab title="Inside the puppet solver" instruments={[solverInstrument]} defaultInstrument="Puppet solver" />
+      <Lab title="Inside the puppet solver" instruments={[solverInstrument]} />
     </div>
   );
 }

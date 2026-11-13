@@ -79,7 +79,7 @@ const shown = () => screen.getByRole('status', { name: 'clock' }).textContent;
 
 describe('a trial clock in a snapshot', () => {
   it('comes back where it stood when the snapshot is loaded', async () => {
-    await renderSettled(<Lab instruments={[timed]} defaultInstrument="Timed" />, {
+    await renderSettled(<Lab instruments={[timed]} />, {
       wrapper: withIcons,
     });
     fireEvent.click(screen.getByRole('button', { name: 'seek' }));
@@ -93,7 +93,7 @@ describe('a trial clock in a snapshot', () => {
     expect(shown()).toBe('1200');
   });
   it('comes back where it rested when saved before it ever moved', async () => {
-    await renderSettled(<Lab instruments={[timed]} defaultInstrument="Timed" />, {
+    await renderSettled(<Lab instruments={[timed]} />, {
       wrapper: withIcons,
     });
     expect(shown()).toBe('700');
@@ -105,7 +105,7 @@ describe('a trial clock in a snapshot', () => {
     expect(shown()).toBe('700');
   });
   it('comes back in the pass it stood in, for a clock of several passes', async () => {
-    await renderSettled(<Lab instruments={[looped]} defaultInstrument="Looped" />, {
+    await renderSettled(<Lab instruments={[looped]} />, {
       wrapper: withIcons,
     });
     fireEvent.click(screen.getByRole('button', { name: 'seek' }));
@@ -117,7 +117,7 @@ describe('a trial clock in a snapshot', () => {
     expect(shown()).toBe('2500');
   });
   it("lets go of a trial's load hold when the trial closes", async () => {
-    await renderSettled(<Lab instruments={[timed]} defaultInstrument="Timed" />, {
+    await renderSettled(<Lab instruments={[timed]} />, {
       wrapper: withIcons,
     });
     const trialId = lab!.trials[0]!.id;

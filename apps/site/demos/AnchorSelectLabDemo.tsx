@@ -80,7 +80,7 @@ const instrument = defineInstrument<State, Config>({
 export function AnchorSelectLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Anchor selection along a path" instruments={[instrument]} defaultInstrument="Anchor selection" />
+      <Lab title="Anchor selection along a path" instruments={[instrument]} />
     </div>
   );
 }

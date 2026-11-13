@@ -144,7 +144,7 @@ describe('StoryTrial', () => {
     const instrument = documentInstrument({ entry, loaded: { kind: 'story', story: local! }, setup: {} });
     renderWithIcons(
       <StoryGlobalsContext.Provider value={{}}>
-        <Lab instruments={[instrument]} defaultInstrument={entry.id} />
+        <Lab instruments={[instrument]} />
       </StoryGlobalsContext.Provider>,
     );
     const button = await screen.findByRole('button', { name: 'off' });

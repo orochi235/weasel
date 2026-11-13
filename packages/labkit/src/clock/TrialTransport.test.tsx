@@ -31,7 +31,7 @@ function timed(spec: ClockCapability | undefined, props: TrialTransportProps = {
 }
 
 const mountLab = (instrument: Instrument) =>
-  renderSettled(<Lab instruments={[instrument]} defaultInstrument="Timed" />, {
+  renderSettled(<Lab instruments={[instrument]} />, {
     wrapper: withIcons,
   });
 
@@ -252,7 +252,7 @@ describe('<TrialTransport>', () => {
       };
       let lab: LabContextValue | null = null;
       await live(renderSettled)(
-        <Lab instruments={[keyed]} defaultInstrument="Timed">
+        <Lab instruments={[keyed]}>
           <LabContext.Consumer>
             {(value) => {
               lab = value;

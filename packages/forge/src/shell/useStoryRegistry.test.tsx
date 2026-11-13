@@ -99,7 +99,7 @@ describe('useStoryRegistry under a lab', () => {
 
   function RegistryLab() {
     const registry = useStoryRegistry([a], options);
-    return <Lab instruments={registry.instruments} defaultInstrument={a.id} />;
+    return <Lab instruments={registry.instruments} opening={[a.id]} />;
   }
 
   it('follows the frame’s answers in the settings panel without other input', async () => {
@@ -122,7 +122,7 @@ describe('useStoryRegistry under a lab', () => {
     function Spy() {
       const registry = useStoryRegistry([a], options);
       instruments.push(registry.instruments[0]);
-      return <Lab instruments={registry.instruments} defaultInstrument={a.id} />;
+      return <Lab instruments={registry.instruments} opening={[a.id]} />;
     }
     const view = renderWithIcons(<Spy />);
     const { frame, received } = connectFrame(view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement);

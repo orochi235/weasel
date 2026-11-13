@@ -55,7 +55,7 @@ const softInstrument = defineInstrument<PathLabState, Config>({
 export function SoftSelectionLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Soft selection" instruments={[softInstrument]} defaultInstrument="Soft selection" />
+      <Lab title="Soft selection" instruments={[softInstrument]} />
     </div>
   );
 }

@@ -74,7 +74,7 @@ const harmonizeInstrument = defineInstrument<State, Config>({
 export function HarmonizeLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Harmonize curvature" instruments={[harmonizeInstrument]} defaultInstrument="Harmonize" />
+      <Lab title="Harmonize curvature" instruments={[harmonizeInstrument]} />
     </div>
   );
 }

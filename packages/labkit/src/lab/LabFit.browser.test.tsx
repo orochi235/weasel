@@ -213,7 +213,6 @@ test.each(CASES)('$fixture fits a $viewport viewport', async ({ fixture, viewpor
       <Lab
         title={`Fit: ${fixture}`}
         instruments={[Stub]}
-        defaultInstrument="Stub"
         opening={fixture === 'pair' ? ['Stub', 'Stub'] : undefined}
         chrome={fixture === 'floating' ? [floater] : undefined}
         labChrome={fixture === 'sidebar' ? [sidebarTree] : undefined}

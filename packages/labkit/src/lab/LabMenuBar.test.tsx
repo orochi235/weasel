@@ -47,7 +47,7 @@ function Grab() {
 
 function mount(props: Partial<LabProps> = {}) {
   return renderSettled(
-    <Lab {...({ instruments: [Stub], defaultInstrument: 'Stub', ...props } as LabProps)}>
+    <Lab {...({ instruments: [Stub], ...props } as LabProps)}>
       <Grab />
     </Lab>,
     { wrapper: withIcons },
@@ -173,7 +173,7 @@ describe('the lab’s menu bar', () => {
   });
 
   it('lists the zoom variants under View, and runs one', async () => {
-    await mount({ instruments: [Staged], defaultInstrument: 'Staged' });
+    await mount({ instruments: [Staged] });
     await open('View');
     const rows = [...document.querySelectorAll('[role="menu"] [role^="menuitem"]')].map(
       (el) => el.textContent ?? '',

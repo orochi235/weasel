@@ -50,7 +50,7 @@ const undo = () => screen.getByRole('button', { name: 'Undo' });
 /** Two settings changes, far enough apart to be two undo steps, then Reset. */
 async function flipTwiceAndReset(clears: boolean): Promise<void> {
   vi.useFakeTimers({ toFake: ['Date'] });
-  await renderSettled(<Lab instruments={[owning(clears)]} defaultInstrument="Owning" />, {
+  await renderSettled(<Lab instruments={[owning(clears)]} />, {
     wrapper: withIcons,
   });
   fireEvent.click(grid());

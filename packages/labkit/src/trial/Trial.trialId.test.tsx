@@ -33,7 +33,7 @@ const reader = defineInstrument<{ hits: number }, Record<string, never>>({
 
 describe('<Trial> trial-scoped hooks', () => {
   it('lets an instrument read its own trial state through useTrialState', async () => {
-    await renderSettled(<Lab instruments={[reader]} defaultInstrument="Reader" />, {
+    await renderSettled(<Lab instruments={[reader]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByTestId('probe')).toHaveTextContent('hits:7');
@@ -44,7 +44,7 @@ describe('<Trial> root element', () => {
   it('carries its trial id, so a lab can find a trial from outside', async () => {
     let labRef: LabContextValue | null = null;
     const { container } = await renderSettled(
-      <Lab instruments={[reader]} defaultInstrument="Reader">
+      <Lab instruments={[reader]}>
         <LabContext.Consumer>
           {(value) => {
             if (value) labRef = value;

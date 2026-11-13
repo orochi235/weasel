@@ -55,7 +55,7 @@ function makeInstrument(
 describe('an instrument that draws', () => {
   it('still renders its own DOM, as an overlay over the canvas', async () => {
     const { container } = await renderSettled(
-      <Lab instruments={[makeInstrument(() => undefined)]} defaultInstrument="Probe" />,
+      <Lab instruments={[makeInstrument(() => undefined)]} />,
       { wrapper: withIcons },
     );
     expect(screen.getByTestId('readout')).toHaveTextContent('n = 7');
@@ -67,7 +67,7 @@ describe('an instrument that draws', () => {
 
   it('draws with the camera applied, so world geometry lands where the view says', async () => {
     const draw = vi.fn();
-    await renderSettled(<Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe" />, {
+    await renderSettled(<Lab instruments={[makeInstrument(draw)]} />, {
       wrapper: withIcons,
     });
     await nextFrame();
@@ -79,7 +79,7 @@ describe('an instrument that draws', () => {
 
   it('passes zoom in the args so a layer can keep line widths unscaled', async () => {
     const draw = vi.fn();
-    await renderSettled(<Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe" />, {
+    await renderSettled(<Lab instruments={[makeInstrument(draw)]} />, {
       wrapper: withIcons,
     });
     await nextFrame();
@@ -104,7 +104,7 @@ describe('two trials that draw', () => {
       return null;
     }
     await renderSettled(
-      <Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe">
+      <Lab instruments={[makeInstrument(draw)]}>
         <Capture />
       </Lab>,
       { wrapper: withIcons },
@@ -140,10 +140,9 @@ describe('an auto config path', () => {
       render: () => null,
       canvas: { layers: [{ id: 'main', draw }] },
     });
-    const { container } = await renderSettled(
-      <Lab instruments={[instrument as Instrument]} defaultInstrument="Auto" />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab instruments={[instrument as Instrument]} />, {
+      wrapper: withIcons,
+    });
     await nextFrame();
 
     expect(draw).toHaveBeenCalledWith(
@@ -163,7 +162,7 @@ describe('LabProps.instruments', () => {
     // The assignment is the assertion: this file fails to compile if
     // `defineInstrument<St, ...>`'s result stops being assignable.
     const typed = makeInstrument(() => undefined);
-    await renderSettled(<Lab instruments={[typed]} defaultInstrument="Probe" />, {
+    await renderSettled(<Lab instruments={[typed]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByTestId('readout')).toBeInTheDocument();
@@ -182,7 +181,7 @@ describe('LabProps.instruments', () => {
     const instrument = makeInstrument(vi.fn(), {
       worldSpec: { origin: { x: 0.5, y: 0.5 }, yAxis: 'up' },
     });
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />, {
+    await renderSettled(<Lab instruments={[instrument]} />, {
       wrapper: withIcons,
     });
     await nextFrame();
@@ -208,7 +207,7 @@ describe('LabProps.instruments', () => {
         pan: { x: width / 4, y: height / 4 },
       }),
     });
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />, {
+    await renderSettled(<Lab instruments={[instrument]} />, {
       wrapper: withIcons,
     });
     await nextFrame();
@@ -236,7 +235,7 @@ describe('LabProps.instruments', () => {
       },
       layers: { ids: ['grid', 'glyph'] },
     });
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />, {
+    await renderSettled(<Lab instruments={[instrument]} />, {
       wrapper: withIcons,
     });
     expect([...seen]).toEqual(['grid', 'glyph']);
@@ -255,7 +254,7 @@ describe('LabProps.instruments', () => {
       canvas: { layers: [{ id: 'grid', draw: () => undefined }] },
       layers: { ids: ['grid'] },
     });
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />, {
+    await renderSettled(<Lab instruments={[instrument]} />, {
       wrapper: withIcons,
     });
     const undo = screen.getByRole('button', { name: 'Undo' });

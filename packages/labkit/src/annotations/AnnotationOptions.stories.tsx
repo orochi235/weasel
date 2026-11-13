@@ -52,7 +52,7 @@ function Story({ tool, select }: { tool: string; select: boolean }) {
   const instruments = useMemo(() => [instrument(tool, select)], [tool, select]);
   return (
     <div className="lk-annotation-options-story">
-      <Lab title="Annotation options" instruments={instruments} defaultInstrument="Picture" />
+      <Lab title="Annotation options" instruments={instruments} opening={['Picture']} />
     </div>
   );
 }

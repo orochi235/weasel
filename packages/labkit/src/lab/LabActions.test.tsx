@@ -93,7 +93,7 @@ describe('a lab’s actions registry', () => {
     });
     const { container } = await renderSettled(
       <>
-        <Lab instruments={[binds]} defaultInstrument="Binds" />
+        <Lab instruments={[binds]} />
         <ElsewhereCanvas />
       </>,
       { wrapper: withIcons },
@@ -137,7 +137,7 @@ describe('a lab’s actions registry', () => {
       return null;
     }
     await renderSettled(
-      <Lab instruments={[plain]} defaultInstrument="Plain">
+      <Lab instruments={[plain]}>
         <Cmd />
       </Lab>,
       { wrapper: withIcons },
@@ -202,7 +202,7 @@ describe('a lab’s actions registry', () => {
       return null;
     }
     await renderSettled(
-      <Lab instruments={[staged]} defaultInstrument="Staged">
+      <Lab instruments={[staged]}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },

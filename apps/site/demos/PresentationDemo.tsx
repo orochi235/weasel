@@ -46,7 +46,7 @@ function PresentButton() {
 export function PresentationDemo() {
   return (
     <div className="ckd-lab-frame prd-host">
-      <Lab title="Presentation" instruments={[pendulum]} defaultInstrument="Pendulum">
+      <Lab title="Presentation" instruments={[pendulum]}>
         <PresentButton />
       </Lab>
     </div>

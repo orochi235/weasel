@@ -172,18 +172,16 @@ const plain = defineInstrument<Record<string, never>, Record<string, never>>({
 
 describe('an instrument that declares a stage', () => {
   it('renders its DOM on the stage', async () => {
-    const { container } = await renderSettled(
-      <Lab instruments={[staged]} defaultInstrument="Staged" />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab instruments={[staged]} />, {
+      wrapper: withIcons,
+    });
     expect(content(container)).toContainElement(screen.getByTestId('art'));
   });
 
   it('gets the zoom controls, and they move the stage', async () => {
-    const { container } = await renderSettled(
-      <Lab instruments={[staged]} defaultInstrument="Staged" />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab instruments={[staged]} />, {
+      wrapper: withIcons,
+    });
     const trialView = within(screen.getByRole('toolbar', { name: 'View' }));
     await act(async () => {
       fireEvent.click(trialView.getByRole('button', { name: 'Zoom in' }));
@@ -208,10 +206,9 @@ describe('an instrument that declares a stage', () => {
       toJSON: () => ({}),
     });
     try {
-      const { container } = await renderSettled(
-        <Lab instruments={[staged]} defaultInstrument="Staged" />,
-        { wrapper: withIcons },
-      );
+      const { container } = await renderSettled(<Lab instruments={[staged]} />, {
+        wrapper: withIcons,
+      });
       const trialView = within(screen.getByRole('toolbar', { name: 'View' }));
       await act(async () => {
         fireEvent.click(trialView.getByRole('button', { name: 'Zoom in' }));
@@ -227,7 +224,7 @@ describe('an instrument that declares a stage', () => {
   });
 
   it('is what earns them: DOM content without one gets none', async () => {
-    await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />, {
+    await renderSettled(<Lab instruments={[plain]} />, {
       wrapper: withIcons,
     });
     expect(screen.queryByRole('toolbar', { name: 'View' })).toBeNull();
@@ -244,10 +241,9 @@ describe('an instrument that declares a stage', () => {
         overlay: ({ state }) => <div data-testid="legend">{state.n}</div>,
       },
     });
-    const { container } = await renderSettled(
-      <Lab instruments={[overlaid]} defaultInstrument="Overlaid" />,
-      { wrapper: withIcons },
-    );
+    const { container } = await renderSettled(<Lab instruments={[overlaid]} />, {
+      wrapper: withIcons,
+    });
     const legend = screen.getByTestId('legend');
     expect(legend).toHaveTextContent('7');
     expect(container.querySelector('.lk-stage')).toContainElement(legend);

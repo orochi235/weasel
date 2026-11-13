@@ -79,7 +79,7 @@ async function mount(pick: string, everyRender = false) {
   live = { tools: null, renders: 0 };
   await renderSettled(
     <StrictMode>
-      <Lab instruments={[instrument(pick, everyRender)]} defaultInstrument="Scene" />
+      <Lab instruments={[instrument(pick, everyRender)]} />
     </StrictMode>,
     { wrapper: withIcons },
   );

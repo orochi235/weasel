@@ -57,7 +57,7 @@ const timed: Instrument = {
 describe('a trial clock in a mounted lab', () => {
   it('reaches the instrument, the trial, the lab, the record and Reset', async () => {
     await renderSettled(
-      <Lab title="T" instruments={[timed]} defaultInstrument="Timed">
+      <Lab title="T" instruments={[timed]}>
         <Readout label="outside" />
       </Lab>,
       { wrapper: withIcons },
@@ -91,7 +91,7 @@ describe('a trial clock in a mounted lab', () => {
       clock: undefined,
       render: () => <Readout label="inside" />,
     };
-    await renderSettled(<Lab title="T" instruments={[plain]} defaultInstrument="Plain" />, {
+    await renderSettled(<Lab title="T" instruments={[plain]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByLabelText('inside')).toHaveTextContent('none');
@@ -116,7 +116,6 @@ describe('a trial clock in a mounted lab', () => {
       <Lab
         title="T"
         instruments={[shared]}
-        defaultInstrument="Shared"
         opening={['Shared', 'Shared']}
         clock={{ duration: 1000 }}
       >
@@ -144,7 +143,7 @@ describe('a trial clock in a mounted lab', () => {
     const shared: Instrument = { ...timed, name: 'Shared', clock: 'lab' };
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
     await expect(
-      renderSettled(<Lab title="T" instruments={[shared]} defaultInstrument="Shared" />, {
+      renderSettled(<Lab title="T" instruments={[shared]} />, {
         wrapper: withIcons,
       }),
     ).rejects.toThrow(/declares no `clock`/);
@@ -154,7 +153,7 @@ describe('a trial clock in a mounted lab', () => {
   it('sets the document title while mounted', async () => {
     const before = document.title;
     const { unmount } = await renderSettled(
-      <Lab title="T" documentTitle="rosee" instruments={[timed]} defaultInstrument="Timed" />,
+      <Lab title="T" documentTitle="rosee" instruments={[timed]} />,
       { wrapper: withIcons },
     );
     expect(document.title).toBe('rosee');

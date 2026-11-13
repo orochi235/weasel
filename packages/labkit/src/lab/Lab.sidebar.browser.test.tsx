@@ -23,7 +23,7 @@ const Bare: Instrument = {
 test('a trial with no sidebar sections gives its whole body to the content', async () => {
   const { container, getByTestId } = renderWithIcons(
     <div className="lk-present-frame">
-      <Lab instruments={[Bare]} defaultInstrument="Bare" />
+      <Lab instruments={[Bare]} />
     </div>,
   );
   const body = () =>

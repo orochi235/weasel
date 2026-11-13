@@ -54,9 +54,7 @@ const centredInstrument = defineInstrument<DropState, Record<string, never>>({
 
 async function renderLab(probe?: (state: DropState) => void, instrument = testInstrument) {
   return renderSettled(
-    <Lab instruments={[instrument]} defaultInstrument={instrument.name}>
-      {probe ? <StateProbe onState={probe} /> : null}
-    </Lab>,
+    <Lab instruments={[instrument]}>{probe ? <StateProbe onState={probe} /> : null}</Lab>,
     { wrapper: withIcons },
   );
 }

@@ -78,7 +78,7 @@ const knob = defineInstrument({
 describe('useTrialHistory', () => {
   it("steps the instrument's own history from the trial's Undo, and takes no snapshots meanwhile", async () => {
     history = fakeHistory();
-    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Own" />, {
+    await renderSettled(<Lab instruments={[instrument]} />, {
       wrapper: withIcons,
     });
     const undo = screen.getByRole('button', { name: 'Undo' });
@@ -94,7 +94,7 @@ describe('useTrialHistory', () => {
 
   it('records a write to the path just undone as a new entry, however soon it comes', async () => {
     history = fakeHistory();
-    await renderSettled(<Lab instruments={[knob]} defaultInstrument="Knob" />, {
+    await renderSettled(<Lab instruments={[knob]} />, {
       wrapper: withIcons,
     });
     fireEvent.click(screen.getByRole('button', { name: 'wider' }));

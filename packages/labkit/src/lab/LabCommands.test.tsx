@@ -49,7 +49,7 @@ const trigger = (id: string) =>
 describe('a lab’s header commands', () => {
   it('registers lab.add.<name> per instrument, and running one adds that trial', async () => {
     await renderSettled(
-      <Lab instruments={[Staged, Plain]} defaultInstrument="Staged">
+      <Lab instruments={[Staged, Plain]} opening={['Staged']}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -63,7 +63,7 @@ describe('a lab’s header commands', () => {
 
   it('labels the add command "Add trial" when the lab has one instrument', async () => {
     await renderSettled(
-      <Lab instruments={[Staged]} defaultInstrument="Staged">
+      <Lab instruments={[Staged]}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -73,7 +73,7 @@ describe('a lab’s header commands', () => {
 
   it('registers no add command with addTrial={false}', async () => {
     await renderSettled(
-      <Lab instruments={[Staged, Plain]} defaultInstrument="Staged" addTrial={false}>
+      <Lab instruments={[Staged, Plain]} opening={['Staged']} addTrial={false}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -83,7 +83,7 @@ describe('a lab’s header commands', () => {
 
   it('registers an add command for an instrument added after mount', async () => {
     const { rerender } = await renderSettled(
-      <Lab instruments={[Staged, Plain]} defaultInstrument="Staged">
+      <Lab instruments={[Staged, Plain]} opening={['Staged']}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -91,7 +91,7 @@ describe('a lab’s header commands', () => {
     expect(ids()).not.toContain('lab.add.Third');
     await act(async () => {
       rerender(
-        <Lab instruments={[Staged, Plain, Third]} defaultInstrument="Staged">
+        <Lab instruments={[Staged, Plain, Third]} opening={['Staged']}>
           <Grab />
         </Lab>,
       );
@@ -101,7 +101,7 @@ describe('a lab’s header commands', () => {
 
   it('registers lab.mode.* and marks the current mode active', async () => {
     await renderSettled(
-      <Lab instruments={[Staged]} defaultInstrument="Staged">
+      <Lab instruments={[Staged]}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -126,7 +126,7 @@ describe('a lab’s header commands', () => {
       },
     ];
     await renderSettled(
-      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+      <Lab instruments={[Staged]} labChrome={labChrome}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -151,7 +151,7 @@ describe('a lab’s header commands', () => {
       },
     ];
     const { container } = await renderSettled(
-      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+      <Lab instruments={[Staged]} labChrome={labChrome}>
         <input data-testid="field" />
       </Lab>,
       { wrapper: withIcons },
@@ -174,7 +174,7 @@ describe('a lab’s header commands', () => {
       { id: 'x-menu', region: 'header', item: { kind: 'menu', label: 'Menu', entries: [] } },
     ];
     await renderSettled(
-      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+      <Lab instruments={[Staged]} labChrome={labChrome}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -197,7 +197,7 @@ describe('a lab’s header commands', () => {
       },
     ];
     await renderSettled(
-      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+      <Lab instruments={[Staged]} labChrome={labChrome}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -217,7 +217,7 @@ describe('a lab’s header commands', () => {
       },
     ];
     await renderSettled(
-      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+      <Lab instruments={[Staged]} labChrome={labChrome}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -232,7 +232,7 @@ describe('a lab’s header commands', () => {
   it('registers nothing for a header render contribution', async () => {
     const labChrome: LabContribution[] = [{ id: 'x-render', region: 'header', render: () => null }];
     await renderSettled(
-      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+      <Lab instruments={[Staged]} labChrome={labChrome}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -246,7 +246,7 @@ describe('a lab’s header commands', () => {
       { id: 'zoom', region: 'header', item: { icon: icon('ui:add'), label: 'Mine', onActivate } },
     ];
     await renderSettled(
-      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+      <Lab instruments={[Staged]} labChrome={labChrome}>
         <Grab />
       </Lab>,
       { wrapper: withIcons },
@@ -272,10 +272,9 @@ describe('a lab’s header commands', () => {
         },
       },
     ];
-    await renderSettled(
-      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome} {...props} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab instruments={[Staged]} labChrome={labChrome} {...props} />, {
+      wrapper: withIcons,
+    });
     await act(async () => {
       fireEvent.keyDown(window, { key: 'i', ...MOD });
     });

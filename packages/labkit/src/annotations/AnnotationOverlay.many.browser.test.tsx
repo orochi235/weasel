@@ -41,7 +41,7 @@ test(`${COUNT} targets mounted in one commit all take marks`, async () => {
   try {
     renderWithIcons(
       <div className="lk-many-lab-host">
-        <Lab instruments={[Grid]} defaultInstrument="Grid" />
+        <Lab instruments={[Grid]} />
       </div>,
     );
     await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
@@ -108,7 +108,7 @@ const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
 test('a stroke begun in the frame a pane scrolls lands on the target now under it', async () => {
   renderWithIcons(
     <div className="lk-many-lab-host">
-      <Lab instruments={[Stacked]} defaultInstrument="Stacked" />
+      <Lab instruments={[Stacked]} />
     </div>,
   );
   await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));

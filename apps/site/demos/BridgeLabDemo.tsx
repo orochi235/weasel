@@ -91,7 +91,7 @@ const bridgeInstrument = defineInstrument<State, Config>({
 export function BridgeLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Bridge" instruments={[bridgeInstrument]} defaultInstrument="Bridge" />
+      <Lab title="Bridge" instruments={[bridgeInstrument]} />
     </div>
   );
 }

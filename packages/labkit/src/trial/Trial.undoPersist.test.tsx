@@ -38,12 +38,7 @@ const KEY = 'undo-persist-test';
 
 function mount(backing: Map<string, unknown>) {
   return renderSettled(
-    <Lab
-      instruments={[counter]}
-      defaultInstrument="Counter"
-      storage={createMemoryAdapter(backing)}
-      storageKey={KEY}
-    />,
+    <Lab instruments={[counter]} storage={createMemoryAdapter(backing)} storageKey={KEY} />,
     { wrapper: withIcons },
   );
 }

@@ -138,7 +138,7 @@ const cornersInstrument = defineInstrument<State, Config>({
 export function CornerShapeLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title={CORNER_CONTROLS.name} instruments={[cornersInstrument]} defaultInstrument="Corners" />
+      <Lab title={CORNER_CONTROLS.name} instruments={[cornersInstrument]} />
     </div>
   );
 }

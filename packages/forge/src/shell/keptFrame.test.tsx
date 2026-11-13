@@ -25,7 +25,7 @@ function RegistryLab() {
   const registry = useStoryRegistry([entry], { frameUrl: '/frame.html' });
   return (
     <StoryGlobalsContext.Provider value={{}}>
-      <Lab instruments={registry.instruments} defaultInstrument={entry.id} />
+      <Lab instruments={registry.instruments} opening={[entry.id]} />
     </StoryGlobalsContext.Provider>
   );
 }

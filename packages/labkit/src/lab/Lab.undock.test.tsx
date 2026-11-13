@@ -39,10 +39,9 @@ const pinned: TrialContribution = {
 };
 
 async function renderLab() {
-  return renderSettled(
-    <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[notes]} />,
-    { wrapper: withIcons },
-  );
+  return renderSettled(<Lab title="T" instruments={[bare]} chrome={[notes]} />, {
+    wrapper: withIcons,
+  });
 }
 
 describe('undocking a sidebar section', () => {
@@ -76,7 +75,7 @@ describe('undocking a sidebar section', () => {
 
   it('sends a section declaring undockAs floating to the floating layer', async () => {
     const { container } = await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[floater]} />,
+      <Lab title="T" instruments={[bare]} chrome={[floater]} />,
       { wrapper: withIcons },
     );
     await userEvent.click(screen.getByRole('button', { name: 'Undock Floater' }));
@@ -95,10 +94,9 @@ describe('undocking a sidebar section', () => {
       return null;
     }
     const counted: Instrument = { ...bare, render: () => <Counted /> };
-    await renderSettled(
-      <Lab title="T" instruments={[counted]} defaultInstrument="Bare" chrome={[floater]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[counted]} chrome={[floater]} />, {
+      wrapper: withIcons,
+    });
     expect(mounts).toBe(1);
     await userEvent.click(screen.getByRole('button', { name: 'Undock Floater' }));
     expect(screen.getByTestId('floater-body')).toBeInTheDocument();
@@ -106,10 +104,9 @@ describe('undocking a sidebar section', () => {
   });
 
   it('offers no tear-out control on a section that opts out', async () => {
-    await renderSettled(
-      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[pinned]} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab title="T" instruments={[bare]} chrome={[pinned]} />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByRole('button', { name: 'Undock Pinned' })).toBeNull();
   });
 
@@ -126,7 +123,7 @@ describe('undocking a sidebar section', () => {
 
     async function undockInFirstOfTwo() {
       const view = await renderSettled(
-        <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[notes]}>
+        <Lab title="T" instruments={[bare]} chrome={[notes]}>
           {capture}
         </Lab>,
         { wrapper: withIcons },

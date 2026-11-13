@@ -18,7 +18,7 @@ const pin = () => screen.getByRole('button', { name: /Count/ });
 
 describe('an auto setting in a trial falls off when edited', () => {
   it('pins on a drag of its live slider, and goes back to auto from its label', async () => {
-    await renderSettled(<Lab instruments={[counted]} defaultInstrument="Counted" />, {
+    await renderSettled(<Lab instruments={[counted]} />, {
       wrapper: withIcons,
     });
     expect(pin()).toHaveAttribute('aria-pressed', 'false');

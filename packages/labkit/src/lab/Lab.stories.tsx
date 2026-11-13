@@ -26,7 +26,7 @@ type Story = StoryObj<typeof Lab>;
 export const Default: Story = {
   args: {
     instruments: [StubInstrument],
-    defaultInstrument: 'Stub',
+    opening: ['Stub'],
     title: 'Default Lab',
   },
 };
@@ -42,7 +42,7 @@ function AddSecondTrial() {
 export const TwoTrials: Story = {
   args: {
     instruments: [StubInstrument],
-    defaultInstrument: 'Stub',
+    opening: ['Stub'],
     title: 'Two Trials',
     children: <AddSecondTrial />,
   },
@@ -52,7 +52,7 @@ export const TwoTrials: Story = {
 export const MenusInHeader: Story = {
   args: {
     instruments: [StubInstrument],
-    defaultInstrument: 'Stub',
+    opening: ['Stub'],
     title: 'Menus in the header',
   },
 };
@@ -63,7 +63,7 @@ export const MenusInHeader: Story = {
 export const MenusInHeaderNarrow: Story = {
   args: {
     instruments: [StubInstrument],
-    defaultInstrument: 'Stub',
+    opening: ['Stub'],
     title: 'Menus in a narrow header',
   },
   render: (args) => (
@@ -101,7 +101,7 @@ const Tuned = defineInstrument({
 export const FloatingSidebar: Story = {
   args: {
     instruments: [Tuned],
-    defaultInstrument: 'Tuned',
+    opening: ['Tuned'],
     title: 'Floating sidebar',
     sidebar: 'float',
     hide: ['undo', 'redo'],

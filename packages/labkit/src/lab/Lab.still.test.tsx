@@ -26,10 +26,9 @@ function timed(spec: ClockCapability | 'lab'): Instrument {
 }
 
 function mountLab(spec: ClockCapability | 'lab', props: Partial<LabProps> = {}) {
-  return renderSettled(
-    <Lab {...({ instruments: [timed(spec)], defaultInstrument: 'Timed', ...props } as LabProps)} />,
-    { wrapper: withIcons },
-  );
+  return renderSettled(<Lab {...({ instruments: [timed(spec)], ...props } as LabProps)} />, {
+    wrapper: withIcons,
+  });
 }
 
 const c = () => clock as TrialClock;
@@ -93,7 +92,7 @@ describe('<Lab still>', () => {
     });
     const mountRunning = (spec: ClockCapability | 'lab', props: Partial<LabProps>) => {
       frames = [];
-      const lab = { instruments: [running(spec)], defaultInstrument: 'Timed', ...props };
+      const lab = { instruments: [running(spec)], ...props };
       return renderSettled(<Lab {...(lab as LabProps)} />, { wrapper: withIcons });
     };
     // A real frame can repeat the time the run starts or stops at.

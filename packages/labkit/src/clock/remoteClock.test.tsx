@@ -67,7 +67,6 @@ describe("a trial clock whose record another tab's write replaces", () => {
     await renderSettled(
       <Lab
         instruments={[timed]}
-        defaultInstrument="Timed"
         storage={createMemoryAdapter(backing)}
         storageKey="remote-clock"
       />,

@@ -75,7 +75,7 @@ export const EveryRegion: Story = {
   tags: ['gallery'],
   args: {
     instruments: [FullInstrument],
-    defaultInstrument: 'Every Region',
+    opening: ['Every Region'],
     title: 'Chrome Regions',
   },
 };
@@ -84,7 +84,7 @@ export const EveryRegion: Story = {
 export const SuppressedAndReplaced: Story = {
   args: {
     instruments: [FullInstrument],
-    defaultInstrument: 'Every Region',
+    opening: ['Every Region'],
     title: 'Suppress + Replace',
     suppress: ['snapshot'],
     chrome: [
@@ -113,7 +113,7 @@ const SUBJECTS = ['Ash', 'Birch', 'Cedar'];
 export const SubjectTitleAndLead: Story = {
   args: {
     instruments: [FullInstrument],
-    defaultInstrument: 'Every Region',
+    opening: ['Every Region'],
     title: 'Title Bar Lead',
     suppress: ['snapshot'],
     chrome: [

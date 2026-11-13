@@ -29,11 +29,7 @@ const stage = (gestures?: CameraGestures): Instrument => ({
 
 async function touchOf(instrument: Instrument, gestures?: CameraGestures) {
   const { container } = await renderSettled(
-    <Lab
-      instruments={[instrument]}
-      defaultInstrument={instrument.name}
-      {...(gestures ? { gestures } : {})}
-    />,
+    <Lab instruments={[instrument]} {...(gestures ? { gestures } : {})} />,
     { wrapper: withIcons },
   );
   const host = container.querySelector<HTMLElement>('.lk-canvas-stack, .lk-stage');

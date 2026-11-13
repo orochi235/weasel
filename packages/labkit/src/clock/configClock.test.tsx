@@ -66,7 +66,7 @@ const make = (clock: Declare) =>
   });
 
 const mount = (clock: Declare) =>
-  renderSettled(<Lab title="T" instruments={[make(clock)]} defaultInstrument="Config clock" />, {
+  renderSettled(<Lab title="T" instruments={[make(clock)]} />, {
     wrapper: withIcons,
   });
 const click = (name: string) =>
@@ -182,11 +182,7 @@ describe('a clock declared from config, under StrictMode', () => {
     const mix = vi.fn(() => ({ sync() {}, seek() {}, now: 0 }));
     await renderSettled(
       <StrictMode>
-        <Lab
-          title="T"
-          instruments={[make((s) => ({ duration: s * 1000, mix }))]}
-          defaultInstrument="Config clock"
-        />
+        <Lab title="T" instruments={[make((s) => ({ duration: s * 1000, mix }))]} />
       </StrictMode>,
       { wrapper: withIcons },
     );

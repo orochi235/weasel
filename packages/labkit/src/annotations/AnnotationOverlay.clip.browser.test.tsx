@@ -125,7 +125,7 @@ const not = (color: string, pixels: Pixel[]): number =>
 test('a mark is cut where its target is, and takes no press past it', async () => {
   renderWithIcons(
     <div className="lk-clip-lab-host">
-      <Lab instruments={[Clipped]} defaultInstrument="Clipped" />
+      <Lab instruments={[Clipped]} />
     </div>,
   );
   await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
@@ -178,7 +178,7 @@ test('a mark is cut where its target is, and takes no press past it', async () =
 test('the box that takes input follows its target when it moves with nothing resizing', async () => {
   renderWithIcons(
     <div className="lk-clip-lab-host">
-      <Lab instruments={[Clipped]} defaultInstrument="Clipped" />
+      <Lab instruments={[Clipped]} />
     </div>,
   );
   await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
@@ -232,7 +232,7 @@ const Scrolling = defineInstrument<Record<string, never>, Record<string, never>>
 test('a mark on scrolled content moves with it as its target scrolls', async () => {
   renderWithIcons(
     <div className="lk-clip-lab-host">
-      <Lab instruments={[Scrolling]} defaultInstrument="Scrolling" />
+      <Lab instruments={[Scrolling]} />
     </div>,
   );
   await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
@@ -274,7 +274,7 @@ test('a mark on scrolled content moves with it as its target scrolls', async () 
 test('a wheel over a target with no camera scrolls it while a drawing tool holds the box', async () => {
   renderWithIcons(
     <div className="lk-clip-lab-host">
-      <Lab instruments={[Scrolling]} defaultInstrument="Scrolling" />
+      <Lab instruments={[Scrolling]} />
     </div>,
   );
   await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));

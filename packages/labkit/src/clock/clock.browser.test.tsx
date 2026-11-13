@@ -74,7 +74,7 @@ test('a timed layer repaints as the clock plays, and holds once it pauses', asyn
   pausedAt = Number.NaN;
   renderWithIcons(
     <div className="lk-clock-frame">
-      <Lab title="T" instruments={[Ticking]} defaultInstrument="Ticking" />
+      <Lab title="T" instruments={[Ticking]} />
     </div>,
   );
   // Paints at three distinct times: only the clock moving explains that, since

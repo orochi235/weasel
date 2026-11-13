@@ -135,7 +135,6 @@ export function AnnotationCaptureDemo() {
       <Lab
         title="Annotation capture"
         instruments={[inspector]}
-        defaultInstrument="Quadrants"
       />
     </div>
   );

@@ -145,7 +145,7 @@ const brushInstrument = defineInstrument<State, Config>({
 export function SimplifyBrushLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Simplify brush" instruments={[brushInstrument]} defaultInstrument="Simplify brush" />
+      <Lab title="Simplify brush" instruments={[brushInstrument]} />
     </div>
   );
 }

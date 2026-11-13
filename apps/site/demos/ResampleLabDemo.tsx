@@ -64,7 +64,7 @@ const instrument = defineInstrument<State, Config>({
 export function ResampleLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Resample a path" instruments={[instrument]} defaultInstrument="Resample" />
+      <Lab title="Resample a path" instruments={[instrument]} />
     </div>
   );
 }

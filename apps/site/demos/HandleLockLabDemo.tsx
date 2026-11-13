@@ -46,7 +46,7 @@ const lockInstrument = defineInstrument<PathLabState, Record<string, never>>({
 export function HandleLockLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Handle locks" instruments={[lockInstrument]} defaultInstrument="Handle locks" />
+      <Lab title="Handle locks" instruments={[lockInstrument]} />
     </div>
   );
 }

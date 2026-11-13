@@ -36,12 +36,7 @@ const palette = () => screen.queryByRole('toolbar', { name: /Rectangle|Text|mark
 
 async function mount() {
   await renderSettled(
-    <Lab
-      instruments={[annotating]}
-      defaultInstrument="Annotating"
-      storageKey="options-test"
-      storage={createMemoryAdapter()}
-    />,
+    <Lab instruments={[annotating]} storageKey="options-test" storage={createMemoryAdapter()} />,
     { wrapper: withIcons },
   );
   await waitFor(() => expect(api).not.toBeNull());

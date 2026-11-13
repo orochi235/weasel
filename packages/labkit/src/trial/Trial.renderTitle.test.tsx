@@ -22,7 +22,7 @@ const Lettered = defineInstrument({
 
 describe('renderTitle', () => {
   it('is handed the trial config, and redraws when it changes', async () => {
-    await renderSettled(<Lab instruments={[Lettered]} defaultInstrument="Lettered" />, {
+    await renderSettled(<Lab instruments={[Lettered]} />, {
       wrapper: withIcons,
     });
     expect(screen.getByTestId('tag')).toHaveTextContent('M');

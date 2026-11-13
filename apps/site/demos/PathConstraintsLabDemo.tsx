@@ -111,7 +111,7 @@ const constraintsInstrument = defineInstrument<State, Config>({
 export function PathConstraintsLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Path constraints" instruments={[constraintsInstrument]} defaultInstrument="Constraints" />
+      <Lab title="Path constraints" instruments={[constraintsInstrument]} />
     </div>
   );
 }

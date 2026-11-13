@@ -29,7 +29,7 @@ function mountLab(spec: ClockCapability | undefined, props: Partial<LabProps> = 
     <Lab
       {...({
         instruments: [timed(spec)],
-        defaultInstrument: 'Timed',
+        opening: ['Timed'],
         present: true,
         ...props,
       } as LabProps)}
@@ -170,10 +170,9 @@ describe('a presented lab’s messages', () => {
 
   it('answers a trial whose function clock resolves to none', async ({ host }) => {
     const none: Instrument = { ...timed(undefined), clock: () => null };
-    await renderSettled(
-      <Lab {...({ instruments: [none], defaultInstrument: 'Timed', present: true } as LabProps)} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab {...({ instruments: [none], present: true } as LabProps)} />, {
+      wrapper: withIcons,
+    });
     expect(lastState()).toMatchObject({ clock: false, duration: null });
     const before = states().length;
     await host.send({ type: 'labkit:query' });

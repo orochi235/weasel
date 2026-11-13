@@ -39,7 +39,7 @@ const instrument = defineInstrument({
 const MARK = { target: 'pane', kind: 'rect' as const, frac: { x: 0.2, y: 0.3, w: 0.1, h: 0.1 } };
 
 const mount = () =>
-  renderSettled(<Lab instruments={[instrument]} defaultInstrument="Both" />, {
+  renderSettled(<Lab instruments={[instrument]} />, {
     wrapper: withIcons,
   });
 const grid = () => screen.getByRole('checkbox', { name: 'Show grid' });
@@ -150,7 +150,7 @@ const sized = defineInstrument({
 
 describe('a run of writes to one setting', () => {
   it('ends at a mark made between two of them', async () => {
-    await renderSettled(<Lab instruments={[sized]} defaultInstrument="Sized" />, {
+    await renderSettled(<Lab instruments={[sized]} />, {
       wrapper: withIcons,
     });
     const cell = () => screen.getByLabelText('cell').textContent;

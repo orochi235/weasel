@@ -57,7 +57,6 @@ async function mount(overrides?: BindingOverrides): Promise<HTMLElement> {
   const { container } = await renderSettled(
     <Lab
       instruments={[Story]}
-      defaultInstrument="Story"
       labChrome={[
         {
           id: 'loupe',

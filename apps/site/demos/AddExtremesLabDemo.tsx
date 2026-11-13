@@ -58,7 +58,7 @@ const instrument = defineInstrument<State, Config>({
 export function AddExtremesLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Add extremes" instruments={[instrument]} defaultInstrument="Add extremes" />
+      <Lab title="Add extremes" instruments={[instrument]} />
     </div>
   );
 }

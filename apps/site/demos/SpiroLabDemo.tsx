@@ -116,7 +116,7 @@ const spiroInstrument = defineInstrument<State, Config>({
 export function SpiroLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Spiro curves" instruments={[spiroInstrument]} defaultInstrument="Spiro" />
+      <Lab title="Spiro curves" instruments={[spiroInstrument]} />
     </div>
   );
 }

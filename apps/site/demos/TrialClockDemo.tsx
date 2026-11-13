@@ -69,7 +69,7 @@ const orbit = defineInstrument({
 export function TrialClockDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Trial clock" instruments={[orbit]} defaultInstrument="Orbit" />
+      <Lab title="Trial clock" instruments={[orbit]} />
     </div>
   );
 }

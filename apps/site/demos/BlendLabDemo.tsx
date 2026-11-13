@@ -120,7 +120,7 @@ const blendInstrument = defineInstrument<State, Config>({
 export function BlendLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Blend" instruments={[blendInstrument]} defaultInstrument="Blend" />
+      <Lab title="Blend" instruments={[blendInstrument]} />
     </div>
   );
 }

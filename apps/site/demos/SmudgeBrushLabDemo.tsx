@@ -73,7 +73,7 @@ const smudgeInstrument = defineInstrument<State, Config>({
 export function SmudgeBrushLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Smudge brush" instruments={[smudgeInstrument]} defaultInstrument="Smudge brush" />
+      <Lab title="Smudge brush" instruments={[smudgeInstrument]} />
     </div>
   );
 }

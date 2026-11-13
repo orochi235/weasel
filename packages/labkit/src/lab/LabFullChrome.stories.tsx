@@ -244,7 +244,7 @@ type Story = StoryObj<typeof Lab>;
 export const AllChrome: Story = {
   args: {
     instruments: [spectrometer, beamProfile, thermalDrift],
-    defaultInstrument: 'Spectrometer',
+    opening: ['Spectrometer'],
     title: 'Optics bench',
     mode: 'dark',
     nebula: ['#3b5bdb', '#7048e8', '#0ca678'],
@@ -284,7 +284,7 @@ export const UndockablePanels: Story = {
 export const SingleInstrument: Story = {
   args: {
     instruments: [runLog],
-    defaultInstrument: 'Run log',
+    opening: ['Run log'],
     title: 'Run log',
   },
 };
@@ -295,7 +295,7 @@ export const SingleInstrument: Story = {
 export const WithFooter: Story = {
   args: {
     instruments: [spectrometer, beamProfile],
-    defaultInstrument: 'Spectrometer',
+    opening: ['Spectrometer'],
     title: 'With footer',
     mode: 'dark',
     footer: <span className="lk-run-tag">Footer — reached through LabProps.footer</span>,

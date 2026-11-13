@@ -35,7 +35,7 @@ describe('a change to one trial’s record', () => {
   it('does not render the lab, and still reaches a reader of the lab context', async () => {
     let lab: LabContextValue | null = null;
     await renderSettled(
-      <Lab instruments={[counter]} defaultInstrument="Counter">
+      <Lab instruments={[counter]}>
         <LabContext.Consumer>
           {(value) => {
             lab = value;

@@ -16,7 +16,7 @@ type Story = StoryObj<typeof Lab>;
 const lab = (name: string, start: Parameters<typeof calibrationInstrument>[0] = {}) => ({
   args: {
     instruments: [calibrationInstrument(start)],
-    defaultInstrument: 'Calibration',
+    opening: ['Calibration'],
     title: name,
   },
 });

@@ -59,7 +59,7 @@ async function mount() {
       ),
     },
   });
-  const r = await renderSettled(<Lab instruments={[pictured]} defaultInstrument="Pictured" />, {
+  const r = await renderSettled(<Lab instruments={[pictured]} />, {
     wrapper: withIcons,
   });
   const box = r.container.querySelector('.lk-overview__box');

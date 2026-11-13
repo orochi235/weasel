@@ -18,7 +18,6 @@ describe('the lab overlay region', () => {
       <Lab
         title="T"
         instruments={[bare]}
-        defaultInstrument="Bare"
         labChrome={[{ id: 'x', region: 'overlay', render: () => <i data-testid="o" /> }]}
       />,
       { wrapper: withIcons },
@@ -36,7 +35,6 @@ describe('the lab overlay region', () => {
       <Lab
         title="T"
         instruments={[bare]}
-        defaultInstrument="Bare"
         labChrome={[
           {
             id: 'x',

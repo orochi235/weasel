@@ -106,7 +106,7 @@ function Capture() {
 async function mount(withCanvas: boolean) {
   const instrument = orbitOnly(withCanvas);
   const out = await renderSettled(
-    <Lab instruments={[instrument]} defaultInstrument={instrument.name}>
+    <Lab instruments={[instrument]}>
       <Capture />
     </Lab>,
     { wrapper: withIcons },

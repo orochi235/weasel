@@ -36,7 +36,7 @@ function Harness({ storage }: { storage: StorageAdapter }) {
   return (
     <Lab
       instruments={instruments}
-      defaultInstrument={slider.id}
+      opening={[slider.id]}
       labChrome={tree}
       addTrial={false}
       storageKey="tree-test"
@@ -467,7 +467,7 @@ describe('StoryTree', () => {
       return (
         <Lab
           instruments={instruments}
-          defaultInstrument={slider.id}
+          opening={[slider.id]}
           labChrome={contribution}
           addTrial={false}
           storageKey="tree-tone-test"
@@ -519,7 +519,7 @@ describe('StoryTree galleries', () => {
     return (
       <Lab
         instruments={instruments}
-        defaultInstrument={primary.id}
+        opening={[primary.id]}
         labChrome={chrome}
         addTrial={false}
         storageKey="tree-gallery"
@@ -550,7 +550,7 @@ describe('StoryTree galleries', () => {
       return (
         <Lab
           instruments={instruments}
-          defaultInstrument={gallery.id}
+          opening={[gallery.id]}
           labChrome={onlyChrome}
           addTrial={false}
           storageKey="tree-only-galleries"
@@ -590,7 +590,7 @@ describe('StoryTree labs', () => {
     return (
       <Lab
         instruments={instruments}
-        defaultInstrument={primary.id}
+        opening={[primary.id]}
         labChrome={chrome}
         addTrial={false}
         storageKey="tree-labs"
@@ -623,7 +623,7 @@ describe('StoryTree folders sharing a path', () => {
     const chrome: LabContribution[] = [{ id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={shared} /> }];
     function Shared() {
       const { instruments } = useStoryRegistry([...shared, ...indexEntries(shared)], { frameUrl: '/frame.html' });
-      return <Lab instruments={instruments} defaultInstrument={shared[0]!.id} labChrome={chrome} addTrial={false} storageKey="tree-shared" storage={createMemoryAdapter()} />;
+      return <Lab instruments={instruments} opening={[shared[0]!.id]} labChrome={chrome} addTrial={false} storageKey="tree-shared" storage={createMemoryAdapter()} />;
     }
     const libraries = librariesFrom([{ path: '/packages/ui/', label: 'ui' }, { path: '/packages/labkit/', label: 'labkit' }]);
     const error = vi.spyOn(console, 'error');

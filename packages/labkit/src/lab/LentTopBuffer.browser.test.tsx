@@ -77,7 +77,6 @@ async function mount(): Promise<HTMLElement> {
     <Host>
       <Lab
         instruments={[Story]}
-        defaultInstrument="Story"
         labChrome={[
           { id: 'loupe', region: 'overlay', render: () => <LensOverlay scene={scene} /> },
         ]}

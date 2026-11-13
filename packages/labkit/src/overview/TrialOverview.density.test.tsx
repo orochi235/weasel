@@ -41,7 +41,7 @@ it("resizes the overview's canvases when the display's density changes", async (
       overlay: () => <TrialOverview width={200} height={150} render={() => <div />} />,
     },
   });
-  const r = await renderSettled(<Lab instruments={[pictured]} defaultInstrument="Pictured" />, {
+  const r = await renderSettled(<Lab instruments={[pictured]} />, {
     wrapper: withIcons,
   });
   const chrome = r.container.querySelector<HTMLCanvasElement>('.lk-overview__chrome');

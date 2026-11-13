@@ -152,7 +152,7 @@ const widthInstrument = defineInstrument<State, Config>({
 export function StrokeWidthLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Stroke width and nib" instruments={[widthInstrument]} defaultInstrument="Width" />
+      <Lab title="Stroke width and nib" instruments={[widthInstrument]} />
     </div>
   );
 }

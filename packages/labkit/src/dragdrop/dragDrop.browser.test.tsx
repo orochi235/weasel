@@ -42,7 +42,7 @@ const Drop = defineInstrument<DropState, Record<string, never>>({
 test('a palette item dragged onto the canvas drops at the world point it was released on', async () => {
   const { container } = renderWithIcons(
     <div className="lk-present-frame">
-      <Lab instruments={[Drop]} defaultInstrument="Drop" />
+      <Lab instruments={[Drop]} />
     </div>,
   );
   const stack = () => container.querySelector('.lk-canvas-stack') as HTMLElement;
@@ -68,7 +68,7 @@ test('a palette item dragged onto the canvas drops at the world point it was rel
 test('a palette item released off the canvas drops nothing', async () => {
   const { container } = renderWithIcons(
     <div className="lk-present-frame">
-      <Lab instruments={[Drop]} defaultInstrument="Drop" />
+      <Lab instruments={[Drop]} />
     </div>,
   );
   const palette = await screen.findByRole('button', { name: 'Item A' });

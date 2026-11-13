@@ -183,7 +183,7 @@ const trimInstrument = defineInstrument<State, Config>({
 export function StrokeTrimLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Stroke trim" instruments={[trimInstrument]} defaultInstrument="Stroke trim" />
+      <Lab title="Stroke trim" instruments={[trimInstrument]} />
     </div>
   );
 }

@@ -62,7 +62,7 @@ const combInstrument = defineInstrument<State, Config>({
 export function CurvatureCombLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Curvature comb" instruments={[combInstrument]} defaultInstrument="Comb" />
+      <Lab title="Curvature comb" instruments={[combInstrument]} />
     </div>
   );
 }

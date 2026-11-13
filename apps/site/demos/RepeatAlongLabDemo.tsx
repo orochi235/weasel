@@ -106,7 +106,7 @@ const repeatInstrument = defineInstrument<State, Config>({
 export function RepeatAlongLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Repeat along a path" instruments={[repeatInstrument]} defaultInstrument="Repeat along a path" />
+      <Lab title="Repeat along a path" instruments={[repeatInstrument]} />
     </div>
   );
 }

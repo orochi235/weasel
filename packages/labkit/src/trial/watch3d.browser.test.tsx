@@ -52,7 +52,7 @@ function threeLab(kind: Kind, orbit?: Orbit): Instrument {
 const mount = (instrument: Instrument, mode: LabMode = 'dark') =>
   renderWithIcons(
     <div className="lk-present-frame">
-      <Lab instruments={[instrument]} defaultInstrument={instrument.name} mode={mode} />
+      <Lab instruments={[instrument]} mode={mode} />
     </div>,
   );
 

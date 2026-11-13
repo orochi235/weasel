@@ -64,7 +64,7 @@ const balanceInstrument = defineInstrument<State, Config>({
 export function BalanceHandlesLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Balance handles" instruments={[balanceInstrument]} defaultInstrument="Balance" />
+      <Lab title="Balance handles" instruments={[balanceInstrument]} />
     </div>
   );
 }

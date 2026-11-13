@@ -21,10 +21,9 @@ const grid = () => screen.getByRole('checkbox', { name: 'Show grid' });
 
 describe('hiding a trial button', () => {
   it('drops the undo row and still undoes and redoes from the keys', async () => {
-    await renderSettled(
-      <Lab instruments={[Gridded]} defaultInstrument="Gridded" hide={['undo', 'redo']} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab instruments={[Gridded]} hide={['undo', 'redo']} />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Redo' })).toBeNull();
     expect(screen.queryByRole('toolbar', { name: 'Trial actions' })).toBeNull();
@@ -39,10 +38,9 @@ describe('hiding a trial button', () => {
   });
 
   it('keeps Mod+S saving a snapshot once its button is hidden', async () => {
-    await renderSettled(
-      <Lab instruments={[Gridded]} defaultInstrument="Gridded" hide={['snapshot']} />,
-      { wrapper: withIcons },
-    );
+    await renderSettled(<Lab instruments={[Gridded]} hide={['snapshot']} />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByRole('button', { name: 'Save snapshot' })).toBeNull();
     expect(fireEvent.keyDown(document.body, { key: 's', ctrlKey: true })).toBe(false);
     expect(await screen.findByRole('button', { name: 'Load snapshot' })).toBeInTheDocument();
@@ -51,7 +49,7 @@ describe('hiding a trial button', () => {
   it('throws on an id that is not there, as suppress does', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     await expect(
-      renderSettled(<Lab instruments={[Gridded]} defaultInstrument="Gridded" hide={['nope']} />, {
+      renderSettled(<Lab instruments={[Gridded]} hide={['nope']} />, {
         wrapper: withIcons,
       }),
     ).rejects.toThrow(/cannot hide "nope"/);

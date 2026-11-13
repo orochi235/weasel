@@ -5,7 +5,6 @@ export function AnnotateLab() {
   return (
     <Lab
       instruments={[PartInspector]}
-      defaultInstrument="PartInspector"
       storageKey="annotate-lab"
       mode="dark"
       title="Annotate Lab"

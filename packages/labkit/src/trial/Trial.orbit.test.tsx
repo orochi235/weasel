@@ -55,7 +55,7 @@ function Capture() {
 
 async function mount() {
   const out = await renderSettled(
-    <Lab instruments={[Solid]} defaultInstrument="Solid">
+    <Lab instruments={[Solid]}>
       <Capture />
     </Lab>,
     { wrapper: withIcons },

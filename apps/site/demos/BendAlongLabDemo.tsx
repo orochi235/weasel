@@ -103,7 +103,7 @@ const bendInstrument = defineInstrument<State, Config>({
 export function BendAlongLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Bend along a path" instruments={[bendInstrument]} defaultInstrument="Bend along a path" />
+      <Lab title="Bend along a path" instruments={[bendInstrument]} />
     </div>
   );
 }
