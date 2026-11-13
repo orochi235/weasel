@@ -231,7 +231,7 @@ export interface UseTextEditReturn {
   cancelEdit: () => void;
   /** End the edit and write it. An edit that leaves the text, the runs, and
    *  the node's style as it found them writes nothing. */
-  commit: () => void;
+  commitEdit: () => void;
   isEditing: (id: string) => boolean;
   /**
    * The node-wide style this edit has rewritten and not yet written back, or

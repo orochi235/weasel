@@ -6,7 +6,7 @@
 import { textureCacheKey } from './textureCacheKey';
 import { variantKey } from './variantKey';
 import { createReflectable, type Reflection } from '@weasel-js/registry';
-import type { FontStyle } from './fontStyle';
+import { normalizeVariant, type FontStyle, type FontVariant } from './fontStyle';
 import { notifyGlyphReady } from './glyphReady';
 import { parseBmFont, type BmFont } from './FontAtlas';
 import type { GlyphTextureSink } from './textureSink';
@@ -34,11 +34,6 @@ export interface FontEntry {
   bitmap: ImageBitmap;
 }
 
-/** Which face within a family. Defaults to weight 400, style `'normal'`. */
-export interface FontVariant {
-  weight?: number;
-  style?: FontStyle;
-}
 
 
 /** One family's registered faces, keyed `${weight}|${style}`. */
@@ -50,12 +45,6 @@ const registry = createReflectable<FontFamilyFaces>();
  *  is the same set shaped for a font picker. */
 export const fontRegistry: Reflection<FontFamilyFaces> = registry.reflection;
 
-function normalizeVariant(v: FontVariant): { weight: number; style: FontStyle } {
-  return {
-    weight: v.weight ?? 400,
-    style: v.style ?? 'normal',
-  };
-}
 
 /** Atlas registrations still fetching, per family. One token per call, so a
  *  reset that clears the map cannot be undone by a late `finally`. */
@@ -113,7 +102,7 @@ export function faceMetricsFor(
   style: FontStyle = 'normal',
 ): FaceMetrics | undefined {
   return getFont(family, weight, style)?.font.faceMetrics
-    ?? outlineMetrics(family, weight, style === 'italic' ? 'italic' : 'normal')?.faceMetrics;
+    ?? outlineMetrics(family, weight, style)?.faceMetrics;
 }
 
 /** One family in the registry and the variants registered for it — what a
@@ -389,7 +378,7 @@ function settle(family: string, token: object): void {
  */
 export function fontPending(family: string, weight = 400, style: FontStyle = 'normal'): boolean {
   if (atlasPending(family)) return true;
-  const outline = outlineStatus(family, weight, style === 'italic' ? 'italic' : 'normal');
+  const outline = outlineStatus(family, weight, style);
   return outline === 'idle' || outline === 'loading';
 }
 
@@ -411,9 +400,6 @@ export function ensureFontTexture(
 }
 
 export { textureCacheKey } from './textureCacheKey';
-
-/** Kept as a no-op for context-restore call sites; per-cache dedup handles it now. */
-export function markAllFontsNotUploaded(): void {}
 
 /** What `resolveFontVariant` found: the atlas to draw with, the face it
  *  actually landed on after walking the fallback chain, and what has to be
@@ -476,7 +462,7 @@ function missResolveResult(
   // Outline-only: a family with parsed font bytes and no atlas. Ranked above
   // every fallback below because it is the *real* face, and below explicit
   // canvas enrollment, which is a consumer saying which tier it wants.
-  const face = outlineMetrics(family, weight, style === 'italic' ? 'italic' : 'normal');
+  const face = outlineMetrics(family, weight, style);
   if (face) {
     return {
       entry: null,

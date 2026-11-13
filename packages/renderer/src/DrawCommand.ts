@@ -168,9 +168,9 @@ export interface TextDrawCommand {
   maxWidth?: number;
   align?: TextAlign;
   /** What `start` / `end` resolve against, and the base direction of bidi
-   *  reordering — see `LayoutRunsOpts.direction`. Default `style`'s. */
+   *  reordering — see `LayoutRunsOptions.direction`. Default `style`'s. */
   direction?: TextDirection | 'auto';
-  /** Spread each wrapped line across `width` — see `LayoutRunsOpts.justify`.
+  /** Spread each wrapped line across `width` — see `LayoutRunsOptions.justify`.
    *  `align` then sets only the lines it does not spread. Default `false`. */
   justify?: boolean;
   /** Box width `align` resolves within, from `x`. Default `maxWidth`; with

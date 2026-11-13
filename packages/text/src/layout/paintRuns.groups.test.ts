@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { stubFetch, registerFixture, RUN_PLAIN, RUN_BOLD, RUN_ITALIC } from './testing/fontFixtures';
 
@@ -29,7 +29,7 @@ describe('layoutRuns — single line', () => {
         stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: end }],
       },
     });
-    const opts: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
+    const opts: LayoutRunsOptions = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
     // Paint identity is structural: built separately, equal gradients are one paint.
     const one = layoutAndPaint([{ ...RUN_PLAIN('AB'), fill: gradient() }, { ...RUN_PLAIN('A'), fill: gradient() }], opts);
     expect(one.groups).toHaveLength(1);

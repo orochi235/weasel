@@ -8,7 +8,7 @@
  * width only when the style declares `wrap`; otherwise a line runs as long as
  * its text, whichever of them is asking.
  */
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import type { LaidOutRuns } from './layoutRuns';
 import { cachedLayoutRuns } from './layoutCache';
 import { resolveTextStyle, type ResolvedTextStyle } from '../textStyle';
@@ -22,7 +22,7 @@ import { scaleRuns, scaleStyle, shrinkScale } from './textFit';
 export interface TextPoseLayoutInput {
   style: ResolvedTextStyle;
   runs: ResolvedRun[];
-  opts: LayoutRunsOpts & { justify: boolean };
+  opts: LayoutRunsOptions & { justify: boolean };
   /** What `pose.fit` scaled every size in `style` and `runs` by: 1 unless it shrank them. */
   fitScale: number;
 }

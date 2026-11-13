@@ -3,11 +3,11 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
 import { layoutRuns } from './layoutRuns';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import { cachedLayoutRuns, _resetLayoutCacheForTests } from './layoutCache';
 import { layoutTextPose } from './textPoseLayout';
 import { registerBidi, paragraphDirection, _resetBidiWarningForTests } from './bidiRegistry';
-import type { BidiResolver } from './bidiSeam';
+import type { BidiEngine } from './bidiSeam';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 beforeEach(async () => {
@@ -30,7 +30,7 @@ const RUN = (text: string): ResolvedRun => ({
   fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
-const OPTS: LayoutRunsOpts = { maxWidth: 400, lineHeight: 1.2, align: 'left' };
+const OPTS: LayoutRunsOptions = { maxWidth: 400, lineHeight: 1.2, align: 'left' };
 const HEBREW = 'אבג';
 
 /** Cell indices of line `n`, sorted by where they were painted. */
@@ -51,7 +51,7 @@ describe('registerBidi', () => {
   });
 
   it('yields to an engine passed in the options', () => {
-    const logical: BidiResolver = {
+    const logical: BidiEngine = {
       analyze: () => null,
       reorder: (_a, start, end) => ({
         order: Array.from({ length: end - start }, (_, i) => start + i),
@@ -84,7 +84,7 @@ describe('registerBidi', () => {
     }
     expect(warn).not.toHaveBeenCalled();
     layoutRuns([RUN('\u0627\u0661')], OPTS);
-    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls.filter(([message]) => String(message).includes('right-to-left'))).toHaveLength(1);
     warn.mockRestore();
   });
 
@@ -113,7 +113,7 @@ describe('registerBidi', () => {
 });
 
 describe('layoutRuns — an omitted direction is the paragraph\'s own', () => {
-  const start: LayoutRunsOpts = { ...OPTS, align: 'start' };
+  const start: LayoutRunsOptions = { ...OPTS, align: 'start' };
 
   it('sets a right-to-left paragraph from the right edge under `start`', () => {
     registerBidi(bidi);

@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import { layoutAndPaint } from './testing/layoutAndPaint';
 import type { PaintedRuns } from './paintRuns';
 import type { ResolvedRun } from '../runs/resolveRuns';
@@ -16,7 +16,7 @@ beforeEach(async () => {
   await registerFixture('inter', [{}]);
 });
 
-const WRAPPED: LayoutRunsOpts = { maxWidth: 120, lineHeight: 1.2, align: 'left', justify: true };
+const WRAPPED: LayoutRunsOptions = { maxWidth: 120, lineHeight: 1.2, align: 'left', justify: true };
 
 /** Everything a layout says, its views built. */
 function read(laid: LaidOutRuns) {

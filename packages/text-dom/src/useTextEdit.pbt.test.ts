@@ -250,7 +250,7 @@ describe('useTextEdit session (stateful)', () => {
       check(m, { edit: () => result.current, overlay });
       await fc.asyncModelRun(() => ({ model: m, real: { edit: () => result.current, overlay } }), cmds);
       const opened = keyed(fromUnits(toUnits(rs)));
-      act(() => result.current.commit());
+      act(() => result.current.commitEdit());
       const want = fromUnits(m.units);
       if (keyed(want) === opened) {
         expect(h.runCommits).toEqual([]);

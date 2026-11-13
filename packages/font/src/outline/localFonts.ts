@@ -136,7 +136,7 @@ export async function enableLocalFontOutlines(
   if (typeof query !== 'function') {
     throw new Error(
       'weasel enableLocalFontOutlines: this browser has no Local Font Access API ' +
-      '(queryLocalFonts). Large text keeps rendering from the SDF tier.',
+      '(queryLocalFonts). Large text keeps rendering from the SDF tier. Check canQueryLocalFonts() before calling.',
     );
   }
 

@@ -8,7 +8,7 @@
  * points at the separators, analyzes each stretch, and answers a line's
  * reorder against whichever stretch the line sits in.
  */
-import type { BidiAnalysis, BidiReordering, BidiResolver } from './bidiSeam';
+import type { BidiAnalysis, BidiReordering, BidiEngine } from './bidiSeam';
 
 /**
  * Whether `cp` ends a bidi paragraph: the hard line breaks of bidi class B,
@@ -40,7 +40,7 @@ export interface AnalyzedParagraphs {
  * must lie within a single paragraph — true of any line a wrap produces.
  */
 export function analyzeParagraphs(
-  engine: BidiResolver,
+  engine: BidiEngine,
   codePoints: readonly number[],
   isBreak: (index: number) => boolean,
   direction: 'ltr' | 'rtl' | 'auto',

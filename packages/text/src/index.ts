@@ -53,14 +53,14 @@ export {
 } from './layout/layoutCache';
 export { layoutTextPose, textPoseLayoutInput, textFitScale } from './layout/textPoseLayout';
 export { TEXT_FIT_TOLERANCE, type TextFit } from './layout/textFit';
-export { fittedTextPose } from './fittedTextPose';
+export { fitTextToBox } from './fitTextToBox';
 export type { TextPoseLayout, TextPoseLayoutInput } from './layout/textPoseLayout';
-export type { BidiResolver, BidiReordering, BidiAnalysis } from './layout/bidiSeam';
+export type { BidiEngine, BidiReordering, BidiAnalysis } from './layout/bidiSeam';
 export { registerBidi, registeredBidi, paragraphDirection, warnRtlWithoutEngine } from './layout/bidiRegistry';
 export type { TextShaper, ShapedGlyph, ShapedCluster } from './layout/shaperSeam';
-export { registerShaper } from './layout/shaperRegistry';
+export { registerShaper, registeredShaper, warnShapingWithoutEngine } from './layout/shaperRegistry';
 export { textEngineGeneration } from './layout/engineGeneration';
-export type { LayoutRunsOpts } from './layout/layoutOpts';
+export type { LayoutRunsOptions } from './layout/layoutOpts';
 export type {
   LaidOutRuns,
   LaidOutLineBox,
@@ -71,7 +71,7 @@ export { paintRuns } from './layout/paintRuns';
 export { QUAD_STRIDE } from './layout/glyphQuads';
 export type { LaidOutQuad } from './layout/glyphQuads';
 export type {
-  PaintRunsOpts,
+  PaintRunsOptions,
   PaintedRuns,
   LaidOutGroup,
   LaidOutOutlineGlyph,
@@ -84,15 +84,15 @@ export { graphemeEnds } from './measure/graphemes';
 export { measureText, measuredWidth } from './measure/measureText';
 export type { MeasuredText, MeasuredSpan } from './measure/measureText';
 export { measureTextBounds } from './measure/measureTextBounds';
-export type { MeasureTextBoundsOpts } from './measure/measureTextBounds';
+export type { MeasureTextBoundsOptions } from './measure/measureTextBounds';
 export { textLineBoxes } from './measure/lineBoxes';
-export type { TextLineBoxesOpts } from './measure/lineBoxes';
+export type { TextLineBoxesOptions } from './measure/lineBoxes';
 export { verticalAlignOffset } from './measure/verticalAlign';
 export type { TextVerticalAlign } from './measure/verticalAlign';
 
 export type { TextPose } from './pose';
 export { pointInTextPose, caretIndexAt } from './hitTest';
-export type { PointInTextPoseOpts } from './hitTest';
+export type { PointInTextPoseOptions } from './hitTest';
 export { fitTextPose } from './fitTextPose';
 export type { FitTextPoseOptions } from './fitTextPose';
 export { renderLabel, defaultLabelTextRenderer } from './renderLabel';

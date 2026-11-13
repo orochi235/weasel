@@ -1,7 +1,7 @@
 /**
  * The seam against the real algorithm.
  *
- * `layoutRuns` declares `BidiResolver` and `@weasel-js/bidi` satisfies it, with
+ * `layoutRuns` declares `BidiEngine` and `@weasel-js/bidi` satisfies it, with
  * neither package importing the other. Types lining up is not evidence that the
  * semantics do, so this drives actual right-to-left strings through the actual
  * engine — which is why `@weasel-js/bidi` is a devDependency here and appears
@@ -13,12 +13,12 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
 import { layoutAndPaint } from './testing/layoutAndPaint';
-import type { LayoutRunsOpts } from './layoutOpts';
-import type { BidiResolver } from './bidiSeam';
+import type { LayoutRunsOptions } from './layoutOpts';
+import type { BidiEngine } from './bidiSeam';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 /** The compile-time half of the claim: the engine *is* a resolver. */
-const engine: BidiResolver = bidi;
+const engine: BidiEngine = bidi;
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -48,7 +48,7 @@ const RUN = (text: string): ResolvedRun => ({
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
 
-const OPTS: LayoutRunsOpts = {
+const OPTS: LayoutRunsOptions = {
   maxWidth: 400, lineHeight: 1.2, align: 'left', bidi: engine,
 };
 /** Cell indices sorted by where they were painted, left to right. */
@@ -143,7 +143,7 @@ describe('L4 — mirroring', () => {
 
 describe('paragraphs', () => {
   /** Cell indices of `line`, sorted by where they were painted. */
-  const visualOf = (text: string, line: number, opts: LayoutRunsOpts = OPTS) => {
+  const visualOf = (text: string, line: number, opts: LayoutRunsOptions = OPTS) => {
     const cells = layoutAndPaint([RUN(text)], opts).lines[line].cells;
     return { cells, order: cells.map((_, i) => i).sort((a, b) => cells[a].x - cells[b].x) };
   };
@@ -210,7 +210,7 @@ describe('characters the engine removes', () => {
 });
 
 describe('a wrapped right-to-left line', () => {
-  const RTL: LayoutRunsOpts = { ...OPTS, direction: 'rtl', align: 'right' };
+  const RTL: LayoutRunsOptions = { ...OPTS, direction: 'rtl', align: 'right' };
   /** A box that fits `אבג ` and part of the next word, so the text wraps once. */
   const boxFor = (text: string): number => {
     const cells = layoutAndPaint([RUN(text)], { ...RTL, maxWidth: Infinity }).lines[0].cells;

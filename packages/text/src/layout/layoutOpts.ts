@@ -1,12 +1,12 @@
 import type { TextAlign, TextDirection } from '../textStyle';
-import type { BidiResolver } from './bidiSeam';
+import type { BidiEngine } from './bidiSeam';
 import { registeredBidi } from './bidiRegistry';
 import type { TextShaper } from './shaperSeam';
 import { registeredShaper } from './shaperRegistry';
 import { DEFAULT_TAB_SIZE } from './tabStops';
 
 /** Options for `layoutRuns`. */
-export interface LayoutRunsOpts {
+export interface LayoutRunsOptions {
   /** Wrap width. `Infinity` never wraps. */
   maxWidth: number;
   /**
@@ -37,7 +37,7 @@ export interface LayoutRunsOpts {
    * and wrong for right-to-left text — see the warning this emits when it
    * detects the latter without one.
    */
-  bidi?: BidiResolver;
+  bidi?: BidiEngine;
   /**
    * Shaping engine. Default: the one given to `registerShaper`. With neither,
    * each code point is laid out as its own glyph and pairs are kerned, which
@@ -60,14 +60,14 @@ export interface LayoutRunsOpts {
   tabSize?: number;
 }
 
-/** {@link LayoutRunsOpts} with every default filled in. */
-export interface ResolvedLayoutOpts {
+/** {@link LayoutRunsOptions} with every default filled in. */
+export interface ResolvedLayoutOptions {
   maxWidth: number;
   alignWidth: number;
   lineHeight: number;
   align: TextAlign;
   justify: boolean;
-  bidi: BidiResolver | null;
+  bidi: BidiEngine | null;
   shaper: TextShaper | null;
   direction: TextDirection | 'auto';
   tabSize: number;
@@ -75,12 +75,12 @@ export interface ResolvedLayoutOpts {
 
 /** Fill in the defaults `layoutRuns` lays out with: into `out`, when given. */
 export function resolveLayoutOpts(
-  opts: LayoutRunsOpts,
-  out: ResolvedLayoutOpts = {
+  opts: LayoutRunsOptions,
+  out: ResolvedLayoutOptions = {
     maxWidth: 0, alignWidth: 0, lineHeight: 0, align: 'left', justify: false,
     bidi: null, shaper: null, direction: 'auto', tabSize: 0,
   },
-): ResolvedLayoutOpts {
+): ResolvedLayoutOptions {
   out.maxWidth = opts.maxWidth;
   storeAlignWidth(out, opts);
   out.lineHeight = opts.lineHeight;
@@ -96,17 +96,17 @@ export function resolveLayoutOpts(
 /** `opts`' align width, defaulted to its wrap width, into `out`. Stored on
  *  each branch: `alignWidth ?? maxWidth` joins a tagged field with a double
  *  one, and V8 boxed the join as a heap number every layout. */
-export function storeAlignWidth(out: { alignWidth: number }, opts: LayoutRunsOpts): void {
+export function storeAlignWidth(out: { alignWidth: number }, opts: LayoutRunsOptions): void {
   if (opts.alignWidth === undefined) out.alignWidth = opts.maxWidth;
   else out.alignWidth = opts.alignWidth;
 }
 
 /** The bidi engine `opts` lays out with: its own, else the registered one. */
-export function layoutBidi(opts: LayoutRunsOpts): BidiResolver | null {
+export function layoutBidi(opts: LayoutRunsOptions): BidiEngine | null {
   return opts.bidi ?? registeredBidi();
 }
 
 /** The shaper `opts` lays out with: its own, else the registered one. */
-export function layoutShaper(opts: LayoutRunsOpts): TextShaper | null {
+export function layoutShaper(opts: LayoutRunsOptions): TextShaper | null {
   return opts.shaper ?? registeredShaper();
 }

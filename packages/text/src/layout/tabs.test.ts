@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import { cachedLayoutRuns } from './layoutCache';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { tabAdvance } from './tabStops';
@@ -27,7 +27,7 @@ const RUN = (text: string, more: Partial<ResolvedRun> = {}): ResolvedRun => ({
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
   ...more,
 });
-const OPTS: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
+const OPTS: LayoutRunsOptions = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
 
 /** The advance of one space at the run's size, read off a laid-out one. */
 function spaceAdvance(): number {
@@ -100,7 +100,7 @@ describe('layoutRuns — tabs', () => {
   });
 
   it('hangs a trailing tab past the aligned edge, as it does a space', () => {
-    const opts: LayoutRunsOpts = { maxWidth: 400, lineHeight: 1.2, align: 'right' };
+    const opts: LayoutRunsOptions = { maxWidth: 400, lineHeight: 1.2, align: 'right' };
     const bare = layoutAndPaint([RUN('AB')], opts);
     const trailed = layoutAndPaint([RUN('AB\t')], opts);
     expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);

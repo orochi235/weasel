@@ -1,4 +1,4 @@
-import { type FaceEmbedding, type OutlineVariant, registerFontOutlines, unregisterFontOutlines } from '@weasel-js/font';
+import { type FaceEmbedding, type FontVariant, registerFontOutlines, unregisterFontOutlines } from '@weasel-js/font';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -17,8 +17,8 @@ function interBytes(): ArrayBuffer {
   return out;
 }
 
-const registered: [string, OutlineVariant][] = [];
-function registerInter(family: string, variant: OutlineVariant = {}): void {
+const registered: [string, FontVariant][] = [];
+function registerInter(family: string, variant: FontVariant = {}): void {
   registerFontOutlines(family, variant, interBytes());
   registered.push([family, variant]);
 }

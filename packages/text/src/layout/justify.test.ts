@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import { cachedLayoutRuns } from './layoutCache';
 import { paintRuns } from './paintRuns';
 import { layoutTextPose, textPoseLayoutInput } from './textPoseLayout';
@@ -28,7 +28,7 @@ const RUN = (text: string): ResolvedRun => ({
   fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
-const OPTS: LayoutRunsOpts = { maxWidth: 100, lineHeight: 1.2, align: 'justify' };
+const OPTS: LayoutRunsOptions = { maxWidth: 100, lineHeight: 1.2, align: 'justify' };
 
 /** Each line's quad x0s, in emission order. */
 function lineXs(out: ReturnType<typeof layoutAndPaint>): number[][] {

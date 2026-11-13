@@ -67,7 +67,7 @@
 
 import { faceGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import { layoutBidi, layoutShaper, storeAlignWidth, type LayoutRunsOpts } from './layoutOpts';
+import { layoutBidi, layoutShaper, storeAlignWidth, type LayoutRunsOptions } from './layoutOpts';
 import { truncate } from './arrayPool';
 import { LineBox, type LayoutColumns } from './layoutColumns';
 import { layoutRuns, type LaidOutRuns } from './layoutRuns';
@@ -87,8 +87,8 @@ export const LAYOUT_CACHE_STRUCTURAL_LIMIT = 64;
 
 /** One option combination, defaults filled in, and the layout made with it. */
 export interface Variant {
-  maxWidth: number; alignWidth: number; lineHeight: number; align: LayoutRunsOpts['align'];
-  justify: boolean; direction: NonNullable<LayoutRunsOpts['direction']>; tabSize: number;
+  maxWidth: number; alignWidth: number; lineHeight: number; align: LayoutRunsOptions['align'];
+  justify: boolean; direction: NonNullable<LayoutRunsOptions['direction']>; tabSize: number;
   bidi: ReturnType<typeof layoutBidi>; shaper: ReturnType<typeof layoutShaper>; laid: LaidOutRuns;
 }
 
@@ -104,7 +104,7 @@ let structural: Structural[] = [];
 let structuralGeneration = -1;
 let clock = 0;
 
-function matches(v: Variant, opts: LayoutRunsOpts, bidi: Variant['bidi']): boolean {
+function matches(v: Variant, opts: LayoutRunsOptions, bidi: Variant['bidi']): boolean {
   return same(v.maxWidth, opts.maxWidth) && same(v.alignWidth, opts.alignWidth ?? opts.maxWidth)
     && same(v.lineHeight, opts.lineHeight) && v.align === opts.align
     && v.justify === (opts.justify === true || opts.align === 'justify')
@@ -159,7 +159,7 @@ function disown(vs: Variant[]): void {
 const NO_LAYOUT: LaidOutRuns = { lines: [], bounds: { width: 0, height: 0 } };
 
 /** Set `v` to `opts` and `laid`, defaults filled in. */
-function fill<V extends Variant>(v: V, opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): V {
+function fill<V extends Variant>(v: V, opts: LayoutRunsOptions, bidi: Variant['bidi'], laid: LaidOutRuns): V {
   v.maxWidth = opts.maxWidth; storeAlignWidth(v, opts); v.lineHeight = opts.lineHeight;
   v.align = opts.align; v.justify = opts.justify === true || opts.align === 'justify';
   v.direction = opts.direction ?? 'auto'; v.tabSize = opts.tabSize ?? DEFAULT_TAB_SIZE; v.bidi = bidi;
@@ -167,7 +167,7 @@ function fill<V extends Variant>(v: V, opts: LayoutRunsOpts, bidi: Variant['bidi
   return v;
 }
 
-function variant(opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): Variant {
+function variant(opts: LayoutRunsOptions, bidi: Variant['bidi'], laid: LaidOutRuns): Variant {
   const spare = spareVariants.pop();
   if (spare !== undefined) return fill(spare, opts, bidi, laid);
   const v: Variant = {
@@ -195,7 +195,7 @@ function variant(opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns)
  */
 export function cachedLayoutRuns(
   runs: readonly ResolvedRun[],
-  opts: LayoutRunsOpts,
+  opts: LayoutRunsOptions,
   use: CacheUse = 'keep',
 ): LaidOutRuns {
   const fonts = faceGeneration();
@@ -240,7 +240,7 @@ export function dropRuns(runs: readonly ResolvedRun[]): void {
 }
 
 function structuralLayout(
-  runs: readonly ResolvedRun[], opts: LayoutRunsOpts, bidi: Variant['bidi'], fonts: number, entry: RunsEntry,
+  runs: readonly ResolvedRun[], opts: LayoutRunsOptions, bidi: Variant['bidi'], fonts: number, entry: RunsEntry,
 ): LaidOutRuns {
   if (structuralGeneration !== fonts) {
     for (const s of structural) { unlist(s); s.runs = NO_RUNS; }
@@ -300,7 +300,7 @@ export function clearRuns(runs: readonly ResolvedRun[]): void {
 
 const NO_RUNS: readonly ResolvedRun[] = [];
 
-function structuralEntry(opts: LayoutRunsOpts, bidi: Variant['bidi'], laid: LaidOutRuns): Structural {
+function structuralEntry(opts: LayoutRunsOptions, bidi: Variant['bidi'], laid: LaidOutRuns): Structural {
   return fill({
     maxWidth: 0, alignWidth: 0, lineHeight: 0, align: 'left', justify: false, direction: 'auto', tabSize: 0,
     bidi: null, shaper: null, laid, hash: 0, runs: [], used: 0,

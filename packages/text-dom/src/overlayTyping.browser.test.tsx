@@ -54,7 +54,7 @@ async function open(c: Case): Promise<HTMLElement> {
 }
 
 function committed(): TextEditCommit {
-  flushSync(() => edit.commit());
+  flushSync(() => edit.commitEdit());
   expect(commits).toHaveLength(1);
   return commits[0];
 }

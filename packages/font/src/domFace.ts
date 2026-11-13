@@ -13,7 +13,7 @@
 
 import type { FontStyle } from './fontStyle';
 import { cssFamilyName, cssString } from './cssFamily';
-import { resolveFontVariant, type FontVariant } from './registerFont';
+import { resolveFontVariant } from './registerFont';
 import {
   hasFontOutlines, listFontOutlines, outlineCssSource, onOutlineBytes, type OutlineFaceInfo,
 } from './outline/outlineRegistry';
@@ -58,11 +58,11 @@ onOutlineBytes((registration, bytes) => {
  * The outline family and registered variants DOM text in `family` is set in,
  * or `null` when the DOM should use `family` as it stands.
  */
-function privateFamily(family: string, variant: FontVariant): {
+function privateFamily(family: string, weight: number, style: FontStyle): {
   target: string; variants: readonly OutlineFaceInfo[];
 } | null {
   if (!domFonts()) return null;
-  const resolved = resolveFontVariant(family, variant.weight ?? 400, variant.style ?? 'normal');
+  const resolved = resolveFontVariant(family, weight, style);
   if (resolved.source === 'canvas') return null;
   const target = resolved.resolved.family;
   dropUnregistered(target);
@@ -97,8 +97,8 @@ function privateFamily(family: string, variant: FontVariant): {
  * {@link cssFontFamilyLoading} for that. Outside a browser, `family` comes
  * back unchanged.
  */
-export function cssFontFamily(family: string, variant: FontVariant = {}): string {
-  const priv = privateFamily(family, variant);
+export function cssFontFamily(family: string, weight = 400, style: FontStyle = 'normal'): string {
+  const priv = privateFamily(family, weight, style);
   if (!priv) return family;
   const name = nameFor(priv.target);
   for (const v of priv.variants) ensureFace(name, v.family, v.weight, v.style);
@@ -117,14 +117,12 @@ export function cssFontFamily(family: string, variant: FontVariant = {}): string
  * on in the same task instead of a microtask later.
  */
 export function cssFontFamilyLoading(
-  family: string, variant: FontVariant = {},
+  family: string, weight = 400, style: FontStyle = 'normal',
 ): Promise<void> | null {
-  const priv = privateFamily(family, variant);
+  const priv = privateFamily(family, weight, style);
   if (!priv) return null;
   const name = nameFor(priv.target);
   for (const v of priv.variants) ensureFace(name, v.family, v.weight, v.style);
-  const weight = variant.weight ?? 400;
-  const style = variant.style ?? 'normal';
   const exact = priv.variants.filter((v) => v.weight === weight && v.style === style);
   const pending = (exact.length > 0 ? exact : priv.variants)
     .map((v) => faces.get(`${v.family}|${v.weight}|${v.style}`))

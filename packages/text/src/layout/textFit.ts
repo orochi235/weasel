@@ -7,7 +7,7 @@
 import { faceGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import type { ResolvedTextStyle } from '../textStyle';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import { LineBox } from './layoutColumns';
 import { layoutRuns } from './layoutRuns';
 import { runsHash, same, sameRuns } from './runsKey';
@@ -32,7 +32,7 @@ const FIT_CACHE_LIMIT = 64;
 interface Fit {
   hash: number;
   runs: readonly ResolvedRun[];
-  opts: LayoutRunsOpts;
+  opts: LayoutRunsOptions;
   width: number;
   height: number;
   scale: number;
@@ -43,7 +43,7 @@ let fits: Fit[] = [];
 let fitsGeneration = -1;
 let clock = 0;
 
-const sameOpts = (a: LayoutRunsOpts, b: LayoutRunsOpts): boolean =>
+const sameOpts = (a: LayoutRunsOptions, b: LayoutRunsOptions): boolean =>
   same(a.maxWidth, b.maxWidth) && same(a.alignWidth, b.alignWidth) && same(a.lineHeight, b.lineHeight)
   && a.align === b.align && a.justify === b.justify && a.direction === b.direction && same(a.tabSize, b.tabSize);
 
@@ -68,7 +68,7 @@ export function scaleStyle(style: ResolvedTextStyle, k: number): ResolvedTextSty
 }
 
 /** The bounds of `runs` set at `k` times their size, laid out uncached, their arrays given straight back. */
-function boundsAt(runs: readonly ResolvedRun[], opts: LayoutRunsOpts, k: number): { width: number; height: number } {
+function boundsAt(runs: readonly ResolvedRun[], opts: LayoutRunsOptions, k: number): { width: number; height: number } {
   const laid = layoutRuns(k === 1 ? runs : scaleRuns(runs, k), opts);
   const bounds = { ...laid.bounds };
   const cols = laid.lines.length > 0 ? LineBox.columns(laid.lines[0]!) : null;
@@ -76,7 +76,7 @@ function boundsAt(runs: readonly ResolvedRun[], opts: LayoutRunsOpts, k: number)
   return bounds;
 }
 
-function search(runs: readonly ResolvedRun[], opts: LayoutRunsOpts, width: number, height: number): number {
+function search(runs: readonly ResolvedRun[], opts: LayoutRunsOptions, width: number, height: number): number {
   // A hair of slack: a scale found exactly is found again to the last bit only sometimes.
   const inside = (b: { width: number; height: number }): boolean =>
     b.width <= width * (1 + 1e-9) + 1e-9 && b.height <= height * (1 + 1e-9) + 1e-9;
@@ -109,7 +109,7 @@ function search(runs: readonly ResolvedRun[], opts: LayoutRunsOpts, width: numbe
  * most 26 layouts, about 12 in practice, remembered per input until a face lands.
  */
 export function shrinkScale(
-  runs: readonly ResolvedRun[], opts: LayoutRunsOpts, width: number, height: number,
+  runs: readonly ResolvedRun[], opts: LayoutRunsOptions, width: number, height: number,
 ): number {
   const fonts = faceGeneration();
   if (fitsGeneration !== fonts) {

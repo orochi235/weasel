@@ -78,7 +78,8 @@ export function assertOutlinable(run: ResolvedRun, caller: string): void {
       'await loadTextOutlines first.');
   }
   if (status === 'failed') {
-    fail('outlines-failed', `the outlines registered for ${family} ${weight}/${style} failed to load.`);
+    fail('outlines-failed', `the outlines registered for ${family} ${weight}/${style} failed to load; ` +
+      'the console has the reason. Register a source that loads.');
   }
 }
 
@@ -136,7 +137,8 @@ export function placedGlyphOutline(
     if (!blankFallback && hasGlyphQuad(g)) {
       const { family, weight, style } = g.resolved.resolved;
       throw new TextOutlinesError('no-outlines', family, weight, style,
-        'a fallback face serving some of the text\'s characters has no outlines registered.', caller);
+        `some of the text's characters are drawn by the fallback face ${family} ${weight}/${style}, `
+        + 'which has no outlines registered. Call registerFontOutlines for it.', caller);
     }
     return null;
   }

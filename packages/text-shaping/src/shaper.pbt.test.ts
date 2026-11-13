@@ -6,14 +6,14 @@
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { loadShaper, type Shaper } from './index';
+import { loadShaper, type TextShaper } from './index';
 import { scriptPieces } from './scripts';
 import { ARABIC, DEVANAGARI, LATIN } from './__fixtures__/fonts';
 import { mixedText, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 300;
 
-let shaper: Shaper;
+let shaper: TextShaper;
 beforeAll(async () => {
   shaper = await loadShaper();
 });

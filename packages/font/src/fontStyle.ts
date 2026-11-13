@@ -7,3 +7,14 @@
  * silently in every place that had not been found.
  */
 export type FontStyle = 'normal' | 'italic';
+
+/** Which face within a family. Defaults to weight 400, style `'normal'`. */
+export interface FontVariant {
+  weight?: number;
+  style?: FontStyle;
+}
+
+/** `v` with its defaults filled in. */
+export function normalizeVariant(v: FontVariant): { weight: number; style: FontStyle } {
+  return { weight: v.weight ?? 400, style: v.style ?? 'normal' };
+}

@@ -29,7 +29,7 @@ describe('useTextEdit reports the edit opening and closing', () => {
     const { h, events, edit } = session({ a: 'hi' });
     act(() => edit().startEdit('a'));
     getOverlay(h.container)!.textContent = 'hello';
-    act(() => edit().commit());
+    act(() => edit().commitEdit());
     expect(events).toEqual(['start a', 'end a "hello"']);
   });
 

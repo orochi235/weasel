@@ -303,7 +303,7 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     expect(overlay.style.top).toBe('-5.328px');
     // Node styling, so it must not come back as run styling.
     appendChar(overlay, 'd');
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'abcd' }]);
   });
 
@@ -314,7 +314,7 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     expect(getOverlay(h.container)!.style.textTransform).toBe('uppercase');
     // Inherited by every run span, so it must not come back as run styling.
     appendChar(getOverlay(h.container)!, 'd');
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'abcd' }]);
   });
 
@@ -327,7 +327,7 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     expect(overlay.style.getPropertyValue('--weasel-small-caps')).toBe(String(SMALL_CAPS_SCALE));
     expect(overlay.querySelector('[data-small-caps]')?.textContent).toBe('bc');
     appendChar(overlay, 'd');
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'Abcd' }]);
   });
 
@@ -350,7 +350,7 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     expect([...span.childNodes].map((n) => n.textContent)).toEqual(['a', 'X', 'b']);
     act(() => dispatchBeforeInput(overlay, 'Y'));
     expect(span.textContent).toBe('aXYb');
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'aXYb', fontVariantCaps: 'small-caps' }]);
   });
 
@@ -366,7 +366,7 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     appendChar(getOverlay(h.container)!, 'd');
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'abcd' }]);
   });
 });

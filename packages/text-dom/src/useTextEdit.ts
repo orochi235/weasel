@@ -399,7 +399,7 @@ export function useTextEdit(
       selectionRef]);
 
   return {
-    editingId, startEdit, cancelEdit, commit, isEditing, nodeStyle,
+    editingId, startEdit, cancelEdit, commitEdit: commit, isEditing, nodeStyle,
     selection, rangeStyle, pendingStyle, applyStyleToSelection, toggleStyle,
     effectiveStyle: shownStyle(opts, editingId, nodeStyle, rangeStyle, pendingStyle),
   };

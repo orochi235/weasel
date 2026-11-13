@@ -21,9 +21,7 @@ export function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle):
   el.style.color = isSolidPaint(paint) ? paint.color : '#000';
   el.style.caretColor = style.caretColor;
   // The canvas's face, not the browser's reading of the family name.
-  const fontFamily = cssFontFamily(style.fontFamily, {
-    weight: numericWeight(style.fontWeight), style: style.fontStyle,
-  });
+  const fontFamily = cssFontFamily(style.fontFamily, numericWeight(style.fontWeight), style.fontStyle);
   el.style.font = fontString({ ...style, fontFamily });
   // Linux Chromium otherwise rounds every advance to a whole pixel at DPR 1, while
   // the canvas lays out a face's own fractional ones: 'Small Caps' at 24px ran 3px

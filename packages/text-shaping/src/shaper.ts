@@ -36,7 +36,7 @@ export interface ShapedGlyph {
 }
 
 /** A shaping engine for weasel's text layout: what `registerShaper` takes. */
-export interface Shaper {
+export interface TextShaper {
   /**
    * Shape `text` set in the face whose font file is `face` (an sfnt: TrueType
    * or OpenType, not WOFF), with the OpenType `features` turned on.
@@ -84,7 +84,7 @@ const fmt = (v: number): string => {
   return Math.abs(r) < 1e21 ? String(r) : BigInt(r).toString();
 };
 
-class HarfBuzzShaper implements Shaper {
+class HarfBuzzShaper implements TextShaper {
   readonly #hb: HarfBuzz;
   readonly #faces = new WeakMap<ArrayBuffer, FaceRecord>();
   readonly #features = new Map<string, HbFeature>();
@@ -113,7 +113,7 @@ class HarfBuzzShaper implements Shaper {
     let f = this.#features.get(tag);
     if (!f) {
       const parsed = this.#hb.Feature.fromString(tag);
-      if (!parsed) throw new Error(`weasel shape: "${tag}" is not an OpenType feature setting`);
+      if (!parsed) throw new Error(`weasel shape: "${tag}" is not an OpenType feature setting; pass one per entry, a tag such as "smcp" or a setting such as "liga=0"`);
       f = parsed;
       this.#features.set(tag, f);
     }
@@ -208,7 +208,7 @@ class HarfBuzzShaper implements Shaper {
   }
 }
 
-let loading: Promise<Shaper> | null = null;
+let loading: Promise<TextShaper> | null = null;
 
 /**
  * Load HarfBuzz (about 450 kB of WebAssembly) and resolve with a shaper over
@@ -222,7 +222,7 @@ let loading: Promise<Shaper> | null = null;
  * registerShaper(await loadShaper());
  * ```
  */
-export function loadShaper(): Promise<Shaper> {
+export function loadShaper(): Promise<TextShaper> {
   if (loading) return loading;
   const load = Promise.all([import('./vendor/harfbuzzjs/index'), import('./vendor/harfbuzzjs/harfbuzz')])
     .then(async ([hb, { default: createHarfBuzz }]) => {

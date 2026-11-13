@@ -51,7 +51,7 @@ async function open(c: Case): Promise<HTMLElement> {
 }
 
 function committed(): TextEditCommit {
-  flushSync(() => edit.commit());
+  flushSync(() => edit.commitEdit());
   expect(commits).toHaveLength(1);
   return commits[0];
 }
@@ -84,7 +84,7 @@ describe('undo inside the edit overlay', () => {
     expect(window.getSelection()!.toString()).toBe('cd');
     await userEvent.keyboard(UNDO);
     expect(overlay.textContent).toBe('abc');
-    flushSync(() => edit.commit());
+    flushSync(() => edit.commitEdit());
     expect(commits).toEqual([]);
   });
 

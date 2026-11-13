@@ -15,7 +15,7 @@ import {
   LAYOUT_CACHE_VARIANT_LIMIT, LAYOUT_CACHE_STRUCTURAL_LIMIT,
 } from './layoutCache';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import type { BidiResolver } from './bidiSeam';
+import type { BidiEngine } from './bidiSeam';
 import { registerBidi } from './bidiRegistry';
 
 function stubFetch() {
@@ -255,7 +255,7 @@ describe('what the key has to tell apart', () => {
   });
 
   it('lays out again when a bidi engine is supplied, and per engine', () => {
-    const engine = (): BidiResolver => ({
+    const engine = (): BidiEngine => ({
       analyze: () => null,
       reorder: (_a, start, end) => ({
         order: Array.from({ length: end - start }, (_, i) => end - 1 - i),

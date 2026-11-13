@@ -105,7 +105,7 @@ export interface LaidOutDecoration {
 }
 
 /** Options for {@link paintRuns}. */
-export interface PaintRunsOpts {
+export interface PaintRunsOptions {
   /**
    * World-space `fontSize` at or above which glyphs are emitted as outline
    * geometry, when the resolved face has outlines registered. Omit (the
@@ -214,7 +214,7 @@ const SCRATCH_MAX = 1 << 14;
 export function paintRuns(
   laid: LaidOutRuns,
   runs: readonly ResolvedRun[],
-  opts: PaintRunsOpts = {},
+  opts: PaintRunsOptions = {},
 ): PaintedRuns {
   return paintRunsInto(laid, runs, opts, { groups: [], decorations: [] });
 }
@@ -223,7 +223,7 @@ export function paintRuns(
 export function paintRunsInto(
   laid: LaidOutRuns,
   runs: readonly ResolvedRun[],
-  opts: PaintRunsOpts,
+  opts: PaintRunsOptions,
   out: PaintedRuns,
 ): PaintedRuns {
   const { groups, decorations } = out;

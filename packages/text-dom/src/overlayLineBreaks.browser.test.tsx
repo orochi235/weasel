@@ -67,7 +67,7 @@ let committed: string[] = [];
 let commitEdit: () => void = () => {};
 
 function Editor({ c, caret }: { c: Case; caret: number }) {
-  const { startEdit, commit } = useTextEdit({
+  const { startEdit, commitEdit: commit } = useTextEdit({
     container: host,
     getText: () => c.text,
     ...(c.runs ? { getRuns: () => [{ text: c.text }], setRuns: () => {} } : {}),

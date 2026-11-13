@@ -1910,3 +1910,19 @@ Calls the lanes made without a ruling:
   aliases (`interactions/…`) are not packages to it (2026-11-12).
 - Open: a bare `npx vitest` inside a package with no vite or vitest config of its own still runs that package's
   files under vitest's defaults, with no project's setup. Only a config file in each such package could refuse it.
+
+## Audit round twenty-one (2026-11-12): text
+
+- 2026-11-12: The bidi and shaping contracts take the implementing packages' names where they had two:
+  `BidiEngine` (as `@weasel-js/bidi` already called it, over text's `BidiResolver`) and `TextShaper` (as
+  `@weasel-js/text` already called it, over text-shaping's `Shaper`).
+- 2026-11-12: Face addressing splits by job. Registering and loading take a `FontVariant` object
+  (`registerFont`, `registerFontOutlines`, `unregisterFontOutlines`, `loadFontOutlines`, `warmFonts`'s
+  `FontRequest`); a lookup of one face takes `(family, weight = 400, style = 'normal')` positionally (`getFont`,
+  `fontPending`, `hasFontOutlines`, `outlineStatus`, `cssFontFamily`, `cssFontFamilyLoading`), since those run per
+  run and per frame. `cssFontFamily` moved to the lookup shape.
+- 2026-11-12: The scripts the no-shaper warning names are Arabic, Syriac, Thaana, N'Ko, the Indic blocks, Tibetan,
+  Myanmar, Khmer and Mongolian, letters and marks only. Thai and Lao are left out: set one glyph per code point,
+  they read, if with marks placed less well.
+- `fittedTextPose` is renamed `fitTextToBox`, on the maintainer's call (2026-11-12): `fitTextPose` sizes a text
+  pose's box to its text, and the renamed one sizes the text to its box.

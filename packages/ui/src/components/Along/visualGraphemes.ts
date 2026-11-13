@@ -1,4 +1,4 @@
-import { registeredBidi, warnRtlWithoutEngine, type BidiResolver } from '@weasel-js/text';
+import { registeredBidi, warnRtlWithoutEngine, type BidiEngine } from '@weasel-js/text';
 
 const BIDI_CONTROLS = /^[؜‎‏‪-‮⁦-⁩]+$/;
 
@@ -11,7 +11,7 @@ const BIDI_CONTROLS = /^[؜‎‏‪-‮⁦-⁩]+$/;
 export function visualGraphemes(
   graphemes: readonly string[],
   direction: 'ltr' | 'rtl',
-  bidi: BidiResolver | null = registeredBidi(),
+  bidi: BidiEngine | null = registeredBidi(),
 ): string[] {
   const codePoints: number[] = [];
   const owner: number[] = [];
@@ -38,7 +38,7 @@ export function visualGraphemes(
   return direction === 'rtl' ? out.reverse() : out;
 }
 
-function mirrored(bidi: BidiResolver, g: string): string {
+function mirrored(bidi: BidiEngine, g: string): string {
   const first = g.codePointAt(0)!;
   const m = bidi.mirror(first);
   return m === null ? g : String.fromCodePoint(m) + g.slice(String.fromCodePoint(first).length);

@@ -3,14 +3,14 @@ import { loadFontOutlines, registerFontOutlines } from '@weasel-js/font';
 import { bidi } from '@weasel-js/bidi';
 import {
   layoutRuns, paintRuns, registerShaper, resolveRuns, resolveTextStyle, DEFAULT_TEXT_FILL,
-  type LayoutRunsOpts,
+  type LayoutRunsOptions,
 } from '@weasel-js/text';
-import { loadShaper, type Shaper } from './index';
+import { loadShaper, type TextShaper } from './index';
 import { ARABIC, DEVANAGARI, LATIN } from './__fixtures__/fonts';
 
 /** Text laid out end to end through weasel's layout with HarfBuzz registered. */
 
-let shaper: Shaper;
+let shaper: TextShaper;
 let unregister: () => void;
 beforeAll(async () => {
   shaper = await loadShaper();
@@ -22,9 +22,9 @@ beforeAll(async () => {
 });
 afterAll(() => unregister());
 
-const OPTS: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left', bidi };
+const OPTS: LayoutRunsOptions = { maxWidth: Infinity, lineHeight: 1.2, align: 'left', bidi };
 
-function lay(text: string, family: string, opts: Partial<LayoutRunsOpts> = {}, caps = false, lang?: string) {
+function lay(text: string, family: string, opts: Partial<LayoutRunsOptions> = {}, caps = false, lang?: string) {
   const runs = resolveRuns(
     [{ text, ...(caps ? { fontVariantCaps: 'small-caps' as const } : {}) }],
     resolveTextStyle({ fontFamily: family, fontSize: 100, lang }, { fill: DEFAULT_TEXT_FILL }),

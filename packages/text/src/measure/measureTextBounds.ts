@@ -5,7 +5,7 @@ import { cachedLayoutRuns } from '../layout/layoutCache';
 import { scaleRuns, shrinkScale } from '../layout/textFit';
 
 /** Options for `measureTextBounds`. */
-export interface MeasureTextBoundsOpts {
+export interface MeasureTextBoundsOptions {
   /** Wrap width; words exceeding it start a new line. Default `Infinity` (no wrap). */
   maxWidth?: number;
   /** Overrides `style`'s `lineHeight` multiplier for this measurement. */
@@ -31,7 +31,7 @@ export interface MeasureTextBoundsOpts {
 export function measureTextBounds(
   text: string,
   style?: TextStyle,
-  opts?: MeasureTextBoundsOpts,
+  opts?: MeasureTextBoundsOptions,
 ): { width: number; height: number } {
   const resolved = resolveTextStyle(style, undefined, opts?.scale);
   const authored = resolveRuns([{ text }], resolved, opts?.scale);

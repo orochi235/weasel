@@ -80,7 +80,7 @@ describe('useTextEdit — range styling surface', () => {
     const overlay = getOverlay(h.container)!;
     await selectCharsAndSettle(overlay, 0, 2);
     act(() => result.current.applyStyleToSelection({ underline: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'ab', bold: true, underline: true },
       { text: 'cd' },
@@ -95,7 +95,7 @@ describe('useTextEdit — range styling surface', () => {
     const overlay = getOverlay(h.container)!;
     await selectCharsAndSettle(overlay, 1, 3);
     act(() => result.current.applyStyleToSelection({ fontSize: 24, fontFamily: 'Georgia' }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'a' },
       { text: 'bc', fontSize: 24, fontFamily: 'Georgia' },
@@ -123,7 +123,7 @@ describe('useTextEdit — range styling surface', () => {
     act(() => result.current.applyStyleToSelection({ underline: true }));
     expect(result.current.selection).toEqual({ start: 0, end: 2 });
     act(() => result.current.applyStyleToSelection({ italic: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'ab', italic: true, underline: true },
       { text: 'cd' },
@@ -140,7 +140,7 @@ describe('useTextEdit — range styling surface', () => {
     expect(result.current.selection).toEqual({ start: 0, end: 2 });
     expect(result.current.rangeStyle?.bold).toBe(true);
     act(() => result.current.applyStyleToSelection({ underline: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'ab', bold: true, underline: true },
       { text: 'cd' },
@@ -188,7 +188,7 @@ describe('useTextEdit — range styling surface', () => {
     // It arms the styling for what comes next rather than restyling text the
     // user didn't select.
     expect(result.current.pendingStyle).toEqual({ underline: true });
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits).toEqual([]);
   });
 
@@ -201,7 +201,7 @@ describe('useTextEdit — range styling surface', () => {
     const overlay = getOverlay(h.container)!;
     await selectCharsAndSettle(overlay, 0, 4);
     act(() => result.current.applyStyleToSelection({}));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits).toEqual([]);
   });
 
@@ -217,7 +217,7 @@ describe('useTextEdit — range styling surface', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     await selectCharsAndSettle(getOverlay(h.container)!, 0, 2);
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(result.current.selection).toBeNull();
     expect(result.current.rangeStyle).toBeNull();
     act(() => result.current.startEdit('a'));

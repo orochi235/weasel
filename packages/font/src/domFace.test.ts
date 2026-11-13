@@ -60,7 +60,7 @@ describe('cssFontFamily', () => {
     await registerTestFont('sans-serif');
     registerFontOutlines('sans-serif', {}, '/fonts/inter.ttf');
     cssFontFamily('sans-serif');
-    cssFontFamily('sans-serif', { weight: 700 });
+    cssFontFamily('sans-serif', 700);
     expect(StubFace.made).toHaveLength(1);
   });
 
@@ -203,7 +203,7 @@ describe('cssFontFamilyLoading', () => {
     StubFace.gate = new Promise<void>((r) => { open = r; });
     registerFontOutlines('sans-serif', { weight: 700 }, '/fonts/inter-bold.ttf');
     expect(cssFontFamilyLoading('sans-serif')).toBeNull();
-    expect(cssFontFamilyLoading('sans-serif', { weight: 700 })).toBeInstanceOf(Promise);
+    expect(cssFontFamilyLoading('sans-serif', 700)).toBeInstanceOf(Promise);
     open();
   });
 

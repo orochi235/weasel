@@ -192,7 +192,7 @@ overlay is visible within; it clips without scrolling), plus optional
 `getRuns` / `setRuns` for rich text —
 when `getRuns` returns a non-empty array the overlay renders styled
 `<span data-run>` elements instead of plain text. Returns `{ editingId,
-startEdit(id, opts?), cancelEdit, commit, isEditing }`.
+startEdit(id, opts?), cancelEdit, commitEdit, isEditing }`.
 
 Nothing is written until the edit commits. Pass `commit(id, { text, runs?,
 style? })` in place of `setText` / `setRuns` / `setStyle` to take the whole
