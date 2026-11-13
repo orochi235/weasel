@@ -272,6 +272,14 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * - `ingest` — dropped and pasted content: images, SVG, files, and
      *   whatever `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop.
      * - `draw` — all of the above.
+     * - `whiteboard` — `view`, `pick`, `move`, `resize` and `edit`, with the
+     *   pencil, text and sticky-note tools.
+     * - `tools:select`, `tools:view`, `tools:shape`, `tools:draw`,
+     *   `tools:type`, `tools:page` — a built-in tool set and nothing else.
+     *
+     * The parts of `edit`, `arrange` and `paths` are names of their own
+     * (`nudge`, `clipboard`, `align`, `pathfinder`, …), for a canvas that
+     * wants one without the rest; `SCENE_CANVAS_FEATURES` lists every name.
      *
      * Any `FeaturePreset` object goes beside the names: core's own
      * (`pathsPreset`), or one a package ships.
