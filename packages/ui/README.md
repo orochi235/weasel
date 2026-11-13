@@ -39,6 +39,25 @@ scale from `@weasel-js/plot/scales`: `<Slider scale={logScale} … />`. `Plot2D`
 generated ticks and the `Timeline` ruler's come from the same scales, and a
 custom `TickSettings.format` receives their `TickFormatCtx`.
 
+## Numbers in the user's locale
+
+Number fields show and read numbers in one locale: `2,5` and `1.500` in German. That covers `UnitField`, `NumberField`,
+the number rows of `PrefsForm`, `PropertyPanel` and `SelectionPanel`, and the context menu's number rows. The locale
+is the nearest `I18nProvider`'s, else the browser's language, else `en-US`, so one provider sets them all:
+
+```tsx
+import { I18nProvider } from '@weasel-js/ui';
+
+<I18nProvider locale={userLocale}>
+  <App />
+</I18nProvider>
+```
+
+Take `I18nProvider` from `@weasel-js/ui`, not from a `react-aria-components` of your own: a second copy of React Aria
+keeps a locale the fields never see. `UnitField`'s `locale` prop sets one field alone, and `useFieldLocale(locale?)`
+returns the locale a field settles on, for a field of your own. A locale whose numbers would not read back as shown
+falls back to Latin digits, then to `en-US`.
+
 ## License
 
 MIT
