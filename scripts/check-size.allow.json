@@ -22,7 +22,7 @@
     "longestFunction": 232
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 504
+    "lines": 459
   },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 167

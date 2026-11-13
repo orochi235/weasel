@@ -4,22 +4,20 @@ import type { SceneCanvasGeometry } from './geometryProps';
 import type { SceneCanvasHit, SceneCanvasPointerProps } from './pointerProps';
 import type { Paint } from '@weasel-js/paint';
 import type { SceneCanvasActionProps } from './actionProps';
+import type { SceneCanvasIngestion } from './ingestionProps';
+import type { SceneCanvasSelectTool } from './selectToolProps';
+export type { SceneCanvasIngestion } from './ingestionProps';
+export type { SceneCanvasSelectTool } from './selectToolProps';
 import type { SceneCanvasLongPress } from './longPressProps';
 import type { SceneCanvasSampleProps } from './sampleProps';
 export type { SceneCanvasLongPress } from './longPressProps';
 import { Yoke } from '@weasel-js/routing/react';
-import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
-import type { ContentHandlerEntry, KitHandlersOption } from 'domains/ingestion';
 import type { SceneCanvasSnap } from 'domains/snap/types';
-import type { SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
-import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { UseResizeOptions } from 'interactions/actions/resize/options';
-import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { ReactNode } from 'react';
 import type { Animator } from '@weasel-js/animator';
 import type { PoseTransitionSeat } from '../../animation/poseTransition';
@@ -156,22 +154,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     //     hover, clicks, chrome and actions, whatever `tools` it runs. ---
     geometry?: SceneCanvasGeometry;
 
-    // --- Selection options. `pickBest` configures the internal select tool, and is
-    //     ignored under a `tools` takeover; `handleHitRadius` sizes the handles' hit
-    //     area, and `move`, `resize` and `rotate` configure their presets, either way. ---
-    selectTool?: {
-      move?: UseMoveOptions<TPose>;
-      resize?: UseResizeOptions<TPose>;
-      /** Rotation options, or `false` to hide the rotation handle and bind it to
-       *  nothing; the `rotate` action stays, for other tools and `actions.rotate`. */
-      rotate?: UseRotateOptions<TPose> | false;
-      handleHitRadius?: number;
-      /** Override the body-pick used on click/pointerdown. Alt-aware: receives
-       *  the live alt state + current selection so consumers can implement
-       *  alt-cycling through an overlapping stack. Default: top-most hit
-       *  (alt ignored). */
-      pickBest?: (world: import('@weasel-js/routing').WorldPoint, alt: boolean, sel: readonly string[], viewId?: string | null) => string | null;
-    };
+    /** The select tool's options, and the move, resize and rotate presets'. See {@link SceneCanvasSelectTool}. */
+    selectTool?: SceneCanvasSelectTool<TPose>;
 
     /** Consumer node factories for the `insert` action, keyed by tool `kind`.
      *  Each factory receives the drag AABB + tool `extras` and returns the
@@ -182,37 +166,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  layer, and the undoable op. Return `null` to reject an insert. */
     insertNodeFactories?: Record<string, InsertNodeFactory>;
 
-    /** External-content ingestion (OS drop / clipboard paste / picker).
-     *
-     *  - `handlers` — content handlers for this canvas alone, priority 0 by default, above
-     *    the kit's. One for every canvas on the page goes through `registerContentHandler`.
-     *  - `kitHandlers` — which kit handlers it keeps (`KitHandlersOption`); default all.
-     *  - `resolveSrc` — overrides the image handler's `data:`-URI embed (e.g.
-     *    upload to an asset store, return the URL).
-     *  - `svg.unpack` — makes the kit SVG handler parse dropped SVG files into
-     *    native scene nodes instead of one embedded-image node each.
-     *  - `clipboard` — the kit weasel-JSON paste handler, enabled by default.
-     *    `reviver` restores JSON-unfriendly values the copying side encoded via
-     *    `jsonReplacer`. `enabled: false` opts the canvas out, but the kit
-     *    handler still consumes weasel-matching items and declines them inert
-     *    rather than letting them fall through. Also governs Cmd/Ctrl+V under
-     *    the `edit` preset; the rest takes the `ingest` preset.
-     *
-     *  Memoize `handlers` and `clipboard.reviver`: inline literals rebuild them every render. */
-    ingestion?: {
-      handlers?: ContentHandlerEntry[];
-      kitHandlers?: KitHandlersOption;
-      resolveSrc?: (file: File) => Promise<string>;
-      svg?: SvgIngestOptions;
-      clipboard?: {
-        reviver?: (key: string, value: unknown) => unknown;
-        enabled?: boolean;
-        /** Called when a paste left copied nodes out, with each one and the
-         *  reason. `useClipboardOps` takes the same callback as
-         *  `onPasteOmitted` for a paste from its own in-memory copy. */
-        onOmitted?: (omitted: PasteOmission[]) => void;
-      };
-    };
+    /** External-content ingestion: OS drop, clipboard paste, the file picker. See {@link SceneCanvasIngestion}. */
+    ingestion?: SceneCanvasIngestion;
 
     selection?: SelectionApi;
     selectionOptions?: UseSelectionOptions;

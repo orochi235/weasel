@@ -23,6 +23,8 @@ export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
 export type { SceneCanvasTextEditor } from '../canvas/SceneCanvas/defaultTextEditor';
 export type { SceneCanvasGeometry } from '../canvas/SceneCanvas/geometryProps';
+export type { SceneCanvasIngestion } from '../canvas/SceneCanvas/ingestionProps';
+export type { SceneCanvasSelectTool } from '../canvas/SceneCanvas/selectToolProps';
 export type { SceneCanvasViewport } from '../canvas/SceneCanvas/viewportProp';
 export type { EdgePanOptions } from '../canvas/SceneCanvas/useEdgePan';
 export { DEFAULT_CONTENT_MARGIN, type ContentViewBounds, type SceneCameraProps } from '../canvas/SceneCanvas/sceneViewBounds';
