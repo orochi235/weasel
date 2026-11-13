@@ -118,16 +118,16 @@ export interface History {
    *  nothing — both start from where the history stands. Throws when no branch
    *  of that id forks from the current entry. */
   switchBranch(id: number): void;
-  /** Monotonic counter bumped on every push/undo/redo/clear/coalesce.
-   *  Cheap to read; callers use it as a React dep to detect changes. */
+  /** Monotonic counter bumped on every change to the stacks: each step `observe`
+   *  reports. Cheap to read; callers use it as a React dep to detect changes. */
   getVersion(): number;
   /** End the current coalescing run: the next entry is pushed fresh even if
    *  its keys match the top entry and it lands inside the window. For a
    *  caller that changed state the stack does not know about, so an entry
    *  coalesced across that change would undo past it. */
   seal(): void;
-  /** Subscribe to history changes. Fires after every push/undo/redo/
-   *  clear/coalesce. Returns an unsubscribe fn. */
+  /** Subscribe to history changes. Fires whenever `getVersion` bumps.
+   *  Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
   /** Hear what each change was, after the stacks have changed and before
    *  `subscribe`'s listeners run. A step that changed nothing reports
