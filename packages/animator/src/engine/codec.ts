@@ -64,20 +64,11 @@ export interface Codec {
   columns(group: object): LaneColumns | null;
 }
 
-/** What the codec calls on a motion patch: a tween has no `push`, a glide no `to`. */
-interface Moves {
-  to?(key: unknown, target: number[], at?: number): void;
-  read(key: unknown, at?: number): Motion<number[]> | undefined;
-  push?(key: unknown, velocity: number[], at?: number): void;
-}
-
 interface Voice {
   kind: 'tween' | 'spring' | 'path';
   slot: Slot;
-  /** `handle` and `patch` are absent while a tween is `queued`, and a path has
-   *  no `patch`. */
+  /** Absent while a tween is `queued`. */
   handle: Handle<unknown>;
-  patch: Moves;
   /** Where it started: what `own` answers until a frame has read it. */
   from: number[];
   /** The codec's own copy, kept at the voice's motion as of its last re-cue. */
@@ -92,19 +83,23 @@ interface Voice {
 
 // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
 // at `from`, and the codec releases it with a `to` or `push` timed at 0.
-function springVoice(slot: Slot, sp: SpringStart): { handle: Handle<unknown>; patch: Moves } {
+function springVoice(slot: Slot, sp: SpringStart): Handle<unknown> {
   // With no target the spring force is zero whatever the stiffness, leaving damping alone:
   // velocity falls as exp(-t * damping / mass), a glide whose time constant is mass / damping.
-  const patch: Moves & Patch<unknown, Out, void> = sp.to == null
+  const patch: Patch<unknown, Out, void> = sp.to == null
     ? glide<unknown, Out, number[]>('v', { from: sp.from, ms: (1000 * sp.mass) / sp.damping })
     : springPatch<unknown, Out, number[]>('v', {
       from: sp.from, to: sp.from, stiffness: sp.stiffness, damping: sp.damping, mass: sp.mass,
     });
   const handle = slot.lane.mix.cue({ patch, subjects: [slot.key] });
-  if (sp.to) patch.to!(slot.key, sp.to, 0);
-  patch.push!(slot.key, sp.velocity, 0);
-  return { handle, patch };
+  if (sp.to) handle.to(slot.key, sp.to, 0);
+  handle.push(slot.key, sp.velocity, 0);
+  return handle;
 }
+
+/** A voice's motion as its patch last read it. Every codec voice moves `number[]` axes. */
+const motionOf = (v: Voice): Motion<number[]> | undefined =>
+  v.handle.read(v.slot.key) as Motion<number[]> | undefined;
 
 const zeros = (n: number): number[] => new Array<number>(n).fill(0);
 
@@ -125,15 +120,14 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
   };
   /** A spring voice's motion now: as its voice last read it, else where it was last placed. */
   const current = (v: Voice): Own =>
-    v.patch.read(v.slot.key) ?? { value: v.spring!.from.slice(), velocity: v.spring!.velocity.slice() };
+    motionOf(v) ?? { value: v.spring!.from.slice(), velocity: v.spring!.velocity.slice() };
 
   const respring = (v: Voice, next: SpringStart): void => {
     const rate = v.handle.rate;
     v.handle.fade({ over: 0 });
-    const { handle, patch } = springVoice(v.slot, next);
+    const handle = springVoice(v.slot, next);
     handle.rate = rate;
     v.handle = handle;
-    v.patch = patch;
     v.spring = next;
     rewinds.recued(v);
   };
@@ -157,8 +151,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
         const key = v.slot.key;
         const patch = tweenPatch<unknown, Out, number[]>('v', { from: q.from.slice(), to: q.from.slice(), ms: q.ms, ease: q.ease });
         v.handle = v.slot.lane.mix.cue({ patch, subjects: [key], seek: q.atEnd ? q.ms : 0 });
-        v.patch = patch;
-        patch.to(key, q.to.slice(), 0);
+        v.handle.to(key, q.to.slice(), 0);
         if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
       }
       queue.length = 0;
@@ -181,8 +174,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
       const sp = { ...s, from: s.from.slice(), to: s.to && s.to.slice(), velocity: s.velocity.slice() };
       const shared = s.on !== undefined;
       const slot = lanes.join(sp.axes, shared ? s.on : s.id, shared ? new Array<number>(sp.axes).fill(0) : sp.from);
-      const { handle, patch } = springVoice(slot, sp);
-      const v: Voice = { kind: 'spring', slot, handle, patch, from: sp.from, spring: sp };
+      const v: Voice = { kind: 'spring', slot, handle: springVoice(slot, sp), from: sp.from, spring: sp };
       voices.set(s.id, v);
       const reader = slot as Slot & SpringReader;
       if (!shared) reader.motion = () => current(v);
@@ -210,7 +202,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
       if ((to == null) === (sp.to == null)) {
         if (!to) return;
         sp.to = to.slice();
-        v.patch.to!(v.slot.key, sp.to);
+        v.handle.to(v.slot.key, sp.to);
         return;
       }
       // Held and free run different patches, so the voice is re-cued from where it is.
@@ -224,8 +216,9 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
     },
     push(id, velocity) {
       const v = get(id);
-      if (v.spring && !v.patch.read(v.slot.key)) v.spring.velocity = velocity.slice();
-      v.patch.push?.(v.slot.key, velocity);
+      if (v.kind !== 'spring') return;
+      if (!motionOf(v)) v.spring!.velocity = velocity.slice();
+      v.handle.push(v.slot.key, velocity);
     },
     rate(id, rate) {
       const v = get(id);
@@ -243,7 +236,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
       if (v.kind === 'path') {
         return { value: rewinds.has(v) ? v.from : v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
       }
-      return (!v.queued && v.patch.read(v.slot.key))
+      return (!v.queued && motionOf(v))
         || { value: v.queued?.atEnd ? v.queued.to : v.from, velocity: zeros(v.from.length) };
     },
     voiceCount: () => voices.size,

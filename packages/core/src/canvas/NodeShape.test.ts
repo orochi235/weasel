@@ -62,18 +62,21 @@ describe('shape painter registry', () => {
     expect(findNodeShape(node({ measure: { start: { x: 0, y: 0 }, end: { x: 1, y: 1 } } }))?.id).toBe('kit:measure');
   });
 
-  it('registers a normal-priority painter — added after built-ins', () => {
+  it('registers a normal-priority painter after the built-ins, ahead of the rect fallback', () => {
     const custom: NodeShapeEntry = {
-      id: 'app:image',
-      matches: (n) => (n.data as { image?: unknown } | null)?.image != null,
+      id: 'app:heart',
+      matches: (n) => (n.data as { heart?: unknown } | null)?.heart != null,
       paint: () => [],
     };
     registerNodeShape(custom);
     const ids = getNodeShapes().map((p) => p.id);
-    expect(ids).toEqual(['kit:text', 'kit:measure', 'kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'kit:rect-fallback', 'app:image']);
-    // Because rect-fallback always matches, app:image never wins from
-    // normal priority. That's a feature of the built-in order.
-    expect(findNodeShape(node({ image: 'x' }))?.id).toBe('kit:rect-fallback');
+    expect(ids).toEqual(['kit:text', 'kit:measure', 'kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'app:heart', 'kit:rect-fallback']);
+    // The fallback matches every rect-posed node, so a painter behind it would never paint one.
+    expect(findNodeShape(node({ heart: 'x' }))?.id).toBe('app:heart');
+    // A built-in that matches still wins over a normal-priority painter.
+    const greedy: NodeShapeEntry = { id: 'app:greedy', matches: () => true, paint: () => [] };
+    registerNodeShape(greedy);
+    expect(findNodeShape(node({ text: 'hi' }))?.id).toBe('kit:text');
   });
 
   it("'high' priority painters beat the built-ins", () => {
@@ -108,6 +111,25 @@ describe('shape painter registry', () => {
     dispose();
     dispose();
     expect(getNodeShapes().map((p) => p.id)).not.toContain('once');
+  });
+
+  it('a second dispose leaves another registration of the same painter in place', () => {
+    const shared: NodeShapeEntry = { id: 'shared', matches: () => true, paint: () => [] };
+    const first = registerNodeShape(shared, { priority: 'high' });
+    registerNodeShape(shared, { priority: 'high' });
+    first();
+    first();
+    expect(findNodeShape(node({}))?.id).toBe('shared');
+  });
+
+  it('a disposer takes out its own registration, not an earlier one of the same painter', () => {
+    const p: NodeShapeEntry = { id: 'p', matches: (n) => (n.data as { k?: string }).k !== undefined, paint: () => [] };
+    const q: NodeShapeEntry = { id: 'q', matches: () => true, paint: () => [] };
+    registerNodeShape(p, { priority: 'high' });
+    registerNodeShape(q, { priority: 'high' });
+    const second = registerNodeShape(p, { priority: 'high' });
+    second();
+    expect(findNodeShape(node({ k: 'x' }))?.id).toBe('p');
   });
 });
 

@@ -253,3 +253,46 @@ describe('createMenuWidget', () => {
     expect(close).not.toHaveBeenCalled();
   });
 });
+
+describe('createMenuWidget text rows on a Mac', () => {
+  it('reads Ctrl+A as the start of the line and Cmd+A as select-all, by the key a non-Latin layout types on', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    const set = vi.fn();
+    const row: MenuEntry = { kind: 'text', key: 'name', label: 'Name', value: 'abc', set };
+    const { w } = widget({ ...open, source: 'keyboard', entries: [row] });
+    w.onKey!(keydown('Enter'));
+    w.onKey!(keydown('ф', { code: 'KeyA', ctrlKey: true }));
+    w.onKey!(keydown('x'));
+    w.onKey!(keydown('Enter'));
+    expect(set).toHaveBeenLastCalledWith('xabc');
+    w.onKey!(keydown('Enter'));
+    w.onKey!(keydown('a', { code: 'KeyA', metaKey: true }));
+    w.onKey!(keydown('y'));
+    w.onKey!(keydown('Enter'));
+    expect(set).toHaveBeenLastCalledWith('y');
+    vi.restoreAllMocks();
+  });
+});
+
+describe('createMenuWidget kill buffer on a Mac', () => {
+  it('yanks into one text row what Ctrl+K cut from another', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    const setA = vi.fn(), setB = vi.fn();
+    const rows: MenuEntry[] = [
+      { kind: 'text', key: 'a', label: 'A', value: 'keep cut', set: setA },
+      { kind: 'text', key: 'b', label: 'B', value: 'x', set: setB },
+    ];
+    const { w } = widget({ ...open, source: 'keyboard', entries: rows });
+    w.onKey!(keydown('Enter'));
+    for (let i = 0; i < 3; i++) w.onKey!(keydown('b', { code: 'KeyB', ctrlKey: true }));
+    w.onKey!(keydown('k', { code: 'KeyK', ctrlKey: true }));
+    w.onKey!(keydown('Enter'));
+    expect(setA).toHaveBeenLastCalledWith('keep ');
+    w.onKey!(keydown('ArrowDown'));
+    w.onKey!(keydown('Enter'));
+    w.onKey!(keydown('y', { code: 'KeyY', ctrlKey: true }));
+    w.onKey!(keydown('Enter'));
+    expect(setB).toHaveBeenLastCalledWith('xcut');
+    vi.restoreAllMocks();
+  });
+});

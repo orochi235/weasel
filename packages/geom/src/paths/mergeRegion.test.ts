@@ -86,6 +86,14 @@ describe('mergeRegion', () => {
     expectSameRegion(grown, m, 0.13);
   });
 
+  it('cuts two rounded corners crossing nearly tangent cleanly (synthetic bold on a bake, 0.001 em apart)', () => {
+    const grown = growRegion(pathFromD('M0 -0.001h0.02v0.02h-0.02Z M0 0h0.021v0.1h-0.021Z'), 1 / 75, { join: 'round', tolerance: 0.0005 });
+    const m = mergeRegion(grown, { tolerance: 0.0005 });
+    expect(contourCount(m)).toBe(1);
+    expect(edgesInsideFill(m, 2e-4)).toBe(0);
+    expectSameRegion(grown, m, 0.002);
+  });
+
   it('keeps an edge two contours share once, and none inside the fill (shrunk from text\'s synthetic bold property)', () => {
     for (const d of [
       'M0 0 L2 0 L2 3 L0 3 Z M0 0 L2 0 L2 2 L0 2 Z',

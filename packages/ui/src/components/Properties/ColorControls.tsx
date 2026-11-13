@@ -53,8 +53,9 @@ export function ColorControl(p: PropertyColorFieldProps) {
     <ColorField
       id={p.id}
       className={p.className ? `${s.colorField} ${p.className}` : s.colorField}
-      value={p.mixed ? undefined : withAlpha ? withAlpha01(split.rgb, alpha) : (p.value ?? '#000000')}
+      value={p.mixed || p.unset ? undefined : withAlpha ? withAlpha01(split.rgb, alpha) : (p.value ?? '#000000')}
       mixed={p.mixed}
+      unset={p.unset}
       alpha={withAlpha}
       alphaDisabled={p.alphaDisabled}
       disabled={p.disabled}
@@ -93,8 +94,8 @@ export function PaintControl(p: PropertyPaintFieldProps) {
   // The inline editor is a stack of controls, and a kind's editor may be a consumer's: drawn inert, it keeps
   // the height it has enabled, so the rows under it do not move when a condition flips.
   return (
-    <div className={p.className ? `${s.paintOff} ${p.className}` : s.paintOff} role="group" aria-label={p.name} aria-disabled="true">
-      <div ref={makeInert} className={s.paintOffBody}>
+    <div className={p.className ? `${s.paintDisabled} ${p.className}` : s.paintDisabled} role="group" aria-label={p.name} aria-disabled="true">
+      <div ref={makeInert} className={s.paintDisabledBody}>
         {editor}
       </div>
     </div>

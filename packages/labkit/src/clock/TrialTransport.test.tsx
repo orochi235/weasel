@@ -4,6 +4,7 @@ import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, describe, expect, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
+import { LabContext, type LabContextValue } from '../lab/LabContext';
 import { it as liveTest } from '../testing/liveTest';
 import { TrialTransport, type TrialTransportProps } from './TrialTransport';
 import type { ClockCapability, TrialClock } from './trialClock';
@@ -231,6 +232,41 @@ describe('<TrialTransport>', () => {
       key('r', stage);
       expect(c().rate).toBe(0);
       expect(c().elapsed).toBe(0);
+    });
+
+    it('plays the clock of the trial the key comes from, with two trials each keyed', async ({
+      live,
+    }) => {
+      const clocks = new Map<string, TrialClock>();
+      const keyed: Instrument = {
+        ...timed({ duration: 1000 }),
+        render: (ctx) => {
+          if (ctx.trial.clock) clocks.set(ctx.trial.id, ctx.trial.clock);
+          return (
+            <>
+              <TrialTransport keys />
+              <div data-testid={`body-${ctx.trial.id}`} tabIndex={-1} />
+            </>
+          );
+        },
+      };
+      let lab: LabContextValue | null = null;
+      await live(renderSettled)(
+        <Lab instruments={[keyed]} defaultInstrument="Timed">
+          <LabContext.Consumer>
+            {(value) => {
+              lab = value;
+              return null;
+            }}
+          </LabContext.Consumer>
+        </Lab>,
+        { wrapper: withIcons },
+      );
+      await live(actSettled)(async () => (lab as LabContextValue | null)?.addTrial('Timed'));
+      const [first, second] = [...clocks.keys()];
+      key(' ', screen.getByTestId(`body-${second}`));
+      expect(clocks.get(second as string)?.rate).toBe(1);
+      expect(clocks.get(first as string)?.rate).toBe(0);
     });
 
     it('answers none without `keys`', async ({ mount }) => {

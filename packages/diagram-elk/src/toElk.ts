@@ -10,7 +10,7 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import {
   DEFAULT_PORTS,
-  portsOnOutline,
+  portsOf,
   type EdgeLabelRoom,
   type Graph,
   type GraphGroup,
@@ -37,17 +37,11 @@ export interface ElkIndex {
   edges: Map<string, DrawnEdge>;
 }
 
-/** Where each of a node's declared ports sits, cast onto its outline as
- *  `portsOf` casts them, for a node whose top-left is `at`. */
+/** Where each of a node's declared ports sits, as `portsOf` places them, for a node whose top-left is `at`. */
 export function portPoints(node: GraphNode, at: Vec2): Port[] {
-  const bounds = { x: at.x, y: at.y, width: node.bounds.width, height: node.bounds.height };
-  const ports: Port[] = (node.ports ?? DEFAULT_PORTS).map((spec) => ({
-    id: spec.id,
-    nodeId: node.id,
-    point: { x: at.x + spec.at.u * bounds.width, y: at.y + spec.at.v * bounds.height },
-    normal: null,
-  }));
-  return node.outline === undefined ? ports : portsOnOutline(ports, node.outline, bounds);
+  const trait = { ports: node.ports ?? DEFAULT_PORTS, ...(node.outline !== undefined ? { outline: node.outline } : {}) };
+  const pose = { x: at.x, y: at.y, width: node.bounds.width, height: node.bounds.height };
+  return portsOf({ id: node.id, kind: 'mark', data: null }, pose, { read: () => trait });
 }
 
 /** Each drawn edge once, in graph order, naming only the ports its node ends

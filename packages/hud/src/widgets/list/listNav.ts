@@ -1,5 +1,5 @@
 import {
-  EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS, rowKey, typeaheadStep, type TypeaheadBuffer,
+  EMPTY_TYPEAHEAD, rowKey, typeaheadSearching, typeaheadStep, type TypeaheadBuffer,
 } from '@weasel-js/ui-input';
 import { IDLE_PRESS, pressStep, type ListMode, type PressState } from '@weasel-js/ui-logic';
 import type { HudKeyEvent, HudPointerEvent } from '../../widget';
@@ -78,7 +78,7 @@ export function createListNav(
       const all = rows();
       if (evt.type !== 'keydown' || !live || all.length === 0) return { handled: false, changed: false };
       const at = active ?? home() ?? 0;
-      const searching = typed.text !== '' && Date.now() - typed.at < TYPEAHEAD_RESET_MS;
+      const searching = typeaheadSearching(typed, Date.now());
       const action = rowKey(all, at, evt, { activate: true, typeahead: true }, searching);
       if (!action) return { handled: false, changed: false };
       keyed = true;

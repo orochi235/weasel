@@ -1,4 +1,5 @@
 import { createEmitter } from '@weasel-js/registry';
+import { onLeave } from './onLeave';
 import { createRemote } from './remote';
 import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 import { DELETED, createWriteQueue } from './writeQueue';
@@ -91,20 +92,6 @@ export interface CreateRecordCacheOptions extends RecordCacheOptions {
 /** A cache holding `initial`, with nothing read from storage. */
 export function createRecordCache(options: CreateRecordCacheOptions): OwnedRecordCache {
   return buildCache(options, false).cache;
-}
-
-/** Run `flush` whenever the page hides or goes away. Returns the stop. */
-function flushOnLeave(flush: () => void): () => void {
-  if (typeof window === 'undefined') return () => {};
-  const onVisibility = (): void => {
-    if (document.visibilityState === 'hidden') flush();
-  };
-  window.addEventListener('pagehide', flush);
-  document.addEventListener('visibilitychange', onVisibility);
-  return () => {
-    window.removeEventListener('pagehide', flush);
-    document.removeEventListener('visibilitychange', onVisibility);
-  };
 }
 
 /** `startUnread` leaves the cache waiting on a first read: `cache.read()`
@@ -220,7 +207,7 @@ function buildCache(
     return reading;
   }
 
-  const stopFlushingOnLeave = flushOnLeave(() => void queue.flush());
+  const stopFlushingOnLeave = onLeave(() => void queue.flush());
 
   const remove = (name: string): void => {
     // An unread cache cannot tell what storage holds, so it queues the delete.

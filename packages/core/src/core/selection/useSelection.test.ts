@@ -11,6 +11,15 @@ const a = asNodeId('a');
 const b = asNodeId('b');
 const c = asNodeId('c');
 
+/** A scene holding nodes `a` to `d`, as a selection names only nodes it holds. */
+function sceneWithNodes() {
+  const scene = createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
+  for (const id of ['a', 'b', 'c', 'd']) {
+    scene.add({ id: asNodeId(id), kind: 'mark', layer: 'default', data: { label: id }, pose: { x: 0, y: 0, width: 1, height: 1 } });
+  }
+  return scene;
+}
+
 describe('useSelection', () => {
   it('starts empty by default', () => {
     const { result } = renderHook(() => useSelection());
@@ -120,7 +129,7 @@ describe('useSelection', () => {
 
 describe('useSelection — bound to a scene', () => {
   function makeScene() {
-    return createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
+    return sceneWithNodes();
   }
 
   it('reads and writes the scene selection', () => {
@@ -185,7 +194,7 @@ describe('useSelection — bound to a scene', () => {
 
 describe('useSelection — seeding a scene', () => {
   it('seeds an empty scene from `initial`', () => {
-    const scene = createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
+    const scene = sceneWithNodes();
     const { result } = renderHook(() => useSelection({ scene, initial: [a] }));
 
     expect(scene.getSelection()).toEqual([a]);
@@ -207,7 +216,7 @@ describe('useSelection — identity', () => {
   });
 
   it('stays the same object when bound to a scene, and reads the scene live', () => {
-    const scene = createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
+    const scene = sceneWithNodes();
     const { result } = renderHook(() => useSelection({ scene }));
     const first = result.current;
 
@@ -243,8 +252,8 @@ describe('useSelection — identity', () => {
   });
 
   it('an abandoned render\'s scene does not redirect the committed selection', () => {
-    const sceneA = createScene({ systemLayers: [{ id: 'main' }] });
-    const sceneB = createScene({ systemLayers: [{ id: 'main' }] });
+    const sceneA = sceneWithNodes();
+    const sceneB = sceneWithNodes();
     sceneA.setSelection([a]);
     sceneB.setSelection([b]);
     const committed: SelectionApi[] = [];

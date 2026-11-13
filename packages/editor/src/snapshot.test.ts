@@ -11,6 +11,18 @@ describe('snapshot — scene snapshot to node specs', () => {
   type Layer = 'default';
   type Pose = { x: number; y: number; width: number; height: number };
 
+  it('takes a reviver that migrates an older shape of data, typed as the scene data', () => {
+    type Saved = { fill?: string; color?: string };
+    const json: SerializedScene<Saved, Layer, Pose> = {
+      version: 3,
+      systemLayers: [{ id: 'default' }],
+      nodes: [{ id: 'a', kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { color: '#f00' } }],
+    };
+    const migrate = ({ color, ...rest }: Saved): Saved => (color === undefined ? rest : { ...rest, fill: color });
+    expect(nodeSpecsFromSnapshot(json, {}, migrate)[0]?.data).toEqual({ fill: '#f00' });
+    expect(json.nodes[0]?.data).toEqual({ color: '#f00' });
+  });
+
   it('preserves containers and parent links so nesting survives reload', () => {
     const json: SerializedScene<Data, Layer, Pose> = {
       version: 3,

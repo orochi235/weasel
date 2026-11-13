@@ -261,7 +261,7 @@ describe('useInsertDepSource', () => {
     const id = dep.commit({ x: 0, y: 0, width: 1, height: 1 }, { kind: 'totally-unknown' });
     expect(id).toBeNull();
     expect(applyOps).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('insertNodeFactories'));
     warn.mockRestore();
   });
 });

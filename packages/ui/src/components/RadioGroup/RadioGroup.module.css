@@ -37,6 +37,7 @@
 
 .radio[data-disabled] {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
 }
 
@@ -53,6 +54,7 @@
 }
 
 .radio[data-focus-visible] .dot {
+  outline: 2px solid transparent;
   box-shadow: var(--wzl-bevel-sunken, 0 0 0 0 transparent), 0 0 0 2px var(--wzl-focus-ring);
 }
 
@@ -76,6 +78,20 @@
 
 .radio[data-selected] .dot::after {
   transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot::after {
+    transition: none;
+  }
+}
+
+/* Forced colors repaint the dot's fill as Canvas, so a chosen radio would read as empty. */
+@media (forced-colors: active) {
+  .dot::after {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
 }
 
 /* A radio group laid along a track shape: its label and radios are placed on the run. */

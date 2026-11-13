@@ -85,6 +85,33 @@ describe('Lane', () => {
     expect(onSelect).toHaveBeenCalledWith(1);
   });
 
+  it('leaves a key drag to its finger when a second finger presses another key', () => {
+    const onKeyCommit = vi.fn();
+    const onSelect = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} onKeyCommit={onKeyCommit} />);
+    const [first, second] = screen.getAllByTestId('timeline-key');
+    const touch = (pointerId: number, clientX: number) => ({ clientX, clientY: 10, button: 0, pointerId, pointerType: 'touch' });
+    fireEvent.pointerDown(second, touch(1, 250));
+    fireEvent.pointerDown(first, touch(2, 0));
+    fireEvent.pointerMove(document, touch(1, 350));
+    fireEvent.pointerUp(document, touch(1, 350));
+    fireEvent.pointerUp(document, touch(2, 0));
+    expect(onSelect.mock.calls).toEqual([[1]]);
+    expect(onKeyCommit.mock.calls).toEqual([[1, 700]]);
+  });
+
+  it('puts a key back where it was when the browser cancels its drag', () => {
+    const onKeyInput = vi.fn();
+    const onKeyCommit = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyCommit={onKeyCommit} />);
+    const key = screen.getAllByTestId('timeline-key')[1];
+    fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0, pointerId: 1, pointerType: 'touch' });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10, pointerId: 1, pointerType: 'touch' });
+    fireEvent.pointerCancel(document, { pointerId: 1, pointerType: 'touch' });
+    expect(onKeyInput.mock.calls.at(-1)).toEqual([1, 500]);
+    expect(onKeyCommit).not.toHaveBeenCalled();
+  });
+
   it('reports live times through the drag and one commit at its end', () => {
     const onKeyInput = vi.fn();
     const onKeyCommit = vi.fn();

@@ -1,5 +1,35 @@
 # @weasel-js/prefs
 
+## 1.19.1
+
+### Patch Changes
+
+- 8ada2a6: Two `KitSettingsFromPrefs css` bridges on one root share its selector attributes: unmounting one leaves the other's in place.
+  
+  <!-- entry: fix -->
+- Updated dependencies [c9adfef]
+- Updated dependencies [97be45c]
+- Updated dependencies [1691dec]
+- Updated dependencies [b62d643]
+- Updated dependencies [039b7ad]
+- Updated dependencies [d254251]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [8562ebe]
+- Updated dependencies [f265a52]
+- Updated dependencies [a4ef496]
+- Updated dependencies [2c3416d]
+  - @weasel-js/quantity@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/react@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/storage@1.19.1
+  - @weasel-js/icons@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

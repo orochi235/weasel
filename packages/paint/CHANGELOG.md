@@ -1,5 +1,16 @@
 # @weasel-js/paint
 
+## 1.19.1
+
+### Minor Changes
+
+- 1691dec: `DEFAULT_MITER_LIMIT` names the miter limit a stroke that sets none is drawn, keyed and bounded with: 4, as SVG has it.
+  
+  <!-- entry: api -->
+- b62d643: New `tryParseColor`: `parseColor`'s reading of a string, or null where `parseColor` would throw.
+  
+  <!-- entry: api -->
+
 ## 1.19.0
 
 ### Patch Changes

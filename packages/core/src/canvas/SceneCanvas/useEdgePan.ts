@@ -58,6 +58,7 @@ export function useEdgePan(opts: EdgePanInputs): EdgePan {
   const live = useLatest(opts);
   const [pan] = useState(() => edgePan(() => live.current));
   const loop = useVisibleRaf((time, self) => { pan.frame(time, self); }, {
+    phase: 'update',
     target: () => live.current.element(), onResume: () => { pan.resume(); },
   });
   const { dispatcher } = opts;

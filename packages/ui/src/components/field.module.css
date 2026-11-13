@@ -92,7 +92,7 @@
 .frame:focus-visible {
   border-color: var(--_frame-focus-border, var(--wzl-focus-ring));
   box-shadow: var(--_frame-focus-shadow, var(--wzl-field-focus-shadow, 0 0 0 1px var(--wzl-focus-ring)));
-  outline: var(--_frame-focus-outline, none);
+  outline: var(--_frame-focus-outline, 1px solid transparent);
 }
 
 .field[data-invalid] .frame {
@@ -102,6 +102,7 @@
 .field[data-disabled] .frame,
 .frame[data-disabled] {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
 }
 

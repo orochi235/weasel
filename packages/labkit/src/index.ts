@@ -1,3 +1,4 @@
+export { undoKeyStep } from '@weasel-js/core';
 export {
   createIndexedDbAdapter,
   createMemoryAdapter,
@@ -131,6 +132,7 @@ export { capturePlan, captureTarget, composeCaptureSvg } from './annotations/cap
 export type { MarkDrawOptions } from './annotations/drawOne';
 export { createMarkDrawOne, resolveMarkStyle } from './annotations/drawOne';
 export { ExportMenu } from './annotations/ExportMenu';
+export { useHoldMarks } from './annotations/labMarks';
 export type { MarkListProps } from './annotations/MarkList';
 export { MarkList } from './annotations/MarkList';
 export type { MarkStyle, PaintableMark } from './annotations/paint';
@@ -341,4 +343,4 @@ export * from './surface';
 export { interstellarTheme } from './theme/interstellar';
 export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';
-export { type UndoKeysTarget, undoKeyStep, useUndoKeys } from './undo/useUndoKeys';
+export { type UndoKeysTarget, useUndoKeys } from './undo/useUndoKeys';

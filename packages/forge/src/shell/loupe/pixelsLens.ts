@@ -1,3 +1,4 @@
+import { watchDevicePixelRatio } from '@weasel-js/core';
 import { LENS_REST_MS, type LensSourceHandle, type LensSourceRequest, unavailableText } from '@weasel-js/labkit/loupe';
 import { stableStringify } from '../../protocol/messages';
 import { type CapturePayload, messageOf } from '../../vite/capture/payload';
@@ -109,7 +110,9 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
     const side = sideOf(request);
     try {
       const bitmap = await shared.take(target.payload);
-      if (gone || pending !== token || bitmap === null || shared.revision() !== at) return;
+      if (bitmap === null) return;
+      // A capture nothing will show is let go of now rather than left to the collector.
+      if (gone || pending !== token || shared.revision() !== at) return bitmap.close();
       shared.shots.set(side, { key: target.key, revision: at, bitmap, payload: target.payload });
       measure();
     } catch (err) {
@@ -155,6 +158,8 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
     schedule();
   };
   measure();
+  // A window moved to a display of another density keeps the lens's CSS size, so nothing else would repaint it.
+  const unwatchDensity = watchDevicePixelRatio(() => measure());
   return {
     measure,
     revised() {
@@ -169,6 +174,7 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
     },
     detach() {
       gone = true;
+      unwatchDensity();
       cancel();
       shared.shots.delete(sideOf(request));
       canvas.remove();

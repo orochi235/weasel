@@ -7,11 +7,8 @@ import { paintsPose, poseBoxBounds } from './poseBox';
 
 // ─── Built-in painters ─────────────────────────────────────────────────
 export const RECT_FALLBACK_PAINTER: NodeShapeEntry<unknown, RectPose> = {
-  // Last-resort painter — matches any rect-posed mark, so it must be
-  // registered last within `'normal'`.
-  // Consumers who want a different
-  // fallback should register their own painter at `'high'` priority and let
-  // this one never fire (or unregister it explicitly).
+  // Last-resort painter — matches any rect-posed mark, so the registry keeps
+  // it behind every other painter, `'normal'` ones included.
   id: 'kit:rect-fallback',
   matches: (node) => node.kind !== 'group' && paintsPose(node.pose),
   paint: (node, pose, ctx) => {

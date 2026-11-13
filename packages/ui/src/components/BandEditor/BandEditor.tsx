@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
-import { focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
+import { focusedControlOwnsKey, isEditableTarget, isPrimaryPress } from '@weasel-js/gestures';
 import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
@@ -99,6 +99,14 @@ function keepData<T>(_at: number, from: T): T {
   return from;
 }
 
+/** The band key `e` presses: `x` or Delete merges, `l` locks, `s` splits. Null with a modifier held: `x` is a bare
+ *  letter and Cmd/Ctrl+X is cut, which must not be swallowed. Caps Lock reports the letters capitalized with no Shift. */
+function bandKey(e: { key: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }): 'x' | 'l' | 's' | 'Delete' | null {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return null;
+  const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  return key === 'x' || key === 'l' || key === 's' || key === 'Delete' ? key : null;
+}
+
 /**
  * Divides a numeric axis into contiguous bands and lets you drag the seams
  * between them. Each band carries a payload the consumer supplies and
@@ -114,7 +122,7 @@ function keepData<T>(_at: number, from: T): T {
  * |---|---|
  * | drag a seam | resize the two bands either side |
  * | drag `min` / `max` | rescale the whole range, locked bands holding their length (with `onRangeChange`) |
- * | right-click a band, or `l` | lock or unlock it |
+ * | right-click a band, or `l` | lock or unlock it (with `onRangeChange`, the only thing a lock holds against) |
  * | drag a band body | move both its seams, preserving its span |
  * | click the ruler | split the band under the pointer |
  * | `s` | split the selected band at the middle of its drawn span |
@@ -185,13 +193,13 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     return width === 0 ? unit : attract(unit, ticks.map((tick) => toUnit(tick.at)), snapRadiusPx / width);
   };
 
-  // An edge drag. One that ends without a release commits nothing.
+  // An edge drag, which a second finger's press leaves to the first. One that ends without a release commits nothing.
   const drag = (
     down: ReactPointerEvent<HTMLElement>,
     onMove: (ev: PointerEvent) => void,
     onEnd: () => void,
   ): void => {
-    sessionRef.current?.cancel();
+    if (sessionRef.current?.active) return;
     sessionRef.current = openPointerSession(down.currentTarget, down, {
       onMove,
       onEnd: () => { sessionRef.current = null; setDraft(null); onEnd(); },
@@ -215,7 +223,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   };
 
   const onBandPointerDown = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>): void => {
-    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!isPrimaryPress(e)) return;
     if (index !== selectedIndex) onSelect?.(index);
   };
 
@@ -257,7 +265,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   };
 
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!isPrimaryPress(e)) return;
     e.preventDefault();
     splitAt(fromUnit(unitAt(e.clientX)));
   };
@@ -273,19 +281,17 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   };
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    if (e.key !== 'x' && e.key !== 'Delete' && e.key !== 'l' && e.key !== 's') return;
-    // `x` is a bare letter and Cmd/Ctrl+X is cut: neither may be swallowed
-    // when the keystroke belongs to something a consumer put in a band.
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const key = bandKey(e);
+    if (key === null) return;
     if (isEditableTarget(e.target) || focusedControlOwnsKey(e.nativeEvent)) return;
     if (selectedIndex === null || selectedIndex === undefined) return;
-    if (e.key === 'l') {
+    if (key === 'l') {
       if (!props.onRangeChange) return;
       e.preventDefault();
       onChange(toggleLock(committed, selectedIndex));
       return;
     }
-    if (e.key === 's') {
+    if (key === 's') {
       // The middle of the band as drawn, so on a log scale the halves look equal.
       const [from, to] = bandBounds(committed, selectedIndex, min, max);
       if (splitAt(fromUnit((toUnit(from) + toUnit(to)) / 2))) e.preventDefault();

@@ -36,16 +36,39 @@ describe('broken constraint link marks', () => {
     expect(Array.from(dashed.path.coords)).toEqual([80, -40, 80, 0]);
   });
 
+  /** Attach `entry` to a stand-in canvas over `scene`; returns the layer it registered and the detach. */
+  function attachTo(entry: ReturnType<typeof createConstraintLinkMarks>, scene: unknown) {
+    const layers: RenderLayer<unknown>[] = [];
+    const api = {
+      registerLayer: (l: RenderLayer<unknown>) => {
+        layers.push(l);
+        return () => { layers.splice(layers.indexOf(l), 1); };
+      },
+      requestRedraw: () => {},
+    } as unknown as CanvasExtensionApi;
+    const detach = entry.attach!(api, { get: () => scene } as unknown as ContributionDepReader);
+    return { layers, detach };
+  }
+  const view = { x: 0, y: 0, scale: { x: 1, y: 1 } } as never;
+  const draw = (layer: RenderLayer<unknown> | undefined, data?: unknown) => layer!.draw(data, view, undefined as never);
+
   it('draws the scene\'s broken links as a screen layer once attached, and nothing in a view pass', () => {
     const { scene } = setup(-20);
-    const entry = createConstraintLinkMarks(STYLE);
-    const layer = entry.overlay as RenderLayer<unknown>;
-    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } } as never;
-    expect(layer.draw(undefined, view, undefined as never)).toEqual([]);
-    const detach = entry.attach!({} as CanvasExtensionApi, { get: () => scene } as unknown as ContributionDepReader);
-    expect(layer.draw(undefined, view, undefined as never)).toHaveLength(2);
-    expect(layer.draw({ viewId: 'v' }, view, undefined as never)).toEqual([]);
+    const { layers, detach } = attachTo(createConstraintLinkMarks(STYLE), scene);
+    expect(layers).toHaveLength(1);
+    expect(draw(layers[0])).toHaveLength(2);
+    expect(draw(layers[0], { viewId: 'v' })).toEqual([]);
     detach();
-    expect(layer.draw(undefined, view, undefined as never)).toEqual([]);
+    expect(layers).toEqual([]);
+  });
+
+  it('draws each canvas its own scene\'s links when one entry is installed in two', () => {
+    const entry = createConstraintLinkMarks(STYLE);
+    const broken = attachTo(entry, setup(-20).scene);
+    const holding = attachTo(entry, setup(0).scene);
+    expect(draw(broken.layers[0])).toHaveLength(2);
+    expect(draw(holding.layers[0])).toEqual([]);
+    holding.detach();
+    expect(draw(broken.layers[0])).toHaveLength(2);
   });
 });

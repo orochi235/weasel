@@ -4,6 +4,7 @@ import type { Download, Page } from '@playwright/test';
 import { createServer, type Server } from 'node:net';
 import { waitForOwnFrame } from './vitest-own-frame.ts';
 import { HOST_GPU_ARGS } from './chromium-gpu-args.ts';
+import { noteNetworkChanged } from './lib/load-reruns.mjs';
 
 // Server-side commands for the `browser` vitest project, reached from a test
 // through `commands` in 'vitest/browser'. They run against the Playwright
@@ -86,6 +87,16 @@ const collectGarbage: BrowserCommand<[]> = async (ctx) => {
   }
 };
 
+/** Turn the page's `forced-colors` emulation on (`'active'`, Windows high contrast) or off (`'none'`). */
+const forcedColors: BrowserCommand<[mode: 'active' | 'none']> = async (ctx, mode) => {
+  await ctx.page.emulateMedia({ forcedColors: mode });
+};
+
+/** Turn the page's `prefers-reduced-motion` emulation to `'reduce'` or back to `'no-preference'`. */
+const reducedMotion: BrowserCommand<[mode: 'reduce' | 'no-preference']> = async (ctx, mode) => {
+  await ctx.page.emulateMedia({ reducedMotion: mode });
+};
+
 /** Wait until vitest's own commands, `userEvent.keyboard` among them, find this file's frame. */
 const settleFrame: BrowserCommand<[]> = async (ctx) => {
   if (ctx.testPath) await waitForOwnFrame(ctx.page, ctx.testPath);
@@ -108,6 +119,7 @@ const watchRequests: BrowserCommand<[]> = async (ctx) => {
     const failure = request.failure()?.errorText ?? 'failed';
     // A frame torn down mid-load aborts its images and fonts; only a module or page load matters here.
     if (failure === 'net::ERR_ABORTED' && !LOADS.has(request.resourceType())) return;
+    if (failure === 'net::ERR_NETWORK_CHANGED') noteNetworkChanged();
     log(failure, request.resourceType(), request.url());
   });
   page.on('response', (response) => {
@@ -212,7 +224,7 @@ const renderInNode: BrowserCommand<[renders: object[]]> = async (_ctx, renders):
 export const browserCommands = {
   renderInNode,
   grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload, collectGarbage, settleFrame,
-  watchRequests, pointer, clickAcrossStall,
+  watchRequests, pointer, clickAcrossStall, forcedColors, reducedMotion,
 };
 
 declare module 'vitest/browser' {
@@ -228,5 +240,7 @@ declare module 'vitest/browser' {
     pointer: (steps: PointerStep[]) => Promise<void>;
     clickAcrossStall: (at: [x: number, y: number], stallMs: number) => Promise<void>;
     renderInNode: (renders: object[]) => Promise<NodeRenders>;
+    forcedColors: (mode: 'active' | 'none') => Promise<void>;
+    reducedMotion: (mode: 'reduce' | 'no-preference') => Promise<void>;
   }
 }

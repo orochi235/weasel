@@ -42,7 +42,9 @@ export function commitRotate(session: RotateSession, frame: RotateFrame): boolea
     if (r !== undefined) return commitGestureOps(target, lifecycle, r);
   }
   if (frame.delta === 0) return false;
-  const ops = rotateOps(session.ids, session.originPoses, frame.previews, lifecycle.label);
+  // A node removed mid-drag is skipped, as the move's commit skips it.
+  const ids = session.ids.filter((id) => session.scene.get(id) !== undefined);
+  const ops = rotateOps(ids, session.originPoses, frame.previews, lifecycle.label);
   if (ops.length === 0) return false;
   return commitGestureOps(target, lifecycle, ops);
 }

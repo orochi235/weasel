@@ -16,6 +16,8 @@ export interface SliderThumbProps<T extends Thumb> {
   max: number;
   ariaLabel: string | undefined;
   display: SliderProps<T>['display'];
+  /** The locale `display` speaks the value in. */
+  locale: string;
   spoken: string | undefined;
   active: boolean;
   box: { width: number; height: number };
@@ -39,7 +41,7 @@ export function SliderThumb<T extends Thumb>(p: SliderThumbProps<T>): ReactEleme
       aria-valuemin={p.min}
       aria-valuemax={p.max}
       aria-valuenow={thumb.value}
-      aria-valuetext={thumb.valueText ?? p.spoken ?? (p.display ? qty(thumb.value, p.display).spoken : undefined)}
+      aria-valuetext={thumb.valueText ?? p.spoken ?? (p.display ? qty(thumb.value, p.display, { locale: p.locale }).spoken : undefined)}
       aria-label={[p.ariaLabel, thumb.label].filter(Boolean).join(' ') || undefined}
       className={cls}
       style={p.geometry.place(p.fraction)}

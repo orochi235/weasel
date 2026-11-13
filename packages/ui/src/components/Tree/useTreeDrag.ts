@@ -8,6 +8,7 @@ import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
 import type { TreeNode } from './Tree';
 import { modsOf } from '../../useReorderDragList';
 import { useOutsideDrop, type TreeDropHandle } from './useOutsideDrop';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 export const HOVER_EXPAND_MS = 600;
 /** How far the ghost's corner sits from the pointer, so what is under the pointer stays visible. */
@@ -141,7 +142,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
   const onPointerDown = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
     const { enabled, container } = o.current;
     const box = container();
-    if (!enabled || !box || drag.current || e.button !== 0) return;
+    if (!enabled || !box || drag.current || !isPrimaryPress(e)) return;
     if (o.current.visible.find((v) => v.node.id === id)?.node.disabled) return;
     if ((e.target as Element).closest('[data-tree-twisty]')) return;
     if (isInControlWithin(e.target, e.currentTarget)) return;

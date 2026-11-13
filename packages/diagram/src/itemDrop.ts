@@ -21,6 +21,7 @@ import {
   type OngoingOverlay,
   type RectPose,
   type Scene,
+  isPrimaryPress,
 } from '@weasel-js/core';
 import { useMemo, type PointerEvent as ReactPointerEvent } from 'react';
 import type { DiagramSceneData } from './dataTypes';
@@ -54,7 +55,7 @@ export function startItemDrag(down: PointerEvent | ReactPointerEvent, item: unkn
 export function dragItemProps(item: unknown, cb?: CarryCallbacks): { onPointerDown: (e: ReactPointerEvent) => void } {
   return {
     onPointerDown: (e) => {
-      if (e.button !== 0) return;
+      if (!isPrimaryPress(e)) return;
       e.preventDefault();
       startItemDrag(e, item, cb);
     },

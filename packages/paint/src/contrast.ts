@@ -1,4 +1,4 @@
-import { parseColor } from './color';
+import { tryParseColor } from './color';
 import { oklabToSrgbU8, srgbToLinear, srgbU8ToOklab } from './colorSpaces';
 import { byteHex, parseHexBytes } from './hex';
 
@@ -35,17 +35,12 @@ export function luminanceContrast(a: number, b: number): number {
  * The WCAG 2.x contrast ratio of `foreground` text on `background`: 1 for two
  * equal colors up to 21 for black on white, whichever is the lighter. A
  * translucent foreground is laid over the background first; the background's
- * own alpha is ignored. `null` for a color {@link parseColor} cannot read.
+ * own alpha is ignored. `null` for a color `parseColor` cannot read.
  */
 export function contrastRatio(foreground: string, background: string): number | null {
-  let fg: [number, number, number, number];
-  let bg: [number, number, number, number];
-  try {
-    fg = parseColor(foreground);
-    bg = parseColor(background);
-  } catch {
-    return null;
-  }
+  const fg = tryParseColor(foreground);
+  const bg = tryParseColor(background);
+  if (!fg || !bg) return null;
   const a = fg[3];
   const lf = relativeLuminance(a * fg[0] + (1 - a) * bg[0], a * fg[1] + (1 - a) * bg[1], a * fg[2] + (1 - a) * bg[2]);
   return luminanceContrast(lf, relativeLuminance(bg[0], bg[1], bg[2]));

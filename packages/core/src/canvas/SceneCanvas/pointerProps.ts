@@ -1,11 +1,12 @@
 import type { EnteredGroupApi } from '../deps/enteredGroup';
 import type { SceneCanvasTextEditor } from './defaultTextEditor';
 
-/** Minimal hit descriptor passed to `onDoubleClick`. Contains the fields
- *  modality dispatch needs; extends as the kit's `Hit` type evolves. */
+/** The node a click or double-click landed on, as `onClick` and `onDoubleClick` report it. */
 export interface SceneCanvasHit {
   id: string;
   kind: string;
+  /** The world point the node was picked at: where the click was released. */
+  world: { x: number; y: number };
 }
 
 /** `<SceneCanvas>`'s props for what the pointer can reach and what a click names. */

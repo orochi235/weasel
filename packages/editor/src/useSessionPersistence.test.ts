@@ -51,4 +51,16 @@ describe('useSessionPersistence', () => {
       unmount();
     }
   });
+
+  it('drops a saved undo stack beside a scene its load kept aside as unreadable', () => {
+    const saved = JSON.stringify({ version: 3, systemLayers: [{ id: 'main' }], nodes: [] });
+    localStorage.setItem('test:scene', saved);
+    localStorage.setItem('test:scene:unreadable', saved);
+    localStorage.setItem('test:history', '{"version":1}');
+    const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+    const restore = vi.spyOn(scene, 'restoreHistory');
+    renderHook(() => useSessionPersistence(scene, { sceneKey: 'test:scene', historyKey: 'test:history' }));
+    expect(restore).not.toHaveBeenCalled();
+    expect(localStorage.getItem('test:history')).toBeNull();
+  });
 });

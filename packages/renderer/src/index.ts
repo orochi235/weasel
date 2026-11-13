@@ -118,6 +118,7 @@ export {
   getImageBitmap,
   holdImageBitmaps,
   isBitmapSrc,
+  imageLoadsSettled,
   imagePending,
   imageStatus,
   isVectorImageSrc,

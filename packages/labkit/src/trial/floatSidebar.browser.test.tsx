@@ -6,7 +6,7 @@ import { cleanup } from '@testing-library/react';
 import { defineInstrument, f, Lab } from '@weasel-js/labkit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, expect, test } from 'vitest';
-import { userEvent } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 
 // Whether the panel takes no width from the body, and lies over it, is layout: only a browser can say.
 
@@ -19,7 +19,9 @@ const Gridded = defineInstrument({
   render: () => <div data-testid="output" />,
 });
 
-test('a floating sidebar leaves the body its whole box, open or closed, and floats over it', async () => {
+test('a floating sidebar leaves the body its whole box, open or closed, and floats over it centered on its toggle', async () => {
+  // Wider than the frame, or the toggle sits past vitest's default viewport and the panel is shifted back onto it.
+  await page.viewport(1024, 768);
   const { container, getByRole, queryByRole } = renderWithIcons(
     <div className="lk-present-frame">
       <Lab instruments={[Gridded]} defaultInstrument="Gridded" sidebar="float" />
@@ -39,8 +41,9 @@ test('a floating sidebar leaves the body its whole box, open or closed, and floa
   expect(open).toEqual(closed);
   const panel = dialog.getBoundingClientRect();
   expect(panel.top).toBeGreaterThanOrEqual(box('.lk-trial__titlebar').bottom - 1);
-  expect(panel.right).toBeLessThanOrEqual(open.right + 1);
-  expect(panel.left).toBeGreaterThanOrEqual(open.left);
+  const button = toggle.getBoundingClientRect();
+  // Centered under the press, not hung from one end of the button.
+  expect(Math.abs(panel.left + panel.width / 2 - (button.left + button.width / 2))).toBeLessThan(1);
 
   await userEvent.keyboard('{Escape}');
   await expect.poll(() => queryByRole('dialog')).toBeNull();

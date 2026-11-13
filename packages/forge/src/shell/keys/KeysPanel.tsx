@@ -1,7 +1,8 @@
 import './keys.css';
 import { useLabEntries, type LabContribution } from '@weasel-js/labkit';
-import { useActionsRegistry } from '@weasel-js/core';
-import { useEffect, useMemo, useReducer } from 'react';
+import { type ActionsRegistry, useActionsRegistry } from '@weasel-js/core';
+import { useRegisteredActions } from '@weasel-js/ui/components/Prefs';
+import { useMemo, useSyncExternalStore } from 'react';
 import { type KeyRow, keymapDefs, keyRows } from './keyRows';
 
 export { describeBinding } from './keyRows';
@@ -10,15 +11,13 @@ export { describeBinding } from './keyRows';
 export function useKeyRows(): readonly KeyRow[] {
   const registry = useActionsRegistry();
   const entries = useLabEntries();
-  const [version, bump] = useReducer((n: number) => n + 1, 0);
-  useEffect(() => registry?.subscribe(bump), [registry]);
-  return useMemo(
-    () => (registry ? keyRows(registry.list(), keymapDefs(entries), registry.bindingOverrides()) : []),
-    // `version` is the registry's change signal: `list()` has no identity to key on.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [registry, entries, version],
-  );
+  const actions = useRegisteredActions();
+  const overrides = useSyncExternalStore(registry?.subscribe ?? noSubscribe, () => overridesOf(registry));
+  return useMemo(() => keyRows(actions, keymapDefs(entries), overrides), [actions, entries, overrides]);
 }
+
+const noSubscribe = (): (() => void) => () => {};
+const overridesOf = (registry: ActionsRegistry | null) => registry?.bindingOverrides();
 
 function KeysPanel() {
   const rows = useKeyRows();

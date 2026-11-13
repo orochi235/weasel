@@ -3,23 +3,23 @@ import {
   CanvasView,
   PointerContextProvider,
   SceneCanvas,
+  solid,
   usePointerPosition,
   useScene,
   useSelection,
 } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { View } from '@weasel-js/core';
+import type { Fill, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './CanvasViewDemo.module.css';
 import { DemoStage } from './DemoStage';
 
-interface NodeData { color: string }
+interface NodeData { fill: Fill }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 400;
 
-const COLORS: NodeData['color'][] = ['#7fb069', '#a48bd4', '#f0e0a8', '#e07a7a', '#5fb0c2'];
+const COLORS = ['#7fb069', '#a48bd4', '#f0e0a8', '#e07a7a', '#5fb0c2'];
 export function makeRandomScene() {
   const items = [];
   for (let i = 0; i < 12; i++) {
@@ -33,7 +33,7 @@ export function makeRandomScene() {
         width: 60 + Math.random() * 60,
         height: 60 + Math.random() * 60,
       },
-      data: { color: COLORS[i % COLORS.length] },
+      data: { fill: { paint: solid(COLORS[i % COLORS.length]) } },
     });
   }
   return items;
@@ -100,15 +100,6 @@ export function CanvasViewDemo() {
             selection={selection}
             view={view}
             onViewChange={setView}
-            layers={{
-              scene: {
-                drawOne: (n, p): DrawCommand[] => [{
-                  kind: 'path',
-                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { paint: { color: n.data.color } },
-                }],
-              },
-            }}
           >
             {/* A second camera on the same scene. Input inside it routes
                 through that camera: a click picks what it shows, a drag moves

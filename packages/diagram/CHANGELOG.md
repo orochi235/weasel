@@ -1,5 +1,168 @@
 # @weasel-js/diagram
 
+## 1.19.1
+
+### Minor Changes
+
+- 4916272: `reorderPreset` and `groupReorderPreset` install a reorder that works beside the `move` feature.
+  
+  Pass one in `features` rather than `ambient`: its drag is tried ahead of the move's on the same press, and hands off to the move once it leaves `region`.
+  
+  ```tsx
+  <SceneCanvas features={['pick', 'move', reorderPreset({ slots, region, commit })]} />
+  ```
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- d74dbb8: A diagram frees a swapped-out picture once its replacement fails to load, rather than holding it decoded while the failure is drawn.
+  
+  <!-- entry: fix -->
+- 413ee4c: `<DiagramView>` turns its keyboard shortcuts on for `onDelete` even with `pickEdges={false}`, and no longer for `pickEdges` alone.
+  
+  <!-- entry: fix -->
+- 1ba8505: A node whose outline is registered, or unregistered, after the node was first drawn is painted and picked by its new outline.
+  
+  <!-- entry: fix -->
+- 3d476d8: A `registerOutline` disposer removes only its own registration, even when run twice or when one definition is registered twice.
+  
+  <!-- entry: fix -->
+- 4916272: `DiagramView` with `onReorder` and `onMove` reorders a container member dragged within its container, and moves it once dragged out.
+  
+  <!-- entry: rank=5 fix -->
+- d66e6e4: `DiagramView` gives a shape resize handles only with `onResize`, and a container or pool only with `onEditContainer`.
+  
+  <!-- entry: fix -->
+- 95d4dc0: `<DiagramView selected>` selects a node that arrives in the same render as the prop naming it, such as a stage just added from a palette.
+  
+  <!-- entry: fix -->
+- 9496bb6: `DiagramView` and the effect editor no longer free the images and preview textures they still draw when React StrictMode remounts them.
+  
+  <!-- entry: fix perf -->
+- ce1f1a7: A pen's eraser end presses, drags and draws on a canvas and on kit controls as its tip does; its barrel button is a secondary press.
+  
+  `isPrimaryPress(e)` and `pressButtonOf(e)` are new, exported from `@weasel-js/gestures` (and `isPrimaryPress` from `@weasel-js/routing` and `@weasel-js/core`): the one answer to which button a pointer press was made with.
+  
+  <!-- entry: fix api -->
+- c65c8dd: A sequence drag's custom `commit` receives the deps its drag started with, `applyOps` included, when the dispatcher drives it.
+  
+  <!-- entry: fix -->
+- Updated dependencies [e17dbd6]
+- Updated dependencies [c91c39c]
+- Updated dependencies [d65a34b]
+- Updated dependencies [5159b4f]
+- Updated dependencies [c93b396]
+- Updated dependencies [c9adfef]
+- Updated dependencies [687501a]
+- Updated dependencies [3e8a149]
+- Updated dependencies [b1fdbf3]
+- Updated dependencies [687501a]
+- Updated dependencies [de8f829]
+- Updated dependencies [e8de9c3]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [2bb5cde]
+- Updated dependencies [1f42c0c]
+- Updated dependencies [34e40b2]
+- Updated dependencies [d9a7171]
+- Updated dependencies [f0ef9ba]
+- Updated dependencies [9b03a7b]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [a2627b8]
+- Updated dependencies [2a32658]
+- Updated dependencies [dbbca9f]
+- Updated dependencies [3cd42d9]
+- Updated dependencies [913a468]
+- Updated dependencies [eb6276d]
+- Updated dependencies [34dfc04]
+- Updated dependencies [ef4ff01]
+- Updated dependencies [5e0f965]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [7f2951f]
+- Updated dependencies [a760b7b]
+- Updated dependencies [d11f1df]
+- Updated dependencies [baa3137]
+- Updated dependencies [c12b7a7]
+- Updated dependencies [1ba8505]
+- Updated dependencies [500c153]
+- Updated dependencies [661582d]
+- Updated dependencies [5b509a7]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [73bdfc7]
+- Updated dependencies [b39b992]
+- Updated dependencies [b39b992]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [59a1c5f]
+- Updated dependencies [5c1d019]
+- Updated dependencies [f0946c4]
+- Updated dependencies [1f55652]
+- Updated dependencies [d3a8b36]
+- Updated dependencies [635431c]
+- Updated dependencies [60d4ba5]
+- Updated dependencies [f6a2555]
+- Updated dependencies [9a0d9d1]
+- Updated dependencies [e45b7e4]
+- Updated dependencies [9bd6635]
+- Updated dependencies [2a03672]
+- Updated dependencies [7036750]
+- Updated dependencies [08dd689]
+- Updated dependencies [58298fa]
+- Updated dependencies [97be45c]
+- Updated dependencies [71c3f85]
+- Updated dependencies [7e954c5]
+- Updated dependencies [5159b4f]
+- Updated dependencies [8cd600b]
+- Updated dependencies [57c0cf0]
+- Updated dependencies [f58d2be]
+- Updated dependencies [216d193]
+- Updated dependencies [e20a471]
+- Updated dependencies [b62d643]
+- Updated dependencies [36b51a0]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [e0e1f22]
+- Updated dependencies [039b7ad]
+- Updated dependencies [d254251]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [0cbbb94]
+- Updated dependencies [8562ebe]
+- Updated dependencies [6d1a52e]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [5461e84]
+- Updated dependencies [5c64825]
+- Updated dependencies [8941d77]
+- Updated dependencies [f611d11]
+- Updated dependencies [e6959cc]
+- Updated dependencies [59485d4]
+- Updated dependencies [141697f]
+- Updated dependencies [28404b3]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [b4e8f97]
+- Updated dependencies [3fd5c6f]
+- Updated dependencies [250c105]
+- Updated dependencies [a09ed24]
+- Updated dependencies [8562ebe]
+- Updated dependencies [16900c1]
+- Updated dependencies [2c3416d]
+- Updated dependencies [98243b2]
+- Updated dependencies [184acd6]
+  - @weasel-js/animator@1.19.1
+  - @weasel-js/core@1.19.1
+  - @weasel-js/ui-input@1.19.1
+  - @weasel-js/quantity@1.19.1
+  - @weasel-js/font@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/react@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/simulation@1.19.1
+  - @weasel-js/clock@1.19.1
+  - @weasel-js/icons@1.19.1
+  - @weasel-js/audio@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

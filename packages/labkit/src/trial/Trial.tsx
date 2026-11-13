@@ -19,7 +19,6 @@ import { withDragFeedback } from '../dragdrop/feedbackLayer';
 import { Palette } from '../dragdrop/Palette';
 import type { Instrument, InstrumentList, PaletteItem, RenderContext } from '../instrument/types';
 import { undoCapability } from '../instrument/undo';
-import { useJob } from '../job/useJob';
 import { useLabCommands } from '../lab/LabContext';
 import { PresentedTransport } from '../lab/PresentedTransport';
 import { LabStoreContext, TrialIdProvider } from '../state/context';
@@ -35,6 +34,7 @@ import { TrialHistoryContext, useHistoryVersion, useMountedHistory } from './tri
 import { useKeptMarks } from './useKeptMarks';
 import { TrialOrbitProvider } from './useOrbitView';
 import { useTrialCamera } from './useTrialCamera';
+import { useTrialJob } from './useTrialJob';
 import { useTrialLayers } from './useTrialLayers';
 import { useTrialMarks } from './useTrialMarks';
 import { useTrialUndo } from './useTrialUndo';
@@ -142,14 +142,6 @@ function TrialRuntime({
   });
 
   const { mount: mountHistory, ...mounted } = useMountedHistory();
-  const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
-    store,
-    trialId: record.id,
-    instrument,
-    schema,
-    mounted,
-  });
-
   const setView = (v: unknown): void => updateTrialView(record.id, v);
 
   const cam = useTrialCamera({
@@ -173,6 +165,14 @@ function TrialRuntime({
     keptMarks,
     save: updateTrialAnnotations,
   });
+  const { snapshot: snapshotIfNeeded, ...writes } = useTrialWrites({
+    store,
+    trialId: record.id,
+    instrument,
+    schema,
+    mounted,
+    marks: annotationsCap ? annotations : null,
+  });
 
   // A trial gets its own slot when its instrument declares tools; otherwise it
   // reads the lab's. Which slot a change writes follows from the same thing.
@@ -189,14 +189,12 @@ function TrialRuntime({
     else setLabTool(id);
   };
 
-  const jobCap = instrument.job;
-  // Hooks cannot be conditional, so a trial without the capability still calls
-  // this — with a runner that yields nothing and is never started.
-  const job = useJob({
-    capability: jobCap ?? { run: async function* () {}, onItem: (_i, st) => st },
+  const job = useTrialJob({
+    store,
+    trialId,
+    capability: instrument.job,
     config,
     state: record.state,
-    setState: (next) => updateTrialState(record.id, next as never),
   });
 
   const renderCtx: RenderContext<unknown, unknown> = {
@@ -206,7 +204,7 @@ function TrialRuntime({
       snapshotIfNeeded('state.change');
       updateTrialState(record.id, next);
     },
-    setConfig,
+    setConfig: writes.setConfig,
     reportAuto,
     ...(over ? { over } : {}),
     trial: {
@@ -222,7 +220,7 @@ function TrialRuntime({
       ...(clockHandle ? { clock: clockHandle.clock } : {}),
     },
     emit: snapshotIfNeeded,
-    job: jobCap ? job : undefined,
+    job,
   };
 
   // Marks are undone through weasel history, not through labkit's snapshot
@@ -360,14 +358,14 @@ function TrialRuntime({
             <AnnotationsContext.Provider value={instrument.annotations ? provided : null}>
               <CameraWheelContext.Provider value={wheelSlot}>
                 <TrialChrome
-                  job={jobCap ? job : undefined}
+                  job={job}
                   loupe={loupeBindings}
                   trialId={record.id}
                   record={record}
                   instrument={instrument}
                   isLastTrial={isLast}
                   undoBindings={undoBindings}
-                  setConfig={setConfig}
+                  {...writes}
                   reported={reports}
                   trialChrome={extraChrome}
                   {...options}

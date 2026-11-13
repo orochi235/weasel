@@ -5,6 +5,9 @@ import { asNodeId } from './types';
 import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
 import { POSE, makeScene, type Data } from './testing/makeScene';
 import { specsFromSerialized } from './serialization';
+import { statedFields } from './statedFields';
+import { createPageRun } from '../pages/pageNodes';
+import { SnapshotKeyError, SnapshotShapeError } from './snapshotShape';
 import { PAGE_RUN, PAGE_RUN_LAYOUT } from '../pages/pageRunLayout';
 import { PAGE_CLIP, pageClip } from '../pages/pageClip';
 
@@ -195,6 +198,12 @@ describe('sceneFromJSON', () => {
   it('throws on unknown version', () => {
     const json = { version: 4, systemLayers: [{ id: 'structures' as const }], nodes: [] };
     expect(() => sceneFromJSON(json as never, {})).toThrow(/unsupported version/);
+    expect(() => sceneFromJSON(json as never, {})).toThrow(SnapshotShapeError);
+  });
+
+  it('refuses a later version for its version, before reading kinds it may name differently', () => {
+    const json = { version: 4, systemLayers: [{ id: 'structures' }], nodes: [{ id: 'a', kind: 'leaf', layer: 'structures', pose: POSE }] };
+    expect(() => sceneFromJSON(json as never, {})).toThrow(/unsupported version 4/);
   });
 
   it('throws on unknown clipFromPoseKey', () => {
@@ -211,6 +220,12 @@ describe('sceneFromJSON', () => {
       }],
     };
     expect(() => sceneFromJSON(json, { registry: {} })).toThrow(/unknown clipFromPose key 'nonexistent'/);
+    try {
+      sceneFromJSON(json, { registry: {} });
+    } catch (e) {
+      expect(e).toBeInstanceOf(SnapshotKeyError);
+      expect(e).toMatchObject({ id: 'bed', field: 'clipFromPose', key: 'nonexistent' });
+    }
   });
 
   it('takes no registry key from the registry object\'s prototype', () => {
@@ -389,5 +404,23 @@ describe('user layers survive a round-trip', () => {
     });
     expect(scene.layers.map((l) => l.kind)).toEqual(['system', 'system']);
     expect(scene.layers[1].visible).toBe(false);
+  });
+});
+
+describe('a node\'s stated fields through a snapshot', () => {
+  it('come back as statedFields reads them, each one a copy carries', () => {
+    const scene = createScene<Data, 'structures'>({ systemLayers: [{ id: 'structures' }] });
+    createPageRun(scene, [{ id: 'p', width: 100, height: 100 }]);
+    const g = scene.add({
+      kind: 'group', layer: 'structures', parent: asNodeId('p'), pose: POSE, data: { label: 'g' },
+      pickable: false, hidden: true, clip: 'outline', consumesChildren: true,
+      units: { system: { base: 'mm', units: { mm: 1 } }, scale: 1 },
+    });
+    scene.setLocked(g, true);
+    const reloaded = sceneFromJSON(JSON.parse(JSON.stringify(scene.toJSON())) as never);
+    for (const id of scene.toJSON().nodes.map((n) => n.id as NodeId)) {
+      expect(statedFields(reloaded.get(id)!), id).toEqual(statedFields(scene.get(id)!));
+    }
+    expect(Object.keys(statedFields(scene.get(g)!)).sort()).toEqual(['clip', 'consumesChildren', 'hidden', 'locked', 'pickable', 'units']);
   });
 });

@@ -3,6 +3,7 @@ import { createScene } from '../../core/scene/scene';
 import { asNodeId, type RectPose, type Scene } from '../../core/scene/types';
 import { createFrameWriter } from './frameWriter';
 import { createSceneMirror } from './sceneMirror';
+import type { LayoutStrategy } from '../../layout/types';
 
 type D = { fill?: string };
 type AnyScene = Scene<unknown, string, unknown>;
@@ -42,6 +43,32 @@ describe('frameWriter', () => {
     expect(sync().scene).toHaveProperty('reset');
     expect(copy().scroll.get(id('g'))).toEqual({ x: 5, y: -2 });
     expect(copy().overrides.read(id('a'))?.pose).toEqual({ x: 40, y: 0, width: 10, height: 10 });
+  });
+
+  it('keeps a container scrolled through a layout change, which the worker\'s copy makes by putting the node back', () => {
+    const strategy = (): LayoutStrategy<RectPose> => ({
+      snap: { pickTarget: () => null }, childPoses: () => new Map(), getDropTargets: () => [],
+      reflowPoses: () => new Map(), commitDrop: () => [],
+    });
+    const registry = { layout: { first: strategy(), second: strategy() } };
+    const page = createScene<D, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry,
+      initial: [{ id: id('g'), kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {}, layout: registry.layout.first }],
+    });
+    const writer = createFrameWriter();
+    const mirror = createSceneMirror({ registry });
+    const sync = () => {
+      const msg = structuredClone(writer.write({ scene: page as unknown as AnyScene, view: VIEW, width: 10, height: 10, dpr: 1 }));
+      if (msg.scene) mirror.apply(msg.scene);
+      if (msg.scroll) mirror.setScroll(msg.scroll);
+    };
+    sync();
+    page.scroll.set(id('g'), { x: 0, y: 30 });
+    sync();
+    page.setLayout(id('g'), 'second');
+    sync();
+    expect(mirror.scene!.scroll.get(id('g'))).toEqual({ x: 0, y: 30 });
   });
 
   it('shows a write to stored data through an override that shows data', () => {

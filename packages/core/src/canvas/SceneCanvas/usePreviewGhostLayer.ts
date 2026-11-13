@@ -28,6 +28,7 @@ import { copiesAbove } from '../copiesAbove';
 import { scenePaintedPoseOf } from '../derivedPath';
 import { inheritedPaintOf, inheritsPaint, sceneAncestors } from 'core/scene/inheritedPaint';
 import { withShownData } from 'core/scene/nodeAsShown';
+import { pixelScaleCtx } from '../pixelScale';
 
 const GHOST_ALPHA = 0.85;
 
@@ -61,7 +62,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
   return useMemo<RenderLayer<unknown>>(() => ({
     id: 'preview-ghost',
     label: 'Preview ghost',
-    draw: (data, view) => {
+    draw: (data, view, dims) => {
       const slot = sceneSlotRef.current;
       if (!slot || isCustomEntry(slot) || !slot.drawOne) return [];
       const drawOne = slot.drawOne;
@@ -91,8 +92,10 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       ): DrawCommand[] => {
         const effNode = entry.data === entry.node.data ? entry.node : withShownData(entry.node, entry.data);
         const plane = mapOf(entry.node.layer);
-        const ctx = inheritsPaint(effNode) ? { inherited: inheritedPaintOf(effNode, above()) } : undefined;
-        const self = drawOne(effNode, entry.pose, viewOf(entry.node.layer), ctx);
+        const v = viewOf(entry.node.layer);
+        const scaled = pixelScaleCtx(v, dims.dpr);
+        const ctx = inheritsPaint(effNode) ? { ...scaled, inherited: inheritedPaintOf(effNode, above()) } : scaled;
+        const self = drawOne(effNode, entry.pose, v, ctx);
         const kids: DrawCommand[] = [];
         for (const child of entry.children) {
           for (const cmd of drawEntry(child, plane, () => [effNode, ...above()])) kids.push(cmd);
@@ -130,7 +133,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
       const out: DrawCommand[] = [];
       if (settled.length > 0) out.push({ kind: 'group', children: settled });
-      if (ghosted.length > 0) out.push({ kind: 'group', alpha: GHOST_ALPHA, children: ghosted });
+      if (ghosted.length > 0) out.push({ kind: 'group', alpha: slot.ghostAlpha ?? GHOST_ALPHA, children: ghosted });
       return out;
     },
   }), [sceneRef, sceneSlotRef]);

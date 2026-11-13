@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { focusedControlOwnsKey, isEditableTarget } from './keyOwner';
+import { focusedControlOwnsKey, isEditableTarget, textOwnsChord } from './keyOwner';
 
 function el(html: string): Element {
   const host = document.createElement('div');
@@ -81,5 +81,19 @@ describe('focusedControlOwnsKey', () => {
     expect(focusedControlOwnsKey(keyOn(select(), 'Escape'))).toBe(false);
     expect(focusedControlOwnsKey(keyOn(select(), 'z', { metaKey: true }))).toBe(false);
     expect(focusedControlOwnsKey(keyOn(select(), 'z', { ctrlKey: true }))).toBe(false);
+  });
+});
+
+describe('textOwnsChord', () => {
+  const k = { ctrlKey: false, metaKey: false };
+  it('gives a Mac its Ctrl chords, Cmd held or not deciding', () => {
+    expect(textOwnsChord({ ...k, ctrlKey: true }, true)).toBe(true);
+    expect(textOwnsChord({ ctrlKey: true, metaKey: true }, true)).toBe(false);
+    expect(textOwnsChord({ ...k, metaKey: true }, true)).toBe(false);
+    expect(textOwnsChord(k, true)).toBe(false);
+  });
+
+  it('gives the text no chord off a Mac, where Ctrl is mod', () => {
+    expect(textOwnsChord({ ...k, ctrlKey: true }, false)).toBe(false);
   });
 });

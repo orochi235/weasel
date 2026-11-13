@@ -190,4 +190,16 @@ describe('Scene — selection', () => {
     expect(scene.layers.find((l) => l.id === 'art')!.locked).toBe(false);
     expect(scene.getSelection()).toEqual([free, art]);
   });
+
+  it('moving a node onto a hidden layer drops it from the selection; undo puts it back', () => {
+    const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'base' }, { id: 'art' }] });
+    const free = scene.add({ kind: 'mark', layer: 'base', pose: POSE, data: { label: 'f' } });
+    const moved = scene.add({ kind: 'mark', layer: 'base', pose: POSE, data: { label: 'm' } });
+    scene.setLayerVisible('art', false);
+    scene.setSelection([free, moved]);
+    scene.setLayer(moved, 'art');
+    expect(scene.getSelection()).toEqual([free]);
+    scene.undo();
+    expect(scene.getSelection()).toEqual([free, moved]);
+  });
 });

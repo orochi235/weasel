@@ -243,7 +243,8 @@ sharing an id throw, as on a canvas:
   already moves on; an insert snaps the pointer on the ground plane.
 - The session still answers in ctx coordinates, which in a 3D host are screen points: it projects
   the snapped world position back, and `translate` and `createInsert` cast it onto the same plane,
-  so the round trip is exact and `InvocationCtx` stays 2D.
+  so `InvocationCtx` stays 2D. The round trip is exact only to rounding: a box snapped to a ground
+  grid line can store `0.4999999999999929` for `0.5`.
 - `boxSnapSource`, `alignPlaneSource` and `groundGridSource` are its sources, and
   `projectSnapMarks(marks, viewport)` turns the store's `Vec3` marks into screen lines and points
   for the host to draw.

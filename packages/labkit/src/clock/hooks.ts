@@ -1,5 +1,6 @@
 import { useLatest } from '@weasel-js/core';
-import { useContext, useEffect, useReducer, useSyncExternalStore } from 'react';
+import { useNotified } from '@weasel-js/react';
+import { useContext, useEffect, useSyncExternalStore } from 'react';
 import { useLabCommandsOptional } from '../lab/LabContext';
 import { ClockRegistryContext, PENDING_CLOCK, TrialClockContext } from './contexts';
 import type { ClockedMix, TrialClock, TrialClockHandle } from './trialClock';
@@ -15,8 +16,7 @@ const NO_SUBSCRIBE = () => () => {};
  */
 export function useTrialClock(trialId?: string | null): TrialClock | null {
   const clock = useTrialClockHandle(trialId)?.clock ?? null;
-  const [, bump] = useReducer((n: number) => n + 1, 0);
-  useEffect(() => clock?.subscribe(bump), [clock]);
+  useNotified(clock);
   return clock;
 }
 

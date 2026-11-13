@@ -12,7 +12,7 @@ function pagesShowing(index: number | null): DocPages {
   const placed = layoutPages([{ id: 'page-1', width: 816, height: 1056 }, { id: 'page-2', width: 794, height: 1123 }]);
   return {
     placed, current: null, shown: index === null ? null : placed[index]!,
-    goTo: vi.fn(), step: vi.fn(), add: vi.fn(), remove: vi.fn(), move: vi.fn(), rename: vi.fn(), resize: vi.fn(),
+    goTo: vi.fn(), step: vi.fn(), add: vi.fn(), remove: vi.fn(), removable: vi.fn(() => true as const), move: vi.fn(), rename: vi.fn(), resize: vi.fn(),
   };
 }
 
@@ -29,6 +29,16 @@ describe('useDocumentState', () => {
     expect(result.current.filename).toBe('poster.svg');
     act(() => { vi.advanceTimersByTime(300); });
     expect(JSON.parse(localStorage.getItem(DOC_KEY)!)).toEqual({ filename: 'poster.svg' });
+    vi.useRealTimers();
+  });
+
+  it('keeps the paper size and background an older drawing kept beside it, which the scene has yet to take in', () => {
+    vi.useFakeTimers();
+    localStorage.setItem(DOC_KEY, JSON.stringify({ filename: 'a.svg', paperSize: 'a4', backgroundColor: '#ff0000' }));
+    const { result } = renderHook(() => useDocumentState(drawScene(), pagesShowing(0), false));
+    act(() => result.current.setFilename('b.svg'));
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(JSON.parse(localStorage.getItem(DOC_KEY)!)).toEqual({ filename: 'b.svg', paperSize: 'a4', backgroundColor: '#ff0000' });
     vi.useRealTimers();
   });
 

@@ -1,3 +1,4 @@
+import { clientScaleOf } from '@weasel-js/core';
 import type { Point } from '../instrument/types';
 import type { ViewportSize } from './worldSpec';
 
@@ -15,18 +16,11 @@ export interface HostBox {
   scaleY: number;
 }
 
-// `offsetWidth` is rounded to a whole px, so an unscaled box would otherwise
-// read a fractional width as a scale a hair off 1.
-function scaleOf(client: number, layout: number): number {
-  return layout > 0 && Math.abs(client - layout) > 0.5 ? client / layout : 1;
-}
-
 /** `el`'s box, or `null` when there is no element. */
 export function hostBox(el: HTMLElement | null | undefined): HostBox | null {
   if (!el) return null;
   const r = el.getBoundingClientRect();
-  const scaleX = scaleOf(r.width, el.offsetWidth);
-  const scaleY = scaleOf(r.height, el.offsetHeight);
+  const { x: scaleX, y: scaleY } = clientScaleOf(el, r);
   return {
     left: r.left,
     top: r.top,
@@ -54,7 +48,11 @@ export function embedScale(win: Window | null | undefined): number {
     if (!el) break;
     // CSS zoom on the frame or above it already reaches the frame's devicePixelRatio; only a transform does not.
     const zoom = el.currentCSSZoom || 1;
-    scale *= scaleOf(el.getBoundingClientRect().width, (el as HTMLElement).offsetWidth * zoom);
+    const r = el.getBoundingClientRect();
+    scale *= clientScaleOf(
+      { getBoundingClientRect: () => r, offsetWidth: (el as HTMLElement).offsetWidth * zoom },
+      r,
+    ).x;
     w = el.ownerDocument.defaultView;
   }
   return scale;

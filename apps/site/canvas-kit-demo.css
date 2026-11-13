@@ -745,7 +745,7 @@ a:hover { text-decoration: underline; }
   font-size: calc(var(--wzl-font-size-sm) + 1px);
   color: var(--wzl-fg-muted);
 }
-.ckd-field:has(input:disabled) { opacity: 0.45; }
+.ckd-field:has(input:disabled) { opacity: 0.45; filter: var(--wzl-disabled-filter); }
 
 /* InlineRange fills its row, and these rows are sized by their content, so it takes a width here. */
 .ckd-field > input[type='range'],

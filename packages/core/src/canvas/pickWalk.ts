@@ -164,7 +164,6 @@ export function pickWalk<TPose>(
   q: PickQuery<TPose>,
 ): string[] {
   const includeGroups = q.includeGroups ?? true;
-  const isLocked = q.includeLocked === true ? undefined : src.isLocked;
   const out: string[] = [];
 
   // Resolving a container's clip is the expensive half, so the *path* is memoized per
@@ -232,13 +231,7 @@ export function pickWalk<TPose>(
   }) : null) ?? order;
   for (const node of visit) {
     if (!includeGroups && node.kind === 'group') continue;
-    // Transparent to picking: the click belongs to whatever is behind it,
-    // which for a label inside a box is the box.
-    if (node.pickable === false) continue;
-    if (src.isHidden?.(node) === true) continue;
-    if (node.layer !== undefined && src.layerIsPainted?.(node.layer) === false) continue;
-    if (src.alphaOf !== undefined && src.alphaOf(node.id) <= 0) continue;
-    if (isLocked !== undefined && isLocked(node)) continue;
+    if (!passesPickGates(src, node, q.includeLocked === true)) continue;
 
     const query = queryFor(node.layer);
     if (query === null) continue;
@@ -250,6 +243,25 @@ export function pickWalk<TPose>(
   }
 
   return out;
+}
+
+/**
+ * Gates 2 to 4 of the walk, and `pickable`: whether `src` puts `node` within a
+ * pointer's reach at all, before any shape test. A pick that reads what was
+ * painted rather than walking asks this of each node it finds.
+ */
+export function passesPickGates<TPose>(
+  src: PickSource<TPose>,
+  node: PickCandidate<TPose>,
+  includeLocked = false,
+): boolean {
+  // Transparent to picking: the click belongs to whatever is behind it,
+  // which for a label inside a box is the box.
+  if (node.pickable === false) return false;
+  if (src.isHidden?.(node) === true) return false;
+  if (node.layer !== undefined && src.layerIsPainted?.(node.layer) === false) return false;
+  if (src.alphaOf !== undefined && src.alphaOf(node.id) <= 0) return false;
+  return includeLocked || src.isLocked?.(node) !== true;
 }
 
 /**

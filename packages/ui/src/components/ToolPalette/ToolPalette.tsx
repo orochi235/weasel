@@ -187,7 +187,7 @@ export function ToolPalette(props: ToolPaletteProps) {
                   shortcut={shortcut}
                   active={tools.active === tool.id}
                   ariaDisabled={!enabled}
-                  className={[s.paletteBtn, !enabled && s.ineligibleBtn, carryTool?.(tool) != null && s.carrySource].filter(Boolean).join(' ')}
+                  className={[s.paletteBtn, !enabled && s.disabledBtn, carryTool?.(tool) != null && s.carrySource].filter(Boolean).join(' ')}
                   title={resolvedTitle}
                   onClick={enabled ? () => { if (!carry.carried()) tools.setActive(tool.id); } : () => {}}
                   onPointerDown={carryTool && enabled ? (e) => carry.press(tool, e) : undefined}

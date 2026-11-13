@@ -4,7 +4,8 @@
  * about a new kind of shape goes through this registry rather than by overriding `drawOne`.
  *
  * The first entry whose `matches` predicate returns true paints the node: `'high'` entries
- * first, then the built-ins, then `'normal'` ones, in registration order within a tier. Every
+ * first, then the built-ins, then `'normal'` ones, in registration order within a tier, and
+ * last `kit:rect-fallback`, which takes any rect-posed node nothing else claimed. Every
  * built-in but `kit:derived` additionally requires a rect-shaped pose — a scene whose poses are
  * some other shape matches none of them, and paints through a consumer painter or not at all.
  */
@@ -12,6 +13,7 @@ import { glyphGeneration } from '@weasel-js/font';
 import { textEngineGeneration } from '@weasel-js/text';
 import { pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
 import { strokeTrimKey, type StrokeTrim } from '@weasel-js/paint';
+import { createEmitter } from '@weasel-js/registry';
 import { bumpNodeMemoGeneration, nodeMemo } from 'core/scene/nodeMemo';
 import { setDepOutlineReader } from 'core/scene/booleanOfChildren';
 import type { Node } from 'core/scene/types';
@@ -39,14 +41,33 @@ export const DEFAULT_INK: Readonly<NodeInk> = Object.freeze({ filled: true, outs
 /** Options for `registerNodeShape`. */
 export interface RegisterNodeShapeOptions {
   /** `'high'` puts the painter ahead of all normally-registered ones (so
-   *  it can win over a kit built-in). `'normal'` appends at the end. */
+   *  it can win over a kit built-in). `'normal'`, the default, appends after
+   *  the built-ins that claim a node by its data, ahead of the rect fallback. */
   priority?: 'high' | 'normal';
 }
 
-const PAINTERS: { high: NodeShapeEntry[]; normal: NodeShapeEntry[] } = {
+/** One registration. A painter registered twice is two of these, so each disposer takes out its own. */
+interface Registration { readonly entry: NodeShapeEntry }
+
+const PAINTERS: { high: Registration[]; normal: Registration[]; fallback: Registration[] } = {
   high: [],
   normal: [],
+  fallback: [],
 };
+
+const changes = createEmitter();
+
+/** The painter set is ambient state `findNodeShape` reads, and a memo keyed on the node alone cannot see it
+ *  change; neither can a canvas that already painted. See `nodeMemo`. */
+function shapesChanged(): void {
+  bumpNodeMemoGeneration();
+  changes.emit();
+}
+
+/** Hear every registration, release and {@link refreshNodeShapes}: what a mounted canvas repaints on. */
+export function subscribeNodeShapes(listener: () => void): () => void {
+  return changes.subscribe(listener);
+}
 
 // The built-ins go in on first use, not at module load: a bundler may drop an
 // import kept only for its side effect, and the registry would come up empty.
@@ -57,22 +78,31 @@ function ensureBuiltIns(): void {
   registerBuiltInShapePainters();
 }
 
-/** Register a shape painter. Returns a disposer that removes it. */
+/** Register a shape painter. Returns a disposer that removes this registration, and only it. */
 export function registerNodeShape<TData, TPose>(
   painter: NodeShapeEntry<TData, TPose>,
   opts: RegisterNodeShapeOptions = {},
 ): () => void {
   ensureBuiltIns();
   const list = opts.priority === 'high' ? PAINTERS.high : PAINTERS.normal;
-  list.push(painter as NodeShapeEntry);
-  // The painter set is exactly the ambient state `findNodeShape` reads, and a
-  // memo keyed on the node alone cannot see it change. See `nodeMemo`.
-  bumpNodeMemoGeneration();
+  const registration: Registration = { entry: painter as NodeShapeEntry };
+  list.push(registration);
+  shapesChanged();
   return () => {
-    const i = list.indexOf(painter as NodeShapeEntry);
-    if (i >= 0) list.splice(i, 1);
-    bumpNodeMemoGeneration();
+    const i = list.indexOf(registration);
+    if (i < 0) return;
+    list.splice(i, 1);
+    shapesChanged();
   };
+}
+
+/**
+ * Tell the kit that something a registered painter reads besides the node has changed — a
+ * table of named outlines, say — so every node's painter, silhouette and ink are read again,
+ * and every mounted canvas repaints.
+ */
+export function refreshNodeShapes(): void {
+  shapesChanged();
 }
 
 /**
@@ -113,14 +143,11 @@ function matchNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
 ): NodeShapeEntry<TData, TPose> | undefined {
   ensureBuiltIns();
-  for (const p of PAINTERS.high) {
-    if (p.matches(node as Node<unknown, string, unknown>)) {
-      return p as NodeShapeEntry<TData, TPose>;
-    }
-  }
-  for (const p of PAINTERS.normal) {
-    if (p.matches(node as Node<unknown, string, unknown>)) {
-      return p as NodeShapeEntry<TData, TPose>;
+  for (const tier of [PAINTERS.high, PAINTERS.normal, PAINTERS.fallback]) {
+    for (const { entry } of tier) {
+      if (entry.matches(node as Node<unknown, string, unknown>)) {
+        return entry as NodeShapeEntry<TData, TPose>;
+      }
     }
   }
   return undefined;
@@ -259,20 +286,21 @@ function trimmedOutlineOf<TData, TPose>(
   return derivedPath != null ? build() : nodeMemo(node as { data?: unknown }, TRIM_PICK_SLOT, pose, build, strokeTrimKey(trim));
 }
 
-/** The current painters in evaluation order — `'high'` tier first, then `'normal'`. */
+/** The current painters in evaluation order — `'high'` tier first, then `'normal'`, then the rect fallback. */
 export function getNodeShapes(): readonly NodeShapeEntry[] {
   ensureBuiltIns();
-  return [...PAINTERS.high, ...PAINTERS.normal];
+  return [...PAINTERS.high, ...PAINTERS.normal, ...PAINTERS.fallback].map((r) => r.entry);
 }
 
 /** Test-only: clear the registry and re-register the built-ins. */
 export function _resetShapePaintersForTests(): void {
   PAINTERS.high.length = 0;
   PAINTERS.normal.length = 0;
+  PAINTERS.fallback.length = 0;
   builtInsRegistered = false;
   ensureBuiltIns();
-  // `registerNodeShape` already bumps, but the clearing above happens without one.
-  bumpNodeMemoGeneration();
+  // `registerNodeShape` already announces, but the clearing above happens without one.
+  shapesChanged();
 }
 
 function registerBuiltInShapePainters(): void {
@@ -285,5 +313,5 @@ function registerBuiltInShapePainters(): void {
   registerNodeShape(PATH_PAINTER);
   registerNodeShape(SHAPE_PAINTER);
   registerNodeShape(IMAGE_PAINTER);
-  registerNodeShape(RECT_FALLBACK_PAINTER);
+  PAINTERS.fallback.push({ entry: RECT_FALLBACK_PAINTER as NodeShapeEntry });
 }

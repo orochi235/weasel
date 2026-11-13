@@ -48,6 +48,9 @@ export interface PrefRenderContext {
   /** Which live controls write only the value an edit settles on, as the form's kit settings have it. Absent, the
    *  form's defaults. */
   settles?: Readonly<Record<LiveControl, boolean>>;
+  /** How long live text waits for the next keystroke before it is written, in ms, as the form's kit settings have
+   *  it. Absent, every keystroke. */
+  textWaitMs?: number;
   /** What is wrong with the value, where the surface has a message for this leaf. A renderer drawing its own
    *  `<PropertyRow>` hands it to the row's `error`. */
   error?: ReactNode;

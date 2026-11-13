@@ -159,14 +159,14 @@ describe('startSceneRenderWorker, the worker animator', () => {
   it('posts an image answer the page has at once, and stops a pending one on dispose', () => {
     const { client, posted, answer } = start();
     vi.mocked(answerImage).mockImplementationOnce((req, reply) => {
-      reply({ type: 'image', src: req.src, error: 'gone' });
+      reply({ type: 'image', id: req.id, src: req.src, error: 'gone' });
       return () => {};
     });
-    answer({ type: 'image', src: 'a.svg' });
-    expect(posted.at(-1)).toEqual({ type: 'image', src: 'a.svg', error: 'gone' });
+    answer({ type: 'image', id: 1, src: 'a.svg' });
+    expect(posted.at(-1)).toEqual({ type: 'image', id: 1, src: 'a.svg', error: 'gone' });
     const stop = vi.fn();
     vi.mocked(answerImage).mockImplementationOnce(() => stop);
-    answer({ type: 'image', src: 'b.svg' });
+    answer({ type: 'image', id: 2, src: 'b.svg' });
     client.dispose();
     expect(stop).toHaveBeenCalledTimes(1);
   });
@@ -177,7 +177,7 @@ describe('startSceneRenderWorker, the worker animator', () => {
     client.subscribe(due);
     client.dispose();
     vi.mocked(answerImage).mockClear();
-    answer({ type: 'image', src: 'late.svg' });
+    answer({ type: 'image', id: 1, src: 'late.svg' });
     answer({ type: 'dirty' });
     client.animator.play('fade').cancel();
     expect(answerImage).not.toHaveBeenCalled();
@@ -211,6 +211,17 @@ describe('startSceneRenderWorker, the worker animator', () => {
     scene.update(asNodeId('a'), { data: {} });
     client.sync();
     expect(frames(posted)[0]).toMatchObject({ scene: { reset: expect.anything() }, view: VIEW, extraCommands: [] });
+    warn.mockRestore();
+  });
+
+  it('warns once for each different failure the worker reports, not once for its life', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { answer } = start();
+    answer({ type: 'error', message: 'no animation registered as "a"' });
+    answer({ type: 'error', message: 'no animation registered as "a"' });
+    answer({ type: 'error', message: 'no animation registered as "b"' });
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenLastCalledWith(expect.any(String), 'no animation registered as "b"');
     warn.mockRestore();
   });
 });

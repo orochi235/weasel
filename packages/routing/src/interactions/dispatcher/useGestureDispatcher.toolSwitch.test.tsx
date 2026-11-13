@@ -5,7 +5,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import {
   ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue,
@@ -22,6 +22,7 @@ beforeAll(() => {
 });
 
 function mount(opts: { enabled?: boolean } = {}) {
+  let setEntries!: (next: ReadonlyMap<string, Contribution<unknown>>) => void;
   const log: string[] = [];
   const redraw = vi.fn();
   const tool = (id: string): Tool<unknown> => ({
@@ -51,13 +52,15 @@ function mount(opts: { enabled?: boolean } = {}) {
   };
   let ctx!: ActiveToolContextValue;
   function Mount(): ReactNode {
+    const [current, set] = useState<ReadonlyMap<string, Contribution<unknown>>>(entries);
+    setEntries = set;
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const registry = useActionsRegistry();
     ctx = useActiveToolContext();
     useAction(drag);
     useAction(held);
     useGestureDispatcher({
-      canvasRef, actions: registry!, entriesById: entries, requestRedraw: redraw,
+      canvasRef, actions: registry!, entriesById: current, requestRedraw: redraw,
       ...(opts.enabled === undefined ? {} : { enabled: opts.enabled }),
     });
     return <canvas ref={canvasRef} data-testid="c" />;
@@ -76,7 +79,12 @@ function mount(opts: { enabled?: boolean } = {}) {
       document.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, clientX: 40, clientY: 0 }));
     });
   };
-  return { log, redraw, tools: () => ctx, startDrag };
+  const without = (id: string): void => {
+    const next = new Map(entries);
+    next.delete(id);
+    act(() => { setEntries(next); });
+  };
+  return { log, redraw, tools: () => ctx, startDrag, without, restore: () => act(() => { setEntries(entries); }) };
 }
 
 describe('switching the active tool mid-gesture', () => {
@@ -120,5 +128,34 @@ describe('switching the active tool mid-gesture', () => {
     act(() => { tools().setActive('a'); });
     act(() => { tools().setActive('b'); });
     expect(log).toEqual(['activate:a', 'deactivate:a', 'activate:b']);
+  });
+});
+
+describe('a live tool leaving the registry', () => {
+  it('deactivates the active tool and cancels its gesture', () => {
+    const { log, tools, startDrag, without } = mount();
+    act(() => { tools().setActive('a'); });
+    startDrag();
+    log.length = 0;
+    without('a');
+    expect(log).toEqual(['deactivate:a', 'end:cancel']);
+  });
+
+  it('activates it again when it comes back while it still holds the slot', () => {
+    const { log, tools, without, restore } = mount();
+    act(() => { tools().setActive('a'); });
+    without('a');
+    log.length = 0;
+    restore();
+    expect(log).toEqual(['activate:a']);
+  });
+
+  it('deactivates a tool held on a hotkey, and leaves the active one alone', () => {
+    const { log, tools, startDrag, without } = mount();
+    act(() => { tools().setActive('a'); tools().pushHotkey('b'); });
+    startDrag();
+    log.length = 0;
+    without('b');
+    expect(log).toEqual(['deactivate:b']);
   });
 });

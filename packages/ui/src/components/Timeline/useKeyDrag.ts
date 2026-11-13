@@ -4,6 +4,7 @@ import { useKitSetting } from '@weasel-js/react';
 import { sliderAt, spanMap } from '@weasel-js/ui-input';
 import { useSnapRadiusPx } from '../../snap';
 import type { TimeWindow } from './timeScale';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** What a lane's pointer reads: its track, the window laid across it, and the keys on it. */
 export interface KeyDragArgs {
@@ -42,8 +43,10 @@ export function useKeyDrag(a: KeyDragArgs) {
   const msAt = (clientX: number): number => sliderAt(place(clientX).f, track) - offset;
 
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (e.button !== 0) return;
+    if (!isPrimaryPress(e)) return;
     e.stopPropagation();
+    // A key drag belongs to the finger that started it: a second finger's press selects nothing and drags nothing.
+    if (sessionRef.current?.active) return;
     onSelect(i);
 
     const at = (ev: { clientX: number; altKey: boolean }): number => {
@@ -66,7 +69,6 @@ export function useKeyDrag(a: KeyDragArgs) {
       sessionRef.current = null;
     };
     // No pointer capture — see `Ruler`, same idiom across the timeline.
-    sessionRef.current?.cancel();
     sessionRef.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => {
         if (!traveled(ev)) return;
@@ -77,7 +79,11 @@ export function useKeyDrag(a: KeyDragArgs) {
         if (traveled(ev)) onKeyCommit(i, at(ev));
         end();
       },
-      onCancel: end,
+      // The consumer previewed the move through `onKeyInput`; a drag that ends without a release puts it back.
+      onCancel: () => {
+        if (dragging) onKeyInput(i, times[i]);
+        end();
+      },
     }, { capture: false });
   };
 

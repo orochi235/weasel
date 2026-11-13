@@ -1,8 +1,15 @@
+import { FALLBACK_ACCENT, useDeviceProfile } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { type ThemeColorSpec, useThemeColors } from '../../canvas/useThemeColors';
 import type { LensCapture, LensSource, LensSourceRequest } from './lensSource';
-import { LENS_REST_MS } from './lensTypes';
 import { drawPixelGrid, readBitmap, softEdgeMask } from './pixelGrid';
+import { useCaptureDelay } from './useCaptureDelay';
+
+const GRID_COLORS: ThemeColorSpec<'line' | 'tint'> = {
+  line: ['--wzl-fg', '#ffffff'],
+  tint: ['--wzl-accent', FALLBACK_ACCENT],
+};
 
 interface Read {
   capture: LensCapture;
@@ -20,10 +27,6 @@ function maskOf(bitmap: ImageBitmap): { mask: Uint8Array; columns: number } | nu
   return read;
 }
 
-function colorOf(el: Element, name: string, fallback: string): string {
-  return getComputedStyle(el).getPropertyValue(name).trim() || fallback;
-}
-
 /**
  * The Pixel grid over one cell of a Pixels lens: a line on every boundary
  * between the capture's pixels, and a tint on each pixel that blends its
@@ -38,46 +41,49 @@ export function GridCanvas<C>({
   request: LensSourceRequest<C>;
 }) {
   const canvas = useRef<HTMLCanvasElement | null>(null);
+  const [mounted, setMounted] = useState<HTMLCanvasElement | null>(null);
+  const colors = useThemeColors(mounted, GRID_COLORS);
+  const attach = useCallback((el: HTMLCanvasElement | null) => {
+    canvas.current = el;
+    setMounted(el);
+  }, []);
   const [read, setRead] = useState<Read | null>(null);
   const [tick, setTick] = useState(0);
   const latest = useLatest(request);
-  const started = useRef(false);
+  const captureDelay = useCaptureDelay();
   const { reticle, factor, size, conditions, dpr } = request;
   const { width: w, height: h } = size;
+  // The screen's density, which the buffer is sized for; `dpr` is the capture's.
+  const { dpr: sd } = useDeviceProfile();
   useEffect(() => source.subscribe(() => setTick((n) => n + 1)), [source]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the request's fields and `tick` are the signal to capture again; the capture reads `latest`
   useEffect(() => {
     let live = true;
-    const timer = setTimeout(
-      () => {
-        void source.capture?.(latest.current).then(
-          (got) => {
-            if (!live) return;
-            if ('reason' in got) {
-              setRead(null);
-              return;
-            }
-            const m = maskOf(got.bitmap);
-            setRead({ capture: got, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
-          },
-          () => {
-            if (live) setRead(null);
-          },
-        );
-      },
-      started.current ? LENS_REST_MS : 0,
-    );
-    started.current = true;
+    const timer = setTimeout(() => {
+      void source.capture?.(latest.current).then(
+        (got) => {
+          if (!live) return;
+          if ('reason' in got) {
+            setRead(null);
+            return;
+          }
+          const m = maskOf(got.bitmap);
+          setRead({ capture: got, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
+        },
+        () => {
+          if (live) setRead(null);
+        },
+      );
+    }, captureDelay());
     return () => {
       live = false;
       clearTimeout(timer);
     };
-  }, [source, reticle.x, reticle.y, factor, w, h, conditions, dpr, tick, latest]);
+  }, [source, reticle.x, reticle.y, factor, w, h, conditions, dpr, tick, latest, captureDelay]);
   useEffect(() => {
     const el = canvas.current;
     const ctx = el?.getContext('2d');
-    if (!el || !ctx) return;
-    const sd = el.ownerDocument.defaultView?.devicePixelRatio ?? 1;
+    if (!el || !ctx || !colors) return;
     const width = Math.max(1, Math.round(w * sd));
     const height = Math.max(1, Math.round(h * sd));
     if (el.width !== width) el.width = width;
@@ -93,10 +99,7 @@ export function GridCanvas<C>({
       x: Math.round(width / 2 - read.capture.at.x * factor * sd) / sd,
       y: Math.round(height / 2 - read.capture.at.y * factor * sd) / sd,
     };
-    drawPixelGrid(ctx, { ...view, origin }, read.mask, {
-      line: colorOf(el, '--wzl-fg', '#ffffff'),
-      tint: colorOf(el, '--wzl-accent', '#4c8dff'),
-    });
-  }, [read, factor, dpr, w, h]);
-  return <canvas ref={canvas} className="lk-lens-grid" />;
+    drawPixelGrid(ctx, { ...view, origin }, read.mask, colors);
+  }, [colors, read, factor, dpr, sd, w, h]);
+  return <canvas ref={attach} className="lk-lens-grid" />;
 }

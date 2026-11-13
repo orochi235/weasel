@@ -115,7 +115,8 @@ export function paint(c: fc.Arbitrary<number> = coord): fc.Arbitrary<CommandPain
 /**
  * A stroke with any cap, join, miter limit, dash, and width. One PDF draws natively (solid, centered)
  * may be very wide or sized in pixels; any other is outlined through `strokeToPath`, whose union of a
- * very wide round ribbon is slow (`docs/PERF.md`), so its width stays in plain units under 50.
+ * ribbon a million wide takes most of a second (`wideStrokeUnion.bench.ts` in stroke), so its width stays
+ * in plain units under 50.
  */
 export function stroke(c: fc.Arbitrary<number> = coord): fc.Arbitrary<CommandStroke> {
   const len = fc.oneof(fc.double({ min: 0, max: 20, noNaN: true }), fc.constantFrom(0, 1e-6, 1e6, -1));

@@ -138,7 +138,7 @@ describe('an inverted stereo frame', () => {
     const group = screen.getByRole('group', { name: 'Glow' });
     expect(group).toHaveAttribute('data-disabled');
     // A proxy: the CSS-module proxy answers any key, so this shows only that the title asked to dim.
-    expect(screen.getByText('Glow').className).toMatch(/_titleOff_/);
-    expect(screen.getByRole('checkbox', { name: 'on' }).closest('[class*="_titleOff_"]')).toBeNull();
+    expect(screen.getByText('Glow').className).toMatch(/_titleDisabled_/);
+    expect(screen.getByRole('checkbox', { name: 'on' }).closest('[class*="_titleDisabled_"]')).toBeNull();
   });
 });

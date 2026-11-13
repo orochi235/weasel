@@ -103,9 +103,12 @@ export function anyCaused(ops: readonly Op[]): boolean {
 
 /** Both halves of `entries` run end to end, as one entry would hold them: one
  *  list when nothing coalesced, since a step that throws unwinds a two-list
- *  entry by replaying its other half. */
-export function appliedHalves(entries: readonly Entry[]): { forwardOps: Op[]; baseOps: Op[] } {
+ *  entry by replaying its other half. `coalesceKey` is the key every entry was
+ *  recorded under, when they share one. */
+export function appliedHalves(entries: readonly Entry[]): { forwardOps: Op[]; baseOps: Op[]; coalesceKey?: string } {
   const forwardOps = entries.flatMap((e) => e.forwardOps);
-  if (entries.every((e) => e.forwardOps === e.baseOps)) return { forwardOps, baseOps: forwardOps };
-  return { forwardOps, baseOps: entries.flatMap((e) => e.baseOps) };
+  const key = entries[0]?.coalesceKey;
+  const coalesceKey = key !== undefined && entries.every((e) => e.coalesceKey === key) ? { coalesceKey: key } : {};
+  if (entries.every((e) => e.forwardOps === e.baseOps)) return { forwardOps, baseOps: forwardOps, ...coalesceKey };
+  return { forwardOps, baseOps: entries.flatMap((e) => e.baseOps), ...coalesceKey };
 }

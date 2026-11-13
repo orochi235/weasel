@@ -36,6 +36,7 @@
 }
 
 .chip[data-focused] {
+  outline: 1px solid transparent;
   border-color: var(--wzl-fg);
   box-shadow: 0 0 0 1px var(--wzl-fg);
 }

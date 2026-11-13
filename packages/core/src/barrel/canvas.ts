@@ -38,6 +38,7 @@ export { clipOutline } from '../canvas/ownClip';
 export type { PickHudProps } from '../canvas/PickHud';
 export {
   registerNodeShape,
+  refreshNodeShapes,
   findNodeShape,
   findShapeSilhouette,
   findShapeInk,

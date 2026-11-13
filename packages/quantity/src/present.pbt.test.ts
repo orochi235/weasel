@@ -20,7 +20,7 @@ interface Case {
   name: string;
   value: fc.Arbitrary<number>;
   display: fc.Arbitrary<Display>;
-  /** Locales the kind formats in; the rest always write `en-US`. */
+  /** Locales the kind is read back in. */
   locales: fc.Arbitrary<string>;
   /** How far the reading may land from the value. */
   within: (value: number, d: Display) => number;
@@ -28,7 +28,6 @@ interface Case {
 
 const places = fc.integer({ min: 0, max: 4 });
 const value = typed.map((t) => t.value);
-const en = fc.constant('en-US');
 
 const CASES: Case[] = [
   {
@@ -84,7 +83,7 @@ const CASES: Case[] = [
     within: () => 0.5,
   },
   {
-    name: 'compact', value: finite(1e14), locales: en, display: places.map((p) => compact({ places: p })),
+    name: 'compact', value: finite(1e14), locales: locale, display: places.map((p) => compact({ places: p })),
     within: (v, d) => (Math.abs(v) >= 999 ? Math.abs(v) * 5e-3 * (1 + 1e-9) : half(d.places as number, v)),
   },
 ];
@@ -142,10 +141,11 @@ describe('present then parseAs, property', () => {
   }, TIMEOUT);
 
   it('zoom reads back a whole percent at 2x and below, a tenth above, and a whole number past 100x', () => {
-    fc.assert(fc.property(fc.double({ min: 0.001, max: 1e5, noNaN: true }), (z) => {
-      const got = parseAs(present(z, zoom()).text, zoom());
+    fc.assert(fc.property(fc.double({ min: 0.001, max: 1e5, noNaN: true }), locale, (z, loc) => {
+      const text = present(z, zoom(), { locale: loc }).text;
+      const got = parseAs(text, zoom(), { locale: loc });
       const tol = z <= 2 ? 0.005 : z >= 100 ? 0.5 : 0.05;
-      expect(Math.abs(got - z), present(z, zoom()).text).toBeLessThanOrEqual(tol * (1 + 1e-9) + z * 1e-14);
+      expect(Math.abs(got - z), text).toBeLessThanOrEqual(tol * (1 + 1e-9) + z * 1e-14);
     }), RUNS);
   });
 

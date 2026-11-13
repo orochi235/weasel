@@ -45,6 +45,17 @@ describe('a unit whose glyph attaches', () => {
     expect(glyph?.parentElement?.className).toMatch(/unitHost/);
   });
 
+  it('raises a percent sign, which sits on the baseline, and not a degree sign', () => {
+    const { container } = render(
+      <>
+        <PropertyField kind="number" label="Opacity" value={50} unit="%" onChange={() => {}} />
+        <PropertyField kind="number" label="Angle" value={90} unit="°" onChange={() => {}} />
+      </>,
+    );
+    const units = [...container.querySelectorAll('[class*="unitAttached"] [data-part="unit"]')];
+    expect(units.map((u) => [u.textContent, u.hasAttribute('data-raise')])).toEqual([['%', true], ['°', false]]);
+  });
+
   it('is decided by the catalog, so a unit named by its alias attaches too', () => {
     const { container } = render(
       <PropertyField kind="number" label="Angle" value={90} unit="deg" onChange={() => {}} />,

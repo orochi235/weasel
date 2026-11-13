@@ -211,6 +211,7 @@
 /* END GENERATED stance rules: frame */
 
 /* A disabled frame's title, dimmed as a disabled row's label is. */
-.titleOff {
+.titleDisabled {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
 }

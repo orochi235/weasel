@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -119,6 +119,28 @@ describe('a trial config write', () => {
     expect(changes()).toBe('1');
   });
 
+  it('keeps a run in one entry while another lab on the page records an edit', async () => {
+    await renderSettled(
+      <>
+        <div data-testid="lab-a">
+          <Lab instruments={[counting(['config.change'])]} defaultInstrument="Counting" />
+        </div>
+        <div data-testid="lab-b">
+          <Lab instruments={[counting(['config.change'])]} defaultInstrument="Counting" />
+        </div>
+      </>,
+      { wrapper: withIcons },
+    );
+    const a = within(screen.getByTestId('lab-a'));
+    const b = within(screen.getByTestId('lab-b'));
+    fireEvent.click(a.getByRole('button', { name: 'wider' }));
+    fireEvent.click(b.getByRole('button', { name: 'flip' }));
+    fireEvent.click(a.getByRole('button', { name: 'wider' }));
+    expect(a.getByLabelText('changes').textContent).toBe('2');
+    fireEvent.click(a.getByRole('button', { name: 'Undo' }));
+    expect(a.getByLabelText('changes').textContent).toBe('0');
+  });
+
   it('starts a new entry when the path changes', async () => {
     await mount();
     click('wider');
@@ -163,5 +185,33 @@ describe("a trial's other writes", () => {
     expect(undo()).not.toBeDisabled();
     click('Reset trial');
     expect(undo()).toBeDisabled();
+  });
+});
+
+describe('a settings drag', () => {
+  const slider = () => screen.getByRole('slider', { name: 'Cell size' });
+  const drag = (value: number) => fireEvent.input(slider(), { target: { value: String(value) } });
+
+  it('is one undo step however long it pauses, ending where it settles', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    await mount();
+    drag(30);
+    vi.advanceTimersByTime(800);
+    drag(40);
+    fireEvent.change(slider(), { target: { value: '40' } });
+    expect(slider()).toHaveValue('40');
+    fireEvent.click(undo());
+    expect(slider()).toHaveValue('20');
+    expect(undo()).toBeDisabled();
+  });
+
+  it('starts a step of its own after the last one settled', async () => {
+    await mount();
+    drag(30);
+    fireEvent.change(slider(), { target: { value: '30' } });
+    drag(50);
+    fireEvent.change(slider(), { target: { value: '50' } });
+    fireEvent.click(undo());
+    expect(slider()).toHaveValue('30');
   });
 });

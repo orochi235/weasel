@@ -13,14 +13,21 @@ import { createBvh, type Bvh, type HalfSpace } from '@weasel-js/geom/nd';
 import { rectOf, viewProjectionOf, type Viewport3d } from './project';
 import { projectAabbToScreen, screenToNdc, type ScreenBox } from './screen';
 import { padQuery } from './snap/boxIndex';
-import { boxAt, boxIndexable, worldBoxes, worldPoseOf, type Node3d, type World3d } from './world';
+import { boxAt, boxIndexable, inWorld, worldBoxes, worldPoseOf, type Node3d, type World3d } from './world';
+
+/** Whether the asking view draws `layer`. */
+type LayerGate = (layer: string) => boolean;
 
 export interface WorldPickIndex {
   /** The nearest node the ray enters no further along it than `maxT`; a tie on
-   *  distance goes to the first in render order. */
-  nearestOnRay(ray: Ray, excluded: ReadonlySet<NodeId> | null, maxT?: number): NodeId | null;
-  /** The nodes whose projected box overlaps `rect`, in render order. */
-  inScreenRect(vp: Viewport3d, rect: ScreenBox): NodeId[];
+   *  distance goes to the first in render order. `layerIsPainted`, the asking
+   *  view's layer gate, passes over the nodes of a layer it does not draw. */
+  nearestOnRay(
+    ray: Ray, excluded: ReadonlySet<NodeId> | null, maxT?: number, layerIsPainted?: LayerGate,
+  ): NodeId | null;
+  /** The nodes whose projected box overlaps `rect`, in render order, less any
+   *  on a layer `layerIsPainted` says the asking view does not draw. */
+  inScreenRect(vp: Viewport3d, rect: ScreenBox, layerIsPainted?: LayerGate): NodeId[];
 }
 
 /** The screen box a node covers, or null when it projects to nothing visible. */
@@ -32,7 +39,8 @@ export function screenBoxOf<TData, TLayer extends string>(
   const node = world.scene.get(id) as Node3d<TData, TLayer> | undefined;
   const pose = node && worldPoseOf(world.scene, id);
   const box = node && pose && boxAt(world, node, pose);
-  return box ? projectAabbToScreen(box, viewProjectionOf(viewport), rectOf(viewport)) : null;
+  const vp = inWorld(world, viewport);
+  return box ? projectAabbToScreen(box, viewProjectionOf(vp), rectOf(vp)) : null;
 }
 
 /** Widens each side plane, in NDC, past the rounding between it and the exact screen test. */
@@ -75,13 +83,16 @@ class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
     private readonly always: readonly number[],
   ) {}
 
-  nearestOnRay(ray: Ray, excluded: ReadonlySet<NodeId> | null, maxT = Infinity): NodeId | null {
+  nearestOnRay(
+    ray: Ray, excluded: ReadonlySet<NodeId> | null, maxT = Infinity, layerIsPainted?: LayerGate,
+  ): NodeId | null {
     const { order, boxes } = this;
     let best = -1;
     let bestT = Infinity;
     const consider = (i: number) => {
       const box = boxes[i]!;
-      if (excluded?.has(order[i]!.id)) return;
+      const node = order[i]!;
+      if (excluded?.has(node.id) || layerIsPainted?.(node.layer) === false) return;
       const t = intersectRayAabb(ray, box.min, box.max);
       if (t !== null && t <= maxT && (t < bestT || (t === bestT && i < best))) {
         bestT = t;
@@ -99,7 +110,7 @@ class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
     return best < 0 ? null : order[best]!.id;
   }
 
-  inScreenRect(vp: Viewport3d, rect: ScreenBox): NodeId[] {
+  inScreenRect(vp: Viewport3d, rect: ScreenBox, layerIsPainted?: LayerGate): NodeId[] {
     const candidates = [...this.always];
     this.tree.queryHalfSpaces(sidePlanes(vp, rect), (i) => {
       candidates.push(i);
@@ -109,6 +120,7 @@ class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
     const m = viewProjectionOf(vp);
     const pane = rectOf(vp);
     for (const i of candidates) {
+      if (layerIsPainted?.(this.order[i]!.layer) === false) continue;
       const box = projectAabbToScreen(this.boxes[i]!, m, pane);
       if (box && rectsOverlap(box, rect)) hits.push(this.order[i]!.id);
     }

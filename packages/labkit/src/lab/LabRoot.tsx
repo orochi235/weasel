@@ -6,7 +6,8 @@ import { interstellarTheme } from '../theme/interstellar';
 /** Props for `<LabRoot>`. */
 export interface LabRootProps {
   children: ReactNode;
-  /** Color mode. "auto" (default) follows prefers-color-scheme. */
+  /** Color mode. "auto" (default) follows prefers-color-scheme. Unread inside an app's own `ThemeProvider`,
+   *  whose mode then holds. */
   mode?: LabMode;
   /** Added after `lk-root` on the same element. */
   className?: string;

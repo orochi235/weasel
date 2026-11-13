@@ -4,7 +4,7 @@
  * space the host's pointer points arrive in.
  */
 
-import { transformPoint4, type Ray, type Vec3 } from '@weasel-js/geom/3d';
+import { intersectRayPlane, pointOnRay, transformPoint4, type Ray, type Vec3 } from '@weasel-js/geom/3d';
 import { cameraViewProjection, type Camera3d } from './camera';
 import { ndcToScreen, rayThroughScreenPoint, type ScreenBox } from './screen';
 
@@ -21,6 +21,12 @@ export interface Viewport3d {
    */
   originX?: number;
   originY?: number;
+  /**
+   * The world's up, which the camera turns about and keeps upright on screen. Default +y. Every function taking a
+   * `World3d` sets it from `World3d.up`, overriding what is here, so a `ViewportSource` leaves it out; set it only
+   * on a viewport handed straight to `projectPoint`, `projectSnapMarks` and the like.
+   */
+  up?: Vec3;
 }
 
 /**
@@ -44,11 +50,19 @@ export function rectOf(viewport: Viewport3d): ScreenBox {
 }
 
 export function viewProjectionOf(viewport: Viewport3d) {
-  return cameraViewProjection(viewport.camera, viewport.width / Math.max(1, viewport.height));
+  return cameraViewProjection(viewport.camera, viewport.width / Math.max(1, viewport.height), viewport.up);
 }
 
 export function rayAt(viewport: Viewport3d, point: Point): Ray | null {
   return rayThroughScreenPoint(point, rectOf(viewport), viewProjectionOf(viewport));
+}
+
+/** Where the ray through `point` meets the plane `normal · p = offset`, or
+ *  `null` when the point casts no ray or the ray misses the plane. */
+export function castOntoPlane(viewport: Viewport3d, point: Point, normal: Vec3, offset: number): Vec3 | null {
+  const ray = rayAt(viewport, point);
+  const t = ray && intersectRayPlane(ray, normal, offset);
+  return ray && t !== null ? pointOnRay(ray, t) : null;
 }
 
 /** Where `p` draws in the viewport, or null when it is behind the near plane,

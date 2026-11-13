@@ -148,6 +148,39 @@ describe('leaseCanvasRenderer', () => {
   });
 });
 
+describe('a context lost before its renderer is built', () => {
+  it('tells subscribers when it comes back, so the surface paints again', () => {
+    let lost = true;
+    HTMLCanvasElement.prototype.getContext = (function (this: HTMLCanvasElement, kind: string) {
+      if (kind !== 'webgl2') return null;
+      return new Proxy(rec.gl, {
+        get: (gl, prop) => {
+          if (prop === 'canvas') return this;
+          if (prop === 'isContextLost') return () => lost;
+          // A lost context links nothing.
+          if (prop === 'getProgramParameter' || prop === 'getShaderParameter') return () => !lost;
+          return Reflect.get(gl, prop);
+        },
+      });
+    }) as HTMLCanvasElement['getContext'];
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const lease = leaseCanvasRenderer();
+    const canvas = document.createElement('canvas');
+    const restored = vi.fn();
+    lease.subscribeRestored(restored);
+    const size = { width: 10, height: 10, dpr: 1 };
+    expect(lease.bind(canvas, size)).toBeNull();
+
+    lost = false;
+    restore(canvas);
+    expect(restored).toHaveBeenCalledTimes(1);
+    expect(lease.bind(canvas, size)).not.toBeNull();
+    expect(warn).not.toHaveBeenCalled();
+    lease.release();
+    warn.mockRestore();
+  });
+});
+
 describe('a context the renderer refuses', () => {
   it('says why once, and does not build a renderer again on every paint', () => {
     rec = makeGLRecorder({ contextAttributes: { stencil: false } });

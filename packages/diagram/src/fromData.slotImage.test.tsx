@@ -68,18 +68,41 @@ describe('a swapped picture', () => {
     expect(released).toEqual(['a']);
     unmount();
   });
+
+  it('frees the old picture once the new one fails, which the painter no longer draws it for', async () => {
+    __setImageLoaderForTests((src) => (src === 'b' ? Promise.reject(new Error('gone')) : Promise.resolve(bmp)));
+    const { rerender, unmount } = renderHook(({ specs }) => useReleasedImages(useHeldImages(specs)), {
+      initialProps: { specs: [spec('a')] },
+    });
+    getImageBitmap('a');
+    await act(flush);
+    rerender({ specs: [spec('b')] });
+    await act(async () => { getImageBitmap('b'); await flush(); });
+    expect(released).toEqual(['a']);
+    unmount();
+  });
 });
 
 describe('useReleasedImages', () => {
   const specsWith = (...srcs: string[]) => srcs.map((src) => ({ data: { image: { src } } }));
 
-  it('frees an image once the specs stop drawing it, and the rest on unmount', () => {
+  it('frees an image once the specs stop drawing it, and the rest on unmount', async () => {
     const { rerender, unmount } = renderHook(({ specs }) => useReleasedImages(specs), { initialProps: { specs: specsWith('a', 'b') } });
     expect(released).toEqual([]);
     rerender({ specs: specsWith('b', 'c') });
     expect(released).toEqual(['a']);
     unmount();
+    await Promise.resolve();
     expect(released.sort()).toEqual(['a', 'b', 'c']);
+  });
+
+  it('frees nothing still drawn through StrictMode\'s rehearsal unmount', async () => {
+    const { unmount } = renderHook(({ specs }) => useReleasedImages(specs), { initialProps: { specs: specsWith('a') }, reactStrictMode: true });
+    await Promise.resolve();
+    expect(released).toEqual([]);
+    unmount();
+    await Promise.resolve();
+    expect(released).toEqual(['a']);
   });
 
   it('reads the sources from specs that draw images, and no others', () => {

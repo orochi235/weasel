@@ -1,4 +1,4 @@
-import { useId, useRef, type ChangeEvent, type CSSProperties, type ReactElement } from 'react';
+import { useEffect, useId, useRef, type ChangeEvent, type CSSProperties, type ReactElement } from 'react';
 import {
   composePatternTransform,
   decomposePatternTransform,
@@ -126,11 +126,17 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
   const size = tile?.size ?? DEFAULT_TILE_SIZE;
   const rotationId = useId();
   const fileInput = useRef<HTMLInputElement>(null);
+  // Which file read may still commit: a later pick, of a file or a tile, or unmounting retires it.
+  const reading = useRef(0);
+  const latest = useRef(value);
+  useEffect(() => { latest.current = value; });
+  useEffect(() => () => { reading.current++; }, []);
 
-  const withTransform = (next: PatternPaint): PatternPaint =>
-    (value.transform ? { ...next, transform: value.transform } : next);
+  const withTransform = (next: PatternPaint, of: PatternPaint = value): PatternPaint =>
+    (of.transform ? { ...next, transform: of.transform } : next);
 
   const pick = (kind: TileKind): void => {
+    reading.current++;
     onChange(withTransform(seedPattern(kind, color, size)));
   };
 
@@ -139,8 +145,9 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
     // Cleared so picking the same file again still fires a change.
     e.target.value = '';
     if (!file) return;
+    const ticket = ++reading.current;
     readImage(file).then(
-      (read) => onChange(withTransform(seedImagePattern(read))),
+      (read) => { if (ticket === reading.current) onChange(withTransform(seedImagePattern(read), latest.current)); },
       (err: unknown) => console.warn(`weasel PatternPicker: "${file.name}" could not be read as an image`, err),
     );
   };

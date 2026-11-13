@@ -1,10 +1,20 @@
-import { oneCodePoint } from './oneCodePoint';
+import { isOneChar } from '@weasel-js/ui-input';
+import { isApplePlatform } from './platform';
 
 /** The `<input>` types a person types text into. An unknown or missing `type` is `text`. */
 const TEXT_INPUT_TYPES = new Set([
   'text', 'search', 'email', 'url', 'tel', 'password', 'number',
   'date', 'datetime-local', 'month', 'week', 'time',
 ]);
+
+/**
+ * True on an Apple platform for a Ctrl chord without Cmd. In text being edited that is Cocoa's Emacs-style editing
+ * (Ctrl+A to the line's start, Ctrl+B back a character, Ctrl+K to cut to the line's end), so it belongs to the text:
+ * no kit shortcut claims it and nothing prevents its default. Off Apple, Ctrl is `mod` and this is always false.
+ */
+export function textOwnsChord(e: { ctrlKey: boolean; metaKey: boolean }, isMac = isApplePlatform()): boolean {
+  return isMac && e.ctrlKey && !e.metaKey;
+}
 
 /** Returns true when the target takes typed text: a text-entry input, a textarea, or a contenteditable element. */
 export function isEditableTarget(target: EventTarget | null): boolean {
@@ -49,7 +59,7 @@ function selectOwnsKey(e: KeyboardEvent): boolean {
   if (!(e.target instanceof Element) || e.target.tagName !== 'SELECT') return false;
   if (e.metaKey || e.ctrlKey || e.altKey) return false;
   // A one-character `key` is a printable character, which a select reads as type-ahead.
-  return SELECT_NAVIGATION.has(e.key) || oneCodePoint(e.key);
+  return SELECT_NAVIGATION.has(e.key) || isOneChar(e.key);
 }
 
 

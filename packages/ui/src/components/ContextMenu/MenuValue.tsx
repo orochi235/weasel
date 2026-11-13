@@ -5,6 +5,7 @@ import {
 import { unitSymbol } from '@weasel-js/quantity';
 import { editEnd, imeKey, type EditEnd } from '@weasel-js/ui-input';
 import { Input } from '../Input';
+import { QuantityText } from '../QuantityText';
 import { UnitField } from '../NumberField/UnitField';
 import s from './ContextMenu.module.css';
 
@@ -36,7 +37,7 @@ export function MenuNumberValue({ entry: e, rowId, controller: c }: {
         width="fit"
       />
       {unit !== undefined && (value === undefined || Number.isFinite(value)) && (
-        <span className={unit.attaches ? s.unitAttached : s.unit}>{unit.text}</span>
+        <span className={unit.attaches ? s.unitAttached : s.unit}><QuantityText unit={unit.text} /></span>
       )}
     </span>
   );

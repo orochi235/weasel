@@ -129,4 +129,18 @@ describe('<ExportMenu>', () => {
     fireEvent.click(screen.getByRole('button', { name: /download/i }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/tainted/);
   });
+
+  it('says the browser refused the clipboard on a page that has none', async () => {
+    vi.stubGlobal('navigator', {});
+    try {
+      mount(spied().store);
+      open();
+      fireEvent.click(screen.getByRole('button', { name: /copy/i }));
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        /would not let the page write to the clipboard/,
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

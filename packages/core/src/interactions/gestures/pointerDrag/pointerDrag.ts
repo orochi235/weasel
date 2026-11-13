@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import { fixedSeat, type FixedSeat } from '@weasel-js/gestures';
+import { fixedSeat, type FixedSeat, isPrimaryPress } from '@weasel-js/gestures';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/routing';
 
 /** Payload carried by an in-flight pointer drag — `kind` routes to drop zones, `ids` lists the dragged items. */
@@ -75,6 +75,16 @@ function positionGhost(el: HTMLElement, seat: FixedSeat, x: number, y: number) {
   el.style.transform = `translate(${x - seat.left - el.offsetWidth / 2}px, ${y - seat.top - el.offsetHeight / 2}px) scale(0.92)`;
 }
 
+/** Call one of a drop zone's callbacks. `activeDrag` is module state that gates every later drag, so a callback
+ *  that throws is reported and costs only itself, never the drag's teardown. */
+function zoneCall(name: string, fn: () => void): void {
+  try {
+    fn();
+  } catch (err) {
+    console.error(`weasel pointerDrag: drop zone ${name} threw`, err);
+  }
+}
+
 /** The ghost-and-zones half of a drag, driven by whoever owns the pointer. */
 interface GhostDrag {
   move: (e: PointerEvent) => void;
@@ -107,30 +117,25 @@ function beginPointerDrag(
       positionGhost(activeDrag.ghost, activeDrag.seat, e.clientX, e.clientY);
       const zone = findZone(e.clientX, e.clientY, payload.kind);
       if (zone !== activeDrag.lastZone) {
-        activeDrag.lastZone?.onOver?.(false);
-        zone?.onOver?.(true);
+        const left = activeDrag.lastZone;
         activeDrag.lastZone = zone;
+        zoneCall('onOver', () => left?.onOver?.(false));
+        zoneCall('onOver', () => zone?.onOver?.(true));
       }
-      zone?.onMove?.(payload, e.clientX, e.clientY);
+      zoneCall('onMove', () => zone?.onMove?.(payload, e.clientX, e.clientY));
     },
     drop(e) {
       if (!activeDrag) return;
       const zone = findZone(e.clientX, e.clientY, payload.kind);
-      const dropped = activeDrag.payload;
-      activeDrag.lastZone?.onOver?.(false);
-      // `activeDrag` is module state and gates every future drag, so a throwing
-      // consumer `onDrop` must not be able to strand it.
-      try {
-        if (zone) zone.onDrop(dropped, e.clientX, e.clientY);
-      } catch (err) {
-        console.error('weasel pointerDrag: drop zone onDrop threw', err);
-      } finally {
-        teardown();
-      }
+      const { payload: dropped, lastZone } = activeDrag;
+      teardown();
+      zoneCall('onOver', () => lastZone?.onOver?.(false));
+      zoneCall('onDrop', () => zone?.onDrop(dropped, e.clientX, e.clientY));
     },
     cancel() {
-      activeDrag?.lastZone?.onOver?.(false);
+      const lastZone = activeDrag?.lastZone;
       teardown();
+      zoneCall('onOver', () => lastZone?.onOver?.(false));
     },
   };
 }
@@ -170,7 +175,7 @@ export function useDragHandle(
   useEffect(() => () => { live.current?.cancel(); }, []);
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (!isPrimaryPress(e)) return;
     // A second finger would replace `live`, and its release would then clear
     // the ref while the first drag runs on with nothing to cancel it.
     if (live.current) return;

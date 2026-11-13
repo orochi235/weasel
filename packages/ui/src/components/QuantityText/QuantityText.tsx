@@ -14,7 +14,8 @@ export type QuantityTextProps = {
     | { value: Quantity; range?: undefined; vector?: undefined; unit?: undefined }
     | {
         /** A unit with no number: what a field holding the number shows after it, written as the unit
-         *  catalog writes it. A form that attaches to the number is marked `data-attach`. */
+         *  catalog writes it. A form that attaches to the number is marked `data-attach`, and one the catalog
+         *  raises, `%`, `data-raise` as well. */
         unit: string;
         /** The unit's compact form, where it has one. */
         compact?: boolean;
@@ -69,7 +70,7 @@ export function QuantityText(props: QuantityTextProps) {
   const className = [s.quantity, props.className].filter(Boolean).join(' ');
   if (props.unit !== undefined) {
     const shown = unitSymbol(props.unit, { compact: props.compact });
-    return <span className={className}><span data-part="unit" data-attach={shown.attaches ? '' : undefined}>{shown.text}</span></span>;
+    return <span className={className}><span data-part="unit" data-attach={shown.attaches ? '' : undefined} data-raise={shown.attaches && shown.raised ? '' : undefined}>{shown.text}</span></span>;
   }
   const { text, spoken, html, mathml, stacked } = presented(props);
   const reads = !props.mute && spoken !== text;

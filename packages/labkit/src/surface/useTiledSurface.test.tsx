@@ -565,8 +565,12 @@ describe('useTiledSurface', () => {
       act(() => {
         handle?.registerClear('a', clearA);
         handle?.registerClear('b', clearB);
-        handle?.registerPainter('a', () => order.push('paintA'));
-        handle?.registerPainter('b', () => order.push('paintB'));
+        handle?.registerPainter('a', () => {
+          order.push('paintA');
+        });
+        handle?.registerPainter('b', () => {
+          order.push('paintB');
+        });
       });
       flushFrames();
       order.length = 0;
@@ -605,7 +609,9 @@ describe('useTiledSurface', () => {
 
       const seen: number[] = [];
       act(() => {
-        handle?.registerPainter('b', (rect) => seen.push(rect.x));
+        handle?.registerPainter('b', (rect) => {
+          seen.push(rect.x);
+        });
       });
 
       // A panel whose size is already final but whose position is still

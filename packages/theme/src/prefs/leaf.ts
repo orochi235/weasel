@@ -1,6 +1,6 @@
 // A token as a pref leaf: which kind edits it, and its CSS text to the leaf's value and back.
 
-import { parseColor, rgbaToHex } from '@weasel-js/paint';
+import { rgbaToHex, tryParseColor } from '@weasel-js/paint';
 import type { PrefLeaf, PrefLinearUnit, PrefNumber } from '@weasel-js/prefs';
 import { readCssNumber } from '../cssNumber.ts';
 import type { TokenRow } from './tokens.ts';
@@ -8,11 +8,8 @@ import type { TokenRow } from './tokens.ts';
 const NUMERIC_TYPES: ReadonlySet<string> = new Set(['dimension', 'number', 'duration', 'fontWeight']);
 
 function hexOf(css: string): string | undefined {
-  try {
-    return rgbaToHex(parseColor(css));
-  } catch {
-    return undefined;
-  }
+  const rgba = tryParseColor(css);
+  return rgba ? rgbaToHex(rgba) : undefined;
 }
 
 /**

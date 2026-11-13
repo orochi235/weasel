@@ -102,9 +102,8 @@ export class WeaselRenderer {
   private idComposite: ShaderProgram | null = null;
 
   constructor(opts: WeaselRendererOptions) {
-    const { device, lossTarget, lost } = opts.gpu ? { ...openWebGPU(opts.gpu), lossTarget: null } : openWebGL(opts);
+    const { device, lossTarget } = opts.gpu ? { ...openWebGPU(opts.gpu), lossTarget: null } : openWebGL(opts);
     this.gpu = device;
-    void lost?.then(() => { this.contextLost = true; });
     this.effectTargets = new EffectTargets(this.gpu);
     this.programs = new CustomPrograms(this.gpu);
     this.retained = new RetainedSurfaces(this.gpu, opts.retainBudget ?? DEFAULT_RETAIN_BUDGET);
@@ -135,13 +134,6 @@ export class WeaselRenderer {
       this.canvas.width = Math.round(opts.width * opts.dpr);
       this.canvas.height = Math.round(opts.height * opts.dpr);
     }
-    const events: Partial<EventTarget> | null = opts.gpu ? null : this.canvas ?? lossTarget;
-    if (events && typeof events.addEventListener === 'function') {
-      this.lossTarget = events as EventTarget;
-      this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
-      this.lossTarget.addEventListener('webglcontextrestored', this.boundOnRestored);
-    }
-
     this.gpu.beginFrame();
 
     this.pathFill = new LazyProgram(this.gpu, PATH_FILL_SPEC);
@@ -154,12 +146,19 @@ export class WeaselRenderer {
     this.glyphPaintPrograms = { pattern: glyph('pattern'), gradient: glyph('gradient'), texture: glyph('texture') };
 
     this.meshCache = new GLMeshCache(this.gpu);
-    this.textureCache = new GLTextureCache(this.gpu);
+    this.textureCache = new GLTextureCache(this.gpu, (source) => this.imageCache.noteDrawn(source));
     this.imageCache = new GLImageCache(this.gpu, this.imageMinification);
     this.gradRamps = new GradientRampAtlas(this.gpu);
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(this.gpu, this.batchFill);
     this.whiteTexture = createWhiteTexture(this.gpu);
+    // Last: a constructor that throws (a lost context fails the compile above) must leave no listener to rebuild it.
+    const events: Partial<EventTarget> | null = opts.gpu ? null : this.canvas ?? lossTarget;
+    if (events && typeof events.addEventListener === 'function') {
+      this.lossTarget = events as EventTarget;
+      this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
+      this.lossTarget.addEventListener('webglcontextrestored', this.boundOnRestored);
+    }
   }
 
   private lazyPrograms(): LazyProgram[] {
@@ -225,7 +224,8 @@ export class WeaselRenderer {
 
   getTarget(): RenderTarget | null { return this.target; }
 
-  isContextLost(): boolean { return this.contextLost; }
+  /** A WebGL context says so by event; a WebGPU device is asked, since it does not come back. */
+  isContextLost(): boolean { return this.contextLost || (this.backend === 'webgpu' && this.gpu.isContextLost()); }
 
   /** The GPU API this renderer draws with. */
   get backend(): RendererBackend { return this.gpu.language === 'wgsl' ? 'webgpu' : 'webgl2'; }
@@ -250,7 +250,7 @@ export class WeaselRenderer {
     this.batchFill = createBatchFill(this.gpu);
     this.idComposite = null;
     this.meshCache = new GLMeshCache(this.gpu);
-    this.textureCache = new GLTextureCache(this.gpu);
+    this.textureCache = new GLTextureCache(this.gpu, (source) => this.imageCache.noteDrawn(source));
     this.imageCache.abandon();
     this.imageCache = new GLImageCache(this.gpu, this.imageMinification);
     this.gradRamps = new GradientRampAtlas(this.gpu);
@@ -267,7 +267,7 @@ export class WeaselRenderer {
    *  a caller-owned context can host renderer after renderer without
    *  accumulating anything.
    *
-   *  A disposed renderer ignores further `render()` and `registerProgram()`
+   *  A disposed renderer ignores further `render()`, `registerProgram()` and `setImageMinification()`
    *  calls. */
   dispose(): void {
     if (this.disposed) return;
@@ -310,7 +310,7 @@ export class WeaselRenderer {
    * callers with no view concept can keep calling `render(commands)`.
    */
   render(commands: DrawCommand[], viewMatrix?: GlMat3, opts?: RenderOptions): void {
-    if (this.contextLost || this.disposed) return;
+    if (this.disposed || this.isContextLost()) return;
     const t0 = now();
     const counters = { drawCalls: 0 };
     const spanStats: RenderSpanStats[] = [];
@@ -386,7 +386,7 @@ export class WeaselRenderer {
   readPixelsSync(rect: PixelRect): Uint8Array { return readPixelsSync(this.gpu, rect); }
 
   private idFrame(commands: DrawCommand[], viewMatrix: GlMat3 | undefined, opts: RenderIdsOptions, sync: boolean): IdBuffer | Promise<IdBuffer> {
-    if (this.contextLost || this.disposed) return { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) };
+    if (this.disposed || this.isContextLost()) return { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) };
     const device = this.deviceRect();
     this.beginFrame();
     const gpu = this.gpu;
@@ -485,7 +485,7 @@ export class WeaselRenderer {
    *  default. A change frees every image texture, and each re-uploads when next drawn. */
   setImageMinification(mode: ImageMinification | undefined): void {
     const next = mode ?? 'auto';
-    if (next === this.imageMinification) return;
+    if (this.disposed || next === this.imageMinification) return;
     this.imageMinification = next;
     this.imageCache.dispose();
     this.imageCache = new GLImageCache(this.gpu, next);

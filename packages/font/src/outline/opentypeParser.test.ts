@@ -123,3 +123,13 @@ describe('parserOf — module interop', () => {
     expect(parserOf(ns)).toBe(parse);
   });
 });
+
+describe('a WOFF2 file', () => {
+  const WOFF2 = resolve(import.meta.dirname, '../../../theme/fonts/inter-latin.woff2');
+
+  it('is refused with what to register instead', async () => {
+    const buf = readFileSync(WOFF2);
+    const woff2 = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+    await expect(openTypeParser(woff2)).rejects.toThrow(/WOFF2.*TTF, OTF or WOFF/);
+  });
+});

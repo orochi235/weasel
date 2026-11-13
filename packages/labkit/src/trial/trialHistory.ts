@@ -65,7 +65,7 @@ export interface MountedTrialHistory {
 /** Reports a history mounted; the returned function reports it gone. */
 export type MountTrialHistory = (source: TrialHistorySource) => () => void;
 
-/** The history slot of the trial around the caller, or `null` outside one. */
+/** The history slot of the trial around the caller, or of a lab with no trials; `null` outside both. */
 export const TrialHistoryContext = createContext<MountTrialHistory | null>(null);
 
 /**
@@ -73,7 +73,8 @@ export const TrialHistoryContext = createContext<MountTrialHistory | null>(null)
  * it is mounted, the trial's Undo and Redo buttons and their keys step it,
  * settings changes are recorded onto it, and the trial stops snapshotting
  * `state` — the instrument's history is what covers it. Pass `null` to hand
- * nothing over; outside a trial it does nothing.
+ * nothing over. In a lab with no trials it goes to the lab, whose header
+ * Undo and Redo and their keys step it; anywhere else it does nothing.
  */
 export function useTrialHistory(source: TrialHistorySource | null): void {
   const mount = useContext(TrialHistoryContext);

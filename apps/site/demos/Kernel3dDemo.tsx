@@ -2,9 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { IDENTITY_POSE_COMPOSITION,
   type CanvasSize,
   type DrawCommand,
-  PATH_L,
-  PATH_M,
-  PATH_Z,
+  polygonFromPoints,
+  polylineFromPoints,
   type RenderLayer,
   SceneCanvas,
   solid,
@@ -15,11 +14,11 @@ import { IDENTITY_POSE_COMPOSITION,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
-import { multiply, quatFromAxisAngle, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
+import { dot, multiply, quatFromAxisAngle, sub, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import {
-  cameraEye, cameraViewProjection, createCamera, createPickEvery, createPoseDescriptor,
+  cameraEye, cameraViewProjection, createCamera, createCameraDep, createPickEvery, createPoseDescriptor,
   dollyAction, ndcToScreen, orbitAction, panAction, pose3, poseMatrix, useOrbitTool, worldPoseOf,
-  type Camera3d, type Camera3dDep, type Pose3, type Scene3d, type Viewport3d,
+  type Camera3d, type Pose3, type Scene3d, type Viewport3d,
 } from '@weasel-js/kernel3d';
 import styles from './Kernel3dDemo.module.css';
 import { decimal, qty } from '@weasel-js/quantity';
@@ -52,18 +51,11 @@ const toScreen = (m: Mat4, p: Vec3, size: CanvasSize): { x: number; y: number } 
   return w > 0.01 ? ndcToScreen({ x: x / w, y: y / w }, { x: 0, y: 0, ...size }) : null;
 };
 
-const polygon = (pts: readonly { x: number; y: number }[], close: boolean) => ({
-  kind: 'polygon' as const,
-  commands: new Uint8Array([PATH_M, ...pts.slice(1).map(() => PATH_L), ...(close ? [PATH_Z] : [])]),
-  coords: new Float32Array(pts.flatMap((p) => [p.x, p.y])),
-  fillRule: 'nonzero' as const,
-});
+const polygon = (pts: readonly { x: number; y: number }[], close: boolean) =>
+  (close ? polygonFromPoints(pts) : polylineFromPoints(pts));
 
 const hex = (rgb: Solid['rgb'], k: number) =>
   `#${rgb.map((c) => Math.round(Math.min(255, c * k)).toString(16).padStart(2, '0')).join('')}`;
-
-const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
-const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
 
 function groundGrid(vp: Mat4, size: CanvasSize): DrawCommand[] {
   const out: DrawCommand[] = [];
@@ -128,7 +120,7 @@ const deg = (r: number) => qty(wrapAngle(r, 'sign') * RAD_TO_DEG, decimal({ plac
  * Three boxes on a `<SceneCanvas>` whose scene holds `Pose3`s. The kit's own
  * select tool, marquee and selection outline run unchanged: the kernel's
  * `poseDescriptor` answers every bounds question with the box's projected
- * screen rectangle, and its `nodeAtPoint` casts a ray. The view stays at
+ * screen rectangle, and its `pickEvery` casts a ray. The view stays at
  * identity, so the kit's world point is the canvas pixel a ray starts from.
  */
 export function Kernel3dDemo() {
@@ -147,18 +139,14 @@ export function Kernel3dDemo() {
   const pickEvery = useMemo(() => createPickEvery(world), [world]);
 
   const cameraRig = useMemo((): SurfaceContribution => {
-    const camera3d: Camera3dDep = {
-      get: () => cameraRef.current,
-      set: setCamera,
-      size: () => size.current,
-    };
+    const camera3d = createCameraDep(world, { set: setCamera });
     return {
       id: 'camera3d',
       eligibility: { always: true },
       actions: [orbitAction, panAction, dollyAction],
       deps: { camera3d: () => camera3d },
     };
-  }, [cameraRef]);
+  }, [world]);
   const orbit = useOrbitTool();
 
   const layer = useMemo(() => solidsLayer(camera, scene), [camera, scene]);

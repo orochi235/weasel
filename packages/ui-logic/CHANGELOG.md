@@ -1,5 +1,12 @@
 # @weasel-js/ui-logic
 
+## 1.19.1
+
+### Patch Changes
+
+- Updated dependencies [71c3f85]
+  - @weasel-js/geom@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

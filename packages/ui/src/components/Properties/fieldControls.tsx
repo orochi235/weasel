@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef } from 'react';
 import { imeKey } from '@weasel-js/ui-input';
 import { useTextDraft } from '../../useTextDraft';
+import { useDebouncedText } from '../../useDebouncedText';
 import { FontFamilySelect } from '../FontFamilySelect';
 import { FontWeightSelect } from '../FontWeightSelect';
 import { Input } from '../Input';
@@ -137,8 +138,22 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
   );
 }
 
+const noInput = (): void => {};
+
 function StringControl(p: PropertyStringFieldProps) {
-  const edit = useTextDraft({ ...p, value: p.mixed ? '' : (p.value ?? '') });
+  const value = p.mixed ? '' : (p.value ?? '');
+  const waits = p.onInput !== undefined && (p.inputWaitMs ?? 0) > 0;
+  const input = useDebouncedText(value, p.onInput ?? noInput, p.inputWaitMs ?? 0);
+  const typed = useTextDraft({ ...p, value, onInput: waits ? input.type : p.onInput });
+  const edit = waits
+    ? {
+        ...typed,
+        settle: () => {
+          input.flush();
+          typed.settle();
+        },
+      }
+    : typed;
   if (p.control === 'textarea') {
     return (
       <textarea
@@ -152,7 +167,9 @@ function StringControl(p: PropertyStringFieldProps) {
         rows={3}
         onChange={(e) => edit.type(e.target.value)}
         onBlur={edit.settle}
-        onKeyDown={edit.keyDown}
+        onKeyDown={(e) => {
+          if (!imeKey(e.nativeEvent)) edit.keyDown(e);
+        }}
       />
     );
   }

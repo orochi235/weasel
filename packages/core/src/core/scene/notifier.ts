@@ -16,6 +16,11 @@ export interface Notifier {
   /** Run `fn` with the calls it causes held and then dropped: its caller
    *  notifies once itself. The version still counts each one. */
   muted<T>(fn: () => T): T;
+  /** Run `fn` now, or, while a call is held, once the outermost holder is done
+   *  and after the subscribers it notifies: for a change notice of another
+   *  kind that an edit can cause, so it never reports the edit half applied.
+   *  A function queued twice in one hold runs once. */
+  whenSettled(fn: () => void): void;
 }
 
 export function createNotifier(): Notifier {
@@ -23,6 +28,14 @@ export function createNotifier(): Notifier {
   let version = 0;
   let held = 0;
   let pending = false;
+  const settled = new Set<() => void>();
+  const flush = (): void => {
+    if (held > 0) return;
+    for (const fn of settled) {
+      settled.delete(fn);
+      fn();
+    }
+  };
 
   return {
     notify() {
@@ -46,6 +59,7 @@ export function createNotifier(): Notifier {
           pending = false;
           changed.emit();
         }
+        flush();
       }
     },
     muted(fn) {
@@ -56,7 +70,12 @@ export function createNotifier(): Notifier {
       } finally {
         held--;
         pending = was;
+        flush();
       }
+    },
+    whenSettled(fn) {
+      if (held === 0) fn();
+      else settled.add(fn);
     },
   };
 }

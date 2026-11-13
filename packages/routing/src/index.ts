@@ -175,7 +175,9 @@ export { createLongPressStore, LONG_PRESS_MS } from './interactions/dispatcher/l
 export type {
   PendingLongPress, LongPressState, LongPressStore, LongPressOptions,
 } from './interactions/dispatcher/longPressState';
-export { DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/gestures';
+export {
+  DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin, isPrimaryPress,
+} from '@weasel-js/gestures';
 export type { GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';
 export { startCarry } from './interactions/carry';
@@ -228,7 +230,7 @@ export * from './tools/routing';
 export { reportRouteConflicts, type ToolScopes } from './tools/routing/reflection/conflicts';
 
 // ─── input plumbing ───────────────────────────────────────────────────────
-export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
+export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding, undoKeyStep } from './interactions/keyHelpers';
 export type { KeyBinding } from './interactions/keyHelpers';
 export { BROWSER_RESERVED_CHORDS, browserReservedChord, type ReservedChord } from './interactions/browserReservedKeys';
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';
@@ -238,7 +240,9 @@ export {
   pendingKindOf, type PendingIngestItem,
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
-export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';
+export {
+  canvasToClient, clientScaleOf, clientToCanvas, clientToCanvasRect, layoutBoxOf, type LayoutBox, type ShownElement,
+} from './viewport/clientToCanvas';
 export { dlog, dwarn, isDebugEnabled } from './dlog';
 
 // ─── menus ────────────────────────────────────────────────────────────────

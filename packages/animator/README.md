@@ -24,7 +24,7 @@ animator.spring({ target, to: 40 }); // bends the motion; neither cancels the ot
 
 | Export | What it is |
 |---|---|
-| `useAnimator()` | The animator: `tween`, `spring`, `physics`, `decay`, `hold`, `loop`, `stagger`, `timeline`, `watch`, and `live`, with `pause`, `resume`, and `setTimeScale` over everything it runs. The frame loop stops while its host is unseen. Given a `clock` from `@weasel-js/clock`, it advances with that clock instead, so the clock pauses, seeks and gates it. |
+| `useAnimator()` | The animator: `tween`, `spring`, `physics`, `decay`, `hold`, `holdRows`, `loop`, `tweenLoop`, `stagger`, `timeline`, `watch`, and `live`, with `pause`, `resume`, `setTimeScale`, and `cancelKey` over everything it runs, and `onTick` to repaint after each frame's animations. The frame loop stops while its host is unseen. Given a `clock` from `@weasel-js/clock`, it advances with that clock instead, so the clock pauses, seeks and gates it. |
 | `createTarget(opts)` | One value an animator moves. Animations on a target add, so a second one bends the first. `target.axisIndexes(['y'])` answers where the axes it names sit among the target's numbers. |
 | `createElementTarget(opts)` | A target shown as an element's inline style. A run given `compositor: 'auto'` (or `'require'`, which throws where it cannot) that runs alone on it, with no `onTick`, and whose style is only `transform`, `translate`, `rotate`, `scale`, and `opacity`, is handed to `Element.animate` and plays on the browser's compositor, kept on the animator's clock. The default, `'off'`, keeps it on the main thread. |
 | `createTargetTable(opts)` | Many like values as rows of flat arrays, shown in one pass. |

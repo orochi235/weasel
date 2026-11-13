@@ -70,9 +70,9 @@ export function compact(options: Omit<CompactDisplay, 'kind'> = {}): CompactDisp
 /** The built-in `compact` kind, to spread into a `registerDisplayKind` replacement. */
 export const compactKind: DisplayKind<CompactDisplay> = {
   kind: 'compact',
-  format: (value, d) => {
-    const text = formatCompact(value, d.places ?? 0);
-    const m = /^(.*?\d)([A-Za-z]+)$/.exec(text);
+  format: (value, d, ctx) => {
+    const text = formatCompact(value, d.places ?? 0, ctx.locale);
+    const m = /^(.*?[^A-Za-z])([A-Za-z]+)$/.exec(text);
     return m
       ? [
           { type: 'number', value: m[1]! },
@@ -92,5 +92,5 @@ export const compactKind: DisplayKind<CompactDisplay> = {
             }),
       ),
     ),
-  parse: (text) => parseNumber(text),
+  parse: (text, _d, ctx) => parseNumber(text, undefined, ctx.locale),
 };

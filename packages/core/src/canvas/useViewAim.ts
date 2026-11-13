@@ -3,7 +3,7 @@
  * A camera-held view answers its aim from its camera; an aim-held one derives
  * its camera from the aim, through the same thunk a derived `view` uses.
  */
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { Dims } from 'core/layers/render';
 import { normalizeView, type View } from 'core/viewport/view';
@@ -91,7 +91,9 @@ export function useViewAim(args: {
     requestRedraw: () => registry?.surface()?.requestRedraw(),
     controlledBy: held === 'aim' ? 'aim' : 'view',
   });
-  const { getView, setViewFromInput } = state;
+  const { getView, setViewFromInput, reclamp } = state;
+  // A commit can leave the view's rect another size, which no write reports.
+  useEffect(() => { reclamp(); });
 
   const aim = useCallback((): ViewAim => {
     const rect = heldAt(...surfaceFrame());

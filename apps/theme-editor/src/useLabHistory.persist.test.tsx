@@ -1,3 +1,4 @@
+import './labTestSetup';
 import { act, cleanup, fireEvent, renderHook, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SerializedHistory } from '@weasel-js/history';
@@ -69,6 +70,16 @@ describe('useLabHistory with a store', () => {
     expect(again.result.current.state.n).toBe(0);
   });
 
+  it('saves a step still resting when the page turns hidden', () => {
+    const store = memoryStore<S>();
+    const { result } = renderHook(() => useLabHistory<S>({ n: 0 }, store));
+    act(() => result.current.update({ n: 1 }, 'n'));
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    vi.restoreAllMocks();
+    expect(store.held?.state.n).toBe(1);
+  });
+
   it('drops a history saved against other state than the hook opens on', () => {
     const store = memoryStore<S>();
     const first = renderHook(() => useLabHistory<S>({ n: 0 }, store));
@@ -132,7 +143,7 @@ describe('a reload', () => {
     first.unmount();
 
     renderWithIcons(<ThemeWorkbench {...props} start={{ definition: onDisk, baseHash: 'h1' }} />);
-    const undo = within(screen.getByRole('toolbar', { name: 'Theme actions' })).getByRole('button', { name: 'Undo' });
+    const undo = within(screen.getByRole('toolbar', { name: 'Lab actions' })).getByRole('button', { name: 'Undo' });
     expect(undo).toBeEnabled();
     fireEvent.click(undo);
     expect(screen.getByRole('button', { name: 'Pin gray-800' })).toBeInTheDocument();
@@ -176,7 +187,7 @@ describe("a theme draft's history, once the draft is discarded", () => {
     const bench = renderWithIcons(<ThemeWorkbench {...props} />);
     await userEvent.click(screen.getByRole('button', { name: 'Pin gray-800' }));
     clearDraftHistory('weasel');
-    fireEvent.click(within(screen.getByRole('toolbar', { name: 'Theme actions' })).getByRole('button', { name: 'Undo' }));
+    fireEvent.click(within(screen.getByRole('toolbar', { name: 'Lab actions' })).getByRole('button', { name: 'Undo' }));
     bench.unmount();
     expect(draftHistory('weasel').load()?.history.redoStack).toHaveLength(1);
   });

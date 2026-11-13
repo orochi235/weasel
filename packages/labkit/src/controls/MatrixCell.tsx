@@ -1,5 +1,5 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
-import { isBuiltinPref, type PrefLeaf, prefLeafValue } from '@weasel-js/prefs';
+import { isBuiltinPref, type PrefLeaf, type PrefNumber, prefLeafValue } from '@weasel-js/prefs';
 import { qty } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { type PropertyControlProps, stepDisplay } from '@weasel-js/ui/components/Properties';
@@ -7,7 +7,7 @@ import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Too
 import type { CSSProperties, DOMAttributes, MouseEvent, ReactElement, ReactNode } from 'react';
 import { auto as autoValue } from '../config/auto';
 import { useFieldChoices } from './fieldChoices';
-import { summarizeLeaf } from './inDialog';
+import { numberText, summarizeLeaf } from './inDialog';
 
 /** A color leaf whose default is empty: unset is a value of its own, not black. */
 export const clearable = (leaf: PrefLeaf): boolean => leaf.kind === 'color' && leaf.default === '';
@@ -15,9 +15,9 @@ export const clearable = (leaf: PrefLeaf): boolean => leaf.kind === 'color' && l
 /** What a cell shows of a value it opens a popover to edit. */
 function summaryOf(field: PropertyControlProps | null, leaf: PrefLeaf, value: unknown): ReactNode {
   if (field?.kind === 'number') {
-    return typeof field.value === 'number'
-      ? qty(field.value, field.display ?? stepDisplay(field.step)).text
-      : '—';
+    if (typeof field.value !== 'number') return '—';
+    const text = typeof value === 'number' ? numberText(leaf as PrefNumber, value) : undefined;
+    return text ?? qty(field.value, field.display ?? stepDisplay(field.step)).text;
   }
   if (field?.kind === 'enum') {
     const option = field.options.find((o) => o.value === field.value);

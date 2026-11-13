@@ -6,7 +6,8 @@
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names `tool`, `params-sides`,
  * `params-points`, `params-ratio`, `params-rotation`; a path's corner shapes under `corners`
- * and `corner-anchors` (`svgCorners.ts`); a leaf's scene id under `leaf-id`, a live path
+ * and `corner-anchors` (`svgCorners.ts`); a leaf's scene id under `leaf-id`, a node's Layers-panel name under
+ * `label` and its lock as `locked="true"`, a live path
  * effect on its group (`svgEffects.ts`), `role="mark"` on the group a mark with children
  * exports as, and `role="page"` with `page-id` on the clipped group a page's content saves in.
  */
@@ -28,16 +29,18 @@ import type {
   SvgKitTree,
   SvgLeafNode,
   SvgNode,
+  SvgGroupNode,
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
-import { downloadBlob, pickFile } from '@weasel-js/editor';
+import { downloadBlob } from '@weasel-js/editor';
 import { onePage, paperSizeOf } from './pages/drawPages';
 import { isPaperSize, PAPER_PRESETS } from './paperSizes';
 import { pageElements, pagesOfParsed } from './svgPages';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 import { cornerAttrs, pathWithCorners } from './svgCorners';
 import { decodeEffectAttrs, encodeEffectAttrs, type EffectAttrs, type EffectObj } from './svgEffects';
+import { decodeNoteAttrs, encodeNoteAttrs, textFrameFields } from './svgNote';
 
 /**
  * The `wd:` XML namespace, carrying WeaselDraw-specific metadata on top of standard SVG.
@@ -174,6 +177,7 @@ function decodePathToolAndParams(
 export function objToSvgNode(o: Obj): SvgNode {
   if (o.tool === 'text') {
     const style = o.style ?? {};
+    // A note is a group, which carries the attributes for the whole of it.
     const node = svgLeafFromKit({
       text: o.text,
       ...(Object.keys(style).length > 0 ? { style: style as TextStyle } : {}),
@@ -181,8 +185,9 @@ export function objToSvgNode(o: Obj): SvgNode {
       ...(o.verticalAlign ? { verticalAlign: o.verticalAlign } : {}),
       fill: o.fill === undefined ? DEFAULT_IMPORT_FILL : o.fill,
       ...(o.stroke ? { stroke: o.stroke } : {}),
-    }, o) as SvgTextNode;
-    node.meta = { wd: { attrs: encodeWdAttrs(o) } };
+      ...textFrameFields(o),
+    }, o) as SvgTextNode | SvgGroupNode;
+    node.meta = { wd: { attrs: { ...encodeWdAttrs(o), ...encodeNoteAttrs(o) } } };
     return node;
   }
   if (o.tool === 'image') {
@@ -224,7 +229,7 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  *
  * A page's group is no draft: each top-level draft under one names that page's id as `page`.
  */
-interface DraftBase { id: string; parentId: string | null; clip?: NodeClip; hidden?: true; page?: string }
+interface DraftBase { id: string; parentId: string | null; clip?: NodeClip; hidden?: true; page?: string; label?: string; locked?: true }
 export type SceneDraft =
   | (DraftBase & { kind: 'mark'; obj: Obj; boolean?: BooleanShapeOp })
   | (DraftBase & { kind: 'group'; pose: RectBounds; data: SvgKitLeafData })
@@ -255,6 +260,7 @@ function kitLeafToObj(
     if (data.stroke) o.stroke = data.stroke;
     if (data.verticalAlign) o.verticalAlign = data.verticalAlign;
     if (pose.rotation) o.rotation = pose.rotation;
+    Object.assign(o, textFrameFields(data), decodeNoteAttrs(attrs));
     const lh = attrs?.['line-height'] != null ? parseFloat(attrs['line-height']) : NaN;
     if (data.style || Number.isFinite(lh)) {
       o.style = { ...(data.style ?? {}) };
@@ -288,6 +294,7 @@ export function svgNodesToSceneDrafts(
 ): SceneDraft[] {
   const nodes = ('nodes' in input ? input.nodes : input).filter((n) => !isBackgroundNode(n));
   const effects = new Map<string, EffectAttrs>();
+  const marks = new Map<string, Pick<DraftBase, 'label' | 'locked'>>();
   const pageOfGroup = new Map<string, string>();
   const used = new Set<string>();
   const idOf = (n: SvgNode): string => {
@@ -300,6 +307,8 @@ export function svgNodesToSceneDrafts(
     const carried = n.kind === 'group' ? attrs?.['group-id'] ?? attrs?.['leaf-id'] : attrs?.['leaf-id'];
     const id = carried !== undefined && !used.has(carried) ? carried : nextId();
     used.add(id);
+    const named = decodeNodeAttrs(attrs);
+    if (named.label !== undefined || named.locked) marks.set(id, named);
     const effect = n.kind === 'group' ? decodeEffectAttrs(attrs) : null;
     if (effect !== null) effects.set(id, effect);
     return id;
@@ -319,6 +328,7 @@ export function svgNodesToSceneDrafts(
       ...(d.clip ? { clip: d.clip } : {}),
       ...(d.hidden ? { hidden: true as const } : {}),
       ...(page === undefined ? {} : { page }),
+      ...marks.get(d.id),
     };
     if (d.kind === 'mark') return [{ kind: 'mark', ...base, obj: d.data, ...(d.boolean ? { boolean: d.boolean } : {}) }];
     const group = { ...base, pose: d.pose, data: d.data };
@@ -339,6 +349,8 @@ export interface SceneSource extends SvgKitTree<string> {
   isPainted?(id: string): boolean;
   /** The page id (`Page.id`) of a page's node; `undefined` for any other node. */
   pageIdOf?(id: string): string | undefined;
+  /** The name the Layers panel shows for the node, where it was given one, and whether it is locked. */
+  nodeOf?(id: string): { label?: string; locked?: boolean } | undefined;
 }
 
 /**
@@ -351,22 +363,40 @@ export interface SceneSource extends SvgKitTree<string> {
  * export it.
  */
 export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]): SvgNode[] {
+  const named = <T extends SvgNode>(id: string, node: T): T => {
+    const attrs = encodeNodeAttrs(source.nodeOf?.(id));
+    if (attrs === null) return node;
+    return { ...node, meta: { ...node.meta, wd: { ...node.meta?.wd, attrs: { ...node.meta?.wd?.attrs, ...attrs } } } };
+  };
   return svgNodesFromKit(source, {
     ...(roots ? { roots } : {}),
     ...(source.isPainted ? { include: (id: string) => source.isPainted!(id) } : {}),
     leaf: (id) => {
       const obj = source.objOf(id);
       if (obj === undefined) return null;
-      if (!('effect' in obj)) return objToSvgNode(obj);
-      return { kind: 'group', children: obj.parts.map(objToSvgNode), meta: { wd: { attrs: encodeEffectAttrs(obj) } } };
+      if (!('effect' in obj)) return named(id, objToSvgNode(obj));
+      return named(id, { kind: 'group', children: obj.parts.map(objToSvgNode), meta: { wd: { attrs: encodeEffectAttrs(obj) } } });
     },
     group: (id, g) => {
       const page = source.pageIdOf?.(id);
-      const attrs: Record<string, string> = page === undefined ? { 'group-id': id } : { role: PAGE_ROLE, 'page-id': page };
-      return { ...g, meta: { wd: { attrs } } };
+      if (page !== undefined) return { ...g, meta: { wd: { attrs: { role: PAGE_ROLE, 'page-id': page } } } };
+      return named(id, { ...g, meta: { wd: { attrs: { 'group-id': id } } } });
     },
     mark: (_id, g) => ({ ...g, meta: { wd: { attrs: { role: MARK_ROLE } } } }),
   });
+}
+
+/** The `wd:` attributes naming and locking a node: `label`, and `locked="true"`; `null` for neither. */
+function encodeNodeAttrs(node: { label?: string; locked?: boolean } | undefined): Record<string, string> | null {
+  if (node?.label === undefined && node?.locked !== true) return null;
+  return { ...(node.label === undefined ? {} : { label: node.label }), ...(node.locked ? { locked: 'true' } : {}) };
+}
+
+function decodeNodeAttrs(attrs: Record<string, string> | undefined): Pick<DraftBase, 'label' | 'locked'> {
+  return {
+    ...(attrs?.label === undefined ? {} : { label: attrs.label }),
+    ...(attrs?.locked === 'true' ? { locked: true as const } : {}),
+  };
 }
 
 /** `wd:role` on the group a mark with children exports as; its first element is the mark. */
@@ -383,13 +413,3 @@ export function downloadSvg(svg: string, filename: string): void {
   downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), filename);
 }
 
-/** Pick an SVG file; resolve with its name and text, or null if the user cancelled. */
-export async function pickSvgFileNamed(): Promise<{ name: string; text: string } | null> {
-  const file = await pickFile('.svg,image/svg+xml');
-  if (!file) return null;
-  try {
-    return { name: file.name, text: await file.text() };
-  } catch {
-    return null;
-  }
-}

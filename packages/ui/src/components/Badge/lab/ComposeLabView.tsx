@@ -1,3 +1,4 @@
+import { copyText } from '@weasel-js/react';
 import { useState } from 'react';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { lookProps } from '../looks';
@@ -56,7 +57,7 @@ export function ComposeLabView(args: LabArgs) {
   const copySnippet = () => {
     const text = composeSnippet(lab);
     setSnippet(text);
-    if (typeof navigator !== 'undefined' && navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+    void copyText(text);
   };
   return (
     <div className={s.lab}>

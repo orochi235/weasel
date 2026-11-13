@@ -1,3 +1,4 @@
+import { foldText } from '@weasel-js/registry';
 import { heldAt } from './heldAt';
 import type { ListShape } from './list';
 
@@ -23,6 +24,13 @@ export interface TypeaheadBuffer {
 /** A buffer nothing has been typed into. */
 export const EMPTY_TYPEAHEAD: TypeaheadBuffer = { text: '', at: -Infinity };
 
+/** Whether a search is under way at `now`: something typed, and less than `resetMs` ago. A space typed then is
+ *  part of the search, not an activation. A `now` before the last key (a clock set back since) is no search. */
+export function typeaheadSearching(buffer: TypeaheadBuffer, now: number, resetMs: number = TYPEAHEAD_RESET_MS): boolean {
+  const gap = now - buffer.at;
+  return buffer.text !== '' && gap >= 0 && gap < resetMs;
+}
+
 /** The item a typed `query` lands on, searching forward from `at` with
  *  wrap. A one-letter query starts after the highlight so repeating a letter
  *  cycles; a longer one starts at it so typing on keeps the match. An index
@@ -30,21 +38,16 @@ export const EMPTY_TYPEAHEAD: TypeaheadBuffer = { text: '', at: -Infinity };
 export function typeaheadMatch<T>(
   items: readonly T[], at: number | null, query: string, shape: TypeaheadShape<T>,
 ): number | null {
-  const q = fold(query);
+  const q = foldText(query);
   const n = items.length;
   const from = heldAt(n, at);
   const start = from == null ? 0 : isOneChar(query) ? from + 1 : from;
   for (let k = 0; k < n; k++) {
     const i = (start + k) % n;
     const item = items[i]!;
-    if ((shape.canStop?.(item) ?? true) && fold(shape.label(item)).startsWith(q)) return i;
+    if ((shape.canStop?.(item) ?? true) && foldText(shape.label(item)).startsWith(q)) return i;
   }
   return null;
-}
-
-/** `s` lowercased and composed, so a label spelling `é` as `e` + U+0301 is found by typing `é`. */
-function fold(s: string): string {
-  return s.toLowerCase().normalize('NFC');
 }
 
 /** One typed character: the new buffer and the item it lands on. A key that
@@ -58,7 +61,7 @@ export function typeaheadStep<T>(
   shape: TypeaheadShape<T>,
   resetMs: number = TYPEAHEAD_RESET_MS,
 ): { buffer: TypeaheadBuffer; hit: number | null } {
-  const prev = now - buffer.at < resetMs ? buffer.text : '';
+  const prev = typeaheadSearching(buffer, now, resetMs) ? buffer.text : '';
   const k = key.toLowerCase();
   const cycling = prev !== '' && [...prev].every((c) => c.toLowerCase() === k);
   const text = cycling ? key : prev + key;

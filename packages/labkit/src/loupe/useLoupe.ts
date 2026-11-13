@@ -2,14 +2,14 @@ import { useLatest } from '@weasel-js/core';
 import {
   createEyedropperModel,
   createLoupeModel,
+  type LoupeInputApi,
   type LoupeMode,
   type LoupeModel,
   type LoupePoint,
+  WHEEL_RATE,
 } from '@weasel-js/loupe';
 import { useKitSetting } from '@weasel-js/react';
 import { type RefObject, useCallback, useEffect, useReducer, useRef } from 'react';
-import type { LoupeInputApi } from './loupeActions';
-import { WHEEL_RATE } from './loupeActions';
 import type { LoupeLens, ResolvedLoupe } from './types';
 
 /** Options for {@link useLoupe}. */

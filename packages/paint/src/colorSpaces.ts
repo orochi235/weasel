@@ -1,6 +1,6 @@
 // sRGB ↔ OKLab conversion. Reference: https://bottosson.github.io/posts/oklab/
 
-import { lerpHueDeg, type HueInterpolation } from './hue';
+import { lerpHueDeg, wrapDeg, type HueInterpolation } from './hue';
 import { lerp } from './lerp';
 import { byteHex, hexToRgbBytes } from './hex';
 import { hslToSrgb, srgbToHsl } from './hsl';
@@ -257,7 +257,7 @@ export function oklchDegToHex(L: number, C: number, hueDeg: number): string {
 export function hexToOklchDeg(hex: string): OklchDeg {
   const [L, A, B] = srgbU8ToOklab(...hexToRgbBytes(hex));
   const [l, c, h] = oklabToOklch(L, A, B);
-  return { L: l, C: c, H: ((((h * 180) / Math.PI) % 360) + 360) % 360 };
+  return { L: l, C: c, H: wrapDeg((h * 180) / Math.PI) };
 }
 
 // ---------------------------------------------------------------------------
@@ -364,7 +364,7 @@ export function interpolateSrgbSplit(
     case 'oklch': {
       const polar = (c: Rgb): Polar => {
         const [L, C, h] = oklabToOklch(...srgbToOklabFloat(c));
-        return [C, (((h * 180) / Math.PI) % 360 + 360) % 360, L];
+        return [C, wrapDeg((h * 180) / Math.PI), L];
       };
       const [C, H, L] = lerpPolar(polar(from), polar(to), t, hue, hueT);
       const [l, a, b] = oklchToOklab(L, C, (H * Math.PI) / 180);

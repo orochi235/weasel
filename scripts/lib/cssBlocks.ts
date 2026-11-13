@@ -64,10 +64,16 @@ export function lineAt(source: string, index: number): number {
   return n;
 }
 
+export interface Block {
+  /** The block's own prelude last, preceded by those of the blocks it nests in. */
+  readonly selectors: string[];
+  readonly decls: { text: string; index: number }[];
+}
+
 /** Each block's own declarations — nested blocks are their own entries. */
-export function blocks(source: string): { decls: { text: string; index: number }[] }[] {
-  const out: { decls: { text: string; index: number }[] }[] = [];
-  const stack: { decls: { text: string; index: number }[] }[] = [];
+export function blocks(source: string): Block[] {
+  const out: Block[] = [];
+  const stack: Block[] = [];
   let start = 0;
   for (let i = 0; i < source.length; i += 1) {
     const c = source[i];
@@ -75,7 +81,10 @@ export function blocks(source: string): { decls: { text: string; index: number }
     const raw = source.slice(start, i);
     const text = raw.trim();
     const index = start + raw.length - raw.trimStart().length;
-    if (c === '{') stack.push({ decls: [] });
+    if (c === '{') {
+      const outer = stack[stack.length - 1]?.selectors ?? [];
+      stack.push({ selectors: [...outer, text.replace(/\s+/g, ' ')], decls: [] });
+    }
     else {
       if (text && stack.length > 0) stack[stack.length - 1].decls.push({ text, index });
       if (c === '}') {

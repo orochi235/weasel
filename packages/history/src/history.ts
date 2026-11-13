@@ -21,7 +21,7 @@ export type {
 /** What a journal needs from a history beyond its public surface: both halves
  *  of every applied entry, and a way to record both on its parent. */
 interface JournalAccess {
-  appliedOps(): { forwardOps: Op[]; baseOps: Op[] };
+  appliedOps(): ReturnType<typeof appliedHalves>;
   record(forwardOps: Op[], baseOps: Op[], label: string, options?: RecordEntryOptions): void;
 }
 
@@ -169,8 +169,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
 
   /** Step until `n` entries are on the undo stack. An entry changes stacks
    *  only once its step has run, so a throw leaves both stacks describing
-   *  the state as it is. */
+   *  the state as it is. Refused under an active journal, whose edits sit over the stack's top. */
   function walkTo(n: number): Entry[] {
+    if (n !== undoStack.length) refuseWhileActive(activeJournal);
     const walked: Entry[] = [];
     while (undoStack.length > n) {
       const entry = undoStack[undoStack.length - 1]!;
@@ -189,12 +190,12 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     return walked;
   }
 
-  /** Coalesce eligibility: inside the window, and the same keys. Matched by
-   *  multiset rather than position so a multi-id selection can re-emit ops in
-   *  any order between batches without breaking the merge. */
+  /** Coalesce eligibility: inside the window, which a clock set back since (a machine waking to a corrected
+   *  time) is not, and the same keys. Matched by multiset rather than position so a multi-id selection can
+   *  re-emit ops in any order between batches without breaking the merge. */
   function canCoalesce(top: Entry, incoming: Op[]): boolean {
-    const windowMs = typeof coalesceWindowMs === 'function' ? coalesceWindowMs() : coalesceWindowMs;
-    if (!(windowMs > 0) || top.coalesceKey !== undefined || version !== coalesceAnchorVersion || now() - top.timestamp > windowMs) return false;
+    const windowMs = typeof coalesceWindowMs === 'function' ? coalesceWindowMs() : coalesceWindowMs, gap = now() - top.timestamp;
+    if (!(windowMs > 0) || top.coalesceKey !== undefined || version !== coalesceAnchorVersion || !(gap >= 0 && gap <= windowMs)) return false;
     return sameCoalesceKeys(top.forwardOps, incoming);
   }
 
@@ -321,8 +322,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       };
     },
     goto(n) {
-      // Total length stays constant during this walk (we only shuffle
-      // entries between undo and redo stacks).
+      // Total length stays constant during this walk: entries only move between the two stacks.
       const total = undoStack.length + redoStack.length;
       if (!Number.isInteger(n) || n < 0 || n > total || n === undoStack.length) return;
       const start = undoStack.length;

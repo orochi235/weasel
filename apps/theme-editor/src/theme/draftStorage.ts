@@ -1,4 +1,5 @@
 import type { ThemeDefinition } from '@weasel-js/theme';
+import { isUnreadableKey, readStored } from '@weasel-js/editor';
 import { clearSavedHistory, type LabHistoryStore, localHistoryStore } from '../historyStorage';
 
 export interface StoredDraft {
@@ -35,13 +36,14 @@ export function parseDraft(raw: string | null, name: string): StoredDraft | null
   return { definition: definition as ThemeDefinition, baseHash };
 }
 
+/** Theme `name`'s draft, or null for none. One that cannot be read is kept aside (`readStored`), since the next edit
+ *  saves over it. */
 export function loadDraft(name: string): StoredDraft | null {
-  try {
-    return parseDraft(localStorage.getItem(draftKey(name)), name);
-  } catch {
-    // No storage at all: a private window, or this app's tests under Node 26.
-    return null;
-  }
+  return readStored(draftKey(name), (raw) => {
+    const draft = parseDraft(raw, name);
+    if (draft === null) throw new Error(`not a draft of theme "${name}"`);
+    return draft;
+  }, () => null);
 }
 
 /** Every theme with a draft in storage, so a new theme not yet saved survives a reload. */
@@ -50,7 +52,7 @@ export function draftNames(): string[] {
     const names: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key?.startsWith(DRAFT_PREFIX)) names.push(key.slice(DRAFT_PREFIX.length));
+      if (key?.startsWith(DRAFT_PREFIX) && !isUnreadableKey(key)) names.push(key.slice(DRAFT_PREFIX.length));
     }
     return names;
   } catch {
@@ -58,11 +60,13 @@ export function draftNames(): string[] {
   }
 }
 
-export function persistDraft(draft: StoredDraft): void {
+/** Store `draft`; answers whether the browser took it, which a private window or a full quota refuses. */
+export function persistDraft(draft: StoredDraft): boolean {
   try {
     localStorage.setItem(draftKey(draft.definition.name), JSON.stringify(draft));
+    return true;
   } catch {
-    // Private windows and full quotas both land here.
+    return false;
   }
 }
 

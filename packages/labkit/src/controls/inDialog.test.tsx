@@ -45,6 +45,54 @@ describe('f.list', () => {
     );
   });
 
+  it('summarizes a list of objects by each entry’s first string field', () => {
+    const stroke = f.object({ width: f.number(1), name: f.string('') });
+    const schema = f.schema({
+      strokes: f
+        .list(
+          [
+            { width: 1.5, name: 'primary' },
+            { width: 1, name: 'accent' },
+          ],
+          stroke,
+        )
+        .label('Strokes'),
+    });
+    renderWithIcons(<Panel schema={schema} />);
+    const trigger = screen.getByRole('button', { name: 'Edit Strokes' });
+    expect(trigger.textContent).toContain('primary, accent');
+    expect(trigger.textContent).not.toContain('{');
+  });
+
+  it('summarizes an object entry by the summary its schema supplies', () => {
+    const stroke = f
+      .object({ name: f.string(''), width: f.number(1) })
+      .summary((v) => `${v.name} ${v.width}`);
+    const schema = f.schema({
+      strokes: f.list([{ name: 'primary', width: 1.5 }], stroke).label('Strokes'),
+      named: f.map({ a: { name: 'thin', width: 0.5 } }, stroke).label('Named'),
+    });
+    renderWithIcons(<Panel schema={schema} />);
+    expect(screen.getByRole('button', { name: 'Edit Strokes' }).textContent).toContain(
+      'primary 1.5',
+    );
+    expect(screen.getByRole('button', { name: 'Edit Named' }).textContent).toContain(
+      '{"a":"thin 0.5"}',
+    );
+  });
+
+  it('summarizes a union entry by its tag when its variant has no string field', () => {
+    const fill = f.union('type', {
+      solid: f.object({ alpha: f.number(1) }),
+      none: f.object({}),
+    });
+    const schema = f.schema({
+      fills: f.list([{ type: 'solid', alpha: 1 }, { type: 'none' }], fill).label('Fills'),
+    });
+    renderWithIcons(<Panel schema={schema} />);
+    expect(screen.getByRole('button', { name: 'Edit Fills' }).textContent).toContain('solid, none');
+  });
+
   it('is the kind an f.value with a string-array default takes', () => {
     const resolved = resolveConfigSchema(f.schema({ names: f.value(['a']) }));
     expect(resolved.group.children.names).toMatchObject({ kind: 'list' });
@@ -118,6 +166,12 @@ describe('summarizeLeaf', () => {
   it('writes a number with a unit as its field shows it', () => {
     expect(summarizeLeaf(angle, Math.PI)).toBe('180°');
     expect(summarizeLeaf(plain, 3)).toBe('3');
+  });
+
+  it('writes a number with a suffix as its field shows it', () => {
+    // `suffix` is a labkit extra, which no `PrefLeaf` type names.
+    expect(summarizeLeaf(Object.assign({ suffix: 'px' }, plain), 12)).toBe('12px');
+    expect(summarizeLeaf(Object.assign({ suffix: 'ticks' }, angle), Math.PI)).toBe('180ticks');
   });
 
   it("writes a number through its display, and infinity as its endless end's word", () => {

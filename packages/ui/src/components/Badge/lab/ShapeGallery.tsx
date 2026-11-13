@@ -1,3 +1,4 @@
+import { copyText } from '@weasel-js/react';
 import { useState } from 'react';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { SHAPES } from '../shapes';
@@ -61,9 +62,7 @@ export function ShapeGallery({ look, variant, label }: { look: BadgeLook; varian
     const text = shapeParamsSnippet(allParams);
     setSnippet(text);
     setCopied(false);
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => setCopied(true)).catch(() => {});
-    }
+    void copyText(text).then(setCopied);
   };
   const reset = () => {
     setAllParams(defaultShapeParams());

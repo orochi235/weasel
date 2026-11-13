@@ -7,6 +7,7 @@
  * anything core does not already offer.
  */
 
+import type { Vec3 } from '@weasel-js/geom/3d';
 import type { Camera3d, OrbitLimits } from './camera';
 
 /** The `camera3d` dep: the orbit camera a 3D host owns, which the camera
@@ -22,6 +23,9 @@ export interface Camera3dDep {
   /** How far the camera actions may turn and dolly it. Omitted,
    *  `DEFAULT_ORBIT_LIMITS`. */
   limits?(): Partial<OrbitLimits>;
+  /** The world's up (`World3d.up`), which a pan and a dolly slide the target across the screen against. Omitted
+   *  or `undefined`, +y. */
+  up?(): Vec3 | undefined;
   /** Where `camera.home` returns it. Omitted, `camera.home` does nothing. */
   home?(): Camera3d;
 }

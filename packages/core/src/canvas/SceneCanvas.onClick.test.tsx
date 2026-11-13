@@ -57,11 +57,11 @@ function setup(seed?: (scene: Scene<D, L, P>) => void, pickEvery?: () => string 
 }
 
 describe('SceneCanvas onClick', () => {
-  it('fires with the hit node, after the pick has landed', () => {
+  it('fires with the hit node and the world point it was picked at, after the pick has landed', () => {
     const { id, onClick, click } = setup();
     click(140, 130);
     expect(onClick).toHaveBeenCalledTimes(1);
-    expect(onClick.mock.calls[0]).toEqual([{ id, kind: expect.any(String) }, [id]]);
+    expect(onClick.mock.calls[0]).toEqual([{ id, kind: expect.any(String), world: { x: 140, y: 130 } }, [id]]);
   });
 
   it('fires again on a node that is already picked', () => {
@@ -69,7 +69,7 @@ describe('SceneCanvas onClick', () => {
     click(140, 130);
     click(140, 130);
     expect(onClick).toHaveBeenCalledTimes(2);
-    expect(onClick.mock.calls[1]).toEqual([{ id, kind: expect.any(String) }, [id]]);
+    expect(onClick.mock.calls[1]).toEqual([{ id, kind: expect.any(String), world: { x: 140, y: 130 } }, [id]]);
   });
 
   it('fires with null on empty canvas', () => {
@@ -84,7 +84,7 @@ describe('SceneCanvas onClick', () => {
       top = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 120, y: 110, width: 80, height: 60 } });
     });
     click(140, 130);
-    expect(onClick.mock.calls[0]).toEqual([{ id: top, kind: expect.any(String) }, [top]]);
+    expect(onClick.mock.calls[0]).toEqual([{ id: top, kind: expect.any(String), world: { x: 140, y: 130 } }, [top]]);
   });
 
   it('reports a child rather than the container around it', () => {
@@ -94,12 +94,12 @@ describe('SceneCanvas onClick', () => {
       child = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', parent: box, pose: { x: 20, y: 20, width: 40, height: 40 } });
     });
     click(240, 240);
-    expect(onClick.mock.calls[0][0]).toEqual({ id: child, kind: expect.any(String) });
+    expect(onClick.mock.calls[0][0]).toEqual({ id: child, kind: expect.any(String), world: { x: 240, y: 240 } });
   });
 
   it('reports an id the scene does not hold instead of throwing', () => {
     const { onClick, click } = setup(undefined, () => 'not-in-scene');
     click(140, 130);
-    expect(onClick.mock.calls[0]?.[0]).toEqual({ id: 'not-in-scene', kind: 'unknown' });
+    expect(onClick.mock.calls[0]?.[0]).toEqual({ id: 'not-in-scene', kind: 'unknown', world: { x: 140, y: 130 } });
   });
 });

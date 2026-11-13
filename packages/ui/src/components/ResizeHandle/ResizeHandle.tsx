@@ -5,6 +5,7 @@ import { COARSE_STEPS } from '@weasel-js/ui-input';
 import { snapToStep } from '@weasel-js/quantity';
 import type { Orientation } from '../orientation';
 import s from './ResizeHandle.module.css';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /**
  * Props for {@link ResizeHandle}. `onInput` fires throughout the drag and
@@ -102,7 +103,7 @@ export function ResizeHandle(props: ResizeHandleProps) {
   }, [latest]);
 
   const onPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0 || session.current) return;
+    if (!isPrimaryPress(e) || session.current) return;
     const p = latest.current;
     const vertical = (p.orientation ?? 'vertical') === 'vertical';
     const axisOf = (ev: { clientX: number; clientY: number }) => (vertical ? ev.clientX : ev.clientY);

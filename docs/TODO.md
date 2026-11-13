@@ -30,13 +30,32 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P2) [agent] A key pressed right after a click acts before the click's selection lands.** Measured in
-  collego (2026-11-10): its `watch.spec` clicks a node and presses Backspace at once. On 1.17.3 the node was
-  deleted; on 1.18.2 nothing is deleted, though the node shows as selected within 100 ms. The selection comes
-  from `@weasel-js/core`'s select binding. Inferred, not traced: since 1.18 a press is dispatched again as the
-  click it settles into, so the selection commits on release (or later) instead of on press, and a key
-  pressed in between finds the old selection. A person clicking then typing quickly hits it too. Closes when a
-  key pressed straight after a click acts on what the click selected, or the delay is ruled acceptable.
+- **(P3) [agent] An `insertNodeFactories` entry for a kit kind cannot read its own extras without a cast.**
+  `InsertNodeFactory` takes the whole `InsertExtras` union, whose last member is `{ kind: string; [extra]:
+  unknown }`, so `extras.kind === 'pencil'` narrows to that member too and `extras.samples` is `unknown`:
+  StrokeAndFillDemo's pencil factory casts `extras` for that reason. The seam is a factory map typed per key
+  (`{ pencil?: (bounds, extras: Extract<InsertExtras, { kind: 'pencil' }>) => … }` beside an open string
+  index), which needs the factory type made bivariant so the narrower entries still fit the record; new API,
+  too big for audit round 20's pass (2026-11-12). Closes when the demo's factory reads `extras.samples` with no
+  cast.
+
+- **(P2) [recheck] A kernel3d host has no way to drag a node up or down, or along one axis.** kernel3d's
+  `translate` keeps a node at its height (`movedOnLevel` in `packages/kernel3d/src/deps.ts`), and the kernel
+  ships no translate gizmo: an editor building one writes its own action, chrome, hit test and snap plane
+  (found building a z-up scene editor, audit round 20, 2026-11-12). New API of real size: an axis-constrained
+  move action whose plane faces the camera along the dragged axis, handles a `PoseDescriptor` or pick can
+  report, and chrome drawn in screen space. Whether the handles' look is the maintainer's call is the open
+  question. Closes when a kernel3d host can drag a selected node along each world axis, up included, with
+  the kernel's own action and handles.
+
+- **(P3) [agent] A 3D snap stores a coordinate a few ulps off where it snapped.** kernel3d's snap session
+  resolves an exact world delta, then hands the move or insert back a screen point (`SnapOutcome.point`),
+  which `PoseDescriptor.translate` and `createInsert` cast onto the plane again: a box snapped to a
+  ground-grid line at y = 0.5 is stored at 0.4999999999999929 (measured 2026-11-12, audit round 20). Not
+  fixed in the pass: the exact delta has no way through core's move and insert actions, whose outcome and
+  `translate(pose, dx, dy)` are 2D points, so the fix is a core contract that carries a host's own snapped
+  position (or delta) from the session to the commit. Closes when a ground-grid snap in kernel3d stores
+  `k * step` exactly.
 
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
@@ -47,17 +66,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has watched a real OS drag in WeaselDraw and the ghost follows the
   pointer, clears on Esc, on leave and on drop, and looks right.
 
-
-- **(P3) [agent] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
-  runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
-  the header while its body is fixed as the surface buffers plus a `Workspace` of trials.
-  PaletteLab's page *is* the shell body, and the `#/theme` workbench beside it is a second bare
-  `LabShell` page. Moving them in means making each an instrument and running it in a trial pane,
-  with labkit's per-trial store and persistence beside its own, and a trial titlebar beside its own
-  `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
-  no trials at all.
-  Ruled (2026-11-07): labkit supports a lab with no trials, rendering its children as the body.
-  Closes when `<Lab>` takes no instruments and `apps/theme-editor` runs as one.
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -93,16 +101,6 @@ Owner tags, after the priority (2026-10-26):
 ---
 
 ## Paths & booleans
-
-- **(P3) [agent] Path edit through a text-along effect dims the curved text with everything else.** Ruled
-  (2026-11-07): light it, and let a press on it edit the text. Closes when path edit does both.
-- **(P3) [agent] `mergeRegion` leaves edges inside the fill where two curves cross nearly tangent.** Two
-  round-joined synthetic-bold outlines whose corner arcs lie 0.001 em apart (`M0 -0.001h0.02v0.02h-0.02Z` and
-  `M0 0h0.021v0.1h-0.021Z`, grown by the canvas tier's 1/75 em) merge with spikes and slivers a stroke traces.
-  The pass on 2026-11-10 fixed shared and near-shared straight edges and exact duplicate contours; this needs
-  near-tangent curve crossings snapped or merged, a change to the curve boolean core. Closes when
-  `glyphGeometry.pbt.test.ts` checks the bake's round-joined outlines for inner edges too (it checks the
-  mitered atlas ones only).
 
 ### Path editing tricks
 
@@ -230,6 +228,14 @@ Owner tags, after the priority (2026-10-26):
   `apps/draw/src/useSymmetry.ts`).
   Closes when the maintainer has driven draw's Symmetry toggle hands-on and the defaults and keys he
   picks are committed.
+- **(P3) [maintainer] Undoing draw's symmetry group leaves Symmetry on, drawing into nothing.** Turning
+  Symmetry on (or a New, an Open, or deleting the page its group is on, with it on) makes the group as an undo
+  step of its own; one Undo removes it, the `view.symmetry` pref still reads on, and new shapes draw unmirrored
+  until it is toggled off and on
+  (`apps/draw/src/useSymmetry.ts`). Re-making the group on undo would wipe redo, and turning the pref off
+  breaks Undo past a New, which today lands back in the old document's group. Needs a ruling: whether
+  Symmetry's on/off is a pref or document state that undo moves.
+  Closes when the ruling is made and an Undo of the group leaves the toggle and the drawing agreeing.
 - **(P2) [maintainer] Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: its tool key, M, which moved Envelope mesh off it when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
@@ -277,44 +283,63 @@ Owner tags, after the priority (2026-10-26):
 
 ## Text
 
-- **(P3) [agent] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
-  and starts each inline box on a whole pixel.** Measured 2026-10-29 by stepping `x` through a pixel
-  in eighths: WebKit's overlay ink moves in steps of a third of a pixel, each taken late (Inter
-  16px stays put from `x` 20 to 20.25 and moves next at 20.375 and 20.75), where Chromium and
-  Firefox step by quarters to the nearest. A piece that starts between pixels paints from the one
-  below: the small capitals of `"Hgd" Inter 72px small caps` start at 73.508 and paint from 73, so
-  that case's `dRight` runs from -0.07 to -0.91 across the pixel, and is -0.79 at `x` 20 against
-  the test's 0.75. It is the whole configuration, not that case: in
-  `npx vitest run -c scripts/measure-overlay-alignment.config.ts`, 22 of WebKit DPR 1's 160 matrix
-  rows fall outside the test's bounds, every one trailing the canvas (mean `dx` -0.14); WebKit DPR 2
-  has 2, the same Arial 72px rows that Chromium DPR 2 has. Advances are not it: WebKit's DOM width of
-  `GDGDGDGDGD` matches the atlas to 0.001px. Nothing on the overlay moves the grid: `will-change`,
-  `translateZ(0)`, either `text-rendering`, and `-webkit-font-smoothing` left every pixel in place
-  (the last moved the small-caps case 0.76px further left). A WebKit-only nudge only trades one
-  case for another: a half pixel took the matrix mean `dx` to +0.36 and failed three cases, and a
-  sixth of a pixel halved the mean `dx` at 40 and 72px but took Inter 16px's worst `dRight` from
-  0.32 to 0.74. CI runs Chromium only. What is left is a ruling: accept it as WebKit's and give
-  WebKit DPR 1 its own bound in the alignment test, or detect WebKit in text-dom and nudge.
-  Ruled (2026-11-07): accept it as WebKit's. Closes when `overlayAlignment.browser.test.tsx` gives WebKit DPR 1
-  its own bound.
+- **(P2) [agent] Text cannot shrink to fit its box.** A poster's headline in a fixed box needs the largest
+  size at which its text fits; `fitTextPose` only does the reverse, sizing the box to the text. The seam is one
+  decision every reader shares, not a helper: a text node field (`fit: 'shrink'`) that `layoutTextPose` resolves to
+  a scale on the node's and every run's `fontSize` and `letterSpacing`, `{ px }` sizes included, so the `kit:text`
+  painter, `textToPath`, `measureTextBounds`, `caretIndexAt` and the edit overlay all set the text at the fitted
+  size. A search over `layoutTextPose`'s bounds is the easy part; threading the scale through those readers is not
+  an audit pass (found building a poster designer, audit round 20, 2026-11-12). Closes when a node with
+  `fit: 'shrink'` paints, outlines and opens its editor at the fitted size under a test.
 
----
+- **(P2) [agent] SVG export can neither embed the faces its text is set in nor write the text as outlines.**
+  `serializeSvg` writes `<text font-family="…">`, which another renderer sets in whatever face it has. For
+  outlines a consumer writes a `svgNodesFromKit` `leaf` over `textToPathsByPaint` and `svgPaintFromKit`; for an
+  embedded face there is no way at all, though `fontEmbedding(family, weight, style)` already hands back the sfnt
+  and its `embeddable` license bit. The seam: a `svgNodesFromKit` option lowering text leaves to their outline
+  paths, and a `serializeSvg` option writing an `@font-face` per face from `fontEmbedding`, loaded by `warmSvg`
+  (found building a poster designer, audit round 20, 2026-11-12). Closes when both write a text node set in a
+  registered outline face, under a test, and an unembeddable face falls back to outlines with a warning.
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] A direct scene call made while a journal is open lands on the scene's own stack.**
-  `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
-  `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
-  Ruled 2026-10-12 to leave it for now. Routing them means `recorder.record` and the history facade
-  consulting the journal accessor. `scene.recordedForm.test.ts` pins today's split. Routing `scene.batch` also needs a new method
-  on `Journal`: `batch` records ops that have already applied (`engine.recordEntry`), and `Journal`
-  has only `applyBatch`, which would apply them again; a direct call that touches a laid-out
-  container runs as a batch. draw opens a journal in every strict mode, and in every soft mode
-  unless the Modes > Undo inside a mode pref says the document's history
-  (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
-  a mode lands.
-  Ruled (2026-11-07), reopening 2026-10-12's: route them to the open journal.
-  Closes when the direct calls reach the open journal and `scene.recordedForm.test.ts` pins that instead.
+- **(P3) [agent] Moving a node along a path takes a hand-built pose descriptor.** `tweenPose` follows
+  `geometry.lerp`, so a node rides a path when the caller builds a descriptor whose `lerp` reads
+  `pointAtLength(pathLengthTable(path), t * total)` and places the pose there (2026-11-12, audit round
+  20). The kit has every piece but no seam: what point of the pose rides the path, whether the node
+  turns with the tangent, and a 3D pose on a `@weasel-js/geom/3d` path. `springPose` cannot take it on a
+  pose target, whose spring moves each axis on its own. Closes when core exports a path-motion
+  descriptor (or a `tweenPose` option) that a consumer passes a `Path` to, with a demo on it.
+- **(P3) [agent] Exporting a timeline as frames or video is hand-written.** A consumer pauses the
+  timeline, `seek`s it per frame and renders each through `createRasterSession().render`, then
+  encodes the rasters itself; nothing in the kit steps a `TimelineHandle` at a frame rate or
+  hands frames to `VideoEncoder` or `MediaRecorder` (2026-11-12, audit round 20). Closes when a
+  helper renders a timeline span at a given rate to a sequence of rasters, with a site demo that
+  saves the frames.
+
+- **(P3) [agent] `<SceneCanvas scene={json}>` cannot load a scene that needs its own composition.**
+  `useBakedScene` bakes through `sceneFromJSON(json, {})`, and `<SceneCanvas>` has no prop naming a
+  composition, so a serialized scene with nested non-rect poses (a kernel3d `Pose3` scene with groups) is
+  refused there; `sceneFromJSON` throws on one rather than fold it under `RIGID_POSE_COMPOSITION` (audit
+  round 20, 2026-11-12). It never worked: before the throw it loaded with `NaN` in every nested pose. Pass a
+  live `Scene` instead. Closes when the serialized `scene` prop can be given a composition, or is documented
+  as rect-only and refuses with that message.
+
+- **(P3) [agent] SVG export leaves out a node only a consumer painter draws.** `svgNodesFromKit` writes what
+  core's built-in painters draw, so a kind registered with `registerNodeShape` vanishes from the file unless the
+  app passes `leaf` (the svg README shows it, 2026-11-12). The painter already returns the node's `path` draw
+  commands; lowering those (path, fill, stroke) to `SvgPathNode`s through `findNodeShape` would export any
+  painted kind with no `leaf`. Left because a command's gradient fill is in a different frame from the
+  `svgPaintFromKit` one and needs working out. Closes when a node drawn by a registered painter's solid-filled
+  path commands exports with no `leaf`.
+
+- **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids
+  stops painting.** `scenePickIds` numbers each node on its first paint and keeps the number for the
+  scene's life, so an id learned from an id frame stays good. Nodes removed keep theirs, and once a scene
+  has painted `MAX_PICK_ID` (2^24 - 1) distinct ids, `idOf` throws in the paint: a particle emitter
+  minting 100 ids a frame reaches it in about 45 minutes at 60 fps. Reusing a removed node's number
+  breaks the "stays good" promise for ids read before the removal, so it needs a ruling. Closes when
+  removed nodes' numbers are reclaimed or the promise is kept some other bounded way (filed 2026-11-11).
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
@@ -324,6 +349,34 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [maintainer] draw's guides are not saved with the document.** Guides dragged off draw's
   rulers live for the session (`apps/draw/src/useRulers.ts`); saving them is a change to the saved
   SVG. Closes when the maintainer rules whether and how a document keeps its guides, and draw does it.
+- **(P2) [agent] An editor's session can only be saved to `localStorage`.** `useSessionPersistence`,
+  `useAutosave` and `readStored` (`packages/editor/src/`) call `localStorage` directly, so an app that wants
+  its document in IndexedDB rebuilds all of them over `@weasel-js/storage`'s `openRecords`: the debounce, the
+  flush on leave, the undo stack dropped beside a snapshot that loads rebuilt (`snapshotRebuildsTree`), and the
+  unreadable entry kept aside. An image the canvas ingests is embedded as a `data:` URI by default, so a
+  document holding a few photos passes `localStorage`'s quota and every save fails. The seam is the hooks
+  taking a `RecordCache` opened before the scene is made (its reads are synchronous once open), with
+  `localStorage` the default; whether entries stay JSON text or become structured-clone values is the call
+  to make. Closes when an app can keep its session in IndexedDB through the editor's hooks (filed 2026-11-12).
+- **(P2) [recheck] Exporting a page as SVG, PNG or PDF lives only in `@weasel-js/diagram-formats`.**
+  `exportPageSvg`, `exportPagePng` and `exportPagesPdf` (`packages/diagram-formats/src/page*.ts`) read
+  nothing diagram-specific except the default background (the `diagram:theme` page color) and the diagram
+  painters `pageSvgNodes` consults, yet an editor of any other kind must install `@weasel-js/diagram` and
+  `@weasel-js/plot` to get them, or copy the walk from page rect through `planPixelRender` to `writePdf`.
+  draw has no PNG or PDF export. Closes when a page of any scene exports through a package
+  that does not depend on diagram, and diagram-formats builds its exports on it (filed 2026-11-12).
+- **(P2) [agent] A sync layer can hear a scene's ops but cannot apply them to another scene.**
+  `scene.history.observe` reports each entry's ops as `{ name, args }` (`kit:add`, `kit:setPose`, and an
+  inverse as `revert:<kind>`), but those are the scene's registered ops, which `rebuildOp`
+  (`@weasel-js/core/engine`) does not know, and no public call applies one to a peer scene; only
+  `restoreHistory` rebuilds them (`OpTable.rebuild`), into a history. Closes when a scene can apply a
+  serialized op another scene emitted, an undo included, without recording it (filed 2026-11-12).
+- **(P3) [maintainer] A container with an output-grid `drawn` pose clips its children at its stored
+  pose.** `buildSceneTree` paints and culls a node at the quantize rule's drawn pose (2026-11-11), but
+  takes its `clip: 'outline'` (`ownClipOf`) from the pose it is stored at, so the clip can sit up to
+  a grid cell off the container's painted edge. Children still compose from the stored pose, and
+  picking reads it by design. Closes when the maintainer rules whether a clip follows the drawn pose,
+  and the walk does what was ruled.
 
 ---
 
@@ -349,11 +402,27 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] Typeahead misses a label ending in capital sigma.** `typeaheadMatch` (ui-input) compares
-  lowercased text, and `Σ` lowercases to `ς` at a word's end, so typing `ασ` never lands on `ΑΣ`. registry's
-  `matchQuery` folds the two sigmas since 2026-11-10; ui-input does not depend on registry, so the fold needs one
-  home both read rather than a second copy (2026-11-10). Closes when both fold through one definition and a
-  typeahead test lands `ασ` on `ΑΣ`.
+- **(P3) [maintainer] A labkit tile drag shows its node's UUID as the ghost.** `<Workspace reorderable>` mounts
+  windease's `DragProvider` with its default overlay, which labels the chip with the node's `meta.title` and falls
+  back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
+  (seen 2026-11-11). Closes when the ghost shows the trial's title, or labkit draws its own.
+
+- **(P2) [agent] A labkit config has no curve leaf, so a curve in a control panel is a page of consumer code.**
+  labkit re-exports ui's `CurveField` but `f` has no `curve`: a lab declares `f.custom('curve', …)` and a
+  `controls` renderer that draws its own row label and measures its own width (`CurveField` takes `width` in px).
+  The row also cannot be one undo step: `CurveField` reports every move of a drag through `onChange` (it wires
+  `CurveEditor`'s `onInput` there and drops its settled `onChange`), and a renderer has no draft writer, so a drag
+  held still past labkit's 500 ms gesture gap undoes in two steps (measured in a scratch lab, 2026-11-12). The
+  seam: `CurveField` gains `onInput` beside `onChange`, and `f.curve(default, { min, max })` gets a built-in row in
+  `ControlRow` that sizes the field to the row and sends drafts through the panel's `draftConfig`. Too big for an
+  audit pass: new API in two packages. Closes when `f.curve` ships and a dragged, paused curve undoes in one step.
+
+- **(P3) [agent] iconfab still mounts its annotation targets 12 at a time.** labkit's overlay died with "Maximum
+  update depth exceeded" past about two dozen targets in one commit, because the surface committed each tile's
+  placement in a `flushSync` of its own; it now commits a frame's tiles together, and
+  `AnnotationOverlay.many.browser.test.tsx` mounts 100 (2026-11-12). iconfab's Review page
+  (`~/src/iconfab/apps/lab/src/review/Review.tsx`, `TARGET_BATCH`) and its README's "Known problems" still work
+  around it, on labkit 1.19.0 from npm. Closes when a labkit release carries the fix and iconfab drops the batching.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
@@ -384,21 +453,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
   delete it.
 
-- **(P3) [agent] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
-  0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
-  subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
-  cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
-  disabled.
-  Ruled (2026-11-07): the second cue is desaturation onto the neutral ramp. Closes when every control that
-  fades when disabled also desaturates.
-
-- **(P3) [agent] labkit's `Split` lays its content out past a narrow strip until its floors are measured.**
-  `useZoneWidth` starts its `ResizeObserver` a tick after mount, so a trial narrower than a stored sidebar width
-  plus the content's 160px floor first lays the content out overflowing the trial (seen 2026-11-11 in klieg's
-  tube lab: a 259px strip with a 140px sidebar put a 160px content pane at x=141), then slides it 41px left
-  once the floors arrive. Since `watchElementMove` reports that slide, surfaces follow it; what is left is the
-  visible jump at load. Closes when a browser test mounts a 260px `TrialBody` with `width={140}` and finds the
-  content inside the strip on its first painted frame.
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -456,14 +510,12 @@ Owner tags, after the priority (2026-10-26):
 
 ### WeaselDraw app follow-ups (defer)
 
-- **(P3) [waiting] draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
-  line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`) but no layer list and no
-  layer id on a shape; export only leaves hidden layers out (`svgExport.ts`). Nothing is lost yet:
-  draw has the one layer, `'default'` (`WeaselDrawLayer`, `drawDocument.ts`), and no way to add
-  another, and `openSvg.ts` puts every node on it. Whether a page has its own layers is undecided,
-  and the file format waits on that.
-  Closes when draw can add a second layer and its SVG files round-trip the layer list, or on 2026-12-31
-  with draw still on one layer, delete it.
+- **(P3) [maintainer] draw's SVG Save drops the measurements.** A saved file keeps paper size, title, groups,
+  names, locks and line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`), but no layer list and
+  no layer id on a shape, and `svgExport.ts` leaves out everything on an annotation layer as it leaves out a
+  hidden one. Draw keeps its measurements on the `annotations` layer (`drawDocument.ts`), so a drawing saved and
+  opened again has none, though a reload keeps them. Closes when the maintainer rules whether a saved file
+  carries its measurements (and so the layer each shape is on), and Save and Open do what was ruled.
 
 - **(P2) [maintainer] Tune draw's surface assets hands-on, with the maintainer driving.** Which groups form which
   asset, each one's default surface, and where switching lives were picked without anyone using
@@ -477,18 +529,6 @@ Owner tags, after the priority (2026-10-26):
 
 ---
 
-### Domain bundles
-
-- **(P3) [agent] A presentation bundle and a whiteboard bundle.** Each a `Contribution` bundle, the way
-  `@weasel-js/diagram` is (`createDiagramContribution`). Ruled (2026-11-07): build both.
-  - Presentation: a slide-navigation contribution that sherpa (the presentation runtime) can mount — keys and
-    view animation stepping between pages, over `layoutPages`, `fitViewToPage` and `adjacentPage`
-    (`packages/core/src/core/pages/`). Not an in-canvas slide format (ruled 2026-10-17).
-  - Whiteboard: bundles core's `usePencilTool`, `useTextTool`, and `useStickyTool` (built-in id `sticky`, a text
-    node with a `background`; its look is `toolOptions.sticky`). apps/draw leaves `sticky` out today: its
-    `TextObj` and SVG round trip carry no text `background` or `padding`, and SVG import reads a written note
-    back as a rect and a text node, so that round trip is part of the work.
-  Closes when both contributions ship and draw round-trips a sticky.
 ### d3 integration plugin
 
 - **(P3) [maintainer] `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
@@ -509,12 +549,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) [agent] The workshop's marks come back, to draw on a reported issue's screenshot**
-  (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
-  opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop
-  turns labkit's marks off (`marks={false}` in `packages/forge/src/shell/Workshop.tsx`), so nothing in it can mark
-  up the trial before that screenshot is taken. Not decided: whether marks come back for that; deferred (2026-10-28).
-  Ruled (2026-11-07): yes. Closes when the workshop draws marks on the trial while Report is open.
 
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
@@ -634,25 +668,15 @@ only story runner in the repo.
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or
   on 2027-01-01 with none, delete it.
-- **(P3) [agent] Batched pattern fills may lose tile precision far from the origin.** Read from the code, not
-  run: `draw/patternBatch.ts` stores tile coordinates per vertex as float32 without taking whole tiles out
-  first, where the unbatched `bindPattern` does (audit round eleven, 2026-11-09). It would show around 1e7 world
-  units. Needs a GPU to confirm. Closes when a batched pattern at 1e7 draws the same tile as an unbatched one, in
-  a browser test.
-
 (WebGL1 fallback explicitly rejected — WebGL2 only.)
 
 ---
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] The site dev server dies on its first edit to a workspace package.** Saving a file
-  under `packages/core/src` logs `re-bundling workspace packages: <file>` (`scripts/vite-prebundle.ts`),
-  then `transport was disconnected, cannot call "fetchModule"` against `scripts/vite-wake.ts` and
-  `server restart failed`. The server keeps answering, but with the code from before the edit, so a
-  browser check after a package change passes or fails on stale source. Seen twice in a row on `npx vite`
-  at `bb2b7ec72` (2026-11-11). Suspect `68004a234`, which reloads the dev config through vite's module
-  runner on this restart.
+- **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
+  once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second
+  sighting under load.
 
 - **(P3) [waiting] typedoc's own minimatch 10 carries GHSA-g3hv-75wg-m249 (moderate, dev only).** The root
   overrides minimatch to `^11.0.5` under eslint, typescript-eslint and ts-morph; typedoc 0.28 calls `matchOne`,
@@ -664,44 +688,6 @@ only story runner in the repo.
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
-
-- **(P3) [waiting] labkit's `JobProgress.browser.test.tsx` missed its width check once by 0.5 px under load.**
-  "at 100: expected 182.96875 to be close to 182.453125" in the batch run of `d7714ec60` (2026-11-11); it passed
-  3/3 alone on the fleet and in the rerun. The check allows 0.05 px, which a busy node's font rasterizing can
-  exceed. Closes when it is seen a second time (then widen or rework the check), or on 2026-11-30 with none, delete it.
-
-
-- **(P2) [agent] Browser test files fail to load when the node's network changes.** A file
-  fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
-  imported module`, along with any file loading in the same tenth of a second, and the next run
-  passes. The cause is Chromium: on a macOS network change it drops every request in flight, those
-  to vite on localhost included, with `net::ERR_NETWORK_CHANGED`. Seen once since `watchRequests`
-  (`scripts/vitest-browser-commands.ts`) began logging failed loads (2026-10-26): in the
-  palette-carry run on studio, configd logged `IPMonitor] network changed` at 18:13:55.736 on
-  2026-10-28, and 66 ms later 376 module requests failed with `ERR_NETWORK_CHANGED` and
-  `apps/chart/src/pipeline/pages.browser.test.tsx` loaded no tests (measured, from the job log and
-  `log show --process configd` on the node). It was the only weasel test job of 491 run from
-  2026-10-25 to 10-29 that overlapped a logged network change, and the only one with a load failure.
-  - **How often.** `IPMonitor] network changed` events, 2026-10-28 to 10-29: studio about 35 a day,
-    msb-uai 9 in 13 h, keiei 6 in 25 h, teitou 4 in 19 h (measured). Studio alone is on both
-    Ethernet (en0) and Wi-Fi (en1), and its event came right after an IPv6 republish on en1; that
-    the Wi-Fi link is why studio has the most is inferred. Some events are the whole LAN's: at
-    16:12:32 on 10-29 all four nodes logged one within 0.4 s (measured). That explains the
-    2026-10-25 bursts 3 s apart on studio and msb-uai (inferred: the nodes' logs no longer reach back).
-  - **Where to find a sighting.** A run's log holds `weasel-request <epoch ms> <ISO> net::ERR_NETWORK_CHANGED script …`
-    lines at the failed import's `browserv` stamp, and the node's `log show --process configd`
-    holds the event, for a day or two before it rotates. onto keeps each job's log in
-    `~/.config/onto/archive/<node>/<job>/`.
-  - **Not available.** Headless Chromium has no switch to ignore address changes (searched the
-    strings of Playwright's `chrome-headless-shell` 1248, 2026-10-29), and vitest retries tests,
-    never a file's import.
-  - **The decision.** Either take studio's Wi-Fi down while it has Ethernet, which removes its own
-    events and leaves the LAN-wide ones, or have `scripts/vitest-overlap.mjs` run again only the
-    files that loaded no tests when the run logged `ERR_NETWORK_CHANGED`. The second is a rerun the
-    suite does on its own, which nothing in it does today.
-    Ruled (2026-11-07): the rerun. Closes when `scripts/vitest-overlap.mjs` reruns the files that loaded no
-    tests in a run that logged `ERR_NETWORK_CHANGED`.
-
 
 ---
 

@@ -82,7 +82,7 @@ others, and naming it turns those on too; any of them can also be named alone:
 
 | Preset | Registers |
 |---|---|
-| `view` | wheel pan and zoom, pinch, the zoom keys; the hand tool (`tools:view`), held on Space |
+| `view` | wheel pan and zoom, pinch, the zoom keys; a middle-button drag pans under any tool; the hand tool (`tools:view`), held on Space |
 | `select` | the select and lasso tools (`tools:select`), the select tool as the initial active tool and Escape's return target |
 | `outline` | the selection outline, whichever tool sets the selection |
 | `pick` | `select` and `outline` |
@@ -95,6 +95,7 @@ others, and naming it turns those on too; any of them can also be named alone:
 | `paths` | `anchorKeys` (anchor nudge and delete, Escape out of path edit, each tried ahead of its node-level twin), `pathfinder`, `outlines`, `pathEdit`, `pathCommands` |
 | `ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
 | `draw` | every preset above but `pick` and `transform`, whose parts it names itself |
+| `whiteboard` | the pencil, text and the sticky note (`WHITEBOARD_TOOLS`), with `view`, `pick`, `move`, `resize` and `edit` |
 | `tools:shape`, `tools:draw`, `tools:type`, `tools:page` | the tools that make things: shapes, the pen and pencil, text and the sticky note, the page slicer |
 
 A preset holding only actions, tools, and includes is a bundle; one with any
@@ -125,10 +126,12 @@ inset lives and whether it's interactive:
   renders a `Scene` at an arbitrary `view`. Has its own GL context and DOM
   node. Use for thumbnails, side-by-side previews, printable snapshots, or
   any second view that doesn't accept input.
-- **`<MinimapCanvas>`** — `<SceneViewCanvas>` plus a viewport-rectangle
-  indicator and click/drag-to-recenter against a `mainView` callback. Use as
-  a navigation widget in a sidebar/panel — a distinct DOM location from the
-  main `<SceneCanvas>`.
+- **`<MinimapCanvas>`** (`@weasel-js/minimap`) — `<SceneViewCanvas>` plus a
+  viewport-rectangle indicator and click/drag-to-recenter against a `mainView`
+  callback. Use as a navigation widget in a sidebar/panel — a distinct DOM
+  location from the main `<SceneCanvas>`. The same package's
+  `createMinimapContribution` puts the minimap inside the main canvas instead,
+  as one `ambient` entry.
 - **`createViewportLayer`** — renders an inset *inside* the main
   `<SceneCanvas>`'s drawing buffer (superimposed PiP). Use when the inset
   must live as pixels in the main canvas, e.g. for a screenshot-stable
@@ -141,7 +144,8 @@ something that has no scene, like a package that knows nothing of scenes. Where
 a scene exists, render it with one of the components above.
 
 ```tsx
-import { MinimapCanvas, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import { MinimapCanvas } from '@weasel-js/minimap';
 import { useState } from 'react';
 import type { View } from '@weasel-js/core';
 

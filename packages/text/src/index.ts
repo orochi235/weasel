@@ -36,7 +36,7 @@ export type { DecorationKind } from './layout/decorationMetrics';
 export { transformRunTexts } from './runs/textTransform';
 export type { TextTransform, RunSourceMap, TransformedRunText } from './runs/textTransform';
 export {
-  SMALL_CAPS_SCALE, smallCapsScale, smallCapsScaleFor, smallCapsText, isSmallCapsLetter,
+  SMALL_CAPS_SCALE, ownSmallCaps, smallCapsScale, smallCapsScaleFor, smallCapsText, isSmallCapsLetter,
 } from './runs/smallCaps';
 export type { FontVariantCaps, SmallCapsText } from './runs/smallCaps';
 
@@ -78,6 +78,7 @@ export type {
 export type { CacheUse } from './layout/layoutCache';
 export { cachedPaintRuns } from './layout/paintCache';
 
+export { graphemeEnds } from './measure/graphemes';
 export { measureText, measuredWidth } from './measure/measureText';
 export type { MeasuredText, MeasuredSpan } from './measure/measureText';
 export { measureTextBounds } from './measure/measureTextBounds';

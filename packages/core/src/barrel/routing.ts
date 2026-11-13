@@ -87,6 +87,7 @@ export { sliceAction } from '../interactions/actions/defaults/slice';
 export {
   commitDeleteToScene, createDeleteAction, deleteAction, hiddenSourceDeleteOps, type DeleteActionOptions,
 } from '../interactions/actions/defaults/delete';
+export { reachesLocked } from '../interactions/actions/defaults/lockedReach';
 export {
   pinchZoomAction,
   makePinchZoomAction,

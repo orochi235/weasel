@@ -31,7 +31,8 @@ function descriptions(block) {
   const out = new Map();
   for (const line of block.split('\n')) {
     const m = line.match(/^\| `([^`]+)` \|(?: [^|]* \|)? (.*) \|$/);
-    if (m) out.set(m[1], m[2]);
+    // A hand-added row with a stray empty cell would otherwise keep it as part of its description.
+    if (m) out.set(m[1], m[2].replace(/^(?:\| *)+/, ''));
   }
   return out;
 }

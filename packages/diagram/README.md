@@ -632,6 +632,9 @@ The action rebuilds the graph from the scene on each press and writes the whole
 move as one undo entry. Three rules keep a re-layout from scrambling a diagram
 someone has arranged: no RNG anywhere, within-rank order seeded from where the
 nodes already sit, and a node carrying `pinned: true` that nothing moves.
+A container or pool is laid out as one node of its box and carries what it
+holds, as `diagramScene` lays out a boxed region, and an edge with an end inside
+one ranks against the outermost region holding it.
 
 The first pinned node anchors the layout. Under `layered`, every other pin
 keeps its place across its rank, with the rest of the rank moved clear of it,
@@ -801,7 +804,9 @@ marks, each of which returns its disposer, or they do not paint:
 `'connect'` draws them and lets one be dragged onto another, `'show'` draws
 them and nothing more, `'none'` hides them. `portOptions` styles them: `shape`
 is `'square'` (default) or `'circle'`, `fill` is one fill or a function of the
-port (its `type`, say), and `showsPort` picks which of a node's ports show.
+port (its `type`, say), and `showsPort` picks which of a node's ports show. With
+neither `fill` nor `stroke`, a port is drawn in `DEFAULT_PORT_FILL` outlined in
+`DEFAULT_PORT_STROKE`.
 
 Under `layered`, an edge that names neither leaves its source by the face
 toward the next rank and arrives at its target's face toward the last; an edge
@@ -885,8 +890,8 @@ since survive it. Editing reports rather than writes —
 <DiagramView
   ref={view}
   specs={specs}
-  onMove={(moves) => setNodes((ns) => withPositions(ns, moves))}
-  onConnect={(edge) => setEdges((es) => [...es, edge])}
+  onMove={(moves, routes) => setData((d) => applyDiagramEdit(d, { moves, routes, containers: [] }))}
+  onConnect={(edge) => setData((d) => ({ ...d, edges: [...d.edges, edge] }))}
 />
 ```
 
@@ -921,7 +926,7 @@ so a box dragged smaller than its rows grows back to them. Core's
 ```tsx
 <DiagramView
   specs={specs}
-  onResize={(resizes) => setNodes((ns) => withBoxes(ns, resizes))}
+  onResize={(resizes) => setData((d) => applyNodeResizes(d, resizes))}
 />
 ```
 
@@ -942,6 +947,22 @@ Move ids between `members` lists on a move's `parent`, and store a `box` as the
 region's `box` with `pinned: true`. `onDelete` reports a deleted region with
 everything inside it. The view lets shapes drop only into containers and
 lanes, and lanes only into pools (`diagramCanDropInto`).
+
+One gesture can report several times: a container dragged with its members is
+an `onMove` and a `box` edit, a lane resized is a `lanes` edit and the moves of
+the shapes it shifts. `onEdit` hears them as one `DiagramEdit`
+(`{ moves, routes, containers }`), a microtask after the gesture's last report,
+so a host can keep it as one undo entry. Setting it turns on what `onMove` and
+`onEditContainer` do, with or without them.
+
+```tsx
+<DiagramView specs={specs} onEdit={(edit) => commit('Move', (data) => applyDiagramEdit(data, edit))} />
+```
+
+`applyDiagramEdit(data, edit)` stores an edit in `DiagramData` by the rules
+above, and `applyNodeResizes(data, resizes)` a resize; both pin what moved,
+unless given `{ pin: false }` for data built with `layout: 'none'`.
+
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
 through the ports the run will commit.
@@ -962,8 +983,8 @@ view.current.layout(elkPlanner({ direction: 'right' }));
 ```
 
 Labels paint only in a registered font family, and the default is
-sans-serif, so call `registerCanvasFont('sans-serif')` once or they render
-blank. The view opens fitted to the diagram and fits again when `width` or
+sans-serif, so call `registerCanvasFont('sans-serif')` from `@weasel-js/font`
+once or they render blank. The view opens fitted to the diagram and fits again when `width` or
 `height` changes or a layout run settles, until the user pans or zooms. `minScale` stops the fit from
 shrinking a wide diagram past readable; the rest is a pan away.
 
@@ -1106,7 +1127,7 @@ Keep `look` and `options` steady between renders: a new object for either lays
 the chart out again and opens it fitted afresh, as a pipeline whose content
 changes does. Ports that
 carry a value type are drawn, colored by type. As with `DiagramView`, call
-`registerCanvasFont('sans-serif')` once or labels render blank.
+`registerCanvasFont('sans-serif')` (from `@weasel-js/font`) once or labels render blank.
 
 #### Runs
 
@@ -1413,9 +1434,8 @@ between them (`'Move'`), drag a picked box's handles to resize it
 over the title (`'Rename group'`). A resized box is kept in
 `EffectDoc.groupBoxes`, by group id; a group with no box fits its members.
 Under `rack` and `lanes` groups draw as boxes around their members, and
-membership does not drag. A drag's moves and box edits come in as separate
-reports, so the editor gathers them and reports one edit once the drag is done
-reporting, a microtask later.
+membership does not drag. A drag's moves and box edits are reported as one
+edit, a microtask after the drag is done reporting.
 
 `selectedGroup` and `onSelectGroup` are the group pick, beside `selected` and
 `onSelect`, under every look. Cmd-click (Ctrl off macOS) adds a stage or group to the

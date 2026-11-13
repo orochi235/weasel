@@ -40,7 +40,7 @@ export function useFallbackToolOptionValues(): void {
 
 /** Tune the actions each tool's options are params of with every option's
  *  value, from the `toolOptionValues` dep or its default, while that tool is
- *  the active one, read on every invocation. The tuning lies under every other
+ *  the live one (the newest held on its key, else the active one), read on every invocation. The tuning lies under every other
  *  (`ActionTuning.under`), so a host's own tuning of a param still wins. A
  *  tool's bindings name none of its options. Several tools
  *  can bind one action (every shape tool binds `insert`), and only the active
@@ -56,10 +56,19 @@ export function tuneToolOptions(
   const releases: Array<() => void> = [];
   // The tool whose options each action last read: the one a panel change to its last run belongs to.
   const readBy = new Map<string, string>();
-  for (const tool of tools) {
+  const all = [...tools];
+  const ids = new Set(all.map((t) => t.id));
+  // The newest of these tools held on its key, else the active one, as routing walks them.
+  const live = (): string | null => {
+    const slot = deps?.get('activeTool');
+    const stack = slot?.hotkeyStack ?? [];
+    for (let i = stack.length - 1; i >= 0; i--) if (ids.has(stack[i]!)) return stack[i]!;
+    return slot?.active ?? null;
+  };
+  for (const tool of all) {
     const options = tool.options;
     if (!options) continue;
-    const active = () => deps?.get('activeTool')?.active === tool.id;
+    const active = () => live() === tool.id;
     for (const actionId of toolOptionActionIds(options)) {
       releases.push(registry.tune(actionId, {
         under: true,

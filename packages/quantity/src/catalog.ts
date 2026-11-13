@@ -9,6 +9,8 @@ export interface UnitForm {
   readonly text: string;
   /** The glyph hugs the number, with no space and on the number's line: `°`, `′`, `″`, `%`. */
   readonly attaches: boolean;
+  /** A glyph that sits full size on the baseline, so attached it is set smaller and raised to where `°` sits: `%`. */
+  readonly raised: boolean;
   /** Other text that reads as this form: `"` for `″`, `deg` for `°`. */
   readonly aliases: readonly string[];
 }
@@ -30,7 +32,7 @@ export interface CatalogUnit {
 }
 
 /** A form as {@link registerUnit} takes it: bare text is a form that does not attach and has no aliases. */
-export type UnitFormDefinition = string | { text: string; attaches?: boolean; aliases?: readonly string[] };
+export type UnitFormDefinition = string | { text: string; attaches?: boolean; raised?: boolean; aliases?: readonly string[] };
 
 /** A unit as {@link registerUnit} takes it. */
 export interface UnitDefinition {
@@ -44,8 +46,8 @@ export interface UnitDefinition {
 
 function formOf(def: UnitFormDefinition): UnitForm {
   return typeof def === 'string'
-    ? { text: def, attaches: false, aliases: [] }
-    : { text: def.text, attaches: def.attaches ?? false, aliases: def.aliases ?? [] };
+    ? { text: def, attaches: false, raised: false, aliases: [] }
+    : { text: def.text, attaches: def.attaches ?? false, raised: def.raised ?? false, aliases: def.aliases ?? [] };
 }
 
 function catalogUnitOf(def: UnitDefinition): CatalogUnit {
@@ -81,7 +83,7 @@ const BUILTIN: readonly UnitDefinition[] = [
   { name: 'degree', symbol: attached('°', 'deg'), intl: 'degree', css: 'deg' },
   { name: 'radian', symbol: 'rad', spoken: ['radian', 'radians'], css: 'rad' },
   { name: 'turn', symbol: 'turn', spoken: ['turn', 'turns'], css: 'turn' },
-  { name: 'percent', symbol: attached('%'), intl: 'percent', css: '%' },
+  { name: 'percent', symbol: { text: '%', attaches: true, raised: true }, intl: 'percent', css: '%' },
   { name: 'millisecond', symbol: 'ms', intl: 'millisecond', css: 'ms' },
   { name: 'second', symbol: 's', intl: 'second', css: 's' },
   { name: 'minute', symbol: 'min', intl: 'minute' },
@@ -171,7 +173,7 @@ export interface UnitSymbolOptions {
  */
 export function unitSymbol(text: string, options: UnitSymbolOptions = {}): UnitForm {
   const u = catalogUnit(text);
-  if (u === undefined) return { text, attaches: false, aliases: [] };
+  if (u === undefined) return { text, attaches: false, raised: false, aliases: [] };
   if (u.compact && (options.compact || u.compact.text === text || u.compact.aliases.includes(text))) return u.compact;
   return u.symbol;
 }

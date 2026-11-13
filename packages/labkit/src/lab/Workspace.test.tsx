@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
+import { createPortal } from 'react-dom';
 import { describe, expect, test, vi } from 'vitest';
 import { TileGrip } from './TileGrip';
 import { Workspace } from './Workspace';
@@ -171,6 +172,36 @@ describe('Workspace', () => {
       el.getAttribute('data-node'),
     );
     expect(nodes).toEqual(['a', 'b']);
+    vi.restoreAllMocks();
+  });
+
+  test('starts no drag from a press in a portal rendered inside the grip', async () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      const { left, top, width, height } = (this as HTMLElement).style;
+      const px = (value: string) => Number.parseFloat(value) || 0;
+      return new DOMRect(px(left), px(top), px(width), px(height));
+    });
+    const onReorder = vi.fn();
+    // A title bar's popover: a child of the grip in React, and of the body in the DOM.
+    await renderSettled(
+      <Workspace ids={['a', 'b']} reorderable onReorder={onReorder} viewport={VIEWPORT}>
+        <TileGrip>a{createPortal(<input data-testid="field" />, document.body)}</TileGrip>
+        <DragProbe label="b" />
+      </Workspace>,
+      { wrapper: withIcons },
+    );
+    const field = screen.getByTestId('field');
+    await act(async () => {
+      fireEvent.pointerDown(field, { pointerId: 1, clientX: 100, clientY: 300 });
+      fireEvent.pointerMove(field, { pointerId: 1, clientX: 760, clientY: 300 });
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      fireEvent.pointerUp(field, { pointerId: 1, clientX: 760, clientY: 300 });
+    });
+
+    expect(screen.queryByTestId('windease-drag-overlay')).toBeNull();
+    expect(onReorder).not.toHaveBeenCalled();
     vi.restoreAllMocks();
   });
 

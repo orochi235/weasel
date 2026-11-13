@@ -3,8 +3,8 @@
  * and does for it what needs a DOM — sessions, timers, haptics.
  */
 import {
-  createPointerRecognizer, isInControlWithin, longPressEvents, pastDragThreshold, stylusOf,
-  type ClickMemory, type HeldPress, type PointerSample, type RecognizerClock,
+  createPointerRecognizer, isInControlWithin, longPressEvents, pastDragThreshold, pointerDownEvent, pressButtonOf, stylusOf,
+  type ClickMemory, type HeldPress, type PointerButton, type PointerSample, type PressSample, type RecognizerClock,
 } from '@weasel-js/gestures';
 import type { KitSettingsStore } from '@weasel-js/react';
 import { heldWithin, openPointerSession, type PointerSession } from '../../pointerSession';
@@ -28,6 +28,9 @@ export interface PointerInputOptions {
   hover: Pick<HoverCursorInput, 'moved' | 'released'>;
   /** See `UseGestureDispatcherOptions.controls`. */
   controls(): 'leave' | 'take';
+  /** Whether a secondary press may drag. Only while the contextmenu channel
+   *  is on: a drag has to keep the native menu from opening under it. */
+  secondaryDrags: boolean;
 }
 
 export interface PointerInput {
@@ -39,6 +42,9 @@ export interface PointerInput {
   onNativeDoubleClick(e: MouseEvent): void;
   /** Whether a touch or pen hold is in progress, firing its long-press if still pending. */
   takeNativeHold(): boolean;
+  /** Whether a native `contextmenu` belongs to a secondary press this channel
+   *  took, which opens the menu itself if it never becomes a drag. */
+  takeNativeMenu(e: MouseEvent): boolean;
   /** Cancel every held pointer, each through its session, which reports once. */
   cancelHeld(): void;
   /** Where the pointer held longest is, in client pixels; `null` with none held. */
@@ -194,6 +200,50 @@ function pressClaims(canvas: Element | null, dragPx: () => number | undefined) {
   };
 }
 
+/** How long after a secondary release its native menu can still arrive. */
+const MENU_AFTER_RELEASE_MS = 500;
+
+/**
+ * The native `contextmenu` each secondary press this channel took also raises:
+ * while it is held on macOS and Linux, just after its release on Windows. Either
+ * is that press's, which has already opened its menu or dragged instead.
+ */
+function nativeMenus() {
+  const held = new Set<number>();
+  let released: { x: number; y: number; at: number } | null = null;
+  return {
+    pressed(pointerId: number): void { held.add(pointerId); released = null; },
+    ended(pointerId: number, up?: PointerEvent): void {
+      if (held.delete(pointerId) && up) released = { x: up.clientX, y: up.clientY, at: up.timeStamp };
+    },
+    take(e: MouseEvent): boolean {
+      if (held.size > 0) return true;
+      const r = released;
+      released = null;
+      return r !== null && r.x === e.clientX && r.y === e.clientY && e.timeStamp - r.at < MENU_AFTER_RELEASE_MS;
+    },
+  };
+}
+
+/** The button a press on `canvas` is taken with, and whether it landed on a
+ *  control, or null when the press is not this surface's to take. */
+function takesPress(
+  e: PointerEvent, canvas: HTMLElement, opts: PointerInputOptions,
+): { button: PointerButton; onControl: boolean } | null {
+  const button = pressButtonOf(e);
+  if (!button || (button === 'secondary' && !opts.secondaryDrags)) return null;
+  // A button or field laid over the canvas handles its own press: opening a
+  // session here would capture the pointer and retarget its click. A surface
+  // that takes its controls captures only once the press becomes a drag.
+  const onControl = isInControlWithin(e.target, canvas);
+  if (onControl && opts.controls() === 'leave') return null;
+  // A surface nested inside this one runs its own gestures for a press in it.
+  if (pressedNestedIn(canvas, e.target)) return null;
+  // An item whose own listener ran first already took this press for a drag of its own.
+  if (heldWithin(e.pointerId, canvas)) return null;
+  return { button, onControl };
+}
+
 export function pointerInput(core: PointerDispatchCore, opts: PointerInputOptions): PointerInput {
   const { canvas, routeAt, routeDown, routeRelease, toWorld, target } = core;
   const sessions = new Map<number, PointerSession>();
@@ -205,6 +255,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   // toggles on double-click leaves it alone.
   let claimedDoubleClick = false;
   const hold = holdClock(core);
+  const menus = nativeMenus();
 
   const recognizer = recognizerOf(core, opts, hold.clock);
 
@@ -227,6 +278,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     if (claims.yielded(e, session)) { onCancel(e.pointerId); return; }
     routeAt(e.pointerId, e.clientX, e.clientY);
     drop(e.pointerId);
+    menus.ended(e.pointerId, e);
     const { doubleClick } = recognizer.release(sampleOf(e));
     if (doubleClick) claimedDoubleClick = doubleClick === 'handled' || opts.onDoubleClick() !== undefined;
     // Everything this release synthesizes has been dispatched, so the pointer's view can be unpinned.
@@ -242,6 +294,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     const at = recognizer.positionOf(pointerId);
     if (!at) return;
     drop(pointerId);
+    menus.ended(pointerId);
     routeAt(pointerId, at.x, at.y);
     recognizer.cancel(pointerId);
     routeRelease(pointerId);
@@ -250,23 +303,25 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   return {
     onPointerDown(e) {
       claimedDoubleClick = false;
-      // Only the primary button drives gesture dispatch; the others are left
-      // for the consumer's own tools and the browser context menu. An absent
-      // `button` (synthetic events) counts as primary.
-      if ((e.button ?? 0) !== 0) return;
       if (!canvas) return;
-      // A button or field laid over the canvas handles its own press: opening a
-      // session here would capture the pointer and retarget its click. A surface
-      // that takes its controls captures only once the press becomes a drag.
-      const onControl = isInControlWithin(e.target, canvas);
-      if (onControl && opts.controls() === 'leave') return;
-      // A surface nested inside this one runs its own gestures for a press in it.
-      if (pressedNestedIn(canvas, e.target)) return;
-      // An item whose own listener ran first already took this press for a drag of its own.
-      if (heldWithin(e.pointerId, canvas)) return;
+      const taken = takesPress(e, canvas, opts);
+      if (!taken) return;
+      const { button, onControl } = taken;
       routeDown(e.pointerId, e.clientX, e.clientY);
       const w = toWorld(e.clientX, e.clientY);
       const where = underPointer(target(), e, w);
+      const press: PressSample = {
+        ...sampleOf(e), x: w.x, y: w.y, pointerType: e.pointerType, ...where, ...(button !== 'primary' ? { pointerButton: button } : {}),
+      };
+      if (button !== 'primary') {
+        // A press nothing would drag stays the browser's: its autoscroll, its paste, its menu.
+        if (core.dispatcherNow().resolveOnly(pointerDownEvent(press), core.ctxNow()) === null) {
+          routeRelease(e.pointerId);
+          return;
+        }
+        if (button === 'middle') e.preventDefault();
+        else menus.pressed(e.pointerId);
+      }
       // The session owns the rest of this pointer: capture, the moves, the
       // release, and recovery from a release that never arrives. A press on a
       // pointer one is already open for cancels that stale gesture before this
@@ -276,9 +331,9 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
         onMove, onEnd: (up) => { onUp(up, session); }, onCancel: () => { onCancel(e.pointerId); },
       }, { capture: !onControl });
       sessions.set(e.pointerId, session);
-      const sample = lastSample.set(e.pointerId, sampleOf(e)).get(e.pointerId)!;
-      if (onControl) claims.uncaptured(sample);
-      recognizer.press({ ...sample, x: w.x, y: w.y, pointerType: e.pointerType, ...where });
+      lastSample.set(e.pointerId, sampleOf(e));
+      if (onControl) claims.uncaptured(press);
+      recognizer.press(press);
     },
     onHoverMove(e) {
       if (!sessions.has(e.pointerId)) onMove(e);
@@ -288,6 +343,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       claimedDoubleClick = false;
       e.preventDefault();
     },
+    takeNativeMenu: (e) => menus.take(e),
     takeNativeHold: () => {
       hold.routeToPress();
       return recognizer.takeHold();

@@ -18,8 +18,10 @@ import { AT_COLOR, DIM } from './run';
 import { EffectEditor } from './EffectEditor';
 import type { EffectDoc, EffectRun } from './types';
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
+  // An unmount frees a microtask later.
+  await Promise.resolve();
   seen.length = 0;
   released.length = 0;
 });

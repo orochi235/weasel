@@ -12,7 +12,8 @@ import type { WindowWidget } from '../widgets/window/window';
 import type { HudContentCtx, WidgetBounds } from '../widget';
 import { createContentWatch } from './contentWatch';
 import { createLoupeColors } from './loupeColors';
-import { followPointer } from './pointerAim';
+import { lensAimInput } from './aimInput';
+import { registerLoupe } from './loupeRoutes';
 
 export type { LoupeMode };
 
@@ -22,9 +23,9 @@ export interface LoupeBaseOptions {
   /** The canvas pixel mode reads back from. Supplies the GL context and the
    *  drawing-buffer dimensions. */
   canvas: HTMLCanvasElement;
-  /** Where the aim comes from: the element pointer events are taken from and
-   *  the rect client coords are measured against. Defaults to `canvas`, which
-   *  is right whenever the canvas is also the thing under the pointer. */
+  /** The element the aim's client coords are measured against: the one the
+   *  canvas's dispatcher listens on. Defaults to `canvas`, which is right
+   *  whenever the canvas is also the thing under the pointer. */
   input?: HTMLElement;
   /** The rect of `canvas` the magnified picture occupies, in its CSS px — the
    *  one the aim is relative to. Pass `CanvasExtensionApi.getSurfaceRect` for
@@ -155,8 +156,9 @@ export interface LoupeHandle {
 
 /**
  * Build a magnifier: a HUD window whose interior shows the canvas around an
- * aim point, enlarged. Adds the window to the HUD and starts following the
- * pointer; `dispose` removes it again.
+ * aim point, enlarged. Adds the window to the HUD; `dispose` removes it again.
+ * It follows the pointer through the HUD's contribution, whose `loupe.aim`
+ * drives every loupe on the HUD.
  */
 export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const { hud, canvas: element, requestRedraw } = opts;
@@ -334,15 +336,15 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     });
   }
 
-  const unfollow = followPointer(input, {
+  const unregister = registerLoupe(hud, lensAimInput(input, {
     aimAt: (p) => model.aimAt(p),
     holds: (p) => interactive && surface.covers(p),
-  });
+  }));
 
   const teardown = () => {
     disposed = true;
     unsubscribeFrame();
-    unfollow();
+    unregister();
     lens?.remove();
     lens = null;
     dropPixels();

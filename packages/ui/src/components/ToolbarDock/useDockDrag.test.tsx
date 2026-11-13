@@ -238,6 +238,13 @@ describe('moving a bar from its handle with Alt+arrows', () => {
     expect(onChange.mock.calls[1]![0].docks.top).toEqual([['file', 'view'], ['shape']]);
   });
 
+  it('keeps focus on the handle of a bar moved into another row under StrictMode', () => {
+    render(<Harness initial={start([['file', 'view'], ['shape']])} onChange={vi.fn()} />, { reactStrictMode: true });
+    handle('View').focus();
+    key(handle('View'), 'ArrowDown');
+    expect(document.activeElement).toBe(handle('View'));
+  });
+
   it('moves past the last row into the first row of the next dock it may sit in, at that row’s end', () => {
     const onChange = setup(start([['file', 'view']], [['shape'], ['pin2']], []), [...bars, bar('pin2', { docks: ['left'] })]);
     handle('File').focus();

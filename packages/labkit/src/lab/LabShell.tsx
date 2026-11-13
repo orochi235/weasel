@@ -18,7 +18,8 @@ export interface LabShellProps {
   menuBar?: ReactNode;
   /** Optional content rendered into the footer. */
   footer?: ReactNode;
-  /** Color mode. "auto" (default) follows prefers-color-scheme. */
+  /** Color mode. "auto" (default) follows prefers-color-scheme. Unread inside an app's own `ThemeProvider`,
+   *  whose mode then holds. */
   mode?: LabMode;
   /** The project's other labs. Given two or more, the title becomes the way
    *  to reach them; given none, it stays a plain heading. */

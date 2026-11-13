@@ -68,6 +68,7 @@
 .stepper[data-disabled],
 .stepper:disabled {
   opacity: 0.4;
+  filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
 }
 

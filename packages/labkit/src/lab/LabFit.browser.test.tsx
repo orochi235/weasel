@@ -1,6 +1,5 @@
-import '@weasel-js/theme/tokens.css';
-import 'windease/styles.css';
-import '../styles.less';
+// The stylesheet a consumer imports, as this repo resolves it: two trials side by side scroll without windease's zone rules.
+import '@weasel-js/labkit/styles.css';
 import './LabFit.browser.test.less';
 import { cleanup, screen, waitFor } from '@testing-library/react';
 import { Lab } from '@weasel-js/labkit';
@@ -78,7 +77,7 @@ function BodyHost({ host, children }: { host: Host; children: ReactNode }) {
   return mount ? createPortal(children, mount) : null;
 }
 
-type Fixture = 'fullscreen' | 'floating' | 'wrapped' | 'framed' | 'sidebar';
+type Fixture = 'fullscreen' | 'floating' | 'wrapped' | 'framed' | 'sidebar' | 'pair';
 
 /** The element the lab is portaled into, per host. */
 const MOUNT: Record<Host, string> = {
@@ -93,6 +92,7 @@ const HOST: Record<Fixture, Host> = {
   floating: 'reset',
   wrapped: 'wrapped',
   framed: 'framed',
+  pair: 'reset',
 };
 
 function scrolls(el: Element): string[] {
@@ -200,7 +200,7 @@ function fitProblems(fixture: Fixture, viewport: keyof typeof VIEWPORTS): string
   return problems;
 }
 
-const FIXTURES: Fixture[] = ['fullscreen', 'floating', 'wrapped', 'framed', 'sidebar'];
+const FIXTURES: Fixture[] = ['fullscreen', 'floating', 'wrapped', 'framed', 'sidebar', 'pair'];
 const CASES = FIXTURES.flatMap((fixture) =>
   (Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]).map((viewport) => ({ fixture, viewport })),
 );
@@ -214,11 +214,19 @@ test.each(CASES)('$fixture fits a $viewport viewport', async ({ fixture, viewpor
         title={`Fit: ${fixture}`}
         instruments={[Stub]}
         defaultInstrument="Stub"
+        opening={fixture === 'pair' ? ['Stub', 'Stub'] : undefined}
         chrome={fixture === 'floating' ? [floater] : undefined}
         labChrome={fixture === 'sidebar' ? [sidebarTree] : undefined}
       />
     </BodyHost>,
   );
+  if (fixture === 'pair') {
+    // The tiles' resize handles mount once the grid has measured them.
+    await waitFor(() => {
+      if (!document.querySelector('[data-affordance-hit^="resize-y"]'))
+        throw new Error('no handles');
+    });
+  }
   if (fixture === 'floating') {
     await userEvent.click(await screen.findByRole('button', { name: 'Undock Floater' }));
   }

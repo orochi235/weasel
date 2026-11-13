@@ -1,4 +1,4 @@
-import { copyText } from './copyText';
+import { copyText } from '@weasel-js/react';
 import { useFlash } from './useFlash';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './PaletteLab.module.css';

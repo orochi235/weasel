@@ -1,5 +1,193 @@
 # @weasel-js/forge
 
+## 1.19.1
+
+### Patch Changes
+
+- 6d02988: The loupe's Pixels lens closes a capture it throws away, after an edit or a move, instead of leaving it to the collector.
+  
+  <!-- entry: fix perf -->
+- 8879e27: The Keys panel lists actions registered before it mounted, rather than waiting for the next registry change.
+  
+  <!-- entry: fix -->
+- c40eb50: A Pixels lens redraws its capture at the new pixel density when the window moves to another display.
+  
+  <!-- entry: fix visual -->
+- 1aa11a6: A story file edited while its previous version was still loading shows the edit, not the previous version.
+  
+  <!-- entry: fix -->
+- cb16f2a: A component's index page keeps the stories a reload brought in when the load the reload replaced finishes after it.
+  
+  <!-- entry: fix -->
+- 8cd600b: A middle-button drag pans the view under every tool on a canvas with the `view` preset. A `drag` binding names its button — `DragSpec.button`, written `drag(middle)` or `drag(secondary)` in a route, `primary` by default and `*` for any — and `middleDragPanContribution` adds the pan to a canvas without the preset. A press with another button only drags; one that no binding would drag is left to the browser. On a canvas that binds a secondary drag, a right-click opens its context menu on the release rather than the press.
+  
+  <!-- entry: rank=10 api new behavior pick -->
+- Updated dependencies [793b472]
+- Updated dependencies [c91c39c]
+- Updated dependencies [d65a34b]
+- Updated dependencies [c93b396]
+- Updated dependencies [687501a]
+- Updated dependencies [3e8a149]
+- Updated dependencies [b1fdbf3]
+- Updated dependencies [687501a]
+- Updated dependencies [de8f829]
+- Updated dependencies [e8de9c3]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [2bb5cde]
+- Updated dependencies [1f42c0c]
+- Updated dependencies [34e40b2]
+- Updated dependencies [d9a7171]
+- Updated dependencies [f0ef9ba]
+- Updated dependencies [9b03a7b]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [a2627b8]
+- Updated dependencies [2a32658]
+- Updated dependencies [dbbca9f]
+- Updated dependencies [3cd42d9]
+- Updated dependencies [913a468]
+- Updated dependencies [eb6276d]
+- Updated dependencies [34dfc04]
+- Updated dependencies [ef4ff01]
+- Updated dependencies [5e0f965]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [7f2951f]
+- Updated dependencies [a760b7b]
+- Updated dependencies [d11f1df]
+- Updated dependencies [baa3137]
+- Updated dependencies [c12b7a7]
+- Updated dependencies [1ba8505]
+- Updated dependencies [500c153]
+- Updated dependencies [661582d]
+- Updated dependencies [5b509a7]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [73bdfc7]
+- Updated dependencies [b39b992]
+- Updated dependencies [b39b992]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [59a1c5f]
+- Updated dependencies [5c1d019]
+- Updated dependencies [f0946c4]
+- Updated dependencies [1f55652]
+- Updated dependencies [d3a8b36]
+- Updated dependencies [635431c]
+- Updated dependencies [60d4ba5]
+- Updated dependencies [f6a2555]
+- Updated dependencies [9a0d9d1]
+- Updated dependencies [e45b7e4]
+- Updated dependencies [9bd6635]
+- Updated dependencies [2a03672]
+- Updated dependencies [7036750]
+- Updated dependencies [3e4950e]
+- Updated dependencies [58298fa]
+- Updated dependencies [88927c3]
+- Updated dependencies [97c4b91]
+- Updated dependencies [c6944f9]
+- Updated dependencies [e55e22a]
+- Updated dependencies [7e954c5]
+- Updated dependencies [64cc4b8]
+- Updated dependencies [d7c333f]
+- Updated dependencies [a55b07a]
+- Updated dependencies [6817097]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [2dcd6b7]
+- Updated dependencies [6e34091]
+- Updated dependencies [9ddae00]
+- Updated dependencies [2dcd6b7]
+- Updated dependencies [18e1bee]
+- Updated dependencies [40460cc]
+- Updated dependencies [c07a6a7]
+- Updated dependencies [3e8a149]
+- Updated dependencies [3606766]
+- Updated dependencies [34085c0]
+- Updated dependencies [fa5c96b]
+- Updated dependencies [7d83e08]
+- Updated dependencies [c9032c7]
+- Updated dependencies [fad50b0]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [30b17d1]
+- Updated dependencies [2dcd6b7]
+- Updated dependencies [a9c89b6]
+- Updated dependencies [2b01a38]
+- Updated dependencies [ea71c8b]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [40460cc]
+- Updated dependencies [3536b27]
+- Updated dependencies [5159b4f]
+- Updated dependencies [403fd51]
+- Updated dependencies [8cd600b]
+- Updated dependencies [57c0cf0]
+- Updated dependencies [f58d2be]
+- Updated dependencies [4cfff87]
+- Updated dependencies [216d193]
+- Updated dependencies [e20a471]
+- Updated dependencies [b62d643]
+- Updated dependencies [36b51a0]
+- Updated dependencies [21e7a85]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [e0e1f22]
+- Updated dependencies [8ada2a6]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [2acd6e6]
+- Updated dependencies [607d991]
+- Updated dependencies [0cbbb94]
+- Updated dependencies [8562ebe]
+- Updated dependencies [6d1a52e]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [5461e84]
+- Updated dependencies [5c64825]
+- Updated dependencies [8941d77]
+- Updated dependencies [f611d11]
+- Updated dependencies [e70f7a1]
+- Updated dependencies [e6959cc]
+- Updated dependencies [59485d4]
+- Updated dependencies [141697f]
+- Updated dependencies [28404b3]
+- Updated dependencies [a8223fb]
+- Updated dependencies [b4e8f97]
+- Updated dependencies [d66e90e]
+- Updated dependencies [d66e90e]
+- Updated dependencies [fb9e364]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [d6dd797]
+- Updated dependencies [3fd5c6f]
+- Updated dependencies [6fb7160]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [1026b75]
+- Updated dependencies [b94121b]
+- Updated dependencies [d169db7]
+- Updated dependencies [3809dbb]
+- Updated dependencies [c438d4a]
+- Updated dependencies [90a3dd9]
+- Updated dependencies [7ee8a44]
+- Updated dependencies [af15d7a]
+- Updated dependencies [8b5be0f]
+- Updated dependencies [ef15064]
+- Updated dependencies [d254251]
+- Updated dependencies [f431014]
+- Updated dependencies [5526346]
+- Updated dependencies [96a1e29]
+- Updated dependencies [ef15064]
+- Updated dependencies [6b9ac73]
+- Updated dependencies [16900c1]
+- Updated dependencies [2c3416d]
+- Updated dependencies [98243b2]
+- Updated dependencies [184acd6]
+  - @weasel-js/ui@1.19.1
+  - @weasel-js/core@1.19.1
+  - @weasel-js/labkit@1.19.1
+  - @weasel-js/prefs@1.19.1
+  - @weasel-js/react@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/svg@1.19.1
+  - @weasel-js/clock@1.19.1
+  - @weasel-js/theme@1.19.1
+  - @weasel-js/icons@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

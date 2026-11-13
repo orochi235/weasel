@@ -1,4 +1,5 @@
-import { LabShell } from '@weasel-js/labkit';
+import { Lab } from '@weasel-js/labkit';
+import { LABS, THEME_EDITOR_LAB } from '../../shared/labs';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './ThemeEditor.module.css';
 import { ThemeWorkbench } from './ThemeWorkbench';
@@ -54,9 +55,9 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
 
   if (!loaded) {
     return (
-      <LabShell title="Theme editor">
+      <Lab title="Theme editor" pages={LABS} path={THEME_EDITOR_LAB.href}>
         <p className={styles.loading}>Loading themes…</p>
-      </LabShell>
+      </Lab>
     );
   }
 

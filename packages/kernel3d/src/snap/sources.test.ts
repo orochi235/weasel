@@ -6,6 +6,7 @@ import { pose3, type Pose3 } from '../pose3';
 import { alignPlaneSource, groundGridSource } from './sources';
 
 const ZERO: Vec3 = { x: 0, y: 0, z: 0 };
+const VP = { camera: createCamera({}), width: 800, height: 600 };
 
 describe('alignPlaneSource', () => {
   it('offers a plane two boxes share once, and marks it to both', () => {
@@ -38,6 +39,12 @@ describe('groundGridSource', () => {
 
   it('offers the grid lines either side of a probe on the ground', () => {
     expect([...groundGridSource({ step: 1 }).collect(q)]).toHaveLength(4);
+  });
+
+  it("lies on its world's ground, as the session that probes it does", () => {
+    const flat = { ...probe, at: { x: 0.3, y: -1.7, z: 0 } };
+    const zUp = { ...q, probes: [flat] };
+    expect([...groundGridSource({ step: 1, world: { viewport: () => VP, up: { x: 0, y: 0, z: 1 } } }).collect(zUp)]).toHaveLength(4);
   });
 
   it('offers nothing for a step that is zero, negative or not finite', () => {

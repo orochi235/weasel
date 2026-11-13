@@ -20,6 +20,19 @@ export function createPoseOverrides<TPose, TData = unknown>(
   getNode: (id: NodeId) => { data?: unknown } | undefined,
   onInvalidate?: (id: NodeId) => void,
 ): PoseOverrides<TPose, TData> {
+  return createSceneOverrides(getNode, onInvalidate, (emit) => emit());
+}
+
+/**
+ * {@link createPoseOverrides}, telling its listeners of a change through
+ * `whenSettled`: the scene holds the notice until an edit that made it has
+ * landed whole, so nothing reads the scene half edited.
+ */
+export function createSceneOverrides<TPose, TData = unknown>(
+  getNode: (id: NodeId) => { data?: unknown } | undefined,
+  onInvalidate: ((id: NodeId) => void) | undefined,
+  whenSettled: (emit: () => void) => void,
+): PoseOverrides<TPose, TData> {
   type Entry = PoseOverride<TPose, TData>;
   const stacks = createPlyStacks<Entry>();
   const { plies } = stacks;
@@ -45,7 +58,7 @@ export function createPoseOverrides<TPose, TData = unknown>(
   function published(): void {
     generation++;
     fold.publish(stacks.depth());
-    listeners.emit();
+    whenSettled(listeners.emit);
   }
 
   function forget(id: NodeId): void {

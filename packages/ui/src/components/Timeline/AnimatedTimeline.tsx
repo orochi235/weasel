@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useReducer, useState, type ReactElement } from 'react';
-import { useVisibleRaf } from '@weasel-js/core';
+import { useCallback, useMemo, type ReactElement } from 'react';
+import { useNotified } from '@weasel-js/react';
 import { type TimelineHandle, type Track } from '@weasel-js/animator';
 import { Timeline, type TimelineProps } from './Timeline';
+import { Transport, type TransportProps } from './Transport';
+import { useTimelinePlayback } from './useTimelinePlayback';
 
 /** Props for {@link AnimatedTimeline}: `<Timeline>`'s, less what it reads off `handle`. */
 export interface AnimatedTimelineProps
@@ -11,13 +13,6 @@ export interface AnimatedTimelineProps
   transport?: false;
 }
 
-/** Whether the playhead will move on its own. A timeline that ran to its end
- *  without looping still reports itself unpaused. */
-function isAdvancing(handle: TimelineHandle): boolean {
-  if (handle.isPaused()) return false;
-  return handle.loop() !== false || handle.time() < handle.duration();
-}
-
 /** Binds `<Timeline>` to a live handle.
  *
  *  `handle.tracks()` returns the timeline's own array, not a copy, so an edit
@@ -25,33 +20,14 @@ function isAdvancing(handle: TimelineHandle): boolean {
  *  update nothing and raise nothing. */
 export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
   const { handle, ...rest } = props;
-  const [, bump] = useReducer((n: number) => n + 1, 0);
+  const { playhead, duration, onSeek, ...transport } = useTimelinePlayback(handle);
 
   // `subscribe` fires on `edit` only, so the playhead comes from the frame loop.
-  const [edits, setEdits] = useState(0);
-  useEffect(() => handle.subscribe(() => setEdits((n) => n + 1)), [handle]);
-  // A resume, pause, or seek made on the handle from elsewhere: the render it
-  // asks for is what restarts the frame loop below.
-  useEffect(() => handle.subscribePlayback(bump), [handle]);
+  const edits = useNotified(handle);
   // `<Timeline>` tells one track list from the next by identity, and the handle
   // edits its array in place, so every edit hands over a fresh copy.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `edits` is the signal
   const tracks = useMemo(() => handle.tracks().slice(), [handle, edits]);
-
-  // `useVisibleRaf` returns a controller; a continuous loop re-requests from
-  // inside its own frame, and nothing runs until something calls `request`.
-  // No `onResume` here: this loop measures no elapsed time of its own, it only
-  // reads the playhead the animator already advanced.
-  const raf = useVisibleRaf((_time, raf) => {
-    bump();
-    if (isAdvancing(handle)) raf.request();
-  });
-  // Every render, not only mount: an edit can lengthen a finished timeline and
-  // set it running again, and `request` does nothing while a frame is pending.
-  useEffect(() => {
-    if (isAdvancing(handle)) raf.request();
-  });
-  useEffect(() => () => raf.cancel(), [handle, raf]);
 
   const onChange = useCallback((next: Track[]) => {
     handle.edit(() => {
@@ -60,9 +36,6 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
     });
   }, [handle]);
 
-  const playhead = handle.time();
-  const duration = handle.duration();
-
   return (
     <Timeline
       {...rest}
@@ -70,23 +43,22 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
       duration={duration}
       playhead={playhead}
       onChange={onChange}
-      onScrub={handle.seek}
-      transport={props.transport === false ? false : {
-        paused: !isAdvancing(handle),
-        loop: handle.loop(),
-        rate: handle.timeScale(),
-        onPlay: () => {
-          // `rearm` declines to revive a timeline at its duration, so resume
-          // alone would do nothing. Play-at-end rewinds first.
-          if (handle.time() >= duration) handle.seek(0);
-          handle.resume();
-          raf.request();
-          bump();
-        },
-        onPause: () => { handle.pause(); bump(); },
-        onLoopChange: (next) => { handle.setLoop(next); bump(); },
-        onRateChange: (next) => { handle.setTimeScale(next); bump(); },
-      }}
+      onScrub={onSeek}
+      transport={props.transport === false ? false : transport}
     />
   );
+}
+
+/** Props for {@link AnimatedTransport}: `<Transport>`'s presentation, less what it reads off `handle`. */
+export interface AnimatedTransportProps extends Pick<TransportProps, 'rates' | 'formatRate'> {
+  handle: TimelineHandle;
+  /** `false` leaves out the scrub bar. */
+  scrub?: false;
+}
+
+/** `<Transport>` bound to a live handle: play and pause, loop, rate, and a scrub bar that seeks it,
+ *  each written to the handle, and the playhead read from it every frame it moves. */
+export function AnimatedTransport({ handle, scrub, ...rest }: AnimatedTransportProps): ReactElement {
+  const { onSeek, ...playback } = useTimelinePlayback(handle);
+  return <Transport {...rest} {...playback} onSeek={scrub === false ? undefined : onSeek} />;
 }

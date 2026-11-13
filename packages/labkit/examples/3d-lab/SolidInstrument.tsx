@@ -268,17 +268,16 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     groupEntryRef.current = groupEntry;
   }, [groupEntry]);
   const nodeAtPoint = groupEntry.pick;
-  const { reachable } = groupEntry;
-  const areaSelect = useMemo(() => {
-    const all = createAreaSelect(world, selectionApi);
-    return { ...all, hitTestArea: (rect: Parameters<typeof all.hitTestArea>[0]) => all.hitTestArea(rect).filter(reachable) };
-  }, [world, selectionApi, reachable]);
+  const areaSelect = useMemo(
+    () => createAreaSelect(world, selectionApi, null, { entered: groupEntry.entered }),
+    [world, selectionApi, groupEntry.entered],
+  );
   const insert = useBoxInsert(scene, viewportSource);
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const kitSettings = useKitSettings();
   const snap = useMemo(
     () => createSnap(world, {
-      sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1 })],
+      sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1, world })],
       store: snapMarks,
       kitSettings,
     }),

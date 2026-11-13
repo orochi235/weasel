@@ -44,8 +44,7 @@ describe('path data at any magnitude, property', () => {
         if (s.closed) b.close();
       }
       const path = b.build();
-      // Unstroked: boxing a stroke this large is slow (docs/PERF.md).
-      const node: SvgPathNode = { kind: 'path', path, fill: { kind: 'none' } };
+      const node: SvgPathNode = { kind: 'path', path, fill: { kind: 'none' }, stroke: { paint: { kind: 'solid', color: '#000000' }, width: 1 } };
       const xml = serializeSvg([node]);
       if (/\de[+-]\d/.test(xml)) exponents++;
       const out = parseSvg(xml);

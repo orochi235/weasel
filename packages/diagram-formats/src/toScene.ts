@@ -119,7 +119,8 @@ function placedSpecs<TLayer extends string>(
 /**
  * One more page for a scene: `page` as a scene's page, and the nodes it draws as once placed where
  * `placeAt` puts it, as `documentSpecs` draws a page. A graph page with no place for a node is laid out first; a
- * sequence page grows to hold its layout.
+ * sequence page grows to hold its layout. A page names no theme, so without `opts.theme` it draws in the night
+ * theme, whatever theme the scene it joins was drawn in: pass that one.
  */
 export function pageSpecs<TLayer extends string = 'main'>(
   page: DocumentPage, placeAt: (page: Page) => PlacedPage, opts: DocumentSpecsOptions<TLayer> = {},

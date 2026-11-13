@@ -67,7 +67,9 @@ export interface HistoryStep {
 export interface History {
   apply(op: Op, label?: string): void;
   applyOps(ops: Op[], label: string): void;
+  /** Throws while a journal is active: the journal's edits sit over this stack's top. */
   undo(): void;
+  /** Throws while a journal is active, as `undo` does. */
   redo(): void;
   canUndo(): boolean;
   canRedo(): boolean;
@@ -88,7 +90,7 @@ export interface History {
    *  Equivalent to repeated `undo()`/`redo()` calls but doesn't bother
    *  rebuilding entry snapshots between steps. No-op if already at `n`.
    *  When a step throws, as with `undo` and `redo`, the ops it ran are
-   *  inverted and the history stays where the call found it. */
+   *  inverted and the history stays where the call found it. Throws while a journal is active, as `undo` does. */
   goto(n: number): void;
   /** The `timestamp` of entry `i`, counting in time order through the undo
    *  stack and on into the redo stack, so `timestampAt(undoDepth())` is the

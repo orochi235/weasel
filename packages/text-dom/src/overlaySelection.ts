@@ -1,5 +1,6 @@
 /** The DOM selection inside the edit overlay, as character offsets and back, and handing focus back to the overlay. */
 
+import { isEditableTarget } from '@weasel-js/gestures';
 import type { StyledRun } from '@weasel-js/text';
 import { charOffsetToDomPosition, domPositionToCharOffset, runsToDom, type OverlayRunBase } from './domRuns';
 import type { TextEditSelection } from './textEditTypes';
@@ -35,13 +36,6 @@ export function selectOffsets(overlay: HTMLElement, start: number, end: number):
   sel.addRange(range);
 }
 
-/** Whether `el` takes typed text: a field, a text area, or something editable. */
-function isTextEntry(el: Element | null): boolean {
-  return el instanceof HTMLInputElement
-    || el instanceof HTMLTextAreaElement
-    || (el instanceof HTMLElement && el.isContentEditable);
-}
-
 /**
  * Replace the overlay's contents with `runs` and put the selection back on
  * `[start, end)`, which rewriting the DOM destroys.
@@ -50,8 +44,8 @@ function isTextEntry(el: Element | null): boolean {
  * Browsers route editing commands by selection rather than by focus, so with
  * the range restored, the Enter that commits a number field also runs
  * `insertParagraph` over it — replacing the text that was just styled with a
- * line break. (Observed in Chrome.) Focus on a *button* still restores:
- * buttons turn keystrokes into clicks, not into editing commands.
+ * line break. (Observed in Chrome.) Focus on a *button*, a checkbox or a slider still restores: those turn
+ * keystrokes into clicks and steps, not into editing commands.
  */
 export function writeRunsPreservingSelection(
   overlay: HTMLElement,
@@ -61,7 +55,7 @@ export function writeRunsPreservingSelection(
   base: OverlayRunBase,
 ): void {
   const active = document.activeElement;
-  const inTextEntry = active !== overlay && !overlay.contains(active) && isTextEntry(active);
+  const inTextEntry = active !== overlay && !overlay.contains(active) && isEditableTarget(active);
   runsToDom(runs, overlay, base);
   if (!inTextEntry) selectOffsets(overlay, start, end);
 }
@@ -78,7 +72,7 @@ export function writeRunsPreservingSelection(
 export function restoreOverlayFocus(overlay: HTMLElement, range: TextEditSelection): void {
   const active = document.activeElement;
   if (active === overlay || overlay.contains(active)) return;
-  if (isTextEntry(active) || (active instanceof Element && active.closest('[role="dialog"]') !== null)) return;
+  if (isEditableTarget(active) || (active instanceof Element && active.closest('[role="dialog"]') !== null)) return;
   overlay.focus();
   selectOffsets(overlay, range.start, range.end);
 }

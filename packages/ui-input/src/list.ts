@@ -1,4 +1,5 @@
 import { heldAt } from './heldAt';
+import { chordKey } from './keyLetter';
 import { treeKey, type TreeShape } from './tree';
 import { isOneChar } from './typeahead';
 
@@ -72,6 +73,8 @@ export function rovingKey<T>(items: readonly T[], at: number | null, key: string
 /** A key as {@link rowKey} reads it: the key and the modifiers held. */
 export interface KeyPress {
   key: string;
+  /** The physical key, which reads a chord on a non-Latin layout ({@link chordKey}). */
+  code?: string;
   shiftKey?: boolean;
   ctrlKey?: boolean;
   metaKey?: boolean;
@@ -114,7 +117,7 @@ export function rowKey<T>(
   const { key } = press;
   const chord = !!(press.ctrlKey || press.metaKey);
   const mod = !!(apple ? press.metaKey && !press.ctrlKey : press.ctrlKey && !press.metaKey);
-  if (shape.selectAll && key.toLowerCase() === 'a' && mod && !press.altKey && !press.shiftKey) return { kind: 'selectAll' };
+  if (shape.selectAll && chordKey(press).toLowerCase() === 'a' && mod && !press.altKey && !press.shiftKey) return { kind: 'selectAll' };
   const step = rovingKey(items, at, key, shape);
   if (step.handled) return { kind: 'move', at: step.at, extend: !!press.shiftKey };
   if (shape.tree && (key === 'ArrowRight' || key === 'ArrowLeft')) {

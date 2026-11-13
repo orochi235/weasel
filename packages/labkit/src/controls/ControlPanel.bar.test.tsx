@@ -1,4 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { PARAMS_TEXT_WAIT_MS } from '@weasel-js/ui/components/Prefs';
+import { act } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
@@ -63,5 +65,34 @@ describe('<ControlPanel> group drawn as a bar', () => {
     );
     fireEvent.click(within(screen.getByRole('toolbar')).getByRole('button', { name: /bold/i }));
     expect(setConfig).toHaveBeenCalledWith('text.bold', true);
+  });
+});
+
+describe('<ControlPanel> text in a bar', () => {
+  it('waits the lab text wait before it drafts, as a row does', () => {
+    vi.useFakeTimers();
+    try {
+      const schema = resolveConfigSchema(
+        f.schema({ text: f.group({ title: f.string('') }).as('bar') }),
+        [],
+      );
+      const draftConfig = vi.fn();
+      render(
+        <ControlPanel
+          schema={schema}
+          config={{ text: { title: '' } }}
+          setConfig={vi.fn()}
+          draftConfig={draftConfig}
+        />,
+      );
+      fireEvent.change(within(screen.getByRole('toolbar')).getByRole('textbox'), {
+        target: { value: 'a' },
+      });
+      expect(draftConfig).not.toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(PARAMS_TEXT_WAIT_MS.lab));
+      expect(draftConfig).toHaveBeenCalledWith('text.title', 'a');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

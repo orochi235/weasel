@@ -68,36 +68,42 @@ export function constraintLinkMarks(
 
 const toScreenIn = (view: View) => (p: Pt): Pt => viewWorldToScreen(view, p);
 
-/**
- * The layer that draws every broken link of the canvas's scene, as one
- * entry: install it with `<SceneCanvas ambient>` or a preset's
- * `contributions`. `constraintsPreset` carries it.
- */
-export function createConstraintLinkMarks(style: ConstraintGlyphStyle): SurfaceContribution {
-  let scene: Scene<unknown, string, unknown> | undefined;
+/** The layer drawing the broken links of `scene`, with a cache of its own. */
+function linkMarksLayer(scene: Scene<unknown, string, unknown>, style: ConstraintGlyphStyle): RenderLayer<unknown> {
   let cache: { version: number; links: BrokenConstraintLink[] } | null = null;
-  const broken = (sc: Scene<unknown, string, unknown>) => {
-    const version = sc.getVersion();
-    if (cache?.version !== version) cache = { version, links: brokenConstraintLinks(sc) };
+  const broken = () => {
+    const version = scene.getVersion();
+    if (cache?.version !== version) cache = { version, links: brokenConstraintLinks(scene) };
     return cache.links;
   };
-  const layer: RenderLayer<unknown> = {
+  return {
     id: CONSTRAINT_LINK_MARKS_ID,
     label: 'Broken constraint links',
     space: 'screen',
     draw: (data, view) => {
       // The root pass covers the whole canvas; a view pass drawing it too would double it.
-      if (!scene || (data as { viewId?: string | null } | null)?.viewId) return [];
-      return constraintLinkMarks(broken(scene), toScreenIn(view), style);
+      if ((data as { viewId?: string | null } | null)?.viewId) return [];
+      return constraintLinkMarks(broken(), toScreenIn(view), style);
     },
   };
+}
+
+/**
+ * The layer that draws every broken link of the canvas's scene, as one
+ * entry: install it with `<SceneCanvas ambient>` or a preset's
+ * `contributions`. `constraintsPreset` carries it. One entry installed in
+ * several canvases draws each its own scene's links.
+ */
+export function createConstraintLinkMarks(style: ConstraintGlyphStyle): SurfaceContribution {
   return {
     id: CONSTRAINT_LINK_MARKS_ID,
     eligibility: { always: true },
-    overlay: layer,
-    attach: (_api: CanvasExtensionApi, deps: ContributionDepReader) => {
-      scene = deps.get('scene') as Scene<unknown, string, unknown> | undefined;
-      return () => { scene = undefined; cache = null; };
+    attach: (api: CanvasExtensionApi, deps: ContributionDepReader) => {
+      const scene = deps.get('scene') as Scene<unknown, string, unknown> | undefined;
+      if (!scene) return () => {};
+      const off = api.registerLayer(linkMarksLayer(scene, style));
+      api.requestRedraw();
+      return off;
     },
   };
 }

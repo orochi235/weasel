@@ -72,14 +72,14 @@ const KIT_IDS = [
   'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
   'deleteAnchors', 'cutPathAtAnchor', 'retractHandles', 'makeHandlesSymmetric',
   'averageAnchors', 'joinAnchors', 'setAnchorField', 'simplifyPath', 'offsetPath', 'snipAtCrossings', 'joinPaths',
-  'marqueeAnchors', 'selectAnchor',
+  'marqueeAnchors', 'selectAnchor', 'editEffectText',
   'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's
   // useViewportActions, not by useStandardActions — see useViewportActions.ts.
   'viewport.dragPan',
   'clearSelection',
   'enterTextEdit',
-  'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity',
+  'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity', 'setStrokeWidth', 'setVertexColor',
   'ingest',
   'clipboard.copy', 'clipboard.cut', 'clipboard.paste',
 ] as const;

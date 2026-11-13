@@ -15,8 +15,33 @@ npm install @weasel-js/svg
 ## Usage
 
 ```ts
-import { /* … */ } from '@weasel-js/svg';
+import { addOnPages } from '@weasel-js/core';
+import { parseSvg, serializeSvg, svgDraftSpecs, svgNodesFromKit, svgNodesToKitDrafts, warmSvg } from '@weasel-js/svg';
+
+// In: a document's nodes added to a scene, each root onto the page it lands on when the scene has pages.
+const drafts = svgNodesToKitDrafts(parseSvg(text), () => scene.mintId());
+addOnPages(scene, svgDraftSpecs(drafts, { layer: 'main', composition: scene.composition }));
+
+// Out: the scene as a document.
+const nodes = svgNodesFromKit(scene);
+await warmSvg(nodes);
+const svg = serializeSvg(nodes);
 ```
+
+`svgNodesFromKit` writes what core's built-in painters draw: text, paths, shapes and images. A node a
+painter of your own draws (`registerNodeShape`) is left out unless `leaf` writes it; return `undefined`
+for every other node to keep the default:
+
+```ts
+const nodes = svgNodesFromKit(scene, {
+  leaf: (_id, node) => isHeart(node.data)
+    ? { kind: 'path', path: heartIn(node.pose), fill: { kind: 'solid', color: node.data.heart.color } }
+    : undefined,
+});
+```
+
+For files dropped or pasted on a canvas, `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>` does the
+import, fitting each file to the view.
 
 ## Text fidelity
 

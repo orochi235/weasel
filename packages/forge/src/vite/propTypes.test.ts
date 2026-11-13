@@ -2,7 +2,7 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createPropReader, type PropReader } from './propTypes';
 
 describe('createPropReader', () => {
@@ -179,14 +179,14 @@ export default { component: Wrapped };
 
 describe('createPropReader under TypeScript 7', () => {
   it('answers null, as without typescript, since 7 exports only its version', async () => {
-    vi.resetModules();
-    vi.doMock('typescript', () => ({ default: { version: '7.0.2', versionMajorMinor: '7.0' } }));
-    try {
-      const { createPropReader: fresh } = await import('./propTypes');
-      expect(await fresh(tmpdir(), () => [])).toBeNull();
-    } finally {
-      vi.doUnmock('typescript');
-      vi.resetModules();
-    }
+    const seven = () => ({ version: '7.0.2', versionMajorMinor: '7.0' }) as unknown as typeof import('typescript');
+    expect(await createPropReader(tmpdir(), () => [], {}, seven)).toBeNull();
+  });
+
+  it('answers null without typescript', async () => {
+    const missing = (): typeof import('typescript') => {
+      throw new Error("Cannot find module 'typescript'");
+    };
+    expect(await createPropReader(tmpdir(), () => [], {}, missing)).toBeNull();
   });
 });

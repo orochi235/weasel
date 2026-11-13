@@ -143,6 +143,22 @@ describe('draw scene loading', () => {
     expect(loadSceneHistory()).toBeNull();
   });
 
+  it('starts with the welcome rectangle, keeping the saved drawing aside, when this build cannot hold what it saved', () => {
+    const history = JSON.stringify({ version: 1, form: SCENE_HISTORY_FORM, entries: [] });
+    const starter = loaded().toJSON();
+    const unheld = [{ layer: 'later' }, { parent: 'gone' }];
+    for (const change of unheld) {
+      localStorage.clear();
+      const nodes = starter.nodes.map((n) => (n.id === 'starter-1' ? { ...n, id: 'mine', ...change } : n));
+      const saved = JSON.stringify({ ...starter, nodes });
+      localStorage.setItem(LS_KEY, saved);
+      localStorage.setItem(SCENE_HISTORY_KEY, history);
+      expect(content().map((s) => s.id)).toEqual(['starter-1']);
+      expect(localStorage.getItem(`${LS_KEY}:unreadable`)).toBe(saved);
+      expect(loadSceneHistory()).toBeNull();
+    }
+  });
+
   it('removes an undo snapshot it cannot use', () => {
     localStorage.setItem(SCENE_HISTORY_KEY, JSON.stringify({ version: 1, form: 'older' }));
     expect(loadSceneHistory()).toBeNull();

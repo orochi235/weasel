@@ -69,4 +69,32 @@ describe('journal exclusivity', () => {
     expect(() => h.resumeJournal(j)).toThrow(/not resumable/);
     expect(() => j.applyBatch([pushOp(1)], 'x')).toThrow(/not active/);
   });
+
+  it('refuses to walk the parent under an active journal, and leaves both as they were', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    h.applyOps([pushOp(1)], 'one');
+    h.applyOps([pushOp(2)], 'two');
+    h.undo();
+    const j = h.beginJournal({ label: 'j' });
+    j.applyBatch([pushOp(3)], 'three');
+    expect(() => h.undo()).toThrow(/journal is already active/);
+    expect(() => h.redo()).toThrow(/journal is already active/);
+    expect(() => h.goto(0)).toThrow(/journal is already active/);
+    expect(adapter.values).toEqual([1, 3]);
+    j.cancel();
+    expect(adapter.values).toEqual([1]);
+    h.undo();
+    expect(adapter.values).toEqual([]);
+  });
+
+  it('walks the parent again once the journal is suspended', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    h.applyOps([pushOp(1)], 'one');
+    const j = h.beginJournal({ label: 'j' });
+    j.suspend();
+    h.undo();
+    expect(adapter.values).toEqual([]);
+  });
 });

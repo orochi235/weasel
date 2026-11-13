@@ -1,4 +1,4 @@
-import { type ActionTunings, PathBuilder, type RectPose } from '@weasel-js/core';
+import { type ActionTunings, PathBuilder, type RectPose, useSelection } from '@weasel-js/core';
 import { ANCHOR_SELECTION_GROUP, anchorSelectionPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/labkit';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useMemo } from 'react';
-import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
+import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
 import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -51,7 +51,7 @@ const features = ['draw', anchorSelectionPreset] as const;
 
 function AnchorSelectTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { selection, pathEdit, redrawOn } = useSeededPathEdit(scene);
+  const selection = useSelection({ scene, initial: [EDITED_ID] });
   const { n } = ctx.config;
   const tune = useMemo<ActionTunings>(() => ({ selectEveryNthAnchor: { params: { n } } }), [n]);
   return (
@@ -61,8 +61,7 @@ function AnchorSelectTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         trial={ctx.trial}
         selection={selection}
-        pathEdit={pathEdit}
-        redrawOn={redrawOn}
+        defaultPathEdit={EDITED_OPENING}
         tune={tune}
       />
       <OpeningSteps steps={[['selectEveryNthAnchor']]} />

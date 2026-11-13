@@ -1,5 +1,266 @@
 # @weasel-js/ui
 
+## 1.19.1
+
+### Minor Changes
+
+- 4cfff87: Number fields show and read numbers in the user's locale: `2,5` and `1.500` in German, where they were always `en-US`.
+  
+  `UnitField` takes a `locale` prop. Without one it follows React Aria's locale, the same one its `NumberField` already used: the nearest `<I18nProvider locale>`, else the browser's language, else `en-US`. `PropertyPanel`'s number controls, their read-only readouts and the menu's number rows follow it too, so one `<I18nProvider>` sets every number field. A locale whose numbers would not read back as shown falls back to Latin digits, then to `en-US`; `useFieldLocale(locale?)` gives the locale a field settles on, for a consumer's own field.
+  
+  <!-- entry: rank=10 api new behavior pick -->
+- b94121b: A color property a selected node does not hold shows an empty swatch with its opacity locked, rather than the schema default.
+  
+  `ColorField` takes `unset` for this: drawn as `mixed` is, without saying the values disagree.
+  
+  <!-- entry: fix api -->
+- c438d4a: CurveEditor's keys, anchors and bezier handles, and GradientHandles' and MeshHandles' points, draw at the theme's `--wzl-handle-*` sizes.
+  
+  A curve layer's render context gains `handleHalf(token)`, half a handle's size under the theme in force, for a custom layer to size its handles the same way.
+  
+  <!-- entry: fix api -->
+- 5526346: `PropertyCaption` names one control among several in a `group` row, set in the row label's face.
+  
+  ```tsx
+  <PropertyRow group label="Offset">
+    <span><PropertyCaption>X</PropertyCaption><NumberField … /></span>
+    <span><PropertyCaption>Y</PropertyCaption><NumberField … /></span>
+  </PropertyRow>
+  ```
+  
+  <!-- entry: api -->
+- ef15064: A text field's `inputWaitMs` holds `onInput` until typing pauses that long.
+  
+  Whatever is still waiting is sent when the edit settles, before `onChange`. `prefFieldProps` and `withCommitPolicy` take a `textWaitMs` that sets it on text a surface leaves live, and a form's or panel's render context carries `textWaitMs` beside `settles`. `useDebouncedText` also returns `flush`.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 793b472: `BandEditor`'s `x`, `l` and `s` keys work with Caps Lock on.
+  
+  <!-- entry: fix -->
+- 3e4950e: A toolbar moved into another row with Alt+arrows keeps focus on its handle under React StrictMode.
+  
+  <!-- entry: fix -->
+- 88927c3: A focused checkbox, switch, radio, slider thumb, tab or text field shows a focus ring under Windows high contrast (`forced-colors: active`).
+  
+  <!-- entry: fix visual -->
+- c6944f9: The selected rows of a `Tree` and an `ItemList` show in the system's highlight colors under Windows high contrast (`forced-colors: active`).
+  
+  <!-- entry: fix visual -->
+- e55e22a: Checkboxes, switches, radios, tabs and segments show their state under Windows high contrast (`forced-colors: active`).
+  
+  <!-- entry: fix visual -->
+- 5159b4f: Mod+A selects every row of a list on a non-Latin keyboard layout. `rowKey` reads a `code` on the key it is given.
+  
+  <!-- entry: fix -->
+- 21e7a85: `PatternPicker` commits only the latest pick, dropping an image still being read when another pick replaces it.
+  
+  The same holds when the picker unmounts during the read.
+  
+  <!-- entry: fix -->
+- ce1f1a7: A pen's eraser end presses, drags and draws on a canvas and on kit controls as its tip does; its barrel button is a secondary press.
+  
+  `isPrimaryPress(e)` and `pressButtonOf(e)` are new, exported from `@weasel-js/gestures` (and `isPrimaryPress` from `@weasel-js/routing` and `@weasel-js/core`): the one answer to which button a pointer press was made with.
+  
+  <!-- entry: fix api -->
+- 607d991: A switch's thumb and a radio's dot change at once under `prefers-reduced-motion`, instead of sliding and growing.
+  
+  <!-- entry: fix -->
+- e70f7a1: `PrefSchemaEditor` keeps the later of two submits as what was sent when the earlier one finishes last.
+  
+  <!-- entry: fix -->
+- e6959cc: A second finger pressing a slider, a band editor, a timeline or a `useHandleDrag` handle mid-drag leaves the first finger's drag running.
+  
+  <!-- entry: fix -->
+- d6dd797: A timeline key drag the browser cancels, as when a touch turns into a scroll, puts the key back where it was through `onInput`.
+  
+  <!-- entry: fix -->
+- 9f44d6d: `AnimatedTimeline` draws an edit made to its handle while it was mounting, rather than the tracks it first read.
+  
+  <!-- entry: fix -->
+- 1026b75: Alt+arrow in editable text inside a `Bar` unit moves by word instead of reordering the bar, as it already did in a text input.
+  
+  <!-- entry: fix -->
+- d169db7: A `ToggleBar`, `ButtonBar` or `OptionsBar` given `columns` inside a curved `Along` moves focus along its one line, as it is drawn, not by grid rows.
+  
+  <!-- entry: fix -->
+- 3809dbb: `FitLabel`s try their full forms again once a web font finishes loading.
+  
+  <!-- entry: fix -->
+- 90a3dd9: `domMeasureEnv` measures in the theme's font when `--wzl-font-ui` is one family name like `Font 3D`, not the canvas's 10px default.
+  
+  <!-- entry: fix -->
+- 7ee8a44: `PageTabs` calls `onSelect` for Enter or Space on the lit tab, as its docs say, not only for a press on it.
+  
+  <!-- entry: fix -->
+- af15d7a: A mixed `<PaintInput>` reports each pick of its color picker through `onInput`, as a single paint does.
+  
+  <!-- entry: fix -->
+- 8b5be0f: `+=` or `-=` typed into a `SelectionPanel` number moves each selected node by that amount from its own value, mixed selections included.
+  
+  <!-- entry: fix -->
+- ef15064: Forms, selection panels and bars wait `params.form.textWaitMs` or `params.panel.textWaitMs` before writing text they write as it is typed.
+  
+  <!-- entry: fix -->
+- d254251: A `%` attached to a field, a readout or a menu number row is set smaller and raised, like `°`, instead of full size on the baseline. `QuantityText` marks it `data-raise`.
+  
+  <!-- entry: fix visual -->
+- f431014: Prefs' rail and pane stop watching their scrollbars and sticky headings when they unmount under React 18, as under 19.
+  
+  <!-- entry: fix -->
+- 96a1e29: Two edits the schema editor commits before a render undo one at a time, the second back to the first.
+  
+  <!-- entry: fix -->
+- 6b9ac73: A `textarea` field leaves Escape to an input method that is composing, rather than dropping the edit and leaving the field.
+  
+  <!-- entry: fix -->
+- Updated dependencies [e17dbd6]
+- Updated dependencies [c91c39c]
+- Updated dependencies [d65a34b]
+- Updated dependencies [5159b4f]
+- Updated dependencies [c93b396]
+- Updated dependencies [c9adfef]
+- Updated dependencies [687501a]
+- Updated dependencies [3e8a149]
+- Updated dependencies [b1fdbf3]
+- Updated dependencies [687501a]
+- Updated dependencies [de8f829]
+- Updated dependencies [e8de9c3]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [2bb5cde]
+- Updated dependencies [1f42c0c]
+- Updated dependencies [34e40b2]
+- Updated dependencies [d9a7171]
+- Updated dependencies [f0ef9ba]
+- Updated dependencies [9b03a7b]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [a2627b8]
+- Updated dependencies [2a32658]
+- Updated dependencies [dbbca9f]
+- Updated dependencies [3cd42d9]
+- Updated dependencies [913a468]
+- Updated dependencies [eb6276d]
+- Updated dependencies [34dfc04]
+- Updated dependencies [ef4ff01]
+- Updated dependencies [5e0f965]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [7f2951f]
+- Updated dependencies [a760b7b]
+- Updated dependencies [d11f1df]
+- Updated dependencies [baa3137]
+- Updated dependencies [c12b7a7]
+- Updated dependencies [1ba8505]
+- Updated dependencies [500c153]
+- Updated dependencies [661582d]
+- Updated dependencies [5b509a7]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [73bdfc7]
+- Updated dependencies [b39b992]
+- Updated dependencies [b39b992]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [59a1c5f]
+- Updated dependencies [5c1d019]
+- Updated dependencies [f0946c4]
+- Updated dependencies [1f55652]
+- Updated dependencies [d3a8b36]
+- Updated dependencies [635431c]
+- Updated dependencies [60d4ba5]
+- Updated dependencies [f6a2555]
+- Updated dependencies [9a0d9d1]
+- Updated dependencies [e45b7e4]
+- Updated dependencies [9bd6635]
+- Updated dependencies [2a03672]
+- Updated dependencies [7036750]
+- Updated dependencies [08dd689]
+- Updated dependencies [58298fa]
+- Updated dependencies [97be45c]
+- Updated dependencies [71c3f85]
+- Updated dependencies [58309aa]
+- Updated dependencies [11a14fb]
+- Updated dependencies [49caa4b]
+- Updated dependencies [c2f8f12]
+- Updated dependencies [8763373]
+- Updated dependencies [7e954c5]
+- Updated dependencies [de8f829]
+- Updated dependencies [5159b4f]
+- Updated dependencies [55b0f04]
+- Updated dependencies [72e6d28]
+- Updated dependencies [0a483ad]
+- Updated dependencies [8cd600b]
+- Updated dependencies [57c0cf0]
+- Updated dependencies [f58d2be]
+- Updated dependencies [216d193]
+- Updated dependencies [2f6b0e9]
+- Updated dependencies [1691dec]
+- Updated dependencies [e20a471]
+- Updated dependencies [b62d643]
+- Updated dependencies [36b51a0]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [e0e1f22]
+- Updated dependencies [8ada2a6]
+- Updated dependencies [039b7ad]
+- Updated dependencies [d254251]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [0cbbb94]
+- Updated dependencies [8562ebe]
+- Updated dependencies [6d1a52e]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [6976048]
+- Updated dependencies [5461e84]
+- Updated dependencies [5c64825]
+- Updated dependencies [8941d77]
+- Updated dependencies [f611d11]
+- Updated dependencies [e6959cc]
+- Updated dependencies [59485d4]
+- Updated dependencies [141697f]
+- Updated dependencies [28404b3]
+- Updated dependencies [b4e8f97]
+- Updated dependencies [d66e90e]
+- Updated dependencies [d66e90e]
+- Updated dependencies [fb9e364]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [bce70ba]
+- Updated dependencies [d40d869]
+- Updated dependencies [3fd5c6f]
+- Updated dependencies [250c105]
+- Updated dependencies [a09ed24]
+- Updated dependencies [8562ebe]
+- Updated dependencies [72e6d28]
+- Updated dependencies [16900c1]
+- Updated dependencies [2c3416d]
+- Updated dependencies [98243b2]
+- Updated dependencies [184acd6]
+  - @weasel-js/animator@1.19.1
+  - @weasel-js/core@1.19.1
+  - @weasel-js/ui-input@1.19.1
+  - @weasel-js/quantity@1.19.1
+  - @weasel-js/font@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/gestures@1.19.1
+  - @weasel-js/history@1.19.1
+  - @weasel-js/menu@1.19.1
+  - @weasel-js/text@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/prefs@1.19.1
+  - @weasel-js/react@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/guides@1.19.1
+  - @weasel-js/svg@1.19.1
+  - @weasel-js/plot@1.19.1
+  - @weasel-js/ui-logic@1.19.1
+  - @weasel-js/clock@1.19.1
+  - @weasel-js/theme@1.19.1
+  - @weasel-js/icons@1.19.1
+  - @weasel-js/modes@1.19.1
+  - @weasel-js/select@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

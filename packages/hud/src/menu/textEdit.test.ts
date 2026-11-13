@@ -92,8 +92,8 @@ describe('editKey', () => {
 
   it('reads Cmd by the line and Option by the word on Apple, and Ctrl by the word elsewhere', () => {
     const k = { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
-    expect(editMods({ ...k, metaKey: true }, true)).toEqual({ shift: false, mod: true, line: true, word: false });
-    expect(editMods({ ...k, altKey: true }, true)).toEqual({ shift: false, mod: false, line: false, word: true });
+    expect(editMods({ ...k, metaKey: true }, true)).toEqual({ shift: false, mod: true, line: true, word: false, ctrl: false });
+    expect(editMods({ ...k, altKey: true }, true)).toEqual({ shift: false, mod: false, line: false, word: true, ctrl: false });
     expect(editMods({ ...k, ctrlKey: true }, false)).toEqual({ shift: false, mod: true, word: true });
     expect(editMods({ ...k, altKey: true }, false)).toEqual({ shift: false, mod: false, word: false });
     // AltGr arrives as Ctrl+Alt and types a character.
@@ -101,6 +101,41 @@ describe('editKey', () => {
     expect(shown(run('a', [['@', editMods({ ...k, ctrlKey: true, altKey: true }, false)]]))).toBe('a@|');
     expect(shown(run('one two', [['Backspace', editMods({ ...k, ctrlKey: true }, false)]]))).toBe('one |');
     expect(run('abc', [['a', editMods({ ...k, ctrlKey: true }, false)]])).toMatchObject({ anchor: 0, caret: 3 });
+  });
+
+  it("takes a Mac's Ctrl chords as a Mac text field does, and leaves Cmd as mod", () => {
+    const k = { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
+    const ctrl = editMods({ ...k, ctrlKey: true }, true);
+    expect(ctrl).toMatchObject({ mod: false, ctrl: true });
+    expect(editMods({ ...k, ctrlKey: true, metaKey: true }, true)).toMatchObject({ mod: true, ctrl: false });
+    expect(shown(run('abc', [['a', ctrl]]))).toBe('|abc');
+    expect(shown(run('abc', ['Home', ['e', ctrl]]))).toBe('abc|');
+    expect(shown(run('abc', [['b', ctrl]]))).toBe('ab|c');
+    expect(shown(run('abc', ['Home', ['f', ctrl]]))).toBe('a|bc');
+    expect(shown(run('abc', [['h', ctrl]]))).toBe('ab|');
+    expect(shown(run('abc', ['Home', ['d', ctrl]]))).toBe('|bc');
+    expect(shown(run('one two', ['Home', 'ArrowRight', ['k', ctrl]]))).toBe('o|');
+    expect(shown(run('abc', ['Home', ['n', ctrl], ['p', ctrl]]))).toBe('|abc');
+    expect(run('abc', [['a', { ...ctrl, shift: true }]])).toMatchObject({ caret: 0, anchor: 3 });
+    // One it does not take is held, not typed.
+    expect(shown(run('abc', [['x', ctrl]]))).toBe('abc|');
+  });
+
+  it("keeps what a Mac's Ctrl+K cuts, and enters it again at the caret on Ctrl+Y", () => {
+    const ctrl = editMods({ shiftKey: false, ctrlKey: true, metaKey: false, altKey: false }, true);
+    const cut = run('one two', ['Home', 'ArrowRight', 'ArrowRight', 'ArrowRight', ['k', ctrl]]);
+    expect(cut).toMatchObject({ draft: 'one', kill: ' two' });
+    expect(shown(run('one two', ['Home', 'ArrowRight', 'ArrowRight', 'ArrowRight', ['k', ctrl], 'Home', ['y', ctrl]]))).toBe(' two|one');
+    expect(shown(run('ab', [['y', ctrl]]))).toBe('ab|');
+  });
+
+  it("swaps the clusters either side of the caret on a Mac's Ctrl+T, the last two at the end of the line", () => {
+    const ctrl = editMods({ shiftKey: false, ctrlKey: true, metaKey: false, altKey: false }, true);
+    expect(shown(run('abc', ['ArrowLeft', ['t', ctrl]]))).toBe('acb|');
+    expect(shown(run('abc', [['t', ctrl]]))).toBe('acb|');
+    expect(shown(run('a😀e\u0301', ['ArrowLeft', ['t', ctrl]]))).toBe('ae\u0301😀|');
+    expect(shown(run('abc', ['Home', ['t', ctrl]]))).toBe('|abc');
+    expect(shown(run('a', [['t', ctrl]]))).toBe('a|');
   });
 
   it('holds a composition in place of the selection until it is entered', () => {

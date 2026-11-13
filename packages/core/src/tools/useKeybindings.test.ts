@@ -10,7 +10,7 @@ import { ActionsProvider } from '@weasel-js/routing/react';
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import { DepRegistryProvider, useDepSource } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { createModeRegistry, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
 
@@ -379,6 +379,25 @@ describe('useKeybindings', () => {
       expect(result.current.active).toBe('pen');
     });
 
+    it('passes a barred tool\'s key on to the next binding, rather than swallowing it', () => {
+      const ran = vi.fn();
+      const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
+      const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, capabilities: ['creates-paths'] });
+      const modes = modesAllowing([]);
+      renderHook(() => {
+        const tools = useTools({ active: 'select', registry: { select, pen } });
+        useKeybindings(tools, { modes });
+        const registry = useActionsRegistry();
+        useEffect(() => registry?.register({
+          id: 'other.p', label: 'other', defaultBinding: { kind: 'key', key: 'p' },
+          invoker: { timing: 'immediate', run: ran },
+        }), [registry]);
+        return tools;
+      }, { wrapper: makeWrapper('select', true) });
+      act(() => press('p'));
+      expect(ran).toHaveBeenCalledTimes(1);
+    });
+
     it('reads the mode at the keypress, not at mount', () => {
       const modes = createModeRegistry({
         modes: [mode('look', []), mode('draw', ['creates-paths'])], initial: 'look',
@@ -413,5 +432,18 @@ describe('useKeybindings', () => {
     act(() => press('p'));
     expect(abandonedRead).not.toHaveBeenCalled();
     expect(committedRead).toHaveBeenCalled();
+  });
+
+  it('refuses a trigger naming a tool the registry does not hold', () => {
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
+    let ran: boolean | undefined;
+    const { result } = renderHook(() => {
+      const tools = useTools({ active: 'select', registry: { select } });
+      useKeybindings(tools);
+      return { tools, registry: useActionsRegistry() };
+    }, { wrapper: makeWrapper('select', true) });
+    act(() => { ran = result.current.registry!.trigger('tool.activate', { toolId: 'nope' }); });
+    expect(ran).toBe(false);
+    expect(result.current.tools.active).toBe('select');
   });
 });

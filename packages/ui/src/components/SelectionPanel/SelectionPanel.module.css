@@ -58,6 +58,7 @@
 /* As `Checkbox` dims the text beside a disabled box: the controls dim themselves. */
 .row[data-disabled] > .rowLabel {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
 }
 
 .row {

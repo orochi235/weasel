@@ -2,7 +2,7 @@ import { type ReactElement, type ReactNode } from 'react';
 import { selection, type MultipleSelection, type SingleSelection } from '@weasel-js/ui-input';
 import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard, type SegmentSweep } from '../segmentSweep';
 import s from '../segmentedControl.module.css';
-import { SegmentedRow, segmentClassName, segmentedTiling, segmentPlaceProps, type SegmentedGridProps } from '../segmentedRow';
+import { SegmentedRow, segmentClassName, segmentPlaceProps, useSegmentedTiling, type SegmentedGridProps } from '../segmentedRow';
 import { tilingRoving } from '../../tiling';
 import { selectionRoving } from '../../selectionRoving';
 import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
@@ -85,7 +85,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     if (usable(i) && !guard.sweeping()) model.press(i);
   };
 
-  const tiles = segmentedTiling(props);
+  const tiles = useSegmentedTiling(props);
   const roving = useRovingTabIndex({
     itemSelector: `.${s.segment}`,
     ...(tiles ? tilingRoving(tiles) : {}),

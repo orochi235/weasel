@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { planPixelRender, renderSceneToPixels } from './renderSceneToPixels';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { rotateAroundAABBCenter } from './poseRotation';
@@ -306,6 +306,24 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
     expect(() =>
       renderSceneToPixels({ scene: fakeScene([]), sourceRect: RECT, scale: { x: 1, y: 1 } }),
     ).toThrow(/WebGL2 is unavailable/);
+  });
+
+  it('draws on a page canvas where an OffscreenCanvas will not open WebGL 2', () => {
+    const rec = makeGLRecorder();
+    vi.stubGlobal('OffscreenCanvas', class {
+      constructor(public width: number, public height: number) {}
+      getContext(): null { return null; }
+    });
+    const setup = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = ((kind: string) => (kind === 'webgl2' ? rec.gl : null)) as HTMLCanvasElement['getContext'];
+    try {
+      const out = renderSceneToPixels({ scene: fakeScene([]), sourceRect: RECT, scale: { x: 1, y: 1 } });
+      expect(out.width).toBe(RECT.width);
+      expect(rec.calls.map((c) => c.name)).toContain('readPixels');
+    } finally {
+      HTMLCanvasElement.prototype.getContext = setup;
+      vi.unstubAllGlobals();
+    }
   });
 
   it('throws when both gl and createCanvas are supplied', () => {

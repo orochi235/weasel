@@ -57,6 +57,8 @@ export interface WalkCtx {
   targets?: PrefAliasTargets;
   /** Paths of the rows whose labels are drawn as changed. */
   changed?: ReadonlySet<string>;
+  /** What is wrong with a row's value, by its path. */
+  errors?: ReadonlyMap<string, ReactNode>;
   /** Paths of the rows and groups the form marks as selected. */
   selected?: readonly string[];
   /** The one of `selected` the form brings into view and opens the page of. */
@@ -79,6 +81,8 @@ export interface WalkCtx {
   entryAt?: EntryAt;
   /** Which live controls write only the value an edit settles on. */
   settles?: Readonly<Record<LiveControl, boolean>>;
+  /** How long live text waits for the next keystroke before it is written, in ms. */
+  textWaitMs?: number;
   /** What the form was given to split values with, and which rows are open. */
   split?: SplitCtx;
   /** A surface that draws its leaves itself and its groups as the form does: a standalone `Bar`'s opened
@@ -155,6 +159,7 @@ export function prefRenderContext(
     ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: inside?.hiddenAt ?? ((at: string) => ctx.hidden!.has(at)) } : {}),
     ...(entryAt ? { entryAt } : {}),
     ...(ctx.settles ? { settles: ctx.settles } : {}),
+    ...(ctx.textWaitMs ? { textWaitMs: ctx.textWaitMs } : {}),
   };
   return { renderCtx, toggles };
 }
@@ -213,6 +218,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
     <PropertyRow
       label={pref.name}
       changed={ctx.changed?.has(path)}
+      error={ctx.errors?.get(path)}
       mixed={renderCtx.mixedAt?.(path, true)}
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
@@ -339,5 +345,6 @@ function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | u
     { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields, disabled: ctx.disabled },
     'form',
     ctx.settles,
+    ctx.textWaitMs,
   );
 }

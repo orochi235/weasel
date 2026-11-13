@@ -14,7 +14,6 @@ import type {
 import { gradientForBounds, isGradientPaint, isTilePaint, withGradientKind } from '@weasel-js/paint';
 import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
 import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
-import { _resetPaintDrawKindsForTests } from '@weasel-js/renderer/test-seams';
 import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
@@ -237,9 +236,9 @@ export function paintKindOf(fill: Paint): PaintKindEntry | undefined {
   return getPaintKind(fill.kind ?? 'solid');
 }
 
-/** @internal Test helper — do not call from product code. */
-export function _resetPaintKindsForTests(): void {
+/** @internal Back to the built-ins alone, once the renderer's half is reset too; tests reach it
+ *  through `_resetPaintKindsForTests` in `@weasel-js/core/test-seams`. */
+export function _reseedPaintKinds(): void {
   KINDS.clear();
-  _resetPaintDrawKindsForTests();
   seed();
 }

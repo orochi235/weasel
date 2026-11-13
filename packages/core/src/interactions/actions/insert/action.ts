@@ -3,7 +3,6 @@ import type { DragSample, InvocationCtx, OngoingHandle, BindingOpts, OngoingOver
 import { resolveParams } from '@weasel-js/routing';
 import type { ModSpec } from '@weasel-js/gestures';
 import { shapeKindInfo } from 'core/shapeKinds';
-import type { KitInsertShape } from 'core/shapeKinds';
 import { SNAP_ROLE_MODS, SNAP_ROLES } from 'domains/snap/roles';
 import { runBehaviorSettled } from '../gestureLifecycle';
 import { inPlane, insertLayer } from '../planeInput';
@@ -39,7 +38,7 @@ export const INSERT_DRAG_MODS: ModSpec = { ...SNAP_ROLE_MODS, alt: 'optional' };
  *
  * The new node has no scene id until commit, so the live preview is the
  * `overlay()` surface with `kind: 'insertPreview'`. A consumer-defined kind
- * the kit cannot draw skips the preview and still commits on release.
+ * previews as the outline of the box it will fill.
  *
  * A polygon's or a star's insert is the last operation once it commits, so a
  * panel can change its sides, or its points and inner radius, by replaying the
@@ -83,12 +82,12 @@ export const insertAction: Action & { requires: string[] } = inPlane({
           // Resolve params on every overlay() so thunked params (polygon
           // sides ticking via ArrowUp mid-drag) reflect in the live preview.
           const resolved = resolveParams(session.opts?.params);
-          if (!shapeKindInfo(insertKind(resolved))?.insertPreview) return null;
+          if (shapeKindInfo(insertKind(resolved))?.insertPreview === false) return null;
           const { bounds, extras, start, ends } = insertShape(resolved, frame, frame.points, gesture.userRotation);
           const lands = scene && insertLanding(scene, session.dep, bounds, extras, ends);
           return {
             kind: 'insertPreview',
-            shape: extras.kind as KitInsertShape,
+            shape: extras.kind,
             bounds,
             extras,
             ...(lands ? { lands } : {}),

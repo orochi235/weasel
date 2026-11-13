@@ -1,7 +1,8 @@
 import type { Hud } from './hud';
+import { recordHudOn } from './loupe/loupeRoutes';
 import type { CanvasExtensionApi, RenderLayer, LayerHit, View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { depsUnchanged, viewToTransform } from '@weasel-js/core';
+import { clientToCanvas, depsUnchanged, viewToTransform } from '@weasel-js/core';
 import { worldToScreen } from '@weasel-js/core';
 import {
   DEFAULT_FONT_FAMILY,
@@ -54,6 +55,22 @@ export function attachHud(
   hud: Hud,
   options: AttachHudOptions = {},
 ): () => void {
+  const detach = bindHud(api, hud, options);
+  // Recorded so a HUD entry built without this HUD finds its loupes.
+  const forget = recordHudOn(api, hud);
+  return () => { forget(); detach(); };
+}
+
+/** Registers the bundled font, and redraws the canvas once it arrives while the HUD is still `attached` there. */
+function loadDefaultFont(api: CanvasExtensionApi, urls: FontAtlasUrls | undefined, attached: () => boolean): void {
+  registerDefaultFont(urls)
+    .then(() => { if (attached()) api.requestRedraw(); })
+    .catch((err) => {
+      console.warn('weasel-hud: failed to register default font', err);
+    });
+}
+
+function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): () => void {
   const theme = options.theme ?? resolveTheme(weaselTheme);
   const color = hudColor(options.tints ?? { theme: weaselTheme, resolved: theme });
   if (hud.attached) {
@@ -65,13 +82,8 @@ export function attachHud(
   // registered, so there is nothing to fetch and nothing to wait for.
   const font = options.font;
   const defaultFont = typeof font === 'string' ? font : DEFAULT_FONT_FAMILY;
-  if (typeof font !== 'string') {
-    registerDefaultFont(font)
-      .then(() => api.requestRedraw())
-      .catch((err) => {
-        console.warn('weasel-hud: failed to register default font', err);
-      });
-  }
+  let attached = true;
+  if (typeof font !== 'string') loadDefaultFont(api, font, () => attached);
 
   // Track the currently-hovered widget at the closure level.
   let lastHovered: Widget | null = null;
@@ -185,6 +197,7 @@ export function attachHud(
   });
 
   return () => {
+    attached = false;
     // Widgets outlive the attachment. Leaving one believing the pointer is
     // still over it strands it painted as hovered, and a re-attach starts
     // with an empty `lastHovered` so it never sees the leave.
@@ -273,8 +286,7 @@ function wireFocus(
   hitAt: (sx: number, sy: number) => Widget | null,
 ): () => void {
   const onPointerDown = (e: PointerEvent) => {
-    const r = element.getBoundingClientRect();
-    const hit = hitAt(e.clientX - r.left, e.clientY - r.top);
+    const hit = hitAt(...clientToCanvas(element, e.clientX, e.clientY));
     hud.focus(hit && isFocusable(hit) ? hit : null, { visible: false });
   };
 
@@ -310,9 +322,15 @@ function wireFocus(
   const onBlur = (e: FocusEvent) => { if (e.relatedTarget !== text.input) hud.focus(null); };
 
   const region = createLiveRegion(element.ownerDocument);
+  const announce = () => {
+    const name = hud.focused?.accessibleName ?? '';
+    if (region.textContent !== name) region.textContent = name;
+  };
   const unsubscribe = hud.subscribeFocus((w) => {
     region.textContent = w?.accessibleName ?? '';
   });
+  // A widget's change, a button's new label among them, is drawn on the next frame; its name is read there too.
+  const unannounce = hud.subscribeFrame(announce);
   const unmirror = mirrorFocusedTree(element, hud);
 
   element.addEventListener('pointerdown', onPointerDown);
@@ -325,6 +343,7 @@ function wireFocus(
     element.removeEventListener('keyup', onKeyUp);
     element.removeEventListener('blur', onBlur);
     unsubscribe();
+    unannounce();
     unmirror();
     text.detach();
     region.remove();

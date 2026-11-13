@@ -108,6 +108,28 @@ describe('useFrameLoop — a paint that throws', () => {
   });
 });
 
+/** A subscriber that throws costs its own call, as on every other weasel emitter. */
+describe('useFrameLoop — a subscriber that throws', () => {
+  it('lets the paint and the other subscribers run, and does not throw into the caller', () => {
+    const loopRef = { current: null as FrameLoop | null };
+    const paint = vi.fn(() => true);
+    render(<Host loopRef={loopRef} paint={paint} syncPaint />);
+    const loop = loopRef.current!;
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const heard: string[] = [];
+    loop.subscribeBeforePaint(() => { throw new Error('bad before'); });
+    loop.subscribeBeforePaint(() => { heard.push('before'); });
+    loop.subscribeFrame(() => { throw new Error('bad after'); });
+    loop.subscribeFrame(() => { heard.push('after'); });
+
+    expect(() => act(() => { loop.requestRedraw(); })).not.toThrow();
+    expect(paint).toHaveBeenCalledTimes(1);
+    expect(heard).toEqual(['before', 'after']);
+    expect(error).toHaveBeenCalledTimes(2);
+    error.mockRestore();
+  });
+});
+
 describe('useFrameLoop after an abandoned render', () => {
   it('keeps the committed syncPaint', () => {
     const loopRef = { current: null as FrameLoop | null };

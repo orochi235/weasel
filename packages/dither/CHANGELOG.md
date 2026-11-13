@@ -1,5 +1,20 @@
 # @weasel-js/dither
 
+## 1.19.1
+
+### Patch Changes
+
+- Updated dependencies [69b696d]
+- Updated dependencies [71c3f85]
+- Updated dependencies [16900c1]
+- Updated dependencies [4fb0c17]
+- Updated dependencies [20878ef]
+- Updated dependencies [04ac694]
+- Updated dependencies [92e4fa8]
+- Updated dependencies [f3618cb]
+  - @weasel-js/renderer@1.19.1
+  - @weasel-js/geom@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

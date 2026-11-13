@@ -43,8 +43,9 @@ export interface SceneOptions<TData, TLayer extends string, TPose = RectPose> {
   composition?: PoseComposition<TPose>;
   /** How laid-out containers are measured. See {@link LayoutFrame}. */
   layoutFrame?: LayoutFrame<TPose>;
-  /** When supplied, `scene.applyBatch` consults this on every call. If it returns a non-null
-   *  `Journal`, ops are routed to the journal's `applyBatch` instead of recording a new
+  /** When supplied, every recorded edit consults this: `applyBatch`, a direct call such as
+   *  `setPose`, a `batch`, and `scene.history`'s `apply`, `applyOps`, `recordEntry` and `seal`.
+   *  If it returns a non-null `Journal`, the edit is recorded there instead of as a new
    *  parent-history entry, and undo and redo step that journal. The scene state changes as
    *  normal; only the history tracking differs.
    *

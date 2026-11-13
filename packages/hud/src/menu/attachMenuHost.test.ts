@@ -100,13 +100,11 @@ describe('attachMenuHost', () => {
   });
 
   it('closes the host when the menu cannot take focus', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    hud.bind({ requestRedraw() {}, registerLayer: () => () => {}, subscribeFrame: () => () => {} });
-    hud.unbind();
+    const focus = vi.spyOn(hud, 'focus').mockReturnValue(false);
     host.open({ menu: 'row', client: { x: 10, y: 10 } });
     expect(hud.widgets()).toHaveLength(0);
     expect(host.current()).toBeNull();
-    warn.mockRestore();
+    focus.mockRestore();
   });
 
   it('closes on a wheel outside the menu, and not on one over it', () => {

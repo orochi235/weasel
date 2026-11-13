@@ -74,6 +74,24 @@ const pruned = <V>(map: ReadonlyMap<string, V>, ids: Set<string>): ReadonlyMap<s
 
 const toError = (error: unknown): Error => (error instanceof Error ? error : new Error(String(error)));
 
+type Imports = Map<string, Promise<Record<string, unknown>>>;
+
+/**
+ * `importOf`, noting each import it hands out, and whether each is still its file's in `current`: a reload drops a
+ * file's import for a newer one, whose answer a load that read the old one must not overwrite when it lands late.
+ */
+function trackedImports(importOf: (file: string) => Promise<Record<string, unknown>>, current: Imports) {
+  const read: Imports = new Map();
+  return {
+    importOf: (file: string) => {
+      const loading = importOf(file);
+      read.set(file, loading);
+      return loading;
+    },
+    latest: () => [...read].every(([file, loading]) => current.get(file) === loading),
+  };
+}
+
 /**
  * One instrument per story in `index`, each schema holding a `$globals` group for `globals`. The lab's global values
  * reach the stories through `StoryGlobalsContext`, not through here.
@@ -110,7 +128,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
   }
 
   // One import per file, shared by every entry it holds; a reload drops the file's promise and asks again.
-  const imports = useRef(new Map<string, Promise<Record<string, unknown>>>());
+  const imports = useRef<Imports>(new Map());
   const liveRef = useLatest({ index, importers, setup, load, libraries });
   // Files asked for before the importers held them: a story file added while the workshop runs lists first.
   const missing = useRef(new Set<string>());
@@ -139,23 +157,20 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
       };
       const fail = (ids: string[], error: unknown) => {
         const fault = toError(error);
-        setFaults((prev) => {
-          const next = new Map(prev);
-          for (const id of ids) next.set(id, fault);
-          return next;
-        });
+        setFaults((prev) => new Map([...prev, ...ids.map((id): [string, Error] => [id, fault])]));
       };
+      const reads = trackedImports(importOf, imports.current);
       if (isIndexId(entry.id)) {
         const { index: entries, libraries } = liveRef.current;
-        const source = { index: entries, importOf, load: loadModule, parameters: current.parameters, prepare: current.prepare, libraries };
+        const source = { index: entries, importOf: reads.importOf, load: loadModule, parameters: current.parameters, prepare: current.prepare, libraries };
         void loadIndexBundle(entry.id, source)
-          .then((bundle) => settle([entry.id], new Map<string, Loaded>([[entry.id, { kind: 'index', bundle }]])))
-          .catch((error: unknown) => fail([entry.id], error));
+          .then((bundle) => { if (reads.latest()) settle([entry.id], new Map<string, Loaded>([[entry.id, { kind: 'index', bundle }]])); })
+          .catch((error: unknown) => { if (reads.latest()) fail([entry.id], error); });
         return;
       }
       const siblings = liveRef.current.index.filter((e) => e.file === entry.file && !isIndexId(e.id));
       const ids = siblings.map((e) => e.id);
-      void importOf(entry.file)
+      void reads.importOf(entry.file)
         .then(async (mod) => {
           const stories = loadModule(mod, entry.title, current.parameters);
           const result = new Map<string, Loaded>();
@@ -166,9 +181,9 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
             result.set(sibling.id, { kind: 'story', story });
           }
           if (!result.has(entry.id)) throw new Error(`${entry.file} has no story export "${entry.exportName}"`);
-          settle(ids, result);
+          if (reads.latest()) settle(ids, result);
         })
-        .catch((error: unknown) => fail(ids, error));
+        .catch((error: unknown) => { if (reads.latest()) fail(ids, error); });
     },
     [importOf, liveRef],
   );

@@ -10,6 +10,7 @@ import type { PrefsFormProps } from './PrefsForm';
 import { PrefsPane } from './PrefsPane';
 import { PrefsRail } from './PrefsRail';
 import { markScrollbar } from './scrollbar';
+import { useAttachRef } from '../../useAttachRef';
 import type { WalkCtx } from './PrefsRow';
 import { looseEntryName, prefGroupNests, prefGroupOpensPage, prefPageHasOwn, prefRailAbove, prefRailItems, prefRailParent } from './schema';
 import { pathWithin, type SelectionRoot } from './selection';
@@ -53,6 +54,7 @@ export function RailLayout(props: PrefsFormProps & {
   }
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const markPane = useAttachRef(markScrollbar);
 
   const show = (path: string): void => {
     if (props.section === undefined) setUncontrolled(path);
@@ -114,7 +116,7 @@ export function RailLayout(props: PrefsFormProps & {
         <ResizeHandle value={railWidth ?? RAIL_WIDTH} min={120} max={360} onInput={setRailWidth} ariaLabel="Resize sections" />
       )}
       {group === null ? (
-        <div className={s.pane} ref={markScrollbar} data-pref-into="" data-pref-scroll="">
+        <div className={s.pane} ref={markPane} data-pref-into="" data-pref-scroll="">
           <NoMatches query={query} onClear={onClearFilter} />
         </div>
       ) : (

@@ -16,6 +16,7 @@ import { withTransformsBaked } from './bakeTransforms';
 import type { SvgKitLeafData } from './fromKit';
 import { fadeFill, fadeRun, fadeStroke } from './fadePaint';
 import { groupTakes, NO_TAKES, takesOf, type Takes } from './draftTakes';
+import { framedTextDraft, framedTextParts, type FramedTextParts } from './framedText';
 import {
   boundsOfPath,
   DEFAULT_TEXT_FILL,
@@ -64,7 +65,10 @@ export type SvgLeafNode = Exclude<SvgNode, SvgGroupNode>;
 export interface SvgNodesToKitDraftsOptions<TData> {
   /** Lower a leaf yourself, from the kit data the default writes for it and
    *  the node it came from — for data shaped other than the kit painters', or
-   *  metadata the document carries. `null` leaves it out. */
+   *  metadata the document carries. `null` leaves it out. A text node with a
+   *  background (a `<g>` marked `textFrame`) is one leaf, its source the text
+   *  with the `<g>`'s `meta`: its edge and shadow are drawn shapes SVG has no
+   *  word for, which only the document's own metadata can carry back. */
   leaf?(id: string, draft: { pose: SvgDraftPose; data: SvgKitLeafData }, source: SvgLeafNode): TData | null;
   /** Keep a group that draws nothing, which is otherwise dropped — for one
    *  whose metadata means something with no children under it. It is drafted
@@ -167,7 +171,9 @@ function strokeInBoxFrame(stroke: Stroke, box: SvgDraftBounds): Stroke {
  * `nextId` is handed the node each id is for. `options.leaf` replaces a leaf's
  * data; a group whose leaves it all leaves out is dropped like an empty one.
  * A boolean group `svgNodesFromKit` wrote is drafted as a mark with `boolean`,
- * its operands under it and shown.
+ * its operands under it and shown. A text node with a background that
+ * `svgLeafFromKit` wrote is drafted as that one text leaf, with `background`,
+ * `padding`, and `overflow: 'clip'` where it clips.
  */
 export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
   input: ParseResult | readonly SvgNode[],
@@ -197,6 +203,8 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     const k = inherited * (n.opacity ?? 1);
     const takes = takesOf(n, from, k);
     if (n.kind === 'group') {
+      const framed = n.textFrame ? framedTextParts(n) : null;
+      if (framed) return visitFramedText(n, framed, parentId, k);
       const [own, kids, ...more] = n.children;
       if (own && own.kind !== 'group' && kids?.kind === 'group' && kids.boolean) {
         return visitMark(n, own, kids, more, parentId, k, takes);
@@ -235,6 +243,14 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
 
     const { pose, data } = leafDraft(n, takes, k);
     return pushLeaf(n, parentId, pose, data);
+  };
+
+  const visitFramedText = (n: SvgGroupNode, parts: FramedTextParts, parentId: string | null, k: number): SvgDraftPose | null => {
+    const source: SvgLeafNode = { ...parts.text, ...(n.meta ? { meta: n.meta } : {}), ...(n.hidden ? { hidden: true } : {}) };
+    const box = boxOfPath(parts.box.path);
+    const paint = fillDataFromSvg(parts.box.fill, box);
+    const { pose, data } = framedTextDraft(parts, leafDraft(parts.text, NO_INHERIT, k), box, paint && fadeFill(paint, k));
+    return pushLeaf(source, parentId, pose, data);
   };
 
   // A mark with children as `svgNodesFromKit`'s `mark` option writes one.
@@ -354,6 +370,8 @@ function emptyResultOf(n: SvgGroupNode): SvgLeafNode {
     ...(n.stroke ? { stroke: n.stroke } : {}), ...(n.inherits ? { inherits: n.inherits } : {}),
   };
 }
+
+const NO_INHERIT = { fill: false, stroke: false };
 
 function boxOfPath(path: Path): SvgDraftBounds {
   const b = boundsOfPath(path);

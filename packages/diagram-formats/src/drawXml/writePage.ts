@@ -1,6 +1,7 @@
 /** One page of a document as a draw-style `<diagram>`: its shapes, regions, and groups as nested cells, then its edges. */
 import { IDENTITY_POSE_COMPOSITION, pageName } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import { unionRects } from '@weasel-js/geom';
 import { freshId } from '@weasel-js/registry';
 import {
   diagramScene, type ContainerHeader, type DataContainer, type DiagramData, type DiagramTheme,
@@ -54,18 +55,6 @@ function parentsOf(data: DiagramData, known: ReadonlySet<string>, warn: Warn): M
   return parent;
 }
 
-const union = (boxes: readonly Box[]): Box | undefined => {
-  if (boxes.length === 0) return undefined;
-  const x = boxes.reduce((m, b) => Math.min(m, b.x), Infinity);
-  const y = boxes.reduce((m, b) => Math.min(m, b.y), Infinity);
-  return {
-    x,
-    y,
-    width: boxes.reduce((m, b) => Math.max(m, b.x + b.width), -Infinity) - x,
-    height: boxes.reduce((m, b) => Math.max(m, b.y + b.height), -Infinity) - y,
-  };
-};
-
 const regionLabel = (c: { label?: string }): string => c.label ?? '';
 
 function vertices(data: DiagramData, theme: DiagramTheme, headerOf: (id: string) => ContainerHeader | undefined, warn: Warn): Vertex[] {
@@ -111,7 +100,7 @@ export function writePage(page: GraphPage, index: number, theme: DiagramTheme, w
     if (!boxes.has(v.id)) {
       const pose = specs.get(v.id)?.pose;
       const node = nodes.get(v.id);
-      const box = v.group === true ? union((children.get(v.id) ?? []).map(boxOf).filter((b): b is Box => b !== undefined))
+      const box = v.group === true ? unionRects((children.get(v.id) ?? []).map(boxOf).filter((b): b is Box => b !== undefined)) ?? undefined
         : pose === undefined ? undefined
           : { x: pose.x, y: pose.y, width: node?.width ?? pose.width, height: node?.height ?? pose.height };
       if (box !== undefined) boxes.set(v.id, box);

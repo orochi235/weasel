@@ -9,10 +9,11 @@ import type { Paint, PolygonPath } from '@weasel-js/core';
 import { serializeSvg } from '@weasel-js/svg';
 import type { SvgNode } from '@weasel-js/svg';
 import {
-  registerPaintKind, _resetPaintKindsForTests, listPaintKinds, getPaintKind, paintKindRegistry,
+  registerPaintKind, listPaintKinds, getPaintKind, paintKindRegistry,
   registerPaintKindLoader, patternFamily,
 } from './paintKinds';
 import { asPaint, type PaintKindEntry } from './paintKindEntry';
+import { _resetPaintKindsForTests } from '@weasel-js/core/test-seams';
 import { warmPaintKinds } from '@weasel-js/renderer';
 import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
 import { findNodeShape } from 'canvas/NodeShape';

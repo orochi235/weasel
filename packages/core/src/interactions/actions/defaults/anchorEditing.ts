@@ -254,6 +254,13 @@ export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
   enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.SelectionRequired),
 }, editingLayer);
 
+/** Flat index of the open path's anchor a click at `world` lands on, else -1. */
+export function anchorUnder(deps: ActionDeps | undefined, world: { x: number; y: number }): number {
+  const dep = depOf(deps);
+  const path = dep ? worldPathOf(dep) : null;
+  return path ? nearestAnchorIndex(path, world.x, world.y, anchorClickSlop(deps)) : -1;
+}
+
 /** Flat index of the anchor nearest `(wx, wy)` within `slop`, else -1. */
 function nearestAnchorIndex(
   path: PolygonPath,

@@ -1,6 +1,7 @@
 import { adoptCss, KitSettingsProvider, styleRootOf, type KitSettingsOverrides } from '@weasel-js/react';
 import { useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { prefsCss, prefsCssAttributes } from './css';
+import { claimAttributes, releaseAttributes } from './hostAttributes';
 import type { PrefGroup } from './groups';
 import { prefValueAtPath } from './helpers';
 import { kitSettingsCssOptions } from './kitCss';
@@ -16,7 +17,8 @@ import type { PrefsStore } from './store';
  * the component renders in, and the selectors' attributes are set on that
  * root's element — `<html>`, or the shadow host, matched as `:root` or
  * `:host`. That root is found from a hidden `<span>` rendered ahead of the
- * children. Both are rewritten on every store change and removed on unmount.
+ * children. Both are rewritten on every store change and removed on unmount; an attribute another bridge on the
+ * same root also sets stays, at that bridge's value, until it unmounts too.
  */
 export function KitSettingsFromPrefs<S extends PrefGroup>({
   store,
@@ -40,13 +42,8 @@ export function KitSettingsFromPrefs<S extends PrefGroup>({
     const host = 'host' in root ? root.host : root.documentElement;
     const options = { ...kitSettingsCssOptions(at), root: 'host' in root ? ':host' : ':root' };
     const sheet = adoptCss(root, prefsCss(store, options));
-    let set: string[] = [];
-    const write = (): void => {
-      for (const name of set) host.removeAttribute(name);
-      const attributes = prefsCssAttributes(store, options);
-      for (const [name, option] of Object.entries(attributes)) host.setAttribute(name, option);
-      set = Object.keys(attributes);
-    };
+    const owner = {};
+    const write = (): void => claimAttributes(host, owner, prefsCssAttributes(store, options));
     write();
     const stop = store.subscribe(() => {
       sheet.write(prefsCss(store, options));
@@ -55,7 +52,7 @@ export function KitSettingsFromPrefs<S extends PrefGroup>({
     return () => {
       stop();
       sheet.release();
-      for (const name of set) host.removeAttribute(name);
+      releaseAttributes(host, owner);
     };
   }, [store, at, css]);
 

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/theme",
-  "version": "1.19.0",
+  "version": "1.19.1",
   "description": "Design tokens shared by weasel-ui and weasel-hud — CSS variables + a parallel TS export.",
   "weasel": {
     "tier": "other"
@@ -46,10 +46,10 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/paint": "1.19.0",
-    "@weasel-js/prefs": "1.19.0",
-    "@weasel-js/react": "1.19.0",
-    "@weasel-js/registry": "1.19.0"
+    "@weasel-js/paint": "1.19.1",
+    "@weasel-js/prefs": "1.19.1",
+    "@weasel-js/react": "1.19.1",
+    "@weasel-js/registry": "1.19.1"
   },
   "peerDependencies": {
     "react": ">=18"

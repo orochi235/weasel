@@ -10,7 +10,7 @@ const OPTIONS: ToolOptions = {
   },
 };
 
-const depsOf = (values: ToolOptionValues, active = { active: 'b' as string | null }) => ({
+const depsOf = (values: ToolOptionValues, active: { active: string | null; hotkeyStack?: string[] } = { active: 'b' }) => ({
   get: (name: string) => (name === 'toolOptionValues' ? values : name === 'activeTool' ? active : undefined),
 });
 
@@ -70,6 +70,24 @@ describe('tuneToolOptions', () => {
     for (const t of tunings.get('brush')!) t.keep!({ radiusPx: 30 });
     expect(values.get('b')).toEqual({ radiusPx: 10 });
     expect(values.get('c')).toEqual({ radiusPx: 30 });
+  });
+
+  it("reaches a shared action with the options of a tool held on its key, not the active tool's", () => {
+    const tunings = new Map<string, ActionTuning[]>();
+    const registry = {
+      tune: (id: string, t: ActionTuning) => { tunings.set(id, [...(tunings.get(id) ?? []), t]); return () => {}; },
+    };
+    const values = createToolOptionValues();
+    const slot = { active: 'b' as string | null, hotkeyStack: ['hand', 'c'] };
+    tuneToolOptions(registry, depsOf(values, slot) as never, [
+      defineTool({ id: 'b', options: OPTIONS }), defineTool({ id: 'c', options: OPTIONS }),
+    ]);
+    values.set('b', 'radiusPx', 10);
+    values.set('c', 'radiusPx', 20);
+    const read = () => tunings.get('brush')!.map((t) => (t.params as () => Record<string, unknown>)());
+    expect(read()).toEqual([{}, { radiusPx: 20 }]);
+    slot.hotkeyStack = ['hand'];
+    expect(read()).toEqual([{ radiusPx: 10 }, {}]);
   });
 
   it('keeps a panel change made after a tool switch in the options of the tool its operation ran with', () => {

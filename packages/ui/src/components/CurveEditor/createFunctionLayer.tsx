@@ -12,17 +12,16 @@ import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
 import { arrowMove } from '@weasel-js/ui-input';
-import { handleHalf } from '../../handles';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
 import type {
   CurveLayer, LayerCtx, LayerGesture, LayerRenderCtx, ModelPoint, PlotPoint,
   EmptyDownArgs, KeyDownArgs,
 } from './layerTypes';
-
 import type {
   ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerConfig, FunctionLayerState,
 } from './functionLayerTypes';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 export type {
   ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerConfig, FunctionLayerState,
@@ -31,9 +30,6 @@ export type {
 const SAMPLES_PER_SEGMENT = 16;
 /** Out of every hit radius. */
 const FAR: PlotPoint = { x: Infinity, y: Infinity };
-const ENDPOINT_HALF = handleHalf('--wzl-handle-size-lg');
-const LOCKED_HALF = handleHalf('--wzl-handle-size-sm');
-const ANCHOR_RADIUS = handleHalf('--wzl-handle-dot-size');
 export const ANCHOR_SNAP_PX = 12;
 export const CURVE_HIT_PX = 8;
 /** An arrow-key nudge, as a fraction of the range; shift takes ten. */
@@ -175,7 +171,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
           ].filter(Boolean).join(' ');
           const renderAsDiamond = isEndpoint || locked;
           if (renderAsDiamond) {
-            const half = locked ? LOCKED_HALF : ENDPOINT_HALF;
+            const half = ctx.handleHalf(locked ? '--wzl-handle-size-sm' : '--wzl-handle-size-lg');
             return (
               <Diamond
                 key={i}
@@ -193,7 +189,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
               className={anchorCls}
               cx={a.x}
               cy={a.y}
-              r={ANCHOR_RADIUS}
+              r={ctx.handleHalf('--wzl-handle-dot-size')}
               data-anchor-index={i}
               {...a11y}
             />
@@ -293,7 +289,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     ctx: LayerCtx,
     extra: EmptyDownArgs<FunctionLayerState>,
   ): LayerGesture<FunctionLayerState> | void {
-    if (e.button !== 0) return;
+    if (!isPrimaryPress(e)) return;
     if (hit.kind === 'anchor') {
       const { index } = hit.payload as { index: number };
       dlog('function-layer', 'anchor-down', { id, index, shift: ctx.modifiers.shift, button: e.button });
@@ -346,7 +342,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     ctx: LayerCtx,
     extra: EmptyDownArgs<FunctionLayerState>,
   ): LayerGesture<FunctionLayerState> | void {
-    if (!interactive || e.button !== 0) return;
+    if (!interactive || !isPrimaryPress(e)) return;
     if (addPointMode !== 'click-empty') return;
     if (cfg.maxPoints !== undefined && state.points.length >= cfg.maxPoints) return;
 

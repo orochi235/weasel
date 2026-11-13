@@ -49,10 +49,10 @@ describe('GESTURE_DESCRIPTORS', () => {
     expect(d.arg?.values).toEqual(['2', '3', '4']);
   });
 
-  it('drag is a special case: target slot, but function-form drops it (no arg)', () => {
+  it('drag has a target slot and a button arg defaulting to primary', () => {
     const d = getGestureDescriptor('drag');
     expect(d.hasTarget).toBe(true);
-    expect(d.arg).toBeUndefined();
+    expect(d.arg).toEqual({ name: 'button', values: ['primary', 'middle', 'secondary', '*'], default: 'primary' });
   });
 
   it('getGestureDescriptor throws on unknown name', () => {

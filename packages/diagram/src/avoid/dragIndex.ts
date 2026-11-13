@@ -6,18 +6,12 @@
  * already reads everything.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { unionRects } from '@weasel-js/geom';
 import { ObstacleIndex } from './obstacles';
 import { SegmentIndex } from './segments';
 import { inflate, type AvoidInput, type AvoidObstacle, type Box } from './types';
 
 const sameBox = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
-
-/** The box holding `a` and `b`. */
-function union(a: Box, b: Box): Box {
-  const x = Math.min(a.x, b.x);
-  const y = Math.min(a.y, b.y);
-  return { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y };
-}
 
 /** One drag frame as the router routes it. */
 export interface DragFrame {
@@ -87,7 +81,7 @@ export class DragIndex {
       for (const e of this.attached.get(id) ?? []) first.add(e);
       this.segments.edgesMeeting(inflate(this.committed.get(id)!.box, this.clearance), meeting);
       this.segments.edgesMeeting(inflate(o.box, this.clearance), meeting);
-      limit = union(limit, o.box);
+      limit = unionRects([limit, o.box])!;
     }
     return { index: this.index, dirty: [...first, ...[...meeting].filter((e) => !first.has(e))], limit };
   }

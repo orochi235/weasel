@@ -1,5 +1,5 @@
 // src/tools/useTools.ts
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import type { ModeRegistry } from '@weasel-js/modes';
 import { dlog } from '../dlog';
 import type { AnyTool, Tool } from './types';
@@ -39,11 +39,16 @@ export interface ToolsApi<TOverlay = KernelOverlay> {
   /** Set the active-slot tool, or `null` to clear it. The gesture dispatcher
    *  watches the active tool and cancels any in-flight handle itself. */
   setActive: (id: string | null) => void;
+  /** The tool input routes to now, and whose cursor shows: the newest held
+   *  tool the active mode allows, else the active tool if the mode allows it,
+   *  else `null`. */
+  routed: string | null;
   /** Currently hotkey-engaged tool id (or `null`): the top of the hotkey stack. */
   hotkeyEngaged: string | null;
   /** Engage a hotkey-slot tool by id. */
   engageHotkey: (id: string) => void;
-  /** Disengage the hotkey-slot tool, if any. */
+  /** Release the newest hold `engageHotkey` made, or with none, the top of
+   *  the hotkey stack. A tool held on its key is left held. */
   disengageHotkey: () => void;
   /** All always-on entries, in registration order. */
   ambient: readonly Contribution<TOverlay>[];
@@ -164,20 +169,26 @@ export function useTools<TOverlay = KernelOverlay>(
     [setFocused, slottedRef, activeRef],
   );
 
+  // The holds this api made, newest last. A held key (Space for the hand)
+  // shares the stack, so releasing ours by its top would release that one.
+  const holdsRef = useRef<string[]>([]);
   const engageHotkey = useCallback(
     (id: string) => {
       if (!Object.hasOwn(slottedRef.current.registry, id)) {
         throw new Error(`engageHotkey: "${id}" not in registry`);
       }
       dlog('tools', 'hotkey engaged:', id);
+      holdsRef.current.push(id);
       ctx.pushHotkey(id);
     },
     [ctx, slottedRef],
   );
 
   const disengageHotkey = useCallback(() => {
-    if (hotkeyRef.current) dlog('tools', 'hotkey disengaged:', hotkeyRef.current);
-    ctx.popHotkey();
+    const own = holdsRef.current.pop();
+    const id = own ?? hotkeyRef.current;
+    if (id) dlog('tools', 'hotkey disengaged:', id);
+    ctx.popHotkey(own);
   }, [ctx, hotkeyRef]);
 
   // May be called while rendering, so it reads this render's tools, not a ref.
@@ -193,11 +204,13 @@ export function useTools<TOverlay = KernelOverlay>(
   // Memoized: a consumer using `tools` as an effect dep loops infinitely on
   // identity churn when it setStates from inside that effect.
   const active = contributions.focused;
+  const routed = contributions.routed;
   const getActiveOverlays = contributions.overlays;
   return useMemo(
     () => ({
       active,
       setActive,
+      routed,
       hotkeyEngaged,
       engageHotkey,
       disengageHotkey,
@@ -206,6 +219,6 @@ export function useTools<TOverlay = KernelOverlay>(
       has,
       getActiveOverlays,
     }),
-    [active, setActive, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays, slotted],
+    [active, setActive, routed, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays, slotted],
   );
 }

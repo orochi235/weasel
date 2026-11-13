@@ -5,7 +5,7 @@
  * what is new; polled while open, because the live prediction moves with the
  * pointer and no notice reports that.
  */
-import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import type { DispatchRecord, TraceLogEntry } from '@weasel-js/core/routing';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Switch } from '@weasel-js/ui/components/Switch';
@@ -34,28 +34,37 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
   const [shown, setShown] = useState<readonly Outcome[]>(['handled']);
   const [showCoords, setShowCoords] = useState(false);
 
-  const read = (): void => {
-    follower.read().then((slice) => {
-      if (slice.entries.length) {
-        const read = sequenced(slice.entries as unknown as TraceLogEntry[], slice.cursor);
-        setEntries((prev) => [...prev, ...read].slice(-KEEP));
-      }
-      if (slice.coords?.length) setCoords((prev) => [...prev, ...(slice.coords as unknown as CoordEntry[])].slice(-KEEP));
-      setLive(slice.live as unknown as DispatchRecord | null);
-      setNow(Date.now());
-    }, () => {});
-  };
+  const [error, setError] = useState<string | null>(null);
+  const readNow = useRef<() => void>(() => {});
 
-  useEffect(() => client.onChanged((id, areas) => {
-    if (id === rootId && areas.includes('trace')) read();
-  }));
-  usePoll(read, POLL_MS, true);
+  useEffect(() => {
+    let live = true;
+    const read = (): void => {
+      follower.read().then((slice) => {
+        if (!live) return;
+        if (slice.entries.length) {
+          const read = sequenced(slice.entries as unknown as TraceLogEntry[], slice.cursor);
+          setEntries((prev) => [...prev, ...read].slice(-KEEP));
+        }
+        if (slice.coords?.length) setCoords((prev) => [...prev, ...(slice.coords as unknown as CoordEntry[])].slice(-KEEP));
+        setLive(slice.live as unknown as DispatchRecord | null);
+        setNow(Date.now());
+        setError(null);
+      }, (err: Error) => { if (live) setError(err.message); });
+    };
+    readNow.current = read;
+    const off = client.onChanged((id, areas) => { if (id === rootId && areas.includes('trace')) read(); });
+    return () => { live = false; readNow.current = () => {}; off(); };
+  }, [client, rootId, follower]);
+  usePoll(() => readNow.current(), POLL_MS, true);
 
   const toggleCoords = (on: boolean): void => {
     follower.setCoords(on);
     setShowCoords(on);
     if (!on) setCoords([]);
   };
+
+  if (error) return <p className={s.note}>{error}</p>;
 
   return (
     <div className={s.dispatch}>

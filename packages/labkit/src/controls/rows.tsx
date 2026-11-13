@@ -1,16 +1,12 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
-import { useDebouncedText } from '@weasel-js/ui/components/Prefs';
 import {
-  type PropertyControlProps,
-  PropertyField,
+  PropertyCaption,
   PropertyRow,
   type PropertyRowLayout,
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
 import { valueAtPath } from '../config/path';
-import { BareControl, leafValueAt, useTextWaitMs } from './fields';
-
-const noDrafts = (): void => {};
+import { BareControl, leafValueAt } from './fields';
 
 /** A leaf this panel has no control for is named rather than dropped: a silent
  *  gap reads as "this control does not exist". */
@@ -28,31 +24,6 @@ export function UnwiredRow({
       <span className="lk-control-panel__unknown">no control for “{kind}”</span>
     </PropertyRow>
   );
-}
-
-/** A text row whose drafts are debounced — see {@link useDebouncedText}. Its settled text is written as it is. */
-export function DebouncedTextRow({
-  leaf,
-  field,
-  ...row
-}: {
-  leaf: PrefLeaf;
-  field: PropertyControlProps & { kind: 'string' };
-  label: string;
-  layout?: PropertyRowLayout;
-  span?: boolean;
-  description?: string;
-  readout?: ReactNode;
-  auto?: boolean;
-  onAutoChange?: (next: boolean) => void;
-  changed?: boolean;
-}) {
-  const drafts = useDebouncedText(
-    field.value ?? '',
-    field.onInput ?? noDrafts,
-    useTextWaitMs(leaf),
-  );
-  return <PropertyField {...field} {...row} onInput={drafts.type} />;
 }
 
 /** The messages of a pair's cells, as one. */
@@ -122,7 +93,9 @@ export function PairedRow<TC extends Record<string, unknown>>({
         // knob it is — without a caption a paired switch reads only to a
         // screen reader. A cell whose leaf is deliberately unnamed keeps none.
         <span key={path} className="lk-pair-cell" title={leaf.description || undefined}>
-          {leaf.name ? <span className="lk-pair-label">{leaf.name}</span> : null}
+          {leaf.name ? (
+            <PropertyCaption className="lk-pair-label">{leaf.name}</PropertyCaption>
+          ) : null}
           <BareControl
             leaf={leaf}
             value={leafValueAt(shown, path, leaf)}

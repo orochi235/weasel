@@ -13,13 +13,12 @@ import {
   ownTextureIds, registerTextureAs, textureRegistry, unregisterTexture,
   type TextureHandle,
 } from '../textures/registerTexture';
-
-const ID_PREFIX = 'image:';
+import { IMAGE_PATTERN_ID_PREFIX as ID_PREFIX, imagePatternTextureId } from './imagePatternId';
 
 /** The texture that draws `paint`'s picture. Never `null`: an image that has
  *  not decoded yet, or failed to, has a handle that draws nothing. */
 export function resolveImagePattern(paint: Pick<ImagePatternPaint, 'src'>): TextureHandle {
-  return { id: ID_PREFIX + paint.src };
+  return { id: imagePatternTextureId(paint.src) };
 }
 
 /** Keep the registry entry for `id` the bitmap the image cache holds now. The

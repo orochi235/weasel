@@ -11,7 +11,8 @@ import type { PoseComposition } from './composeFrame';
 import { RIGID_POSE_COMPOSITION } from './composePose';
 import { localizeWorldPoses } from './worldSave';
 import { withKitRegistry } from './kitRegistry';
-import { assertSnapshotShape } from './snapshotShape';
+import { assertSnapshotShape, SnapshotKeyError } from './snapshotShape';
+import { statedFields } from './statedFields';
 import type {
   AddNodeSpec, LayerRecord, Node, NodeId, SavedScene, SceneRegistry, SerializedLayer, SerializedNode, SerializedNodeV1,
   SerializedScene,
@@ -72,14 +73,7 @@ export function serializeScene<TData, TLayer extends string, TPose>(
     if (n.parent != null) out.parent = n.parent;
     if (n.dependsOn === 'children') out.dependsOn = 'children';
     else if (n.dependsOn && n.dependsOn.length > 0) out.dependsOn = n.dependsOn;
-    if (n.pickable === false) out.pickable = false;
-    if (n.hidden === true) out.hidden = true;
-    if (n.locked === true) out.locked = true;
-    if (n.units !== undefined) out.units = n.units;
-    if (n.clip !== undefined) out.clip = n.clip;
-    if (n.consumesChildren === true) out.consumesChildren = true;
-    if (n.page !== undefined) out.page = n.page;
-    if (n.pageRun !== undefined) out.pageRun = n.pageRun;
+    Object.assign(out, statedFields(n));
     Object.assign(
       out,
       fnKeysOf(fnFields, n as unknown as FnBearingNode, 'jsonKey', (field) => {
@@ -137,8 +131,8 @@ export interface SkippedKey {
  *  (new instance) and `Scene.loadState` (in-place). Validates version and
  *  resolves every `NODE_FN_FIELDS` key → function via the registry, with the
  *  kit's own entries under it as every scene has them;
- *  throws on a snapshot of the wrong shape (`SnapshotShapeError`), on an unsupported version, and on an unknown
- *  registry key unless `opts.unknownKeys` is `'skip'`. */
+ *  throws `SnapshotShapeError` on a snapshot of the wrong shape or an unsupported version, and `SnapshotKeyError`
+ *  on an unknown registry key unless `opts.unknownKeys` is `'skip'`. */
 export function specsFromSerialized<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer>,
@@ -156,15 +150,10 @@ function currentSpecs<TData, TLayer extends string, TPose>(
   registry: SceneRegistry<TPose, TData, TLayer>,
   opts: SpecsFromSerializedOptions<TData, TLayer, TPose>,
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  type Entry = { n: Omit<SerializedNode<TData, TLayer, TPose>, 'kind'>; kind: 'mark' | 'group' };
-  let entries: Entry[];
-  if (json.version === 1) {
-    entries = json.nodes.map((n) => ({ n, kind: nodeKindOf(1, n, opts.classifyV1) }));
-  } else if (json.version === 2 || json.version === 3) {
-    entries = json.nodes.map((n) => ({ n, kind: nodeKindOf(2, n) }));
-  } else {
-    throw new Error(`Scene: unsupported version ${String(Reflect.get(json, 'version'))}; versions 1, 2 and 3 are supported`);
-  }
+  const entries = json.nodes.map((n) => ({
+    n: n as Omit<SerializedNode<TData, TLayer, TPose>, 'kind'>,
+    kind: json.version === 1 ? nodeKindOf(1, n, opts.classifyV1) : nodeKindOf(2, n),
+  }));
   return entries.map(({ n, kind }) => {
     const spec: AddNodeSpec<TData, TLayer, TPose> = {
       id: n.id as NodeId,
@@ -174,14 +163,7 @@ function currentSpecs<TData, TLayer extends string, TPose>(
       data: n.data,
     };
     if (n.parent !== undefined) spec.parent = n.parent as NodeId;
-    if (n.pickable !== undefined) spec.pickable = n.pickable;
-    if (n.hidden === true) spec.hidden = true;
-    if (n.locked === true) spec.locked = true;
-    if (n.units !== undefined) spec.units = n.units;
-    if (n.clip !== undefined) spec.clip = n.clip;
-    if (n.consumesChildren === true) spec.consumesChildren = true;
-    if (n.page !== undefined) spec.page = n.page;
-    if (n.pageRun !== undefined) spec.pageRun = n.pageRun;
+    Object.assign(spec, statedFields(n));
     if (n.dependsOn !== undefined) {
       spec.dependsOn = n.dependsOn === 'children'
         ? 'children'
@@ -197,12 +179,7 @@ function currentSpecs<TData, TLayer extends string, TPose>(
         opts.onSkip?.({ id: spec.id!, field: field.field, key });
         continue;
       }
-      if (!fn) {
-        throw new Error(
-          `Scene: unknown ${field.field} key '${key}'. ` +
-          `Register a function with this key in the registry option.`,
-        );
-      }
+      if (!fn) throw new SnapshotKeyError(spec.id as string, field.field, key);
       (spec as unknown as Record<string, unknown>)[field.field] = fn;
     }
     if (clipsAsV1(json.version, spec)) spec.clip = 'outline';

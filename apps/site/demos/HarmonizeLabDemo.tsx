@@ -1,4 +1,4 @@
-import { type ActionTunings, editingAnchors, never, type RectPose } from '@weasel-js/core';
+import { type ActionTunings, editingAnchors, never, type RectPose, useSelection } from '@weasel-js/core';
 import { createCurvatureCombPreset, harmonizePreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/labkit';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useMemo } from 'react';
-import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
+import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
 import s from './HarmonizeLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -37,7 +37,7 @@ const tune: ActionTunings = { harmonizeAnchors: { bindings: [{ kind: 'key', key:
 
 function HarmonizeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { selection, pathEdit, redrawOn } = useSeededPathEdit(scene);
+  const selection = useSelection({ scene, initial: [EDITED_ID] });
   const { comb, scale } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);
@@ -55,8 +55,7 @@ function HarmonizeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         trial={ctx.trial}
         selection={selection}
-        pathEdit={pathEdit}
-        redrawOn={redrawOn}
+        defaultPathEdit={EDITED_OPENING}
         chromeVisibility={chromeVisibility}
         tune={tune}
       />

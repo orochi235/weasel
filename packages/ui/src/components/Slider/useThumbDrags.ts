@@ -40,7 +40,6 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
   // movement would commit the stale buffer and undo that move.
   const beginThumbDrag = useCallback(
     (origin: Element, down: ReactPointerEvent, index: number, seed?: readonly T[]) => {
-      sessionRef.current?.cancel();
       const buf: T[] = (seed ?? thumbs).map(t => ({ ...t }));
       dragBufferRef.current = buf;
       setDragged(index);
@@ -99,7 +98,6 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
 
   const beginShiftAllDrag = useCallback(
     (origin: Element, down: ReactPointerEvent, anchorG: number) => {
-      sessionRef.current?.cancel();
       setDragged(null);
       const buf: T[] = thumbs.map(t => ({ ...t }));
       const startValues = buf.map(t => t.value);
@@ -153,5 +151,6 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
     [thumbs, onInput, onChange, canceled, min, max, step, even, props.scale, valueToFraction, fractionToValue, geometry],
   );
 
-  return { beginThumbDrag, beginShiftAllDrag, dragged };
+  // `held`: a drag belongs to the finger that started it, so a second finger's press is not a new drag.
+  return { beginThumbDrag, beginShiftAllDrag, dragged, held: () => sessionRef.current?.active === true };
 }

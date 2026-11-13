@@ -64,6 +64,18 @@ describe('usePrefsValues', () => {
     expect(result.current.values.grid).toBe(true);
   });
 
+  it("returns setAuto for PrefsForm's onAutoChange: false pins a leaf at its value, true unpins it", () => {
+    const store = open();
+    const { result } = renderHook(() => usePrefsValues(store));
+    act(() => result.current.setAuto('density', false));
+    expect(result.current.unset.has('density')).toBe(false);
+    expect(store.stored()).toEqual({ density: 72 });
+    act(() => result.current.set('density', 90));
+    act(() => result.current.setAuto('density', true));
+    expect(result.current.unset.has('density')).toBe(true);
+    expect(result.current.values.density).toBe(72);
+  });
+
   it('hears a leaf binding', () => {
     const store = open();
     const tree = renderHook(() => usePrefsValues(store));

@@ -47,8 +47,12 @@ were different experiments. Use one probe across the whole range.
 
 **A browser test file that loads no tests, beside `weasel-request … net::ERR_NETWORK_CHANGED`
 lines, lost its imports to the node's network and not to the change under test.** Chromium on
-macOS drops every request in flight when the network changes, those to vite on localhost included.
-`docs/TODO.md` ("fail to load when the node's network changes") has the evidence.
+macOS drops every request in flight when the network changes, those to vite on localhost included;
+headless Chromium has no switch to ignore it, and vitest retries tests, never a file's import. On studio
+on 2026-10-28, 66 ms after configd logged `IPMonitor] network changed`, 376 module requests failed and one
+file loaded no tests (measured). `scripts/vitest-overlap.mjs` runs such files once more when the run logged
+`ERR_NETWORK_CHANGED` (`scripts/lib/load-reruns.mjs`), and their second run's verdict stands in for the first
+where nothing else failed (ruled 2026-11-07).
 
 **Run vitest with `--reporter=default` to see a passing test's console output.** The
 reporter vitest picks on its own when an agent runs it drops stderr from passing tests, so
@@ -60,6 +64,11 @@ they re-render.** That covers every lab: `Workspace` and `Split` register nodes 
 mount, and every `addTrial`, `rerender` or mark added does the same. Mount through
 `renderSettled` (`@weasel-js/react/testing/renderSettled`), and make a store-changing
 `act` async, so the notify lands inside it.
+
+**`renderHook` under an arrow-function `StrictMode` wrapper runs each effect once.** `wrapper: ({ children }) =>
+<StrictMode>{children}</StrictMode>` mounts the hook with no double effect, so a test written to catch a missing
+cleanup passes either way; `wrapper: StrictMode` or the `reactStrictMode: true` option runs it twice (measured
+2026-11-12, React 19.2).
 
 **An async `act` never returns while a tree re-renders every frame faster than it can render.**
 React's async `act` keeps flushing until a turn of the event loop finds no update queued; a playing

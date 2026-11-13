@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { EMPTY_TYPEAHEAD, isOneChar, type TypeaheadBuffer } from '@weasel-js/ui-input';
+import { EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS, isOneChar, type TypeaheadBuffer } from '@weasel-js/ui-input';
 import { spinKey } from '@weasel-js/quantity';
 import { accessLetter } from './access';
 import { createMenuController, SUBMENU_OPEN_MS, type MenuController, type MenuScheduler } from './controller';
@@ -106,6 +106,22 @@ function keyModel(m: Model, key: string, dir: MenuDirection): boolean {
   const inward = dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight';
   const outward = dir === 'rtl' ? 'ArrowRight' : 'ArrowLeft';
   const top = (i: number | null) => [...m.stack.slice(0, -1), i];
+  const search = (): boolean => {
+    m.pending = null;
+    const step = typeaheadStep(rows, at, m.typed, key, m.now);
+    m.typed = step.buffer;
+    if (step.hit !== null) {
+      expect(isRow(rows[step.hit]!)).toBe(true);
+      m.stack = [...m.stack.slice(0, level), step.hit];
+      t.count('typeahead hit');
+    }
+    return true;
+  };
+  // A space typed while a search is live is part of it.
+  if (key === ' ' && m.typed.text !== '' && m.now - m.typed.at < TYPEAHEAD_RESET_MS) {
+    t.count('space searched');
+    return search();
+  }
   switch (key) {
     case 'ArrowDown': return nav(top(nextRow(rows, at, 1)));
     case 'ArrowUp': return nav(top(nextRow(rows, at, -1)));
@@ -157,14 +173,7 @@ function keyModel(m: Model, key: string, dir: MenuDirection): boolean {
     m.stack = r.kind === 'submenu' ? [...m.stack.slice(0, level), letter, firstRowOf(r.entries)] : [...m.stack.slice(0, level), letter];
     return true;
   }
-  const step = typeaheadStep(rows, at, m.typed, key, m.now);
-  m.typed = step.buffer;
-  if (step.hit !== null) {
-    expect(isRow(rows[step.hit]!)).toBe(true);
-    m.stack = [...m.stack.slice(0, level), step.hit];
-    t.count('typeahead hit');
-  }
-  return true;
+  return search();
 }
 
 function hoverModel(m: Model, level: number, index: number | null): void {

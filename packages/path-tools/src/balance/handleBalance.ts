@@ -93,7 +93,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
         kind: 'balance-handles',
         onMove(moveCtx: InvocationCtx): void {
           // Read live, like a handle drag's, so a lock can change mid-drag.
-          const held = (moveCtx.deps.editAnchors ?? dep).handleLocks ?? NO_LOCKS;
+          const held = dep.handleLocks ?? NO_LOCKS;
           if (locksInForce(held, moveCtx).length) {
             current = null;
             return;

@@ -75,7 +75,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
   });
 
   const outer = createOuterOps({
-    own: (name, args) => (ops.handlers.has(name) ? ops.op(name, args) : null),
+    own: ops.rebuild,
     recorder: () => recorder,
     // Deferred rather than muted, so a throwing op cannot strand subscribers
     // after earlier ops in the batch already mutated state.
@@ -105,6 +105,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     notifier,
     mode,
     engine,
+    journal: () => targetJournal(),
     runOp: ops.run,
     makeOp: ops.op,
     log,
@@ -112,8 +113,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     passes,
     selection: selection.get,
     writePose: env.writePose,
-    labeled: poseWrites.labeled,
-    label: poseWrites.label, unlabel: poseWrites.unlabel,
+    labeled: poseWrites.labeled, label: poseWrites.label, unlabel: poseWrites.unlabel,
   });
   const { record, engineDriven } = recorder;
 
@@ -128,7 +128,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     if (mode.untracked()) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
   }
 
-  const { history, methods, openJournal } = createSceneHistory({
+  const { history, methods, openJournal, targetJournal } = createSceneHistory({
     engine,
     applying: (step) => atomically(() => engineDriven(step), () => true),
     causing: outer.causing,

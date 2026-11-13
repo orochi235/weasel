@@ -86,6 +86,21 @@ describe('useSceneSelectTool — hidden layers', () => {
     act(() => { result.current.scene.setLayerVisible('bg', false); });
     expect(result.current.tool.pickEvery({ x: 10, y: 10 })).toEqual([]);
   });
+
+  it("hands a geometry.pickEvery override the surface's own layer gate, as it hands a view's", () => {
+    // A 3D host's ray pick honors the gate it is handed and has no other way to learn it.
+    const gated = (_w: unknown, view?: { layerIsPainted?(layer: string): boolean }) =>
+      view?.layerIsPainted?.('bg') === false ? [] : ['bg-node'];
+    const { result } = renderHook(() => {
+      const scene = useScene<Item, 'default' | 'bg', Pose>({ systemLayers: [{ id: 'default' }, { id: 'bg' }] });
+      const adapter = useSceneAdapter(scene);
+      return useSceneSelectTool({
+        scene, adapter, geometry: { pickEvery: gated }, layerIsPainted: (layer) => layer !== 'bg',
+      });
+    });
+    expect(result.current.pickEvery({ x: 10, y: 10 })).toEqual([]);
+    expect(result.current.pickBest({ x: 10, y: 10 })).toBeNull();
+  });
 });
 
 describe('useSceneSelectTool — geometry.picking', () => {

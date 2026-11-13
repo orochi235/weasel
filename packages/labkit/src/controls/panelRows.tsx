@@ -15,6 +15,7 @@ import {
   PropertyGroup,
   PropertyList,
   type PropertyListPack,
+  PropertySpan,
   Subpanel,
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
@@ -305,18 +306,19 @@ function controlTabs(
   },
 ): ReactNode {
   return (
-    <GroupTabs
-      key={key}
-      className="lk-control-tabs"
-      tabs={paths.map((path) => {
-        const group = at.group(path);
-        return {
-          id: path,
-          name: group.name,
-          disabled: !at.enabled(path),
-          content: at.content(group, path),
-        };
-      })}
-    />
+    <PropertySpan key={key}>
+      <GroupTabs
+        className="lk-control-tabs"
+        tabs={paths.map((path) => {
+          const group = at.group(path);
+          return {
+            id: path,
+            name: group.name,
+            disabled: !at.enabled(path),
+            content: at.content(group, path),
+          };
+        })}
+      />
+    </PropertySpan>
   );
 }

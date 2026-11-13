@@ -118,7 +118,7 @@ export const panAction: Action = {
     timing: 'ongoing',
     start(ctx) {
       return dragCamera(ctx, 'pan', (origin, d, dep) =>
-        panBy(origin, d.x, d.y, dep.size().height));
+        panBy(origin, d.x, d.y, dep.size().height, dep.up?.()));
     },
   },
 };
@@ -172,7 +172,7 @@ export const dollyAction: Action = {
         );
       if (!(factor > 0) || !Number.isFinite(factor) || factor === 1) return 'pass';
       const pane = dep.size();
-      dep.set(dollyToward(dep.get(), factor, paneAnchor(wheelPoint(params), dep, pane), pane, dep.limits?.()));
+      dep.set(dollyToward(dep.get(), factor, paneAnchor(wheelPoint(params), dep, pane), pane, dep.limits?.(), dep.up?.()));
       return undefined;
     },
   },
@@ -195,7 +195,7 @@ export const pinchDollyAction: Action = {
       const at = ctx.multiTouch?.centroid;
       const apply = cameraStepper(dep, 1, (a, b) => a / b, (origin, factor, d) => {
         const pane = d.size();
-        return dollyToward(origin, factor, paneAnchor(at, d, pane), pane, d.limits?.());
+        return dollyToward(origin, factor, paneAnchor(at, d, pane), pane, d.limits?.(), d.up?.());
       });
       return {
         kind: 'pinch',

@@ -20,8 +20,10 @@ const OPTIONS = { showPreviews: true };
 const bitmap = (): ImageBitmap => ({ width: 4, height: 4, close() {} }) as unknown as ImageBitmap;
 const runOf = (previews: Record<string, ImageBitmap>): EffectRun => ({ stages: { a: { previews } } });
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
+  // An unmount frees a microtask later.
+  await Promise.resolve();
   released.length = 0;
 });
 
@@ -38,10 +40,21 @@ describe('EffectChart previews', () => {
     expect(released).toEqual([first]);
   });
 
-  it('frees every preview it shows when it unmounts', () => {
+  it('frees every preview it shows when it unmounts', async () => {
     const out = bitmap();
     const { unmount } = render(<EffectChart pipeline={pipeline} options={OPTIONS} run={runOf({ out })} width={100} height={100} />);
     unmount();
+    await Promise.resolve();
+    expect(released).toEqual([out]);
+  });
+
+  it('frees no preview it still shows through StrictMode\'s rehearsal unmount', async () => {
+    const out = bitmap();
+    const { unmount } = render(<EffectChart pipeline={pipeline} options={OPTIONS} run={runOf({ out })} width={100} height={100} />, { reactStrictMode: true });
+    await Promise.resolve();
+    expect(released).toEqual([]);
+    unmount();
+    await Promise.resolve();
     expect(released).toEqual([out]);
   });
 });

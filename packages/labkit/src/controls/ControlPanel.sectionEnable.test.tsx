@@ -37,7 +37,7 @@ const schema: ResolvedConfig = {
 
 // The classes are a proxy: the CSS-module proxy answers any key, so these show only that a title asked to dim.
 const dimmed = (el: Element): boolean =>
-  el.closest('[class*="_off_"], [class*="_titleOff_"]') !== null;
+  el.closest('[class*="_disabled_"], [class*="_titleDisabled_"]') !== null;
 
 describe('<ControlPanel> a section of an object leaf its enableIf turns off', () => {
   it.each([false, true])(

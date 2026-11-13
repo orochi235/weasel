@@ -116,8 +116,6 @@ export function TextNodesDemo() {
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             selectable={false}
-            // The overlay stands in for the node while it is edited.
-            alphaFor={(id) => (id === edit.editingId ? 0 : 1)}
           />
         </DemoStage>
       </div>

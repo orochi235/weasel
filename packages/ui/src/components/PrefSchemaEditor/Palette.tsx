@@ -12,6 +12,7 @@ import { blankLeaf } from './kindSchemas';
 import { GHOST_WIDTH, NodeGhost, ghostIsPage } from './NodeGhost';
 import type { SchemaNode } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** Something the palette makes: a kind of group, a label, or a separator. */
 export interface PaletteItem {
@@ -104,7 +105,7 @@ export function Palette({ items, sections = false, ghost = true, disabled = fals
   };
   const off = (item: PaletteItem): boolean => disabled || (!pages && item.id === 'page');
   const press = (item: PaletteItem, e: PointerEvent) => {
-    if (off(item) || e.button !== 0 || session.current || !root.current) return;
+    if (off(item) || !isPrimaryPress(e) || session.current || !root.current) return;
     const node = item.make();
     const at = (ev: { clientX: number; clientY: number }): PaletteDrag => ({ item, node, x: ev.clientX, y: ev.clientY });
     session.current = startThresholdDrag(e, {

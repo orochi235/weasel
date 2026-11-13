@@ -1,5 +1,48 @@
 # @weasel-js/loupe
 
+## 1.19.1
+
+### Minor Changes
+
+- 403fd51: The loupe's actions (`createLoupeActions`, `LoupeInputApi` and their ids) are imported from `@weasel-js/loupe`, not `@weasel-js/labkit`.
+  
+  `@weasel-js/loupe` also exports `createLoupeAimActions` (just `loupe.aim` and `loupe.leave`), `LoupeAimInput`, the `LOUPE_AIM_ID`, `LOUPE_LEAVE_ID` and `LOUPE_PICK_ID` ids, and `WHEEL_RATE`. `LoupeInputApi.aimAt` is handed a third argument, `held`, true while a button is down.
+  
+  ```ts
+  // before
+  import { createLoupeActions, type LoupeInputApi } from '@weasel-js/labkit/loupe';
+  // after
+  import { createLoupeActions, type LoupeInputApi } from '@weasel-js/loupe';
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Patch Changes
+
+- Updated dependencies [d3a8b36]
+- Updated dependencies [3fdf6ae]
+- Updated dependencies [71c3f85]
+- Updated dependencies [770768b]
+- Updated dependencies [8cd600b]
+- Updated dependencies [1691dec]
+- Updated dependencies [b62d643]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [8562ebe]
+- Updated dependencies [25e3464]
+- Updated dependencies [687501a]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [4ff8a4b]
+- Updated dependencies [2de6b88]
+- Updated dependencies [687501a]
+- Updated dependencies [9db6c05]
+- Updated dependencies [42f5a79]
+- Updated dependencies [72e6d28]
+- Updated dependencies [6289e51]
+  - @weasel-js/routing@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/registry@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

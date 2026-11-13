@@ -14,18 +14,26 @@ const pdf = vi.hoisted(() => vi.fn(async (_scene: unknown, _pages: readonly unkn
 const warned = vi.hoisted(() => vi.fn());
 const noPages = vi.hoisted(() => ({ on: false }));
 const between = vi.hoisted(() => ({ on: false }));
+const svgWarns = vi.hoisted(() => ({ on: false }));
 
 vi.mock('@weasel-js/editor', async (actual) => ({
   ...(await actual<typeof import('@weasel-js/editor')>()),
   downloadBlob: (blob: Blob, name: string) => { saved.push({ blob, name }); },
   reportFileWarnings: warned,
 }));
-// jsdom has no WebGL2 to draw a PNG with; the SVG export runs for real.
-vi.mock('@weasel-js/diagram-formats', async (actual) => ({
-  ...(await actual<typeof import('@weasel-js/diagram-formats')>()),
-  exportPagePng: png,
-  exportPagesPdf: pdf,
-}));
+// jsdom has no WebGL2 to draw a PNG with; the SVG export runs for real, and can be made to warn.
+vi.mock('@weasel-js/diagram-formats', async (actual) => {
+  const real = await actual<typeof import('@weasel-js/diagram-formats')>();
+  return {
+    ...real,
+    exportPageSvg: (...args: Parameters<typeof real.exportPageSvg>) => {
+      if (svgWarns.on) args[2]?.onWarn?.('a font this export uses failed to load');
+      return real.exportPageSvg(...args);
+    },
+    exportPagePng: png,
+    exportPagesPdf: pdf,
+  };
+});
 vi.mock('./pages/useChartPages', async (actual) => {
   const real = await actual<typeof import('./pages/useChartPages')>();
   return {
@@ -55,6 +63,7 @@ afterEach(() => {
   warned.mockClear();
   noPages.on = false;
   between.on = false;
+  svgWarns.on = false;
   chartPrefs().reset();
   localStorage.clear();
 });
@@ -99,6 +108,13 @@ describe('File › Export', () => {
     pdf.mockResolvedValueOnce({ blob: new Blob(['%PDF']), skipped: [{ kind: 'glyph', detail: 'glyph U+1F600' }] });
     exportAs('Pages as PDF');
     await vi.waitFor(() => expect(warned).toHaveBeenCalledWith('Exported', ['glyph U+1F600'], 'chart-export-pdf'));
+  });
+
+  it('reports what the SVG could not carry, as the PDF does', async () => {
+    svgWarns.on = true;
+    exportAs('Page as SVG');
+    await vi.waitFor(() => expect(saved).toHaveLength(1));
+    expect(warned).toHaveBeenCalledWith('Exported', ['a font this export uses failed to load'], 'chart-export-svg');
   });
 
   it('draws the page last shown while the view is between pages', async () => {

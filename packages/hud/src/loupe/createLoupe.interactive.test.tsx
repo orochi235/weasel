@@ -1,7 +1,8 @@
 /**
  * An interactive loupe is a view on the canvas: a press inside the lens acts on
  * what the lens shows, in the lens's world units. A plain one keeps its
- * interior to itself.
+ * interior to itself. Every loupe aims through the HUD's own entry on the
+ * canvas's dispatcher.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -165,11 +166,27 @@ describe('an interactive loupe', () => {
     const m = await mount();
     const loupe = await openLoupe(m, 'interactive');
     await press(m.canvas, [
+      ['pointermove', PRESS.x, PRESS.y],
       ['pointerdown', PRESS.x, PRESS.y],
       ['pointermove', 360, PRESS.y],
     ]);
     expect(loupe.aim).toEqual(AIM);
     await press(m.canvas, [['pointerup', 360, PRESS.y]]);
+    // Released, the next move aims again.
+    await press(m.canvas, [['pointermove', 350, 320]]);
+    expect(loupe.aim).toEqual({ x: 350, y: 320 });
+  });
+
+  it('follows a drag that began off the lens', async () => {
+    const m = await mount();
+    const loupe = await openLoupe(m, 'interactive');
+    await press(m.canvas, [
+      ['pointermove', 300, 380],
+      ['pointerdown', 300, 380],
+      ['pointermove', 340, 380],
+    ]);
+    expect(loupe.aim).toEqual({ x: 340, y: 380 });
+    await press(m.canvas, [['pointerup', 340, 380]]);
   });
 
   it('leaves a HUD window stacked over the lens reachable', async () => {
@@ -231,6 +248,42 @@ describe('a loupe aimed over a view', () => {
     await openLoupe(m, 'interactive');
     await press(m.canvas, [['pointerdown', PRESS.x, PRESS.y], ['pointerup', PRESS.x, PRESS.y]]);
     expect(m.selection()).toEqual([]);
+  });
+});
+
+describe('a loupe’s aim', () => {
+  it('follows a real pointer move with only the HUD’s entry installed', async () => {
+    const m = await mount();
+    const loupe = await openLoupe(m, 'picture');
+    await press(m.canvas, [['pointermove', 350, 320]]);
+    expect(loupe.aim).toEqual({ x: 350, y: 320 });
+  });
+
+  it('follows a drag across a plain lens: only an interactive one holds', async () => {
+    const m = await mount();
+    const loupe = await openLoupe(m, 'view');
+    await press(m.canvas, [
+      ['pointermove', PRESS.x, PRESS.y],
+      ['pointerdown', PRESS.x, PRESS.y],
+      ['pointermove', 360, PRESS.y],
+    ]);
+    expect(loupe.aim).toEqual({ x: 360, y: PRESS.y });
+    await press(m.canvas, [['pointerup', 360, PRESS.y]]);
+  });
+
+  it('stays where it was while the pointer is over the window', async () => {
+    const m = await mount();
+    const loupe = await openLoupe(m, 'picture');
+    await press(m.canvas, [['pointermove', PRESS.x, PRESS.y]]);
+    expect(loupe.aim).toEqual(AIM);
+  });
+
+  it('does not move once the loupe is disposed', async () => {
+    const m = await mount();
+    const loupe = await openLoupe(m, 'picture');
+    await act(async () => { loupe.dispose(); });
+    await press(m.canvas, [['pointermove', 350, 320]]);
+    expect(loupe.aim).toEqual(AIM);
   });
 });
 

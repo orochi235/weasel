@@ -2,10 +2,17 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { type Action, ActionsProvider, useActionsRegistry } from '@weasel-js/core';
 import { StrictMode, useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { makeMatchMedia } from '../../../../core/src/core/device/testing/matchMedia';
 import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
 import type { LensSource, LensSourceRequest, LensSourceStatus, LensSources } from './lensSource';
-import { LENS_DEFAULTS, type LensIds, type LensSettings, type LoupePoint } from './lensTypes';
+import {
+  LENS_DEFAULTS,
+  LENS_REST_MS,
+  type LensIds,
+  type LensSettings,
+  type LoupePoint,
+} from './lensTypes';
 
 const IDS = { lensId: 'a', body: 'a:body', reticle: 'a:reticle', leader: 'a:leader' } as LensIds;
 const SIZE = { width: 160, height: 160 };
@@ -413,6 +420,65 @@ describe('LensSlot comparisons', () => {
     expect(within(screen.getByTestId('slot')).getByText('Nothing under the reticle')).toBeTruthy();
     // A message stands in for the diff, so nothing stale shows beneath it.
     expect(screen.getByTestId('slot').querySelector('canvas')?.hidden).toBe(true);
+  });
+
+  it("captures Difference again when the display's density changes", async () => {
+    const dprDescriptor = Object.getOwnPropertyDescriptor(window, 'devicePixelRatio');
+    Object.defineProperty(window, 'devicePixelRatio', { value: 1, configurable: true });
+    const media = makeMatchMedia({
+      '(pointer: coarse)': false,
+      '(hover: hover)': true,
+      '(resolution: 1dppx)': true,
+    });
+    vi.stubGlobal('matchMedia', media.mm);
+    try {
+      const pixels = fakeSource('pixels');
+      const capture = vi.fn(async (_r: LensSourceRequest<string>) => ({
+        reason: 'Nothing under the reticle',
+      }));
+      pixels.source.capture = capture;
+      render(
+        <Both
+          settings={settings({ compare: 'b', view: 'difference' })}
+          sources={{ pixels: pixels.source }}
+        />,
+      );
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 0));
+      });
+      expect(capture).toHaveBeenCalledTimes(2);
+      // The window moves to a 2x display; the reticle stays where it was.
+      Object.defineProperty(window, 'devicePixelRatio', { value: 2, configurable: true });
+      act(() => media.fire('(resolution: 1dppx)', false));
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, LENS_REST_MS + 10));
+      });
+      expect(capture).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.unstubAllGlobals();
+      if (dprDescriptor) Object.defineProperty(window, 'devicePixelRatio', dprDescriptor);
+    }
+  });
+
+  it('captures Difference at once under StrictMode, not after the rest a repeat waits', async () => {
+    const pixels = fakeSource('pixels');
+    const capture = vi.fn(async (_r: LensSourceRequest<string>) => ({
+      reason: 'Nothing under the reticle',
+    }));
+    pixels.source.capture = capture;
+    render(
+      <Both
+        settings={settings({ source: 'pixels', compare: 'b', view: 'difference' })}
+        sources={{ pixels: pixels.source }}
+      />,
+      {
+        reactStrictMode: true,
+      },
+    );
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(capture.mock.calls.map(([r]) => r.conditions)).toEqual([null, 'b']);
   });
 
   it('labels a Live lens in Difference with the Pixels source it really shows', () => {

@@ -219,11 +219,12 @@ describe('createTextEditor (stateful)', () => {
 });
 
 describe('editMods', () => {
-  it('reads the platform conventions: Cmd by the line and Option by the word on Apple, Ctrl by the word elsewhere, Ctrl+Alt as AltGr', () => {
+  it('reads the platform conventions: Cmd by the line, Option by the word and Ctrl by the Emacs keys on Apple, Ctrl by the word elsewhere, Ctrl+Alt as AltGr', () => {
     fc.assert(fc.property(fc.boolean(), fc.boolean(), fc.boolean(), fc.boolean(), fc.boolean(), (shiftKey, ctrlKey, metaKey, altKey, apple) => {
       const m = editMods({ shiftKey, ctrlKey, metaKey, altKey }, apple);
       expect(m.shift).toBe(shiftKey);
-      if (apple) expect({ mod: !!m.mod, line: !!m.line, word: !!m.word }).toEqual({ mod: ctrlKey || metaKey, line: metaKey, word: altKey });
+      expect(!!m.ctrl).toBe(apple && ctrlKey && !metaKey);
+      if (apple) expect({ mod: !!m.mod, line: !!m.line, word: !!m.word }).toEqual({ mod: metaKey, line: metaKey, word: altKey });
       else if (ctrlKey && altKey) expect({ mod: !!m.mod, line: !!m.line, word: !!m.word }).toEqual({ mod: false, line: false, word: false });
       else expect({ mod: !!m.mod, line: !!m.line, word: !!m.word }).toEqual({ mod: ctrlKey || metaKey, line: false, word: ctrlKey });
     }), runs(64));

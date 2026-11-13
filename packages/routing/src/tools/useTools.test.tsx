@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { useLayoutEffect, useState } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
+import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '../interactions/actions/activeToolContext';
 import { useTools, type ToolsApi } from './useTools';
 import type { AnyTool } from './types';
 
@@ -56,5 +56,23 @@ describe('useTools after an abandoned render', () => {
     const before = committed();
     act(() => { bump(); });
     expect(committed()).toBe(before);
+  });
+});
+
+describe('useTools hotkey holds', () => {
+  it('releases its own hold, not a tool held on a key above it', () => {
+    let tools!: ToolsApi;
+    let ctx!: ActiveToolContextValue;
+    function Host(): null {
+      tools = useTools({ registry: { a, b } });
+      ctx = useActiveToolContext();
+      return null;
+    }
+    render(<ActiveToolContextProvider><Host /></ActiveToolContextProvider>);
+    act(() => { tools.engageHotkey('a'); });
+    // What `tool.offhand` does while its key is down.
+    act(() => { ctx.pushHotkey('b'); });
+    act(() => { tools.disengageHotkey(); });
+    expect(ctx.hotkeyStack).toEqual(['b']);
   });
 });

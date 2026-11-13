@@ -54,10 +54,10 @@ export interface KitOpsEnv<TData, TLayer extends string, TPose> {
   /** Drop from the selection whatever a lock or a hide just put out of
    *  reach, and the ids in `gone`. */
   narrowSelection(gone?: ReadonlySet<NodeId>): void;
-  /** Drop the pose override of a node that is about to leave the scene: ids
-   *  are reusable, and one left behind would attach itself to whatever is
-   *  added under that id next. */
-  clearOverride(id: NodeId): void;
+  /** Drop the pose override and scroll offset of a node that is about to
+   *  leave the scene: ids are reusable, and one left behind would attach
+   *  itself to whatever is added under that id next. */
+  forgetViewState(id: NodeId): void;
   /** See `LockGuard.noteWritten`. */
   noteWritten(node: Node<TData, TLayer, TPose>): void;
 }
@@ -77,6 +77,28 @@ function movesNode<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, TL
   };
 }
 
+/** `kit:setLayer`. Onto a hidden layer, the node is out of the selection's reach. */
+function registerSetLayer<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, TLayer, TPose>): void {
+  const { requireNode, invalidateDependents } = env.store;
+  const place = (id: NodeId, layer: TLayer): void => {
+    (requireNode(id) as { layer: TLayer }).layer = layer;
+    env.invalidateOrder();
+    invalidateDependents(id);
+  };
+  env.register('kit:setLayer', {
+    apply: (p) => {
+      const { id, to } = p as { id: NodeId; to: TLayer };
+      env.requireLayerIndex(to);
+      place(id, to);
+      env.narrowSelection();
+    },
+    revert: (p) => {
+      const { id, from } = p as { id: NodeId; from: TLayer };
+      place(id, from);
+    },
+  });
+}
+
 /** Register every kit op kind. Answers with the table a live `kit:setLayout`
  *  payload's strategies are kept in, which `scene.setLayout` fills. */
 export function registerKitOps<TData, TLayer extends string, TPose>(
@@ -84,7 +106,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
 ): {
   layoutRefs: WeakMap<object, { from: LayoutStrategy<TPose> | null; to: LayoutStrategy<TPose> | null }>;
 } {
-  const { state, requireLayerIndex, invalidateOrder, fnFields } = env;
+  const { state, fnFields } = env;
   const {
     dependents, childDerived, invalidateDependents, invalidateChildDerivedFrom, trackChildDerived, retarget,
     requireNode, detach, attach, addedFns, restoreNodeFunctions,
@@ -133,7 +155,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       invalidateDependents(p.id);
     },
     revert: (p) => {
-      env.clearOverride(p.id);
+      env.forgetViewState(p.id);
       detach(p.id);
       state.nodes.delete(p.id);
       dependents.remove(p.id);
@@ -146,7 +168,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   // Neither half invalidates dependents: removal's closure takes every live one.
   registerKitOp<RemoveSnapshot<TData, TLayer, TPose>>('kit:remove', {
     apply: (p) => {
-      for (const n of p.nodes) env.clearOverride(n.id);
+      for (const n of p.nodes) env.forgetViewState(n.id);
       for (const d of p.detached) detach(d.id);
       for (const n of p.nodes) {
         state.nodes.delete(n.id);
@@ -201,19 +223,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     },
   });
 
-  registerKitOp<{ id: NodeId; from: TLayer; to: TLayer }>('kit:setLayer', {
-    apply: (p) => {
-      requireLayerIndex(p.to);
-      (requireNode(p.id) as { layer: TLayer }).layer = p.to;
-      invalidateOrder();
-      invalidateDependents(p.id);
-    },
-    revert: (p) => {
-      (requireNode(p.id) as { layer: TLayer }).layer = p.from;
-      invalidateOrder();
-      invalidateDependents(p.id);
-    },
-  });
+  registerSetLayer(env);
 
   registerKitOp<{
     id: NodeId;

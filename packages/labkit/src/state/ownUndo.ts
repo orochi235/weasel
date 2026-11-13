@@ -1,4 +1,5 @@
 import type { TrialHistorySource } from '../trial/trialHistory';
+import type { LabStore } from './store';
 import { onTrialRestart } from './trialRestarts';
 
 interface Held {
@@ -35,10 +36,11 @@ function stepKey(source: TrialHistorySource): string {
 /**
  * Holds `source` as the history trial `trialId` of `store` saves for its
  * instrument, and tells `onOwnUndoStep`'s listeners each time it steps.
- * Returns the release, which keeps what it saved last for the next save.
+ * Returns the release, which keeps what it saved last for the next save while
+ * the trial stays open.
  */
 export function holdOwnUndo(
-  store: object,
+  store: LabStore,
   trialId: string,
   source: TrialHistorySource,
 ): () => void {
@@ -57,7 +59,7 @@ export function holdOwnUndo(
     off();
     if (h.sources.get(trialId) !== source) return;
     h.sources.delete(trialId);
-    if (!source.serialize) return;
+    if (!source.serialize || !store.getState().trials.some((t) => t.id === trialId)) return;
     const offRestart = onTrialRestart(store, trialId, () => unpark(h, trialId));
     h.parked.set(trialId, { data: source.serialize(), off: offRestart });
   };

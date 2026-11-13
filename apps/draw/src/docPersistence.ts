@@ -35,3 +35,36 @@ function parseDoc(raw: string): LoadedDoc {
     paperSize: isPaperSize(parsed.paperSize) ? parsed.paperSize : DEFAULT_PAPER_SIZE,
   };
 }
+
+/** The fields of a {@link LoadedDoc} only a drawing saved before its pages and background were the scene's keeps. */
+const LEGACY_FIELDS = ['paperSize', 'backgroundColor'] as const;
+
+/** The stored entry with `change` applied, `null` for none or one that cannot be read. */
+function storedDocWith(change: (stored: Record<string, unknown>) => Record<string, unknown>): string | null {
+  return readStored(DOC_KEY, (raw) => {
+    const stored: unknown = JSON.parse(raw);
+    if (stored === null || typeof stored !== 'object' || Array.isArray(stored)) throw new Error('Not a document entry');
+    return JSON.stringify(change(stored as Record<string, unknown>));
+  }, () => null);
+}
+
+/** `doc` as its entry's text, keeping the fields an older drawing kept beside it until the scene has taken them in
+ *  ({@link retireLegacyDoc}): the scene's load reads them. */
+export function docEntry(doc: PersistedDoc): string {
+  const legacy = (stored: Record<string, unknown>) =>
+    Object.fromEntries(LEGACY_FIELDS.flatMap((k) => (k in stored ? [[k, stored[k]]] : [])));
+  return storedDocWith((stored) => ({ ...legacy(stored), ...doc })) ?? JSON.stringify(doc);
+}
+
+/** Drop the fields an older drawing kept beside it, once a saved scene holds its pages and background. */
+export function retireLegacyDoc(): void {
+  const next = storedDocWith((stored) => {
+    const out = { ...stored };
+    for (const k of LEGACY_FIELDS) delete out[k];
+    return out;
+  });
+  if (next === null) return;
+  try {
+    if (next !== localStorage.getItem(DOC_KEY)) localStorage.setItem(DOC_KEY, next);
+  } catch { /* the next save tries again */ }
+}

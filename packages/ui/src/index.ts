@@ -138,6 +138,7 @@ export { rampColor, colorRamp } from './color/ramp';
 export type { ColorRampOptions } from './color/ramp';
 export { useAsyncOptions } from './useAsyncOptions';
 export { IDLE_SETTLE_MS, useIdleSettle } from './useIdleSettle';
+export { I18nProvider, useFieldLocale } from './useFieldLocale';
 export type { OptionKey } from './optionKey';
 export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './useAsyncOptions';
 export * from './floating';

@@ -2,15 +2,16 @@ import {
   type AddNodeSpec, type BooleanShapeOp, booleanGroupFields, localizeWorldPoses,
   addOnPages, pathEffectNode, registeredPathEffects,
 } from '@weasel-js/core';
+import { pickFile } from '@weasel-js/editor';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
 import { setBackground } from './docBackground';
 import { DEFAULT_BG_COLOR } from './docPersistence';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
-import { reportSvgUnreadable, reportSvgWarnings } from './fileNotices';
+import { reportSvgUnread, reportSvgWarnings } from './fileNotices';
 import { firstPageSize, onePage, replacePages } from './pages/drawPages';
 import { leafOfObj } from './svgImport';
 import type { Obj } from './svgObj';
-import { parsedToDoc, pickSvgFileNamed, type SceneDraft, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
+import { parsedToDoc, type SceneDraft, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 
 type OnWarn = (warning: ParseResult['warnings'][number]) => void;
 
@@ -67,18 +68,29 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[], keepPages: b
     if (draft.kind === 'effect' && live(draft)) {
       skipped.add(draft.id);
       const sources = draft.dependsOn.map((s) => sceneIdOf.get(s)!);
-      specs.push({ ...pathEffectNode(draft.effect, sources, 'default', derivations!), ...at } as Spec);
+      const effect = pathEffectNode(draft.effect, sources, 'default', derivations!);
+      specs.push({ ...effect, ...named(effect.data as WeaselDrawData, draft), ...at } as Spec);
       continue;
     }
     if (draft.kind === 'effect' && !parents.has(draft.id)) continue;
     const node = draft.kind === 'mark'
       ? { kind: 'mark' as const, ...(draft.boolean ? booleanOfObj(draft.obj, draft.boolean) : leafOfObj(draft.obj)) }
       : { kind: 'group' as const, pose: draft.pose, data: draft.data as WeaselDrawData };
-    specs.push({ ...node, ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
+    specs.push({ ...node, ...named(node.data, draft), ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
   }
   const pageOf = new Map(keepPages ? drafts.flatMap((d) => (d.page === undefined ? [] : [[sceneIdOf.get(d.id)!, d.page]])) : []);
   // A file's geometry is world; each pose is stored in its container's frame.
   addOnPages(scene, localizeWorldPoses(specs, scene.composition), { pageOf: (id) => pageOf.get(id) });
+  // Locked last: nothing can be added under a locked node.
+  for (const d of drafts) {
+    const id = sceneIdOf.get(d.id)!;
+    if (d.locked && scene.get(id) !== undefined) scene.setLocked(id, true);
+  }
+}
+
+/** `data` with the draft's name in it. */
+function named(data: WeaselDrawData, draft: SceneDraft): { data: WeaselDrawData } {
+  return { data: draft.label === undefined ? data : { ...data, label: draft.label } };
 }
 
 /**
@@ -130,43 +142,45 @@ export interface OpenSvgTarget {
   leaveMode(): void;
 }
 
-/** Whether `read` read the file `name`; when it was not an SVG document, a toast says so. */
-function readOrReport(did: 'opened' | 'imported', name: string, read: () => void): boolean {
+/**
+ * Pick an SVG file and hand `read` its text and name. Every way it can fail to be read toasts, as a failed
+ * Save does: text that is not an SVG document says so, and anything else gives its own message. The
+ * file's name once read, or null when the picker was canceled or the file was not read.
+ */
+async function pickAndRead(did: 'opened' | 'imported', read: (text: string, name: string) => void): Promise<string | null> {
+  const file = await pickFile('.svg,image/svg+xml');
+  if (!file) return null;
   try {
-    read();
-    return true;
+    read(await file.text(), file.name);
+    return file.name;
   } catch (err) {
-    if (!(err instanceof UnreadableSvgError)) throw err;
-    reportSvgUnreadable(did, name, err.message);
-    return false;
+    const why = err instanceof Error ? err.message : String(err);
+    reportSvgUnread(did, file.name, err instanceof UnreadableSvgError ? `It is not an SVG document: ${why}` : why);
+    return null;
   }
 }
 
 /**
  * Pick an SVG file and open it as the document, with a toast for what it
- * could not read. A canceled picker, or a file that is not an SVG document, changes nothing.
+ * could not read. A canceled picker, or a file that was not read, changes nothing.
  */
 export async function openSvgFile(target: OpenSvgTarget): Promise<void> {
-  const picked = await pickSvgFileNamed();
-  if (picked === null) return;
   const warnings: string[] = [];
-  const read = readOrReport('opened', picked.name, () => {
-    openSvgText(target.scene, picked.text, picked.name, (w) => warnings.push(w), () => target.leaveMode());
+  const name = await pickAndRead('opened', (text, picked) => {
+    openSvgText(target.scene, text, picked, (w) => warnings.push(w), () => target.leaveMode());
   });
-  if (!read) return;
+  if (name === null) return;
   reportSvgWarnings('Opened', warnings);
-  target.setFilename(picked.name);
+  target.setFilename(name);
   target.showFirstPage();
 }
 
 /**
  * Pick an SVG file and add it to the document, with a toast for what it
- * could not read. A canceled picker, or a file that is not an SVG document, changes nothing.
+ * could not read. A canceled picker, or a file that was not read, changes nothing.
  */
 export async function importSvgFile(scene: DrawScene): Promise<void> {
-  const picked = await pickSvgFileNamed();
-  if (picked === null) return;
   const warnings: string[] = [];
-  if (!readOrReport('imported', picked.name, () => importSvgText(scene, picked.text, (w) => warnings.push(w)))) return;
+  if (await pickAndRead('imported', (text) => importSvgText(scene, text, (w) => warnings.push(w))) === null) return;
   reportSvgWarnings('Imported', warnings);
 }

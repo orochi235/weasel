@@ -30,11 +30,12 @@ import { useItemDrop } from './itemDrop';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
 import { DEFAULT_FIT_PADDING, diagramViewBounds, useDiagramFit } from './diagramFit';
+import { useBatchedEdits } from './batchedEdits';
 import { useMirroredSelection } from './mirrorSelection';
 import { useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
 import { registerMarkShape } from './marks';
-import { diagramResizable } from './resizable';
+import { viewResizable } from './resizable';
 import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
 import { useSequenceTextEdit } from './sequence/textEdit';
@@ -42,6 +43,7 @@ import { useSequenceTextEdit } from './sequence/textEdit';
 const SHAPE_OUTLINE = { outline: { follow: 'shape' as const } };
 
 export type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
+export type { DiagramEdit } from './batchedEdits';
 export type {
   DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, LabelMove, NodeResize, ReconnectChange, RouteChange,
 } from './diagramViewProps';
@@ -67,10 +69,11 @@ const adoptViewRule = (el: HTMLElement | null) => {
  *  written: change the specs to keep it. Labels paint only in a registered
  *  font family; `diagramScene` defaults to sans-serif, so call
  *  `registerCanvasFont('sans-serif')` or text renders blank. */
-export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function DiagramView(props, ref) {
+export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function DiagramView({ onEdit, ...props }, ref) {
+  const reports = useBatchedEdits(props.onMove, props.onEditContainer, onEdit);
   return (
     <WeaselProvider>
-      <Inner {...props} apiRef={ref} />
+      <Inner {...props} {...reports} apiRef={ref} />
     </WeaselProvider>
   );
 });
@@ -83,7 +86,8 @@ function Inner({
   ambient: extraAmbient, tools, onToolsCreated, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, bounded, refit, background, animator, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
-  const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined);
+  const edgeEdits = onReconnect !== undefined || onEditRoute !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined;
+  const edgesPick = pickEdges ?? (edgeEdits || onDelete !== undefined);
   const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
   const placer = useMemo(() => (labels === 'dodge' ? createSpecLabelPlacer() : null), [labels]);
   const routed = useMemo(() => {
@@ -104,9 +108,9 @@ function Inner({
     registry,
   });
   const selection = useSelection({ scene, mode: selectionMode === 'multiple' ? 'multi' : 'single' });
-  const mirror = useMirroredSelection(selection, selected, onSelect);
-
   useSceneSync(scene, specs, { onMove, onEditContainer });
+  // After the sync, so a `selected` naming a node these specs add finds it in the scene.
+  const mirror = useMirroredSelection(selection, selected, onSelect, scene.subscribe);
   useReleasedImages(specs);
 
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
@@ -119,7 +123,7 @@ function Inner({
   const { layers: pageLayers, box: pagesBox } = usePagesView(pages);
   const layers = useMemo(() => ({ ...pageLayers, selectionOverlay: SHAPE_OUTLINE }), [pageLayers]);
   const canvasRef = useRef<SceneCanvasApi | null>(null);
-  const { onPointerDownCapture, onClick: headerHit } = useHeaderClick(canvasRef, scene, onHeaderClick);
+  const headerHit = useHeaderClick(scene, onHeaderClick);
   const onClick = useCallback((hit: SceneCanvasHit | null) => {
     mirror();
     headerHit(hit);
@@ -160,17 +164,17 @@ function Inner({
   const moves = onMove !== undefined || onEditContainer !== undefined;
   const resizes = onResize !== undefined || onEditContainer !== undefined;
   const sequences = onEditSequence !== undefined;
-  const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick || sequences;
+  const edits = moves || resizes || sequences || edgeEdits || onDelete !== undefined || onConnect !== undefined || onReorder !== undefined;
   const features = useMemo((): FeatureEntry[] => [
     'view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : []), ...(sequences ? ['edit' as const] : []),
     ...editing.presets,
   ], [moves, resizes, sequences, editing.presets]);
   const textEditor = useSequenceTextEdit(scene, onEditSequence);
-  const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
+  const selectTool = useSelectTool(scene, onResize !== undefined, onEditContainer !== undefined);
 
   const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
   return (
-    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className} onPointerDownCapture={onPointerDownCapture}>
+    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className}>
       <SceneCanvas
         ref={canvasRef}
         scene={scene}
@@ -193,6 +197,11 @@ function Inner({
       <Overlays canvasRef={canvasRef} scene={scene} overlays={overlays} />
     </div>
   );
+}
+
+/** The select tool's resize handles, on the boxes a callback reports. */
+function useSelectTool(scene: Scene<DiagramSceneData, 'main', RectPose>, shapes: boolean, regions: boolean) {
+  return useMemo(() => ({ resize: { resizable: viewResizable(scene, { shapes, regions }) } }), [scene, shapes, regions]);
 }
 
 /** Each overlay's content, kept over the node it targets. */

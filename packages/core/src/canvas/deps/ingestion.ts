@@ -6,6 +6,7 @@
  */
 import type { RefObject } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';
+import { layoutBoxOf } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
 import type { ClipboardIngestCtx, IngestionDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
@@ -30,7 +31,7 @@ export function useIngestionDepSource(
     viewportWorldRect() {
       const canvas = canvasRef.current;
       if (!canvas) return { x: 0, y: 0, width: 0, height: 0 };
-      return viewportWorldRect(getViewRef.current(), canvas.getBoundingClientRect());
+      return viewportWorldRect(getViewRef.current(), layoutBoxOf(canvas));
     },
     get resolveSrc() {
       return resolveSrcRef.current;

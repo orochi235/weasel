@@ -66,6 +66,10 @@ const sameView = (a: View | null, b: View): boolean =>
  * chrome drawn over the canvas from {@link Rulers.layout} — `<Rulers>` in
  * `@weasel-js/ui` draws them. Labels read in the unit scopes of the frame
  * under the pointer, falling back to `root`.
+ *
+ * One instance serves one canvas: its state is that canvas's view, size and
+ * pointer. Build one per canvas; attaching an instance to a second canvas
+ * while the first is mounted throws.
  */
 export function createRulers(opts: RulersOptions): Rulers {
   const id = opts.id ?? 'rulers';
@@ -114,6 +118,7 @@ export function createRulers(opts: RulersOptions): Rulers {
     actions: [pointer, guide],
     bindings,
     attach: (canvas) => {
+      if (api !== null) throw new Error(`[guides] rulers '${id}' are attached to a canvas already; createRulers serves one canvas, so build one per canvas`);
       api = canvas;
       const offs = [canvas.registerLayer(draftLayer), canvas.registerLayer(rulersHitLayer(hitLayerId, size, opts.guides.getGuides))];
       canvas.requestRedraw();

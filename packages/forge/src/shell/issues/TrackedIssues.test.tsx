@@ -52,6 +52,7 @@ describe('TrackedIssues', () => {
     serve({ ...CHECKOUT, unavailable: 'The GitHub CLI (gh) is not installed.' });
     mount();
     expect(await screen.findByText('The GitHub CLI (gh) is not installed.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Report an issue…' }));
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Thumb drifts' } });
     expect(screen.getByRole('button', { name: 'Report' }).hasAttribute('disabled')).toBe(false);
   });
@@ -67,6 +68,7 @@ describe('TrackedIssues', () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null);
     mount();
     await screen.findByText('No open issues for Slider.');
+    fireEvent.click(screen.getByRole('button', { name: 'Report an issue…' }));
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Thumb drifts' } });
     fireEvent.click(screen.getByRole('button', { name: 'Report' }));
     expect(open).toHaveBeenCalledTimes(1);
@@ -82,6 +84,7 @@ describe('TrackedIssues', () => {
     serve({ repo: null, branch: 'main', commit: 'abc1234', unavailable: 'This checkout’s origin is not a GitHub repository.' });
     mount();
     await screen.findByText('This checkout’s origin is not a GitHub repository.');
+    fireEvent.click(screen.getByRole('button', { name: 'Report an issue…' }));
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Thumb drifts' } });
     expect(screen.getByRole('button', { name: 'Report' }).hasAttribute('disabled')).toBe(true);
   });

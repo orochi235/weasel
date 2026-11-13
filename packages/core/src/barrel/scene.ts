@@ -78,7 +78,7 @@ export * from '../core/adapters/types';
 export {
   createScene, sceneFromJSON, nodeKindOf, specsFromSerialized, isSerializedScene, localizeInScene, localizeWorldPoses, worldPosesOf, sceneSelectionStore, useScene, asNodeId, hasChildren, isLeaf, statedFields, SCENE_HISTORY_FORM,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentOf, documentPose, effectivePose, nodeAsShown,
-  CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, SnapshotShapeError, reconcileSpecs, sceneDeclaredScopes, sceneMagnification, sceneSharedUnitScopes, sceneUnitScopes,
+  CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, SnapshotKeyError, SnapshotShapeError, reconcileSpecs, sceneDeclaredScopes, sceneMagnification, sceneSharedUnitScopes, sceneUnitScopes,
   BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf, booleanGroupFields,
 } from '../core/scene';
 export type { BooleanShapeOp, PlacedSpec, PoseSource, PosedNode, ScopedScene, ShownDataSource } from '../core/scene';
@@ -138,7 +138,7 @@ export type {
 } from '../core/scene';
 export type { SceneDoc, SceneDocValues, SerializedDoc } from '../core/scene/docValues';
 export { replaceDoc } from '../core/scene/docValues';
-export { OUTPUT_GRID_KEY, outputGridOf, quantizeSize } from '../core/scene/outputGrid';
+export { OUTPUT_GRID_KEY, outputGridOf, quantizedShape, quantizeSize } from '../core/scene/outputGrid';
 export type { QuantizeRule, SceneQuantize } from '../core/scene/useSceneOptions';
 export type { SceneDeclaredFieldSetters } from '../core/scene/declaredFieldSetters';
 

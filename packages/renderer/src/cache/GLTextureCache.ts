@@ -36,7 +36,8 @@ export class GLTextureCache {
   private readonly registered = new Map<string, TexSource>();
   private sweptVersion = -1;
 
-  constructor(private readonly gpu: GpuDevice) {}
+  /** `drew` hears of each registry-backed source a draw binds, so the image cache spares it. */
+  constructor(private readonly gpu: GpuDevice, private readonly drew?: (source: TexSource) => void) {}
 
   has(id: string): boolean {
     return this.map.has(id);
@@ -73,6 +74,7 @@ export class GLTextureCache {
       this.gpu.writeTexture(cached, { source, premultiply: true });
     }
     this.registered.set(id, source);
+    this.drew?.(source);
     return this.ensure(id, source, wrap, true);
   }
 

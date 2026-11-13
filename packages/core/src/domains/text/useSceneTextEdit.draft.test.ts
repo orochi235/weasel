@@ -113,6 +113,17 @@ describe('useSceneTextEdit — drafts', () => {
     expect(scene.get(T)!.data).toBe(stored);
   });
 
+  it('ends the edit writing nothing when the node is locked before the commit, as when it is removed', () => {
+    const { scene, container, hook } = setup();
+    act(() => hook.result.current.startEdit('lone'));
+    type(container, '!');
+    scene.setLocked(LONE, true);
+    act(() => hook.result.current.commit());
+    expect(hook.result.current.editingId).toBeNull();
+    expect(scene.overrides.ids()).toEqual([]);
+    expect(scene.get(LONE)!.data.text).toBe('alone');
+  });
+
   it('shows the draft again on the next keystroke after the node is deleted and the delete undone', () => {
     const { scene, container, hook } = setup();
     act(() => hook.result.current.startEdit('t'));

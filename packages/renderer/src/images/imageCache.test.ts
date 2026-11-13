@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   getImageBitmap,
+  imageLoadsSettled,
   imageStatus,
   subscribeImageReady,
   isVectorImageSrc,
@@ -540,5 +541,27 @@ describe('bitmapSrc', () => {
     getImageBitmap('other');
     await flush();
     expect(getImageBitmap(src)).toBe(bmp);
+  });
+});
+
+describe('imageLoadsSettled', () => {
+  beforeEach(() => _resetImageCacheForTests());
+
+  it('waits for the loads in flight, a failed one included, and counts them', async () => {
+    let fail!: (e: Error) => void;
+    __setImageLoaderForTests((src) => (src === 'bad'
+      ? new Promise<ImageBitmap>((_, reject) => { fail = reject; })
+      : Promise.resolve(fakeBitmap())));
+    getImageBitmap('good');
+    getImageBitmap('bad');
+    let count: number | undefined;
+    const settled = imageLoadsSettled().then((n) => { count = n; });
+    await flush();
+    expect(count).toBeUndefined();
+    fail(new Error('gone'));
+    await settled;
+    expect(count).toBe(2);
+    expect(imageStatus('bad')).toBe('error');
+    expect(await imageLoadsSettled()).toBe(0);
   });
 });

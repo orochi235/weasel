@@ -62,9 +62,9 @@ describe('buildSceneLayer over a bare adapter', () => {
     expect(coords(ctxOf('edge')?.derivedPath)).toEqual([0, 0, 200, 100]);
   });
 
-  it('hands a node that derives nothing no context', () => {
+  it('hands a node that derives nothing no derived path', () => {
     const { ctxOf } = paint(items());
-    expect(ctxOf('a')).toBeUndefined();
+    expect(ctxOf('a')).not.toHaveProperty('derivedPath');
   });
 
   it('re-derives when the adapter answers a moved dependency', () => {

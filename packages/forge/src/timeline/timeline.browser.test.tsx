@@ -1,4 +1,4 @@
-import '../../../../apps/forge/labkitStyles';
+import '@weasel-js/labkit/styles.css';
 import '../shell/shell.css';
 import { createMemoryAdapter } from '@weasel-js/labkit';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';

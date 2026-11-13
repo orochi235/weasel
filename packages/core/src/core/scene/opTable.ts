@@ -28,12 +28,21 @@ export interface OpTable {
   /** Apply a kind's forward half. Throws when nothing is registered for it. */
   run(kind: string, payload: unknown): void;
   /** A registered op as an engine `Op`. `invert()` flips the direction with
-   *  the same payload, so undo replays `revert` and redo replays `apply`.
-   *  The handler is looked up at apply time, so a re-registered kind takes
-   *  effect on replay; that one exists is checked here, to fail at the call
-   *  site. */
+   *  the same payload, so undo replays `revert` and redo replays `apply`; the
+   *  inverse is named {@link revertName} of the kind, so its `name` and `args`
+   *  rebuild it and not the edit it undoes. The handler is looked up at apply
+   *  time, so a re-registered kind takes effect on replay; that one exists is
+   *  checked here, to fail at the call site. */
   op(kind: string, payload: unknown): Op;
+  /** The op a `name` and `args` describe: a registered kind's forward op, or
+   *  its revert under {@link revertName}. `null` for a name nothing here owns. */
+  rebuild(name: string, args: unknown): Op | null;
 }
+
+const REVERT = 'revert:';
+
+/** The `name` of the op that reverts a registered op of `kind`. */
+export const revertName = (kind: string): string => `${REVERT}${kind}`;
 
 export function createOpTable(env: OpTableEnv): OpTable {
   const handlers = new Map<string, RegisteredOp<unknown>>();
@@ -73,7 +82,7 @@ export function createOpTable(env: OpTableEnv): OpTable {
   function op(kind: string, payload: unknown, forward = true): Op {
     handlerFor(kind);
     return {
-      name: kind,
+      name: forward ? kind : revertName(kind),
       args: payload,
       coalesceKey: coalesceKeyFor(kind, payload),
       apply: () => {
@@ -91,5 +100,10 @@ export function createOpTable(env: OpTableEnv): OpTable {
     register: (kind, handler) => { handlers.set(kind, handler); },
     run: (kind, payload) => handlerFor(kind).apply(payload),
     op: (kind, payload) => op(kind, payload),
+    rebuild(name, args) {
+      if (handlers.has(name)) return op(name, args);
+      const kind = name.startsWith(REVERT) ? name.slice(REVERT.length) : null;
+      return kind !== null && handlers.has(kind) ? op(kind, args, false) : null;
+    },
   };
 }

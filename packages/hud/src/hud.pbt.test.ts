@@ -19,7 +19,6 @@ interface Model {
   list: number[];
   focused: number | null;
   visible: boolean;
-  detached: boolean;
   bound: boolean;
   heard: boolean[][];
   emitted: (number | null)[];
@@ -72,7 +71,6 @@ const pick = fc.nat({ max: POOL - 1 });
 
 const add = pick.map((i) => cmd(`add ${i}`, (m, r) => {
   r.hud.add(r.pool[i]!);
-  if (m.detached) { hits.hit('add detached'); return; }
   if (m.list.includes(i)) { hits.hit('add again'); return; }
   m.list.push(i);
 }));
@@ -119,11 +117,9 @@ const bind = fc.nat({ max: 3 }).map((k) => k > 0).map((on) => cmd(on ? 'bind' : 
     if (m.bound) { expect(() => r.hud.bind({ requestRedraw: () => {}, subscribeFrame: () => () => {} } as never)).toThrow(); return; }
     r.hud.bind({ requestRedraw: () => {}, subscribeFrame: () => () => {} } as never);
     m.bound = true;
-    m.detached = false;
   } else {
     r.hud.unbind();
     m.bound = false;
-    m.detached = true;
   }
 }));
 
@@ -141,9 +137,9 @@ describe('createHud (stateful)', () => {
       const hud = createHud();
       const emitted: (Widget | null)[] = [];
       hud.subscribeFocus((w) => { emitted.push(w); });
-      const m: Model = { list: [], focused: null, visible: false, detached: false, bound: false, heard: pool.map(() => []), emitted: [] };
+      const m: Model = { list: [], focused: null, visible: false, bound: false, heard: pool.map(() => []), emitted: [] };
       fc.modelRun(() => ({ model: m, real: { hud, pool, emitted } }), cmds);
     }), runs(RUNS));
-    for (const k of ['add detached', 'add again', 'remove focused', 'focus', 'focus refused', 'tab', 'tab off the end', 'hide focused']) hits.atLeast(k, 10);
+    for (const k of ['add again', 'remove focused', 'focus', 'focus refused', 'tab', 'tab off the end', 'hide focused']) hits.atLeast(k, 10);
   }, timeoutFor(RUNS, 20));
 });

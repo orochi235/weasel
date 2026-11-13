@@ -1,6 +1,5 @@
 import {
   BUILTIN_TOOLS,
-  withoutTools,
   type Measurements,
   measurementsContribution,
   measureEndSource,
@@ -51,9 +50,7 @@ import { usePathOverlays } from './usePathOverlays';
 import { useSymmetry } from './useSymmetry';
 import { useSpacingHints } from './useSpacingHints';
 
-/** Every built-in but the sticky tool, whose `background` and `padding` the
- *  document's SVG round trip does not carry. */
-const DRAW_TOOLS = [withoutTools(BUILTIN_TOOLS, 'sticky')];
+const DRAW_TOOLS = [BUILTIN_TOOLS];
 
 // OS-dropped and pasted SVG files unpack into real scene nodes rather than one embedded-image
 // node. `clipboard.reviver` revives typed-array node data carried by weasel-JSON clipboard
@@ -271,7 +268,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           view={view}
         />
       </div>
-      <DrawPageStrip pages={props.pages} />
+      <DrawPageStrip pages={props.pages} leaveMode={machine.leaveMode} />
     </div>
   );
 }

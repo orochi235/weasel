@@ -29,6 +29,7 @@ export type {
 } from '@weasel-js/simulation';
 export { useSimulation } from '@weasel-js/simulation/react';
 export * from '../domains/poseRun';
+export * from '../domains/presentation';
 export { useNodeOverlayFrame } from '../core/viewport/useNodeOverlayFrame';
 export type {
   NodeOverlayFrame,
@@ -100,7 +101,9 @@ export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from '@weasel-js
 
 // ─── Viewport: wheel / velocity / decay / pinch / camera animation ──────────
 export * from '../core/viewport/wheelHandler';
-export { clientToCanvas } from '@weasel-js/routing';
+export {
+  canvasToClient, clientScaleOf, clientToCanvas, layoutBoxOf, type LayoutBox, type ShownElement,
+} from '@weasel-js/routing';
 export type { ViewLike } from '../core/viewport/clientToWorld';
 export { useVelocityTracker } from '../core/viewport/useVelocityTracker';
 export { createVelocityTracker } from '../core/viewport/createVelocityTracker';
@@ -145,7 +148,7 @@ export type { SurfaceSizeProps } from '../canvas/useSurfaceSize';
 export { DrawCanvas } from '../canvas/DrawCanvas';
 export type { DrawCanvasProps, DrawCanvasDraw } from '../canvas/DrawCanvas';
 // The accent a canvas's chrome paints in, read off the theme cascade, and how to hear it change.
-export { accentColorOf, FALLBACK_ACCENT, watchThemeOf } from '../canvas/accentColor';
+export { accentColorOf, chromeColorOf, FALLBACK_ACCENT, watchThemeOf } from '../canvas/accentColor';
 
 // ─── Canvas focus & visibility gating ───────────────────────────────────────
 export { gateLayer } from '../core/layers/gateLayer';

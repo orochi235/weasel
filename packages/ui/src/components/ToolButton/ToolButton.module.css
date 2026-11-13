@@ -32,6 +32,7 @@
 }
 .button:is([disabled], [data-disabled]) {
   opacity: 0.4;
+  filter: var(--wzl-disabled-filter);
 }
 
 .icon { display: block; }

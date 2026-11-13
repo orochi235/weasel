@@ -111,6 +111,16 @@ describe('<SceneViewCanvas>', () => {
     expect((root.children[0] as GroupDrawCommand).children).toHaveLength(2);
   });
 
+  it('paints with the kit painters, as <SceneCanvas> does, when given no drawOne', () => {
+    const scene = createScene<{ fill: { paint: { kind: 'solid'; color: string } } }, L, P>({ systemLayers: [{ id: 'main' }] });
+    scene.add({ kind: 'mark', data: { fill: { paint: { kind: 'solid', color: '#f00' } } }, layer: 'main', pose: { x: 10, y: 20, width: 30, height: 40 } });
+
+    render(<SceneViewCanvas scene={scene} view={identityView} width={100} height={80} />);
+
+    const layer = (renderMock.mock.calls[0][0][0] as GroupDrawCommand).children[0] as GroupDrawCommand;
+    expect(JSON.stringify(layer.children)).toContain('"color":"#f00"');
+  });
+
   it('re-renders when the scene is mutated', async () => {
     const scene = makeScene();
 

@@ -74,6 +74,7 @@ function ChromeHarness({
     setMode: vi.fn(),
     marks: true,
     setMarks: vi.fn(),
+    holdMarks: () => () => {},
     ...labOverrides,
   };
   return (

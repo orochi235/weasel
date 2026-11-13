@@ -25,6 +25,7 @@ export { axisAlignedBounds, positiveBox, unionAABB, unionBounds } from '../core/
 export type { Dims, LayerDims } from '../core/layers/dims';
 export { createArrangeOp } from '../core/ops/arrange';
 export type { ArrangeArgs, ArrangedPose } from '../core/ops/arrange';
+export { createInsertOp } from '../core/ops/create';
 export { createHistory } from '../core/ops/createHistory';
 export { opFactoryRegistry, rebuildOp, registerOpFactory, registeredOpNames } from '../core/ops/registry';
 export type { OpFactory } from '../core/ops/registry';
@@ -74,7 +75,7 @@ export type { ShownDataSource } from '../core/scene/nodeAsShown';
 export type { Bivariant, ClipFromPoseFn, CopiesFromPoseFn, DerivePathFn, DerivePoseFn, DerivedDep } from '../core/scene/nodeFnTypes';
 export { contentRoots, hidesSubtree, isNodeHidden, isNodeLocked, isPageStructure, nodeGates, withoutPageStructure } from '../core/scene/nodeGates';
 export type { GateSource, GatedLayer, GatedNode, NodeGates } from '../core/scene/nodeGates';
-export { OUTPUT_GRID_KEY, outputGridOf, quantizeSize } from '../core/scene/outputGrid';
+export { OUTPUT_GRID_KEY, outputGridOf, quantizeSize, quantizedShape } from '../core/scene/outputGrid';
 export type { BlendEffect } from '../core/scene/pathEffects/blend';
 export { PATH_EFFECT, createPathEffectDerivations, pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects } from '../core/scene/pathEffects/derive';
 export type { PathEffectDerivations } from '../core/scene/pathEffects/derive';
@@ -98,7 +99,7 @@ export type { SceneScroll, ScrollOffsets, ScrollSource } from '../core/scene/scr
 export { isSerializedScene, nodeKindOf, specsFromSerialized } from '../core/scene/serialization';
 export type { SkippedKey, SpecsFromSerializedOptions, V1Classifier } from '../core/scene/serialization';
 export type { SavedScene, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1, SerializedSceneV2 } from '../core/scene/serializedTypes';
-export { SnapshotShapeError } from '../core/scene/snapshotShape';
+export { SnapshotKeyError, SnapshotShapeError } from '../core/scene/snapshotShape';
 export { statedFields } from '../core/scene/statedFields';
 export type { StatedNodeFields } from '../core/scene/statedFields';
 export { hasChildren, isLeaf } from '../core/scene/treeShape';
@@ -171,6 +172,7 @@ export { AUTO_ORIGIN_PROJECTION, RECT_ORIGIN_PROJECTION } from '../interactions/
 export type { OriginProjection } from '../interactions/gestures/shared/originProjection';
 export type { ActionBehavior, AreaSelectOverlay, BehaviorEnd, BehaviorResult, BoundsConstraint, CloneBehavior, CloneBehaviorResult, CloneEnd, GestureContext, GroupTransform, InsertBehavior, InsertMoveResult, InsertOverlay, InsertPoint, InsertProposed, LassoSelectBehavior, LassoSelectMoveResult, LassoSelectOverlay, LassoSelectPose, LassoSelectProposed, MoveBehavior, MoveEnd, PointerState, ResizeMoveResult, ResizeOverlay, ResizeProposed, RotateBehavior, RotateMoveResult, RotateOverlay, RotateProposed } from '../interactions/gestures/types';
 export type { ContainerBounds, DropRegion, DropTarget, LayoutArrival, LayoutChild, LayoutContainer, LayoutDragged, LayoutDropTargetMode, LayoutSnap, LayoutStrategy, ReflowGlideOptions, ReflowTransition } from '../layout/types';
+export { pressTarget } from '../tools/builtin/pressTarget';
 export type { PressTargetTree } from '../tools/builtin/pressTarget';
 export { useGroupEntryContribution } from '../tools/builtin/select/groupEntry';
 export { selectionMoveContribution } from '../tools/builtin/select/selectionContributions';

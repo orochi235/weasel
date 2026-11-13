@@ -6,7 +6,7 @@
  * It decides with its sink's answers, so it is not a pure function of its
  * input: a long-press only spends its press when something handled it.
  */
-import type { EventModifiers, InputEvent } from '../ui/inputEvent';
+import type { EventModifiers, InputEvent, PointerButton } from '../ui/inputEvent';
 import { pastDragThreshold } from '../ui/dragThreshold';
 import { composeClick, type ClickMemory, type ClickObserver, type ReleaseOutcome } from './click';
 import { createLongPressHold, type HeldPress, type RecognizerClock } from './longPressHold';
@@ -93,6 +93,9 @@ interface Held {
   touch: boolean;
   /** Set on a pointer that armed a long-press, for as long as it is held. */
   holdType?: 'touch' | 'pen';
+  /** Any but `'primary'` only drags, or released in place, for `'secondary'`,
+   *  opens the context menu; it neither clicks nor ends a click sequence. */
+  button: PointerButton;
 }
 
 /** Spend every held press on a multitouch gesture, which also ends the click sequence. */
@@ -134,6 +137,21 @@ function fireLongPress(
   // drag, nor the next click count as a second one.
   rec.buffered = clicks.last = null;
   if (rec.holdType) observer.longPress?.(rec.holdType);
+}
+
+/** Whether any held pointer armed a long-press, firing each one still pending ahead of its timer. */
+function takeHolds(
+  held: ReadonlyMap<number, Held>, hold: ReturnType<typeof createLongPressHold>, fire: (rec: Held) => void,
+): boolean {
+  let holding = false;
+  for (const [id, rec] of held) {
+    if (!rec.holdType) continue;
+    holding = true;
+    if (!hold.pendingFor(id)) continue;
+    hold.cancel(id);
+    fire(rec);
+  }
+  return holding;
 }
 
 /** Each threshold as its option says at the moment of reading, else its constant. */
@@ -199,8 +217,12 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       // A press on a pointer still held means its release was lost: end that one first.
       if (held.has(s.pointerId)) recognizer.cancel(s.pointerId);
       const ev = pointerDownEvent(s);
-      const rec: Held = { pos: { x: s.clientX, y: s.clientY }, buffered: ev, down: pressFactsOf(s), touch: s.pointerType === 'touch' };
+      const button = s.pointerButton ?? 'primary';
+      const rec: Held = {
+        pos: { x: s.clientX, y: s.clientY }, buffered: ev, down: pressFactsOf(s), touch: s.pointerType === 'touch', button,
+      };
       held.set(s.pointerId, rec);
+      if (button !== 'primary') return;
       const hand = rec.touch ? fingers().size : 0;
       // The press dispatches twice, to disjoint spec kinds: now for
       // `pointerDown` bindings, and buffered for `drag`. A second finger's is
@@ -224,7 +246,8 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       // The buffered press goes out before the move: it opens the drag the moves pump.
       if (rec?.buffered && pastDragThreshold(rec.down, s, dragPx())) {
         const press = rec.buffered;
-        rec.buffered = clicks.last = null;
+        rec.buffered = null;
+        if (rec.button === 'primary') clicks.last = null;
         hold.cancel(s.pointerId);
         sink.dispatch(press);
       }
@@ -247,6 +270,8 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       // else spent it. Without this, a tool binding `click` but not `drag`
       // would click on the release of a drag clear across the canvas.
       if (!rec?.buffered) return {};
+      if (rec.button === 'secondary') sink.dispatch(longPressEvents(rec.down).contextmenu);
+      if (rec.button !== 'primary') return {};
       const at = world(s);
       const up = {
         target: s.target, clientX: s.clientX, clientY: s.clientY, world: { x: at.x, y: at.y }, ...modifiersOf(s),
@@ -260,24 +285,14 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       const before = rec.touch ? fingers().size : 0;
       held.delete(pointerId);
       hold.cancel(pointerId);
-      clicks.last = null;
+      if (rec.button === 'primary') clicks.last = null;
       // A cancel carries no modifiers of its own, so these are the press's.
       if (before >= 2) sink.dispatch(multiTouchEvent(before, rec.down, { end: 'cancel' }));
       if (rec.touch) touches.abandon();
       sink.dispatch({ kind: 'pointercancel', pointerId, ...modifiersOf(rec.down) });
     },
 
-    takeHold() {
-      let holding = false;
-      for (const [id, rec] of held) {
-        if (!rec.holdType) continue;
-        holding = true;
-        if (!hold.pendingFor(id)) continue;
-        hold.cancel(id);
-        fireLongPress(rec, sink, observer, clicks);
-      }
-      return holding;
-    },
+    takeHold: () => takeHolds(held, hold, (rec) => { fireLongPress(rec, sink, observer, clicks); }),
 
     heldCount: () => held.size,
     positionOf: (pointerId) => held.get(pointerId)?.pos,

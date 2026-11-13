@@ -4,6 +4,7 @@ import s from './Timeline.module.css';
 import { decimalsOf, type TickSet } from '@weasel-js/plot/scales';
 import { sliderAt, spanMap, spanPan, spanZoom } from '@weasel-js/ui-input';
 import { MIN_SPAN_MS, TICK_SPACING_PX, toPercent, windowScale, type TimeWindow } from './timeScale';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;
@@ -51,10 +52,9 @@ export function Ruler(props: RulerProps): ReactElement {
   // and capture would retarget pointerup and kill the click on non-native
   // children of the scrubbed track.
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (e.button !== 0) return;
+    if (!isPrimaryPress(e) || sessionRef.current?.active) return;
     onScrub(msAt(e.clientX));
 
-    sessionRef.current?.cancel();
     const end = (): void => { sessionRef.current = null; };
     sessionRef.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => { onScrub(msAt(ev.clientX)); },

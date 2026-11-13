@@ -113,6 +113,7 @@ curly quote, so both codepoints are listed.
 | `lengthenPath` | none of its own: the `lengthen` path-edit tool binds a drag on an anchor, Shift optional, and the action takes it only on an open end, so a drag on any other anchor falls through to `editAnchors`; its `mode` param (`'tangent'`, the default, or `'curvature'`) picks how the end grows, Shift picks the other, and both are read on every move |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |
+| `editEffectText` | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
 | `insertPathAnchor` | Alt+click |
 | `cutPathAtAnchor` | Alt+Shift+click |
 | `viewport.pinchZoom` | two-finger `multiTouch` |
@@ -134,7 +135,7 @@ from the `resize`, `rotate` and `move` presets' selection contributions.
 `.top` / `.bottom` / `.centerX` / `.centerY`, `distribute.horizontal` /
 `.vertical`, `pathfinder.union` / `.subtract` / `.intersect` / `.exclude` /
 `.divide` / `.crop`, `setFill`, `setStroke`, `setFillOpacity`,
-`setStrokeOpacity`, `setAnchorField`, `cycleCornerShape` (the selected corners' next `corner-shape` keyword), `setCorners` (the selected corners' `shape` and `radius` params) — all UI-driven.
+`setStrokeOpacity`, `setStrokeWidth` (`width`, and per-anchor `vertexWidths`), `setVertexColor` (one anchor's `rgba` by `index`), `setAnchorField`, `cycleCornerShape` (the selected corners' next `corner-shape` keyword), `setCorners` (the selected corners' `shape` and `radius` params) — all UI-driven.
 
 The `align.*` actions take a `to` param and `flip` a `pivot` param naming what
 the selection lines up against: `'union'` (the selection itself — align's

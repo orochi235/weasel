@@ -21,6 +21,9 @@ const STALE_DASH = [6, 4];
 /** Screen pixels: a point marks a place rather than a region of the picture,
  *  so it holds its size like a selection handle. */
 const POINT_RADIUS_PX = HANDLE_BASE_PX / 2;
+/** Screen pixels per unit of an arrow's head: the head is a pointer at a place, so it reads the same however far the
+ *  picture under it is zoomed. The width a head was drawn at on an unzoomed target. */
+const ARROW_HEAD_PX = MARK_WIDTH;
 const UNIT_SCALE: View['scale'] = { x: 1, y: 1 };
 
 /** The subset of a mark's scene node this needs: where it is, and what it is. */
@@ -70,7 +73,8 @@ function polyline(points: { x: number; y: number }[]): Path {
  *
  * `scale` is the view's, world to screen. Only a point reads it — its ring is
  * sized in screen pixels — and the default draws that ring as though a world
- * unit were a pixel.
+ * unit were a pixel. An arrow's head is in screen pixels too, as a `{ px }`
+ * marker size the renderer resolves.
  */
 export function markCommands(
   m: PaintableMark,
@@ -100,7 +104,8 @@ export function markCommands(
     case 'arrow': {
       const [a, b] = vertices(m);
       // The spec's arrow: a line carrying an end marker, not its own geometry.
-      return [{ kind: 'path', path: linePath(a, b), stroke: { ...stroke, markerEnd: 'arrow' } }];
+      const markerEnd = { key: 'arrow', size: { px: ARROW_HEAD_PX } };
+      return [{ kind: 'path', path: linePath(a, b), stroke: { ...stroke, markerEnd } }];
     }
     case 'stroke':
       return [{ kind: 'path', path: polyline(vertices(m)), stroke }];

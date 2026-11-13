@@ -2,6 +2,7 @@ import { readStored, useAutosave } from '@weasel-js/editor';
 import type { EffectDoc } from '@weasel-js/diagram/effect';
 import { createHistory, swapOp } from '@weasel-js/history';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { reportPipelineSave } from '../reportFailure';
 
 export const PIPELINE_STORAGE_KEY = 'weaselchart:pipeline-v1';
 export const PIPELINE_FILE_EXTENSION = '.weaselpipeline.json';
@@ -51,7 +52,7 @@ export function usePipelineDoc(storageKey: string = PIPELINE_STORAGE_KEY): Pipel
     current.current = next;
     setDoc(next);
   }, []);
-  useAutosave(() => ({ primary: [storageKey, JSON.stringify(doc)] }), { revision: doc });
+  useAutosave(() => ({ primary: [storageKey, JSON.stringify(doc)] }), { revision: doc, onSaved: reportPipelineSave });
 
   const change = useCallback((next: EffectDoc, label: string, coalesceKey?: string) => {
     history.apply(swapOp({

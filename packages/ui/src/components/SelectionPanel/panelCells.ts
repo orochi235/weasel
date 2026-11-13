@@ -34,6 +34,8 @@ export interface PanelCellScope {
   targets?: PrefAliasTargets;
   /** Which live controls write only the value an edit settles on. */
   settles?: Readonly<Record<LiveControl, boolean>>;
+  /** How long live text waits for the next keystroke before it is written, in ms. */
+  textWaitMs?: number;
   /** What an `'inherit'` fill and stroke on a node would take from its containers. */
   paintAbove?: (node: AnyNode) => InheritedPaint;
 }
@@ -84,6 +86,7 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRende
     ...(scope.active?.has(panelLeafKey(panelLeaf)) ? { active: true } : {}),
     ...(entryAt ? { entryAt } : {}),
     ...(scope.settles ? { settles: scope.settles } : {}),
+    ...(scope.textWaitMs ? { textWaitMs: scope.textWaitMs } : {}),
     ...withInherit(inheritOf(panelLeaf, scope)),
   };
 }

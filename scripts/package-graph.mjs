@@ -101,6 +101,10 @@ function toSvg(out, category) {
 
 async function main() {
   const outDir = process.argv[2] ?? join(tmpdir(), 'weasel-package-graph');
+  if (outDir.startsWith('-')) {
+    console.error('usage: node scripts/package-graph.mjs [outDir]  (it takes no flags)');
+    process.exit(2);
+  }
   mkdirSync(outDir, { recursive: true });
   const packages = readPackages();
   const problems = tierProblems(packages);

@@ -20,11 +20,12 @@
 
 .trigger[data-disabled] {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
 }
 
 .trigger[data-focus-visible] {
-  outline: none;
+  outline: 1px solid transparent;
   border-color: var(--wzl-focus-ring);
   box-shadow: 0 0 0 1px var(--wzl-focus-ring);
 }

@@ -3,11 +3,15 @@
  * beside it for an import to rebuild it from.
  */
 import { describe, expect, it } from 'vitest';
-import { booleanGroupFields, boundsOfPath, createScene, pathContainsPoint, type Path, type RectPose } from '@weasel-js/core';
+import {
+  RIGID_POSE_COMPOSITION, booleanGroupFields, boundsOfPath, createScene, pathContainsPoint,
+  type IngestCtx, type Op, type Path, type RectPose,
+} from '@weasel-js/core';
 import { svgNodesFromKit, type SvgKitTree } from './fromKit';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
 import { svgNodesToKitDrafts } from './unpack';
+import { unpackSvgFiles } from './unpackFiles';
 import type { SvgGroupNode, SvgPathNode } from './types';
 
 const RED = { paint: { kind: 'solid' as const, color: '#ff0000' } };
@@ -82,5 +86,21 @@ describe('a boolean group in SVG', () => {
       boolean: 'intersect', pose: { x: 0, y: 0, width: 300, height: 300 }, data: { fill: { paint: { color: '#ff0000' } } },
     });
     expect(drafts.slice(1).every((d) => !d.hidden)).toBe(true);
+  });
+
+  it('is ingested with its operands where they were drawn, since it is an envelope and not their frame', async () => {
+    const xml = serializeSvg(exported('union'));
+    let minted = 0;
+    const nodes: { id: string; parent: string | null; pose: RectPose }[] = [];
+    const ctx = {
+      // The union spans (0, 0) to (150, 150): a drop at (175, 175) moves it 100 right and down, at full size.
+      point: { x: 175, y: 175 },
+      viewportWorldRect: () => ({ x: 0, y: 0, width: 10_000, height: 10_000 }),
+      applyOps: (ops: Op[]) => nodes.push(...ops.map((op) => (op.args as { node: (typeof nodes)[number] }).node)),
+      scene: { layers: [{ id: 'main' }], mintId: () => `svg-${minted++}`, composition: RIGID_POSE_COMPOSITION },
+    } as unknown as IngestCtx;
+    await unpackSvgFiles([new File([xml], 'a.svg', { type: 'image/svg+xml' })], ctx);
+    const operands = nodes.filter((n) => n.parent === nodes[0]!.id);
+    expect(operands.map((n) => [n.pose.x, n.pose.y])).toEqual([[100, 100], [150, 150]]);
   });
 });

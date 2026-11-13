@@ -52,6 +52,8 @@ export function usePipelineAudio(pipeline: EffectPipeline, previews: AudioPrevie
   const [live, setLive] = useState<Live | null>(null);
   const current = useRef<Live | null>(null);
   const latest = useLatest({ pipeline, sources });
+  // A file picked after the component went must not make an engine its cleanup has already passed.
+  const mounted = useRef(false);
 
   const awake = useCallback((): Live => {
     if (current.current !== null) return current.current;
@@ -61,20 +63,31 @@ export function usePipelineAudio(pipeline: EffectPipeline, previews: AudioPrevie
     setLive(made);
     return made;
   }, [latest]);
-  useEffect(() => () => {
-    current.current?.runner.dispose();
-    current.current?.engine.dispose();
-    current.current = null;
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      current.current?.runner.dispose();
+      current.current?.engine.dispose();
+      current.current = null;
+    };
   }, []);
 
   const runner = live?.runner ?? null;
   const { run } = useFollowAudioRunner(runner, { pipeline, sources, previews });
 
+  // Each pick's number: a long file still decoding when a later one is picked must not replace it.
+  const picks = useRef(0);
   const chooseSource = useCallback(async () => {
     const file = await pickFile('audio/*');
-    if (file === null) return;
+    if (file === null || !mounted.current) return;
+    const mine = ++picks.current;
+    const current = (): boolean => mounted.current && picks.current === mine;
     const { engine } = awake();
-    setSources({ audio: await engine.context.decodeAudioData(await file.arrayBuffer()) });
+    const bytes = await file.arrayBuffer();
+    if (!current()) return;
+    const audio = await engine.context.decodeAudioData(bytes);
+    if (current()) setSources({ audio });
   }, [awake]);
   const wake = useCallback(() => awake().runner, [awake]);
 

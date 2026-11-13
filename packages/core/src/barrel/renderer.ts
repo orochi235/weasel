@@ -173,6 +173,7 @@ export {
 } from '../canvas/SceneCanvas/presets/tools';
 export { drawPreset, pickPreset, transformPreset } from '../canvas/SceneCanvas/presets/composites';
 export { ingestPreset } from '../canvas/SceneCanvas/presets/ingest';
+export { WHITEBOARD_TOOLS, whiteboardPreset } from '../canvas/SceneCanvas/presets/whiteboard';
 export { KIT_SHAPE_KINDS, SHAPE_KINDS } from '../core/shapeKinds';
 export type {
   BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,
@@ -224,6 +225,7 @@ export type {
 } from '../domains/text/useSceneTextEdit';
 export type { EditingDrawOne } from '../domains/text/editingDrawOne';
 export { textBoxOf, type TextNodeData, type TextOverflow } from '../canvas/nodeShapes/textPainter';
+export { shapePathOf } from '../canvas/nodeShapes/shapePainter';
 export { edgeColor, textFrameOf, type TextEdge, type TextFrame, type TextShadow } from '../canvas/nodeShapes/textFrame';
 export type { StyleToggle } from '@weasel-js/text-dom';
 export type { Vec2 } from '../core/geometry/vec2';

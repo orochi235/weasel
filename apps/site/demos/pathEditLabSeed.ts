@@ -4,15 +4,11 @@ import {
   createScene,
   type NodeId,
   type Path,
-  type PathEditHost,
+  type PathEditOpening,
   pathFromD,
   type RectPose,
-  type RedrawSource,
   solid,
-  useSelection,
 } from '@weasel-js/core';
-import { createEmitter } from '@weasel-js/registry';
-import { useState } from 'react';
 
 /** The one path each path-edit lab opens with its anchors already editable. */
 export const EDITED_ID: NodeId = asNodeId('curve');
@@ -35,30 +31,6 @@ export function createPathLabScene(d: string | Path, fill?: string) {
   });
 }
 
-/**
- * The path selected and open for anchor editing, the way a double-click on it
- * leaves it: `scene`'s selection holding it, and a path-edit host whose open path
- * starts as it. Escape closes it and a double-click reopens it, through the
- * host. `redrawOn` repaints the canvas when the host's answer changes.
- */
-export function useSeededPathEdit(scene: ReturnType<typeof createPathLabScene>): {
-  selection: ReturnType<typeof useSelection>;
-  pathEdit: PathEditHost;
-  redrawOn: readonly RedrawSource[];
-} {
-  const selection = useSelection({ scene, initial: [EDITED_ID] });
-  const [seeded] = useState(() => {
-    let editing: string | null = EDITED_ID;
-    const listeners = createEmitter();
-    const changes: RedrawSource = { subscribe: listeners.subscribe };
-    const pathEdit: PathEditHost = {
-      editingId: () => editing,
-      setEditingId(id) {
-        editing = id;
-        listeners.emit();
-      },
-    };
-    return { pathEdit, redrawOn: [changes] };
-  });
-  return { selection, ...seeded };
-}
+/** Opens {@link EDITED_ID} in anchor edit as the canvas mounts, for `defaultPathEdit`: the selection must
+ *  hold it too, as `useSelection({ scene, initial: [EDITED_ID] })` does. */
+export const EDITED_OPENING: PathEditOpening = { id: EDITED_ID };

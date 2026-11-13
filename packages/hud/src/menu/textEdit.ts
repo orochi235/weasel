@@ -1,30 +1,34 @@
 import type { MenuController, MenuEntry, MenuTextEntry } from '@weasel-js/menu';
-import { isApplePlatform } from '@weasel-js/gestures';
+import { isApplePlatform, textOwnsChord } from '@weasel-js/gestures';
 import { editEnd } from '@weasel-js/ui-input';
 
 /** A text row being typed into in a HUD menu: which row, what has been typed so far, and the caret and the other
  *  end of the selection, as code-point offsets into `draft`. `anchor` equals `caret` when nothing is selected.
- *  `preedit` is an input method's text still being composed, shown in place of the selection; absent with none. */
+ *  `preedit` is an input method's text still being composed, shown in place of the selection; absent with none.
+ *  `kill` is the text Apple's Ctrl+K last cut, which Ctrl+Y enters again. */
 export interface HudTextEdit {
   entry: MenuTextEntry;
   draft: string;
   caret: number;
   anchor: number;
   preedit?: string;
+  kill?: string;
 }
 
-/** What the modifiers a key arrives with ask for: `shift` extends the selection, `mod` (Ctrl or Cmd) selects all on
- *  `a` and holds any other character, `line` takes an arrow, Backspace or Delete to the end of the line, and `word`
- *  takes them by a word. */
-export interface EditMods { shift?: boolean; mod?: boolean; line?: boolean; word?: boolean }
+/** What the modifiers a key arrives with ask for: `shift` extends the selection, `mod` (Cmd on Apple, Ctrl elsewhere)
+ *  selects all on `a` and holds any other character, `line` takes an arrow, Backspace or Delete to the end of the
+ *  line, `word` takes them by a word, and `ctrl` reads the letter as Apple's Ctrl text-editing keys
+ *  ({@link CTRL_EDITS}). */
+export interface EditMods { shift?: boolean; mod?: boolean; line?: boolean; word?: boolean; ctrl?: boolean }
 
-/** The modifiers held for a key, read as the platform's text fields read them: on Apple, Cmd works by the line and
- *  Option by the word; elsewhere Ctrl works by the word, and Ctrl with Alt is AltGr, typing a character. */
+/** The modifiers held for a key, read as the platform's text fields read them: on Apple, Cmd works by the line,
+ *  Option by the word, and Ctrl by the Emacs-style keys; elsewhere Ctrl works by the word, and Ctrl with Alt is
+ *  AltGr, typing a character. */
 export function editMods(
   evt: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, apple = isApplePlatform(),
 ): EditMods {
   const shift = evt.shiftKey;
-  if (apple) return { shift, mod: evt.ctrlKey || evt.metaKey, line: evt.metaKey, word: evt.altKey };
+  if (apple) return { shift, mod: evt.metaKey, line: evt.metaKey, word: evt.altKey, ctrl: textOwnsChord(evt, true) };
   if (evt.ctrlKey && evt.altKey) return { shift };
   return { shift, mod: evt.ctrlKey || evt.metaKey, word: evt.ctrlKey };
 }
@@ -73,10 +77,10 @@ function clusterStep(draft: string, from: number, dir: -1 | 1): number {
   return stops[stops.length - 1]!;
 }
 
-/** An edit of `entry` holding `draft`, with the caret at its end. */
-export function startEdit(entry: MenuTextEntry, draft: string): HudTextEdit {
+/** An edit of `entry` holding `draft`, with the caret at its end, and `kill` for Ctrl+Y to enter. */
+export function startEdit(entry: MenuTextEntry, draft: string, kill?: string): HudTextEdit {
   const n = Array.from(draft).length;
-  return { entry, draft, caret: n, anchor: n };
+  return { entry, draft, caret: n, anchor: n, ...(kill === undefined ? {} : { kill }) };
 }
 
 /** The selection's two ends, in order. */
@@ -136,6 +140,43 @@ function moveFor(edit: HudTextEdit, key: string, mods: EditMods): number | undef
   return undefined;
 }
 
+/** The key each of Apple's Ctrl text-editing letters stands for in a one-line field, `k` aside: Ctrl+A and Ctrl+E
+ *  go to the line's ends, as Ctrl+P and Ctrl+N do with only one line, Ctrl+B and Ctrl+F move a character, and
+ *  Ctrl+H and Ctrl+D delete one. Ctrl+K, Ctrl+Y and Ctrl+T are {@link ctrlEdit}'s own. Ctrl+O, Ctrl+V and Ctrl+L
+ *  open a line, page down and center, none of which a one-line field has. */
+export const CTRL_EDITS: Readonly<Record<string, string>> = {
+  a: 'Home', e: 'End', p: 'Home', n: 'End', b: 'ArrowLeft', f: 'ArrowRight', h: 'Backspace', d: 'Delete',
+};
+
+/** `edit` after Apple's Ctrl with `letter`: Ctrl+K cuts the selection or the rest of the line into `kill`, Ctrl+Y
+ *  enters `kill` in place of the selection, and Ctrl+T swaps the clusters either side of the caret. Any letter it
+ *  does not take is held. */
+function ctrlEdit(edit: HudTextEdit, letter: string, shift: boolean): HudTextEdit {
+  const [from, to] = selectionOf(edit);
+  if (letter === 'k') {
+    const end = from !== to ? to : Array.from(edit.draft).length;
+    if (end === from) return edit;
+    return { ...splice(edit, from, end, ''), kill: Array.from(edit.draft).slice(from, end).join('') };
+  }
+  if (letter === 'y') return edit.kill ? splice(edit, from, to, edit.kill) : edit;
+  if (letter === 't') return from === to ? transpose(edit) : edit;
+  const key = CTRL_EDITS[letter];
+  return key ? editKey(edit, key, { shift }).edit ?? edit : edit;
+}
+
+/** `edit` with the clusters before and after the caret swapped and the caret past both, as Cocoa's Ctrl+T does;
+ *  at the end of the line, the last two. Unchanged at the start or with fewer than two clusters. */
+function transpose(edit: HudTextEdit): HudTextEdit {
+  const stops = clusterStops(edit.draft);
+  let at = stops.indexOf(edit.caret);
+  if (at === stops.length - 1) at--;
+  if (at < 1) return edit;
+  const chars = Array.from(edit.draft);
+  const [a, b, c] = [stops[at - 1]!, stops[at]!, stops[at + 1]!];
+  const swapped = [...chars.slice(b, c), ...chars.slice(a, b)].join('');
+  return splice(edit, a, c, swapped);
+}
+
 /** What one key does to an edit: the edit it leaves, null once Enter or Escape ends it, and on Enter the text to
  *  write. A character replaces the selection, Backspace and Delete take it or the character (or the word, or the
  *  rest of the line) either side of the caret, and the arrows, Home and End move the caret. A character here is a
@@ -143,6 +184,7 @@ function moveFor(edit: HudTextEdit, key: string, mods: EditMods): number | undef
 export function editKey(edit: HudTextEdit, key: string, mods: EditMods = {}): { edit: HudTextEdit | null; commit?: string } {
   const ends = editEnd({ key, shift: mods.shift === true });
   if (ends) return ends === 'commit' ? { edit: null, commit: edit.draft } : { edit: null };
+  if (mods.ctrl) return { edit: ctrlEdit(edit, key.toLowerCase(), mods.shift === true) };
   const to = moveFor(edit, key, mods);
   if (to !== undefined) return { edit: moveTo(edit, to, mods.shift === true) };
   const [from, end] = selectionOf(edit);
@@ -164,6 +206,8 @@ export function editKey(edit: HudTextEdit, key: string, mods: EditMods = {}): { 
  *  `c` on Enter. `changed` hears every change to what is drawn. */
 export function createTextEditor(c: Pick<MenuController, 'textValue' | 'setText'>, changed: () => void) {
   let edit: HudTextEdit | null = null;
+  // Shared by every row of the menu, so Ctrl+Y in one enters what Ctrl+K cut from another.
+  let kill: string | undefined;
   const end = (commit?: string) => {
     const was = edit;
     edit = null;
@@ -175,7 +219,7 @@ export function createTextEditor(c: Pick<MenuController, 'textValue' | 'setText'
     /** Start typing into `e` when it is a text row that is not disabled, and not the row already typed into. */
     start(e: MenuEntry | undefined) {
       if (e?.kind !== 'text' || e.disabled || edit?.entry === e) return;
-      edit = startEdit(e, c.textValue(e) ?? '');
+      edit = startEdit(e, c.textValue(e) ?? '', kill);
       changed();
     },
     /** When `e` is the row being typed into, put the caret at the offset `at` finds in what is typed; `at` gives
@@ -204,6 +248,7 @@ export function createTextEditor(c: Pick<MenuController, 'textValue' | 'setText'
     key(key: string, mods: EditMods = {}): boolean {
       if (!edit) return false;
       const next = editKey(edit, key, mods);
+      kill = next.edit?.kill ?? kill;
       if (next.edit) { edit = next.edit; changed(); } else end(next.commit);
       return true;
     },

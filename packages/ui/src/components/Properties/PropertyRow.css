@@ -37,14 +37,25 @@
   margin-bottom: -4px;
 }
 
-.rowLabel {
+/* A row's label and a caption inside a row (`PropertyCaption`) wear one face. */
+.rowLabel,
+.caption {
   font-family: var(--wzl-font-display);
   font-weight: var(--wzl-font-weight-light);
   font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm));
-  line-height: var(--wzl-leading-snug);
   color: var(--wzl-fg-muted);
   text-transform: var(--wzl-params-label-case, uppercase);
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
+}
+
+.caption {
+  text-align: var(--wzl-params-label-align, start);
+  inline-size: var(--wzl-params-label-width, auto);
+  white-space: nowrap;
+}
+
+.rowLabel {
+  line-height: var(--wzl-leading-snug);
   display: flex;
   align-items: center;
   justify-content: var(--wzl-params-label-align, start);
@@ -64,6 +75,7 @@
 /* As `Checkbox` dims the text beside a disabled box: the control dims itself. */
 .row[data-disabled] > .rowLabel {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
 }
 
 .row[data-disabled] {

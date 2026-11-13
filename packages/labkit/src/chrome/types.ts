@@ -247,6 +247,10 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
    *  settings panel quotes. Absent for a chrome mounted without a trial. */
   reported?: AutoReports;
   setConfig: (key: string, value: unknown) => void;
+  /** Writes a value an edit is passing through — a slider's drag, a number being typed — which the trial records
+   *  as one undo step with the `setConfig` it settles on, however long the edit pauses. A `<ControlPanel>`'s
+   *  `draftConfig`. A context built without one drafts through `setConfig`. */
+  draftConfig?: (key: string, value: unknown) => void;
   /** The lab's values for the schema `configSchema` is drawn over, which `config` does not hold.
    *  `setConfig` writes a path of that schema there. */
   overValues?: Readonly<Record<string, unknown>>;

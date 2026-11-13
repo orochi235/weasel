@@ -11,6 +11,11 @@ describe('pathPoseDescriptor.lerp', () => {
     });
   });
 
+  it('lands on the end rect itself at t = 1', () => {
+    const b = { kind: 'rect', x: 0.1, y: 0.3, width: 0.2, height: 100.3 } as const;
+    expect(pathPoseDescriptor.lerp!({ kind: 'rect', x: 0.7, y: 100.1, width: 3, height: -0.1 }, b, 1)).toEqual(b);
+  });
+
   it("grows a corner's radius between the ends, and takes the nearer end's shape when it changes", () => {
     const tri = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 0, y: 100 }]);
     const a = withCorner(withCorner(tri, 0, { shape: 'round', radius: 10 }), 1, { shape: 'bevel', radius: 4 });

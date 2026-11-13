@@ -54,10 +54,17 @@ describe('a mark as vector', () => {
     expect(nodes).toHaveLength(1);
     const [node] = nodes;
     if (node?.kind !== 'path') throw new Error('expected a path node');
-    expect(node.stroke?.markerEnd).toBe('arrow');
+    expect(node.stroke?.markerEnd).toEqual({ key: 'arrow', size: 2 });
     expect(serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 100, height: 60 } })).toContain(
       '<marker',
     );
+  });
+
+  it("writes an arrow's screen-sized head against the export's scale", () => {
+    // Output pixels per content unit: the head comes out the size it shows on screen.
+    const [node] = markSvgNodes(mark('arrow'), {}, { x: 4, y: 4 });
+    if (node?.kind !== 'path') throw new Error('expected a path node');
+    expect(node.stroke?.markerEnd).toEqual({ key: 'arrow', size: 0.5 });
   });
 
   it('emits text as text, at the pose, in the mark color', () => {

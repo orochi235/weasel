@@ -9,6 +9,23 @@ import { createEmitter } from '@weasel-js/registry';
 import { outermost } from '@weasel-js/select';
 import type { NodeId } from './types';
 
+/** A scene's selection members. */
+export interface SceneSelectionMembers {
+  /** The transient set of active ids — "operate on these N as a unit".
+   *  Shared by every view over this scene unless a view supplies its own
+   *  (see `CanvasView.selection`). Not document content: it never appears
+   *  in `toJSON`. It does ride on history entries, so undo and redo put
+   *  back the selection an edit was made under; changing it is never an
+   *  undo step of its own. Removing a node deselects it. */
+  getSelection(): readonly NodeId[];
+  setSelection(ids: readonly NodeId[]): void;
+  /** `ids` as `setSelection` keeps them: each once, naming a node, neither
+   *  locked nor hidden, not page structure, and none with an ancestor among
+   *  them; the same array when it keeps every id. A selection kept off the
+   *  scene reads it to hold what the scene's own would. */
+  selectable(ids: readonly NodeId[]): readonly NodeId[];
+}
+
 export interface SceneSelection {
   get(): readonly NodeId[];
   /** `ids` as the selection may hold them: in reach, and none held by an ancestor among them. */

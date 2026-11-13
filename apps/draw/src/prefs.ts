@@ -3,7 +3,7 @@
 
 import {
   ELLIPSE_TOOL_OPTIONS, LINE_TOOL_OPTIONS, PEN_TOOL_OPTIONS, PENCIL_TOOL_OPTIONS, POLYGON_TOOL_OPTIONS, RECT_TOOL_OPTIONS,
-  STAR_TOOL_OPTIONS, TEXT_TOOL_OPTIONS, toolOptionsPrefs, type OptionedTool,
+  STAR_TOOL_OPTIONS, STICKY_TOOL_OPTIONS, TEXT_TOOL_OPTIONS, toolOptionsPrefs, type OptionedTool,
 } from '@weasel-js/core';
 import { SIMPLIFY_BRUSH_OPTIONS, SMUDGE_BRUSH_OPTIONS } from '@weasel-js/path-tools';
 import { INITIAL_FILL, INITIAL_STROKE } from './newShapePaint';
@@ -19,6 +19,7 @@ import {
   type PrefValueAt,
 } from '@weasel-js/prefs';
 import { usePref as usePrefOf } from '@weasel-js/prefs/react';
+import { pageLocalStorage } from '@weasel-js/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RegistryEnumFilter } from './registry/types';
@@ -52,6 +53,7 @@ export const DRAW_OPTIONED_TOOLS: readonly OptionedTool[] = [
   { id: 'pencil', options: PENCIL_TOOL_OPTIONS },
   { id: 'pen', options: PEN_TOOL_OPTIONS },
   { id: 'text', options: TEXT_TOOL_OPTIONS },
+  { id: 'sticky', options: STICKY_TOOL_OPTIONS },
   { id: 'smudgeBrush', options: SMUDGE_BRUSH_OPTIONS },
   { id: 'simplifyBrush', options: SIMPLIFY_BRUSH_OPTIONS },
 ];
@@ -318,7 +320,7 @@ export function drawPrefs(): PrefsStore<typeof PREFS> {
  *  still waiting on its first read imports when that read lands. */
 export function importLegacyPrefs(
   target: PrefsStore<typeof PREFS>,
-  storage: Pick<Storage, 'getItem' | 'removeItem'> | undefined = globalThis.localStorage,
+  storage: Pick<Storage, 'getItem' | 'removeItem'> | undefined = pageLocalStorage(),
 ): void {
   if (!storage) return;
   whenWritable(target, () => foldLegacyPrefs(target, storage));

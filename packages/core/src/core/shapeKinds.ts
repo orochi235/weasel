@@ -54,8 +54,8 @@ export type ShapeKindsWhere<T, F extends keyof ShapeKindDescriptor> = {
 /** Built-in shape tool ids handled by `useBuiltinShapeTools`. */
 export type BuiltinShapeToolId = ShapeKindsWhere<typeof SHAPE_KINDS, 'tool'>;
 
-/** The insert kinds the kit's dispatcher overlay layer knows how to render.
- *  Consumer-defined kinds fall outside it: no live preview, commit unaffected. */
+/** The insert kinds the kit's dispatcher overlay layer draws a shape of its own for.
+ *  A consumer-defined kind falls outside it and previews as the outline of its box. */
 export type KitInsertShape = ShapeKindsWhere<typeof SHAPE_KINDS, 'insertPreview'>;
 
 /** Kinds in `table` whose descriptor sets `field`, in declaration order. */

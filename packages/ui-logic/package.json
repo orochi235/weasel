@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/ui-logic",
-  "version": "1.19.0",
+  "version": "1.19.1",
   "description": "Headless components: the measure/draw contract, button and row-list layout, and the focus scope that a DOM component and a canvas-drawn widget share. No React, no DOM.",
   "weasel": {
     "tier": "other"
@@ -40,7 +40,7 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.19.0"
+    "@weasel-js/geom": "1.19.1"
   },
   "publishConfig": {
     "access": "public",

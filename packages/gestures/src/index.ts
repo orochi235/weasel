@@ -81,6 +81,7 @@ export type {
   PinchEvent,
   PointerSampleStylus,
   PointerIdentity,
+  PointerButton,
   PointerDownEvent,
   PointerMoveEvent,
   HoverEvent, HoverWhere,
@@ -110,10 +111,12 @@ export type {
 export { hitPredicate, bodyPredicate } from './ui/spec';
 
 // Pure matcher functions
-export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, parseTargetSpec, chordCodesFor, CHORD_MODIFIERS } from './ui/match';
+export { matchSpec, matchModifiers, matchKey, matchKeyEvent, matchTarget, matchPhase, parseTargetSpec, chordCodesFor } from './ui/match';
+export { CHORD_MODIFIERS } from '@weasel-js/ui-input';
 export { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ui/ingestTypes';
 export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
 export { isApplePlatform } from './ui/platform';
+export { historyKey } from './ui/historyKey';
 
 // Shortcut legends: how a keyboard prints a binding's keys, per platform
 export { keySpecsFromMods, keySpecFromKey, detectPlatform, MODIFIER_LABELS } from './ui/keySpecsFromMods';
@@ -145,6 +148,7 @@ export { createPointerRecognizer } from './recognizer/pointerRecognizer';
 export type {
   PointerRecognizer, PointerRecognizerOptions, RecognizerObserver, RecognizerSink,
 } from './recognizer/pointerRecognizer';
+export { pointerDownEvent } from './recognizer/samples';
 export type { PointerSample, PressSample } from './recognizer/samples';
 export type { HeldPress, RecognizerClock } from './recognizer/longPressHold';
 export type { ClickMemory, ClickObserver, ReleaseOutcome } from './recognizer/click';
@@ -152,5 +156,6 @@ export { multiTouchGeometry, type MultiTouchGeometry, type Point } from './recog
 export { clickEvents, longPressEvents } from './recognizer/pressFacts';
 export type { PressFacts, ReleaseFacts } from './recognizer/pressFacts';
 export { CONTROL_SELECTOR, isInControlWithin } from './ui/controlTarget';
+export { isPrimaryPress, pressButtonOf } from './ui/pressButton';
 export { heldPointers, type HeldPointers } from './ui/heldPointers';
-export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from './ui/keyOwner';
+export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget, textOwnsChord } from './ui/keyOwner';

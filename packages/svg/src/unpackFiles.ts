@@ -6,12 +6,9 @@ import { parseSvg } from './parse';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { svgNodesToKitDrafts } from './unpack';
 import {
-  booleanGroupFields,
   createInsertOp,
   dwarn,
-  localizeWorldPoses,
   unionAABB,
-  type BooleanShapeOp,
   type IngestCtx,
   type Op,
   type PoseComposition,
@@ -20,6 +17,7 @@ import {
   type TextStyle,
 } from '@weasel-js/core';
 import type { SvgDraftPose } from './draftPose';
+import { svgDraftSpecs } from './draftSpecs';
 
 const CASCADE_OFFSET_PX = 24;
 const VIEWPORT_FIT = 0.9;
@@ -53,12 +51,6 @@ function scaleLeafData(
   return out;
 }
 
-/** A boolean group's fields and data, its path left to the derivation. */
-function asBooleanGroup(op: BooleanShapeOp, data: Record<string, unknown>) {
-  const { path: _path, ...rest } = data;
-  return { ...booleanGroupFields<SvgDraftPose>(), data: { ...rest, boolean: op } };
-}
-
 /**
  * Parse each file and insert its node tree, one undo step per file. Pass it
  * as `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>`.
@@ -67,8 +59,8 @@ function asBooleanGroup(op: BooleanShapeOp, data: Record<string, unknown>) {
  * drop point (or the viewport center), with later files cascading by a fixed
  * offset. A multi-root file is wrapped in one container so it arrives as a
  * single selectable unit. Content the file hides arrives hidden
- * (`SceneNode.hidden`) rather than being left out. A file that fails to parse, or parses to nothing,
- * is skipped with a `console.warn`.
+ * (`SceneNode.hidden`) rather than being left out. A file that fails to parse, parses to nothing,
+ * or cannot be inserted is skipped with a `console.warn` saying which.
  */
 export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<void> {
   const layer = ((ctx.scene.layers[0]?.id as string | undefined) ?? 'default');
@@ -77,6 +69,10 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
     try {
       const text = await readFileText(file);
       const parsed = parseSvg(text, { keepHidden: true });
+      if (parsed.error !== undefined) {
+        console.warn(`weasel ingest: svg "${file.name}" failed to parse: ${parsed.error}`);
+        continue;
+      }
       for (const w of parsed.warnings) dwarn('ingest', `svg "${file.name}":`, w);
       let drafts = svgNodesToKitDrafts(parsed, () => ctx.scene.mintId());
       if (drafts.length === 0) {
@@ -119,31 +115,15 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
         height: p.height * scale,
       });
 
-      // Measured in world; each pose is stored in its container's frame.
-      const placed = localizeWorldPoses(
-        drafts.map((d) => ({ id: d.id, parent: d.parentId, pose: place(d.pose) })),
-        ctx.scene.composition as PoseComposition<SvgDraftPose>,
-      );
-      const ops: Op[] = drafts.map((d, i) =>
-        createInsertOp({
-          node: {
-            id: d.id,
-            kind: d.kind,
-            layer,
-            pose: placed[i]!.pose,
-            data: d.kind === 'mark' ? scaleLeafData(d.data, scale) : d.data,
-            ...(d.kind === 'mark' && d.boolean ? asBooleanGroup(d.boolean, scaleLeafData(d.data, scale)) : {}),
-            parent: d.parentId,
-            ...(d.clip ? { clip: d.clip } : {}),
-            ...(d.hidden ? { hidden: true } : {}),
-          } as unknown as { id: string },
-          label: 'Insert SVG',
-        }),
-      );
+      const placed = drafts.map((d) => ({
+        ...d, pose: place(d.pose), ...(d.kind === 'mark' ? { data: scaleLeafData(d.data, scale) } : {}),
+      }) as typeof d);
+      const specs = svgDraftSpecs(placed, { layer, composition: ctx.scene.composition as PoseComposition<SvgDraftPose> });
+      const ops: Op[] = specs.map((node) => createInsertOp({ node: node as unknown as { id: string }, label: 'Insert SVG' }));
       ctx.applyOps(ops, 'Insert SVG');
       index++;
     } catch (err) {
-      console.warn(`weasel ingest: svg "${file.name}" failed to parse`, err);
+      console.warn(`weasel ingest: svg "${file.name}" was not inserted`, err);
     }
   }
 }

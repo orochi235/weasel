@@ -1,4 +1,4 @@
-import { LabShell } from '@weasel-js/labkit';
+import { Lab } from '@weasel-js/labkit';
 import { openPrefsSync, prefValueAtPath, type PrefGroup, type PrefsStore } from '@weasel-js/prefs';
 import { usePrefsValues } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
@@ -14,7 +14,9 @@ import { weaselTheme, type Theme } from '@weasel-js/theme';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { useMemo, useState } from 'react';
 import { LABS, THEME_PREFS_LAB } from '../../shared/labs';
+import { HistorySlot } from './HistorySlot';
 import { ThemePreview } from './ThemePreview';
+import { usePrefsHistory } from './usePrefsHistory';
 import { tokenReferenceRenderer } from './TokenReference';
 import styles from './ThemePrefs.module.css';
 
@@ -34,7 +36,8 @@ const PREFIX = 'theme-prefs.';
  */
 export function ThemePrefs({ theme = weaselTheme, storage = localStorageAdapter }: ThemePrefsProps) {
   const [store] = useState(() => openPrefsSync(themePrefsSchema(theme), { storage, prefix: PREFIX }) as PrefsStore<PrefGroup>);
-  const { set, unset, reset, setAt } = usePrefsValues(store);
+  const { unset } = usePrefsValues(store);
+  const { history, set, reset, setAt } = usePrefsHistory(store);
   const { values, scopes } = themePrefsValues(store, theme);
   const { mode: _mode, ...selection } = themePrefsSelection(store);
   const axis = themeAxisPath('');
@@ -46,7 +49,8 @@ export function ThemePrefs({ theme = weaselTheme, storage = localStorageAdapter 
     [store],
   );
   return (
-    <LabShell title="Theme prefs" pages={LABS} path={THEME_PREFS_LAB.href}>
+    <Lab title="Theme prefs" pages={LABS} path={THEME_PREFS_LAB.href}>
+      <HistorySlot history={history} />
       <div className={styles.layout}>
         <div className={styles.form}>
           <PrefsForm
@@ -69,6 +73,6 @@ export function ThemePrefs({ theme = weaselTheme, storage = localStorageAdapter 
           <ThemePreview variants={[{ label: 'Pinned', theme: themeFromPrefs(store, theme) }]} selection={selection} />
         </div>
       </div>
-    </LabShell>
+    </Lab>
   );
 }

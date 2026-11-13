@@ -9,14 +9,15 @@ import { TemplateDialog } from './templates/TemplateDialog';
 import { chartThemeOf } from './theme/themeCommands';
 
 /** File › New…: a dialog listing every page template, which replaces the chart with a one-page chart made from the
- *  template chosen, in the chart's theme. */
-export function NewChart({ scene }: { scene: ChartScene }): ReactElement | null {
+ *  template chosen, in the chart's theme. `onReplaced` runs once it has. */
+export function NewChart({ scene, onReplaced }: { scene: ChartScene; onReplaced: () => void }): ReactElement | null {
   const [open, setOpen] = useState(false);
   useNewCommand(CHART_ACTIONS.new, 'New…', () => setOpen(true));
   if (!open) return null;
   const create = (template: PageTemplate) => {
     const drawn = templateSpecs(template, { layer: 'shapes', theme: chartThemeOf(scene), measure: rendererMeasure, size: CHART_PAGE });
     replaceChartWithDocument(scene, drawn, 'New chart');
+    onReplaced();
     setOpen(false);
   };
   return <TemplateDialog title="New Chart" action="Create" initial={FLOWCHART_TYPE.id} onChoose={create} onClose={() => setOpen(false)} />;

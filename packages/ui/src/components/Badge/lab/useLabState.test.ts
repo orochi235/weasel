@@ -60,4 +60,17 @@ describe('useLabState undo', () => {
     undo();
     expect(result.current[0].zoom).toBe(2);
   });
+
+  it('leaves a chord with nothing to step, and one typed in a text field, to the browser', () => {
+    renderHook(() => useLabState(ARGS));
+    const bare = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true });
+    act(() => { window.dispatchEvent(bare); });
+    expect(bare.defaultPrevented).toBe(false);
+
+    const field = document.body.appendChild(document.createElement('input'));
+    const typed = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, cancelable: true, bubbles: true });
+    act(() => { field.dispatchEvent(typed); });
+    expect(typed.defaultPrevented).toBe(false);
+    field.remove();
+  });
 });

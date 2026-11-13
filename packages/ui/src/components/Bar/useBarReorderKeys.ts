@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
 import type { PrefOrder } from '@weasel-js/prefs';
+import { isEditableTarget } from '@weasel-js/gestures';
 import { useLatest } from '@weasel-js/react';
 import { BAR_IN, BAR_UNIT } from './barOrder';
 import { BAR_LEAD } from './useBarOverflow';
@@ -31,14 +32,6 @@ export interface BarReorderKeys {
 }
 
 const FOCUSABLE = 'button, input, select, textarea, a[href], [tabindex]';
-
-const NON_TEXT_INPUTS = new Set(['button', 'checkbox', 'radio', 'range', 'submit', 'reset', 'color', 'file', 'image']);
-
-/** True where Alt+arrow means word motion: a text-entry input, or a textarea. */
-function entersText(el: Element): boolean {
-  if (el instanceof HTMLTextAreaElement) return true;
-  return el instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(el.type);
-}
 
 /** The control a unit's keys act on: the unit itself where it takes focus, else the first control inside it. */
 function focusableOf(unit: HTMLElement): HTMLElement {
@@ -76,7 +69,7 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, dir, keysO
     const keys = enabled ? (vertical ? 'Alt+ArrowUp Alt+ArrowDown' : 'Alt+ArrowLeft Alt+ArrowRight') : null;
     for (const unit of el.querySelectorAll<HTMLElement>(`[${BAR_UNIT}]`)) {
       const control = focusableOf(unit);
-      if (keys === null || entersText(control)) control.removeAttribute('aria-keyshortcuts');
+      if (keys === null || isEditableTarget(control)) control.removeAttribute('aria-keyshortcuts');
       else control.setAttribute('aria-keyshortcuts', keys);
     }
   });
@@ -91,7 +84,7 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, dir, keysO
     const back = delta < 0;
     const target = e.target as Element;
     // A dock's handle answers to Alt+arrows itself, moving the whole bar.
-    if (entersText(target) || target.closest?.(`[${BAR_LEAD}]`)) return;
+    if (isEditableTarget(target) || target.closest?.(`[${BAR_LEAD}]`)) return;
     const grabbed = target.closest?.(`[${BAR_UNIT}]`);
     if (!grabbed || !el.contains(grabbed)) return;
     const { container, key } = grabbedUnit(grabbed, e.shiftKey);

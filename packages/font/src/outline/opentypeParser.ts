@@ -125,6 +125,8 @@ function isSfnt(bytes: ArrayBuffer): boolean {
   return tag === 0x00010000 || tag === 0x74727565 || tag === 0x4f54544f;
 }
 
+const isWoff2 = (bytes: ArrayBuffer): boolean => bytes.byteLength >= 4 && new DataView(bytes).getUint32(0) === 0x774f4632;
+
 const isCff = (bytes: ArrayBuffer): boolean => bytes.byteLength >= 4 && new DataView(bytes).getUint32(0) === 0x4f54544f;
 
 const finiteOr = (n: number | undefined, fallback: number): number => (Number.isFinite(n) ? n! : fallback);
@@ -172,6 +174,10 @@ function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer, ascent
  */
 export function createOpenTypeParser(postScriptName?: string): OutlineParser {
   return async (bytes: ArrayBuffer): Promise<OutlineFace> => {
+    if (isWoff2(bytes)) {
+      throw new Error('the file is WOFF2, whose compression the outline parser cannot read; '
+        + 'register the face\'s TTF, OTF or WOFF file instead');
+    }
     const parse = parserOf(await loadOpenType());
     const { bytes: single, matched, names } = sfntFromCollection(bytes, postScriptName);
     if (!matched) {

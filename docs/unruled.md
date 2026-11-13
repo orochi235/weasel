@@ -242,6 +242,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-11-11 (my call, audit round 16, history lane): `scene.jumpToHistoryIndex` (draw's History panel) does nothing
+  and returns false while a journal is open, where it walked the scene stack beneath the journal's applied edits.
+  Rejected: committing the journal first, which would end the user's mode from a click on the panel.
+- 2026-11-11 (my call, audit round 15, scene lane): `sceneToAdapter(scene)` and `useSceneAdapter(scene)` given no
+  `selection` read and write the scene's own selection, where they answered `[]` and dropped writes. The boolean,
+  outline and shape-builder actions read `adapter.getSelection()` and acted on nothing through such an adapter.
 - 2026-11-11 (my call, core actions second property pass): a drag's pointer that is no finite number lands nowhere,
   as routing's sweep and kernel3d's camera already had it. Every drag `inPlane` wraps, the marquee, and the lasso
   decline a press at such a point; move, resize, rotate, clone, insert, the marquee, and the lasso skip such a move
@@ -416,6 +422,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   and `remapRotatedLeaf` share. The true factor is past the double range.
 
 ## Rendering, canvas, and paint
+- Open (2026-11-11, audit round 16, errors lane): whether a node whose `drawOne` throws should cost only that node.
+  Today it costs the frame, on the page and in the render worker alike (each retries once, then waits for a change),
+  while a contribution's `beforePaint`/`afterPaint`, an outline glyph, and an ingest handler each cost only
+  themselves. Isolating it means a try in the command build, which every `drawOne` call site in core shares.
 - 2026-11-11 (my call, core canvas second pass): `reconcileSpecs` puts a group's member back on its own layer after
   the group's spec changes layer and the member's does not, wherever the group's new layer allows; `setLayer` alone
   still carries the whole subtree (fef31b751). The member's spec says where it stands, which is what the render
@@ -888,6 +898,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- Open (2026-11-11, audit round 15, leftovers lane): which minus sign a formatted number uses, and one formatter
+  for both. quantity writes a negative with U+2212 (`MINUS_SIGN`, `packages/quantity/src/number.ts`), and plot's
+  `formatTick` (`packages/plot/src/scales/tickFormat.ts`) writes `toFixed`'s hyphen-minus, so a chart's tick reads
+  `-5` beside a readout of `−5`. Left as it is: the fold is either plot formatting ticks through quantity, or both
+  reading one shared sign, and which sign a tick label should carry (U+2212 also changes a copied label) is a call.
 - Ruled 2026-11-10 (my call, overnight sweep): a tiling's `columns` is held to at most 2^24, so an `Infinity`
   count lays its items out in one row with finite, whole tracks; past that, a stretched row's tracks stop being
   whole numbers. Why: an input past the double range is handled at its limit.
@@ -924,6 +939,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   is a lone combining mark no longer finds one the text composed into the letter before it.
 - 2026-11-11 (my call, same pass): select's presses, ranges, and store read ids as a `Set` does, `NaN` one id and
   `-0` the same as `0`, as ui-input's selection values do.
+- 2026-11-11 (my call, audit round fifteen): a menu takes a space typed within the typeahead window of a letter
+  as part of the search, as `rowKey` lists and the hud list do, so typing "save a" finds "Save As…" rather than
+  choosing "Save" at the space. A space with no live search still chooses.
 - Open (2026-11-11): `matchQuery` and typeahead lowercase rather than case-fold, so `STRASSE` does not find `Straße`.
 - Open (2026-11-11): `deepEqual` over values that hold themselves (an array whose item is the array) overflows the
   stack rather than answer.
@@ -1068,6 +1086,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Diagram, audio, and labkit
 
+- Open (2026-11-11, audit round 15, leftovers lane): how close together two edits must be to undo as one step,
+  and who sets it. labkit merges a trial's config writes to one path within a hardcoded 500 ms (`GESTURE_MS`,
+  `packages/labkit/src/trial/useTrialWrites.ts`); ui exposes the same idea as the kit setting `history.coalesceMs`,
+  default 800 (`packages/ui/src/kitSettings.ts`), read by `PrefSchemaEditor`; ui's Badge lab uses its own 300
+  (`packages/ui/src/components/Badge/lab/useLabState.ts`). Left as they are: folding them means picking one default
+  and whether labkit reads the kit setting.
 - Ruled 2026-11-10 (my call, overnight sweep): the avoid router reroutes a connector its last commit
   found no path for only when something it depends on changes (its ends or stops, an attached shape, an
   obstacle meeting the line it falls back to), so an unchanged scene answers nothing. A commit retries
@@ -1286,6 +1310,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 - 2026-10-18: "Snap to grid" also snaps resize corners, inserts and pen clicks, as its description
   already said.
+- 2026-11-11 (my call, audit round 16, errors lane): a stored document `readStored` cannot parse is copied to
+  `<key>:unreadable` with a `console.error`, then the app starts from its fallback as before, and nothing tells the
+  user. Open: whether draw and chart should toast it, and whether anything should offer the copy back.
 
 ## Build
 
@@ -1661,3 +1688,208 @@ Calls the lanes made without a ruling:
 - Open: `Slider` commits through `onChange` when a press or keystroke moves nothing.
 - Open: which edge an RTL menu favors when it fits on neither side, or is wider than the viewport. menu's placement
   property skips both cases (2026-11-10).
+
+## Audit round sixteen (2026-11-11): contracts
+
+- Open: a mixed number slider in `PropertyField` disables its track and reads out a dash that takes no focus, so it
+  cannot be edited, while `PrefsForm`'s `mixed` says editing one calls `onChange` as usual. A test pins the disabled
+  track ("parks a mixed slider").
+- Open: `Slider`'s region drag moves the two thumbs beside it by one track distance with no `step` or stop snapping,
+  and a shift-all drag snaps to `step` even under `snap: 'strict'`, which says `step` no longer applies and every
+  stop is a detent. Under strict stops spaced unevenly, both thumbs cannot land on stops and keep their gap.
+- Open: a `ControlPanel` group drawn `as: 'bar'` hands its cells no `errors`, `changed` or `auto`, so an error, a
+  changed mark or an auto readout on a bar leaf does not show. A paired row shows errors and `changed`, not `auto`.
+- Open: `selectTool.pickBest` steers only the internal select tool's own pick; the dispatcher, hover and `onClick`
+  pick the topmost hit, so with alt-cycling `onClick` can name a different node from the one the press selected.
+
+## Audit round sixteen (2026-11-11): leftovers
+
+- A raw `History`'s `undo`, `redo` and `goto` throw while a journal is active, as `beginJournal` does, rather than
+  stepping into the journal as the scene facade's `undo` does (2026-11-12).
+- A snapshot in an unsupported version throws `SnapshotShapeError`, checked before any node; an unregistered
+  function key throws a new `SnapshotKeyError` carrying `id`, `field` and `key` (2026-11-12).
+- A text edit takes focus back from a checkbox or a slider in its chrome after styling, as from a button, since
+  text-dom now asks gestures' `isEditableTarget`; arrow keys on a slider then reach the text, not the slider
+  (2026-11-12).
+- Open: whether Mod+Z in a text field inside an editor with its own history (`PrefSchemaEditor`'s fields,
+  `CssVarsPanel`'s apart from its filter) steps the editor or is left to the field. Page-level handlers leave it to
+  the field (`undoKeyStep`); these two take it.
+- Open: draw's soft modes without a journal cannot discard an edit that coalesced into the entry before the mode,
+  and a text box's typing coalesces into its insert on purpose (`useTextEditSession`'s "one undo entry with its
+  insert"). Sealing the history on entry fixes discard and splits that entry. No soft mode has a coalescing edit
+  today.
+- Open: whether a `LensCapture`'s bitmap stays valid after the source's next capture. The Pixels source closes the
+  captures it throws away, and leaves a replaced shot open because `capture()` handed it to a caller that may paint
+  it later.
+- Open: whether paint keeps a lerp of its own (no dependencies) or takes geom's, which also stays finite where
+  `b - a` overflows. d3's transition pins `t` 0 and 1 over a pose descriptor's lerp; that is not a copy.
+- Open: whether `useGestureDispatcher`'s `views` (multi-view routing, which core fills through
+  `@weasel-js/routing/internal`) becomes public surface.
+- Open: whether `@weasel-js/brush`, one 14-line helper over routing's tool options, stays a package of its own.
+- Open: ui and 19 other packages promise `react >=18`, and nothing runs their tests under React 18. labkit and forge
+  ask for `^19.0.0`.
+
+## Audit round seventeen (2026-11-12): params
+
+- A color leaf the selected nodes do not hold draws as `mixed` does, an empty checkered swatch with its opacity
+  locked until a color is picked, rather than the leaf's default; `ColorField` takes `unset` for it (2026-11-12).
+- Open: a paint leaf the nodes do not hold still shows the leaf's default, dimmed, as `PaintField`'s `unset` says
+  ("a value is in effect but was never chosen"). Under `SelectionPanel` that default is not what paints, since
+  `absentIsDefault` is what makes the default the value in effect; `FieldBase.unset` says a control shows no
+  value there. Whether paint follows color to an empty trigger.
+- Open: labkit fills a stored trial's missing config keys from its instrument's defaults on load, and repairs
+  nothing against the config schema: a number past a since-narrowed `max`, or an enum option since removed, reaches
+  the instrument and the panel as stored, and only the next edit clamps it. Repairing on load needs the schema at
+  hydration and has to leave `minAt`/`maxAt` bounds, auto values and encoded leaves alone.
+
+## Audit round seventeen (2026-11-12): theme
+
+- Open: whether `PlotView` with no `theme` follows the nearest `ThemeProvider`, as `useHud` does, or keeps drawing
+  `PLOT_THEME`, the weasel theme's dark mode, as documented. In a light-mode provider its text and axes are drawn in
+  dark mode's near-white `fg`. Ties to the `docs/TODO.md` entry on whether the site's `.ckd-canvas` stage follows the
+  mode.
+
+## Audit round seventeen (2026-11-12): persistence
+
+- Pasting again from a canvas's in-memory clipboard re-snapshots what the last paste made, falling back to the
+  made nodes only when the adapter's snapshot comes back empty (a React-state adapter not yet flushed), so the
+  next paste reads them in world as a copy does (2026-11-12).
+- draw's SVG Save writes a node's Layers-panel name as `wd:label` and its lock as `wd:locked="true"`, and Open and
+  Import restore both, locking after the nodes are added (2026-11-12).
+- `nodeSpecsFromSnapshot`'s new `systemLayers` builds the specs into a scene of those layers to prove they load,
+  so draw and chart build one scene more at boot (2026-11-12).
+- Open: Cmd+V pastes the OS clipboard's copy through the weasel-JSON handler at the adapter's fixed offset from the
+  copied nodes every time, while the Paste button steps on from its last paste or lands at the pointer. Both put
+  the same nodes in history, but a run of Cmd+V stacks every paste on one spot.
+
+## Audit round seventeen (2026-11-12): consumer setup
+
+- Open: diagram's paired helpers (`diagramPorts`, `diagramWaypoints`, `diagramEdgeEnds`, `diagramLabelDrag`, the
+  container and sequence ones) hand back a layer to `registerLayer` and a contribution for `ambient`, so the README
+  has a consumer hold a canvas ref and register the layer in an effect. `SurfaceContribution.attach` exists for
+  exactly this ("a registered (hit-testable) layer"), and the minimap registers through it. Moving each layer into
+  its contribution's `attach` makes one `ambient` entry the whole install, but breaks a consumer who also
+  registers the layer, and `DiagramView` would have to stop registering its own; hit order would then follow
+  `ambient` order rather than `useDiagramEditing`'s `layers` order. The other answer is core hit-testing a
+  contribution's `overlay`, which it paints and never hit-tests.
+
+## Audit round eighteen (2026-11-12): a lab's trials
+
+- The lab store's `setTrialInstrument` is gone (`major` changeset): it kept the old instrument's state, config, view
+  and undo under the same id, and `swapTrial` is the way a trial changes instrument (2026-11-12).
+- Reset, or a snapshot loaded over a trial, cancels its running job; an `auto` job then runs again on the new state,
+  and a hand-started one stays idle until started. `useJob` takes `epoch` for it (2026-11-12).
+- A job capability takes `begin(state, config)`, the state a run folds its items into; without it each run still
+  adds to the last, so an `auto` job on a reloaded trial repeats its items unless the instrument clears them
+  (2026-11-12). Open: whether a job with no `begin` should start each run clean, which would need labkit to know
+  which part of the state the job fills.
+- Open: a snapshot saves a trial's config, state and clock but not its view, so loading one keeps the pan and zoom
+  the trial shows now rather than what it showed when saved. Saving the view would change every snapshot record.
+
+## Audit round eighteen (2026-11-12): document
+
+- 2026-11-12 (my call, after the 2026-11-09 Delete ruling): Delete Page, in draw and chart alike, is disabled with
+  `ActionDisabledReason.Locked` while the page, anything on it, or anything its delete cascades to is locked
+  (`DocPages.removable`). It used to throw from the scene and change nothing. New and Open still replace locked
+  content, since they replace the whole document.
+
+## Audit round eighteen (2026-11-12): canvas view
+
+- `viewBounds` holds the view through a size change as well as a write: a canvas's `defaultView` is clamped
+  once the canvas has a size, and a resize (a window, a panel shown again after `display: none`) moves the view
+  back inside, reporting it to `onViewChange` as an input write would. A `<CanvasView>` does the same when a
+  commit leaves its rect another size. `'content'` bounds never move a view this way, since they always take in
+  what it shows (2026-11-12).
+
+## Audit round nineteen (2026-11-12): not English on a US keyboard
+
+- Ruled 2026-11-12 (Mike, 2026-11-12: respect the locale where it can be done reliably): the number fields show and
+  read in the user's locale. `UnitField` takes a `locale` prop and otherwise follows React Aria's (`useFieldLocale`):
+  the nearest `<I18nProvider locale>`, else `navigator.language`, else `en-US`, so one provider sets every field,
+  React Aria's `NumberField` included. `PropertyPanel`'s number controls and read-only numbers, the DOM menu's number
+  rows and, through `navigator.language` or a `locale` option, the hud menu's follow it. Display and parse go through
+  that one locale on every path; `compact` and `zoom`, which wrote `en-US` everywhere, now write the locale too, with
+  the `K`/`M`/`B`/`T` suffix kept. `fieldLocale` keeps a locale only where its numbers read back as shown, else
+  writes it with Latin digits (`-u-nu-latn`), else falls back to `en-US`; every locale tried, non-Latin digits
+  (`ar-EG`, `hi-IN-u-nu-deva`, `fa-IR`, `th-TH-u-nu-thai`) included, reads back without a fallback.
+- Mike, 2026-11-12: respect the Ctrl text-editing shortcuts on macOS. On a Mac, in text being edited, a Ctrl chord
+  without Cmd is Cocoa's Emacs-style editing (Ctrl+A, E, B, F, P, N, D, H, K, Y, T, O, V, L) and belongs to the
+  text: no kit shortcut claims it and nothing prevents its default. Off a Mac nothing changed. Built: gestures'
+  `textOwnsChord(e, isMac)` holds the rule; text-dom's style shortcuts take Cmd only on a Mac; a HUD menu text row,
+  which edits for itself, takes Cmd+A as select-all and Ctrl+A, E, B, F, P, N, D, H, K, Y and T as a one-line Cocoa
+  field does: Ctrl+K cuts into a kill buffer the menu's text rows share, Ctrl+Y enters it at the caret, and Ctrl+T
+  swaps the grapheme clusters either side of the caret, the last two at the line's end. Ctrl+O, V and L open a line,
+  page down and center, which mean nothing in a one-line field. Every other key handler reads `mod` or skips
+  editable targets already.
+
+## Audit round nineteen (2026-11-12): the user's settings
+
+- Under `prefers-reduced-motion` a kit default that moves something yields: an animated camera move and an animated
+  reflow take no time unless the caller names an `ms`, and ui's switch, radio and `ControlMatrix` switch drop their
+  transitions (2026-11-12).
+- Open: a hand-tool pan with `inertia` still coasts after release under `prefers-reduced-motion`, and with
+  `boundary: 'bounce'` or `'spring'` bounces off the pan limits. `animatedZoom: true` goes instant under the same
+  preference, so the two `viewport` options disagree; but platform scroll views keep their momentum with Reduce
+  Motion on. Whether reduced motion drops the coast, only the bounce, or neither.
+
+## Audit round nineteen (2026-11-12): touch and pen
+
+- 2026-11-12 (the lane's call): every kit `<Canvas>` that takes input sets `touch-action: none` at zero specificity, so
+  a `<SceneCanvas>` inside a labkit camera with `data-lk-touch='scroll'` keeps one-finger touch for its own tools
+  rather than scrolling the page. A consumer class can set `touch-action` back.
+
+## Audit round twenty (2026-11-12): a poster designer
+
+- Open: copying a styled range out of one text box and pasting it into another keeps only bold, italic, the rules
+  and super- and subscript; a run's own face, size, color and letter spacing take the destination's, because the
+  paste reads the browser's copied markup, where those cannot be told from the source page's defaults (text-dom's
+  README says so). Whether a copy made in the edit overlay should keep them. If so, the overlay writes its own runs
+  to the clipboard on copy and cut, beside `text/plain` and `text/html`, and `clipboardRuns` prefers them.
+- Open, and seen again (see the 2026-11-10 entry on italic and weight): a consumer who registers one face of a
+  custom font with `registerFontOutlines` and bolds a word gets the word set in the default family, or not drawn
+  where there is none or under the `'none'` policy, where an atlas face would fake the weight (run in jsdom).
+
+## Audit round twenty (2026-11-12): app settings and an inspector
+
+- 2026-11-12 (the lane's call): `@weasel-js/ui` re-exports React Aria's `I18nProvider`, and its README tells a
+  consumer to set number fields' locale with that one. ui pins `react-aria-components` exactly, so a provider from a
+  consumer's own copy of another version holds a locale the fields never read.
+- 2026-11-12 (the lane's call): `PrefsForm` takes `errors`, a `ReadonlyMap` from leaf path to message, shown under the
+  leaf's row through `PropertyRow`'s `error`. A map, as `auto` and `mixed` are sets, rather than a `validate` field on
+  the leaf: what counts as wrong is the caller's to say. `SelectionPanel` has no such prop yet.
+- 2026-11-12 (the lane's call): `usePrefsValues` returns `setAuto(path, next)` for `PrefsForm`'s `onAutoChange`, where
+  its JSDoc had offered `reset`. It pins at `store.get(path)`; theme-editor keeps its own, which pins at the value the
+  pinned theme shows.
+- Open: `Slider` now follows the number fields' locale, but number text that only displays does not:
+  `QuantityText` defaults to `en-US` as its JSDoc says, and `MeasureReadout`, the timeline's `Transport` and ruler,
+  and the gradient editor's stop positions write `en-US` always. Whether the 2026-11-12 locale ruling reaches them.
+
+## Audit round twenty (2026-11-12): an animated presentation
+
+- 2026-11-12 (the lane's call): a timeline's `seek` or `edit` between frames shows the targets its tracks hold
+  before it returns, as it already called a track's `onTick`; a seek inside a frame still shows with that frame.
+  Before, the target read the new value at once but showed it at the next frame, so a render right after a seek drew
+  the frame before.
+- Open: scrubbing `<AnimatedTransport>` or `<AnimatedTimeline>` seeks a playing timeline and leaves it playing, as
+  `<AnimatedTimeline>` always has. The timeline demo, which wired `<Transport>` by hand until 2026-11-12, paused on a
+  scrub. Whether a scrub pauses playback.
+
+## Audit round twenty (2026-11-12): a vector drawing app
+
+- 2026-11-12 (the lane's call): a drag inserting a consumer-defined kind previews the outline of the box it will
+  fill, as a rect drag does, where it used to show nothing until release. A kind whose descriptor sets
+  `insertPreview: false` (pen, lasso) still shows none. The alternative is previewing the node itself, through the
+  insert dep's `peek` and its painter.
+- 2026-11-12 (the lane's call): `registerNodeShape` at the default priority puts a painter ahead of
+  `kit:rect-fallback`, which used to match every rect-posed node first and left a default-priority painter unable
+  to paint one.
+
+## Audit round twenty (2026-11-12): a tuning lab
+
+- A settings edit that sends drafts (a slider drag, a number typed, a color dragged) is one undo step from its first
+  draft to the value it settles on, however long it pauses; a write with no drafts still runs together with the
+  next by labkit's 500 ms gap, which the round-15 entry above leaves open (2026-11-12).
+- Open: a trial's Load snapshot menu offers only the snapshots that trial saved, though the store loads any
+  snapshot of the same instrument into any trial. So a snapshot cannot be loaded into a clone to compare it with
+  the trial that saved it, and a lab wanting presets shared across trials lists `useLabContext().savedSnapshots`
+  itself. Whether the menu offers every snapshot of the instrument, groups them by trial, or stays per trial.

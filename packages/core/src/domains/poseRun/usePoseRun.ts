@@ -147,6 +147,7 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
   // The gate defaults an absent clock to `requestAnimationFrame` itself, so
   // these pass straight through rather than being defaulted twice.
   const loop = useVisibleRaf((_time, loop) => { tick(loop); }, {
+    phase: 'update',
     requestFrame: opts.requestFrame,
     cancelFrame: opts.cancelFrame,
   });
@@ -155,6 +156,8 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     mounted.current = true;
     return () => {
       mounted.current = false;
+      // Not running once unmounted, so the `start` a remount makes (StrictMode's, an Activity shown again) runs.
+      running.current = false;
       loop.cancel();
       // Teardown is not a decision: an unmounted run abandons its frames
       // rather than writing them.

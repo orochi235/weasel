@@ -40,6 +40,13 @@ describe('matchesKeyBinding', () => {
     expect(matchesKeyBinding(key('d'), { key: 'd', shift: 'optional' }, PC)).toBe(true);
     expect(matchesKeyBinding(key('d'), { key: ['x', 'd'] }, PC)).toBe(true);
   });
+
+  it('matches a chord on a non-Latin layout by the letter its key bears, as the dispatcher does', () => {
+    // A Russian layout reports Ctrl+S as Ctrl+ы.
+    expect(matchesKeyBinding({ ...key('ы', { ctrl: true }), code: 'KeyS' }, { key: 's', mod: true }, PC)).toBe(true);
+    // Alone, the key is what it typed.
+    expect(matchesKeyBinding({ ...key('ы'), code: 'KeyS' }, { key: 's' }, PC)).toBe(false);
+  });
 });
 
 describe('historyKey', () => {
@@ -53,6 +60,16 @@ describe('historyKey', () => {
   it('reads Shift+Mod+Z and Mod+Y as redo', () => {
     expect(historyKey(key('Z', { meta: true, shift: true }), MAC)).toBe('redo');
     expect(historyKey(key('y', { ctrl: true }), PC)).toBe('redo');
+  });
+
+  it('reads the Z and Y keys on a non-Latin layout, which report the character they type', () => {
+    // Russian: Z types я, Y types н. Hebrew: Z types ז.
+    expect(historyKey({ ...key('я', { meta: true }), code: 'KeyZ' }, MAC)).toBe('undo');
+    expect(historyKey({ ...key('Я', { meta: true, shift: true }), code: 'KeyZ' }, MAC)).toBe('redo');
+    expect(historyKey({ ...key('н', { ctrl: true }), code: 'KeyY' }, PC)).toBe('redo');
+    expect(historyKey({ ...key('ז', { ctrl: true }), code: 'KeyZ' }, PC)).toBe('undo');
+    // AZERTY types z on the W key, and is read by what it typed.
+    expect(historyKey({ ...key('z', { ctrl: true }), code: 'KeyW' }, PC)).toBe('undo');
   });
 
   it('leaves everything else alone', () => {

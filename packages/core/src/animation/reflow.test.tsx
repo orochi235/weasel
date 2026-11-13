@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
+import { stubReducedMotion } from '@weasel-js/react/testing/stubMatchMedia';
 import { createScene } from '../core/scene/scene';
 import { effectivePose } from '../core/scene/effectivePose';
 import type { NodeId, RectPose } from '../core/scene/types';
@@ -360,6 +361,30 @@ describe('useAnimatedReflow', () => {
     act(() => { result.current!.glide(a, at(100)); });
     frame(0);
     frame(100);
+    expect(where(a).x).toBeCloseTo(50);
+  });
+});
+
+describe('reflow under prefers-reduced-motion', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('moves a node to its slot at once in place of the default duration', () => {
+    stubReducedMotion(true);
+    const { animator, frame, scene, a, where } = setup();
+    const reflow = createReflowTransition(scene, animator(), { easing: linear });
+    act(() => { reflow.glide(a, at(100)); });
+    frame(0);
+    frame(16);
+    expect(where(a).x).toBe(100);
+  });
+
+  it('leaves a duration the options name', () => {
+    stubReducedMotion(true);
+    const { animator, frame, scene, a, where } = setup();
+    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    act(() => { reflow.glide(a, at(100)); });
+    frame(0);
+    frame(50);
     expect(where(a).x).toBeCloseTo(50);
   });
 });

@@ -1,6 +1,6 @@
 {
   "packages/animator/src/engine/codec.ts": {
-    "longestFunction": 141
+    "longestFunction": 139
   },
   "packages/animator/src/timeline/booking.ts": {
     "longestFunction": 135
@@ -22,10 +22,10 @@
     "longestFunction": 232
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 510
+    "lines": 509
   },
   "packages/core/src/core/scene/kitOps.ts": {
-    "longestFunction": 179
+    "longestFunction": 167
   },
   "packages/core/src/core/scene/nodeStore.ts": {
     "longestFunction": 201
@@ -34,7 +34,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 517
+    "lines": 506
   },
   "packages/core/src/domains/paths/penPreviewLayer.ts": {
     "longestFunction": 138
@@ -72,7 +72,7 @@
     "longestFunction": 228
   },
   "packages/forge/src/shell/useStoryRegistry.ts": {
-    "longestFunction": 186
+    "longestFunction": 183
   },
   "packages/forge/src/vite/depGraph.ts": {
     "longestFunction": 176
@@ -91,10 +91,7 @@
     "longestFunction": 394
   },
   "packages/hud/src/attach.ts": {
-    "longestFunction": 148
-  },
-  "packages/hud/src/hud.ts": {
-    "longestFunction": 125
+    "longestFunction": 140
   },
   "packages/hud/src/loupe/createLoupe.ts": {
     "longestFunction": 212
@@ -103,7 +100,7 @@
     "longestFunction": 228
   },
   "packages/kernel3d/src/deps.ts": {
-    "longestFunction": 147
+    "longestFunction": 139
   },
   "packages/labkit/src/annotations/AnnotationOverlay.tsx": {
     "longestFunction": 169
@@ -125,7 +122,7 @@
     "longestFunction": 206
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 178
+    "longestFunction": 171
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
@@ -147,16 +144,16 @@
     "longestFunction": 194
   },
   "packages/labkit/src/state/store.ts": {
-    "longestFunction": 167
+    "longestFunction": 161
   },
   "packages/labkit/src/surface/useTiledSurface.ts": {
-    "longestFunction": 241
+    "longestFunction": 240
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "longestFunction": 304
+    "longestFunction": 302
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 201
+    "longestFunction": 200
   },
   "packages/renderer/src/WeaselRenderer.ts": {
     "lines": 520
@@ -174,8 +171,8 @@
     "lines": 511
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 506,
-    "longestFunction": 361
+    "lines": 427,
+    "longestFunction": 341
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
     "longestFunction": 126
@@ -200,7 +197,7 @@
     "longestFunction": 127
   },
   "packages/ui/src/components/BandEditor/BandEditor.tsx": {
-    "longestFunction": 231
+    "longestFunction": 229
   },
   "packages/ui/src/components/Callout/Callout.tsx": {
     "longestFunction": 136
@@ -210,11 +207,11 @@
     "longestFunction": 290
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
-    "lines": 409,
+    "lines": 405,
     "longestFunction": 309
   },
   "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {
-    "lines": 435,
+    "lines": 432,
     "longestFunction": 291
   },
   "packages/ui/src/components/DataGrid/DataGrid.tsx": {
@@ -227,7 +224,7 @@
     "longestFunction": 134
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
-    "longestFunction": 147
+    "longestFunction": 145
   },
   "packages/ui/src/components/Plot2D/Plot2D.tsx": {
     "longestFunction": 216
@@ -251,7 +248,7 @@
     "longestFunction": 132
   },
   "packages/ui/src/components/Slider/useThumbDrags.ts": {
-    "longestFunction": 133
+    "longestFunction": 132
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
     "longestFunction": 130

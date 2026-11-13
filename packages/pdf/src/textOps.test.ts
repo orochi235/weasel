@@ -175,7 +175,7 @@ describe('writeText', () => {
     expect(s).not.toContain('/Font');
   });
 
-  it('treats an outline source that throws as having no outline', async () => {
+  it('reports an outline source that throws with its error, not as a missing glyph', async () => {
     const fonts: PdfFontSource = {
       embedding: async () => null,
       outline: () => {
@@ -186,6 +186,8 @@ describe('writeText', () => {
     expect(content).not.toMatch(/\nf\n/);
     expect(skipped).toHaveLength(1);
     expect(skipped[0].detail).toContain('U+0048');
+    expect(skipped[0].detail).toContain('broken source');
+    expect(skipped[0].detail).not.toContain('no glyph to draw');
   });
 
   it('winds an outline-drawn glyph positive, as textToPath does, whichever way its face winds it', async () => {

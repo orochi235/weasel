@@ -71,16 +71,25 @@ const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
  * Formats a number the way a `compact` readout shows it: below 1,000 at
  * `decimals` places, from 1,000 up at three significant figures with a magnitude
  * suffix (`40.0K`, `294K`, `2.00M`), so the readout holds one width whatever the
- * value. Always `en-US`, so {@link parseNumber} reads it back.
+ * value. The number is written in `locale` (`40,0K` in `de-DE`) and the suffix
+ * stays the `K`/`M`/`B`/`T` that {@link parseNumber} reads in any locale, where
+ * `Intl`'s own compact words (`2 Mio.`) would not read back.
  */
-export function formatCompact(value: number, decimals = 0): string {
+export function formatCompact(value: number, decimals = 0, locale = 'en-US'): string {
   if (!Number.isFinite(value)) return formatNumber(value);
-  const options: Intl.NumberFormatOptions =
-    belowCompact(value, decimals)
-      ? { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals }
-      : { notation: 'compact', minimumSignificantDigits: 3, maximumSignificantDigits: 3 };
-  return signed(unsignedZero(value, (n) => n.toLocaleString('en-US', options)));
+  if (belowCompact(value, decimals)) {
+    const plain = { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals };
+    return signed(unsignedZero(value, (n) => n.toLocaleString(locale, plain)));
+  }
+  const parts = COMPACT_EN.formatToParts(Math.abs(value));
+  const of = (type: string) => parts.filter((p) => p.type === type).map((p) => p.value).join('');
+  const places = of('fraction').length;
+  const mantissa = Number(`${of('integer').replaceAll(',', '')}.${of('fraction') || '0'}`)
+    .toLocaleString(locale, { minimumFractionDigits: places, maximumFractionDigits: places });
+  return `${value < 0 ? MINUS_SIGN : ''}${mantissa}${of('compact')}`;
 }
+
+const COMPACT_EN = new Intl.NumberFormat('en-US', { notation: 'compact', minimumSignificantDigits: 3, maximumSignificantDigits: 3 });
 
 /** Whether `value` shows below a thousand at `decimals` places, where a compact
  *  readout writes it plain. Asked of the value as shown: 999.6 reads `1000`. */

@@ -255,7 +255,8 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
     },
     showNow(s) {
       if (!s.show) return;
-      shown(s, readTarget(s));
+      // One come to rest since the last frame shows its committed value, as that frame would have.
+      shown(s, rested.delete(s) ? s.get() : readTarget(s));
       publish();
     },
     get resting() { return rested.size > 0; },

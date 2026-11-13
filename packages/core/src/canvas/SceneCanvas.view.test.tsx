@@ -279,6 +279,27 @@ describe('SceneCanvas view bounds', () => {
     expect(onViewChange).toHaveBeenCalledWith(CLAMPED);
     expect(apiRef.current!.getView()).toEqual(CLAMPED);
   });
+
+  it('holds a view inside them as the canvas grows, and the view it mounts on', async () => {
+    const apiRef = { current: null as SceneCanvasApi | null };
+    const onViewChange = vi.fn();
+    const at = (width: number) => (
+      <SceneCanvas<D, L, P>
+        ref={apiRef} scene={newScene()} width={width} height={150}
+        defaultView={OUTSIDE} viewBounds={BOUNDS} onViewChange={onViewChange}
+      />
+    );
+    const { rerender } = render(at(200));
+    await frame();
+    expect(apiRef.current!.getView()).toEqual(CLAMPED);
+
+    act(() => { apiRef.current!.setView({ x: 200, y: 0, scale: { x: 1, y: 1 } }); });
+    rerender(at(300));
+    await frame();
+    // 300 wide shows [x, x + 300], which the 400-wide bounds hold only from x = 100.
+    expect(apiRef.current!.getView()).toEqual({ x: 100, y: 0, scale: { x: 1, y: 1 } });
+    expect(onViewChange).toHaveBeenLastCalledWith({ x: 100, y: 0, scale: { x: 1, y: 1 } });
+  });
 });
 
 describe('SceneCanvas view read during the first commit', () => {

@@ -1,5 +1,34 @@
 # @weasel-js/menu
 
+## 1.19.1
+
+### Minor Changes
+
+- 8763373: A hud menu's number rows write their value in the browser's locale, as a `@weasel-js/ui` number field beside them would: `2,5` in German.
+  
+  `attachMenuHost` and `createMenuWidget` take a `locale` option to name another, and `menuNumberText(value, entry, locale)` takes one as a third argument, `en-US` by default.
+  
+  <!-- entry: api behavior -->
+
+### Patch Changes
+
+- 0a483ad: A space typed mid-search in a menu is part of the search, as in a list: typing "save a" finds "Save As…" instead of choosing "Save".
+  
+  <!-- entry: fix behavior -->
+- Updated dependencies [5159b4f]
+- Updated dependencies [c9adfef]
+- Updated dependencies [97be45c]
+- Updated dependencies [5159b4f]
+- Updated dependencies [039b7ad]
+- Updated dependencies [d254251]
+- Updated dependencies [8562ebe]
+- Updated dependencies [250c105]
+- Updated dependencies [a09ed24]
+- Updated dependencies [8562ebe]
+  - @weasel-js/ui-input@1.19.1
+  - @weasel-js/quantity@1.19.1
+  - @weasel-js/registry@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

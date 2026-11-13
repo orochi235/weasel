@@ -11,9 +11,11 @@ import {
   ActionsProvider,
   ActiveToolContextProvider,
   DepRegistryProvider,
+  FALLBACK_ACCENT,
   type Tool,
   useActionsRegistry,
   useDepSource,
+  useDeviceProfile,
   useGestureDispatcher,
   useLatest,
   usePointerPosition,
@@ -37,6 +39,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import {
   CameraContext,
@@ -46,6 +49,7 @@ import {
 } from '../canvas/CameraInput';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
 import { fromCameraView } from '../canvas/cameraView';
+import { type ThemeColorSpec, useThemeColors } from '../canvas/useThemeColors';
 import type { ViewportSize, WorldFrame } from '../canvas/worldSpec';
 import { FloatingPanel, type FloatingPanelProps } from '../primitives/FloatingPanel';
 import { OverviewMarks } from './OverviewMarks';
@@ -125,14 +129,14 @@ function fitRect(rect: OverviewBounds, size: ViewportSize): View {
   };
 }
 
-/** A canvas's 2D context sized to `size` at the device pixel ratio. */
+/** A canvas's 2D context sized to `size` at `dpr` device pixels per CSS pixel. */
 function prepare(
   canvas: HTMLCanvasElement | null,
   size: ViewportSize,
+  dpr: number,
 ): CanvasRenderingContext2D | null {
   const ctx = canvas?.getContext('2d') ?? null;
   if (!canvas || !ctx) return null;
-  const dpr = window.devicePixelRatio || 1;
   const w = Math.round(size.width * dpr);
   const h = Math.round(size.height * dpr);
   if (canvas.width !== w) canvas.width = w;
@@ -140,11 +144,6 @@ function prepare(
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, size.width, size.height);
   return ctx;
-}
-
-function cssVar(el: Element | null, name: string, fallback: string): string {
-  if (!el) return fallback;
-  return getComputedStyle(el).getPropertyValue(name).trim() || fallback;
 }
 
 /**
@@ -229,8 +228,9 @@ function LayersCanvas({ fit, size, frame }: { fit: View; size: ViewportSize; fra
   const stack = useContext(CanvasStackContext);
   const ref = useRef<HTMLCanvasElement | null>(null);
   const layers = stack?.surface?.layers;
+  const { dpr } = useDeviceProfile();
   useLayoutEffect(() => {
-    const ctx = prepare(ref.current, size);
+    const ctx = prepare(ref.current, size, dpr);
     if (!ctx || !layers) return;
     const local: WorldFrame = { originPx: { x: 0, y: 0 }, yDir: frame.yDir };
     const view = fromCameraView(fit, local);
@@ -240,9 +240,14 @@ function LayersCanvas({ fit, size, frame }: { fit: View; size: ViewportSize; fra
       layer.render(ctx, view, local);
       ctx.restore();
     }
-  }, [layers, fit, size, frame.yDir]);
+  }, [layers, fit, size, frame.yDir, dpr]);
   return <canvas ref={ref} className="lk-overview__canvas" />;
 }
+
+const CHROME_COLORS: ThemeColorSpec<'frame' | 'crosshair'> = {
+  frame: ['--wzl-fg', '#ffffff'],
+  crosshair: ['--wzl-accent', FALLBACK_ACCENT],
+};
 
 /** The visible-rect indicator and the linked crosshair. */
 function ChromeCanvas({
@@ -254,20 +259,22 @@ function ChromeCanvas({
   size: ViewportSize;
   camera: CameraContextValue;
 }) {
-  const ref = useRef<HTMLCanvasElement | null>(null);
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+  const colors = useThemeColors(canvas, CHROME_COLORS);
   const pointer = usePointerPosition();
   const root = camera.view.get();
   const host = camera.view.hostSize?.() ?? null;
-  // No dependency list: this renders only when the pointer or the trial's
-  // camera moved, and either one moves the chrome.
+  const { dpr } = useDeviceProfile();
+  // No dependency list: this renders only when the pointer, the trial's
+  // camera, the theme or the density changed, and each one changes the chrome.
   useLayoutEffect(() => {
-    const ctx = prepare(ref.current, size);
-    if (!ctx) return;
+    const ctx = prepare(canvas, size, dpr);
+    if (!ctx || !colors) return;
     const s = fit.scale.x;
     const px = (x: number, y: number) => ({ x: (x - fit.x) * s, y: (y - fit.y) * s });
     if (host) {
       const a = px(root.x, root.y);
-      ctx.strokeStyle = cssVar(ref.current, '--wzl-fg', '#ffffff');
+      ctx.strokeStyle = colors.frame;
       ctx.lineWidth = 1;
       ctx.setLineDash([2, 3]);
       ctx.strokeRect(
@@ -285,11 +292,11 @@ function ChromeCanvas({
       const { halo, bars } = crosshairRects(at.x, at.y, { x: 1, y: 1 });
       ctx.fillStyle = 'rgb(0 0 0 / 60%)';
       for (const r of halo) ctx.fillRect(r.x, r.y, r.w, r.h);
-      ctx.fillStyle = cssVar(ref.current, '--wzl-accent', '#4c8dff');
+      ctx.fillStyle = colors.crosshair;
       for (const r of bars) ctx.fillRect(r.x, r.y, r.w, r.h);
     }
   });
-  return <canvas ref={ref} className="lk-overview__canvas lk-overview__chrome" />;
+  return <canvas ref={setCanvas} className="lk-overview__canvas lk-overview__chrome" />;
 }
 
 /**

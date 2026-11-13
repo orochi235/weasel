@@ -7,26 +7,29 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
-import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
-import { numericWeight, resolveRunFace, resolveTextStyle } from '@weasel-js/text';
-import { cssFontFamilyLoading } from '@weasel-js/font';
+import type { TextStyle } from '@weasel-js/text';
+import { resolveTextStyle } from '@weasel-js/text';
 import { editEnd, imeKey } from '@weasel-js/ui-input';
+import { historyKey } from '@weasel-js/gestures';
 import type { StyledRun } from '@weasel-js/text';
-import { charOffsetToDomPosition, domToRuns, type OverlayRunBase } from './domRuns';
+import { domToRuns, type OverlayRunBase } from './domRuns';
+import { holdForFaces, installSelectionStyle, openingRange } from './overlayOpen';
 import {
   applyStyleToRange, effectiveRangeStyle, nodeHasFlag, rangeWeight, setFlagOverRange,
   styleAtRange, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
-import { armedOver, armPatch } from './armedStyle';
+import { armedOver, armPatch, usePendingStyle } from './armedStyle';
+import { overlayHistory, type OverlayHistory, type OverlayState } from './overlayHistory';
 import { draftChanged, overlayDraft, writeEdit } from './overlayDraft';
 import { runStyleAt } from './runSplice';
+import { styleAtCaret, usePublishedRange } from './publishedRange';
 import { overlayTop } from './overlayFrame';
 import { mountOverlayBoxes, placeOverlay } from './overlayPlace';
 export { overlayTop };
 import { applyOverlayStyle } from './overlayStyle';
 import { seedOverlay, type CaretHolder } from './overlaySeed';
 import {
-  readSelectionOffsets, restoreOverlayFocus, sameSelection, writeRunsPreservingSelection,
+  readSelectionOffsets, restoreOverlayFocus, writeRunsPreservingSelection,
 } from './overlaySelection';
 import { typingHandlers } from './overlayTyping';
 import { toggleForKey } from './styleShortcuts';
@@ -58,14 +61,6 @@ function patchForToggle(
   return { [toggle]: !on };
 }
 
-/** The styling at a collapsed caret, read as a range: `runStyleAt`'s, which the next typed character takes. */
-function styleAtCaret(runs: readonly StyledRun[], at: number): RangeStyle {
-  return runs.some((r) => r.text.length > 0) ? styleAtRange([{ ...runStyleAt(runs, at), text: ' ' }], 0, 1) : {};
-}
-
-/** No pending style. One frozen object so re-publishing an already-empty
- *  pending style doesn't re-render every consumer. */
-const NO_PENDING: RunStylePatch = Object.freeze({});
 
 /** In-place text editing via a contenteditable overlay positioned over the text node's screen-space pose. */
 export function useTextEdit(
@@ -102,68 +97,11 @@ export function useTextEdit(
   const sentRef = useRef(''); // the last draft sent, as JSON; before the first, the overlay as it opened
   const holderRef = useRef<CaretHolder | null>(null);
   const priorRunsRef = useRef<readonly StyledRun[] | undefined>(undefined); // the node's, as the edit opened
-  const [selection, setSelection] = useState<TextEditSelection | null>(null);
-  const [rangeStyle, setRangeStyle] = useState<RangeStyle | null>(null);
-  const [pendingStyle, setPendingStyle] = useState<RunStylePatch>(NO_PENDING);
-  /** The pending style, read synchronously by `beforeinput` — which fires
-   *  well before React has re-rendered with the state above. */
-  const pendingRef = useRef<RunStylePatch>(NO_PENDING);
-  /** The caret offset the pending style was armed at, or `null` when nothing
-   *  is armed. Publishing any other range abandons it. */
-  const pendingAtRef = useRef<number | null>(null);
+  const { pendingStyle, pendingRef, pendingAtRef, armPending, dropPending } = usePendingStyle();
+  const historyRef = useRef<OverlayHistory | null>(null);
+  const { selection, rangeStyle, selectionRef, publishRange, syncSelection, clearSelection } =
+    usePublishedRange(overlayRef, pendingAtRef, dropPending);
 
-  const armPending = useCallback((next: RunStylePatch, at: number) => {
-    const empty = Object.keys(next).length === 0;
-    pendingRef.current = empty ? NO_PENDING : next;
-    pendingAtRef.current = empty ? null : at;
-    setPendingStyle(pendingRef.current);
-  }, []);
-
-  const dropPending = useCallback(() => {
-    if (pendingAtRef.current === null) return;
-    pendingRef.current = NO_PENDING;
-    pendingAtRef.current = null;
-    setPendingStyle(NO_PENDING);
-  }, []);
-
-  /** The published range, mirrored in a ref: the fallback when the DOM
-   *  selection has moved into editing chrome. */
-  const selectionRef = useRef<TextEditSelection | null>(null);
-
-  /** Publish `range` and the styling the overlay currently carries across it. */
-  const publishRange = useCallback((overlay: HTMLElement, range: TextEditSelection) => {
-    const collapsed = range.start === range.end;
-    // A pending style belongs to the caret position it was armed at. Any
-    // other range means the caret moved, which abandons it.
-    if (pendingAtRef.current !== null
-      && !(collapsed && range.start === pendingAtRef.current)) {
-      dropPending();
-    }
-    selectionRef.current = range;
-    setSelection((prev) => (sameSelection(prev, range) ? prev : range));
-    const runs = domToRuns(overlay);
-    setRangeStyle(collapsed
-      ? styleAtCaret(runs, range.start)
-      : styleAtRange(runs, range.start, range.end));
-  }, [dropPending]);
-
-  const syncSelection = useCallback(() => {
-    const overlay = overlayRef.current;
-    if (!overlay) return;
-    const next = readSelectionOffsets(overlay);
-    // A selection outside the overlay means focus moved into a control, which
-    // is when the range matters most: leave it published rather than clear it.
-    if (next === null) return;
-    publishRange(overlay, next);
-  }, [publishRange]);
-
-  /** Drop the published range — the edit session it described is over. */
-  const clearSelection = useCallback(() => {
-    selectionRef.current = null;
-    setSelection(null);
-    setRangeStyle(null);
-    dropPending();
-  }, [dropPending]);
 
   const cancelEdit = useCallback(() => setEditingId(null), [setEditingId]);
 
@@ -200,7 +138,16 @@ export function useTextEdit(
     if (id !== null && draftChanged(sentRef, draft)) optsRef.current.onDraft?.(id, draft);
   }, [editingIdRef, optsRef]);
 
-  const applyStyleToSelection = useCallback(function applyStyle(patch: RunStylePatch) {
+  /** Hold `style` as the node's, or the node's own for `null`, and dress the overlay in it. */
+  const restyleNode = useCallback((overlay: HTMLDivElement, id: string, style: TextStyle | null) => {
+    holdNodeStyle(style);
+    // The root's own decoration and slant reach every run by inheritance.
+    const base = (baseRef.current = resolveTextStyle(style ?? optsRef.current.getStyle(id), optsRef.current.getPaint?.(id)));
+    applyOverlayStyle(overlay, base);
+    return base;
+  }, [holdNodeStyle, optsRef]);
+
+  const applyStyle = useCallback(function applyStyle(patch: RunStylePatch) {
     const overlay = overlayRef.current;
     if (!overlay) return;
     // An empty patch would still round-trip the runs through
@@ -228,12 +175,7 @@ export function useTextEdit(
       : undefined;
     if (unsetFlag !== undefined && id !== null) {
       const r = setFlagOverRange(runs, styleOf(id) ?? {}, range.start, range.end, unsetFlag, false);
-      holdNodeStyle(r.style);
-      // The root's own decoration and slant reach every run by inheritance,
-      // the range just cleared included.
-      const resolved = resolveTextStyle(r.style, optsRef.current.getPaint?.(id));
-      baseRef.current = resolved;
-      applyOverlayStyle(overlay, resolved);
+      const resolved = restyleNode(overlay, id, r.style);
       writeRunsPreservingSelection(overlay, r.runs, range.start, range.end, resolved);
       publishRange(overlay, range);
       // The rewrite raised the flag on every existing run, so a caret sitting
@@ -267,7 +209,14 @@ export function useTextEdit(
     // when the patch came from chrome the selection is in that control.
     publishRange(overlay, range);
     sendDraft(overlay);
-  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, holdNodeStyle, sendDraft]);
+  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, restyleNode, sendDraft, pendingRef, selectionRef]);
+
+  /** `applyStyle`, as one step of the edit's undo. */
+  const applyStyleToSelection = useCallback((patch: RunStylePatch) => {
+    historyRef.current?.before('other');
+    applyStyle(patch);
+    historyRef.current?.after();
+  }, [applyStyle]);
 
   const toggleStyle = useCallback((toggle: StyleToggle) => {
     const overlay = overlayRef.current;
@@ -284,7 +233,7 @@ export function useTextEdit(
       ? armedOver(styleAtCaret(runs, range.start), pendingRef.current)
       : styleAtRange(runs, range.start, range.end);
     applyStyleToSelection(patchForToggle(current, toggle, nodeStyle));
-  }, [applyStyleToSelection, editingIdRef, styleOf]);
+  }, [applyStyleToSelection, editingIdRef, styleOf, pendingRef, selectionRef]);
 
   useEffect(() => {
     if (editingId == null) return;
@@ -348,6 +297,12 @@ export function useTextEdit(
         else cancelEdit();
         return;
       }
+      const step = historyKey(e);
+      if (step) {
+        e.preventDefault();
+        history[step]();
+        return;
+      }
       const toggle = toggleForKey(e);
       if (toggle) {
         e.preventDefault();
@@ -360,21 +315,39 @@ export function useTextEdit(
       commit();
     };
 
+    const written = (range: TextEditSelection) => {
+      holderRef.current?.wrote(overlay, range.end);
+      dropPending();
+      publishRange(overlay, range);
+    };
+    const edited = () => {
+      holderRef.current?.edited(overlay);
+      place();
+      boxes.scroller.reveal();
+      sendDraft(overlay);
+      history.after();
+    };
+    const history = (historyRef.current = overlayHistory({
+      read: (): OverlayState | null => {
+        const at = readSelectionOffsets(overlay) ?? selectionRef.current;
+        const runs = domToRuns(overlay);
+        return at && { runs: holderRef.current?.trim(runs) ?? runs, selection: at, style: nodeStyleRef.current };
+      },
+      write: ({ runs, selection: at, style: held }) => {
+        const base = restyleNode(overlay, editingId, held);
+        writeRunsPreservingSelection(overlay, runs, at.start, at.end, base);
+        holderRef.current?.reseed(runs);
+        written(at);
+        edited();
+      },
+    }));
     const { onBeforeInput, onInput, onCompositionStart, onCompositionEnd } = typingHandlers(overlay, {
       pending: () => pendingRef.current,
       base: () => baseRef.current,
       lastRange: () => selectionRef.current,
-      onWritten: (caret) => {
-        holderRef.current?.wrote(overlay, caret);
-        dropPending();
-        publishRange(overlay, { start: caret, end: caret });
-      },
-      onEdited: () => {
-        holderRef.current?.edited(overlay);
-        place();
-        boxes.scroller.reveal();
-        sendDraft(overlay);
-      },
+      onWritten: written,
+      onEdited: edited,
+      history,
     });
 
     // Blur can't be the only way out: once focus has moved into editing
@@ -417,11 +390,13 @@ export function useTextEdit(
       boxes.remove();
       styleEl?.remove();
       overlayRef.current = null;
+      historyRef.current = null;
       holdNodeStyle(null);
       clearSelection();
     };
   }, [editingId, opts.container, optsRef, commit, cancelEdit, syncSelection, clearSelection,
-      frameLoop, toggleStyle, dropPending, publishRange, holdNodeStyle, sendDraft]);
+      frameLoop, toggleStyle, dropPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
+      selectionRef]);
 
   return {
     editingId, startEdit, cancelEdit, commit, isEditing, nodeStyle,
@@ -450,57 +425,3 @@ function shownStyle(
 }
 
 let OVERLAY_SEQ = 0;
-
-/**
- * The loads the overlay's faces are still waiting on — the node's and each
- * run's that names its own family — or `null` when every one is in hand.
- */
-function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[]): Promise<unknown> | null {
-  const pending = [
-    cssFontFamilyLoading(style.fontFamily, {
-      weight: numericWeight(style.fontWeight), style: style.fontStyle,
-    }),
-    ...runs.filter((r) => r.fontFamily != null).map((r) => {
-      const face = resolveRunFace(r, style);
-      return cssFontFamilyLoading(face.fontFamily, { weight: face.fontWeight, style: face.fontStyle });
-    }),
-  ].filter((p) => p !== null);
-  return pending.length === 0 ? null : Promise.all(pending);
-}
-
-/** The selection an edit opens with: the whole text, or a caret `caret`
- *  characters in, clamped to the end. */
-function openingRange(overlay: HTMLElement, caret: number | 'all'): Range {
-  const range = document.createRange();
-  if (caret === 'all') {
-    range.selectNodeContents(overlay);
-    return range;
-  }
-  const at = charOffsetToDomPosition(overlay, caret);
-  if (at) range.setStart(at.node, at.offset);
-  range.collapse(true);
-  return range;
-}
-
-/**
- * Inject a `<style>` element scoped to `overlayClass` so the edit overlay's
- * `::selection` matches the configured colors, or `null` when none are set.
- */
-function installSelectionStyle(
-  overlayClass: string,
-  style: ResolvedTextStyle,
-): HTMLStyleElement | null {
-  if (style.selectionBackground == null && style.selectionColor == null) return null;
-  const el = document.createElement('style');
-  const decls: string[] = [];
-  if (style.selectionBackground != null) {
-    decls.push(`background: ${style.selectionBackground};`);
-  }
-  if (style.selectionColor != null) {
-    decls.push(`color: ${style.selectionColor};`);
-  }
-  el.textContent = `.${overlayClass}::selection { ${decls.join(' ')} }`;
-  document.head.appendChild(el);
-  return el;
-}
-

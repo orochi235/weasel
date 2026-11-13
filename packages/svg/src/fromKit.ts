@@ -16,6 +16,7 @@ import {
   poseLinearOf,
   resolveFill,
   resolveStroke,
+  shapePathOf,
   type ImageNodeData,
   type NodeClip,
   type Path,
@@ -44,6 +45,12 @@ import { asBooleanLeaf, booleanGroupSvg, derivedPathIn } from './booleanGroup';
  *  `svgNodesToKitDrafts` writes. */
 export interface SvgKitLeafData {
   path?: Path;
+  /** A built-in shape kind (`rect`, `ellipse`, `polygon`, `star`), drawn in the pose's box. */
+  shape?: string;
+  /** A `polygon`'s side count. */
+  sides?: number;
+  /** A `star`'s point count. */
+  points?: number;
   /** `'inherit'` takes the enclosing container's. */
   fill?: Fill | Inherit | null;
   stroke?: Stroke | Inherit | null;
@@ -98,9 +105,9 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
 }
 
 /**
- * Write one leaf as the `SvgNode` its built-in painter draws — image, text or
- * path, in the order the painters claim a node. `null` for data none of them
- * draws. A text node with a `background` is a group: the box, then the text.
+ * Write one leaf as the `SvgNode` its built-in painter draws — text, path,
+ * shape or image, in the order the painters claim a node. `null` for data none
+ * of them draws. A text node with a `background` is a group marked `textFrame`: the box, then the text.
  * One that clips is a group clipped to its box as it is drawn, turned with it.
  *
  * An `'inherit'` fill or stroke is none here, with no container to read;
@@ -114,7 +121,6 @@ export function svgLeafFromKit(
   data: SvgKitLeafData,
   pose: SvgKitPose,
 ): SvgPathNode | SvgTextNode | SvgImageNode | SvgGroupNode | null {
-  if (data.image) return svgImageFromKit(data.image, pose);
   if (data.text != null) {
     const text = svgTextFromKit({ ...data, text: data.text }, pose);
     const boxPath: Path = { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
@@ -131,14 +137,15 @@ export function svgLeafFromKit(
     const over: SvgNode[] = frame.edge
       ? [svgLeafFromKit({ path: frame.edge.path, fill: null, stroke: { ...solid(frame.edge.color), width: frame.edge.width } }, pose) as SvgPathNode]
       : [];
-    const framed: SvgNode = { kind: 'group', children: [box, ...over, text], ...clip };
-    return under.length > 0 ? { kind: 'group', children: [...under, framed] } : framed;
+    const framed: SvgGroupNode = { kind: 'group', children: [box, ...over, text], ...clip };
+    return under.length > 0 ? { kind: 'group', children: [...under, framed], textFrame: true } : { ...framed, textFrame: true };
   }
-  if (!data.path) return null;
+  const outline = data.path ? pathInPoseFrame(data.path, pose) : shapePathOf(data, pose);
+  if (!outline) return data.image ? svgImageFromKit(data.image, pose) : null;
   const stroke = svgStrokeFromKit(resolveStroke(data.stroke), pose);
   const node: SvgPathNode = {
     kind: 'path',
-    path: pathInPoseFrame(data.path, pose),
+    path: outline,
     fill: svgPaintFromKit(resolveFill(data.fill)?.paint ?? null, pose),
   };
   if (stroke) node.stroke = stroke;
@@ -215,11 +222,13 @@ export interface SvgNodesFromKitOptions<TId extends string = string> {
   roots?: readonly TId[];
   /** `false` leaves a node out, with everything under it — a hidden layer. */
   include?(id: TId): boolean;
-  /** Lower a leaf yourself; `null` leaves it out. Defaults to {@link svgLeafFromKit}.
+  /** Lower a leaf yourself; `null` leaves it out, and `undefined` writes the
+   *  default, {@link svgLeafFromKit} with its `'inherit'` fields resolved: the
+   *  answer for every node but the kinds a consumer painter draws.
    *  `inherited` is what the leaf's `'inherit'` fields resolve to; write those
    *  as these, and the walk marks the result as inheriting where SVG's
    *  cascade can carry them. */
-  leaf?(id: TId, node: SvgKitTreeNode, inherited: SvgKitInherited): SvgNode | null;
+  leaf?(id: TId, node: SvgKitTreeNode, inherited: SvgKitInherited): SvgNode | null | undefined;
   /** Decorate the `<g>` written for a scene group, e.g. with `meta`. */
   group?(id: TId, group: SvgGroupNode): SvgGroupNode;
   /** Decorate the `<g>` written for a mark with children, so a reader can
@@ -281,8 +290,9 @@ export function svgNodesFromKit<TId extends string>(
       : stored;
     const own = node.data as SvgKitLeafData | null;
     const isGroup = node.kind === 'group';
+    const custom = isGroup ? null : leaf?.(id, node, up);
     const self = isGroup ? null : markInherits(
-      leaf ? leaf(id, node, up) : svgLeafFromKit(resolvedData(own ?? {}, up), node.pose), own ?? {}, up,
+      custom !== undefined ? custom : svgLeafFromKit(resolvedData(own ?? {}, up), node.pose), own ?? {}, up,
     );
     const kids = tree.childrenOf(id);
     if (!isGroup && kids.length === 0) return self;

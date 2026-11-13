@@ -12,7 +12,7 @@ import { caretAt, caretX } from './valueRows';
 import { createTextEditor, editMods } from './textEdit';
 import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
-import type { StepRepeatOptions } from '@weasel-js/ui-input';
+import { chordKey, type StepRepeatOptions } from '@weasel-js/ui-input';
 import { chipUnder, createChipHold, levelAt } from './chipRepeat';
 
 const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];
@@ -36,6 +36,9 @@ export interface MenuWidgetOptions {
   /** The timing of a held number chip. Defaults to `REPEAT_DELAY_MS` and `REPEAT_EVERY_MS` from `@weasel-js/ui-input`,
    *  the defaults a `@weasel-js/ui` number field's steppers hold with. */
   repeat?: StepRepeatOptions;
+  /** The locale a number row's value is written in, as a `@weasel-js/ui` number field's would be. Defaults to the
+   *  browser's language, and to `en-US` where there is none. */
+  locale?: string;
   onChange(): void;
 }
 
@@ -80,6 +83,7 @@ function menuTextInput(
 export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const m = opts.metrics ?? DEFAULT_MENU_METRICS;
   const measure = opts.measure ?? measureLabel;
+  const locale = opts.locale ?? globalThis.navigator?.language;
   const edits = createEmitter();
   const rev = createRevision(() => { opts.onChange(); edits.emit(); });
   const pickers = withColorPickers(
@@ -145,7 +149,9 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
 
   const key = (evt: HudKeyEvent): boolean => {
     if (evt.type !== 'keydown') return false;
-    if (typing.key(evt.key, editMods(evt))) return true;
+    const mods = editMods(evt);
+    // A chord is read by the key's letter, so a non-Latin layout's select-all and Ctrl keys reach the edit.
+    if (typing.key(mods.mod || mods.ctrl ? chordKey(evt) : evt.key, mods)) return true;
     const level = c.stack().length - 1;
     const at = c.stack()[level];
     const row = at == null ? undefined : c.entriesAt(level)[at];
@@ -155,7 +161,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
     return true;
   };
 
-  const accessibleTree: HudAccessibleTree = { read: () => accessibleMenu(c, pickers.swatchOf), subscribe: c.subscribe };
+  const accessibleTree: HudAccessibleTree = { read: () => accessibleMenu(c, pickers.swatchOf, locale), subscribe: c.subscribe };
 
   return {
     id: `weasel-menu-${opts.open.seq}`,
@@ -174,7 +180,7 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
       panels = place(c, family);
       const values = {
         number: c.numberValue, text: c.textValue, editing: typing.current(), swatch: pickers.swatchOf,
-        measure,
+        measure, locale,
       };
       return panels.flatMap((p, level) => drawPanel(ctx, p, c.entriesAt(level), c.stack()[level] ?? null, m, opts.icons, values));
     },

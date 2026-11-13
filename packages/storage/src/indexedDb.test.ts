@@ -86,3 +86,26 @@ describe('createIndexedDbAdapter — stores and versions', () => {
     expect(await adapter.get('k')).toBe(7);
   });
 });
+
+describe('createIndexedDbAdapter — a blocked upgrade', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('says it is waiting on another connection, and lands once that one closes', async () => {
+    const database = fresh();
+    // A connection, as another tab's might be, that ignores a request to upgrade.
+    const other = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(database, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('records');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const thumbs = createIndexedDbAdapter({ database, store: 'thumbs' });
+    const written = thumbs.set('a', 1);
+    await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
+    expect(String(warn.mock.calls[0]![0])).toMatch(/waits for another tab/);
+    other.close();
+    await written;
+    expect(await thumbs.get('a')).toBe(1);
+  });
+});

@@ -1,7 +1,9 @@
+import './labTestSetup';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaletteLab } from './PaletteLab';
+import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 /**
@@ -31,8 +33,8 @@ describe('<PaletteLab> action rail', () => {
 
   it('renders the three controls in the lab toolbar', () => {
     renderWithIcons(<PaletteLab />);
-    const buttons = within(rail()).getAllByRole('button');
-    expect(buttons.map((b) => b.textContent?.trim())).toEqual(['Undo', 'Redo', 'Reset']);
+    expect(within(rail()).getAllByRole('button')).toHaveLength(3);
+    for (const name of ['Undo', 'Redo', 'Reset']) expect(within(rail()).getByRole('button', { name })).toBeTruthy();
   });
 
   it('titles undo and redo with their shortcuts', async () => {
@@ -40,9 +42,9 @@ describe('<PaletteLab> action rail', () => {
     renderWithIcons(<PaletteLab />);
     // A disabled button takes no focus and shows no tooltip, so give each one history first.
     await user.click(screen.getByRole('radio', { name: 'Light' }));
-    expect(await tooltipOf('Undo')).toContain('Undo (⌘Z)');
+    expect(await tooltipOf('Undo')).toContain(`Undo (${formatShortcut({ key: 'z', mod: true })})`);
     await user.click(within(rail()).getByRole('button', { name: 'Undo' }));
-    expect(await tooltipOf('Redo')).toContain('Redo (⇧⌘Z)');
+    expect(await tooltipOf('Redo')).toContain(`Redo (${formatShortcut({ key: 'z', mod: true, shift: true })})`);
   });
 
   /** RAC opens a tooltip only on keyboard focus, so enter keyboard modality first. */
@@ -76,5 +78,22 @@ describe('<PaletteLab> action rail', () => {
 
     await user.click(within(rail()).getByRole('button', { name: 'Reset' }));
     expect(screen.getByRole('radio', { name: 'Dark' })).toHaveAttribute('aria-checked', 'true');
+  });
+});
+
+describe('<PaletteLab> with storage refused', () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it('says the palette is not being kept', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => { throw new DOMException('full', 'QuotaExceededError'); },
+      removeItem: () => {},
+    });
+    renderWithIcons(<PaletteLab />);
+    expect(screen.getByText(/This palette is not being kept in the browser/)).toBeInTheDocument();
   });
 });

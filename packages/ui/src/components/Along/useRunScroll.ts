@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { DRAG_THRESHOLD_PX, keysHeld, modifierStateOf, openPointerSession, type PointerSession } from '@weasel-js/core';
-import { isApplePlatform } from '@weasel-js/gestures';
+import { isApplePlatform, isPrimaryPress } from '@weasel-js/gestures';
 import { clamp, type RunSpot, type TrackRun } from '@weasel-js/geom';
 import { useKitSetting, useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
 import { boxPoint } from './boxPoint';
@@ -112,7 +112,7 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
 
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     const el = root.current;
-    if (latest.current.max <= 0 || el === null || e.button !== 0 || (latest.current.modReorders && keysHeld(['mod'], modifierStateOf(e), isApplePlatform())) || !el.contains(e.target as Node)) return;
+    if (latest.current.max <= 0 || el === null || !isPrimaryPress(e) || (latest.current.modReorders && keysHeld(['mod'], modifierStateOf(e), isApplePlatform())) || !el.contains(e.target as Node)) return;
     session.current?.cancel();
     const across = frame?.current ?? el;
     const s0 = positionAt(across, latest.current.run, e);

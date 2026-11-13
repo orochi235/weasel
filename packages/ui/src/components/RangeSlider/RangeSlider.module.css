@@ -81,6 +81,7 @@
 }
 
 .thumb[data-focus-visible] {
+  outline: 2px solid transparent;
   box-shadow: 0 0 0 2px var(--wzl-focus-ring);
 }
 
@@ -90,5 +91,6 @@
 
 .slider[data-disabled] {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
 }

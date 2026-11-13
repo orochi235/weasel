@@ -71,7 +71,6 @@ export function SmallCapsDemo() {
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             selectable={false}
-            alphaFor={(id) => (id === edit.editingId ? 0 : 1)}
           />
         </DemoStage>
       </div>

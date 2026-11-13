@@ -306,6 +306,7 @@ provide the corresponding chrome; they compose freely.
 | `dragDrop` | A palette to drag items from, and a drop pipeline that hands you world coordinates |
 | `undo` | On by default: undo and redo buttons, snapshotting state and settings together on `state.change` and `config.change`, or the events you name — or stepping a history of the instrument's own, handed over with `useTrialHistory`. `undo: false` turns it off |
 | `job` | Starts async work, aborts it on unmount and on a key change, and renders progress and a cancel control |
+| `clock` | Playback time on `ctx.trial.clock`, which a canvas layer marked `timed` redraws from. Outside a presentation the trial draws no play controls: put a `<TrialTransport>` in a chrome contribution, as `{ id: 'transport', region: 'status', render: () => <TrialTransport /> }` |
 | `tools` | A tool palette and a tool slot on the trial |
 | `chrome` | Anything else, as contributions keyed to a region |
 
@@ -536,6 +537,27 @@ Style your own surfaces against the `--wzl-*` tokens so they follow the mode the
 lab is in. Class names are `lk-*` and are not public API — every component takes
 a `className`.
 
+## A lab with no trials
+
+A page that is one editor rather than a grid of trials is still a `<Lab>`: leave
+out `instruments`, and its `children` become the body, beside the lab's header,
+menus, mode switch, pages switcher, and `labChrome`. A history the body hands over
+with `useTrialHistory` gets the lab's Undo and Redo and their keys;
+`trialHistoryOf` makes one of a weasel `History`.
+
+```tsx
+import { Lab, trialHistoryOf, useTrialHistory } from '@weasel-js/labkit';
+
+function Editor({ history }: { history: History }) {
+  useTrialHistory(useMemo(() => trialHistoryOf(history), [history]));
+  return <MyEditor history={history} />;
+}
+
+<Lab title="Palette" pages={PAGES} path={PALETTE.href}>
+  <Editor history={history} />
+</Lab>;
+```
+
 ## Without the runtime
 
 The presentational pieces work on their own. `<LabShell>` is a titled page
@@ -599,7 +621,9 @@ view's zoom, or an orbit's opening distance over its distance now.
 An orbit's view is kernel3d's `Camera3d` — `{ target, yaw, pitch, distance,
 fov, near, far }`, plain numbers in radians and scene units. Whatever draws
 the scene reads it with `useOrbitView()`, and projects it with kernel3d's
-`cameraViewProjection`; chrome reads it with `useTrialOrbit()`.
+`cameraViewProjection`; chrome reads it with `useTrialOrbit()`. A scene
+whose up is not +y declares it as `orbit: { up }`, the same axis as its
+`World3d.up`, and passes it to `cameraViewProjection` too.
 An instrument that draws 3D — through `useOrbitView()`, or a three.js
 renderer in its DOM — without declaring `orbit` has a camera labkit cannot
 move, and in development it warns and marks the trial's title bar. Declare

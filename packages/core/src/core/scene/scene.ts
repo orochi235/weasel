@@ -1,5 +1,5 @@
 import { withKitRegistry } from './kitRegistry';
-import { createPoseOverrides } from './poseOverrides';
+import { createSceneOverrides } from './poseOverrides';
 import { createScrollOffsets } from './scrollOffsets';
 import { createArrivalWindow } from './arrivalWindow';
 import { documentReads, sceneMutators } from './sceneMutators';
@@ -16,6 +16,7 @@ import { createSceneState } from './sceneState';
 import { systemLayerRecord } from './layerStack';
 import { layerFromSerialized, specsFromSerialized, type SpecsFromSerializedOptions } from './serialization';
 import { assertSnapshotShape } from './snapshotShape';
+import { foldable } from './rigidFoldable';
 import { resolveLayoutFrame, runLayoutPass, sceneLayoutSource } from './layoutPass';
 import type { PoseComposition } from './composeFrame';
 import { RIGID_POSE_COMPOSITION } from './composePose';
@@ -105,7 +106,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   selection.subscribe(notifier.notify);
 
   /** Ephemeral, deliberately not part of `state`: not document content, never in `toJSON` or history. */
-  const overrides = createPoseOverrides<TPose, TData>((id) => state.nodes.get(id), doc.store.invalidateDependents);
+  const overrides = createSceneOverrides<TPose, TData>((id) => state.nodes.get(id), doc.store.invalidateDependents, notifier.whenSettled);
   const scroll = createScrollOffsets();
 
   const recording = createSceneRecording({
@@ -134,7 +135,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     layoutFrame,
     generateId,
     narrowSelection: selection.narrow,
-    clearOverride: overrides.clear,
+    forgetViewState: (id) => { overrides.clear(id); scroll.set(id, null); },
   });
   for (const [kind, handler] of Object.entries(options.ops ?? {})) recording.ops.register(kind, handler);
 
@@ -162,11 +163,11 @@ function buildScene<TData, TLayer extends string, TPose>(
     scroll,
 
     getSelection: selection.get,
-    setSelection: (ids) => selection.set([...ids]),
+    setSelection: (ids) => selection.set([...ids]), selectable: selection.legal,
 
     loadState(json, opts) {
       // Validate + map up front: throws on a bad version or registry key before live state is touched.
-      const specs = quantizedSpecs(specsFromSerialized(json, registry, { composition: scene.composition, ...opts }), options.quantize, json.doc);
+      const specs = quantizedSpecs(foldable(specsFromSerialized(json, registry, { composition: scene.composition, ...opts }), options.composition), options.quantize, json.doc);
       if (mode.open()) {
         throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
       }
@@ -176,7 +177,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       doc.reset(json.systemLayers.map(layerFromSerialized), json.doc);
       recording.clearHistory();
       poseWrites.quiet(() => edits.construct(specs));
-      selection.replace(selection.legal(selection.get().filter((id) => state.nodes.has(id))));
+      selection.replace(selection.legal(selection.get()));
       notifier.notify();
     },
 
@@ -214,7 +215,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
   return buildScene(
     options,
     json.systemLayers.map(layerFromSerialized),
-    (registry) => specsFromSerialized(json, registry, options),
+    (registry) => foldable(specsFromSerialized(json, registry, options), options.composition),
     json.doc,
   );
 }

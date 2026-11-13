@@ -24,6 +24,11 @@ export interface JobCapability<TS = unknown, TC = unknown, TItem = unknown> {
   run: (args: { config: TC; state: TS; signal: AbortSignal }) => AsyncIterable<JobEvent<TItem>>;
   /** Fold one result into state. Called once per `item` event, in arrival order. */
   onItem: (item: TItem, state: TS) => TS;
+  /** The state a run folds its items into, from the state as it starts: where
+   *  `onItem` accumulates, return it with the last run's results cleared. A run
+   *  starts on mount for an `auto` job, a reloaded trial included, so without
+   *  this each run adds its items to those already there. Default: unchanged. */
+  begin?: (state: TS, config: TC) => TS;
 }
 
 /** One item that failed, and why. */

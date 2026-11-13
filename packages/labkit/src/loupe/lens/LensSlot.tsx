@@ -1,3 +1,4 @@
+import { useDeviceProfile } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
 import {
   type CSSProperties,
@@ -24,8 +25,9 @@ import {
   shownSource,
   unavailableText,
 } from './lensSource';
-import { LENS_REST_MS, type LensSettings, type LensSourceKind } from './lensTypes';
+import type { LensSettings, LensSourceKind } from './lensTypes';
 import { gridFits } from './pixelGrid';
+import { useCaptureDelay } from './useCaptureDelay';
 
 /** Which source a lens shows, re-resolved whenever any source's availability changes. */
 export function useLensResolution<C>(
@@ -115,9 +117,11 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
   useEffect(() => subscribe(() => setTick((n) => n + 1)), [subscribe]);
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const [said, say] = useState<string | null>(null);
-  const started = useRef(false);
+  const captureDelay = useCaptureDelay();
   const latest = useLatest({ reticle, size });
   const dpr = settings.dprs[0] ?? 1;
+  // The screen's, which the diff is drawn at; `dpr` is the captures'.
+  const { dpr: density } = useDeviceProfile();
   const { compare, factor } = settings;
   const { lensId } = lens;
   // biome-ignore lint/correctness/useExhaustiveDependencies: the reticle, the size and `tick` are the signal to capture again; the capture reads `latest`
@@ -144,15 +148,14 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
             say(missing.reason);
             return;
           }
-          paintDifference(el, a as LensCapture, b as LensCapture, { size: box, factor });
+          paintDifference(el, a as LensCapture, b as LensCapture, { size: box, factor, density });
           say(null);
         })
         .catch((err: unknown) => {
           if (live) say(messageOf(err));
         });
     // At once the first time; after that, once whatever moved has come to rest.
-    const timer = setTimeout(run, started.current ? LENS_REST_MS : 0);
-    started.current = true;
+    const timer = setTimeout(run, captureDelay());
     return () => {
       live = false;
       clearTimeout(timer);
@@ -168,8 +171,10 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
     factor,
     compare,
     dpr,
+    density,
     tick,
     latest,
+    captureDelay,
   ]);
   const reason = status === true ? said : unavailableText('pixels', status);
   // A message stands in for the image: what was drawn before it no longer answers.

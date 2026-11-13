@@ -38,7 +38,8 @@ export interface UseSelectionOptions {
   scene?: SelectionStore;
   /** When `true`, every mutator (`set`/`add`/`remove`/`toggle`/`clear`/
    *  `applyClick`) is a no-op — selection stays at whatever `initial`
-   *  pinned it to. */
+   *  pinned it to. With `scene`, only this hook is held: undo, redo and other
+   *  hooks on that store still move it, and `initial` seeds it only when empty. */
   lock?: boolean;
 }
 

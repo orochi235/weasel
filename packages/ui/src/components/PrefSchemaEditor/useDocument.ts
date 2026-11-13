@@ -22,7 +22,8 @@ export interface DocumentOptions<V> {
   taken: boolean;
   /** The selection a step records and restores. */
   selection: { get(): string[]; set(ids: readonly string[]): void };
-  /** Called with the value before and after each `commit`, ahead of handing it on. Not called on undo or redo. */
+  /** Called with the value before and after each `commit`, ahead of handing it on: before is the value last handed
+   *  to `onChange`, which a render may not have shown yet. Not called on undo or redo. */
   onCommit?(before: V, after: V): void;
 }
 
@@ -88,6 +89,8 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
   }, []);
 
   const sent = useRef<unknown>(null);
+  // Sends numbered as they leave, and the newest that has landed: one landing after a later send must not replace it.
+  const sends = useRef({ left: 0, landed: 0 });
   useEffect(() => {
     sent.current ??= draftKey === undefined ? null : codec.openSent(draftKey, draftStorage);
     if (!taken || sent.current === null) return;
@@ -102,7 +105,8 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
 
   return {
     commit(next, coalesceKey) {
-      const before = latest.current.value;
+      // What the last commit or step handed on, which a render may not have shown yet.
+      const before = emitted.current;
       latest.current.onCommit?.(before, next);
       history.applyOps([swapOp(before, next, hand, coalesceKey)], 'edit schema');
       keep();
@@ -117,7 +121,10 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
     current: () => emitted.current,
     async send(run) {
       const packed = codec.packSent(emitted.current, base);
+      const mine = ++sends.current.left;
       await run();
+      if (mine < sends.current.landed) return;
+      sends.current.landed = mine;
       sent.current = packed;
       if (draftKey !== undefined) codec.saveSent(draftKey, packed, draftStorage);
     },

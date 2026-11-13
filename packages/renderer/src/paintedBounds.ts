@@ -1,5 +1,5 @@
 import { type Path, mat3, type GlMat3 } from '@weasel-js/geom';
-import { resolveScreenLength, type Stroke } from '@weasel-js/paint';
+import { DEFAULT_MITER_LIMIT, resolveScreenLength, type Stroke } from '@weasel-js/paint';
 import { markerReach, resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
 import {
   SPRITE_STRIDE, type DrawCommand, type ImageDrawCommand, type PathDrawCommand, type ShaderDrawCommand,
@@ -8,9 +8,6 @@ import {
 import { effectsReach } from './effects/types';
 import { getProgramSource } from './shaders/registerProgram';
 import { textBox } from './textBounds';
-
-/** Matches the tessellator's default. */
-const DEFAULT_MITER_LIMIT = 4;
 
 /** An axis-aligned box in screen space, CSS pixels. */
 export interface ScreenBox { minX: number; minY: number; maxX: number; maxY: number }

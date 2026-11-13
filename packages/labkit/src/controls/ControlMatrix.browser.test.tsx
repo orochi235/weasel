@@ -5,6 +5,7 @@ import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
 import { ControlMatrix, type ControlMatrixColumn } from '@weasel-js/labkit/controls';
 import { baselineOf } from '@weasel-js/react/testing/baselineOf';
 import { afterEach, expect, test } from 'vitest';
+import { commands } from 'vitest/browser';
 
 // Where the lifted column headers sit against the panel title is a layout question.
 
@@ -52,5 +53,37 @@ test('and so do headers that are buttons, beside a twisty', () => {
   const { title, heads } = matrix({ onColumnClick: () => {}, collapsible: true });
   for (const head of heads) {
     expect(Math.abs(baselineOf(head) - baselineOf(title))).toBeLessThan(0.5);
+  }
+});
+
+test('under forced colors a switch draws its thumb apart from its track', async () => {
+  await commands.forcedColors('active');
+  try {
+    const looks = {
+      defaults: { background: true, glow: 0.25 },
+      window: { background: false, glow: 0.25 },
+    };
+    matrix({ config: { looks } });
+    const switches = [...document.querySelectorAll('.lk-control-matrix__switch')];
+    expect(switches.map((sw) => sw.getAttribute('aria-checked')).sort()).toEqual(['false', 'true']);
+    for (const sw of switches) {
+      const bg = (part: string) =>
+        getComputedStyle(sw.querySelector(`.lk-control-matrix__${part}`) as Element)
+          .backgroundColor;
+      expect(bg('thumb')).not.toBe(bg('track'));
+    }
+  } finally {
+    await commands.forcedColors('none');
+  }
+});
+
+test("under prefers-reduced-motion a switch's thumb jumps to its side", async () => {
+  await commands.reducedMotion('reduce');
+  try {
+    matrix();
+    const thumb = document.querySelector('.lk-control-matrix__thumb') as Element;
+    expect(getComputedStyle(thumb).transitionDuration).toBe('0s');
+  } finally {
+    await commands.reducedMotion('no-preference');
   }
 });

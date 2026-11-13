@@ -11,7 +11,7 @@ import type { HeldPointerFeed } from './gestureDispatcherOptions';
 import { dispatcherWatch } from './dispatcherWatch';
 import { carryInput } from './channels/carry';
 import { contextMenuInput } from './channels/contextMenu';
-import { hoverCursorInput } from './channels/hoverCursor';
+import { hoverCursorInput, type HoverCursorInput } from './channels/hoverCursor';
 import { DROPOVER_CLASS, ingestInput } from './channels/ingest';
 import { keyboardInput } from './channels/keyboard';
 import { joinSurface } from './channels/keyPeers';
@@ -80,6 +80,7 @@ export function attachInput(
     clicks: src.clicks,
     hover,
     controls: src.controls,
+    secondaryDrags: channels.contextMenu,
   });
 
   // A window that loses focus never delivers the keyup, so without this every
@@ -107,25 +108,10 @@ export function attachInput(
   // Whether or not the pointer channel is on: it is what an `over` key binding asks.
   trackPointerOver(listeners, canvas, core, keys);
   if (channels.pointer) {
-    // Separate from the key channel's listeners, so the cursor also tracks
-    // modifiers when `keyboard: false` turns gesture key dispatch off.
-    listeners.on(window, 'keydown', hover.onKey);
-    listeners.on(window, 'keyup', hover.onKey);
-    listeners.on(window, 'keydown', pointer.modifiersChanged);
-    listeners.on(window, 'keyup', pointer.modifiersChanged);
-    listeners.on(canvas, 'pointerleave', hover.onLeave);
-    listeners.on(canvas, 'pointerdown', pointer.onPointerDown);
-    listeners.on(canvas, 'pointermove', pointer.onHoverMove);
-    listeners.on(canvas, 'dblclick', pointer.onNativeDoubleClick);
+    listenPointer(listeners, canvas, pointer, hover);
     src.heldPointer()?.({ at: pointer.heldAt, repeat: pointer.repeatHeld });
   } else if (channels.hover) {
-    listeners.on(window, 'keydown', hover.onKey);
-    listeners.on(window, 'keyup', hover.onKey);
-    listeners.on(canvas, 'pointerleave', hover.onLeave);
-    listeners.on(canvas, 'pointermove', (e: PointerEvent) => {
-      core.routeAt(null, e.clientX, e.clientY);
-      hover.moved(e);
-    });
+    listenHover(listeners, canvas, core, hover);
   }
   if (channels.wheel) listenWheel(listeners, canvas, wheelInput(core, pinch.live));
   if (channels.pinch) {
@@ -134,7 +120,7 @@ export function attachInput(
     listeners.on(canvas, 'gestureend', pinch.onGestureEnd);
   }
   if (channels.contextMenu) {
-    listeners.on(canvas, 'contextmenu', contextMenuInput(core, pointer.takeNativeHold));
+    listeners.on(canvas, 'contextmenu', contextMenuInput(core, pointer.takeNativeHold, pointer.takeNativeMenu));
   }
   if (channels.ingest) {
     listeners.on(canvas, 'dragenter', ingest.onDragOver);
@@ -167,6 +153,31 @@ export function attachInput(
 }
 
 /** Listen for the wheel in the capture phase, for one that landed here, and in the bubble phase, for one that landed in a nested surface. */
+/** The pointer channel's listeners, and the hover cursor's beside them. */
+function listenPointer(listeners: ListenerSet, canvas: HTMLElement | null, pointer: PointerInput, hover: HoverCursorInput): void {
+  // Separate from the key channel's listeners, so the cursor also tracks
+  // modifiers when `keyboard: false` turns gesture key dispatch off.
+  listeners.on(window, 'keydown', hover.onKey);
+  listeners.on(window, 'keyup', hover.onKey);
+  listeners.on(window, 'keydown', pointer.modifiersChanged);
+  listeners.on(window, 'keyup', pointer.modifiersChanged);
+  listeners.on(canvas, 'pointerleave', hover.onLeave);
+  listeners.on(canvas, 'pointerdown', pointer.onPointerDown);
+  listeners.on(canvas, 'pointermove', pointer.onHoverMove);
+  listeners.on(canvas, 'dblclick', pointer.onNativeDoubleClick);
+}
+
+/** Hover alone, with the pointer channel off: the moves still route and paint the cursor. */
+function listenHover(listeners: ListenerSet, canvas: HTMLElement | null, core: DispatchCore, hover: HoverCursorInput): void {
+  listeners.on(window, 'keydown', hover.onKey);
+  listeners.on(window, 'keyup', hover.onKey);
+  listeners.on(canvas, 'pointerleave', hover.onLeave);
+  listeners.on(canvas, 'pointermove', (e: PointerEvent) => {
+    core.routeAt(null, e.clientX, e.clientY);
+    hover.moved(e);
+  });
+}
+
 function listenWheel(listeners: ListenerSet, canvas: HTMLElement | null, wheel: ReturnType<typeof wheelInput>): void {
   listeners.on(canvas, 'wheel', wheel.capture, { passive: false, capture: true });
   listeners.on(canvas, 'wheel', wheel.bubble, { passive: false });

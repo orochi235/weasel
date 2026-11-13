@@ -191,6 +191,7 @@
 /* A disabled control dims itself; the name beside it is the bar's to dim. */
 .field:has(:disabled, [data-disabled]) > :is(.label, .after) {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
 }
 
 /* A bar's budget is one line rather than a column, so a number carries only
@@ -327,6 +328,7 @@
 .action[aria-disabled='true'],
 .popTrigger[data-disabled] {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
 }
 

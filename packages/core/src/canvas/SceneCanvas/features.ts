@@ -36,7 +36,7 @@ export const SCENE_CANVAS_FEATURES = [
   'escape', 'contextMenu', 'selectAll', 'duplicate', 'delete', 'group', 'nudge', 'style', 'clipboard', 'edit',
   'flip', 'reorder', 'align', 'distribute', 'arrange',
   'anchorKeys', 'pathfinder', 'outlines', 'pathEdit', 'pathCommands', 'paths',
-  'ingest', 'draw',
+  'ingest', 'draw', 'whiteboard',
 ] as const;
 
 /** A core preset's name, as `<SceneCanvas features>` takes it. */

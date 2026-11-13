@@ -4,10 +4,10 @@
  * the warnings for what neither format holds.
  */
 import {
-  dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramThemeFrom, type DataEdge, type DataNode, type DiagramTheme,
+  DEFAULT_PORTS, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramThemeFrom, type DataEdge, type DataNode, type DiagramTheme,
   type EdgeStyle, type NodeStyle,
 } from '@weasel-js/diagram';
-import { normalizeHex, parseColor, rgbaToHex, tryNormalizeHex } from '@weasel-js/paint';
+import { normalizeHex, rgbaToHex, tryNormalizeHex, tryParseColor } from '@weasel-js/paint';
 import { deepEqual } from '@weasel-js/registry';
 import { graphPageOf, writtenPage, type DiagramDocument, type GraphPage, type WriteOptions } from './document';
 import { Warnings } from './graphRead';
@@ -35,6 +35,12 @@ export interface GraphOut {
   clusterIds: ReadonlySet<string>;
   edges: DataEdge[];
   warnings: Warnings;
+}
+
+/** Whether `node` has ports or port labels of its own, which no graph format holds. A scene carries a port's label on
+ *  the port, so `documentFromScene` writes `ports` and never `portLabels`. */
+export function ownPorts(node: DataNode): boolean {
+  return node.portLabels !== undefined || (node.ports !== undefined && !deepEqual(node.ports, DEFAULT_PORTS, { undefinedAsAbsent: true }));
 }
 
 /** A node's text, a line per text row. */
@@ -102,6 +108,7 @@ export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, f
   for (const n of page.data.nodes) {
     if (n.outline !== undefined && typeof n.outline !== 'string') warnings.add(`${format} has no drawn outlines; those shapes were written as rectangles.`);
     if (n.marks !== undefined && n.marks.length > 0) warnings.add(`${format} has no marks; the marks drawn over shapes were dropped.`);
+    if (ownPorts(n)) warnings.add(`${format} has no ports of a shape's own; shapes' ports and port labels were dropped.`);
   }
   if (page.data.edges.some((e) => e.waypoints !== undefined && e.waypoints.length > 0)) {
     warnings.add(`${format} holds no routes; connectors' bends were dropped.`);
@@ -116,12 +123,8 @@ export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, f
 export function hexColor(css: string): string {
   if (css.startsWith('#')) return tryNormalizeHex(css) ?? css;
   if (!/^rgba?\(/i.test(css)) return css;
-  let rgba: readonly [number, number, number, number];
-  try {
-    rgba = parseColor(css);
-  } catch {
-    return css;
-  }
+  const rgba = tryParseColor(css);
+  if (!rgba) return css;
   // An alpha written out is kept, `ff` included: a fourth comma-separated value or one after `/`.
   return normalizeHex(rgbaToHex(rgba), /\/|(?:,[^,]*){3}/.test(css) ? 'rgba' : 'rgb');
 }

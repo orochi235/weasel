@@ -1,3 +1,4 @@
+import './labTestSetup';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ThemeDefinition } from '@weasel-js/theme';
@@ -50,6 +51,16 @@ describe('<ThemeWorkbench>', () => {
     expect([...items.keys()]).toEqual([]);
   });
 
+  it('says a draft is not being kept when the browser refuses to store it', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => { throw new DOMException('full', 'QuotaExceededError'); },
+      removeItem: () => {},
+    });
+    renderBench({ start: { definition: edited, baseHash: 'h1' } });
+    expect(screen.getByText(/This draft is not being kept in the browser/)).toBeInTheDocument();
+  });
+
   describe('a draft that does not derive', () => {
     const broken = () => renderBench({ start: { definition: { ...weasel, pins: { ...weasel.pins, fg: '{nope}' } }, baseHash: 'h1' } });
 
@@ -79,7 +90,7 @@ describe('<ThemeWorkbench>', () => {
 
   it('reports how many own tokens a pin overrides, and each layer in the rail', () => {
     renderBench();
-    expect(screen.getByText('23 of 181 overridden')).toBeInTheDocument();
+    expect(screen.getByText('23 of 182 overridden')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Ramps/ })).toHaveTextContent('23 pinned');
   });
 

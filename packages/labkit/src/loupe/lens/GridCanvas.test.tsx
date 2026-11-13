@@ -25,7 +25,11 @@ function source(kind: 'live' | 'pixels') {
   return { s, capture };
 }
 
-function mount(patch: Partial<LensSettings<string>>, sources: LensSources<string>) {
+function mount(
+  patch: Partial<LensSettings<string>>,
+  sources: LensSources<string>,
+  reactStrictMode = false,
+) {
   const props = {
     lens: IDS,
     settings: { ...LENS_DEFAULTS, ...patch },
@@ -43,6 +47,7 @@ function mount(patch: Partial<LensSettings<string>>, sources: LensSources<string
         <LensChrome {...props} />
       </div>
     </>,
+    { reactStrictMode },
   );
 }
 
@@ -61,6 +66,13 @@ describe('the Pixel grid canvas', () => {
       dpr: 1,
       conditions: null,
     });
+  });
+
+  it('takes its first capture at once under StrictMode, not after the rest a repeat waits', async () => {
+    const pixels = source('pixels');
+    mount({ source: 'pixels', factor: 8, readouts: ['grid'] }, { pixels: pixels.s }, true);
+    await settle();
+    expect(pixels.capture).toHaveBeenCalledTimes(1);
   });
 
   it('is not mounted until the lens has switched it on', () => {

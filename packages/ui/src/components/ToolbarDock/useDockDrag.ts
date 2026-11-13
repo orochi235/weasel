@@ -8,6 +8,7 @@ import { DOCK_BAR, drawnBars, drawnLayout, keyTarget, movedLayout, placeWords, s
 import { floatWhereDrawn, grabBar, homeTarget, measureEmpties, tearStep, type DockGrab } from './dockTear';
 import { canEnter, floatOf, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
 import { isNudgeChord } from '@weasel-js/ui-input';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /**
  * What a drag in progress shows: the bar it lifted, the drawn docks that bar may not enter, where it would drop, and
@@ -101,7 +102,7 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
     const el = root.current;
     const into = layer.current;
     const bar = barOf(barId);
-    if (!el || !into || !bar || !latest.current.onLayoutChange || drag.current !== null || e.button !== 0) return;
+    if (!el || !into || !bar || !latest.current.onLayoutChange || drag.current !== null || !isPrimaryPress(e)) return;
     const press = { clientX: e.clientX, clientY: e.clientY };
     const torn = { now: false };
     let grab: DockGrab | null = null;

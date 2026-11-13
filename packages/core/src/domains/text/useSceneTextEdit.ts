@@ -17,18 +17,18 @@ import { scenePaintedPoseOf } from '../../canvas/derivedPath';
 import type { Scene } from '../../core/scene/types';
 import { drawOneEditing, type EditingDrawOne } from './editingDrawOne';
 import { textHitAt } from './textHitAt';
-import { registerHostTextEditor } from './hostTextEditors';
+import { registerHostTextEditor, type HostTextEditorHandle } from './hostTextEditors';
 import { editedData, sceneTextDrafts } from './sceneTextDrafts';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { inheritedPaintIn } from '../../canvas/inheritedPaints';
 import { withInheritedPaint } from '../../core/scene/inheritedPaint';
-import { clientToCanvas } from '@weasel-js/routing';
+import { clientToCanvas, layoutBoxOf } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
 import { poseFrameOf, viewScreenToWorld } from '@weasel-js/geom';
-import { isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
+import { DEFAULT_TEXT_STYLE, isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import { textBoxOf, type TextOverflow } from '../../canvas/nodeShapes/textPainter';
 import { useTextEdit, type TextEditClipRect, type TextEditScreenPose, type UseTextEditReturn } from '@weasel-js/text-dom';
 
@@ -85,7 +85,10 @@ export interface UseSceneTextEditOptions<TData> {
    * written as one `scene.update`, so a commit is one undo step.
    */
   setStyle?: (data: TData, style: TextStyle) => TData;
-  /** Fallback fontSize when `style.fontSize` is unset. Default `16`. */
+  /**
+   * @deprecated Ignored. A node with no `style.fontSize` is edited at the size the canvas lays it out at,
+   * `DEFAULT_TEXT_STYLE.fontSize`, which this never changed: it sized only the overlay, off the glyphs.
+   */
   defaultFontSize?: number;
   /**
    * The view to project through. Omit it and the view is read live from the
@@ -136,9 +139,9 @@ export interface UseSceneTextEditReturn extends UseTextEditReturn {
   /**
    * `defaultDrawOne`, less the glyphs of the node being edited: the overlay
    * stands in for its text, and the rest of the node, a `background` among
-   * it, goes on painting. Pass it as `layers.scene.drawOne`, with
-   * `paintBounds: defaultPaintBounds`, in place of an `alphaFor` that hides
-   * the whole node.
+   * it, goes on painting. A `<SceneCanvas>` inside `container` drawing this
+   * scene already leaves those glyphs out; this is for anything else that
+   * draws the node.
    */
   drawOne: EditingDrawOne;
 }
@@ -165,7 +168,8 @@ function projectionsOf<TData extends DefaultTextData>(opts: { readonly current: 
 
 /** Wire double-click-to-edit text on a scene: mounts a DOM editing overlay
  *  over the node being edited and writes the result back as an undoable op.
- *  `<SceneCanvas>`'s own editor stands down for any canvas inside `container`. */
+ *  `<SceneCanvas>`'s own editor stands down for any canvas inside `container`,
+ *  and such a canvas leaves out the glyphs of the node being edited. */
 export function useSceneTextEdit<
   TData extends DefaultTextData,
   TLayer extends string,
@@ -175,8 +179,19 @@ export function useSceneTextEdit<
   container: HTMLElement | null,
   options: UseSceneTextEditOptions<TData> = {},
 ): UseSceneTextEditReturn {
-  useEffect(() => (container ? registerHostTextEditor(container) : undefined), [container]);
-  return useSceneTextEditor(scene, container, options);
+  const host = useRef<HostTextEditorHandle | null>(null);
+  useEffect(() => {
+    if (!container) return undefined;
+    const handle = registerHostTextEditor(container, scene);
+    host.current = handle;
+    return () => {
+      handle.dispose();
+      if (host.current === handle) host.current = null;
+    };
+  }, [container, scene]);
+  const edit = useSceneTextEditor(scene, container, options);
+  useEffect(() => { host.current?.setEditing(edit.editingId); }, [edit.editingId, container, scene]);
+  return edit;
 }
 
 /** `useSceneTextEdit` without announcing itself as a host's editor: what
@@ -207,13 +222,14 @@ export function useSceneTextEditor<
     const root = containerRef.current;
     const canvas = root ? findMountedCanvas(root, openedOnRef.current) : null;
     if (!root || !canvas) return null;
-    const a = canvas.element.getBoundingClientRect();
-    const b = root.getBoundingClientRect();
+    // Layout boxes: under an ancestor transform a client offset is the container's px times its scale.
+    const a = layoutBoxOf(canvas.element);
+    const b = layoutBoxOf(root);
     return {
       canvas,
       box: {
-        x: a.left - b.left - root.clientLeft + root.scrollLeft,
-        y: a.top - b.top - root.clientTop + root.scrollTop,
+        x: (a.left - b.left) / b.scale.x - root.clientLeft + root.scrollLeft,
+        y: (a.top - b.top) / b.scale.y - root.clientTop + root.scrollTop,
         width: a.width,
         height: a.height,
       },
@@ -254,7 +270,7 @@ export function useSceneTextEditor<
       if (!node) return null;
       const at = surface();
       const view = resolveView(optsRef.current.view) ?? at?.canvas.getView();
-      return screenPoseOf(node.data, scenePaintedPoseOf(scene)(node), read, view, at?.box, optsRef.current.defaultFontSize);
+      return screenPoseOf(node.data, scenePaintedPoseOf(scene)(node), read, view, at?.box);
     },
     getClipRect: () => surface()?.box ?? null,
     getRuns: (id) => {
@@ -264,7 +280,8 @@ export function useSceneTextEditor<
     commit: (id, { text, runs, style }) => {
       const nid = asNodeId(id);
       const node = sceneRef.current.get(nid);
-      if (!node) return;
+      // A node removed or locked during the edit takes no write; the edit still ends.
+      if (!node || sceneRef.current.isLocked(nid)) return;
       drafts.commit(id, editedData(node.data, { text, runs, style }, optsRef.current));
     },
   });
@@ -309,14 +326,13 @@ function screenPoseOf<TData extends DefaultTextData>(
   read: ReturnType<typeof projectionsOf<TData>>,
   view: View | undefined,
   origin: TextEditClipRect | undefined,
-  defaultFontSize = 16,
 ): TextEditScreenPose {
   const inset = textBoxOf({ padding: read.padding(d) }, painted);
   const box = screenBoxOf({ ...painted, ...inset }, view, origin);
   return {
     ...box,
     // `kit:text` lays a `{ px }` size out at scale 1, as that many world units.
-    fontSize: resolveScreenLength(read.style(d)?.fontSize ?? defaultFontSize, 1),
+    fontSize: resolveScreenLength(read.style(d)?.fontSize ?? DEFAULT_TEXT_STYLE.fontSize, 1),
     pxScale: 1,
     verticalAlign: read.verticalAlign(d),
     ...(read.overflow(d) === 'clip' ? { clip: clipToBox(inset, painted) } : {}),

@@ -3,6 +3,8 @@ import { registerOpFactory } from './registry';
 import { captureSlot, resolveSlot, slotFromIndex, type OrderedReader, type SiblingSlot } from './slot';
 
 interface ReparentAdapter extends OrderedReader {
+  /** Where `id` sits now. An adapter that has it is read over `fromParentId`, which a caller can have stale. */
+  getParent?(id: string): string | null;
   setParent(id: string, parentId: string | null): void;
   /** Sibling-order write, paired with `getChildren`. */
   setChildOrder(parentId: string | null, ids: string[]): void;
@@ -66,9 +68,10 @@ function optionalSlot(slot: SiblingSlot | undefined, index: number | undefined):
  */
 export function createReparentOp(args: ReparentArgs): Op {
   const {
-    id, fromParentId, toParentId,
+    id, toParentId,
     label = 'Reparent', coalesceKey = `reparent:${id}`,
   } = args;
+  let { fromParentId } = args;
   let fromSlot = optionalSlot(args.fromSlot, args.fromIndex);
   const toSlot = optionalSlot(args.toSlot, args.toIndex);
   const argsForSerial: ReparentArgs = {
@@ -81,6 +84,11 @@ export function createReparentOp(args: ReparentArgs): Op {
     coalesceKey,
     apply(adapter) {
       const a = adapter as ReparentAdapter;
+      const live = a.getParent?.(id);
+      if (live !== undefined && live !== fromParentId && a.getChildren(live).includes(id)) {
+        fromParentId = live;
+        argsForSerial.fromParentId = live;
+      }
       const observed = captureSlot(a, fromParentId, id);
       if (observed) {
         fromSlot = observed;

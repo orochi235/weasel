@@ -12,6 +12,7 @@
 import type { ColorSource } from '@weasel-js/paint';
 import type { KitSettingsStore } from '@weasel-js/react';
 import type { ReactNode } from 'react';
+import type { HandleSizeToken } from '../../handles';
 import type { Point as PlotPoint, ModelRange } from '../Plot2D/geometry';
 
 /** Convenience aliases — both are `{ x, y }` but with different units. */
@@ -49,6 +50,8 @@ export interface LayerRenderCtx extends LayerCtx {
   /** A color source as a CSS color under the theme, tints, and palette in
    *  force; `undefined` for no source and for one nothing answers. */
   colorCss(source: ColorSource | null | undefined): string | undefined;
+  /** Half a handle's size in px under the theme in force (see `handleHalf`). */
+  handleHalf(token: HandleSizeToken): number;
 }
 
 /** Layer-private payload returned from `hitTest`. The editor doesn't

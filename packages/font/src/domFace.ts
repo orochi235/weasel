@@ -15,7 +15,7 @@ import type { FontStyle } from './fontStyle';
 import { cssFamilyName, cssString } from './cssFamily';
 import { resolveFontVariant, type FontVariant } from './registerFont';
 import {
-  listFontOutlines, outlineCssSource, onOutlineBytes, type OutlineFaceInfo,
+  hasFontOutlines, listFontOutlines, outlineCssSource, onOutlineBytes, type OutlineFaceInfo,
 } from './outline/outlineRegistry';
 
 interface Loaded {
@@ -65,6 +65,7 @@ function privateFamily(family: string, variant: FontVariant): {
   const resolved = resolveFontVariant(family, variant.weight ?? 400, variant.style ?? 'normal');
   if (resolved.source === 'canvas') return null;
   const target = resolved.resolved.family;
+  dropUnregistered(target);
   const variants = listFontOutlines().filter((f) => f.family === target && f.status !== 'failed');
   if (variants.length === 0) {
     if (resolved.entry && !warned.has(target)) {
@@ -130,6 +131,17 @@ export function cssFontFamilyLoading(
     .filter((l): l is Loaded => l !== undefined && !l.settled)
     .map((l) => l.done);
   return pending.length === 0 ? null : Promise.all(pending).then(() => {});
+}
+
+/** Take `family`'s faces whose outline registration is gone out of `document.fonts`, so the
+ *  browser stops matching a weight or style the canvas no longer draws from that file. */
+function dropUnregistered(family: string): void {
+  for (const [key, loaded] of faces) {
+    const { from } = loaded;
+    if (from.family !== family || hasFontOutlines(from.family, from.weight, from.style)) continue;
+    if (loaded.face) document.fonts.delete(loaded.face);
+    faces.delete(key);
+  }
 }
 
 function ensureFace(

@@ -4,7 +4,7 @@
  * `<SceneCanvas>` makes the one its `<Canvas>` looks through, and each
  * `<CanvasView>` makes its own.
  */
-import { useCallback, useRef, type MutableRefObject } from 'react';
+import { useCallback, useLayoutEffect, useRef, type MutableRefObject } from 'react';
 import { HOME_VIEW } from 'core/viewport/homeView';
 import { useLatest } from '@weasel-js/react';
 import type { Dims } from 'core/layers/render';
@@ -25,8 +25,9 @@ export interface CameraProps {
   onViewChange?: (next: View) => void;
   /**
    * Optional world-space rect that constrains pan: every write to the view passes through
-   * `clampView` first, keeping the visible rect inside `viewBounds`. An axis where the
-   * visible rect is larger than the bounds is centered. Has no effect on `scale`.
+   * `clampView` first, keeping the visible rect inside `viewBounds`, and so do `defaultView`
+   * and a resize of the canvas. An axis where the visible rect is larger than the bounds is
+   * centered. Has no effect on `scale`.
    */
   viewBounds?: { x: number; y: number; width: number; height: number };
 }
@@ -77,6 +78,10 @@ export interface CanvasViewState {
   announceControlled: () => void;
   /** Drop every subscriber, on unmount. */
   clearSubscribers: () => void;
+  /** Bring the view back inside `viewBounds` at the size the camera now looks
+   *  through, as an input write would. Call when that size changes: bounds
+   *  hold the visible rect, which a resize moves with no write. */
+  reclamp: () => void;
 }
 
 
@@ -152,8 +157,24 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   }, []);
   const clearSubscribers = useCallback(() => { viewSubsRef.current.clear(); }, []);
 
+  const reclamp = useCallback(() => {
+    const { viewBounds: bounds, dims: size, derived } = live.current;
+    const dims = size();
+    // An unmeasured canvas shows nothing to hold inside anything.
+    if (!bounds || derived || !(dims.width > 0 && dims.height > 0)) return;
+    const view = getView();
+    const reach = typeof bounds === 'function' ? bounds(view, dims) : bounds;
+    if (reach && !sameView(clampView(view, reach, dims), view)) write(view, false);
+  }, [live, getView, write]);
+
   return {
     viewRef, controlled: controlledView, setView, setViewFromInput, getView, subscribeView,
-    adoptControlled, announceControlled, clearSubscribers,
+    adoptControlled, announceControlled, clearSubscribers, reclamp,
   };
+}
+
+/** Run a camera's `reclamp` when the size it looks through changes. Call after whatever its `dims` reads
+ *  through is current for the commit. */
+export function useReclampOnResize(reclamp: () => void, width: number, height: number): void {
+  useLayoutEffect(() => { reclamp(); }, [reclamp, width, height]);
 }

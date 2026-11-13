@@ -1,5 +1,110 @@
 # @weasel-js/routing
 
+## 1.19.1
+
+### Minor Changes
+
+- d3a8b36: `undoKeyStep`, labkit's reading of an undo chord for a page-level handler, is exported from routing and core too.
+  
+  It skips a chord typed in a text field or already handled. labkit still exports it.
+  
+  <!-- entry: api -->
+- 8cd600b: A middle-button drag pans the view under every tool on a canvas with the `view` preset. A `drag` binding names its button — `DragSpec.button`, written `drag(middle)` or `drag(secondary)` in a route, `primary` by default and `*` for any — and `middleDragPanContribution` adds the pan to a canvas without the preset. A press with another button only drags; one that no binding would drag is left to the browser. On a canvas that binds a secondary drag, a right-click opens its context menu on the release rather than the press.
+  
+  <!-- entry: rank=10 api new behavior pick -->
+- ce1f1a7: A pen's eraser end presses, drags and draws on a canvas and on kit controls as its tip does; its barrel button is a secondary press.
+  
+  `isPrimaryPress(e)` and `pressButtonOf(e)` are new, exported from `@weasel-js/gestures` (and `isPrimaryPress` from `@weasel-js/routing` and `@weasel-js/core`): the one answer to which button a pointer press was made with.
+  
+  <!-- entry: fix api -->
+- ca3a89a: A canvas shows the cursor of the tool its input goes to, so a tool the active mode bars no longer shows its cursor.
+  
+  `ToolsApi.routed` and `ContributionsApi.routed` name that tool: the newest held tool the mode allows, else the active tool if the mode allows it, else `null`.
+  
+  <!-- entry: fix api -->
+- 687501a: `layoutBoxOf`, `clientScaleOf` and `canvasToClient` are exported: an element's CSS-pixel box and the scale it is shown at.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 3fdf6ae: An action's `enabled` is handed a drop's world point as `at`, so it can refuse a drop by where it lands, and the drag's preview agrees.
+  
+  <!-- entry: fix -->
+- 770768b: An ongoing action started by a long-press is handed the press's world point in `ctx.world`.
+  
+  <!-- entry: fix -->
+- 25e3464: A throwing `active` predicate gets the dev warning a throwing `enabled` gets, once per action, instead of reading as off in silence.
+  
+  <!-- entry: fix -->
+- 687501a: `clientToCanvas` answers in the element's own CSS pixels when an ancestor transform shows it larger or smaller.
+  
+  <!-- entry: fix -->
+- 4ff8a4b: `ToolsApi.disengageHotkey()` releases the newest hold `engageHotkey` made, and leaves a tool held on its key (Space for the hand) held.
+  
+  <!-- entry: fix -->
+- 2de6b88: A binding whose action's `enabled` throws declines the gesture, which goes to the next candidate, as the palette and menus already read it.
+  
+  <!-- entry: fix -->
+- 9db6c05: Releasing one of two registrations of the same action or dep source leaves the other live where it sat.
+  
+  <!-- entry: fix -->
+- 42f5a79: A tool taken out of the registry while it is active or held on a key hears `onDeactivate`, and a gesture it had in flight is canceled.
+  
+  A half-drawn pen path is discarded and the measure tool stops measuring, as on a switch to another tool. If the tool comes back while it still holds the slot, it hears `onActivate` again.
+  
+  <!-- entry: fix -->
+- 72e6d28: Undo, redo and every `matchesKeyBinding` shortcut fire on a non-Latin keyboard layout. They read the letter the key bears, as canvas bindings already did.
+  
+  <!-- entry: fix -->
+- 6289e51: Shift+wheel steps a tool's size at once on the first notch after the system clock is set back.
+  
+  <!-- entry: fix -->
+- Updated dependencies [5159b4f]
+- Updated dependencies [c9adfef]
+- Updated dependencies [97be45c]
+- Updated dependencies [71c3f85]
+- Updated dependencies [58309aa]
+- Updated dependencies [11a14fb]
+- Updated dependencies [49caa4b]
+- Updated dependencies [c2f8f12]
+- Updated dependencies [8763373]
+- Updated dependencies [de8f829]
+- Updated dependencies [5159b4f]
+- Updated dependencies [72e6d28]
+- Updated dependencies [0a483ad]
+- Updated dependencies [8cd600b]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [8ada2a6]
+- Updated dependencies [039b7ad]
+- Updated dependencies [d254251]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [8562ebe]
+- Updated dependencies [d40d869]
+- Updated dependencies [250c105]
+- Updated dependencies [a09ed24]
+- Updated dependencies [8562ebe]
+- Updated dependencies [72e6d28]
+- Updated dependencies [2c3416d]
+  - @weasel-js/ui-input@1.19.1
+  - @weasel-js/quantity@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/gestures@1.19.1
+  - @weasel-js/history@1.19.1
+  - @weasel-js/menu@1.19.1
+  - @weasel-js/prefs@1.19.1
+  - @weasel-js/react@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/cursor@1.19.1
+  - @weasel-js/icons@1.19.1
+  - @weasel-js/modes@1.19.1
+  - @weasel-js/select@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

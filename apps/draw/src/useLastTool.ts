@@ -11,6 +11,10 @@ export function useLastTool(tools: ToolsApi | null, modes?: ModeRegistry): void 
   const [lastTool, setLastTool] = usePref('tools.lastTool');
   const restored = useRef(false);
   const active = tools?.active ?? null;
+  // A remount restores again: StrictMode's would otherwise store the tool the restore is replacing.
+  useEffect(() => () => {
+    restored.current = false;
+  }, []);
   useEffect(() => {
     if (!tools) return;
     if (!restored.current) {

@@ -144,9 +144,8 @@ describe('glyph geometry, property', () => {
         [after.x + after.width, before.x + before.width + growth], [after.y + after.height, before.y + before.height + growth]] as const) {
         expect(Math.abs(a - b), `${source} ${d}`).toBeLessThan(2e-4 + 1e-6);
       }
-      // Grown outlines on the grid lie a multiple of 0.001 em apart, or touch. Round joins crossing nearly
-      // tangent still leave slivers (docs/TODO.md, `mergeRegion`).
-      if (source === 'atlas') expect(edgesInsideFill(grown, 2e-4), d).toBe(0);
+      // Grown outlines on the grid lie a multiple of 0.001 em apart, or touch: round joins cross nearly tangent.
+      expect(edgesInsideFill(grown, 2e-4), `${source} ${d}`).toBe(0);
       if (rs.length > 1) t.count('overlapping');
       const sides = (r: (typeof rs)[number]) => [r.x, r.x + r.w, r.y + 10, r.y + r.h + 10];
       if (rs.some((a, i) => rs.slice(i + 1).some((b) => sides(a).some((v) => sides(b).includes(v))))) t.count('shared');

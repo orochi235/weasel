@@ -27,6 +27,10 @@ describe('typeaheadStep', () => {
     const c = typeaheadStep(names, b.hit, b.buffer, 'c', 100 + TYPEAHEAD_RESET_MS, shape);
     expect(c.buffer.text).toBe('c');
   });
+  it('starts over after the clock is set back', () => {
+    const a = typeaheadStep(names, null, EMPTY_TYPEAHEAD, 'c', 3_600_000, shape);
+    expect(typeaheadStep(names, a.hit, a.buffer, 'l', 0, shape).buffer.text).toBe('l');
+  });
   it('cycles on a repeated letter', () => {
     const a = typeaheadStep(names, 0, EMPTY_TYPEAHEAD, 'c', 0, shape);
     const b = typeaheadStep(names, a.hit, a.buffer, 'c', 10, shape);
@@ -43,5 +47,12 @@ describe('an astral character', () => {
   const byLabel = { label: (s: string) => s };
   it('is one letter of a query, so repeating it cycles', () => {
     expect(typeaheadMatch(emoji, 0, '🍎', byLabel)).toBe(2);
+  });
+});
+
+describe('typeaheadMatch folds text as matchQuery does', () => {
+  it('lands a word-final small sigma on a capital one', () => {
+    expect(typeaheadMatch(['x', 'ΑΣ'], null, 'ας', shape)).toBe(1);
+    expect(typeaheadMatch(['x', 'ΑΣ'], null, 'ασ', shape)).toBe(1);
   });
 });
