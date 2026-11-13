@@ -511,7 +511,7 @@ function PanelsAndRows() {
             <SidebarPanel
               title="Selection"
               collapsed={panelCollapsed}
-              onToggleCollapse={() => setPanelCollapsed((v) => !v)}
+              onCollapsedChange={setPanelCollapsed}
               onHide={() => {}}
             >
               <div className="lk-specimen__pad">2 items selected</div>

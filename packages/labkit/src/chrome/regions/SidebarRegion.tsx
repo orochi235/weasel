@@ -71,8 +71,9 @@ export function Section({
       bodyClassName="lk-sidebar-section__body"
       headerRef={barRef}
       title={title}
+      collapsible={onCollapsedChange !== undefined}
       collapsed={collapsed}
-      onToggleCollapse={onCollapsedChange && (() => onCollapsedChange(!collapsed))}
+      onCollapsedChange={onCollapsedChange}
       actions={actions && !collapsed ? actions : undefined}
       trailing={trailing}
       fill={fill}

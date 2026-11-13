@@ -7,7 +7,7 @@ import { SidebarPanel } from './SidebarPanel';
 import { renderWithIcons } from '../../testing/withIcons';
 
 describe('SidebarPanel', () => {
-  it('renders a static title with no toggle when onToggleCollapse is omitted', () => {
+  it('renders a static title with no toggle when onCollapsedChange is omitted', () => {
     renderWithIcons(<SidebarPanel title="Properties">body</SidebarPanel>);
     expect(screen.getByText('Properties')).toBeTruthy();
     expect(screen.queryByRole('button')).toBeNull();
@@ -15,14 +15,14 @@ describe('SidebarPanel', () => {
 
   it('draws its actions in the header, before the close button, and keeps them while collapsed', () => {
     const { rerender } = renderWithIcons(
-      <SidebarPanel title="Path" onToggleCollapse={() => {}} onHide={() => {}} actions={<button type="button">Switch</button>}>
+      <SidebarPanel title="Path" onCollapsedChange={() => {}} onHide={() => {}} actions={<button type="button">Switch</button>}>
         body
       </SidebarPanel>,
     );
     const names = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent);
     expect(names).toEqual(['Path', 'Switch', 'Hide panel']);
     rerender(
-      <SidebarPanel title="Path" collapsed onToggleCollapse={() => {}} actions={<button type="button">Switch</button>}>
+      <SidebarPanel title="Path" collapsed onCollapsedChange={() => {}} actions={<button type="button">Switch</button>}>
         body
       </SidebarPanel>,
     );
@@ -30,24 +30,35 @@ describe('SidebarPanel', () => {
   });
 
   it('renders the collapse toggle as a button reporting aria-expanded', () => {
-    const onToggleCollapse = vi.fn();
+    const onCollapsedChange = vi.fn();
     const { rerender } = renderWithIcons(
-      <SidebarPanel title="Properties" onToggleCollapse={onToggleCollapse}>body</SidebarPanel>,
+      <SidebarPanel title="Properties" onCollapsedChange={onCollapsedChange}>body</SidebarPanel>,
     );
     const btn = screen.getByRole('button', { expanded: true });
     fireEvent.click(btn);
-    expect(onToggleCollapse).toHaveBeenCalledTimes(1);
+    expect(onCollapsedChange).toHaveBeenCalledTimes(1);
 
     rerender(
-      <SidebarPanel title="Properties" collapsed onToggleCollapse={onToggleCollapse}>body</SidebarPanel>,
+      <SidebarPanel title="Properties" collapsed onCollapsedChange={onCollapsedChange}>body</SidebarPanel>,
     );
     expect(screen.getByRole('button', { expanded: false })).toBeTruthy();
     expect(screen.queryByText('body')).toBeNull();
   });
 
+  it('holds its own fold from defaultCollapsed, reporting each toggle', () => {
+    const onCollapsedChange = vi.fn();
+    renderWithIcons(
+      <SidebarPanel title="Layers" defaultCollapsed onCollapsedChange={onCollapsedChange}>body</SidebarPanel>,
+    );
+    expect(screen.queryByText('body')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { expanded: false }));
+    expect(onCollapsedChange).toHaveBeenLastCalledWith(false);
+    expect(screen.getByText('body')).toBeTruthy();
+  });
+
   it('draws the fold mark, not a text triangle, and shows the panel’s state on it', () => {
     const { container, rerender } = renderWithIcons(
-      <SidebarPanel title="Properties" onToggleCollapse={() => {}}>body</SidebarPanel>,
+      <SidebarPanel title="Properties" onCollapsedChange={() => {}}>body</SidebarPanel>,
     );
     const btn = screen.getByRole('button');
     expect(btn.textContent).toBe('Properties');
@@ -55,19 +66,19 @@ describe('SidebarPanel', () => {
     expect(container.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
     expect(sign()).toBe('M3 6.5 H10');
     rerender(
-      <SidebarPanel title="Properties" collapsed onToggleCollapse={() => {}}>body</SidebarPanel>,
+      <SidebarPanel title="Properties" collapsed onCollapsedChange={() => {}}>body</SidebarPanel>,
     );
     expect(sign()).toBe('M3 6.5 H10 M6.5 3 V10');
   });
 
   it('names its body with aria-controls while open, and nothing while the body is unmounted', () => {
     const { rerender } = renderWithIcons(
-      <SidebarPanel title="Layers" onToggleCollapse={() => {}}>body</SidebarPanel>,
+      <SidebarPanel title="Layers" onCollapsedChange={() => {}}>body</SidebarPanel>,
     );
     const id = screen.getByRole('button').getAttribute('aria-controls');
     expect(id).toBeTruthy();
     expect(document.getElementById(id!)?.textContent).toBe('body');
-    rerender(<SidebarPanel title="Layers" collapsed onToggleCollapse={() => {}}>body</SidebarPanel>);
+    rerender(<SidebarPanel title="Layers" collapsed onCollapsedChange={() => {}}>body</SidebarPanel>);
     expect(screen.getByRole('button').hasAttribute('aria-controls')).toBe(false);
   });
 
@@ -76,7 +87,7 @@ describe('SidebarPanel', () => {
       <SidebarPanel
         title="Path"
         collapsed
-        onToggleCollapse={() => {}}
+        onCollapsedChange={() => {}}
         onHide={() => {}}
         actions={<button type="button">Switch</button>}
         trailing={<button type="button">Undock</button>}
@@ -149,7 +160,7 @@ describe('SidebarPanel static title', () => {
   });
 
   it('gives the collapsible title the same box', () => {
-    renderWithIcons(<SidebarPanel title="Properties" onToggleCollapse={() => {}}>body</SidebarPanel>);
+    renderWithIcons(<SidebarPanel title="Properties" onCollapsedChange={() => {}}>body</SidebarPanel>);
     expect(screen.getByRole('button').className).toMatch(/titleBox/);
   });
 });

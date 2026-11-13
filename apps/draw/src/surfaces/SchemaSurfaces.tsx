@@ -45,7 +45,7 @@ export function SchemaPanel({ asset, chrome, order }: { asset: SurfaceAsset; chr
     <SidebarPanel
       title={title ?? asset.label}
       collapsed={chrome.collapsed}
-      onToggleCollapse={chrome.onToggleCollapse}
+      onCollapsedChange={chrome.onToggleCollapse}
       onHide={chrome.onHide}
       actions={<SurfaceSwitchButton asset={asset} current="panel" />}
     >

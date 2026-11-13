@@ -78,7 +78,7 @@ export function SequencePanel({ tools, scene, selected, choices, onChoose }: {
   const frag = sel?.fragments[0] === undefined ? null : findStep(sel.data.steps, sel.fragments[0]);
   const arrow = sel?.messages[0] === undefined ? null : arrowNameOf(sel.data, sel.messages[0]);
   return (
-    <SidebarPanel title="Sequence" collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)}>
+    <SidebarPanel title="Sequence" collapsed={collapsed} onCollapsedChange={setCollapsed}>
       <ToolPalette tools={tools} include={isSequenceTool} columns={5} aria-label="Sequence tools" />
       <Select
         label="Adds" orientation="row" width="fit" options={PARTICIPANTS}

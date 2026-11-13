@@ -37,7 +37,7 @@ function GroupPanel({ group, tools, look }: { group: StencilGroup; tools: ToolsA
     return <StencilGhost stencil={stencil} style={style} scale={look.scale} />;
   };
   return (
-    <SidebarPanel title={group.label} collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)}>
+    <SidebarPanel title={group.label} collapsed={collapsed} onCollapsedChange={setCollapsed}>
       <ToolPalette
         tools={tools} include={include} columns={3} aria-label={group.label} carryTool={carryStencil} carryGhost={ghost}
       />

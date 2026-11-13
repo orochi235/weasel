@@ -21,13 +21,13 @@ export default meta;
 type Story = StoryObj<typeof SidebarPanel>;
 
 export const StaticHeader: Story = {};
-export const Collapsible: Story = { args: { onToggleCollapse: () => {} } };
+export const Collapsible: Story = { args: { onCollapsedChange: () => {} } };
 export const Closeable: Story = {
-  args: { onToggleCollapse: () => {}, onHide: () => {} },
+  args: { onCollapsedChange: () => {}, onHide: () => {} },
 };
 export const WithActions: Story = {
   args: {
-    onToggleCollapse: () => {},
+    onCollapsedChange: () => {},
     onHide: () => {},
     actions: (
       <MenuButton bare current label="Panel" items={[{ value: 'bar', label: 'Show as toolbar' }, { value: 'menu', label: 'Show as menu' }]} />
@@ -53,7 +53,7 @@ function InteractiveSidebarPanel(args: SidebarPanelProps) {
       <SidebarPanel
         {...args}
         collapsed={collapsed}
-        onToggleCollapse={() => setCollapsed((v) => !v)}
+        onCollapsedChange={setCollapsed}
         onHide={() => setHidden(true)}
       />
     </Sidebar>
