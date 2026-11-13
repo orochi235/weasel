@@ -2034,3 +2034,36 @@ Calls the lanes made without a ruling:
 - Open: audio's reverb and impulse lengths are seconds (`impulseResponse(ctx, seconds)`, the reverb insert's
   `seconds`) where every other audio duration is ms, and the animator's `slew` steps in seconds where its tweens take
   ms. Changing either is a unit change inside an option that keeps its name, which a caller would not see break.
+
+## Audit round twenty-two (2026-11-13): bundled default bindings
+
+- Two collision tests hold the bindings: core's `kitBindingCollisions.test.tsx` loads every binding the kit ships at
+  once (the sweep in `kitSweep.fixture.tsx`, tool keys as one `tool.activate`) and runs the dev route-conflict check
+  over it, with kernel3d as a scope of its own; draw's `bindingCollisions.test.tsx` mounts draw's features, entries,
+  tools, tunings and commands on one canvas. Neither found a collision once `reportRouteConflicts` stopped counting
+  `hover` bindings, which all run (2026-11-13).
+- An action's own key binding carries `BETWEEN_GESTURES`, or a phase of its own, unless it only moves the view
+  (`viewport.zoom.*`), is an Escape that `cancelGesture` takes mid-drag (`exitPathEdit`, `tool.resetToDefault`), or
+  opens a keymap. `kitBindingPhases.test.tsx` holds the kit to it, and the tool keys now carry it as the offhand keys
+  did. draw's color keys and view toggles do not: they change the next shape's style or the view, not the document,
+  and a change mid-draw reaching the shape is how the tool options work (2026-11-13).
+- Binding ids are `<owner>.<role>`, the role naming the variant or, for a lone binding, the gesture; Spiro's
+  `finishClick`-style ids and pinch zoom's `.pinch` on a `multiTouch` were the strays. An app's tuning on a kit
+  action keeps its app prefix (`draw.constrainAnchors.horizontal`), so a later kit default cannot take its id
+  (2026-11-13).
+- A binding that takes any modifier uses `ANY_MODS` (`@weasel-js/gestures`, re-exported by routing and core). The
+  pen's handle drag and path-tools' anchor link leave Meta out on purpose and keep their own `mods` (2026-11-13).
+- Unbound actions are reached from a panel, a menu or the palette on purpose: the setters a panel drives (`setFill`,
+  `setStroke*`, `setAnchorField`, `setCorners`, …), align and distribute, the path commands and path-effect
+  release/expand, the diagram router choices, the path-edit `show.*` toggles, `present.go`, and `measure.moveBy` /
+  `rotateBy`. The Pathfinder operations are reached by key through the Alt+P keymap's holds, and `clipboard.paste`
+  by the DOM paste event (2026-11-13).
+- Open: no tool key collides in the kit or in draw. Settled 2026-11-12: Sticky S, Smudge U, Extend Shift+U. draw
+  binds X to swap fill and stroke and Shift+X to swap focus, D to reset the colors, and / to toggle the focused
+  paint to none; crop mode holds C. Free in draw, unmodified: J, Q, W, Z (rig's Bone J and Weight W are not in draw,
+  so kit-wide only Q and Z are free). Free in draw with Shift: A, B, D, E, G, I, J, K, L, N, O, Q, R, S, T, Y, Z.
+- Open: `@weasel-js/hud`'s long-press binding is tested for its target and kind, not by a touch held on a widget
+  through the dispatcher; core's long-press tests drive the gesture itself. Pinch dolly is now driven by two touch
+  pointers (`pinchDolly.integration.test.tsx`).
+- Open: chart's own commands (`apps/chart/src/chartCommands.ts`) bind keys without ids, as draw's did; chart is
+  outside this lane.
