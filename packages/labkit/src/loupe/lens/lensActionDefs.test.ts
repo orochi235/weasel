@@ -156,7 +156,9 @@ describe('createLoupeKeymap', () => {
     expect(keymap!.bindings!.some((b) => b.actionId === LENS_ACTION_IDS.followMove)).toBe(false);
     // The quick key binds outside it too, with no leader before it.
     const quick = leader!.actions!.find((a) => a.id === LENS_ACTION_IDS.quick)!;
-    expect(quick.defaultBinding).toEqual([expect.objectContaining({ spec: { kind: 'key', key: 'F2' } })]);
+    expect(quick.defaultBinding).toEqual([
+      expect.objectContaining({ spec: { kind: 'key', key: 'F2' } }),
+    ]);
     expect(keymap!.bindings!.some((b) => b.actionId === LENS_ACTION_IDS.quick)).toBe(false);
   });
 });
