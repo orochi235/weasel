@@ -35,9 +35,16 @@
   font-size: calc(var(--wzl-font-size-sm) + 1px);
 }
 .ckd-release-count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   margin-left: auto;
   color: var(--wzl-fg-subtle);
   font-size: calc(var(--wzl-font-size-sm) + 1px);
+}
+
+.ckd-release-breakdown {
+  font-size: var(--wzl-font-size-xs);
 }
 
 .ckd-release-entries {
