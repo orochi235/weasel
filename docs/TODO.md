@@ -636,23 +636,9 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] Two of labkit's floating-sidebar tests fail when their file runs alone.** In
-  `Trial.floatPanel.test.tsx`, "closes on a press outside it, and the toggle closes what it opened" and "keeps a
-  section torn out of the panel in the workspace once the panel closes" failed 3 of 3 fleet runs of
-  `vitest run --project=labkit <that file>` at `c7b148f5e` (2026-11-11), and 1 of 3 locally, yet pass inside the
-  full suite. Something the suite sets up that the file does not set up itself. Closes when the file passes alone.
-
 - **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
   once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second
   sighting under load.
-
-- **(P2) [agent] The site dev server dies on its first edit to a workspace package.** Saving a file
-  under `packages/core/src` logs `re-bundling workspace packages: <file>` (`scripts/vite-prebundle.ts`),
-  then `transport was disconnected, cannot call "fetchModule"` against `scripts/vite-wake.ts` and
-  `server restart failed`. The server keeps answering, but with the code from before the edit, so a
-  browser check after a package change passes or fails on stale source. Seen twice in a row on `npx vite`
-  at `bb2b7ec72` (2026-11-11). Suspect `68004a234`, which reloads the dev config through vite's module
-  runner on this restart.
 
 - **(P3) [waiting] typedoc's own minimatch 10 carries GHSA-g3hv-75wg-m249 (moderate, dev only).** The root
   overrides minimatch to `^11.0.5` under eslint, typescript-eslint and ts-morph; typedoc 0.28 calls `matchOne`,
@@ -664,45 +650,6 @@ only story runner in the repo.
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
-
-- **(P3) [agent] labkit's `JobProgress.browser.test.tsx` misses its width check by 0.5 px at 100.**
-  "at 100: expected 182.96875 to be close to 182.453125" in the batch run of `d7714ec60` (2026-11-11), and the
-  same two numbers again in the suite run of `ccecc970d` (2026-11-11) on teitou; it passed 3/3 alone on the fleet
-  after the first. Identical figures twice read as a real width change at three digits, not rasterizing noise
-  (inferred, not measured). Rework the check, or the count's sizing for its total, so 100 holds the width.
-
-
-- **(P2) [agent] Browser test files fail to load when the node's network changes.** A file
-  fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
-  imported module`, along with any file loading in the same tenth of a second, and the next run
-  passes. The cause is Chromium: on a macOS network change it drops every request in flight, those
-  to vite on localhost included, with `net::ERR_NETWORK_CHANGED`. Seen once since `watchRequests`
-  (`scripts/vitest-browser-commands.ts`) began logging failed loads (2026-10-26): in the
-  palette-carry run on studio, configd logged `IPMonitor] network changed` at 18:13:55.736 on
-  2026-10-28, and 66 ms later 376 module requests failed with `ERR_NETWORK_CHANGED` and
-  `apps/chart/src/pipeline/pages.browser.test.tsx` loaded no tests (measured, from the job log and
-  `log show --process configd` on the node). It was the only weasel test job of 491 run from
-  2026-10-25 to 10-29 that overlapped a logged network change, and the only one with a load failure.
-  - **How often.** `IPMonitor] network changed` events, 2026-10-28 to 10-29: studio about 35 a day,
-    msb-uai 9 in 13 h, keiei 6 in 25 h, teitou 4 in 19 h (measured). Studio alone is on both
-    Ethernet (en0) and Wi-Fi (en1), and its event came right after an IPv6 republish on en1; that
-    the Wi-Fi link is why studio has the most is inferred. Some events are the whole LAN's: at
-    16:12:32 on 10-29 all four nodes logged one within 0.4 s (measured). That explains the
-    2026-10-25 bursts 3 s apart on studio and msb-uai (inferred: the nodes' logs no longer reach back).
-  - **Where to find a sighting.** A run's log holds `weasel-request <epoch ms> <ISO> net::ERR_NETWORK_CHANGED script …`
-    lines at the failed import's `browserv` stamp, and the node's `log show --process configd`
-    holds the event, for a day or two before it rotates. onto keeps each job's log in
-    `~/.config/onto/archive/<node>/<job>/`.
-  - **Not available.** Headless Chromium has no switch to ignore address changes (searched the
-    strings of Playwright's `chrome-headless-shell` 1248, 2026-10-29), and vitest retries tests,
-    never a file's import.
-  - **The decision.** Either take studio's Wi-Fi down while it has Ethernet, which removes its own
-    events and leaves the LAN-wide ones, or have `scripts/vitest-overlap.mjs` run again only the
-    files that loaded no tests when the run logged `ERR_NETWORK_CHANGED`. The second is a rerun the
-    suite does on its own, which nothing in it does today.
-    Ruled (2026-11-07): the rerun. Closes when `scripts/vitest-overlap.mjs` reruns the files that loaded no
-    tests in a run that logged `ERR_NETWORK_CHANGED`.
-
 
 ---
 

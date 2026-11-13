@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import type { IndexHtmlTransformHook, Plugin } from 'vite';
 
 /** Options for `localWake`. */
@@ -15,13 +15,14 @@ export interface LocalWakeOptions {
  * vite-plugin-wake from this machine's checkout of it, or no plugin where there is none. It is not
  * published, so CI and a fresh clone must build without it.
  */
-export async function localWake({ skip, ...options }: LocalWakeOptions = {}): Promise<Plugin | null> {
+export function localWake({ skip, ...options }: LocalWakeOptions = {}): Plugin | null {
   const entry = process.env.WAKE_PATH ?? join(homedir(), 'src/wake/dist/index.js');
   if (!existsSync(entry)) {
     if (!process.env.CI) console.warn(`wake: ${entry} not found; serving without one-copy-per-app`);
     return null;
   }
-  const { wake } = (await import(pathToFileURL(resolve(entry)).href)) as {
+  // Not `import()`: a config reloaded through vite's module runner can no longer load lazily (docs/traps/build-dev.md).
+  const { wake } = createRequire(import.meta.url)(resolve(entry)) as {
     wake: (o: { fallback?: readonly number[] }) => Plugin;
   };
   const plugin = wake(options);

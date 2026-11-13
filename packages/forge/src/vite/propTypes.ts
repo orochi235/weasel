@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import type ts from 'typescript';
 import type { ArgShape, ArgType } from '../csf/argsToSchema.ts';
@@ -32,6 +33,9 @@ export interface PropControlsOptions {
   skip?: (declaredIn: string) => boolean;
 }
 
+// Not `import()`: a dev config reloaded through vite's module runner can no longer load lazily (docs/traps/build-dev.md).
+const requireTypeScript = () => createRequire(import.meta.url)('typescript') as typeof ts;
+
 /**
  * Reads component props through the project's own TypeScript, so a prop's type is what the compiler resolves it to.
  * `stories` are the program's roots, named up front so the program is built once. Null without `typescript`, or
@@ -41,12 +45,13 @@ export async function createPropReader(
   root: string,
   stories: () => readonly string[],
   { skip }: PropControlsOptions = {},
+  loadTypeScript: () => typeof ts = requireTypeScript,
 ): Promise<PropReader | null> {
   const platform = (file: string) => PLATFORM.test(file);
   const skipped = (file: string) => platform(file) || skip?.(file) === true;
   let tsm: typeof ts;
   try {
-    tsm = (await import('typescript')).default;
+    tsm = loadTypeScript();
   } catch {
     return null;
   }

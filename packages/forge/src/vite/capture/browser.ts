@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import type { Browser, BrowserContext, Page, Route } from 'playwright';
 import { type CapturePayload, messageOf } from './payload.ts';
 
@@ -21,7 +22,8 @@ export const INSTALL_CHROMIUM = 'install Chromium for Playwright: npx playwright
 type Playwright = typeof import('playwright');
 type Load = () => Promise<Playwright>;
 
-const loadPlaywright: Load = () => import('playwright');
+// Not `import()`: a dev config reloaded through vite's module runner can no longer load lazily (docs/traps/build-dev.md).
+const loadPlaywright: Load = async () => createRequire(import.meta.url)('playwright') as Playwright;
 
 /** What a capture page exposes once it has mounted. */
 interface CaptureWindow {
