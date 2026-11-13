@@ -129,6 +129,8 @@ export { viewportWorldRect } from '../core/viewport/viewportWorldRect';
 export { screenToWorld, worldToScreen } from '../core/viewport/viewTransform';
 export type { ViewTransform } from '../core/viewport/viewTransform';
 export { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM, normalizeZoom } from '../core/viewport/zoomBounds';
+export { SHAPE_COUNT_RANGE, STAR_RATIO_RANGE, clampShapeGenerator, isShapeGenerator, regenerateShape, settleShapeGenerator, shapeGeneratorOf, shapeGeneratorPath, withoutShapeGenerator } from '../domains/paths/shapeGenerator';
+export type { GeneratedShape, PolygonGenerator, ShapeGenerator, StarGenerator } from '../domains/paths/shapeGenerator';
 export { createEnteredGroupScope } from '../domains/selection/enteredGroupScope';
 export { assertSnapSourceIds, gatherSnapCandidates, resolveHolding, resolvedSnapMarks, snapSourcesFor } from '../domains/snap/gather';
 export type { GatherSnapOptions, GatheredCandidate, SnapCandidateMark } from '../domains/snap/gather';

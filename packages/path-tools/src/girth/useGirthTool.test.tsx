@@ -132,7 +132,7 @@ describe('useGirthTool', () => {
     t.drag([[96, 2], [96, 10]], { peek: (h) => { handle = h; } });
     expect(t.widths()).toEqual([NaN, 20]);
     t.scene.undo();
-    handle!.replay!({ reach: 2 });
+    handle!.replay!({ reachPx: 2 });
     expect(t.widths()).toHaveLength(3);
   });
 
@@ -221,7 +221,7 @@ describe('useGirthTool', () => {
     const grabbed = () => t.marks().some((m) => Math.abs(centerOf(m).x - 50) < 0.5 && centerOf(m).y > 1);
     t.hover(50, 15);
     expect(grabbed()).toBe(false);
-    t.pressWith({ x: 50, y: 2 }, { reach: 20 });
+    t.pressWith({ x: 50, y: 2 }, { reachPx: 20 });
     t.hover(50, 15);
     expect(grabbed()).toBe(true);
     t.altClick(100, 15);

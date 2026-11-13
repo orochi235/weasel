@@ -155,3 +155,7 @@ export function prefUnit(
     ...(opts?.compact ? { compact: true } : {}),
   };
 }
+
+/** A length stored and shown in CSS pixels: what a leaf keyed `…Px` carries, a brush radius or a click's reach
+ *  measured on screen rather than in world units. */
+export const PX_UNIT: PrefLinearUnit = { scale: 1, suffix: 'px' };

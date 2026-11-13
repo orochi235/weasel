@@ -1,10 +1,10 @@
 import { useMemo, useReducer, useRef, useState } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useKitSettings, useLatest } from '@weasel-js/react';
 import type { Action, ActionDeps, ModifierState } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { boundsOfPath, isSpiroKind, withinPxRadius, type SpiroKind, type SpiroPoint } from '@weasel-js/geom';
-import { createPointerFollower, defineTool, pointSnap, selectCommitted, snapMods, type Tool } from '@weasel-js/core';
+import { createPointerFollower, defineTool, PEN_CLOSE_HIT_PX, pointSnap, selectCommitted, snapMods, type Tool } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { createSpiroPreviewLayer, type SpiroPreviewState } from './spiroPreviewLayer';
 import { spiroNodeData } from './spiroShape';
@@ -14,7 +14,7 @@ import type { ImmediateParams } from '@weasel-js/routing';
 export interface UseSpiroToolOptions {
   /** Select the new curve once it commits. Default `true`. */
   autoSelect?: boolean;
-  /** Screen-px radius of "click the first point to close". Default `8`. */
+  /** Screen-px radius of "click the first point to close". Default: the pen's, `targets.penCloseHitPx`. */
   closeHitRadius?: number;
 }
 
@@ -145,8 +145,9 @@ function spiroActions(host: SpiroActionsHost): Action[] {
  * (`spiroRepresentation`).
  */
 export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {
-  const { autoSelect = true, closeHitRadius = 8 } = options;
-  const opts = useLatest({ autoSelect, closeHitRadius });
+  const { autoSelect = true } = options;
+  const kitSettings = useKitSettings();
+  const opts = useLatest({ autoSelect, closeHitRadius: options.closeHitRadius });
   const scratchRef = useRef<SpiroScratch | null>(null);
   if (scratchRef.current === null) scratchRef.current = fresh();
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
@@ -155,9 +156,12 @@ export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {
   const actions = useMemo(() => spiroActions({
     scratch: () => scratchRef.current!,
     reset: () => { scratchRef.current = fresh(); },
-    options: () => opts.current,
+    options: () => ({
+      autoSelect: opts.current.autoSelect,
+      closeHitRadius: opts.current.closeHitRadius ?? kitSettings.get('targets.penCloseHitPx') ?? PEN_CLOSE_HIT_PX,
+    }),
     repaint: forceRender,
-  }), [opts]);
+  }), [opts, kitSettings]);
 
   return useMemo(() => defineTool({
     id: 'spiro',

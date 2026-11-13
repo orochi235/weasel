@@ -84,6 +84,7 @@ export {
   pathPoseDescriptor,
   pathOriginProjection,
   createPenPreviewLayer,
+  PEN_CLOSE_HIT_PX,
   createPathEditingOverlayLayer,
   GEOMETRY_BOUND_DATA,
   withoutGeometryBoundData,
@@ -236,7 +237,7 @@ export {
 } from '../interactions/actions/pathCommands/pathNodes';
 export { nodeFrameOf, shownIn, shownNodeOf, type NodeFrame } from '../domains/paths/nodeFrame';
 export { joinPathsCommand, planJoin, type JoinPlan } from '../interactions/actions/pathCommands/cutJoin';
-export { DEFAULT_SIMPLIFY_TOLERANCE } from '../interactions/actions/pathCommands/simplifyOffset';
+export { DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, SIMPLIFY_PATH_PARAMS } from '../interactions/actions/pathCommands/simplifyOffset';
 export { livePathEdit, type LivePathEditSpec } from '../interactions/actions/pathCommands/livePathEdit';
 export {
   anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,

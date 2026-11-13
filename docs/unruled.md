@@ -2186,3 +2186,16 @@ Calls the lanes made without a ruling:
   schema (2026-11-13).
 - Open: the kit has no keyboard shortcut sheet listing tool keys; `describeKeymap` covers keymaps and forge's keys
   panel lists bindings. Whether one belongs in ui is a product call.
+
+## Audit round twenty-three (2026-11-13): tunable values
+
+- 2026-11-13 (the lane's call): a reach, a drag threshold, a gesture's rate, a sampling step and anything that only
+  moves the view stay out of the params forms, as round twenty-two ruled for the slice and lasso tools; the
+  allowlist beside `kitActionParams.test.tsx` names each with its reason. The path-tools click commands' reach
+  (`radiusPx`, `reachPx`) predates that ruling and stays a lever.
+- 2026-11-13 (the lane's call): nudge's step is the binding's `magnitude` variant, ui-input's arrow steps shared with
+  every keyboard-stepped control, so nudge declares no params.
+- 2026-11-13 (the lane's call): Select every Nth anchor declares its count as a form although selecting anchors is no
+  undo step and so never reaches the last-operation panel; a surface driving it reads the range there.
+- 2026-11-13 (the lane's call): world-unit params (Simplify's tolerance, Offset Path's distance, Duplicate's offset,
+  the path effects' sizes) carry no unit; a document unit scope is what would show them in a unit.

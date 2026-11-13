@@ -7,7 +7,7 @@ import type { ActionDeps } from '@weasel-js/routing';
 import { type Path, pxReach } from '@weasel-js/geom';
 import { type NodeId, nodeOutline, type PathNode, pathNodesOf, type Scene, type SceneNode, shownNodeOf } from '@weasel-js/core';
 import type { ImmediateParams } from '@weasel-js/routing';
-import { pref } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
 
@@ -17,7 +17,7 @@ export const DEFAULT_STROKE_REACH_PX = 6;
 /** The `radiusPx` leaf of a click command's params form: how far its click reaches. */
 export const strokeReachPref = () => pref.number('Reach', DEFAULT_STROKE_REACH_PX, {
   description: 'How near a stroke the click has to land to act on it.',
-  min: 1, max: 30, step: 1, control: 'slider', unit: { scale: 1, suffix: 'px' },
+  min: 1, max: 30, step: 1, control: 'slider', unit: PX_UNIT,
 });
 
 type PressParams = (ImmediateParams & { radiusPx?: number }) | undefined;

@@ -16,7 +16,7 @@ import {
   annotationLayerIds, commitOps, createInsertOp, editAnchorsAction, pathEditPathOf, pathOperationTags,
   type EditAnchorsDep, type NodeId, type Scene, type SceneNode,
 } from '@weasel-js/core';
-import { pref } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
 
 /** Params for `linkAnchor`. */
@@ -34,7 +34,7 @@ const LABEL = 'Link anchor';
 export const LINK_ANCHOR_PARAMS = pref.group(LABEL, {
   reachPx: pref.number('Reach', DEFAULT_REACH_PX, {
     description: 'How near another path\'s anchor or segment the dropped anchor has to land to be tied to it.',
-    min: 1, max: 30, step: 1, control: 'slider', unit: { scale: 1, suffix: 'px' },
+    min: 1, max: 30, step: 1, control: 'slider', unit: PX_UNIT,
   }),
 });
 

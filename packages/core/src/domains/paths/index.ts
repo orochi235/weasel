@@ -181,6 +181,7 @@ export { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 export { pathOriginProjection } from './originProjection';
 export {
   createPenPreviewLayer,
+  PEN_CLOSE_HIT_PX,
   type CreatePenPreviewLayerOptions,
   type PenPreviewStyle,
 } from './penPreviewLayer';

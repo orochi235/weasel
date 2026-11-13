@@ -17,7 +17,7 @@ export interface UseGirthToolOptions {
   /** Screen px around a stroke's edge within which a press takes hold of it,
    *  and along the path within which it takes the anchor there rather than
    *  inserting one. Default 6. Given, it wins over the reach the last-operation panel last set for a drag. */
-  reach?: number;
+  reachPx?: number;
 }
 
 /**
@@ -33,7 +33,7 @@ export interface UseGirthToolOptions {
  * its anchors, with a line across the stroke at each that has a width.
  */
 export function useGirthTool(options: UseGirthToolOptions = {}): Tool {
-  const opts = useLatest({ reach: options.reach });
+  const opts = useLatest({ reachPx: options.reachPx });
   const env = useMemo(() => {
     const changed = createEmitter();
     const held: { focus: GirthFocus | null; reach: number | null } = { focus: null, reach: null };
@@ -43,7 +43,7 @@ export function useGirthTool(options: UseGirthToolOptions = {}): Tool {
         held.focus = next;
         changed.emit();
       },
-      reachPx: () => opts.current.reach ?? held.reach ?? DEFAULT_GIRTH_REACH_PX,
+      reachPx: () => opts.current.reachPx ?? held.reach ?? DEFAULT_GIRTH_REACH_PX,
       noteReach: (px) => {
         held.reach = px;
       },
@@ -70,7 +70,7 @@ export function useGirthTool(options: UseGirthToolOptions = {}): Tool {
       {
         spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } },
         actionId: GIRTH_DRAG_ID,
-        opts: { id: 'girth.drag', params: () => (opts.current.reach === undefined ? {} : { reach: opts.current.reach }) },
+        opts: { id: 'girth.drag', params: () => (opts.current.reachPx === undefined ? {} : { reachPx: opts.current.reachPx }) },
       },
       { spec: { kind: 'click', mods: { alt: true } }, actionId: GIRTH_CLEAR_ID, opts: { id: 'girth.clear' } },
       { spec: { kind: 'hover', mods: { alt: 'optional', shift: 'optional' } }, actionId: GIRTH_HOVER_ID, opts: { id: 'girth.hover' } },

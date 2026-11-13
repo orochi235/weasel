@@ -6,6 +6,7 @@
 import type {
   BendAlongEffect, BlendEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, TextAlongEffect, ZigzagEffect,
 } from '@weasel-js/core';
+import { effectSettingDefaults } from './effectForms';
 
 type Params = Record<string, unknown> | undefined;
 
@@ -85,15 +86,19 @@ export function withEffectSettings(effect: PathEffect, params: Params): PathEffe
   return next;
 }
 
-/** What a new effect of `kind` starts from, before its params. */
+/** The default of `kind`'s required setting `field`, from its form. */
+const required = (kind: PathEffect['kind'], field: string): number => effectSettingDefaults(kind)[field] as number;
+
+/** What a new effect of `kind` starts from, before its params: the settings it cannot leave unset, at their
+ *  forms' defaults. */
 export const EFFECT_DEFAULTS: { [K in PathEffect['kind']]: Extract<PathEffect, { kind: K }> } = {
-  blend: { kind: 'blend', steps: 4 },
+  blend: { kind: 'blend', steps: required('blend', 'steps') },
   bendAlong: { kind: 'bendAlong' },
   repeatAlong: { kind: 'repeatAlong' },
   textAlong: { kind: 'textAlong', hideSources: true },
-  roughen: { kind: 'roughen', size: 5, hideSources: true },
-  zigzag: { kind: 'zigzag', size: 5, hideSources: true },
-  puckerBloat: { kind: 'puckerBloat', amount: 0.5, hideSources: true },
+  roughen: { kind: 'roughen', size: required('roughen', 'size'), hideSources: true },
+  zigzag: { kind: 'zigzag', size: required('zigzag', 'size'), hideSources: true },
+  puckerBloat: { kind: 'puckerBloat', amount: required('puckerBloat', 'amount'), hideSources: true },
 };
 
 /**

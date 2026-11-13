@@ -42,6 +42,7 @@ import { scenePickIds } from './scenePickIds';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 import { scenePoseTarget } from '../animation/poseTarget';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
+import { DUPLICATE_OFFSET } from '../interactions/actions/defaults/duplicate';
 
 /** A scene adapter's pose reads: the stored pose, the world pose, and the fold between them. */
 function scenePoseReads<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>) {
@@ -296,9 +297,9 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       return pasteSceneSnapshot(clipboardEnv, clipboard, offset, ctx);
     },
     // Constant cascade: the hook re-snapshots the just-created items, so
-    // repeated pastes stack +12/+12 each time.
+    // repeated pastes stack one offset further each time.
     getPasteOffset(): { dx: number; dy: number } {
-      return { dx: 12, dy: 12 };
+      return { dx: DUPLICATE_OFFSET, dy: DUPLICATE_OFFSET };
     },
   };
 

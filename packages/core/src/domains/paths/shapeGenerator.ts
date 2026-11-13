@@ -51,6 +51,9 @@ export const SHAPE_COUNT_RANGE = { min: 3, max: 32 } as const;
 /** The range of a star's `innerRadiusRatio`. */
 export const STAR_RATIO_RANGE = { min: 0.01, max: 1 } as const;
 
+/** What a polygon or star is drawn with where its data names no count or ratio: the insert params form's defaults. */
+export const SHAPE_DEFAULTS = { sides: 6, points: 5, innerRadiusRatio: 0.5 } as const;
+
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
 /** Whether `v` is a well-formed {@link ShapeGenerator}. */

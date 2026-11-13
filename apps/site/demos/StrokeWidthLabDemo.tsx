@@ -124,7 +124,7 @@ function useStyleControls(scene: Scene<Data, 'default', RectPose>, style: Style)
 function WidthTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, seed);
   useStyleControls(scene, ctx.config);
-  const girthTool = useGirthTool({ reach: ctx.config.reach });
+  const girthTool = useGirthTool({ reachPx: ctx.config.reach });
   const tools = useMemo(() => ({ girth: girthTool }), [girthTool]);
   const layers = useMemo(
     () => (ctx.config.outline ? { outline: { layer: outlineLayer(scene) } } : {}),

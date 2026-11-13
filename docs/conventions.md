@@ -140,6 +140,20 @@ A bounds function given nothing to bound returns `null` (`boundsOfCoords`,
 `unionRects`, `unionBoundsPath`, `aabbOfPoints`); one given a path that draws
 nothing returns a zero-size box.
 
+## An action's tunable values are its params
+
+Every number an action's result turns on (a tolerance, a strength, a count, a
+radius, an angle, an offset) is a leaf of its `params` form, with a label, a
+`min` and a `max`, so the last-operation panel can change it after the run. The
+leaf's default is the only place the default is written: a tool option, a
+slider or a fallback in the invoker reads it from the leaf or from the one
+constant the leaf reads. A length measured on screen is keyed `…Px` and carries
+`PX_UNIT`; a world length carries no unit; an angle is stored in radians and
+shown in degrees. A variant that picks what the action does is not a param, nor
+is a reach, a threshold, or anything that only moves the view.
+`kitActionParams.test.tsx` in core holds every bundled action to this, and its
+allowlist says why each number left outside a form is there.
+
 ## Factories are `create…`
 
 A function that builds and returns a fresh object, store or descriptor is `create…`: `createDispatcher`,

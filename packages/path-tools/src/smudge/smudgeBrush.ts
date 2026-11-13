@@ -5,7 +5,7 @@
 import {
   type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
-import { pref } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { pxReach, smudgePath, type PolygonPath } from '@weasel-js/geom';
 import { brushRing } from '@weasel-js/cursor';
 import { commitOps, drawnAABBOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
@@ -27,7 +27,7 @@ const LABEL = 'Smudge brush';
  *  (`SMUDGE_BRUSH_TOOL_OPTIONS`), which are one setting. */
 export const SMUDGE_BRUSH_PARAMS = pref.group(LABEL, {
   radiusPx: pref.number('Size', DEFAULT_SMUDGE_RADIUS_PX, {
-    description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider',
+    description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider', unit: PX_UNIT,
   }),
   strength: pref.number('Strength', DEFAULT_SMUDGE_STRENGTH, {
     description: 'How closely the outline under the brush follows the pointer.', min: 0.05, max: 1, step: 0.05, control: 'slider',

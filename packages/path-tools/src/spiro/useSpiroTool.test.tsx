@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { ReactNode } from 'react';
 import { act, renderHook } from '@testing-library/react';
+import { KitSettingsProvider } from '@weasel-js/react';
 import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import {
   createInsertOp, createScene, defaultCommitAdapter, commitSelectionOps,
@@ -43,5 +45,25 @@ describe('useSpiroTool', () => {
     scene.undo();
     expect(scene.nodes.size).toBe(1);
     expect(held).toEqual([prior]);
+  });
+
+  it('closes on a click as near the first point as the pen\'s close reach', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const committed: unknown[] = [];
+    const insert = { commit: (_b: unknown, extras: unknown) => { committed.push(extras); return scene.mintId(); } } as unknown as InsertDep;
+    const deps = { insert, selection: { get: () => [], set: () => {} }, view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) } } as unknown as ActionDeps;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <KitSettingsProvider value={{ targets: { penCloseHitPx: 20 } }}>{children}</KitSettingsProvider>
+    );
+    const { result } = renderHook(() => useSpiroTool(), { wrapper });
+    const place = (x: number, y: number) => {
+      const action = result.current.actions!.find((a) => a.id === 'spiro.placePoint')!;
+      act(() => { (action.invoker as ImmediateInvoker).run(deps, { press: { x, y } }); });
+    };
+    place(0, 0);
+    place(100, 0);
+    place(50, 80);
+    place(15, 0);
+    expect(committed).toHaveLength(1);
   });
 });

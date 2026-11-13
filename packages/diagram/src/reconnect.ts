@@ -29,7 +29,7 @@ import {
   type ConnectActionOptions,
   type MovingEnd,
 } from './connect';
-import { createTargets, isBodyEnd, type ConnectEnd } from './connectTargets';
+import { createTargets, DEFAULT_SNAP_RADIUS, isBodyEnd, type ConnectEnd } from './connectTargets';
 import { routerOf, type Router } from './edge';
 import {
   EDGE_END_AFFORDANCE_KIND,
@@ -65,8 +65,6 @@ export interface ReconnectOptions<TPose> extends Omit<ConnectActionOptions<TPose
   /** Defaults to {@link commitReconnectToScene} against `deps.scene`. */
   commit?: (change: EndChange, ctx: InvocationCtx) => void;
 }
-
-const DEFAULT_SNAP = 16;
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -153,7 +151,7 @@ interface ReconnectScratch {
 export function createReconnectAction<TPose>(opts: ReconnectOptions<TPose>): Action {
   const { canConnect = defaultCanConnect, commit = commitReconnectToScene } = opts;
   const endsOf = createEdgeEnds(opts.participants, opts);
-  const shared = { ...opts, snapRadius: opts.snapRadius ?? DEFAULT_SNAP, bodies: opts.bodies ?? true };
+  const shared = { ...opts, snapRadius: opts.snapRadius ?? DEFAULT_SNAP_RADIUS, bodies: opts.bodies ?? true };
   // The resolver asks `canConnect(fixed, candidate)`; a moved `from` end
   // swaps them back so the policy sees the edge's own direction.
   const targetsFor = (moving: MovingEnd) => createTargets({

@@ -6,7 +6,7 @@ import {
   useToolOptionParams, useToolOptionValues,
 } from '@weasel-js/core';
 import { pxReach } from '@weasel-js/geom';
-import { pref } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { brushRing } from '@weasel-js/cursor';
 import { shareBrushSize } from '@weasel-js/brush';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
@@ -21,11 +21,11 @@ type Act = (ctx: InvocationCtx, at: Point[], radius: number) => void;
  *  `share` is laid over its options: sharing its size makes it every sharing brush's size. */
 function brushTool(id: string, label: string, act: Act, share?: ToolOptionShare): Tool {
   const prefs = pref.group(label, {
-    radiusPx: pref.number('Size', 16, { min: 4, max: 120, step: 1, control: 'slider' }),
+    radiusPx: pref.number('Size', 16, { min: 4, max: 120, step: 1, control: 'slider', unit: PX_UNIT }),
   });
   const own: ToolOptions = { actionId: id, prefs, size: { option: 'radiusPx', times: 1.25 } };
   const options = shareToolOptions(own, share);
-  const radiusOf = (p: Readonly<Record<string, unknown>> | undefined) => (typeof p?.radiusPx === 'number' ? p.radiusPx : 16);
+  const radiusOf = (p: Readonly<Record<string, unknown>> | undefined) => (typeof p?.radiusPx === 'number' ? p.radiusPx : prefs.children.radiusPx.default);
   const action: Action = {
     id, label, params: prefs, requires: ['scene', 'view', 'applyOps', 'selection'],
     cursor: (params) => brushRing(radiusOf(params)),

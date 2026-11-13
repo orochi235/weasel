@@ -30,7 +30,7 @@ import {
   type Stroke,
   type Vec2,
 } from '@weasel-js/core';
-import { bodyAt, createTargets, isBodyEnd, type ConnectEnd } from './connectTargets';
+import { bodyAt, createTargets, DEFAULT_SNAP_RADIUS, isBodyEnd, type ConnectEnd } from './connectTargets';
 import { DEFAULT_EDGE_STYLE } from './dataStyles';
 import { EDGE_DERIVE_PATH, ROUTERS, type Router } from './edge';
 import { edgeStrokeOf } from './edgeStroke';
@@ -119,7 +119,6 @@ export interface ConnectActionOptions<TPose> {
   edgeStroke?: Stroke;
 }
 
-const DEFAULT_SNAP = 16;
 /** What a connect-authored edge is drawn with, when the consumer overrides
  *  nothing: what `diagramScene` draws an edge in with no theme. */
 export const DEFAULT_EDGE_STROKE: Stroke = edgeStrokeOf(DEFAULT_EDGE_STYLE);
@@ -232,7 +231,7 @@ export function createConnectAction<TPose>(opts: ConnectActionOptions<TPose>): A
   const {
     id = CONNECT_ACTION_ID,
     canConnect = defaultCanConnect,
-    snapRadius = DEFAULT_SNAP,
+    snapRadius = DEFAULT_SNAP_RADIUS,
     router: routerKey = DEFAULT_ROUTER,
   } = opts;
   const stroke = opts.edgeStroke;

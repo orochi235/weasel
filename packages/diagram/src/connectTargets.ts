@@ -97,6 +97,10 @@ function refusalMarks(box: { x: number; y: number; width: number; height: number
 }
 
 /** What {@link createTargets} needs from the connect action's options. */
+/** How near the pointer must come to a port, in world units, before an edge end snaps to it, where the action
+ *  names no `snapRadius`: drawing an edge and dragging one's end alike. */
+export const DEFAULT_SNAP_RADIUS = 16;
+
 export interface TargetOptions<TPose> extends PortsOptions<TPose> {
   participants: ParticipantSource<TPose>;
   /** Asked with the end that stays put first, and the candidate second. */

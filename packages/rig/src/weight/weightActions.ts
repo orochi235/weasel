@@ -13,7 +13,7 @@ import { brushWeights, jointShares, setWeights } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from '../bone/placedRig';
 import type { RigEditState } from '../bone/rigEditState';
 import { resolveParams, type BindingOptions, type ImmediateParams } from '@weasel-js/routing';
-import { pref } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { brushRing } from '@weasel-js/cursor';
 
 /** One path under the rig node, where it is drawn, with the weights now showing. */
@@ -66,7 +66,7 @@ export const DEFAULT_WEIGHT_RADIUS_PX = 24;
 /** The weight brush's size: the `weight.paint` action's params, and the tool's options. */
 export const WEIGHT_BRUSH_PARAMS = pref.group('Weight brush', {
   radiusPx: pref.number('Size', DEFAULT_WEIGHT_RADIUS_PX, {
-    description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider',
+    description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider', unit: PX_UNIT,
   }),
 }, { description: 'The size of the weight brush.' });
 
