@@ -38,6 +38,15 @@ Owner tags, after the priority (2026-10-26):
   way `useSceneTextEdit` measures its overlay box) or portaled out, and either changes how it clips and stacks
   against the page. Closes when the tag sits beside the pointer on a canvas inside `transform: scale(0.5)`.
 
+- **(P2) [recheck] A kernel3d host has no way to drag a node up or down, or along one axis.** kernel3d's
+  `translate` keeps a node at its height (`movedOnLevel` in `packages/kernel3d/src/deps.ts`), and the kernel
+  ships no translate gizmo: an editor building one writes its own action, chrome, hit test and snap plane
+  (found building a z-up scene editor, audit round 20, 2026-11-12). New API of real size: an axis-constrained
+  move action whose plane faces the camera along the dragged axis, handles a `PoseDescriptor` or pick can
+  report, and chrome drawn in screen space. Whether the handles' look is the maintainer's call is the open
+  question. Closes when a kernel3d host can drag a selected node along each world axis, up included, with
+  the kernel's own action and handles.
+
 - **(P3) [agent] A 3D snap stores a coordinate a few ulps off where it snapped.** kernel3d's snap session
   resolves an exact world delta, then hands the move or insert back a screen point (`SnapOutcome.point`),
   which `PoseDescriptor.translate` and `createInsert` cast onto the plane again: a box snapped to a
