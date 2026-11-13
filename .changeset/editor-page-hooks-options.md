@@ -2,7 +2,7 @@
 '@weasel-js/editor': major
 ---
 
-`usePages`, `usePageSettle` and `usePageFit` take `padding` (and `usePageSettle` its `paging`) in a trailing options bag instead of as positional arguments.
+`usePages`, `usePageSettle` and `usePageFit` take `padding` (and `usePageSettle` its `paging`) in an options bag, not positionally.
 
 ```ts
 // before
