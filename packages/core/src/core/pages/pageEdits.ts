@@ -67,7 +67,8 @@ function writePage(scene: AnyScene, id: NodeId, page: Page, pose: RectPose): voi
 }
 
 /**
- * Make the scene's pages `next`, as one undo entry labeled `label`: pages it
+ * Make the scene's pages `next`, as one undo entry (`options.label`, default
+ * "Set pages"): pages it
  * keeps are resized, renamed and reordered, new ones are added, and ones it
  * drops are deleted with everything on them and whatever follows that. A
  * scene with no page run gets one, and what it held goes onto the pages
@@ -77,16 +78,17 @@ function writePage(scene: AnyScene, id: NodeId, page: Page, pose: RectPose): voi
 export function setPages<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   next: PagesDoc,
-  label: string,
-  options: Pick<PageEditOptions, 'descriptor'> = {},
+  options: PageEditOptions = {},
 ): void {
   const s = asAny(scene);
+  const { label = 'Set pages', descriptor } = options;
+  const place = descriptor ? { descriptor } : {};
   s.batch(label, () => {
     const run = pageRunOf(s);
     if (run === null) {
       const held = [...s.roots];
       createPageRun(s, next.pages, next.layout);
-      placeOnPages(s, held, options);
+      placeOnPages(s, held, place);
       return;
     }
     const node = s.get(run)!;
@@ -116,8 +118,7 @@ function edit<TData, TLayer extends string, TPose>(
   const doc = pagesOf(scene);
   const pages = change([...doc?.pages ?? []]);
   if (doc === null && pages.length === 0) return;
-  const { label = fallback, descriptor } = options;
-  setPages(scene, { ...doc, pages }, label, descriptor ? { descriptor } : {});
+  setPages(scene, { ...doc, pages }, { ...options, label: options.label ?? fallback });
 }
 
 /** Insert `page` at `index`, by default after the last page. An index past either end is held to it, as {@link movePage}

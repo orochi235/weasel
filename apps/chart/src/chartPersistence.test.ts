@@ -92,7 +92,7 @@ describe('chart persistence', () => {
   it('saves and loads the page list', () => {
     const scene = reopened(twoBodiesAndAnEdge().scene);
     const pages = [{ id: 'page-1', name: 'Cover', width: 816, height: 1056 }, { id: 'q', width: 100, height: 100 }];
-    setPages(scene, { pages }, 'Pages');
+    setPages(scene, { pages }, { label: 'Pages' });
     expect(pagesOf(reopened(scene))?.pages).toEqual(pages);
   });
 
@@ -141,7 +141,7 @@ describe('chart persistence', () => {
 
   it('replaces the chart with a document as one undo entry, clearing what it lacks, on one page where it has none', () => {
     const scene = reopened(twoBodiesAndAnEdge().scene);
-    setPages(scene, { pages: [{ id: 'old', width: 10, height: 10 }] }, 'Pages');
+    setPages(scene, { pages: [{ id: 'old', width: 10, height: 10 }] }, { label: 'Pages' });
     scene.doc.set('stale', 1);
     const before = scene.historyIndex();
     replaceChartWithDocument(scene, { specs: [], pages: [], doc: { kept: 2 } }, 'Import');

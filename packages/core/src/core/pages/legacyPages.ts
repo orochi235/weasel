@@ -1,8 +1,7 @@
 /** The conversion of a scene saved with its pages as the `core:pages` document value. */
-import type { PoseDescriptor } from '../geometry/poseDescriptor';
 import type { Scene } from '../scene/types';
 import { PAGES_DOC_KEY, pageRunOf, type PagesDoc } from './pageNodes';
-import { setPages } from './pageEdits';
+import { setPages, type PageEditOptions } from './pageEdits';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -16,7 +15,7 @@ type AnyScene = Scene<unknown, string, unknown>;
  */
 export function adoptLegacyPages<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
-  options: { descriptor?: PoseDescriptor<unknown> } = {},
+  options: Pick<PageEditOptions, 'descriptor'> = {},
 ): boolean {
   const s = scene as unknown as AnyScene;
   const doc = s.doc.get<PagesDoc>(PAGES_DOC_KEY);
@@ -26,7 +25,7 @@ export function adoptLegacyPages<TData, TLayer extends string, TPose>(
     return false;
   }
   s.untracked(() => s.batch('Adopt pages', () => {
-    setPages(s, doc, 'Adopt pages', options);
+    setPages(s, doc, { ...options, label: 'Adopt pages' });
     s.doc.set(PAGES_DOC_KEY, undefined);
   }));
   return true;
