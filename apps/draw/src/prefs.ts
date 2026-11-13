@@ -23,6 +23,7 @@ import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { pageLocalStorage } from '@weasel-js/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import { LOUPE_FACTOR, LOUPE_MODE } from './loupePrefs';
+import type { ColorModePreference } from '@weasel-js/theme';
 import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RecordingProfile } from './recorder';
 import type { RegistryEnumFilter } from './registry/types';
@@ -113,6 +114,11 @@ export const PREFS = {
         },
         surfaces: SURFACES_PREF,
         toolbars: TOOLBARS_PREF,
+        colorMode: pref.enum<ColorModePreference>('Color mode', 'auto', [
+          { value: 'auto', label: 'Auto (follow the system)' },
+          { value: 'light', label: 'Light' },
+          { value: 'dark', label: 'Dark' },
+        ], { description: 'Light or dark chrome, or whichever the system is set to.' }),
         showAnnotations: {
           kind: 'boolean',
           name: 'Show annotations in Layers',
