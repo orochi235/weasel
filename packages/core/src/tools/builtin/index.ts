@@ -45,7 +45,7 @@ export {
 // action descriptors registered via useStandardActions + useGestureDispatcher.
 export { PEN_TOOL_OPTIONS } from './pen/penOptions';
 export {
-  DEFAULT_SHAPE_PAINT, DEFAULT_STROKE_WIDTH, shapeToolOptions, STYLE_OPTION_KEYS, styleOptionLeaves,
+  DEFAULT_SHAPE_PAINT, DEFAULT_STROKE_WIDTH, shapeToolOptions, STYLE_OPTION_KEYS, styleOptionLeaves, toolOptionPaint,
   type InsertStyle, type ShapeToolOptionsSpec, type StyleOptionKey,
 } from './shared/styleOptions';
 export {

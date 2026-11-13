@@ -2536,6 +2536,7 @@
     "toolOptionActionIds": "function",
     "toolOptionLeaf": "function",
     "toolOptionNumberLeaf": "function",
+    "toolOptionPaint": "function",
     "toolOptionParams": "function",
     "toolOptionSlot": "function",
     "toolOptionSteps": "function",

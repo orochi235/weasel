@@ -5,18 +5,28 @@
  * of its own (`share: { fill: null }`).
  */
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import type { Paint } from '@weasel-js/paint';
+import { isSolidPaint, type Paint } from '@weasel-js/paint';
 import { DEFAULT_STROKE_WIDTH, type InsertStyle, type StyleOptionKey } from 'interactions/actions/insert/style';
 import type { ToolOptions } from '@weasel-js/routing';
 import { cycleFill, solid } from '../../../util/paint';
+import { toHex8 } from '../../../util/color';
 
 export { DEFAULT_STROKE_WIDTH, STYLE_OPTION_KEYS, type InsertStyle, type StyleOptionKey } from 'interactions/actions/insert/style';
 
 /** The kit's color for a new shape: the first of its palette. */
 export const DEFAULT_SHAPE_PAINT: Paint = solid(cycleFill(0));
 
+/** `paint` in the one spelling every tool option's color default takes: `solid`'s, six hex digits with any alpha
+ *  as `opacity`, so `#000` and `#000000ff` read as one value. Any other paint comes back as it is. */
+export function toolOptionPaint(paint: Paint | null): Paint | null {
+  if (!isSolidPaint(paint)) return paint;
+  const out = solid(toHex8(paint.color));
+  const opacity = (paint.opacity ?? 1) * (out.opacity ?? 1);
+  return opacity === 1 ? out : { ...out, opacity };
+}
+
 const paintLeaf = (name: string, description: string, value: Paint | null): PrefLeaf => ({
-  kind: 'paint', name, description, alpha: true, default: value,
+  kind: 'paint', name, description, alpha: true, default: toolOptionPaint(value),
 });
 
 /** Each style option's leaf, defaulting to `defaults`. */

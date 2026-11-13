@@ -6,7 +6,7 @@ import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insert
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import { STICKY_DEFAULTS, type StickyStyle } from './stickyNode';
-import { styleOptionLeaves } from '../shared/styleOptions';
+import { styleOptionLeaves, toolOptionPaint } from '../shared/styleOptions';
 import { shareToolOptions, withToolOptionDefault, type ToolOptions } from '@weasel-js/routing';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 
@@ -48,7 +48,8 @@ export function useStickyTool(options: UseStickyToolOptions = {}): Tool {
   } = options;
   return useMemo(() => {
     const toolOptions = withToolOptionDefault(
-      withToolOptionDefault(shareToolOptions(STICKY_TOOL_OPTIONS, share), 'paper', background?.paint), 'ink', fill?.paint,
+      withToolOptionDefault(shareToolOptions(STICKY_TOOL_OPTIONS, share), 'paper', background && toolOptionPaint(background.paint)),
+      'ink', fill && toolOptionPaint(fill.paint),
     );
     // `minSize` rides on both inserts: the drag grows to it, and the note
     // keeps it as its own minimum.

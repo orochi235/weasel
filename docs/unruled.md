@@ -2034,3 +2034,25 @@ Calls the lanes made without a ruling:
 - Open: audio's reverb and impulse lengths are seconds (`impulseResponse(ctx, seconds)`, the reverb insert's
   `seconds`) where every other audio duration is ms, and the animator's `slew` steps in seconds where its tweens take
   ms. Changing either is a unit change inside an option that keeps its name, which a caller would not see break.
+
+## Audit round twenty-two (2026-11-13): core's built-in tools
+
+- 2026-11-13 (the lane's call): a tool option's color default takes one spelling, `solid`'s: six lowercase hex
+  digits with any alpha as `opacity`, and no `kind` (`{ color: '#000000' }`). Every paint leaf a built-in tool
+  declares goes through `toolOptionPaint`, so the text tool's fill and the sticky's ink, which came from text's
+  `#000`, now default to the same value a black stroke does. Text nodes made outside a tool keep text's own
+  `DEFAULT_TEXT_FILL` (`#000`); respelling that is the text package's change, and would move every saved text node.
+- 2026-11-13 (the lane's call): the last-operation panel shows the live tool's options beside the action's own
+  params (`ActionTuning.form`), so a rectangle's fill and stroke width, and a placed sticky's paper and ink, are
+  levers after the shape is drawn. The lasso's hit mode became its tool option. The measure tool's `angleStep`,
+  the slice tool's `closeHitRadius` and the lasso's `minVertexSpacing` stay hook options: the first reads only
+  under Shift, and the other two are reach and sampling settings rather than something a user tunes per run.
+- 2026-11-13 (the lane's call): the hand tool and the lasso commit nothing to the history (a pan edits the view, a
+  lasso the selection), so the walk over every built-in tool checks that they leave the history alone instead of
+  undoing them. `image`, `eyedropper` and `measure` need arguments, so they are in no built-in tool set and no
+  `BUILTIN_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
+- No two tool keys collide, in core or across path-tools and rig, and no action binds a bare letter. The star and
+  image tools have no key; the bare letters no tool takes are C, D, O, Q, X and Z (B is puppet, F distort, J bone,
+  U smudge, W weight and Y trim).
+- Open: the sticky tool's cursor is the rectangle's (`cursorFor('crosshair', { mark: 'rect' })`), so the two are
+  not told apart from the pointer, which the shape cursors were drawn to fix. A `sticky` mark is a new glyph.

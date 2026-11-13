@@ -7,7 +7,9 @@ import { useLineTool } from './line';
 import { useEllipseTool } from './ellipse';
 import { usePenTool } from './pen';
 import { useTextTool } from './text';
-import { DEFAULT_SHAPE_PAINT } from './shared/styleOptions';
+import { DEFAULT_SHAPE_PAINT, toolOptionPaint } from './shared/styleOptions';
+import { useStickyTool } from './sticky';
+import { usePencilTool } from './pencil';
 import { createToolOptionValues, setToolOption, toolOptionParams, toolOptionSlot } from '@weasel-js/routing';
 
 describe('polygon and star tool options', () => {
@@ -59,5 +61,26 @@ describe('shape tools’ style options', () => {
     const t = tools();
     expect(t.polygon.options!.share?.sides).toBeUndefined();
     expect(toolOptionSlot('polygon', t.polygon.options!, 'sides')).toEqual({ owner: 'polygon', key: 'sides' });
+  });
+});
+
+describe('tool option colors', () => {
+  it('default in one spelling, so the same color reads as one value across tools', () => {
+    const t = renderHook(() => ({
+      rect: useRectTool(), line: useLineTool(), polygon: usePolygonTool(), star: useStarTool(), pen: usePenTool(),
+      pencil: usePencilTool(), text: useTextTool(), sticky: useStickyTool(), ellipse: useEllipseTool(),
+    })).result.current;
+    for (const [id, tool] of Object.entries(t)) {
+      for (const [key, leaf] of Object.entries(tool.options!.prefs.children)) {
+        if ((leaf as { kind?: string }).kind !== 'paint') continue;
+        const value = (leaf as { default: Parameters<typeof toolOptionPaint>[0] }).default;
+        expect(value, `${id}.${key}`).toEqual(toolOptionPaint(value));
+      }
+    }
+    const black = { color: '#000000' };
+    expect(toolOptionParams('text', t.text.options!, undefined).fill).toEqual(black);
+    expect(toolOptionParams('sticky', t.sticky.options!, undefined).ink).toEqual(black);
+    expect(toolOptionPaint({ kind: 'solid', color: '#000000ff' })).toEqual(black);
+    expect(toolOptionPaint({ color: '#11223380', opacity: 0.5 })).toEqual({ color: '#112233', opacity: 0.25098039215686274 });
   });
 });
