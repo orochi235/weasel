@@ -2180,6 +2180,24 @@ Calls the lanes made without a ruling:
 
 ## Auto and reset (2026-11-13)
 
+- Auto is opt-in and is a distinct concept from default (maintainer's ruling, 2026-11-13). A leaf can be auto only
+  where its schema declares `auto`; prefs, `PrefsForm`/`PrefsDialog`, `usePrefsValues(store).form`, `SelectionPanel`,
+  labkit and the theme editor all read `prefCanAuto`. `auto: false` meant the same as no `auto` and is gone. While
+  auto a leaf reads its owner's computed value, else `auto.value`, never `default`; this corrects the first pass
+  of this section, which made the default the last case of auto and let a leaf with `auto` unset be auto
+  (2026-11-13).
+- So draw's, the editor's, chart's and the site demos' settings forms show no Auto toggle: none of their leaves
+  declares `auto`, and each gets Reset alone (2026-11-13).
+- A store's leaf that opts in with no `auto.value` reads `undefined` while auto, as labkit's does with no resolver;
+  turning Auto off pins what its control shows, which with nothing computed is what a field holding nothing draws,
+  the default (2026-11-13).
+- A theme token's `auto` is `{ on: true, value }`, `value` the theme's resolved value split along its axes: the
+  theme is what computes a token while it follows it. An `auto.value` may be a `PrefScope` on a leaf with `scopes`,
+  as `defaultScope` is (2026-11-13).
+- A surface that keeps no auto state resets a leaf to its `default` and judges it reset against that, whatever its
+  `auto` says (2026-11-13).
+- The schema editor's Auto panel says "Can be auto" where it said "Never auto". Setting "Starts auto" or an auto
+  value opts the leaf in, and clearing either leaves it opted in, as `auto: {}` (2026-11-13).
 - Reset returns a leaf to the state its schema starts it in: auto for a leaf that says `auto.on`, pinned at its
   `default` for any other, including one that can be auto but does not start so. Reading "unpinned if it can be
   auto" literally would make a reset of such a leaf write a mark, and give `auto.on` no say in it; this reading
@@ -2187,10 +2205,10 @@ Calls the lanes made without a ruling:
 - A prefs store keeps a leaf that is auto against its schema's start as a record of its own, `{ $at, $auto: true }`,
   which no migration is handed; a leaf that starts auto is stored as nothing while it is. `stored()` shows the mark
   as it is (2026-11-13).
-- labkit hands an instrument `undefined` at an auto path that has no resolver and no `auto.value`, as before: the
-  instrument is that leaf's resolver (`.auto()` says only it can work the value out), and `undefined` is how it
-  knows to. Its row draws what the instrument reports, else the default, and quotes nothing until a report
-  (2026-11-13).
+- labkit hands an instrument `undefined` at an auto path where neither a resolver nor `auto.value` gives a value,
+  as before: the instrument is that leaf's resolver (`.auto()` says only it can work the value out), and
+  `undefined` is how it knows to. A resolver that returns `undefined` leaves the path so too. Its row draws what
+  the instrument reports, and quotes nothing until a report (2026-11-13).
 - A write of a group's value in labkit pins every leaf under the group's path except one it holds the `auto`
   sentinel at, which unpins that leaf and keeps what it last held. A group reset is one such write, so it stays
   one undo step (2026-11-13).
@@ -2200,7 +2218,7 @@ Calls the lanes made without a ruling:
   heading shows it always, disabled while nothing under it differs (2026-11-13).
 - `SelectionPanel`'s rows and `resettable` sections reset too, writing `prefStoredReset` into every selected node
   in one undo step; a scene node has no auto state, so a row there compares values only (2026-11-13).
-- The theme editor's tokens say `auto.on` (following the theme) and its axes `auto: false`; each token page is
+- The theme editor's tokens say `auto.on` (following the theme) and its axes declare no `auto`; each token page is
   `resettable` (2026-11-13).
 
 ## Audit round twenty-three (2026-11-13): tool surfaces

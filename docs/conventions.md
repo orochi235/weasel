@@ -156,13 +156,17 @@ allowlist says why each number left outside a form is there.
 
 ## Auto and reset mean one thing on every surface
 
-A leaf is **auto** when no value is pinned for it. While auto it reads the first of these that is set: what its
-owner computes (labkit's `.auto(fn)`, or a value the instrument reports), the leaf's `auto.value`, its `default`.
-`prefAutoValue` (`@weasel-js/prefs`) is that rule. `auto.on` starts the leaf auto; `auto: false` keeps it pinned
-for good. Turning Auto on unpins the leaf; turning it off pins the value it shows; an edit pins.
+**Auto is opt-in, and it is not the default.** A leaf can be auto only if its schema declares `auto` (an object,
+`{}` included); a leaf without it is always pinned, and no surface offers it an Auto toggle (`prefCanAuto`). While
+auto, a leaf reads what its owner computes: labkit's `.auto(fn)`, a value the instrument reports, else the leaf's
+`auto.value`. It never reads `default`: with none of those it reads `undefined` (`prefAutoValue`), and its control
+draws what a field holding nothing draws. `auto.on` starts the leaf auto. Turning Auto on unpins the leaf; turning
+it off pins the value it shows; an edit pins. A stored auto mark for a leaf that does not opt in reads as nothing
+stored.
 
-**Reset** puts a leaf back as its schema says (`prefResetOf`): auto where it says `auto.on`, otherwise pinned at
-`default`. Every row that edits a leaf offers `ResetControl` (`@weasel-js/ui/components/Properties`) while
+**Default** is what a pinned leaf with nothing set reads. **Reset** puts a leaf back as its schema starts it
+(`prefResetOf`): auto where it says `auto.on`, otherwise pinned at `default`. A surface that keeps no auto state,
+such as `SelectionPanel` over scene nodes, resets to `default` (`prefStoredReset`). Every row that edits a leaf offers `ResetControl` (`@weasel-js/ui/components/Properties`) while
 `prefIsReset` says the leaf differs, and the heading of a group or section that says `resettable` offers one for
 everything under it (`prefResets`). A prefs store, `PrefsForm`, `PrefsDialog`, `SelectionPanel`, labkit's
 `ControlPanel` and the theme editor all go through these. A surface never writes its own reading of either word,
