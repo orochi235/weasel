@@ -30,14 +30,16 @@ export function usePref<S extends PrefGroup, P extends PrefPath<S>>(
 }
 
 /** The whole of `store` as React state, shaped for `PrefsForm`: `values`,
- *  `onChange={set}`, `auto={unset}`, and `reset` for `onAutoChange`; for its
- *  scoped values, `scopes` and `onChangeAt={setAt}`. `stored` is `store.stored()`. */
+ *  `onChange={set}`, `auto={unset}`, and `onAutoChange={setAuto}`, which pins a
+ *  leaf at the value it reads now or, given true, resets it; for its scoped
+ *  values, `scopes` and `onChangeAt={setAt}`. `stored` is `store.stored()`. */
 export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
   values: Record<string, unknown>;
   set: (path: string, value: unknown) => void;
   unset: ReadonlySet<string>;
   stored: Record<string, unknown>;
   reset: (path?: string) => void;
+  setAuto: (path: string, next: boolean) => void;
   scopes: ReadonlyMap<string, PrefScope>;
   setAt: (path: string, value: unknown, at: PrefSelection) => void;
 } {
@@ -51,9 +53,13 @@ export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
     [store],
   );
   const reset = useCallback((path?: string) => store.reset(path), [store]);
+  const setAuto = useCallback(
+    (path: string, next: boolean) => (next ? store.reset(path) : store.set(path as PrefPath<S>, store.get(path as PrefPath<S>))),
+    [store],
+  );
   const setAt = useCallback(
     (path: string, value: unknown, at: PrefSelection) => store.set(path as PrefPath<S>, value as never, { at }),
     [store],
   );
-  return { values, set, unset, stored, reset, scopes, setAt };
+  return { values, set, unset, stored, reset, setAuto, scopes, setAt };
 }

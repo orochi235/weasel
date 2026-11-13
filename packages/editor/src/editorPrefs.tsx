@@ -51,7 +51,7 @@ export function EditorPrefsDialog({ store, open, onClose, dialog }: {
   onClose: () => void;
   dialog?: EditorPrefsDialogProps;
 }) {
-  const { values, set, unset, reset } = usePrefsValues(store);
+  const { values, set, unset, setAuto } = usePrefsValues(store);
   return (
     <PrefsDialog
       layout="rail"
@@ -62,7 +62,7 @@ export function EditorPrefsDialog({ store, open, onClose, dialog }: {
       values={values}
       onChange={set}
       auto={unset}
-      onAutoChange={(path, next) => (next ? reset(path) : set(path, store.get(path as never)))}
+      onAutoChange={setAuto}
     />
   );
 }

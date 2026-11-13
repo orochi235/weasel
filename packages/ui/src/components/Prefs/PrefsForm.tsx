@@ -129,6 +129,9 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
    *  from a default, or from what was last saved. What counts as changed is the caller's to say. An alias row is marked when the leaf
    *  it shows is named. */
   changed?: ReadonlySet<string>;
+  /** What is wrong with a leaf's value, by its dotted path: each is shown under the leaf's row as an alert, and
+   *  the row is marked invalid (`PropertyRow`'s `error`). What counts as wrong is the caller's to say. */
+  errors?: ReadonlyMap<string, ReactNode>;
   /** Dotted paths of the leaves, groups and fields to draw disabled, beside what the schema's own `enableIf`s
    *  disable: for a caller that judged the conditions itself, against values `values` does not hold the way the
    *  schema's paths name them (labkit's `sectionTree`). Named as `applyPrefConditions` names what it disables, so a
@@ -215,7 +218,7 @@ export function PrefsForm(props: PrefsFormProps) {
   const selection = useSelectedRow(selected, lead, props.onSelect);
   const split = useSplitRows(props, schema, props.over);
   const { settles, textWaitMs } = useParamsPolicy('form');
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, targets, changed: props.changed, selected: shown, lead, disabled, active: applied?.active, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles, textWaitMs };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, targets, changed: props.changed, errors: props.errors, selected: shown, lead, disabled, active: applied?.active, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles, textWaitMs };
   const field = filterable ? (
     <div className={s.filter}>
       <Input
