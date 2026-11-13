@@ -76,10 +76,10 @@ export const LENS_ACTION_IDS = {
 
 type LensActionId = (typeof LENS_ACTION_IDS)[keyof typeof LENS_ACTION_IDS];
 
-/** The Loupe keymap's keys, by action. */
 /** The key, outside the Loupe keymap, that opens a lens following the pointer and closes it again. */
 export const QUICK_KEY = 'F2';
 
+/** The Loupe keymap's keys, by action. */
 export const LENS_KEYS: Partial<Record<LensActionId, string>> = {
   'loupe.add': 'l',
   'loupe.close': 'Shift+L',
