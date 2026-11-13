@@ -12,7 +12,7 @@ import {
 } from './prefs';
 import { drawToolOptionValues } from './toolOptions';
 import { INITIAL_FILL } from './newShapePaint';
-import { PEN_TOOL_OPTIONS, RECT_TOOL_OPTIONS, setToolOption, toolOptionParams } from '@weasel-js/core';
+import { PEN_TOOL_OPTIONS, RECT_TOOL_OPTIONS, setToolOption, toolOptionPaint, toolOptionParams } from '@weasel-js/core';
 
 // jsdom 26 + Node 26 currently leaves `window.localStorage` returning
 // `undefined` from its native getter. Swap in a plain in-memory Storage so
@@ -124,6 +124,16 @@ describe('openDrawPrefs', () => {
     expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 4, value: false });
     expect(backing.get(`${PREFS_PREFIX}tools.shared.fill`)).toEqual({ $at: 4, value: { kind: 'solid', color: '#123456ff' } });
     expect(toolOptionParams('pen', PEN_TOOL_OPTIONS, values).fill).toEqual({ kind: 'solid', color: '#123456ff' });
+  });
+
+  it('defaults every tool option color in the one spelling, draw’s own starting paints included', () => {
+    const colors = [...prefLeaves(PREFS)].filter(([path, leaf]) => path.startsWith('tools.') && (leaf.kind === 'paint' || leaf.kind === 'color'));
+    expect(colors.map(([path]) => path)).toEqual(expect.arrayContaining(['tools.shared.fill', 'tools.shared.stroke', 'tools.sticky.ink', 'tools.shared.textFill']));
+    for (const [path, leaf] of colors) {
+      const value = leaf.default as Parameters<typeof toolOptionPaint>[0];
+      if (leaf.kind === 'paint') expect(value, path).toEqual(toolOptionPaint(value));
+      else expect(value, path).toMatch(/^#[0-9a-f]{6}$/);
+    }
   });
 
   it('draws a new shape in draw’s own starting fill until one is picked', () => {

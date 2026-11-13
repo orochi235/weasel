@@ -2056,8 +2056,6 @@ Calls the lanes made without a ruling:
   must equal `KitSettingPath` between them, each declared once (2026-11-13).
 - Open: draw's preferences do not include any kit settings schema, so a draw user cannot change a gesture timing or
   a target size. Whether draw's dialog should carry them is a product call.
-- Open: the sticky tool's `ink` and the shared `textFill` default to `#000`, where the shared `stroke` is
-  `#000000ff`. Both read as black; the spelling belongs to the tools lane.
 
 ## Audit round twenty-two (2026-11-13): core's built-in tools
 
@@ -2130,3 +2128,20 @@ Calls the lanes made without a ruling:
   pointers (`pinchDolly.integration.test.tsx`).
 - Chart's command keys (grid, undo and redo, group and ungroup, the page keys) take `<action>.key` ids, as draw's do
   (2026-11-13, in the batch).
+
+## Audit round twenty-three (2026-11-13): tool surfaces
+
+- A tool's key, wherever chrome shows it, is read from the live `tool.activate` bindings: `ToolsApi.shortcuts`, which
+  `useTools` keeps from its actions scope (the declared `keybinding`s with no scope). `ToolPalette`, its stacks' menu
+  rows, core's devtools registry, draw's registry inspector and tools widget, and labkit's trial rail all read it, so
+  a key rebound through `bindingOverrides` reaches each and an unbound one drops its chip. `ToolPalette`'s
+  `lookupShortcut` and `ToolPresentation.shortcut`, the two ways to restate a key by hand, are gone (2026-11-13).
+- A labkit chrome item's `shortcut` is a `MenuShortcut`, formatted by `formatShortcut` in every region; a header item
+  that binds `keys` shows its command's live key, and a `TrialTool` the trial's scene holds shows the scene's key.
+  The site's lab demos no longer restate their tools' keys: several had drifted (the extend lab said U, the smudge
+  lab S) (2026-11-13).
+- Every tool option's color default is in `toolOptionPaint`'s spelling, draw's host-given shared fill and stroke
+  included; core's `shapeToolOptions.test.tsx` holds the built-ins and draw's `prefs.test.ts` holds draw's whole tools
+  schema (2026-11-13).
+- Open: the kit has no keyboard shortcut sheet listing tool keys; `describeKeymap` covers keymaps and forge's keys
+  panel lists bindings. Whether one belongs in ui is a product call.
