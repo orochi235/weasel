@@ -278,10 +278,11 @@ export interface MultiTouchEvent extends EventModifiers {
   kind: 'multitouch';
   fingers: number;
   /**
-   * Centroid of active pointers in **canvas-local** CSS pixels — client
-   * coordinates with the canvas's bounding-rect origin already subtracted,
-   * which is the space `zoomAt` anchors in. Not client coords, and not world:
-   * calling `clientToWorld` on it subtracts the canvas origin a second time.
+   * Centroid of active pointers in **view-local** CSS pixels — client
+   * coordinates with the origin of the view the gesture runs in already
+   * subtracted (the canvas's, or a sub-view's rect), which is the space that
+   * view's camera anchors `zoomAt` in. Not client coords, and not world:
+   * calling `clientToWorld` on it subtracts the origin a second time.
    *
    * Present on the event a finger landing produces and on each move of a
    * running gesture; absent on the one that ends it.

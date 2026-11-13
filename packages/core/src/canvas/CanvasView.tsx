@@ -193,6 +193,12 @@ export function CanvasView(props: CanvasViewProps): null {
     const [x, y] = clientToWorld(local.x, local.y, { left: rect.x, top: rect.y }, camera());
     return { x, y };
   }, [registry, rectNow, camera]);
+  /** A client point in CSS px from this view's top-left, where its camera anchors. */
+  const clientToLocalHere = useCallback((cx: number, cy: number): { x: number; y: number } => {
+    const local = surfaceLocal(registry?.surface() ?? null, cx, cy);
+    const rect = rectNow();
+    return { x: local.x - rect.x, y: local.y - rect.y };
+  }, [registry, rectNow]);
 
   // Anchors are hit in this view's camera world, where its plane draws them.
   const getAnchorState = useMemo(() => anchorStateFrom(
@@ -270,6 +276,7 @@ export function CanvasView(props: CanvasViewProps): null {
       affordanceAt,
       classifyTarget,
       clientToWorld: clientToWorldHere,
+      clientToLocal: clientToLocalHere,
       deps: () => ({
         ...live.current.deps, view: viewApi, ingestion: ingestionApi, hitAt: hitAtOf(classifyTarget),
         // An Escape here cancels what is in flight here.
@@ -282,7 +289,7 @@ export function CanvasView(props: CanvasViewProps): null {
       getRuleCtx: () => inputsRef.current?.chromeCaps?.ruleCtx(ruleInputs()),
     },
   }), [id, parent, order, interactive, paint, held, aim, setAim, label, background, rectAt, cameraAt, viewApi,
-       affordanceAt, classifyTarget, clientToWorldHere, ruleInputs, ingestionApi, drawnLayers,
+       affordanceAt, classifyTarget, clientToWorldHere, clientToLocalHere, ruleInputs, ingestionApi, drawnLayers,
        layerIsPainted, ownedSelection, inputsRef, helpersRef, frameIn, registry, live]);
 
   useEffect(() => {

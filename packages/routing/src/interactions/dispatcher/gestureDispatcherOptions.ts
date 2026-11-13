@@ -30,6 +30,12 @@ export interface DispatcherViewTarget {
   classifyTarget: UseGestureDispatcherOptions['classifyTarget'];
   clientToWorld: UseGestureDispatcherOptions['clientToWorld'];
   /**
+   * Client point to CSS pixels from this view's own top-left: the screen space
+   * its camera (`view`) anchors in, and the one a multitouch centroid is
+   * reported in. Absent: the surface's own canvas-local space.
+   */
+  clientToLocal?: (clientX: number, clientY: number) => { x: number; y: number };
+  /**
    * The deps this view answers for itself — its camera, its selection, and
    * whatever else is per-view rather than per-canvas. Read per event; every
    * name it does not carry still resolves through the canvas registry.
