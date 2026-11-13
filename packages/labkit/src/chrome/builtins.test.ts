@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
-import { fromConfigFields } from '../config/fromConfigField';
 import { resolveConfigSchema } from '../config/resolve';
 import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
@@ -33,8 +32,7 @@ const ctx: TrialChromeContext = {
   canExpand: false,
   expanded: false,
   toggleExpanded: () => {},
-  configFields: [],
-  configSchema: fromConfigFields([]),
+  configSchema: resolveConfigSchema(f.schema({}), []),
   config: {},
   auto: new Set<string>(),
   setConfig: () => {},
@@ -137,16 +135,6 @@ describe('builtinContributions', () => {
 
   it('contributes a settings section only when the schema has fields', () => {
     expect(ids(bare)).not.toContain('settings');
-    const withFields = {
-      ...ctx,
-      configSchema: fromConfigFields([
-        { key: 'n', label: 'N', type: 'number' as const, default: 1 },
-      ]),
-    };
-    expect(ids(bare, withFields)).toContain('settings');
-  });
-
-  it('contributes a settings section for a builder schema too', () => {
     const withSchema = {
       ...ctx,
       configSchema: resolveConfigSchema(f.schema({ showGrid: f.boolean(true) }), []),

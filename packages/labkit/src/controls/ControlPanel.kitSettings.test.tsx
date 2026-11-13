@@ -3,10 +3,11 @@ import { KitSettingsProvider } from '@weasel-js/react';
 import { PARAMS_TEXT_WAIT_MS } from '@weasel-js/ui/components/Prefs';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { f } from '../config/builder';
+import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
-import type { ConfigField } from './types';
 
-const fields: ConfigField[] = [{ key: 't', label: 'T', type: 'text', default: '' }];
+const text = resolveConfigSchema(f.schema({ t: f.string('').label('T') }), []);
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -21,7 +22,7 @@ describe('<ControlPanel> text drafts under kit settings', () => {
     const draftConfig = vi.fn();
     render(
       <ControlPanel
-        fields={fields}
+        schema={text}
         config={{ t: '' }}
         setConfig={vi.fn()}
         draftConfig={draftConfig}
@@ -38,7 +39,7 @@ describe('<ControlPanel> text drafts under kit settings', () => {
     render(
       <KitSettingsProvider value={{ params: { lab: { textWaitMs: 20 } } }}>
         <ControlPanel
-          fields={fields}
+          schema={text}
           config={{ t: '' }}
           setConfig={vi.fn()}
           draftConfig={draftConfig}
@@ -51,14 +52,14 @@ describe('<ControlPanel> text drafts under kit settings', () => {
 });
 
 describe('<ControlPanel> params.lab.settles', () => {
-  const counts: ConfigField[] = [{ key: 'n', label: 'N', type: 'number', default: 0 }];
+  const counts = resolveConfigSchema(f.schema({ n: f.number(0).label('N') }), []);
 
   function typeNumber(settles?: { number: boolean }) {
     const draftConfig = vi.fn();
     const setConfig = vi.fn();
     const panel = (
       <ControlPanel
-        fields={counts}
+        schema={counts}
         config={{ n: 0 }}
         setConfig={setConfig}
         draftConfig={draftConfig}

@@ -14,21 +14,17 @@ import { type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
 import { resolveAutoConfig } from '../config/autoConfig';
 import { type AutoReports, withAutoReports } from '../config/autoReports';
-import { fromConfigFields } from '../config/fromConfigField';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { type ControlPack, gridOf } from './controlPack';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
 import { panelRows } from './panelRows';
-import type { ConfigField } from './types';
 
 export type { ControlPack } from './controlPack';
 
 /** Props for {@link ControlPanel}. */
 export interface ControlPanelProps<TC extends Record<string, unknown>> extends AppearanceProps {
-  /** The instrument's resolved config schema. */
-  schema?: ResolvedConfig;
-  /** @deprecated Pass `schema`. A field list is adapted into one internally. */
-  fields?: ConfigField[];
+  /** The config schema to draw, resolved: `useResolvedConfig(f.schema({ … }))`, or a trial's `configSchema`. */
+  schema: ResolvedConfig;
   config: TC;
   /** Writes one value. The path is dotted for a leaf inside an `f.group`, and
    *  the bare key for one at the root. A `.resettable()` group's reset is one
@@ -198,8 +194,7 @@ function useShown<TC>(
  *  back through `setConfig`. Built on the property rows, so a lab's controls
  *  are the same aligned, themed rows the rest of the kit uses. */
 export function ControlPanel<TC extends Record<string, unknown>>({
-  schema,
-  fields,
+  schema: resolved,
   config,
   setConfig,
   draftConfig,
@@ -225,7 +220,6 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   className,
   ...appearance
 }: ControlPanelProps<TC>) {
-  const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
   const choices = useFieldChoicesOf(resolved.group);
   const over = overGiven ?? resolved.over;
 

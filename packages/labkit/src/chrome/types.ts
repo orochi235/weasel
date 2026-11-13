@@ -4,7 +4,6 @@ import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { ReactNode } from 'react';
 import type { AutoReports } from '../config/autoReports';
 import type { ResolvedConfig } from '../config/types';
-import type { ConfigField } from '../controls/types';
 import type { SavedSnapshot } from '../state/types';
 
 /** A named position in a trial's chrome. Content is not a region — that is
@@ -233,12 +232,8 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
   expanded: boolean;
   toggleExpanded: () => void;
 
-  /** The instrument's controls, resolved against the lab's rules. Always
-   *  populated: a legacy `configSchema()` is adapted into the same shape. */
+  /** The instrument's controls, resolved against the lab's rules. Empty for an instrument declaring no `config`. */
   configSchema: ResolvedConfig;
-  /** @deprecated Read `configSchema`. Empty for an instrument declaring
-   *  `config`, since a builder schema has no `ConfigField[]` form. */
-  configFields: ConfigField[];
   config: unknown;
   /** The trial's unpinned paths. `config` stays raw, so a control drawn from
    *  it sits at the value un-pinning writes back. */

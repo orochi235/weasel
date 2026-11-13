@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { defineInstrument, Lab, useLabContext } from '@weasel-js/labkit';
 import { useEffect, useRef } from 'react';
-import type { ConfigField } from '../controls/types';
+import { f } from '../config/builder';
 import type { Instrument, RenderContext } from '../instrument/types';
 import type { JobEvent } from '../job/types';
 
@@ -21,33 +21,19 @@ interface ScanState {
 
 const PLOT = { w: 240, h: 120 };
 
-function scanSchema(traceColor: string): ConfigField[] {
-  return [
-    { key: 'gain', label: 'Gain', type: 'slider', default: 1.4, min: 0.1, max: 4, step: 0.1 },
-    {
-      key: 'integrationMs',
-      label: 'Integration (ms)',
-      type: 'number',
-      default: 250,
-      min: 10,
-      max: 2000,
-      step: 10,
-    },
-    {
-      key: 'source',
-      label: 'Source',
-      type: 'select',
-      default: 'deuterium',
-      options: [
-        { value: 'deuterium', label: 'Deuterium' },
-        { value: 'tungsten', label: 'Tungsten' },
-        { value: 'xenon', label: 'Xenon flash' },
-      ],
-    },
-    { key: 'channel', label: 'Channel', type: 'text', default: 'CH-1', maxLength: 12 },
-    { key: 'traceColor', label: 'Trace', type: 'color', default: traceColor },
-    { key: 'autoBaseline', label: 'Auto baseline', type: 'checkbox', default: true },
-  ];
+function scanSchema(traceColor: string) {
+  return f.schema({
+    gain: f.number(1.4).range(0.1, 4).step(0.1),
+    integrationMs: f.number(250).range(10, 2000).step(10).input().label('Integration (ms)'),
+    source: f.enum('deuterium', [
+      { value: 'deuterium', label: 'Deuterium' },
+      { value: 'tungsten', label: 'Tungsten' },
+      { value: 'xenon', label: 'Xenon flash' },
+    ]),
+    channel: f.string('CH-1').maxLength(12),
+    traceColor: f.color(traceColor).label('Trace'),
+    autoBaseline: f.boolean(true).label('Auto baseline'),
+  });
 }
 
 function wait(ms: number, signal: AbortSignal): Promise<void> {
@@ -107,16 +93,8 @@ function scanInstrument(
 ): Instrument<ScanState, ScanConfig, number> {
   return defineInstrument<ScanState, ScanConfig, number>({
     name,
-    defaultConfig: () => ({
-      gain: 1.4,
-      integrationMs: 250,
-      source: 'deuterium',
-      channel: 'CH-1',
-      traceColor,
-      autoBaseline: true,
-    }),
+    config: scanSchema(traceColor),
     initialState: () => ({ samples: [], marks: [] }),
-    configSchema: () => scanSchema(traceColor),
     render: (ctx) => <SeedMarks ctx={ctx} />,
     canvas: {
       initialView: { zoom: 1, pan: { x: 24, y: 24 } },

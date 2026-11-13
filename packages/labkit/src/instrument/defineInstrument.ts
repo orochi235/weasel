@@ -1,8 +1,8 @@
 import type { ConfigSchema } from '../config/types';
 import type { Instrument } from './types';
 
-/** An instrument as it is written: either the legacy `defaultConfig` (plus an
- *  optional `configSchema`), or a `config` schema that supplies both. */
+/** An instrument as it is written: with a `defaultConfig`, or with a `config`
+ *  schema that supplies it. */
 export type InstrumentSpec<TS, TC, TItem = unknown> =
   | Instrument<TS, TC, TItem>
   | (Omit<Instrument<TS, TC, TItem>, 'defaultConfig'> & { config: ConfigSchema<TC> });
@@ -12,7 +12,7 @@ export type InstrumentSpec<TS, TC, TItem = unknown> =
  * the literal rather than making them be written out.
  *
  * A spec declaring `config` gets its `defaultConfig` synthesized from the
- * schema. A spec written the legacy way is returned unchanged, by reference.
+ * schema. A spec giving `defaultConfig` is returned unchanged, by reference.
  *
  * TypeScript infers all three type arguments or none, so a call that names
  * `TS` and `TC` leaves `TItem` at `unknown` and a job's `onItem` needs a cast.

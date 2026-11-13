@@ -16,7 +16,6 @@ const testInstrument = defineInstrument<DropState, Record<string, never>>({
   name: 'TestDrop',
   defaultConfig: () => ({}),
   initialState: () => ({ items: [] }),
-  configSchema: () => [],
   render: () => null,
   canvas: {
     initialView: { zoom: 1, pan: { x: 0, y: 0 } },

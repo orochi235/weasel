@@ -221,7 +221,6 @@ export {
   ValueNode,
 } from './config/builder';
 export { type FieldSweepOptions, fieldSweep } from './config/fieldSweep';
-export { fromConfigFields } from './config/fromConfigField';
 export type { LabOver, OverAccess } from './config/over';
 export {
   fillConfigDefaults,
@@ -275,18 +274,6 @@ export {
 } from './controls/ControlMatrix';
 export { type ControlPack, ControlPanel, type ControlPanelProps } from './controls/ControlPanel';
 export { type InDialogOptions, inDialog, summarizeLeaf, summarizeValue } from './controls/inDialog';
-export type {
-  CheckboxField,
-  ColorField,
-  ConfigField,
-  ConfigFieldBase,
-  ConfigFieldType,
-  NumberField,
-  SelectField,
-  SelectOption,
-  SliderField,
-  TextField,
-} from './controls/types';
 export { defineInstrument, type InstrumentSpec } from './instrument/defineInstrument';
 export type {
   CanvasCapability,
@@ -307,8 +294,6 @@ export type {
   UndoCapability,
   ViewTransform,
 } from './instrument/types';
-export type { ValidationResult } from './instrument/validateConfigSchema';
-export { validateConfigSchema } from './instrument/validateConfigSchema';
 export * from './job';
 export { type LoupeKitSettings, labkitKitSettingsSchema } from './kitSettings';
 export * from './lab';

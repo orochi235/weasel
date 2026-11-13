@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
 import { ControlPanel } from './ControlPanel';
-import type { ConfigField } from './types';
 
 describe('<ControlPanel> visibility and sections', () => {
   it('hides a row whose showIf is false', () => {
@@ -223,11 +222,11 @@ describe('<ControlPanel> collapsible sections', () => {
 });
 
 describe('<ControlPanel> title, stance, grade, emphasis, and tint', () => {
-  const fields: ConfigField[] = [{ key: 'on', label: 'On', type: 'checkbox', default: true }];
+  const fields = resolveConfigSchema(f.schema({ on: f.boolean(true) }), []);
 
   it('renders the bare list when given none of them', () => {
     const { container } = renderWithIcons(
-      <ControlPanel fields={fields} config={{ on: true }} setConfig={vi.fn()} />,
+      <ControlPanel schema={fields} config={{ on: true }} setConfig={vi.fn()} />,
     );
     expect(container.firstElementChild?.classList.contains('lk-control-panel')).toBe(true);
     expect(container.querySelector('[data-stance], h2')).toBeNull();
@@ -239,7 +238,7 @@ describe('<ControlPanel> title, stance, grade, emphasis, and tint', () => {
         title="View"
         stance="clarify"
         tint={1}
-        fields={fields}
+        schema={fields}
         config={{ on: true }}
         setConfig={vi.fn()}
       />,

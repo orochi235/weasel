@@ -1,18 +1,25 @@
 import { useMemo } from 'react';
 import type { Instrument } from '../instrument/types';
 import { useLabCommandsOptional } from '../lab/LabContext';
-import { fromConfigFields } from './fromConfigField';
 import { resolveConfigSchema } from './resolve';
 import type { ResolvedConfig } from './types';
 
 const NO_RULES: readonly [] = [];
 
+const NO_CONFIG: ResolvedConfig = {
+  group: { name: '', children: {} },
+  sections: [],
+  showIf: new Map(),
+  renderers: {},
+  dialogs: {},
+};
+
 /**
  * An instrument's controls, resolved against the surrounding lab's rules.
  *
  * Resolution cannot happen in `defineInstrument` — rules are lab-scoped and
- * that runs at module load — so it happens here, at render. Both instrument
- * paths land in the same shape, so callers never branch on which was used.
+ * that runs at module load — so it happens here, at render. An instrument
+ * declaring no `config` gets an empty schema.
  */
 export function useConfigSchema(
   // biome-ignore lint/suspicious/noExplicitAny: instruments are stored contravariantly; see InstrumentList
@@ -21,10 +28,7 @@ export function useConfigSchema(
   const lab = useLabCommandsOptional();
   const rules = lab?.configRules ?? NO_RULES;
   return useMemo(
-    () =>
-      instrument.config
-        ? resolveConfigSchema(instrument.config, rules)
-        : fromConfigFields(instrument.configSchema?.() ?? []),
+    () => (instrument.config ? resolveConfigSchema(instrument.config, rules) : NO_CONFIG),
     [instrument, rules],
   );
 }

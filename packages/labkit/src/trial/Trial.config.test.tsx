@@ -18,16 +18,6 @@ const schemaInstrument = defineInstrument({
   render: () => null,
 });
 
-const legacyInstrument = defineInstrument({
-  name: 'Legacy',
-  defaultConfig: () => ({ showGrid: true }),
-  configSchema: () => [
-    { type: 'checkbox' as const, key: 'showGrid', label: 'Show grid', default: true },
-  ],
-  initialState: () => ({}),
-  render: () => null,
-});
-
 describe('a trial renders its instrument config', () => {
   it('renders a builder schema into the settings sidebar', async () => {
     await renderSettled(<Lab instruments={[schemaInstrument]} defaultInstrument="Schema" />, {
@@ -35,13 +25,6 @@ describe('a trial renders its instrument config', () => {
     });
     expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
     expect(screen.getByText('Grid spacing')).toBeInTheDocument();
-  });
-
-  it('renders a legacy ConfigField list through the same path', async () => {
-    await renderSettled(<Lab instruments={[legacyInstrument]} defaultInstrument="Legacy" />, {
-      wrapper: withIcons,
-    });
-    expect(screen.getByLabelText('Show grid')).toBeInTheDocument();
   });
 
   it('writes a config change back to the trial', async () => {

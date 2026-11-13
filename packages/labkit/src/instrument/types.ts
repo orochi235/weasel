@@ -9,7 +9,6 @@ import type { TrialContribution } from '../chrome/types';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { OverAccess } from '../config/over';
 import type { ConfigPath, ConfigSchema } from '../config/types';
-import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
 import type { TrialInfo } from '../state/types';
 import type { ToolCapability } from '../tools/types';
@@ -234,11 +233,8 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   initialState: (config: TC) => TS;
   /** The instrument's config, declared once: values, types and controls.
    *  Supplying this makes `defaultConfig` optional — `defineInstrument`
-   *  synthesizes it. Prefer it over `defaultConfig` + `configSchema`. */
+   *  synthesizes it. Without it the instrument has no settings panel. */
   config?: ConfigSchema<TC>;
-  /** @deprecated Declare `config` instead; this repeats what `TC` already
-   *  says and nothing holds the two to one answer. */
-  configSchema?: () => ConfigField[];
   /** The instrument's DOM. With `canvas`, this renders as an overlay above the
    *  layers rather than instead of them; return `null` for canvas only. */
   render: (ctx: RenderContext<TS, TC>) => ReactNode;

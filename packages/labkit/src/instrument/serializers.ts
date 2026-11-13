@@ -9,8 +9,8 @@ import type { Instrument, InstrumentList } from './types';
  * neither the store nor a trial composed outside a lab has access to. No rule
  * can reach `autoResolve` or `auto`, so for reading those the
  * two resolutions agree; anything reading the rendered leaves wants
- * `useConfigSchema` instead. `undefined` for a legacy `configSchema()`
- * instrument, which declares no auto annotations at all.
+ * `useConfigSchema` instead. `undefined` for an instrument declaring no
+ * `config`, which has no auto annotations at all.
  */
 export function unruledConfigSchema(
   // biome-ignore lint/suspicious/noExplicitAny: instruments are stored contravariantly; see InstrumentList

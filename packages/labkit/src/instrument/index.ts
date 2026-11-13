@@ -16,5 +16,3 @@ export type {
   UndoCapability,
   ViewTransform,
 } from './types';
-export type { ValidationResult } from './validateConfigSchema';
-export { validateConfigSchema } from './validateConfigSchema';
