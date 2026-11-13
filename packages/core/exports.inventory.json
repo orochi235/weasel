@@ -2143,7 +2143,7 @@
     "paintsLayer": "function",
     "paragraphDirection": "function",
     "parseColor": "function",
-    "parseColorToRgba255": "function",
+    "parseColorBytes": "function",
     "parseDebugFlags": "function",
     "parseHexBytes": "function",
     "parseUnitExpr": "function",

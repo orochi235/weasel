@@ -175,7 +175,7 @@ export { strokedBounds } from '../canvas/nodeShapes/strokedBounds';
 // ─── Color helpers (parse / normalize / convert) ────────────────────────────
 export {
   parseColor,
-  parseColorToRgba255,
+  parseColorBytes,
   tryParseColor,
   normalizeHex,
   hexToRgba,

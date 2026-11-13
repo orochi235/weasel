@@ -78,8 +78,8 @@ export function __resetParseColorCache(): void {
   CACHE.clear();
 }
 
-/** Same as `parseColor` but returns integer 0..255 components. */
-export function parseColorToRgba255(input: string): [number, number, number, number] {
+/** `parseColor` as four integer 0..255 channels, alpha last, as `parseHexBytes` returns them. */
+export function parseColorBytes(input: string): [number, number, number, number] {
   const [r, g, b, a] = parseColor(input);
   return [
     Math.round(r * 255),

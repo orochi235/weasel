@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { hslToSrgb } from './hsl';
-import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorToRgba255, rgbaToHex, __resetParseColorCache } from './color';
+import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorBytes, rgbaToHex, __resetParseColorCache } from './color';
 
 // Reference chroma-form HSL→RGB — the previous duplicate implementation that
 // lived in `animation/colorHelpers.ts`. Kept here only to prove the shared
@@ -34,17 +34,17 @@ describe('hslToSrgb', () => {
   });
 });
 
-describe('parseColorToRgba255', () => {
+describe('parseColorBytes', () => {
   it('returns integer 0..255 components for #ffffff', () => {
-    expect(parseColorToRgba255('#ffffff')).toEqual([255, 255, 255, 255]);
+    expect(parseColorBytes('#ffffff')).toEqual([255, 255, 255, 255]);
   });
 
   it('returns [0,0,0,255] for #000000', () => {
-    expect(parseColorToRgba255('#000000')).toEqual([0, 0, 0, 255]);
+    expect(parseColorBytes('#000000')).toEqual([0, 0, 0, 255]);
   });
 
   it('handles rgba with fractional alpha', () => {
-    const [r, g, b, a] = parseColorToRgba255('rgba(255, 0, 0, 0.5)');
+    const [r, g, b, a] = parseColorBytes('rgba(255, 0, 0, 0.5)');
     expect(r).toBe(255);
     expect(g).toBe(0);
     expect(b).toBe(0);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { normalizeHex, parseColor, parseColorToRgba255, rgbaToHex, tryNormalizeHex } from './color';
+import { normalizeHex, parseColor, parseColorBytes, rgbaToHex, tryNormalizeHex } from './color';
 import { linearToSrgb, linearSrgbToOklab, oklabToLinearSrgb, srgbToLinear } from './colorSpaces';
 import { hslToSrgb } from './hsl';
 import { byteHex, parseHexBytes } from './hex';
@@ -85,9 +85,9 @@ describe('parseColor, property', () => {
 
   it('reads the hex it writes back to the same bytes', () => {
     fc.assert(fc.property(hexColor, ({ text, bytes }) => {
-      expect(parseColorToRgba255(text)).toEqual(bytes);
+      expect(parseColorBytes(text)).toEqual(bytes);
       const written = rgbaToHex(parseColor(text));
-      expect(parseColorToRgba255(written)).toEqual(bytes);
+      expect(parseColorBytes(written)).toEqual(bytes);
       expect(written).toBe(normalizeHex(text, bytes[3] === 255 ? 'rgb' : 'rgba'));
     }), RUNS);
   });
