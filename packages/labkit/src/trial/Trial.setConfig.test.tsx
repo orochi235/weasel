@@ -187,3 +187,31 @@ describe("a trial's other writes", () => {
     expect(undo()).toBeDisabled();
   });
 });
+
+describe('a settings drag', () => {
+  const slider = () => screen.getByRole('slider', { name: 'Cell size' });
+  const drag = (value: number) => fireEvent.input(slider(), { target: { value: String(value) } });
+
+  it('is one undo step however long it pauses, ending where it settles', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    await mount();
+    drag(30);
+    vi.advanceTimersByTime(800);
+    drag(40);
+    fireEvent.change(slider(), { target: { value: '40' } });
+    expect(slider()).toHaveValue('40');
+    fireEvent.click(undo());
+    expect(slider()).toHaveValue('20');
+    expect(undo()).toBeDisabled();
+  });
+
+  it('starts a step of its own after the last one settled', async () => {
+    await mount();
+    drag(30);
+    fireEvent.change(slider(), { target: { value: '30' } });
+    drag(50);
+    fireEvent.change(slider(), { target: { value: '50' } });
+    fireEvent.click(undo());
+    expect(slider()).toHaveValue('30');
+  });
+});

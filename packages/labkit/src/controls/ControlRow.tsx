@@ -28,6 +28,7 @@ import {
   PropertyField,
   PropertyRow,
   type PropertyRowLayout,
+  PropertySpan,
 } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
 import { drawsOwn, entryAt } from '../config/drawsOwn';
@@ -83,16 +84,16 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
   const custom = drawsOwn(resolved, renderers, props.path, leaf);
   if (prefDrawsNoControl(leaf) && !custom) {
     return (
-      <div className="lk-control-words">
+      <PropertySpan className="lk-control-words">
         <PrefWords pref={leaf} />
-      </div>
+      </PropertySpan>
     );
   }
   if (prefDrawsActionRow(leaf) && !custom) {
     // An action's button reads its own label, so it takes the row's whole width with none beside it.
     const action = boundAction(leaf, props.config, props.setConfig);
     return (
-      <div className="lk-control-actions">
+      <PropertySpan className="lk-control-actions">
         {leaf.kind === 'actions' ? (
           <PrefActionRows pref={leaf as PrefActions} path={props.path} disabled={props.disabled} />
         ) : (
@@ -103,7 +104,7 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
             active={isLeafActive(resolved, props.path, props.config, props.over)}
           />
         )}
-      </div>
+      </PropertySpan>
     );
   }
   if (leaf.kind !== 'alias' || drawn) return <LeafRow {...props} />;
@@ -226,7 +227,7 @@ function customRow(
 
 const spanned = (row: ReactNode): ReactNode =>
   row === null || row === undefined || row === false ? null : (
-    <div className="lk-control-custom">{row}</div>
+    <PropertySpan className="lk-control-custom">{row}</PropertySpan>
   );
 
 function LeafRow<TC extends Record<string, unknown>>({

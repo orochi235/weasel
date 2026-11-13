@@ -1,5 +1,6 @@
 import type { PrefBoundReader, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { BarLayout, groupBarNodes, renderBarLeaf } from '@weasel-js/ui/components/Bar';
+import { PropertySpan } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
 import { useFieldChoices } from './fieldChoices';
 import { labField, useLabSettles, useTextWaitMs } from './fields';
@@ -52,39 +53,42 @@ export function ControlBar(props: ControlBarProps) {
     row,
     open,
   } = props;
+  // A bar takes the panel's whole width, a pairs group's included.
   return (
-    <BarLayout
-      className="lk-control-bar"
-      framed
-      overflow={group.overflow}
-      lead={group.lead}
-      icon={group.icon}
-      disabled={!enabled(path)}
-      label={group.name === '' ? undefined : group.name}
-      nodes={groupBarNodes(group, path, open)}
-      cells={(leaves) =>
-        leaves
-          .filter((node) => visible(node.path))
-          .map(({ path: at, leaf }) => ({
-            path: at,
-            content: custom(at, leaf) ? (
-              row(at)
-            ) : (
-              <Cell
-                path={at}
-                leaf={bind(leaf)}
-                value={value(at, leaf)}
-                write={(v) => write(at, v)}
-                draft={draft && ((v) => draft(at, v))}
-                read={read}
-                disabled={!enabled(at)}
-                active={active?.(at) === true}
-                row={() => row(at)}
-              />
-            ),
-          }))
-      }
-    />
+    <PropertySpan>
+      <BarLayout
+        className="lk-control-bar"
+        framed
+        overflow={group.overflow}
+        lead={group.lead}
+        icon={group.icon}
+        disabled={!enabled(path)}
+        label={group.name === '' ? undefined : group.name}
+        nodes={groupBarNodes(group, path, open)}
+        cells={(leaves) =>
+          leaves
+            .filter((node) => visible(node.path))
+            .map(({ path: at, leaf }) => ({
+              path: at,
+              content: custom(at, leaf) ? (
+                row(at)
+              ) : (
+                <Cell
+                  path={at}
+                  leaf={bind(leaf)}
+                  value={value(at, leaf)}
+                  write={(v) => write(at, v)}
+                  draft={draft && ((v) => draft(at, v))}
+                  read={read}
+                  disabled={!enabled(at)}
+                  active={active?.(at) === true}
+                  row={() => row(at)}
+                />
+              ),
+            }))
+        }
+      />
+    </PropertySpan>
   );
 }
 

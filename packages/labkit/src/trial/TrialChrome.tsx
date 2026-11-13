@@ -22,7 +22,7 @@ import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
-import { useLabCommands } from '../lab/LabContext';
+import { type LabCommands, useLabCommands } from '../lab/LabContext';
 import { usePresentedTrial } from '../lab/presentation';
 import { useLightboxControl } from '../lightbox/LightboxContext';
 import { JobProgress } from '../primitives/JobProgress';
@@ -91,6 +91,8 @@ export interface TrialChromeProps extends TrialChromeOptions {
   /** The trial's one config write, which `Trial` hands its instrument too.
    *  Omitted, a chrome mounted without a trial makes its own. */
   setConfig?: (path: string, value: unknown) => void;
+  /** The trial's write of a value an edit is passing through, given with `setConfig`. */
+  draftConfig?: (path: string, value: unknown) => void;
   /** What the instrument reported for its auto paths, which the settings panel quotes. */
   reported?: AutoReports;
   /** Supplied when the instrument declares a `job`. */
@@ -129,6 +131,17 @@ const contentClassOf = (instrument: Instrument, presented: boolean): string | un
     .filter(Boolean)
     .join(' ') || undefined;
 
+/** The lab's commands on one trial: its snapshots and the title bar's actions. */
+const labOpsOn = (lab: LabCommands, trialId: string) =>
+  ({
+    savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
+    saveSnapshot: (name?: string) => lab.saveSnapshot(trialId, name),
+    loadSnapshot: (snapshotId: string) => lab.loadSnapshot(trialId, snapshotId),
+    clone: () => lab.cloneTrial(trialId),
+    reset: () => lab.resetTrial(trialId),
+    close: () => lab.closeTrial(trialId),
+  }) satisfies Partial<TrialChromeContext>;
+
 /** The trial's writes, for chrome mounted without a `setConfig`: its marks end a gesture, as in the trial. */
 function useChromeWrites(opts: Omit<TrialWritesOptions, 'marks' | 'mounted'>) {
   return useTrialWrites({ ...opts, marks: useContext(AnnotationsContext) });
@@ -144,6 +157,7 @@ export function TrialChrome({
   isLastTrial,
   undoBindings,
   setConfig: setConfigProp,
+  draftConfig: draftConfigProp,
   reported,
   job,
   loupe,
@@ -177,6 +191,7 @@ export function TrialChrome({
     schema: configSchema,
   });
   const setConfig = setConfigProp ?? ownWrites.setConfig;
+  const draftConfig = setConfigProp ? (draftConfigProp ?? setConfigProp) : ownWrites.draftConfig;
   const overValues = useLabOverValues();
 
   const title = record.title ?? instrument.title ?? instrument.name;
@@ -218,18 +233,14 @@ export function TrialChrome({
       auto,
       reported,
       setConfig,
+      draftConfig,
       overValues,
       collapsedSections: record.collapsedSections ?? NO_SECTIONS,
       setSectionCollapsed: (key, collapsed) => setTrialSectionCollapsed(trialId, key, collapsed),
       undockedPanels: panels.undocked,
       undockPanel: panels.undockPanel,
       dockPanel: panels.dockPanel,
-      savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
-      saveSnapshot: (name) => lab.saveSnapshot(trialId, name),
-      loadSnapshot: (snapshotId) => lab.loadSnapshot(trialId, snapshotId),
-      clone: () => lab.cloneTrial(trialId),
-      reset: () => lab.resetTrial(trialId),
-      close: () => lab.closeTrial(trialId),
+      ...labOpsOn(lab, trialId),
       activeToolId,
       setActiveTool,
     };
@@ -242,6 +253,7 @@ export function TrialChrome({
     isLastTrial,
     updateTrialView,
     setConfig,
+    draftConfig,
     undoBindings,
     loupe,
     lightbox,
