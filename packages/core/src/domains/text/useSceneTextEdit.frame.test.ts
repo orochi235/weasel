@@ -6,11 +6,11 @@
  */
 import { describe, expect, it, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import type { MouseEvent } from 'react';
 import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import { useScene } from '../../core/scene/useScene';
 import { asNodeId, type RectPose, type UseSceneOptions } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
+import { openAt } from './testing/openAt';
 import { useSceneTextEdit, type DefaultTextData } from './useSceneTextEdit';
 import { RIGID_POSE_COMPOSITION, composeRigidPose } from '../../core/scene/composePose';
 
@@ -118,9 +118,7 @@ describe('useSceneTextEdit — a turned, skewed text node', () => {
     const { hook, container } = renderEdit(pose, undefined, group);
     const canvas = document.createElement('canvas');
     container.appendChild(canvas);
-    act(() => hook.result.current.onDoubleClick({
-      target: canvas, clientX: world[0], clientY: world[1],
-    } as unknown as MouseEvent<HTMLElement>));
+    act(() => openAt(hook.result.current, world[0], world[1]));
     return hook.result.current.editingId;
   }
 

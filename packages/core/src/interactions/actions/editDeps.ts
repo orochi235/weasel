@@ -5,11 +5,11 @@ import type { Point2, WorldPoint } from '@weasel-js/routing';
 
 /**
  * Dep for `enterTextEditAction`. `<SceneCanvas>` answers it with its own
- * editor (its `textEditor` prop); a host with an editor of its own, one
- * driving character controls, publishes it instead.
+ * editor (its `textEditor` prop), or with the editor of a host's
+ * `useSceneTextEdit` whose container holds the canvas. A host whose editor's
+ * container does not hold the canvas publishes it from inside `<SceneCanvas>`.
  *
- * Wrap the return value of `useTextEdit` / `useSceneTextEdit` to source this
- * dep. The `isTextNode` predicate is optional — when absent the action fires
+ * Wrap the return value of `useSceneTextEdit` to source this dep. The `isTextNode` predicate is optional — when absent the action fires
  * unconditionally (the binding spec acts as the gate).
  *
  * @example
@@ -17,6 +17,7 @@ import type { Point2, WorldPoint } from '@weasel-js/routing';
  * const textEdit = useSceneTextEdit(scene, container);
  * useDepSource('textEdit', () => ({
  *   startEdit: textEdit.startEdit,
+ *   textAt: textEdit.textAt,
  *   isTextNode: textEdit.isTextNode,
  * }));
  * ```
@@ -24,6 +25,12 @@ import type { Point2, WorldPoint } from '@weasel-js/routing';
 export interface TextEditDep {
   /** Begin editing the node with `id`. */
   startEdit(id: string, opts?: { caret?: number | 'all' }): void;
+  /**
+   * The top-most text node this editor would open at world point `at`, and
+   * the caret at the glyph there, or `null` where there is none. A
+   * double-click opens what this answers (`enterTextEdit.doubleClick`).
+   */
+  textAt(at: Point2): { id: string; caret: number } | null;
   /**
    * Optional predicate: returns `true` when the node with `id` is a text node.
    * When absent the action fires on any selected node (binding spec is the gate).

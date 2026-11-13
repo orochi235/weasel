@@ -161,7 +161,7 @@ export { selectPreset } from '../canvas/SceneCanvas/presets/select';
 export { movePreset, outlinePreset, resizePreset, rotatePreset } from '../canvas/SceneCanvas/presets/transform';
 export {
   clipboardPreset, contextMenuPreset, deletePreset, duplicatePreset, editPreset, escapePreset, groupPreset,
-  nudgePreset, selectAllPreset, stylePreset,
+  nudgePreset, selectAllPreset, stylePreset, textEditPreset,
 } from '../canvas/SceneCanvas/presets/edit';
 export { alignPreset, arrangePreset, distributePreset, flipPreset, reorderPreset } from '../canvas/SceneCanvas/presets/arrange';
 export {
@@ -219,7 +219,6 @@ export type { StarPoint } from '../tools/builtin/star/useStarTool';
 export type { UseSceneTrivialOptions } from '../core/scene/useScene';
 export type {
   DefaultTextData,
-  TextEditDoubleClick,
   UseSceneTextEditReturn,
 } from '../domains/text/useSceneTextEdit';
 export type { EditingDrawOne } from '../domains/text/editingDrawOne';

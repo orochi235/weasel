@@ -1,8 +1,9 @@
 import { useDepSource, useLatest, type UseSceneTextEditReturn } from '@weasel-js/core';
 
 /**
- * Publishes the app's live text-edit session as the `textEdit` dep, replacing
- * `SceneCanvas`'s warn-only stub.
+ * Publishes the app's live text-edit session as the `textEdit` dep, for a host
+ * whose `useSceneTextEdit` container does not hold the canvas. One whose
+ * container holds it needs none: the canvas answers the dep with it.
  *
  * **Mounted as a child of `<SceneCanvas>` on purpose.** The registry is a
  * last-write-wins map and `useDepSource` registers in an effect, so what wins
@@ -15,6 +16,7 @@ export function TextEditDepPublisher({ edit }: { edit: UseSceneTextEditReturn })
 
   useDepSource('textEdit', () => ({
     startEdit: (id, opts) => editRef.current.startEdit(id, opts),
+    textAt: (at) => editRef.current.textAt(at),
     isTextNode: (id) => editRef.current.isTextNode(id),
   }));
 

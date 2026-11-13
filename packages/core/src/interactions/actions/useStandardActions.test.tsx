@@ -78,7 +78,7 @@ const KIT_IDS = [
   // useViewportActions, not by useStandardActions — see useViewportActions.ts.
   'viewport.dragPan',
   'clearSelection',
-  'enterTextEdit',
+  'enterTextEdit', 'editTextAt',
   'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity', 'setStrokeWidth', 'setVertexColor',
   'ingest',
   'clipboard.copy', 'clipboard.cut', 'clipboard.paste',

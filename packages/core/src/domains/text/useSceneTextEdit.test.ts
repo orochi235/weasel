@@ -11,12 +11,12 @@ import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { act, render, renderHook } from '@testing-library/react';
 import { Suspense, createElement, startTransition, useState } from 'react';
 import { Hang } from '@weasel-js/react/testing/abandonRender';
-import type { MouseEvent } from 'react';
 import { useScene } from '../../core/scene/useScene';
 import { asNodeId } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
 import { registerMountedCanvas } from '../../canvas/mountedCanvases';
 import { useSceneTextEdit } from './useSceneTextEdit';
+import { openAt } from './testing/openAt';
 
 interface TextItem {
   id: string;
@@ -201,22 +201,6 @@ describe('useSceneTextEdit — view thunk', () => {
     }
   });
 
-  it('un-projects a double-click through the thunk read at click time', () => {
-    let live: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    const { hook, container } = renderThunkEdit(() => live);
-    const canvas = document.createElement('canvas');
-    container.appendChild(canvas);
-
-    // The node's world box is x 100..300, y 50..90. jsdom reports a zeroed
-    // client rect, so a click at (10, 10) is canvas-space (10, 10) — inside
-    // the node only once the camera has panned to (100, 50).
-    live = { x: 100, y: 50, scale: { x: 1, y: 1 } };
-    act(() => hook.result.current.onDoubleClick({
-      target: canvas, clientX: 10, clientY: 10,
-    } as unknown as MouseEvent<HTMLElement>));
-    expect(hook.result.current.editingId).toBe('a');
-  });
-
   it('does not open the editor on a node whose layer is locked', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -226,34 +210,15 @@ describe('useSceneTextEdit — view thunk', () => {
     });
     const canvas = document.createElement('canvas');
     container.appendChild(canvas);
-    const click = {
-      target: canvas, clientX: 110, clientY: 60,
-    } as unknown as MouseEvent<HTMLElement>;
 
     const { scene } = hook.result.current;
     act(() => scene.setLayerLocked(scene.layers[0]!.id, true));
-    act(() => hook.result.current.edit.onDoubleClick(click));
+    act(() => openAt(hook.result.current.edit, 110, 60));
     expect(hook.result.current.edit.editingId).toBeNull();
 
     act(() => scene.setLayerLocked(scene.layers[0]!.id, false));
-    act(() => hook.result.current.edit.onDoubleClick(click));
+    act(() => openAt(hook.result.current.edit, 110, 60));
     expect(hook.result.current.edit.editingId).toBe('a');
-  });
-
-  it('opens the editor from a double-click whose target is not a canvas', () => {
-    // Under `paintInto` the dblclick target is the caller's input box, so the
-    // old `instanceof HTMLCanvasElement` gate made text editing a silent no-op
-    // on every detached surface.
-    let live: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    const { hook, container } = renderThunkEdit(() => live);
-    const box = document.createElement('div');
-    container.appendChild(box);
-
-    live = { x: 100, y: 50, scale: { x: 1, y: 1 } };
-    act(() => hook.result.current.onDoubleClick({
-      target: box, clientX: 10, clientY: 10,
-    } as unknown as MouseEvent<HTMLElement>));
-    expect(hook.result.current.editingId).toBe('a');
   });
 });
 
@@ -274,9 +239,7 @@ describe('useSceneTextEdit — a double-click on a node that is not text', () =>
       const scene = useScene({ items });
       return useSceneTextEdit(scene, container, { isText });
     });
-    const dblclick = () => act(() => hook.result.current.onDoubleClick({
-      target: canvas, clientX: 110, clientY: 60,
-    } as unknown as MouseEvent<HTMLElement>));
+    const dblclick = () => act(() => openAt(hook.result.current, 110, 60));
     return { hook, dblclick };
   }
 
@@ -379,31 +342,6 @@ describe('useSceneTextEdit — the canvas inside the container', () => {
       dispose();
     }
   });
-
-  it('un-projects a double-click through the canvas it landed on', () => {
-    const { hook, container, canvas: first } = mount();
-    const second = document.createElement('canvas');
-    container.appendChild(second);
-    const disposeFirst = registerMountedCanvas({
-      element: first,
-      getView: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }),
-    });
-    const disposeSecond = registerMountedCanvas({
-      element: second,
-      getView: () => ({ x: 100, y: 50, scale: { x: 1, y: 1 } }),
-    });
-    try {
-      // Canvas-space (10, 10) is inside the node only through the second
-      // canvas's camera.
-      act(() => hook.result.current.onDoubleClick({
-        target: second, clientX: 10, clientY: 10,
-      } as unknown as MouseEvent<HTMLElement>));
-      expect(hook.result.current.editingId).toBe('a');
-    } finally {
-      disposeFirst();
-      disposeSecond();
-    }
-  });
 });
 
 /**
@@ -452,9 +390,7 @@ describe('useSceneTextEdit — a derived pose', () => {
     const canvas = document.createElement('canvas');
     container.appendChild(canvas);
     // x 300..500 once derived; the authored pose claims x 0..200.
-    act(() => hook.result.current.onDoubleClick({
-      target: canvas, clientX: 320, clientY: 10,
-    } as unknown as MouseEvent<HTMLElement>));
+    act(() => openAt(hook.result.current, 320, 10));
     expect(hook.result.current.editingId).toBe('label');
   });
 
@@ -462,9 +398,7 @@ describe('useSceneTextEdit — a derived pose', () => {
     const { hook, container } = renderDerived();
     const canvas = document.createElement('canvas');
     container.appendChild(canvas);
-    act(() => hook.result.current.onDoubleClick({
-      target: canvas, clientX: 20, clientY: 10,
-    } as unknown as MouseEvent<HTMLElement>));
+    act(() => openAt(hook.result.current, 20, 10));
     expect(hook.result.current.editingId).toBeNull();
   });
 
@@ -517,13 +451,11 @@ describe('useSceneTextEdit — a line longer than its box', () => {
   function mount(item: LongItem) {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    const target = document.createElement('div');
-    container.appendChild(target);
     const hook = renderHook(() => {
       const scene = useScene({ items: [item] });
       return useSceneTextEdit(scene, container);
     });
-    return { hook, container, target };
+    return { hook, container };
   }
 
   it('keeps an unwrapped line on one line in the overlay', () => {
@@ -554,10 +486,8 @@ describe('useSceneTextEdit — a line longer than its box', () => {
   });
 
   it('puts a double-click below an unwrapped line at its end, not on a line never drawn', () => {
-    const { hook, container, target } = mount(long());
-    act(() => hook.result.current.onDoubleClick({
-      target, clientX: 110, clientY: 50 + LINE + 5,
-    } as unknown as MouseEvent<HTMLElement>));
+    const { hook, container } = mount(long());
+    act(() => openAt(hook.result.current, 110, 50 + LINE + 5));
     expect(hook.result.current.editingId).toBe('a');
     const sel = window.getSelection()!;
     expect(overlayOf(container).contains(sel.anchorNode)).toBe(true);
@@ -567,37 +497,12 @@ describe('useSceneTextEdit — a line longer than its box', () => {
   it('maps a double-click through the node\'s verticalAlign, as the painter does', () => {
     // One 'AB AB' line bottom-aligned in the 200-tall box sits at y 211.6..250.
     const item = { ...long(), text: 'AB AB', runs: [{ text: 'AB AB' }], width: 400, verticalAlign: 'bottom' as const };
-    const { hook, target } = mount(item);
+    const { hook } = mount(item);
     // Between A's and B's midpoints, on that line.
-    act(() => hook.result.current.onDoubleClick({
-      target, clientX: 130, clientY: 220,
-    } as unknown as MouseEvent<HTMLElement>));
+    act(() => openAt(hook.result.current, 130, 220));
     const sel = window.getSelection()!;
     expect(sel.anchorNode?.nodeType).toBe(Node.TEXT_NODE);
     expect(sel.anchorOffset).toBe(1);
-  });
-});
-
-describe('useSceneTextEdit — a double-click inside the open editor', () => {
-  beforeEach(() => {
-    document.body.innerHTML = '';
-  });
-
-  it('selects a word there instead of opening the node at that offset from the origin', () => {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const near = { ...NODE, id: 'near', x: 0, y: 0 };
-    const hook = renderHook(() => {
-      const scene = useScene({ items: [near, NODE] });
-      return useSceneTextEdit(scene, container);
-    });
-    act(() => hook.result.current.startEdit('a'));
-    // jsdom lays nothing out, so the click's offset within the overlay is its
-    // client position: (5, 5), which is inside `near` if read as a canvas point.
-    act(() => hook.result.current.onDoubleClick({
-      target: overlayOf(container), clientX: 5, clientY: 5,
-    } as unknown as MouseEvent<HTMLElement>));
-    expect(hook.result.current.editingId).toBe('a');
   });
 });
 

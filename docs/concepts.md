@@ -90,7 +90,7 @@ others, and naming it turns those on too; any of them can also be named alone:
 | `resize` | the resize handles, drawn and bound |
 | `rotate` | the rotation handle, drawn and bound |
 | `transform` | `resize` and `rotate` |
-| `edit` | `escape` (Escape, cancel-gesture), `contextMenu`, `selectAll`, `duplicate` (with transform-again), `delete`, `group`, `nudge`, `style` (fill and stroke), `clipboard`; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
+| `edit` | `escape` (Escape, cancel-gesture), `contextMenu`, `selectAll`, `duplicate` (with transform-again), `delete`, `group`, `nudge`, `style` (fill and stroke), `clipboard`, `textEdit` (a double-click on text opens it in place); Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
 | `arrange` | `flip`, `reorder`, `align`, `distribute` |
 | `paths` | `anchorKeys` (anchor nudge and delete, Escape out of path edit, each tried ahead of its node-level twin), `pathfinder`, `outlines`, `pathEdit`, `pathCommands` |
 | `ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |

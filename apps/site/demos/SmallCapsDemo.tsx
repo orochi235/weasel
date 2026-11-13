@@ -1,5 +1,5 @@
-import { useState, useSyncExternalStore } from 'react';
-import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit } from '@weasel-js/core';
+import { useSyncExternalStore } from 'react';
+import { SceneCanvas, asNodeId, solid, useScene } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
 import { glyphGeneration, subscribeGlyphReady } from '@weasel-js/font';
 import { DEFAULT_TEXT_STYLE, smallCapsScaleFor } from '@weasel-js/text';
@@ -55,8 +55,6 @@ export function SmallCapsDemo() {
   useSyncExternalStore(subscribeGlyphReady, glyphGeneration);
   const scale = smallCapsScaleFor(DEFAULT_TEXT_STYLE.fontFamily, 400, 'normal');
   const scene = useScene<NodeData, 'default'>({ systemLayers: [{ id: 'default' }], initial: NODES });
-  const [frame, setFrame] = useState<HTMLDivElement | null>(null);
-  const edit = useSceneTextEdit(scene, frame);
 
   return (
     <div className="ckd-stack">
@@ -64,13 +62,14 @@ export function SmallCapsDemo() {
         Small capitals are set at {(scale * 100).toFixed(1)}% — the face&apos;s x-height over its
         cap height, from its <code>OS/2</code> table.
       </p>
-      <div className="ckd-canvas-frame" ref={setFrame} onDoubleClick={edit.onDoubleClick}>
+      <div className="ckd-canvas-frame">
         <DemoStage width={W} height={H}>
           <SceneCanvas
             className="ckd-canvas"
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             selectable={false}
+            features={['textEdit']}
           />
         </DemoStage>
       </div>

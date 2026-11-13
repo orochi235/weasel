@@ -113,6 +113,7 @@ describe('double-click mode entry in draw', () => {
     const t = setup();
     t.doubleClick(AT.text);
     expect(t.state()).toEqual({ mode: 'normal', target: null });
+    expect(document.querySelectorAll('[contenteditable="true"]')).toHaveLength(1);
   });
 
   it('a grouped path enters its group, in no mode', () => {

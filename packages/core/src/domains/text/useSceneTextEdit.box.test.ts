@@ -4,10 +4,10 @@
  */
 import { describe, expect, it, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import type { MouseEvent } from 'react';
 import { useScene } from '../../core/scene/useScene';
 import { solid } from '../../util/paint';
 import { asNodeId } from '../../core/scene/types';
+import { openAt } from './testing/openAt';
 import { useSceneTextEdit, type UseSceneTextEditOptions } from './useSceneTextEdit';
 import { DEFAULT_TEXT_STYLE } from '@weasel-js/text';
 
@@ -25,9 +25,7 @@ function mount(item: Record<string, unknown>, options: UseSceneTextEditOptions<t
     const scene = useScene({ items: [item as typeof STICKY] });
     return useSceneTextEdit(scene, container, options);
   });
-  const dblclick = (x: number, y: number) => act(() => hook.result.current.onDoubleClick({
-    target: canvas, clientX: x, clientY: y,
-  } as unknown as MouseEvent<HTMLElement>));
+  const dblclick = (x: number, y: number) => act(() => openAt(hook.result.current, x, y));
   return { hook, container, dblclick };
 }
 

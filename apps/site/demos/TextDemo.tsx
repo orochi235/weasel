@@ -88,7 +88,7 @@ export function TextDemo() {
   };
 
   return (
-    <div ref={setContainer} className="ckd-canvas-frame" onDoubleClick={edit.onDoubleClick}>
+    <div ref={setContainer} className="ckd-canvas-frame">
       <DemoStage width={W} height={H}>
         <SceneCanvas
           features={['view', 'pick', 'move', 'resize', 'edit']}

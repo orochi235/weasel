@@ -46,7 +46,7 @@ function fakeHistory() {
 }
 
 function TextEditStub({ startEdit }: { startEdit: (id: string, opts?: object) => void }): null {
-  useDepSource('textEdit', () => ({ startEdit }));
+  useDepSource('textEdit', () => ({ startEdit, textAt: () => null }));
   return null;
 }
 
