@@ -291,53 +291,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven snapping hands-on and the defaults and keys he picks are
   committed.
 
-## Text
-
-- **(P3) [agent] A diagram body measured while its face is still loading keeps the fallback's size.**
-  `rendererMeasure` (`packages/diagram/src/rendererMeasure.ts`) measures synchronously through
-  `measureTextBounds`, and `templateSpecs`, `documentSpecs`, `commitSequence` and `applyChartTheme` store
-  the sizes it returns in the scene. A face registered `lazy` (every app's Inter, `apps/shared/defaultFont.ts`)
-  is measured as the fallback until it lands (`subscribeGlyphReady`'s doc), and nothing measures those bodies
-  again when `faceGeneration()` moves, so a chart built before the face loads keeps bodies sized for the wrong
-  font (read from the code, 2026-11-12; not reproduced in a browser). Too big for audit round 19: the fix is
-  either an async wait for the faces a commit names before it measures, or bodies re-measured on a face
-  change, and both touch every diagram commit path.
-  Closes when a body committed while its face is pending ends up sized for the face once it loads, under a
-  test that holds a lazy face pending across the commit.
-
-- **(P3) [agent] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
-  and starts each inline box on a whole pixel.** Measured 2026-10-29 by stepping `x` through a pixel
-  in eighths: WebKit's overlay ink moves in steps of a third of a pixel, each taken late (Inter
-  16px stays put from `x` 20 to 20.25 and moves next at 20.375 and 20.75), where Chromium and
-  Firefox step by quarters to the nearest. A piece that starts between pixels paints from the one
-  below: the small capitals of `"Hgd" Inter 72px small caps` start at 73.508 and paint from 73, so
-  that case's `dRight` runs from -0.07 to -0.91 across the pixel, and is -0.79 at `x` 20 against
-  the test's 0.75. It is the whole configuration, not that case: in
-  `npx vitest run -c scripts/measure-overlay-alignment.config.ts`, 22 of WebKit DPR 1's 160 matrix
-  rows fall outside the test's bounds, every one trailing the canvas (mean `dx` -0.14); WebKit DPR 2
-  has 2, the same Arial 72px rows that Chromium DPR 2 has. Advances are not it: WebKit's DOM width of
-  `GDGDGDGDGD` matches the atlas to 0.001px. Nothing on the overlay moves the grid: `will-change`,
-  `translateZ(0)`, either `text-rendering`, and `-webkit-font-smoothing` left every pixel in place
-  (the last moved the small-caps case 0.76px further left). A WebKit-only nudge only trades one
-  case for another: a half pixel took the matrix mean `dx` to +0.36 and failed three cases, and a
-  sixth of a pixel halved the mean `dx` at 40 and 72px but took Inter 16px's worst `dRight` from
-  0.32 to 0.74. CI runs Chromium only. What is left is a ruling: accept it as WebKit's and give
-  WebKit DPR 1 its own bound in the alignment test, or detect WebKit in text-dom and nudge.
-  Ruled (2026-11-07): accept it as WebKit's. Closes when `overlayAlignment.browser.test.tsx` gives WebKit DPR 1
-  its own bound.
-
-- **(P3) [agent] A HUD menu's text row places its caret, selection and click as though the draft runs left to
-  right.** `offsetsX` in `packages/hud/src/menu/valueRows.ts` puts offset `i` at the row's right edge less the width
-  of the characters after it, which is where it sits only in left-to-right text; with a bidi engine registered the
-  renderer lays a Hebrew or Arabic draft out right to left, so the caret, the selection band and `caretAt`'s click
-  mapping land mirrored (read from the code, 2026-11-12; not run). Fixing it means taking each cluster's x from the
-  laid-out line (`layoutRuns`, with its bidi levels) rather than from prefix widths, a split selection band where a
-  selection crosses a direction change, and a caret affinity at those changes: more than an audit pass. Closes
-  when a test typing a Hebrew draft into a HUD text row finds the caret at the line's left end and a click on a
-  character's left half putting the caret after it.
-
----
-
 ## Scene, adapters & layout
 
 - **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids

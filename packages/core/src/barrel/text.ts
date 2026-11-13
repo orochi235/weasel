@@ -55,6 +55,7 @@ export {
   QUAD_STRIDE,
   cachedPaintRuns,
   registerBidi,
+  registeredBidi,
   registerShaper,
   paragraphDirection,
   layoutTextPose,

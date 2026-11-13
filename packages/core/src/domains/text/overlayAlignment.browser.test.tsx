@@ -37,6 +37,19 @@ const TEXT = 'H';
  */
 const DY_TOLERANCE = 0.85;
 
+/** How far the overlay's ink may land from the canvas's, in CSS px, along the line. */
+const DX_TOLERANCE = 0.75;
+
+/**
+ * How far the overlay's ink may trail the canvas's. WebKit at DPR 1 sets glyphs
+ * on a third-pixel grid, rounding down, and starts each inline box on a whole
+ * pixel, so its ink trails by up to a pixel; accepted as WebKit's (ruled
+ * 2026-11-07) rather than nudged, since every nudge measured traded one case
+ * for another.
+ */
+const trailTolerance = (): number =>
+  browserName() === 'webkit' && window.devicePixelRatio === 1 ? 1 : DX_TOLERANCE;
+
 interface Ink { cx: number; cy: number; mass: number; right: number; spans: Array<[number, number]> }
 
 /** Share of the ink `right` leaves beyond it: deep enough in the last glyph to be subpixel-smooth. */
@@ -261,10 +274,12 @@ describe('edit overlay alignment', () => {
           expect(Math.abs(x1 - canvas[i][1]), spans).toBeLessThanOrEqual(1);
         });
       } else {
-        expect(Math.abs(d.dx), at).toBeLessThan(0.75);
+        expect(d.dx, at).toBeLessThan(DX_TOLERANCE);
+        expect(d.dx, at).toBeGreaterThan(-trailTolerance());
       }
       expect(Math.abs(d.dy), at).toBeLessThan(DY_TOLERANCE);
-      expect(Math.abs(d.dRight), at).toBeLessThan(0.75);
+      expect(d.dRight, at).toBeLessThan(DX_TOLERANCE);
+      expect(d.dRight, at).toBeGreaterThan(-trailTolerance());
     });
   }
 
