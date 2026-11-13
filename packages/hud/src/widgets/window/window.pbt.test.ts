@@ -7,7 +7,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
-import { DRAG_THRESHOLD_PX } from '@weasel-js/core';
 import { runs, tally, timeoutFor } from '../../pbt.fixture';
 import type { WidgetBounds } from '../../widget';
 import { createWindow } from './window';
@@ -101,7 +100,7 @@ function modelOf(c: Config) {
         return false;
       case 'move': {
         if (!s.drag) return false;
-        if (Math.hypot(cmd.x - s.origin.x, cmd.y - s.origin.y) >= DRAG_THRESHOLD_PX) s.moved = true;
+        s.moved = true;
         const dragged = applyWindowDrag(s.start, s.drag, cmd.x - s.origin.x, cmd.y - s.origin.y, minW, minH);
         const next = s.drag === 'title' ? clamp(s, dragged) : dragged;
         if (same(next, s.b)) return false;

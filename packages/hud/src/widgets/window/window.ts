@@ -3,7 +3,7 @@ import type {
   Widget, WidgetBounds, HudDrawCtx, HudContentCtx, HudPointerEvent,
 } from '../../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
-import { textCommandFromRuns, pathFromD, parseColor, pastDragThreshold } from '@weasel-js/core';
+import { textCommandFromRuns, pathFromD, parseColor } from '@weasel-js/core';
 import { clampRectWithin } from '@weasel-js/geom';
 import { dashForStrokeStyle, mixOklab, type ColorSource } from '@weasel-js/paint';
 import { TINT_REF, type Emphasis, type Grade, type Stance } from '@weasel-js/theme';
@@ -286,12 +286,8 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         }
         case 'move': {
           if (!dragZone || !Number.isFinite(evt.x) || !Number.isFinite(evt.y)) break;
-          if (pastDragThreshold(
-            { clientX: dragOrigin.x, clientY: dragOrigin.y },
-            { clientX: evt.x, clientY: evt.y },
-          )) {
-            pressMoved = true;
-          }
+          // The dispatcher sends a move only once the press crossed the `gestures.dragPx` kit setting.
+          pressMoved = true;
           const dragged = applyWindowDrag(
             dragStart, dragZone, evt.x - dragOrigin.x, evt.y - dragOrigin.y, minW, minH,
           );
