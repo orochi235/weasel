@@ -122,6 +122,7 @@ export * from './components/CurveEditor';
 export * from './components/PointPlotter';
 export * from './components/ColorField';
 export * from './components/CommandPalette';
+export * from './components/ShortcutSheet';
 export * from './components/TokenPanel';
 export * from './components/TokenField';
 export * from './components/GradientEditor';
