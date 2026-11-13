@@ -1,19 +1,12 @@
-import { isPrefLeaf, type PrefGroup, type PrefLeaf, prefShownValue } from '@weasel-js/prefs';
+import { type PrefGroup, type PrefLeaf, prefShownValue } from '@weasel-js/prefs';
 import { deepEqual } from '@weasel-js/registry';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Icon } from '@weasel-js/ui/components/Icon';
+import { configLeaves } from '../config/leaves';
 import { isRecord, valueAtPath, withValueAtPath } from '../config/path';
 import { isEncodedLeaf, storedDefault } from '../config/storedDefault';
 import { icon } from '../icons.gen';
 import { leafValueAt } from './fields';
-
-/** Every leaf beneath a group, by its dotted path. */
-function leavesUnder(group: PrefGroup, at: string): [string, PrefLeaf][] {
-  return Object.entries(group.children).flatMap(([key, child]) => {
-    const path = at === '' ? key : `${at}.${key}`;
-    return isPrefLeaf(child) ? [[path, child] as [string, PrefLeaf]] : leavesUnder(child, path);
-  });
-}
 
 /** What the row at `path` shows: an encoded leaf's stored value read through its encoding. */
 function shownAt(config: Record<string, unknown>, path: string, leaf: PrefLeaf): unknown {
@@ -36,7 +29,7 @@ export function ResetGroup({
   config: Record<string, unknown>;
   setConfig: (path: string, value: unknown) => void;
 }) {
-  const changed = leavesUnder(group, path).filter(
+  const changed = [...configLeaves(group, path)].filter(
     ([p, leaf]) => !deepEqual(shownAt(config, p, leaf), leaf.default),
   );
   return (
