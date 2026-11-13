@@ -560,6 +560,7 @@
     "KitMarkerKey": "type",
     "KitRequirements": "type",
     "KitVersions": "type",
+    "LASSO_TOOL_OPTIONS": "const",
     "LINE_TOOL_OPTIONS": "const",
     "LONG_PRESS_FEEDBACK_ID": "const",
     "LONG_PRESS_MS": "const",

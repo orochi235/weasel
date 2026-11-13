@@ -66,7 +66,7 @@ export {
   type UseEyedropperToolOptions,
 } from './eyedropper';
 export { useLineTool, LINE_TOOL_OPTIONS, type LinePoint } from './line';
-export { useLassoTool, type UseLassoToolOptions } from './lasso';
+export { useLassoTool, LASSO_TOOL_OPTIONS, type UseLassoToolOptions } from './lasso';
 export { usePolygonTool, POLYGON_TOOL_OPTIONS, type UsePolygonToolOptions } from './polygon';
 export { useStarTool, STAR_TOOL_OPTIONS, type UseStarToolOptions } from './star';
 export { usePencilTool, PENCIL_TOOL_OPTIONS, type PencilPoint } from './pencil';
