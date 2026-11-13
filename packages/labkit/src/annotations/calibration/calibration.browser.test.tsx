@@ -159,7 +159,11 @@ async function mount(config: CalibrationConfig): Promise<void> {
       </Lab>
     </div>,
   );
-  await screen.findByTestId('calibration-picture');
+  const picture = await screen.findByTestId('calibration-picture');
+  // The pointer stays where the last test left it, maybe over a button whose tooltip, which takes the pointer
+  // to stay hoverable, would then sit over Rectangle and swallow the click.
+  await userEvent.hover(picture);
+  await waitFor(() => expect(document.querySelector('[role="tooltip"]')).toBeNull());
   await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
   await waitFor(() => expect(document.querySelector('.lk-annotate__input')).not.toBeNull());
   await frames(2);
