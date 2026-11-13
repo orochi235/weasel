@@ -15,6 +15,31 @@ import type { Pair, Ring } from './adapter';
  * the winding.
  */
 export function meshOutline(rings: readonly Ring[]): Ring | null {
+  const { points, edges } = meshEdgeCounts(rings);
+  const loops = walkLoops(edges).map((loop) => loop.map((k) => points.get(k)!));
+  return loops.length === 0 ? null : bridge(loops);
+}
+
+/** A directed edge of a mesh's boundary, `n` times over. */
+export interface MeshEdge {
+  ax: number; ay: number; bx: number; by: number;
+  n: number;
+}
+
+/** The directed edges of `rings`' boundary, as `meshOutline` walks them: each triangle counted once, wound
+ *  counterclockwise, with every edge two triangles share in opposite directions cancelled. */
+export function meshEdges(rings: readonly Ring[]): MeshEdge[] {
+  const { points, edges } = meshEdgeCounts(rings);
+  const out: MeshEdge[] = [];
+  for (const [edge, n] of edges) {
+    const [a, b] = edge.split('|');
+    const [ax, ay] = points.get(a!)!, [bx, by] = points.get(b!)!;
+    out.push({ ax, ay, bx, by, n });
+  }
+  return out;
+}
+
+function meshEdgeCounts(rings: readonly Ring[]): { points: Map<string, Pair>; edges: Map<string, number> } {
   const points = new Map<string, Pair>();
   // Directed edge counts, keyed `from|to`; an edge and its reverse cancel.
   const edges = new Map<string, number>();
@@ -39,8 +64,7 @@ export function meshOutline(rings: readonly Ring[]): Ring | null {
       }
     }
   }
-  const loops = walkLoops(edges).map((loop) => loop.map((k) => points.get(k)!));
-  return loops.length === 0 ? null : bridge(loops);
+  return { points, edges };
 }
 
 /** The directed edges left in `edges`, chained into closed loops of point keys. */
@@ -75,7 +99,7 @@ function walkLoops(edges: Map<string, number>): string[][] {
  * the previous loop's, walked round, and left the way it came in, so every
  * bridge is crossed once each way.
  */
-function bridge(loops: Pair[][]): Ring {
+export function bridge(loops: Pair[][]): Ring {
   const entered = loops.map((loop) => {
     let k = 0;
     for (let i = 1; i < loop.length; i++) if (loop[i][0] < loop[k][0] || (loop[i][0] === loop[k][0] && loop[i][1] < loop[k][1])) k = i;
