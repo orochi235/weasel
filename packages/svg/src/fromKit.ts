@@ -107,7 +107,7 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
 /**
  * Write one leaf as the `SvgNode` its built-in painter draws — text, path,
  * shape or image, in the order the painters claim a node. `null` for data none
- * of them draws. A text node with a `background` is a group: the box, then the text.
+ * of them draws. A text node with a `background` is a group marked `textFrame`: the box, then the text.
  * One that clips is a group clipped to its box as it is drawn, turned with it.
  *
  * An `'inherit'` fill or stroke is none here, with no container to read;
@@ -137,8 +137,8 @@ export function svgLeafFromKit(
     const over: SvgNode[] = frame.edge
       ? [svgLeafFromKit({ path: frame.edge.path, fill: null, stroke: { ...solid(frame.edge.color), width: frame.edge.width } }, pose) as SvgPathNode]
       : [];
-    const framed: SvgNode = { kind: 'group', children: [box, ...over, text], ...clip };
-    return under.length > 0 ? { kind: 'group', children: [...under, framed] } : framed;
+    const framed: SvgGroupNode = { kind: 'group', children: [box, ...over, text], ...clip };
+    return under.length > 0 ? { kind: 'group', children: [...under, framed], textFrame: true } : { ...framed, textFrame: true };
   }
   const outline = data.path ? pathInPoseFrame(data.path, pose) : shapePathOf(data, pose);
   if (!outline) return data.image ? svgImageFromKit(data.image, pose) : null;

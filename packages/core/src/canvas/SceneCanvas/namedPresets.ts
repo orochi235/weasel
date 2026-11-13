@@ -25,6 +25,7 @@ import {
 import { BASELINE_ACTIONS } from './presets/baseline';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';
 import { viewPreset } from './presets/view';
+import { whiteboardPreset } from './presets/whiteboard';
 
 /** Each core preset by name, in the order `SCENE_CANVAS_FEATURES` lists them. */
 export const FEATURE_PRESETS: Readonly<Record<Feature, FeaturePreset>> = {
@@ -65,6 +66,7 @@ export const FEATURE_PRESETS: Readonly<Record<Feature, FeaturePreset>> = {
   paths: pathsPreset,
   ingest: ingestPreset,
   draw: drawPreset,
+  whiteboard: whiteboardPreset,
 };
 
 const FEATURES = Object.keys(FEATURE_PRESETS) as Feature[];

@@ -1,6 +1,7 @@
 import { solid, type ShapeGenerator } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
 import type { Obj, PathObj } from './svgObj';
+import { textFrameFields } from './svgNote';
 
 /** The generator a polygon or star `Obj`'s `params` name. Params without a
  *  rotation cannot place the shape again, so they import as plain geometry. */
@@ -29,6 +30,7 @@ export function leafOfObj(o: Obj): { pose: WeaselDrawPose; data: WeaselDrawData 
         ...(o.style ? { style: o.style } : {}),
         ...(o.runs ? { runs: o.runs } : {}),
         ...(o.verticalAlign ? { verticalAlign: o.verticalAlign } : {}),
+        ...textFrameFields(o),
       },
     };
   }

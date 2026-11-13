@@ -12,6 +12,8 @@ import type {
   Scene,
   SceneRegistry,
   ShapeGenerator,
+  MinSize,
+  TextNodeData,
 } from '@weasel-js/core';
 import { UNION_OF_CHILDREN, unionOfChildren, withPathEffectsRegistry } from '@weasel-js/core';
 import { symmetryRegistry } from '@weasel-js/symmetry';
@@ -26,11 +28,17 @@ export interface WeaselDrawPose {
   x: number; y: number; width: number; height: number; rotation?: number;
 }
 
+/** What makes a text node a note, as the sticky tool writes one: the paper under the text and its frame, and the
+ *  smallest size a resize leaves it. */
+export type TextFrameData = Pick<TextNodeData, 'background' | 'padding' | 'overflow' | 'edge' | 'shadow'> & {
+  minSize?: MinSize;
+};
+
 /** Data stored on every leaf — kit-native shape consumed by PATH_PAINTER
  *  and the text painter. Tools synthesized by `defaultTools={BUILTIN_TOOL_IDS}`
  *  already produce this shape, so no per-tool `create` overrides are
  *  required. `text` is present on text-tool leaves only. */
-export interface WeaselDrawData {
+export interface WeaselDrawData extends TextFrameData {
   path?: Path;
   text?: string;
   /** Node-level typography. What the sidebar's Character / Paragraph groups

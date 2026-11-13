@@ -4,6 +4,7 @@
  * to an `Obj` with its pose baked into the path. Rotation is not baked: it
  * rides on the node so the serializer emits a `rotate` transform.
  */
+import { textFrameFields } from './svgNote';
 import {
   type Fill,
   type Path,
@@ -93,7 +94,7 @@ function leafToObj(id: string, data: ShownDrawData, pose: WeaselDrawPose): Obj |
     if (stroke) o.stroke = stroke;
     if (data.verticalAlign) o.verticalAlign = data.verticalAlign;
     if (pose.rotation) o.rotation = pose.rotation;
-    return o;
+    return Object.assign(o, textFrameFields(data));
   }
   if (data.path == null) return null;
   const generator = shapeGeneratorOf(data);
