@@ -43,6 +43,8 @@ export interface Conflict {
  *    mode's own Escape exit, say. See {@link rulesExclusive}.
  *  - Two bindings whose `opts.views` keep them from being live and equally
  *    ranked in any one view.
+ *  - `hover` bindings: every live one that matches a move runs, so no two
+ *    of them compete.
  *  - Two bindings of one action with equal params that tie on one platform
  *    only: `mod` against `ctrl`, which are one key off a Mac and two on it.
  *    The same pair tying on both platforms is a plain duplicate and is flagged.
@@ -77,6 +79,7 @@ function findConflictsKeyed(
   const rows = buildRouteRegistry(entries);
   const groups = new Map<string, { platform: Platform; members: RegistryEntry[] }>();
   for (const entry of rows) {
+    if (entry.gesture === 'hover') continue;
     // One bucket per arg the binding answers to, not one per display token:
     // `key: ['h','H']` and `key: 'H'` really do collide, as do two `drop` specs
     // whose MIME sets overlap without being equal. Modifiers bucket the same
