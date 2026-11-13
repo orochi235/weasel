@@ -60,7 +60,7 @@ export { StencilGhost, type StencilGhostProps } from './StencilGhost';
 export * from './containers';
 export {
   GRAB_LABEL_ACTION_ID, GRAB_WAYPOINT_ACTION_ID, SELECT_LABEL_EDGE_ACTION_ID,
-  createDiagramContribution, diagramLabelDrag, diagramPorts, diagramWaypoints,
+  diagramLabelDrag, diagramPorts, diagramWaypoints,
 } from './contribution';
 export type { DiagramContributionOptions } from './contribution';
 export {

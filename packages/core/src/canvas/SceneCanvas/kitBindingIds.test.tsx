@@ -183,7 +183,7 @@ function sweepKit(): Sweep {
   s.value(minimap.createMinimapContribution({} as never), 'minimap.createMinimapContribution');
   s.value(minimap.createLinkedCursorContribution(), 'minimap.createLinkedCursorContribution');
   s.value(symmetry.createSymmetry(scene), 'symmetry.createSymmetry');
-  s.value(diagram.createDiagramContribution({} as never), 'diagram.createDiagramContribution');
+  s.value(diagram.diagramPorts({} as never), 'diagram.diagramPorts');
   s.value(diagram.diagramWaypoints({} as never), 'diagram.diagramWaypoints');
   s.value(diagram.diagramLabelDrag({} as never), 'diagram.diagramLabelDrag');
   s.value(diagram.diagramEdgeEnds({} as never), 'diagram.diagramEdgeEnds');

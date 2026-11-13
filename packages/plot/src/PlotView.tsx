@@ -1,5 +1,5 @@
 import {
-  SceneCanvas, WeaselProvider, useLatest, useScene, type NodeId, type Paint, type RectPose, type SceneCanvasApi,
+  SceneCanvas, WeaselProvider, useLatest, useScene, type NodeId, type Paint, type RectPose,
 } from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { plotEditing } from './editing/plotEditing';
@@ -84,17 +84,14 @@ function Inner({ data, onChange, width, height, theme, measure, background, clas
   }), [scene, changed]);
 
   const editing = useMemo(() => plotEditing({ scene: scene as never, ...(measure ? { measure } : {}) }), [scene, measure]);
-  const ambient = useMemo(() => [editing.contribution], [editing]);
+  const ambient = useMemo(() => [editing], [editing]);
   const textEditor = usePlotTextEdit(scene as never, (edit) => replacePlotData(scene, edit.rootId, edit.data, {
     label: edit.label, ...(measure ? { measure } : {}),
   }));
-  const [canvas, setCanvas] = useState<SceneCanvasApi | null>(null);
-  useEffect(() => (canvas === null ? undefined : canvas.registerLayer(editing.layer)), [canvas, editing]);
 
   return (
     <div className={className} data-wzl-plot="">
       <SceneCanvas
-        ref={setCanvas}
         scene={scene}
         features={FEATURES}
         enableKeybindings

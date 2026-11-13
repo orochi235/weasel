@@ -9,12 +9,11 @@ import {
   carriedDescendants,
   sceneCarrySource,
   type Action,
-  type Contribution,
+  type SurfaceContribution,
   type InvocationCtx,
   type NodeId,
   type OngoingHandle,
   type RectPose,
-  type RenderLayer,
   type Scene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
@@ -207,26 +206,23 @@ export function createReleaseMembersAction(opts: LaneActionOptions): Action {
 }
 
 /**
- * Both halves of container editing: the lane layer to `registerLayer`, and
- * the contribution to pass as `ambient`, which carries the lane boundary
- * drag, the add-lane click, and the `diagram.releaseMembers` command. Like
- * `diagramPorts`, one without the other fails quietly.
+ * Container editing, as one entry to pass as `ambient`: the lane layer, the
+ * lane boundary drag, the add-lane click, and the `diagram.releaseMembers`
+ * command.
  */
-export function diagramContainers(opts: LaneActionOptions): { layer: RenderLayer<unknown>; contribution: Contribution } {
+export function diagramContainers(opts: LaneActionOptions): SurfaceContribution {
   const target = `affordance:${LANE_AFFORDANCE_KIND}` as const;
   return {
-    layer: laneLayer(opts.scene, opts),
-    contribution: {
-      id: 'weasel-diagram-containers',
-      eligibility: { claimed: true },
-      actions: [
-        createLaneResizeAction(opts), createAddLaneAction(opts), createReleaseMembersAction(opts), grabPortAction(GRAB_LANE_ACTION_ID),
-      ],
-      bindings: [
-        { spec: { kind: 'drag', target }, actionId: LANE_RESIZE_ACTION_ID, opts: { id: 'weasel-diagram-containers.drag' } },
-        { spec: { kind: 'click', target }, actionId: ADD_LANE_ACTION_ID, opts: { id: 'weasel-diagram-containers.click' } },
-        ...grabPortBindings(GRAB_LANE_ACTION_ID, LANE_AFFORDANCE_KIND).filter((b) => b.spec.kind !== 'click'),
-      ],
-    },
+    id: 'weasel-diagram-containers',
+    eligibility: { claimed: true },
+    layers: [laneLayer(opts.scene, opts)],
+    actions: [
+      createLaneResizeAction(opts), createAddLaneAction(opts), createReleaseMembersAction(opts), grabPortAction(GRAB_LANE_ACTION_ID),
+    ],
+    bindings: [
+      { spec: { kind: 'drag', target }, actionId: LANE_RESIZE_ACTION_ID, opts: { id: 'weasel-diagram-containers.drag' } },
+      { spec: { kind: 'click', target }, actionId: ADD_LANE_ACTION_ID, opts: { id: 'weasel-diagram-containers.click' } },
+      ...grabPortBindings(GRAB_LANE_ACTION_ID, LANE_AFFORDANCE_KIND).filter((b) => b.spec.kind !== 'click'),
+    ],
   };
 }

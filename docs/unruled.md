@@ -1762,17 +1762,6 @@ Calls the lanes made without a ruling:
   copied nodes every time, while the Paste button steps on from its last paste or lands at the pointer. Both put
   the same nodes in history, but a run of Cmd+V stacks every paste on one spot.
 
-## Audit round seventeen (2026-11-12): consumer setup
-
-- Open: diagram's paired helpers (`diagramPorts`, `diagramWaypoints`, `diagramEdgeEnds`, `diagramLabelDrag`, the
-  container and sequence ones) hand back a layer to `registerLayer` and a contribution for `ambient`, so the README
-  has a consumer hold a canvas ref and register the layer in an effect. `SurfaceContribution.attach` exists for
-  exactly this ("a registered (hit-testable) layer"), and the minimap registers through it. Moving each layer into
-  its contribution's `attach` makes one `ambient` entry the whole install, but breaks a consumer who also
-  registers the layer, and `DiagramView` would have to stop registering its own; hit order would then follow
-  `ambient` order rather than `useDiagramEditing`'s `layers` order. The other answer is core hit-testing a
-  contribution's `overlay`, which it paints and never hit-tests.
-
 ## Audit round eighteen (2026-11-12): a lab's trials
 
 - The lab store's `setTrialInstrument` is gone (`major` changeset): it kept the old instrument's state, config, view
@@ -1893,3 +1882,11 @@ Calls the lanes made without a ruling:
   snapshot of the same instrument into any trial. So a snapshot cannot be loaded into a clone to compare it with
   the trial that saved it, and a lab wanting presets shared across trials lists `useLabContext().savedSnapshots`
   itself. Whether the menu offers every snapshot of the instrument, groups them by trial, or stays per trial.
+
+## Audit round twenty-one (2026-11-12): plugin packages
+
+- Settles round seventeen's open question on diagram's paired helpers: a `SurfaceContribution` now carries hit-tested
+  layers in `layers`, registered in entry order and all again when any entry's list changes, so a rebuilt entry keeps
+  its place in hit order. `attach` → `registerLayer` would have moved a rebuilt entry's layer to the top. Every diagram
+  editing helper and `plot`'s `plotEditing` return one entry; `createDiagramContribution`, the connect half without
+  its layer, is gone rather than kept beside `diagramPorts` (2026-11-12).

@@ -51,8 +51,8 @@ Each kind also has its title edited in place.
 `plotSpecs(data, { box })` compiles one to scene node specs: a group root whose
 data is `{ plot: { data, theme } }`, then every mark under it, in the root's
 frame. `replacePlotData` swaps a root's spec and rebuilds its marks as one undo
-entry. `plotEditing({ scene })` gives the handle layer and the contribution
-that bind a drag on a handle (a bar's end, a task's span) to `plot.dragValue`.
+entry. `plotEditing({ scene })` gives the entry to pass as `ambient`: the
+handle layer, and the binding of a drag on a handle (a bar's end, a task's span) to `plot.dragValue`.
 A text mark whose datum names an `edit` is the spec's text: `foldPlotText`
 turns a text edit of it into one edit of the spec, and `usePlotTextEdit` gives
 a `SceneCanvas` the options that do so. `PlotView` hosts one chart on a canvas

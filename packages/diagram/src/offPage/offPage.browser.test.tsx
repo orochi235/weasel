@@ -22,7 +22,7 @@ registerCanvasFont('sans-serif');
 const W = 600;
 const H = 300;
 const LOOK = { style: { fontFamily: 'sans-serif', fontSize: 12 }, fill: '#ffffff', background: '#3060c0' };
-const AMBIENT = [diagramOffPage().contribution];
+const AMBIENT = [diagramOffPage()];
 
 /**
  * Two 200 by 150 pages, 200 apart: p1 spans x 0..200, p2 x 400..600. Shape a

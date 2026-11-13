@@ -13,8 +13,8 @@ import {
   type Contribution,
   type FeaturePreset,
   type RectPose,
-  type RenderLayer,
   type Scene,
+  type SurfaceContribution,
 } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
@@ -141,9 +141,8 @@ type EditingProps = Pick<
 >;
 
 export interface DiagramEditing {
-  /** In registration order: the last is hit first. */
-  layers: readonly RenderLayer<unknown>[];
-  ambient: readonly Contribution[];
+  /** The entries' layers register in this order: the last is hit first. */
+  ambient: readonly SurfaceContribution[];
   /** Presets to pass in `features`, beside the view's own. */
   presets: readonly FeaturePreset[];
   actions: ActionsProp;
@@ -181,10 +180,10 @@ export function useDiagramEditing(
       })
     : null, [mode, source, canConnect, portOptions, connectBodies, report]);
   // A registered layer with no `hitTest` is painted and claims no press.
-  const shown = useMemo(() => {
+  const shown = useMemo((): SurfaceContribution | null => {
     if (mode !== 'show') return null;
     const { hitTest: _hitTest, ...paintOnly } = portLayer<RectPose>(source, portOptions);
-    return paintOnly;
+    return { id: 'weasel-diagram-ports-shown', eligibility: { always: true }, layers: [paintOnly] };
   }, [mode, source, portOptions]);
   const ends = useMemo(() => reconnects
     ? diagramEdgeEnds<RectPose>({
@@ -238,21 +237,15 @@ export function useDiagramEditing(
       : {}),
   }), [deletes, sequences, scene, resizes, regionEdits, report]);
 
-  const portsLayer = ports?.layer ?? shown;
-  const layers = useMemo(
-    // Edge ends after ports and routes: an edge's end sits on a port and beside a route handle, and the last layer is hit first.
-    () => [regions?.layer, labelDrag?.layer, portsLayer, route?.layer, ends?.layer, sequence?.layer]
-      .filter((l): l is RenderLayer<unknown> => l != null),
-    [regions, labelDrag, portsLayer, route, ends, sequence],
-  );
   const extra = props.ambient;
   const ambient = useMemo(() => [
     ...AMBIENT,
-    ...[ports?.contribution, route?.contribution, ends?.contribution, labelDrag?.contribution, label, sequence?.contribution]
-      .filter((c): c is Contribution => c != null),
-    ...(regions?.contributions ?? []),
+    // In hit order, the last hit first: edge ends after ports and routes, since an edge's end sits on a port and
+    // beside a route handle, and a sequence's parts last.
+    ...(regions ?? []),
+    ...[labelDrag, ports ?? shown, route, ends, sequence, label].filter((c): c is SurfaceContribution => c != null),
     ...(extra ?? []),
-  ], [ports, route, ends, labelDrag, label, sequence, regions, extra]);
+  ], [ports, shown, route, ends, labelDrag, label, sequence, regions, extra]);
   const presets = useMemo(() => (reorder === null ? [] : [reorder]), [reorder]);
-  return { layers, ambient, presets, actions };
+  return { ambient, presets, actions };
 }

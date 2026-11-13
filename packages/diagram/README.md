@@ -56,20 +56,20 @@ wire; layout lays the node out with room for it, and a group's box takes it in.
 
 ### Making ports grabbable
 
-`diagramPorts` returns the two halves of the connect gesture. Attach the layer
-with `registerLayer` — the only route the kit hit-tests — and pass the
-contribution as `ambient`:
+`diagramPorts` returns the connect gesture as one entry to pass as `ambient`:
+the port layer, registered so the kit hit-tests it, and the bindings a press
+on a port starts.
 
 ```tsx
-const { layer, contribution } = useMemo(() => diagramPorts({
-  participants: sceneParticipants(scene),
-}), [scene]);
+const ports = useMemo(() => diagramPorts({ participants: sceneParticipants(scene) }), [scene]);
 
-const canvasRef = useRef<SceneCanvasApi | null>(null);
-useEffect(() => canvasRef.current?.registerLayer(layer), [layer]);
-
-return <SceneCanvas ref={canvasRef} scene={scene} ambient={[contribution]} />;
+return <SceneCanvas scene={scene} ambient={[ports]} />;
 ```
+
+The other editing entries below (`diagramWaypoints`, `diagramEdgeEnds`,
+`diagramLabelDrag`, `diagramContainers`, `diagramSequence`) are built the same
+way. Their layers are hit in `ambient` order, the last first:
+`[containers, labelDrag, ports, route, ends, sequence]`.
 
 Dragging one port onto another authors an edge. Which pairs may be joined is
 `canConnect`, which defaults to "a port may not join itself, and two ports that
@@ -139,10 +139,10 @@ A double-click that would remove nothing falls through, to label editing say.
 
 `DiagramView` takes `onEditRoute`, which reports the edge's new waypoints and
 changes nothing: store them as the data edge's `waypoints` and clear its
-`routed`. On a bare canvas, `diagramWaypoints` returns the handle layer to
-register — after the port layer and before the edge-end layer — and the
-contribution to pass as `ambient`, which also carries the `diagram.resetRoute`
-command that clears the selected edges' waypoints. The default commit writes
+`routed`. On a bare canvas, `diagramWaypoints` returns the entry to pass as
+`ambient` — after the ports and before the edge ends — which carries the
+handle layer and the `diagram.resetRoute` command that clears the selected
+edges' waypoints. The default commit writes
 the scene in one undo entry, and the route is the author's from then on, so
 layout leaves it alone.
 
@@ -338,7 +338,7 @@ function Markers({ scene }) {
 }
 
 const offPage = diagramOffPage();
-<SceneCanvas scene={scene} ambient={[offPage.contribution]} /* … */>
+<SceneCanvas scene={scene} ambient={[offPage]} /* … */>
   <Markers scene={scene} />
 </SceneCanvas>
 ```
@@ -518,8 +518,8 @@ drawn inside a container or a lane becomes its member (`diagramDropParentAt`).
 What a region admits is the `canDropInto` dep's call, and `diagramCanDropInto(scene, canReparent?)`
 is the one for a diagram: containers and lanes take shapes and containers, a
 pool takes only lanes, and a stencil body, an edge, or a label takes nothing.
-`diagramContainers` returns the lane layer to register and the contribution to
-pass as `ambient`, which carries the boundary drag (`diagram.resizeLane`), the
+`diagramContainers` returns the entry to pass as `ambient`, which carries the
+lane layer, the boundary drag (`diagram.resizeLane`), the
 add-lane click (`diagram.addLane`), and the `diagram.releaseMembers` command.
 The two lane gestures take a swappable commit.
 
@@ -1028,7 +1028,7 @@ fragment's section), `moveParticipant`, `reconnectMessage`, and
 message or note to another row, a head sideways, a message end onto another
 lifeline — and double-click text editing, each reported as the sequence's new
 data. On a scene that is the document, `diagramSequence({ scene, measure })`
-gives the layer and contribution that commit each edit as one undo entry
+gives the entry, layer included, that commits each edit as one undo entry
 (`commitSequence`), and `foldSequenceText` turns a text edit on a part into one
 edit of the data. A theme applied with `applyDiagramTheme` draws every sequence
 again.

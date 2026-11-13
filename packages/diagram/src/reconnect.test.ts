@@ -247,8 +247,8 @@ describe('the edge-end affordance', () => {
   });
 
   it('comes with a contribution that binds the drag to the reconnect action', () => {
-    const { layer, contribution } = diagramEdgeEnds<Rect>({ participants: PARTICIPANTS, selected: () => ['ab'] });
-    expect(layer.id).toBe('diagram-edge-ends');
+    const contribution = diagramEdgeEnds<Rect>({ participants: PARTICIPANTS, selected: () => ['ab'] });
+    expect(contribution.layers?.map((l) => l.id)).toEqual(['diagram-edge-ends']);
     expect(EDGE_END_AFFORDANCE_KIND).toBe('layer:diagram-edge-ends');
     expect(contribution.eligibility).toEqual({ claimed: true });
     expect(contribution.bindings).toEqual(expect.arrayContaining([
