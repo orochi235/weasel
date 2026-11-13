@@ -5,7 +5,8 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { createToolOptionValues, SHARED_TOOL_OPTIONS, type ToolOptionValues } from '@weasel-js/routing';
+import { createToolOptionValues, SHARED_TOOL_OPTIONS, type LastOperationStore, type ToolOptionValues } from '@weasel-js/routing';
+import { lastOperationOf, useActionsRegistry } from '@weasel-js/routing/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
@@ -32,11 +33,18 @@ function Publish({ values }: { values: ToolOptionValues }) {
   return null;
 }
 
+function GrabLastOperation({ into }: { into: { current: LastOperationStore | null } }) {
+  into.current = lastOperationOf(useActionsRegistry());
+  return null;
+}
+
 function mount(tool: string, values?: ToolOptionValues) {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+  const store: { current: LastOperationStore | null } = { current: null };
   const { container } = render(
     <SceneCanvas scene={scene} width={200} height={200} defaultTools={['rect', 'polygon', 'line', 'sticky']} defaultActiveTool={tool}>
       {values && <Publish values={values} />}
+      <GrabLastOperation into={store} />
     </SceneCanvas>,
   );
   const canvas = container.querySelector('canvas')!;
@@ -46,7 +54,11 @@ function mount(tool: string, values?: ToolOptionValues) {
     canvas.dispatchEvent(new PointerEvent('pointermove', at(120, 100)));
     canvas.dispatchEvent(new PointerEvent('pointerup', at(120, 100)));
   });
-  return { scene, drag };
+  const click = () => act(() => {
+    canvas.dispatchEvent(new PointerEvent('pointerdown', at(60, 60)));
+    canvas.dispatchEvent(new PointerEvent('pointerup', at(60, 60)));
+  });
+  return { scene, drag, click, lastOperation: () => store.current?.get() ?? null, store };
 }
 
 function drawWith(tool: string, values?: ToolOptionValues): Scene<D, L, P> {
@@ -108,5 +120,37 @@ describe('a shape tool’s style', () => {
     values.set(SHARED_TOOL_OPTIONS, 'fill', { color: '#112233' });
     values.set('sticky', 'paper', { color: '#abcdef' });
     expect(only(drawWith('sticky', values)).background).toEqual({ paint: { color: '#abcdef' } });
+  });
+});
+
+describe('a shape tool’s style after the shape is drawn', () => {
+  it('is on the last-operation panel, which redraws the shape and keeps the value as the shared option', () => {
+    const values = createToolOptionValues();
+    const { scene, drag, lastOperation, store } = mount('rect', values);
+    drag();
+    const op = lastOperation();
+    expect(op?.id).toBe('insert');
+    expect(Object.keys(op!.schema.children)).toEqual(['fill', 'stroke', 'strokeWidth']);
+    expect(op!.values).toMatchObject({ fill: DEFAULT_SHAPE_PAINT, stroke: null, strokeWidth: 2 });
+    act(() => { store.current!.adjust({ stroke: { color: '#445566' }, strokeWidth: 6 }); });
+    expect(only(scene).stroke).toEqual({ paint: { color: '#445566' }, width: 6 });
+    expect(values.get(SHARED_TOOL_OPTIONS)).toMatchObject({ stroke: { color: '#445566' }, strokeWidth: 6 });
+  });
+
+  it('shows a polygon’s sides beside its style', () => {
+    const { drag, lastOperation } = mount('polygon');
+    drag();
+    expect(Object.keys(lastOperation()!.schema.children)).toEqual(['fill', 'stroke', 'strokeWidth', 'fillRule', 'sides']);
+  });
+
+  it('shows a placed sticky note’s paper and ink', () => {
+    const values = createToolOptionValues();
+    const { scene, click, lastOperation, store } = mount('sticky', values);
+    click();
+    expect(lastOperation()?.id).toBe('place');
+    expect(Object.keys(lastOperation()!.schema.children)).toEqual(['paper', 'ink']);
+    act(() => { store.current!.adjust({ paper: { color: '#abcdef' } }); });
+    expect(only(scene).background).toEqual({ paint: { color: '#abcdef' } });
+    expect(values.get('sticky')).toMatchObject({ paper: { color: '#abcdef' } });
   });
 });

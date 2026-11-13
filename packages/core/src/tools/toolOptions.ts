@@ -46,7 +46,8 @@ export function useFallbackToolOptionValues(): void {
  *  can bind one action (every shape tool binds `insert`), and only the active
  *  tool's options reach it. The options and the action's last-operation panel
  *  are one setting: a value the panel sets is written back to the dep, for the
- *  tool whose options the action last read, active or not.
+ *  tool whose options the action last read, active or not. The panel shows the live tool's options beside the
+ *  action's own params (`ActionTuning.form`), so a shape's fill and stroke can be changed after it is drawn.
  *  Returns a release. */
 export function tuneToolOptions(
   registry: Pick<ActionsRegistry, 'tune'>,
@@ -77,6 +78,7 @@ export function tuneToolOptions(
           readBy.set(actionId, tool.id);
           return toolOptionParams(tool.id, options, deps?.get('toolOptionValues'));
         },
+        form: () => (active() ? options.prefs : null),
         keep: (params) => {
           const values = deps?.get('toolOptionValues');
           if (values && (readBy.get(actionId) ?? (active() ? tool.id : null)) === tool.id) keepToolOptions(tool.id, options, values, params);

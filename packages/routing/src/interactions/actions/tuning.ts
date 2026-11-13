@@ -9,6 +9,7 @@ import type { Action } from './action';
 import type { BoundGesture } from './binding';
 import { resolveParams, type BindingOptions, type Invoker } from './invoker';
 import { rebindRoles, type RoleRebinds } from './modifierRoles';
+import { formWith } from './tunedForm';
 
 /** An action's params, or a thunk read each time the action asks for them. */
 export type ActionParams<P = Record<string, unknown>> = Partial<P> | (() => Partial<P>);
@@ -39,6 +40,12 @@ export interface ActionTuning<P = Record<string, unknown>> {
    *  whatever draws it, says what the next run will use rather than overriding it. An action with such a tuning
    *  keeps no session params of its own. */
   keep?(params: Readonly<Record<string, unknown>>): void;
+  /** The params this tuning supplies, as a form the last-operation panel draws beside the action's own `params`
+   *  (an action's leaf of the same key wins), so a run's tuned values can be changed after it as its own can. A
+   *  function answers it for one run from the params that run resolved, or `null` when this tuning set none of
+   *  them, as a tool's options answer only while their tool is the live one. An action given a form this way is
+   *  kept as the last operation as one declaring `params` is. */
+  form?: Action['params'];
 }
 
 type Params = BindingOptions['params'];
@@ -121,9 +128,11 @@ function tuneOnce(action: Action, tuning: ActionTuning): Action {
   const active = p ? wrapParams(action.active, p, 1) : action.active;
   const bindings = tuning.bindings?.length ? withBindings(action.defaultBinding, tuning.bindings) : null;
   const modifierRoles = tuning.roles && action.modifierRoles ? rebindRoles(action.modifierRoles, tuning.roles) : null;
+  const form = tuning.form ? formWith(action.params, tuning.form) : action.params;
   if (
     invoker === action.invoker && cursor === action.cursor && preview === action.preview &&
-    enabled === action.enabled && active === action.active && bindings === null && modifierRoles === null
+    enabled === action.enabled && active === action.active && bindings === null && modifierRoles === null &&
+    form === action.params
   ) {
     return action;
   }
@@ -136,6 +145,7 @@ function tuneOnce(action: Action, tuning: ActionTuning): Action {
     ...(enabled ? { enabled } : {}),
     ...(active ? { active } : {}),
     ...(bindings ? { defaultBinding: bindings } : {}),
+    ...(form ? { params: form } : {}),
   };
 }
 

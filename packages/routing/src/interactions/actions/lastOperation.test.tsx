@@ -200,6 +200,40 @@ describe('the last operation', () => {
     expect(doc.width).toBe(16);
   });
 
+  it('draws a tuning’s form beside the action’s own, and hands its values back to the tuning', () => {
+    const { doc, registry, store } = setup();
+    const kept: Readonly<Record<string, unknown>>[] = [];
+    const tint = pref.group('Tool', { tint: pref.number('Tint', 0, { min: 0, max: 9 }), by: pref.number('By', 9) }, { as: 'bar' });
+    let live = true;
+    act(() => {
+      registry.tune('widen', { under: true, params: () => ({ tint: 2 }), form: () => (live ? tint : null), keep: (p) => { kept.push(p); } });
+    });
+    act(() => { registry.trigger('widen', { by: 3 }); });
+    const op = store.get()!;
+    expect(op.label).toBe('Widen');
+    expect(op.schema.as).toBeUndefined();
+    expect(Object.keys(op.schema.children)).toEqual(['tint', 'by']);
+    expect(op.schema.children.by).toBe(WIDEN_PARAMS.children.by);
+    expect(op.values).toEqual({ tint: 2, by: 3 });
+    act(() => { store.adjust({ tint: 5 }); });
+    expect(kept.at(-1)).toEqual({ tint: 5, by: 3 });
+    expect(doc.width).toBe(13);
+    live = false;
+    act(() => { store.dismiss(); registry.trigger('widen', { by: 1 }); });
+    expect(Object.keys(store.get()!.schema.children)).toEqual(['by']);
+  });
+
+  it('keeps a run of an action that declares no params once a tuning gives it a form', () => {
+    const { doc, history, registry, store } = setup();
+    const { params: _none, ...bare } = widen(doc, history);
+    act(() => {
+      registry.register({ ...bare, id: 'bare' });
+      registry.tune('bare', { form: WIDEN_PARAMS });
+    });
+    act(() => { registry.trigger('bare', { by: 2 }); });
+    expect(store.get()).toMatchObject({ id: 'bare', label: 'Widen', values: { by: 2 } });
+  });
+
   it('leaves the operation in place, and lets go of it, when its action can no longer run', () => {
     const { doc, history, registry, store } = setup();
     act(() => { registry.trigger('widen', { by: 3 }); });
