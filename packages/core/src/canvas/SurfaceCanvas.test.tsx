@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
-import { __resetAdoptedCss } from '@weasel-js/react';
+import { __resetAdoptedCss } from '@weasel-js/react/test-seams';
 import { SURFACE_RULE, SurfaceCanvas, adoptSurfaceRule } from './SurfaceCanvas';
 
 type StyleRoot = Document | ShadowRoot;
