@@ -5,7 +5,7 @@
  * while the eyedropper is on, pick the color under a click. Every painter's
  * lens aims through these, so they agree on when it follows.
  */
-import { type Action, heldKeySpec } from '@weasel-js/routing';
+import { ANY_MODS, type Action, heldKeySpec } from '@weasel-js/routing';
 
 /** Canonical id of the hold-to-peek action. */
 export const LOUPE_PEEK_ID = 'loupe.peek';
@@ -17,15 +17,6 @@ export const LOUPE_AIM_ID = 'loupe.aim';
 export const LOUPE_LEAVE_ID = 'loupe.leave';
 /** Canonical id of the eyedropper's click. */
 export const LOUPE_PICK_ID = 'loupe.pick';
-
-/** Every modifier optional: the lens follows the pointer with any held, the
- *  peek key among them. */
-const ANY_MODS = {
-  alt: 'optional',
-  ctrl: 'optional',
-  meta: 'optional',
-  shift: 'optional',
-} as const;
 
 /** How fast the wheel walks the magnification. Gentler than the pan-zoom
  *  wheel: the lens' whole range is one order of magnitude. */

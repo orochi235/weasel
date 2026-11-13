@@ -6,6 +6,7 @@ import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import { defineTool } from '../../overlayBinding';
 import type { WorldPoint } from '@weasel-js/routing';
+import { ANY_MODS } from '@weasel-js/gestures';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { rangeAmong } from './selectRange';
@@ -254,7 +255,7 @@ export function useSelectToolWith<TNode extends { id: string }, TPose>(
             spec: {
               kind: 'pointerDown' as const,
               target: { kindOf: onBody },
-              mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
+              mods: ANY_MODS,
             },
             actionId: 'select.pick',
             opts: { id: 'select.pick' },
@@ -265,7 +266,7 @@ export function useSelectToolWith<TNode extends { id: string }, TPose>(
             spec: {
               kind: 'click' as const,
               target: { kindOf: onBody },
-              mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
+              mods: ANY_MODS,
             },
             actionId: 'select.collapseDeferred',
             opts: { id: 'select.collapseDeferred' },

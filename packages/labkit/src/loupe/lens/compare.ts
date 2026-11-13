@@ -142,7 +142,12 @@ export function seamAction<C>(
     id: 'loupe.seam',
     label: 'Move the split seam',
     group: 'loupe',
-    defaultBinding: { kind: 'drag', target: `affordance:layer:${SEAM_LAYER_ID}` },
+    defaultBinding: [
+      {
+        spec: { kind: 'drag', target: `affordance:layer:${SEAM_LAYER_ID}` },
+        opts: { id: 'loupe.seam.drag' },
+      },
+    ],
     activeCursor: 'ew-resize',
     invoker: {
       timing: 'ongoing',

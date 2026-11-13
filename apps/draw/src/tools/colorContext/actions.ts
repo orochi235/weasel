@@ -27,7 +27,7 @@ interface ColorDeps extends ActionDeps {
 export const colorResetAction: Action & { requires: string[] } = {
   id: 'color.reset',
   label: 'Reset colors',
-  defaultBinding: { kind: 'key', key: 'd' },
+  defaultBinding: [{ spec: { kind: 'key', key: 'd' }, opts: { id: 'color.reset.key' } }],
   requires: ['color'],
   invoker: {
     timing: 'immediate',
@@ -48,8 +48,8 @@ export const colorSwapAction: Action & { requires: string[] } = {
   id: 'color.swap',
   label: 'Swap fill/stroke',
   defaultBinding: [
-    { spec: { kind: 'key', key: 'x' }, opts: { params: { kind: 'swap' } } },
-    { spec: { kind: 'key', key: 'x', mods: { shift: true } }, opts: { params: { kind: 'swapFocus' } } },
+    { spec: { kind: 'key', key: 'x' }, opts: { id: 'color.swap.key', params: { kind: 'swap' } } },
+    { spec: { kind: 'key', key: 'x', mods: { shift: true } }, opts: { id: 'color.swap.focus', params: { kind: 'swapFocus' } } },
   ],
   requires: ['color'],
   invoker: {
@@ -67,7 +67,7 @@ export const colorSwapAction: Action & { requires: string[] } = {
 export const colorToggleFocusedNoneAction: Action & { requires: string[] } = {
   id: 'color.toggleFocusedNone',
   label: 'Toggle focused color none',
-  defaultBinding: { kind: 'key', key: '/' },
+  defaultBinding: [{ spec: { kind: 'key', key: '/' }, opts: { id: 'color.toggleFocusedNone.key' } }],
   requires: ['color'],
   invoker: {
     timing: 'immediate',

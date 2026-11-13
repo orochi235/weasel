@@ -19,7 +19,7 @@ function useFileCommand(
   slot: keyof typeof FILE_KEYS, id: string, label: string, run: FileRun, options: FileCommandOptions | undefined,
 ): void {
   const { keys, ...rest } = options ?? {};
-  useCommand(id, label, run, keys === null ? rest : { ...rest, keys: keys ?? FILE_KEYS[slot] });
+  useCommand(id, label, run, keys === null ? rest : { ...rest, keys: keys ?? { spec: FILE_KEYS[slot], opts: { id: `${id}.key` } } });
 }
 
 /** `useCommand` for a document's New, bound to Alt+N by default. */

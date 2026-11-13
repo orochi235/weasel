@@ -5,7 +5,7 @@
  * is an undo step.
  */
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES } from '@weasel-js/routing';
 import {
   cornerAnchors, everyNthAnchor, growAnchorSelection, invertAnchorSelection, pathToAnchors,
   shrinkAnchorSelection, smoothAnchors, type AnchorSet, type PolygonPath,
@@ -41,7 +41,7 @@ function makeSelectCommand(
     icon: icon(id),
     group: ANCHOR_SELECTION_GROUP,
     tags: pathOperationTags('command'),
-    defaultBinding: [{ spec: key, opts: { id: `${id}.key` } }],
+    defaultBinding: [{ spec: { ...key, phase: BETWEEN_GESTURES }, opts: { id: `${id}.key` } }],
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors'],
     invoker: {

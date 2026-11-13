@@ -62,7 +62,7 @@ export const duplicateAction: Action & { requires: string[] } = {
   group: 'edit',
   // Cmd/Ctrl+D is `transformAgain`, which duplicates when nothing else is
   // there to repeat.
-  defaultBinding: [{ spec: { kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'duplicate.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'd', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'duplicate.key' } }],
   eligible: { capability: ['edits-page', 'creates-selection'] },
   // `selection` is read by the `enabled` gate as well as the invoker. An
   // undeclared read throws inside the dev-build deps Proxy before the gate can

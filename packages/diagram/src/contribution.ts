@@ -11,6 +11,7 @@
  * and make none of them grabbable.
  */
 import {
+  ANY_MODS,
   ActionDisabledReason,
   roleMods,
   SNAP_ROLES,
@@ -111,7 +112,6 @@ export const GRAB_LABEL_ACTION_ID = 'diagram.grabLabel';
 export const SELECT_LABEL_EDGE_ACTION_ID = 'diagram.selectLabelEdge';
 
 const NO_MODIFIERS = { shift: false, meta: false, ctrl: false };
-const ANY_MODIFIERS = { shift: 'optional', meta: 'optional', ctrl: 'optional', alt: 'optional' } as const;
 
 function selectLabelEdgeAction(): Action {
   return {
@@ -161,7 +161,7 @@ export function diagramLabelDrag(
     bindings: [
       { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-diagram-label-drag.drag' } },
       { spec: { kind: 'pointerDown', target }, actionId: GRAB_LABEL_ACTION_ID, opts: { id: 'weasel-diagram-label-drag.pointerDown' } },
-      { spec: { kind: 'click', target, mods: ANY_MODIFIERS }, actionId: SELECT_LABEL_EDGE_ACTION_ID, opts: { id: 'weasel-diagram-label-drag.click' } },
+      { spec: { kind: 'click', target, mods: ANY_MODS }, actionId: SELECT_LABEL_EDGE_ACTION_ID, opts: { id: 'weasel-diagram-label-drag.click' } },
       { spec: { kind: 'doubleClick', target }, actionId: EDIT_EDGE_LABEL_ACTION_ID, opts: { id: 'weasel-diagram-label-drag.doubleClick' } },
     ],
   };

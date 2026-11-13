@@ -32,6 +32,11 @@ describe('findConflicts', () => {
     expect(c[0].ownerIds.sort()).toEqual(['a', 'b', 'c']);
   });
 
+  it('does NOT flag two hover bindings, which both run on every move', () => {
+    const hover = (actionId: string) => ({ spec: { kind: 'hover' }, actionId });
+    expect(findConflicts([tool('a', [hover('x')]), tool('b', [hover('y')])])).toEqual([]);
+  });
+
   it('does NOT flag different targets', () => {
     const a = tool('a', [{ spec: { kind: 'click', target: 'empty' }, actionId: 'x' }]);
     const b = tool('b', [{ spec: { kind: 'click', target: 'selected-body' }, actionId: 'y' }]);

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import {
   createToolActivateAction,
   buildToolActivateBindings,
@@ -117,5 +118,10 @@ describe('buildToolActivateBindings', () => {
   it('omits `mods` entirely for an unmodified key', () => {
     const bindings = buildToolActivateBindings([{ toolId: 'rect', keyOpts: { key: 'R' } }]);
     expect((bindings[0] as unknown as { spec: Record<string, unknown> }).spec).not.toHaveProperty('mods');
+  });
+
+  it('holds a tool key off while a gesture is in flight, as an offhand tool is', () => {
+    const [binding] = buildToolActivateBindings([{ toolId: 'rect', keyOpts: { key: 'R' } }]);
+    expect((binding as { spec: { phase?: unknown } }).spec.phase).toBe(BETWEEN_GESTURES);
   });
 });

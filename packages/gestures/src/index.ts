@@ -104,7 +104,7 @@ export type {
   DropSpec, CarrySpec, PasteSpec,
   ModSpec, TargetSpec, TargetPredicate, PhaseSpec,
 } from './ui/spec';
-export { hitPredicate, bodyPredicate } from './ui/spec';
+export { ANY_MODS, hitPredicate, bodyPredicate } from './ui/spec';
 
 // Pure matcher functions
 export { matchSpec, matchModifiers, matchKey, matchKeyEvent, matchTarget, matchPhase, parseTargetSpec, chordCodesFor } from './ui/match';

@@ -3,7 +3,7 @@
  * and in y, with the shape left as it was.
  */
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES } from '@weasel-js/routing';
 import { addExtremaAnchors, anchorAt, segmentEnds, type AnchorSet, type ExtremaAxes, type PenAnchor } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
 import { anchorEditWouldChange, commitAnchorEdit, depOf, pathOperationTags } from '@weasel-js/core';
@@ -71,7 +71,7 @@ export const addExtremeAnchorsAction: Action & { requires: string[] } = {
   group: 'anchors',
   tags: pathOperationTags('command'),
   // `code` too: with Alt held on a Mac the key reads as another glyph.
-  defaultBinding: [{ spec: { kind: 'key', key: 'x', code: 'KeyX', mods: { alt: true } }, opts: { id: 'addExtremeAnchors.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'x', code: 'KeyX', mods: { alt: true }, phase: BETWEEN_GESTURES }, opts: { id: 'addExtremeAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   params: ADD_EXTREMES_PARAMS,

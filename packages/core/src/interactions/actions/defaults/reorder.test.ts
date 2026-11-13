@@ -92,7 +92,7 @@ describe('reorderForwardAction (descriptor)', () => {
     expect(first.spec.kind).toBe('key');
     // No shifted '}' here: strict mods forbid Shift on this binding, so a
     // character you can only type with Shift could never match it.
-    expect(first.spec.key).toEqual([']']);
+    expect(first.spec.key).toBe(']');
     expect(first.spec.mods).toEqual({ mod: true });
   });
 
@@ -212,7 +212,7 @@ describe('reorderBackwardAction (descriptor)', () => {
     const first = bindings[0] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
     expect(first.opts.params.distance).toBe('adjacent');
     expect(first.spec.kind).toBe('key');
-    expect(first.spec.key).toEqual(['[']);
+    expect(first.spec.key).toBe('[');
     expect(first.spec.mods).toEqual({ mod: true });
   });
 

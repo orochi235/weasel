@@ -234,7 +234,7 @@ export type {
 export type { ClipboardSnapshot, PasteCtx, PasteOmission } from '../interactions/actions/clipboard/types';
 
 // ─── Gesture specs ───
-export { hitPredicate, bodyPredicate } from '@weasel-js/gestures';
+export { ANY_MODS, hitPredicate, bodyPredicate } from '@weasel-js/gestures';
 export type {
   ModSpec,
   TargetSpec,

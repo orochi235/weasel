@@ -2,7 +2,7 @@ import type { Action } from './action';
 import type { BoundGesture } from './binding';
 import { resolveParams, type InvocationCtx, type BindingOptions } from './invoker';
 import type { HotkeyTrigger } from '../../contributions/types';
-import type { KeyHeldSpec, ModSpec } from '@weasel-js/gestures';
+import { ANY_MODS, type KeyHeldSpec, type ModSpec } from '@weasel-js/gestures';
 import { BETWEEN_GESTURES } from './betweenGestures';
 
 /** Canonical id of the consolidated tool-offhand action. One descriptor
@@ -61,7 +61,6 @@ const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Alt', 'Control', 'Meta', 'S
 
 // A modifier's own keydown reports its flag set, and which other modifiers are
 // already down when it lands is an accident of the order they were pressed in.
-const ANY_MODS: ModSpec = { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' };
 
 const SHIFT_OR_ALT: ModSpec = { alt: 'optional', shift: 'optional' };
 

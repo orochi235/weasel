@@ -1,4 +1,4 @@
-import { hitPredicate } from '@weasel-js/gestures';
+import { ANY_MODS, hitPredicate } from '@weasel-js/gestures';
 import type { Scene } from 'core/scene/types';
 import type { SurfaceContribution } from 'canvas/surfaceContribution';
 import type { Measurements } from './measurements';
@@ -8,8 +8,6 @@ import { MEASURE_AFFORDANCE_KIND, measurementsLayer } from './measureLayer';
 import { MEASURE_ACTION_IDS } from './actionIds';
 
 const onMeasurement = hitPredicate((hit) => (hit as { kind?: string } | null | undefined)?.kind === MEASURE_AFFORDANCE_KIND);
-
-const MODS_ANY = { shift: 'optional', alt: 'optional', meta: 'optional', ctrl: 'optional' } as const;
 
 /**
  * A scene's measurements on a canvas, whatever tool is active: the layer
@@ -33,8 +31,8 @@ export function measurementsContribution(
     },
     actions: [...measureCommands(ms), measurePickAction(ms), measureDragAction(ms)],
     bindings: [
-      { spec: { kind: 'click', target: { kindOf: onMeasurement }, mods: MODS_ANY }, actionId: MEASURE_ACTION_IDS.pick, opts: { id: 'weasel-measure.click' } },
-      { spec: { kind: 'drag', target: { kindOf: onMeasurement }, mods: MODS_ANY }, actionId: MEASURE_ACTION_IDS.drag, opts: { id: 'weasel-measure.drag' } },
+      { spec: { kind: 'click', target: { kindOf: onMeasurement }, mods: ANY_MODS }, actionId: MEASURE_ACTION_IDS.pick, opts: { id: 'weasel-measure.click' } },
+      { spec: { kind: 'drag', target: { kindOf: onMeasurement }, mods: ANY_MODS }, actionId: MEASURE_ACTION_IDS.drag, opts: { id: 'weasel-measure.drag' } },
     ],
   };
 }

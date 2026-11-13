@@ -82,6 +82,7 @@ export type { PointerSession, PointerSessionCallbacks, PointerSessionCancelReaso
 export { startCarry } from '@weasel-js/routing';
 export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } from '@weasel-js/routing';
 export { sweepAction, SWEEP_BINDING } from '@weasel-js/routing';
+export { BETWEEN_GESTURES } from '@weasel-js/routing';
 export type { SweepItem, SweepOptions, SweepPress, SweepRun } from '@weasel-js/routing';
 export { useHandleDrag } from '../interactions/gestures/handleDrag';
 export type {

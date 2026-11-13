@@ -3,7 +3,7 @@
  * direction its path was heading, on whole paths or on the two anchors
  * selected in path edit.
  */
-import { type Action, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
+import { type Action, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
 import {
   anchorEditWouldChange, commitAnchorEdit, depOf, joinPathsCommand, joinSelectedAnchors, pathOperationTags,
 } from '@weasel-js/core';
@@ -41,7 +41,7 @@ export const bridgePathsAction: Action & { requires: string[] } = {
       label: 'Bridge',
       icon: icon('core:bridge'),
       // `code` too: with Alt held on a Mac the key reads as another glyph.
-      defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true } }, opts: { id: 'bridgePaths.key' } }],
+      defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true }, phase: BETWEEN_GESTURES }, opts: { id: 'bridgePaths.key' } }],
     },
     (params) => ({ tension: bridgeTensionOf(params) }),
   ),
@@ -64,7 +64,7 @@ export const bridgeAnchorsAction: Action & { requires: string[] } = {
   icon: icon('core:bridge'),
   group: 'anchors',
   params: BRIDGE_PARAMS,
-  defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true } }, opts: { id: 'bridgeAnchors.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true }, phase: BETWEEN_GESTURES }, opts: { id: 'bridgeAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {

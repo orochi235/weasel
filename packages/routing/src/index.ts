@@ -176,7 +176,7 @@ export type {
   PendingLongPress, LongPressState, LongPressStore, LongPressOptions,
 } from './interactions/dispatcher/longPressState';
 export {
-  DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin, isPrimaryPress,
+  ANY_MODS, DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin, isPrimaryPress,
 } from '@weasel-js/gestures';
 export { DEFAULT_KEYMAP_UNBOUND, type GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';

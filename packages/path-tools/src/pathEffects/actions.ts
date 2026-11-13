@@ -3,7 +3,7 @@
  * path from the selection, or a live roughen, zigzag, or pucker and bloat of
  * each selected shape; change one's settings; and expand one into ordinary paths.
  */
-import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
+import { type Action, type ActionDeps, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
 import {
   commitOps, createSetDataOp, deleteNode, derivedDepOf, documentOf, hiddenSourceDeleteOps, insertAt, isTextData, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
@@ -83,7 +83,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
     // Alt+Shift, which no major browser takes for these letters (see
     // `BROWSER_RESERVED_CHORDS`); `code` too, since with Alt held on a Mac the
     // key reads as another glyph.
-    defaultBinding: [{ spec: { kind: 'key', key: spec.key, code: spec.code, mods: { alt: true, shift: true } }, opts: { id: `${spec.id}.key` } }],
+    defaultBinding: [{ spec: { kind: 'key', key: spec.key, code: spec.code, mods: { alt: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: `${spec.id}.key` } }],
     eligible: { capability: 'creates-shapes' },
     requires: ['selection', 'scene', 'applyOps'],
     invoker: {
@@ -267,7 +267,7 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
   label: EXPAND_LABEL,
   icon: icon('expand'),
   group: PATH_EFFECTS_GROUP,
-  defaultBinding: [{ spec: { kind: 'key', key: 'e', code: 'KeyE', mods: { alt: true, shift: true } }, opts: { id: 'expandPathEffect.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'e', code: 'KeyE', mods: { alt: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'expandPathEffect.key' } }],
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps'],
   invoker: {

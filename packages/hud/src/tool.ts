@@ -4,7 +4,7 @@ import type {
 import { attachHud, type AttachHudOptions } from './attach';
 import { loupeAimActions, surfaceKey } from './loupe/loupeRoutes';
 import type { Hud } from './hud';
-import { hitPredicate, viewToTransform, worldToScreen, type TargetPredicate } from '@weasel-js/core';
+import { ANY_MODS, hitPredicate, viewToTransform, worldToScreen, type TargetPredicate } from '@weasel-js/core';
 import { claimsOf, type Widget, type HudPointerEvent } from './widget';
 import type { ImmediateParams } from '@weasel-js/core';
 
@@ -16,12 +16,6 @@ export interface HudHitPayload {
 /** Affordance kind `<SceneCanvas>` stamps on a hit from the HUD's layer:
  *  `layer:<RenderLayer.id>`, and the HUD's layer id is `weasel-hud`. */
 export const HUD_AFFORDANCE_KIND = 'layer:weasel-hud';
-
-/** Widgets decide for themselves what a modifier means, so every binding
- *  accepts any combination rather than the grammar's strict default. */
-const MODS_ANY = {
-  shift: 'optional', alt: 'optional', meta: 'optional', ctrl: 'optional',
-} as const;
 
 function isHudHit(hit: unknown): boolean {
   return (hit as { kind?: string } | null | undefined)?.kind === HUD_AFFORDANCE_KIND;
@@ -231,13 +225,13 @@ export function createHudContribution(hud?: Hud, options?: AttachHudOptions): Su
       wheelAction(),
     ],
     bindings: [
-      { spec: { kind: 'pointerDown', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.press', opts: { id: 'weasel-hud.press' } },
-      { spec: { kind: 'click', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.release', opts: { id: 'weasel-hud.release' } },
-      { spec: { kind: 'drag', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.drag', opts: { id: 'weasel-hud.drag' } },
-      { spec: { kind: 'doubleClick', target: { kindOf: hudHitClaiming('doubleClick') }, mods: MODS_ANY }, actionId: 'hud.doubleClick', opts: { id: 'weasel-hud.doubleClick' } },
-      { spec: { kind: 'contextMenu', target: { kindOf: hudHitClaiming('contextMenu') }, mods: MODS_ANY }, actionId: 'hud.contextMenu', opts: { id: 'weasel-hud.contextMenu' } },
-      { spec: { kind: 'longPress', target: { kindOf: hudHitClaiming('longPress') }, mods: MODS_ANY }, actionId: 'hud.longPress', opts: { id: 'weasel-hud.longPress' } },
-      { spec: { kind: 'wheel', target: { kindOf: hudHitClaiming('wheel') }, mods: MODS_ANY }, actionId: 'hud.wheel', opts: { id: 'weasel-hud.wheel' } },
+      { spec: { kind: 'pointerDown', target: { kindOf: hudHitClaiming('pointer') }, mods: ANY_MODS }, actionId: 'hud.press', opts: { id: 'weasel-hud.press' } },
+      { spec: { kind: 'click', target: { kindOf: hudHitClaiming('pointer') }, mods: ANY_MODS }, actionId: 'hud.release', opts: { id: 'weasel-hud.release' } },
+      { spec: { kind: 'drag', target: { kindOf: hudHitClaiming('pointer') }, mods: ANY_MODS }, actionId: 'hud.drag', opts: { id: 'weasel-hud.drag' } },
+      { spec: { kind: 'doubleClick', target: { kindOf: hudHitClaiming('doubleClick') }, mods: ANY_MODS }, actionId: 'hud.doubleClick', opts: { id: 'weasel-hud.doubleClick' } },
+      { spec: { kind: 'contextMenu', target: { kindOf: hudHitClaiming('contextMenu') }, mods: ANY_MODS }, actionId: 'hud.contextMenu', opts: { id: 'weasel-hud.contextMenu' } },
+      { spec: { kind: 'longPress', target: { kindOf: hudHitClaiming('longPress') }, mods: ANY_MODS }, actionId: 'hud.longPress', opts: { id: 'weasel-hud.longPress' } },
+      { spec: { kind: 'wheel', target: { kindOf: hudHitClaiming('wheel') }, mods: ANY_MODS }, actionId: 'hud.wheel', opts: { id: 'weasel-hud.wheel' } },
     ],
   };
 }

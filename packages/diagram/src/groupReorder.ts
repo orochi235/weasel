@@ -6,6 +6,7 @@
  */
 import {
   ActionDisabledReason,
+  BETWEEN_GESTURES,
   bodyPredicate,
   type Action,
   type ActionDeps,
@@ -70,7 +71,7 @@ export function createStepReorderAction(report: (change: ReorderChange) => void)
     label: 'Move along',
     group: 'diagram',
     defaultBinding: STEPS.map(({ key, role, axis, step }) => ({
-      spec: { kind: 'key' as const, key, mods: { alt: true } },
+      spec: { kind: 'key' as const, key, mods: { alt: true }, phase: BETWEEN_GESTURES },
       opts: { id: `${STEP_REORDER_ACTION_ID}.${role}`, params: { axis, step } },
     })),
     requires: ['scene', 'selection'],

@@ -8,7 +8,7 @@
 // Side-effect import: augments DepSchema with `appCommands`.
 import './depSchemaAugmentation';
 
-import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/core';
+import { ActionDisabledReason, BETWEEN_GESTURES, type Action, type ActionDeps } from '@weasel-js/core';
 import { SNAPPING_KEY, type EditorCommandOptions } from '@weasel-js/editor';
 import { icon } from '../icons.gen';
 import { CHROME_ITEMS, chromeActionId } from '../surfaces/chrome';
@@ -49,7 +49,7 @@ export const toggleGridAction: AppAction = {
   icon: icon('ui:grid'),
   group: 'view',
   // `code` too: with Shift held the key reads as the symbol above the 3.
-  defaultBinding: { kind: 'key', key: '3', code: 'Digit3', mods: { shift: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: '3', code: 'Digit3', mods: { shift: true } }, opts: { id: 'view.grid.key' } }],
   requires: ['appCommands'],
   active: (deps) => read(deps)?.gridVisible === true,
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleGrid() },
@@ -69,7 +69,7 @@ export const toggleSnappingAction: AppAction = {
   id: 'view.snapping',
   label: 'Snapping',
   group: 'view',
-  defaultBinding: [SNAPPING_KEY],
+  defaultBinding: [{ spec: SNAPPING_KEY, opts: { id: 'view.snapping.key' } }],
   requires: ['appCommands'],
   active: (deps) => read(deps)?.snapping === true,
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleSnapping() },
@@ -122,7 +122,7 @@ export const releaseCompoundAction: AppAction = {
   label: 'Release compound path',
   icon: icon('releaseCompound'),
   group: 'compound',
-  defaultBinding: { kind: 'key', key: '|', mods: { shift: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: '|', mods: { shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'path.releaseCompound.key' } }],
   requires: ['appCommands'],
   enabled: (deps) => read(deps)?.canReleaseCompound === true || ActionDisabledReason.NotApplicable,
   invoker: {
@@ -146,7 +146,7 @@ export const commandsAction: AppAction = {
   label: 'Commands',
   icon: icon('ui:search'),
   group: 'app',
-  defaultBinding: { kind: 'key', key: 'k', mods: { mod: true } },
+  defaultBinding: [{ spec: { kind: 'key', key: 'k', mods: { mod: true } }, opts: { id: 'app.commands.key' } }],
   requires: ['appCommands'],
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.openPalette() },
 };

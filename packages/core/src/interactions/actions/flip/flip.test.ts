@@ -108,7 +108,7 @@ describe('flipAction (axis param)', () => {
     const bindings = flipAction.defaultBinding as BoundGesture[];
     const first = bindings[0] as { spec: { kind: string; key: unknown; mods: unknown }; opts: unknown };
     expect(first.spec.kind).toBe('key');
-    expect(first.spec.key).toEqual(['h', 'H']);
+    expect(first.spec.key).toBe('h');
     expect(first.spec.mods).toEqual({ shift: true });
   });
 
@@ -116,7 +116,7 @@ describe('flipAction (axis param)', () => {
     const bindings = flipAction.defaultBinding as BoundGesture[];
     const second = bindings[1] as { spec: { kind: string; key: unknown; mods: unknown }; opts: unknown };
     expect(second.spec.kind).toBe('key');
-    expect(second.spec.key).toEqual(['v', 'V']);
+    expect(second.spec.key).toBe('v');
     expect(second.spec.mods).toEqual({ shift: true });
   });
 

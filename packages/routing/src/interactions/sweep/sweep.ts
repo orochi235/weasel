@@ -6,7 +6,7 @@
  * tier outranks it on a tie, and an item running a drag of its own takes the
  * press before it opens. A press either sweeps or drags, never both.
  */
-import type { GestureSpec } from '@weasel-js/gestures';
+import { ANY_MODS, type GestureSpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../actions/action';
 import type { InvocationCtx } from '../actions/invoker';
 
@@ -69,7 +69,7 @@ export interface SweepOptions<K> {
 /** A drag under any modifiers: the lowest-ranked drag binding there is. */
 export const SWEEP_BINDING: GestureSpec = {
   kind: 'drag',
-  mods: { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' },
+  mods: ANY_MODS,
 };
 
 /** Travel, in CSS pixels, between the points hit-tested along one move, so a

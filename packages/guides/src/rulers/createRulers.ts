@@ -1,4 +1,4 @@
-import { hitPredicate, type CanvasExtensionApi, type GestureBinding, type SurfaceContribution, type UnitScope, type View } from '@weasel-js/core';
+import { ANY_MODS, hitPredicate, type CanvasExtensionApi, type GestureBinding, type SurfaceContribution, type UnitScope, type View } from '@weasel-js/core';
 import type { UnitValue } from '@weasel-js/quantity';
 import { createEmitter } from '@weasel-js/registry';
 import { createGuidesLayer } from '../guides/layer';
@@ -53,7 +53,6 @@ export interface Rulers {
   settled(guides: readonly Guide[]): readonly Guide[];
 }
 
-const MODS_ANY = { shift: 'optional', alt: 'optional', meta: 'optional', ctrl: 'optional' } as const;
 let minted = 0;
 
 const sameView = (a: View | null, b: View): boolean =>
@@ -101,9 +100,9 @@ export function createRulers(opts: RulersOptions): Rulers {
   const hitLayerId = `${id}-hit`;
   const onRuler = hitPredicate((hit) => (hit as { kind?: string } | null | undefined)?.kind === `layer:${hitLayerId}`);
   const bindings: GestureBinding[] = [
-    { spec: { kind: 'hover', mods: MODS_ANY }, actionId: pointer.id, opts: { id: `${id}.hover`, params: { over: true } } },
+    { spec: { kind: 'hover', mods: ANY_MODS }, actionId: pointer.id, opts: { id: `${id}.hover`, params: { over: true } } },
     { spec: { kind: 'hover', motion: 'leave' }, actionId: pointer.id, opts: { id: `${id}.leave`, params: { over: false } } },
-    { spec: { kind: 'drag', target: { kindOf: onRuler }, mods: MODS_ANY }, actionId: guide.id, opts: { id: `${id}.drag` } },
+    { spec: { kind: 'drag', target: { kindOf: onRuler }, mods: ANY_MODS }, actionId: guide.id, opts: { id: `${id}.drag` } },
   ];
   const draftLayer = createGuidesLayer({
     getGuides: () => (state.draft ? [state.draft] : []), extent: 'full', id: `${id}-draft`, label: 'Guide being placed',

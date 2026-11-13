@@ -1,5 +1,6 @@
 import {
   type Action,
+  ANY_MODS,
   type Carry,
   type InvocationCtx,
   startCarry,
@@ -163,8 +164,6 @@ export function useDragDrop<TS, TC>({
   return { drag, startDrag, target };
 }
 
-const ANY = 'optional' as const;
-
 function paletteDropAction(sink: DropSink, frame: () => WorldFrame | undefined): Action {
   const world = (ctx: InvocationCtx): Point => frameLocalToWorld(ctx.world, frame());
   return {
@@ -175,7 +174,7 @@ function paletteDropAction(sink: DropSink, frame: () => WorldFrame | undefined):
         spec: {
           kind: 'carry',
           types: [PALETTE_CARRY_TYPE],
-          mods: { alt: ANY, ctrl: ANY, meta: ANY, shift: ANY },
+          mods: ANY_MODS,
         },
         opts: { id: `${PALETTE_DROP_ID}.carry` },
       },
