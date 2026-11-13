@@ -19,8 +19,8 @@ export const RECT_TOOL_OPTIONS = shapeToolOptions({
  *
  * The `drag` binding routes to `insertAction`, which owns the live preview
  * and commits via the `insert` dep on release. Consumers wanting a custom
- * node factory override the dep (`useDepSource('insert', …)`) rather than
- * the tool. Grid snapping comes from the `snap` dep.
+ * node give the dep a factory (`<SceneCanvas insertNodeFactories={{ rect }}>`)
+ * rather than changing the tool. Grid snapping comes from the `snap` dep.
  */
 export function useRectTool(options: InsertToolOptions = {}): Tool {
   const { behaviors, share } = options;
