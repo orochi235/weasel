@@ -121,7 +121,7 @@ export interface LabBaseProps {
   configRules?: readonly ConfigRule[];
   /** Control overrides and app-defined kinds for every trial's settings panel.
    *  Keys are config paths (checked first) or leaf kinds. Memoize or hoist. */
-  controls?: Record<string, ControlRenderer>;
+  renderers?: Record<string, ControlRenderer>;
   /** The values of the schemas instruments' configs are drawn over (`f.schema(nodes, { over })`), and
    *  their writer: the app's, which its own surfaces for that schema read too. Omitted, the lab keeps
    *  them in memory, shared by every trial. */

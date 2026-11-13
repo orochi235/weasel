@@ -76,7 +76,7 @@ describe('lab-wide config seams', () => {
     const vector2: ControlRenderer = (ctx) => (
       <span>vec:{String((ctx.value as { x: number }).x)}</span>
     );
-    await renderSettled(<Lab instruments={[inst]} controls={{ vector2 }} />, {
+    await renderSettled(<Lab instruments={[inst]} renderers={{ vector2 }} />, {
       wrapper: withIcons,
     });
     expect(screen.getByText('vec:3')).toBeInTheDocument();

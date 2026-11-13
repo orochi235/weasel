@@ -273,7 +273,7 @@ export function TrialChrome({
     instrument,
     ctx,
     marks: lab.marks,
-    controls: lab.controls,
+    renderers: lab.renderers,
     trialChrome,
     chrome,
     suppress,

@@ -12,7 +12,7 @@ export interface TrialContributionSources {
   instrument: Instrument;
   ctx: TrialChromeContext;
   marks: boolean;
-  controls?: Record<string, ControlRenderer>;
+  renderers?: Record<string, ControlRenderer>;
   trialChrome?: readonly TrialContribution[];
   chrome?: readonly TrialContribution[];
   suppress?: readonly string[];
@@ -28,7 +28,7 @@ export function useTrialContributions({
   instrument,
   ctx,
   marks,
-  controls,
+  renderers,
   trialChrome,
   chrome,
   suppress,
@@ -40,7 +40,7 @@ export function useTrialContributions({
     const kept = suppressContributions(
       mergeContributions(
         floating ? [floatToggle] : [],
-        builtinContributions(withMarks(instrument, marks), ctx, controls),
+        builtinContributions(withMarks(instrument, marks), ctx, renderers),
         [...(instrument.chrome ?? [])],
         [...(trialChrome ?? [])],
         [...(chrome ?? [])],
@@ -52,7 +52,7 @@ export function useTrialContributions({
     return kept.some((c) => c.region === 'sidebar')
       ? kept
       : kept.filter((c) => c.id !== FLOAT_TOGGLE_ID);
-  }, [floating, instrument, ctx, trialChrome, chrome, suppress, controls, marks]);
+  }, [floating, instrument, ctx, trialChrome, chrome, suppress, renderers, marks]);
   const shown = useMemo(
     () => suppressContributions(offered, hide ?? [], TRANSIENT_BUILTINS, 'hide'),
     [offered, hide],

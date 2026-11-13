@@ -218,7 +218,7 @@ export function Workshop(props: WorkshopProps) {
                 addTrial={false}
                 marks={false}
                 {...(menus ? { menus } : {})}
-                {...(config?.controls ? { controls: config.controls } : {})}
+                {...(config?.renderers ? { renderers: config.renderers } : {})}
                 {...(config?.pages ? { pages: config.pages } : {})}
                 {...(config?.path !== undefined ? { path: config.path } : {})}
               >

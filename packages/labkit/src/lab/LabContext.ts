@@ -45,7 +45,7 @@ export interface LabContextValue {
    *  labkit's own inference. */
   configRules?: readonly ConfigRule[];
   /** Lab-wide control overrides, keyed by config path or by leaf kind. */
-  controls?: Record<string, ControlRenderer>;
+  renderers?: Record<string, ControlRenderer>;
 }
 
 /** Context carrying the surrounding lab. Prefer `useLabContext`. */
