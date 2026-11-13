@@ -11,7 +11,7 @@ import {
 import { defaultVisibilityRules } from './defaults';
 import { viewZoom } from '../../core/viewport/view';
 import { resolveVisibility } from './resolve';
-import { byId, DEFAULT_MODES, IMPLICIT_TAGS, type CapabilityTag } from '@weasel-js/modes';
+import { defaultModeById, DEFAULT_MODES, IMPLICIT_TAGS, type CapabilityTag } from '@weasel-js/modes';
 
 /** Capabilities the named mode actually allows, per the default preset.
  *  The fixture derives these rather than taking a hand-written set: a ctx
@@ -22,7 +22,7 @@ function capsFor(mode: string): ReadonlySet<CapabilityTag> {
   // Consumer-defined mode ids aren't in the preset; those tests pass an
   // explicit `allowedCapabilities` and never reach this.
   const known = DEFAULT_MODES.some((m) => m.id === mode);
-  const allows = known ? byId(mode).allows : [];
+  const allows = known ? defaultModeById(mode).allows : [];
   return new Set<CapabilityTag>([...allows, ...IMPLICIT_TAGS]);
 }
 

@@ -99,7 +99,7 @@ export const DEFAULT_MODES: readonly ModeDefinition[] = [
 
 /** Look up one of the `DEFAULT_MODES` by id. Throws on an unknown id. For an
  *  app's own mode set, use the registry's `byId` instead. */
-export function byId(id: string): ModeDefinition {
+export function defaultModeById(id: string): ModeDefinition {
   const m = DEFAULT_MODES.find((m) => m.id === id);
   if (!m) throw new Error(`Unknown mode id: ${id}`);
   return m;
