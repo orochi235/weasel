@@ -2,14 +2,6 @@
 
 Things in package exports, typings, vite and the dev servers that pass every test and are still wrong.
 
-**`export * from '@weasel-js/<pkg>'` in core's barrel emits no binding in the
-bundle.** A star re-export of an *external* package survives typecheck and the
-unit suite, then fails at the consumer's bundler — `No matching export in
-core/dist/index.js` — because esbuild cannot see through the package boundary
-to enumerate the names. Re-export from another workspace package by name, the
-way core already does for `@weasel-js/font`. Only `npm run test:smoke:consumer`
-catches it.
-
 **A `declare module` augmentation merges through one re-export hop, not two.** TS merges into
 the module where the interface is *declared*; aimed at a module that only re-exports it, it
 declares a fresh one in that module's scope instead. One hop survives — a consumer augmenting
@@ -40,13 +32,6 @@ declare `load()` and `loadSync()` as working, and in 2.0.0 they are deprecation 
 that `console.error` and return `undefined`. A call to either typechecks clean and
 fails at runtime. If that surface ever widens, hand-write a local `.d.ts` covering
 only what the kit calls.
-
-**`import.meta.glob`'s two arguments must be inline literals.** Vite resolves it by
-static analysis, so hoisting the patterns or the options object into a `const` leaves
-it unable to read them — it silently drops `eager` and every matched file becomes its
-own dynamic chunk. That turned one modulepreload into 87 in `apps/draw` and, measured
-cold on Slow 4G, looked exactly like "lazy-loading the dev surfaces caused a 6x FCP
-regression". Bisect before believing a chunk-count regression.
 
 **Keep a real file extension off a virtual module id, or add `.js`.** A virtual id
 ending in a real extension gets claimed by vite's css/json/jsx transforms — postcss
