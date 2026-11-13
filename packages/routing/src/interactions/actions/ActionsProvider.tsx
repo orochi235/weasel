@@ -108,7 +108,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   /** `a` under every tuning for its id from the root down to here. */
   private tuned(a: Action): Action {
     const tunings = this.tuningsOf(a.id);
-    const tuned = overrideActionBindings(tunings.length ? tuneAction(a, tunings) : a, this.overridesHere());
+    const tuned = overrideActionBindings(tunings.length ? tuneAction(a, tunings) : a, this.overridesHere(), a);
     return this.lastOperation.wrap(tuned, this.opHost ??= this.lastOperationHost());
   }
 

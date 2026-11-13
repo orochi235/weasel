@@ -79,16 +79,21 @@ export function overriddenBindings(
 }
 
 /** `action` with `overrides` applied to its own bindings, each keeping its id,
- *  so every reader of `defaultBinding` — dispatch, menus, chips — sees the same keys. */
-export function overrideActionBindings(action: Action, overrides: ResolvedBindingOverrides): Action {
+ *  so every reader of `defaultBinding` — dispatch, menus, chips — sees the same keys.
+ *  Only the bindings `declaredBy` declares, the action's own before any tuning, have an id by position:
+ *  one a tuning added after them is named by its `opts.id` alone, since its position moves as tunings come and go. */
+export function overrideActionBindings(action: Action, overrides: ResolvedBindingOverrides, declaredBy: Action = action): Action {
   if (overrides.size === 0 || action.defaultBinding === undefined) return action;
-  const declared = actionBindings(action);
-  if (!declared.some((b, i) => overrides.has(bindingId(b, null, i)))) return action;
+  const bindings = actionBindings(action);
+  const declared = declaredBy === action ? bindings.length : actionBindings(declaredBy).length;
+  const idOf = (b: GestureBinding, i: number): string | undefined => (i < declared ? bindingId(b, null, i) : b.opts?.id);
+  const named = (b: GestureBinding, i: number): boolean => { const id = idOf(b, i); return id !== undefined && overrides.has(id); };
+  if (!bindings.some(named)) return action;
   const kept: BoundGesture[] = [];
-  declared.forEach((b, i) => {
-    const id = bindingId(b, null, i);
-    const next = overridden(b, id, overrides);
-    if (next) kept.push({ spec: next.spec, opts: { ...next.opts, id } });
+  bindings.forEach((b, i) => {
+    const id = idOf(b, i);
+    const next = id === undefined ? b : overridden(b, id, overrides);
+    if (next) kept.push({ spec: next.spec, opts: id === undefined ? next.opts : { ...next.opts, id } });
   });
   return { ...action, defaultBinding: kept };
 }

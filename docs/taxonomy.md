@@ -466,7 +466,9 @@ A **binding override** replaces or removes one binding by its id, on an action
 or on a contribution alike (`ActionsRegistry.overrideBindings`,
 `<SceneCanvas bindingOverrides>`). A binding's id is its `opts.id`, or its
 owner and its position (`bindingId`): `<entry>#<n>` for a contribution's binding,
-`<action>@<n>` for an action's own, so the two never collide. Every binding the
+`<action>@<n>` for an action's own, so the two never collide. A key a tuning adds
+beside an action's own has no position id, since tunings come and go: only its
+`opts.id` names it. Every binding the
 kit ships declares an id, written `<owner>.<role>`: the owner is the action for
 an action's own binding and the tool or entry for a contribution's, and the role
 names what sets the binding apart there — its variant (`nudge.left.big`,

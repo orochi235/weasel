@@ -8,6 +8,7 @@ import fc from 'fast-check';
 import { keySpecRoute, matchSpec, type GestureSpec, type KeySpec, type PhaseSpec } from '@weasel-js/gestures';
 import { keyEvents, modSpec, runs, tally, timeoutFor } from '../../pbt.fixture';
 import { actionBindings, type GestureBinding } from './binding';
+import { ActionsNode } from './ActionsProvider';
 import type { Action } from './action';
 import {
   bindingId, overriddenBindings, overrideActionBindings, resolveBindingOverrides, type BindingOverrides,
@@ -124,13 +125,13 @@ describe('an override persisted as a route', () => {
       t.hit('routed');
       const back = resolveBindingOverrides([{ only: route }]).get('only');
       expect(back).toBeDefined();
-      for (const isMac of [true, false]) {
+      for (const apple of [true, false]) {
         for (const engagedChannels of engaged) {
           const ctx = { selfChannel: 'own', engagedChannels };
           for (const key of KEYS) {
             for (const e of keyEvents(key)) {
               const ev = { kind: 'key' as const, ...e };
-              expect(matchSpec(ev, back!, isMac, ctx), `${route} on ${JSON.stringify(ev)}`).toBe(matchSpec(ev, spec, isMac, ctx));
+              expect(matchSpec(ev, back!, apple, ctx), `${route} on ${JSON.stringify(ev)}`).toBe(matchSpec(ev, spec, apple, ctx));
             }
           }
         }
@@ -138,4 +139,33 @@ describe('an override persisted as a route', () => {
     }), runs(200));
     t.expectHit('routed', 'unroutable');
   }, timeoutFor(200, 20));
+});
+
+describe('an override on a registered action', () => {
+  // Declared bindings, some with an id; tunings adding keys beside them, some with an id.
+  const declared = fc.array(fc.record({ key: fc.constantFrom('a', 'b', 'c'), id: fc.option(fc.constantFrom('x.one', 'x.two'), { nil: undefined }) }), { minLength: 1, maxLength: 3 });
+  const tunings = fc.array(fc.record({ key: fc.constantFrom('t', 'u'), id: fc.option(fc.constant('x.tuned'), { nil: undefined }), live: fc.boolean() }), { maxLength: 3 });
+  const named = fc.dictionary(fc.constantFrom('x@0', 'x@1', 'x@2', 'x@3', 'x@4', 'x.one', 'x.two', 'x.tuned'), fc.option(fc.constantFrom('p', 'q'), { nil: null }), { maxKeys: 3 });
+  const bound = (k: string, id: string | undefined) => ({ spec: { kind: 'key' as const, key: k }, ...(id ? { opts: { id } } : {}) });
+
+  it('replaces the declared binding it names, or a tuned one by its declared id, whichever tunings are live', () => {
+    const t = tally();
+    fc.assert(fc.property(declared, tunings, named, (own, tuned, raw) => {
+      const { registry } = new ActionsNode(null, true, () => null);
+      registry.register({ id: 'x', label: 'X', defaultBinding: own.map((b) => bound(b.key, b.id)), invoker: { timing: 'immediate', run: () => {} } });
+      for (const tn of tuned) if (tn.live) registry.tune('x', { bindings: [bound(tn.key, tn.id)] });
+      registry.overrideBindings(Object.fromEntries(Object.entries(raw).map(([id, k]) => [id, k === null ? null : { kind: 'key', key: k }])));
+      const keyOf = (id: string, fallback: string): string | null => (id in raw ? raw[id] ?? null : fallback);
+      const want = [
+        ...own.map((b, i) => keyOf(b.id ?? `x@${i}`, b.key)),
+        ...tuned.filter((tn) => tn.live).map((tn) => (tn.id ? keyOf(tn.id, tn.key) : tn.key)),
+      ].filter((k): k is string => k !== null);
+      const got = actionBindings(registry.list()[0]!).map((b) => (b.spec as KeySpec).key);
+      expect(got).toEqual(want);
+      if (tuned.some((tn) => tn.live && !tn.id) && Object.keys(raw).some((id) => id.startsWith('x@') && Number(id.slice(2)) >= own.length)) {
+        t.hit('positional id past the declared ones');
+      }
+    }), runs(300));
+    t.expectHit('positional id past the declared ones');
+  }, timeoutFor(300, 3));
 });

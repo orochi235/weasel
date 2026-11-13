@@ -138,4 +138,12 @@ describe('ActionsRegistry.overrideBindings', () => {
     release();
     expect(child.registry.bindingOverrides().get('a')).toEqual(key('1'));
   });
+
+  it('leaves a key a tuning added alone when an override names the position after the declared ones', () => {
+    const { registry } = new ActionsNode(null, true, () => null);
+    registry.register({ id: 'x', label: 'X', defaultBinding: [{ spec: key('A') }], invoker: { timing: 'immediate', run: () => {} } });
+    registry.tune('x', { bindings: [{ spec: key('T') }] });
+    registry.overrideBindings({ 'x@1': null });
+    expect(actionShortcuts(registry.list()[0]!).map((s) => s.key)).toEqual(['A', 'T']);
+  });
 });
