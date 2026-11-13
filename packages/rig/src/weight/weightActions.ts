@@ -72,7 +72,7 @@ export const WEIGHT_BRUSH_PARAMS = pref.group('Weight brush', {
 
 /** The weight tool's options: its brush size, stepped by `[` `]` and Shift+wheel, which a drag and a click's dab
  *  both read. */
-export const WEIGHT_BRUSH_OPTIONS = {
+export const WEIGHT_TOOL_OPTIONS = {
   actionId: ['weight.paint', 'weight.click'],
   prefs: WEIGHT_BRUSH_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },

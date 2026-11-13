@@ -15,6 +15,6 @@ export { createBoneOverlay, JOINT_RADIUS_PX } from './bone/boneOverlay';
 export { useWeightTool, type UseWeightToolOptions } from './weight/useWeightTool';
 export { createWeightOverlay, POINT_RADIUS_PX } from './weight/weightOverlay';
 export {
-  DEFAULT_WEIGHT_RADIUS_PX, WEIGHT_BRUSH_OPTIONS, WEIGHT_BRUSH_PARAMS, weighedPaths, type WeighedPath, type WeightEnv,
+  DEFAULT_WEIGHT_RADIUS_PX, WEIGHT_TOOL_OPTIONS, WEIGHT_BRUSH_PARAMS, weighedPaths, type WeighedPath, type WeightEnv,
 } from './weight/weightActions';
 export { rigKitSettingsSchema, type RigKitTargetSettings } from './kitSettings';

@@ -5,7 +5,7 @@
  */
 import { useState, type ReactElement } from 'react';
 import { setToolOption, useOngoingAction, useToolOptionParams } from '@weasel-js/core';
-import { SIMPLIFY_BRUSH_OPTIONS } from '@weasel-js/path-tools';
+import { SIMPLIFY_BRUSH_TOOL_OPTIONS } from '@weasel-js/path-tools';
 import { drawToolOptionValues } from '../../toolOptions';
 import { Slider } from '@weasel-js/ui/components/Slider';
 import s from './PathCommands.module.css';
@@ -13,7 +13,7 @@ import s from './PathCommands.module.css';
 const readout = (t: { value: number }): string => t.value.toFixed(1);
 
 /** The Simplify tolerance and its setter: the Simplify brush's `tolerance` option. */
-const SIMPLIFY_BRUSH = { id: 'simplifyBrush', options: SIMPLIFY_BRUSH_OPTIONS };
+const SIMPLIFY_BRUSH = { id: 'simplifyBrush', options: SIMPLIFY_BRUSH_TOOL_OPTIONS };
 
 export function useSimplifyTolerance(): [number, (tolerance: number) => void] {
   const values = drawToolOptionValues();

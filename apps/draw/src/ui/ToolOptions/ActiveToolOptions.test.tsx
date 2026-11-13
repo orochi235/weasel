@@ -1,11 +1,11 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { createToolOptionValues, defineTool } from '@weasel-js/core';
-import { SMUDGE_BRUSH_OPTIONS } from '@weasel-js/path-tools';
+import { SMUDGE_BRUSH_TOOL_OPTIONS } from '@weasel-js/path-tools';
 import { renderWithIcons } from '../../testIcons';
 import { ActiveToolOptions } from './ActiveToolOptions';
 
-const brush = defineTool({ id: 'smudgeBrush', options: SMUDGE_BRUSH_OPTIONS, presentation: { label: 'Smudge brush' } });
+const brush = defineTool({ id: 'smudgeBrush', options: SMUDGE_BRUSH_TOOL_OPTIONS, presentation: { label: 'Smudge brush' } });
 
 describe('ActiveToolOptions', () => {
   it("draws the active tool's options, and writes a change to where the host keeps them", () => {

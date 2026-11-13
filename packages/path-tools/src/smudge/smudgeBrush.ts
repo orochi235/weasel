@@ -24,7 +24,7 @@ export const DEFAULT_SMUDGE_STRENGTH = 0.6;
 const LABEL = 'Smudge brush';
 
 /** The brush's size and strength as a form: the last-operation panel's after a stroke, and the tool's options
- *  (`SMUDGE_BRUSH_OPTIONS`), which are one setting. */
+ *  (`SMUDGE_BRUSH_TOOL_OPTIONS`), which are one setting. */
 export const SMUDGE_BRUSH_PARAMS = pref.group(LABEL, {
   radiusPx: pref.number('Size', DEFAULT_SMUDGE_RADIUS_PX, {
     description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider',
