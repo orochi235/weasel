@@ -1,4 +1,4 @@
-import { boundsOfPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, DEFAULT_FLATTEN_TOLERANCE, type Path } from '@weasel-js/geom';
 import { scaleVertexWidth, type Stroke } from '@weasel-js/paint';
 import {
   markerHeads, resolveStrokeWidth, strokeAtScale, strokeInsets, tessellateStroke,
@@ -26,6 +26,7 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
   if (!(width > 0)) return null;
   const box = new Box();
   const align = stroke.align ?? 'center';
+  const tolerance = flattenFor(path, scale);
   if (align !== 'inner') {
     const k = align === 'outer' ? 2 : 1;
     const insets = strokeInsets(sized, width);
@@ -33,7 +34,7 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
       path,
       { ...sized, width: width * k, align: 'center', vertexWidths: stroke.vertexWidths?.map((w) => scaleVertexWidth(w, k)) },
       {
-        flattenTolerance: flattenAt(scale),
+        flattenTolerance: tolerance.flatten,
         startInset: insetIn(insets.start, spaces.start, spaces.ribbon),
         endInset: insetIn(insets.end, spaces.end, spaces.ribbon),
         ...(spaces.ribbon ? { metric: spaces.ribbon.metric } : {}),
@@ -41,15 +42,34 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
     );
     const v = mesh.vertices;
     const ox = mesh.origin?.x ?? 0, oy = mesh.origin?.y ?? 0;
-    for (let i = 0; i + 1 < v.length; i += 2) box.add(v[i]! + ox, v[i + 1]! + oy, 0);
+    for (let i = 0; i + 1 < v.length; i += 2) box.add(v[i]! + ox, v[i + 1]! + oy, tolerance.pad);
   }
-  for (const { entry, path: head, size } of markerHeads(path, sized, width, flattenAt(scale), spaces)) {
+  for (const { entry, path: head, size } of markerHeads(path, sized, width, tolerance.flatten, spaces)) {
     const b = boundsOfPath(head);
     const pad = entry.outline ? (entry.outline.width * size) / 2 : 0;
     box.add(b.x, b.y, pad);
     box.add(b.x + b.width, b.y + b.height, pad);
   }
   return box.bounds();
+}
+
+/** Below this fraction of a path's size, a coordinate stored as float32 has no more to say. */
+const FINEST = 2 ** -16;
+
+/**
+ * The tolerance to flatten `path` to for its box, and how far to grow the box
+ * so a coarser one still holds every point it would have. A curve with
+ * coordinates near 1e30 flattened to a pixel split as finely as flattening
+ * goes, tens of thousands of pieces each, to place points far finer than its
+ * own float32 coordinates are.
+ */
+function flattenFor(path: Path, scale: number): { flatten: number | undefined; pad: number } {
+  const view = flattenAt(scale);
+  const b = boundsOfPath(path);
+  const size = Math.max(Math.abs(b.x), Math.abs(b.y), Math.abs(b.x + b.width), Math.abs(b.y + b.height));
+  const finest = size * FINEST;
+  if (!Number.isFinite(finest) || finest <= (view ?? DEFAULT_FLATTEN_TOLERANCE)) return { flatten: view, pad: 0 };
+  return { flatten: finest, pad: finest };
 }
 
 /** The world tolerance the renderer flattens curves to at view scale `scale`: its pixel default, on screen. */
