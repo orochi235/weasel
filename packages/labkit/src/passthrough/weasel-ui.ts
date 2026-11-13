@@ -88,7 +88,7 @@ export {
   formatShortcutParts,
   GestureRoute,
   type GestureRouteProps,
-  type GradientTrackOpts,
+  type GradientTrackOptions,
   type GridSettings,
   gestureRouteSegments,
   Icon,
