@@ -88,6 +88,20 @@ describe('a sampled track on a target', () => {
     expect(b.shown.at(-1)).toBeCloseTo(30, 9);
   });
 
+  it('shows a seek between frames before the seek returns', () => {
+    const { animator, frame } = setup();
+    const b = box(0);
+    let tl!: TimelineHandle;
+    act(() => { tl = animator.timeline({ tracks: [ramp(b.target)], duration: 200 }); });
+    frame(0);
+    act(() => { tl.pause(); });
+    // An export seeks and renders each frame with no frame between: the render reads what was shown.
+    for (const t of [25, 75, 50]) {
+      act(() => { tl.seek(t); });
+      expect(b.shown.at(-1)).toBeCloseTo(t, 9);
+    }
+  });
+
   it('shows a seek while paused at once on its target, and at the next frame', () => {
     const { animator, frame } = setup();
     const b = box(0);

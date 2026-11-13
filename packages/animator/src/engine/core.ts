@@ -138,6 +138,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
     clock,
     hub,
     ticking: frame.ticking,
+    framing: frame.framing,
     afterTicks: (cb) => { afterTicks.push(cb); },
     subscribers,
     colorOverrides: host.colorOverrides,
