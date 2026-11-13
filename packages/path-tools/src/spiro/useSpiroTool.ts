@@ -176,9 +176,9 @@ export function useSpiroTool(options: UseSpiroToolOptions = {}): Tool {
     bindings: [
       { spec: { kind: 'click', mods: { shift: 'optional' } }, actionId: 'spiro.placePoint', opts: { id: 'spiro.placePoint' } },
       { spec: { kind: 'click', mods: { alt: true, shift: 'optional' } }, actionId: 'spiro.placePoint', opts: { id: 'spiro.placeCorner', params: { kind: 'corner' } } },
-      { spec: { kind: 'click', mods: { mod: true, shift: 'optional' } }, actionId: 'spiro.finish', opts: { id: 'spiro.finishClick' } },
-      { spec: { kind: 'doubleClick', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'spiro.finish', opts: { id: 'spiro.finishDoubleClick', params: { viaDoubleClick: true } } },
-      { spec: { kind: 'key', key: 'Enter' }, actionId: 'spiro.finish', opts: { id: 'spiro.finishKey' } },
+      { spec: { kind: 'click', mods: { mod: true, shift: 'optional' } }, actionId: 'spiro.finish', opts: { id: 'spiro.finish.click' } },
+      { spec: { kind: 'doubleClick', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'spiro.finish', opts: { id: 'spiro.finish.doubleClick', params: { viaDoubleClick: true } } },
+      { spec: { kind: 'key', key: 'Enter' }, actionId: 'spiro.finish', opts: { id: 'spiro.finish.key' } },
       { spec: { kind: 'key', key: 'Backspace' }, actionId: 'spiro.removeLast', opts: { id: 'spiro.removeLast' } },
       { spec: { kind: 'key', key: 'Escape' }, actionId: 'spiro.cancel', opts: { id: 'spiro.cancel' } },
     ],
