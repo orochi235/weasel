@@ -1837,3 +1837,18 @@ Calls the lanes made without a ruling:
 - 2026-11-12 (the lane's call): every kit `<Canvas>` that takes input sets `touch-action: none` at zero specificity, so
   a `<SceneCanvas>` inside a labkit camera with `data-lk-touch='scroll'` keeps one-finger touch for its own tools
   rather than scrolling the page. A consumer class can set `touch-action` back.
+
+## Audit round twenty (2026-11-12): app settings and an inspector
+
+- 2026-11-12 (the lane's call): `@weasel-js/ui` re-exports React Aria's `I18nProvider`, and its README tells a
+  consumer to set number fields' locale with that one. ui pins `react-aria-components` exactly, so a provider from a
+  consumer's own copy of another version holds a locale the fields never read.
+- 2026-11-12 (the lane's call): `PrefsForm` takes `errors`, a `ReadonlyMap` from leaf path to message, shown under the
+  leaf's row through `PropertyRow`'s `error`. A map, as `auto` and `mixed` are sets, rather than a `validate` field on
+  the leaf: what counts as wrong is the caller's to say. `SelectionPanel` has no such prop yet.
+- 2026-11-12 (the lane's call): `usePrefsValues` returns `setAuto(path, next)` for `PrefsForm`'s `onAutoChange`, where
+  its JSDoc had offered `reset`. It pins at `store.get(path)`; theme-editor keeps its own, which pins at the value the
+  pinned theme shows.
+- Open: `Slider` now follows the number fields' locale, but number text that only displays does not:
+  `QuantityText` defaults to `en-US` as its JSDoc says, and `MeasureReadout`, the timeline's `Transport` and ruler,
+  and the gradient editor's stop positions write `en-US` always. Whether the 2026-11-12 locale ruling reaches them.
