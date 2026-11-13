@@ -8,7 +8,7 @@ import {
   type AnchorSet, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  DEFAULT_SIMPLIFY_TOLERANCE, depOf, editingLayer, inPlane, pathEditPreview, pathOperationTags,
+  DEFAULT_SIMPLIFY_TOLERANCE, depOf, editingLayer, inPlane, pathEditPreview, pathOperationTags, SIMPLIFY_PATH_PARAMS,
 } from '@weasel-js/core';
 
 /** The brush's radius on screen when no param names one. */
@@ -22,9 +22,7 @@ export const SIMPLIFY_BRUSH_PARAMS = pref.group(LABEL, {
   radiusPx: pref.number('Size', SIMPLIFY_BRUSH_RADIUS_PX, {
     description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider', unit: PX_UNIT,
   }),
-  tolerance: pref.number('Tolerance', DEFAULT_SIMPLIFY_TOLERANCE, {
-    description: 'How far the refit outline may stray from the anchors it replaces.', min: 0.1, max: 20, step: 0.1, control: 'slider',
-  }),
+  tolerance: { ...SIMPLIFY_PATH_PARAMS.children.tolerance, description: 'How far the refit outline may stray from the anchors it replaces.' },
 }, { description: 'The size of the Simplify brush and how far its refit may stray.' });
 
 /** Params the brush reads on every move, so a thunk can change them mid-stroke. */

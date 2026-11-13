@@ -1,6 +1,7 @@
 import type { Action, BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
+import type { PrefGroup, PrefNumber } from '@weasel-js/prefs';
 import type { Op } from 'core/ops/types';
 import { selectedPathNodes, withPath, type PathNode } from './pathNodes';
 import { commitOps } from '../defaultCommitAdapter';
@@ -11,9 +12,10 @@ export interface LivePathEditSpec {
   id: string;
   label: string;
   icon?: Action['icon'];
-  /** The param the UI drives, and its value when none is given. */
+  /** The param the UI drives: a number leaf of `params`, whose default is its value when none is given. */
   param: string;
-  initial: number;
+  /** Every param the command reads, as the form the last-operation panel shows after a commit. */
+  params: PrefGroup;
   /** The geometry `node` takes at `value`, or null for none. `params` is
    *  every param the edit was last given, for a command that reads more than
    *  `param`. */
@@ -36,9 +38,15 @@ function sameParams(a: Readonly<Record<string, unknown>>, b: Readonly<Record<str
  * slider's tolerance or distance — and by any other params it reads. `begin`
  * with the params shows the result as a preview; each update that changes
  * one recomputes it; committing writes it as one undo
- * entry, and canceling leaves the scene untouched.
+ * entry, and canceling leaves the scene untouched. A commit is the last
+ * operation, which its handle replays from the paths as they were at the start.
  */
 export function livePathEdit(spec: LivePathEditSpec): Action & { requires: string[] } {
+  const leaf = spec.params.children[spec.param] as PrefNumber | undefined;
+  if (leaf?.kind !== 'number' || typeof leaf.default !== 'number') {
+    throw new Error(`livePathEdit: "${spec.id}" has no number leaf "${spec.param}" with a default in its params`);
+  }
+  const initial = leaf.default;
   return {
     id: spec.id,
     label: spec.label,
@@ -46,6 +54,7 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
     tags: pathOperationTags('command'),
     eligible: { capability: 'creates-shapes' },
     requires: ['selection', 'scene', 'applyOps'],
+    params: spec.params,
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
@@ -57,7 +66,7 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
         };
         const given = resolveParams(opts?.params);
         let params: Readonly<Record<string, unknown>> = { ...given, ...ctx.params };
-        let value = read(ctx.params) ?? read(given) ?? spec.initial;
+        let value = read(ctx.params) ?? read(given) ?? initial;
         let current = new Map<string, { node: PathNode; path: PolygonPath }>();
         const recompute = () => {
           current = new Map();
@@ -70,6 +79,14 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
         const shapeOf = (id: string) => {
           const entry = current.get(id);
           return entry ? withPath(entry.node, entry.path) : null;
+        };
+        const commit = (): void => {
+          const done = current;
+          current = new Map();
+          if (done.size === 0) return;
+          const ops = spec.commit(ctx.deps, done, value);
+          const after = spec.selectAfter?.(ops);
+          commitOps(ctx.deps, ops, spec.label, after ? { select: after } : {});
         };
         return {
           kind: spec.id,
@@ -84,12 +101,15 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
             recompute();
           },
           onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
-            const done = current;
-            current = new Map();
-            if (reason === 'cancel' || done.size === 0) return;
-            const ops = spec.commit(ctx.deps, done, value);
-            const after = spec.selectAfter?.(ops);
-            commitOps(ctx.deps, ops, spec.label, after ? { select: after } : {});
+            if (reason === 'cancel') current = new Map();
+            else commit();
+          },
+          params: () => ({ ...params, [spec.param]: value }),
+          replay(next: Record<string, unknown>): void {
+            value = read(next) ?? value;
+            params = { ...params, ...next };
+            recompute();
+            commit();
           },
           previewIds: () => (current.size > 0 ? [...current.keys()] : null),
           previewPose: (id: string) => shapeOf(id)?.pose ?? null,
