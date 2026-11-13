@@ -153,13 +153,14 @@ export function docFromSnapshot<TData, TLayer extends string, TPose>(
  *  come back as page nodes, and a snapshot saved without pages gets
  *  `opts.pages` (`adoptSnapshotPages`). With `opts.systemLayers`, a snapshot the scene cannot hold throws here,
  *  where a reader's fallback catches it, and not in the scene's construction. `revive` rewrites a copy of each node's
- *  data on the way in, so `json` is left as it is; the default revives typed arrays only. A scene composed other
+ *  data on the way in, so `json` is left as it is; the default revives typed arrays only. A reviver that migrates an
+ *  older shape of data calls `reviveTypedArrays` itself where that data holds typed arrays. A scene composed other
  *  than rigidly passes its own `opts.composition`, since the pages are made in
  *  a scene built on it. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer> = {},
-  revive: <T>(node: T) => T = reviveTypedArrays,
+  revive: (data: TData) => TData = reviveTypedArrays,
   opts: SnapshotLoadOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   const { descriptor: _descriptor, pages: _pages, systemLayers, ...read } = opts;
