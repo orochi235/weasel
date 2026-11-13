@@ -187,9 +187,6 @@ export interface ResolvedConfig {
   renderers: Readonly<Record<string, ControlRenderer>>;
   /** Node-level `.dialog` rows, keyed by path. */
   dialogs: Readonly<Record<string, DialogSpec>>;
-  /** Paths of the groups marked `.resettable()`, whose heading carries a
-   *  button that puts every value beneath it back to its default. */
-  resettable?: ReadonlySet<string>;
   /** The motif each group set with `.motif()` is drawn in, keyed by the group's path. */
   motifs?: ReadonlyMap<string, Motif>;
   /** The schema this one was resolved over, which its aliases point into and its conditions may read. */
@@ -263,8 +260,8 @@ export interface BranchOptions {
   showIf?: ConfigPredicate;
   /** Disable this node while the predicate does not hold; on a group, the whole subtree. */
   enableIf?: ConfigPredicate;
-  /** Put a button on this group's heading that returns every value beneath it
-   *  to its default. Groups only. */
+  /** Put a reset on this group's heading that puts every value beneath it back as its schema says: the
+   *  resolved `PrefGroup`'s `resettable`. Groups only. */
   resettable?: boolean;
   /** The `MotifFrame` motif this group's card is drawn in. Groups only. */
   motif?: Motif;

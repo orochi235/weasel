@@ -24,6 +24,24 @@ export function isStampedRecord(record: unknown): record is StampedRecord {
 }
 
 /**
+ * How a leaf whose schema starts it pinned is stored once it is auto: a mark holding no value, stamped as a
+ * value is. A leaf that starts auto is stored as nothing while it is.
+ */
+export interface AutoRecord {
+  $at: number;
+  $auto: true;
+}
+
+export function autoRecord(at: number): AutoRecord {
+  return { $at: at, $auto: true };
+}
+
+export function isAutoRecord(record: unknown): record is AutoRecord {
+  if (record === null || typeof record !== 'object') return false;
+  return Object.keys(record).length === 2 && (record as AutoRecord).$auto === true && isVersion((record as AutoRecord).$at);
+}
+
+/**
  * A stored record's value and the version it is in. One with no stamp was
  * written by a build from before records carried one, and is read as being
  * in `unstamped`, the version the store said it was at.

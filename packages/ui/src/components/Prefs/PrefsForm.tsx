@@ -82,8 +82,8 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
    * open group is it or one under it. Default false.
    */
   foldable?: boolean;
-  /** Dotted paths whose leaves currently inherit: each still draws its control,
-   *  dimmed, showing the value in `values` — pass it already resolved. Editing
+  /** Dotted paths whose leaves are auto now, unpinned (a store's `auto()`): each still draws its control,
+   *  dimmed, showing the value in `values` — pass it already resolved, as `prefAutoValue` reads it. Editing
    *  it calls `onChange` as usual, which is the owner's cue to pin it. */
   auto?: ReadonlySet<string>;
   /** Dotted paths whose values stand for several that disagree: a leaf's, or a
@@ -95,10 +95,15 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
    *  field's own path and not as the whole object, so the owner keeps every
    *  value's other fields. */
   mixed?: ReadonlySet<string>;
-  /** Given, a leaf's label toggles whether it inherits: `next` true unpins it,
-   *  false pins it at the value it shows. Leaves `canInherit` refuses, and
+  /** Given, a leaf's label toggles whether it is auto: `next` true unpins it,
+   *  false pins it at the value it shows (a store's `setAuto`). Leaves `canInherit` refuses, and
    *  leaves that say `auto: false`, keep a plain label. */
   onAutoChange?: (path: string, next: boolean) => void;
+  /** Puts the leaf or the group at `path` back as its schema says (`prefResets`): a store's `reset`. Every row
+   *  offers a reset while its leaf is not as a reset leaves it, and so does the heading of a group that says
+   *  `resettable`. Unset, the form resets leaf by leaf: `onAutoChange(path, true)` for a leaf that starts auto
+   *  where the form keeps its auto state, else `onChange` with what the leaf reads after a reset. */
+  onReset?: (path: string) => void;
   /** Which leaves can inherit, and so get a label toggle. Default: every leaf
    *  but one that says `auto: false`, once `onAutoChange` is given. */
   canInherit?: (path: string) => boolean;
@@ -218,7 +223,7 @@ export function PrefsForm(props: PrefsFormProps) {
   const selection = useSelectedRow(selected, lead, props.onSelect);
   const split = useSplitRows(props, schema, props.over);
   const { settles, textWaitMs } = useParamsPolicy('form');
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, targets, changed: props.changed, errors: props.errors, selected: shown, lead, disabled, active: applied?.active, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles, textWaitMs };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, onReset: props.onReset, canInherit, inheritHint, fields, targets, changed: props.changed, errors: props.errors, selected: shown, lead, disabled, active: applied?.active, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles, textWaitMs };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

@@ -1,6 +1,6 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { VERSION_RECORD } from './helpers';
-import { readRecord, stampRecord } from './stamp';
+import { isAutoRecord, readRecord, stampRecord } from './stamp';
 
 const isVersion = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0;
 
@@ -38,11 +38,13 @@ export function runPrefsMigrations(
     return false;
   }
   const stored = cache.has(VERSION_RECORD) ? (raw as number) : 0;
-  const held = cache
-    .entries()
-    .filter(([name]) => name !== VERSION_RECORD)
+  const entries = cache.entries().filter(([name]) => name !== VERSION_RECORD);
+  // A mark that a leaf is auto holds no value to migrate, and is only read for the version it was written at.
+  const marks = entries.flatMap(([, record]) => (isAutoRecord(record) ? [record.$at] : []));
+  const held = entries
+    .filter(([, record]) => !isAutoRecord(record))
     .map(([name, record]) => ({ name, ...readRecord(record, Math.min(stored, target)) }));
-  const newest = held.reduce((most, r) => Math.max(most, r.at), stored);
+  const newest = [...held.map((r) => r.at), ...marks].reduce((most, a) => Math.max(most, a), stored);
   if (newest > target) {
     console.warn(
       `[prefs] "${cache.prefix}" was written at version ${newest}, newer than this build's ${target}; opening read-only`,

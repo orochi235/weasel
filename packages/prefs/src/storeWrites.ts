@@ -9,7 +9,7 @@ import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
 import { optionsOf, selectionAt } from './snapshot';
 import { overridesOfPref, prefScopedDefault, scopeSelectorsOf } from './scopeSpec';
-import { recordValue, stampRecord } from './stamp';
+import { isAutoRecord, recordValue, stampRecord } from './stamp';
 import { prefVariantOf, type PrefUnion } from './union';
 
 /** JSON storage cannot keep an infinity; `repairPrefValue` reads these back. */
@@ -83,7 +83,7 @@ export function prefWrites({ leaves, cache, selectors, admitted, version, select
       store(path, stored);
       return;
     }
-    const had = cache.has(path) ? recordValue(cache.get(path)) : unsetScope(leaf);
+    const had = cache.has(path) && !isAutoRecord(cache.get(path)) ? recordValue(cache.get(path)) : unsetScope(leaf);
     const now = selection();
     const under = write?.at ? selectionAt(selectors, now, write.at, admitted) : now;
     const overridesOf = overridesOfPref(leaf);

@@ -9,7 +9,8 @@ import { overridesOfPref, prefScopedDefault } from './scopeSpec';
 import { isPrefScope, scopeSelectors, repairScope, selectionWeights, weighScope, type PrefScope, type PrefSelection, type PrefWeights } from './scope';
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefLeaf } from './schema';
-import { recordValue } from './stamp';
+import { isAutoRecord, recordValue } from './stamp';
+import { prefAutoValue, prefCanAuto, prefStartsAuto } from './autoReset';
 
 export interface Snapshot {
   /** Each leaf's value as read: a split one folded under `selection`. */
@@ -24,6 +25,8 @@ export interface Snapshot {
   splitUnder: Map<string, string[]>;
   tree: Record<string, unknown>;
   unset: ReadonlySet<string>;
+  /** The leaves now auto, unpinned. */
+  auto: ReadonlySet<string>;
 }
 
 /** What a store reads its snapshots from. */
@@ -75,15 +78,31 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
     if (!unsetScopes.has(path)) unsetScopes.set(path, readStored(source, leaf, scope));
     return unsetScopes.get(path);
   };
+  const autoValues = new Map<string, unknown>();
+  /** What an auto leaf holds: its `auto.value`, repaired once, else what it holds unset. */
+  const autoHeld = (path: string, leaf: PrefLeaf): unknown => {
+    if (!autoValues.has(path)) {
+      const declared = prefAutoValue(leaf, undefined, () => undefined);
+      autoValues.set(path, declared === undefined ? unsetHeld(path, leaf) : readStored(source, leaf, declared));
+    }
+    return autoValues.get(path);
+  };
 
   const build = (): Snapshot => {
     const held = new Map<string, unknown>();
     const raw = new Map<string, unknown>();
     const unset = new Set<string>();
+    const auto = new Set<string>();
     for (const [path, leaf] of leaves) {
-      if (!cache.has(path)) {
+      const has = cache.has(path);
+      if (!has) unset.add(path);
+      if (has ? prefCanAuto(leaf) && isAutoRecord(cache.get(path)) : prefStartsAuto(leaf)) {
+        held.set(path, autoHeld(path, leaf));
+        auto.add(path);
+        continue;
+      }
+      if (!has) {
         held.set(path, unsetHeld(path, leaf));
-        unset.add(path);
         continue;
       }
       const record = cache.get(path);
@@ -108,7 +127,7 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
       byPath.set(path, read);
       assignPrefValueAtPath(tree, path, read);
     }
-    return { byPath, held, scopes, selection, splitUnder, tree, unset };
+    return { byPath, held, scopes, selection, splitUnder, tree, unset, auto };
   };
 
   return {

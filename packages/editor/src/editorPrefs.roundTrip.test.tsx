@@ -95,28 +95,40 @@ describe('EditorPrefsDialog over a stored schema', () => {
     expect(store.get('all.number')).toBe(30);
   });
 
-  it("unsets a leaf from its label's Auto toggle, and a reopen reads its default as unset", async () => {
+  it("turns a leaf auto from its label's toggle, and a reopen reads it auto, at its default", async () => {
     const backing = new Map<string, unknown>();
     const store = opened(backing);
     store.set('all.number', 9);
     dialog(store);
-    const pin = screen.getAllByRole('button', { name: 'Pin A number' })[0]!;
-    act(() => { fireEvent.click(pin); });
-    expect(store.isSet('all.number')).toBe(false);
+    act(() => { fireEvent.click(screen.getAllByRole('button', { name: 'Pin A number' })[0]!); });
+    expect(store.isAuto('all.number')).toBe(true);
     expect(await store.flush()).toBe(true);
     const again = opened(backing);
-    expect(again.isSet('all.number')).toBe(false);
+    expect(again.isAuto('all.number')).toBe(true);
     expect(again.get('all.number')).toBe(5);
   });
 
-  it('pins a leaf from its Auto toggle at the value it shows', async () => {
+  it('resets a leaf from its row, and a reopen reads it as its schema starts it', async () => {
     const backing = new Map<string, unknown>();
     const store = opened(backing);
+    store.set('all.number', 9);
+    dialog(store);
+    act(() => { fireEvent.click(screen.getAllByRole('button', { name: 'Reset A number' })[0]!); });
+    expect(store.isSet('all.number')).toBe(false);
+    expect(await store.flush()).toBe(true);
+    expect(opened(backing).get('all.number')).toBe(5);
+  });
+
+  it('pins an auto leaf from its toggle at the value it shows', async () => {
+    const backing = new Map<string, unknown>();
+    const store = opened(backing);
+    store.setAuto('all.string', true);
     dialog(store);
     act(() => { fireEvent.click(screen.getAllByRole('button', { name: 'Pin A string' })[0]!); });
+    expect(store.isAuto('all.string')).toBe(false);
     expect(store.isSet('all.string')).toBe(true);
     expect(await store.flush()).toBe(true);
-    expect(opened(backing).isSet('all.string')).toBe(true);
+    expect(opened(backing).isAuto('all.string')).toBe(false);
   });
 
   it('splits a scoped leaf into its members and writes one at its selection', async () => {

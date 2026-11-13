@@ -86,7 +86,7 @@ describe('PrefSchemaEditor actions', () => {
     renderWithIcons(<Live actions={ACTIONS} />);
     fireEvent.click(within(structure()).getByText('flatten'));
     const attributes = screen.getByRole('region', { name: 'Attributes' });
-    fireEvent.click(within(attributes).getByRole('button', { name: /Action/ }));
+    fireEvent.click(within(attributes).getByRole('button', { name: /^(?!Reset ).*Action/ }));
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
       'Unset',
       'layers.flatten (not registered)',

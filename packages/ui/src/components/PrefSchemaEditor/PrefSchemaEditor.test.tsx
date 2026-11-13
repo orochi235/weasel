@@ -705,7 +705,7 @@ describe('PrefSchemaEditor changed fields and aliases', () => {
     fireEvent.click(add());
     const keys = within(structure()).getAllByRole('treeitem').map(rowKey);
     expect(keys.indexOf('grid2')).toBe(keys.indexOf('grid') + 1);
-    expect(within(attrs()).getByRole('button', { name: /Of/ })).toHaveTextContent('view.grid');
+    expect(within(attrs()).getByRole('button', { name: /^(?!Reset ).*Of/ })).toHaveTextContent('view.grid');
   });
 
   it('offers no alias of a field inside an object pref', () => {

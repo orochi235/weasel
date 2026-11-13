@@ -92,6 +92,8 @@ export interface PanelSection {
   motif?: string;
   /** The key of the leaf drawn in its heading, which stays among its rows until it is drawn there. */
   heading?: string;
+  /** Its heading offers a reset of every leaf under it (`PrefSection.resettable`). */
+  resettable?: true;
   /** Its rows and the sections nested in it, in schema order. */
   items: PanelItem[];
 }
@@ -162,7 +164,7 @@ function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTa
       ([at, member]) => (isPrefLeaf(member) ? shown(at, member) : undefined),
       ([at, member]) => (isPrefLeaf(member) ? null : section(at, member, prefSectionPath(path, at))),
     );
-    return { key, path, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), ...(child.lead ? { lead: child.lead } : {}), ...(child.icon ? { icon: child.icon } : {}), ...(child.motif ? { motif: child.motif } : {}), ...(heading ? { heading } : {}), items };
+    return { key, path, name: child.name, ...(child.as ? { as: child.as } : {}), ...(child.overflow ? { overflow: child.overflow } : {}), ...(child.lead ? { lead: child.lead } : {}), ...(child.icon ? { icon: child.icon } : {}), ...(child.motif ? { motif: child.motif } : {}), ...(heading ? { heading } : {}), ...(child.resettable ? { resettable: true as const } : {}), items };
   };
 
   for (const [key, child] of Object.entries(schema.members)) {

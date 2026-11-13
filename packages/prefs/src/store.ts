@@ -2,7 +2,8 @@ import { createEmitter } from '@weasel-js/registry';
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import type { PrefBlend } from './blend';
 import { checkPrefConditions } from './conditionCheck';
-import { recordValue } from './stamp';
+import { autoRecord, recordValue } from './stamp';
+import { prefCanAuto, prefStartsAuto } from './autoReset';
 import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
 import { isPrefScope, selectionWeights, type PrefScope, type PrefSelection, type PrefWeights } from './scope';
 import { createSnapshots, resolveHeld, selectionAt, weightsUnder, type SnapshotSource } from './snapshot';
@@ -42,15 +43,25 @@ export interface PrefsStore<S extends PrefGroup> {
   scope(path: PrefPath<S>): PrefScope | undefined;
   /** What every split leaf holds, by its path. The same map until something changes. */
   scopes(): ReadonlyMap<string, PrefScope>;
-  /** Unset every leaf at or under `path`; with no path, all. */
+  /** Put every leaf at or under `path` back as its schema says (`prefResetOf`), storing nothing for it: auto
+   *  where it says `auto.on`, else at its default. With no path, all. */
   reset(path?: string): void;
-  /** Whether the leaf has a value of its own rather than following its default. */
+  /** Whether anything is stored for the leaf: a value it is pinned at, or a mark that it is auto where its
+   *  schema starts it pinned. */
   isSet(path: PrefPath<S>): boolean;
+  /** The leaves now auto: unpinned, each reading its `auto.value`, else its default (`prefAutoValue`). The same
+   *  set until something changes. */
+  auto(): ReadonlySet<string>;
+  /** Whether the leaf is auto now. */
+  isAuto(path: PrefPath<S>): boolean;
+  /** Unpin the leaf, given true; given false, pin it at the value it reads now. A leaf that says `auto: false`
+   *  is always pinned, and turning it auto warns and does nothing. */
+  setAuto(path: PrefPath<S>, next: boolean): void;
   /** Every leaf's value as a nested tree. The same object until something
    *  changes. With `at`, the tree as it would read with each selector named
    *  there set to the option given, built for the call. */
   values(read?: { at?: PrefSelection }): Record<string, unknown>;
-  /** The leaves following their default. The same set until something changes. */
+  /** The leaves nothing is stored for, each as its schema starts it. The same set until something changes. */
   unset(): ReadonlySet<string>;
   /** Every stored record as a nested tree, unrepaired, including records no
    *  leaf describes. The same object until something changes. */
@@ -153,9 +164,25 @@ export function createPrefsStore<S extends PrefGroup>(
     warned = true;
     console.warn(`[prefs] write to a closed store${path === undefined ? '' : ` at "${path}"`}; it will not persist`);
   };
+  const writes = prefWrites({ leaves, cache, selectors: source.selectors, admitted: source.admitted!, version, selection: () => current().selection, warnIfClosed });
   return {
     schema,
-    ...prefWrites({ leaves, cache, selectors: source.selectors, admitted: source.admitted!, version, selection: () => current().selection, warnIfClosed }),
+    ...writes,
+    auto: () => current().auto,
+    isAuto: (path) => current().auto.has(path),
+    setAuto: (path, next) => {
+      warnIfClosed(path);
+      const leaf = leaves.get(path);
+      if (!leaf || !prefCanAuto(leaf)) {
+        console.warn(`[prefs] "${path}" cannot be auto; ignoring the write`);
+        return;
+      }
+      const now = current();
+      if (now.auto.has(path) === next) return;
+      if (!next) writes.set(path, now.held.get(path));
+      else if (prefStartsAuto(leaf)) cache.delete(path);
+      else cache.set(path, autoRecord(version));
+    },
     get: (path, read) => {
       const now = current();
       if (!read?.weights && !read?.at) return now.byPath.get(path) as never;

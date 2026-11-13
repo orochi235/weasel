@@ -89,7 +89,7 @@ describe('PrefsForm — font-family leaf', () => {
       <PrefsForm schema={FLAT_SCHEMA} values={{ text: { fontFamily: 'serif' } }} onChange={() => {}} />,
     );
     expect(screen.queryByText('(font-family: no renderer)')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Font/ })).toHaveTextContent('serif');
+    expect(screen.getByRole('button', { name: /^(?!Reset ).*Font/ })).toHaveTextContent('serif');
   });
 
   it('offers the registry and reports the chosen family', () => {
@@ -97,7 +97,7 @@ describe('PrefsForm — font-family leaf', () => {
     render(
       <PrefsForm schema={FLAT_SCHEMA} values={{ text: { fontFamily: 'serif' } }} onChange={onChange} />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /Font/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^(?!Reset ).*Font/ }));
     fireEvent.click(screen.getByRole('option', { name: 'sans-serif' }));
     expect(onChange).toHaveBeenCalledWith('text.fontFamily', 'sans-serif');
   });
@@ -107,7 +107,7 @@ describe('PrefsForm — font-family leaf', () => {
     render(
       <PrefsForm schema={FLAT_SCHEMA} values={{ text: { fontFamily: 'Gilamesh' } }} onChange={() => {}} />,
     );
-    expect(screen.getByRole('button', { name: /Font/ }))
+    expect(screen.getByRole('button', { name: /^(?!Reset ).*Font/ }))
       .toHaveTextContent('Gilamesh — not loaded, showing serif');
   });
 
@@ -131,7 +131,7 @@ describe('PrefsForm — font-family leaf', () => {
         onChange={onChange}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /Font/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^(?!Reset ).*Font/ }));
     fireEvent.click(screen.getByRole('option', { name: 'sans-serif' }));
     expect(onChange).toHaveBeenCalledWith('text.style', {
       fontFamily: 'sans-serif',

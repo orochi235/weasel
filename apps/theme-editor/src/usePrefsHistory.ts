@@ -3,7 +3,10 @@ import { prefLeaves, type PrefGroup, type PrefPath, type PrefSelection, type Pre
 import { deepEqual } from '@weasel-js/registry';
 import { useMemo } from 'react';
 
-/** What a store holds of its own, by leaf path: a split leaf's whole scope, any other leaf's value. */
+/** Held for a leaf that is auto where its schema starts it pinned: a mark, not a value. */
+const AUTO = Symbol('auto');
+
+/** What a store holds of its own, by leaf path: a split leaf's whole scope, any other leaf's value, or `AUTO`. */
 type Held = ReadonlyMap<string, unknown>;
 
 function heldOf(store: PrefsStore<PrefGroup>, paths: readonly string[]): Held {
@@ -12,7 +15,7 @@ function heldOf(store: PrefsStore<PrefGroup>, paths: readonly string[]): Held {
   for (const path of paths) {
     if (unset.has(path)) continue;
     const key = path as PrefPath<PrefGroup>;
-    held.set(path, store.scope(key) ?? store.get(key));
+    held.set(path, store.isAuto(key) ? AUTO : (store.scope(key) ?? store.get(key)));
   }
   return held;
 }
@@ -21,11 +24,14 @@ function heldOf(store: PrefsStore<PrefGroup>, paths: readonly string[]): Held {
 function restoreHeld(store: PrefsStore<PrefGroup>, paths: readonly string[], target: Held): void {
   const now = heldOf(store, paths);
   for (const path of paths) {
+    const key = path as PrefPath<PrefGroup>;
     const want = target.get(path);
     if (!target.has(path)) {
       if (now.has(path)) store.reset(path);
+    } else if (want === AUTO) {
+      if (now.get(path) !== AUTO) store.setAuto(key, true);
     } else if (!now.has(path) || !deepEqual(now.get(path), want)) {
-      store.set(path as PrefPath<PrefGroup>, want as never);
+      store.set(key, want as never);
     }
   }
 }
@@ -46,6 +52,7 @@ export interface PrefsHistory {
   history: History;
   set: (path: string, value: unknown) => void;
   setAt: (path: string, value: unknown, at: PrefSelection) => void;
+  setAuto: (path: string, next: boolean) => void;
   reset: (path?: string) => void;
 }
 
@@ -67,6 +74,8 @@ export function usePrefsHistory(store: PrefsStore<PrefGroup>): PrefsHistory {
       set: (path, value) => write(path, `set ${path}`, () => store.set(path as PrefPath<PrefGroup>, value as never)),
       setAt: (path, value, at) =>
         write(path, `set ${path}`, () => store.set(path as PrefPath<PrefGroup>, value as never, { at })),
+      setAuto: (path, next) =>
+        write(`auto:${path}`, `${next ? 'unpin' : 'pin'} ${path}`, () => store.setAuto(path as PrefPath<PrefGroup>, next)),
       reset: (path) => write(`reset:${path ?? ''}`, `reset ${path ?? 'all'}`, () => store.reset(path)),
     };
   }, [store]);

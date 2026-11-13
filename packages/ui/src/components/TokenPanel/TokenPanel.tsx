@@ -220,7 +220,7 @@ const TokenRow = memo(
         <div className={s.edit}>
           <TokenControl token={token} set={set} />
         </div>
-        {token.overridden ? <Reset label={`Reset ${token.name}`} onPress={() => onChange(token.name, null)} /> : null}
+        {token.overridden ? <Reset name={token.name} onPress={() => onChange(token.name, null)} /> : null}
       </div>
     );
   },
@@ -283,7 +283,7 @@ function Family({
       </div>
       {overridden.length > 0 ? (
         <Reset
-          label={`Reset ${group}`}
+          name={group}
           onPress={() => {
             for (const t of overridden) onChange(t.name, null);
           }}

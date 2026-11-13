@@ -270,7 +270,10 @@ describe('<ControlPanel> resettable group', () => {
         setConfig={vi.fn()}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Reset Modes' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reset Modes' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
     expect(screen.queryByRole('button', { name: 'Reset Plain' })).toBeNull();
   });
 
@@ -300,7 +303,10 @@ describe('<ControlPanel> resettable group', () => {
     renderWithIcons(
       <ControlPanel schema={listed} config={{ tags: { names: ['a', 'b'] } }} setConfig={vi.fn()} />,
     );
-    expect(screen.getByRole('button', { name: 'Reset Tags' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reset Tags' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
   });
 });
 

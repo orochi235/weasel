@@ -2177,13 +2177,31 @@ Calls the lanes made without a ruling:
   already use; a number's `placeholder` and a string's `maxLength` are prefs fields. Labkit keeps one extra the
   schema lacks, `debounceMs`, since ui sets how long typed text waits per surface (`textWaitMs`), not per leaf
   (2026-11-13).
-- Open: "Auto" means two things. In a store-bound form (`usePrefsValues(store).form`) it is the leaf following its
-  default, and turning it on resets the leaf; in labkit's `ControlPanel` it is a resolver computing the value. A
-  store never reads `PrefAuto.value` or `PrefAuto.on`, which only labkit honors; no bundled store's schema declares
-  either. Whether a store reads `auto.value` while a leaf is unset, or the two meanings get two names.
-- Open: reset differs by surface. A store-bound `PrefsForm` resets one leaf through its Auto toggle and has no group
-  reset; `ControlPanel` resets a `.resettable()` group from its heading and has no per-row reset for a leaf that
-  cannot go auto. Whether both surfaces offer both.
+
+## Auto and reset (2026-11-13)
+
+- Reset returns a leaf to the state its schema starts it in: auto for a leaf that says `auto.on`, pinned at its
+  `default` for any other, including one that can be auto but does not start so. Reading "unpinned if it can be
+  auto" literally would make a reset of such a leaf write a mark, and give `auto.on` no say in it; this reading
+  makes a store's `reset` just store nothing (2026-11-13).
+- A prefs store keeps a leaf that is auto against its schema's start as a record of its own, `{ $at, $auto: true }`,
+  which no migration is handed; a leaf that starts auto is stored as nothing while it is. `stored()` shows the mark
+  as it is (2026-11-13).
+- labkit hands an instrument `undefined` at an auto path that has no resolver and no `auto.value`, as before: the
+  instrument is that leaf's resolver (`.auto()` says only it can work the value out), and `undefined` is how it
+  knows to. Its row draws what the instrument reports, else the default, and quotes nothing until a report
+  (2026-11-13).
+- A write of a group's value in labkit pins every leaf under the group's path except one it holds the `auto`
+  sentinel at, which unpins that leaf and keeps what it last held. A group reset is one such write, so it stays
+  one undo step (2026-11-13).
+- The per-row and the group reset are one control, `ResetControl`: the reset glyph that labkit's `ResetGroup` and
+  ui's `TokenPanel` already drew, made a span with a button's role, because a `<button>` inside a row's `<label>`
+  takes the row's name off its control. A row shows it only while its leaf differs from what a reset makes it; a
+  heading shows it always, disabled while nothing under it differs (2026-11-13).
+- `SelectionPanel`'s rows and `resettable` sections reset too, writing `prefStoredReset` into every selected node
+  in one undo step; a scene node has no auto state, so a row there compares values only (2026-11-13).
+- The theme editor's tokens say `auto.on` (following the theme) and its axes `auto: false`; each token page is
+  `resettable` (2026-11-13).
 
 ## Audit round twenty-three (2026-11-13): tool surfaces
 

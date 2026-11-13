@@ -35,6 +35,8 @@ export interface DialogRowProps extends PropertyMetricProps {
   auto?: boolean;
   /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
   onAutoChange?: (next: boolean) => void;
+  /** Resets the row's setting — see `<PropertyRow onReset>`. */
+  onReset?: () => void;
   /** What the row reads when it is auto — see `<PropertyRow autoValue>`. */
   autoValue?: ReactNode;
   /** The row takes no input: its button is disabled, and still reads the summary. */
@@ -68,6 +70,7 @@ export function DialogRow({
   align,
   auto,
   onAutoChange,
+  onReset,
   autoValue,
   disabled,
   changed,
@@ -94,6 +97,7 @@ export function DialogRow({
       align={align}
       auto={auto}
       onAutoChange={onAutoChange}
+      onReset={onReset}
       autoValue={autoValue}
       disabled={disabled}
       changed={changed}

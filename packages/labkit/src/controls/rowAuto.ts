@@ -1,10 +1,12 @@
-import { type PrefLeaf, type PrefNumber, prefLeafValue } from '@weasel-js/prefs';
+import { type PrefLeaf, type PrefNumber, prefAutoValue, prefCanAuto } from '@weasel-js/prefs';
 import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
 import { createElement, type ReactNode, useMemo } from 'react';
-import { autoQuotes, autoResolverOf, leafCanAuto, resolveAutoConfig } from '../config/autoConfig';
+import { autoQuotes, autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
+import { leafValueAt } from './fields';
 import { numberText, summarizeLeaf, summarizeValue } from './inDialog';
+import { leafIsReset, resetWrite } from './leafReset';
 
 /** An auto value as tooltip text. A number with a unit or a display reads as its field shows it. Any other computed
  *  number is cut to 6 significant digits, so `0.1 + 0.2` reads `0.3`. */
@@ -25,11 +27,13 @@ export interface RowAutoSource {
   config: Record<string, unknown>;
   /** `config` with every auto path resolved. */
   shown: Record<string, unknown>;
-  /** The value the row holds while pinned. */
-  pinned: unknown;
   auto: ReadonlySet<string> | undefined;
   setRowAuto: ((path: string, next: boolean, value: unknown) => void) | undefined;
+  /** Writes one value, the `auto` sentinel included: what a reset goes through. */
+  setConfig: (path: string, value: unknown) => void;
 }
+
+const NO_AUTO: ReadonlySet<string> = new Set();
 
 /** What a row would read as auto, pinned or not; `cycles` where unpinning it would close a resolver cycle. */
 function useUnpinned(
@@ -57,25 +61,31 @@ function useUnpinned(
 
 /**
  * A row's auto state: whether it is auto, the value it draws, and the props its
- * row takes to show and toggle it.
+ * row takes to show and toggle it, and to reset it while it is not what a reset makes it.
  */
 export function useRowAuto(source: RowAutoSource) {
-  const { path, leaf, shown, pinned, auto, setRowAuto } = source;
+  const { path, leaf, config, shown, auto, setRowAuto } = source;
+  const pinned = leafValueAt(config, path, leaf);
   const isAutoRow = auto?.has(path) ?? false;
-  const canAuto = setRowAuto !== undefined && leafCanAuto(leaf);
+  const canAuto = setRowAuto !== undefined && prefCanAuto(leaf);
   // Read out of the resolved config rather than re-running this leaf's own
   // resolver, so the row reports the value the instrument actually got — the
   // two diverge as soon as a resolver reads another auto path.
   const resolvedValue = isAutoRow ? valueAtPath(shown, path) : undefined;
-  // An auto row's control stays live, so it draws the value in effect: the report, else the resolver's,
-  // else the leaf's default — never the stale pinned value underneath. Pinning keeps what it showed.
-  const value = isAutoRow ? (resolvedValue ?? prefLeafValue(leaf, leaf.default)) : pinned;
+  // An auto row's control stays live, so it draws the value in effect (`prefAutoValue`: the report or the
+  // resolver's, else `auto.value`, else the default), never the stale pinned value underneath. Pinning keeps it.
+  const value = isAutoRow ? prefAutoValue(leaf, resolvedValue) : pinned;
   const setAuto = (next: boolean): void => setRowAuto?.(path, next, value);
   // What the row would read as auto, pinned or not: the config resolved with
-  // this path unpinned beside the ones that already are. An auto row the
-  // instrument reported a value for has one to quote, resolver or not.
-  const resolves = canAuto && (autoResolverOf(leaf) !== undefined || resolvedValue !== undefined);
-  const unpinned = useUnpinned(source, resolves, isAutoRow);
+  // this path unpinned beside the ones that already are. Only where something
+  // computes it: a leaf the instrument works out has nothing to quote until it reports.
+  const computes =
+    autoResolverOf(leaf) !== undefined || (leaf.auto !== false && leaf.auto?.value !== undefined);
+  const unpinned = useUnpinned(
+    source,
+    canAuto && (computes || resolvedValue !== undefined),
+    isAutoRow,
+  );
   const onAutoChange = canAuto && !unpinned.cycles ? setAuto : undefined;
   const autoValue = unpinned.value === undefined ? undefined : summarizeAuto(unpinned.value, leaf);
   return {
@@ -84,6 +94,22 @@ export function useRowAuto(source: RowAutoSource) {
     setAuto,
     // The word marks the row auto beside its live control; a leaf that quotes its value adds it.
     readout: isAutoRow ? autoReadout(autoQuotes(leaf) ? autoValue : undefined) : undefined,
-    props: { auto: isAutoRow, onAutoChange, autoValue },
+    props: { auto: isAutoRow, onAutoChange, autoValue, onReset: rowReset(source) },
   };
+}
+
+/** The row's reset, where its leaf holds a value it can be given and is not already as a reset leaves it. */
+function rowReset({
+  path,
+  leaf,
+  config,
+  auto,
+  setConfig,
+}: RowAutoSource): (() => void) | undefined {
+  if (
+    (leaf as { readout?: boolean }).readout === true ||
+    leafIsReset(config, path, leaf, auto ?? NO_AUTO)
+  )
+    return undefined;
+  return () => setConfig(path, resetWrite(leaf));
 }

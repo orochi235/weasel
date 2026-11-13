@@ -96,7 +96,7 @@ function groupOf(resolved: ResolvedConfig, group: PrefGroup, path: string): Pref
       as,
       overflow,
       lead,
-      resettable: resolved.resettable?.has(path) || undefined,
+      resettable: group.resettable,
       motif: resolved.motifs?.get(path),
     },
   );

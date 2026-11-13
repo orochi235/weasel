@@ -52,7 +52,6 @@ describe('prefsFromConfig', () => {
     expect([...again.showIf]).toEqual([...resolved.showIf]);
     expect(again.renderers).toEqual(resolved.renderers);
     expect(again.dialogs).toEqual(resolved.dialogs);
-    expect(again.resettable).toEqual(resolved.resettable);
     expect(configFromPrefs(prefs).defaults()).toEqual(schema.defaults());
   });
 

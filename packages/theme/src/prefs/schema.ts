@@ -38,6 +38,8 @@ function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>): PrefLea
   const name = shortName(row);
   const leaf = {
     ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown,
+    // Auto is following the theme; a pin goes over it.
+    auto: { on: true },
     ...(name === row.name ? {} : { tags: [row.name] }),
   } as PrefLeaf;
   const fallback = row.css[selectionKey(table.axes, {})] ?? Object.values(row.css)[0];
@@ -54,7 +56,7 @@ function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>): PrefLea
 
 /**
  * `theme` as a preferences schema. Under `axis`, an `enum` for each of the
- * theme's axes, set to its default. Then a page for each token group, holding
+ * theme's axes, set to its default. Then a page for each token group, resettable, holding
  * a leaf for every token the theme resolves and every override hook, named
  * without its group's prefix: a
  * `color`, a `number` in the token's unit, or a `string` of CSS text for what
@@ -62,8 +64,9 @@ function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>): PrefLea
  * `--wzl-`, and is scoped by the axes its value differs along.
  *
  * A leaf's default is what the theme resolves the token to, already split
- * along the axes it differs by, so a store nothing was written to reads the
- * theme as it is. {@link themeFromPrefs} turns what was written into a theme.
+ * along the axes it differs by, and a token starts auto (`auto.on`), following
+ * it, so a store nothing was written to reads the theme as it is. An axis is
+ * always pinned. {@link themeFromPrefs} turns what was written into a theme.
  */
 export function themePrefsSchema(theme: Theme = weaselTheme): PrefGroup {
   const table = tokenTable(theme);
@@ -74,13 +77,14 @@ export function themePrefsSchema(theme: Theme = weaselTheme): PrefGroup {
       name: labeled(axis),
       description: '',
       default: def.default,
+      auto: false,
       options: Object.keys(def.values).map((value) => ({ value, label: labeled(value) })),
     };
   }
   const children: Record<string, PrefGroup> = { [THEME_PREFS_AXIS]: { name: 'Axes', children: axes } };
   for (const row of table.rows) {
     const key = groupKey(row.group);
-    if (!Object.hasOwn(children, key)) children[key] = { name: labeled(row.group), children: {} };
+    if (!Object.hasOwn(children, key)) children[key] = { name: labeled(row.group), resettable: true, children: {} };
     children[key].children[row.name] = tokenLeaf(row, table);
   }
   return { name: `${labeled(theme.name)} theme`, children };
