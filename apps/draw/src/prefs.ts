@@ -22,6 +22,7 @@ import {
 import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { pageLocalStorage } from '@weasel-js/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
+import { LOUPE_FACTOR, LOUPE_MODE } from './loupePrefs';
 import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RecordingProfile } from './recorder';
 import type { RegistryEnumFilter } from './registry/types';
@@ -240,6 +241,11 @@ export const PREFS = {
           description: "What Undo takes back while a mode such as path edit is open. The mode's own edits: Undo stops where the mode began, and leaving the mode puts its edits in the document's history as one step. The document's history: every edit is its own step there, and Undo can go on past where the mode began.",
         }),
       },
+    },
+    loupe: {
+      name: 'Loupe',
+      description: 'The magnifier the loupe switch shows over the canvas.',
+      children: { mode: LOUPE_MODE, factor: LOUPE_FACTOR },
     },
     recording: {
       name: 'Input recording',
