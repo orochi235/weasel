@@ -1893,3 +1893,16 @@ Calls the lanes made without a ruling:
   snapshot of the same instrument into any trial. So a snapshot cannot be loaded into a clone to compare it with
   the trial that saved it, and a lab wanting presets shared across trials lists `useLabContext().savedSnapshots`
   itself. Whether the menu offers every snapshot of the instrument, groups them by trial, or stays per trial.
+
+## Audit round twenty-one (2026-11-12): the component kit
+
+- Components take `'aria-label'` rather than `ariaLabel`, the DOM's and React Aria's spelling, since MenuButton, Toolbar
+  and PaintInput already did and a prop spread onto the element needs no translation. A data field of a row or
+  segment (`ToggleBarItem.ariaLabel`) stays camelCase, since a quoted key in every item literal buys nothing
+  (2026-11-12).
+- `Checkbox` keeps `isDisabled`, `isReadOnly` and `isSelected`, though the kit draws it, because `Switch`, its
+  sibling, is React Aria's and the two are swapped for each other (2026-11-12).
+- A `SidebarPanel` given `collapsed` and no `onCollapsedChange` now draws its toggle, as a `PropertyGroup` does;
+  before, it drew a static title. labkit's sidebar sections pass `collapsible` so theirs stay static (2026-11-12).
+- The schema editor's inline `PrefsDialog` preview keeps a do-nothing `onOpenChange`, so the preview still draws
+  the close button a real one has (2026-11-12).
