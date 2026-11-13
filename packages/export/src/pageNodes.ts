@@ -1,6 +1,6 @@
 /**
- * One page of a diagram scene as `SvgNode`s: the nodes whose box meets the
- * page, each written the way the canvas paints it.
+ * One page of a scene as `SvgNode`s: the nodes whose box meets the page, each
+ * written the way the canvas paints it.
  */
 import {
   boundsOfPath,
@@ -10,6 +10,7 @@ import {
   derivedPartsOf,
   documentOf,
   effectivePose,
+  findNodeShape,
   INHERIT,
   resolvePartPaint,
   isAnnotationLayer,
@@ -21,7 +22,6 @@ import {
   type RectPose,
   type Scene,
 } from '@weasel-js/core';
-import { diagramShape, markShape } from '@weasel-js/diagram';
 import {
   svgLeafFromKit,
   svgNodesFromKit,
@@ -43,8 +43,16 @@ export interface PageRect {
   readonly height: number;
 }
 
-/** A diagram scene as the exports read it: world-space `RectPose`s. */
+/** A scene as the exports read it: world-space `RectPose`s. */
 export type PageExportScene = Scene<unknown, string, RectPose>;
+
+/** Options for {@link pageSvgNodes}. */
+export interface PageSvgNodesOptions {
+  /** Painters asked before the registered ones (`registerNodeShape`), the
+   *  first that claims a node drawing it: for a kind the scene draws with a
+   *  painter it may not have registered. */
+  painters?: readonly NodeShapeEntry<unknown, RectPose>[];
+}
 
 type Box = { x: number; y: number; width: number; height: number };
 type SceneNode = NonNullable<ReturnType<PageExportScene['get']>>;
@@ -68,10 +76,20 @@ function commandNode(cmd: DrawCommand, pose: SvgKitPose): SvgPathNode | null {
   return node;
 }
 
-/** What a diagram painter draws for `node`, or `null` when none claims it. */
-function diagramPainted(painters: readonly NodeShapeEntry<unknown, RectPose>[], node: SceneNode, pose: RectPose): SvgPathNode[] | null {
-  const painter = painters.find((p) => p.matches(node as never));
-  if (!painter) return null;
+/**
+ * The painter that draws `node` in the export: the first of `painters` to
+ * claim it, else a registered one. The kit's own (`kit:*`) are left to
+ * `svgLeafFromKit`, which writes their text, images and markers as SVG.
+ */
+function painterOf(painters: readonly NodeShapeEntry<unknown, RectPose>[], node: SceneNode): NodeShapeEntry<unknown, RectPose> | undefined {
+  const given = painters.find((p) => p.matches(node as never));
+  if (given) return given;
+  const registered = findNodeShape(node);
+  return registered && !registered.id.startsWith('kit:') ? registered : undefined;
+}
+
+/** What `painter` draws for `node`, as SVG paths. */
+function painted(painter: NodeShapeEntry<unknown, RectPose>, node: SceneNode, pose: RectPose): SvgPathNode[] {
   const at = poseOf(pose);
   return painter.paint(node as never, pose).flatMap((cmd) => commandNode(cmd, at) ?? []);
 }
@@ -88,17 +106,21 @@ function derivedNodes(path: Path, data: SvgKitLeafData): SvgNode[] {
 const one = (nodes: SvgNode[]): SvgNode | null =>
   nodes.length === 0 ? null : nodes.length === 1 ? nodes[0]! : { kind: 'group', children: nodes };
 
+const derives = (node: SceneNode): boolean =>
+  node.kind !== 'group' && (node.dependsOn?.length ?? 0) > 0 && node.derivePath !== undefined;
+
 /**
  * The `SvgNode`s of everything on `page`, in paint order: every node on a
- * visible content layer whose box meets the page, with what is under it.
- * Diagram outlines and drawn marks go through the diagram painters, a node
- * that derives its path (a connector) is drawn along that path, and anything
- * else is written by `svgLeafFromKit`.
+ * visible content layer whose box meets the page, with what is under it. A
+ * node a consumer painter claims (one of `opts.painters`, else one registered
+ * with `registerNodeShape`) is written from that painter's paths, a node that
+ * derives its path (a connector) is drawn along that path, and anything else
+ * is written by `svgLeafFromKit`.
  */
-export function pageSvgNodes(live: PageExportScene, page: PageRect): SvgNode[] {
+export function pageSvgNodes(live: PageExportScene, page: PageRect, opts: PageSvgNodesOptions = {}): SvgNode[] {
   // An export writes the document, not what an open gesture or edit is showing.
   const scene = documentOf(live);
-  const painters = [diagramShape<RectPose>(), markShape<RectPose>()];
+  const painters = opts.painters ?? [];
   const shown = new Set(scene.layers.filter((l) => l.visible && !isAnnotationLayer(l)).map((l) => l.id));
   const poseCache = new Map<string, RectPose>();
   // A child stores its pose in its parent's frame; the walk below is handed every pose in the world.
@@ -108,7 +130,7 @@ export function pageSvgNodes(live: PageExportScene, page: PageRect): SvgNode[] {
     if (p === undefined) poseCache.set(node.id, (p = composeWorldPose(poses as never, node.id, scene.composition.compose as never) as RectPose));
     return p;
   };
-  const pathOf = (node: SceneNode) => (node.kind === 'mark' ? derivedDepOf(scene, node.id)?.path ?? null : null);
+  const pathOf = (node: SceneNode) => (derives(node) ? derivedDepOf(scene, node.id)?.path ?? null : null);
 
   // The page run and pages frame what is on them; a page's export writes that content, not the frames.
   const tops = contentRoots(scene);
@@ -138,8 +160,8 @@ export function pageSvgNodes(live: PageExportScene, page: PageRect): SvgNode[] {
       const node = scene.get(id as never)!;
       const path = pathOf(node);
       if (path) return one(derivedNodes(path, kit.data as SvgKitLeafData));
-      const painted = diagramPainted(painters, node, pose(node));
-      return painted ? one(painted) : svgLeafFromKit(kit.data as SvgKitLeafData, kit.pose);
+      const painter = painterOf(painters, node);
+      return painter ? one(painted(painter, node, pose(node))) : svgLeafFromKit(kit.data as SvgKitLeafData, kit.pose);
     },
   });
 }

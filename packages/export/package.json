@@ -1,0 +1,53 @@
+{
+  "name": "@weasel-js/export",
+  "version": "1.19.1",
+  "description": "Exports a page of any @weasel-js/core scene: one page as an SVG document or a PNG image, and every page as one PDF.",
+  "weasel": {
+    "tier": "other"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/export"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@weasel-js/pdf": "1.19.1"
+  },
+  "peerDependencies": {
+    "@weasel-js/core": "1.19.1",
+    "@weasel-js/svg": "1.19.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

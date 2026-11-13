@@ -1,56 +1,88 @@
 /**
- * One page of a diagram as an SVG document.
+ * A page of a diagram as a file: `@weasel-js/export`'s page exports, drawn
+ * with the diagram painters and on the diagram theme's page color.
  */
-import { layoutTextPose } from '@weasel-js/core';
-import { diagramThemeOf } from '@weasel-js/diagram';
-import { serializeSvg, warmSvg, type SerializeOptions, type SvgNode } from '@weasel-js/svg';
-import { pageSvgNodes, type PageExportScene, type PageRect } from './pageNodes';
+import type { RectPose } from '@weasel-js/core';
+import { diagramShape, diagramThemeOf, markShape } from '@weasel-js/diagram';
+import {
+  exportPagePng as exportScenePagePng,
+  exportPageSvg as exportScenePageSvg,
+  exportPagesPdf as exportScenePagesPdf,
+  pageSvgNodes as scenePageSvgNodes,
+  type ExportPagePngOptions as ScenePagePngOptions,
+  type ExportPageSvgOptions as ScenePageSvgOptions,
+  type ExportPagesPdfOptions as ScenePagesPdfOptions,
+  type PageExportScene,
+  type PageRect,
+} from '@weasel-js/export';
+import type { PdfSkip } from '@weasel-js/pdf';
+import type { SvgNode } from '@weasel-js/svg';
+
+export type { PageExportScene, PageRect } from '@weasel-js/export';
 
 /** Options for {@link exportPageSvg}. */
-export interface ExportPageSvgOptions extends Pick<SerializeOptions, 'title' | 'onWarn' | 'pretty'> {
+export interface ExportPageSvgOptions extends Omit<ScenePageSvgOptions, 'background' | 'painters'> {
   /** The color painted under the page. Default: the page color of the
    *  scene's diagram theme (`diagram:theme`). `null` paints none. */
   background?: string | null;
 }
 
+/** Options for {@link exportPagePng}. */
+export interface ExportPagePngOptions extends Omit<ScenePagePngOptions, 'background'> {
+  /** The color painted under the page. Default: the page color of the
+   *  scene's diagram theme. `null` leaves it transparent. */
+  background?: string | null;
+}
+
+/** Options for {@link exportPagesPdf}. */
+export interface ExportPagesPdfOptions extends Omit<ScenePagesPdfOptions, 'background'> {
+  /** The color painted under each page. Default: the page color of the
+   *  scene's diagram theme. `null` leaves it unpainted. */
+  background?: string | null;
+}
+
 /** The page color a page export paints when told none: the scene theme's. */
-export function pageBackground(scene: PageExportScene, background: string | null | undefined): string | null {
-  return background === undefined ? diagramThemeOf(scene).page : background;
+const pageBackground = (scene: PageExportScene, background: string | null | undefined): string | null =>
+  background === undefined ? diagramThemeOf(scene).page : background;
+
+const painters = () => [diagramShape<RectPose>(), markShape<RectPose>()];
+
+/**
+ * The `SvgNode`s of everything on `page`, as `@weasel-js/export`'s
+ * `pageSvgNodes` writes them, with diagram outlines and drawn marks drawn by
+ * the diagram painters whether or not they are registered.
+ */
+export function pageSvgNodes(scene: PageExportScene, page: PageRect): SvgNode[] {
+  return scenePageSvgNodes(scene, page, { painters: painters() });
 }
 
 /**
- * Write `page` of `scene` as an SVG document: its `viewBox` is the page rect,
- * its size the page's, the page color comes first, and the scene is drawn as
- * the canvas draws it, cut to the page's edges. What lies wholly off the page
- * is left out.
- *
- * It waits for the paint kinds and faces the document needs, so its text is
- * written in the lines the canvas lays it out into. A load that fails goes to
- * `onWarn`, and the export goes ahead without it.
+ * Write `page` of `scene` as an SVG document, as `@weasel-js/export`'s
+ * `exportPageSvg` does, drawing diagram outlines and marks with the diagram
+ * painters, on the diagram theme's page color unless told otherwise.
  */
-export async function exportPageSvg(
-  scene: PageExportScene,
-  page: PageRect,
-  opts: ExportPageSvgOptions = {},
-): Promise<string> {
-  const { background, ...given } = opts;
-  const nodes: SvgNode[] = [];
-  const color = pageBackground(scene, background);
-  if (color !== null) {
-    nodes.push({ kind: 'path', path: { kind: 'rect', x: page.x, y: page.y, width: page.width, height: page.height }, fill: { kind: 'solid', color } });
-  }
-  nodes.push(...pageSvgNodes(scene, page));
-  const serialize: SerializeOptions = {
-    ...given,
-    viewBox: { x: page.x, y: page.y, width: page.width, height: page.height },
-    width: page.width,
-    height: page.height,
-    textLayout: layoutTextPose,
-  };
-  try {
-    await warmSvg(nodes, serialize);
-  } catch (err) {
-    serialize.onWarn?.(`a paint kind or font this export uses failed to load: ${String(err)}`);
-  }
-  return serializeSvg(nodes, serialize);
+export function exportPageSvg(scene: PageExportScene, page: PageRect, opts: ExportPageSvgOptions = {}): Promise<string> {
+  return exportScenePageSvg(scene, page, { ...opts, painters: painters(), background: pageBackground(scene, opts.background) });
+}
+
+/**
+ * Draw `page` of `scene` into a PNG, as `@weasel-js/export`'s `exportPagePng`
+ * does, on the diagram theme's page color unless told otherwise. The caller
+ * has registered the diagram painters (`registerDiagramShape`,
+ * `registerMarkShape`) and the fonts the scene uses. Needs WebGL2.
+ */
+export function exportPagePng(scene: PageExportScene, page: PageRect, opts: ExportPagePngOptions): Promise<Blob> {
+  return exportScenePagePng(scene, page, { ...opts, background: pageBackground(scene, opts.background) });
+}
+
+/**
+ * Write each of `pages` of `scene` as a page of one PDF, as
+ * `@weasel-js/export`'s `exportPagesPdf` does, on the diagram theme's page
+ * color unless told otherwise. The caller has registered what the scene needs
+ * painting with, as for {@link exportPagePng}, including each font's outlines.
+ */
+export function exportPagesPdf(
+  scene: PageExportScene, pages: readonly PageRect[], opts: ExportPagesPdfOptions = {},
+): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
+  return exportScenePagesPdf(scene, pages, { ...opts, background: pageBackground(scene, opts.background) });
 }

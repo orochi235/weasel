@@ -358,13 +358,6 @@ Owner tags, after the priority (2026-10-26):
   taking a `RecordCache` opened before the scene is made (its reads are synchronous once open), with
   `localStorage` the default; whether entries stay JSON text or become structured-clone values is the call
   to make. Closes when an app can keep its session in IndexedDB through the editor's hooks (filed 2026-11-12).
-- **(P2) [recheck] Exporting a page as SVG, PNG or PDF lives only in `@weasel-js/diagram-formats`.**
-  `exportPageSvg`, `exportPagePng` and `exportPagesPdf` (`packages/diagram-formats/src/page*.ts`) read
-  nothing diagram-specific except the default background (the `diagram:theme` page color) and the diagram
-  painters `pageSvgNodes` consults, yet an editor of any other kind must install `@weasel-js/diagram` and
-  `@weasel-js/plot` to get them, or copy the walk from page rect through `planPixelRender` to `writePdf`.
-  draw has no PNG or PDF export. Closes when a page of any scene exports through a package
-  that does not depend on diagram, and diagram-formats builds its exports on it (filed 2026-11-12).
 - **(P2) [agent] A sync layer can hear a scene's ops but cannot apply them to another scene.**
   `scene.history.observe` reports each entry's ops as `{ name, args }` (`kit:add`, `kit:setPose`, and an
   inverse as `revert:<kind>`), but those are the scene's registered ops, which `rebuildOp`
