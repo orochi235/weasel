@@ -37,8 +37,10 @@ const SCHEMA = pref.group('Preferences', {
     ...LEAVES,
     heading: pref.label('A heading'),
     rule: pref.separator(),
-    alsoNumber: { kind: 'alias', name: 'Same number', description: '', of: 'all.number' },
+    alsoNumber: { kind: 'alias', name: 'Same number', description: '', default: undefined, of: 'all.number' },
     split: pref.number('A split number', 4, { min: 0, max: 10, scopes: [{ selector: 'all.enum' }] }),
+    latch: pref.action('', { name: 'A latch', label: 'Latch', run: () => {}, activeIf: { path: 'all.boolean' } }),
+    gated: pref.string('A gated string', '', { enableIf: { path: 'all.boolean' } }),
   }),
 });
 
@@ -131,5 +133,19 @@ describe('EditorPrefsDialog over a stored schema', () => {
     expect(again.get('all.split')).toBe(4);
     again.set('all.enum', 'two');
     expect(again.get('all.split')).toBe(8);
+  });
+
+  it('judges activeIf and enableIf against what a reopened store read', async () => {
+    const backing = new Map<string, unknown>();
+    dialog(opened(backing));
+    expect(screen.getByRole('button', { name: 'Latch' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('textbox', { name: 'A gated string' })).toBeDisabled();
+    cleanup();
+    const store = opened(backing);
+    store.set('all.boolean', true);
+    expect(await store.flush()).toBe(true);
+    dialog(opened(backing));
+    expect(screen.getByRole('button', { name: 'Latch' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('textbox', { name: 'A gated string' })).toBeEnabled();
   });
 });
