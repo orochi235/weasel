@@ -341,7 +341,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
             add(c, scaleBy(plane.normal, half)),
             sub(c, scaleBy(plane.normal, half)),
           ]),
-        );
+        )!;
         return {
           position: scaleBy(add(box.min, box.max), 0.5),
           rotation: quatIdentity(),
