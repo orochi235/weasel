@@ -5,9 +5,9 @@ import {
 import { useCallback, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { AppCommands } from './appCommands';
 import type { DrawScene } from './drawDocument';
-import { usePref } from './prefs';
+import { usePref, type DrawPrefValue } from './prefs';
 
-const SPECS: Record<string, Pick<SymmetrySpec, 'kind' | 'angle'>> = {
+const SPECS: Record<DrawPrefValue<'view.symmetryAxis'>, Pick<SymmetrySpec, 'kind' | 'angle'>> = {
   vertical: { kind: 'mirror', angle: VERTICAL_AXIS },
   horizontal: { kind: 'mirror', angle: HORIZONTAL_AXIS },
   both: { kind: 'both', angle: HORIZONTAL_AXIS },
@@ -36,7 +36,7 @@ function existingGroup(scene: DrawScene, ctrl: SymmetryController): NodeId | nul
 export function useSymmetry(scene: DrawScene, page: { id?: string; x?: number; y?: number; width: number; height: number }) {
   const [on, setOn] = usePref('view.symmetry');
   const [axisPref] = usePref('view.symmetryAxis');
-  const spec = SPECS[axisPref] ?? SPECS.vertical!;
+  const spec = SPECS[axisPref];
   const ctrl = useMemo(() => createSymmetry(scene as never), [scene]);
   const group = useRef<NodeId | null>(null);
 

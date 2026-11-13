@@ -4,11 +4,8 @@ import { useMemo, useReducer } from 'react';
 import { downloadBlob, pickFile, serializeReplacer } from '@weasel-js/editor';
 import { DRAW_LOAD_OPTIONS, reviveSnapshot } from '../persistence';
 import { drawPrefs } from '../prefs';
-import type { RecordingProfile } from '../recorder';
 import { recordingContribution } from './contribution';
 import { createRecordingSession, type RecordingHost } from './session';
-
-const PROFILES: readonly RecordingProfile[] = ['gesture-only', 'full', 'events-only'];
 
 /** The parts of the editor a recording's baseline covers. */
 export interface RecordingTarget {
@@ -47,7 +44,7 @@ export function useRecording(target: RecordingTarget): SurfaceContribution {
       view: () => live.current.view(),
       setView: (view) => live.current.setView(view),
     }),
-    profile: () => PROFILES.find((p) => p === drawPrefs().get('recording.profile')) ?? 'gesture-only',
+    profile: () => drawPrefs().get('recording.profile'),
     save: downloadBlob,
     pick: () => pickFile('.json,.gz,application/json,application/gzip'),
     changed: rerender,

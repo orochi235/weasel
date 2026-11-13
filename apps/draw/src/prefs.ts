@@ -10,6 +10,7 @@ import { INITIAL_FILL, INITIAL_STROKE } from './newShapePaint';
 import {
   flattenPrefValues,
   openPrefsSync,
+  pref,
   type PrefBase,
   type PrefEnumControl,
   type PrefGroup,
@@ -22,6 +23,7 @@ import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { pageLocalStorage } from '@weasel-js/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
+import type { RecordingProfile } from './recorder';
 import type { RegistryEnumFilter } from './registry/types';
 import { dropPathToolsChrome, fillRuleToToolOptions, panelsToSurfaces, pathAidsToGroup } from './surfaces/prefsMigration';
 import type { SurfacesValue } from './surfaces/types';
@@ -168,18 +170,14 @@ export const PREFS = {
           description: 'Draw into a symmetry group, whose mirrored copies follow every edit to what is drawn in it, and the anchors you drag on a path that is already its own mirror image. Drag the handles on the axis to move or turn it. Turning it off stops drawing into the group; what is in it stays mirrored.',
           default: false,
         },
-        symmetryAxis: {
-          kind: 'enum',
-          name: 'Symmetry axis',
+        symmetryAxis: pref.enum('Symmetry axis', 'vertical', [
+          { value: 'vertical', label: 'Vertical (left and right)' },
+          { value: 'horizontal', label: 'Horizontal (top and bottom)' },
+          { value: 'both', label: 'Both' },
+        ], {
           description: 'Which way the symmetry group mirrors: left and right, top and bottom, or into all four quarters.',
-          default: 'vertical',
-          options: [
-            { value: 'vertical', label: 'Vertical (left and right)' },
-            { value: 'horizontal', label: 'Horizontal (top and bottom)' },
-            { value: 'both', label: 'Both' },
-          ],
           enableIf: { path: 'view.symmetry', is: true },
-        },
+        }),
         spacingHints: {
           kind: 'boolean',
           name: 'Spacing hints',
@@ -235,33 +233,25 @@ export const PREFS = {
       name: 'Modes',
       description: 'Path edit, text edit, and the other modes you work inside.',
       children: {
-        undo: {
-          kind: 'enum',
-          name: 'Undo inside a mode',
+        undo: pref.enum('Undo inside a mode', 'mode', [
+          { value: 'mode', label: "The mode's own edits" },
+          { value: 'document', label: "The document's history" },
+        ], {
           description: "What Undo takes back while a mode such as path edit is open. The mode's own edits: Undo stops where the mode began, and leaving the mode puts its edits in the document's history as one step. The document's history: every edit is its own step there, and Undo can go on past where the mode began.",
-          default: 'mode',
-          options: [
-            { value: 'mode', label: "The mode's own edits" },
-            { value: 'document', label: "The document's history" },
-          ],
-        },
+        }),
       },
     },
     recording: {
       name: 'Input recording',
       description: 'The recorder behind Record and Play in the command bar.',
       children: {
-        profile: {
-          kind: 'enum',
-          name: 'Pointer movement kept',
+        profile: pref.enum<RecordingProfile>('Pointer movement kept', 'gesture-only', [
+          { value: 'gesture-only', label: 'During a gesture' },
+          { value: 'full', label: 'All of it' },
+          { value: 'events-only', label: 'None' },
+        ], {
           description: 'Which pointer moves a recording keeps. Presses, releases, wheel, and keys are always kept.',
-          default: 'gesture-only',
-          options: [
-            { value: 'gesture-only', label: 'During a gesture' },
-            { value: 'full', label: 'All of it' },
-            { value: 'events-only', label: 'None' },
-          ],
-        },
+        }),
       },
     },
     tools: {
