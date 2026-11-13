@@ -41,7 +41,7 @@ export {
 } from './anchorNudge';
 export { setAnchorFieldAction, type SetAnchorFieldParams } from './anchorFields';
 export {
-  retractHandlesAction, makeHandlesSymmetricAction, makeHandleCommand, type HandleEdit, type HandleScope,
+  retractHandlesAction, makeHandlesSymmetricAction, createHandleCommand, type HandleEdit, type HandleScope,
 } from './anchorHandles';
 export { averageAnchorsAction, joinAnchorsAction, joinSelectedAnchors } from './anchorJoin';
 export { editTargetOf } from './pathEditMarks';

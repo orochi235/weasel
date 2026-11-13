@@ -122,6 +122,13 @@ geom's `cubicBezierEasing` (via core). The scalar `Math.max(lo, Math.min(hi, v))
 scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
 and modes do no geometry at all.
 
+## Factories are `create…`
+
+A function that builds and returns a fresh object, store or descriptor is `create…`: `createDispatcher`,
+`createEmitter`, `createResizeAction`. A React hook that builds one for the life of a component is `use…`, and
+a pair keeps the same stem (`createGroupEntryContribution`, `useGroupEntryContribution`). `make…` names nothing
+public; an action named for what it does keeps its verb (`makeBooleanGroupAction` makes a boolean group).
+
 ## Stores notify through `createEmitter`
 
 A store keeps its subscribers in `createEmitter()` from `@weasel-js/registry`,

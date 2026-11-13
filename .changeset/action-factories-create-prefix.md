@@ -3,9 +3,9 @@
 '@weasel-js/routing': major
 ---
 
-The action factories that were spelled `make…Action` are `create…Action`, like `createResizeAction` and `createDeleteAction`.
+The action factories that were spelled `make…` are `create…`, like `createResizeAction` and `createDeleteAction`.
 
-`makeViewportZoomAction`, `makeViewportWheelPanAction` and `makePinchZoomAction` (core) and `makeToolOffhandAction` (routing) are renamed; their arguments are unchanged.
+`makeViewportZoomAction`, `makeViewportWheelPanAction`, `makePinchZoomAction` and `makeHandleCommand` (core) and `makeToolOffhandAction` (routing) are renamed; their arguments are unchanged.
 
 ```ts
 // before
