@@ -1,8 +1,6 @@
 /**
- * Back-compat wrapper around `LayeredCurveEditor` that preserves the
- * original single-curve API. New consumers wanting multi-layer
- * composition should reach for `LayeredCurveEditor` + `createFunctionLayer`
- * directly.
+ * The single-curve editor: a `LayeredCurveEditor` holding one function layer.
+ * Several curves on one plot take `LayeredCurveEditor` and `createFunctionLayer`.
  */
 import {
   useCallback, useMemo, useState,

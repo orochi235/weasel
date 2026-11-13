@@ -5,11 +5,8 @@
  */
 
 // ─── SceneCanvas: the top-level renderer ─────────────────────────────────────
-// `Canvas` is intentionally NOT exported — it is `@internal` / `@deprecated`
-// (bare `<Canvas>` is not a supported consumer surface). Internal consumers
-// import it directly from `./canvas/Canvas`. Its types (`CanvasProps`, slot
-// configs, etc.) remain exported below because they form part of SceneCanvas's
-// public surface.
+// `Canvas` is `@internal` and not exported. Its types (`CanvasProps`, slot
+// configs) are, because they are part of SceneCanvas's public surface.
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from '../canvas/SceneCanvas';
 export { CANVAS_CONTEXT_ATTRIBUTES } from '../canvas/contextAttributes';
 export { readCanvasPixels } from '../canvas/readCanvasPixels';

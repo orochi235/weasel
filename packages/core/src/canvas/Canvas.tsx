@@ -9,9 +9,7 @@
  * render at a canonical position; custom entries (any other key, value carrying `.layer`) insert
  * at `after`/`before` an existing slot, defaulting to the top.
  *
- * @internal
- * @deprecated Bare `<Canvas>` is not a supported consumer surface.
- *   Use `<SceneCanvas>` instead.
+ * @internal Not a consumer surface; consumers mount `<SceneCanvas>`.
  */
 
 import { forwardRef, useCallback, useEffect, useInsertionEffect, useLayoutEffect, useRef } from 'react';
