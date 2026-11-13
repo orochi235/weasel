@@ -27,6 +27,44 @@ const nodeAtPoint = createNodeAtPoint(world);
 const poseDescriptor = createPoseDescriptor(world);
 ```
 
+## On a `<SceneCanvas>`
+
+The deps go where the canvas reads them: `poseDescriptor` and `geometry.pickEvery` as props, and the
+camera, the insert and the snap as one ambient entry's deps. `features={['pick', 'move']}` turns on
+the select tool's click and drag; the layers are yours to draw.
+
+```tsx
+const insert = createInsert({
+  world,
+  // The dep mints the id and commits the node as one undo step.
+  node: ({ center, width, depth }) => ({ data: { color: 'tan' }, pose: pose3({ ...center, y: 0.5 }, { x: width, y: 1, z: depth }) }),
+});
+const rig: SurfaceContribution = {
+  id: 'rig',
+  eligibility: { always: true },
+  actions: [orbitAction, panAction, dollyAction],
+  deps: {
+    camera3d: () => ({ get: () => cameraRef.current, set: setCamera, size: () => size }),
+    insert: () => insert,
+    snap: () => createSnap(world, { sources: [groundGridSource({ world, step: 1 })] }),
+  },
+};
+
+<SceneCanvas
+  scene={scene}
+  features={['pick', 'move']}
+  tools={{ orbit: useOrbitTool(), box }} // `box` binds a drag to `insert`
+  ambient={[rig]}
+  poseDescriptor={createPoseDescriptor(world)}
+  geometry={{ pickEvery: createPickEvery(world) }}
+  layers={{ scene: { drawOne: () => [] }, solids: { layer: mySolidsLayer, before: 'scene' } }}
+/>
+```
+
+A world with another up (`up: { x: 0, y: 0, z: 1 }`) passes it to everything that places the
+camera: `World3d.up`, `Camera3dDep.up`, and `cameraViewProjection`, `cameraEye` and `projectPoint` in
+the renderer.
+
 ## What core did not have to change
 
 `Scene` is generic over its pose and holds a `Pose3` — position, quaternion,
