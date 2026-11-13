@@ -1,9 +1,9 @@
 import type { FeaturePreset } from '@weasel-js/core';
 import { gridSnapSource, type GridSnapSourceOptions } from '../sources/grid';
-import { createGridLayer, type GridLayerOpts } from './layer';
+import { createGridLayer, type GridLayerOptions } from './layer';
 
 /** Options for `createGridPreset`: the grid's, and how it snaps. */
-export interface GridPresetOptions extends GridLayerOpts {
+export interface GridPresetOptions extends GridLayerOptions {
   /** Preset id. Default `'grid'`. */
   id?: string;
   /** Snap gestures to the grid's lines, on its `spacing`, `unitSystem` and

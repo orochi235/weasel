@@ -35,7 +35,7 @@ export type { CarrySource } from 'core/scene/carryDescendants';
 export { nestedHitTester } from 'core/scene/nestedHit';
 export { unionOfChildrenVia } from 'core/scene/unionOfChildren';
 export type {
-  NestedHitOpts,
+  NestedHitOptions,
   NestedHitTester,
 } from 'core/scene/nestedHit';
 

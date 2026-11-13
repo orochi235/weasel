@@ -134,7 +134,7 @@ export interface ViewPoseAdapter<TPose> {
   getNode?(id: string): { layer?: string } | undefined;
 }
 
-export interface UseViewHelpersOpts<TPose> {
+export interface UseViewHelpersOptions<TPose> {
   adapter: ViewPoseAdapter<TPose> | undefined;
   geometry: PoseDescriptor<TPose>;
   /** Consumer-supplied bounds resolver. Falls back to the adapter's pose. */
@@ -177,7 +177,7 @@ export function worldPoseOf<TPose>(adapter: ViewPoseAdapter<TPose>, id: string):
  * calling this once.
  */
 export function useViewHelpers<TPose>(
-  opts: UseViewHelpersOpts<TPose>,
+  opts: UseViewHelpersOptions<TPose>,
 ): ViewHelpersBundle<TPose> {
   const {
     adapter, geometry, boundsOf, boundsOfPose, nodes, getScale, selection, gestureSource,

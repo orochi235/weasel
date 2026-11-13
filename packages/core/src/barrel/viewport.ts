@@ -12,7 +12,7 @@ export * from '../domains/viewports';
 export {
   deriveParallaxView, planeMap, toPlane, fromPlane, rectToPlane, rectFromPlane, planeToPlane, planeMatrix,
 } from '../core/viewport/parallax';
-export type { ParallaxOpts, ScalarOrXY, PlaneMap } from '../core/viewport/parallax';
+export type { ParallaxOptions, ScalarOrXY, PlaneMap } from '../core/viewport/parallax';
 export {
   createSimulation,
   DEFAULT_ALPHA_DECAY,
@@ -92,7 +92,7 @@ export { clampView } from '../core/viewport/clampView';
 export { viewportWorldRect } from '../core/viewport/viewportWorldRect';
 export type { ClampBounds, CanvasSize } from '../core/viewport/clampView';
 export { sceneNodeClientRect } from '../core/viewport/sceneNodeClientRect';
-export type { SceneNodeClientRectOpts, NodeClientRect } from '../core/viewport/sceneNodeClientRect';
+export type { SceneNodeClientRectOptions, NodeClientRect } from '../core/viewport/sceneNodeClientRect';
 export * from '../core/viewport/useAutoCenter';
 
 // ─── Scheduling: the visibility gate every weasel frame loop runs behind ────

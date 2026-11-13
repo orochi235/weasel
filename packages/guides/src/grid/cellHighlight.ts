@@ -10,7 +10,7 @@ import { hasArea, intersect } from './lattice';
 import type { GridCell } from './pointToGridCell';
 
 /** Options for `createCellHighlightLayer`. */
-export interface CellHighlightLayerOpts {
+export interface CellHighlightLayerOptions {
   /** Cell to highlight, or `null` to skip drawing: its `box`, in its
    *  `frame` where it has one (`pointToGridCell`, `useGridCellHover`). */
   getCell: () => GridCell | null;
@@ -21,7 +21,7 @@ export interface CellHighlightLayerOpts {
 const DEFAULT_FILL: CommandFill = { paint: { kind: 'solid', color: 'rgba(127,176,105,0.15)' } };
 
 /** Build a `RenderLayer` that fills a single grid cell — typically a snap-target preview. */
-export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLayer<unknown> {
+export function createCellHighlightLayer(opts: CellHighlightLayerOptions): RenderLayer<unknown> {
   const fill = opts.fill ?? DEFAULT_FILL;
   return {
     id: 'cell-highlight',

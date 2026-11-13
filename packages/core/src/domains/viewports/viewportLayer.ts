@@ -26,7 +26,7 @@ import type { ResolvableView } from './viewResolver';
  * draw in the viewport's own CSS-pixel space: their coords are relative to
  * the rect's top-left, and they clip to it, rather than to the outer canvas.
  */
-export interface CreateViewportLayerOpts<TData, TSource = TData> {
+export interface CreateViewportLayerOptions<TData, TSource = TData> {
   id: string;
   label: string;
   /** Layers re-rendered through `view`. Each receives `(data, view, dims)`
@@ -81,7 +81,7 @@ export interface ViewportLayer<TData> extends RenderLayer<TData> {
 /** Build a layer that renders other layers through a second view, inside a
  *  sub-region of the canvas — a minimap, an inset, a magnifier. */
 export function createViewportLayer<TData, TSource = TData>(
-  opts: CreateViewportLayerOpts<TData, TSource>,
+  opts: CreateViewportLayerOptions<TData, TSource>,
 ): ViewportLayer<TData> {
   const { id, label, source, view, bounds, clip: clipAt, background, data: sourceData } = opts;
   const fixedView = typeof view === 'function' ? null : normalizeView(view);

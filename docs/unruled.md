@@ -1893,3 +1893,14 @@ Calls the lanes made without a ruling:
   snapshot of the same instrument into any trial. So a snapshot cannot be loaded into a clone to compare it with
   the trial that saved it, and a lab wanting presets shared across trials lists `useLabContext().savedSnapshots`
   itself. Whether the menu offers every snapshot of the instrument, groups them by trial, or stays per trial.
+
+## Audit round twenty-one (2026-11-12): core's canvas and scene surface
+
+- 2026-11-12: Options bags are named `*Options` (now in `docs/conventions.md`), and 19 `*Opts` types in
+  core, guides and parallax were renamed to it: the layer factories', `ParallaxOpts`, `NestedHitOpts`,
+  `SceneNodeClientRectOpts`, `CreateViewResolverOpts`, `ComposeSelectionPoseOpts`, `UseViewHelpersOpts`.
+- Open: the rest of the `*Opts` types sit in other lanes' code and were left for them: routing's
+  `BindingOpts` and core's `ToolActivateKeyOpts`; core's viewport input `WheelPanOpts` and `ZoomClampOpts`
+  (and `WheelPanOpts` beside an unrelated `WheelPanOptions` in `viewportWheelPan.ts`, which wants one name
+  each); text's `LayoutRunsOpts`, `PaintRunsOpts`, `TextLineBoxesOpts`, `PointInTextPoseOpts` and
+  `MeasureTextBoundsOpts`; renderer's `TilePatternOpts`; ui's `GradientTrackOpts`.

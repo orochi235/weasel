@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import { buildDebugOverlayCommands, createDebugOverlayLayer } from './createDebugOverlayLayer';
 import { createDebugSink } from './createDebugSink';
-import type { CreateDebugOverlayLayerOpts } from './index';
+import type { CreateDebugOverlayLayerOptions } from './index';
 
 const DIMS = { width: 800, height: 600, dpr: 1 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 describe('createDebugOverlayLayer', () => {
   it('is registered as a screen-space layer', () => {
-    const opts: CreateDebugOverlayLayerOpts = {
+    const opts: CreateDebugOverlayLayerOptions = {
       sink: createDebugSink({ bounds: true }),
       config: { bounds: true },
     };

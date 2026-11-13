@@ -176,7 +176,7 @@ export {
   type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery,
 } from '@weasel-js/geom';
 export { pathSnapGlyph, PATH_SNAP_LABELS } from './pathSnap/glyphs';
-export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
+export { createPathLayer, type CreatePathLayerOptions } from './pathLayer';
 export { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 export { pathOriginProjection } from './originProjection';
 export {

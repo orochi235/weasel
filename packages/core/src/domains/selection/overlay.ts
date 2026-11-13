@@ -34,7 +34,7 @@ import {
 
 export type { SelectionHandleStyle };
 
-export { composeSelectionPose, type ComposeSelectionPoseOpts } from './selectionPose';
+export { composeSelectionPose, type ComposeSelectionPoseOptions } from './selectionPose';
 
 /** Project world AABB into screen-space AABB using the active view. */
 function projectBounds<B extends Bounds>(b: B, view: View): B {
@@ -45,7 +45,7 @@ function projectBounds<B extends Bounds>(b: B, view: View): B {
 }
 
 /** Options every selection layer shares. `getSelection` and `getPose` are
- *  declared on {@link SelectionOverlayLayerOpts}, which makes both optional —
+ *  declared on {@link SelectionOverlayLayerOptions}, which makes both optional —
  *  omitted, they come off the draw envelope. */
 interface SelectionLayerCommon<TPose> {
   /** How to read poses. Default `AUTO_POSE_DESCRIPTOR`. */
@@ -64,16 +64,16 @@ interface SelectionLayerCommon<TPose> {
 
 /** Options for `createSelectionOutlineLayer`. The overlay layer's options
  *  minus the handle visuals — the two run the same body. */
-export type SelectionOutlineLayerOpts<TPose> =
-  Omit<SelectionOverlayLayerOpts<TPose>, 'handles' | 'handlesOf' | 'resizeHandles' | 'rotationHandle'>;
+export type SelectionOutlineLayerOptions<TPose> =
+  Omit<SelectionOverlayLayerOptions<TPose>, 'handles' | 'handlesOf' | 'resizeHandles' | 'rotationHandle'>;
 
 /** Options for `createSelectionHandlesLayer`. The overlay layer's options
  *  minus the outline stroke — the two run the same body. */
-export type SelectionHandlesLayerOpts<TPose> =
-  Omit<SelectionOverlayLayerOpts<TPose>, 'outline'>;
+export type SelectionHandlesLayerOptions<TPose> =
+  Omit<SelectionOverlayLayerOptions<TPose>, 'outline'>;
 
 /** Options for `createSelectionOverlayLayer`. */
-export interface SelectionOverlayLayerOpts<TPose>
+export interface SelectionOverlayLayerOptions<TPose>
   extends SelectionLayerCommon<TPose> {
   /**
    * Which ids to draw chrome for. Omit to take them from the `ChromeState` on
@@ -240,7 +240,7 @@ interface SelectionPasses {
 }
 
 function buildSelectionLayer<TPose>(
-  opts: SelectionOverlayLayerOpts<TPose>,
+  opts: SelectionOverlayLayerOptions<TPose>,
   passes: SelectionPasses,
 ): RenderLayer<unknown> {
   const { stroke, pad } = resolveOutlineStroke(opts.outline);
@@ -336,7 +336,7 @@ function buildSelectionLayer<TPose>(
  *  pixels, or `null` when it paints none. The badge's grab region and its
  *  slops halo read this too, so all three agree on it. */
 export function rotationBadgeOf(
-  opts: Pick<SelectionOverlayLayerOpts<unknown>, 'handles' | 'rotationHandle'>,
+  opts: Pick<SelectionOverlayLayerOptions<unknown>, 'handles' | 'rotationHandle'>,
 ): { distancePx: number; sizePx: number } | null {
   const r = opts.rotationHandle;
   if (!r || opts.handles === false) return null;
@@ -351,7 +351,7 @@ export function rotationBadgeOf(
  * runs both passes in one layer) when both are wanted.
  */
 export function createSelectionOutlineLayer<TPose>(
-  opts: SelectionOutlineLayerOpts<TPose>,
+  opts: SelectionOutlineLayerOptions<TPose>,
 ): RenderLayer<unknown> {
   return buildSelectionLayer(opts, {
     id: 'selection-outline',
@@ -366,7 +366,7 @@ export function createSelectionOutlineLayer<TPose>(
  * `createSelectionOutlineLayer` (handles render on top of the outline).
  */
 export function createSelectionHandlesLayer<TPose>(
-  opts: SelectionHandlesLayerOpts<TPose>,
+  opts: SelectionHandlesLayerOptions<TPose>,
 ): RenderLayer<unknown> {
   return buildSelectionLayer(opts, {
     id: 'selection-handles',
@@ -382,7 +382,7 @@ export function createSelectionHandlesLayer<TPose>(
  * all three run the same body. Pass `handles: false` to render outlines only.
  */
 export function createSelectionOverlayLayer<TPose>(
-  opts: SelectionOverlayLayerOpts<TPose>,
+  opts: SelectionOverlayLayerOptions<TPose>,
 ): RenderLayer<unknown> {
   return buildSelectionLayer(opts, {
     id: 'selection-overlay',

@@ -1,4 +1,4 @@
-import type { ParallaxOpts } from '../viewport/parallax';
+import type { ParallaxOptions } from '../viewport/parallax';
 
 interface LayerRecordBase<TLayer extends string> {
   id: TLayer;
@@ -7,7 +7,7 @@ interface LayerRecordBase<TLayer extends string> {
   /** Draw this layer as a parallax plane: through a view derived from the
    *  camera's (see `deriveParallaxView`), and picked through the same one.
    *  Absent means the layer moves with the camera. */
-  parallax?: ParallaxOpts;
+  parallax?: ParallaxOptions;
   /** A non-printing layer of aids — measurements, notes — rather than content.
    *  Its nodes draw on the canvas and save with the scene, but export leaves
    *  them out and content picking passes through them. Read it through
@@ -42,7 +42,7 @@ export interface SystemLayerSpec<TLayer extends string> {
   visible?: boolean;
   locked?: boolean;
   /** See `LayerRecord.parallax`. */
-  parallax?: ParallaxOpts;
+  parallax?: ParallaxOptions;
   /** See `LayerRecord.annotation`. */
   annotation?: boolean;
 }
@@ -57,7 +57,7 @@ export interface AddLayerSpec<TLayer extends string> {
   /** Default `false`. */
   locked?: boolean;
   /** See `LayerRecord.parallax`. */
-  parallax?: ParallaxOpts;
+  parallax?: ParallaxOptions;
   /** See `LayerRecord.annotation`. */
   annotation?: boolean;
   /** Render-stack position. Default: top of stack (highest render index). */

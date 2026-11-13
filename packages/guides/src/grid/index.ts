@@ -5,9 +5,9 @@ export type {
   UseGridCellHoverReturn,
 } from './useGridCellHover';
 export { createGridLayer } from './layer';
-export type { GridLayerOpts } from './layer';
+export type { GridLayerOptions } from './layer';
 export { createCellHighlightLayer } from './cellHighlight';
-export type { CellHighlightLayerOpts } from './cellHighlight';
+export type { CellHighlightLayerOptions } from './cellHighlight';
 export { pointToGridCell, type GridCell, type GridScoping } from './pointToGridCell';
 export { sceneGridRegions, gridOwner, regionAt, type GridOwners, type GridRegion } from './regions';
 export { gridLines, containerLines, type GridScopes } from './reading';

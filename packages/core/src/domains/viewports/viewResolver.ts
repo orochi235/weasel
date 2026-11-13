@@ -66,7 +66,7 @@ export interface ViewResolver {
  * Options for `createViewResolver`. Each field is a function called afresh on
  * every query, so views and the canvas may move between events.
  */
-export interface CreateViewResolverOpts {
+export interface CreateViewResolverOptions {
   /** Candidate views in paint order — the last one containing a point wins,
    *  so a nested view listed after the one around it is the one a point
    *  inside both reaches. */
@@ -84,7 +84,7 @@ export interface CreateViewResolverOpts {
 }
 
 /** Build a `ViewResolver` over `opts.views`, falling back to `opts.root`. */
-export function createViewResolver(opts: CreateViewResolverOpts): ViewResolver {
+export function createViewResolver(opts: CreateViewResolverOptions): ViewResolver {
   const { views, root, toLocal, occluded } = opts;
   const pinned = new Map<number, string | null>();
 

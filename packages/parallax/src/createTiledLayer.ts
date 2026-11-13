@@ -14,7 +14,7 @@ export type TilePeriod = number | { x?: number; y?: number };
 export type TileBleed = number | { x?: number; y?: number };
 
 /** Options for {@link createTiledLayer}. */
-export interface CreateTiledLayerOpts<TData> {
+export interface CreateTiledLayerOptions<TData> {
   id: string;
   label: string;
   /** Layers redrawn once per visible copy. */
@@ -77,7 +77,7 @@ function translate(tx: number, ty: number): Float64Array {
  * it draws nothing.
  */
 export function createTiledLayer<TData>(
-  opts: CreateTiledLayerOpts<TData>,
+  opts: CreateTiledLayerOptions<TData>,
 ): RenderLayer<TData> {
   const { id, label, source, period, bleed } = opts;
   return {

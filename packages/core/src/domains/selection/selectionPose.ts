@@ -60,7 +60,7 @@ function boxReader<TPose>(
 }
 
 /** Options for `composeSelectionPose`. */
-export interface ComposeSelectionPoseOpts<TPose> {
+export interface ComposeSelectionPoseOptions<TPose> {
   /** Move overlay; when present its `poses` map wins over everything else. */
   moveOverlay?: { poses: Map<string, TPose> } | null;
   /**
@@ -99,7 +99,7 @@ export interface ComposeSelectionPoseOpts<TPose> {
  * precedence rules). Containers with no leaves resolve to `null`.
  */
 export function composeSelectionPose<TPose>(
-  opts: ComposeSelectionPoseOpts<TPose>,
+  opts: ComposeSelectionPoseOptions<TPose>,
 ): (id: string) => TPose | null {
   const { moveOverlay, resizeOverlay, getStoredPose, getChildren, isContainer } = opts;
   const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;

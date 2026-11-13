@@ -116,7 +116,7 @@ export { fitViewToBounds, hasExtent } from '../core/viewport/fitViewToBounds';
 export type { FitViewToBoundsOptions, ViewportDims } from '../core/viewport/fitViewToBounds';
 export { interpolateView } from '../core/viewport/interpolateView';
 export { deriveParallaxView, fromPlane, planeMap, planeMatrix, planeToPlane, rectFromPlane, rectToPlane, toPlane } from '../core/viewport/parallax';
-export type { ParallaxOpts, PlaneMap, ScalarOrXY } from '../core/viewport/parallax';
+export type { ParallaxOptions, PlaneMap, ScalarOrXY } from '../core/viewport/parallax';
 export { useDecayLoop } from '../core/viewport/useDecayLoop';
 export type { DecayLoopConfig, InertiaConfig, InertiaConfig as HandToolInertiaConfig, PanBounds } from '../core/viewport/useDecayLoop';
 export { VIEW_ANIMATION_KEY, useViewAnimation, useViewAnimationOn, viewAxes } from '../core/viewport/useViewAnimation';

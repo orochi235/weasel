@@ -122,6 +122,14 @@ geom's `cubicBezierEasing` (via core). The scalar `Math.max(lo, Math.min(hi, v))
 scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
 and modes do no geometry at all.
 
+## An options bag is named `*Options`
+
+The type of a function's or a factory's trailing settings object ends in
+`Options` (`CreatePathLayerOptions`, `PageEditOptions`), never `Opts`,
+`Config` or `Params`. A type that is not a settings bag — a `Spec` a node or
+layer is built from, a `Props` a component takes, an op's `Args` — keeps its
+own suffix.
+
 ## Stores notify through `createEmitter`
 
 A store keeps its subscribers in `createEmitter()` from `@weasel-js/registry`,

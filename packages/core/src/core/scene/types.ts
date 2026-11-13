@@ -1,6 +1,6 @@
 import type { History, SerializedHistory } from '@weasel-js/history';
 import type { SerializedSceneHistory } from './historyForm';
-import type { ParallaxOpts } from '../viewport/parallax';
+import type { ParallaxOptions } from '../viewport/parallax';
 import type { UnitScope } from '@weasel-js/quantity';
 import type { LayoutStrategy } from '../../layout/types';
 import type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from './layerTypes';
@@ -355,7 +355,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   /** Set or clear (`undefined`) a layer's parallax — see
    *  `LayerRecord.parallax`. Undoable; an animation tweening it writes inside
    *  {@link Scene.untracked} so no frame becomes an undo step. */
-  setLayerParallax(layer: TLayer, parallax: ParallaxOpts | undefined): void;
+  setLayerParallax(layer: TLayer, parallax: ParallaxOptions | undefined): void;
   /** Whether `id` is locked: it or an ancestor carries `locked`, or sits on a
    *  locked layer. A lock covers its whole subtree, whatever layers the
    *  descendants are tagged to. An id not in the scene is not locked. */

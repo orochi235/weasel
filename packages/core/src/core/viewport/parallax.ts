@@ -10,7 +10,7 @@ export type ScalarOrXY = number | { x: number; y: number };
  *  screen), `zoom` the same for scale, and `anchor` the camera position
  *  (`view.x` / `view.y`) the translation is measured from — every plane lines
  *  up when the camera sits there. */
-export interface ParallaxOpts {
+export interface ParallaxOptions {
   pan: ScalarOrXY;
   zoom?: ScalarOrXY;
   anchor?: { x: number; y: number };
@@ -32,7 +32,7 @@ function asXY(v: ScalarOrXY): { x: number; y: number } {
  *
  * Identity holds: `pan=1, zoom=1` returns a view equal to `outer`.
  */
-export function deriveParallaxView(outer: View, opts: ParallaxOpts): View {
+export function deriveParallaxView(outer: View, opts: ParallaxOptions): View {
   const p = asXY(opts.pan);
   const z = asXY(opts.zoom ?? 1);
   const a = opts.anchor ?? { x: 0, y: 0 };
@@ -67,7 +67,7 @@ export interface PlaneMap {
 /** The map from `outer`'s world into the world of a plane drawn through
  *  `deriveParallaxView(outer, opts)` — the one that puts both points under the
  *  same pixel. */
-export function planeMap(outer: View, opts: ParallaxOpts): PlaneMap {
+export function planeMap(outer: View, opts: ParallaxOptions): PlaneMap {
   const inner = deriveParallaxView(outer, opts);
   const kx = outer.scale.x / inner.scale.x;
   const ky = outer.scale.y / inner.scale.y;

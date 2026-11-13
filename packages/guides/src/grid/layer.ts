@@ -24,7 +24,7 @@ import type { GridRegion } from './regions';
 import { containerLines, gridLines, type GridScopes } from './reading';
 
 /** Options for `createGridLayer`. */
-export interface GridLayerOpts {
+export interface GridLayerOptions {
   /**
    * The grid's lines: a pitch for both axes, or a rule per axis (`{ x, y }`,
    * see `GridAxis`), an axis left out drawing none. Lengths are a bare
@@ -78,7 +78,7 @@ const DEFAULT_SUB: CommandStroke = {
 };
 
 /** Build a `RenderLayer` that draws a world-space grid with optional accent lines and subdivisions. */
-export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
+export function createGridLayer(opts: GridLayerOptions): RenderLayer<unknown> {
   const styles: LatticeStyles = {
     line: opts.style?.line ?? DEFAULT_LINE,
     accent: opts.style?.accent ?? DEFAULT_ACCENT,

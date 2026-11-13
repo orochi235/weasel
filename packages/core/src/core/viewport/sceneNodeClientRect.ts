@@ -5,7 +5,7 @@ import { worldToScreen } from './viewTransform';
 import { canvasToClient } from '@weasel-js/routing';
 
 /** Options for {@link sceneNodeClientRect}. */
-export interface SceneNodeClientRectOpts {
+export interface SceneNodeClientRectOptions {
   /** Node (or container) id to locate. */
   id: string;
   /**
@@ -35,7 +35,7 @@ export interface NodeClientRect {
  * semantics: the rect is where the node is *now* — it does not track
  * subsequent pan/zoom or scene mutations.
  */
-export function sceneNodeClientRect(opts: SceneNodeClientRectOpts): NodeClientRect | null {
+export function sceneNodeClientRect(opts: SceneNodeClientRectOptions): NodeClientRect | null {
   const bounds = opts.getWorldBounds(opts.id);
   if (bounds === null) return null;
   const t = viewToTransform(opts.view);

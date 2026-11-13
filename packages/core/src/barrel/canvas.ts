@@ -157,7 +157,7 @@ export type { WorkspaceTintLayerOptions } from '../domains/modes/modeLayers';
 export { modeTriggers } from '../domains/modes/modeTriggers';
 export type { ModeTriggerHandlers } from '../domains/modes/modeTriggers';
 export { createChildrenLayer } from '../core/layers/children';
-export type { CreateChildrenLayerOpts } from '../core/layers/children';
+export type { CreateChildrenLayerOptions } from '../core/layers/children';
 
 // ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
 export * from '../debug';

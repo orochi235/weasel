@@ -7,7 +7,7 @@ import { annotationLayerIds } from 'core/scene/annotation';
 import { nodeGates } from 'core/scene/nodeGates';
 import { composesFrames } from 'core/scene/composeFrame';
 import { isDocument } from 'core/scene/documentOf';
-import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
+import { planeMap, type ParallaxOptions, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { derivedFramePose, resolveDerivedPath, scenePaintedPoseOf } from './derivedPath';
@@ -153,7 +153,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
 /** Each parallax layer's plane map under `camera`, or null when no layer is a
  *  plane — which keeps the per-layer lookup off the walk entirely. */
 export function scenePlaneOf(
-  layers: readonly { id: string; parallax?: ParallaxOpts }[] | undefined,
+  layers: readonly { id: string; parallax?: ParallaxOptions }[] | undefined,
   camera: View,
 ): ((layer: string) => PlaneMap | null) | null {
   let maps: Map<string, PlaneMap> | null = null;

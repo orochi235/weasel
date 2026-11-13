@@ -27,7 +27,7 @@ import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import {
   deriveParallaxView, fromPlane, planeMap, planeToPlane, rectFromPlane, rectToPlane, toPlane,
-  type ParallaxOpts, type PlaneMap,
+  type ParallaxOptions, type PlaneMap,
 } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -154,8 +154,8 @@ function livePlane(
   const viewApi = bag.view as ViewApi | undefined;
   if (layer === undefined || !scene || !viewApi) return null;
   if (!scene.layers.some((l) => l.parallax !== undefined)) return null;
-  const parallaxOf = (id: string): ParallaxOpts | undefined => scene.layers.find((l) => l.id === id)?.parallax;
-  const parallax = (): ParallaxOpts | undefined => parallaxOf(layer);
+  const parallaxOf = (id: string): ParallaxOptions | undefined => scene.layers.find((l) => l.id === id)?.parallax;
+  const parallax = (): ParallaxOptions | undefined => parallaxOf(layer);
 
   const IDENTITY: PlaneMap = { scale: { x: 1, y: 1 }, offset: { x: 0, y: 0 } };
   const map = (): PlaneMap => {
