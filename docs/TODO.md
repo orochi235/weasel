@@ -38,6 +38,15 @@ Owner tags, after the priority (2026-10-26):
   way `useSceneTextEdit` measures its overlay box) or portaled out, and either changes how it clips and stacks
   against the page. Closes when the tag sits beside the pointer on a canvas inside `transform: scale(0.5)`.
 
+- **(P3) [agent] A 3D snap stores a coordinate a few ulps off where it snapped.** kernel3d's snap session
+  resolves an exact world delta, then hands the move or insert back a screen point (`SnapOutcome.point`),
+  which `PoseDescriptor.translate` and `createInsert` cast onto the plane again: a box snapped to a
+  ground-grid line at y = 0.5 is stored at 0.4999999999999929 (measured 2026-11-12, audit round 20). Not
+  fixed in the pass: the exact delta has no way through core's move and insert actions, whose outcome and
+  `translate(pose, dx, dy)` are 2D points, so the fix is a core contract that carries a host's own snapped
+  position (or delta) from the session to the commit. Closes when a ground-grid snap in kernel3d stores
+  `k * step` exactly.
+
 - **(P2) [agent] A key pressed right after a click acts before the click's selection lands.** Measured in
   collego (2026-11-10): its `watch.spec` clicks a node and presses Backspace at once. On 1.17.3 the node was
   deleted; on 1.18.2 nothing is deleted, though the node shows as selected within 100 ms. The selection comes
