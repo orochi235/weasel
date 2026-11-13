@@ -677,12 +677,6 @@ only story runner in the repo.
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or
   on 2027-01-01 with none, delete it.
-- **(P3) [agent] Batched pattern fills may lose tile precision far from the origin.** Read from the code, not
-  run: `draw/patternBatch.ts` stores tile coordinates per vertex as float32 without taking whole tiles out
-  first, where the unbatched `bindPattern` does (audit round eleven, 2026-11-09). It would show around 1e7 world
-  units. Needs a GPU to confirm. Closes when a batched pattern at 1e7 draws the same tile as an unbatched one, in
-  a browser test.
-
 (WebGL1 fallback explicitly rejected — WebGL2 only.)
 
 ---
