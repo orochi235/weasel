@@ -2531,6 +2531,7 @@
     "toPlane": "function",
     "toRoot": "function",
     "toRuns": "function",
+    "toolGaps": "function",
     "toolIdsOf": "function",
     "toolOptionActionIds": "function",
     "toolOptionLeaf": "function",

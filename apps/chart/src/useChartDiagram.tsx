@@ -2,11 +2,11 @@ import {
   useDepSource, useTransformFollower, type Contribution, type SelectionApi, type SurfaceContribution, type Tool,
 } from '@weasel-js/core';
 import {
-  CONNECTOR_TOOL_ID, STENCIL_GROUPS, bodyFollower, diagramSequence, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
+  STENCIL_GROUPS, bodyFollower, diagramSequence, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
   diagramLabelDrag, diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding,
-  registerDiagramShape, roleStyle, sceneParticipants, stencilKind, stencilTool, themeFont,
-  themeLabelStyle, useAvoidRouting, useFaceRemeasure, useHops, useLabelPlacement, rendererMeasure, useConnectorTool, useOffPageMarkers,
-  useSequenceTools, useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
+  registerDiagramShape, roleStyle, sceneParticipants, themeFont,
+  themeLabelStyle, useAvoidRouting, useFaceRemeasure, useHops, useLabelPlacement, rendererMeasure, useDiagramTools, useOffPageMarkers,
+  useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useAutoLayoutCommand } from './autoLayout';
@@ -32,12 +32,14 @@ const OFF_PAGE = diagramOffPage({ padding: PAGE_FIT_PADDING });
 /** Labels sized by the renderer's own text metrics, as stencil rows are, and everything measured again when a face lands. */
 const LABEL_PLACEMENT = { measure: rendererMeasure };
 
+/** The sequence tools' parts, sized by the renderer's own text metrics. */
+const SEQUENCE = { measure: rendererMeasure };
+
 /** Every shipped group's stencils, so a chart showing any group can draw it. */
 const ALL_STENCILS = Object.values(STENCIL_GROUPS).flatMap((g) => g.stencils);
 const SHAPE_STENCILS = ALL_STENCILS.filter((s): s is DiagramStencil => !isContainerStencil(s));
 const CONTAINER_STENCILS = ALL_STENCILS.filter(isContainerStencil);
 
-const STENCIL_TOOLS: Record<string, Tool> = Object.fromEntries(ALL_STENCILS.map((s) => [stencilKind(s.id), stencilTool(s)]));
 
 export interface ChartDiagram {
   /** The entries' layers register in this order: the last is hit first. */
@@ -72,18 +74,18 @@ export function useChartDiagram(
   const route = useMemo(() => diagramWaypoints<ChartPose>({ selected, participants }), [selected, participants]);
   const containers = useMemo(() => diagramContainers({ scene: scene as never, selected }), [scene, selected]);
   const labelDrag = useMemo(() => diagramLabelDrag({ scene: scene as never, selected }), [scene, selected]);
-  const connector = useConnectorTool<ChartPose>({ participants, router, edgeStroke });
   const label = useMemo(() => edgeLabel(theme), [theme]);
   const drop = useMemo(() => stencilDrop(participants), [participants]);
   const sequenceEdit = useMemo(() => diagramSequence({ scene: scene as never, measure: rendererMeasure }), [scene]);
-  const sequenceTools = useSequenceTools({ measure: rendererMeasure });
+  const connector = useMemo(() => ({ participants, router, edgeStroke }), [participants, router, edgeStroke]);
+  const tools = useDiagramTools<ChartPose>({ connector, stencils: ALL_STENCILS, sequence: SEQUENCE });
   useOffPageMarkers<ChartPose>(scene as never, { theme: CHART_DEFAULT_THEME });
   return useMemo(() => ({
     // Edge ends after ports and routes: an edge's end sits on a port and beside a route handle, and a press on it must start
     // neither. A sequence's parts last: nothing else takes a press on them.
     ambient: [containers, labelDrag, ports, route, ends, label, OFF_PAGE, drop, sequenceEdit],
-    tools: { [CONNECTOR_TOOL_ID]: connector, ...STENCIL_TOOLS, ...sequenceTools },
-  }), [containers, labelDrag, ports, route, ends, connector, label, drop, sequenceEdit, sequenceTools]);
+    tools,
+  }), [containers, labelDrag, ports, route, ends, label, drop, sequenceEdit, tools]);
 }
 
 /**

@@ -55,6 +55,9 @@ export { CONNECTOR_ACTION_ID, CONNECTOR_TOOL_ID, connectorTool, useConnectorTool
 export { FLOWCHART_STENCILS, stencilBuild, stencilIdOf, stencilKind } from './stencil';
 export type { DiagramStencil } from './stencil';
 export { stencilTool, useStencilInsert, useStencilTool } from './stencilTool';
+export {
+  DIAGRAM_TOOLS, STENCIL_TOOLS, stencilTools, stencilToolSet, useDiagramTools, type UseDiagramToolsOptions,
+} from './diagramTools';
 export type { StencilInsertOptions } from './stencilTool';
 export { StencilGhost, type StencilGhostProps } from './StencilGhost';
 export * from './containers';

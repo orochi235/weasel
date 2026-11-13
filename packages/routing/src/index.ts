@@ -212,6 +212,7 @@ export type {
 } from './tools/types';
 export type { ToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';
+export { toolGaps } from './tools/toolGaps';
 export {
   createToolOptionValues, heldToolOptions, keepToolOptions, setToolOption, shareToolOptions, SHARED_TOOL_OPTIONS,
   steppedOption, toolOptionActionIds, toolOptionLeaf, toolOptionNumberLeaf, toolOptionParams, toolOptionSlot, withToolOptionDefault,
