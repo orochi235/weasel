@@ -20,5 +20,7 @@ export const anchorsTool: Tool = defineTool({
   keybinding: { key: 'A' },
   capabilities: ['edits-anchors'],
   hookName: 'anchorsTool',
+  // The anchor and handle cursors are the actions'; between them it is the plain pointer.
+  cursor: 'default',
   presentation: { label: 'Anchors', icon: icon('anchors'), group: 'path-edit' },
 });

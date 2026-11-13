@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useLassoTool } from './useLassoTool';
-import { resolveParams } from '@weasel-js/routing';
+import { resolveParams, toolOptionParams } from '@weasel-js/routing';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { Tool } from '../../overlayBinding';
 
@@ -36,15 +36,16 @@ describe('useLassoTool', () => {
     expect(bindings[0].spec.kind).toBe('drag');
   });
 
-  it('hands its hit mode to the action through the binding params', () => {
+  it('keeps its hit mode as its own option, defaulting to the mode it is given', () => {
     const { result, rerender } = renderHook(
       ({ mode }: { mode?: 'centers' | 'intersect' | 'enclosed' }) => useLassoTool({ mode }),
       { initialProps: {} },
     );
-    const params = () => resolveParams(result.current.bindings![0].opts?.params);
-    expect(params()).toEqual({ mode: 'intersect' });
+    expect(result.current.options?.actionId).toBe('lassoSelect');
+    expect(result.current.options?.share).toBeUndefined();
+    expect(toolOptionParams('lasso', result.current.options!, undefined)).toEqual({ mode: 'intersect' });
     rerender({ mode: 'enclosed' });
-    expect(params()).toEqual({ mode: 'enclosed' });
+    expect(toolOptionParams('lasso', result.current.options!, undefined)).toEqual({ mode: 'enclosed' });
   });
 
   it('hands its vertex spacing to the action through the binding params', () => {
@@ -53,9 +54,9 @@ describe('useLassoTool', () => {
       { initialProps: {} },
     );
     const params = () => resolveParams(result.current.bindings![0].opts?.params);
-    expect(params()).toEqual({ mode: 'intersect' });
+    expect(params()).toEqual({});
     rerender({ minVertexSpacing: 0 });
-    expect(params()).toEqual({ mode: 'intersect', minVertexSpacing: 0 });
+    expect(params()).toEqual({ minVertexSpacing: 0 });
   });
 
   it('hands its behaviors to the action through the binding, and none when given none', () => {
@@ -66,13 +67,13 @@ describe('useLassoTool', () => {
     expect(withNone.result.current.bindings![0].opts?.behaviors).toBeUndefined();
   });
 
-  it('the params thunk reads the committed mode, not an abandoned render\'s', () => {
+  it('the params thunk reads the committed spacing, not an abandoned render\'s', () => {
     let tool = null as Tool | null;
-    function Probe({ mode }: { mode: 'intersect' | 'enclosed' }) {
-      tool = useLassoTool({ mode });
+    function Probe({ minVertexSpacing }: { minVertexSpacing: number }) {
+      tool = useLassoTool({ minVertexSpacing });
       return null;
     }
-    renderThenAbandon<'intersect' | 'enclosed'>('intersect', 'enclosed', (mode) => <Probe mode={mode} />);
-    expect(resolveParams(tool!.bindings![0].opts?.params)).toEqual({ mode: 'intersect' });
+    renderThenAbandon<number>(1, 5, (minVertexSpacing) => <Probe minVertexSpacing={minVertexSpacing} />);
+    expect(resolveParams(tool!.bindings![0].opts?.params)).toEqual({ minVertexSpacing: 1 });
   });
 });
