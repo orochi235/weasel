@@ -166,6 +166,9 @@ barrel does not export. Run both before adding an export. Export the
 referenced type rather than listing it in the package's
 `typedoc.config.mjs` under `intentionallyNotExported`.
 
+An options bag a function or hook takes is named `<Name>Options` (`LayoutRunsOptions`,
+`UseTextEditOptions`), never `<Name>Opts` (2026-11-12).
+
 Test-only reset hooks go on the package's `test-seams` entry; types a sibling
 package fills across the boundary go on an `internal` entry
 (`@weasel-js/routing/internal`). Neither is public API, and the audit treats an
