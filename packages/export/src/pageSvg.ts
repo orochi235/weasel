@@ -6,7 +6,7 @@ import { serializeSvg, warmSvg, type SerializeOptions, type SvgNode } from '@wea
 import { pageSvgNodes, type PageExportScene, type PageRect, type PageSvgNodesOptions } from './pageNodes';
 
 /** Options for {@link exportPageSvg}. */
-export interface ExportPageSvgOptions extends Pick<SerializeOptions, 'title' | 'onWarn' | 'pretty'>, PageSvgNodesOptions {
+export interface ExportPageSvgOptions extends Pick<SerializeOptions, 'title' | 'onWarn' | 'pretty' | 'text'>, PageSvgNodesOptions {
   /** The color painted under the page. Default none: the page is transparent. */
   background?: string | null;
 }
@@ -19,7 +19,9 @@ export interface ExportPageSvgOptions extends Pick<SerializeOptions, 'title' | '
  *
  * It waits for the paint kinds and faces the document needs, so its text is
  * written in the lines the canvas lays it out into. A load that fails goes to
- * `onWarn`, and the export goes ahead without it.
+ * `onWarn`, and the export goes ahead without it. `text` sets how text is
+ * written: live `<text>` (the default), glyph outlines, or live text with its
+ * faces embedded.
  */
 export async function exportPageSvg(
   scene: PageExportScene,
