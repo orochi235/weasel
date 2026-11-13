@@ -132,7 +132,7 @@ five changesets. Leave `pick` alone: highlights are chosen at release time with 
 
 ## Package manager
 
-npm is canonical: `package-lock.json` is the committed lockfile and `workspaces` lives in `package.json`. `pnpm install` is fine locally for speed (`.npmrc` has `link-workspace-packages=true` so it resolves the `*` workspace deps), but **never commit `pnpm-lock.yaml`** — it's gitignored on purpose. Don't introduce `pnpm-workspace.yaml`, `preinstall` hooks blocking npm, or `workspace:*` deps without an explicit decision to migrate.
+npm is the package manager: `package-lock.json` is the committed lockfile and `workspaces` lives in `package.json`. pnpm 10 ignores the `workspaces` field and links no workspace package, so it cannot install this repo; `pnpm-lock.yaml` is gitignored so a stray one never lands. Don't introduce `pnpm-workspace.yaml`, `preinstall` hooks blocking npm, or `workspace:*` deps without an explicit decision to migrate.
 
 ## Reference implementations
 

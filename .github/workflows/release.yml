@@ -16,7 +16,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    # Hide `npm warn Unknown ... config` noise from `.npmrc`'s pnpm-only keys.
     # It also hides npm's reply to a failed publish, which changesets then
     # reports as a success; remove it first if a release drops a package.
     env:
