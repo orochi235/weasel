@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { remapRotatedLeaf, RECT_POSE_DESCRIPTOR } from './geometry';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
+import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 
 const SRC: Bounds = { x: 0, y: 0, width: 100, height: 100 };
 const leaf = (over: Partial<Bounds & { rotation: number }> = {}) => ({
@@ -107,7 +107,7 @@ describe('remapRotatedLeaf', () => {
 function corners(p: Bounds): [number, number][] {
   const m = poseFrameOf(p) ?? ([1, 0, 0, 1, 0, 0] as const);
   return ([[p.x, p.y], [p.x + p.width, p.y], [p.x + p.width, p.y + p.height], [p.x, p.y + p.height]] as const)
-    .map(([x, y]) => applyToPoint(m, x, y));
+    .map(([x, y]) => transformPoint(m, x, y));
 }
 
 /** `points` through the affine taking `src` onto `dst`. */

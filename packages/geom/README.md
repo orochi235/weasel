@@ -35,14 +35,14 @@ loop allocates nothing. The types that do exist are small:
 
 `translate`, `scale`, `rotate`, `rotateAboutPoint`, and `boxToBox` build a
 `Mat3`. `multiply(m, n)` composes two, applying `n` first. `invert` returns
-`null` for a singular matrix, and `applyToPoint` maps one point.
+`null` for a singular matrix, and `transformPoint` maps one point.
 
 ```ts
-import { applyToPoint, invert, multiply, scale, translate } from '@weasel-js/geom';
+import { transformPoint, invert, multiply, scale, translate } from '@weasel-js/geom';
 
 // World to screen for a view at (10, 20), zoomed 2x: translate, then scale.
 const worldToScreen = multiply(scale(2, 2), translate(-10, -20));
-applyToPoint(worldToScreen, 15, 25); // [10, 10]
+transformPoint(worldToScreen, 15, 25); // [10, 10]
 
 const screenToWorld = invert(worldToScreen); // Mat3 | null
 ```

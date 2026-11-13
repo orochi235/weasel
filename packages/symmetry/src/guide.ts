@@ -1,4 +1,4 @@
-import { applyToPoint, ellipsePath, linePath, rectPath, type Path, type Point } from '@weasel-js/geom';
+import { transformPoint, ellipsePath, linePath, rectPath, type Path, type Point } from '@weasel-js/geom';
 import {
   viewToTransform, worldToScreen, type DrawCommand, type LayerHit, type RenderLayer, type View,
 } from '@weasel-js/core';
@@ -148,7 +148,7 @@ export function symmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryG
         const d = screenDir(spec.angle, view);
         out.push(line({ x: cx, y: cy }, { x: cx + d.x * reach, y: cy + d.y * reach }, faint));
         for (const m of SYMMETRY_KINDS.repeat.transforms(spec, center)) {
-          const [wx, wy] = applyToPoint(m, center.x, center.y);
+          const [wx, wy] = transformPoint(m, center.x, center.y);
           const [x, y] = worldToScreen(wx, wy, t);
           out.push({ kind: 'path', path: dot({ x, y }, 2.5), fill: { paint: { kind: 'solid', color: faint } } });
         }

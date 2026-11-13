@@ -1,6 +1,6 @@
 /**
  * The port-curve rule in the 2D kernel's currency: loose scalars, the way
- * `cubicEvalAt` and `applyToPoint` take them. The rule itself lives in
+ * `cubicEvalAt` and `transformPoint` take them. The rule itself lives in
  * `./portCurve`, stated once over components, so this and `./3d` cannot drift.
  */
 

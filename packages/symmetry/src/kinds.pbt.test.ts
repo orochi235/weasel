@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { applyToPoint, multiply, translate, type Affine } from '@weasel-js/geom';
+import { transformPoint, multiply, translate, type Affine } from '@weasel-js/geom';
 import { SYMMETRY_KINDS, symmetryTransforms, wedges, type SymmetrySpec } from './kinds';
 import { MAX_WALLPAPER_COPIES } from './wallpaper';
 import { FINITE_KINDS, ID, coord, isIsometry, lookup, near, point, power, runs, spec, tally, timeoutFor } from './pbt.fixture';
@@ -36,7 +36,7 @@ describe('a kind that turns or reflects about its center', () => {
       for (const m of ms) {
         expect(near(m, ID)).toBe(false);
         expect(isIsometry(m)).toBe(true);
-        const [x, y] = applyToPoint(m, c.x, c.y);
+        const [x, y] = transformPoint(m, c.x, c.y);
         expect(Math.hypot(x - c.x, y - c.y)).toBeLessThan(1e-9 * Math.max(1, Math.abs(c.x), Math.abs(c.y)));
       }
       for (let i = 0; i < group.length; i++) {

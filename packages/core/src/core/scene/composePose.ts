@@ -7,7 +7,7 @@
  * consumer-supplied `compose`.
  */
 
-import { applyToPoint, multiply, poseFrameInverseOf, poseFrameOf, poseLinearOf, rotate, type Affine } from '@weasel-js/geom';
+import { transformPoint, multiply, poseFrameInverseOf, poseFrameOf, poseLinearOf, rotate, type Affine } from '@weasel-js/geom';
 import type { RectPose } from 'core/scene/types';
 export type { RectPose };
 
@@ -98,7 +98,7 @@ export function composeRigidPose<TPose extends RectPose>(parent: TPose, child: T
   const pr = parent.rotation ?? 0;
   const frame = poseLinearOf(parent) && poseFrameOf(parent);
   if (frame) {
-    const [cx, cy] = applyToPoint(frame, parent.x + child.x + child.width / 2, parent.y + child.y + child.height / 2);
+    const [cx, cy] = transformPoint(frame, parent.x + child.x + child.width / 2, parent.y + child.y + child.height / 2);
     const linear = multiply(frame, poseFrameOf(child) ?? NO_FRAME);
     return withLinear(centeredAt(child, cx, cy), (child.rotation ?? 0) + pr, linear);
   }
@@ -121,7 +121,7 @@ export function decomposeRigidPose<TPose extends RectPose>(parent: TPose, world:
   // A singular transform has no inverse: the container draws nothing, and the turn alone is undone.
   const back = poseLinearOf(parent) && poseFrameInverseOf(parent);
   if (back) {
-    const [ux, uy] = applyToPoint(back, world.x + world.width / 2, world.y + world.height / 2);
+    const [ux, uy] = transformPoint(back, world.x + world.width / 2, world.y + world.height / 2);
     const linear = multiply(back, poseFrameOf(world) ?? NO_FRAME);
     return withLinear(centeredAt(world, ux - parent.x, uy - parent.y), (world.rotation ?? 0) - pr, linear);
   }

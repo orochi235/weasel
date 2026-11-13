@@ -3,7 +3,7 @@ import {
   boundsOfPath, pathFromD, solid, type Path, type PolygonPath, type Stroke,
 } from '@weasel-js/core';
 import {
-  applyToPoint, lengthAtCurve, pathLengthTable, pointAtLength, polygonFromPoints, polylineFromPoints, poseFrameOf,
+  transformPoint, lengthAtCurve, pathLengthTable, pointAtLength, polygonFromPoints, polylineFromPoints, poseFrameOf,
   resolveCorners, transformPath,
 } from '@weasel-js/geom';
 import { trimSpan } from '@weasel-js/stroke';
@@ -168,7 +168,7 @@ describe('svg export bakes a stroke trim', () => {
     const trim = { end: { length: 250 } };
     const table = pathLengthTable(local);
     const { point } = pointAtLength(table, lengthAtCurve(table, trimSpan(local, trim)!.to));
-    const [x, y] = applyToPoint(poseFrameOf(pose)!, point[0], point[1]);
+    const [x, y] = transformPoint(poseFrameOf(pose)!, point[0], point[1]);
     const [p] = stroked(paths(local, { paint: INK, width: 1, trim }, null, pose));
     const [ex, ey] = endOf(p);
     expect(Math.hypot(ex - x, ey - y)).toBeLessThan(1e-3);

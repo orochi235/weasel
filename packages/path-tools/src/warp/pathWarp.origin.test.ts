@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PathBuilder, applyToPoint, transformPath, translate, worldCoords, type PolygonPath,
+  PathBuilder, transformPoint, transformPath, translate, worldCoords, type PolygonPath,
 } from '@weasel-js/geom';
 import type { DistortWarp } from '@weasel-js/geom/warp';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
@@ -50,7 +50,7 @@ describe('a warp on a polygon pose measured from an origin', () => {
     const resolved = resolvePathWarp(scene.get(asNodeId('a')))!;
     expect(resolved).not.toBeNull();
     // The dragged corner's handle moved with the pose.
-    const [x, y] = applyToPoint(resolved.toWorld, ...cornerOf(resolved.held.warp as DistortWarp, 2));
+    const [x, y] = transformPoint(resolved.toWorld, ...cornerOf(resolved.held.warp as DistortWarp, 2));
     expect(x).toBeCloseTo(FAR + 155, 2);
     expect(y).toBeCloseTo(110, 2);
   });

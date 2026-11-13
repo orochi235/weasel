@@ -7,7 +7,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { MouseEvent } from 'react';
-import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
+import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import { useScene } from '../../core/scene/useScene';
 import { asNodeId, type RectPose, type UseSceneOptions } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
@@ -60,7 +60,7 @@ describe('useSceneTextEdit — a turned, skewed text node', () => {
     const el = overlayOf(container);
     const frame = poseFrameOf(POSE)!;
     for (const [u, v] of [[0, 0], [200, 0], [200, 40], [0, 40]]) {
-      const [wx, wy] = applyToPoint(frame, POSE.x + u, POSE.y + v);
+      const [wx, wy] = transformPoint(frame, POSE.x + u, POSE.y + v);
       const [sx, sy] = land(el, u, v);
       expect(sx).toBeCloseTo((wx - VIEW.x) * VIEW.scale.x, 6);
       expect(sy).toBeCloseTo((wy - VIEW.y) * VIEW.scale.y, 6);
@@ -83,7 +83,7 @@ describe('useSceneTextEdit — a turned, skewed text node', () => {
     const el = overlayOf(container);
     const frame = poseFrameOf(pose) ?? ([1, 0, 0, 1, 0, 0] as const);
     for (const [u, v] of [[0, 0], [200, 0], [200, 40], [0, 40]]) {
-      const [wx, wy] = applyToPoint(frame, pose.x + u, pose.y + v);
+      const [wx, wy] = transformPoint(frame, pose.x + u, pose.y + v);
       const [sx, sy] = land(el, u, v);
       expect(sx).toBeCloseTo((wx - view.x) * view.scale.x, 6);
       expect(sy).toBeCloseTo((wy - view.y) * view.scale.y, 6);
@@ -100,7 +100,7 @@ describe('useSceneTextEdit — a turned, skewed text node', () => {
     const world = composeRigidPose(GROUP, LOCAL);
     const frame = poseFrameOf(world)!;
     for (const [u, v] of [[0, 0], [200, 0], [200, 40], [0, 40]]) {
-      const [wx, wy] = applyToPoint(frame, world.x + u, world.y + v);
+      const [wx, wy] = transformPoint(frame, world.x + u, world.y + v);
       const [sx, sy] = land(el, u, v);
       expect(sx).toBeCloseTo((wx - VIEW.x) * VIEW.scale.x, 6);
       expect(sy).toBeCloseTo((wy - VIEW.y) * VIEW.scale.y, 6);
@@ -109,7 +109,7 @@ describe('useSceneTextEdit — a turned, skewed text node', () => {
 
   it('opens the editor from a double-click where such a container draws the text', () => {
     const world = composeRigidPose(GROUP, LOCAL);
-    const at = applyToPoint(poseFrameOf(world)!, world.x + 10, world.y + 10);
+    const at = transformPoint(poseFrameOf(world)!, world.x + 10, world.y + 10);
     expect(doubleClickAt(at, LOCAL, GROUP)).toBe('a');
     expect(doubleClickAt([LOCAL.x + 10, LOCAL.y + 10], LOCAL, GROUP)).toBeNull();
   });
@@ -126,7 +126,7 @@ describe('useSceneTextEdit — a turned, skewed text node', () => {
 
   it('opens the editor from a double-click on the text as drawn', () => {
     // Near the start of the line, which the quarter turn stands on end.
-    expect(doubleClickAt(applyToPoint(poseFrameOf(POSE)!, 110, 60))).toBe('a');
+    expect(doubleClickAt(transformPoint(poseFrameOf(POSE)!, 110, 60))).toBe('a');
   });
 
   it('opens none from a double-click in the unturned box the text is not drawn in', () => {

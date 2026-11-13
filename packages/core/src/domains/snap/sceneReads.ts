@@ -1,4 +1,4 @@
-import { applyToPoint, invert, type Point } from '@weasel-js/geom';
+import { transformPoint, invert, type Point } from '@weasel-js/geom';
 import type { WorldPoint } from '@weasel-js/routing';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
@@ -66,7 +66,7 @@ export function sceneSnapFrames(scene: Scene<unknown, string, unknown>): (id: st
     if (!m) return undefined;
     const back = invert(m);
     const through = (t: typeof m, p: Point): Point => {
-      const [x, y] = applyToPoint(t, p.x, p.y);
+      const [x, y] = transformPoint(t, p.x, p.y);
       return { x, y };
     };
     return { toWorld: (p) => through(m, p), toLocal: (p) => (back ? through(back, p) : null) };

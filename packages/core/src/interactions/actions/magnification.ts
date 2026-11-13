@@ -1,4 +1,4 @@
-import { applyToPoint, invert, type Affine, type Point } from '@weasel-js/geom';
+import { transformPoint, invert, type Affine, type Point } from '@weasel-js/geom';
 import { magnificationOf } from '@weasel-js/quantity';
 import { sceneDeclaredScopes } from 'core/scene/unitScopes';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -62,7 +62,7 @@ export function unitFrameAt(scene: Scene<unknown, string, unknown>): (p: Point) 
   boxes.reverse();
   return (p) => {
     for (const b of boxes) {
-      const [x, y] = applyToPoint(b.toLocal, p.x, p.y);
+      const [x, y] = transformPoint(b.toLocal, p.x, p.y);
       // A point snapped to the box's edge comes back a rounding error outside it.
       const e = 1e-9 * Math.max(b.width, b.height, 1);
       if (x >= -e && y >= -e && x <= b.width + e && y <= b.height + e) return b.id;

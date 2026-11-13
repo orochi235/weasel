@@ -1,5 +1,5 @@
 import { sceneBoxFrames, sceneUnitScopes, unitFrameAt, type NodeId, type Scene, type UnitScope } from '@weasel-js/core';
-import { applyToPoint } from '@weasel-js/geom';
+import { transformPoint } from '@weasel-js/geom';
 
 type Point = { x: number; y: number };
 type AnyScene = Scene<unknown, string, unknown>;
@@ -35,7 +35,7 @@ export function rulerFrameAt(scene: AnyScene, root: UnitScope, origin?: Point): 
     const id = frameAt(p);
     const box = id === null ? null : boxes(id);
     if (id === null || box === null) return doc;
-    const [x, y] = applyToPoint(box, 0, 0);
+    const [x, y] = transformPoint(box, 0, 0);
     return { id, scopes: sceneUnitScopes(scene, id, root, { inclusive: true }), origin: { x, y } };
   };
 }

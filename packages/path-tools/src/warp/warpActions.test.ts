@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyToPoint, boundsOfPath, PathBuilder, pathToAnchors, rotateAboutPoint, transformPath, type PolygonPath,
+  transformPoint, boundsOfPath, PathBuilder, pathToAnchors, rotateAboutPoint, transformPath, type PolygonPath,
 } from '@weasel-js/geom';
 import type { DistortWarp } from '@weasel-js/geom/warp';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
@@ -108,7 +108,7 @@ describe('distort', () => {
     expect(resolved).not.toBeNull();
     const { corners } = resolved.held.warp as DistortWarp;
     const handles = corners.map((c) => {
-      const [x, y] = applyToPoint(resolved.toWorld, c.x, c.y);
+      const [x, y] = transformPoint(resolved.toWorld, c.x, c.y);
       return { x: Math.round(x * 1000) / 1000, y: Math.round(y * 1000) / 1000 };
     });
     // The square's corners are the distort's, wherever the rotation took them.
@@ -134,7 +134,7 @@ describe('distort', () => {
     const { corners } = resolved.held.warp as DistortWarp;
     const anchors = anchorsOf(scene);
     corners.forEach((c, i) => {
-      const [x, y] = applyToPoint(resolved.toWorld, c.x, c.y);
+      const [x, y] = transformPoint(resolved.toWorld, c.x, c.y);
       expect(x).toBeCloseTo(anchors[i].x, 2);
       expect(y).toBeCloseTo(anchors[i].y, 2);
     });
@@ -244,7 +244,7 @@ describe('paths warped together', () => {
     // Each path's controls sit on the corners of the box the pair was warped in, carried with it.
     const corner = (t: (typeof held)[number]) => {
       const c = (t.held.warp as DistortWarp).corners[0];
-      const [x, y] = applyToPoint(t.toWorld, c.x, c.y);
+      const [x, y] = transformPoint(t.toWorld, c.x, c.y);
       return { x, y };
     };
     const byId = new Map(held.map((t) => [String(t.node.id), t]));

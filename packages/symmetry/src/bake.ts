@@ -1,4 +1,4 @@
-import { applyToPoint, multiply, poseFrameOf, type Affine, type PoseLinear } from '@weasel-js/geom';
+import { transformPoint, multiply, poseFrameOf, type Affine, type PoseLinear } from '@weasel-js/geom';
 import { UNION_OF_CHILDREN, statedFields, unionOfChildren, type NodeId, type Scene } from '@weasel-js/core';
 import { isSymmetryGroup } from './group';
 import { keepContentsPut, localPoseUnder, worldPoseOf } from './frames';
@@ -41,7 +41,7 @@ const clean = (v: number): number => (Math.abs(v) < 1e-12 ? 0 : Math.abs(v - Mat
 export function carryPose<P extends BoxPose>(pose: P, m: Affine): P {
   const frame = poseFrameOf(pose) ?? [1, 0, 0, 1, 0, 0];
   const [a, b, c, d] = multiply(m, frame).map(clean);
-  const [cx, cy] = applyToPoint(m, pose.x + pose.width / 2, pose.y + pose.height / 2);
+  const [cx, cy] = transformPoint(m, pose.x + pose.width / 2, pose.y + pose.height / 2);
   const { rotation: _r, transform: _t, ...rest } = pose;
   const out = { ...rest, x: clean(cx - pose.width / 2), y: clean(cy - pose.height / 2) } as P;
   if (b === 0 && c === 0 && (a > 0 || d > 0)) {

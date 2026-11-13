@@ -1,4 +1,4 @@
-import { applyToPoint, boundsOfPath, meanScale, pathContainsPoint } from '@weasel-js/geom';
+import { transformPoint, boundsOfPath, meanScale, pathContainsPoint } from '@weasel-js/geom';
 import { shapeCoversPoint } from 'canvas/NodeShape';
 import { ownClipOf } from 'canvas/ownClip';
 import type { PickQuery } from 'canvas/pickWalk';
@@ -53,7 +53,7 @@ export function adapterPointQuery<TPose>(
       return pointQuery(p.x, p.y, t * meanScale(m.scale));
     },
     inCopy: (m) => {
-      const [x, y] = applyToPoint(m, px, py);
+      const [x, y] = transformPoint(m, px, py);
       return pointQuery(x, y, t * Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])));
     },
   });

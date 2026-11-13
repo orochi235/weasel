@@ -4,7 +4,7 @@
  * reaches hit-test, marquee, and bounds extraction alike.
  */
 import type { Bounds } from 'tools/builtin/select';
-import { applyToPoint, pointInPath, strokeHitTest, type Affine } from '@weasel-js/geom';
+import { transformPoint, pointInPath, strokeHitTest, type Affine } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { positiveBox } from 'core/geometry/unionBounds';
@@ -73,7 +73,7 @@ export function poseContainsRotated<TPose>(
   if (!frame) return containsInFrame(pose, wx, wy, tolerance, descriptor, null, false);
   const back = poseFrameInverseOf(framed);
   if (!back) return false;
-  const [lx, ly] = applyToPoint(back, wx, wy);
+  const [lx, ly] = transformPoint(back, wx, wy);
   return containsInFrame(pose, lx, ly, tolerance, descriptor, frame, poseLinearOf(framed) !== null);
 }
 

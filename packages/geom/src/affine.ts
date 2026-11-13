@@ -65,7 +65,7 @@ export function invert(m: Affine): Affine | null {
 }
 
 /** Apply to a point, returning a tuple. Cold-path use; hot loops inline. */
-export function applyToPoint(m: Affine, x: number, y: number): [number, number] {
+export function transformPoint(m: Affine, x: number, y: number): [number, number] {
   return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
 }
 

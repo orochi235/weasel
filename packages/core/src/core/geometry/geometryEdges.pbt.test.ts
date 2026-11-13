@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { applyToPoint, extentScale, poseFrameOf } from '@weasel-js/geom';
+import { transformPoint, extentScale, poseFrameOf } from '@weasel-js/geom';
 import { coord, positive, runs, tally, timeoutFor } from '../pbt.fixture';
 import { unionAABB, unionBounds, axisAlignedBounds } from './unionBounds';
 import { RECT_POSE_DESCRIPTOR, remapRotatedLeaf, type RotatedPose } from './poseDescriptor';
@@ -98,7 +98,7 @@ describe('remaps between boxes of next to no size', () => {
       const corners = (b: Bounds) => {
         const frame = poseFrameOf(b);
         const cs = [[b.x, b.y], [b.x + b.width, b.y], [b.x + b.width, b.y + b.height], [b.x, b.y + b.height]] as const;
-        return cs.map(([x, y]) => (frame ? applyToPoint(frame, x, y) : [x, y]));
+        return cs.map(([x, y]) => (frame ? transformPoint(frame, x, y) : [x, y]));
       };
       const want = corners(p).map(g);
       const got = corners(next);

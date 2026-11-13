@@ -10,7 +10,7 @@
  * when the consumer is watching it move.
  */
 
-import { applyToPoint } from '@weasel-js/geom';
+import { transformPoint } from '@weasel-js/geom';
 import type { RectPose } from 'core/geometry/rectPose';
 import { poseFrameOf } from '@weasel-js/geom';
 export type { RectPose };
@@ -88,7 +88,7 @@ export function axisAlignedBounds<TPose extends RectPose>(b: TPose): RectPose {
     [b.x, b.y + b.height],
   ];
   for (const [px, py] of corners) {
-    const [rx, ry] = applyToPoint(frame, px, py);
+    const [rx, ry] = transformPoint(frame, px, py);
     if (rx < minX) minX = rx;
     if (rx > maxX) maxX = rx;
     if (ry < minY) minY = ry;

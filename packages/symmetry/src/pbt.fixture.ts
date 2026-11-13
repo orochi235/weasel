@@ -2,7 +2,7 @@
  * fast-check arbitraries and helpers shared by symmetry's property tests. Test-only: nothing in the package imports it.
  */
 import fc from 'fast-check';
-import { applyToPoint, multiply, type Affine, type Point } from '@weasel-js/geom';
+import { transformPoint, multiply, type Affine, type Point } from '@weasel-js/geom';
 import { DEFAULT_SYMMETRY, type SymmetryKind, type SymmetrySpec, type WallpaperCell } from './kinds';
 
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
@@ -65,7 +65,7 @@ export function isIsometry(m: Affine, tol = 1e-9): boolean {
 /** `ms` bucketed by where each takes `probe`, to find one near an affine quickly. */
 export function lookup(ms: readonly Affine[], cellSize: number, probe: Point = { x: 0, y: 0 }): (m: Affine, tol?: number) => boolean {
   const cell = (v: number) => Math.floor(v / cellSize);
-  const at = (m: Affine) => applyToPoint(m, probe.x, probe.y);
+  const at = (m: Affine) => transformPoint(m, probe.x, probe.y);
   const buckets = new Map<string, Affine[]>();
   for (const m of ms) {
     const [x, y] = at(m);

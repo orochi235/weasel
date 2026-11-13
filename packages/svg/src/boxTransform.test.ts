@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
 import type { SvgImageNode, SvgNode, SvgTextNode } from './types';
-import { applyToPoint } from '@weasel-js/geom';
+import { transformPoint } from '@weasel-js/geom';
 import { poseFrameOf, type PoseLinear } from '@weasel-js/core';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -24,7 +24,7 @@ function drawnCorners(node: SvgTextNode | SvgImageNode): number[][] {
   const frame = poseFrameOf(node)!;
   const { x, y, width: w, height: h } = node;
   return [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]
-    .map(([px, py]) => applyToPoint(frame, px, py).map((v) => Math.round(v * 1e9) / 1e9 + 0));
+    .map(([px, py]) => transformPoint(frame, px, py).map((v) => Math.round(v * 1e9) / 1e9 + 0));
 }
 
 // A box pinned by `data-weasel-*` so no expectation rests on font measurement:

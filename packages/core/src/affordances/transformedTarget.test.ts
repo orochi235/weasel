@@ -5,7 +5,7 @@
  * where the node draws it.
  */
 import { describe, expect, it } from 'vitest';
-import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
+import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import type { PathDrawCommand } from '@weasel-js/renderer';
 import { createCornerResizeAffordance, type CornerResizeScratch } from './cornerResize';
 import { createRotationAffordance } from './rotationHandle';
@@ -30,7 +30,7 @@ const state = {
 
 /** A point of the unskewed box, where the node draws it. */
 const drawn = (lx: number, ly: number) => {
-  const [x, y] = applyToPoint(FRAME, lx, ly);
+  const [x, y] = transformPoint(FRAME, lx, ly);
   return { x, y };
 };
 
@@ -48,7 +48,7 @@ describe('corner handles on a skewed, turned target', () => {
 
   it('takes none where the corner would sit without the transform', () => {
     const turnedOnly = poseFrameOf({ ...B, transform: undefined })!;
-    const [x, y] = applyToPoint(turnedOnly, 100, 60);
+    const [x, y] = transformPoint(turnedOnly, 100, 60);
     expect(regionAt({ x, y })).toBeNull();
   });
 
@@ -104,7 +104,7 @@ describe('a target whose transform is singular', () => {
 
   it('has no ring to press: it draws nothing', () => {
     const rotate = createRotationAffordance({ bandPx: 24 });
-    const [x, y] = applyToPoint(poseFrameOf({ ...B, transform: undefined })!, -3, 30);
+    const [x, y] = transformPoint(poseFrameOf({ ...B, transform: undefined })!, -3, 30);
     expect(hitAffordanceRegions([rotate], x, y, flatState, VIEW)).toBeNull();
   });
 });
