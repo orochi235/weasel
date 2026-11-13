@@ -24,7 +24,7 @@ export interface GestureBinding {
  * a runtime parameter — the dispatcher extracts `opts.params` and passes
  * them to `ImmediateInvoker.run` as its second argument.
  */
-export type BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOpts };
+export type BoundGesture = GestureSpec | { spec: GestureSpec; opts?: BindingOpts };
 
 /**
  * The whole of an action `actionBindings` reads. Routing needs this much and
@@ -54,7 +54,7 @@ export function actionBindings(action: BindingSource): GestureBinding[] {
   return raw.map((entry) => {
     const isBoundObj = !('kind' in entry);
     const spec = isBoundObj ? (entry as { spec: GestureSpec }).spec : (entry as GestureSpec);
-    const opts = isBoundObj ? (entry as { opts: BindingOpts }).opts : undefined;
+    const opts = isBoundObj ? (entry as { opts?: BindingOpts }).opts : undefined;
     return { spec, actionId: action.id, ...(opts !== undefined ? { opts } : {}) };
   });
 }

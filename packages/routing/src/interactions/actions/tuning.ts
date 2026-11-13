@@ -17,7 +17,7 @@ export type ActionParams<P = Record<string, unknown>> = Partial<P> | (() => Part
  *  options it passes — the {@link BoundGesture} shape, its params typed. */
 export type TunedBinding<P = Record<string, unknown>> =
   | GestureSpec
-  | { spec: GestureSpec; opts: Omit<BindingOpts, 'params'> & { params?: ActionParams<P> } };
+  | { spec: GestureSpec; opts?: Omit<BindingOpts, 'params'> & { params?: ActionParams<P> } };
 
 /** What a host changes about one action. */
 export interface ActionTuning<P = Record<string, unknown>> {
