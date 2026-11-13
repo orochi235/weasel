@@ -167,7 +167,7 @@ const where = fc.tuple(fc.nat({ max: 3 }), fc.nat({ max: 16 }), fc.constantFrom<
 
 const commands = fc.commands([
   fc.tuple(where, fc.array(fc.record({ d: fc.integer({ min: -30, max: 30 }), alt: fc.boolean() }), { maxLength: 4 }),
-    fc.record({ oneSided: fc.boolean(), reach: fc.constantFrom(1, 6, 30) }, { requiredKeys: [] }), fc.constantFrom(true, true, true, false), fc.boolean())
+    fc.record({ oneSided: fc.boolean(), reachPx: fc.constantFrom(1, 6, 30) }, { requiredKeys: [] }), fc.constantFrom(true, true, true, false), fc.boolean())
     .map(([[k, i, s, o], moves, p, commit, replay]) => new Drag(k, i, s, o, moves, p, commit, replay)),
   fc.tuple(where, fc.constantFrom(true, true, false)).map(([[k, i, s, o], pressed]) => new Clear(k, i, s, o, pressed)),
   fc.constant(new Undo()),

@@ -40,18 +40,18 @@ export interface GirthEnv {
 /** What `girth.drag` reads from its params. */
 export interface GirthDragParams {
   /** Screen px around a stroke's edge within which a press takes hold of it, and along the path within which it
-   *  takes the anchor there rather than inserting one. Default: the tool's `reach`. */
-  reach?: number;
+   *  takes the anchor there rather than inserting one. Default: the tool's `reachPx`. */
+  reachPx?: number;
   /** Move only the grabbed edge, writing a `{ left, right }` pair; Alt flips it. Default `false`. */
   oneSided?: boolean;
 }
 
-/** Default {@link GirthDragParams.reach}. */
+/** Default {@link GirthDragParams.reachPx}. */
 export const DEFAULT_GIRTH_REACH_PX = 6;
 
 /** A Girth drag's params as a form, for the last-operation panel. */
 export const GIRTH_DRAG_PARAMS = pref.group('Stroke width', {
-  reach: pref.number('Grab reach', DEFAULT_GIRTH_REACH_PX, {
+  reachPx: pref.number('Grab reach', DEFAULT_GIRTH_REACH_PX, {
     description: 'How near the edge, and how near an anchor along the path, a press has to land to take the anchor there rather than add a width point.',
     min: 1, max: 30, step: 1, control: 'slider', unit: PX_UNIT,
   }),
@@ -107,9 +107,9 @@ const edgeOf = (grip: WidthGrip, moved: number): Point => ({
 });
 
 function reachOf(params: GirthDragParams | undefined, env: GirthEnv): number {
-  if (typeof params?.reach !== 'number' || !(params.reach > 0)) return env.reachPx();
-  env.noteReach?.(params.reach);
-  return params.reach;
+  if (typeof params?.reachPx !== 'number' || !(params.reachPx > 0)) return env.reachPx();
+  env.noteReach?.(params.reachPx);
+  return params.reachPx;
 }
 
 /** The grip a press at `press` takes with `params`, read against the scene and view as they are now. */
