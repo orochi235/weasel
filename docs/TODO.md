@@ -504,6 +504,230 @@ Owner tags, after the priority (2026-10-26):
 
 ---
 
+## UI library consolidation (pre-2.0 audit)
+
+From a read-only audit of `@weasel-js/ui` (2026-11-13): https://claude.ai/artifact/7Dz6X1nKtyLXYAYH3Lbisb, which
+also maps every set of components that overlap in functionality. An entry marked *(inferred)* rests on reasoning
+from the code, not a reading of it; check that first. Paths are under `packages/ui/src/components/` unless they
+name a package. Breaking changes are in scope.
+
+- **(P2) [agent] `FillStrokeSwatch` turns a gradient into a solid.** `FillStrokeSwatch/`'s `Chip` takes
+  `fill: Paint`, but its native picker shows `solidColorOf(paint) ?? PICKER_FALLBACK` and reports
+  `onChange(slot, color: string)`, so touching a gradient chip writes a solid back. Make each slot a `PaintField`
+  trigger reporting `Paint`, with one `ColorChip` shared with `ColorField` (which repeats the same draft,
+  `usePickerClose`, and `useRecordRecentColor` pattern). Closes when a gradient survives opening and closing a
+  slot's picker, under a test.
+
+- **(P2) [agent] labkit's `PaletteRegion` draws no group separators.** `labkit/src/chrome/regions/PaletteRegion.tsx`
+  copies `ToolPalette`'s frame and flattens the groups (`groupsOf(...).flatMap(g => g.entries)`). Closes with the
+  `ToolPalette` rail entry below, or sooner when the lab's rail shows its groups' separators.
+
+- **(P2) [agent] A `Toolbar` or `ToolPalette` inside `ToolbarDock` probably gets no move handle** *(inferred)*.
+  Only `Bar/BarLayout.tsx` reads `DockBarContext` and `useReportDockLeast`. Closes when a story shows a docked
+  `Toolbar` with a handle, or the `Bar` + `Toolbar` merge lands.
+
+- **(P3) [agent] `TextArea`, `OptionsBar`, and labkit's `ControlBar` have drifted from their siblings.** `TextArea`
+  hand-copies `FieldFoot`/`fieldRootClass` and has no `orientation` or `mixed`; `OptionsBar` has no
+  `SegmentTooltip`, `disabledReason`, `orientation`, or `FitScope`; `ControlBar` never fuses paired flags
+  *(inferred)*. Closes when each matches its sibling, which the `Field`, segmented-bar, and `barCells` entries
+  below do as a side effect.
+
+- **(P2) [agent] Make `<Along>` the only way to curve a control.** `Slider` (`Slider/SliderBody.tsx:61`), `Jog`
+  (`Jog/Jog.tsx:61`), `DetentSlider`, `Bar`, `Tabs`, `SwatchGrid`, `SwatchStrip`, and `segmentedRow.tsx` each do
+  `props.shape ?? along?.shape`; `RadioGroup` already reads only the context. `Along/CurvedLabel.tsx` takes its own
+  `arc`/`shape`/`align` and calls `useBoxShape` itself. First confirm that the prop's containing-block coordinates
+  match what `Along` measures. Closes when no leaf control declares `shape` and `CurvedLabel` reads `useTrackShape`.
+
+- **(P2) [agent] One run context in place of `OrientationContext`, `AlongContext`, and `BarSideContext`.** All
+  three say which way the run goes, and `Bar/barSide.ts` derives its side from the run. `ToolGroup` takes an
+  `orientation` prop defaulting to vertical instead of reading the context; `ToolPalette`, `ResizeHandle`, and
+  `PrefsForm` take the prop too. A `useRun()` returns shape, alignment, orientation, and the side at a point;
+  `BarMarkContext` stays private. Closes when those three contexts are one and no component inside a run takes
+  `orientation` as a prop.
+
+- **(P2) [agent] One form context and one `ActionButton`.** `ToolButton`, `Toolbar.Button`, `BarActionButton`, and
+  the segment button all carry label, shortcut, description, `disabledReason`, pressed state, and a menu option, and
+  all build tooltips through `segmentTooltipContent`. `BarActionButton` already reads `Bar/barInMenu.ts`'s
+  `BarInMenuContext` to draw as a menu row, which overlaps `renderBarLeaf`'s `LeafSurface`. Merge those two into a
+  form context (bar cell, menu row, popover row, palette) and draw one `ActionButton` from it. Closes when the four
+  buttons are one component.
+
+- **(P1.5) [agent] A `<PrefsSource>` behind every params surface.** `SelectionPanel` imports 19 modules from
+  `../Prefs/` yet keeps its own `ListLeaf`, `ObjectLeaf`, and `renderContext`; the leaf-kind switch exists twice
+  (`Prefs/PrefsRow.tsx:280`, `SelectionPanel/renderLeaf.tsx:83`); `PropertyRenderContext` repeats about 15 fields
+  of `PrefRenderContext`, so `PrefSchemaEditor` needs both `renderers` and `propertyRenderers`. The reset policy is
+  written three times: `Prefs/reset.tsx`, `labkit/src/controls/leafReset.ts`, and `SelectionPanel/panelCells.ts:139`.
+  A source context exposes `valueAt(path) → { value, mixed, each }`, `write`, `autoAt`, and `reset(paths)`, with a
+  provider for a values map, a node selection, and a lab config. Closes when `PrefsForm`, `SelectionPanel`, and
+  `ControlPanel` render leaves through one renderer and reset through one policy.
+
+- **(P2) [agent] Grow `PropertyRowContext` into a row scope.** `auto`, `onAutoChange`, `onReset`, `changed`, and
+  `error` are declared on `PropertyRow`, `DialogRow`, and `PropertyFieldRow`; `SelectionPanel/LabeledRow.tsx` adds
+  `disabled`/`disabledReason`. `Properties/rowContext.ts` carries only `{ label }`, read only by `EasingPicker`.
+  `mixed` stays a prop. Closes when those row props are read from the scope rather than declared on each row.
+
+- **(P2) [maintainer] Pick one name for disabled, then add a `<Disabled reason>` scope.** About 30 components take
+  `disabled` or `isDisabled` and 15 take `disabledReason`: the React Aria-shaped ones say `isDisabled`, and
+  `Button`, `CloseButton`, `MenuButton`, `Disclosure`, and the font selects say `disabled`. Every reason ends up in
+  `segmentTooltipContent`, so a scope that it and `stillReachable` read can replace the per-component pair,
+  overridable per control; per-option disabling stays a field. The name is the maintainer's call; the scope is agent
+  work after it. Closes when one name is used library-wide and the scope ships.
+
+- **(P3) [agent] A `<Density>` scope for the `sm`/`md` controls.** `ButtonBar`, `ToggleBar`, `OptionsBar`, and
+  `ColorModeControl` alias `SegmentedSize`, ui-logic's `ButtonSize` is the same, and `Toolbar` declares `'md'|'sm'`
+  inline, but `Toolbar`'s `size` does not reach the buttons inside it. Leave out `Code` and `Badge` (`xs|sm|md`) and
+  the pixel-sized handles. Closes when a size set on a container reaches the controls inside it.
+
+- **(P2) [agent] Children in place of config arrays.** `CurveEditor` takes `layers: LayerBinding[]`; `Powerline`
+  takes a `segments` array of badges; `ToolOptionsBar` is `Bar` plus a label and a slot; `RangeSlider` exists for
+  its label-and-value header. Make them `<CurveEditor><FunctionLayer/></CurveEditor>`, a `Powerline` whose context
+  gives each child `<Badge>` its neighbor's edge cap, a `Bar` with `children`, and a `<Field label output>` wrapper
+  any control can sit in. Closes when each of the four takes children.
+
+- **(P3) [agent] One fit scope.** `FitLabel/`'s `FitScope` steps labels down their forms together by DOM overflow;
+  `Keycaps/KeyBank.tsx`'s `bankFitter` picks among spellings longest first by canvas measurement, then scales the
+  bank to its smallest member. Give `FitScope` an optional scale stage and have `KeyCap` read `FitContext`. Closes
+  when `KeyBankContext` no longer carries a fitter.
+
+- **(P3) [agent] `<Sequence>` for the hand-built galleries.** `Button`'s `Matrix` story, `Tooltip`'s `Placements`,
+  `MotifFrame/MotifFrame.stories.tsx:57`, and `Badge/lab/QuatrefoilOctants.tsx:62` map over values by hand. Closes
+  when all four render through `Sequence`.
+
+- **(P2) [agent] One segmented bar for `ToggleBar`, `OptionsBar`, and `ButtonBar`.** All three build the same
+  `SegmentedRow` with identical tiling, roving, and segment-class code, and alias the same size and variant types;
+  they differ only in selection model and aria role. One bar with a selection mode (single, multiple, each,
+  momentary) lives in a `Segmented/` folder with `segmentedRow.tsx`, `segmentsAlong.tsx`, `segmentSweep.tsx`,
+  `segmentedVariant.ts`, and `segmentedControl.module.css`. Closes when one component remains.
+
+- **(P2) [agent] One children-based `Bar` for `Bar`'s layout and `Toolbar`; the schema half becomes `PrefsBar`.**
+  Both render `role="toolbar"`; `Toolbar` roves and `Bar` doesn't; `ToolbarTitle` and `Bar`'s label share
+  `barLabel.module.css`; `StatusBarSpacer` duplicates `ToolbarSpacer`; `Bar/Bar.tsx` imports Prefs, SelectionPanel,
+  and Properties. `BarLayout` plus `Toolbar`'s Group/Spacer/Title, roving, orientation, and the dock handle become
+  `Bar`; the schema walker becomes `PrefsBar` beside Prefs; `StatusBar` and `ToolOptionsBar` fold in; move
+  `Bar/barStoryFields.tsx` out of source. Closes when there is one strip component.
+
+- **(P2) [agent] One slider: retire `RangeSlider`, turn `DetentSlider` into `useDetents()`.** `RangeSlider` is a
+  React Aria slider with its own `localeWritten` workaround, though `Slider` is already multi-thumb and follows
+  text direction; `DetentSlider`'s 150 lines map items to indexes and set `snap="strict"`;
+  `Properties/NumberControls.tsx:205` renders its own range input rather than `InlineRange`. Give the header to
+  `<Field label output>`, give `InlineRange` a `fill={false}`, and move `range.module.css` and
+  `sliderSlop.module.css` into their owners. Closes when `RangeSlider` and `DetentSlider` are gone and
+  NumberControls renders `InlineRange`.
+
+- **(P2) [agent] Replace labkit's `ScaleIndicator` with ui's `ScaleBar`.** `labkit/src/primitives/ScaleIndicator.tsx`
+  has its own 1/2/5 `niceNumber` and a bare `unit = 'px'` with no magnification, and `plot`'s `niceStep` is a third
+  copy of the rounding. `ScaleBar` reads zoom from the view context by default; `labkit/src/chrome/builtins.tsx:309`
+  and `Specimen.tsx:814` render it. Closes when `ScaleIndicator` is deleted and one nice-step function remains.
+
+- **(P2) [agent] One `Ruler` for three rulers.** `Timeline/Ruler.tsx` (`spacedTicks`), `BandEditor/Ruler.tsx`
+  (label thinning), `Rulers/Rulers.tsx`, and `Plot2D`'s own tick spacing; the root exports both `Ruler` and
+  `Rulers`. A 1D `Ruler` over a `ContinuousScale`, with thinning built in and Timeline's playhead and BandEditor's
+  range ends as children *(design inferred)*. Closes when the tick logic lives in one place.
+
+- **(P2) [agent] Register mesh as a paint kind instead of branching in `GradientEditor`.** `GradientEditor.tsx:163`
+  returns `<MeshEditor>` for a mesh, `MeshEditor/MeshHandles` imports `../GradientEditor/handleOverlay`, and
+  `PaintInput` already picks editors through `valueKind.Editor`. Move `PaintSlot` beside the paint helpers. Closes
+  when `GradientEditor` has no mesh branch.
+
+- **(P3) [agent] Make `LayerList` a `Tree` with a row-controls slot.** `Tree` is `role="tree"` with cross-parent
+  drops; `LayerList` is `role="treegrid"` with a `useReorderDragList` per level, its own `layerTree.ts`, and
+  `ItemList`'s CSS; `Tree`'s `trailing` is documented "Not a control". Also resolve the `useSceneLayerList` name
+  clash with core. Closes when `LayerList` is a `Tree` preset.
+
+- **(P2) [agent] Split `ToolPalette` into a rail of items plus a `ToolsApi` adapter.** `ToolPalette` accepts only
+  `tools: ToolsApi`, so labkit's `PaletteRegion` rebuilds its frame. The rail takes items (icon, label, shortcut,
+  active, onPress, group). Closes when `PaletteRegion` renders the rail.
+
+- **(P2) [agent] Delete labkit's hand-kept copy of ui's exports.** `labkit/src/passthrough/weasel-ui.ts` re-exports
+  about 206 names as `@weasel-js/labkit/weasel-ui`, and nothing outside labkit imports it;
+  `labkit/src/primitives/index.ts` also re-exports `StatusBar` and `Toolbar`. Closes when labkit imports
+  `@weasel-js/ui` directly and the subpath is gone.
+
+- **(P2) [agent] Export `Bar`'s cell step and drop `ControlBar`'s copy.** Both share `BarLayout` and
+  `groupBarNodes`, but `labkit/src/controls/ControlBar.tsx` maps leaves through its own `Cell`/`labField` and
+  filters with its own `visible`. Export `barCells(leaves, cellFor)` with a pluggable cell factory. Closes when
+  `ControlBar` calls it.
+
+- **(P3) [agent] Draw hud's menu from a shared headless panel.** `hud/src/menu/drawPanel.ts` hard-codes
+  `DEFAULT_MENU_METRICS`, "close to the DOM menu's", while the DOM menu lays out from CSS. A ui-logic menu panel
+  reads tokens through `MeasureEnv`, as `measureButton` and `measureRowList` already do. Closes when both menus
+  take their geometry from it.
+
+- **(P3) [maintainer] Presets and option builders in place of wrapper components.** `PointPlotter` is `CurveEditor`
+  with three props fixed; `FontWeightSelect` and `FontFamilySelect` only build options for `Select`; `CloseButton`
+  repeats `Button`'s `iconOnly`, tooltip, and reason handling; `ActionSettingsDialog` repeats `PrefsDialog`;
+  `ThemeSwitcher` is a generic cycle button. The renames (`ThemeSwitcher`'s especially) are the maintainer's; the
+  folding is agent work. Closes when each is a preset, a builder (`fontWeightOptions()`,
+  `useFontFamilyOptions()`), or gone.
+
+- **(P3) [agent] One `Option` type for `Select`, `ComboBox`, and `MenuButton`.** `SelectOption` has `isDisabled`,
+  icon, description, and `disabledReason`; `ComboBoxOption` has only `isDisabled`; `MenuButtonItem` says
+  `disabled`; `optionLabels.tsx` types its input loosely to cope. Closes when all three take one type.
+
+- **(P3) [agent] `CommandPalette` steps its list and finds shortcuts its own way.** `moveHighlight`
+  (`CommandPalette/CommandPalette.tsx:180`) reimplements ui-input's `stepStop` with `canStop`, and
+  `item.shortcut ?? actionShortcuts(...)` is written again in `actionShortcutText.ts`. Closes when it uses
+  `stepStop` and one `actionItemShortcuts` sits beside `actionShortcuts` in core.
+
+- **(P2) [maintainer] Move `PrefSchemaEditor` out of ui.** 8,341 source lines plus 10,308 of tests; 43 files
+  (3,624 lines) are pure model with no React or CSS (`schemaEdit`, `schemaExport`, `workspaceCodec`, `bundle*`,
+  `kindSchemas`, `draft`). Only `apps/draw/src/dev` uses it, and `PrefConditionEditor` is used only by its
+  `AttributesPane`. The model goes to `@weasel-js/prefs` as `./edit`; the editor and `PrefConditionEditor` go to a
+  new `prefs-editor` package, which needs the maintainer to seed on npm. Closes when neither lives in ui.
+
+- **(P3) [agent] Move `GestureRoute` and `FallthroughDiagram` to devtools.** They import
+  `@weasel-js/core/routing` descriptors, and their only consumers are `devtools/src/views/Bindings.tsx` and
+  `TraceTable.tsx`. Closes when they live in devtools.
+
+- **(P3) [agent] Move React-free helpers to paint, geom, and text.** `paintValue.ts` (its own `./paint-value`
+  subpath), `src/paintPreview.ts`, `TokenPanel/color.ts`'s `parsesAsColor`, `src/color/oklch.ts`, and
+  `src/color/ramp.ts` go to `@weasel-js/paint`; `CurveEditor`'s `interpolation`, `catmullRom`, and `monotone` and
+  `Timeline/easingSpec.ts` go to `@weasel-js/geom`; `Along/joiningTypes.gen.ts` and `visualGraphemes.ts` go to
+  `@weasel-js/text`. Whether theme's `lightnessRamp` and ui's `ChromaCurve` should merge is open *(inferred)*.
+  Closes when ui holds none of them.
+
+- **(P3) [agent] Move labkit's and draw's general pieces into ui.** `labkit/src/primitives/Legend.tsx` and
+  `FpsMeter.tsx` have no labkit dependencies; `FloatingPanel` needs value/onChange in place of `usePersistedState`;
+  `ZoomControl` is built on ui; `Readout` wraps `DetailList`; `apps/draw/src/ui/HistoryList` is a general undo list
+  on `ItemList`; draw's `ToolIcon` repeats each tool's declared `icon`. `JobProgress`, `Split`, and `HeldClock` stay
+  in labkit. Closes when the five live in ui, `Readout` folds into `DetailList`, and `ToolIcon` reads `ToolDef.icon`.
+
+- **(P3) [agent] Move ui-logic's key and pointer helpers to ui-input.** ui-logic's index says that is ui-input's
+  job, yet it exports `pressStep`, `isPressKey`, `IDLE_PRESS`, and `dropSide` (which belongs beside `dropBand` and
+  `nearestGap`). Closes when ui-logic exports only the measure/draw contract.
+
+- **(P3) [agent] Move Badge's lab out of the component.** Badge is about 10.5k lines, of which `Badge.tsx` is 247
+  and `lab/` is 2,382, exported only through `testing/labViews.ts`; the lab hand-rolls a params panel
+  (`lab/ParamControl.tsx`, `controls.ts`). Rebuild it in labkit or an app on `ControlPanel` and `Sequence`. Closes
+  when `Badge/lab/` is gone from ui.
+
+- **(P3) [agent] Rename and split folders to match what they hold.** `ContextMenu/` holds the whole menu layer
+  (`MenuPanel`, `MenuRow`, `useMenuTrigger`, `useDismiss`) that `MenuButton`, `MenuBar`, `BarMenu`, and `ToolStack`
+  import; `src/floating/` is a drag-and-snap panel hook, not overlay positioning; `Timeline/` also holds `Ruler`,
+  `Transport`, and `EasingPicker` (a Properties control); `Icon/index.ts` is a one-line re-export of `src/icons`;
+  `Keycaps/index.ts` re-exports gestures' `keySpecsFrom*` and `detectPlatform`. Closes when there is a `Menu/`
+  folder, `floating/` is renamed or folded into `ToolbarDock`, `Timeline/` holds only the timeline, and the two
+  re-export shims are gone.
+
+- **(P3) [agent] Move loose stylesheets and helpers into the component that owns them.** `field.module.css` (15
+  importers beside `Field/`'s own helpers), `checkbox.module.css` (also used by `Properties/fieldControls.tsx:127`),
+  `listbox.module.css` (whose `surface` styles 8 popovers while `Popover` draws nothing), `segmentTooltip.tsx` (the
+  shared tooltip builder), `colorModes.ts`, `stanceCss.ts`/`stanceSurfaces.ts` (build-time only), `mixedHint.ts`,
+  `sizer.module.css`, `optionLabels.tsx`, `src/paintGradientTrack.tsx`/`paintGradientCurve.tsx` (a Slider
+  `renderTrack`), and `ColorField/OpacityRange` (used by `PaintInput`). Closes when `components/` holds only
+  component folders and genuinely shared files (`orientation.ts`, `appearance.ts`, `checker.module.css`,
+  `Caret.tsx`, `dropTarget.ts`).
+
+- **(P3) [agent] Group `AnchorFields` and `CharacterOptions` with the editor panels.** Both are core-bound panels
+  (on `PropertyList` + `useAnchorFields`, and on `ToolOptionsBar` + `useTextTool`) filed among the form controls.
+  Closes when they sit with `SelectionPanel` and `Properties`.
+
+- **(P3) [recheck] One rule for story titles.** 75 of 144 stories sit under `ui/Foundations` with no visible rule
+  (`Toolbar` in, `ToolButton` out; `Tabs` in, `PageTabs` out), and some titles don't match their files
+  (`Timeline/Ruler` is `ui/Ruler`, `Keycaps.stories` is `KeySequence`). Proposed: `ui/<folder>[/<export>]`,
+  Foundations kept only for its overview page, categories as tags, and a check that enforces it; also sort
+  `packages/ui/src/index.ts`. Closes when the check passes on every story.
+
 ## forge
 
 `@weasel-js/forge` is the component workshop built on labkit: each story renders
