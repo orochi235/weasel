@@ -6,6 +6,7 @@ import { loupeAimActions, surfaceKey } from './loupe/loupeRoutes';
 import type { Hud } from './hud';
 import { ANY_MODS, hitPredicate, viewToTransform, worldToScreen, type TargetPredicate } from '@weasel-js/core';
 import { claimsOf, type Widget, type HudPointerEvent } from './widget';
+import { createOpenPresses, type OpenPresses } from './openPresses';
 import type { ImmediateParams } from '@weasel-js/core';
 
 /** What the HUD layer's `hitTest` resolves and hands to the actions below. */
@@ -50,7 +51,7 @@ function toScreen(deps: ActionDeps, x: number, y: number): [number, number] {
 // `PointerEvent`, so there is nothing truer to pass than `null`. Widgets read
 // the normalized `x` / `y` and the event `type`.
 
-function pressAction(): Action {
+function pressAction(presses: OpenPresses): Action {
   return {
     id: 'hud.press',
     label: 'HUD — press widget',
@@ -62,13 +63,14 @@ function pressAction(): Action {
         const widget = widgetIn(p?.affordance);
         if (!widget || !p?.world) return;
         const [x, y] = toScreen(deps, p.world.x, p.world.y);
+        presses.opened(widget);
         widget.onPointer({ type: 'down', x, y, native: null } satisfies HudPointerEvent);
       },
     },
   };
 }
 
-function releaseAction(): Action {
+function releaseAction(presses: OpenPresses): Action {
   return {
     id: 'hud.release',
     label: 'HUD — release widget',
@@ -80,13 +82,14 @@ function releaseAction(): Action {
         const widget = widgetIn(p?.affordance);
         if (!widget || !p?.world) return;
         const [x, y] = toScreen(deps, p.world.x, p.world.y);
+        presses.closed(widget);
         widget.onPointer({ type: 'up', x, y, native: null } satisfies HudPointerEvent);
       },
     },
   };
 }
 
-function dragAction(): Action {
+function dragAction(presses: OpenPresses): Action {
   return {
     id: 'hud.drag',
     label: 'HUD — drag widget',
@@ -108,6 +111,7 @@ function dragAction(): Action {
             widget.onPointer({ type: 'move', x, y, native: null } satisfies HudPointerEvent);
           },
           onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
+            presses.closed(widget);
             if (reason === 'cancel') {
               widget.onPointer({ type: 'cancel', native: null } satisfies HudPointerEvent);
               return;
@@ -194,6 +198,9 @@ function wheelAction(): Action {
  * - `click` sends the `up` for a press that never crossed the drag threshold —
  *   the common case for a button.
  * - `drag` pumps `move` and closes with `up` / `cancel`.
+ * - A press neither closes (a long-press spent it, a second finger took it
+ *   for a pinch, the browser canceled the pointer) gets a `cancel` once the
+ *   pointer is released or lost.
  *
  * The other four are one binding each. Every binding gates on both the
  * affordance kind and the hit widget's claim set, so it fires only for input
@@ -206,19 +213,22 @@ function wheelAction(): Action {
  */
 export function createHudContribution(hud?: Hud, options?: AttachHudOptions): SurfaceContribution {
   const surfaces = new Set<object>();
+  const presses = createOpenPresses();
   return {
     id: 'weasel-hud',
     attach: (api: CanvasExtensionApi) => {
       const key = surfaceKey(api);
       surfaces.add(key);
       const detach = hud ? attachHud(api, hud, options) : null;
+      const win = api.element?.ownerDocument.defaultView ?? (typeof window === 'undefined' ? null : window);
+      const unwatch = win ? presses.watch(win) : null;
       if (hud) api.requestRedraw();
-      return () => { surfaces.delete(key); detach?.(); };
+      return () => { surfaces.delete(key); detach?.(); unwatch?.(); };
     },
     eligibility: { claimed: true },
     actions: [
       ...loupeAimActions(hud, surfaces),
-      pressAction(), releaseAction(), dragAction(),
+      pressAction(presses), releaseAction(presses), dragAction(presses),
       pointAction('hud.doubleClick', 'HUD — double-click widget', 'doubleclick'),
       pointAction('hud.contextMenu', 'HUD — right-click widget', 'contextmenu'),
       pointAction('hud.longPress', 'HUD — long-press widget', 'longpress'),
