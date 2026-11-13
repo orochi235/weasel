@@ -2147,3 +2147,6 @@ Calls the lanes made without a ruling:
   wheel does, so an action can zoom about it without its own client-to-world map.
 - Open: the minimap takes no two-finger touch pinch; one finger pans it. A pinch there needs the minimap's own camera
   at the action, which `<MinimapCanvas>` keeps in its hook rather than as a dep.
+- 2026-11-13 (the lane's call): `Select`'s opening click ends at the `gestures.longPressMs` kit setting: held longer,
+  the release picks a row. The insert action's own 8 px drag threshold stays its own: it only ever raises the bar the
+  `gestures.dragPx` setting sets, since the recognizer opens no drag before that setting is crossed.

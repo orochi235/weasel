@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
-import { pastDragThreshold } from '@weasel-js/core';
+import { LONG_PRESS_MS, pastDragThreshold } from '@weasel-js/core';
 import { useKitSetting } from '@weasel-js/react';
 import s from './Select.module.css';
 
@@ -7,9 +7,6 @@ export type Nudge = { offset: number; crossOffset: number };
 
 /** Where and when the pointer went down on the trigger. */
 export type Press = { x: number; y: number; at: number };
-
-/** How long a press may last and how far it may travel and still be a click. */
-const CLICK_MS = 500;
 
 export const NO_NUDGE: Nudge = { offset: 0, crossOffset: 0 };
 
@@ -45,6 +42,7 @@ export function AlignOverTrigger({
   // element is reached from inside: this marker's own parent.
   const markerRef = useRef<HTMLSpanElement>(null);
   const dragPx = useKitSetting('gestures.dragPx');
+  const holdMs = useKitSetting('gestures.longPressMs') ?? LONG_PRESS_MS;
   // A measurement that settles takes two passes — one to place the list, one
   // to confirm. A cap is what keeps a list whose own placement changes its
   // measurement from renegotiating forever.
@@ -111,14 +109,14 @@ export function AlignOverTrigger({
     const onUp = (e: PointerEvent) => {
       doc.removeEventListener('pointerup', onUp, true);
       const press = pressRef.current;
-      if (!press || performance.now() - press.at > CLICK_MS) return;
+      if (!press || performance.now() - press.at > holdMs) return;
       if (pastDragThreshold({ clientX: press.x, clientY: press.y }, e, dragPx)) return;
       e.preventDefault();
       e.stopPropagation();
     };
     doc.addEventListener('pointerup', onUp, true);
     return () => doc.removeEventListener('pointerup', onUp, true);
-  }, [triggerRef, pressRef, dragPx]);
+  }, [triggerRef, pressRef, dragPx, holdMs]);
 
   return <span ref={markerRef} hidden />;
 }

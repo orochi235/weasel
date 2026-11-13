@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, createEvent, screen, act } from '@testing-library/react';
-import { DRAG_THRESHOLD_PX } from '@weasel-js/core';
+import { DRAG_THRESHOLD_PX, LONG_PRESS_MS } from '@weasel-js/core';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { Select, SelectItem, SelectSection } from './Select';
 import s from './Select.module.css';
@@ -232,6 +232,38 @@ describe('Select', () => {
       const up = createEvent.pointerUp(document, { clientX: 40, clientY: 10 });
       fireEvent(document, up);
       expect(up.defaultPrevented).toBe(true);
+    });
+
+    it('keeps the release of a press held past a long-press', () => {
+      vi.useFakeTimers({ toFake: ['performance'] });
+      try {
+        render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
+        const trigger = screen.getByRole('button', { name: /Color/ });
+        press(trigger, { clientX: 20, clientY: 10 });
+        act(() => { fireEvent.click(trigger); });
+        vi.advanceTimersByTime(LONG_PRESS_MS + 1);
+        const up = createEvent.pointerUp(document, { clientX: 20, clientY: 10 });
+        fireEvent(document, up);
+        expect(up.defaultPrevented).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('holds a press up to the gestures.longPressMs kit setting before it stops being the click', () => {
+      vi.useFakeTimers({ toFake: ['performance'] });
+      try {
+        render(<KitSettingsProvider value={{ gestures: { longPressMs: 900 } }}><Select label="Color" options={OPTIONS} defaultSelectedKey="g" /></KitSettingsProvider>);
+        const trigger = screen.getByRole('button', { name: /Color/ });
+        press(trigger, { clientX: 20, clientY: 10 });
+        act(() => { fireEvent.click(trigger); });
+        vi.advanceTimersByTime(600);
+        const early = createEvent.pointerUp(document, { clientX: 20, clientY: 10 });
+        fireEvent(document, early);
+        expect(early.defaultPrevented).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('keeps a release that travelled — a drag onto a row is a choice', () => {
