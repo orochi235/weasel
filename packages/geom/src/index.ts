@@ -103,7 +103,7 @@ export { puckerBloatPath, type PuckerBloatPathOptions } from './paths/puckerBloa
 export { pathDistanceToPoint } from './paths/pathDistance';
 export { intersectSegments, type SegmentCrossing } from './intersect/segmentIntersections';
 export { pathSegments, type PathSegment } from './intersect/pathSegments';
-export { pathCrossings, type PathCrossing, type PathStop } from './intersect/pathCrossings';
+export { pathCrossings, type PathCrossing, type PathCrossingsOptions, type PathStop } from './intersect/pathCrossings';
 export {
   createPathSnapIndex, findPathSnap, findPathSnaps, PATH_SNAP_KINDS,
   type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery, type PathSnapTarget,
