@@ -16,9 +16,9 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { dot, multiply, quatFromAxisAngle, sub, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import {
-  cameraEye, cameraViewProjection, createCamera, createPickEvery, createPoseDescriptor,
+  cameraEye, cameraViewProjection, createCamera, createCameraDep, createPickEvery, createPoseDescriptor,
   dollyAction, ndcToScreen, orbitAction, panAction, pose3, poseMatrix, useOrbitTool, worldPoseOf,
-  type Camera3d, type Camera3dDep, type Pose3, type Scene3d, type Viewport3d,
+  type Camera3d, type Pose3, type Scene3d, type Viewport3d,
 } from '@weasel-js/kernel3d';
 import styles from './Kernel3dDemo.module.css';
 import { decimal, qty } from '@weasel-js/quantity';
@@ -139,18 +139,14 @@ export function Kernel3dDemo() {
   const pickEvery = useMemo(() => createPickEvery(world), [world]);
 
   const cameraRig = useMemo((): SurfaceContribution => {
-    const camera3d: Camera3dDep = {
-      get: () => cameraRef.current,
-      set: setCamera,
-      size: () => size.current,
-    };
+    const camera3d = createCameraDep(world, { set: setCamera });
     return {
       id: 'camera3d',
       eligibility: { always: true },
       actions: [orbitAction, panAction, dollyAction],
       deps: { camera3d: () => camera3d },
     };
-  }, [cameraRef]);
+  }, [world]);
   const orbit = useOrbitTool();
 
   const layer = useMemo(() => solidsLayer(camera, scene), [camera, scene]);

@@ -44,7 +44,8 @@ const rig: SurfaceContribution = {
   eligibility: { always: true },
   actions: [orbitAction, panAction, dollyAction],
   deps: {
-    camera3d: () => ({ get: () => cameraRef.current, set: setCamera, size: () => size }),
+    // Reads the camera, the pane and the up from `world`, as every other dep does.
+    camera3d: () => createCameraDep(world, { set: setCamera }),
     insert: () => insert,
     snap: () => createSnap(world, { sources: [groundGridSource({ world, step: 1 })] }),
   },
@@ -61,9 +62,9 @@ const rig: SurfaceContribution = {
 />
 ```
 
-A world with another up (`up: { x: 0, y: 0, z: 1 }`) passes it to everything that places the
-camera: `World3d.up`, `Camera3dDep.up`, and `cameraViewProjection`, `cameraEye` and `projectPoint` in
-the renderer.
+A world with another up (`up: { x: 0, y: 0, z: 1 }`) sets it on `World3d.up`, which every dep built
+from the world reads. The renderer passes it too, to `cameraViewProjection`, `cameraEye` and
+`projectPoint`: a camera holds no up of its own.
 
 ## What core did not have to change
 
