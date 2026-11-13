@@ -5,17 +5,7 @@
 // writes a bare string back over it. These helpers are what keep a control
 // honest about the shape it is holding.
 
-import { isSolidPaint, type Paint } from '@weasel-js/paint';
-
-/** Whether a value is a `Paint` at all: an object naming a kind, or one
- *  carrying a color, which is the solid member with its optional tag left off.
- *  A pref's stored value is `unknown`, so this is what stands between a paint
- *  control and a string someone saved there. */
-export function isPaint(value: unknown): value is { kind?: string; color?: string } {
-  if (typeof value !== 'object' || value === null) return false;
-  const paint = value as { kind?: unknown; color?: unknown };
-  return typeof paint.kind === 'string' || typeof paint.color === 'string';
-}
+import { isPaint, isSolidPaint, type Paint } from '@weasel-js/paint';
 
 /** The color of a solid paint, or `undefined` for anything else — including a
  *  value that isn't a paint at all. */

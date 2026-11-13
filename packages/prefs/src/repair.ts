@@ -1,3 +1,4 @@
+import { isPaint, tryParseColor } from '@weasel-js/paint';
 import { endlessAllows } from '@weasel-js/quantity';
 import { isPlainObject } from '@weasel-js/registry';
 import { prefClampNumber } from './bounds';
@@ -37,9 +38,12 @@ export function repairPrefValue(
     case 'boolean':
       return (leaf as PrefBoolean).encoding || typeof stored === 'boolean' ? stored : leaf.default;
     case 'string':
-    case 'color':
     case 'field':
       return typeof stored === 'string' ? stored : leaf.default;
+    case 'color':
+      return typeof stored === 'string' && tryParseColor(stored) !== null ? stored : leaf.default;
+    case 'paint':
+      return stored === null || isPaint(stored) ? stored : leaf.default;
     case 'enum': {
       const e = leaf as PrefEnum;
       if (e.encoding) return stored;

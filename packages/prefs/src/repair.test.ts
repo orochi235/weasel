@@ -65,6 +65,24 @@ describe('repairPrefValue', () => {
     expect(repairPrefValue(c, 0xffffff)).toBe('#000');
   });
 
+  it('defaults a color no color reader reads, and keeps any CSS color the kit reads', () => {
+    const c = { kind: 'color', name: 'C', description: '', default: '#000' } as PrefLeaf;
+    expect(repairPrefValue(c, 'notacolor')).toBe('#000');
+    expect(repairPrefValue(c, '#ff00f')).toBe('#000');
+    expect(repairPrefValue(c, 'rebeccapurple')).toBe('rebeccapurple');
+    expect(repairPrefValue(c, '#ff000080')).toBe('#ff000080');
+  });
+
+  it('defaults a paint that is no paint, and keeps an explicit none', () => {
+    const p = { kind: 'paint', name: 'P', description: '', default: { color: '#000' } } as PrefLeaf;
+    const solid = { kind: 'solid', color: '#f00' };
+    expect(repairPrefValue(p, solid)).toBe(solid);
+    expect(repairPrefValue(p, null)).toBeNull();
+    expect(repairPrefValue(p, '#f00')).toEqual({ color: '#000' });
+    expect(repairPrefValue(p, { x: 1 })).toEqual({ color: '#000' });
+    expect(repairPrefValue(p, 7)).toEqual({ color: '#000' });
+  });
+
   it('defaults an object leaf that is not a plain object, unless it lifts scalars', () => {
     const obj = { kind: 'object', name: 'O', description: '', default: { x: 1 }, children: {} } as PrefLeaf;
     const lifting = { ...obj, fromScalar: (v: unknown) => ({ x: v }) } as PrefLeaf;
