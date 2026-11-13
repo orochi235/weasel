@@ -5,7 +5,7 @@ import { StatusBar, StatusBarItem, StatusBarSpacer } from './StatusBar';
 describe('StatusBar', () => {
   it('labels the bar without making it a live region', () => {
     const { container } = render(
-      <StatusBar ariaLabel="Editor status"><StatusBarItem>tool: select</StatusBarItem></StatusBar>,
+      <StatusBar aria-label="Editor status"><StatusBarItem>tool: select</StatusBarItem></StatusBar>,
     );
     const bar = container.querySelector('footer')!;
     expect(bar.getAttribute('aria-label')).toBe('Editor status');

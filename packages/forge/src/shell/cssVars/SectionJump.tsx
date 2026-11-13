@@ -86,7 +86,7 @@ export function SectionJump() {
 
   return (
     <div ref={ref} className="fg-css-vars__jump">
-      <ToggleBar ariaLabel="Jump to section" variant="flat" size="sm" items={items} value={current} onChange={jump} />
+      <ToggleBar aria-label="Jump to section" variant="flat" size="sm" items={items} value={current} onChange={jump} />
     </div>
   );
 }

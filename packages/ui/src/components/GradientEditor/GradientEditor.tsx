@@ -122,7 +122,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
             items={kinds}
             value={kind}
             size="sm"
-            ariaLabel="Gradient kind"
+            aria-label="Gradient kind"
             onChange={(next) => next && switchKind(next)}
           />
         )}
@@ -138,7 +138,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
         items={spaces}
         value={space}
         size="sm"
-        ariaLabel="Blend space"
+        aria-label="Blend space"
         onChange={(next) => next && onChange({ ...value, interpolate: next } as Paint)}
       />
     );

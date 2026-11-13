@@ -75,7 +75,7 @@ describe('a chosen control still reads as chosen', () => {
   test('a selected segment fills apart from the others', () => {
     render(
       <OptionsBar
-        ariaLabel="Bar"
+        aria-label="Bar"
         items={['a', 'b'].map((v, i) => ({ value: v, label: v, selected: i === 0, onChange: () => {} }))}
       />,
     );

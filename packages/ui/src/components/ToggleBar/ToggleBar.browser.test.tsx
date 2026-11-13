@@ -17,7 +17,7 @@ const ITEMS = [
 test.each(['tree', 'components', 'gallery'] as const)(
   'a selected flat segment keeps both side borders on top (%s)',
   (value) => {
-    render(<ToggleBar ariaLabel="View" variant="flat" items={[...ITEMS]} value={value} onChange={() => {}} />);
+    render(<ToggleBar aria-label="View" variant="flat" items={[...ITEMS]} value={value} onChange={() => {}} />);
     const selected = screen.getByRole('radio', { checked: true });
     const r = selected.getBoundingClientRect();
     const y = r.top + r.height / 2;
@@ -35,7 +35,7 @@ test.each(['glass', 'flat', 'minimal'] as const)('a squeezed %s bar keeps its te
     <div style={{ display: 'flex', width: 120 }}>
       <input style={{ flex: 1 }} />
       <ToggleBar
-        ariaLabel="View"
+        aria-label="View"
         variant={variant === 'glass' ? undefined : variant}
         items={[...ITEMS]}
         value="tree"
@@ -53,7 +53,7 @@ test.each(['glass', 'flat', 'minimal'] as const)('a squeezed %s bar keeps its te
 test.each(['glass', 'flat', 'minimal'] as const)('a %s bar is smaller at `sm` than at `md`', (variant) => {
   const bar = (size: 'sm' | 'md') => (
     <ToggleBar
-      ariaLabel={size}
+      aria-label={size}
       size={size}
       variant={variant === 'glass' ? undefined : variant}
       items={[...ITEMS]}

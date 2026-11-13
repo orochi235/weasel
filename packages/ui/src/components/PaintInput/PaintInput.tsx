@@ -214,7 +214,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
         items={items}
         value={active}
         size="sm"
-        ariaLabel="Paint kind"
+        aria-label="Paint kind"
         onChange={(kind) => kind && switchKind(kind)}
       />
       {!mixed && inheriting ? <InheritedSwatch paint={inherit?.paint} /> : (

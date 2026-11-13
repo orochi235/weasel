@@ -58,7 +58,7 @@ export function InputTraceView({ config }: { config: InputTraceConfig }): ReactE
               </Along>
               {config.slider && (
                 <Along arc={{ start: 240, end: 120, direction: 'ccw', inset: 16 }}>
-                  <Slider ariaLabel="Zoom" min={0} max={100} step={1} stops={STOPS} thumbs={thumbs} onInput={setThumbs} />
+                  <Slider aria-label="Zoom" min={0} max={100} step={1} stops={STOPS} thumbs={thumbs} onInput={setThumbs} />
                 </Along>
               )}
             </div>

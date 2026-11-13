@@ -17,7 +17,7 @@ export function StoredArea({ title, size, areaRef, dropping = false, children }:
   const height = useEditorSize(size);
   return (
     <>
-      <ResizeHandle orientation="horizontal" invert {...height} min={60} max={600} ariaLabel={`Resize ${title.toLowerCase()}`} />
+      <ResizeHandle orientation="horizontal" invert {...height} min={60} max={600} aria-label={`Resize ${title.toLowerCase()}`} />
       <ListPane title={title} className={s.storedArea} paneRef={areaRef} data-drop={dropping || undefined} style={{ '--stored-h': `${height.value}px` } as CSSProperties}>
         {children}
       </ListPane>

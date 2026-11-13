@@ -224,9 +224,9 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
     <section className={`${s.pane} ${s.structurePane}`} aria-label="Structure">
       <PaneHeader title="Structure">
         {/* A filter opens every branch it shows, so there is nothing to fold while one is set. */}
-        <Button iconOnly variant="ghost" size="sm" ariaLabel="Expand all" tooltip="Expand all" disabled={sought !== ''}
+        <Button iconOnly variant="ghost" size="sm" aria-label="Expand all" tooltip="Expand all" disabled={sought !== ''}
           onClick={() => onExpandedChange(new Set(treeBranchIds(nodes)))}><Icon name={icon('expand')} size={16} /></Button>
-        <Button iconOnly variant="ghost" size="sm" ariaLabel="Collapse all" tooltip="Collapse all" disabled={sought !== ''}
+        <Button iconOnly variant="ghost" size="sm" aria-label="Collapse all" tooltip="Collapse all" disabled={sought !== ''}
           onClick={() => onExpandedChange(new Set())}><Icon name={icon('collapse')} size={16} /></Button>
       </PaneHeader>
       <div className={s.treeFilter}>

@@ -79,7 +79,7 @@ export function SequencePanel({ tools, scene, selected, choices, onChoose }: {
   const arrow = sel?.messages[0] === undefined ? null : arrowNameOf(sel.data, sel.messages[0]);
   return (
     <SidebarPanel title="Sequence" collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)}>
-      <ToolPalette tools={tools} include={isSequenceTool} columns={5} ariaLabel="Sequence tools" />
+      <ToolPalette tools={tools} include={isSequenceTool} columns={5} aria-label="Sequence tools" />
       <Select
         label="Adds" orientation="row" width="fit" options={PARTICIPANTS}
         selectedKey={head === undefined ? choices.participant : head.outline === 'actor' ? 'actor' : 'participant'}

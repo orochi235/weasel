@@ -15,11 +15,11 @@ type Story = StoryObj<typeof ThemeSwitcher>;
 /** Wired to `useColorModePreference`; the readout shows what `auto` resolves
  *  to. Shift-click steps backwards. */
 export const WithPreferenceHook: Story = {
-  render: function Render({ ariaLabel, size, variant }) {
+  render: function Render({ 'aria-label': ariaLabel, size, variant }) {
     const { preference, setPreference, mode } = useColorModePreference();
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <ThemeSwitcher value={preference} onChange={setPreference} ariaLabel={ariaLabel} size={size} variant={variant} />
+        <ThemeSwitcher value={preference} onChange={setPreference} aria-label={ariaLabel} size={size} variant={variant} />
         <span>
           {preference} → {mode}
         </span>
@@ -41,9 +41,9 @@ export const CustomOptions: Story = {
     const [shape, setShape] = useState<'rect' | 'ellipse' | 'star'>('rect');
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <ThemeSwitcher {...args} value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" />
-        <ThemeSwitcher {...args} value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" size="md" />
-        <ThemeSwitcher {...args} value={shape} onChange={setShape} options={SHAPES} ariaLabel="Shape" variant="solid" />
+        <ThemeSwitcher {...args} value={shape} onChange={setShape} options={SHAPES} aria-label="Shape" />
+        <ThemeSwitcher {...args} value={shape} onChange={setShape} options={SHAPES} aria-label="Shape" size="md" />
+        <ThemeSwitcher {...args} value={shape} onChange={setShape} options={SHAPES} aria-label="Shape" variant="solid" />
       </div>
     );
   },

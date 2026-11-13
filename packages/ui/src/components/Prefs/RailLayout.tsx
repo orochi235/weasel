@@ -106,14 +106,14 @@ export function RailLayout(props: PrefsFormProps & {
         items={drawnItems}
         section={page}
         onOpen={setOpen}
-        ariaLabel={schema.name}
+        aria-label={schema.name}
         header={filterField}
         showCounts={query.trim() !== ''}
         foldable={props.foldable === true} hidden={props.ctx.hidden}
         dropInto={drop?.rail && drop.where === 'into' ? drop.path : null}
       />
       {props.resizableRail === true && (
-        <ResizeHandle value={railWidth ?? RAIL_WIDTH} min={120} max={360} onInput={setRailWidth} ariaLabel="Resize sections" />
+        <ResizeHandle value={railWidth ?? RAIL_WIDTH} min={120} max={360} onInput={setRailWidth} aria-label="Resize sections" />
       )}
       {group === null ? (
         <div className={s.pane} ref={markPane} data-pref-into="" data-pref-scroll="">

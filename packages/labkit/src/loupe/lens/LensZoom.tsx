@@ -63,7 +63,7 @@ export function LensZoom<C>({
   };
   const slider = (
     <Slider
-      ariaLabel="Zoom"
+      aria-label="Zoom"
       min={FACTOR_MIN}
       max={FACTOR_MAX}
       stops={STOPS}

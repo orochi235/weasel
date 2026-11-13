@@ -29,7 +29,7 @@ export type ToggleBarVariant = SegmentedVariant;
 
 /** What a {@link ToggleBar} takes whichever selection mode it is in. */
 export type ToggleBarCommonProps = SegmentedGridProps & {
-  ariaLabel?: string;
+  'aria-label'?: string;
   className?: string;
   height?: number;
   /** Size variant. `sm` is ~60% of the default height with reduced padding
@@ -72,7 +72,7 @@ export type ToggleBarProps<V extends string | number = string> =
  * `selection` model.
  */
 export function ToggleBar<V extends string | number = string>(props: ToggleBarProps<V>): ReactElement {
-  const { items, ariaLabel, className, height, size, variant, orientation } = props;
+  const { items, 'aria-label': ariaLabel, className, height, size, variant, orientation } = props;
   const values = items.map((it) => it.value);
   const model = selection<V>(props, values);
   const usable = (i: number): boolean => items[i] !== undefined && !items[i].disabled;

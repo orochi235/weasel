@@ -171,7 +171,7 @@ export function ListEditor<T>({
                 ref={(el) => {
                   focus.removes.current[i] = el;
                 }}
-                ariaLabel={`Remove ${name(i)}`}
+                aria-label={`Remove ${name(i)}`}
                 disabled={disabled || value.length <= minItems}
                 onClick={() => remove(i)}
               />

@@ -6,7 +6,7 @@ import s from './CloseButton.stories.module.css';
 const meta: Meta<typeof CloseButton> = {
   title: 'ui/Foundations/CloseButton',
   component: CloseButton,
-  args: { ariaLabel: 'Close' },
+  args: { 'aria-label': 'Close' },
 };
 export default meta;
 
@@ -15,7 +15,7 @@ type Story = StoryObj<typeof CloseButton>;
 export const Basic: Story = {};
 
 export const WithTooltip: Story = {
-  args: { ariaLabel: 'Hide panel', tooltip: 'Hide panel' },
+  args: { 'aria-label': 'Hide panel', tooltip: 'Hide panel' },
 };
 
 export const Disabled: Story = {
@@ -37,7 +37,7 @@ export const RemoveRows: Story = {
           {rows.map((r) => (
             <li key={r}>
               <span>{r}</span>
-              <CloseButton {...args} ariaLabel={`Remove ${r}`} onClick={() => setRows(rows.filter((x) => x !== r))} />
+              <CloseButton {...args} aria-label={`Remove ${r}`} onClick={() => setRows(rows.filter((x) => x !== r))} />
             </li>
           ))}
         </ul>

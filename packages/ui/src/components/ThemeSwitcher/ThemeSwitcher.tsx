@@ -28,7 +28,7 @@ export interface ThemeSwitcherProps<T extends string = ColorModePreference> {
   options?: readonly ThemeSwitcherOption<T>[];
   /** What is being switched, leading the accessible name and tooltip
    *  (`Theme: Auto — click for Light`). Defaults to `'Theme'`. */
-  ariaLabel?: string;
+  'aria-label'?: string;
   /** Defaults to `sm`, the size of a header's icon buttons. */
   size?: ButtonSize;
   /** Defaults to `ghost`. */
@@ -48,7 +48,7 @@ export function ThemeSwitcher<T extends string = ColorModePreference>({
   value,
   onChange,
   options = COLOR_MODE_OPTIONS as unknown as readonly ThemeSwitcherOption<T>[],
-  ariaLabel = 'Theme',
+  'aria-label': ariaLabel = 'Theme',
   size = 'sm',
   variant = 'ghost',
   className,
@@ -65,7 +65,7 @@ export function ThemeSwitcher<T extends string = ColorModePreference>({
       variant={variant}
       size={size}
       iconOnly
-      ariaLabel={name}
+      aria-label={name}
       tooltip={name}
       className={className}
       onClick={(event) => onChange((event.shiftKey ? previous : next).value)}

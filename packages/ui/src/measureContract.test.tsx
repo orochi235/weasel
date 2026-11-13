@@ -22,7 +22,7 @@ describe('nodeText', () => {
 describe('domButton', () => {
   it('reads its children as the label, or as the icon when icon-only', () => {
     expect(buttonFaceOf({ children: <span>Go</span> })).toMatchObject({ label: 'Go', size: 'md' });
-    expect(buttonFaceOf({ iconOnly: true, ariaLabel: 'Add', children: '+' })).toMatchObject({ iconOnly: true, icon: '+' });
+    expect(buttonFaceOf({ iconOnly: true, 'aria-label': 'Add', children: '+' })).toMatchObject({ iconOnly: true, icon: '+' });
     expect(buttonFaceOf({}).label).toBeUndefined();
   });
 

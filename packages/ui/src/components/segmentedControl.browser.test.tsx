@@ -29,7 +29,7 @@ function Bar({ bar, segs, variant, height }: { bar: Bar; segs: readonly Seg[] } 
   if (bar === 'ButtonBar') {
     return (
       <ButtonBar
-        ariaLabel="Bar"
+        aria-label="Bar"
         variant={variant}
         height={height}
         items={segs.map((sg, i) => ({ value: String(i), ...sg, onAction: () => {} }))}
@@ -38,7 +38,7 @@ function Bar({ bar, segs, variant, height }: { bar: Bar; segs: readonly Seg[] } 
   }
   return (
     <OptionsBar
-      ariaLabel="Bar"
+      aria-label="Bar"
       variant={variant}
       height={height}
       items={segs.map((sg, i) => ({
@@ -82,7 +82,7 @@ describe.each(['ButtonBar', 'OptionsBar'] as const)('%s', (bar) => {
     render(
       <>
         <Bar bar={bar} segs={TEXT} height={40} />
-        <ToggleBar ariaLabel="Toggle" items={TEXT.map((t) => ({ value: t.label, label: t.label }))} value={null} onChange={() => {}} height={40} />
+        <ToggleBar aria-label="Toggle" items={TEXT.map((t) => ({ value: t.label, label: t.label }))} value={null} onChange={() => {}} height={40} />
       </>,
     );
     const root = screen.getByRole(bar === 'ButtonBar' ? 'toolbar' : 'group', { name: 'Bar' });
@@ -104,7 +104,7 @@ test('a minimal ToggleBar draws its segments as a minimal OptionsBar does', () =
   render(
     <>
       <Bar bar="OptionsBar" segs={TEXT} variant="minimal" />
-      <ToggleBar ariaLabel="Toggle" variant="minimal" items={TEXT.map((t) => ({ value: t.label, label: t.label }))} value="Tree" onChange={() => {}} />
+      <ToggleBar aria-label="Toggle" variant="minimal" items={TEXT.map((t) => ({ value: t.label, label: t.label }))} value="Tree" onChange={() => {}} />
     </>,
   );
   const look = (el: Element) => {

@@ -263,13 +263,13 @@ export function AssetEditor(
       <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={kindsShown} renderers={renderers} types={types}
         expanded={expanded} onExpandedChange={setExpanded} unplaced={over || bundles ? undefined : unplaced} {...bundles?.structure} actions={catalog ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
         toolSlot={toolSlot} shelfSlot={shelfSlot} maxDepth={maxDepth} rowMark={treeMark} readOnly={readOnly} over={over} />
-      <ResizeHandle className={s.structureHandle} {...structureSize} {...RANGE.structure} ariaLabel="Resize structure" />
+      <ResizeHandle className={s.structureHandle} {...structureSize} {...RANGE.structure} aria-label="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">
           {notice && (
             <>
               <span>{notice}</span>
-              <CloseButton ariaLabel="Dismiss" onClick={() => setNotice(null)} />
+              <CloseButton aria-label="Dismiss" onClick={() => setNotice(null)} />
             </>
           )}
         </div>
@@ -282,7 +282,7 @@ export function AssetEditor(
           changed={selection.paths.length > 1 ? undefined : changedAttrs}
           kinds={kindList} custom={kindsShown} types={types} renderers={renderers} actions={actionList ?? undefined} over={over} readOnly={readOnly || bundles?.locked(selection.paths)} onNotice={setNotice} />}
       </div>
-      <ResizeHandle {...attributesSize} {...RANGE.attributes} ariaLabel="Resize attributes" />
+      <ResizeHandle {...attributesSize} {...RANGE.attributes} aria-label="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}
         onSelect={(path, how) => {
           // The root's own entry names no node to add to a selection.
@@ -292,7 +292,7 @@ export function AssetEditor(
       <Shelf slot={setShelfSlot}><ExportPanel schema={schema} types={types} exported={exported} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} /></Shelf>
       {list && (
         <>
-          <ResizeHandle className={s.asideHandle} invert {...asideSize} {...RANGE.aside} ariaLabel="Resize sidebar" />
+          <ResizeHandle className={s.asideHandle} invert {...asideSize} {...RANGE.aside} aria-label="Resize sidebar" />
           <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar">
             <AssetList assets={shownAssets(workspace)} elsewhere={elsewhere} order={order} onElsewhere={onElsewhere} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
           </aside>

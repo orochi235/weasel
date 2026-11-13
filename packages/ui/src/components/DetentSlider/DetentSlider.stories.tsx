@@ -53,7 +53,7 @@ export const PlaybackRate: Story = {
       items={[0.25, 0.5, 1, 2, 4]}
       initial={1}
       formatLabel={(r) => `${r}×`}
-      ariaLabel="Playback rate"
+      aria-label="Playback rate"
     />
   ),
 };
@@ -69,7 +69,7 @@ export const ManyDetents: Story = {
       items={[1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64]}
       initial={8}
       formatLabel={(n) => `${n}px`}
-      ariaLabel="Stroke width"
+      aria-label="Stroke width"
     />
   ),
 };
@@ -86,7 +86,7 @@ export const OrdinalValues: Story = {
         { value: 'high', label: 'High', ariaLabel: 'High quality' },
       ]}
       initial={'low' as const}
-      ariaLabel="Quality"
+      aria-label="Quality"
     />
   ),
 };
@@ -94,6 +94,6 @@ export const OrdinalValues: Story = {
 /** Two detents is a toggle laid along a line. */
 export const TwoDetents: Story = {
   render: (args) => (
-    <Wrapper {...args} width={160} items={[0.5, 1]} initial={1} formatLabel={(r) => `${r}×`} ariaLabel="Rate" />
+    <Wrapper {...args} width={160} items={[0.5, 1]} initial={1} formatLabel={(r) => `${r}×`} aria-label="Rate" />
   ),
 };

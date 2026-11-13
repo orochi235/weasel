@@ -29,7 +29,7 @@ export function StagePalette({ onAdd }: StagePaletteProps): ReactElement {
         items={DOMAINS}
         value={domain}
         onChange={(v) => { if (v) setDomain(v); }}
-        ariaLabel="Stage set"
+        aria-label="Stage set"
         size="sm"
       />
       <ItemList

@@ -10,7 +10,7 @@ function Bar({ calls }: { calls: string[] }) {
   return (
     <OptionsBar
       sweep
-      ariaLabel="opts"
+      aria-label="opts"
       items={(['a', 'b', 'c'] as const).map((v) => ({
         value: v,
         label: v,

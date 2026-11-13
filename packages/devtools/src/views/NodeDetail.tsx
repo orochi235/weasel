@@ -39,7 +39,7 @@ export function NodeDetail({ client, rootId, nodeId, onPick }: NodeDetailProps):
         <DetailRow label="Layer">{d.layer}</DetailRow>
         <DetailRow label="Parent">
           {d.parent && (
-            <Button size="sm" variant="link" onClick={() => onPick(d.parent!)} ariaLabel={`Show parent ${d.parent}`}>
+            <Button size="sm" variant="link" onClick={() => onPick(d.parent!)} aria-label={`Show parent ${d.parent}`}>
               {d.parent}
             </Button>
           )}

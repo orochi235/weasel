@@ -302,8 +302,8 @@ describe('ToggleBar skin', () => {
   it('draws its segments from the stylesheet ButtonBar and OptionsBar share', () => {
     render(
       <>
-        <ToggleBar ariaLabel="View" items={[{ value: 'a', label: 'A' }]} value={null} onChange={() => {}} />
-        <ButtonBar ariaLabel="Do" items={[{ value: 'b', label: 'B', onAction: () => {} }]} />
+        <ToggleBar aria-label="View" items={[{ value: 'a', label: 'A' }]} value={null} onChange={() => {}} />
+        <ButtonBar aria-label="Do" items={[{ value: 'b', label: 'B', onAction: () => {} }]} />
       </>,
     );
     const toggle = screen.getByRole('radio', { name: 'A' });

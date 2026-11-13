@@ -23,7 +23,7 @@ function Rows({ store }: { store: LabStore }) {
           </span>
           <Button
             size="sm"
-            ariaLabel={`Discard ${describe(record)}`}
+            aria-label={`Discard ${describe(record)}`}
             onClick={() => store.getState().discardUnreadable(record.kind, record.id)}
           >
             Discard

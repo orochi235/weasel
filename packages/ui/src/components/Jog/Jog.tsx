@@ -89,7 +89,7 @@ function jogParts(props: JogProps): JogParts {
         iconOnly
         size="sm"
         variant="ghost"
-        ariaLabel={`Previous ${unit.toLowerCase()}`}
+        aria-label={`Previous ${unit.toLowerCase()}`}
         disabled={at <= 0}
         onClick={() => onStep(-1)}
       >
@@ -101,7 +101,7 @@ function jogParts(props: JogProps): JogParts {
         iconOnly
         size="sm"
         variant="ghost"
-        ariaLabel={playing ? 'Pause' : 'Play'}
+        aria-label={playing ? 'Pause' : 'Play'}
         disabled={count < 2}
         onClick={() => onPlay(!playing)}
       >
@@ -113,7 +113,7 @@ function jogParts(props: JogProps): JogParts {
         iconOnly
         size="sm"
         variant="ghost"
-        ariaLabel={`Next ${unit.toLowerCase()}`}
+        aria-label={`Next ${unit.toLowerCase()}`}
         disabled={at >= last}
         onClick={() => onStep(1)}
       >
@@ -133,7 +133,7 @@ function jogParts(props: JogProps): JogParts {
                 step={1}
                 snap="strict"
                 thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
-                ariaLabel={unit}
+                aria-label={unit}
                 thumbs={[{ value: at, valueText: spoken }]}
                 onInput={(next) => onScrub(Math.round(next[0]?.value ?? 0))}
               />

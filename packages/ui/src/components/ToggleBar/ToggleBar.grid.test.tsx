@@ -8,7 +8,7 @@ const cells = (n: number) => Array.from({ length: n }, (_, i) => ({ value: Strin
 
 function Grid({ count, lastRow }: { count: number; lastRow?: LastRow }) {
   const [value, setValue] = useState<string[]>([]);
-  return <ToggleBar mode="multiple" columns={3} lastRow={lastRow} items={cells(count)} value={value} onChange={setValue} ariaLabel="grid" />;
+  return <ToggleBar mode="multiple" columns={3} lastRow={lastRow} items={cells(count)} value={value} onChange={setValue} aria-label="grid" />;
 }
 
 describe('ToggleBar columns', () => {
@@ -31,7 +31,7 @@ describe('ToggleBar columns', () => {
   });
 
   it('stays one line without columns', () => {
-    const { getByRole } = render(<ToggleBar mode="multiple" items={cells(4)} value={[]} onChange={() => {}} ariaLabel="row" />);
+    const { getByRole } = render(<ToggleBar mode="multiple" items={cells(4)} value={[]} onChange={() => {}} aria-label="row" />);
     expect(getByRole('group').style.getPropertyValue('--tracks')).toBe('');
   });
 });

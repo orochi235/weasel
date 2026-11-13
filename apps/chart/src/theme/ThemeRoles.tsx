@@ -37,7 +37,7 @@ export function ThemeRoles({ edit }: { edit: ThemeEdit }): ReactElement {
       {/* Laid out as a list entry, a remove button's room held empty, so its columns line up with the rest. */}
       <div className="wc-theme-role-fixed">
         <PropertyList pack="one-up"><RoleFields edit={edit} role={fixed} /></PropertyList>
-        <span className="wc-theme-role-spacer" aria-hidden="true"><CloseButton ariaLabel="" disabled /></span>
+        <span className="wc-theme-role-spacer" aria-hidden="true"><CloseButton aria-label="" disabled /></span>
       </div>
       <div className="wc-theme-roles">
         <ListEditor<RoleEntry>

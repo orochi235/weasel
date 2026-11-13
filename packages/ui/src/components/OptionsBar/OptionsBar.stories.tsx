@@ -11,7 +11,7 @@ export default meta;
 type Story = StoryObj<typeof OptionsBar>;
 
 export const Independent: Story = {
-  args: { ariaLabel: 'Text style' },
+  args: { 'aria-label': 'Text style' },
   render: (args) => {
     const [b, setB] = useState(true);
     const [i, setI] = useState(false);

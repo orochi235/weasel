@@ -48,7 +48,7 @@ export interface ResizeHandleProps {
    * pane measured in something finer than whole pixels.
    */
   step?: number;
-  ariaLabel?: string;
+  'aria-label'?: string;
   className?: string;
 }
 
@@ -75,7 +75,7 @@ function settle(n: number, min: number, max: number, step: number): number {
 export function ResizeHandle(props: ResizeHandleProps) {
   const {
     orientation = 'vertical', value, min, max, invert, onInput, onChange,
-    step = 1, ariaLabel, className,
+    step = 1, 'aria-label': ariaLabel, className,
   } = props;
 
   // The session reads current props rather than the ones the pointerdown

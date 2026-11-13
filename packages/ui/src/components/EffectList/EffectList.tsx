@@ -44,7 +44,7 @@ export interface EffectListProps<T extends EffectListItem> {
   onDuplicate?(item: T): T;
   /** Cards have a remove button. Default `true`. */
   removable?: boolean;
-  ariaLabel?: string;
+  'aria-label'?: string;
   className?: string;
 }
 
@@ -63,7 +63,7 @@ export function EffectList<T extends EffectListItem>({
   renderBody,
   onDuplicate,
   removable = true,
-  ariaLabel,
+  'aria-label': ariaLabel,
   className,
 }: EffectListProps<T>) {
   const css = useColorCss();

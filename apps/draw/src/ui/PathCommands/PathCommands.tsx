@@ -37,7 +37,7 @@ export function SimplifySlider({ tolerance, onTolerance, className = s.slider }:
   return (
     <Slider
       className={className}
-      ariaLabel="Simplify tolerance"
+      aria-label="Simplify tolerance"
       min={0.1}
       max={20}
       step={0.1}
@@ -59,7 +59,7 @@ export function OffsetSlider({ className = s.slider }: PathSliderProps): ReactEl
   return (
     <Slider
       className={className}
-      ariaLabel="Offset distance"
+      aria-label="Offset distance"
       min={-50}
       max={50}
       step={0.5}

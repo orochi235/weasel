@@ -132,7 +132,7 @@ export function Transport(props: TransportProps): ReactElement {
       <div className={s.rate}>
         Rate
         <DetentSlider
-          ariaLabel="Rate"
+          aria-label="Rate"
           items={rates.map((r) => ({ value: r, ariaLabel: rateSpoken(r) }))}
           value={rate}
           onChange={onRateChange}
@@ -150,7 +150,7 @@ export function Transport(props: TransportProps): ReactElement {
 
       {onSeek ? (
         <Slider
-          ariaLabel="Position"
+          aria-label="Position"
           thumbs={[{ value: shown, valueText: spokenSeconds(shown) }]}
           min={start}
           max={start + duration}

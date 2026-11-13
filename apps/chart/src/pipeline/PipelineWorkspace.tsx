@@ -57,7 +57,7 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
 
   return (
     <div className="wc-body">
-      <Sidebar side="left" className="wc-sidebar" ariaLabel="Stages">
+      <Sidebar side="left" className="wc-sidebar" aria-label="Stages">
         <StagePalette onAdd={add} />
       </Sidebar>
       <div className="wc-host">
@@ -68,7 +68,7 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
           selectedGroup={group} onSelectGroup={pickGroup}
         />
       </div>
-      <Sidebar side="right" className="wc-sidebar" ariaLabel="Params">
+      <Sidebar side="right" className="wc-sidebar" aria-label="Params">
         <ParamPanel doc={doc} selected={selected} group={group} change={change} />
       </Sidebar>
     </div>

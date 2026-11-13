@@ -268,7 +268,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
                           size="sm"
                           variant="ghost"
                           iconOnly
-                          ariaLabel={`${s.pinned ? 'Unpin' : 'Pin'} ${s.token}`}
+                          aria-label={`${s.pinned ? 'Unpin' : 'Pin'} ${s.token}`}
                           pressed={s.pinned}
                           disabled={s.pinned && !ownPin(s.token)}
                           onClick={() => togglePin(s)}

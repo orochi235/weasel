@@ -37,7 +37,7 @@ export function SelectDemo() {
         items={CONVENTIONS}
         value={convention}
         onChange={(v) => v && setConvention(v)}
-        ariaLabel="Key convention"
+        aria-label="Key convention"
         size="sm"
       />
       <div className={s.body}>

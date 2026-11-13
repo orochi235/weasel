@@ -46,8 +46,8 @@ function Specimen({ caption }: { caption: string }) {
         </div>
         <Checkbox isSelected={checked} onChange={setChecked}>Checkbox</Checkbox>
         <Switch isSelected={on} onChange={setOn}>Switch</Switch>
-        <Slider thumbs={thumbs} onInput={setThumbs} min={0} max={100} thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)" ariaLabel="Slider" />
-        <ToggleBar size="sm" ariaLabel="Alignment" items={ALIGN} value={align} onChange={setAlign} />
+        <Slider thumbs={thumbs} onInput={setThumbs} min={0} max={100} thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)" aria-label="Slider" />
+        <ToggleBar size="sm" aria-label="Alignment" items={ALIGN} value={align} onChange={setAlign} />
         <div className={styles.sunken}>
           <Input label="Sunken field" defaultValue="Text" />
         </div>

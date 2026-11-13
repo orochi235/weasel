@@ -100,7 +100,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
         size="sm"
         variant="flat"
         className={p.className}
-        ariaLabel={p.name}
+        aria-label={p.name}
         items={[{ value: key, label: p.glyph ?? <FitLabel forms={labelForms(p.name, p.short)} />, ariaLabel: p.name, disabled: p.disabled, disabledReason: p.disabledReason }]}
         value={on ? [key] : []}
         mixedValues={p.mixed ? [key] : []}

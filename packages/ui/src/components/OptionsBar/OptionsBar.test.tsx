@@ -12,7 +12,7 @@ function items(onChange: (next: boolean) => void = () => {}) {
 
 describe('OptionsBar', () => {
   it('renders a group of toggle buttons carrying their pressed state', () => {
-    const { container } = render(<OptionsBar items={items()} ariaLabel="View" />);
+    const { container } = render(<OptionsBar items={items()} aria-label="View" />);
     expect(container.querySelector('[role="group"]')?.getAttribute('aria-label')).toBe('View');
     const btns = container.querySelectorAll('button');
     expect(btns[0].getAttribute('aria-pressed')).toBe('true');

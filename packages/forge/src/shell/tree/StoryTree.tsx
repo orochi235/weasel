@@ -257,7 +257,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         </p>
       ) : null}
       <ToggleBar
-        ariaLabel="Sidebar view"
+        aria-label="Sidebar view"
         variant="flat"
         size="sm"
         items={views}

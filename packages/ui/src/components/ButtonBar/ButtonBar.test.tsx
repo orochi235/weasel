@@ -12,7 +12,7 @@ function items(onAction = () => {}) {
 
 describe('ButtonBar', () => {
   it('renders one button per item under a toolbar role', () => {
-    const { container } = render(<ButtonBar items={items()} ariaLabel="Edit" />);
+    const { container } = render(<ButtonBar items={items()} aria-label="Edit" />);
     expect(container.querySelector('[role="toolbar"]')?.getAttribute('aria-label')).toBe('Edit');
     expect(container.querySelectorAll('button')).toHaveLength(3);
   });

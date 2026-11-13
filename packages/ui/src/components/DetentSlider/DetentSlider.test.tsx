@@ -10,7 +10,7 @@ function renderRate(props: Partial<Parameters<typeof DetentSlider<number>>[0]> =
   const onCommit = vi.fn();
   const view = render(
     <DetentSlider
-      ariaLabel="Playback rate"
+      aria-label="Playback rate"
       items={RATES}
       value={1}
       formatLabel={(r) => `${r}×`}

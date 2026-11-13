@@ -36,7 +36,7 @@ export const OneControlGroup: Story = {
             size="sm"
             variant="ghost"
             iconOnly
-            ariaLabel={ariaLabel}
+            aria-label={ariaLabel}
             pressed={on.has(key)}
             onClick={() => toggle(key)}
           >

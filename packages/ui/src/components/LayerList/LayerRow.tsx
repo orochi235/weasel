@@ -171,7 +171,7 @@ function Remove({ item, shared }: { item: LayerListItem; shared: Shared }) {
   return (
     <span className={s.stop} onPointerDown={stop}>
       <CloseButton
-        ariaLabel={`Remove ${item.label}`}
+        aria-label={`Remove ${item.label}`}
         onClick={() => onRemove(item.id)}
       />
     </span>

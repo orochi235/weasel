@@ -47,17 +47,17 @@ export type ButtonBase = {
 /** A button with a visible label, which names it. */
 export type ButtonRegular = ButtonBase & {
   iconOnly?: false;
-  ariaLabel?: string;
+  'aria-label'?: string;
 };
 
-/** A button showing only its icon, which `ariaLabel` has to name. */
+/** A button showing only its icon, which `aria-label` has to name. */
 export type ButtonIconOnly = ButtonBase & {
   iconOnly: true;
-  ariaLabel: string;
+  'aria-label': string;
 };
 
 /**
- * Props for {@link Button}. Setting `iconOnly` makes `ariaLabel` required,
+ * Props for {@link Button}. Setting `iconOnly` makes `aria-label` required,
  * since an icon-only button has no text for a screen reader to announce.
  */
 export type ButtonProps = ButtonRegular | ButtonIconOnly;
@@ -92,7 +92,7 @@ function Spinner(): ReactNode {
  * button `aria-busy`, and leaves the label in place; it does not disable the
  * button, so pass `disabled` too if the click should be blocked.
  *
- * `shortcut` adds a kit tooltip reading `Name (⌘S)`, named by `ariaLabel` or
+ * `shortcut` adds a kit tooltip reading `Name (⌘S)`, named by `aria-label` or
  * string children, the way `ToolButton` and `ButtonBar` items show theirs;
  * `tooltip` replaces that text with any content. A disabled button with a
  * `disabledReason` keeps its tooltip, which reads `Name: reason`.
@@ -115,7 +115,7 @@ export const Button = forwardRef(function Button(
     loading,
     fullWidth,
     iconOnly,
-    ariaLabel,
+    'aria-label': ariaLabel,
     type = 'button',
     className,
     style,

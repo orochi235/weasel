@@ -39,7 +39,7 @@ function Stages({ args }: { args: Story['args'] }): ReactElement {
     <div className={s.frame}>
       <EffectList<Stage>
         {...(args as Partial<EffectListProps<Stage>>)}
-        ariaLabel="Stages"
+        aria-label="Stages"
         items={items}
         kinds={KINDS}
         onChange={setItems}

@@ -6,7 +6,7 @@ import { renderWithIcons } from '../../testing/withIcons';
 
 describe('CloseButton', () => {
   it('draws the kit close glyph, not a text ×, named by ariaLabel', () => {
-    renderWithIcons(<CloseButton ariaLabel="Close dialog" />);
+    renderWithIcons(<CloseButton aria-label="Close dialog" />);
     const btn = screen.getByRole('button', { name: 'Close dialog' });
     expect(btn.textContent).toBe('');
     const svg = btn.querySelector('svg')!;
@@ -18,16 +18,16 @@ describe('CloseButton', () => {
 
   it('fires onClick, and not while disabled', () => {
     const onClick = vi.fn();
-    const { rerender } = renderWithIcons(<CloseButton ariaLabel="Remove" onClick={onClick} />);
+    const { rerender } = renderWithIcons(<CloseButton aria-label="Remove" onClick={onClick} />);
     fireEvent.click(screen.getByRole('button'));
     expect(onClick).toHaveBeenCalledTimes(1);
-    rerender(<CloseButton ariaLabel="Remove" onClick={onClick} disabled />);
+    rerender(<CloseButton aria-label="Remove" onClick={onClick} disabled />);
     fireEvent.click(screen.getByRole('button'));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it('is a plain button, so it never submits a surrounding form', () => {
-    renderWithIcons(<CloseButton ariaLabel="Close" />);
+    renderWithIcons(<CloseButton aria-label="Close" />);
     expect(screen.getByRole('button').getAttribute('type')).toBe('button');
   });
 });

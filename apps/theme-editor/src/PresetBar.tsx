@@ -61,7 +61,7 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
               iconOnly
               className={styles.presetCopy}
               tooltip="Copy as a built-in entry"
-              ariaLabel={copied === p.name ? `Copied ${p.name}` : `Copy ${p.name} as source`}
+              aria-label={copied === p.name ? `Copied ${p.name}` : `Copy ${p.name} as source`}
               onClick={() => {
                 void copyText(toSource(p)).then((took) => took && flashCopied(p.name));
               }}
@@ -73,7 +73,7 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
                 className={styles.presetCopy}
                 onClick={() => remove(p.name)}
                 tooltip={`Delete ${p.name}`}
-                ariaLabel={`Delete ${p.name}`}
+                aria-label={`Delete ${p.name}`}
               />
             )}
           </span>

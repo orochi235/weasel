@@ -84,7 +84,7 @@ export function LensRimView({ config }: { config: LensRimConfig }): ReactElement
               <Bar label="Lens" schema={actionsSchema(config.actions, 'Lens')} overflow={config.overflow} />
             </Along>
             <Along arc={bottom}>
-              <Slider ariaLabel="Zoom" min={1} max={8} stops={ZOOM_STOPS} spacing="even" snap="strict" thumbs={zoom} onInput={setZoom} />
+              <Slider aria-label="Zoom" min={1} max={8} stops={ZOOM_STOPS} spacing="even" snap="strict" thumbs={zoom} onInput={setZoom} />
             </Along>
           </div>
           <Button size="sm" onClick={() => setMarks([])}>Clear marks</Button>

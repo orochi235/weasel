@@ -23,7 +23,7 @@ function Bar({ initial = [], sweep = true, seen }: { initial?: string[]; sweep?:
       value={value}
       sweep={sweep}
       onChange={(next) => { seen.push(next); setValue(next); }}
-      ariaLabel="cells"
+      aria-label="cells"
     />
   );
 }
@@ -96,7 +96,7 @@ describe('ToggleBar sweep', () => {
       const [value, setValue] = useState<string[]>([]);
       return (
         <ToggleBar mode="multiple" columns={3} sweep items={cells} value={value}
-          onChange={(next) => { seen.push(next); setValue(next); }} ariaLabel="grid" />
+          onChange={(next) => { seen.push(next); setValue(next); }} aria-label="grid" />
       );
     }
     const utils = render(<Grid />);

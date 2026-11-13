@@ -73,7 +73,7 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
           mode="multiple"
           variant="minimal"
           size="sm"
-          ariaLabel="Outcome filters"
+          aria-label="Outcome filters"
           items={[
             { value: 'handled', label: 'handled', tooltip: 'Show handled inputs and mode switches' },
             { value: 'unhandled', label: 'unhandled', tooltip: 'Show inputs nothing handled' },

@@ -37,7 +37,7 @@ export type DetentSliderProps<V extends DetentValue = number> = {
   trackHeight?: number;
   /** The track to lie along; see `SliderProps.shape`. */
   shape?: TrackShape;
-  ariaLabel?: string;
+  'aria-label'?: string;
   className?: string;
 };
 
@@ -84,7 +84,7 @@ function plainText(label: ReactNode, fallback: DetentValue): string {
  * with `spacing="even"` and magnetic stops.
  */
 export function DetentSlider<V extends DetentValue = number>(props: DetentSliderProps<V>): ReactElement {
-  const { value, onChange, onCommit, formatLabel, ariaLabel, className } = props;
+  const { value, onChange, onCommit, formatLabel, 'aria-label': ariaLabel, className } = props;
   const items = normalize(props.items);
   const index = resolveIndex(items, value);
   const lastIndex = Math.max(0, items.length - 1);
@@ -139,7 +139,7 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
         trackClick="move-nearest"
         trackHeight={props.trackHeight ?? 8}
         shape={props.shape}
-        ariaLabel={ariaLabel}
+        aria-label={ariaLabel}
         thumbs={thumbs}
         onInput={handleInput}
         onChange={handleCommit}

@@ -84,7 +84,7 @@ export function UnitEditor({ ctx }: { ctx: PrefRenderContext }) {
             <Input aria-label={label} value={name} onChange={(v) => rename(i, v)} />
             <NumberText label={`${label} scale`} value={factor} accept={nonZero} onCommit={(n) => rescale(i, { factor: n ?? 1 })} />
             <NumberText label={`${label} offset`} value={offset === 0 ? undefined : offset} onCommit={(n) => rescale(i, { offset: n ?? 0 })} />
-            <CloseButton ariaLabel={`Remove accepted suffix ${i + 1}`} onClick={() => setAccepted(rows.filter((_, j) => j !== i))} />
+            <CloseButton aria-label={`Remove accepted suffix ${i + 1}`} onClick={() => setAccepted(rows.filter((_, j) => j !== i))} />
           </div>
         );
       })}

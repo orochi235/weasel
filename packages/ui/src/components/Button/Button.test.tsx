@@ -54,7 +54,7 @@ describe('Button', () => {
 
   it('iconOnly requires ariaLabel and applies aria-label', () => {
     const { getByRole } = render(
-      <Button iconOnly ariaLabel="Add"><span>+</span></Button>,
+      <Button iconOnly aria-label="Add"><span>+</span></Button>,
     );
     const btn = getByRole('button');
     expect(btn.getAttribute('aria-label')).toBe('Add');
@@ -204,7 +204,7 @@ describe('Button tooltip', () => {
   });
 
   it('names an icon-only button by ariaLabel', () => {
-    render(<Button iconOnly ariaLabel="Undo" shortcut="⌘Z"><svg /></Button>);
+    render(<Button iconOnly aria-label="Undo" shortcut="⌘Z"><svg /></Button>);
     keyboardFocus(screen.getByRole('button', { name: 'Undo' }));
     expect(screen.getByRole('tooltip').textContent).toContain('Undo (⌘Z)');
   });

@@ -208,6 +208,6 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
    *  ±Infinity sits there. Its readout and spoken text are `display`'s word
    *  for infinity — `endless(unit('ms'), 'never')` — else `∞`. */
   endless?: Endless;
-  ariaLabel?: string;
+  'aria-label'?: string;
   className?: string;
 };

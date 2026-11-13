@@ -54,7 +54,7 @@ describe('Slider keyboard', () => {
 
   it('exposes ARIA attributes on each thumb', () => {
     const { container } = render(
-      <Slider min={0} max={1} thumbs={[{ value: 0.25 }]} ariaLabel="Hue" onInput={() => {}} />,
+      <Slider min={0} max={1} thumbs={[{ value: 0.25 }]} aria-label="Hue" onInput={() => {}} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     expect(thumb.getAttribute('aria-orientation')).toBe('horizontal');

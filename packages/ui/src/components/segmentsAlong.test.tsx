@@ -41,7 +41,7 @@ function Toggle({ initial = 'b', variant }: { initial?: string; variant?: 'flat'
   const [value, setValue] = useState<string | null>(initial);
   return (
     <Along shape={shape}>
-      <ToggleBar ariaLabel="Pick" items={ITEMS} value={value} onChange={setValue} variant={variant} />
+      <ToggleBar aria-label="Pick" items={ITEMS} value={value} onChange={setValue} variant={variant} />
     </Along>
   );
 }
@@ -51,7 +51,7 @@ describe('segmented controls along a curve', () => {
     const four = [...ITEMS, { value: 'd', label: 'D' }];
     render(
       <Along shape={shape}>
-        <ToggleBar mode="multiple" columns={2} ariaLabel="Pick" items={four} value={[]} onChange={() => {}} />
+        <ToggleBar mode="multiple" columns={2} aria-label="Pick" items={four} value={[]} onChange={() => {}} />
       </Along>,
     );
     const buttons = screen.getAllByRole('button');
@@ -86,7 +86,7 @@ describe('segmented controls along a curve', () => {
   test('a mixed segment is stroked as mixed', () => {
     render(
       <Along shape={shape}>
-        <ToggleBar mode="multiple" ariaLabel="Style" items={ITEMS} value={['a']} mixedValues={['c']} onChange={() => {}} />
+        <ToggleBar mode="multiple" aria-label="Style" items={ITEMS} value={['a']} mixedValues={['c']} onChange={() => {}} />
       </Along>,
     );
     const lit = [...screen.getByRole('group').querySelectorAll('[data-lit]')].map((el) => el.getAttribute('data-lit'));
@@ -108,7 +108,7 @@ describe('segmented controls along a curve', () => {
     test('ToggleBar: Right selects the segment on the right', () => {
       render(
         <Along shape={bottom}>
-          <ToggleBar ariaLabel="Pick" items={ITEMS} value="b" onChange={() => {}} />
+          <ToggleBar aria-label="Pick" items={ITEMS} value="b" onChange={() => {}} />
         </Along>,
       );
       const [a, b] = ['A', 'B'].map((name) => screen.getByRole('radio', { name }));
@@ -123,7 +123,7 @@ describe('segmented controls along a curve', () => {
     test('ButtonBar: Right focuses the button on the right', () => {
       render(
         <Along shape={bottom}>
-          <ButtonBar ariaLabel="Do" items={ITEMS.map((item) => ({ ...item, onAction: () => {} }))} />
+          <ButtonBar aria-label="Do" items={ITEMS.map((item) => ({ ...item, onAction: () => {} }))} />
         </Along>,
       );
       const [a, b] = ['A', 'B'].map((name) => screen.getByRole('button', { name }));
@@ -142,8 +142,8 @@ describe('segmented controls along a curve', () => {
   test('ButtonBar and OptionsBar follow the run too', () => {
     render(
       <Along shape={shape}>
-        <ButtonBar ariaLabel="Do" items={[{ value: 'x', label: 'X', onAction: () => {} }]} />
-        <OptionsBar ariaLabel="Opts" items={[{ value: 'y', label: 'Y', selected: true, onChange: () => {} }]} />
+        <ButtonBar aria-label="Do" items={[{ value: 'x', label: 'X', onAction: () => {} }]} />
+        <OptionsBar aria-label="Opts" items={[{ value: 'y', label: 'Y', selected: true, onChange: () => {} }]} />
       </Along>,
     );
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-shape', 'arc');
@@ -153,7 +153,7 @@ describe('segmented controls along a curve', () => {
   });
 
   test('outside an Along a bar keeps its straight well', () => {
-    render(<ToggleBar ariaLabel="Pick" items={ITEMS} value="b" onChange={() => {}} />);
+    render(<ToggleBar aria-label="Pick" items={ITEMS} value="b" onChange={() => {}} />);
     expect(screen.getByRole('radiogroup')).not.toHaveAttribute('data-shape');
     expect(screen.getByRole('radio', { checked: true }).className).toContain(seg.segmentSelected);
     expect(screen.getByRole('radio', { checked: true })).not.toHaveAttribute('data-segment');

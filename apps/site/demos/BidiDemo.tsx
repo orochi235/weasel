@@ -40,7 +40,7 @@ export function BidiDemo() {
           items={DIRECTIONS}
           value={direction}
           onChange={(v) => v && setDirection(v)}
-          ariaLabel="Paragraph direction"
+          aria-label="Paragraph direction"
           size="sm"
         />
       </div>

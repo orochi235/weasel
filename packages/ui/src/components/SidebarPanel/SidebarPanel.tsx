@@ -93,7 +93,7 @@ export function SidebarPanel(props: SidebarPanelProps) {
           {onHide !== undefined && (
             <CloseButton
               className={s.hideButton}
-              ariaLabel="Hide panel"
+              aria-label="Hide panel"
               tooltip="Hide panel"
               onClick={onHide}
             />

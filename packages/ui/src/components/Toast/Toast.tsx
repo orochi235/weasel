@@ -52,7 +52,7 @@ function ToastItem({ toast: t, queue }: { toast: QueuedToast<ToastContent>; queu
           <Text slot="description" className={s.description}>{t.content.description}</Text>
         )}
       </RACToastContent>
-      <CloseButton ariaLabel="Dismiss notification" onClick={() => racQueueOf(queue).close(t.key)} />
+      <CloseButton aria-label="Dismiss notification" onClick={() => racQueueOf(queue).close(t.key)} />
     </RACToast>
   );
 }

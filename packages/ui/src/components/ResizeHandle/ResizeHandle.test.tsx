@@ -14,7 +14,7 @@ function setup(props: Partial<React.ComponentProps<typeof ResizeHandle>> = {}) {
       max={600}
       onInput={onInput}
       onChange={onChange}
-      ariaLabel="Resize sidebar"
+      aria-label="Resize sidebar"
       {...props}
     />,
   );
@@ -43,7 +43,7 @@ describe('ResizeHandle', () => {
     const committed = { onInput: vi.fn(), onChange: vi.fn(), max: 600 };
     const abandoned = { onInput: vi.fn(), onChange: vi.fn(), max: 280 };
     renderThenAbandon(committed, abandoned, (p) => (
-      <ResizeHandle value={260} min={200} ariaLabel="Resize sidebar" {...p} />
+      <ResizeHandle value={260} min={200} aria-label="Resize sidebar" {...p} />
     ));
     const handle = document.querySelector<HTMLElement>('[role="separator"]')!;
     fireEvent.pointerDown(handle, { button: 0, clientX: 500 });
@@ -65,7 +65,7 @@ describe('ResizeHandle', () => {
           min={200}
           max={600}
           onInput={(next) => { onInput(next); setValue(next); }}
-          ariaLabel="Resize sidebar"
+          aria-label="Resize sidebar"
         />
       );
     }

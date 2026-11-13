@@ -105,7 +105,7 @@ export function DebugOverlayDemo() {
           items={FEATURES.map((f) => ({ value: f.key, label: f.label, tooltip: f.help }))}
           value={FEATURES.filter((f) => enabled[f.key]).map((f) => f.key)}
           onChange={(on) => setEnabled({ ...NONE, ...Object.fromEntries(on.map((k) => [k, true])) })}
-          ariaLabel="Debug overlays"
+          aria-label="Debug overlays"
           size="sm"
         />
         <Button onClick={allOn}>all on</Button>

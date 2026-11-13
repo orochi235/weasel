@@ -55,7 +55,7 @@ export function ViewportDemo() {
           items={BOUNDARIES.map((b) => ({ value: b, label: b, disabled: !inertiaOn }))}
           value={boundary}
           onChange={(b) => b && setBoundary(b)}
-          ariaLabel="Boundary"
+          aria-label="Boundary"
           size="sm"
         />
         <span className="ckd-hint">

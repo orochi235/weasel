@@ -23,7 +23,7 @@ function Held({ onItems, onSelect, ...rest }: HeldProps) {
   const [selected, setSelected] = useState<string | null>(null);
   return (
     <EffectList
-      ariaLabel="Stages"
+      aria-label="Stages"
       kinds={KINDS}
       items={items}
       selected={selected}
@@ -168,7 +168,7 @@ describe('EffectList', () => {
       const [items, setItems] = useState(START);
       return (
         <>
-          <EffectList ariaLabel="Stages" kinds={KINDS} items={items} onChange={setItems} removable={false} />
+          <EffectList aria-label="Stages" kinds={KINDS} items={items} onChange={setItems} removable={false} />
           <button type="button" onClick={() => setItems((v) => v.filter((it) => it.id !== 'b'))}>Drop B</button>
         </>
       );
@@ -190,7 +190,7 @@ describe('EffectList', () => {
         <Held
           onItems={outer}
           renderBody={() => (
-            <EffectList ariaLabel="Inner" kinds={KINDS} items={items} onChange={(next) => { setItems(next); inner(next); }} />
+            <EffectList aria-label="Inner" kinds={KINDS} items={items} onChange={(next) => { setItems(next); inner(next); }} />
           )}
         />
       );

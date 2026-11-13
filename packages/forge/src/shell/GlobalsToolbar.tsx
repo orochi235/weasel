@@ -107,7 +107,7 @@ function NestedGlobals({
         variant="ghost"
         size="sm"
         iconOnly
-        ariaLabel={`More ${label} settings`}
+        aria-label={`More ${label} settings`}
         pressed={open}
         onClick={() => setOpen((was) => !was)}
       >

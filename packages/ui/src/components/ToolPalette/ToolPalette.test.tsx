@@ -43,7 +43,7 @@ describe('ToolPalette', () => {
 
   it('shows only the tools include accepts, under its own name', () => {
     const tools = fakeTools([fakeTool('select'), fakeTool('trim', undefined, 'Trim')]);
-    renderWithIcons(<ToolPalette tools={tools} include={(t) => t.id === 'trim'} ariaLabel="Path tools" />);
+    renderWithIcons(<ToolPalette tools={tools} include={(t) => t.id === 'trim'} aria-label="Path tools" />);
     expect(screen.getAllByRole('button')).toHaveLength(1);
     expect(screen.getByRole('toolbar', { name: 'Path tools' })).toBeTruthy();
   });

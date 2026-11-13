@@ -59,7 +59,7 @@ describe('ThemeSwitcher', () => {
     ];
     const onChange = vi.fn();
     renderWithIcons(
-      <ThemeSwitcher value="b" onChange={onChange} options={options} ariaLabel="Palette" className="mine" />,
+      <ThemeSwitcher value="b" onChange={onChange} options={options} aria-label="Palette" className="mine" />,
     );
     const button = screen.getByRole('button', { name: 'Palette: Beta — click for Alpha' });
     expect(button.querySelector('[data-testid="b"]')).not.toBeNull();

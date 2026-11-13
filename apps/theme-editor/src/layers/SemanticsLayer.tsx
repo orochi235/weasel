@@ -110,7 +110,7 @@ export function SemanticsLayer({ draft, derived, lookup, highlight, onChange }: 
                   <td className={styles.num}>{r.worst ? contrastText(r.worst) : '—'}</td>
                   <td>
                     {r.ownPin ? (
-                      <Button size="sm" variant="ghost" ariaLabel={`Revert ${r.name}`} onClick={() => revert(r.name)}>
+                      <Button size="sm" variant="ghost" aria-label={`Revert ${r.name}`} onClick={() => revert(r.name)}>
                         Revert
                       </Button>
                     ) : r.pinned ? (

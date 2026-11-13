@@ -194,20 +194,20 @@ export function DitherDemo() {
       <div className="ckd-controls">
         <div className="ckd-control">
           Grid
-          <ToggleBar items={GRIDS} value={grid} onChange={(v) => { if (v !== null) pickGrid(v); }} ariaLabel="Grid" size="sm" />
+          <ToggleBar items={GRIDS} value={grid} onChange={(v) => { if (v !== null) pickGrid(v); }} aria-label="Grid" size="sm" />
           <Button size="sm" onClick={() => setView(fitPage(STAGE))}>Fit page</Button>
         </div>
         <div className="ckd-control">
           Method
-          <ToggleBar items={METHODS} value={method} onChange={(v) => { if (v) setMethod(v); }} ariaLabel="Method" size="sm" />
+          <ToggleBar items={METHODS} value={method} onChange={(v) => { if (v) setMethod(v); }} aria-label="Method" size="sm" />
         </div>
         <div className="ckd-control">
           Keep marks crisp
-          <ToggleBar items={CRISP} value={crisp} onChange={(v) => { if (v) setCrisp(v); }} ariaLabel="Keep marks crisp" size="sm" />
+          <ToggleBar items={CRISP} value={crisp} onChange={(v) => { if (v) setCrisp(v); }} aria-label="Keep marks crisp" size="sm" />
         </div>
         <div className="ckd-control">
           Marks
-          <ToggleBar items={SNAP} value={snap} onChange={(v) => { if (v) setSnap(v); }} ariaLabel="Marks" size="sm" />
+          <ToggleBar items={SNAP} value={snap} onChange={(v) => { if (v) setSnap(v); }} aria-label="Marks" size="sm" />
         </div>
         <label className="ckd-control">
           Threshold

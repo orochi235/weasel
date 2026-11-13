@@ -44,14 +44,14 @@ export function PlotTableView({ data, table, scope, edit }: PlotTableViewProps):
         <span className={s.rowActions}>
           {insert && (
             <Button
-              size="sm" variant="ghost" ariaLabel={`Insert ${table.item} after ${rowName(index)}`}
+              size="sm" variant="ghost" aria-label={`Insert ${table.item} after ${rowName(index)}`}
               onClick={() => edit((d) => insert(d, scope, index + 1), `Add ${table.item}`)}
             >
               +
             </Button>
           )}
           {remove && (
-            <CloseButton ariaLabel={`Remove ${rowName(index)}`} onClick={() => edit((d) => remove(d, scope, index), `Remove ${table.item}`)} />
+            <CloseButton aria-label={`Remove ${rowName(index)}`} onClick={() => edit((d) => remove(d, scope, index), `Remove ${table.item}`)} />
           )}
         </span>
       ),

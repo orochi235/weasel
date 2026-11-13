@@ -49,7 +49,7 @@ function InteractiveSidebarPanel(args: SidebarPanelProps) {
     );
   }
   return (
-    <Sidebar side="right" ariaLabel="Demo sidebar">
+    <Sidebar side="right" aria-label="Demo sidebar">
       <SidebarPanel
         {...args}
         collapsed={collapsed}

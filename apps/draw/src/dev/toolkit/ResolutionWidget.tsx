@@ -162,7 +162,7 @@ export function ResolutionWidget({
         <ToggleBar<ModKey>
           mode="multiple"
           size="sm"
-          ariaLabel="modifiers"
+          aria-label="modifiers"
           items={MOD_KEYS.map((m) => ({ value: m, label: m }))}
           value={MOD_KEYS.filter((m) => mods[m])}
           onChange={(next) => setMods(Object.fromEntries(next.map((m) => [m, true])))}

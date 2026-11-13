@@ -59,7 +59,7 @@ function Dial({ at, config }: { at: number; config: ClockSweepConfig }): ReactEl
       )}
       {config.show !== 'bar' && (
         <Along arc={sweepArc(at, config.span, SLIDER_INSET)}>
-          <Slider ariaLabel={`Slider at ${label}`} min={0} max={10} stops={STOPS} trackHeight={6} thumbs={thumbs} onInput={setThumbs} />
+          <Slider aria-label={`Slider at ${label}`} min={0} max={10} stops={STOPS} trackHeight={6} thumbs={thumbs} onInput={setThumbs} />
         </Along>
       )}
     </div>
