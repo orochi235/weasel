@@ -26,11 +26,12 @@ It runs beside `@weasel-js/core`, `@weasel-js/geom`, `@weasel-js/guides`,
 | Shell | `EditorShell`, `EDITOR_ACTIONS`, `EDITOR_PREFERENCES_KEY`, `SNAPPING_KEY`, `useEditorKeys`, `EDITOR_CONTEXT_MENUS`, `EDITOR_CONTEXT_MENUS_CONTRIBUTION` |
 | Preferences | `useEditorPrefs`, `useOpenPreferences`, `EditorPrefsDialog` |
 | Menu bar | `editorMenuBar`, `menu`, `menuRun`, `EDITOR_MENU_TITLES` |
-| Session | `useSessionPersistence`, `useAutosave`, `readStored`, `writeSession` |
-| Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `adoptSnapshotPages`, `serializeReplacer`, `reviveTypedArrays` |
+| Session | `useSessionPersistence`, `useAutosave`, `readStored`, `writeSession`, `isUnreadableKey`, `sessionSaveReporter` |
+| Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `adoptSnapshotPages`, `snapshotRebuildsTree`, `serializeReplacer`, `reviveTypedArrays` |
+| Clipboard | `useDocClipboard`, `DOC_CLIPBOARD_ACTIONS`, `DOC_CLIPBOARD_KEYS` |
 | Files | `downloadBlob`, `pickFile`, `describeFileWarnings`, `reportFileWarnings` |
 | File commands | `useNewCommand`, `useOpenCommand`, `useSaveCommand`, `FILE_KEYS` |
-| Pages | `usePages`, `usePageSettle`, `usePageFit`, `usePaperLayer`, `usePageGrid` |
+| Pages | `usePages`, `usePageSettle`, `PAGE_SETTLE_MS`, `usePageFit`, `usePaperLayer`, `usePageGrid` |
 | Text editing | `TextEditDepPublisher` |
 
 ```tsx
@@ -67,8 +68,34 @@ const ambient = [{
 }];
 ```
 
-A saved snapshot keeps a path's typed arrays tagged (`serializeReplacer`), and
-loading reads the tags back, along with the untagged shapes older saves wrote.
+## Saving the session
+
+The session hooks keep the document in `localStorage`. `useSessionPersistence`
+saves the scene and its undo stack 300 ms after each change, and at once when
+the page goes away or turns hidden; on mount it restores the undo stack. The
+scene itself is read before the scene is made, and handed to `useScene`:
+
+```tsx
+function loadSaved() {
+  return readStored('myapp:scene', (raw) => {
+    const json: unknown = JSON.parse(raw);
+    if (!isSerializedScene<Data, Layer, RectPose>(json)) throw new Error('not a saved document');
+    return { initial: nodeSpecsFromSnapshot(json), doc: docFromSnapshot(json) };
+  }, () => ({ initial: [], doc: undefined }));
+}
+
+function useDocument() {
+  const [saved] = useState(loadSaved);
+  const scene = useScene<Data, Layer, RectPose>({ systemLayers, initial: saved.initial, ...(saved.doc && { doc: saved.doc }) });
+  useSessionPersistence(scene, { sceneKey: 'myapp:scene', historyKey: 'myapp:history' });
+  return scene;
+}
+```
+
+An entry `readStored` cannot read is kept aside under `<key>:unreadable` rather
+than lost to the next save. A saved snapshot keeps a path's typed arrays tagged
+(`serializeReplacer`), and loading reads the tags back, along with the untagged
+shapes older saves wrote.
 
 ## Pages
 
