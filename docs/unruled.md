@@ -2184,8 +2184,29 @@ Calls the lanes made without a ruling:
 - Every tool option's color default is in `toolOptionPaint`'s spelling, draw's host-given shared fill and stroke
   included; core's `shapeToolOptions.test.tsx` holds the built-ins and draw's `prefs.test.ts` holds draw's whole tools
   schema (2026-11-13).
-- Open: the kit has no keyboard shortcut sheet listing tool keys; `describeKeymap` covers keymaps and forge's keys
-  panel lists bindings. Whether one belongs in ui is a product call.
+
+## Audit round twenty-three (2026-11-13): the shortcut sheet
+
+- The kit has a keyboard shortcut sheet, approved 2026-11-13. `describeShortcuts` (routing, beside `describeKeymap`)
+  reads it from an actions registry's `list()`: tool keys from `tool.activate` through `toolShortcutsOf`, the same
+  read `ToolsApi.shortcuts` makes, command keys from each entry's `key` bindings, and held keys from `keyHeld` ones,
+  `tool.offhand` named for the tool it holds. ui's `<ShortcutSheet>` draws it, since ui owns the chrome that reads the
+  dispatcher's bindings (`CommandPalette`, `ToolPalette`) and core holds no React chrome (2026-11-13).
+- `shortcuts.show` opens it on Shift+/ (`SHORTCUT_SHEET_KEY`, `?` on a US layout, held to the Slash key by `code`).
+  It was free: draw's `/` (`color.toggleFocusedNone`) forbids Shift, forge's keys panel is Alt+/, the site's palette
+  listens for `/` itself, and draw's binding collision test now mounts the sheet's command (2026-11-13, the lane's
+  call: a command key).
+- Tools are grouped by the `ToolSet`s a host passes, headed by the set's new `label`, and the rest follow under
+  "Other tools"; every registered tool is listed, a keyless one as "No key", so an unbound key reads as gone rather
+  than the tool. Commands are grouped by `Action.group` and listed only with a key. A key that requires Ctrl or Meta
+  has no chip form (`keySpecShortcut`) and is left out, as menus leave it out (2026-11-13).
+- Pointer gestures a modifier changes ("Shift+drag: constrain") are not listed. Most such bindings are a tool's or an
+  entry's, not an action's, and say which action the gesture runs, not what the modifier does to it; what a modifier
+  does mid-gesture is a modifier role, declared per action, so the sheet would repeat "Shift: Constrain" under each
+  action that snaps. A keymap's own keys stay `<KeymapHint>`'s; its leader is listed as a command (2026-11-13).
+- `<EditorShell>` mounts the sheet; a workspace names its tools with `useEditorTools(tools, toolSets)`, since the shell
+  sits above the canvas that holds them. `<Lab>` mounts one too, naming the lab's `TrialTool`s, with a row in its Lab
+  menu (2026-11-13).
 
 ## Audit round twenty-three (2026-11-13): tunable values
 

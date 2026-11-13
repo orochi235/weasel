@@ -10,16 +10,24 @@ export interface LabMenuBarProps {
   contributions: readonly LabContribution[];
   addTrial: boolean;
   zoom: boolean;
+  /** End the Lab menu with the shortcut sheet's row. */
+  shortcuts?: boolean;
 }
 
 /** The lab's menu bar. Its rows run the commands `LabCommands` and `LabZoom` register, so it
  *  must sit inside the lab's actions registry. */
-export function LabMenuBar({ menus, contributions, addTrial, zoom }: LabMenuBarProps) {
+export function LabMenuBar({
+  menus,
+  contributions,
+  addTrial,
+  zoom,
+  shortcuts = false,
+}: LabMenuBarProps) {
   const { instruments } = useLabCommands();
   const declared = menus?.schema;
   const schema = useMemo(
-    () => labMenuBar({ instruments, addTrial, zoom, header: contributions, declared }),
-    [instruments, addTrial, zoom, contributions, declared],
+    () => labMenuBar({ instruments, addTrial, zoom, header: contributions, declared, shortcuts }),
+    [instruments, addTrial, zoom, contributions, declared, shortcuts],
   );
   return (
     <MenuBar

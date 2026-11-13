@@ -12,6 +12,7 @@ import { LabFooterRegion } from '../chrome/LabChrome';
 import { ClockRegistryContext } from '../clock/contexts';
 import { useLabClocks } from '../clock/useLabClocks';
 import { PersistenceContext } from '../state/Persistence';
+import type { LabMode } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { interstellarTheme } from '../theme/interstellar';
 import { TrialHistoryContext } from '../trial/trialHistory';
@@ -23,6 +24,7 @@ import { LabPalette } from './LabPalette';
 import { LabPanes } from './LabPanes';
 import { LabProviders } from './LabProviders';
 import { LabShell } from './LabShell';
+import { LabShortcutSheet } from './LabShortcutSheet';
 import { LabSurface } from './LabSurface';
 import { useLabChromeAll } from './labChromeAll';
 import type { LabBaseProps, LabProps } from './labProps';
@@ -118,6 +120,13 @@ function warnSeedIgnored(): void {
   console.warn('[labkit] <Lab> reads `seed` only when it starts presenting; it is ignored here');
 }
 
+/** Holds the store's color mode to the `mode` prop whenever the prop is given and changes. */
+function useModeProp(mode: LabMode | undefined, store: OpenedLab['store']) {
+  useEffect(() => {
+    if (mode && mode !== store.getState().mode) store.getState().setMode(mode);
+  }, [mode, store]);
+}
+
 function LabRuntime({
   instruments,
   mode,
@@ -142,6 +151,7 @@ function LabRuntime({
   menus,
   menuBar = true,
   marks = true,
+  shortcuts = true,
   contextMenus,
   tools,
   configRules,
@@ -180,16 +190,13 @@ function LabRuntime({
   useFocusPick(labBody, store, setFocusPick);
   const options = { transport, messages };
   const presentation = useLabPresentation(start, focusedTrialId, labBody, clocks, store, options);
-  const presenting = presentation.active;
   const resolvedMode = useResolvedColorMode(modeValue);
 
   const labMarks = useLabMarks(opened.records, marks);
   const chromeAll = useLabChromeAll(instruments, labMarks.shown, tools, lone.labChrome);
   const labChromeAll = chromeAll.all;
 
-  useEffect(() => {
-    if (mode && mode !== store.getState().mode) store.getState().setMode(mode);
-  }, [mode, store]);
+  useModeProp(mode, store);
 
   const commands = useStoreCommands(store, {
     instruments,
@@ -204,12 +211,13 @@ function LabRuntime({
   const bar = labBar({
     header,
     menuBar,
-    presenting,
+    presenting: presentation.active,
     menus,
     zoom: zoom && !trialless,
     children: trialless ? undefined : children,
     addTrial: !trialless && (addTrial ?? true),
     contributions: labChromeAll,
+    shortcuts,
   });
   const backdropStyle = nebulaStyle(nebula, theme, resolvedMode, density ?? 'comfortable');
 
@@ -262,6 +270,7 @@ function LabRuntime({
                       header={bar.header}
                     >
                       <UnreadableRecords />
+                      {shortcuts && <LabShortcutSheet tools={chromeAll.tools} />}
                       <PanelHostContext.Provider value={panelHosts}>
                         <LabSurface bodyRef={setLabBody} contributions={labChromeAll}>
                           <AnnotationOptions tools={chromeAll.tools} />

@@ -111,6 +111,9 @@ export interface LabBaseProps {
    *  turns them on and off, and a stored lab keeps that choice over this.
    *  Hidden marks are kept, not dropped. */
   marks?: boolean;
+  /** Offer the keyboard shortcut sheet: `shortcuts.show` on Shift+/, a row in the Lab menu, and the sheet, listing
+   *  every key bound in the lab and the focused trial. Default `true`. */
+  shortcuts?: boolean;
   /** Menus a right-click over a trial's camera opens, picked by each def's `when` (a camera
    *  reports no body, so `when: {}` matches anywhere on it). Rows name commands registered in
    *  the lab. Memoize or hoist. */
