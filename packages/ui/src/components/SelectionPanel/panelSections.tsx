@@ -6,6 +6,7 @@ import { Fragment, type ReactNode } from 'react';
 import { prefAsBox, prefTabRuns } from '@weasel-js/prefs';
 import { BarLayout } from '../Bar/BarLayout';
 import { MotifFrame } from '../MotifFrame';
+import { ResetControl } from '../Properties/ResetControl';
 import { FORM_FRAMES } from '../Prefs/frames';
 import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
 import { offTitle } from '../Prefs/offTitle';
@@ -15,7 +16,7 @@ import { RAIL_ATTR, selectionAttrs } from '../Prefs/selection';
 import type { RenderedCell } from './cells';
 import { LabeledRow } from './LabeledRow';
 import { isPanelSection, panelLeafKey, panelOwnRows, panelRowsOf, type PanelRow, type PanelSection } from './model';
-import { rowCells, type PanelCellScope } from './panelCells';
+import { panelResets, rowCells, type PanelCellScope } from './panelCells';
 import { PanelTabs, sectionHeaded, sectionHolds, sectionNamed, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
@@ -83,8 +84,9 @@ function blockRow(row: PanelRow, control: RenderedCell, headless: boolean, marks
 /** `marks` for an element whose hidden mark is worked out where it is drawn. */
 const selectedOnly = (marks: PanelMarks): PanelMarks => ({ selected: marks.selected });
 
-function labeledRow(row: PanelRow, controls: readonly RenderedCell[], marks: PanelMarks, marked: boolean): ReactNode {
+function labeledRow(row: PanelRow, controls: readonly RenderedCell[], marks: PanelMarks, marked: boolean, scope: PanelCellScope): ReactNode {
   const [first] = row.leaves;
+  const due = panelResets(row.leaves, scope);
   // A row several leaves share is drawn for its first, and is hidden only when they all are.
   const shared = row.leaves.length > 1;
   return (
@@ -95,6 +97,7 @@ function labeledRow(row: PanelRow, controls: readonly RenderedCell[], marks: Pan
       marked={marked}
       disabled={controls.every((cell) => cell.disabled)}
       disabledReason={first.leaf.disabledReason}
+      onReset={due.length > 0 ? () => scope.reset(due, row.label) : undefined}
       attrs={{ ...selectionAttrs(panelLeafKey(first), shared ? selectedOnly(marks) : marks, true), ...(shared ? hiddenAttrs(marked) : {}) }}
     >
       {controls.map(({ key, content }) => (
@@ -148,19 +151,21 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
   const quiet = hush || whole;
   const rowMarks: PanelMarks = quiet ? { ...marks, hidden: undefined } : marks;
   const marked = (controls: readonly RenderedCell[]): boolean => !quiet && controls.every((cell) => cell.hidden);
-  const control = headControl && (
+  const reset = sectionReset(section, scope);
+  const lead = headControl && (
     <span className={s.headingControl} {...selectionAttrs(panelLeafKey(only!), rowMarks, true)}>
       {headControl.content}
       {!quiet && headControl.hidden && <HiddenBadge />}
     </span>
   );
+  const control = lead || reset ? <>{lead}{reset}</> : undefined;
   const drawnRows = placed(parts.map((part) => {
     if ('drawn' in part) return part.drawn;
     const { row, controls } = part;
     if (controls.length === 0) return undefined;
     const node = row.leaves.length === 1 && controls[0].block
       ? blockRow(row, controls[0], section.name === '', rowMarks, marked(controls))
-      : labeledRow(row, controls, rowMarks, marked(controls));
+      : labeledRow(row, controls, rowMarks, marked(controls), scope);
     return { node };
   }), marks, depth + 1);
   const Heading = depth === 0 ? 'h3' : 'h5';
@@ -179,6 +184,13 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
   );
   const inline = whole || control ? <>{whole && <HiddenBadge />}{control}</> : undefined;
   return { section, content, hidden: whole, allHidden, off, framed: { titled: headed || Boolean(control), inline, rows: drawnRows } };
+}
+
+/** The reset in the heading of a section that says `resettable`, disabled while no leaf under it would change. */
+function sectionReset(section: PanelSection, scope: PanelCellScope): ReactNode {
+  if (!section.resettable) return null;
+  const due = panelResets(panelRowsOf(section).flatMap((row) => row.leaves), scope);
+  return <ResetControl name={section.name || 'all'} disabled={due.length === 0} onReset={() => scope.reset(due, section.name)} />;
 }
 
 /** `section` as drawn, `depth` sections deep, or `undefined` when it draws nothing. */

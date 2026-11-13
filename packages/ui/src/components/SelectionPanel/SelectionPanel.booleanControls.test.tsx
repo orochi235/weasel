@@ -149,7 +149,7 @@ describe('SelectionPanel — boolean controls', () => {
     const seg = screen.getByRole('button', { name: 'Bold' });
     expect(seg).toHaveAttribute('aria-pressed', 'true');
     const label = screen.getAllByText('Bold').find((el) => !seg.contains(el))!;
-    expect(within(label.parentElement!).getAllByRole('button')).toHaveLength(1);
+    expect(within(label.parentElement!).getAllByRole('button', { name: 'Bold' })).toHaveLength(1);
   });
 });
 

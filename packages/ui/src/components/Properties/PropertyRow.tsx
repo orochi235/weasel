@@ -1,6 +1,7 @@
 import { type ReactNode, type RefObject, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import { PropertyHelp } from './PropertyHelp';
+import { ResetControl } from './ResetControl';
 import { PropertyRowContext } from './rowContext';
 import s from './Properties.module.css';
 
@@ -59,6 +60,9 @@ export interface PropertyRowProps extends PropertyMetricProps {
    *  The label then names that toggle, so a control passed as `children` has to
    *  carry its own accessible name — every `<PropertyField>` does. */
   onAutoChange?: (next: boolean) => void;
+  /** Given, a `ResetControl` after the label calls it: the owner passes it while the row's value is not
+   *  what a reset makes it (`prefIsReset`), and puts the setting back as its schema says. */
+  onReset?: () => void;
   /** Small muted text after the label — where an inherited value comes from. */
   hint?: ReactNode;
   /** The row's value differs from a baseline of the caller's: its label is drawn in the accent color. */
@@ -96,6 +100,7 @@ export function PropertyRow({
   align,
   auto,
   onAutoChange,
+  onReset,
   hint,
   changed = false,
   mixed = false,
@@ -159,6 +164,7 @@ export function PropertyRow({
       ) : (
         name
       )}
+      {onReset && <ResetControl name={typeof label === 'string' ? label : 'this setting'} onReset={onReset} disabled={disabled} />}
       {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
     </span>
   );

@@ -33,6 +33,7 @@ import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
 import { withRowControl } from './surfaceControls';
+import { autoTracked, rowReset } from './reset';
 import { selectionAttrs } from './selection';
 import { SplitBody, SplitHead, SplitMarks, SplitToggle, splitRowState } from './SplitRow';
 import type { SplitCtx } from './splitRows';
@@ -50,6 +51,8 @@ export interface WalkCtx {
   auto?: ReadonlySet<string>;
   mixed?: ReadonlySet<string>;
   onAutoChange?: (path: string, next: boolean) => void;
+  /** Puts the leaf or the group at a path back as its schema says, where the owner does that itself. */
+  onReset?: (path: string) => void;
   inheritHint?: (path: string) => string | undefined;
   canInherit?: (path: string) => boolean;
   fields?: readonly PrefFieldChoice[];
@@ -135,7 +138,7 @@ export function prefRenderContext(
   const { onAutoChange } = ctx;
   const inside = at === undefined ? undefined : ctx.targets;
   const entryAt = inside?.entryAt ?? ctx.entryAt;
-  const toggles = onAutoChange !== undefined && pref.auto !== false && (ctx.canInherit?.(path) ?? true);
+  const toggles = autoTracked(ctx, path, pref);
   const renderCtx: PrefRenderContext = {
     path,
     pref: leafAtValues(pref, ctx.values),
@@ -148,7 +151,7 @@ export function prefRenderContext(
     setValueAt: ctx.onChange,
     auto: ctx.auto?.has(from) ?? false,
     setAuto: (next) => {
-      if (toggles) onAutoChange(path, next);
+      if (toggles) onAutoChange?.(path, next);
     },
     ...(ctx.fields ? { fields: ctx.fields } : {}),
     disabled: ctx.disabled?.has(own) ?? false,
@@ -228,6 +231,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       // control keeps drawing it; editing it pins, through `onChange`.
       auto={inherited}
       onAutoChange={toggles ? setAuto : undefined}
+      onReset={rowReset(ctx, path, pref)}
       hint={marked || split ? <>{marked && <HiddenBadge />}{inheritHint}{split && <SplitMarks levels={split.shape.levels} />}</> : inheritHint}
       disabled={renderCtx.disabled}
       disabledReason={pref.disabledReason}

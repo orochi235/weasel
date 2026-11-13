@@ -1,0 +1,30 @@
+/* `ResetControl`: a row's or a group's reset, a glyph in the label's muted color that takes the
+   foreground's when pointed at. */
+.reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: 16px;
+  block-size: 16px;
+  border-radius: var(--wzl-radius-sm);
+  color: var(--wzl-fg-muted);
+  cursor: pointer;
+  /* Above the slider track a stacked row pulls up under its label, as the auto toggle is. */
+  position: relative;
+  z-index: 1;
+}
+
+.reset:hover {
+  color: var(--wzl-fg);
+}
+
+.reset:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+}
+
+.reset[aria-disabled='true'] {
+  cursor: default;
+  filter: var(--wzl-disabled-filter);
+}

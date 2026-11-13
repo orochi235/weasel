@@ -1,4 +1,5 @@
 import { asNodeId, type NodeId, type NodePropertiesEntry, type Scene, type SelectionApi } from '@weasel-js/core';
+import { prefStoredReset } from '@weasel-js/prefs';
 import { boundAtNode } from './nodeBounds';
 import { declaredField, nodeRoot } from './declaredFields';
 import { nodeLeafValue, nodeValueAt, setAtPath, type AnyNode, type PanelLeaf } from './model';
@@ -75,6 +76,8 @@ export interface LeafWrites {
   commit(selection: Pick<SelectionApi, 'current'>, leaf: PanelLeaf, next: Next): void;
   /** A value on the way there, as a slider's drag passes through: written, and kept out of undo. */
   draft(selection: Pick<SelectionApi, 'current'>, leaf: PanelLeaf, next: Next): void;
+  /** Each of `leaves` back as its schema says (`prefStoredReset`), in every selected node, as one undo step. */
+  reset(selection: Pick<SelectionApi, 'current'>, leaves: readonly PanelLeaf[], label: string): void;
 }
 
 /** What a node held before a draft wrote over it, and what the last draft left it holding. */
@@ -109,6 +112,14 @@ export function leafWrites<TData, TLayer extends string, TPose>(
   };
 
   return {
+    reset: (selection, leaves, label) => {
+      const ids = selection.current.map(asNodeId);
+      const due = leaves.filter(writable);
+      for (const leaf of due) restore(leaf);
+      scene.batch(`Reset ${label}`, () => {
+        for (const leaf of due) writeLeaf(scene, ids, leaf, () => prefStoredReset(leaf.leaf), settleOf);
+      });
+    },
     commit: (selection, leaf, next) => {
       // A batch records a write from what the document holds, so the drafts come out first.
       restore(leaf);

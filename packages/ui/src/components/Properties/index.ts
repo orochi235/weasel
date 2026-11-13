@@ -41,5 +41,7 @@ export type { PropertyAlign, PropertyDensity, PropertyMetricProps } from './metr
 export { PropertyList, PropertyNote, PropertySpan } from './PropertyList';
 export { PropertyPanel } from './PropertyPanel';
 export { PropertyRow } from './PropertyRow';
+export type { ResetControlProps } from './ResetControl';
+export { ResetControl } from './ResetControl';
 export type { SubpanelProps } from './Subpanel';
 export { Subpanel } from './Subpanel';

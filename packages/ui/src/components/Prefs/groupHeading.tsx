@@ -3,6 +3,7 @@ import { isPrefLeaf, prefHeadingKey, type PrefGroup, type PrefLeaf } from '@weas
 import { HiddenBadge, marksHidden } from './hidden';
 import { offTitle } from './offTitle';
 import { prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
+import { groupReset } from './reset';
 import { selectionAttrs } from './selection';
 import { splitMarks } from './SplitRow';
 import s from './Prefs.module.css';
@@ -17,7 +18,8 @@ export interface GroupHeading {
   name: ReactNode;
   /** The class a heading takes while it holds `control`. */
   className: string | undefined;
-  /** The control of the leaf marked `heading`, named for the group. */
+  /** The control of the leaf marked `heading`, named for the group, and the group's reset where it says
+   *  `resettable`. */
   control: ReactNode;
   entries: Entry[];
 }
@@ -37,12 +39,13 @@ export function groupHeading(ctx: WalkCtx, group: PrefGroup, path: string): Grou
   const name = offTitle(group.name, off);
   const key = prefHeadingKey(group);
   const leaf = key === undefined ? undefined : group.children[key];
+  const reset = groupReset(ctx, group, path);
   if (key === undefined || leaf === undefined || !isPrefLeaf(leaf) || ctx.renderers?.[leaf.kind] || ctx.leaves) {
-    return { off, name, className: undefined, control: null, entries };
+    return { off, name, className: undefined, control: reset, entries };
   }
   const own = path === '' ? key : `${path}.${key}`;
   const shown = shownLeaf(ctx, leaf);
-  if (!shown) return { off, name, className: undefined, control: null, entries };
+  if (!shown) return { off, name, className: undefined, control: reset, entries };
   const { renderCtx } = prefRenderContext(ctx, own, { ...shown.pref, name: group.name }, shown.at);
   return {
     off,
@@ -53,6 +56,7 @@ export function groupHeading(ctx: WalkCtx, group: PrefGroup, path: string): Grou
         {renderPrefControl(renderCtx, ctx.renderers)}
         {splitMarks(ctx.split, ctx.values, renderCtx, shown.at !== undefined)}
         {marksHidden(ctx.hidden, own) && <HiddenBadge />}
+        {reset}
       </span>
     ),
     entries: entries.filter(([k]) => k !== key),

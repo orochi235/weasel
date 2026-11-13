@@ -201,7 +201,7 @@ export function Scale({
       </span>
       {overridden.length > 0 ? (
         <Reset
-          label={`Reset ${group}`}
+          name={group}
           onPress={() => {
             for (const t of overridden) onChange(t.name, null);
           }}
