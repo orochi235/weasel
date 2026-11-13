@@ -49,6 +49,7 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
   'packages/labkit/src/loupe/lens/lensActionDefs.ts': {
     8: 'count: the most lenses a lab holds', 64: 'view: the lens\'s greatest magnification',
     0.5: 'view: a zoom-out step halves the magnification, chosen by the action',
+    250: 'threshold: how short a press of the quick-lens key is a tap, which closes the lens',
   },
   'packages/loupe/src/actions.ts': { 0.002: 'view: magnification per wheel delta' },
   'packages/path-tools/src/balance/handleBalance.ts': { 10: RADIX },
