@@ -13,13 +13,10 @@ import type { Instrument } from '../instrument/types';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { stateOp } from '../undo/stateOp';
-import { readTrialEdit, type TrialEdit } from './trialEdit';
+import { readTrialEdit } from './trialEdit';
 import type { MountedTrialHistory } from './trialHistory';
 import { type TrialSnapshot, useTrialSnapshot } from './useTrialSnapshot';
-
-/** A config write within this long of the last one to the same path belongs
- *  to the same gesture — a slider drag writes on every move. */
-const GESTURE_MS = 500;
+import { GESTURE_MS, settledGesture, type WriteGesture } from './writeGesture';
 
 const NO_HISTORY = (): null => null;
 
@@ -91,16 +88,7 @@ export function useTrialWrites({
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const over = useLatest(useContext(LabOverContext));
-  /** The gesture the last write began or continued. `start` is the record as the gesture found it, where its step
-   *  is the trial's own snapshot, which a gesture ending where it started can take back. `open` while drafts run,
-   *  which no pause ends. */
-  const lastWrite = useRef<{
-    path: string;
-    at: number;
-    version: string;
-    start: TrialEdit | null;
-    open: boolean;
-  } | null>(null);
+  const lastWrite = useRef<WriteGesture | null>(null);
   // Undoing an entry ends the gesture that recorded it, on whichever history holds it.
   const { snapshot, stored } = useTrialSnapshot({
     store,
@@ -152,12 +140,6 @@ export function useTrialWrites({
     lastWrite.current = null;
   }, [stored]);
 
-  /** A settled write to `path` ends the drafts that ran there before it. */
-  const settle = useCallback((path: string, draft: boolean): void => {
-    if (!draft && lastWrite.current?.open && lastWrite.current.path === path)
-      lastWrite.current = null;
-  }, []);
-
   const apply = useCallback(
     (path: string, value: unknown, draft: boolean): void => {
       if (writesOver(schema, path)) {
@@ -200,18 +182,16 @@ export function useTrialWrites({
   const write = useCallback(
     (path: string, value: unknown, draft: boolean): void => {
       apply(path, value, draft);
-      settle(path, draft);
+      lastWrite.current = settledGesture(lastWrite.current, path, draft);
     },
-    [apply, settle],
+    [apply],
   );
-  const setConfig = useCallback(
-    (path: string, value: unknown): void => write(path, value, false),
-    [write],
+  return useMemo(
+    () => ({
+      snapshot,
+      setConfig: (path: string, value: unknown) => write(path, value, false),
+      draftConfig: (path: string, value: unknown) => write(path, value, true),
+    }),
+    [snapshot, write],
   );
-  const draftConfig = useCallback(
-    (path: string, value: unknown): void => write(path, value, true),
-    [write],
-  );
-
-  return useMemo(() => ({ snapshot, setConfig, draftConfig }), [snapshot, setConfig, draftConfig]);
 }

@@ -150,23 +150,22 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     }
     if (found.as === 'bar') {
       return (
-        <PropertySpan key={path}>
-          <ControlBar
-            group={found}
-            path={path}
-            visible={visible}
-            enabled={enabled}
-            active={active}
-            value={(p, leaf) => leafValueAt(shown, p, leaf)}
-            read={(p) => valueAtPath(shown, p)}
-            write={setConfig}
-            bind={(leaf) => boundAction(leaf, config as Record<string, unknown>, setConfig)}
-            draft={draftConfig}
-            custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
-            row={(p) => listOf(rows, node(p, rows))}
-            open={(inner, at) => listOf(rows, body(inner, at, rows))}
-          />
-        </PropertySpan>
+        <ControlBar
+          key={path}
+          group={found}
+          path={path}
+          visible={visible}
+          enabled={enabled}
+          active={active}
+          value={(p, leaf) => leafValueAt(shown, p, leaf)}
+          read={(p) => valueAtPath(shown, p)}
+          write={setConfig}
+          bind={(leaf) => boundAction(leaf, config as Record<string, unknown>, setConfig)}
+          draft={draftConfig}
+          custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
+          row={(p) => listOf(rows, node(p, rows))}
+          open={(inner, at) => listOf(rows, body(inner, at, rows))}
+        />
       );
     }
     // A group with no name contributes its rows and no chrome (core's rule for an empty

@@ -22,7 +22,7 @@ import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
-import { useLabCommands } from '../lab/LabContext';
+import { type LabCommands, useLabCommands } from '../lab/LabContext';
 import { usePresentedTrial } from '../lab/presentation';
 import { useLightboxControl } from '../lightbox/LightboxContext';
 import { JobProgress } from '../primitives/JobProgress';
@@ -131,6 +131,17 @@ const contentClassOf = (instrument: Instrument, presented: boolean): string | un
     .filter(Boolean)
     .join(' ') || undefined;
 
+/** The lab's commands on one trial: its snapshots and the title bar's actions. */
+const labOpsOn = (lab: LabCommands, trialId: string) =>
+  ({
+    savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
+    saveSnapshot: (name?: string) => lab.saveSnapshot(trialId, name),
+    loadSnapshot: (snapshotId: string) => lab.loadSnapshot(trialId, snapshotId),
+    clone: () => lab.cloneTrial(trialId),
+    reset: () => lab.resetTrial(trialId),
+    close: () => lab.closeTrial(trialId),
+  }) satisfies Partial<TrialChromeContext>;
+
 /** The trial's writes, for chrome mounted without a `setConfig`: its marks end a gesture, as in the trial. */
 function useChromeWrites(opts: Omit<TrialWritesOptions, 'marks' | 'mounted'>) {
   return useTrialWrites({ ...opts, marks: useContext(AnnotationsContext) });
@@ -229,12 +240,7 @@ export function TrialChrome({
       undockedPanels: panels.undocked,
       undockPanel: panels.undockPanel,
       dockPanel: panels.dockPanel,
-      savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
-      saveSnapshot: (name) => lab.saveSnapshot(trialId, name),
-      loadSnapshot: (snapshotId) => lab.loadSnapshot(trialId, snapshotId),
-      clone: () => lab.cloneTrial(trialId),
-      reset: () => lab.resetTrial(trialId),
-      close: () => lab.closeTrial(trialId),
+      ...labOpsOn(lab, trialId),
       activeToolId,
       setActiveTool,
     };
