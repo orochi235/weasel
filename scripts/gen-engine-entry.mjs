@@ -73,7 +73,7 @@ if (process.argv.includes('--check')) {
   let current = '';
   try { current = readFileSync(OUT, 'utf8'); } catch {}
   if (current !== text) {
-    console.error(`[engine-entry] ${relative(ROOT, OUT)} is out of date; run node scripts/gen-engine-entry.mjs`);
+    console.error(`[engine-entry] ${relative(ROOT, OUT)} is out of date; run \`npm run gen:engine-entry\`.`);
     process.exit(1);
   }
   console.log('[engine-entry] up to date.');

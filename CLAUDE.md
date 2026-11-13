@@ -132,7 +132,7 @@ five changesets. Leave `pick` alone: highlights are chosen at release time with 
 
 ## Package manager
 
-npm is canonical: `package-lock.json` is the committed lockfile and `workspaces` lives in `package.json`. `pnpm install` is fine locally for speed (`.npmrc` has `link-workspace-packages=true` so it resolves the `*` workspace deps), but **never commit `pnpm-lock.yaml`** — it's gitignored on purpose. Don't introduce `pnpm-workspace.yaml`, `preinstall` hooks blocking npm, or `workspace:*` deps without an explicit decision to migrate.
+npm is the package manager: `package-lock.json` is the committed lockfile and `workspaces` lives in `package.json`. pnpm 10 ignores the `workspaces` field and links no workspace package, so it cannot install this repo; `pnpm-lock.yaml` is gitignored so a stray one never lands. Don't introduce `pnpm-workspace.yaml`, `preinstall` hooks blocking npm, or `workspace:*` deps without an explicit decision to migrate.
 
 ## Reference implementations
 
@@ -215,8 +215,9 @@ from the diff against the merge-base. Green, `main` fast-forwards to that tip, a
 `main`'s post-merge run, since `main` is then the commit it tested. Red, the failing file says whose it
 is: fix that branch or drop it, and rerun the batch. Hold a ready branch for the next batch rather
 than running one for it alone; a batch touching a `triggers` path, dependencies or build tooling gets a
-full run, which is one more reason to fold such a change in rather than run it separately. Never run
-`npm run test:gate` itself: it runs typecheck, lint and every check on this machine. Perf measurements
+full run, which is one more reason to fold such a change in rather than run it separately. The
+`gate` project runs typecheck, lint and every check at once, so it has no npm script and runs only
+inside a fleet run. Perf measurements
 are not test runs and still go to the fleet, one job at a time. On 2026-10-30, seven agents each
 finishing with a branch run and then a run of `main` per merge put 2–3 suite-sized runs behind every
 change.
@@ -261,11 +262,12 @@ What a branch run selects, the gate, `test:fleet:postbuild`, the draw view check
 
 ## Test and typecheck commands
 
-Core's tests run under the root vitest config, not the package: `npx vitest run --project=core`.
-The `core` workspace has no `test` script at all. `npm test` runs every project.
-`packages/text` and `packages/bidi` run under the `weasel-ui` project, not `core` — and running
-vitest from inside a package finds zero files and looks like a pass. `npm run check:test-projects`
-prints which project owns each directory, and fails on a test file no project collects.
+Every test runs under the root vitest config's projects: `npx vitest run --project=core <file>`
+from the root, or `npm test -- <file>` inside a package, which runs its files from the root under
+whichever projects own them (`scripts/package-test.mjs`). `npm test` at the root runs every project.
+`packages/text` and `packages/bidi` run under the `weasel-ui` project, not `core`.
+`npm run check:test-projects` prints which project owns each directory, and fails on a test file no
+project collects.
 A check that needs a real browser — layout, real IndexedDB, CSS jsdom can't resolve — is a
 `*.browser.test.{ts,tsx}` file, not a story `play`: the `browser` project runs it in headless
 Chromium (`npm run test:browser`, part of `npm test` and CI).
@@ -287,11 +289,6 @@ Things that pass every test and are still wrong.
 **The git stash stack is shared by every worktree of this repo.** A `stash`/`pop` pair run in one
 worktree can pop another session's work into it. Use a throwaway worktree for a baseline instead;
 if you must stash, `push -u -m <tag>`, `apply` by SHA, and drop your own entry by tag.
-
-**A worktree with no `node_modules` of its own builds against the main checkout's.** Node resolves
-`@weasel-js/*` up the tree, so a package build there reads main's stale `dist` for its siblings, and
-`test:smoke:consumer` calls `<repo>/node_modules/.bin/tsc` and fails with an empty error. Run
-`npm ci` in the worktree before building or smoke-testing anything in it.
 
 Read the file for the area before changing anything in it:
 

@@ -8,6 +8,9 @@ import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
+import { assertPackageBuild } from '../../scripts/lib/own-install.mjs';
+
+assertPackageBuild(import.meta.dirname);
 
 export default defineConfig({
   plugins: [react()],

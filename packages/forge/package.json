@@ -65,7 +65,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
     "@babel/parser": "^8.0.6",

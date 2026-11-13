@@ -52,7 +52,7 @@ for (const pkg of pkgs) {
   if (!grouped.has(pkg.name)) {
     problems.push(
       `${pkg.name} (${pkg.dir}/package.json) is published but missing from the ` +
-        `\`fixed\` group in .changeset/config.json — it will version on its own.`,
+        `\`fixed\` group in .changeset/config.json — it will version on its own. Add it to that list.`,
     );
   }
 }
@@ -61,7 +61,7 @@ for (const name of grouped) {
   if (!pkgs.some((p) => p.name === name)) {
     problems.push(
       `${name} is in the \`fixed\` group but is not a published workspace — ` +
-        `a rename or a deletion left the list behind.`,
+        `a rename or a deletion left the list behind. Rename or remove it there.`,
     );
   }
 }

@@ -72,7 +72,7 @@ export function offenders(files: readonly { path: string; source: string }[], ra
 if (process.argv[1]?.endsWith('check-controls.ts')) {
   const root = join(import.meta.dirname, '..');
   const rankOf = ranks(readFileSync(join(root, 'packages/theme/src/generated/tokens.css'), 'utf8'));
-  if (rankOf.size === 0) throw new Error('no control ranks in the generated tokens; has the theme been built?');
+  if (rankOf.size === 0) throw new Error('no control ranks in packages/theme/src/generated/tokens.css; run `npm run gen:tokens -w @weasel-js/theme`');
   const files = [...walk(join(root, 'packages')), ...walk(join(root, 'apps'))].filter(isStylesheet).map((path) => ({
     path: relative(root, path),
     source: readFileSync(path, 'utf8'),

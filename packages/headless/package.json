@@ -44,7 +44,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup && tsup --config tsup.page.config.ts"
+    "build": "tsup && tsup --config tsup.page.config.ts",
+    "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
     "@weasel-js/core": "1.19.1",

@@ -59,7 +59,7 @@
     "polygon-clipping": "^0.15.7"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "node ../../scripts/package-test.mjs",
     "build": "tsup"
   },
   "author": "orochi235",

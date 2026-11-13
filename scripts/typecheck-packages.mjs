@@ -14,9 +14,11 @@ import { existsSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { exitUnlessOwnInstall } from './lib/own-install.mjs';
 import { tscArgv } from './lib/tsc.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
+exitUnlessOwnInstall(ROOT);
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
 const named = process.argv.slice(2);

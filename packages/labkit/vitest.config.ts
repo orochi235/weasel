@@ -1,9 +1,11 @@
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { type AliasOptions, defineConfig } from 'vitest/config';
+import { assertOwnInstall } from '../../scripts/lib/own-install.mjs';
 
 // labkit is a workspace package; the weasel monorepo root is two levels up.
 const weaselRoot = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
+assertOwnInstall(weaselRoot);
 
 // Reuse the monorepo's canonical alias map so tests resolve @weasel-js/core*
 // (and weasel's bare core/ domains/ imports) against source — same as the

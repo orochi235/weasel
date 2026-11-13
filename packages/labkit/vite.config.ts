@@ -1,12 +1,15 @@
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { type AliasOptions, defineConfig, type PluginOption } from 'vite';
+import { assertOwnInstall } from '../../scripts/lib/own-install.mjs';
+import { LAN_SERVER } from '../../scripts/vite-lan.ts';
 
 const example = process.env.LABKIT_EXAMPLE ?? 'minimal';
 const here = fileURLToPath(new URL('.', import.meta.url));
 
 // labkit is a workspace package; the weasel monorepo root is two levels up.
 const weaselRoot = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
+assertOwnInstall(weaselRoot);
 
 const labkitAlias = {
   '@weasel-js/labkit': fileURLToPath(new URL('./src/index.ts', import.meta.url)),
@@ -44,6 +47,7 @@ export default defineConfig(async () => ({
     ],
   },
   server: {
+    ...LAN_SERVER,
     fs: { allow: [here, weaselRoot] },
   },
 }));

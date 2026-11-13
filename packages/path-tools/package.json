@@ -44,7 +44,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup && cp src/icons.table.json dist/"
+    "build": "tsup && cp src/icons.table.json dist/",
+    "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
     "@weasel-js/cursor": "1.19.1",

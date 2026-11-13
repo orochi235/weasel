@@ -60,7 +60,7 @@ export const isStylesheet = (p: string) =>
 if (process.argv[1]?.endsWith('check-spacing.ts')) {
   const root = join(import.meta.dirname, '..');
   const rungs = ladder(readFileSync(join(root, 'packages/theme/src/generated/tokens.css'), 'utf8'));
-  if (rungs.size === 0) throw new Error('no --wzl-space-<n> rungs in the generated tokens; has the theme been built?');
+  if (rungs.size === 0) throw new Error('no --wzl-space-<n> rungs in packages/theme/src/generated/tokens.css; run `npm run gen:tokens -w @weasel-js/theme`');
   const files = [...walk(join(root, 'packages')), ...walk(join(root, 'apps'))].filter(isStylesheet).map((path) => ({
     path: relative(root, path),
     source: readFileSync(path, 'utf8'),

@@ -1893,3 +1893,20 @@ Calls the lanes made without a ruling:
   snapshot of the same instrument into any trial. So a snapshot cannot be loaded into a clone to compare it with
   the trial that saved it, and a lab wanting presets shared across trials lists `useLabContext().savedSnapshots`
   itself. Whether the menu offers every snapshot of the instrument, groups them by trial, or stays per trial.
+
+## Audit round twenty-one (2026-11-12): developer ergonomics
+
+- A checkout counts as installed when `node_modules/@weasel-js/core` exists, the workspace link `npm ci` writes; a
+  `node_modules` holding only a tool's `.cache` does not. Every vite and vitest config, the tsup preset, and the
+  build, typecheck, consumer smoke and `check:needs` scripts refuse a checkout without it (2026-11-12).
+- `npm test` inside any package with tests runs `scripts/package-test.mjs`, which runs the package's files from the
+  repo root under whichever projects own them, on one worker unless told otherwise. labkit keeps its own
+  `vitest run`, since it has a config of its own (2026-11-12).
+- The `test:gate` npm script is gone rather than guarded: nothing called it, and the gate runs only inside a fleet
+  run (2026-11-12).
+- `.npmrc` is gone: its one key served `pnpm install`, which pnpm 10 no longer does for this repo, and npm warned
+  about it on every call. The workflows keep `NPM_CONFIG_LOGLEVEL: error` (2026-11-12).
+- The star re-export rule covers every package's source and the apps alike; bare paths under core's own tsconfig
+  aliases (`interactions/…`) are not packages to it (2026-11-12).
+- Open: a bare `npx vitest` inside a package with no vite or vitest config of its own still runs that package's
+  files under vitest's defaults, with no project's setup. Only a config file in each such package could refuse it.

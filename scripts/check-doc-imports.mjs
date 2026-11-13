@@ -89,6 +89,7 @@ function main() {
   }
   if (problems.length) {
     console.error(problems.join('\n'));
+    console.error("\nPoint each snippet at the entry that exports the name now, or at the name it was renamed to.");
     process.exit(1);
   }
   console.log(`${uses.length} named imports in docs, each exported where it is imported from`);

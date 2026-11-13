@@ -1,5 +1,9 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'tsup';
+import { assertOwnInstall } from '../../scripts/lib/own-install.mjs';
 import { weaselIcons } from '../icons-plugin/src/index';
+
+assertOwnInstall(fileURLToPath(new URL('../..', import.meta.url)));
 
 export default defineConfig({
   entry: {

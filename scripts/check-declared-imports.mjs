@@ -97,14 +97,14 @@ function ownAliases(dir) {
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   for (const { to } of CROSS_PACKAGE) {
     if (!['.ts', '.tsx', '.js'].some((ext) => existsSync(join(ROOT, to + ext)))) {
-      console.error(`[declared-imports] ${to} is allowlisted as a cross-package import and does not exist.`);
+      console.error(`[declared-imports] ${to} is allowlisted as a cross-package import and does not exist. Update or remove its CROSS_PACKAGE entry in scripts/check-declared-imports.mjs.`);
       process.exit(1);
     }
   }
 
   for (const helper of TEST_HELPERS) {
     if (!existsSync(join(ROOT, helper))) {
-      console.error(`[declared-imports] ${helper} is listed as a test helper and does not exist.`);
+      console.error(`[declared-imports] ${helper} is listed as a test helper and does not exist. Update or remove it in TEST_HELPERS in scripts/check-declared-imports.mjs.`);
       process.exit(1);
     }
   }

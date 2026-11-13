@@ -15,7 +15,7 @@
   },
   "type": "module",
   "engines": {
-    "node": "^22.18.0 || >=24.11.0"
+    "node": ">=24.11.0"
   },
   "workspaces": [
     "packages/*"
@@ -49,7 +49,6 @@
     "test:draw": "vitest run --project=draw",
     "test:chart": "vitest run --project=draw apps/chart",
     "test:smoke": "vitest run --project=smoke",
-    "test:gate": "vitest run --project=gate",
     "test:fleet": "node scripts/fleet-test.mjs",
     "test:fleet:postbuild": "node scripts/fleet-ci.mjs postbuild",
     "test:browser": "node scripts/vitest-overlap.mjs run --project=browser",

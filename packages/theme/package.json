@@ -81,7 +81,8 @@
   ],
   "scripts": {
     "gen:tokens": "tsx scripts/build-tokens.ts",
-    "build": "npm run gen:tokens && tsup && cp src/generated/tokens.css dist/tokens.css && cp src/fonts.css src/faces.css src/numeric.module.css src/inherited.module.css dist/"
+    "build": "npm run gen:tokens && tsup && cp src/generated/tokens.css dist/tokens.css && cp src/fonts.css src/faces.css src/numeric.module.css src/inherited.module.css dist/",
+    "test": "node ../../scripts/package-test.mjs"
   },
   "publishConfig": {
     "access": "public",

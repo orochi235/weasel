@@ -28,8 +28,10 @@ import { existsSync } from 'node:fs';
 import { isShipped } from './check-declared-imports.mjs';
 import { SOURCE, importSpecifiers, importedNames, namedSpecifiers, packageOf } from './lib/imports.mjs';
 import { smokeIcons } from './smoke-consumer-icons.mjs';
+import { exitUnlessOwnInstall } from './lib/own-install.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+exitUnlessOwnInstall(repoRoot);
 
 /**
  * Every package directory under `packages/`, read off disk rather than listed

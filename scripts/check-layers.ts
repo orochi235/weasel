@@ -44,7 +44,7 @@ export function offenders(files: readonly { path: string; source: string }[], lo
 if (process.argv[1]?.endsWith('check-layers.ts')) {
   const root = join(import.meta.dirname, '..');
   const lowest = floor(readFileSync(join(root, 'packages/theme/src/generated/tokens.css'), 'utf8'));
-  if (!Number.isFinite(lowest)) throw new Error('no --wzl-z-<layer> rungs in the generated tokens; has the theme been built?');
+  if (!Number.isFinite(lowest)) throw new Error('no --wzl-z-<layer> rungs in packages/theme/src/generated/tokens.css; run `npm run gen:tokens -w @weasel-js/theme`');
   const files = [...walk(join(root, 'packages')), ...walk(join(root, 'apps'))]
     .filter((p) => !p.includes('.stories.'))
     .map((path) => ({ path: relative(root, path), source: readFileSync(path, 'utf8') }));
