@@ -63,16 +63,16 @@ describe('GLYPHS', () => {
   });
 
   it.each(MARKED)('%s with %s keeps its halo inside the viewBox', (glyph, mark) => {
-    expect(haloFitsInBox(cursorGlyph(glyph, mark))).toBe(true);
+    expect(haloFitsInBox(cursorGlyph(glyph, { mark }))).toBe(true);
   });
 
   it.each(MARKED)('%s with %s moves its hotspot with the glyph', (glyph, mark) => {
     const g = GLYPHS[glyph];
     const [sx, sy] = 'mark' in g ? g.mark.shift : [0, 0];
-    expect(cursorGlyph(glyph, mark).hotspot).toEqual([g.hotspot[0] + sx, g.hotspot[1] + sy]);
+    expect(cursorGlyph(glyph, { mark }).hotspot).toEqual([g.hotspot[0] + sx, g.hotspot[1] + sy]);
   });
 
   it('refuses a mark on a glyph with no slot', () => {
-    expect(() => cursorGlyph('pencil', 'add')).toThrow(/no slot/);
+    expect(() => cursorGlyph('pencil', { mark: 'add' })).toThrow(/no slot/);
   });
 });

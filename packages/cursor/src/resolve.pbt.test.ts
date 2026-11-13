@@ -32,7 +32,7 @@ function model(spec: CursorGlyphSpec): ResolvedCursor {
   const size = positive(spec.size);
   if (worldRadius !== undefined) return { kind: 'painted', glyph: spec.glyph, ...mark, angle, worldRadius };
   if (size !== undefined && size > CURSOR_MAX_CSS_PX) return { kind: 'painted', glyph: spec.glyph, ...mark, angle, size };
-  return { kind: 'css', css: bakeCursor(cursorGlyph(spec.glyph, spec.mark), { size: size ?? 24, angle, fallback: spec.fallback ?? 'default' }) };
+  return { kind: 'css', css: bakeCursor(cursorGlyph(spec.glyph, { mark: spec.mark }), { size: size ?? 24, angle, fallback: spec.fallback ?? 'default' }) };
 }
 
 describe('resolveCursorTier', () => {
@@ -66,7 +66,7 @@ describe('cursorFor', () => {
     fc.assert(fc.property(variant, bakedSize, angle, angle, (v, size, a, b) => {
       const opts = { ...(v.mark ? { mark: v.mark } : {}), size };
       const css = cursorFor(v.glyph, { ...opts, angle: a });
-      expect(css).toBe(bakeCursor(cursorGlyph(v.glyph, v.mark), { size, angle: a }));
+      expect(css).toBe(bakeCursor(cursorGlyph(v.glyph, { mark: v.mark }), { size, angle: a }));
       if (quantizeCursorAngle(a) === quantizeCursorAngle(b)) {
         t.count('same step');
         expect(cursorFor(v.glyph, { ...opts, angle: b })).toBe(css);
@@ -86,7 +86,7 @@ describe('cursorFor', () => {
     fc.assert(fc.property(fc.oneof(fc.string(), fc.constantFrom('__proto__', 'constructor', 'toString', 'hasOwnProperty')), (name) => {
       fc.pre(!(cursorVariants().some((v) => v.glyph === name)));
       expect(() => cursorGlyph(name as never)).toThrow(/unknown cursor glyph/);
-      expect(() => cursorGlyph('crosshair', name as never)).toThrow(/unknown cursor mark/);
+      expect(() => cursorGlyph('crosshair', { mark: name as never })).toThrow(/unknown cursor mark/);
     }), runs(RUNS));
   });
 });

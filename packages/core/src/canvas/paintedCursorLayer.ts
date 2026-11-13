@@ -67,7 +67,7 @@ export function createPaintedCursorLayer(state: PaintedCursorState): RenderLayer
       const { cursor, at } = frame;
       let glyph: CursorGlyph;
       try {
-        glyph = cursorGlyph(cursor.glyph, cursor.mark);
+        glyph = cursorGlyph(cursor.glyph, { mark: cursor.mark });
       } catch {
         // A name the set lacks, or a mark on a glyph with no slot: draw nothing rather than throw mid-frame.
         return [];

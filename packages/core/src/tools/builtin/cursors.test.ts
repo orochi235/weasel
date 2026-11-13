@@ -36,7 +36,7 @@ describe('builtin tool cursors', () => {
     // the mark would insert shapes offset from the pointer by a third of the
     // glyph, consistently enough to read as a calibration problem.
     for (const mark of SHAPE_MARKS) {
-      expect(cursorGlyph('crosshair', mark).hotspot).toEqual([9, 9]);
+      expect(cursorGlyph('crosshair', { mark }).hotspot).toEqual([9, 9]);
     }
   });
 });

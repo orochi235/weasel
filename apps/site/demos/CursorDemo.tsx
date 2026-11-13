@@ -24,7 +24,7 @@ function Tile({ variant, selected, onSelect }: {
   selected: boolean;
   onSelect: (variant: CursorVariant) => void;
 }) {
-  const glyph = cursorGlyph(variant.glyph, variant.mark);
+  const glyph = cursorGlyph(variant.glyph, { mark: variant.mark });
   const css = cursorFor(variant.glyph, { ...(variant.mark ? { mark: variant.mark } : {}), fallback: FALLBACK });
   const [hx, hy] = glyph.hotspot;
   return (
