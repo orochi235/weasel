@@ -12,6 +12,8 @@ import { copyText } from '@weasel-js/react';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { type LoupeSettings, useHud, useLoupe } from '@weasel-js/hud/react';
 import { pref } from '@weasel-js/prefs';
+import { LOUPE_FACTOR, LOUPE_MODE } from './loupePrefs';
+import { drawPrefs, usePref } from './prefs';
 import type { SchemaBinding } from './surfaces/types';
 import { usePickColor } from './usePickColor';
 
@@ -26,7 +28,8 @@ export const LOUPE_COPY_ACTION = 'draw.loupe.copy';
 interface LoupeState extends LoupeSettings {
   /** Hex under the aim point. Null until the pointer has moved over the canvas with the loupe showing. */
   color: string | null;
-  set(patch: Partial<LoupeSettings>): void;
+  /** Show or hide the lens, for this session. */
+  setVisible(visible: boolean): void;
 }
 
 /** Shown only while the loupe is. */
@@ -35,8 +38,8 @@ const WHILE_ON = { showIf: { path: 'on' } } as const;
 /** The loupe's controls, as the surface asset draws them; {@link useLoupeBinding} binds their paths. */
 export const LOUPE_SCHEMA = pref.group('Loupe', {
   on: pref.boolean('Loupe', false, { control: 'switch' }),
-  mode: pref.enum<LoupeMode>('Mode', 'vector', ['vector', 'pixel'], { control: 'toggle', ...WHILE_ON }),
-  factor: pref.number('Magnification', 8, { min: 2, max: 16, step: 1, short: ['Zoom'], ...WHILE_ON }),
+  mode: { ...LOUPE_MODE, ...WHILE_ON },
+  factor: { ...LOUPE_FACTOR, ...WHILE_ON },
   color: pref.color('Color', '', { readout: true, ...WHILE_ON }),
   copy: pref.action(LOUPE_COPY_ACTION, {
     name: 'Copy',
@@ -46,9 +49,6 @@ export const LOUPE_SCHEMA = pref.group('Loupe', {
     ...WHILE_ON,
   }),
 });
-
-const { on, mode, factor } = LOUPE_SCHEMA.children;
-const INITIAL: LoupeSettings = { visible: on.default, mode: mode.default, factor: factor.default };
 
 const LoupeContext = createContext<LoupeState | null>(null);
 
@@ -62,10 +62,13 @@ export interface LoupeProviderProps {
   children?: ReactNode;
 }
 
-/** Owns the loupe's settings and the color it reads, for every control that shows them, and keeps the lens to
- *  them. */
+/** Owns whether the loupe shows and the color it reads, for every control that shows them, and keeps the lens to
+ *  them and to its mode and magnification, which are prefs. */
 export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProviderProps) {
-  const [settings, setSettings] = useState(INITIAL);
+  const [visible, setVisible] = useState(LOUPE_SCHEMA.children.on.default);
+  const [mode] = usePref('loupe.mode');
+  const [factor] = usePref('loupe.factor');
+  const settings = useMemo((): LoupeSettings => ({ visible, mode, factor }), [visible, mode, factor]);
   const [color, setColor] = useState<string | null>(null);
 
   const colorRef = useLatest(color);
@@ -83,11 +86,7 @@ export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProvi
   }), [colorRef]);
   useAction(copy);
 
-  const state = useMemo((): LoupeState => ({
-    ...settings,
-    color,
-    set: (patch) => setSettings((prev) => ({ ...prev, ...patch })),
-  }), [settings, color]);
+  const state = useMemo((): LoupeState => ({ ...settings, color, setVisible }), [settings, color]);
 
   return (
     <LoupeContext.Provider value={state}>
@@ -109,7 +108,7 @@ function LoupeLens({ canvasRef, source, settings, state, onColor }: {
   useLoupe(canvasRef, hud, source, settings, {
     onColorChange: onColor,
     onPick: pickColor,
-    onClose: () => state.set({ visible: false }),
+    onClose: () => state.setVisible(false),
   });
   return null;
 }
@@ -130,9 +129,9 @@ export function useLoupeBinding(): SchemaBinding {
         ...(state.color ? { color: state.color } : {}),
       },
       onChange: (path, value) => {
-        if (path === 'on') state.set({ visible: value === true });
-        else if (path === 'mode') state.set({ mode: value as LoupeMode });
-        else if (path === 'factor' && typeof value === 'number') state.set({ factor: value });
+        if (path === 'on') state.setVisible(value === true);
+        else if (path === 'mode') drawPrefs().set('loupe.mode', value as LoupeMode);
+        else if (path === 'factor' && typeof value === 'number') drawPrefs().set('loupe.factor', value);
       },
     };
   }, [state]);

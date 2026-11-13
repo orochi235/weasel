@@ -171,7 +171,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         canvas={{ elementRef: internalCanvasRef, apiRef: canvasApiRef, ready: canvasReady }} snapSources={enabled.snapSources} snapStore={layered.snapStore}
       />
       <SurfaceDeclarations views={props.views} entries={contributionEntries(tools.tools)} added={addedViews} />
-      <DefaultTextEditDep editor={textEditor} onDoubleClick={enabled.has('edit')} />
+      <DefaultTextEditDep editor={textEditor} />
       {props.children}
     </CanvasKitProviders>
   );

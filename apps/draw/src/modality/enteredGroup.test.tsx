@@ -169,6 +169,16 @@ describe('the entered group in draw', () => {
     expect(t.entered()).toBeNull();
   });
 
+  it('a double-click on text in a group enters the group, and the next one opens the text', () => {
+    const t = setup();
+    t.doubleClick(AT.txt);
+    expect(t.entered()).toBe('g');
+    expect(t.live().textEdit.editingId).toBeNull();
+    t.doubleClick(AT.txt);
+    expect(t.live().textEdit.editingId).toBe('txt');
+    expect(t.mode()).toBe('text-edit');
+  });
+
   it('Escape while editing text inside the group ends the edit and keeps the group', () => {
     const t = setup();
     t.doubleClick(AT.a);

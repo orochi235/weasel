@@ -95,6 +95,17 @@ describe('the loupe asset', () => {
     expect(lens.settings?.factor).toBe(12);
   });
 
+  it('keeps the mode and magnification as prefs, and the switch for the session', () => {
+    drawPrefs().set('loupe.mode', 'pixel');
+    drawPrefs().set('loupe.factor', 4);
+    renderWithIcons(<App />);
+    expect(lens.settings).toEqual({ visible: false, mode: 'pixel', factor: 4 });
+    click(loupeBar().getByRole('switch', { name: 'Loupe' }));
+    click(loupeBar().getByRole('radio', { name: 'Vector' }));
+    expect(drawPrefs().get('loupe.mode')).toBe('vector');
+    expect(drawPrefs().stored()).not.toHaveProperty('loupe.on');
+  });
+
   it('shows the color under the lens and copies it', async () => {
     const writeText = vi.fn(() => Promise.resolve());
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });

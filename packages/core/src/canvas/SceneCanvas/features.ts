@@ -33,7 +33,7 @@ import type { BuiltinToolId } from './props';
 export const SCENE_CANVAS_FEATURES = [
   'tools:select', 'tools:view', 'tools:shape', 'tools:draw', 'tools:type', 'tools:page',
   'view', 'select', 'outline', 'pick', 'move', 'resize', 'rotate', 'transform',
-  'escape', 'contextMenu', 'selectAll', 'duplicate', 'delete', 'group', 'nudge', 'style', 'clipboard', 'edit',
+  'escape', 'contextMenu', 'selectAll', 'duplicate', 'delete', 'group', 'nudge', 'style', 'clipboard', 'textEdit', 'edit',
   'flip', 'reorder', 'align', 'distribute', 'arrange',
   'anchorKeys', 'pathfinder', 'outlines', 'pathEdit', 'pathCommands', 'paths',
   'ingest', 'draw', 'whiteboard',

@@ -8,7 +8,7 @@ import {
 } from '@weasel-js/diagram';
 import { foldPlotText, isPlotText, plotEditing, plotMarkOf, replacePlotData } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
-import { TextEditDepPublisher, usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
+import { usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
 import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';
@@ -118,7 +118,7 @@ export function ChartWorkspace(): ReactElement {
           )}
         </Sidebar>
         <div className="wc-stage">
-          <div className="wc-host" ref={attachHost} onDoubleClick={textEdit.onDoubleClick}>
+          <div className="wc-host" ref={attachHost}>
             {dims.width > 0 && dims.height > 0 && (
               <SceneCanvas<ChartData, ChartLayer, ChartPose>
                 aria-label="Chart"
@@ -147,7 +147,6 @@ export function ChartWorkspace(): ReactElement {
                 <AvoidRoutingPublisher scene={scene} />
                 <HopsPublisher scene={scene} />
                 <ContainerDropPublisher scene={scene} />
-                <TextEditDepPublisher edit={textEdit} />
               </SceneCanvas>
             )}
           </div>

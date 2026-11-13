@@ -1,19 +1,19 @@
 /**
- * `<SceneCanvas>`'s own text editor: the one a text or sticky tool's
- * `enterTextEdit` reaches, and a double-click on a text node opens, when the
- * host has wired none of its own. It stands down for a host editor — a
- * `useSceneTextEdit` whose container holds the canvas, or a `textEdit` dep
- * registered over it.
+ * `<SceneCanvas>`'s own text editor: the one `enterTextEdit` reaches, from a
+ * text or sticky tool or a double-click on a text node, when the host has
+ * wired none of its own. It stands down for a host editor: a
+ * `useSceneTextEdit` whose container holds the canvas, which the canvas's
+ * `textEdit` dep then answers with, or a `textEdit` dep registered over it.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type MutableRefObject } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState, useSyncExternalStore, type MutableRefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
+import { useDepSource } from '@weasel-js/routing/react';
 import type { TextEditDep } from 'interactions/actions/depSchema';
 import type { Node, Scene } from 'core/scene/types';
 import {
   useSceneTextEditor, type DefaultTextData, type UseSceneTextEditOptions, type UseSceneTextEditReturn,
 } from 'domains/text/useSceneTextEdit';
-import { hostTextEditing, hostTextEditorHolds, subscribeHostTextEditing } from 'domains/text/hostTextEditors';
+import { hostTextEditDep, hostTextEditing, hostTextEditorHolds, subscribeHostTextEditing } from 'domains/text/hostTextEditors';
 import { drawOneEditing, type EditingDrawOne } from 'domains/text/editingDrawOne';
 import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from '../defaultDrawOne';
 import { isCustomEntry } from '../layerSlots';
@@ -29,6 +29,8 @@ export interface DefaultTextEditor {
   element: HTMLElement | null;
   /** Whether the host has an editor of its own over this canvas. */
   yields: () => boolean;
+  /** The dep of the host's editor over this canvas, or `null` for none. */
+  host: () => TextEditDep | null;
 }
 
 /**
@@ -49,44 +51,41 @@ export function useDefaultTextEditor<TData>(
   });
   const live = on && config !== false;
   const container = live && element ? ((element.offsetParent ?? element.parentElement) as HTMLElement | null) : null;
+  const elRef = useLatest(element);
   const edit = useSceneTextEditor(
     scene as unknown as Scene<DefaultTextData, string>, container, (config || {}) as unknown as UseSceneTextEditOptions<DefaultTextData>,
+    () => elRef.current,
   );
   const editRef = useLatest(edit);
-  const elRef = useLatest(element);
   const dep = useMemo<TextEditDep>(() => ({
     startEdit: (id, opts) => editRef.current.startEdit(id, opts),
+    textAt: (at) => editRef.current.textAt(at),
     isTextNode: (id) => editRef.current.isTextNode(id),
   }), [editRef]);
   const yields = useMemo(() => () => {
     const el = elRef.current;
     return el === null || hostTextEditorHolds(el);
   }, [elRef]);
-  return { edit, dep, element: container ? element : null, yields };
+  const sceneRef = useLatest(scene);
+  const host = useMemo(() => () => {
+    const el = elRef.current;
+    return el === null ? null : hostTextEditDep(el, sceneRef.current);
+  }, [elRef, sceneRef]);
+  return { edit, dep, element: container ? element : null, yields, host };
 }
 
 /**
- * Publishes the editor as the `textEdit` dep and opens it on a double-click.
- * Rendered after the canvas's standard deps and before its children, so it
- * sits over the stub and under any `textEdit` a child registers.
+ * Publishes the editor as the `textEdit` dep, or the editor of a host's
+ * `useSceneTextEdit` holding the canvas while there is one. Rendered after
+ * the canvas's standard deps and before its children, so it sits over the
+ * stub and under any `textEdit` a child registers.
  */
-export function DefaultTextEditDep({ editor, onDoubleClick }: {
-  editor: DefaultTextEditor;
-  /** Whether a double-click on a text node opens it: the `edit` feature. */
-  onDoubleClick: boolean;
-}): null {
-  const { dep, element, yields, edit } = editor;
-  const registry = useDepRegistry();
-  const editRef = useLatest(edit);
-  useDepSource('textEdit', (below) => (element && !yields() ? dep : (below() as TextEditDep)));
-  useEffect(() => {
-    if (!element || !onDoubleClick) return;
-    const open = (e: MouseEvent) => {
-      if (registry.get('textEdit') === dep) editRef.current.onDoubleClick(e);
-    };
-    element.addEventListener('dblclick', open);
-    return () => element.removeEventListener('dblclick', open);
-  }, [element, onDoubleClick, registry, dep, editRef]);
+export function DefaultTextEditDep({ editor }: { editor: DefaultTextEditor }): null {
+  const { dep, element, yields, host } = editor;
+  useDepSource('textEdit', (below) => {
+    if (element && !yields()) return dep;
+    return host() ?? (below() as TextEditDep);
+  });
   return null;
 }
 

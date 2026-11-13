@@ -1,14 +1,15 @@
-import { createContext, useContext, type ReactNode, type ReactElement } from 'react';
+import { createContext, useContext, useMemo, type ReactNode, type ReactElement } from 'react';
 import {
-  useColorModePreference,
+  useResolvedColorMode,
   type ColorMode,
   type ColorModePreferenceState,
 } from '@weasel-js/theme/react';
+import { usePref } from './prefs';
 
 const ColorModeContext = createContext<ColorModePreferenceState | null>(null);
 
 /**
- * Holds the app's color-mode preference. Separate from `ThemeProvider` because
+ * Holds the app's color-mode preference, the `ui.colorMode` pref. Separate from `ThemeProvider` because
  * the provider publishes the *current* mode but owns no way to change it.
  */
 export function ColorModeProvider({
@@ -16,7 +17,9 @@ export function ColorModeProvider({
 }: {
   children: (mode: ColorMode) => ReactNode;
 }): ReactElement {
-  const state = useColorModePreference({ storageKey: 'wd-mode' });
+  const [preference, setPreference] = usePref('ui.colorMode');
+  const mode = useResolvedColorMode(preference);
+  const state = useMemo(() => ({ preference, setPreference, mode }), [preference, setPreference, mode]);
   return <ColorModeContext.Provider value={state}>{children(state.mode)}</ColorModeContext.Provider>;
 }
 

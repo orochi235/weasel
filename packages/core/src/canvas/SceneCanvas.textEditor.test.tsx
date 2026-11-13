@@ -44,7 +44,7 @@ function mount(opts: { features?: Feature[]; textEditor?: SceneCanvasTextEditor<
     const edit = useSceneTextEdit(scene, opts.host ? frame : null);
     hostEditing = () => edit.editingId;
     return (
-      <div ref={setFrame} data-testid="frame" onDoubleClick={opts.host ? edit.onDoubleClick : undefined}>
+      <div ref={setFrame} data-testid="frame">
         <SceneCanvas scene={scene} width={300} height={60} features={opts.features ?? ['edit']}
           {...(opts.textEditor !== undefined ? { textEditor: opts.textEditor } : {})}>
           <StartEdit />
@@ -54,9 +54,9 @@ function mount(opts: { features?: Feature[]; textEditor?: SceneCanvasTextEditor<
   }
   const frame = render(<Host />).getByTestId('frame');
   const canvas = frame.querySelector('canvas')!;
-  const doubleClick = () => act(() => {
-    canvas.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, clientX: 20, clientY: 20 }));
-  });
+  const press = (type: string) =>
+    canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: 20, clientY: 20, pointerId: 1, button: 0, buttons: 1 }));
+  const doubleClick = () => act(() => { press('pointerdown'); press('pointerup'); press('pointerdown'); press('pointerup'); });
   const overlays = () => frame.querySelectorAll('[contenteditable="true"]');
   return { scene, doubleClick, overlays };
 }
@@ -88,16 +88,15 @@ describe("SceneCanvas's own text editor", () => {
     expect(t.overlays()).toHaveLength(0);
   });
 
-  it("stands down for a host's useSceneTextEdit over the canvas", () => {
+  it("stands down for a host's useSceneTextEdit over the canvas, answering the textEdit dep with it", () => {
     const t = mount({ host: true });
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     t.doubleClick();
     expect(t.overlays()).toHaveLength(1);
     expect(hostEditing()).toBe('t');
     // A second editor opening would take focus and end the host's edit.
     act(() => startEdit!('t'));
     expect(hostEditing()).toBe('t');
-    warn.mockRestore();
+    expect(t.overlays()).toHaveLength(1);
   });
 
   it("leaves out the glyphs of the node a host's editor has open", () => {

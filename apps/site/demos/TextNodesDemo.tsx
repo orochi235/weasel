@@ -109,13 +109,14 @@ export function TextNodesDemo() {
       <div className="ckd-strip-slot">
         <CharacterOptions className="ckd-strip" style={edit.effectiveStyle} onPatch={edit.applyStyleToSelection} />
       </div>
-      <div className="ckd-canvas-frame" ref={setFrame} onDoubleClick={edit.onDoubleClick}>
+      <div className="ckd-canvas-frame" ref={setFrame}>
         <DemoStage width={W} height={H}>
           <SceneCanvas
             className="ckd-canvas"
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             selectable={false}
+            features={['textEdit']}
           />
         </DemoStage>
       </div>

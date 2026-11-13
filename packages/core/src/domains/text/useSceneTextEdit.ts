@@ -22,11 +22,10 @@ import { editedData, sceneTextDrafts } from './sceneTextDrafts';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import { inheritedPaintIn } from '../../canvas/inheritedPaints';
 import { withInheritedPaint } from '../../core/scene/inheritedPaint';
-import { clientToCanvas, layoutBoxOf } from '@weasel-js/routing';
+import { layoutBoxOf, type Point2 } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
-import { viewScreenToWorld } from '@weasel-js/geom';
 import { isTextData, type StyledRun, type TextFit, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import type { TextOverflow } from '../../canvas/nodeShapes/textPainter';
 import { screenPoseOf } from './textEditScreenPose';
@@ -96,10 +95,10 @@ export interface UseSceneTextEditOptions<TData> {
    */
   defaultFontSize?: number;
   /**
-   * The view to project through. Omit it and the view is read live from the
-   * weasel canvas mounted inside `container` (the one a double-click landed
-   * on, when there are several). With no canvas there, the node's world box
-   * is passed through as screen pixels.
+   * The view to project the overlay through. Omit it and the view is read
+   * live from the weasel canvas mounted inside `container` (the first, when
+   * there are several). With no canvas there, the node's world box is passed
+   * through as screen pixels.
    *
    * A thunk is re-read on every projection; a plain `View` is the value from
    * the render that supplied it.
@@ -127,17 +126,13 @@ function resolveView(view: View | (() => View) | undefined): View | undefined {
   return typeof view === 'function' ? view() : view;
 }
 
-/** What `onDoubleClick` reads of the event: a React or a DOM `MouseEvent`. */
-export type TextEditDoubleClick = Pick<MouseEvent, 'target' | 'clientX' | 'clientY'>;
-
-/** Return shape extends `UseTextEditReturn` with an `onDoubleClick`
- *  binding for the canvas container. Double-clicking inside a text
- *  node enters edit mode with the caret seeded at the clicked glyph. */
+/** Return shape extends `UseTextEditReturn` with what the `textEdit` dep
+ *  answers: a double-click on a canvas inside `container` reaches the editor
+ *  through it, with no handler of the host's. */
 export interface UseSceneTextEditReturn extends UseTextEditReturn {
-  /** Bind to the element wrapping `<SceneCanvas>` (the same element
-   *  passed as `container`, or any ancestor that receives the dblclick
-   *  bubble). Starts an edit on the top-most text node under the cursor. */
-  onDoubleClick: (e: TextEditDoubleClick) => void;
+  /** The top-most unlocked text node at world point `at`, and the caret at
+   *  the glyph there: what `TextEditDep.textAt` wants. */
+  textAt: (at: Point2) => { id: string; caret: number } | null;
   /** The `isText` option asked of the node with this id: what
    *  `TextEditDep.isTextNode` wants, so both ways into an edit agree. */
   isTextNode: (id: string) => boolean;
@@ -173,10 +168,12 @@ function projectionsOf<TData extends DefaultTextData>(opts: { readonly current: 
   };
 }
 
-/** Wire double-click-to-edit text on a scene: mounts a DOM editing overlay
- *  over the node being edited and writes the result back as an undoable op.
- *  `<SceneCanvas>`'s own editor stands down for any canvas inside `container`,
- *  and such a canvas leaves out the glyphs of the node being edited. */
+/** Wire in-place text editing on a scene: mounts a DOM editing overlay over
+ *  the node being edited and writes the result back as an undoable op.
+ *  `<SceneCanvas>`'s own editor stands down for any canvas inside `container`
+ *  and answers its `textEdit` dep with this one, so the canvas's double-click
+ *  (`enterTextEdit.doubleClick`) and a text tool open this editor, and such a
+ *  canvas leaves out the glyphs of the node being edited. */
 export function useSceneTextEdit<
   TData extends DefaultTextData,
   TLayer extends string,
@@ -187,22 +184,29 @@ export function useSceneTextEdit<
   options: UseSceneTextEditOptions<TData> = {},
 ): UseSceneTextEditReturn {
   const host = useRef<HostTextEditorHandle | null>(null);
+  const edit = useSceneTextEditor(scene, container, options);
+  const editRef = useLatest(edit);
   useEffect(() => {
     if (!container) return undefined;
-    const handle = registerHostTextEditor(container, scene);
+    const handle = registerHostTextEditor(container, scene, {
+      startEdit: (id, opts) => editRef.current.startEdit(id, opts),
+      textAt: (at) => editRef.current.textAt(at),
+      isTextNode: (id) => editRef.current.isTextNode(id),
+    });
     host.current = handle;
     return () => {
       handle.dispose();
       if (host.current === handle) host.current = null;
     };
-  }, [container, scene]);
-  const edit = useSceneTextEditor(scene, container, options);
+  }, [container, scene, editRef]);
   useEffect(() => { host.current?.setEditing(edit.editingId); }, [edit.editingId, container, scene]);
   return edit;
 }
 
 /** `useSceneTextEdit` without announcing itself as a host's editor: what
- *  `<SceneCanvas>` mounts as its own. */
+ *  `<SceneCanvas>` mounts as its own, projecting through `canvas`, the
+ *  element of the canvas it edits for. A host's editor projects through the
+ *  first canvas inside `container`. */
 export function useSceneTextEditor<
   TData extends DefaultTextData,
   TLayer extends string,
@@ -211,15 +215,14 @@ export function useSceneTextEditor<
   scene: Scene<TData, TLayer, TPose>,
   container: HTMLElement | null,
   options: UseSceneTextEditOptions<TData> = {},
+  canvas: () => Element | null = () => null,
 ): UseSceneTextEditReturn {
   // Refs, so the useTextEdit callbacks always see the current values
   // without re-binding.
   const sceneRef = useLatest(scene);
   const optsRef = useLatest(options);
   const containerRef = useLatest(container);
-  // The last double-click's target, so the overlay projects through the
-  // canvas the edit was opened on.
-  const openedOnRef = useRef<EventTarget | null>(null);
+  const canvasRef = useLatest(canvas);
   const drafts = useMemo(() => sceneTextDrafts(sceneRef, optsRef), [sceneRef, optsRef]);
   useEffect(() => () => drafts.close(), [drafts]);
 
@@ -227,7 +230,7 @@ export function useSceneTextEditor<
   // from and the region its glyphs are clipped to.
   const surface = (): { canvas: MountedCanvas; box: TextEditClipRect } | null => {
     const root = containerRef.current;
-    const canvas = root ? findMountedCanvas(root, openedOnRef.current) : null;
+    const canvas = root ? findMountedCanvas(root, canvasRef.current()) : null;
     if (!root || !canvas) return null;
     // Layout boxes: under an ancestor transform a client offset is the container's px times its scale.
     const a = layoutBoxOf(canvas.element);
@@ -293,27 +296,10 @@ export function useSceneTextEditor<
     },
   });
 
-  const onDoubleClick = useCallback((e: TextEditDoubleClick) => {
-    // The dblclick bubbles from the canvas up to any wrapping container; the
-    // element it started on is what the click coordinates are relative to.
-    const canvas = e.target instanceof HTMLElement ? e.target : null;
-    if (!canvas) return;
-    // Inside the editor a double-click selects a word, and its target is a run
-    // span whose box the click would be measured against as if it were a canvas.
-    if (canvas.closest('[contenteditable="true"]')) return;
-
-    // The click is un-projected here; `textHitAt` takes it back through the
-    // frame the node is drawn in.
-    const [canvasX, canvasY] = clientToCanvas(canvas, e.clientX, e.clientY);
-    const root = containerRef.current;
-    const view = resolveView(optsRef.current.view)
-      ?? (root ? findMountedCanvas(root, canvas)?.getView() : undefined);
-    const at = view ? viewScreenToWorld(view, { x: canvasX, y: canvasY }) : { x: canvasX, y: canvasY };
-    const hit = textHitAt(sceneRef.current, read, at.x, at.y);
-    if (!hit) return;
-    openedOnRef.current = canvas;
-    edit.startEdit(hit.id, { caret: hit.caret });
-  }, [edit, containerRef, optsRef, read, sceneRef]);
+  const textAt = useCallback(
+    (at: Point2) => textHitAt(sceneRef.current, read, at.x, at.y),
+    [read, sceneRef],
+  );
 
   const isTextNode = useCallback((id: string): boolean => {
     const node = sceneRef.current.get(asNodeId(id));
@@ -321,7 +307,7 @@ export function useSceneTextEditor<
   }, [read, sceneRef]);
 
   const drawOne = useMemo(() => drawOneEditing(edit.editingId), [edit.editingId]);
-  return { ...edit, onDoubleClick, isTextNode, drawOne };
+  return { ...edit, textAt, isTextNode, drawOne };
 }
 
 /** A text node's paint as the canvas paints it: an inherited one is its container's. */

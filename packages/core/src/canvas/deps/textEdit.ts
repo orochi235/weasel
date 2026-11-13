@@ -1,7 +1,7 @@
 /**
  * `useTextEditDepSource` — the `textEdit` dep `enterTextEditAction` reads when
- * no editor answers it: a `startEdit` that does nothing, and an `isTextNode`
- * that asks `isTextData`. `<SceneCanvas>`'s own editor registers over it
+ * no editor answers it: a `startEdit` that does nothing, a `textAt` that finds
+ * nothing, and an `isTextNode` that asks `isTextData`. `<SceneCanvas>`'s own editor registers over it
  * (`SceneCanvas/defaultTextEditor.tsx`), and so does a host's.
  */
 import { useDepSource } from '@weasel-js/routing/react';
@@ -27,6 +27,7 @@ export function useTextEditDepSource(
           );
         }
       },
+      textAt: () => null,
       isTextNode(id: string) {
         return isTextData(sc.get(id as NodeId)?.data);
       },

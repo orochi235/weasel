@@ -11,7 +11,7 @@ import {
 import { drawPreset, pickPreset, transformPreset } from './presets/composites';
 import {
   clipboardPreset, contextMenuPreset, deletePreset, duplicatePreset, editPreset, escapePreset, groupPreset,
-  nudgePreset, selectAllPreset, stylePreset,
+  nudgePreset, selectAllPreset, stylePreset, textEditPreset,
 } from './presets/edit';
 import { ingestPreset } from './presets/ingest';
 import {
@@ -52,6 +52,7 @@ export const FEATURE_PRESETS: Readonly<Record<Feature, FeaturePreset>> = {
   nudge: nudgePreset,
   style: stylePreset,
   clipboard: clipboardPreset,
+  textEdit: textEditPreset,
   edit: editPreset,
   flip: flipPreset,
   reorder: reorderPreset,

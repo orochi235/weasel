@@ -213,17 +213,23 @@ the same pair.
 scene. It projects through the view of the weasel canvas mounted inside
 `container` and clips the overlay to that canvas's box, so a canvas that pans
 or zooms needs no extra wiring; pass `options.view` only to use another camera.
-Its `onDoubleClick` opens an edit on the topmost text node under the pointer.
-A node is text when `options.isText(data)` says so (default: `data.text` is a
-string), and the returned `isTextNode(id)` asks the same question by id, for
+Its `textAt(world)` names the topmost text node at a world point and the caret
+at the glyph there. A node is text when `options.isText(data)` says so
+(default: `data.text` is a string), and the returned `isTextNode(id)` asks the
+same question by id. The two answer `TextEditDep.textAt` and
 `TextEditDep.isTextNode`.
 
 `<SceneCanvas>` mounts one of these itself, so a canvas needs no wiring for the
-text and sticky tools to open an edit, nor, with the `edit` feature, for a
-double-click to. Its `textEditor` prop takes the same options, or `false` for
-none. It stands down for a host's own: a `useSceneTextEdit` whose container
-holds the canvas, or a `textEdit` dep registered by a child. A host wires its
-own for character controls, which read the edit's `selection` and styling.
+text and sticky tools to open an edit, nor, with the `textEdit` feature (part
+of `edit`), for a double-click to: `editTextAt` is bound to it, opens what
+`textAt` names, and declines where the double-click names a group, whose own
+double-click enters it. Its `textEditor` prop takes the same options, or `false`
+for none. It stands down for a host's own: a `useSceneTextEdit` whose container
+holds the canvas, whose editor the canvas's `textEdit` dep then answers with,
+so the host binds no handler of its own; or a `textEdit` dep registered by a
+child (`TextEditDepPublisher`), for a host whose container is elsewhere. A host
+wires its own for character controls, which read the edit's `selection` and
+styling.
 
 ### `useClipboardOps(options)`
 

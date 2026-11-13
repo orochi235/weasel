@@ -33,7 +33,7 @@ import { useModeId } from './modality/useModeId';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { DrawPageStrip } from './pages/DrawPageStrip';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
-import { type DocPages, TextEditDepPublisher, usePaperLayer } from '@weasel-js/editor';
+import { type DocPages, usePaperLayer } from '@weasel-js/editor';
 import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardJsonReviver } from './persistence';
 import { useColorContext } from './tools/colorContext';
@@ -185,7 +185,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
       <div
         className="wd-canvas-host"
         ref={hostRef}
-        onDoubleClick={textEdit.onDoubleClick}
         data-mode={modeId}
       >
         <OpacityHud percent={opacityScrubPercent} />
@@ -253,7 +252,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             <CreateOutlinesAdapterPublisher scene={scene} selection={selection} />
             <NoticesPublisher />
             <ToolOptionsPublisher />
-            <TextEditDepPublisher edit={textEdit} />
           </SceneCanvas>
         )}
         {rulers.rulers && <Rulers rulers={rulers.rulers} />}
