@@ -6,11 +6,11 @@ import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/ui-input';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type ParamsSurface } from './components/Prefs/commitPolicy';
 import type { ParamsPolicy } from './components/Prefs/useParamsPolicy';
 import { COALESCE_MS } from './components/PrefSchemaEditor/useDocument';
-import { FOCUS_DELAY } from './components/Properties/rowHelp';
+import { FOCUS_DELAY, HELP_ICON } from './components/Properties/rowHelp';
 import { STOP_SNAP_PX } from './components/Slider/stops';
 import { DEFAULT_TTL_MS } from './components/Toast/queue';
 import { TYPEAHEAD_MS } from './useTypeahead';
-import { IDLE_SETTLE_MS } from './useIdleSettle';
+import { IDLE_SETTLE_MS, SETTLE_WHEN_IDLE } from './useIdleSettle';
 import { REST_MS } from './components/Tree/useRowTip';
 import { HOVER_EXPAND_MS } from './components/Tree/useTreeDrag';
 import { SNAP_RADIUS_PX } from './snap';
@@ -65,7 +65,7 @@ export const uiKitSettingsSchema = pref.group('Components', {
     repeatEveryMs: ms('Repeat interval', REPEAT_EVERY_MS, 1000, 'How often a held stepper steps once it repeats.'),
   }),
   typing: pref.group('Typing', {
-    settleWhenIdle: pref.boolean('Write when idle', true, {
+    settleWhenIdle: pref.boolean('Write when idle', SETTLE_WHEN_IDLE, {
       description: 'A typed field writes its text once typing rests, as well as on Enter or leaving it.',
     }),
     idleMs: ms('Idle delay', IDLE_SETTLE_MS, 5000, 'How long typing rests before a field that writes when idle writes it.'),
@@ -82,7 +82,7 @@ export const uiKitSettingsSchema = pref.group('Components', {
   }),
   help: pref.group('Help', {
     focusDelayMs: ms('Focus delay', FOCUS_DELAY, 3000, "How long keyboard focus rests on a row's control before its help opens."),
-    icon: pref.boolean('Icon', false, { description: 'Mark a described row with an ⓘ beside its label.' }),
+    icon: pref.boolean('Icon', HELP_ICON, { description: 'Mark a described row with an ⓘ beside its label.' }),
   }),
   toast: pref.group('Toasts', {
     ttlMs: ms('Duration', DEFAULT_TTL_MS, 60000, 'How long a toast stays when it does not set its own time.'),

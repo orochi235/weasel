@@ -2,6 +2,7 @@ import { pref } from '@weasel-js/prefs';
 import {
   DOUBLE_CLICK_MAX_MS, DOUBLE_CLICK_MAX_PX, DRAG_THRESHOLD_PX, LONG_PRESS_MS, TAP_THRESHOLD_PX,
 } from '@weasel-js/gestures';
+import { DEFAULT_KEYMAP_UNBOUND } from '@weasel-js/routing';
 import { ANCHOR_HIT_BASE_PX, HANDLE_BASE_PX, ROTATION_HANDLE_BASE_PX } from 'core/device/targets';
 import { DEFAULT_VIEW_ANIMATION_MS } from 'core/viewport/useViewAnimation';
 import { DEFAULT_PICK_TOLERANCE_PX } from 'canvas/SceneCanvas/useSceneSelectTool';
@@ -30,7 +31,7 @@ export const coreKitSettingsSchema = pref.group('Canvas', {
     longPressMs: msLeaf('Long-press hold', LONG_PRESS_MS),
     tapPx: pxLeaf('Tap travel', TAP_THRESHOLD_PX),
     dragPx: pxLeaf('Drag threshold', DRAG_THRESHOLD_PX),
-    keymapUnbound: pref.enum('Keys a keymap does not bind', 'modal', [
+    keymapUnbound: pref.enum('Keys a keymap does not bind', DEFAULT_KEYMAP_UNBOUND, [
       { value: 'modal', label: 'Ignore them' },
       { value: 'cascade', label: 'Close it and pass them on' },
     ]),

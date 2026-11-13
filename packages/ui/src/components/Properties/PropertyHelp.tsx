@@ -5,7 +5,7 @@ import { useKitSetting } from '@weasel-js/react';
 import { Focusable } from '../Tooltip/Focusable';
 import { inlineMarkdownText } from '../InlineMarkdown';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
-import { useRowHelp } from './rowHelp';
+import { HELP_ICON, useRowHelp } from './rowHelp';
 import s from './PropertyHelp.module.css';
 import row from './Properties.module.css';
 
@@ -42,7 +42,7 @@ export function PropertyHelp({ label, description, autoValue, disabledReason, wi
   const cue = useRef<HTMLElement | null>(null);
   const help = useRowHelp(cue, within);
   const inRow = within !== undefined;
-  const icon = useKitSetting('help.icon') === true;
+  const icon = useKitSetting('help.icon') ?? HELP_ICON;
   const { hoverProps } = useHover({ onHoverChange: help.setOpen });
   const bare = inRow && children != null && !icon;
   const { open, setOpen } = help;
