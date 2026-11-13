@@ -19,9 +19,10 @@ export interface MeasureTextBoundsOpts {
  * using the registered font atlas metrics. Mirrors `textCommand` exactly, so
  * the returned bounds match what actually gets drawn.
  *
- * Returns `{ width, height }` in the same units as `style.fontSize`. The font
- * must already be registered via `registerFont`; an unregistered family falls
- * back to the atlas fallback glyph (and warns).
+ * Returns `{ width, height }` in the same units as `style.fontSize`. The face
+ * must already be registered — `registerFont`, `registerFontOutlines` or
+ * `registerCanvasFont` — and loaded; an unregistered family measures as
+ * `setFontFallbackPolicy` has it drawn, and warns.
  */
 export function measureTextBounds(
   text: string,
