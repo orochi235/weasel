@@ -11,6 +11,7 @@ import {
   boxToBox,
   isCornerShape,
   pathFromD,
+  pathToD,
   transformPath,
   withoutCorners,
   type CornerShape,
@@ -18,7 +19,6 @@ import {
   type Path,
   type PolygonPath,
 } from '@weasel-js/geom';
-import { serializePathD } from '@weasel-js/svg';
 
 /** The `wd:` attributes that carry `path`'s corners, or none when it has no spec. */
 export function cornerAttrs(path: Path): Record<string, string> {
@@ -26,7 +26,7 @@ export function cornerAttrs(path: Path): Record<string, string> {
   const entries: string[] = [];
   path.corners.forEach((c, i) => { if (c) entries.push(`${i}:${c.shape}:${c.radius}`); });
   if (entries.length === 0) return {};
-  return { corners: entries.join(';'), 'corner-anchors': serializePathD(withoutCorners(path)) };
+  return { corners: entries.join(';'), 'corner-anchors': pathToD(withoutCorners(path)) };
 }
 
 function parseCorners(text: string): (CornerSpec | null)[] | null {

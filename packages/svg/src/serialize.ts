@@ -11,7 +11,6 @@ import type {
   SerializeOptions, SvgGroupNode, SvgInherits,
   SvgNode, SvgImageNode, SvgPathNode, SvgTextNode,
 } from './types';
-import { serializePathD } from './path-serializer';
 import { pathAsSvgDraws } from './openSubpathFill';
 import { formatMatrix, trimNumber } from './transform';
 import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
@@ -34,7 +33,7 @@ import { alignedTextXml, hasAlignedTextStroke } from './alignedTextStroke';
 import { prettyXml } from './prettyXml';
 import { BOOLEAN_ATTR } from './booleanGroup';
 import { TEXT_FRAME_ATTR } from './framedText';
-import { RAD_TO_DEG } from '@weasel-js/geom';
+import { RAD_TO_DEG, pathToD } from '@weasel-js/geom';
 
 /**
  * Produce an SVG document string. The root `viewBox` is `opts.viewBox` if
@@ -259,10 +258,10 @@ function groupXml(
 function pathXml(
   node: SeatedPathNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
 ): string {
-  const attrs: string[] = [`d="${serializePathD(node.path)}"`];
+  const attrs: string[] = [`d="${pathToD(node.path)}"`];
   // A shaft cut back for its heads keeps the path as authored, for the parser.
   if (node.seat) {
-    attrs.push(`${WEASEL_NS_PREFIX}:d="${serializePathD(node.seat.authored)}"`);
+    attrs.push(`${WEASEL_NS_PREFIX}:d="${pathToD(node.seat.authored)}"`);
     registry.usePrivateNamespace();
   }
   const fillAttrs = paintAttrs(node.fill, 'fill', registry);

@@ -122,7 +122,7 @@ draws any k. The command stream keeps the bare anchors, so editing still works
 on them; `resolveCorners` (`paths/corners.ts`) expands the specs into plain
 geometry, and the readers that draw, hit, bound, and export a path —
 tessellation, `extractPolylines`, `flatSubpaths`, `boundsOfPath`, the booleans'
-contour parser, the renderer's `drawPath`, and `serializePathD` — call it
+contour parser, the renderer's `drawPath`, and `pathToD` — call it
 first. A spec rides on its anchor through the anchor model (`PenAnchor.corner`),
 so an insert or delete keeps each corner on its anchor. The widgets and
 commands that edit corners in path edit are `@weasel-js/path-tools`'
