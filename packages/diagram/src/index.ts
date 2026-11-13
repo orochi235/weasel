@@ -331,6 +331,7 @@ export type {
   ReconnectChange, ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
+export { applyDiagramEdit, applyNodeResizes, type ApplyEditOptions } from './applyEdit';
 export { useMirroredSelection } from './mirrorSelection';
 export { DIAGRAM_ROLES, DIAGRAM_THEME_KEY } from './theme/types';
 export type { DiagramFont, DiagramRole, DiagramTheme, FontField, StyleField } from './theme/types';

@@ -887,8 +887,8 @@ since survive it. Editing reports rather than writes —
 <DiagramView
   ref={view}
   specs={specs}
-  onMove={(moves) => setNodes((ns) => withPositions(ns, moves))}
-  onConnect={(edge) => setEdges((es) => [...es, edge])}
+  onMove={(moves, routes) => setData((d) => applyDiagramEdit(d, { moves, routes, containers: [] }))}
+  onConnect={(edge) => setData((d) => ({ ...d, edges: [...d.edges, edge] }))}
 />
 ```
 
@@ -923,7 +923,7 @@ so a box dragged smaller than its rows grows back to them. Core's
 ```tsx
 <DiagramView
   specs={specs}
-  onResize={(resizes) => setNodes((ns) => withBoxes(ns, resizes))}
+  onResize={(resizes) => setData((d) => applyNodeResizes(d, resizes))}
 />
 ```
 
@@ -953,8 +953,12 @@ so a host can keep it as one undo entry. Setting it turns on what `onMove` and
 `onEditContainer` do, with or without them.
 
 ```tsx
-<DiagramView specs={specs} onEdit={(edit) => commit('Move', (doc) => applyEdit(doc, edit))} />
+<DiagramView specs={specs} onEdit={(edit) => commit('Move', (data) => applyDiagramEdit(data, edit))} />
 ```
+
+`applyDiagramEdit(data, edit)` stores an edit in `DiagramData` by the rules
+above, and `applyNodeResizes(data, resizes)` a resize; both pin what moved,
+unless given `{ pin: false }` for data built with `layout: 'none'`.
 
 `view.current.layout('layered')` re-runs a layout animated from where the
 nodes stand; `'force'` relaxes live. Either way the routes ease with the nodes,
