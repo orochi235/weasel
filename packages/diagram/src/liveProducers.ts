@@ -9,7 +9,7 @@ import {
   type PoseDescriptor,
 } from '@weasel-js/core';
 import type { EasingFn } from '@weasel-js/animator';
-import { lerp } from '@weasel-js/geom';
+import { easeInOutQuad, lerp } from '@weasel-js/geom';
 import { forceRelaxation, type ForceOptions } from './force';
 import type { Graph } from './graph';
 import { center, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
@@ -36,10 +36,6 @@ export type LiveLayoutProducer<TPose> = (ctx: LiveLayoutCtx<TPose>) => LiveLayou
  *  than timed, so a background tab resumes where it paused rather than
  *  arriving the instant it comes back. */
 export const EASE_FRAMES = 24;
-
-/** Smooth start and end. Inlined rather than pulled from the animator, which
- *  is a registry of running tweens, not a curve library. */
-export const easeInOut: EasingFn = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 
 /** How far along an eased run is at `frame`, before and after its easing. */
 export function progress(frame: number, frames: number, easing: EasingFn): { t: number; u: number } {
@@ -143,7 +139,7 @@ export function easedProducer<TPose>(
   opts: EasedProducerOptions = {},
 ): LiveLayoutProducer<TPose> {
   const frames = opts.frames ?? EASE_FRAMES;
-  const easing = opts.easing ?? easeInOut;
+  const easing = opts.easing ?? easeInOutQuad;
   const target = algorithm(graph, opts.layout);
   const from = new Map<string, { x: number; y: number }>();
   for (const node of graph.nodes) from.set(node.id, { x: node.bounds.x, y: node.bounds.y });

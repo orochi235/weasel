@@ -27,6 +27,7 @@ import {
 import type { EasingFn } from '@weasel-js/animator';
 import { isPromise } from './footprint';
 import { buildGraph, type Graph, type GraphSource } from './graph';
+import { easeInOutQuad } from '@weasel-js/geom';
 import { chain } from './chain';
 import { grid } from './grid';
 import { layered } from './layered';
@@ -35,7 +36,6 @@ import { planOf, plannerPlan, type LayoutFn, type LayoutOptions, type LayoutPlan
 import { sameGraph, shapeOf, usePendingPlan } from './livePlan';
 import {
   EASE_FRAMES,
-  easeInOut,
   easedProducer,
   forceProducer,
   progress,
@@ -185,7 +185,7 @@ export function useLiveLayout<TPose>(opts: UseLiveLayoutOptions<TPose>): LiveLay
     }
     const poses = layoutPoses(o.scene, placed, o.geometry);
     // Routes ease only toward where they will be written, which a held run never writes.
-    const { u } = progress(frame, o.frames ?? EASE_FRAMES, o.easing ?? easeInOut);
+    const { u } = progress(frame, o.frames ?? EASE_FRAMES, o.easing ?? easeInOutQuad);
     eased.show(o.scene, held.current ? null : u, (id) => poses.get(id) ?? ctx.pinned.get(id as NodeId), o.geometry);
     return { poses: [...poses] as [NodeId, TPose][], done };
   }, [optsRef, eased]);

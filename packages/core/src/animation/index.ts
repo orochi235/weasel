@@ -1,6 +1,5 @@
 export {
   linear,
-  easeIn, easeOut, easeInOut,
   easeInQuad, easeOutQuad, easeInOutQuad,
   easeInCubic, easeOutCubic, easeInOutCubic,
   easeInQuart, easeOutQuart, easeInOutQuart,

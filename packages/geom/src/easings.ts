@@ -150,18 +150,6 @@ export const easeInOutBounce: EasingFn = (t) =>
     ? (1 - easeOutBounce(1 - 2 * t)) / 2
     : (1 + easeOutBounce(2 * t - 1)) / 2;
 
-// --- Backwards-compat aliases. Pre-library callers asked for `easeIn`/
-// `easeOut`/`easeInOut`; those resolve to the quadratic curve.
-/** Alias for `easeInQuad`, kept for call sites that predate the
- *  named-curve library. */
-export const easeIn = easeInQuad;
-/** Alias for `easeOutQuad`, kept for call sites that predate the
- *  named-curve library. */
-export const easeOut = easeOutQuad;
-/** Alias for `easeInOutQuad`, kept for call sites that predate the
- *  named-curve library. */
-export const easeInOut = easeInOutQuad;
-
 /** All easings in one bag — useful for demos / pickers. */
 export const EASINGS = {
   linear,

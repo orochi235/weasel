@@ -1,4 +1,4 @@
-import { easeOut, resolveEasing } from '@weasel-js/geom';
+import { easeOutQuad, resolveEasing } from '@weasel-js/geom';
 import type { ElementBinding } from '../../elementTarget';
 import { stateOf, type TargetState } from '../../target';
 import type {
@@ -56,7 +56,7 @@ export function handOffTween<T>(hs: Handoffs, o: TargetTweenOptions<T>): Animati
     : o.interpolate ? (u: number) => o.interpolate!(fromValue, o.to, u) : null;
   const motion = tweenMotion({
     ms: o.ms,
-    easing: resolveEasing(o.easing ?? easeOut),
+    easing: resolveEasing(o.easing ?? easeOutQuad),
     from,
     delta: travel(ax, to, from),
     path: blend && ((e) => ax.to(blend(e))),

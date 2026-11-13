@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-  easeIn, easeInOut, easeOut, linear,
+  linear, easeInQuad, easeOutQuad, easeInOutQuad,
   EASINGS,
   easeInBack, easeOutBack, easeInElastic, easeOutElastic,
   easeInBounce, easeOutBounce,
 } from './easings';
 
 describe('easings', () => {
-  it.each([linear, easeIn, easeOut, easeInOut])('endpoints are 0 and 1 for %o', (fn) => {
+  it.each([linear, easeInQuad, easeOutQuad, easeInOutQuad])('endpoints are 0 and 1 for %o', (fn) => {
     expect(fn(0)).toBeCloseTo(0, 10);
     expect(fn(1)).toBeCloseTo(1, 10);
   });
@@ -18,19 +18,19 @@ describe('easings', () => {
     }
   });
 
-  it('easeIn is convex (slow start)', () => {
-    expect(easeIn(0.5)).toBeLessThan(0.5);
+  it('easeInQuad is convex (slow start)', () => {
+    expect(easeInQuad(0.5)).toBeLessThan(0.5);
   });
 
-  it('easeOut is concave (fast start)', () => {
-    expect(easeOut(0.5)).toBeGreaterThan(0.5);
+  it('easeOutQuad is concave (fast start)', () => {
+    expect(easeOutQuad(0.5)).toBeGreaterThan(0.5);
   });
 
-  it('easeInOut is symmetric around 0.5', () => {
+  it('easeInOutQuad is symmetric around 0.5', () => {
     for (const t of [0.1, 0.2, 0.3, 0.4]) {
-      expect(easeInOut(t) + easeInOut(1 - t)).toBeCloseTo(1, 10);
+      expect(easeInOutQuad(t) + easeInOutQuad(1 - t)).toBeCloseTo(1, 10);
     }
-    expect(easeInOut(0.5)).toBeCloseTo(0.5, 10);
+    expect(easeInOutQuad(0.5)).toBeCloseTo(0.5, 10);
   });
 });
 

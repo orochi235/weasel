@@ -5,7 +5,7 @@ import type { Animator, EasingSpec, SpringPresetName } from '@weasel-js/animator
 
 /** Options for `animateOnSetPose`. */
 export interface AnimateOnSetPoseOptions<TPose> {
-  /** Default: 200ms tween with easeOut. */
+  /** Default: 200ms tween with easeOutQuad. */
   ms?: number;
   easing?: EasingSpec;
   /** Use a spring instead of a duration tween. Mutually exclusive with ms/easing. */
