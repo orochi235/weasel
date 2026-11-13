@@ -25,7 +25,7 @@ export {
   warmFonts,
 } from './registerFont';
 export type {
-  FontEntry, FontFamilyFaces, FontVariant, FontRequest, ResolveResult, RegisteredFont, RegisterFontOptions,
+  FontEntry, FontFamilyFaces, FontRequest, ResolveResult, RegisteredFont, RegisterFontOptions,
 } from './registerFont';
 
 export {
@@ -75,7 +75,6 @@ export {
 } from './outline/outlineRegistry';
 export type {
   OutlineSource,
-  OutlineVariant,
   OutlineFontOptions,
   OutlineStatus,
   OutlineFaceInfo,
@@ -87,7 +86,7 @@ export type { GlyphMetrics } from './glyphMetrics';
 export { glyphIn, resolveGlyph, resolveColorCluster } from './resolveGlyph';
 export type { ResolvedGlyph } from './resolveGlyph';
 export { warnNoMetrics } from './glyphWarnings';
-export type { FontStyle } from './fontStyle';
+export type { FontStyle, FontVariant } from './fontStyle';
 export {
   enableLocalFontOutlines,
   canQueryLocalFonts,

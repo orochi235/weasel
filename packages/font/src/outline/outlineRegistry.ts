@@ -33,7 +33,7 @@
 import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { notifyGlyphReady } from '../glyphReady';
 import type { OutlineFace, OutlineParser } from './OutlineFace';
-import type { FontStyle } from '../fontStyle';
+import { normalizeVariant, type FontStyle, type FontVariant } from '../fontStyle';
 import { cssString } from '../cssFamily';
 import { openTypeParser } from './opentypeParser';
 
@@ -46,13 +46,6 @@ export type OutlineSource =
   | ArrayBuffer
   | Blob
   | (() => ArrayBuffer | Blob | Promise<ArrayBuffer | Blob>);
-
-/** Which face within a family to register outlines for. Defaults to weight
- *  400, style `'normal'`. */
-export interface OutlineVariant {
-  weight?: number;
-  style?: FontStyle;
-}
 
 /** Options for registering an outline font. */
 export interface OutlineFontOptions {
@@ -102,9 +95,6 @@ function slotKey(family: string, weight: number, style: FontStyle): string {
   return `${family}|${weight}|${style}`;
 }
 
-function normalize(v: OutlineVariant): { weight: number; style: FontStyle } {
-  return { weight: v.weight ?? 400, style: v.style ?? 'normal' };
-}
 
 /**
  * Register font file bytes for one face, so text set in it can render from
@@ -121,11 +111,11 @@ function normalize(v: OutlineVariant): { weight: number; style: FontStyle } {
  */
 export function registerFontOutlines(
   family: string,
-  variant: OutlineVariant,
+  variant: FontVariant,
   source: OutlineSource,
   opts: OutlineFontOptions = {},
 ): void {
-  const { weight, style } = normalize(variant);
+  const { weight, style } = normalizeVariant(variant);
   slots.set(slotKey(family, weight, style), {
     family, weight, style, source,
     cssSrc: opts.cssSrc,
@@ -143,8 +133,8 @@ export function registerFontOutlines(
 
 /** Drop a registration. Glyphs already handed out stay valid — they are
  *  plain path data — but nothing further resolves from this face. */
-export function unregisterFontOutlines(family: string, variant: OutlineVariant = {}): void {
-  const { weight, style } = normalize(variant);
+export function unregisterFontOutlines(family: string, variant: FontVariant = {}): void {
+  const { weight, style } = normalizeVariant(variant);
   // Only when something was actually dropped: a miss must not invalidate any layout.
   if (slots.delete(slotKey(family, weight, style))) notifyGlyphReady();
 }
@@ -278,9 +268,9 @@ export function outlineMetrics(
  * the geometry in one go, such as converting text to paths.
  */
 export async function loadFontOutlines(
-  family: string, variant: OutlineVariant = {},
+  family: string, variant: FontVariant = {},
 ): Promise<OutlineStatus | null> {
-  const { weight, style } = normalize(variant);
+  const { weight, style } = normalizeVariant(variant);
   const slot = slots.get(slotKey(family, weight, style));
   if (!slot) return null;
   await beginLoad(slot);

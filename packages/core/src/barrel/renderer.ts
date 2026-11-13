@@ -102,7 +102,6 @@ export type {
   FontFamilyFaces,
   OutlineFaceInfo,
   OutlineSource,
-  OutlineVariant,
   OutlineStatus,
   FontStyle,
   LocalFontOutlinesResult,

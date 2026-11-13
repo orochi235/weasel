@@ -51,7 +51,7 @@ export function shapingFace(resolved: ResolveResult): FaceEmbedding | null {
   const { family, weight, style } = resolved.resolved;
   const face = resolved.outlineFace ?? (resolved.source === 'outline'
     ? undefined
-    : outlineMetrics(family, weight, style === 'italic' ? 'italic' : 'normal'));
+    : outlineMetrics(family, weight, style));
   if (!face) return null;
   let embedding = embeddingOf.get(face);
   if (embedding === undefined) {
