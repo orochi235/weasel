@@ -36,6 +36,7 @@ import { valueAtPath, withValueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf, isLeafActive } from '../config/visible';
 import { boundAction } from './boundAction';
+import { CurveRow } from './CurveRow';
 import { type ControlPack, spansGrid } from './controlPack';
 import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
 import { useFieldChoices } from './fieldChoices';
@@ -230,6 +231,44 @@ const spanned = (row: ReactNode): ReactNode =>
     <PropertySpan className="lk-control-custom">{row}</PropertySpan>
   );
 
+/** An action leaf's row: an icon alone, which the row's label names. Not a `<label>`: that would hand a click on
+ *  its text to the button. */
+function ActionRow({
+  path,
+  leaf,
+  resolved,
+  config,
+  setConfig,
+  layout,
+  disabled,
+  error,
+  over,
+  label,
+  description,
+}: Pick<
+  ControlRowProps<Record<string, unknown>>,
+  'path' | 'leaf' | 'resolved' | 'config' | 'setConfig' | 'layout' | 'error' | 'over'
+> & { disabled: boolean; label: string; description: string | undefined }) {
+  return (
+    <PropertyRow
+      group
+      label={label}
+      description={description}
+      layout={layout}
+      disabled={disabled}
+      disabledReason={leaf.disabledReason}
+      error={error}
+    >
+      <PrefActionButton
+        pref={boundAction(leaf, config, setConfig) as PrefAction}
+        path={path}
+        disabled={disabled}
+        active={isLeafActive(resolved, path, config, over)}
+      />
+    </PropertyRow>
+  );
+}
+
 function LeafRow<TC extends Record<string, unknown>>({
   path,
   leaf,
@@ -287,27 +326,14 @@ function LeafRow<TC extends Record<string, unknown>>({
   const description = leaf.description;
   const row = { label, description, layout, readout: autoReadout, changed, error, ...autoProps };
 
-  if (leaf.kind === 'action') {
+  if (leaf.kind === 'action')
     return (
-      // An icon alone, which the row's label names. Not a `<label>`: that would hand a click on its text to the button.
-      <PropertyRow
-        group
+      <ActionRow
+        {...{ path, leaf, resolved, config, setConfig, layout, disabled, error, over }}
         label={label}
         description={description}
-        layout={layout}
-        disabled={disabled}
-        disabledReason={leaf.disabledReason}
-        error={error}
-      >
-        <PrefActionButton
-          pref={boundAction(leaf, config, setConfig) as PrefAction}
-          path={path}
-          disabled={disabled}
-          active={isLeafActive(resolved, path, config, over)}
-        />
-      </PropertyRow>
+      />
     );
-  }
 
   // Too much for a row, so the row opens it in a dialog.
   if (prefIsCompound(leaf)) {
@@ -331,6 +357,18 @@ function LeafRow<TC extends Record<string, unknown>>({
       />
     );
   }
+
+  if (leaf.kind === 'curve')
+    return (
+      <CurveRow
+        leaf={leaf}
+        value={value}
+        write={write}
+        draft={draft}
+        disabled={disabled}
+        row={row}
+      />
+    );
 
   const read = (p: string): unknown => valueAtPath(shown, p);
   const field = labField(leaf, value, write, choices, disabled, draft, read, settles, textWaitMs);

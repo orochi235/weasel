@@ -205,6 +205,7 @@ export {
   BaseNode,
   BooleanNode,
   ColorNode,
+  CurveNode,
   CustomNode,
   EnumNode,
   f,

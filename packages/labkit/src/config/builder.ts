@@ -13,6 +13,7 @@ import {
   SeparatorNode,
   UnionNode,
 } from './compound';
+import { CurveNode } from './curveNode';
 import { configFromPrefs } from './fromPrefs';
 import { NumberNode } from './numberNode';
 import { copyTree, setOwn } from './path';
@@ -35,6 +36,7 @@ export {
   ActionNode,
   AliasNode,
   BaseNode,
+  CurveNode,
   LabelNode,
   ListNode,
   MapNode,
@@ -290,6 +292,9 @@ export const f = {
   string: (def: string): StringNode => new StringNode(def),
   /** A color, held as a hex string: `#rrggbb`, or `#rrggbbaa` after `.alpha()`. */
   color: (def: string): ColorNode => new ColorNode(def),
+  /** A curve y = f(x) over x in [0, 1], held flat as `[x0, y0, x1, y1, …]`: `f.curve([0, 0, 1, 1]).range(-1, 1)`.
+   *  A drag along it is one undo step. */
+  curve: (def: readonly number[]): CurveNode => new CurveNode([...def]),
   ...compound,
 
   /** A fixed set of choices. The choices' literal types flow into the config

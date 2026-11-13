@@ -382,16 +382,6 @@ Owner tags, after the priority (2026-10-26):
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
   (seen 2026-11-11). Closes when the ghost shows the trial's title, or labkit draws its own.
 
-- **(P2) [agent] A labkit config has no curve leaf, so a curve in a control panel is a page of consumer code.**
-  labkit re-exports ui's `CurveField` but `f` has no `curve`: a lab declares `f.custom('curve', …)` and a
-  `renderers` entry that draws its own row label and measures its own width (`CurveField` takes `width` in px).
-  The row also cannot be one undo step: `CurveField` reports every move of a drag through `onChange` (it wires
-  `CurveEditor`'s `onInput` there and drops its settled `onChange`), and a renderer has no draft writer, so a drag
-  held still past labkit's 500 ms gesture gap undoes in two steps (measured in a scratch lab, 2026-11-12). The
-  seam: `CurveField` gains `onInput` beside `onChange`, and `f.curve(default, { min, max })` gets a built-in row in
-  `ControlRow` that sizes the field to the row and sends drafts through the panel's `draftConfig`. Too big for an
-  audit pass: new API in two packages. Closes when `f.curve` ships and a dragged, paused curve undoes in one step.
-
 - **(P3) [agent] iconfab still mounts its annotation targets 12 at a time.** labkit's overlay died with "Maximum
   update depth exceeded" past about two dozen targets in one commit, because the surface committed each tile's
   placement in a `flushSync` of its own; it now commits a frame's tiles together, and

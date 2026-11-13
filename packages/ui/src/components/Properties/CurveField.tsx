@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from 'react';
+import { useElementSize } from '@weasel-js/core';
+import { useCallback, useMemo, useRef } from 'react';
 import { dlog } from '../../dlog';
 import { type ControlPoint, CurveEditor } from '../CurveEditor';
 import { CurveMarks, type CurveMark } from './CurveMarks';
@@ -14,15 +15,20 @@ export interface CurveFieldProps {
   min: number;
   max: number;
   step: number;
-  /** Plot width in CSS px. Caller sizes (typically uses a ResizeObserver). */
-  width: number;
+  /** Plot width in CSS px. Default: the width the field is laid out at. */
+  width?: number;
   /** Plot height in CSS px. Default 110. */
   height?: number;
   /** Flat default curve. When provided, a Reset button restores it. */
   defaults?: readonly number[];
+  /** A finished edit: the curve a drag settles on, a flip, a reset. Without `onInput`, every move of a drag too. */
   onChange: (next: number[]) => void;
+  /** Every move of a drag. Given, `onChange` hears only the curve the drag settles on, once. */
+  onInput?: (next: number[]) => void;
   /** Optional vertical marks overlaid on the plot (e.g. landmarks). */
   marks?: readonly CurveMark[];
+  /** Takes no input: the plot ignores the pointer and the buttons are disabled. */
+  disabled?: boolean;
 }
 
 /**
@@ -40,16 +46,21 @@ export function CurveField({
   height = 110,
   defaults,
   onChange,
+  onInput,
   marks,
+  disabled = false,
 }: CurveFieldProps) {
+  const host = useRef<HTMLDivElement>(null);
+  const measured = useElementSize(host);
+  const plotWidth = width ?? measured.width;
   const points: ControlPoint[] = useMemo(() => {
     const out: ControlPoint[] = [];
     for (let i = 0; i + 1 < values.length; i += 2) out.push({ x: values[i], y: values[i + 1] });
     return out;
   }, [values]);
 
-  const handleChange = useCallback(
-    (next: ControlPoint[]) => {
+  const snapped = useCallback(
+    (next: readonly ControlPoint[]): number[] => {
       const flat: number[] = new Array(next.length * 2);
       for (let i = 0; i < next.length; i++) {
         const ySnap = Math.round(next[i].y / step) * step;
@@ -57,14 +68,20 @@ export function CurveField({
         flat[i * 2] = next[i].x;
         flat[i * 2 + 1] = y;
       }
-      dlog('curve-field', 'handleChange', {
-        nLen: next.length,
-        flatLen: flat.length,
-        sample: flat.slice(0, 4),
-      });
-      onChange(flat);
+      dlog('curve-field', 'snapped', { nLen: next.length, flatLen: flat.length, sample: flat.slice(0, 4) });
+      return flat;
     },
-    [onChange, min, max, step],
+    [min, max, step],
+  );
+  const handleInput = useCallback(
+    (next: ControlPoint[]) => (onInput ?? onChange)(snapped(next)),
+    [onInput, onChange, snapped],
+  );
+  const handleSettled = useCallback(
+    (next: ControlPoint[]) => {
+      if (onInput) onChange(snapped(next));
+    },
+    [onInput, onChange, snapped],
   );
 
   const handleFlip = useCallback(() => {
@@ -89,16 +106,17 @@ export function CurveField({
   }, [values, min, max, onChange]);
 
   return (
-    <div className={s.field}>
+    <div ref={host} className={disabled ? `${s.field} ${s.disabled}` : s.field} aria-disabled={disabled || undefined}>
       <div className={s.plot}>
         <CurveEditor
           value={points}
-          onInput={handleChange}
+          onInput={handleInput}
+          onChange={handleSettled}
           domain="1d"
           constrain="function"
           xRange={[0, 1]}
           yRange={[min, max]}
-          width={width}
+          width={plotWidth}
           height={height}
           endpoints="pinned-x"
           addPointMode="click-curve"
@@ -106,13 +124,13 @@ export function CurveField({
           grid={{}}
           history={false}
         />
-        {marks && marks.length > 0 && <CurveMarks marks={marks} width={width} height={height} />}
+        {marks && marks.length > 0 && <CurveMarks marks={marks} width={plotWidth} height={height} />}
       </div>
       <div className={s.actions}>
-        <button type="button" className={s.action} onClick={handleFlip}>
+        <button type="button" className={s.action} onClick={handleFlip} disabled={disabled}>
           Flip horizontally
         </button>
-        <button type="button" className={s.action} onClick={handleFlipVertical}>
+        <button type="button" className={s.action} onClick={handleFlipVertical} disabled={disabled}>
           Flip vertically
         </button>
         {defaults && (
@@ -120,6 +138,7 @@ export function CurveField({
             type="button"
             className={s.action}
             onClick={() => onChange([...defaults])}
+            disabled={disabled}
           >
             Reset
           </button>

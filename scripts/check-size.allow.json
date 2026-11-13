@@ -152,7 +152,7 @@
     "longestFunction": 302
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 200
+    "longestFunction": 198
   },
   "packages/renderer/src/WeaselRenderer.ts": {
     "lines": 520
