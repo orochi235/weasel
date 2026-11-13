@@ -6,7 +6,7 @@
 
 import {
   PORT_REACH,
-  cubicAt as cubicAtN,
+  cubicPointAt as cubicAtN,
   portControls as portControlsN,
   portCurvePoints as portCurvePointsN,
 } from '../portCurve';

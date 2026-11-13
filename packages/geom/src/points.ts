@@ -6,7 +6,7 @@
  * Published as is from `./nd`. The 2D barrel states the same rules over loose
  * scalars in `./points2` (they run per pointermove and per vertex, so they
  * must not allocate), and `./3d` wraps these in `Vec3`. Both use the scalar
- * `lerp` and `segmentTFrom` below, so the tiers return the same numbers.
+ * `lerpPoint` and `segmentTFrom` below, so the tiers return the same numbers.
  */
 
 import { lerp as lerpScalar } from './scalar';
@@ -27,7 +27,7 @@ export function distance(a: readonly number[], b: readonly number[]): number {
 }
 
 /** The point `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */
-export function lerp(a: readonly number[], b: readonly number[], t: number): number[] {
+export function lerpPoint(a: readonly number[], b: readonly number[], t: number): number[] {
   const out: number[] = [];
   for (let i = 0; i < a.length; i++) out.push(lerpScalar(a[i]!, b[i]!, t));
   return out;
@@ -63,7 +63,7 @@ export function closestPointOnSegment(
   b: readonly number[],
 ): number[] {
   const t = segmentT(p, a, b);
-  return t === 1 ? b.slice() : lerp(a, b, t);
+  return t === 1 ? b.slice() : lerpPoint(a, b, t);
 }
 
 /** Squared distance from `p` to segment `a`–`b`. */

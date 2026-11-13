@@ -79,12 +79,12 @@ export function portCurvePoints(
 ): number[][] {
   const [c1, c2] = portControls(a, b, outNormal, inNormal, reach);
   const out: number[][] = [];
-  for (let s = 1; s <= samples; s++) out.push(cubicAt(a, c1, c2, b, s / samples));
+  for (let s = 1; s <= samples; s++) out.push(cubicPointAt(a, c1, c2, b, s / samples));
   return out;
 }
 
 /** A cubic evaluated at `t`, component-wise, in whatever dimension it was given. */
-export function cubicAt(
+export function cubicPointAt(
   p0: readonly number[],
   p1: readonly number[],
   p2: readonly number[],
