@@ -203,6 +203,49 @@ return [{
 
 `glsl` is the program's GLSL and `wgsl` its WGSL, written as `@weasel-js/renderer`'s README ("Writing WGSL") describes; a canvas draws with whichever its backend reads. A canvas's `backend` prop (`'webgl2'`, the default, `'webgpu'` or `'auto'`) is fixed at its first paint; `'auto'` takes WebGPU when a device is ready and every program registered so far has WGSL. A program with no source for the canvas's backend draws nothing there and is reported once. Leaving out `vert` selects the kit's vertex shader, which provides the `v_uv`, `v_screen`, `v_world` and `v_worldLocal` varyings and sets `u_bounds`, `u_view`, `u_proj` and `u_worldOrigin` itself. Far from the origin `v_world` is as coarse as any float32 that size; `v_worldLocal` is the same point measured from `u_worldOrigin`, a world point near the bounds, and stays exact, so a periodic pattern reads `mod(u_worldOrigin, P) + v_worldLocal`. Uniforms take a number, a 2–4 element tuple, a `Float32Array`, or a `TextureHandle` from `registerTexture`. Output **premultiplied** alpha — `vec4(rgb * a, a)` — or translucent pixels come out too bright. `bounds` is in CSS pixels.
 
+## Exporting
+
+Core keeps a registry of export formats, each writing one or more world-space
+rectangles of a scene to a file. Core registers `png`; `@weasel-js/svg`
+registers `svg` (`registerSvgExport()`) and `@weasel-js/pdf/export` registers `pdf`
+(`registerPdfExport()`), so core depends on neither.
+
+```ts
+import { exportFormats, exportPages, exportRegions, placedPagesOf, selectionRegion, viewportWorldRect } from '@weasel-js/core';
+
+const pages = placedPagesOf(scene);
+const png = await exportPages(scene, [pages[0]], 'png', { scale: 2, background: '#ffffff' });
+const shown = await exportRegions(scene, [viewportWorldRect(view, { width, height })], 'png');
+const picked = await exportRegions(scene, [selectionRegion(scene, selection.get())!], 'svg');
+```
+
+A region is an `ExportRegion`: `{ x, y, width, height, name? }` in world
+units. `exportPages` makes one of each `PlacedPage`, named as the page order
+shows it; `viewportWorldRect(view, size)` is the one a view shows;
+`selectionRegion(scene, ids)` is the box the ids draw, strokes included.
+`name` labels a PDF page and titles an SVG.
+
+`exportRegions(scene, regions, formatId, opts)` writes them in the format
+registered under `formatId` and answers a `Blob`. It throws for an id nothing
+registered, and for several regions handed to a format that is not
+`multiRegion`. Every format takes `background` (default none: core holds no
+page color) and `onWarn`, which hears what it left out; the rest of `opts`
+goes to the format (`scale` for `png`, `title` for `svg` and `pdf`).
+`exportFormats()` lists what is registered, `png` first, the same array until
+the registry changes; `exportFormatRegistry` is its reflection, with
+`subscribe` for a menu that lists them. `registerExportFormat(format)` adds
+one and returns its disposer; registering an id that is held overrides it.
+
+Each export draws the document, not what an open gesture or edit is showing,
+writes nothing to the scene, and leaves annotation layers out.
+`exportRegionPng(scene, region, { scale, background })` is the `png` format
+on its own: the renderer's pixels, `region × scale` in size. It needs WebGL2.
+
+`regionRenderArgs(scene, region, { scale, background })` is the render a
+region draws with, which the PNG and PDF exports build on. Handed to
+`@weasel-js/headless`'s raster host as they are, they render a region from
+Node.
+
 ## Subpath imports
 
 Core's main entry carries the everyday surface. A few narrower ones have their own:

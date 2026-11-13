@@ -105,7 +105,7 @@ export function Toolbar({
   }), [clipboard]);
   useDepSource('clipboard', () => clipboardDep);
   useDebugCommands();
-  useFileCommands({ scene, filename, paperSize, page, setFilename, showFirstPage, leaveMode });
+  useFileCommands({ scene, filename, paperSize, page, selection, setFilename, showFirstPage, leaveMode });
 
   return (
     <>

@@ -3,9 +3,9 @@ import { act, fireEvent } from '@testing-library/react';
 import { renderWithIcons } from '../../testIcons';
 
 let finish!: () => void;
-vi.mock('@weasel-js/export', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@weasel-js/export')>()),
-  exportPagesPdf: () => new Promise((resolve) => { finish = () => resolve({ blob: new Blob(['%PDF']) }); }),
+vi.mock('@weasel-js/pdf/export', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/pdf/export')>()),
+  exportRegionsPdf: () => new Promise((resolve) => { finish = () => resolve({ blob: new Blob(['%PDF']) }); }),
 }));
 
 const { StrokeTrimLabDemo } = await import('../StrokeTrimLabDemo');

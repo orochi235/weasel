@@ -47,6 +47,19 @@ describe('writePdf', () => {
     expect(latin1(bytes)).toContain('/Title (Chart)');
   });
 
+  it('labels the pages that name one, and numbers the rest', async () => {
+    const { bytes } = await writePdf(
+      [{ width: 10, height: 10, commands: [], label: 'Cover' }, { width: 10, height: 10, commands: [] }],
+      { fonts: NO_FONTS, compress: false },
+    );
+    expect(latin1(bytes)).toContain('/PageLabels <</Nums [0 <</P (Cover)>> 1 <</S /D /St 2>>]>>');
+  });
+
+  it('writes no page labels when no page has one', async () => {
+    const { bytes } = await writePdf([{ width: 10, height: 10, commands: [] }], { fonts: NO_FONTS, compress: false });
+    expect(latin1(bytes)).not.toContain('/PageLabels');
+  });
+
   it('refuses an empty page list', async () => {
     await expect(writePdf([], { fonts: NO_FONTS, compress: false })).rejects.toThrow('pdf: a document needs at least one page');
   });

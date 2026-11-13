@@ -5,7 +5,7 @@ import {
 import { registerFontOutlines, type OutlineFace } from '@weasel-js/font';
 import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { exportPageSvg } from './pageSvg';
+import { exportRegionSvg } from './regionSvg';
 
 const BARS: OutlineFace = {
   unitsPerEm: 1000, ascender: 0.8, advanceOf: () => 0.6, kernOf: () => 0, glyphD: () => 'M0 -0.5L0.2 -0.5L0.2 0L0 0Z',
@@ -35,16 +35,16 @@ afterEach(() => {
   _resetLayoutCacheForTests();
 });
 
-describe("exportPageSvg's text modes", () => {
+describe("exportRegionSvg's text modes", () => {
   it('writes live text by default', async () => {
     const { scene, page } = headline();
-    expect(await exportPageSvg(scene, page)).toContain('<text');
+    expect(await exportRegionSvg(scene, page)).toContain('<text');
   });
 
   it("writes a shrink-to-fit headline as outlines inside its box with text: 'outline'", async () => {
     const { scene, page } = headline();
     const warnings: string[] = [];
-    const svg = await exportPageSvg(scene, page, { text: 'outline', onWarn: (m) => warnings.push(m) });
+    const svg = await exportRegionSvg(scene, page, { text: 'outline', onWarn: (m) => warnings.push(m) });
     expect(warnings).toEqual([]);
     expect(svg).not.toContain('<text');
     const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');

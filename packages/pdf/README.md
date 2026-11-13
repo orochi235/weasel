@@ -1,7 +1,8 @@
 # @weasel-js/pdf
 
 PDF documents from weasel draw commands: vector paths, shadings, images, and
-embedded fonts with selectable text. No scene graph, no React.
+embedded fonts with selectable text, and regions of a `@weasel-js/core` scene
+written through it.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -28,6 +29,25 @@ Page units are points, with the origin at the top left and y growing downward.
 `registryFontSource` reads the faces registered with `@weasel-js/font`, whose
 outlines must be registered for text to embed. `writePdf` rejects an empty
 page list.
+
+Each page may carry a `label`, which a viewer shows in place of its number;
+the pages without one are numbered.
+
+## Exporting a scene
+
+`exportRegionsPdf(scene, regions, opts)`, from the `@weasel-js/pdf/export` entry, writes each world-space region of a
+core scene as a page of one PDF, in order, at 0.75 points per unit (96 units
+to the inch), labeled with its region's `name`. It answers `{ blob, skipped }`.
+It draws the document through core's renderer, so the painters and fonts are
+the caller's to register, and needs WebGL2 and `OffscreenCanvas`; annotation
+layers are left out. That entry is the only one that reads core, which is an
+optional peer: `writePdf` and the main entry need neither core nor React. `background` is painted under each page (default none),
+and `title` and `lang` are passed to `writePdf`.
+
+`registerPdfExport()` registers this as core's `pdf` export format, which
+takes several regions: `exportPages(scene, placedPagesOf(scene), 'pdf', opts)`
+answers the `Blob`, and each `skipped` entry goes to `onWarn`. It returns the
+disposer.
 
 ## What is drawn
 

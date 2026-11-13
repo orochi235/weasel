@@ -25,13 +25,11 @@ import {
   isAnnotationNode,
   layoutTextPose,
   pageOfNode,
-  pageRunOf,
   pathEffectOf,
   pathEffectParts,
   resolveFill,
   resolvePartPaint,
   resolveStroke,
-  pageNodeOf,
   pathInPoseFrame,
   shapeGeneratorOf,
   unionAABB,
@@ -51,9 +49,7 @@ import {
   SWILL_NAMESPACES,
   type SceneSource,
 } from './svgInterop';
-import { rectsIntersect } from '@weasel-js/geom';
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
-import { contentRoots } from '@weasel-js/core';
 import type { EffectObj } from './svgEffects';
 import type { ImageObj, Obj, PathObj, PathParams, TextObj } from './svgObj';
 
@@ -275,47 +271,6 @@ export function sceneToSvgString<TLayer extends string>(
 
   return serializeWarm(nodes, {
     ...docToSerializeOptions({ title: opts.filename, pages: opts.pages }),
-    ...(opts.onWarn ? { onWarn: opts.onWarn } : {}),
-  });
-}
-
-export interface PageToSvgOptions {
-  /** The `<title>`; none when absent. */
-  title?: string;
-  /** As {@link SceneToSvgOptions.backgroundColor}, for the one page. */
-  backgroundColor: string;
-  onWarn?: (message: string) => void;
-}
-
-/**
- * Serialize one page of a WeaselDraw scene to an SVG document string: what
- * is on the page, and what follows other nodes across it, in a `viewBox` of
- * the page's rect, so what crosses the edge is cut there. It is an export,
- * not a save: it carries no page list.
- */
-export function pageToSvgString<TLayer extends string>(
-  scene: DrawScene<TLayer>,
-  page: PlacedPage,
-  opts: PageToSvgOptions,
-): Promise<string> {
-  const poseOf = poseOfIn(scene);
-  const run = pageRunOf(scene);
-  // A node following others sits in the run, across pages: it goes with every page it crosses.
-  const followers = (run === null ? [] : scene.childrenOf(run)).map(String).filter((id) => {
-    const box = scene.get(id as never)?.page === undefined ? unionAABB([poseOf(id)]) : null;
-    return box !== null && rectsIntersect(box, page);
-  });
-  const node = pageNodeOf(scene, page.id);
-  const roots = [...(node === null ? [] : contentRoots(scene, [node])).map(String), ...followers];
-  const nodes: SvgNode[] = WHITE.test(opts.backgroundColor) ? [] : [backgroundSvgNode(opts.backgroundColor, page)];
-  nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOf), roots));
-  const { x, y, width, height } = page;
-  return serializeWarm(nodes, {
-    viewBox: { x, y, width, height },
-    width,
-    height,
-    ...(opts.title ? { title: opts.title } : {}),
-    namespaces: SWILL_NAMESPACES,
     ...(opts.onWarn ? { onWarn: opts.onWarn } : {}),
   });
 }

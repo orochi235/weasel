@@ -8,6 +8,7 @@ import icons from 'virtual:weasel-icons';
 import { App } from './App';
 import { drawTheme } from './theme';
 import { ColorModeProvider } from './colorMode';
+import { registerDrawExports } from './exportPage';
 import { registerAvailableFonts } from './fonts';
 import { registerDefaultFont } from '../../shared/defaultFont';
 import { migrateLegacyPanelFlags } from './surfaces/surfaceState';
@@ -38,6 +39,9 @@ registerDefaultFont('WeaselDraw');
 // family that's actually installed is enrolled with the kit's dynamic
 // canvas-SDF tier, which rasterizes glyphs on demand. See `./fonts`.
 registerAvailableFonts();
+
+// File › Export lists core's PNG and these.
+registerDrawExports();
 
 // The v2 blob lands first, so the panel flags fold into what it held.
 importLegacyPrefs(drawPrefs());

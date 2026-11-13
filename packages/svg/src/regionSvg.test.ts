@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { registerNodeShape, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
-import { exportPageSvg } from './pageSvg';
-import { BLUE, GRAY, GREEN, RED, plainScene } from './testing/plainScene';
+import { exportFormats, exportRegions, registerNodeShape, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
+import { BLUE, GRAY, GREEN, RED, plainScene } from '@weasel-js/core/testing/plainScene';
+import { exportRegionSvg, registerSvgExport } from './regionSvg';
 
-async function exported(pageIndex: number, opts?: Parameters<typeof exportPageSvg>[2]): Promise<Document> {
+async function exported(pageIndex: number, opts?: Parameters<typeof exportRegionSvg>[2]): Promise<Document> {
   const { scene, pages } = plainScene();
-  const svg = await exportPageSvg(scene, pages[pageIndex]!, opts);
+  const svg = await exportRegionSvg(scene, pages[pageIndex]!, opts);
   return new DOMParser().parseFromString(svg, 'image/svg+xml');
 }
 
@@ -26,7 +26,7 @@ const STAR: NodeShapeEntry<unknown, RectPose> = {
 let dispose: (() => void) | undefined;
 afterEach(() => { dispose?.(); dispose = undefined; });
 
-describe('exportPageSvg', () => {
+describe('exportRegionSvg', () => {
   it('views exactly the page, at the page size', async () => {
     const root = (await exported(1)).documentElement;
     expect(root.getAttribute('viewBox')).toBe('240 0 200 100');
@@ -60,7 +60,7 @@ describe('exportPageSvg', () => {
     const { scene, pages } = plainScene();
     scene.update('r' as never, { data: { star: true } });
     dispose = registerNodeShape(STAR);
-    const doc = new DOMParser().parseFromString(await exportPageSvg(scene, pages[0]!), 'image/svg+xml');
+    const doc = new DOMParser().parseFromString(await exportRegionSvg(scene, pages[0]!), 'image/svg+xml');
     expect(fills(doc)).toContain(PURPLE);
     expect(fills(doc)).not.toContain(RED);
   });
@@ -68,7 +68,35 @@ describe('exportPageSvg', () => {
   it('asks the painters it is given before the registered ones', async () => {
     const { scene, pages } = plainScene();
     scene.update('r' as never, { data: { star: true } });
-    const doc = new DOMParser().parseFromString(await exportPageSvg(scene, pages[0]!, { painters: [STAR] }), 'image/svg+xml');
+    const doc = new DOMParser().parseFromString(await exportRegionSvg(scene, pages[0]!, { painters: [STAR] }), 'image/svg+xml');
     expect(fills(doc)).toContain(PURPLE);
+  });
+});
+
+describe('exportRegionSvg on a region that is not a page', () => {
+  it('draws what meets the region, from both pages, and titles it with the region name', async () => {
+    const { scene } = plainScene();
+    const region = { x: 60, y: 0, width: 260, height: 100, name: 'Middle' };
+    const doc = new DOMParser().parseFromString(await exportRegionSvg(scene, region), 'image/svg+xml');
+    expect(doc.documentElement.getAttribute('viewBox')).toBe('60 0 260 100');
+    expect(fills(doc)).toEqual(expect.arrayContaining([RED, GREEN, BLUE]));
+    expect(doc.querySelector('title')?.textContent).toBe('Middle');
+  });
+});
+
+describe('registerSvgExport', () => {
+  it('registers the svg format, which writes one region as an SVG blob', async () => {
+    dispose = registerSvgExport();
+    expect(exportFormats().map((f) => f.id)).toContain('svg');
+    const { scene, pages } = plainScene();
+    const blob = await exportRegions(scene, [pages[1]!], 'svg', { background: '#fafafa' });
+    expect(blob.type).toBe('image/svg+xml');
+    const doc = new DOMParser().parseFromString(await blob.text(), 'image/svg+xml');
+    expect(fills(doc)).toEqual(['#fafafa', BLUE]);
+  });
+
+  it('is gone once disposed', () => {
+    registerSvgExport()();
+    expect(exportFormats().map((f) => f.id)).not.toContain('svg');
   });
 });

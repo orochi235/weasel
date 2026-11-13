@@ -19,17 +19,21 @@ import type { DrawScene } from './drawDocument';
 import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCommands';
 import { importSvgFile, openSvgFile } from './openSvg';
 import { contentRoots } from '@weasel-js/core';
-import { exportPageSvgFile, saveSvgFile } from './saveSvg';
-import { exportPagePngFile, exportPagesPdfFile } from './exportPage';
+import { saveSvgFile } from './saveSvg';
+import { exportPagesFile, exportSelectionFile } from './exportPage';
+import { registerPdfExport } from '@weasel-js/pdf/export';
+import { registerSvgExport } from '@weasel-js/svg';
 import { backgroundOf, setBackground } from './docBackground';
 import { withIcons } from './testIcons';
 import { drawScene } from './testScenes';
 
-vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}), exportPageSvgFile: vi.fn(async () => {}) }));
-vi.mock('./exportPage', () => ({ exportPagePngFile: vi.fn(async () => {}), exportPagesPdfFile: vi.fn(async () => {}) }));
+vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}) }));
+vi.mock('./exportPage', () => ({ exportPagesFile: vi.fn(async () => {}), exportSelectionFile: vi.fn(async () => {}) }));
 vi.mock('./openSvg', () => ({ openSvgFile: vi.fn(async () => {}), importSvgFile: vi.fn(async () => {}) }));
 
 beforeAll(() => {
+  registerSvgExport();
+  registerPdfExport();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn(() => null);
 });
@@ -144,42 +148,55 @@ describe('useFileCommands', () => {
     expect(saveSvgFile).toHaveBeenCalledWith(scene, { filename: 'b', backgroundColor: '#336699' });
   });
 
-  it('Export Page writes the page in view, and nothing with none', () => {
-    const { registry, scene, target, rerender } = setup();
-    act(() => { registry.trigger('file.exportPage'); });
-    expect(exportPageSvgFile).toHaveBeenCalledWith(scene, target.page, { filename: 'a', backgroundColor: '#ffffff' });
-    vi.mocked(exportPageSvgFile).mockClear();
-    rerender({ ...target, page: null });
-    act(() => { registry.trigger('file.exportPage'); });
-    expect(exportPageSvgFile).not.toHaveBeenCalled();
+  it('offers Export and Export Selection once per registered format, PNG first', () => {
+    const { get } = setup();
+    expect(actionItems(get(FILE_ACTIONS.exportPage)).map((i) => [i.key, i.label])).toEqual([
+      ['file.exportPage:png', 'Page as PNG Image…'],
+      ['file.exportPage:svg', 'Page as SVG Document…'],
+      ['file.exportPage:pdf', 'Pages as PDF Document…'],
+    ]);
+    expect(actionItems(get(FILE_ACTIONS.exportSelection)).map((i) => i.label))
+      .toEqual(['Selection as PNG Image…', 'Selection as SVG Document…', 'Selection as PDF Document…']);
   });
 
-  it('Export Page reads as unavailable while there is no page to write, so a menu greys it', () => {
-    const { registry, target, rerender } = setup();
-    const enabled = () => registry.list().find((a) => a.id === 'file.exportPage')!.enabled?.({}) ?? true;
-    expect(enabled()).toBe(true);
-    rerender({ ...target, page: null });
-    expect(enabled()).toBe(ActionDisabledReason.NotApplicable);
-  });
-
-  it('Export Page as PNG writes the page in view on the background, and nothing with none', () => {
+  it("Export in a one-page format writes the page in view on the document's background, and nothing with none", () => {
     const { registry, scene, target, rerender } = setup();
     setBackground(scene, '#336699');
-    act(() => { registry.trigger(FILE_ACTIONS.exportPng); });
-    expect(exportPagePngFile).toHaveBeenCalledWith(scene, target.page, { filename: 'a', backgroundColor: '#336699' });
-    vi.mocked(exportPagePngFile).mockClear();
+    act(() => { registry.trigger(FILE_ACTIONS.exportPage, { format: 'png' }); });
+    expect(exportPagesFile).toHaveBeenCalledWith(scene, expect.objectContaining({ id: 'png' }), [target.page], { filename: 'a', backgroundColor: '#336699' });
+    vi.mocked(exportPagesFile).mockClear();
     rerender({ ...target, page: null });
-    act(() => { registry.trigger(FILE_ACTIONS.exportPng); });
-    expect(exportPagePngFile).not.toHaveBeenCalled();
-    expect(registry.list().find((a) => a.id === FILE_ACTIONS.exportPng)!.enabled?.({})).toBe(ActionDisabledReason.NotApplicable);
+    act(() => { registry.trigger(FILE_ACTIONS.exportPage, { format: 'svg' }); });
+    expect(exportPagesFile).not.toHaveBeenCalled();
   });
 
-  it('Export Pages as PDF writes every page, whichever is in view', () => {
+  it('Export in a one-page format reads as unavailable while there is no page to write, so a menu greys it', () => {
+    const { get, target, rerender } = setup();
+    const enabled = (format: string) => get(FILE_ACTIONS.exportPage).enabled?.({}, undefined, undefined, { format }) ?? true;
+    expect(enabled('svg')).toBe(true);
+    rerender({ ...target, page: null });
+    expect(enabled('svg')).toBe(ActionDisabledReason.NotApplicable);
+    expect(enabled('pdf')).toBe(true);
+  });
+
+  it('Export in a format holding several pages writes every page, whichever is in view', () => {
     const { registry, scene, target, rerender } = setup();
     rerender({ ...target, page: null });
-    act(() => { registry.trigger(FILE_ACTIONS.exportPdf); });
-    expect(exportPagesPdfFile).toHaveBeenCalledWith(scene, placedPagesOf(scene), { filename: 'a', backgroundColor: '#ffffff' });
-    expect(vi.mocked(exportPagesPdfFile).mock.calls[0]![1]).toHaveLength(2);
+    act(() => { registry.trigger(FILE_ACTIONS.exportPage, { format: 'pdf' }); });
+    expect(exportPagesFile).toHaveBeenCalledWith(scene, expect.objectContaining({ id: 'pdf' }), placedPagesOf(scene), { filename: 'a', backgroundColor: '#ffffff' });
+    expect(vi.mocked(exportPagesFile).mock.calls[0]![2]).toHaveLength(2);
+  });
+
+  it('Export Selection writes what is selected, and needs a selection', () => {
+    const { registry, scene, target, get, rerender } = setup();
+    const enabled = () => get(FILE_ACTIONS.exportSelection).enabled?.({}, undefined, undefined, { format: 'svg' }) ?? true;
+    expect(enabled()).toBe(ActionDisabledReason.SelectionRequired);
+    act(() => { registry.trigger(FILE_ACTIONS.exportSelection, { format: 'svg' }); });
+    expect(exportSelectionFile).not.toHaveBeenCalled();
+    rerender({ ...target, selection: { get: () => ['a'] } });
+    expect(enabled()).toBe(true);
+    act(() => { registry.trigger(FILE_ACTIONS.exportSelection, { format: 'svg' }); });
+    expect(exportSelectionFile).toHaveBeenCalledWith(scene, expect.objectContaining({ id: 'svg' }), ['a'], { filename: 'a', backgroundColor: '#ffffff' });
   });
 
   it('mod+S saves, and keeps the browser from saving the page', () => {

@@ -71,6 +71,12 @@ export type {
 export { renderDebugSnapshot, debugSnapshotArgs } from '../canvas/renderDebugSnapshot';
 export type { RenderDebugSnapshotArgs } from '../canvas/renderDebugSnapshot';
 export { rasterToPng } from '../canvas/rasterToPng';
+export { exportFormatRegistry, exportFormats, exportRegions, registerExportFormat } from '../canvas/export/exportFormats';
+export { exportPages, pageRegion } from '../canvas/export/exportPages';
+export { exportRegionPng, type ExportRegionPngOptions, type PngExportOptions } from '../canvas/export/regionPng';
+export { selectionRegion } from '../canvas/export/selectionRegion';
+export { regionRenderArgs, type RegionRenderArgs, type RegionRenderArgsOptions } from '../canvas/export/regionRenderArgs';
+export type { ExportFormat, ExportOptions, ExportRegion, ExportScene } from '../canvas/export/exportTypes';
 
 // --- Pointer ambient context ----------------------------------------------
 export {

@@ -67,3 +67,11 @@ export type {
   Matrix,
 } from './types';
 export { IDENTITY_MATRIX } from './types';
+export { regionSvgNodes, type RegionSvgNodesOptions } from './regionSvgNodes';
+export {
+  exportRegionSvg,
+  registerSvgExport,
+  SVG_EXPORT,
+  type ExportRegionSvgOptions,
+  type SvgExportOptions,
+} from './regionSvg';

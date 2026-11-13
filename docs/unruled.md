@@ -1382,8 +1382,9 @@ calls its builds made where the spec was silent.
 - 2026-10-20 (arc 4, PDF): Effects, shader and custom-paint groups go to an injected `rasterize`
   hook, which gets a wrapper group carrying the effects and the page view as a fourth argument;
   without a hook they are skipped. Porter-Duff composites draw source-over and are listed in
-  `skipped`. `writePdf([])` throws. `exportPagesPdf` lives in `@weasel-js/export` (in
-  `@weasel-js/diagram-formats` until 2026-11-12), so `@weasel-js/pdf` stays free of core.
+  `skipped`. `writePdf([])` throws. `writePdf` reads no scene; `exportRegionsPdf`, which
+  writes a scene's regions through it, lives in `@weasel-js/pdf/export`, a separate entry taking core as an optional peer so the
+  main entry stays free of core and React (2026-11-12), and registers as the `pdf` export format.
 - 2026-10-20 (arc 4, PDF): `resolveStrokeLengths` takes `{ quantize: false }`, so `{ px }` stroke
   widths resolve at the exact scale in a PDF. `markerDrawCommands`, `syntheticBoldOffset` and
   `emboldenGlyphD` are now exported rather than copied.

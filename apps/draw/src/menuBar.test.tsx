@@ -20,6 +20,7 @@ import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocu
 import { DRAW_FEATURES } from './drawFeatures';
 import { useFileCommands } from './fileCommands';
 import { DRAW_MENU_BAR } from './menuBar';
+import { registerDrawExports } from './exportPage';
 import { saveSvgFile } from './saveSvg';
 import { withIcons } from './testIcons';
 
@@ -27,6 +28,7 @@ vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}) }));
 vi.mock('./openSvg', () => ({ openSvgFile: vi.fn(async () => {}), importSvgFile: vi.fn(async () => {}) }));
 
 beforeAll(() => {
+  registerDrawExports();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn(() => null);
 });
@@ -90,7 +92,7 @@ const labels = () => [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HT
   .map((r) => r.children[1]!.textContent);
 
 const ROWS = {
-  File: ['New', 'Open…', 'Import…', 'Save', 'Export Page as SVG…', 'Export Page as PNG…', 'Export Pages as PDF…'],
+  File: ['New', 'Open…', 'Import…', 'Save', 'Export'],
   Edit: ['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Duplicate', 'Delete', 'Select All'],
   Arrange: ['Group', 'Ungroup', 'Bring Forward', 'Bring to Front', 'Send Backward', 'Send to Back',
     'Align Left', 'Align Centers Horizontally', 'Align Right', 'Align Top', 'Align Centers Vertically', 'Align Bottom',
@@ -136,6 +138,17 @@ describe('DRAW_MENU_BAR', () => {
     expect(labels()).toEqual(['US Letter', 'A4', 'Legal']);
     act(() => { fireEvent.click(menu().getByRole('menuitem', { name: 'A4' })); });
     expect(pagesOf(t.scene)?.pages[0]).toMatchObject({ width: 794, height: 1123 });
+  });
+
+  it("opens Export as a submenu of a row per registered format, for the page and for the selection", () => {
+    setup();
+    open('File');
+    act(() => { fireEvent.click(menu().getByRole('menuitem', { name: /^Export/ })); });
+    expect(labels()).toEqual([
+      'Page as PNG Image…', 'Page as SVG Document…', 'Pages as PDF Document…',
+      'Selection as PNG Image…', 'Selection as SVG Document…', 'Selection as PDF Document…',
+    ]);
+    expect(menu().getByRole('menuitem', { name: /^Selection as SVG/ })).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('runs the action a row names', () => {

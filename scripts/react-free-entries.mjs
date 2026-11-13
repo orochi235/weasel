@@ -57,6 +57,11 @@ export const REACT_FREE_ENTRIES = [
     dom: true,
   },
   {
+    spec: '@weasel-js/pdf',
+    why: 'writing PDFs from draw commands; reading a scene is behind @weasel-js/pdf/export',
+    dom: true,
+  },
+  {
     spec: '@weasel-js/prefs',
     why: 'the schema and the store; the hooks live behind @weasel-js/prefs/react',
     dom: true,

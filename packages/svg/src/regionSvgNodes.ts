@@ -1,6 +1,6 @@
 /**
- * One page of a scene as `SvgNode`s: the nodes whose box meets the page, each
- * written the way the canvas paints it.
+ * One region of a scene as `SvgNode`s: the nodes whose box meets the region,
+ * each written the way the canvas paints it.
  */
 import {
   boundsOfPath,
@@ -16,11 +16,12 @@ import {
   isAnnotationLayer,
   scenePoseAdapter,
   type DrawCommand,
+  type ExportRegion,
+  type ExportScene,
   type NodeShapeEntry,
   type Paint,
   type Path,
   type RectPose,
-  type Scene,
 } from '@weasel-js/core';
 import {
   svgLeafFromKit,
@@ -31,23 +32,11 @@ import {
   type SvgKitPose,
   type SvgKitTree,
   type SvgKitTreeNode,
-  type SvgNode,
-  type SvgPathNode,
-} from '@weasel-js/svg';
+} from './fromKit';
+import type { SvgNode, SvgPathNode } from './types';
 
-/** A page's rect in world space. A `PlacedPage` is one. */
-export interface PageRect {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
-
-/** A scene as the exports read it: world-space `RectPose`s. */
-export type PageExportScene = Scene<unknown, string, RectPose>;
-
-/** Options for {@link pageSvgNodes}. */
-export interface PageSvgNodesOptions {
+/** Options for {@link regionSvgNodes}. */
+export interface RegionSvgNodesOptions {
   /** Painters asked before the registered ones (`registerNodeShape`), the
    *  first that claims a node drawing it: for a kind the scene draws with a
    *  painter it may not have registered. */
@@ -55,7 +44,7 @@ export interface PageSvgNodesOptions {
 }
 
 type Box = { x: number; y: number; width: number; height: number };
-type SceneNode = NonNullable<ReturnType<PageExportScene['get']>>;
+type SceneNode = NonNullable<ReturnType<ExportScene['get']>>;
 
 const meets = (a: Box, b: Box): boolean =>
   Math.min(a.x + a.width, b.x + b.width) >= Math.max(a.x, b.x)
@@ -110,14 +99,14 @@ const derives = (node: SceneNode): boolean =>
   node.kind !== 'group' && (node.dependsOn?.length ?? 0) > 0 && node.derivePath !== undefined;
 
 /**
- * The `SvgNode`s of everything on `page`, in paint order: every node on a
- * visible content layer whose box meets the page, with what is under it. A
+ * The `SvgNode`s of everything in `region`, in paint order: every node on a
+ * visible content layer whose box meets the region, with what is under it. A
  * node a consumer painter claims (one of `opts.painters`, else one registered
  * with `registerNodeShape`) is written from that painter's paths, a node that
  * derives its path (a connector) is drawn along that path, and anything else
  * is written by `svgLeafFromKit`.
  */
-export function pageSvgNodes(live: PageExportScene, page: PageRect, opts: PageSvgNodesOptions = {}): SvgNode[] {
+export function regionSvgNodes(live: ExportScene, region: ExportRegion, opts: RegionSvgNodesOptions = {}): SvgNode[] {
   // An export writes the document, not what an open gesture or edit is showing.
   const scene = documentOf(live);
   const painters = opts.painters ?? [];
@@ -132,7 +121,7 @@ export function pageSvgNodes(live: PageExportScene, page: PageRect, opts: PageSv
   };
   const pathOf = (node: SceneNode) => (derives(node) ? derivedDepOf(scene, node.id)?.path ?? null : null);
 
-  // The page run and pages frame what is on them; a page's export writes that content, not the frames.
+  // The page run and pages frame what is on them; an export writes that content, not the frames.
   const tops = contentRoots(scene);
   const tree: SvgKitTree = {
     roots: scene.layers.flatMap((l) => tops.filter((id) => scene.get(id)?.layer === l.id)),
@@ -154,7 +143,7 @@ export function pageSvgNodes(live: PageExportScene, page: PageRect, opts: PageSv
       const node = scene.get(id as never);
       if (!node || !shown.has(node.layer)) return false;
       const path = pathOf(node);
-      return meets(path ? boundsOfPath(path) : pose(node), page);
+      return meets(path ? boundsOfPath(path) : pose(node), region);
     },
     leaf(id, kit) {
       const node = scene.get(id as never)!;

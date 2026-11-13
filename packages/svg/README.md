@@ -153,6 +153,30 @@ so the import can tell the two apart. The per-leaf pieces are
 public too: `svgLeafFromKit`, `svgPaintFromKit`, `svgStrokeFromKit`,
 `svgImageFromKit`.
 
+## Exporting a region
+
+`exportRegionSvg(scene, region, opts)` writes a world-space rectangle of a
+scene as an SVG document: its `viewBox` is the region and its `width` and
+`height` the region's size. Only nodes whose box meets the region are
+written, in paint order, on the scene's visible layers; annotation layers are
+left out, and it draws the document, not what an open gesture is showing.
+
+| In the scene | In the SVG |
+| --- | --- |
+| A node a consumer painter claims | That painter's paths, with their fills and strokes. The painter is the first of `painters` to claim the node, else the one `registerNodeShape` registered. |
+| A connector, or any node that derives its path | One path along the route, with its markers. A path made of parts writes one path per part. |
+| Anything else | What `svgLeafFromKit` writes for it. |
+
+`background` is painted under the region; by default nothing is. `title`
+defaults to the region's `name`. It waits for the paint kinds and faces the
+document uses, and a load that fails goes to `onWarn`. `text` and `pretty`
+are passed on to `serializeSvg`. `regionSvgNodes(scene, region, { painters })`
+is the walk alone, for a caller assembling its own document.
+
+`registerSvgExport()` registers this as core's `svg` export format, so
+`exportRegions(scene, [region], 'svg', opts)` answers it as a `Blob`. It
+returns the disposer.
+
 ## Stroke markers
 
 A marker reference goes out as `marker-start` / `-mid` / `-end="url(#id)"` with

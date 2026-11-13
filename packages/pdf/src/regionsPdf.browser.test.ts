@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist';
 import * as pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { exportPagesPdf } from '@weasel-js/export';
-import { plainScene } from '@weasel-js/export/testing/plainScene';
+import { plainScene } from '@weasel-js/core/testing/plainScene';
+import { exportRegionsPdf } from './regionsPdf';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 (globalThis as { pdfjsWorker?: unknown }).pdfjsWorker = pdfWorker;
@@ -31,10 +31,10 @@ const rgb = (img: ImageData, x: number, y: number): number[] => {
   return [img.data[at]!, img.data[at + 1]!, img.data[at + 2]!];
 };
 
-describe('exportPagesPdf', () => {
+describe('exportRegionsPdf', () => {
   it('writes one page per page, each at the page size in points, skipping nothing', async () => {
     const { scene, pages } = plainScene();
-    const { blob, skipped } = await exportPagesPdf(scene, pages);
+    const { blob, skipped } = await exportRegionsPdf(scene, pages);
     expect(skipped).toEqual([]);
     const doc = await read(blob);
     expect(doc.numPages).toBe(2);
@@ -44,12 +44,21 @@ describe('exportPagesPdf', () => {
 
   it('draws each page its own shapes, with annotation layers left out', async () => {
     const { scene, pages } = plainScene();
-    const doc = await read((await exportPagesPdf(scene, pages)).blob);
+    const doc = await read((await exportRegionsPdf(scene, pages)).blob);
     const first = await draw(doc, 1);
     // 0.75 points to the unit: the red rect's center (50, 40) is at (37, 30), the gray note's (160, 80) at (120, 60).
     expect(rgb(first, 37, 30)).toEqual([255, 0, 0]);
     expect(rgb(first, 120, 60)).toEqual([255, 255, 255]);
     // The blue path spans (300, 30) to (340, 60) in the world, 60 into page 2.
     expect(rgb(await draw(doc, 2), 60, 33)).toEqual([0, 0, 255]);
+  });
+
+  it('labels each page with its region name', async () => {
+    const { scene, pages } = plainScene();
+    const regions = [{ ...pages[0]!, name: 'Front' }, { x: 0, y: 0, width: 440, height: 100, name: 'Spread' }];
+    const doc = await read((await exportRegionsPdf(scene, regions)).blob);
+    expect(await doc.getPageLabels()).toEqual(['Front', 'Spread']);
+    const vp = (await doc.getPage(2)).getViewport({ scale: 1 });
+    expect([vp.width, vp.height]).toEqual([330, 75]);
   });
 });

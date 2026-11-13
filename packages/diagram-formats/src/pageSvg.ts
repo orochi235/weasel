@@ -1,41 +1,37 @@
 /**
- * A page of a diagram as a file: `@weasel-js/export`'s page exports, drawn
- * with the diagram painters and on the diagram theme's page color.
+ * A page of a diagram as a file: the region exports of core, svg and pdf,
+ * drawn with the diagram painters and on the diagram theme's page color.
  */
-import type { RectPose } from '@weasel-js/core';
-import { diagramShape, diagramThemeOf, markShape } from '@weasel-js/diagram';
 import {
-  exportPagePng as exportScenePagePng,
-  exportPageSvg as exportScenePageSvg,
-  exportPagesPdf as exportScenePagesPdf,
-  pageSvgNodes as scenePageSvgNodes,
-  type ExportPagePngOptions as ScenePagePngOptions,
-  type ExportPageSvgOptions as ScenePageSvgOptions,
-  type ExportPagesPdfOptions as ScenePagesPdfOptions,
-  type PageExportScene,
-  type PageRect,
-} from '@weasel-js/export';
+  exportRegionPng, type ExportRegion, type ExportRegionPngOptions, type ExportScene, type RectPose,
+} from '@weasel-js/core';
+import { diagramShape, diagramThemeOf, markShape } from '@weasel-js/diagram';
 import type { PdfSkip } from '@weasel-js/pdf';
-import type { SvgNode } from '@weasel-js/svg';
+import { exportRegionsPdf, type ExportRegionsPdfOptions } from '@weasel-js/pdf/export';
+import { exportRegionSvg, regionSvgNodes, type ExportRegionSvgOptions, type SvgNode } from '@weasel-js/svg';
 
-export type { PageExportScene, PageRect } from '@weasel-js/export';
+/** A scene as the page exports read it: world-space `RectPose`s. Core's `ExportScene`. */
+export type PageExportScene = ExportScene;
+
+/** A page's rect in world space. A `PlacedPage` is one. */
+export type PageRect = Pick<ExportRegion, 'x' | 'y' | 'width' | 'height'>;
 
 /** Options for {@link exportPageSvg}. */
-export interface ExportPageSvgOptions extends Omit<ScenePageSvgOptions, 'background' | 'painters'> {
+export interface ExportPageSvgOptions extends Omit<ExportRegionSvgOptions, 'background' | 'painters'> {
   /** The color painted under the page. Default: the page color of the
    *  scene's diagram theme (`diagram:theme`). `null` paints none. */
   background?: string | null;
 }
 
 /** Options for {@link exportPagePng}. */
-export interface ExportPagePngOptions extends Omit<ScenePagePngOptions, 'background'> {
+export interface ExportPagePngOptions extends Omit<ExportRegionPngOptions, 'background'> {
   /** The color painted under the page. Default: the page color of the
    *  scene's diagram theme. `null` leaves it transparent. */
   background?: string | null;
 }
 
 /** Options for {@link exportPagesPdf}. */
-export interface ExportPagesPdfOptions extends Omit<ScenePagesPdfOptions, 'background'> {
+export interface ExportPagesPdfOptions extends Omit<ExportRegionsPdfOptions, 'background'> {
   /** The color painted under each page. Default: the page color of the
    *  scene's diagram theme. `null` leaves it unpainted. */
   background?: string | null;
@@ -47,42 +43,45 @@ const pageBackground = (scene: PageExportScene, background: string | null | unde
 
 const painters = () => [diagramShape<RectPose>(), markShape<RectPose>()];
 
+/** `page` as a bare rect: a page's name titles neither its SVG nor its PDF page here. */
+const rectOf = ({ x, y, width, height }: PageRect) => ({ x, y, width, height });
+
 /**
- * The `SvgNode`s of everything on `page`, as `@weasel-js/export`'s
- * `pageSvgNodes` writes them, with diagram outlines and drawn marks drawn by
+ * The `SvgNode`s of everything on `page`, as `@weasel-js/svg`'s
+ * `regionSvgNodes` writes them, with diagram outlines and drawn marks drawn by
  * the diagram painters whether or not they are registered.
  */
 export function pageSvgNodes(scene: PageExportScene, page: PageRect): SvgNode[] {
-  return scenePageSvgNodes(scene, page, { painters: painters() });
+  return regionSvgNodes(scene, rectOf(page), { painters: painters() });
 }
 
 /**
- * Write `page` of `scene` as an SVG document, as `@weasel-js/export`'s
- * `exportPageSvg` does, drawing diagram outlines and marks with the diagram
+ * Write `page` of `scene` as an SVG document, as `@weasel-js/svg`'s
+ * `exportRegionSvg` does, drawing diagram outlines and marks with the diagram
  * painters, on the diagram theme's page color unless told otherwise.
  */
 export function exportPageSvg(scene: PageExportScene, page: PageRect, opts: ExportPageSvgOptions = {}): Promise<string> {
-  return exportScenePageSvg(scene, page, { ...opts, painters: painters(), background: pageBackground(scene, opts.background) });
+  return exportRegionSvg(scene, rectOf(page), { ...opts, painters: painters(), background: pageBackground(scene, opts.background) });
 }
 
 /**
- * Draw `page` of `scene` into a PNG, as `@weasel-js/export`'s `exportPagePng`
+ * Draw `page` of `scene` into a PNG, as core's `exportRegionPng`
  * does, on the diagram theme's page color unless told otherwise. The caller
  * has registered the diagram painters (`registerDiagramShape`,
  * `registerMarkShape`) and the fonts the scene uses. Needs WebGL2.
  */
 export function exportPagePng(scene: PageExportScene, page: PageRect, opts: ExportPagePngOptions): Promise<Blob> {
-  return exportScenePagePng(scene, page, { ...opts, background: pageBackground(scene, opts.background) });
+  return exportRegionPng(scene, rectOf(page), { ...opts, background: pageBackground(scene, opts.background) });
 }
 
 /**
  * Write each of `pages` of `scene` as a page of one PDF, as
- * `@weasel-js/export`'s `exportPagesPdf` does, on the diagram theme's page
+ * `@weasel-js/pdf/export`'s `exportRegionsPdf` does, on the diagram theme's page
  * color unless told otherwise. The caller has registered what the scene needs
  * painting with, as for {@link exportPagePng}, including each font's outlines.
  */
 export function exportPagesPdf(
   scene: PageExportScene, pages: readonly PageRect[], opts: ExportPagesPdfOptions = {},
 ): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
-  return exportScenePagesPdf(scene, pages, { ...opts, background: pageBackground(scene, opts.background) });
+  return exportRegionsPdf(scene, pages.map(rectOf), { ...opts, background: pageBackground(scene, opts.background) });
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Browser } from 'playwright-core';
-import { planPixelRender, sceneFromJSON, type SavedScene } from '@weasel-js/core';
-import { createNodeRasterHost } from './host';
+import { planPixelRender, regionRenderArgs, sceneFromJSON, type SavedScene } from '@weasel-js/core';
+import { createNodeRasterHost, type NodeRenderArgs } from './host';
 import { sceneFromWire, sceneToWire } from './protocol';
 import { FIXTURE_RENDER, fixtureScene } from './testing/fixtureScene';
 
@@ -12,6 +12,17 @@ describe('node raster host', () => {
     const plan = (s: typeof scene | ReturnType<typeof sceneFromJSON>) =>
       planPixelRender({ scene: s, ...FIXTURE_RENDER, background: '#ffffff' });
     expect(JSON.parse(JSON.stringify(plan(sceneFromJSON(sceneFromWire(wire) as SavedScene<unknown, string, unknown>))))).toEqual(JSON.parse(JSON.stringify(plan(scene))));
+  });
+
+  it("takes core's regionRenderArgs as they are, and draws the same region from them", () => {
+    const scene = fixtureScene();
+    const region = { ...FIXTURE_RENDER.sourceRect, name: 'Fixture' };
+    const args: NodeRenderArgs = regionRenderArgs(scene, region, { scale: 2, background: '#ffffff' });
+    const rest = { sourceRect: args.sourceRect, scale: args.scale, background: args.background! };
+    const wire = JSON.parse(JSON.stringify(sceneToWire(scene))) as object;
+    const read = sceneFromJSON(sceneFromWire(wire) as SavedScene<unknown, string, unknown>);
+    expect(JSON.parse(JSON.stringify(planPixelRender({ scene: read, ...rest }))))
+      .toEqual(JSON.parse(JSON.stringify(planPixelRender({ scene, ...rest }))));
   });
 
   it('launches nothing until a render, and refuses one once disposed', async () => {
