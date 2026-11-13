@@ -6,7 +6,7 @@ import { type PageCtx, pageFlip, writeCommands } from './drawCommands';
 import { DocumentFonts } from './fonts/embedFont';
 import type { PdfFontSource } from './fonts/fontSource';
 import { num } from './num';
-import { type Deflater, name, PdfObjects, type PdfRef, text } from './objects';
+import { type Deflater, name, type PdfDict, PdfObjects, type PdfRef, type PdfValue, text } from './objects';
 import { PageResources } from './resources';
 
 /** An axis-aligned rectangle in page units. */
@@ -18,6 +18,8 @@ export interface PdfPage {
   height: number;
   commands: readonly DrawCommand[];
   view?: GlMat3;
+  /** The page's label, which a viewer shows in place of its number. A page without one is labeled with its number. */
+  label?: string;
 }
 
 /** A decoded bitmap handed back by the host, for images and paints the PDF cannot express directly. */
@@ -62,6 +64,13 @@ export interface PdfSkip {
 export interface PdfResult {
   bytes: Uint8Array;
   skipped: readonly PdfSkip[];
+}
+
+/** The catalog's `/PageLabels` number tree, or none when no page has a label. */
+function pageLabels(pages: readonly PdfPage[]): PdfDict | undefined {
+  if (!pages.some((p) => p.label !== undefined)) return undefined;
+  const nums = pages.flatMap((p, i): PdfValue[] => [i, p.label === undefined ? { S: name('D'), St: i + 1 } : { P: text(p.label) }]);
+  return { Nums: nums };
 }
 
 /** Whether a page side is a length its media box, written to four decimals, holds. */
@@ -135,7 +144,9 @@ async function writePages(pages: readonly PdfPage[], opts: WritePdfOptions, defl
 
   const [shared] = langs.size === 1 ? langs : [];
   const lang = opts.lang ?? shared;
-  objects.set(catalog, { Type: name('Catalog'), Pages: tree, Lang: lang === undefined ? undefined : text(lang) });
+  objects.set(catalog, {
+    Type: name('Catalog'), Pages: tree, Lang: lang === undefined ? undefined : text(lang), PageLabels: pageLabels(pages),
+  });
   objects.set(tree, { Type: name('Pages'), Kids: kids, Count: kids.length });
   objects.set(info, { Producer: text('weasel'), Title: opts.title === undefined ? undefined : text(opts.title) });
   await fonts.finish();
