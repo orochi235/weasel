@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { asNodeId, type NodeId } from '../../core/scene/types';
-import type { ChromeCtx, Condition, RuleCtx } from './types';
+import type { Condition, RuleCtx } from './types';
 import {
   when, and, or, not, always, never,
   focused, gesturing, resizable, actionIs,
@@ -190,7 +190,7 @@ describe('chrome-caps / defaults table', () => {
   });
 
   it('selection.rotation-handle needs focus + at least one selection + idle', () => {
-    const f = (over: Partial<ChromeCtx>) =>
+    const f = (over: Partial<RuleCtx>) =>
       resolveVisibility(undefined, ctx({ selection: [NID('a')], focused: true, ...over }))(
         'selection.rotation-handle',
       );
@@ -300,25 +300,6 @@ describe('mode-gated defaults', () => {
       allowedCapabilities: new Set<CapabilityTag>(['edits-anchors']),
     });
     expect(resolveVisibility(undefined, anchorish)('selection.outline')).toBe(false);
-  });
-
-  // Regression guard: a consumer that never passed `modes` must not
-  // lose its chrome. `resolveVisibility` fills the legacy ChromeCtx shape
-  // with normal-mode capabilities, so capability rules stay true.
-  it('legacy ChromeCtx (no mode wired) still shows transform chrome', () => {
-    const legacy: ChromeCtx = {
-      focused: true,
-      selection: [NID('n1')],
-      multiActive: false,
-      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-      action: { kind: null, id: null },
-      hover: null,
-      view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
-    };
-    const isVisible = resolveVisibility(undefined, legacy);
-    expect(isVisible('selection.outline')).toBe(true);
-    expect(isVisible('selection.resize-handles')).toBe(true);
-    expect(isVisible('selection.rotation-handle')).toBe(true);
   });
 
   // path-edit chrome follows the edit target, not the mode id. It used to

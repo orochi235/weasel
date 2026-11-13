@@ -121,11 +121,9 @@ export {
   DEFAULT_ALLOWED_CAPABILITIES,
   defaultVisibilityRules,
   resolveVisibility,
-  buildChromeCtx,
   useHoverTracking,
 } from '../domains/chrome-caps';
 export type {
-  ChromeCtx,
   ChromeId,
   Condition,
   VisibilityRules,
@@ -133,7 +131,6 @@ export type {
   Selector,
   RuleCtx,
   BuildRuleCtxArgs,
-  BuildChromeCtxArgs,
   UseHoverTrackingArgs,
   HoverTracking,
 } from '../domains/chrome-caps';

@@ -1,26 +1,8 @@
-import type { NodeId } from '../../core/scene/types';
-import type { ModifierState } from '../../interactions/gestures/types';
-import type { View } from '../../core/viewport/view';
 import type { Rule } from '@weasel-js/routing';
 import type { RuleCtx } from '@weasel-js/routing';
 
 export type { Rule };
 export type { RuleCtx } from '@weasel-js/routing';
-
-/**
- * Live state read by chrome-visibility {@link Condition}s: the legacy
- * subset of `RuleCtx`, without mode/capability info. The resolver fills
- * in normal mode's defaults for evaluation.
- */
-export interface ChromeCtx {
-  readonly focused: boolean;
-  readonly selection: readonly NodeId[];
-  readonly multiActive: boolean;
-  readonly modifiers: ModifierState;
-  readonly action: { readonly kind: string | null; readonly id: string | null };
-  readonly hover: NodeId | null;
-  readonly view: View;
-}
 
 /**
  * Composable visibility predicate with fluent surface. Carries its underlying

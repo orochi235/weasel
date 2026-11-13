@@ -9,7 +9,6 @@
  * @packageDocumentation
  */
 export type {
-  ChromeCtx,
   ChromeId,
   Condition,
   VisibilityRules,
@@ -54,5 +53,4 @@ export { evaluate, describeRule, ALWAYS, NEVER } from '@weasel-js/routing';
 export { buildRuleCtx, DEFAULT_ALLOWED_CAPABILITIES } from '@weasel-js/routing';
 export { defaultVisibilityRules } from './defaults';
 export { resolveVisibility } from './resolve';
-export { buildChromeCtx, type BuildChromeCtxArgs } from './buildChromeCtx';
 export { useHoverTracking, type UseHoverTrackingArgs, type HoverTracking } from './useHoverTracking';
