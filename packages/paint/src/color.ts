@@ -107,16 +107,16 @@ export type HexForm = 'rgb' | 'rgba';
  */
 export function normalizeHex(input: string, form?: HexForm): string {
   const hex = tryNormalizeHex(input, form);
-  if (hex === undefined) throw new Error(`normalizeHex: invalid hex "${input}"`);
+  if (hex === null) throw new Error(`normalizeHex: invalid hex "${input}"`);
   return hex;
 }
 
-/** {@link normalizeHex}, undefined where it would throw. */
-export function tryNormalizeHex(input: string, form?: HexForm): string | undefined {
+/** {@link normalizeHex}, null where it would throw, the way {@link tryParseColor} answers. */
+export function tryNormalizeHex(input: string, form?: HexForm): string | null {
   const trimmed = input.trim();
   const hashed = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
   const bytes = parseHexBytes(hashed);
-  if (!bytes) return undefined;
+  if (!bytes) return null;
   const digits = bytes.map(byteHex).join('');
   const alpha = form ? form === 'rgba' : hashed.length === 5 || hashed.length === 9;
   return `#${alpha ? digits : digits.slice(0, 6)}`;

@@ -255,8 +255,8 @@ describe('normalizeHex', () => {
 
 describe('tryNormalizeHex', () => {
   it('returns undefined where normalizeHex throws', () => {
-    expect(tryNormalizeHex('#xyz')).toBeUndefined();
-    expect(tryNormalizeHex('red', 'rgba')).toBeUndefined();
+    expect(tryNormalizeHex('#xyz')).toBeNull();
+    expect(tryNormalizeHex('red', 'rgba')).toBeNull();
     expect(tryNormalizeHex(' #ABC ', 'rgb')).toBe('#aabbcc');
   });
 });

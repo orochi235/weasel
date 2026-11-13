@@ -31,7 +31,7 @@ describe('hexColor', () => {
     fc.assert(fc.property(typed, fc.boolean(), fc.option(typed, { nil: undefined }), (text, alpha, keep) => {
       const out = hexColor(text, alpha, keep);
       const read = tryNormalizeHex(text);
-      expect(out === undefined).toBe(read === undefined);
+      expect(out === undefined).toBe(read === null);
       if (out === undefined) { seen.hit('refused'); return; }
       expect(out).toMatch(alpha ? /^#[0-9a-f]{8}$/ : /^#[0-9a-f]{6}$/);
       expect(out.slice(0, 7)).toBe(read!.slice(0, 7));
