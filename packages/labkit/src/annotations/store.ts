@@ -324,7 +324,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       return markIdOf(init.target, node);
     },
 
-    update(id, patch: AnnotationPatch) {
+    update(id, patch: AnnotationPatch, opts) {
       const found = nodeOf(id);
       if (!found) return;
       const { frac: fracPatch, points, ...meaning } = patch;
@@ -334,10 +334,16 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       const bounds = roundFrac(frac ?? worldToFrac(found.node.pose as MarkPose, content));
       const shape = points ? shapeFor(found.node.data.kind, points, bounds) : undefined;
       const data = { ...found.node.data, ...meaning, ...(shape ? { shape } : {}) };
-      found.scene.batch('update mark', () => {
-        if (Object.keys(meaning).length > 0 || shape) found.scene.update(nid, { data });
-        if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
-      });
+      const coalesce =
+        opts?.coalesceKey === undefined ? undefined : { coalesceKey: opts.coalesceKey };
+      found.scene.batch(
+        'update mark',
+        () => {
+          if (Object.keys(meaning).length > 0 || shape) found.scene.update(nid, { data });
+          if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
+        },
+        coalesce,
+      );
     },
 
     setMeta(id, meta) {

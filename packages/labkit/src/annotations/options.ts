@@ -10,14 +10,15 @@ import type { AnnotationData } from './types';
 export const MARK_WIDTH_KEY = 'markWidth';
 export const MARK_COLOR_KEY = 'markColor';
 
-const colorLeaf: PrefLeaf = {
+/** Each style option's leaf: what the options palette draws for it. */
+export const MARK_COLOR_LEAF: PrefLeaf = {
   kind: 'color',
   name: 'Color',
   description: 'What a new mark is drawn in.',
   default: MARK_COLOR,
 };
 
-const widthLeaf: PrefLeaf = {
+export const MARK_WIDTH_LEAF: PrefLeaf = {
   kind: 'number',
   name: 'Width',
   description: 'How thick a new mark’s line is, in the picture’s units.',
@@ -27,7 +28,7 @@ const widthLeaf: PrefLeaf = {
   step: 0.5,
 };
 
-const sizeLeaf: PrefLeaf = {
+export const MARK_SIZE_LEAF: PrefLeaf = {
   kind: 'number',
   name: 'Size',
   description: 'How large a new text mark is set, in the picture’s units.',
@@ -41,14 +42,18 @@ const sizeLeaf: PrefLeaf = {
  *  them when it makes a mark. */
 export const MARK_LINE_OPTIONS: ToolOptions = {
   actionId: [],
-  prefs: { name: 'Mark', as: 'bar', children: { width: widthLeaf, color: colorLeaf } },
+  prefs: { name: 'Mark', as: 'bar', children: { width: MARK_WIDTH_LEAF, color: MARK_COLOR_LEAF } },
   share: { width: MARK_WIDTH_KEY, color: MARK_COLOR_KEY },
 };
 
 /** The text tool's options: its size, and the color every mark shares. */
 export const MARK_TEXT_OPTIONS: ToolOptions = {
   actionId: [],
-  prefs: { name: 'Text', as: 'bar', children: { fontSize: sizeLeaf, color: colorLeaf } },
+  prefs: {
+    name: 'Text',
+    as: 'bar',
+    children: { fontSize: MARK_SIZE_LEAF, color: MARK_COLOR_LEAF },
+  },
   share: { color: MARK_COLOR_KEY },
 };
 

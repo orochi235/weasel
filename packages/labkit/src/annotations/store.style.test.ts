@@ -16,6 +16,18 @@ describe("a mark's style in the store", () => {
     expect(back.get(id)).toMatchObject({ width: 10, color: '#0090ff', fontSize: 20 });
   });
 
+  it('takes back a burst of updates sharing a coalesce key in one undo', () => {
+    const store = createAnnotationStore({ targets: () => TARGETS });
+    const a = store.add({ target: 't', kind: 'rect', frac: BOX, width: 2 });
+    const b = store.add({ target: 't', kind: 'ellipse', frac: BOX, width: 3 });
+    for (const w of [4, 6, 8]) {
+      store.update(a, { width: w }, { coalesceKey: 'restyle:1' });
+      store.update(b, { width: w }, { coalesceKey: 'restyle:1' });
+    }
+    expect(store.undo()).toBe(true);
+    expect([store.get(a)?.width, store.get(b)?.width]).toEqual([2, 3]);
+  });
+
   it('paints a restyled mark at its new width', () => {
     const store = createAnnotationStore({ targets: () => TARGETS });
     const id = store.add({
