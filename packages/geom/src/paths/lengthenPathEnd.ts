@@ -1,6 +1,6 @@
 /**
  * Grow or trim an open subpath at one of its ends. Lengthen drags this, and
- * Extend to next path reaches it through `lengthenOpenEnd`.
+ * Reach gets there through `lengthenOpenEnd`.
  *
  * A positive distance extends the end outward along the curve its mode draws
  * (`extensionPieces`): straight along the end tangent, along a circular arc
@@ -20,7 +20,7 @@ import { flatAnchorIndex, locateAnchor } from './anchorEdits';
 import { isStraightSegment, type PenAnchor } from './anchors';
 import { splitCubicAtT, type Point } from './cubicMath';
 import { cubicCurvatureAt, cubicDerivativeAt } from './curvature';
-import type { OpenPathEnd } from './extendPath';
+import type { OpenPathEnd } from './reachPath';
 import { nearestOnCubic, nearestOnLine } from '../nearest';
 import {
   easeLength, extensionPieces, pieceLengthAt, type EaseOptions, type LengthenMode, type PathEndFrame,

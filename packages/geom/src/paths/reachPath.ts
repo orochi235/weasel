@@ -58,8 +58,8 @@ export function lengthenOpenEnd(
   return editAnchorSetTracked(path, (set) => lengthenPathEnd(set, end, distance, mode, opts))?.path ?? null;
 }
 
-/** Options for {@link extendToMeet}. */
-export interface ExtendToMeetOptions extends EaseOptions {
+/** Options for {@link reachToMeet}. */
+export interface ReachToMeetOptions extends EaseOptions {
   /** The furthest the end may travel, by arc length. Default: as far as any stroke reaches. */
   maxDistance?: number;
   /** The curve the end travels along. Default `'eased'`. */
@@ -67,16 +67,16 @@ export interface ExtendToMeetOptions extends EaseOptions {
 }
 
 /**
- * Extend `end` of `path` along the curve `opts.mode` draws to the first stroke
+ * Reach `end` of `path` along the curve `opts.mode` draws to the first stroke
  * it meets — one of `boundaries`, or `path`'s own other segments. Returns the
  * extended path, the point it now ends at and how far it went by arc length,
  * or null when the curve meets nothing.
  */
-export function extendToMeet(
+export function reachToMeet(
   path: Path,
   boundaries: readonly Path[],
   end: OpenPathEnd,
-  opts: ExtendToMeetOptions = {},
+  opts: ReachToMeetOptions = {},
 ): { path: PolygonPath; at: Point; distance: number } | null {
   if (path.kind !== 'polygon') return null;
   const frame = pathEndFrame(pathToAnchors(path), end);

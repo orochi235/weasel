@@ -113,8 +113,8 @@ export {
 export { snipPathAt, type SnipPathOptions, type SnipResult } from './paths/snipPath';
 export { pathAwayFromAnchors, type PathAwayFromAnchors } from './paths/pathAwayFromAnchors';
 export {
-  extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ExtendToMeetOptions, type OpenPathEnd,
-} from './paths/extendPath';
+  reachToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ReachToMeetOptions, type OpenPathEnd,
+} from './paths/reachPath';
 export {
   lengthenPathEnd, lengthToward, openEndAt, pathEndAnchorIndex, pathEndFrame,
   type EaseOptions, type LengthenMode, type PathEndFrame,

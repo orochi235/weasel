@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="816" height="1056" viewBox="0 0 816 1056">
-<text x="40" y="48" font-family="sans-serif" font-size="13" fill="#333">Extend to next path: press U, click near an open end of a blue path.</text>
+<text x="40" y="48" font-family="sans-serif" font-size="13" fill="#333">Reach: press Shift+U, click near an open end of a blue path.</text>
 <text x="40" y="64" font-family="sans-serif" font-size="13" fill="#333">The end grows on until it meets the next path (gray). Reach: 6 screen px.</text>
 <text x="40" y="110" font-family="sans-serif" font-size="13" fill="#333">1. Lines stopping short of a wall.</text>
 <text x="40" y="126" font-family="sans-serif" font-size="13" fill="#333">Click each right-hand end.</text>

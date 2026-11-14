@@ -1079,21 +1079,21 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SnipLabDemo.tsx',
   },
   {
-    id: 'lab-extend',
-    title: 'Extend to next path',
+    id: 'lab-reach',
+    title: 'Reach',
     package: 'path-tools',
     description:
-      'Extend to next path, the `extendToMeet` command: an open end travels on until it meets the first stroke in its way, through `extendToMeet` in `@weasel-js/geom`. A straight end grows longer. A curved one eases out of its bend: its curvature falls steadily to zero over the stretch that turns it a further 30°, and then it runs straight, so tangent and curvature both carry on unbroken. The command\'s `shape` param picks a straight run along the tangent instead, and `easeTurn` sets the 30°. With `useExtendTool` a click picks the end nearest it; with a selection the command extends every open end of it, and in anchor editing just the selected end anchors. The lab binds the command to <kbd>E</kbd> through `<SceneCanvas tune>`. An end that meets nothing stays put, and each extend is one undo step.',
-    hint: 'With the Extend tool, click near the right end of the short orange line: it grows to the green wall. Click near the right end of the curved hook and it eases out of its bend before it runs straight. Or pick Select, select strokes, and press <kbd>E</kbd>. Undo with <kbd>Mod+Z</kbd>.',
-    load: () => import('./demos/ExtendLabDemo').then((m) => m.ExtendLabDemo),
-    path: 'apps/site/demos/ExtendLabDemo.tsx',
+      'Reach, the `reachToMeet` command: an open end travels on until it meets the first stroke in its way, through `reachToMeet` in `@weasel-js/geom`. A straight end grows longer. A curved one eases out of its bend: its curvature falls steadily to zero over the stretch that turns it a further 30°, and then it runs straight, so tangent and curvature both carry on unbroken. The command\'s `shape` param picks a straight run along the tangent instead, and `easeTurn` sets the 30°. With `useReachTool` a click picks the end nearest it; with a selection the command extends every open end of it, and in anchor editing just the selected end anchors. The lab binds the command to <kbd>E</kbd> through `<SceneCanvas tune>`. An end that meets nothing stays put, and each extend is one undo step.',
+    hint: 'With the Reach tool, click near the right end of the short orange line: it grows to the green wall. Click near the right end of the curved hook and it eases out of its bend before it runs straight. Or pick Select, select strokes, and press <kbd>E</kbd>. Undo with <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/ReachLabDemo').then((m) => m.ReachLabDemo),
+    path: 'apps/site/demos/ReachLabDemo.tsx',
   },
   {
     id: 'lab-lengthen',
     title: 'Lengthen',
     package: 'path-tools',
     description:
-      "Three open paths, one ending straight, one in a gentle curve, one in a tight curl, with the gently curved one open in path edit and the Lengthen path-edit tool (`useLengthenTool`) on. While it is on, dragging an open end runs the `lengthenPath` action over `lengthenPathEnd` in `@weasel-js/geom`: outward grows the path straight along its end tangent, along a circular arc with the curvature the end has, or easing out of that curvature into a straight run, meeting the path smoothly; inward shortens it along itself. A straight end grows in place; a curved one gets a new segment, one per quarter turn of arc, and an arc stops at a full turn. Extend to next path grows an end by the same rule, eased by default. The palette's Lengthen is an ordinary tool whose binding outranks anchor editing's; Escape returns to the Anchors tool path edit starts on. Lengthen along is the action's `mode` param, a thunk through `<SceneCanvas tune>`, so a change reaches a drag under way, and Shift flips a curve to tangent and tangent to curvature. Each drag is one undo step.",
+      "Three open paths, one ending straight, one in a gentle curve, one in a tight curl, with the gently curved one open in path edit and the Lengthen path-edit tool (`useLengthenTool`) on. While it is on, dragging an open end runs the `lengthenPath` action over `lengthenPathEnd` in `@weasel-js/geom`: outward grows the path straight along its end tangent, along a circular arc with the curvature the end has, or easing out of that curvature into a straight run, meeting the path smoothly; inward shortens it along itself. A straight end grows in place; a curved one gets a new segment, one per quarter turn of arc, and an arc stops at a full turn. Reach grows an end by the same rule, eased by default. The palette's Lengthen is an ordinary tool whose binding outranks anchor editing's; Escape returns to the Anchors tool path edit starts on. Lengthen along is the action's `mode` param, a thunk through `<SceneCanvas tune>`, so a change reaches a drag under way, and Shift flips a curve to tangent and tangent to curvature. Each drag is one undo step.",
     hint: 'Drag the right-hand end of the orange path outward, then back in to shorten it. Hold <kbd>Shift</kbd> mid-drag to switch between tangent and a curve, or set the default with Lengthen along. Press Escape to go back to Anchors and move anchors, Escape again to leave path edit; then double-click the purple curl and pick Lengthen. Undo with the button or <kbd>Mod+Z</kbd>.',
     load: () => import('./demos/LengthenLabDemo').then((m) => m.LengthenLabDemo),
     path: 'apps/site/demos/LengthenLabDemo.tsx',

@@ -1,6 +1,6 @@
 /**
  * The curve an open end grows along, as the segments `lengthenPathEnd` appends
- * and `extendToMeet` searches. Each mode starts with the end's own point and
+ * and `reachToMeet` searches. Each mode starts with the end's own point and
  * tangent:
  *
  * - `'tangent'` runs straight on.

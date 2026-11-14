@@ -168,8 +168,8 @@ export {
   poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
 } from '@weasel-js/geom';
 export {
-  extendToMeet, kneadPath, type KneadPathOptions, intersectSegments, lengthenOpenEnd, openEndRay, openPathEnds, pathCrossings, pathSegments, snipPathAt,
-  type ExtendToMeetOptions, type OpenPathEnd, type PathCrossing, type PathSegment, type PathStop, type SegmentCrossing, type SnipPathOptions, type SnipResult,
+  reachToMeet, kneadPath, type KneadPathOptions, intersectSegments, lengthenOpenEnd, openEndRay, openPathEnds, pathCrossings, pathSegments, snipPathAt,
+  type ReachToMeetOptions, type OpenPathEnd, type PathCrossing, type PathSegment, type PathStop, type SegmentCrossing, type SnipPathOptions, type SnipResult,
 } from '@weasel-js/geom';
 export {
   createPathSnapIndex, findPathSnap, PATH_SNAP_KINDS,

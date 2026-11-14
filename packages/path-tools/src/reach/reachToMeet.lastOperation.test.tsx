@@ -6,7 +6,7 @@ import {
   ActionsProvider, asNodeId, createHistory, DepRegistryProvider, lastOperationOf, useActionsRegistry, useDepRegistry,
   type Op,
 } from '@weasel-js/core';
-import { extendToMeetAction } from './extendToMeet';
+import { reachToMeetAction } from './reachToMeet';
 
 /** A curved stroke still turning at its end, and a wall it reaches either way. */
 const NODES = new Map([
@@ -42,19 +42,19 @@ function setup() {
       batches.push(ops);
       history.applyOps([{ apply: () => {}, invert() { return this; } } as unknown as Op], label);
     });
-    registry!.register(extendToMeetAction);
+    registry!.register(reachToMeetAction);
   });
   return { history, registry: registry!, batches, store: lastOperationOf(registry)! };
 }
 
 const commandsOf = (ops: Op[]) => Array.from((ops[0].args as { to: PolygonPath }).to.commands);
 
-describe('Extend to next path as the last operation', () => {
+describe('Reach as the last operation', () => {
   it('is held after a click, and changing its shape reruns the click in place', () => {
     const { history, registry, batches, store } = setup();
     // What the tool's click binding hands the action: the world point and its reach.
-    act(() => { registry.trigger('extendToMeet', { world: { x: 25, y: 7 }, radiusPx: 3 }); });
-    expect(store.get()).toMatchObject({ id: 'extendToMeet', values: { shape: 'eased', radiusPx: 3 } });
+    act(() => { registry.trigger('reachToMeet', { world: { x: 25, y: 7 }, radiusPx: 3 }); });
+    expect(store.get()).toMatchObject({ id: 'reachToMeet', values: { shape: 'eased', radiusPx: 3 } });
     const eased = commandsOf(batches[0]);
     act(() => { store.adjust({ shape: 'straight' }); });
     expect(history.undoDepth()).toBe(1);

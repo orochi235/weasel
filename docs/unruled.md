@@ -396,11 +396,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `index` past either end of the page order to that end, as `movePage` already did, rather than reading a negative
   one from the end as `splice` does: one rule for an index into the page order.
 - Ruled 2026-11-10 (my call, overnight sweep): Snip and the Girth tool's `girth.clear`, click commands, are
-  enabled outright by a click's point, as Extend to next path is, so the tool keeps the click and the run decides; with
+  enabled outright by a click's point, as Reach is, so the tool keeps the click and the run decides; with
   no click, `enabled` asks whether the press in their params reaches a piece to cut or a set width point to clear, and
   answers `NotApplicable` otherwise. Before, both were always enabled.
-- Ruled 2026-11-10 (my call, overnight sweep): `extendToMeet` takes an end within float32 rounding of a stroke (1e-6 of
-  its coordinates' magnitude) as already meeting it, so a second Extend to next path is disabled rather than recording
+- Ruled 2026-11-10 (my call, overnight sweep): `reachToMeet` takes an end within float32 rounding of a stroke (1e-6 of
+  its coordinates' magnitude) as already meeting it, so a second Reach is disabled rather than recording
   an invisible step, after the Align ruling above.
 - Ruled 2026-11-10 (my call, overnight sweep): `toolStacksOf` reports no stack for a stacked set that names no tool, as
   `withoutTools` leaves one cut to nothing: a palette has no button to draw for it.
@@ -1580,7 +1580,7 @@ Calls the round made:
 - Undo in a lab steps whichever of the marks and the trial's history changed last. A `TrialHistorySource`
   without `undoStamp` keeps marks first.
 - A trial's writes to the lab's `over` (`f.alias` rows) are undo steps, so Undo rewrites the app's own values.
-- Trim and Extend pass over locked and hidden strokes; a locked stroke still cuts and stops, a hidden one does
+- Snip and Reach pass over locked and hidden strokes; a locked stroke still cuts and stops, a hidden one does
   neither. Link anchor ties to no hidden or locked path.
 - Arrows in ui's widgets (`PageTabs`, `TokenField`, `ItemList`, the icon picker, `PrefsRail`, `Tree`) follow the
   direction read from computed CSS at the key press, through ui-input's `arrowDir`. `ResizeHandle` stays physical.
@@ -1653,7 +1653,7 @@ Key rulings and the per-view camera TODO landed in the same batch.
 - Next from a view never shown a page goes to the first page; `add` there puts the page after the last.
 - Cut at Crossings, Join and Release Compound Path carry per-anchor widths and colors to the pieces (blended at a
   cut, reversed with a reversed path); any command leaving them out of step with the anchors drops them.
-- Warp and knead on a group skip its locked and hidden members, as trim and extend do.
+- Warp and knead on a group skip its locked and hidden members, as Snip and Reach do.
 - Far from the origin, where a step index passes 2^53, the ruler, grid lines and tiled layers draw nothing;
   `snapPoint` still offers points. A repeated Mermaid architecture name is an error; a repeated mind-map id is
   renamed.
@@ -1948,7 +1948,7 @@ Calls the lanes made without a ruling:
   no `navigator` where `isApplePlatform` answers false (documented as the docs convention), and lookups such as
   `pickMenu` returning `undefined` where others return `null` (routing has no rule, and the `find`-shaped ones
   follow `Array.find`).
-- Sticky keeps S, Knead moves to U, and Extend moves from U to Shift+U, on the maintainer's call
+- Sticky keeps S, Knead moves to U, and Reach moves from U to Shift+U, on the maintainer's call
   (2026-11-12). The star tool has no default key at all.
 - Open: two tool sets are not named for their tools' palette group, which `BUILTIN_TOOL_GROUPS` says each set is:
   `RESHAPE_TOOLS` (`reshape`) holds tools in the `path` group, and `RIG_TOOLS` (`rig`) tools in `shape`. Renaming
@@ -2126,7 +2126,7 @@ Calls the lanes made without a ruling:
   release/expand, the diagram router choices, the path-edit `show.*` toggles, `present.go`, and `measure.moveBy` /
   `rotateBy`. The Pathfinder operations are reached by key through the Alt+P keymap's holds, and `clipboard.paste`
   by the DOM paste event (2026-11-13).
-- Open: no tool key collides in the kit or in draw. Settled 2026-11-12: Sticky S, Knead U, Extend Shift+U. draw
+- Open: no tool key collides in the kit or in draw. Settled 2026-11-12: Sticky S, Knead U, Reach Shift+U. draw
   binds X to swap fill and stroke and Shift+X to swap focus, D to reset the colors, and / to toggle the focused
   paint to none; crop mode holds C. Free in draw, unmodified: J, Q, W, Z (rig's Bone J and Weight W are not in draw,
   so kit-wide only Q and Z are free). Free in draw with Shift: A, B, D, E, G, I, J, K, L, N, O, Q, R, S, T, Y, Z.
@@ -2237,7 +2237,7 @@ Calls the lanes made without a ruling:
   `lookupShortcut` and `ToolPresentation.shortcut`, the two ways to restate a key by hand, are gone (2026-11-13).
 - A labkit chrome item's `shortcut` is a `MenuShortcut`, formatted by `formatShortcut` in every region; a header item
   that binds `keys` shows its command's live key, and a `TrialTool` the trial's scene holds shows the scene's key.
-  The site's lab demos no longer restate their tools' keys: several had drifted (the extend lab said U, the knead
+  The site's lab demos no longer restate their tools' keys: several had drifted (the Reach lab said U, the knead
   lab S) (2026-11-13).
 - Every tool option's color default is in `toolOptionPaint`'s spelling, draw's host-given shared fill and stroke
   included; core's `shapeToolOptions.test.tsx` holds the built-ins and draw's `prefs.test.ts` holds draw's whole tools

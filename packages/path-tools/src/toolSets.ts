@@ -1,7 +1,7 @@
 import { toolSet, type ToolSet } from '@weasel-js/core';
 import { useMemo } from 'react';
 import type { Tool } from '@weasel-js/core';
-import { useExtendTool } from './extend/useExtendTool';
+import { useReachTool } from './reach/useReachTool';
 import { useGirthTool } from './girth/useGirthTool';
 import { useLengthenTool } from './lengthen/useLengthenTool';
 import { useShapeBuilderTool } from './shapeBuilder/useShapeBuilderTool';
@@ -13,7 +13,7 @@ import { useDistortTool, useClothWarpTool, usePuppetTool } from './warp/useWarpT
 
 /** The ids {@link usePathToolsTools} keys its tools by. */
 export type PathToolId =
-  | 'girth' | 'snip' | 'extend' | 'knead' | 'distort' | 'cloth' | 'puppet' | 'spiro' | 'shapeBuilder'
+  | 'girth' | 'snip' | 'reach' | 'knead' | 'distort' | 'cloth' | 'puppet' | 'spiro' | 'shapeBuilder'
   | PathEditToolId;
 
 /** The ids {@link usePathEditTools} keys its tools by. */
@@ -24,7 +24,7 @@ export type PathEditToolId = 'sand' | 'lengthen';
 export const WARP_TOOLS: ToolSet<PathToolId> = toolSet('warp', ['distort', 'cloth', 'puppet'], { stack: true, label: 'Warp' });
 
 /** The tools that reshape paths already drawn: girth, the stroke tools, Knead, and the warps. */
-export const RESHAPE_TOOLS: ToolSet<PathToolId> = toolSet('reshape', ['girth', 'snip', 'extend', 'knead', WARP_TOOLS], { label: 'Reshape' });
+export const RESHAPE_TOOLS: ToolSet<PathToolId> = toolSet('reshape', ['girth', 'snip', 'reach', 'knead', WARP_TOOLS], { label: 'Reshape' });
 
 /** The path-edit tools: each changes what a drag in path edit does, and carries `edits-anchors`.
  *  Core's `anchors` tool sits in the same palette group. */
@@ -49,7 +49,7 @@ export function usePathEditTools(): Record<PathEditToolId, Tool> {
 export function usePathToolsTools(): Record<PathToolId, Tool> {
   const girth = useGirthTool();
   const snip = useSnipTool();
-  const extend = useExtendTool();
+  const reach = useReachTool();
   const knead = useKneadTool();
   const distort = useDistortTool();
   const cloth = useClothWarpTool();
@@ -58,7 +58,7 @@ export function usePathToolsTools(): Record<PathToolId, Tool> {
   const shapeBuilder = useShapeBuilderTool();
   const pathEdit = usePathEditTools();
   return useMemo(
-    () => ({ girth, snip, extend, knead, distort, cloth, puppet, spiro, shapeBuilder, ...pathEdit }),
-    [girth, snip, extend, knead, distort, cloth, puppet, spiro, shapeBuilder, pathEdit],
+    () => ({ girth, snip, reach, knead, distort, cloth, puppet, spiro, shapeBuilder, ...pathEdit }),
+    [girth, snip, reach, knead, distort, cloth, puppet, spiro, shapeBuilder, pathEdit],
   );
 }

@@ -159,7 +159,7 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [maintainer] Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
   path-edit tool (`useLengthenTool`) has no key; a plain drag grows along the end tangent and Shift along the end
   curvature (the `mode` param, Shape in the last-operation panel after a drag, flips which, and `'eased'` makes the
-  plain drag ease out of the bend as Extend to next path does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
+  plain drag ease out of the bend as Reach does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
   leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is the pen with an `add` mark, nothing previews where a drag will land
   before it starts, and the end anchor is left selected after a drag
@@ -175,7 +175,7 @@ Owner tags, after the priority (2026-10-26):
   them, and the last-operation panel after a stroke, which replays it and writes back to the row), that it pushes
   every unlocked, shown path and text node while nothing is selected (only the selection otherwise, a ruling of 2026-10-31), that text converts to outlines the moment the brush's disc meets
   its drawn box, the conversion and the knead landing as one undo entry (ruled 2026-10-31;
-  `packages/path-tools/src/shared/outlineSession.ts`). Its key is U, and Extend moved to Shift+U (ruled 2026-11-12).
+  `packages/path-tools/src/shared/outlineSession.ts`). Its key is U, and Reach moved to Shift+U (ruled 2026-11-12).
   Closes when the maintainer has driven Knead hands-on and the defaults he picks are committed.
 - **(P2) [maintainer] Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
   keys: `constrainAnchors` and `unconstrainAnchors` have no default keys (the lab binds C and

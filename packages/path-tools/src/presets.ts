@@ -16,7 +16,7 @@ import type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 import { createConstraintsExtension, DEFAULT_CONSTRAINT_STYLE } from './constraints/constraintsExtension';
 import { createConstraintLinkMarks } from './constraints/constraintLinkMarks';
 import { linkAnchorAction } from './constraints/linkAnchor';
-import { extendToMeetAction } from './extend/extendToMeet';
+import { reachToMeetAction } from './reach/reachToMeet';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 import { createHandleSnapExtension, handleSnapSource, type HandleSnapOptionsInput } from './handleSnap/handleSnap';
 import { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
@@ -87,8 +87,8 @@ export const bridgePreset: FeaturePreset = {
 /** `snipPath`, which `useSnipTool` binds. */
 export const snipPreset: FeaturePreset = { id: 'snip', actions: [snipPathAction] };
 
-/** `extendToMeet`, which `useExtendTool` binds. */
-export const extendPreset: FeaturePreset = { id: 'extend', actions: [extendToMeetAction] };
+/** `reachToMeet`, which `useReachTool` binds. */
+export const reachPreset: FeaturePreset = { id: 'reach', actions: [reachToMeetAction] };
 
 /** `lengthenPath`, which `useLengthenTool`, a path-edit tool, binds. */
 export const lengthenPreset: FeaturePreset = {
@@ -241,7 +241,7 @@ export const warpPreset: FeaturePreset = {
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
-    sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, extendPreset, lengthenPreset,
+    sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, reachPreset, lengthenPreset,
     kneadPreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     filletPreset, pathEffectsPreset, warpPreset,

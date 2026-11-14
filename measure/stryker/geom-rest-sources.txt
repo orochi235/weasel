@@ -40,7 +40,7 @@ packages/geom/src/warp/profileCholesky.ts
 packages/geom/src/warp/pathWarp.ts
 packages/geom/src/constraints/pathConstraints.ts
 packages/geom/src/paths/cubicContours.ts
-packages/geom/src/paths/extendPath.ts
+packages/geom/src/paths/reachPath.ts
 packages/geom/src/pxExtent.ts
 packages/geom/src/track/run.ts
 packages/geom/src/glMat3.ts

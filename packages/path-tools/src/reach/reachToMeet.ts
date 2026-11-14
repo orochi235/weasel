@@ -1,19 +1,19 @@
-/** Extend to next path: carry an open end on until it meets a stroke. */
+/** Reach: carry an open end on until it meets a stroke. */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  anchorAt, anchorsToPath, DEG_TO_RAD, distance, editAnchorSetTracked, extendToMeet, lengthenPathEnd, openEndAt, openEndRay,
+  anchorAt, anchorsToPath, DEG_TO_RAD, distance, editAnchorSetTracked, reachToMeet, lengthenPathEnd, openEndAt, openEndRay,
   openPathEnds, pathDistanceToPoint, pathEndAnchorIndex, pathToAnchors,
-  type AnchorSet, type ExtendToMeetOptions, type OpenPathEnd, type PenAnchor, type PointOrigin, type PolygonPath,
+  type AnchorSet, type ReachToMeetOptions, type OpenPathEnd, type PenAnchor, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
 import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
 import { pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 
-const EXTEND_LABEL = 'Extend to next path';
+const REACH_LABEL = 'Reach';
 
-/** What the `extendToMeet` action reads from its params. */
-export type ExtendToMeetParams = {
+/** What the `reachToMeet` action reads from its params. */
+export type ReachToMeetParams = {
   /** The curve an end travels along: easing out of its bend into a straight
    *  run, or straight on along its tangent. Default `'eased'`. */
   shape?: 'eased' | 'straight';
@@ -23,8 +23,8 @@ export type ExtendToMeetParams = {
   radiusPx?: number;
 };
 
-/** Extend to next path's params as a form, for the last-operation panel. */
-export const EXTEND_TO_MEET_PARAMS = pref.group(EXTEND_LABEL, {
+/** Reach's params as a form, for the last-operation panel. */
+export const REACH_TO_MEET_PARAMS = pref.group(REACH_LABEL, {
   shape: pref.enum<'eased' | 'straight'>('Shape', 'eased', [
     { value: 'eased', label: 'Eased' },
     { value: 'straight', label: 'Straight' },
@@ -36,9 +36,9 @@ export const EXTEND_TO_MEET_PARAMS = pref.group(EXTEND_LABEL, {
   radiusPx: strokeReachPref(),
 });
 
-/** `params` as `extendToMeet` options. */
-function extendOptions(params: unknown): ExtendToMeetOptions {
-  const p = (params ?? {}) as ExtendToMeetParams;
+/** `params` as `reachToMeet` options. */
+function extendOptions(params: unknown): ReachToMeetOptions {
+  const p = (params ?? {}) as ReachToMeetParams;
   if (p.shape === 'straight') return { mode: 'tangent' };
   const turn = p.easeTurn;
   return typeof turn === 'number' && Number.isFinite(turn) && turn > 0 ? { mode: 'eased', easeTurn: turn } : { mode: 'eased' };
@@ -70,7 +70,7 @@ function endNearPress(all: readonly PathNode[], press: StrokePress) {
   return [];
 }
 
-/** What Extend to next path makes of one node: its path, where its anchors came from, and the flat indexes of
+/** What Reach makes of one node: its path, where its anchors came from, and the flat indexes of
  *  `selected` once the ends have grown, an end anchor following its end. */
 interface Extended {
   node: PathNode;
@@ -81,8 +81,8 @@ interface Extended {
 
 /** Carry each of `ends` on to meet `boundaries`, as one edit of `path`; null when none meets anything. */
 function extendEnds(
-  path: PolygonPath, boundaries: Parameters<typeof extendToMeet>[1], ends: readonly OpenPathEnd[],
-  opts: ExtendToMeetOptions, selected: ReadonlySet<number>,
+  path: PolygonPath, boundaries: Parameters<typeof reachToMeet>[1], ends: readonly OpenPathEnd[],
+  opts: ReachToMeetOptions, selected: ReadonlySet<number>,
 ): Omit<Extended, 'node'> | null {
   let after: number[] = [];
   const next = editAnchorSetTracked(path, (set) => {
@@ -93,7 +93,7 @@ function extendEnds(
     }
     let changed = false;
     for (const end of ends) {
-      const met = extendToMeet(anchorsToPath(set.anchors, set.closed, path), boundaries, end, opts);
+      const met = reachToMeet(anchorsToPath(set.anchors, set.closed, path), boundaries, end, opts);
       if (met && lengthenPathEnd(set, end, met.distance, opts.mode ?? 'eased', opts)) changed = true;
     }
     const flatOf = new Map(set.anchors.flat().map((a, k) => [a, k]));
@@ -106,7 +106,7 @@ function extendEnds(
   return next && { ...next, selected: [...new Set(after)].sort((a, b) => a - b) };
 }
 
-/** What Extend to next path would make of each node it reaches. */
+/** What Reach would make of each node it reaches. */
 function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string, Extended> {
   const out = new Map<string, Extended>();
   const all = scenePathNodes(deps);
@@ -126,23 +126,23 @@ function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string,
 }
 
 /**
- * Extend to next path: carry each open end of the selected paths to the first
- * stroke it meets (`extendToMeet`), easing a curved end out of its bend unless
- * `params.shape` is `'straight'` ({@link ExtendToMeetParams}). In
+ * Reach: carry each open end of the selected paths to the first
+ * stroke it meets (`reachToMeet`), easing a curved end out of its bend unless
+ * `params.shape` is `'straight'` ({@link ReachToMeetParams}). In
  * path edit, the selected end anchors of the edited path, or all its open
  * ends when none is selected. Given a press (`press`, as a click
  * binding supplies), the open end nearest it of the topmost stroke within
  * `radiusPx` instead. An end that meets nothing stays put. One undo step.
  */
-export const extendToMeetAction: Action & { requires: string[] } = {
-  id: 'extendToMeet',
-  icon: icon('extend'),
-  label: EXTEND_LABEL,
+export const reachToMeetAction: Action & { requires: string[] } = {
+  id: 'reachToMeet',
+  icon: icon('reach'),
+  label: REACH_LABEL,
   tags: pathOperationTags('click'),
   group: 'path',
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps', 'editAnchors', 'view'],
-  params: EXTEND_TO_MEET_PARAMS,
+  params: REACH_TO_MEET_PARAMS,
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -151,13 +151,13 @@ export const extendToMeetAction: Action & { requires: string[] } = {
       const edited = dep?.editingId ? plan.get(dep.editingId) : undefined;
       if (dep && edited && plan.size === 1) {
         // The edited path goes through path edit, so what its extensions keep per anchor follows the anchors.
-        dep.applyEdit(dep.editingId, edited.path, EXTEND_LABEL, edited.origins);
+        dep.applyEdit(dep.editingId, edited.path, REACH_LABEL, edited.origins);
         dep.setSelectedAnchors(edited.selected);
         return;
       }
       const ops: Op[] = [];
-      for (const { node, path } of plan.values()) ops.push(...reshapeOps(node, path, EXTEND_LABEL));
-      commitOps(deps, ops, EXTEND_LABEL);
+      for (const { node, path } of plan.values()) ops.push(...reshapeOps(node, path, REACH_LABEL));
+      commitOps(deps, ops, REACH_LABEL);
     },
   } satisfies ImmediateInvoker,
   // A click's point arrives here without the binding's reach, so `run` decides there. Handed no params, either

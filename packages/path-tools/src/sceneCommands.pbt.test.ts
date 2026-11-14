@@ -1,6 +1,6 @@
 /**
  * Stateful property test of the commands that act on a scene's strokes from outside path edit, on a real scene of
- * random paths: Extend to next path, Snip, and Knead, with node selections, undo, and redo at
+ * random paths: Reach, Snip, and Knead, with node selections, undo, and redo at
  * random. After every step each stroke is well formed and finite; a command changed the scene exactly when it was
  * enabled and recorded one undo step; and undo and redo land on the scenes the model recorded.
  */
@@ -9,7 +9,7 @@ import fc from 'fast-check';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { Action, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { asNodeId, createScene, defaultCommitAdapter, IDENTITY_POSE_COMPOSITION, type NodeId, type Op, type Scene } from '@weasel-js/core';
-import { extendToMeetAction, kneadAction, snipPathAction } from './index';
+import { reachToMeetAction, kneadAction, snipPathAction } from './index';
 import { checkPath, densePath, penPath, point, runs, snap, tally, timeoutFor } from './pbt.fixture';
 
 const VIEW = { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) };
@@ -64,8 +64,8 @@ class Extend implements fc.Command<Model, H> {
   run(m: Model, h: H): void {
     const params = this.press ? { ...this.params, press: this.press } : this.params;
     // A click's point enables it outright, and the run decides; without one, `enabled` asks what `run` would do.
-    const on = this.press ? isOn(extendToMeetAction, h.deps, this.press, this.params) : isOn(extendToMeetAction, h.deps, undefined, params);
-    step(m, h, 'extendToMeet', on, () => { if (on) (extendToMeetAction.invoker as ImmediateInvoker).run(h.deps, params); }, { idleOk: !!this.press });
+    const on = this.press ? isOn(reachToMeetAction, h.deps, this.press, this.params) : isOn(reachToMeetAction, h.deps, undefined, params);
+    step(m, h, 'reachToMeet', on, () => { if (on) (reachToMeetAction.invoker as ImmediateInvoker).run(h.deps, params); }, { idleOk: !!this.press });
   }
   toString(): string { return `Extend(${JSON.stringify(this.params)} ${JSON.stringify(this.press)})`; }
 }
@@ -162,7 +162,7 @@ describe('scene stroke commands on a real scene, stateful property', () => {
       const model: Model = { states: [sceneSnap(h)], cursor: 0, base: h.scene.historyIndex() };
       fc.modelRun(() => ({ model, real: h }), cmds);
     }), runs(200));
-    for (const k of ['extendToMeet:ran', 'snipPath:ran', 'knead:ran', 'undo', 'redo']) {
+    for (const k of ['reachToMeet:ran', 'snipPath:ran', 'knead:ran', 'undo', 'redo']) {
       expect(t.get(k), `${k} ${t}`).toBeGreaterThan(8);
     }
   }, timeoutFor(200, 200));

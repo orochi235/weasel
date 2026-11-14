@@ -10,7 +10,7 @@ import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
 import type { LengthenPathParams } from './lengthen/lengthenPath';
 import type { ResamplePathParams } from './resample/resample';
 import type { AddExtremesParams } from './extremes/addExtremes';
-import type { ExtendToMeetParams } from './extend/extendToMeet';
+import type { ReachToMeetParams } from './reach/reachToMeet';
 import type { SandParams } from './sand/sand';
 import type { KneadParams } from './knead/knead';
 import type { WarpKind, WarpSettings } from './warp/warpTargets';
@@ -53,7 +53,7 @@ declare module '@weasel-js/routing' {
     selectEveryNthAnchor: { n?: number };
     resamplePath: ResamplePathParams;
     addExtremeAnchors: AddExtremesParams;
-    extendToMeet: ExtendToMeetParams;
+    reachToMeet: ReachToMeetParams;
     setFillets: SetFilletsParams;
   }
 }

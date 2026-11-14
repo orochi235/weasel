@@ -96,7 +96,7 @@ export const TOOLS = {
     <path d="M6.875 3 V17 M13.125 3 V17" stroke-width="1.25"/>
     <path d="M2.5 10.625 H6.875 M13.125 10.625 H17.5"/>
     <path d="M8.6 10.625 H11.4" stroke-width="1" stroke-dasharray="1.2 1.2"/>`,
-  extend: `
+  reach: `
     <path d="M16.875 3 V17" stroke-width="1.25"/>
     <path d="M2.5 10.625 H8"/>
     <rect x="6.5" y="9.125" width="3" height="3" fill="currentColor" stroke="none"/>

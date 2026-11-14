@@ -101,7 +101,7 @@ describe('path-tools tools on a canvas', () => {
 
   it('extend an open end to the next stroke with a click, as one undo entry', () => {
     const t = mount({ a: 'M 0 100 L 100 100', wall: 'M 200 0 L 200 200' });
-    t.use('extend');
+    t.use('reach');
     const before = t.scene.historyIndex();
     t.click([100, 100]);
     expect(t.scene.historyIndex()).toBe(before + 1);

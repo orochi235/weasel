@@ -1,5 +1,5 @@
 import { IDENTITY_POSE_COMPOSITION, type ActionTunings, createScene, ellipsePath, pathFromD } from '@weasel-js/core';
-import { extendPreset, useExtendTool } from '@weasel-js/path-tools';
+import { reachPreset, useReachTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -16,7 +16,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', extendPreset] as const;
+const FEATURES = ['draw', reachPreset] as const;
 
 const config = f.schema({
   reach: f.number(6).range(2, 20).step(1).suffix('px').label('Click reach'),
@@ -36,12 +36,12 @@ const createLabScene = () =>
     ],
   });
 
-const TUNE: ActionTunings = { extendToMeet: { bindings: [{ kind: 'key', key: 'e' }] } };
+const TUNE: ActionTunings = { reachToMeet: { bindings: [{ kind: 'key', key: 'e' }] } };
 
 function ExtendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const extend = useExtendTool({ radiusPx: ctx.config.reach });
-  const tools = useMemo(() => ({ extend }), [extend]);
+  const reach = useReachTool({ radiusPx: ctx.config.reach });
+  const tools = useMemo(() => ({ reach }), [reach]);
   return (
     <TrialSceneCanvas
       features={FEATURES}
@@ -53,24 +53,24 @@ function ExtendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
 }
 
-const extendInstrument = defineInstrument<State, Config>({
-  name: 'Extend to next path',
+const reachInstrument = defineInstrument<State, Config>({
+  name: 'Reach',
   config,
   initialState: () => ({ scene: null }),
   tools: {
-    initial: 'extend',
+    initial: 'reach',
     tools: [
-      { id: 'extend', label: 'Extend to next path', icon: icon('ui:arrowRight') },
+      { id: 'reach', label: 'Reach', icon: icon('ui:arrowRight') },
       { id: 'select', label: 'Select (then E extends the selection)', icon: icon('core:select') },
     ],
   },
   render: (ctx) => <ExtendTrial ctx={ctx} />,
 });
 
-export function ExtendLabDemo() {
+export function ReachLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Extend to next path" instruments={[extendInstrument]} />
+      <Lab title="Reach" instruments={[reachInstrument]} />
     </div>
   );
 }

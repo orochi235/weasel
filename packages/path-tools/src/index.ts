@@ -24,7 +24,7 @@ export {
   createPathStructurePreset,
   createSoftSelectionPreset,
   curvatureCombPreset,
-  extendPreset,
+  reachPreset,
   handleLocksPreset,
   handleSnapPreset,
   lengthenPreset,
@@ -51,7 +51,7 @@ export {
   BRIDGE_PARAMS, bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,
 } from './bridge/bridge';
 export { planSnip, SNIP_PATH_PARAMS, snipPathAction } from './snip/snip';
-export { EXTEND_TO_MEET_PARAMS, extendToMeetAction, type ExtendToMeetParams } from './extend/extendToMeet';
+export { REACH_TO_MEET_PARAMS, reachToMeetAction, type ReachToMeetParams } from './reach/reachToMeet';
 export { LENGTHEN_PATH_PARAMS, lengthenPathAction, type LengthenPathParams } from './lengthen/lengthenPath';
 export { useLengthenTool } from './lengthen/useLengthenTool';
 export {
@@ -98,7 +98,7 @@ export {
 
 // ─── Tools ─────────────────────────────────────────────────────────────────
 export { useSnipTool, type UseSnipToolOptions } from './snip/useSnipTool';
-export { useExtendTool, type UseExtendToolOptions } from './extend/useExtendTool';
+export { useReachTool, type UseReachToolOptions } from './reach/useReachTool';
 export { KNEAD_TOOL_OPTIONS, useKneadTool, type UseKneadToolOptions } from './knead/useKneadTool';
 export type { StrokeClickToolOptions } from './shared/strokeClickTool';
 export {

@@ -61,7 +61,7 @@ export const snipPathAction: Action & { requires: string[] } = {
       commitOps(deps, ops, SNIP_LABEL, gone ? { select: (deps.selection?.get() ?? []).filter((id) => id !== target.id) } : {});
     },
   } satisfies ImmediateInvoker,
-  // A click's point enables it, as Extend to next path's does, and the run decides; without one, the press in its params does.
+  // A click's point enables it, as Reach's does, and the run decides; without one, the press in its params does.
   enabled: (deps?: ActionDeps, at?: { x: number; y: number }, _carried?: unknown, params?: unknown) =>
     (at || (deps?.scene && planSnip(deps, params)) ? true : ActionDisabledReason.NotApplicable),
 };

@@ -45,7 +45,7 @@ Tag: `path-click`
 | Cut path at anchor | `cutPathAtAnchor` | Opens the path there | Alt+Shift+click | main | core |
 | Equalize handles | `equalizeHandles` | Gives a segment's two handles one proportion of the way to their corner | Double-click a balance grip | main | path-tools |
 | Snip | `snipPath` | Removes the piece between the nearest crossings | Click with the Snip tool (Y) | main | path-tools |
-| Extend to next path | `extendToMeet` | Carries an open end to the next stroke | Click with the Extend tool (Shift+U) | main | path-tools |
+| Reach | `reachToMeet` | Carries an open end to the next stroke | Click with the Reach tool (Shift+U) | main | path-tools |
 | Convert segment | `convertSegmentAt` | Flips the segment between straight and curved | Shift+double-click in path edit | main | path-tools |
 | Slice | `slice` | Cuts shapes along a drawn line | Slice tool (K) | main | core |
 
@@ -115,7 +115,7 @@ explicit:
 - **A drag on an anchor or handle** runs `editAnchors`, with handle locks, constraints, path snapping,
   soft selection and handle snap all shaping the same drag; with Alt held at the press, `linkAnchor`
   runs that same drag and links the anchor where it lands.
-- **A click on a stroke** trims or extends depending on the tool held; Insert and Cut add a
+- **A click on a stroke** snips or reaches depending on the tool held; Insert and Cut add a
   modifier to the same click.
 - **A brush drag** simplifies or kneads depending on the tool.
 - **Mod+J** joins, Alt+J bridges, and Mod+Alt+Shift+J averages, in both the path and anchor

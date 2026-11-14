@@ -6,7 +6,7 @@ import { pathToAnchors } from './anchors';
 import { cornerSpecAt, withCorner, type CornerSpec } from './cornerSpec';
 import { restoreCorners, cornerTraces } from './cornerRestore';
 import { resolveCorners } from './corners';
-import { extendToMeet } from './extendPath';
+import { reachToMeet } from './reachPath';
 import { pathFromD } from './pathFromD';
 import { snipPathAt } from './snipPath';
 
@@ -74,9 +74,9 @@ describe('operations keep the corners they leave whole', () => {
     expect(pieces!.map(cornersByPoint)).toEqual([{}, { '10,0': ROUND, '10,10': BEVEL }, {}]);
   });
 
-  it('Extend to next path keeps the corners behind the end it grows', () => {
+  it('Reach keeps the corners behind the end it grows', () => {
     const wall = pathFromD('M-20 0 L-20 20');
-    const extended = extendToMeet(run(), [wall], { sub: 0, end: 'last' })!.path;
+    const extended = reachToMeet(run(), [wall], { sub: 0, end: 'last' })!.path;
     expect(cornersByPoint(extended)).toEqual({ '10,0': ROUND, '10,10': BEVEL });
   });
 
