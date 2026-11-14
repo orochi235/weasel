@@ -1,10 +1,12 @@
 /**
  * The kit's built-in shape kinds — one table, every other spelling derived.
  *
- * This module imports nothing on purpose: `useBuiltinShapeTools` imports the
- * package barrel, so anything barrel-reachable that needs these lists at
- * module-evaluation time must not route through it.
+ * This module imports nothing at runtime on purpose: `useBuiltinShapeTools`
+ * imports the package barrel, so anything barrel-reachable that needs these
+ * lists at module-evaluation time must not route through it.
  */
+
+import type { CoreIconName } from '../icons.gen';
 
 /** What the kit knows about one built-in shape kind. */
 export interface ShapeKindDescriptor {
@@ -22,6 +24,10 @@ export interface ShapeKindDescriptor {
   /** A node of this kind is a text node: an insert drops into its caret, and
    *  its properties carry the text groups. Absent, it is not. */
   readonly text?: boolean;
+  /** The core glyph for a kind with no auto-mounted tool, whose tool's
+   *  `presentation.icon` therefore can't be read off a mounted canvas. A kind
+   *  with `tool: true` takes its icon from its tool. */
+  readonly icon?: CoreIconName;
 }
 
 /**
@@ -40,7 +46,7 @@ export const SHAPE_KINDS = {
   lasso: { tool: true, insertPreview: false, family: 'select' },
   text: { tool: true, insertPreview: true, text: true, family: 'type' },
   sticky: { tool: true, insertPreview: true, text: true, family: 'type' },
-  image: { tool: false, insertPreview: true },
+  image: { tool: false, insertPreview: true, icon: 'image' },
 } as const satisfies Record<string, ShapeKindDescriptor>;
 
 /** Every kind in the table, tool or not. */

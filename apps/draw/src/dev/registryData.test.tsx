@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/react';
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import type { IconRef } from '@weasel-js/icons';
 import { collectIcons, collectBundles, collectExports, collectPropertiesTrait, collectOpFactories, collectOpKinds, collectShapeTrait } from './registryData';
 import type { ActionEntry, ToolEntry } from './registryEntries';
@@ -91,6 +94,15 @@ describe('collectShapeTrait — authoring tool', () => {
     const byId = new Map(collectShapeTrait([rect]).map((k) => [k.id, k]));
     expect(byId.get('rect')).toMatchObject({ hookName: 'useRectTool', icon: glyph });
     expect(byId.get('ellipse')?.icon).toBeUndefined();
+  });
+
+  it('gives image, which has no auto-mounted tool, the core image glyph its kind declares', () => {
+    const image = collectShapeTrait().find((k) => k.id === 'image');
+    expect(image).toBeDefined();
+    const { container } = render(<>{image?.icon}</>, { wrapper: withIcons });
+    const expected = render(<Icon name={icon('core:image')} size={16} />, { wrapper: withIcons }).container;
+    expect(container.querySelector('svg')).not.toBeNull();
+    expect(container.innerHTML).toBe(expected.innerHTML);
   });
 });
 

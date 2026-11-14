@@ -3,6 +3,7 @@ import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { icon } from '../../../icons.gen';
+import { SHAPE_KINDS } from 'core/shapeKinds';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 
@@ -41,7 +42,7 @@ export function useImageTool(options: UseImageToolOptions): Tool {
         presentation: {
           label,
           group: 'shape',
-          icon: icon('image'),
+          icon: icon(SHAPE_KINDS.image.icon),
         },
         // Declarative binding routes empty-space drags through the
         // dispatcher + insertAction; `kind: 'image'` selects the insert

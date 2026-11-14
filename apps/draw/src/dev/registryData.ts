@@ -2,7 +2,9 @@ import * as Weasel from '@weasel-js/core';
 import { defaultNodeProperties, type NodePropertiesEntry } from '@weasel-js/core';
 import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import { type PrefObject, prefSectionLeaves } from '@weasel-js/prefs';
-import { iconSpecRefs } from '@weasel-js/icons';
+import { iconSpecRefs, toIconRef } from '@weasel-js/icons';
+import { actionIcon } from '@weasel-js/ui/components/Icon';
+import type { ReactNode } from 'react';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import { ICON_GROUPS, icon } from '../icons.gen';
 import {
@@ -89,11 +91,8 @@ export function collectOpFactories(): readonly OpFactoryEntry[] {
     .map((id) => ({ kind: 'opFactory', id, label: id }));
 }
 
-/** Shape-kind ids the inspector mirrors from the kit. Sourced from
- *  `Weasel.KIT_SHAPE_KINDS` so adding a new builtin shape tool to the kit
- *  surfaces here automatically (parity-checked by
- *  `src/index.barrel.test.ts`). */
-const SHAPE_KIND_IDS: readonly string[] = Weasel.KIT_SHAPE_KINDS;
+/** Every built-in shape kind, those with no auto-mounted tool (`image`) included. */
+const SHAPE_KIND_IDS = Object.keys(Weasel.SHAPE_KINDS) as Weasel.ShapeKind[];
 
 /** Tree-leaf badge count: how many other entries reference this one. Used
  *  by the inspector to render `(n)` next to leaves where the count is
@@ -183,8 +182,14 @@ export function collectShapeTrait(
     label: id,
     tool: id,
     hookName: toolById.get(id)?.hookName,
-    icon: toolById.get(id)?.presentation?.icon,
+    icon: toolById.get(id)?.presentation?.icon ?? kindIcon(id),
   }));
+}
+
+/** The glyph a kind declares for itself, for a kind no mounted tool covers. */
+function kindIcon(id: Weasel.ShapeKind): ReactNode {
+  const name = (Weasel.SHAPE_KINDS[id] as Weasel.ShapeKindDescriptor).icon;
+  return name === undefined ? undefined : actionIcon(toIconRef(`core:${name}`));
 }
 
 export function collectPropertiesTrait(
