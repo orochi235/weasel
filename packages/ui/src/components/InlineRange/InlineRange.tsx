@@ -1,11 +1,13 @@
-import { type CSSProperties, forwardRef, type InputHTMLAttributes, type Ref } from 'react';
+import { type CSSProperties, forwardRef, type InputHTMLAttributes, type KeyboardEvent, type MouseEvent, type Ref } from 'react';
 import s from './InlineRange.module.css';
+import type { HoldProps } from '../Disabled';
+import { useNativeHold } from '../Disabled/nativeHold';
 
 /** Props for {@link InlineRange} — a range input's, with `value` required. */
 export type InlineRangeProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
-  'type' | 'value' | 'min' | 'max'
-> & {
+  'type' | 'value' | 'min' | 'max' | 'disabled' | 'readOnly'
+> & HoldProps & {
   value: number;
   min?: number;
   max?: number;
@@ -27,18 +29,34 @@ function marksStyle(marks: readonly number[]): Record<string, string> {
   };
 }
 
+const VALUE_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
+
+/** A held range's handlers: none of the caller's, and the native thumb kept from moving under a key or a press. */
+const REFUSED = {
+  onInput: undefined,
+  onChange: undefined,
+  onPointerDown: undefined,
+  onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => {
+    if (VALUE_KEYS.has(e.key)) e.preventDefault();
+  },
+  onMouseDown: (e: MouseEvent<HTMLInputElement>) => e.preventDefault(),
+};
+
 /**
  * Compact range input for a property row: one track, no label, no output.
  * It sits inline beside a swatch or a readout, and owns the native range skin
  * every such surface wears.
  *
- * Straight only; for a control along a curve, or with several thumbs, use `Slider`.
+ * Straight only; for a control along a curve, or with several thumbs, use `Slider`. Held disabled for a reason, or
+ * read-only, it stays focusable and drops every input, since its `value` is controlled.
  */
 export const InlineRange = forwardRef(function InlineRange(
   props: InlineRangeProps,
   ref: Ref<HTMLInputElement>,
 ) {
-  const { value, min = 0, max = 100, fill = true, marks, className, style, ...rest } = props;
+  const { value, min = 0, max = 100, fill = true, marks, className, style, disabled, disabledReason, readOnly, readOnlyReason, ...own } = props;
+  const hold = useNativeHold({ disabled, disabledReason, readOnly, readOnlyReason, 'aria-describedby': own['aria-describedby'] });
+  const rest = hold.refuses ? { ...own, ...REFUSED } : own;
   const span = max - min;
   const filled = span > 0 ? ((Math.min(Math.max(value, min), max) - min) / span) * 100 : 0;
   const marked = marks !== undefined && marks.length > 0;
@@ -46,9 +64,10 @@ export const InlineRange = forwardRef(function InlineRange(
     ...(fill ? { '--slider-fill': `${filled}%` } : {}),
     ...(marked ? marksStyle(marks) : {}),
   };
-  return (
+  return hold.wrap(
     <input
       {...rest}
+      {...hold.attrs}
       ref={ref}
       type="range"
       value={value}
@@ -56,6 +75,6 @@ export const InlineRange = forwardRef(function InlineRange(
       max={max}
       className={[s.range, fill && s.filled, marked && s.marks, className].filter(Boolean).join(' ')}
       style={{ ...vars, ...style } as CSSProperties}
-    />
+    />,
   );
 });

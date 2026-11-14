@@ -71,7 +71,7 @@ export function MenuTextValue({ entry: e, rowId, controller: c }: {
           if (!imeKey(ev.nativeEvent)) end(editEnd({ key: ev.key, shift: ev.shiftKey }));
           ev.continuePropagation();
         }}
-        isDisabled={e.disabled}
+        disabled={e.disabled}
       />
     </span>
   );

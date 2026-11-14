@@ -17,6 +17,8 @@ import { InlineRange } from '../InlineRange';
 import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyRow';
 import s from './Properties.module.css';
+import { useControlAccess } from '../Disabled';
+import { useNativeHold } from '../Disabled/nativeHold';
 import { trackPlace } from './sliderScale';
 import { catchStop, useTrackStops } from './sliderStops';
 import { attachesUnit, UnitSuffix } from './unitSuffix';
@@ -119,6 +121,7 @@ export function NumberInput(p: PropertyNumberFieldProps) {
       display={p.display}
       steppers={p.steppers}
       disabled={p.disabled}
+      disabledReason={p.disabledReason}
       settleWhenIdle={p.settleWhenIdle}
       aria-label={p.name}
       onInput={p.onInput}
@@ -189,8 +192,10 @@ function sliderBounds(p: PropertyNumberFieldProps): {
 function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps & { keyed?: boolean }) {
   const { min, max, step, settle, onTrack } = sliderBounds(p);
   const live = p.onInput ?? p.onChange;
-  const commit = p.onInput ? p.onChange : undefined;
+  const held = useControlAccess({ disabled: p.mixed || p.disabled, disabledReason: p.disabledReason }).state !== 'enabled';
+  const commit = p.onInput && !held ? p.onChange : undefined;
   const place = trackPlace(p.scale, min, max, step, p.stops);
+  // The native `change` comes off a listener of its own, past InlineRange's hold, so a held track drops it here.
   const range = useCommitListener(commit && ((raw) => commit(settle(place.fromInput(Number(raw))))));
   const stops = useTrackStops(p.stops, min, max, place.fraction);
   const known = isKnown(p);
@@ -218,7 +223,9 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
       max={place.max}
       step={place.step}
       value={place.toInput(value)}
+      // A mixed value is no one value to move, so the track is held.
       disabled={p.mixed || p.disabled}
+      disabledReason={p.disabledReason}
       onPointerDown={stops.onPointerDown}
       onKeyDown={(e) => {
         const next = place.keyStep(e.key, value, inlineDirection(e.currentTarget));
@@ -311,6 +318,7 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
+  const hold = useNativeHold({ disabled });
   const locale = { locale: useFieldLocale() };
   const text = (n: number) => (format ? String(format(n)) : qty(n, display, locale).text);
   const read = (typed: string) => parseAs(typed, display, locale);
@@ -325,7 +333,7 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
   const canceled = useRef(false);
   const commit = () => {
     // A draft still reading as the value shown writes nothing: the readout rounds, and that text is not an edit.
-    if (draft !== null && !canceled.current && draft !== text(value)) {
+    if (draft !== null && !canceled.current && !hold.refuses && draft !== text(value)) {
       const n = read(draft);
       if (!Number.isNaN(n)) onCommit(settle(n));
     }
@@ -346,7 +354,8 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
         className={s.readoutInput}
         style={fit as CSSProperties}
         value={displayValue}
-        disabled={disabled}
+        {...hold.attrs}
+        readOnly={hold.refuses}
         onFocus={(e) => {
           canceled.current = false;
           setDraft(text(value));
@@ -368,6 +377,7 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
             canceled.current = true;
             e.currentTarget.blur();
           } else {
+            if (hold.refuses) return;
             const typed = draft === null ? value : read(draft);
             const from = onTrack(Number.isNaN(typed) ? value : typed);
             const spun = spinKey(e.key, from, { step, ...reach });

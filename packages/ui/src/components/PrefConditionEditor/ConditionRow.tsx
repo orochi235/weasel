@@ -6,7 +6,8 @@ import { CloseButton } from '../CloseButton';
 import { Code } from '../Code';
 import { prefFieldProps } from '../Prefs/prefField';
 import { PropertyControl } from '../Properties';
-import { Select, type SelectOption } from '../Select';
+import { Select } from '../Select';
+import type { ListOption } from '../listOption';
 import { rowCondition, type TestRow } from './conditionGroups';
 import { leafKey, leafOf, type ConditionLeaf } from './conditionLeaves';
 import {
@@ -25,7 +26,7 @@ export interface ConditionScope {
   /** Every pref a row may read, which is how a row finds its own. */
   leaves: readonly ConditionLeaf[];
   /** The prefs a row may be pointed at. */
-  prefOptions: readonly SelectOption[];
+  prefOptions: readonly ListOption[];
 }
 
 export interface ConditionRowProps {

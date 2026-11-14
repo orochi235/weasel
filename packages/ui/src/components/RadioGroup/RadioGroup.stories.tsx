@@ -33,7 +33,7 @@ export const Horizontal: Story = {
 };
 
 export const Disabled: Story = {
-  args: { label: 'Snap mode', isDisabled: true, defaultValue: 'grid' },
+  args: { label: 'Snap mode', disabled: true, defaultValue: 'grid' },
   render: (args) => (
     <RadioGroup {...args}>
       <Radio value="off">Off</Radio>

@@ -7,6 +7,7 @@ import {
   Button as RACButton,
   ListBox as RACListBox,
   ListBoxItem as RACListBoxItem,
+  Text,
   type ComboBoxProps as RACComboBoxProps,
   type ListBoxItemProps as RACListBoxItemProps,
 } from 'react-aria-components';
@@ -15,23 +16,14 @@ import { Popover } from '../Popover';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
-import { optionLabels } from '../optionLabels';
+import { optionLabels, withIcon } from '../optionLabels';
+import type { HoldProps } from '../Disabled';
+import { useRacHold } from '../Disabled/racHold';
+import type { ListOption } from '../listOption';
 import type { OptionKey } from '../../optionKey';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './ComboBox.module.css';
-
-/**
- * One option in a {@link ComboBox}'s `options` list. `textValue` is the
- * plain-text form used for filtering and screen readers, needed only when
- * `label` isn't a bare string.
- */
-export type ComboBoxOption = {
-  value: string;
-  label: ReactNode;
-  textValue?: string;
-  isDisabled?: boolean;
-};
 
 
 /**
@@ -55,9 +47,9 @@ const admitEverything = () => true;
  * Props for {@link ComboBox}, on top of React Aria's `ComboBox` props, with
  * the selection key narrowed to the option value type.
  */
-export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & FieldSlotProps & {
+export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & {
   placeholder?: string;
-  options?: ReadonlyArray<ComboBoxOption & { value: T }>;
+  options?: ReadonlyArray<ListOption<T>>;
   children?: ReactNode;
   selectedKey?: T | null;
   defaultSelectedKey?: T;
@@ -98,6 +90,7 @@ export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<
  * is in the input, selection clears (key becomes null).
  */
 export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) {
+  const hold = useRacHold(props);
   const {
     label,
     orientation,
@@ -119,14 +112,15 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
     className,
     portalContainer,
     ...rest
-  } = props;
+  } = hold.rest;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const revertingRef = useRef(false);
 
-  return (
+  return hold.wrap(
     <RACComboBox
       {...rest}
+      {...hold.rac}
       // 'contains' leaves this unset so React Aria uses its own locale-aware
       // match rather than a reimplementation of it.
       defaultFilter={filter === 'none' ? admitEverything : filter === 'contains' ? undefined : filter}
@@ -171,7 +165,10 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
           >
             {options !== undefined
               ? options.map((o) => (
-                  <ComboBoxItem key={String(o.value)} id={o.value} textValue={o.textValue} isDisabled={o.isDisabled}>
+                  <ComboBoxItem
+                    key={String(o.value)} id={o.value} textValue={o.textValue} disabled={o.disabled} icon={o.icon}
+                    description={o.description} disabledReason={o.disabledReason}
+                  >
                     {o.label}
                   </ComboBoxItem>
                 ))
@@ -179,7 +176,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
           </RACListBox>
         </Popover>
       )}
-    </RACComboBox>
+    </RACComboBox>,
   );
 }
 
@@ -239,11 +236,35 @@ function ComboBoxFrame({
 }
 
 /** Props for {@link ComboBoxItem}, on top of React Aria's `ListBoxItem` props. */
-export type ComboBoxItemProps = Omit<RACListBoxItemProps, 'className'> & {
+export type ComboBoxItemProps = Omit<RACListBoxItemProps, 'className' | 'isDisabled' | 'children'> & {
+  children?: ReactNode;
   className?: string;
+  /** The row cannot be chosen. */
+  disabled?: boolean;
+  /** A glyph drawn before the label. */
+  icon?: ReactNode;
+  /** A line under the label, and the row's accessible description. */
+  description?: string;
+  /** Why the row is disabled, in place of `description` while `disabled`. */
+  disabledReason?: string;
 };
 
 /** One row in a {@link ComboBox}'s filtered list. */
-export function ComboBoxItem({ className, ...rest }: ComboBoxItemProps) {
-  return <RACListBoxItem {...rest} className={[listbox.option, className].filter(Boolean).join(' ')} />;
+export function ComboBoxItem({ className, disabled, icon, description, disabledReason, children, textValue, ...rest }: ComboBoxItemProps) {
+  const note = (disabled && disabledReason) || description;
+  return (
+    <RACListBoxItem
+      {...rest}
+      isDisabled={disabled}
+      textValue={textValue ?? (typeof children === 'string' ? children : undefined)}
+      className={[listbox.option, className].filter(Boolean).join(' ')}
+    >
+      {note ? (
+        <span className={listbox.optionBody}>
+          <span>{withIcon(icon, <Text slot="label">{children}</Text>)}</span>
+          <Text slot="description" className={listbox.note}>{note}</Text>
+        </span>
+      ) : withIcon(icon, children)}
+    </RACListBoxItem>
+  );
 }

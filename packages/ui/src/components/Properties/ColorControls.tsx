@@ -59,6 +59,7 @@ export function ColorControl(p: PropertyColorFieldProps) {
       alpha={withAlpha}
       alphaDisabled={p.alphaDisabled}
       disabled={p.disabled}
+      disabledReason={p.disabledReason}
       onInput={live}
       onChange={settled}
       aria-label={p.name}
@@ -73,7 +74,7 @@ const makeInert = (el: HTMLElement | null): void => {
 
 export function PaintControl(p: PropertyPaintFieldProps) {
   if (p.disabled && p.control !== 'inline') {
-    return <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} inherit={p.inherit} disabled onChange={p.onChange} aria-label={p.name} />;
+    return <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} inherit={p.inherit} disabled disabledReason={p.disabledReason} onChange={p.onChange} aria-label={p.name} />;
   }
   const Editor = p.control === 'inline' ? PaintInput : PaintField;
   const editor = (

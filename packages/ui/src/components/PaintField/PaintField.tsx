@@ -14,10 +14,12 @@ import { ownPaint } from '../PaintInput/PaintInput';
 import listbox from '../listbox.module.css';
 import { MIXED_HINT } from '../mixedHint';
 import s from './PaintField.module.css';
+import type { HoldProps } from '../Disabled';
+import { useRacHold } from '../Disabled/racHold';
 
 /** Props for {@link PaintField}. `onInput` fires throughout a gesture inside
  *  the popover and `onChange` once at its end. */
-export interface PaintFieldProps extends OverlayPortalProps {
+export interface PaintFieldProps extends OverlayPortalProps, HoldProps {
   /** The paint being edited. `null` is an explicit "no paint"; `undefined` is
    *  no value to show; `'inherit'` takes the enclosing container's. */
   value: Paint | Inherit | null | undefined;
@@ -33,8 +35,6 @@ export interface PaintFieldProps extends OverlayPortalProps {
   kinds?: readonly PaintKind[];
   /** Offer "None" in the editor. Default `true`. */
   allowNone?: boolean;
-  /** The trigger shows the paint and opens nothing. */
-  disabled?: boolean;
   onInput?: (next: Paint | null) => void;
   onChange: (next: Paint | null) => void;
   /** Names the paint this field edits — `Fill`, `Color`. */
@@ -63,22 +63,27 @@ function kindLabel(paint: Paint | Inherit | null | undefined, mixed: boolean, la
  */
 export function PaintField(props: PaintFieldProps): ReactElement {
   const {
-    value, mixed = false, unset = false, kinds, allowNone = true, disabled = false,
+    value, mixed = false, unset = false, kinds, allowNone = true,
     onInput, onChange, className, portalContainer,
   } = props;
   const ariaLabel = props['aria-label'];
+  // Disabled or read-only, the trigger shows the paint and opens nothing.
+  const hold = useRacHold(props);
+  const held = hold.access.state !== 'enabled';
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const shown = value === INHERIT ? props.inherit?.paint : value;
   const preview = mixed ? undefined : paintPreviewCss(shown);
   const label = usePaintKind(ownPaint(value)?.kind)?.label;
 
-  return (
-    <DialogTrigger>
+  return hold.wrap(
+    <DialogTrigger {...(held ? { isOpen: false } : {})}>
       {anchor}
       <RACButton
         className={[s.trigger, className].filter(Boolean).join(' ')}
         aria-label={ariaLabel}
-        isDisabled={disabled}
+        isDisabled={hold.rac.isDisabled}
+        aria-describedby={hold.rac['aria-describedby']}
+        {...(hold.access.state === 'disabled' && hold.access.reachable ? { 'data-held': 'disabled' } : {})}
         {...(unset ? { 'data-unset': '' } : {})}
         {...(mixed ? { 'data-mixed': '' } : {})}
       >
@@ -108,6 +113,6 @@ export function PaintField(props: PaintFieldProps): ReactElement {
           </RACDialog>
         </Popover>
       )}
-    </DialogTrigger>
+    </DialogTrigger>,
   );
 }

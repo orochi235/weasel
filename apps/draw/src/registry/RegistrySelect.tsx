@@ -12,7 +12,7 @@
 import { createContext, useContext } from 'react';
 import { Input } from '@weasel-js/ui/components/Input';
 import { PropertyControl } from '@weasel-js/ui/components/Properties';
-import { Select, type SelectOption } from '@weasel-js/ui/components/Select';
+import { Select, type ListOption } from '@weasel-js/ui/components/Select';
 import type {
   RegistryEnumFilter,
   RegistryEnumSources,
@@ -61,9 +61,9 @@ export function RegistrySelect({
         const bv = sortBy === 'value' ? b.value : b.label;
         return av.localeCompare(bv, undefined, { sensitivity: 'base' });
       });
-  const options: SelectOption[] = sorted.map((o) => ({ value: o.value, label: o.label }));
+  const options: ListOption[] = sorted.map((o) => ({ value: o.value, label: o.label }));
   if (!sorted.some((o) => o.value === value)) {
-    options.unshift({ value, label: `${value} (not in registry)`, isDisabled: true });
+    options.unshift({ value, label: `${value} (not in registry)`, disabled: true });
   }
   if (control === 'radio') {
     return (
@@ -72,7 +72,7 @@ export function RegistrySelect({
         control="radio"
         name={ariaLabel}
         value={value}
-        options={options.map((o) => ({ value: o.value, label: o.label, ...(o.isDisabled ? { disabled: true } : {}) }))}
+        options={options.map((o) => ({ value: o.value, label: o.label, ...(o.disabled ? { disabled: true } : {}) }))}
         onChange={onChange}
       />
     );

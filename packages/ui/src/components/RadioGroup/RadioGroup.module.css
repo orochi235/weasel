@@ -35,7 +35,7 @@
   color: var(--wzl-fg-subtle);
 }
 
-.radio[data-disabled] {
+.radio:is([data-disabled], [data-held='disabled']) {
   opacity: 0.5;
   filter: var(--wzl-disabled-filter);
   cursor: not-allowed;

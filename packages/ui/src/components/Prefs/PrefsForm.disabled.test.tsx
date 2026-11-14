@@ -27,7 +27,7 @@ const schema: PrefGroup = {
 
 describe('PrefsForm disabled', () => {
   it('draws the rows it names disabled, and leaves the rest live', () => {
-    renderWithIcons(<PrefsForm schema={schema} values={{ view: { lift: 5 } }} disabled={new Set(['view.lift'])} onChange={noop} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{ view: { lift: 5 } }} disabledPaths={new Set(['view.lift'])} onChange={noop} />);
     const lift = screen.getByRole('spinbutton', { name: 'Lift' });
     expect(lift).toBeDisabled();
     expect(disabledRow(lift)).not.toBeNull();
@@ -35,13 +35,13 @@ describe('PrefsForm disabled', () => {
   });
 
   it("adds to what the schema's own conditions disable", () => {
-    renderWithIcons(<PrefsForm schema={schema} values={{ view: { lift: 0 } }} disabled={new Set(['view.lift'])} onChange={noop} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{ view: { lift: 0 } }} disabledPaths={new Set(['view.lift'])} onChange={noop} />);
     expect(screen.getByRole('spinbutton', { name: 'Lift' })).toBeDisabled();
     expect(screen.getByRole('spinbutton', { name: 'Spread' })).toBeDisabled();
   });
 
   it("disables one field of an object leaf by the field's path", () => {
-    renderWithIcons(<PrefsForm schema={schema} values={{ view: { lift: 5 } }} disabled={new Set(['view.stroke.gap'])} onChange={noop} />);
+    renderWithIcons(<PrefsForm schema={schema} values={{ view: { lift: 5 } }} disabledPaths={new Set(['view.stroke.gap'])} onChange={noop} />);
     expect(screen.getByRole('spinbutton', { name: 'Gap' })).toBeDisabled();
     expect(screen.getByRole('spinbutton', { name: 'Width' })).toBeEnabled();
   });

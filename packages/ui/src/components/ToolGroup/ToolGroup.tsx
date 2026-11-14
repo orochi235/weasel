@@ -3,9 +3,10 @@ import { useRun } from '../Run';
 import { tiling } from '../../tiling';
 import { withDensity, type DensityProps } from '../Density';
 import s from './ToolGroup.module.css';
+import { holdScope, type HoldProps } from '../Disabled';
 
 /** Props for {@link ToolGroup}. */
-export interface ToolGroupProps extends DensityProps {
+export interface ToolGroupProps extends DensityProps, HoldProps {
   children: ReactNode;
   /** Lays children in a grid this many across, in place of the run's single line. */
   columns?: number;
@@ -34,7 +35,7 @@ export function ToolGroup(props: ToolGroupProps) {
   const style = tiles?.style;
   return (
     <div className={cls} style={style} role="group" data-group={groupKey} aria-label={ariaLabel}>
-      {withDensity(size, children)}
+      {holdScope(props, withDensity(size, children))}
     </div>
   );
 }

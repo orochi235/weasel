@@ -47,7 +47,7 @@ describe('Select', () => {
   it("reads an option's description under its label in the list, and a disabled one's reason in its place", () => {
     const described = [
       { value: 'r', label: 'Red', description: 'Warm' },
-      { value: 'g', label: 'Green', description: 'Cool', isDisabled: true, disabledReason: 'Out of stock' },
+      { value: 'g', label: 'Green', description: 'Cool', disabled: true, disabledReason: 'Out of stock' },
     ];
     render(<Select label="Color" options={described} defaultSelectedKey="r" />);
     const trigger = screen.getByRole('button', { name: /Red/ });

@@ -2,10 +2,11 @@ import type { ReactNode } from 'react';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { ToolbarButton } from './ToolbarButton';
 import { useDensity, withDensity, type DensityProps } from '../Density';
+import { holdScope, type HoldProps } from '../Disabled';
 import s from './Toolbar.module.css';
 
 /** Props for {@link Toolbar}. */
-export interface ToolbarProps extends DensityProps {
+export interface ToolbarProps extends DensityProps, HoldProps {
   children: ReactNode;
   /** Names the toolbar for assistive tech. The APG pattern needs one when a view holds more than one. */
   'aria-label'?: string;
@@ -29,7 +30,8 @@ export interface ToolbarProps extends DensityProps {
  * `size="sm"` is the compact strip, for chrome around a working surface rather than a page's own strip: the buttons
  * inside draw at `sm`, and the control height drops with them, so a slider or a number box keeps step.
  */
-export function Toolbar({ children, 'aria-label': ariaLabel, roving = true, wrap, size, framed, className }: ToolbarProps) {
+export function Toolbar(props: ToolbarProps) {
+  const { children, 'aria-label': ariaLabel, roving = true, wrap, size, framed, className } = props;
   const { rootRef, onKeyDown } = useRovingTabIndex<HTMLDivElement>({ orientation: 'horizontal' });
   const sm = useDensity(size) === 'sm';
   return (
@@ -40,13 +42,13 @@ export function Toolbar({ children, 'aria-label': ariaLabel, roving = true, wrap
       aria-label={ariaLabel}
       onKeyDown={roving ? onKeyDown : undefined}
     >
-      {withDensity(size, children)}
+      {holdScope(props, withDensity(size, children))}
     </div>
   );
 }
 
 /** Props for {@link ToolbarGroup}. */
-export interface ToolbarGroupProps {
+export interface ToolbarGroupProps extends HoldProps {
   children: ReactNode;
   /** Pushes this group, and everything after it, to the far end. */
   end?: boolean;
@@ -56,7 +58,8 @@ export interface ToolbarGroupProps {
 
 /** Related controls, kept tight and ruled off from a group beside them. Group rather than separate with
  *  repeated spacers: consecutive spacers share the free space, so every gap collapses to the same slack. */
-export function ToolbarGroup({ children, end, 'aria-label': ariaLabel, className }: ToolbarGroupProps) {
+export function ToolbarGroup(props: ToolbarGroupProps) {
+  const { children, end, 'aria-label': ariaLabel, className } = props;
   return (
     // biome-ignore lint/a11y/useSemanticElements: a group inside role="toolbar" is the APG pattern. <fieldset> means form controls, needs a <legend> to be named, and its UA min-width breaks flex children.
     <div
@@ -64,7 +67,7 @@ export function ToolbarGroup({ children, end, 'aria-label': ariaLabel, className
       role="group"
       aria-label={ariaLabel}
     >
-      {children}
+      {holdScope(props, children)}
     </div>
   );
 }

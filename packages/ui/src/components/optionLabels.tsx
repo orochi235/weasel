@@ -1,8 +1,10 @@
 import { Children, isValidElement, type ReactNode } from 'react';
 import listbox from './listbox.module.css';
+import type { ListOption } from './listOption';
+import type { OptionKey } from '../optionKey';
 
-/** An option as a list declares it: a label and an optional leading glyph. */
-type LabeledOption = { label: ReactNode; icon?: ReactNode };
+/** The part of an option a label is drawn from. */
+type LabeledOption = Pick<ListOption<OptionKey>, 'label' | 'icon'>;
 
 /** A titled group of options. */
 type OptionGroup = { options: ReadonlyArray<LabeledOption> };

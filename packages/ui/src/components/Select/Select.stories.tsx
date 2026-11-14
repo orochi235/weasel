@@ -27,7 +27,7 @@ export const ExplicitChildren: Story = {
     <Select {...args}>
       <SelectItem id="r">Red</SelectItem>
       <SelectItem id="g">Green</SelectItem>
-      <SelectItem id="b" isDisabled>Blue (unavailable)</SelectItem>
+      <SelectItem id="b" disabled>Blue (unavailable)</SelectItem>
     </Select>
   ),
   // The trigger needs `overflow: hidden` for its ellipsis, which turns the line
@@ -120,7 +120,7 @@ export const Sections: Story = {
 };
 
 export const Disabled: Story = {
-  args: { label: 'Color', options: COLORS, defaultSelectedKey: 'r', isDisabled: true },
+  args: { label: 'Color', options: COLORS, defaultSelectedKey: 'r', disabled: true },
 };
 
 export const Controlled: Story = {

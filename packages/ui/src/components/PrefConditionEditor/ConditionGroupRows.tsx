@@ -71,7 +71,7 @@ export function ConditionGroupRows({ name, group, scope, onChange, onRemove, too
       })}
       <div className={s.foot}>
         <Select className={s.add} aria-label={`Add a condition${to}`} placeholder="Add a condition on…" selectedKey={null} options={scope.prefOptions}
-          isDisabled={scope.prefOptions.length === 0}
+          disabled={scope.prefOptions.length === 0}
           onSelectionChange={(key) => {
             const found = scope.leaves.find((l) => leafKey(l) === key);
             if (found) write([...parts, rowCondition(rowAt(found))]);

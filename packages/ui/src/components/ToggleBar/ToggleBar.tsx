@@ -9,7 +9,8 @@ import type { SegmentedVariant } from '../segmentedVariant';
 import type { ControlSize } from '../Density';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
-import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import { SegmentTooltip, useSegmentAccess, type SegmentTooltipFields } from '../segmentTooltip';
+import { holdScope, type DisableableProps, type HoldProps } from '../Disabled';
 import type { Orientation } from '../Run';
 
 /** One segment of a {@link ToggleBar}, identified by its `value`. */
@@ -17,17 +18,13 @@ export type ToggleBarItem<V extends string | number = string> = {
   value: V;
   label?: ReactNode;
   ariaLabel?: string;
-  disabled?: boolean;
-  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
-   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
-  disabledReason?: string;
-} & SegmentTooltipFields;
+} & SegmentTooltipFields & DisableableProps;
 
 /** Visual treatment of a {@link ToggleBar}. */
 export type ToggleBarVariant = SegmentedVariant;
 
 /** What a {@link ToggleBar} takes whichever selection mode it is in. */
-export type ToggleBarCommonProps = SegmentedGridProps & {
+export type ToggleBarCommonProps = SegmentedGridProps & HoldProps & {
   'aria-label'?: string;
   className?: string;
   height?: number;
@@ -75,7 +72,8 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
   const { items, 'aria-label': ariaLabel, className, height, size, variant, orientation } = props;
   const values = items.map((it) => it.value);
   const model = selection<V>(props, values);
-  const usable = (i: number): boolean => items[i] !== undefined && !items[i].disabled;
+  const held = useSegmentAccess({ ...props, holdsValue: true }).state !== 'enabled';
+  const usable = (i: number): boolean => !held && items[i] !== undefined && !items[i].disabled;
   // Radios choose as the arrows move; segments that only take focus are toggle buttons.
   const radios = model.mode === 'single' && model.followsFocus;
   const sweep = props.mode === 'multiple' ? props.sweep : undefined;
@@ -114,7 +112,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
           key: String(item.value),
           state,
           draw: (place) => (
-            <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled} disabledReason={item.disabledReason}>
+            <SegmentTooltip tip={item} disabled={item.disabled} disabledReason={item.disabledReason} holdsValue>
               <button
                 type="button"
                 role={radios ? 'radio' : undefined}
@@ -135,10 +133,10 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
       })}
     />
   );
-  if (!sweep) return row;
+  if (!sweep) return <>{holdScope(props, row)}</>;
   return (
     <>
-      {row}
+      {holdScope(props, row)}
       <SegmentSweeper rootRef={roving.rootRef} values={values} sweepable={usable} model={model} sweep={sweep} swept={guard.swept} />
     </>
   );

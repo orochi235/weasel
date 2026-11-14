@@ -1,8 +1,8 @@
 export { ComboBox, ComboBoxItem } from './ComboBox';
+export type { ListOption } from '../listOption';
 export type {
   ComboBoxProps,
   ComboBoxItemProps,
-  ComboBoxOption,
   ComboBoxCommit,
   ComboBoxFilter,
 } from './ComboBox';

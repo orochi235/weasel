@@ -36,9 +36,9 @@ export function EnumControl(p: PropertyEnumFieldProps) {
 
   if (p.control === 'radio') {
     return (
-      <RadioGroup className={p.className} value={current ?? (p.onClear && !p.mixed ? UNSET : null)} isDisabled={p.disabled} onChange={choose(p)} aria-label={p.name}>
+      <RadioGroup className={p.className} value={current ?? (p.onClear && !p.mixed ? UNSET : null)} disabled={p.disabled} disabledReason={p.disabledReason} onChange={choose(p)} aria-label={p.name}>
         {choices(p).map((o) => (
-          <Radio key={o.value} value={o.value} isDisabled={o.disabled} description={o.description} disabledReason={o.disabledReason}>
+          <Radio key={o.value} value={o.value} disabled={o.disabled} description={o.description} disabledReason={o.disabledReason}>
             {o.label}
           </Radio>
         ))}
@@ -78,9 +78,11 @@ export function EnumControl(p: PropertyEnumFieldProps) {
           label: o.glyph ?? <FitLabel forms={labelForms(o.label, o.short)} />,
           ariaLabel: nameOf(o.label),
           tooltip: segmentTip(o),
-          disabled: p.disabled || o.disabled,
-          disabledReason: (o.disabled ? o.disabledReason : undefined) ?? (p.disabled ? p.disabledReason : undefined),
+          disabled: o.disabled,
+          disabledReason: o.disabledReason,
         }))}
+        disabled={p.disabled}
+        disabledReason={p.disabledReason}
         value={current}
         // Clearable: a click on the lit segment clears it, and the arrows move focus without choosing, so each
         // segment can show mixed. Otherwise the bar is a radio group.
@@ -98,7 +100,8 @@ export function EnumControl(p: PropertyEnumFieldProps) {
     <Select<string>
       className={p.className ? `${s.select} ${p.className}` : s.select}
       triggerId={p.id}
-      isDisabled={p.disabled}
+      disabled={p.disabled}
+      disabledReason={p.disabledReason}
       aria-label={p.name}
       placeholder={p.placeholder ?? (p.unset ? '—' : 'Choose option…')}
       mixed={p.mixed}
@@ -107,7 +110,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         value: o.value,
         label: o.label,
         icon: o.glyph,
-        isDisabled: o.disabled,
+        disabled: o.disabled,
         description: o.description,
         disabledReason: o.disabledReason,
       }))}
