@@ -11,14 +11,14 @@ import { useScene } from 'core/scene/useScene';
 import { defineTool, type useTools } from '../tools/overlayBinding';
 import type { Action } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type D = { color: string };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
     setPointerCapture: (...args: unknown[]) => void;

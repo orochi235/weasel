@@ -7,13 +7,13 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { WeaselRenderer, type DrawCommand, type ImageMinification } from '@weasel-js/renderer';
-import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import type { RenderLayer } from '../core/layers/render';
 
 let recorder: GLRecorder;
 beforeAll(() => {
-  recorder = makeGLRecorder();
+  recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
   };

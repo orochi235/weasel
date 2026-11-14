@@ -17,11 +17,11 @@ import type { CanvasExtensionApi } from './canvasExtension';
 import type { RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
 import type { CanvasHelpers } from './useViewHelpers';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { Hang, renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
   };

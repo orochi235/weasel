@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { createScene, defaultDrawOne } from '@weasel-js/core';
-import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { MinimapCanvas } from './MinimapCanvas';
 
 type P = { x: number; y: number; width: number; height: number };
@@ -16,7 +16,7 @@ const KINDS = ['Program', 'Buffer', 'Texture'] as const;
 let rec: GLRecorder;
 
 beforeEach(() => {
-  rec = makeGLRecorder();
+  rec = createGLRecorder();
   Object.defineProperty(window, 'devicePixelRatio', { value: 1, configurable: true, writable: true });
   // The recorder answers `canvas` with a function; a context names its element.
   HTMLCanvasElement.prototype.getContext = (function (this: HTMLCanvasElement, kind: string) {

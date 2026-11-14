@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { registerOwnDrawPaint, ownDrawRect } from './testing/ownDrawPaint';
 import { SOLID_RING_SIZE, MAX_VERTICES_PER_BATCH, FLOATS_PER_VERTEX } from './drawBatch';
@@ -37,7 +37,7 @@ const POST = 8;
 const SLOT = 9;
 
 describe('renderer — consecutive image batching', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
 
   const bitmap = (width = 16, height = 16) =>
@@ -49,7 +49,7 @@ describe('renderer — consecutive image batching', () => {
   afterEach(() => unregister());
   beforeEach(() => {
     unregister = registerOwnDrawPaint();
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     atlas = bitmap();
     recorder.reset();

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WeaselRenderer, type ShaderProgramHandle } from '@weasel-js/renderer';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { createScene } from '../../core/scene/scene';
 import { asNodeId, type RectPose, type Scene } from '../../core/scene/types';
 import { createFrameWriter } from './frameWriter';
@@ -13,7 +13,7 @@ const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** A worker host on a port the test speaks for the page, painting through a recorded context. */
 function host(animations: Record<string, WorkerAnimation> = {}, shaders?: readonly ShaderProgramHandle[]) {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const canvas = Object.assign(new EventTarget(), {
     width: 0, height: 0, getContext: () => recorder.gl,
   }) as unknown as OffscreenCanvas;

@@ -6,11 +6,11 @@
  * arithmetic yields NaN. These pin the three the target-rect work depends on.
  */
 import { describe, it, expect } from 'vitest';
-import { makeGLRecorder } from './glRecorder';
+import { createGLRecorder } from './glRecorder';
 
-describe('makeGLRecorder', () => {
+describe('createGLRecorder', () => {
   it('gives every framebuffer constant a real, distinct value', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     const names = [
       'FRAMEBUFFER', 'RENDERBUFFER', 'COLOR_ATTACHMENT0',
       'DEPTH_STENCIL_ATTACHMENT', 'DEPTH24_STENCIL8', 'RGBA8',
@@ -27,7 +27,7 @@ describe('makeGLRecorder', () => {
   });
 
   it('gives SCISSOR_TEST a value distinct from the other capability flags', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     expect(gl.SCISSOR_TEST).toBe(0x0C11);
     for (const other of [gl.BLEND, gl.DEPTH_TEST, gl.CULL_FACE, gl.STENCIL_TEST]) {
       expect(gl.SCISSOR_TEST).not.toBe(other);
@@ -35,21 +35,21 @@ describe('makeGLRecorder', () => {
   });
 
   it('reports drawing-buffer dimensions as numbers, not recording functions', () => {
-    const { gl } = makeGLRecorder({ drawingBufferWidth: 1640, drawingBufferHeight: 800 });
+    const { gl } = createGLRecorder({ drawingBufferWidth: 1640, drawingBufferHeight: 800 });
     expect(gl.drawingBufferWidth).toBe(1640);
     expect(gl.drawingBufferHeight).toBe(800);
     expect(gl.drawingBufferHeight - 100).toBe(700);
   });
 
   it('defaults the drawing buffer to a non-zero size', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     expect(typeof gl.drawingBufferWidth).toBe('number');
     expect(gl.drawingBufferWidth).toBeGreaterThan(0);
   });
 
   it('reports context attributes, defaulting to a stencil buffer', () => {
-    expect(makeGLRecorder().gl.getContextAttributes()).toMatchObject({ stencil: true });
-    const noStencil = makeGLRecorder({ contextAttributes: { stencil: false } });
+    expect(createGLRecorder().gl.getContextAttributes()).toMatchObject({ stencil: true });
+    const noStencil = createGLRecorder({ contextAttributes: { stencil: false } });
     expect(noStencil.gl.getContextAttributes()).toMatchObject({ stencil: false });
   });
 });

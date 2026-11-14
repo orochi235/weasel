@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { PolygonPath } from '@weasel-js/geom';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { _resetStrokeMeshCacheForTests } from './cache/strokeMeshCache';
@@ -33,7 +33,7 @@ const stroked = (path: PolygonPath, width: number): DrawCommand => ({
   stroke: { width, paint: { color: '#222222' } },
 });
 
-type Recorder = ReturnType<typeof makeGLRecorder>;
+type Recorder = ReturnType<typeof createGLRecorder>;
 
 const counts = (rec: Recorder) => ({
   created: rec.calls.filter((c) => c.name === 'createVertexArray').length,
@@ -46,7 +46,7 @@ describe('renderer — stroke ribbon caching', () => {
 
   beforeEach(() => {
     _resetStrokeMeshCacheForTests();
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   });
 
@@ -91,7 +91,7 @@ describe('renderer — stroke ribbon caching', () => {
     r.render([stroked(path, 2)]);
     r.render([stroked(path, 2)]);
 
-    const recorderB = makeGLRecorder();
+    const recorderB = createGLRecorder();
     const rB = new WeaselRenderer({ gl: recorderB.gl, width: 800, height: 600, dpr: 1 });
     recorderB.reset();
     rB.render([stroked(path, 2)]);

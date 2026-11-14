@@ -9,7 +9,7 @@
  * `colorMatrixFold.browser.test.ts` shows that the routes paint the same pixel.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
 import type { DrawCommand } from './DrawCommand';
@@ -37,12 +37,12 @@ const lifted = (bias: number): number[] => {
 };
 
 describe('renderer — a group color matrix and the run', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
   const atlas = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
 
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
   });

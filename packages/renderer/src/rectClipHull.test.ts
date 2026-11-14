@@ -5,7 +5,7 @@
  * `hullClip.browser.test.ts` checks the pixels; this counts the draws.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { FLOATS_PER_VERTEX } from './drawBatch';
@@ -17,11 +17,11 @@ const C = Math.SQRT1_2;
 const EIGHTH_TURN = new Float32Array([C, C, 0, -C, C, 0, 0, 0, 1]);
 
 describe('a rect clip where the shader decides hulls', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
 
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     // The recorder reports no sample count; a single-sampled canvas offers hulls.
     Object.defineProperty(r._batchVariants(), 'hulls', { value: true });

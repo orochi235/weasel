@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { ID_UNIFORM } from './shaders/idOutput';
@@ -14,7 +14,7 @@ const rect = (x: number): DrawCommand => ({
 const tagged = (pickId: number, ...children: DrawCommand[]): DrawCommand => ({ kind: 'group', pickId, children });
 
 function setup() {
-  const rec = makeGLRecorder();
+  const rec = createGLRecorder();
   const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 50, dpr: 2 });
   rec.reset();
   return { rec, r, named: (name: string) => rec.calls.filter((c) => c.name === name) };

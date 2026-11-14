@@ -4,7 +4,7 @@
  * they paint.
  */
 import { describe, expect, it } from 'vitest';
-import { makeGLRecorder } from '../testing/glRecorder';
+import { createGLRecorder } from '../testing/glRecorder';
 import { GLImageCache } from './GLImageCache';
 import { GLTextureCache } from './GLTextureCache';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
@@ -12,7 +12,7 @@ import { webglDevice } from '../gpu/webgl/WebGLDevice';
 const source = { width: 4, height: 4, data: new Uint8ClampedArray(64) } as ImageData;
 
 /** The premultiply flag's value at each `texImage2D`, replayed from `pixelStorei`. */
-function flagAtUploads(recorder: ReturnType<typeof makeGLRecorder>): { atUpload: unknown[]; after: unknown } {
+function flagAtUploads(recorder: ReturnType<typeof createGLRecorder>): { atUpload: unknown[]; after: unknown } {
   const { gl, calls } = recorder;
   // A constant the recorder does not carry reads 0, the same as every other missing one.
   expect(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL).toBe(0x9241);
@@ -27,13 +27,13 @@ function flagAtUploads(recorder: ReturnType<typeof makeGLRecorder>): { atUpload:
 
 describe('which uploads premultiply', () => {
   it('an image upload does, and puts the flag back', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     new GLImageCache(webglDevice(recorder.gl)).upload({}, source);
     expect(flagAtUploads(recorder)).toEqual({ atUpload: [true], after: false });
   });
 
   it('a registered texture does, on its first upload and on a replaced source', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const cache = new GLTextureCache(webglDevice(recorder.gl));
     cache.uploadRegistered('tex_1', source);
     cache.uploadRegistered('tex_1', { ...source });
@@ -41,7 +41,7 @@ describe('which uploads premultiply', () => {
   });
 
   it('a font atlas does not: its channels are a distance field', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     new GLTextureCache(webglDevice(recorder.gl)).upload('inter', source);
     expect(flagAtUploads(recorder)).toEqual({ atUpload: [false], after: false });
   });

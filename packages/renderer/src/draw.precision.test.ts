@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { viewToMat3 } from '@weasel-js/geom';
@@ -21,7 +21,7 @@ const PANS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 const viewPannedBy = (px: number) => ({ x: WORLD_X - px / ZOOM, y: 0, scale: { x: ZOOM, y: ZOOM } });
 
 function frame(children: DrawCommand[], px: number) {
-  const rec = makeGLRecorder();
+  const rec = createGLRecorder();
   const r = new WeaselRenderer({ gl: rec.gl, width: 800, height: 600, dpr: 1 });
   rec.reset();
   const view = viewToMat3(viewPannedBy(px));
@@ -120,7 +120,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
       -sin, cos, 0,
       300.3 - (cos * cx - sin * cy), 200.7 - (sin * cx + cos * cy), 1,
     ]);
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 800, height: 600, dpr: 1 });
     rec.reset();
     r.render([{
@@ -151,7 +151,7 @@ describe('precision far from the origin (world x = 262,144 at 64x)', () => {
   });
 
   it('sends an ordinary transform as it is, with no origin', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 800, height: 600, dpr: 1 });
     rec.reset();
     const transform = new Float64Array([2, 0, 0, 0, 2, 0, 1000.5, -40.25, 1]);

@@ -30,14 +30,14 @@ import type { SceneCanvasApi } from './canvasExtension';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type D = { kind: 'rect' };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
     setPointerCapture: (...args: unknown[]) => void;

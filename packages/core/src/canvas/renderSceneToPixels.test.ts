@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { planPixelRender, renderSceneToPixels } from './renderSceneToPixels';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { rotateAroundAABBCenter } from './poseRotation';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node, Scene } from 'core/scene/types';
@@ -212,11 +212,11 @@ describe('planPixelRender — layers', () => {
 });
 
 describe('renderSceneToPixels — GL execution (glRecorder)', () => {
-  const recorderFactory = (rec: ReturnType<typeof makeGLRecorder>) =>
+  const recorderFactory = (rec: ReturnType<typeof createGLRecorder>) =>
     (w: number, h: number) => ({ width: w, height: h, getContext: () => rec.gl });
 
   it('sizes the viewport to the output grid and reads back the full rect', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     renderSceneToPixels({ scene: fakeScene([]), sourceRect: RECT, scale: { x: 3, y: 2 }, createCanvas: recorderFactory(rec) });
     const viewport = rec.calls.find((c) => c.name === 'viewport');
     expect(viewport?.args).toEqual([0, 0, 120, 40]);
@@ -225,7 +225,7 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
   });
 
   it('flips rows: GL bottom-up becomes top-down output', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     // Wrap the recorder gl so readPixels fills each GL row y with byte value y.
     const gl = new Proxy(rec.gl, {
       get(target, prop, receiver) {
@@ -257,7 +257,7 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
   });
 
   it('unpremultiplies on readback', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const gl = new Proxy(rec.gl, {
       get(target, prop, receiver) {
         if (prop === 'readPixels') {
@@ -286,7 +286,7 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
       get() { reads++; return 1; },
     });
     try {
-      const rec = makeGLRecorder();
+      const rec = createGLRecorder();
       renderSceneToPixels({ scene: fakeScene([]), sourceRect: RECT, scale: { x: 2, y: 2 }, createCanvas: recorderFactory(rec) });
       expect(reads).toBe(0);
     } finally {
@@ -296,7 +296,7 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
   });
 
   it('disposes the per-call renderer', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     renderSceneToPixels({ scene: fakeScene([]), sourceRect: RECT, scale: { x: 1, y: 1 }, createCanvas: recorderFactory(rec) });
     expect(rec.calls.map((c) => c.name)).toContain('deleteProgram');
   });
@@ -309,7 +309,7 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
   });
 
   it('draws on a page canvas where an OffscreenCanvas will not open WebGL 2', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     vi.stubGlobal('OffscreenCanvas', class {
       constructor(public width: number, public height: number) {}
       getContext(): null { return null; }
@@ -327,7 +327,7 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
   });
 
   it('throws when both gl and createCanvas are supplied', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     expect(() =>
       renderSceneToPixels({
         scene: fakeScene([]), sourceRect: RECT, scale: { x: 1, y: 1 },

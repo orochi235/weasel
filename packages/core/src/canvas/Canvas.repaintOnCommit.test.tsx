@@ -15,10 +15,10 @@ import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import type { SelectionApi } from '../core/selection/useSelection';
 import { asNodeId, type NodeId } from '../core/scene/types';
 import type { RenderLayer } from '../core/layers/render';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
   };

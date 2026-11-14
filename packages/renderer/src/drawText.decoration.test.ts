@@ -5,7 +5,7 @@ import {
 import {
   _resetFontRegistryForTests, _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
 } from '@weasel-js/font/test-seams';
-import type { makeGLRecorder } from './testing/glRecorder';
+import type { createGLRecorder } from './testing/glRecorder';
 import type { DrawCommand } from './DrawCommand';
 import { drawGroup, dispatch, type DrawContext } from './draw';
 import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
@@ -56,7 +56,7 @@ describe('drawText — decoration reaches the GPU', () => {
    */
   function quadsOfMode(
     ctx: DrawContext,
-    calls: ReturnType<typeof makeGLRecorder>['calls'],
+    calls: ReturnType<typeof createGLRecorder>['calls'],
     mode: number,
   ): Array<{ corners: number[]; rgba: number[] }> {
     const v = stagedVertices(ctx, calls);

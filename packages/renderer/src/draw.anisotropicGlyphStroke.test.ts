@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Stroke } from '@weasel-js/paint';
 import { registerFont, FIXTURE_FONT, registerFontOutlines, glyphOutline } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
@@ -25,7 +25,7 @@ const SIZE = 128;
 const FOUR_TO_ONE = mat3.scaled(mat3.identity(), 4, 1);
 
 /** The red ribbon's batched vertices, on screen, in staging order. */
-function ribbon(rec: ReturnType<typeof makeGLRecorder>): Point[] {
+function ribbon(rec: ReturnType<typeof createGLRecorder>): Point[] {
   const out: Point[] = [];
   for (const call of rec.calls) {
     if (call.name !== 'bufferSubData') continue;
@@ -47,7 +47,7 @@ describe('outlined text — stroke lengths', () => {
   const caps = { ...meshBatching };
   beforeEach(() => { meshBatching.maxVertices = meshBatching.maxVerticesInRun = Infinity; });
   afterEach(() => { Object.assign(meshBatching, caps); });
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
 
   beforeEach(async () => {
@@ -74,7 +74,7 @@ describe('outlined text — stroke lengths', () => {
     });
     glyphOutline('inter', 400, 'normal', 65);
     await new Promise((res) => setTimeout(res, 0));
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   });
 

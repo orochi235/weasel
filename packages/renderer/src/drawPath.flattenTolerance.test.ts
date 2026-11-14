@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PATH_M as M, PATH_Z as Z, PATH_C as C } from '@weasel-js/geom';
 import type { GlMat3, PolygonPath } from '@weasel-js/geom';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import type { FlattenTolerance } from './draw/flattenTolerance';
@@ -38,7 +38,7 @@ describe('flattenTolerance option', () => {
     flattenTolerance?: FlattenTolerance,
     dpr = 1,
   ): number => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr, flattenTolerance });
     const caps = { ...meshBatching };
     meshBatching.maxVertices = Infinity;
@@ -71,7 +71,7 @@ describe('flattenTolerance option', () => {
   });
 
   it('keeps a mesh built at a set tolerance for the next frame', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1, flattenTolerance: 0.01 });
     const cmd = { kind: 'path', path: POLYGON_CURVED, ...UNBATCHABLE } as DrawCommand;
     r.render([cmd]);
@@ -85,7 +85,7 @@ describe('flattenTolerance option', () => {
   });
 
   it('setFlattenTolerance changes the tolerance after construction', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     r.setFlattenTolerance(0.01);
     const caps = { ...meshBatching };

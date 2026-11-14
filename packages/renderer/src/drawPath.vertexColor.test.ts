@@ -3,7 +3,7 @@ import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel
 import type { DrawCommand } from './DrawCommand';
 import { dispatch } from './draw';
 import { createRecorderCtx } from './testing/recorderCtx';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
@@ -129,7 +129,7 @@ describe('vertex colors on a path with corner shapes', () => {
 
   /** The same, as the batch stages them: a nonzero fill joins the run. */
   function stagedColors(cmd: DrawCommand): number[][] {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 200, height: 200, dpr: 1 });
     rec.reset();
     r.render([cmd]);

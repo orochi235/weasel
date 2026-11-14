@@ -4,7 +4,7 @@
  * `imageMinification.browser.test.ts` shows what it does to the pixels.
  */
 import { describe, it, expect } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
 
@@ -12,7 +12,7 @@ const bitmap = (side: number): ImageBitmap =>
   ({ width: side, height: side, close: () => {} }) as unknown as ImageBitmap;
 
 function setup(dpr = 1) {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const renderer = new WeaselRenderer({
     gl: recorder.gl, width: 200, height: 200, dpr, imageMinification: 'auto',
   });
@@ -97,7 +97,7 @@ describe("imageMinification: 'auto'", () => {
   });
 
   it('is the default', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1 });
     renderer.render([image(bitmap(64), 8)]);
     expect(recorder.calls.map((c) => c.name)).toContain('generateMipmap');
@@ -106,7 +106,7 @@ describe("imageMinification: 'auto'", () => {
 
 describe("imageMinification: 'linear'", () => {
   it('builds none', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1, imageMinification: 'linear' });
     renderer.render([image(bitmap(64), 8)]);
     expect(recorder.calls.map((c) => c.name)).not.toContain('generateMipmap');
@@ -115,7 +115,7 @@ describe("imageMinification: 'linear'", () => {
 
 describe('setImageMinification', () => {
   it("switches a 'linear' renderer to 'auto' from the next draw", () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1, imageMinification: 'linear' });
     const img = bitmap(64);
     renderer.render([image(img, 8)]);
@@ -125,7 +125,7 @@ describe('setImageMinification', () => {
   });
 
   it('frees the textures uploaded under the old strategy, and undefined restores the default', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const renderer = new WeaselRenderer({ gl: recorder.gl, width: 200, height: 200, dpr: 1, imageMinification: 'linear' });
     const mipmaps = (): number => recorder.calls.filter((c) => c.name === 'generateMipmap').length;
     const img = bitmap(64);

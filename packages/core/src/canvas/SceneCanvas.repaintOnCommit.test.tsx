@@ -16,14 +16,14 @@ import type { RenderLayer } from 'core/layers/render';
 import type { SurfaceContribution } from './surfaceContribution';
 import type { VisibilityRules } from 'domains/chrome-caps';
 import { never } from 'domains/chrome-caps';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type D = { kind: 'rect' };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
   proto.setPointerCapture = vi.fn();

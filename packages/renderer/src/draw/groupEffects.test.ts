@@ -3,7 +3,7 @@ import { mat3 } from '@weasel-js/geom';
 import type { DrawCommand, GroupDrawCommand } from '../DrawCommand';
 import { blur, vignette } from '../effects/builtins';
 import { effectsWindow } from './groupEffects';
-import { makeGLRecorder } from '../testing/glRecorder';
+import { createGLRecorder } from '../testing/glRecorder';
 import { WeaselRenderer } from '../WeaselRenderer';
 
 const BUFFER = { x: 0, y: 0, width: 400, height: 300 };
@@ -48,7 +48,7 @@ describe('an offscreen pass', () => {
   // WebGPU refuses a viewport past its target's bounds, so an effects
   // buffer's offset rides the projection instead.
   const viewportsOf = (commands: DrawCommand[]): number[][] => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 400, height: 300, dpr: 1 });
     r.render(commands);
     r.dispose();

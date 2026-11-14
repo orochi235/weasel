@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import type { RenderLayer } from '../core/layers/render';
-import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 let recorders: Map<HTMLCanvasElement, GLRecorder>;
 const original = HTMLCanvasElement.prototype.getContext;
@@ -19,7 +19,7 @@ beforeEach(() => {
   HTMLCanvasElement.prototype.getContext = (function (this: HTMLCanvasElement, kind: string) {
     if (kind !== 'webgl2') return null;
     let rec = recorders.get(this);
-    if (!rec) { rec = makeGLRecorder(); recorders.set(this, rec); }
+    if (!rec) { rec = createGLRecorder(); recorders.set(this, rec); }
     return rec.gl;
   }) as HTMLCanvasElement['getContext'];
 });

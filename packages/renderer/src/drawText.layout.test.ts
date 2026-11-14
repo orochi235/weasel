@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import type { LaidOutRuns } from '@weasel-js/text';
@@ -29,7 +29,7 @@ vi.mock('@weasel-js/text', async (importOriginal) => {
   };
 });
 
-let recorder: ReturnType<typeof makeGLRecorder>;
+let recorder: ReturnType<typeof createGLRecorder>;
 let r: WeaselRenderer;
 
 beforeEach(async () => {
@@ -50,7 +50,7 @@ beforeEach(async () => {
   } as unknown as ImageBitmap);
   await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
 
-  recorder = makeGLRecorder();
+  recorder = createGLRecorder();
   r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   recorder.reset();
 });

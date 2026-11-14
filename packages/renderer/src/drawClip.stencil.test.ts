@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 import type { PolygonPath } from '@weasel-js/geom';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand, GroupDrawCommand } from './DrawCommand';
 import { pushClip, popClip, drawGroup, dispatch } from './draw';
@@ -367,7 +367,7 @@ describe('C1/I4: popClip enables STENCIL_TEST after evenodd child disables it', 
 
 describe('C2: frame-start stencilMask(0xFF) before clear', () => {
   it('render() sets stencilMask(0xFF) before clear(STENCIL_BUFFER_BIT)', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
     r.render([]);

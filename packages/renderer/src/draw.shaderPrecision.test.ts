@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { viewToMat3 } from '@weasel-js/geom';
-import { makeGLRecorder, type GLRecorder } from './testing/glRecorder';
+import { createGLRecorder, type GLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
 import type { DrawCommand } from './DrawCommand';
@@ -33,7 +33,7 @@ beforeEach(() => _resetProgramRegistryForTests());
 afterEach(() => _resetProgramRegistryForTests());
 
 function frame(px: number, worldX = WORLD_X) {
-  rec = makeGLRecorder();
+  rec = createGLRecorder();
   const r = new WeaselRenderer({ gl: rec.gl, width: 800, height: 600, dpr: 1 });
   const program = registerProgram('far-shader', { glsl: { frag: FRAG } });
   const view = viewToMat3({ x: worldX - px / ZOOM, y: 0, scale: { x: ZOOM, y: ZOOM } });

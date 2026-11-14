@@ -18,7 +18,7 @@ import { warmPaintKinds } from '@weasel-js/renderer';
 import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
 import { findNodeShape } from 'canvas/NodeShape';
 import { getProgramSource, registerProgram } from '@weasel-js/renderer';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 
@@ -259,7 +259,7 @@ describe('paint-kind registry', () => {
   it('paints a registered kind through its own program', () => {
     registerProgram(WASH_PROGRAM, { glsl: { frag: WASH_FRAG } });
     dispose = registerPaintKind(washEntry());
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 400, height: 300, dpr: 1 });
     recorder.reset();
     expect(() => r.render([{ kind: 'path', path: triangle(), fill: { paint: WASH } } as DrawCommand])).not.toThrow();
@@ -270,7 +270,7 @@ describe('paint-kind registry', () => {
     // `draw.ts`'s dispatch used to fall through to an unguarded cast to the
     // gradient union, so a sixth kind read `fill.stops` off a paint with none.
     dispose = registerPaintKind({ ...washEntry(), bind: undefined });
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 400, height: 300, dpr: 1 });
     expect(() => r.render([{ kind: 'path', path: triangle(), fill: { paint: WASH } } as DrawCommand])).not.toThrow();
   });
@@ -306,7 +306,7 @@ describe('paint kinds loaded on demand', () => {
     registerProgram(WASH_PROGRAM, { glsl: { frag: WASH_FRAG } });
     const load = vi.fn(async () => washEntry());
     registerPaintKindLoader('test-wash', load);
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 400, height: 300, dpr: 1 });
     const frame = () => {
       recorder.reset();

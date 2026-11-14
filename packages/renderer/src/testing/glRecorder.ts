@@ -135,7 +135,7 @@ function snapshot(value: unknown): unknown {
 }
 
 /** A WebGL2 stand-in that records every call and draws nothing. */
-export function makeGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
+export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
   const calls: GLCall[] = [];
   const {
     drawingBufferWidth = 800,

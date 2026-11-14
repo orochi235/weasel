@@ -1,7 +1,7 @@
 /** Counterexamples the retained-surface property test shrank to, kept as plain cases. */
 import { describe, expect, it } from 'vitest';
 import { mat3 } from '@weasel-js/geom';
-import { makeGLRecorder } from '../testing/glRecorder';
+import { createGLRecorder } from '../testing/glRecorder';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import { RetainedSurfaces } from './RetainedSurfaces';
 import type { RetainedKey } from './retainedKey';
@@ -12,7 +12,7 @@ const key = (): RetainedKey => ({
 
 describe('RetainedSurfaces, shrunk', () => {
   it('keeps no pixels for a key once a reserve has drawn over them and nothing committed', () => {
-    const store = new RetainedSurfaces(webglDevice(makeGLRecorder().gl), Infinity);
+    const store = new RetainedSurfaces(webglDevice(createGLRecorder().gl), Infinity);
     const k = key();
     store.beginFrame([]);
     store.reserve('a', 64, 48, { x: 0, y: 0, width: 10, height: 10 })!.commit(k);

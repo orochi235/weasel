@@ -2,14 +2,14 @@
 import { vi } from 'vitest';
 import { SceneCanvas, useScene, type NodeId } from '@weasel-js/core';
 import type { DevtoolsRoot } from '@weasel-js/core/devtools-protocol';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type Data = { label: string; paint?: () => void };
 type Pose = { x: number; y: number; width: number; height: number };
 
 /** Hands every canvas a recording WebGL2 context, since jsdom has none. */
 export function stubWebGL(): void {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
 }

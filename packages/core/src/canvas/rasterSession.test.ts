@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createRasterSession, renderSceneToPixels, type HeadlessCanvasLike } from './renderSceneToPixels';
-import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node, Scene } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
@@ -76,7 +76,7 @@ function liveObjects(rec: GLRecorder): Record<string, number> {
 
 describe('createRasterSession', () => {
   it('compiles the built-in programs once across many renders', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const session = createRasterSession({ gl: rec.gl });
     session.render({ scene: SCENE_A, drawOne: drawOne as never, sourceRect: { x: 0, y: 0, width: 20, height: 10 }, scale: { x: 1, y: 1 } });
     const afterOne = names(rec, 'createProgram');
@@ -90,7 +90,7 @@ describe('createRasterSession', () => {
   });
 
   it('uploads a bitmap once across renders rather than once per render', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const session = createRasterSession({ gl: rec.gl });
     const args = { scene: SCENE_A, drawOne: drawOne as never, sourceRect: { x: 0, y: 0, width: 20, height: 10 }, scale: { x: 1, y: 1 } };
     session.render(args);
@@ -102,7 +102,7 @@ describe('createRasterSession', () => {
   });
 
   it('dispose frees every GL object the session created, caches included', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const session = createRasterSession({ gl: rec.gl });
     const args = { scene: SCENE_A, drawOne: drawOne as never, sourceRect: { x: 0, y: 0, width: 20, height: 10 }, scale: { x: 1, y: 1 } };
     // Three sightings: the stroke ribbon goes persistent on the second.
@@ -117,7 +117,7 @@ describe('createRasterSession', () => {
   });
 
   it('a one-shot render on a caller-owned context leaves nothing behind', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const args = { scene: SCENE_A, drawOne: drawOne as never, sourceRect: { x: 0, y: 0, width: 20, height: 10 }, scale: { x: 1, y: 1 }, gl: rec.gl };
     renderSceneToPixels(args);
     renderSceneToPixels(args);
@@ -125,7 +125,7 @@ describe('createRasterSession', () => {
   });
 
   it('refuses to render after dispose, and dispose is idempotent', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const session = createRasterSession({ gl: rec.gl });
     session.dispose();
     session.dispose();
@@ -134,7 +134,7 @@ describe('createRasterSession', () => {
   });
 
   it('creates its own canvas on first render and grows it, never shrinks it', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const created: Array<[number, number]> = [];
     const canvas: HeadlessCanvasLike = { width: 0, height: 0, getContext: () => rec.gl };
     const session = createRasterSession({
@@ -156,13 +156,13 @@ describe('createRasterSession', () => {
   });
 
   it('rejects gl together with createCanvas', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     expect(() => createRasterSession({ gl: rec.gl, createCanvas: () => ({ width: 0, height: 0, getContext: () => rec.gl }) }))
       .toThrow(/mutually exclusive/);
   });
 
   it('throws on a lost caller-owned context', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const lost = new Proxy(rec.gl, {
       get: (t, p) => (p === 'isContextLost' ? () => true : (t as never)[p]),
     });
@@ -176,7 +176,7 @@ describe('a raster the context cannot hold', () => {
   const args = { scene: SCENE_A, drawOne: drawOne as never, scale: { x: 1, y: 1 } };
 
   it('throws rather than return an image cropped to the drawing buffer', () => {
-    const rec = makeGLRecorder({ drawingBufferWidth: 100, drawingBufferHeight: 50 });
+    const rec = createGLRecorder({ drawingBufferWidth: 100, drawingBufferHeight: 50 });
     const session = createRasterSession({ gl: rec.gl });
     expect(() => session.render({ ...args, sourceRect: { x: 0, y: 0, width: 101, height: 50 } }))
       .toThrow(/101 × 50.*100 × 50/);

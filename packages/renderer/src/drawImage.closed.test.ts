@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { SPRITE_STRIDE } from './DrawCommand';
 
@@ -8,7 +8,7 @@ const closed = { width: 0, height: 0, close: () => {} } as unknown as ImageBitma
 
 describe('WeaselRenderer.render — a bitmap the image cache has closed', () => {
   it('draws nothing for an image or sprites command still holding it, rather than uploading it', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 100, dpr: 1 });
     recorder.reset();
     r.render([

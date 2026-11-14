@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeGLRecorder } from '../../testing/glRecorder';
+import { createGLRecorder } from '../../testing/glRecorder';
 import { ShaderCompileError } from '../../shaders/ShaderProgram';
 import { WebGLDevice } from './WebGLDevice';
 import { GlProgram } from './GlProgram';
 import { VERT_SRC, FRAG_SRC, PATH_FILL_UNIFORMS, PATH_FILL_ATTRIBUTES } from '../../shaders/pathFill';
 
 describe('GlProgram', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
   });
 
   it('compiles vertex + fragment shaders and links a program', () => {

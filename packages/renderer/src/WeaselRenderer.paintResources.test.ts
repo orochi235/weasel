@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from '@weasel-js/geom';
 import type { Paint } from '@weasel-js/paint';
@@ -44,7 +44,7 @@ function fakeCanvas(gl: WebGL2RenderingContext) {
 describe('paint-kind resources', () => {
   it('hands every frame of one renderer the same lifetime, and releases it on dispose', () => {
     register();
-    const r = new WeaselRenderer({ gl: makeGLRecorder().gl, width: 10, height: 10, dpr: 1 });
+    const r = new WeaselRenderer({ gl: createGLRecorder().gl, width: 10, height: 10, dpr: 1 });
     r.render(frame);
     r.render(frame);
     expect(seen).toHaveLength(2);
@@ -59,7 +59,7 @@ describe('paint-kind resources', () => {
 
   it('gives two renderers on one context separate lifetimes', () => {
     register();
-    const gl = makeGLRecorder().gl;
+    const gl = createGLRecorder().gl;
     new WeaselRenderer({ gl, width: 10, height: 10, dpr: 1 }).render(frame);
     new WeaselRenderer({ gl, width: 10, height: 10, dpr: 1 }).render(frame);
     expect(seen[0].resources).not.toBe(seen[1].resources);
@@ -67,7 +67,7 @@ describe('paint-kind resources', () => {
 
   it('releases the lifetime on a context restore and opens a new one', () => {
     register();
-    const canvas = fakeCanvas(makeGLRecorder().gl);
+    const canvas = fakeCanvas(createGLRecorder().gl);
     const r = new WeaselRenderer({ canvas: canvas as unknown as HTMLCanvasElement, width: 10, height: 10, dpr: 1 });
     r.render(frame);
     const release = vi.fn();
@@ -81,7 +81,7 @@ describe('paint-kind resources', () => {
 
   it('measures paint space in device pixels, pixel ratio included', () => {
     register();
-    const r = new WeaselRenderer({ gl: makeGLRecorder().gl, width: 10, height: 10, dpr: 2 });
+    const r = new WeaselRenderer({ gl: createGLRecorder().gl, width: 10, height: 10, dpr: 2 });
     r.render(frame, mat3.scaled(mat3.identity(), 3, 3));
     const world = seen[0].spaceToDevice('world')!;
     expect(mat3.apply(world, 1, 1)).toEqual([6, 6]);
