@@ -2299,3 +2299,27 @@ Calls the lanes made without a ruling:
   arrow keys and a double-click reset) and the command palette's `/` key. Neither is a demo, and the shell mounts no
   dispatcher; running each through one would mean an actions registry, a dep registry and a dispatcher for one
   affordance.
+
+## Audit round twenty-four (2026-11-14): one concept, one name
+
+- 2026-11-14 (the lane's call): `InertiaConfig` and `DecayLoopConfig` are `InertiaOptions` and `DecayLoopOptions`, though
+  the first is the value of an `inertia` option rather than a function's trailing bag: neither is a `Spec`, `Props` or
+  `Args`, so the options suffix is the one that applies. Round six's `HandToolInertiaConfig` and
+  `ActionDisabledReasonValue`, kept then only because a patch could not drop them, are gone.
+- 2026-11-14 (the lane's call): bidi keeps `UNICODE_VERSION`, the name its README gives, and drops `BIDI_UNICODE_VERSION`.
+- 2026-11-14 (the lane's call): ui re-exports ui-input's `spanPlace`, `spanShare` and `attract` under their own names
+  rather than as `toFraction`, `spanFraction` and `snapToNearest`; ui's `toPercent` and `spanPercent` keep theirs.
+- 2026-11-14 (the lane's call): what a keycap draws is a `KeyLegend` everywhere, and `keySpec` is left to the key
+  binding's gesture spec. The helpers are `keyLegend…`; ui's `keySpecsFromLegend`, which reads a shortcut
+  `formatShortcut` already wrote, is `keyLegendsFromFormatted`.
+- 2026-11-14 (the lane's call): `useKeybindings` takes `enabled` (default true), as the dispatcher, snap and
+  hover-tracking hooks do. `SceneCanvas`'s `enableKeybindings` prop keeps its name.
+- 2026-11-14 (the lane's call): `DebugConfig` is `DebugFlags`, after `parseDebugFlags`, which returns one.
+- 2026-11-14 (the lane's call): the curve editor's layer options are `FunctionLayerOptions` and `KeyframeLayerOptions`,
+  with no `Create` prefix. Layer options are split about evenly between `Create…LayerOptions` and `…LayerOptions`
+  across the kit; this pass left that split alone.
+- 2026-11-14 (the lane's call): handle snapping takes `angleStep` and `reachRad` in radians, the names core's measure
+  tool and snap sessions use, and `simplifyPath`'s `cornerAngle` is in radians; their demos and lab controls still show
+  degrees.
+- 2026-11-14 (the lane's call): `make…` factories on testing entries are `create…` (`createGLRecorder`,
+  `createUploadTracker`, `createEditAnchorsDepForTests`); `makeBooleanGroup` and `makeHandlesSymmetric` keep their verb.
