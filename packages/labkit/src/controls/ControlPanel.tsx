@@ -200,6 +200,38 @@ function useShown<TC>(
   );
 }
 
+/** How each section of a panel folds: what `panelRows` hands a section's list, keyed by the section. */
+function sectionFold(
+  resolved: ResolvedConfig,
+  gridPack: PropertyListPack,
+  {
+    collapse,
+    collapsed,
+    onCollapse,
+    twisty,
+  }: Pick<
+    ControlPanelProps<Record<string, unknown>>,
+    'collapse' | 'collapsed' | 'onCollapse' | 'twisty'
+  >,
+) {
+  // A section that declares how it opens is foldable whether or not the lab
+  // asked for folds — there is nothing else for the declaration to mean.
+  const folds =
+    collapse !== undefined ||
+    collapsed !== undefined ||
+    onCollapse !== undefined ||
+    resolved.sections.some((s) => s.collapsed !== undefined);
+  const startsFolded = collapse === 'closed';
+  return (key: string, declared?: boolean, grid: PropertyListPack = gridPack) => ({
+    pack: grid,
+    collapsible: folds,
+    twisty,
+    defaultCollapsed: declared ?? startsFolded,
+    collapsed: collapsed ? (collapsed[key] ?? declared ?? startsFolded) : undefined,
+    onCollapsedChange: onCollapse ? (next: boolean) => onCollapse(key, next) : undefined,
+  });
+}
+
 /** Render an instrument's config schema as a stack of controls, each writing
  *  back through `setConfig`. Built on the property rows, so a lab's controls
  *  are the same aligned, themed rows the rest of the kit uses. */
@@ -251,23 +283,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   });
 
   const gridPack = gridOf(pack);
-  // A section that declares how it opens is foldable whether or not the lab
-  // asked for folds — there is nothing else for the declaration to mean.
-  const folds =
-    collapse !== undefined ||
-    collapsed !== undefined ||
-    onCollapse !== undefined ||
-    resolved.sections.some((s) => s.collapsed !== undefined);
-  const startsFolded = collapse === 'closed';
-
-  const fold = (key: string, declared?: boolean, grid: PropertyListPack = gridPack) => ({
-    pack: grid,
-    collapsible: folds,
-    twisty,
-    defaultCollapsed: declared ?? startsFolded,
-    collapsed: collapsed ? (collapsed[key] ?? declared ?? startsFolded) : undefined,
-    onCollapsedChange: onCollapse ? (next: boolean) => onCollapse(key, next) : undefined,
-  });
+  const fold = sectionFold(resolved, gridPack, { collapse, collapsed, onCollapse, twisty });
   const { body, lift, loosePaths } = panelRows({
     resolved,
     config,
