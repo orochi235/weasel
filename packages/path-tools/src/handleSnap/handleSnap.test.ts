@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AffordanceHit, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { overlaysOf } from '@weasel-js/routing';
-import { anchorsToPath, PATH_C, PATH_M, PATH_Z, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
+import { anchorsToPath, DEG_TO_RAD, PATH_C, PATH_M, PATH_Z, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION, createScene, createSnapOutcomeStore, editAnchorsAction, type SnapDep } from '@weasel-js/core';
 import {
   createSnapSession2dForTests as createSnapSession2d,
@@ -69,7 +69,7 @@ function start(options: HandleSnapOptions | null, path: PolygonPath = curve(), p
 
 describe('handle snapping', () => {
   it('snaps the handle angle to a step and draws the line it snapped to', () => {
-    const drag = start({ stepDeg: 45, reachDeg: 6 });
+    const drag = start({ angleStep: 45 * DEG_TO_RAD, reachRad: 6 * DEG_TO_RAD });
     drag.move({ x: 20, y: 19 });
     expect(drag.marks()).toEqual([expect.objectContaining({ kind: 'line' })]);
     expect(overlaysOf(drag.handle)).toEqual([]);
@@ -86,14 +86,14 @@ describe('handle snapping', () => {
   });
 
   it('leaves a locked angle unsnapped', () => {
-    const drag = start({ stepDeg: 45, reachDeg: 6 });
+    const drag = start({ angleStep: 45 * DEG_TO_RAD, reachRad: 6 * DEG_TO_RAD });
     drag.move({ x: 20, y: 19 }, { ...NO_MODS, shift: true });
     expect(overlaysOf(drag.handle)).toEqual([expect.objectContaining({ role: 'lock' })]);
     expect(drag.out()).toEqual({ x: 20, y: 0 });
   });
 
   it('holds its length with Ctrl and still snaps its angle', () => {
-    const drag = start({ stepDeg: 45, reachDeg: 6 });
+    const drag = start({ angleStep: 45 * DEG_TO_RAD, reachRad: 6 * DEG_TO_RAD });
     drag.move({ x: 20, y: 19 }, { ...NO_MODS, ctrl: true });
     expect(drag.marks()).toEqual([expect.objectContaining({ kind: 'line' })]);
     const h = drag.out();
@@ -103,11 +103,11 @@ describe('handle snapping', () => {
 
   it('snaps no further than its reach', () => {
     // 42°: within 6° of 45°, not within 2°.
-    const near = start({ stepDeg: 45, reachDeg: 6 });
+    const near = start({ angleStep: 45 * DEG_TO_RAD, reachRad: 6 * DEG_TO_RAD });
     near.move({ x: 20, y: 18 });
     const h = near.out();
     expect(h.x).toBeCloseTo(h.y, 4);
-    const far = start({ stepDeg: 45, reachDeg: 2 });
+    const far = start({ angleStep: 45 * DEG_TO_RAD, reachRad: 2 * DEG_TO_RAD });
     far.move({ x: 20, y: 18 });
     expect(far.marks()).toEqual([]);
     expect(far.out()).toEqual({ x: 20, y: 18 });
@@ -117,7 +117,7 @@ describe('handle snapping', () => {
 
     it('snaps onto it, keeping the length, ahead of a step that is also in reach', () => {
       // The other handle points at 185°, so the line through it runs at 5°.
-      const drag = start({ stepDeg: 45 }, corner(polar(30), polar(185)), polar(30));
+      const drag = start({ angleStep: 45 * DEG_TO_RAD }, corner(polar(30), polar(185)), polar(30));
       drag.move(polar(3.1));
       expect(drag.marks()).toEqual([{ kind: 'line', from: expect.anything(), to: expect.anything() }]);
       expect((drag.marks()[0] as { from: Point }).from).toEqual({ x: expect.closeTo(polar(185).x, 5), y: expect.closeTo(polar(185).y, 5) });
@@ -131,7 +131,7 @@ describe('handle snapping', () => {
       // between it and 45°.
       const other = { x: -8, y: -6 };
       const line = Math.atan2(6, 8) / DEG;
-      const drag = start({ stepDeg: 45 }, corner(polar(30), other), polar(30));
+      const drag = start({ angleStep: 45 * DEG_TO_RAD }, corner(polar(30), other), polar(30));
       drag.move(polar((line + 45) / 2));
       expect(drag.marks()).toEqual([{ kind: 'line', from: other, to: expect.anything() }]);
       expect(angleOf(drag.out())).toBeCloseTo(line, 4);
@@ -139,14 +139,14 @@ describe('handle snapping', () => {
 
     it('wraps round the half turn', () => {
       // The line runs at 178°; the pointer is at -178°, 4° from it the short way round.
-      const drag = start({ stepDeg: 50 }, corner(polar(90), polar(-2)), polar(90));
+      const drag = start({ angleStep: 50 * DEG_TO_RAD }, corner(polar(90), polar(-2)), polar(90));
       drag.move(polar(-178));
       expect(angleOf(drag.out())).toBeCloseTo(178, 4);
     });
   });
 
   it('wraps a step round the half turn', () => {
-    const drag = start({ stepDeg: 90, opposite: false }, corner(polar(90), polar(-2)), polar(90));
+    const drag = start({ angleStep: 90 * DEG_TO_RAD, opposite: false }, corner(polar(90), polar(-2)), polar(90));
     drag.move(polar(-177));
     expect(Math.abs(angleOf(drag.out()))).toBeCloseTo(180, 4);
   });
