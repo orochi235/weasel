@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { createRecentColorsStore } from '../RecentColors';
-import { describeHold } from '../Disabled/testing/holdCases';
+import { describeHold } from '../Disabled/testing/holdCases.fixtures';
 import { SwatchStrip } from './SwatchStrip';
 import type { SwatchPalette } from './palettes';
 

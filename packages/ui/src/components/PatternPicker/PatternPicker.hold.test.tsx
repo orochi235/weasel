@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
-import { describeHold, unlessDisabled } from '../Disabled/testing/holdCases';
+import { describeHold, unlessDisabled } from '../Disabled/testing/holdCases.fixtures';
 import { PatternPicker, seedPattern } from './PatternPicker';
 
 // The tile swatches are its own; the size bar and the rotation field hold themselves through the scope it opens.

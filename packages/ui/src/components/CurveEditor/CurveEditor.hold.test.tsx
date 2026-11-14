@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { useState } from 'react';
 import { fireEvent, render } from '@testing-library/react';
-import { describeHold } from '../Disabled/testing/holdCases';
+import { describeHold } from '../Disabled/testing/holdCases.fixtures';
 import { CurveEditor, type ControlPoint } from './CurveEditor';
 
 const POINTS = [{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }];

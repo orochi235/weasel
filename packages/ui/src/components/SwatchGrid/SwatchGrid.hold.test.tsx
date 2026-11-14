@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest';
 import type { ReactElement } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { arcShape } from '@weasel-js/geom';
-import { describeHold, type HoldSubject } from '../Disabled/testing/holdCases';
+import { describeHold, type HoldSubject } from '../Disabled/testing/holdCases.fixtures';
 import { Along } from '../Along';
 import { ReadOnly } from '../Disabled';
 import { SwatchGrid, type SwatchGridOption } from './SwatchGrid';

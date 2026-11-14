@@ -1,7 +1,7 @@
 import { beforeAll, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { Disabled, ReadOnly } from '../Disabled';
-import { describeHold } from '../Disabled/testing/holdCases';
+import { describeHold } from '../Disabled/testing/holdCases.fixtures';
 import { BandEditor } from './BandEditor';
 import type { Band } from './bands';
 

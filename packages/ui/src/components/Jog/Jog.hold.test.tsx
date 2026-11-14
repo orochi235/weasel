@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
-import { describeHold, unlessDisabled } from '../Disabled/testing/holdCases';
+import { describeHold, unlessDisabled } from '../Disabled/testing/holdCases.fixtures';
 import { Jog } from './Jog';
 
 // Its step and play buttons are actions, held as disabled for the Jog's reason even when it is read-only; its scrubber
