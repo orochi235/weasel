@@ -31,7 +31,8 @@ export interface KeyBankProps {
  * itself. Keys outside a bank are never fitted.
  *
  * A bank is a fit scope running a scale stage (`useFitScope`'s `scale`), so a
- * `FitLabel` inside it steps as in any other scope.
+ * `FitLabel` inside it steps as in any other scope, once a class gives the
+ * bank a box of its own to measure: by default it has none.
  */
 export function KeyBank({ children, wrap = false, spellings = KEY_SPELLINGS, minScale = KEY_MIN_SCALE, className }: KeyBankProps) {
   const ref = useRef<HTMLDivElement>(null);

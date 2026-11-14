@@ -81,9 +81,10 @@
   opacity: 0.6;
 }
 
-/* Rail entries sit a pixel apart, so the outline is drawn inside the entry. */
+/* Rail entries sit a pixel apart, so the outline is drawn inside the entry, and the entry keeps the rail's ground. */
 .railItem[data-drop-placeholder] {
   outline-offset: -1px;
+  background: none;
 }
 
 .railItem[data-drop='into'] {
@@ -242,37 +243,6 @@
   --wzl-input-surface: var(--wzl-surface);
 }
 
-.railList {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.railItem {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-2);
-  padding: var(--wzl-space-2) var(--wzl-space-3);
-  border: none;
-  border-radius: var(--wzl-radius-sm);
-  background: none;
-  color: var(--wzl-fg);
-  font: inherit;
-  /* The size of a control's text in the pane beside it. */
-  font-size: var(--wzl-font-size);
-  text-align: start;
-  cursor: default;
-}
-
-.railItem:hover {
-  background: var(--wzl-surface-raised);
-}
-
-.railItem:focus-visible {
-  outline: 2px solid var(--wzl-focus-ring);
-  outline-offset: -2px;
-}
-
 /* The entries nested under one, a step in from it. */
 .railNest {
   display: flex;
@@ -297,24 +267,9 @@
   flex: 0 0 var(--wzl-control-h-sm);
 }
 
-/* The open page. */
-.railItem[data-rail-mark='current'] {
-  background: var(--wzl-accent);
-  color: var(--wzl-fg-on-accent);
-  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
-  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
-}
-
 /* Choosing it opens the first entry under it: it has no page of its own to show. */
 .railPasses .railName {
   color: var(--wzl-fg-muted);
-}
-
-.railName {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Last in the row: a count that changes as the reader types would otherwise

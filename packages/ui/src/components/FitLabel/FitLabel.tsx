@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { flushSync } from 'react-dom';
 import { useScaleStage, type FitScale, type FitScaleOptions } from './fitScale';
+import { prepareRoom, settleSpent, type FitRoom } from './fitRoom';
 
 /**
  * A label's forms, longest first: the canonical name, then each shorter form a
@@ -51,80 +52,64 @@ function useFontLoads(ref: RefObject<HTMLElement | null>, onLoad: (el: HTMLEleme
   }, [ref, onLoad]);
 }
 
-const overflows = (el: Element | null): boolean => el !== null && el.scrollWidth > el.clientWidth;
+const overflows = (el: Element): boolean => el.scrollWidth > el.clientWidth;
 
-/** The room a fit scope's labels last stepped and ran out of forms in. */
-interface FitRoom {
-  steppedAtRef: RefObject<{ self: number; parent: number } | null>;
-  spentAtRef: RefObject<number | null>;
-}
-
-/** Steps a scope's labels again whenever its element or its parent is resized. */
+/**
+ * Steps a scope's labels again whenever its element is resized. Only the element is observed: its parent can be
+ * resized by any observer deeper in the page, which turns watching it into a ResizeObserver loop. A step leaves the
+ * element's box as it was, since its CSS holds the box to its room; marking it spent can move it, so that waits for
+ * `recheck`'s render, outside the observer's delivery.
+ */
 function useRoomObserver(
   ref: RefObject<HTMLElement | null>,
   depth: number,
-  { steppedAtRef, spentAtRef }: FitRoom,
+  roomRef: RefObject<FitRoom>,
   shouldStep: () => boolean,
-  markSpent: () => void,
+  recheck: () => void,
   setOwn: (next: number | ((s: number) => number)) => void,
 ): void {
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    // A scope with no labels has nothing to fit, and its parent can be resized by any observer deeper in the page:
-    // watching it anyway turns that into a ResizeObserver loop.
-    if (depth < 1) {
-      spentAtRef.current = null;
-      el.removeAttribute('data-fit-spent');
-      return;
-    }
-    if (typeof ResizeObserver === 'undefined') return;
-    const parent = el.parentElement;
+    if (!el || depth < 1 || typeof ResizeObserver === 'undefined') return;
+    const room = roomRef.current;
     const observer = new ResizeObserver(() => {
-      if (spentAtRef.current !== null && parent !== null && parent.clientWidth > spentAtRef.current + 0.5) {
-        spentAtRef.current = null;
-        el.removeAttribute('data-fit-spent');
-      }
-      if (depth < 2) {
-        markSpent();
-        return;
-      }
-      const at = steppedAtRef.current;
-      const grew =
-        at !== null &&
-        (el.clientWidth > at.self + 0.5 || (parent !== null && parent.clientWidth > at.parent + 0.5));
-      if (grew) {
-        steppedAtRef.current = null;
+      const at = room.steppedAt;
+      if (depth >= 2 && at !== null && el.clientWidth > at + 0.5) {
+        room.steppedAt = null;
         flushSync(() => setOwn(0));
-      } else if (shouldStep()) {
+      } else if (depth >= 2 && shouldStep()) {
         flushSync(() => setOwn((s) => s + 1));
-      } else {
-        markSpent();
       }
+      if (room.spentAt !== null || overflows(el)) recheck();
     });
     observer.observe(el);
-    if (parent) observer.observe(parent);
     return () => observer.disconnect();
-  }, [ref, depth, steppedAtRef, spentAtRef, shouldStep, markSpent, setOwn]);
+  }, [ref, depth, roomRef, shouldStep, recheck, setOwn]);
 }
 
 /**
  * Fits the {@link FitLabel}s under `ref` to the room they are given.
  *
- * Every label steps down together, one form at a time, until neither `ref`'s
- * element nor its parent overflows or no label has a shorter form left: the
- * element overflowing itself is a control squeezed below its content, and its
- * parent overflowing is one that will not shrink at all. Each label takes its
- * form at the step, or its last where it has fewer. The room growing past the
- * size it had when a step was taken starts again from the full forms, and so
- * does a web font finishing loading.
+ * Every label steps down together, one form at a time, until `ref`'s element
+ * no longer overflows or no label has a shorter form left. Each label takes its
+ * form at the step, or its last where it has fewer. The element growing past
+ * the width it had when a step was taken starts again from the full forms, and
+ * so does a web font finishing loading.
+ *
+ * Only the element is measured, never its parent, so its box has to take the
+ * shape of its room whatever forms it shows: it fills the room, or it is
+ * clamped to it. While it holds labels the element carries `data-fit-room`, and
+ * `--fit-natural` holds its width at the full forms, for the component's
+ * CSS to keep a box sized to its content at that width within its room as the
+ * labels shorten: `min-inline-size: min(var(--fit-natural, 0px), 100%)`
+ * beside `max-inline-size: 100%`.
  *
  * A scope nested in another steps at least as far as the outer one, so a
  * control inside a strip shortens along with the strip.
  *
- * Once every label is at its last form and the room still overflows, the
- * element carries `data-fit-spent`, for a layout to give it more room, until its
- * parent grows wider than it was then.
+ * Once every label is at its last form and the element still overflows, it
+ * carries `data-fit-spent`, for a layout to give it more room, until it grows
+ * wider than it was with that room.
  *
  * Given `scale` when it mounts, the scope also runs a scale stage: members that
  * join it through {@link useFitScale} each fit a form to their own room by
@@ -140,12 +125,10 @@ export function useFitScope(
   const scale = useScaleStage(ref, scaleOptions) ?? outer?.scale ?? null;
   const [own, setOwn] = useState(0);
   const [labels, setLabels] = useState<readonly number[]>([]);
+  const [check, setCheck] = useState(0);
+  const recheck = useCallback(() => setCheck((c) => c + 1), []);
   const counted = useRef(new Map<symbol, number>());
-  // Room sizes when the last step was taken: growing past them retries the
-  // full forms, while the shrink a step itself causes does not.
-  const steppedAt = useRef<{ self: number; parent: number } | null>(null);
-  // The parent's width when the labels ran out of forms, while the element is marked spent.
-  const spentAt = useRef<number | null>(null);
+  const roomRef = useRef<FitRoom>({ steppedAt: null, spentAt: null, measured: false });
 
   const depth = labels.reduce((max, d) => Math.max(max, d), 0);
   const outerRegister = outer?.register;
@@ -168,54 +151,51 @@ export function useFitScope(
   useLayoutEffect(() => {
     ownRef.current = own;
   }, [own]);
-  /** Whether the room overflows and a label has a shorter form left; records the room if so. */
+  /** Whether the element overflows and a label has a shorter form left; records the room if so. */
   const shouldStep = useCallback((): boolean => {
     const el = ref.current;
-    if (!el || ownRef.current >= depth - 1) return false;
-    const parent = el.parentElement;
-    if (!overflows(el) && !overflows(parent)) return false;
-    steppedAt.current = { self: el.clientWidth, parent: parent?.clientWidth ?? 0 };
+    if (!el || ownRef.current >= depth - 1 || !overflows(el)) return false;
+    roomRef.current.steppedAt = el.clientWidth;
     return true;
-  }, [ref, depth]);
-
-  /** Marks the element spent when no label has a shorter form left and the room still overflows. */
-  const markSpent = useCallback((): void => {
-    const el = ref.current;
-    // Before its labels register, a scope has no forms to run out of.
-    if (!el || depth < 1 || spentAt.current !== null || ownRef.current < depth - 1) return;
-    const parent = el.parentElement;
-    if (!overflows(el) && !overflows(parent)) return;
-    spentAt.current = parent?.clientWidth ?? 0;
-    el.setAttribute('data-fit-spent', '');
   }, [ref, depth]);
 
   // A label set that changed may fit at a longer form than the old one did.
   const fittedFor = useRef(labels);
   useLayoutEffect(() => {
+    const room = roomRef.current;
     if (fittedFor.current !== labels) {
       fittedFor.current = labels;
-      steppedAt.current = null;
+      room.steppedAt = null;
+      room.measured = false;
       if (own !== 0) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- measures layout
         setOwn(0);
         return;
       }
     }
+    const el = ref.current;
+    if (!el) return;
+    prepareRoom(el, room, depth, own === 0);
     if (shouldStep()) setOwn(own + 1);
-    else markSpent();
-  }, [labels, own, shouldStep, markSpent]);
+    else settleSpent(el, room, depth > 0 && own >= depth - 1);
+  }, [ref, depth, labels, own, check, shouldStep]);
 
   // Labels set in a fallback font may have stepped further than the face that loads needs, with no change in
   // the room to say so.
-  const refit = useCallback((el: HTMLElement): void => {
-    steppedAt.current = null;
-    spentAt.current = null;
-    el.removeAttribute('data-fit-spent');
-    setOwn(0);
-  }, []);
+  const refit = useCallback(
+    (el: HTMLElement): void => {
+      roomRef.current.steppedAt = null;
+      roomRef.current.spentAt = null;
+      roomRef.current.measured = false;
+      el.removeAttribute('data-fit-spent');
+      setOwn(0);
+      setCheck((c) => c + 1);
+    },
+    [],
+  );
   useFontLoads(ref, refit);
 
-  useRoomObserver(ref, depth, { steppedAtRef: steppedAt, spentAtRef: spentAt }, shouldStep, markSpent, setOwn);
+  useRoomObserver(ref, depth, roomRef, shouldStep, recheck, setOwn);
 
   const step = Math.max(own, outer?.step ?? 0);
   return useMemo(() => ({ step, register, scale }), [step, register, scale]);

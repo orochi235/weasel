@@ -32,6 +32,13 @@
   touch-action: none;
 }
 
+/* Fitting its labels, the track keeps the width of their full forms within its room as they shorten, which is
+   how its fit scope sees the room grow back (useFitScope). */
+.root:where([data-fit-room]) {
+  min-width: min(var(--fit-natural, 0px), 100%);
+  max-width: 100%;
+}
+
 .segment {
   position: relative;
   flex: 1 1 0;

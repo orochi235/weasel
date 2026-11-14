@@ -95,6 +95,7 @@ export * from './components/PrefsBar';
 export * from './components/Properties';
 export * from './components/QuantityText';
 export * from './components/RadioGroup';
+export * from './components/RailList';
 export * from './components/RecentColors';
 export * from './components/ResizeHandle';
 export * from './components/Ruler';
