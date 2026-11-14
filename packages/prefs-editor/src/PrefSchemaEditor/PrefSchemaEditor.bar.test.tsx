@@ -50,6 +50,14 @@ describe('PrefSchemaEditor over a root drawn as a bar', () => {
     expect(within(tree).getByText('undo')).toBeInTheDocument();
   });
 
+  it('reads its zoom as every zoom readout does: a percentage up to 2x, a factor past it', () => {
+    renderWithIcons(<Live />);
+    const range = within(preview()).getByRole('slider', { name: 'Zoom' });
+    expect(within(preview()).getByText('100%')).toBeInTheDocument();
+    fireEvent.change(range, { target: { value: '3' } });
+    expect(within(preview()).getByText('3x')).toBeInTheDocument();
+  });
+
   it('runs the bar down its side from a switch', () => {
     renderWithIcons(<Live />);
     fireEvent.click(within(preview()).getByRole('switch', { name: 'Vertical' }));
