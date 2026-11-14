@@ -47,7 +47,7 @@ export type PathEffect =
 
 /** The parts `effect` paints from `sources`, in its sources' order, or
  *  `null` when a source it needs is missing — a tween's spine among them,
- *  where it names one. */
+ *  where it names one — or its kind is not one this build knows. */
 export function effectParts(effect: PathEffect, sources: readonly (EffectSource | null)[]): DerivedPart[] | null {
   const [a, b] = sources;
   if (!a) return null;
@@ -75,4 +75,6 @@ export function effectParts(effect: PathEffect, sources: readonly (EffectSource 
     case 'textAlong':
       return textAlongParts(effect, a.items?.() ?? [wholeItem(a)], b.world);
   }
+  // A kind this build does not know, as a document saved before a rename holds.
+  return null;
 }

@@ -65,7 +65,7 @@ const RENAMED_TOOLS: Readonly<Record<string, string>> = {
 };
 
 /** Version 5 to 6: the path tools renamed beside Poise and Fillet keep their options and the last-used tool, and
- *  Fillet's command-row asset keeps the surface Corner shape's had. */
+ *  Fillet's command-row asset keeps the surface and toolbar place Corner shape's had. */
 export const renamePathTools: PrefsMigration = (records) => {
   for (const key of [...records.keys()]) {
     const [group, owner, ...rest] = key.split('.');
@@ -77,8 +77,26 @@ export const renamePathTools: PrefsMigration = (records) => {
   const last = records.get('tools.lastTool');
   if (typeof last === 'string' && Object.hasOwn(RENAMED_TOOLS, last)) records.set('tools.lastTool', RENAMED_TOOLS[last]);
   const surfaces = records.get('ui.surfaces');
-  if (surfaces && typeof surfaces === 'object' && Object.hasOwn(surfaces, 'corners')) {
-    const { corners, ...rest } = surfaces as Record<string, unknown>;
-    records.set('ui.surfaces', Object.hasOwn(rest, 'fillets') ? rest : { ...rest, fillets: corners });
+  if (isRecord(surfaces)) {
+    const moved = renameEntry(surfaces, 'corners', 'fillets');
+    if (moved !== surfaces) records.set('ui.surfaces', moved);
+  }
+  const toolbars = records.get('ui.toolbars');
+  if (isRecord(toolbars) && isRecord(toolbars.docks) && isRecord(toolbars.floating)) {
+    const docks = Object.fromEntries(Object.entries(toolbars.docks).map(([id, rows]) => [id, Array.isArray(rows)
+      ? rows.map((row: unknown) => (Array.isArray(row) && row.includes('corners') && !row.includes('fillets')
+        ? row.map((bar: unknown) => (bar === 'corners' ? 'fillets' : bar))
+        : row))
+      : rows]));
+    records.set('ui.toolbars', { ...toolbars, docks, floating: renameEntry(toolbars.floating, 'corners', 'fillets') });
   }
 };
+
+const isRecord = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+
+/** `map` with its own `from` entry under `to`, or `map` itself where it holds none to move. */
+function renameEntry(map: Record<string, unknown>, from: string, to: string): Record<string, unknown> {
+  if (!Object.hasOwn(map, from)) return map;
+  const { [from]: moved, ...rest } = map;
+  return Object.hasOwn(rest, to) ? rest : { ...rest, [to]: moved };
+}

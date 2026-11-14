@@ -2375,3 +2375,12 @@ Calls the lanes made without a ruling:
   to their new ids, and Corner shape's `ui.surfaces` entry to `fillets`, rather than letting them start from
   defaults as the Knead changeset allows. The site's renamed lab routes (`lab-envelope` to `lab-cloth-warp` and the
   rest) get no redirects: the site has no redirect mechanism and its labs keep no stored trials.
+
+## Audit round twenty-four (2026-11-14): correctness of the newest code
+
+- 2026-11-14 (merged with the renames lane): a path effect or held warp of a kind this build does not know is read as
+  none (paints nothing; ignored as a stale warp) rather than throwing. Kinds renamed in this release (`blend`,
+  `distort`, `envelope`, `puppet`) are not unknown: the kit reads them under their new names, so draw keeps no rewrite
+  of its own.
+- 2026-11-14 (merged with the renames lane): draw's prefs take the renames in a version 5 to 6 step, which also moves
+  the Fillet asset's toolbar dock and floating place, rather than growing the unreleased version 4 to 5 step.
