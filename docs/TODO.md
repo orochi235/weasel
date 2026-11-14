@@ -104,11 +104,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Path editing tricks
 
-- **(P1) [maintainer] Rename the path tools the maintainer deferred to the end of the adoption pass.**
-  Envelope mesh is now Cloth warp (landed 2026-11-14), and the Width tool is already Girth; the maintainer picks the
-  rest from a field of candidates (ruled 2026-11-07). They live in `@weasel-js/path-tools`
-  (`packages/path-tools/README.md`).
-  Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`.
 - **(P2) [maintainer] Tune Poise hands-on, with the maintainer driving.** First-draft behavior: a
   grip drag scales both handles by one factor, read off the pointer's projection onto the line the
   grip slides along, and a length lock (`handleLock.length`, or Mod) holds it still
