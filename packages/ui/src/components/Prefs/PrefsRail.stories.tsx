@@ -32,7 +32,7 @@ const SCHEMA: PrefGroup = {
 const ITEMS = prefRailItems(SCHEMA);
 
 const meta: Meta<typeof PrefsRail> = {
-  title: 'ui/Foundations/Prefs/PrefsRail',
+  title: 'ui/Prefs/PrefsRail',
   component: PrefsRail,
   args: { foldable: false },
 };

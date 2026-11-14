@@ -2,11 +2,11 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsBar, type PrefsBarProps } from '@weasel-js/ui/components/PrefsBar';
-import s from './BarOverflow.stories.module.css';
+import s from './Bar.overflow.stories.module.css';
 import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof PrefsBar> = {
-  title: 'ui/Bar/Overflow',
+  title: 'ui/Bar',
   component: PrefsBar,
 };
 export default meta;

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { PropertyField, PropertyList, PropertyPanel, type PropertyAlign, type PropertyDensity } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta = {
-  title: 'ui/Properties/Metrics',
+  title: 'ui/Properties',
 };
 export default meta;
 type Story = StoryObj;

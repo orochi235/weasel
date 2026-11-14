@@ -4,7 +4,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm, type PrefsFormProps } from '@weasel-js/ui/components/Prefs';
 
 const meta: Meta<typeof PrefsForm> = {
-  title: 'ui/Foundations/Prefs',
+  title: 'ui/Prefs',
   component: PrefsForm,
 };
 export default meta;

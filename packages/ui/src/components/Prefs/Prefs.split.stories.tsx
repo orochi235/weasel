@@ -57,7 +57,7 @@ function SplitForm({ layout, held, open }: SplitFormProps) {
 }
 
 const meta: Meta<typeof SplitForm> = {
-  title: 'ui/Foundations/Prefs',
+  title: 'ui/Prefs',
   component: SplitForm,
   args: { layout: 'columns', held: {}, open: [] },
 };

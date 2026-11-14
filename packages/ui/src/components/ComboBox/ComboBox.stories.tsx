@@ -4,7 +4,7 @@ import { ComboBox, ComboBoxItem, type ComboBoxProps } from '@weasel-js/ui/compon
 import { useAsyncOptions } from '@weasel-js/ui';
 
 const meta: Meta<typeof ComboBox> = {
-  title: 'ui/Foundations/ComboBox',
+  title: 'ui/ComboBox',
   component: ComboBox,
 };
 export default meta;

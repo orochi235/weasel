@@ -5,7 +5,7 @@ import { FitLabel } from '@weasel-js/ui/components/FitLabel';
 import s from './FitLabel.stories.module.css';
 
 const meta: Meta<typeof FitLabel> = {
-  title: 'ui/Foundations/FitLabel',
+  title: 'ui/FitLabel',
   component: FitLabel,
 };
 

@@ -13,7 +13,7 @@ interface StoryArgs extends KeyBankProps {
 const NAV = ['PrtSc', 'ScrLk', 'Pause', 'Insert', 'Home', 'PgUp', 'Delete', 'End', 'PgDn'];
 
 const meta: Meta<StoryArgs> = {
-  title: 'ui/Foundations/Keycaps/KeyBank',
+  title: 'ui/Keycaps/KeyBank',
   component: KeyBank,
   args: { wrap: false, minScale: KEY_MIN_SCALE, keyWidth: 1, font: 'system sans' },
   argTypes: {

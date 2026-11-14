@@ -4,7 +4,7 @@ import type { AnchorField, AnchorFieldValues, NumberEntry } from '@weasel-js/cor
 import { AnchorFields, type AnchorFieldsProps } from '@weasel-js/ui/components/inspector/AnchorFields';
 
 const meta: Meta<typeof AnchorFields> = {
-  title: 'ui/AnchorFields',
+  title: 'ui/inspector/AnchorFields',
   component: AnchorFields,
 };
 export default meta;

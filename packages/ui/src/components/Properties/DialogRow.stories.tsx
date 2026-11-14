@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { DialogRow, PropertyList } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta<typeof DialogRow> = {
-  title: 'ui/Properties/Rows/DialogRow',
+  title: 'ui/Properties/DialogRow',
   component: DialogRow,
 };
 export default meta;

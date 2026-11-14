@@ -5,7 +5,7 @@ import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { SwatchStrip, BUILTIN_PALETTES, type SwatchPalette } from '@weasel-js/ui/components/SwatchStrip';
 
 const meta: Meta<typeof SwatchStrip> = {
-  title: 'ui/Foundations/SwatchStrip',
+  title: 'ui/SwatchStrip',
   component: SwatchStrip,
 };
 export default meta;

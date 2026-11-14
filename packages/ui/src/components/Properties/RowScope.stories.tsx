@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { DialogRow, PropertyField, PropertyList, RowScope } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta<typeof RowScope> = {
-  title: 'ui/Properties/Rows/RowScope',
+  title: 'ui/Properties/RowScope',
   component: RowScope,
 };
 export default meta;

@@ -6,7 +6,7 @@ import { LastOperationPanel, type LastOperationPanelProps } from '@weasel-js/ui/
 import { Button } from '@weasel-js/ui/components/Button';
 
 const meta: Meta<typeof LastOperationPanel> = {
-  title: 'ui/Foundations/LastOperationPanel',
+  title: 'ui/LastOperationPanel',
   component: LastOperationPanel,
 };
 export default meta;

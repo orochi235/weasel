@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { TextArea } from '@weasel-js/ui/components/TextArea';
 
 const meta: Meta<typeof TextArea> = {
-  title: 'ui/Foundations/TextArea',
+  title: 'ui/TextArea',
   component: TextArea,
 };
 export default meta;

@@ -44,7 +44,7 @@ interface StoryArgs extends KeyCapProps {
 }
 
 const meta: Meta<StoryArgs> = {
-  title: 'ui/Foundations/Keycaps/KeyCap',
+  title: 'ui/Keycaps/KeyCap',
   component: KeyCap,
   args: {
     label: 'K',

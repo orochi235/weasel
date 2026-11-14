@@ -2054,7 +2054,7 @@ Calls the lanes made without a ruling:
 
 - A store-bound form binds through `usePrefsValues(store).form`, spread on `PrefsForm` or `PrefsDialog`, so every
   bundled one offers Auto and splits scoped leaves the same way. Theme-editor's form keeps its own binding: its
-  writes go through its undo history and only its token rows inherit. `PrefsSplit.stories.tsx` keeps its explicit
+  writes go through its undo history and only its token rows inherit. `Prefs.split.stories.tsx` keeps its explicit
   props, since spreading `form` would add Auto toggles to a story about split rows (2026-11-13).
 - labkit's lab config stays its own schema, bridged both ways by `prefsFromConfig` and `configFromPrefs` and tested
   there, rather than declaring through `pref` (2026-11-13).

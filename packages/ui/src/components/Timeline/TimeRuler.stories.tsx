@@ -4,7 +4,7 @@ import { TimeRuler, type TimeWindow } from '@weasel-js/ui/components/Timeline';
 import s from './TimeRuler.stories.module.css';
 
 const meta: Meta<typeof TimeRuler> = {
-  title: 'ui/TimeRuler',
+  title: 'ui/Timeline/TimeRuler',
   component: TimeRuler,
 };
 export default meta;

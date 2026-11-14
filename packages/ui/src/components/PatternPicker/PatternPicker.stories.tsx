@@ -4,7 +4,7 @@ import type { PatternPaint } from '@weasel-js/core';
 import { PatternPicker, seedPattern } from '@weasel-js/ui/components/PatternPicker';
 
 const meta: Meta<typeof PatternPicker> = {
-  title: 'ui/Foundations/PatternPicker',
+  title: 'ui/PatternPicker',
   component: PatternPicker,
   args: { color: '#3a7bd5ff' },
 };

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { oklchDegToHex, chromaAt, type ChromaCurve, colorRamp, type ColorInterpolationSpace, type ColorRampOptions } from '@weasel-js/paint';
 
 const meta: Meta = {
-  title: 'ui/Color/ColorRamp',
+  title: 'ui/color',
   tags: ['gallery'],
 };
 

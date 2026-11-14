@@ -30,7 +30,7 @@ type Props = Omit<BandEditorProps<Slice>, 'display'> & { display?: FractionDispl
 const TypedBandEditor: ComponentType<Props> = BandEditor<Slice>;
 
 const meta: Meta<typeof TypedBandEditor> = {
-  title: 'ui/Foundations/BandEditor',
+  title: 'ui/BandEditor',
   component: TypedBandEditor,
   args: {
     min: MIN,

@@ -253,7 +253,7 @@ function StoryRoot({ children }: { children: ReactNode }) {
 }
 
 const meta: Meta = {
-  title: 'ui/LayeredCurveEditor',
+  title: 'ui/CurveEditor/LayeredCurveEditor',
 };
 export default meta;
 

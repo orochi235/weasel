@@ -7,7 +7,7 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof SegmentedBar> = {
-  title: 'ui/Foundations/SegmentedBar',
+  title: 'ui/Segmented/SegmentedBar',
   component: SegmentedBar,
 };
 

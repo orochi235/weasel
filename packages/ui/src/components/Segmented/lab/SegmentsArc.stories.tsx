@@ -1,7 +1,7 @@
 import { f, meta, story } from '@weasel-js/forge';
 import { SEGMENTS_ARC_DEFAULTS as D, SegmentsArcView, type SegmentsArcConfig } from './SegmentsArcView';
 
-export default meta({ title: 'ui/Foundations/SegmentedBar', layout: 'fullscreen', tags: ['lab'] });
+export default meta({ title: 'ui/Segmented/SegmentedBar', layout: 'fullscreen', tags: ['lab'] });
 
 /** SegmentedBar's modes along the arcs of one circle, in each variant and size. */
 export const OnAnArc = story({

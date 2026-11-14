@@ -4,7 +4,7 @@ import { Along, CurvedLabel, type AlongArc, type RunAlign } from '@weasel-js/ui/
 import s from './CurvedLabel.stories.module.css';
 
 /** A line of text laid along the arc of the `Along` it sits in. */
-export default meta({ title: 'ui/CurvedLabel' });
+export default meta({ title: 'ui/Along/CurvedLabel' });
 
 interface CurvedLabelConfig {
   text: string;

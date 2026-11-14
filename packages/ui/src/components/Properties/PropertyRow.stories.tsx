@@ -3,7 +3,7 @@ import { PropertyRow, RowScope } from '@weasel-js/ui/components/Properties';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof PropertyRow> = {
-  title: 'ui/Properties/Rows/PropertyRow',
+  title: 'ui/Properties/PropertyRow',
   component: PropertyRow,
 };
 export default meta;

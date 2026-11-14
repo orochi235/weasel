@@ -10,7 +10,7 @@ import { oklchDegToHex } from '@weasel-js/paint';
 import st from './Slider.stories.module.css';
 
 const meta: Meta<typeof Slider> = {
-  title: 'ui/Foundations/Slider',
+  title: 'ui/Slider',
   component: Slider,
   args: {
     min: 0,

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { PlotDataPanel } from '@weasel-js/ui/components/PlotDataPanel';
 
 const meta: Meta<typeof PlotDataPanel> = {
-  title: 'ui/Properties/PlotDataPanel',
+  title: 'ui/PlotDataPanel',
   component: PlotDataPanel,
 };
 export default meta;

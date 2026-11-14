@@ -4,7 +4,7 @@ import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid
 import s from './DataGrid.stories.module.css';
 
 const meta: Meta<typeof DataGrid> = {
-  title: 'ui/Foundations/DataGrid',
+  title: 'ui/DataGrid',
   component: DataGrid,
 };
 

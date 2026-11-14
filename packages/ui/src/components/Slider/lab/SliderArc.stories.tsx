@@ -3,7 +3,7 @@ import { loadInto } from '../../Along/lab/Presets';
 import { SLIDER_ARC_DEFAULTS as D, type SliderArcConfig } from './sliderArcConfig';
 import { SliderArcView } from './SliderArcView';
 
-export default meta({ title: 'ui/Foundations/Slider', layout: 'fullscreen', tags: ['lab'] });
+export default meta({ title: 'ui/Slider', layout: 'fullscreen', tags: ['lab'] });
 
 /** Every Slider prop on an arc, beside a straight twin given the same props and value. */
 export const OnAnArc = story({

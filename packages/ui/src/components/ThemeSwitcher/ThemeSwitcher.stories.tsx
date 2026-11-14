@@ -6,7 +6,7 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof ThemeSwitcher> = {
-  title: 'ui/Foundations/ThemeSwitcher',
+  title: 'ui/ThemeSwitcher',
   component: ThemeSwitcher,
 };
 export default meta;

@@ -8,7 +8,7 @@ import { icon } from '../../icons.gen';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 const meta: Meta<typeof ActionLeaf> = {
-  title: 'ui/Foundations/Prefs/ActionLeaf',
+  title: 'ui/Prefs/ActionLeaf',
   component: ActionLeaf,
 };
 export default meta;

@@ -24,7 +24,7 @@ const ARRANGE: Action[] = [
 const LEAF = pref.actions('arrange');
 
 const meta: Meta<typeof ActionsLeaf> = {
-  title: 'ui/Foundations/Prefs/ActionsLeaf',
+  title: 'ui/Prefs/ActionsLeaf',
   component: ActionsLeaf,
   args: { disabled: false },
 };

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { UnitField } from '@weasel-js/ui/components/NumberField';
 
 const meta: Meta<typeof UnitField> = {
-  title: 'ui/Foundations/NumberField/UnitField',
+  title: 'ui/NumberField/UnitField',
   component: UnitField,
   args: { steppers: true, disabled: false, mixed: false },
 };

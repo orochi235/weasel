@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { FontFamilySelect } from '@weasel-js/ui/components/FontFamilySelect';
 
 const meta: Meta<typeof FontFamilySelect> = {
-  title: 'ui/Foundations/FontFamilySelect',
+  title: 'ui/FontFamilySelect',
   component: FontFamilySelect,
 };
 export default meta;

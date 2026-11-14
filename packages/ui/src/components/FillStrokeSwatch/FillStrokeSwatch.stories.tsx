@@ -5,7 +5,7 @@ import type { PaintSlot } from '@weasel-js/paint';
 import { FillStrokeSwatch, type FillStrokeSwatchProps } from '@weasel-js/ui/components/FillStrokeSwatch';
 
 const meta: Meta<typeof FillStrokeSwatch> = {
-  title: 'ui/Foundations/FillStrokeSwatch',
+  title: 'ui/FillStrokeSwatch',
   component: FillStrokeSwatch,
 };
 export default meta;

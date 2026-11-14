@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 
 const meta: Meta<typeof Checkbox> = {
-  title: 'ui/Foundations/Checkbox',
+  title: 'ui/Checkbox',
   component: Checkbox,
 };
 export default meta;

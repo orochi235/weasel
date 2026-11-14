@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { PrefMixed } from '@weasel-js/ui/components/Prefs';
 
 const meta: Meta<typeof PrefMixed> = {
-  title: 'ui/Foundations/Prefs/PrefMixed',
+  title: 'ui/Prefs/PrefMixed',
   component: PrefMixed,
 };
 export default meta;

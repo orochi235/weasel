@@ -4,7 +4,7 @@ import { solid, type Inherit, type Paint } from '@weasel-js/core';
 import { PaintInput } from '@weasel-js/ui/components/PaintInput';
 
 const meta: Meta<typeof PaintInput> = {
-  title: 'ui/Foundations/PaintInput',
+  title: 'ui/PaintInput',
   component: PaintInput,
   args: { allowNone: true, mixed: false, unset: false },
 };

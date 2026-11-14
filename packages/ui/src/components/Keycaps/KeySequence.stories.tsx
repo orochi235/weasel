@@ -49,7 +49,7 @@ function resolveFont(value: string | undefined): string | undefined {
 }
 
 const meta: Meta<StoryArgs> = {
-  title: 'ui/Foundations/Keycaps/KeySequence',
+  title: 'ui/Keycaps/KeySequence',
   component: KeySequence,
   args: {
     keys: [{ label: '⌘' }, { label: 'K' }],

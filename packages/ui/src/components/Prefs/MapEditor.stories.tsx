@@ -13,7 +13,7 @@ const PREF: PrefMap = {
 };
 
 const meta: Meta<typeof MapEditor> = {
-  title: 'ui/Foundations/Prefs/MapEditor',
+  title: 'ui/Prefs/MapEditor',
   component: MapEditor,
   args: { disabled: false },
 };

@@ -8,7 +8,7 @@ import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/Menu';
 import s from './ContextMenuHost.stories.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
-const meta: Meta = { title: 'ui/ContextMenu' };
+const meta: Meta = { title: 'ui/Menu/ContextMenuHost' };
 export default meta;
 
 type Story = StoryObj;

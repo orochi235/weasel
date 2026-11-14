@@ -6,9 +6,9 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { icons as uiIcons } from '@weasel-js/ui/icons';
 import { ICON_GROUPS, icon } from '../../icons.gen';
 import { MARK_GROUP } from '../../icons.gen';
-import s from './icons.stories.module.css';
+import s from './Icon.gallery.stories.module.css';
 
-const meta: Meta = { title: 'ui/Icons/Gallery', tags: ['gallery'] };
+const meta: Meta = { title: 'ui/Icon', tags: ['gallery'] };
 export default meta;
 
 /** A table's glyphs by group, in the order it lists them. */

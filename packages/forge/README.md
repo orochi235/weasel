@@ -321,7 +321,7 @@ file. A story's tags are its meta's plus its own, and `'!gallery'` on a story
 drops the meta's.
 
 ```ts
-const meta: Meta = { title: 'ui/Icons/Gallery', tags: ['gallery'] };
+const meta: Meta = { title: 'ui/Icon', tags: ['gallery'] };
 export const AllPermutations: Story = { tags: ['gallery'], render: … };
 ```
 

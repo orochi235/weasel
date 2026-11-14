@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 
 const meta: Meta<typeof MenuButton> = {
-  title: 'ui/Foundations/MenuButton',
+  title: 'ui/MenuButton',
   component: MenuButton,
 };
 export default meta;

@@ -29,7 +29,7 @@ const PREF: PrefUnion = {
 };
 
 const meta: Meta<typeof UnionPicker> = {
-  title: 'ui/Foundations/Prefs/UnionPicker',
+  title: 'ui/Prefs/UnionPicker',
   component: UnionPicker,
   args: { mixed: false, disabled: false },
 };

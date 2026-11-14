@@ -4,7 +4,7 @@ import { CloseButton } from '@weasel-js/ui/components/CloseButton';
 import s from './CloseButton.stories.module.css';
 
 const meta: Meta<typeof CloseButton> = {
-  title: 'ui/Foundations/CloseButton',
+  title: 'ui/CloseButton',
   component: CloseButton,
   args: { 'aria-label': 'Close' },
 };

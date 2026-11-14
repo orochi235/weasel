@@ -10,7 +10,7 @@ import type { BadgeVariant } from './types';
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];
 
 const meta: Meta<typeof Badge> = {
-  title: 'ui/Foundations/Badge',
+  title: 'ui/Badge',
   component: Badge,
   args: {
     children: 'LABEL',

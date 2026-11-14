@@ -10,7 +10,7 @@ interface StoryArgs {
 }
 
 const meta: Meta<StoryArgs> = {
-  title: 'ui/Foundations/Keycaps/KeyDiagram',
+  title: 'ui/Keycaps/KeyDiagram',
   component: KeyDiagram,
   args: { platform: 'macos', legend: 'auto', linger: 0 },
   argTypes: {

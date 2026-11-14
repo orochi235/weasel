@@ -55,7 +55,7 @@ function Panel({ data, selected, onSelect }: { data: Data } & Marks) {
 }
 
 const meta: Meta<typeof Panel> = {
-  title: 'ui/SelectionPanel',
+  title: 'ui/inspector/SelectionPanel',
   component: Panel,
   parameters: { layout: 'padded' },
 };

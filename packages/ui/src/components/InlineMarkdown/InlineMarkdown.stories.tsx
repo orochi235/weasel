@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 
 const meta: Meta<typeof InlineMarkdown> = {
-  title: 'ui/Foundations/InlineMarkdown',
+  title: 'ui/InlineMarkdown',
   component: InlineMarkdown,
   args: {
     text: 'Sets `fill` on **every** stop, *not* ~~one~~, as [the spec](https://example.com) says. A glob like *.ts stays as written. <kbd>Mod+Z</kbd> undoes it.',

@@ -5,7 +5,7 @@ import { EMPHASES, GRADES } from '@weasel-js/theme';
 import { BADGE_LOOKS, lookProps } from '../Badge/looks';
 
 const meta: Meta<typeof Code> = {
-  title: 'ui/Foundations/Code',
+  title: 'ui/Code',
   component: Code,
   args: { children: 'editor.insert', variant: 'subtle' },
   argTypes: {

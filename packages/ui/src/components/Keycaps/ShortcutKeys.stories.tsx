@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ShortcutKeys } from '@weasel-js/ui/components/Keycaps';
 
 const meta: Meta<typeof ShortcutKeys> = {
-  title: 'ui/Foundations/Keycaps/ShortcutKeys',
+  title: 'ui/Keycaps/ShortcutKeys',
   component: ShortcutKeys,
 };
 export default meta;

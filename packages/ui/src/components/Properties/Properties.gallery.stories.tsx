@@ -6,7 +6,7 @@ import { PropertyField, PropertyList, PropertyPanel, PropertyRow } from '@weasel
 // Titled "Gallery" so it sorts above PropertyPanel/PropertyList/Rows in the
 // sidebar alphabetically (G < P < R). Acts as the visual root of the section.
 const meta: Meta = {
-  title: 'ui/Properties/Gallery',
+  title: 'ui/Properties',
   tags: ['gallery'],
 };
 export default meta;

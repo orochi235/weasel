@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
 
 const meta: Meta<typeof ColorField> = {
-  title: 'ui/Foundations/ColorField',
+  title: 'ui/ColorField',
   component: ColorField,
   args: { alpha: false, disabled: false, mixed: false },
 };

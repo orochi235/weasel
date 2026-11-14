@@ -539,12 +539,6 @@ name a package. Breaking changes are in scope.
   `AttributesPane`. The model goes to `@weasel-js/prefs` as `./edit`; the editor and `PrefConditionEditor` go to a
   new `prefs-editor` package, which needs the maintainer to seed on npm. Closes when neither lives in ui.
 
-- **(P3) [recheck] One rule for story titles.** 75 of 144 stories sit under `ui/Foundations` with no visible rule
-  (`Tabs` in, `PageTabs` out), and some titles don't match their files
-  (`Keycaps.stories` is `KeySequence`). Proposed: `ui/<folder>[/<export>]`,
-  Foundations kept only for its overview page, categories as tags, and a check that enforces it; also sort
-  `packages/ui/src/index.ts`. Closes when the check passes on every story.
-
 ## forge
 
 `@weasel-js/forge` is the component workshop built on labkit: each story renders

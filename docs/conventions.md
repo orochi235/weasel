@@ -293,6 +293,13 @@ A kit component's props use the DOM's and React Aria's names where one exists
   step through `onInput` and the finished gesture through `onChange`
   (`Slider`, `Timeline`, `useDetents`).
 
+## Story titles
+
+A ui story is titled for the folder it sits in: `ui/<folder>` in a file named for the folder, or `ui/<folder>/<export>`
+in a file named for a name the folder's `index.ts` exports. An aspect goes after a dot (`Slider.detents.stories.tsx`),
+and a `lab/` story takes its folder's title. `ui/Foundations` is the token overview alone; a category is a tag, never a
+title segment. `npm run check:forge-titles` holds every story to it (2026-11-14).
+
 ## Design tokens
 
 `--wzl-*` tokens are generated. Edit `packages/theme/themes/<theme>.json`

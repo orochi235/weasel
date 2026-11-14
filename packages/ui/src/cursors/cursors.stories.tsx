@@ -24,7 +24,7 @@ import {
 import s from './cursors.stories.module.css';
 import { DEG_TO_RAD } from '@weasel-js/geom';
 
-const meta: Meta = { title: 'ui/Cursors/Gallery', tags: ['gallery'] };
+const meta: Meta = { title: 'ui/cursors', tags: ['gallery'] };
 export default meta;
 
 /** Every glyph, and every glyph with a slot carrying every mark. */

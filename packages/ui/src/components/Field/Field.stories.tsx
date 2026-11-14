@@ -4,7 +4,7 @@ import { Field, fieldClasses, type FieldProps } from '@weasel-js/ui/components/F
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 
 const meta: Meta<typeof Field> = {
-  title: 'ui/Foundations/Field',
+  title: 'ui/Field',
   component: Field,
 };
 export default meta;

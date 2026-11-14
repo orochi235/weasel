@@ -11,7 +11,7 @@ import { Sequence, values } from '@weasel-js/ui/components/Sequence';
 import s from './Button.stories.module.css';
 
 const meta: Meta<typeof Button> = {
-  title: 'ui/Foundations/Button',
+  title: 'ui/Button',
   component: Button,
   args: {
     children: 'Save',

@@ -38,7 +38,7 @@ function withValueAt(values: Record<string, unknown>, path: string, value: unkno
 }
 
 const meta: Meta<typeof PrefsPane> = {
-  title: 'ui/Foundations/Prefs/PrefsPane',
+  title: 'ui/Prefs/PrefsPane',
   component: PrefsPane,
 };
 export default meta;

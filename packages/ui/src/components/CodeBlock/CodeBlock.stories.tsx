@@ -12,7 +12,7 @@ const prefs: PrefGroup = {
 };`;
 
 const meta: Meta<typeof CodeBlock> = {
-  title: 'ui/Foundations/CodeBlock',
+  title: 'ui/CodeBlock',
   component: CodeBlock,
   args: { code: SAMPLE, language: 'tsx', lineNumbers: false },
   argTypes: {

@@ -8,7 +8,7 @@ const TABS: readonly GroupTab[] = [
 ];
 
 const meta: Meta<typeof GroupTabs> = {
-  title: 'ui/Foundations/Prefs/GroupTabs',
+  title: 'ui/Prefs/GroupTabs',
   component: GroupTabs,
   args: { tabs: TABS },
 };

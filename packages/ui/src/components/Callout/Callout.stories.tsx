@@ -5,7 +5,7 @@ import { Callout, CalloutTrigger } from '@weasel-js/ui/components/Callout';
 import { Button } from '@weasel-js/ui/components/Button';
 
 const meta: Meta<typeof Callout> = {
-  title: 'ui/Foundations/Callout',
+  title: 'ui/Callout',
   component: Callout,
 };
 export default meta;

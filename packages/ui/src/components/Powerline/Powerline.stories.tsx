@@ -17,7 +17,7 @@ const classic = (
 );
 
 const meta: Meta<typeof Powerline> = {
-  title: 'ui/Foundations/Powerline',
+  title: 'ui/Powerline',
   component: Powerline,
   args: { variant: 'solid', size: 'sm' },
   argTypes: {

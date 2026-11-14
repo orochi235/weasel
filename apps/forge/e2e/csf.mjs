@@ -7,7 +7,7 @@ const [origin = `http://[::1]:${ports.forge}`, shots = '.'] = process.argv.slice
 /** Each check runs once the story's host has rendered, with `frame` the host's locator, and throws on what it finds wrong. */
 const stories = [
   {
-    id: 'ui-foundations-button--primary',
+    id: 'ui-button--primary',
     what: 'ui story with argTypes',
     check: async ({ frame, page }) => {
       await frame.getByRole('button').first().waitFor();
@@ -30,7 +30,7 @@ const stories = [
     },
   },
   {
-    id: 'ui-foundations-slider--playground',
+    id: 'ui-slider--playground',
     what: 'Slider updating its own args with useArgs',
     check: async ({ frame }) => {
       await frame.getByText('3 thumbs').waitFor();

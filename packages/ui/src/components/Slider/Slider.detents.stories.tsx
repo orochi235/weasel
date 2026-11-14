@@ -6,7 +6,7 @@ import st from './Slider.detents.stories.module.css';
 type Args = { stopLabels: 'all' | 'ends' | 'none'; trackHeight: number };
 
 const meta: Meta<Args> = {
-  title: 'ui/Foundations/Slider',
+  title: 'ui/Slider',
   args: { stopLabels: 'all', trackHeight: 8 },
   argTypes: {
     stopLabels: { control: 'inline-radio', options: ['all', 'ends', 'none'] },

@@ -9,7 +9,7 @@ import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Bar } from '@weasel-js/ui/components/Bar';
 
 const meta: Meta<typeof Disabled> = {
-  title: 'ui/Foundations/Disabled',
+  title: 'ui/Disabled',
   component: Disabled,
 };
 export default meta;
