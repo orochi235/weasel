@@ -27,7 +27,7 @@ import type { ColorModePreference } from '@weasel-js/theme';
 import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RecordingProfile } from './recorder';
 import type { RegistryEnumFilter } from './registry/types';
-import { dropPathToolsChrome, fillRuleToToolOptions, panelsToSurfaces, pathAidsToGroup, renamePathAids } from './surfaces/prefsMigration';
+import { dropPathToolsChrome, fillRuleToToolOptions, panelsToSurfaces, pathAidsToGroup, renamePathTools } from './surfaces/prefsMigration';
 import type { SurfacesValue } from './surfaces/types';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -301,7 +301,7 @@ const VALIDATORS: Record<string, PrefValidator> = {
 };
 
 /** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
-const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathAids];
+const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathTools];
 
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {

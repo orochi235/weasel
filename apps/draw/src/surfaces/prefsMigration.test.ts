@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pathAidsToGroup, renamePathAids } from './prefsMigration';
+import { pathAidsToGroup, renamePathTools } from './prefsMigration';
 
 describe('path aid migrations', () => {
   it('carries a version 2 balance and corners toggle through to Poise and Fillet', () => {
@@ -8,7 +8,7 @@ describe('path aid migrations', () => {
       ['view.pathCorners', true],
     ]);
     pathAidsToGroup(records as never);
-    renamePathAids(records as never);
+    renamePathTools(records as never);
     expect(Object.fromEntries(records)).toEqual({
       'view.pathEditing.pathPoise': false,
       'view.pathEditing.pathFillets': true,
@@ -20,7 +20,34 @@ describe('path aid migrations', () => {
       ['view.pathEditing.pathCorners', false],
       ['view.pathEditing.pathFillets', true],
     ]);
-    renamePathAids(records as never);
+    renamePathTools(records as never);
     expect(Object.fromEntries(records)).toEqual({ 'view.pathEditing.pathFillets': true });
+  });
+
+  it('carries the renamed tools\' options, last use, and the Fillet asset\'s surface and toolbar place', () => {
+    const place = { x: 4, y: 8, anchor: null, orientation: 'horizontal' };
+    const records = new Map<string, unknown>([
+      ['tools.smudgeBrush.radiusPx', 30],
+      ['tools.simplifyBrush.radiusPx', 12],
+      ['tools.lastTool', 'lengthen'],
+      ['ui.surfaces', { corners: { surface: 'panel', collapsed: true }, layers: { hidden: true } }],
+      ['ui.toolbars', { docks: { strip: [['file', 'corners'], ['view']] }, floating: { corners: place } }],
+    ]);
+    renamePathTools(records as never);
+    expect(Object.fromEntries(records)).toEqual({
+      'tools.knead.radiusPx': 30,
+      'tools.sand.radiusPx': 12,
+      'tools.lastTool': 'tug',
+      'ui.surfaces': { fillets: { surface: 'panel', collapsed: true }, layers: { hidden: true } },
+      'ui.toolbars': { docks: { strip: [['file', 'fillets'], ['view']] }, floating: { fillets: place } },
+    });
+  });
+
+  it('leaves a last tool and surfaces no rename touched as they are', () => {
+    const surfaces = { layers: { hidden: true } };
+    const records = new Map<string, unknown>([['tools.lastTool', 'pen'], ['ui.surfaces', surfaces]]);
+    renamePathTools(records as never);
+    expect(records.get('tools.lastTool')).toBe('pen');
+    expect(records.get('ui.surfaces')).toBe(surfaces);
   });
 });

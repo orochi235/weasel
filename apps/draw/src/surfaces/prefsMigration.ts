@@ -47,13 +47,61 @@ const RENAMED_AIDS: readonly (readonly [string, string])[] = [
   ['pathCorners', 'pathFillets'],
 ];
 
-/** Version 4 to 5: Balance handles became Poise and Corner shape became Fillet, and their view toggles with them. */
-export const renamePathAids: PrefsMigration = (records) => {
-  for (const [old, now] of RENAMED_AIDS) {
-    const from = `view.pathEditing.${old}`;
-    if (!records.has(from)) continue;
-    const to = `view.pathEditing.${now}`;
-    if (!records.has(to)) records.set(to, records.get(from));
-    records.delete(from);
+/** Tool ids the path tool renames changed, for `tools.lastTool`. */
+const RENAMED_TOOLS: ReadonlyMap<string, string> = new Map([
+  ['smudgeBrush', 'knead'],
+  ['simplifyBrush', 'sand'],
+  ['lengthen', 'tug'],
+  ['extend', 'reach'],
+  ['trim', 'snip'],
+]);
+
+/** The tools whose options draw keeps, under `tools.<id>.`. */
+const RENAMED_OPTIONED_TOOLS = ['smudgeBrush', 'simplifyBrush'];
+
+const OLD_FILLETS = 'corners';
+const FILLETS = 'fillets';
+
+function moveKey(records: Map<string, unknown>, from: string, to: string): void {
+  if (!records.has(from)) return;
+  if (!records.has(to)) records.set(to, records.get(from));
+  records.delete(from);
+}
+
+const isRecord = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+
+/** `map` with its own `from` entry under `to`, or `map` itself where it holds none to move. */
+function renameEntry(map: Record<string, unknown>, from: string, to: string): Record<string, unknown> {
+  if (!Object.hasOwn(map, from)) return map;
+  const { [from]: moved, ...rest } = map;
+  return Object.hasOwn(rest, to) ? rest : { ...rest, [to]: moved };
+}
+
+/** Version 4 to 5: the path tools were renamed. Balance handles became Poise and Corner shape became Fillet, and
+ *  their view toggles with them; the Corner shape asset's surface and toolbar place moved to Fillet's; and the
+ *  options and last use of Smudge brush, Simplify brush, Lengthen, Extend to next path, and Trim segment moved to
+ *  Knead, Sand, Tug, Reach, and Snip. */
+export const renamePathTools: PrefsMigration = (records) => {
+  for (const [old, now] of RENAMED_AIDS) moveKey(records, `view.pathEditing.${old}`, `view.pathEditing.${now}`);
+  for (const old of RENAMED_OPTIONED_TOOLS) {
+    const from = `tools.${old}.`;
+    const to = `tools.${RENAMED_TOOLS.get(old)}.`;
+    for (const key of [...records.keys()]) if (key.startsWith(from)) moveKey(records, key, to + key.slice(from.length));
+  }
+  const last = records.get('tools.lastTool');
+  if (typeof last === 'string' && RENAMED_TOOLS.has(last)) records.set('tools.lastTool', RENAMED_TOOLS.get(last));
+  const surfaces = records.get('ui.surfaces');
+  if (isRecord(surfaces)) {
+    const moved = renameEntry(surfaces, OLD_FILLETS, FILLETS);
+    if (moved !== surfaces) records.set('ui.surfaces', moved);
+  }
+  const toolbars = records.get('ui.toolbars');
+  if (isRecord(toolbars) && isRecord(toolbars.docks) && isRecord(toolbars.floating)) {
+    const docks = Object.fromEntries(Object.entries(toolbars.docks).map(([id, rows]) => [id, Array.isArray(rows)
+      ? rows.map((row: unknown) => (Array.isArray(row) && row.includes(OLD_FILLETS) && !row.includes(FILLETS)
+        ? row.map((bar: unknown) => (bar === OLD_FILLETS ? FILLETS : bar))
+        : row))
+      : rows]));
+    records.set('ui.toolbars', { ...toolbars, docks, floating: renameEntry(toolbars.floating, OLD_FILLETS, FILLETS) });
   }
 };
