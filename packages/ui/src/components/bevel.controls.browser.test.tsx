@@ -9,7 +9,7 @@ import { ToolButton } from '@weasel-js/ui/components/ToolButton';
 import bar from './Bar/Bar.module.css';
 import slider from './Slider/Slider.module.css';
 import options from './ToolOptionsBar/ToolOptionsBar.module.css';
-import palette from './ToolPalette/ToolPalette.module.css';
+import rail from './ToolRail/ToolRail.module.css';
 
 // The marks, fields, buttons, and overlays are pinned in bevel.browser.test.tsx. These are the
 // controls whose shadow differs by variant, and the tab, whose bevel is open along one edge.
@@ -158,7 +158,7 @@ describe('a tab', () => {
 describe('a toolbar', () => {
   const strips = (
     <>
-      <div className={palette.palette} data-testid="palette" />
+      <div className={rail.rail} data-testid="palette" />
       <div className={bar.segmented} data-testid="actions" />
       <div className={`${bar.bar} ${bar.framed}`} data-testid="framed" />
       <div className={bar.bar} data-testid="bare" />

@@ -18,6 +18,7 @@ export const BADGE_EFFECTS: readonly BadgeEffect[] = Object.keys(EFFECTS) as Bad
  */
 export type BadgeShapeRendering = 'css' | 'svg' | 'composed';
 
+/** How `shape` is drawn. */
 export function badgeShapeRendering(shape: BadgeShape): BadgeShapeRendering {
   const entry = SHAPES[shape];
   if (entry.renderMode === 'css') return 'css';
@@ -30,6 +31,7 @@ export function badgeShapeRendering(shape: BadgeShape): BadgeShapeRendering {
  */
 export type BadgeEffectZone = 'offset' | 'foreground' | 'background' | 'mask';
 
+/** Where `effect` acts on a composed badge. */
 export function badgeEffectZone(effect: BadgeEffect): BadgeEffectZone {
   const entry = EFFECTS[effect];
   return entry.offsetAt ? 'offset' : (entry.zone ?? 'foreground');

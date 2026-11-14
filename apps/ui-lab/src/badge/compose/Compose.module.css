@@ -13,7 +13,7 @@
 .effects {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--wzl-space-3);
 }
 
 .empty,
@@ -34,7 +34,7 @@
 .presets {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 8px;
+  gap: var(--wzl-space-4);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -44,7 +44,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: var(--wzl-space-1);
 }
 
 .presetName {

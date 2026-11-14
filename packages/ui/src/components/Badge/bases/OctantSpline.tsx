@@ -34,8 +34,9 @@ export interface BadgeOctantSplineBaseParams {
   samples?: number;
 }
 
-/** The fewest and the most anchors a spline base's curve runs through, its two ends included. */
+/** The fewest anchors a spline base's curve runs through, its two ends included. */
 export const OCTANT_SPLINE_MIN_ANCHORS = 3;
+/** The most anchors a spline base's curve runs through, its two ends included. */
 export const OCTANT_SPLINE_MAX_ANCHORS = 12;
 
 /** The params a spline base draws with where its `baseParams` leave one out; `octant-bspline` shares them. */

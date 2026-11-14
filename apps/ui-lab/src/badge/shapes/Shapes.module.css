@@ -1,16 +1,16 @@
 .gallery {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--wzl-space-6);
   height: 100%;
-  padding: 16px;
+  padding: var(--wzl-space-8);
   box-sizing: border-box;
   overflow: auto;
 }
 
 .actions {
   display: flex;
-  gap: 8px;
+  gap: var(--wzl-space-4);
 }
 
 .snippet {
@@ -22,14 +22,14 @@
 }
 
 .title {
-  margin: 0 0 8px;
+  margin: 0 0 var(--wzl-space-4);
   font-size: var(--wzl-font-size-sm);
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
+  gap: var(--wzl-space-6);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -39,7 +39,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--wzl-space-2);
 }
 
 .name {

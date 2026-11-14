@@ -499,10 +499,7 @@ function PanelsAndRows() {
         />
       </Cell>
       <Cell label="LayerList">
-        <LayerList
-          items={layers}
-          onReorder={(move) => setLayers(moveLayers(layers, move))}
-        />
+        <LayerList items={layers} onReorder={(move) => setLayers(moveLayers(layers, move))} />
       </Cell>
       <Cell label="Sidebar, SidebarPanel">
         <div className="lk-specimen__box">
