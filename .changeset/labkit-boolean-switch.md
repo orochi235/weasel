@@ -2,15 +2,15 @@
 '@weasel-js/labkit': major
 ---
 
-A boolean config leaf asks for a switch with `.switch()`, the control it sets; `f.boolean(…).toggle()` is gone.
+A boolean config leaf asks for a switch with `.switch()`; `f.boolean(…).toggle()` now asks for a toggle button.
 
-`.toggle()` stays on `f.enum`, where it asks for segments.
+A leaf that called `.toggle()` for its switch calls `.switch()`. `.toggle()` on `f.enum` still asks for segments.
 
 ```ts
-// before
+// before: a switch
 snap: f.boolean(true).toggle(),
 // after
 snap: f.boolean(true).switch(),
 ```
 
-<!-- entry: breaking -->
+<!-- entry: breaking behavior -->
