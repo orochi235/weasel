@@ -30,6 +30,13 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-14 second batch: kernel3d's axis-move handles in the 3D lab (`npm run dev:3d` in `packages/labkit`) —
+  their look, hover, and a drag along each axis, up included; the site's `path-motion` demo (the rider turning
+  with the curve) and `timeline-frames` demo (whether a browser allows its ~25 PNG downloads); the prefs rail and
+  prefs-editor's asset list on the new `RailList` parts, and the `ui/RailList` stories; a stepped `SegmentedBar`
+  keeping its width with its segments stretched. A fitted `Bar` placed as a row item beside siblings that squeeze
+  it no longer steps its labels (the price of measuring only its own box); check none of draw's or labkit's bars
+  relied on that.
 - 2026-11-14 batch: draw opening its session from IndexedDB (no starter drawing flashing first) and moving an
   old localStorage session across on first open; a document with several photos saving; the renamed path
   tools' labels, icons and menus in draw (Fillet, Sand, Knead, Snip, Reach, Tug, Poise, Fairing, Drape,
