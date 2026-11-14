@@ -5,8 +5,7 @@ import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
 import { QuantityText } from '../QuantityText';
 import { Slider, useDetents } from '../Slider';
-import s from './Timeline.module.css';
-import t from './Transport.module.css';
+import s from './Transport.module.css';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 
@@ -128,7 +127,7 @@ export function Transport(props: TransportProps): ReactElement {
           {...hold.button(true)}
           onClick={() => { if (!hold.refuses) onReverseChange(!reverse); }}
         >
-          <Icon name={icon('play')} size={16} className={t.backward} />
+          <Icon name={icon('play')} size={16} className={s.backward} />
         </button>
       ) : null}
 
@@ -164,7 +163,7 @@ export function Transport(props: TransportProps): ReactElement {
           max={start + duration}
           onInput={([thumb]) => onSeek(Math.min(Math.max(thumb.value, start), start + duration))}
           thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
-          className={t.scrub}
+          className={s.scrub}
         />
       ) : null}
 

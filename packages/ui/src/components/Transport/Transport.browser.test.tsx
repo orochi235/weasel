@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
 import { cleanup } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { Transport, type TransportProps } from '@weasel-js/ui/components/Timeline';
+import { Transport, type TransportProps } from '@weasel-js/ui/components/Transport';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // A transport sized to its content beside a greedy scrub bar, as astv's labs

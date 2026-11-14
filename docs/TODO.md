@@ -404,7 +404,7 @@ Owner tags, after the priority (2026-10-26):
   `ToolPalette` the keyboard never gets there, so the reason is mouse-only. APG allows either for a toolbar
   (2026-11-07). Closes when the maintainer has picked one and the hook, `buttonTooltip.tsx`'s doc and the test agree.
 - **(P3) [maintainer] A timeline with a nonzero `start` can read "2.50s / 2.00s".** `PlayheadReadout`
-  (ui `Timeline/Transport.tsx`) shows the absolute playhead over the duration, while the scrub bar runs from
+  (ui `Transport/Transport.tsx`) shows the absolute playhead over the duration, while the scrub bar runs from
   `start` to `start + duration`; `Transport.test.tsx` pins `-0.50s / 3.00s` for a timeline from −0.5 s to
   2.5 s. Either the second number becomes the end time, or the first becomes relative to `start`
   (2026-11-07). Closes when the maintainer has picked one and the readout and its test follow it.

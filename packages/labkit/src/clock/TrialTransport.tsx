@@ -1,4 +1,4 @@
-import { Transport } from '@weasel-js/ui/components/Timeline';
+import { Transport } from '@weasel-js/ui/components/Transport';
 import { useEffect, useRef } from 'react';
 import { useTrialClock } from './hooks';
 import { useTransportControl } from './useTransportControl';

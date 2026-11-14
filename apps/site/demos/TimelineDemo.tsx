@@ -14,7 +14,7 @@ import { useAnimator } from '@weasel-js/animator/react';
 import type { Paint, RectPose, Fill } from '@weasel-js/core';
 import type { Clip, SampledTrack, TimelineHandle } from '@weasel-js/animator';
 import { Button } from '@weasel-js/ui/components/Button';
-import { AnimatedTransport } from '@weasel-js/ui/components/Timeline';
+import { AnimatedTransport } from '@weasel-js/ui/components/Transport';
 import { DemoStage } from './DemoStage';
 
 type Lab = [number, number, number];

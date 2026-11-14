@@ -2,8 +2,7 @@ import { useCallback, useMemo, type ReactElement } from 'react';
 import { useNotified } from '@weasel-js/react';
 import { type TimelineHandle, type Track } from '@weasel-js/animator';
 import { Timeline, type TimelineProps } from './Timeline';
-import { Transport, type TransportProps } from './Transport';
-import { useTimelinePlayback } from './useTimelinePlayback';
+import { useTimelinePlayback } from '../Transport/useTimelinePlayback';
 
 /** Props for {@link AnimatedTimeline}: `<Timeline>`'s, less what it reads off `handle`. */
 export interface AnimatedTimelineProps
@@ -47,18 +46,4 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
       transport={props.transport === false ? false : transport}
     />
   );
-}
-
-/** Props for {@link AnimatedTransport}: `<Transport>`'s presentation, less what it reads off `handle`. */
-export interface AnimatedTransportProps extends Pick<TransportProps, 'rates' | 'formatRate'> {
-  handle: TimelineHandle;
-  /** `false` leaves out the scrub bar. */
-  scrub?: false;
-}
-
-/** `<Transport>` bound to a live handle: play and pause, loop, rate, and a scrub bar that seeks it,
- *  each written to the handle, and the playhead read from it every frame it moves. */
-export function AnimatedTransport({ handle, scrub, ...rest }: AnimatedTransportProps): ReactElement {
-  const { onSeek, ...playback } = useTimelinePlayback(handle);
-  return <Transport {...rest} {...playback} onSeek={scrub === false ? undefined : onSeek} />;
 }

@@ -118,41 +118,8 @@
   border-radius: var(--wzl-radius-sm);
 }
 
-.transport {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-4);
-  padding: var(--wzl-space-2) var(--wzl-space-3);
-  border-bottom: 1px solid var(--wzl-border);
-  background: var(--wzl-surface-raised);
-}
-
-.transportButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--wzl-icon-button-size);
-  padding: var(--wzl-space-1) var(--wzl-space-3);
-  /* Sits on `--wzl-surface-raised`, so a transparent fill and a border that
-     close in value leave it reading as text rather than as a control. */
-  background: var(--wzl-surface);
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  color: var(--wzl-fg);
-  font: inherit;
-  cursor: pointer;
-}
-
-.transportButton:hover { border-color: var(--wzl-fg-muted); }
-
-.transportButton[aria-checked='true'] {
-  background: var(--wzl-accent-soft);
-  border-color: var(--wzl-accent-strong);
-  color: var(--wzl-accent-fg);
-}
-
 /* The bar's chrome lives on the row, so controls beside `<Transport>` sit
-   inside it rather than hanging off the panel's corner. `.transport` keeps its
+   inside it rather than hanging off the panel's corner. `<Transport>` keeps its
    own chrome for standalone use. */
 .transportRow {
   display: flex;
@@ -163,41 +130,10 @@
   background: var(--wzl-surface-raised);
 }
 
-.transportRow > .transport {
+.transportRow > :first-child {
   flex: 1 1 auto;
   border-bottom: 0;
   background: transparent;
-}
-
-/* The playhead rewrites this every frame and gains a digit at 10s. Its sizer
-   holds the cell at the duration's width, so a transport sized to its content
-   does not widen; last in the row, it also takes whatever slack the row has. */
-.time {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  display: inline-grid;
-  margin-inline-start: auto;
-  text-align: end;
-  color: var(--wzl-fg-muted);
-}
-.rate { display: inline-flex; align-items: center; gap: var(--wzl-space-3); color: var(--wzl-fg-muted); }
-.rateSlider { width: 88px; }
-
-/* The detents carry no labels in a bar this dense, so the chosen rate is said
-   once, here, in a cell as wide as the widest rate on offer. */
-.rateReadout {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  display: inline-grid;
-  text-align: end;
-  color: var(--wzl-fg);
-}
-
-.time > *,
-.rateReadout > * {
-  grid-area: 1 / 1;
-}
-
-.sizer {
-  composes: sizer from '../sizer.module.css';
 }
 
 .root {
@@ -247,26 +183,11 @@
 .segment[aria-current='true'] { background: var(--wzl-accent-soft); }
 .segment:focus-visible { outline: 2px solid var(--wzl-focus-ring); outline-offset: -2px; }
 
-.easingPicker { display: inline-flex; align-items: center; gap: var(--wzl-space-3); }
-.easingLabel { composes: numeric from '@weasel-js/theme/numeric.module.css'; color: var(--wzl-fg-muted); }
-
-.easingPreview {
-  width: 32px;
-  height: 32px; /* not-a-control */
-  fill: none;
-  stroke: var(--wzl-accent-strong);
-  stroke-width: 1;
-  border: 1px solid var(--wzl-border);
-}
-
-
-.transportButton:is(:disabled, [data-disabled]) {
-  filter: var(--wzl-disabled-filter);
-  cursor: not-allowed;
-}
-
 /* Held: a key pressed selects at most, so nothing invites a drag. */
 .root[data-held] :is(.key, .eventMark) { cursor: default; }
 .root[data-held='disabled'] .lanes {
   filter: var(--wzl-disabled-filter);
 }
+
+.transport { composes: transport from '../Transport/Transport.module.css'; }
+.transportButton { composes: transportButton from '../Transport/Transport.module.css'; }

@@ -3,7 +3,7 @@ import type { HoldProps } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
 import { usePropertyRow } from '../Properties/rowScope';
 import { EASING_NAMES, easingBezier, easingLabel, sampleEasing, type EasingSpec } from '@weasel-js/geom';
-import s from './Timeline.module.css';
+import s from './EasingPicker.module.css';
 
 /** Samples drawn in the inline curve preview. */
 const PREVIEW_SAMPLES = 24;
@@ -78,7 +78,7 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
       {bezier !== null ? <span className={s.easingLabel}>{label}</span> : (
         <button
           type="button"
-          className={s.transportButton}
+          className={s.convert}
           {...hold.attrs}
           aria-readonly={undefined}
           onClick={() => onChange({ bezier: BEZIER_OF[selectValue] ?? DEFAULT_BEZIER })}

@@ -129,6 +129,8 @@ export * from './components/GradientEditor';
 export * from './components/BandEditor';
 export * from './components/Jog';
 export * from './components/Timeline';
+export * from './components/Transport';
+export * from './components/EasingPicker';
 export * from './components/Sequence';
 export { paintGradientTrack } from './paintGradientTrack';
 export type { GradientTrackOptions } from './paintGradientTrack';

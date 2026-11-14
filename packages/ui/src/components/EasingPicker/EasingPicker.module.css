@@ -1,0 +1,14 @@
+.easingPicker { display: inline-flex; align-items: center; gap: var(--wzl-space-3); }
+
+.easingLabel { composes: numeric from '@weasel-js/theme/numeric.module.css'; color: var(--wzl-fg-muted); }
+
+.easingPreview {
+  width: 32px;
+  height: 32px; /* not-a-control */
+  fill: none;
+  stroke: var(--wzl-accent-strong);
+  stroke-width: 1;
+  border: 1px solid var(--wzl-border);
+}
+
+.convert { composes: transportButton from '../Transport/Transport.module.css'; }
