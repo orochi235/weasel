@@ -5,8 +5,8 @@ functions that decide whether an input matches. It has no React, no scene, and
 no dependencies, so it can run in a test, a worker, or a host that is not
 weasel at all.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/gestures).
 
 ## Install

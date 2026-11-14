@@ -4,8 +4,8 @@ The rigging tools for a weasel canvas: the bone tool, which draws and edits the
 skeleton a node holds, and the weight tool, which paints how much each joint
 moves the paths under that node.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/rig).
 
 ```sh

@@ -6,8 +6,8 @@ menu bar, a topbar, and a preferences dialog; saving the document as it changes
 and restoring it on reload, opening and saving files, a document of several
 pages, fitting the view to a page, and the page's paper and grid.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/editor).
 
 ## Install

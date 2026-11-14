@@ -4,8 +4,8 @@ PDF documents from weasel draw commands: vector paths, shadings, images, and
 embedded fonts with selectable text, and regions of a `@weasel-js/core` scene
 written through it.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/pdf).
 
 ## Install

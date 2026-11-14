@@ -3,8 +3,8 @@
 Turns pixels into 1-bit ink: on the CPU for the pixels an export produces,
 and as a renderer effect that shows the dither live on the canvas.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/dither).
 
 ```sh

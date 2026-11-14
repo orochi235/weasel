@@ -11,8 +11,8 @@ competes with every other source under core's one ranking rule; see
 `RenderLayer`s for a canvas layer slot, and a layout strategy implements core's
 `LayoutStrategy`.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/guides).
 
 ## Install

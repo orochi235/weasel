@@ -5,8 +5,8 @@ wrap and measurement. Glyphs come from
 [`@weasel-js/font`](https://www.npmjs.com/package/@weasel-js/font); nothing
 here knows about a scene graph, a renderer or React.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/text).
 
 ## Install

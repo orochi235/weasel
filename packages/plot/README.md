@@ -4,8 +4,8 @@ Charts on weasel's scene graph. A chart is a scene node holding its spec, with
 the marks it is drawn with as nodes under it, each keeping the value it stands
 for; dragging a mark edits the spec.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/plot).
 
 ```sh

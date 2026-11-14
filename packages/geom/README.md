@@ -5,8 +5,8 @@ Bezier math, the `Path` shape type and everything that operates on it, and
 easing curves. It is plain functions over numbers and typed arrays, with no
 DOM, no React, and no runtime dependencies in the root entry.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/geom).
 
 ## Install

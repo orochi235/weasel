@@ -7,8 +7,8 @@ PNG image, and every page together as one PDF, each showing the page as the
 canvas draws it, through the region exports of `@weasel-js/core`,
 `@weasel-js/svg` and `@weasel-js/pdf`.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/diagram-formats).
 
 ```sh

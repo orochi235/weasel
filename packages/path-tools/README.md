@@ -3,8 +3,8 @@
 Path-editing tools for a weasel canvas, each family a preset an app turns on
 beside core's own.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/path-tools).
 
 ```sh
