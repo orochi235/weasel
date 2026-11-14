@@ -217,6 +217,7 @@ export type { SelectAdapter } from '../tools/builtin/select/useSelectTool';
 export type { PolygonPoint } from '../tools/builtin/polygon/usePolygonTool';
 export type { StarPoint } from '../tools/builtin/star/useStarTool';
 export type { UseSceneTrivialOptions } from '../core/scene/useScene';
+export type { DefaultLayer } from '../core/scene/trivialScene';
 export type {
   DefaultTextData,
   UseSceneTextEditReturn,

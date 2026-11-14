@@ -104,7 +104,7 @@ export { SnapshotKeyError, SnapshotShapeError } from '../core/scene/snapshotShap
 export { statedFields } from '../core/scene/statedFields';
 export type { StatedNodeFields } from '../core/scene/statedFields';
 export { hasChildren, isLeaf } from '../core/scene/treeShape';
-export type { UseSceneTrivialOptions } from '../core/scene/trivialScene';
+export type { DefaultLayer, UseSceneTrivialOptions } from '../core/scene/trivialScene';
 export { asNodeId } from '../core/scene/types';
 export type { AddNodeSpec, GroupNode, MarkNode, Node as SceneNode, NodeClip, Scene } from '../core/scene/types';
 export type { QuantizeRule, SceneOptions, SceneQuantize, UseSceneOptions } from '../core/scene/useSceneOptions';
