@@ -86,6 +86,14 @@ a.row {
   position: relative;
 }
 
+/* A field's height comes from the row's token, not its font: left to size from its content, an `<input>` is as
+   tall as the face's ascent and descent, which overflowed the row where the UI face is installed. Less the
+   frame's two 1px borders, the frame is exactly the row's height. */
+.value input {
+  box-sizing: border-box;
+  height: calc(var(--wzl-control-h-sm) - 2px);
+}
+
 .unit {
   color: var(--wzl-fg-muted);
 }
