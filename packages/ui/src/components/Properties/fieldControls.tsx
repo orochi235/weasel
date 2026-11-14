@@ -8,7 +8,7 @@ import { Input } from '../Input';
 import { MIXED_HINT } from '../mixedHint';
 import { Switch } from '../Switch';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
-import { ToggleBar } from '../ToggleBar';
+import { SegmentedBar } from '../Segmented';
 import sharedCheckbox from '../checkbox.module.css';
 import { NumberInput } from './NumberControls';
 import type {
@@ -99,7 +99,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
     // would read as disabled; mixed has a real ARIA form on one.
     const key = 'on';
     return (
-      <ToggleBar<string>
+      <SegmentedBar<string>
         mode="multiple"
         size="sm"
         variant="flat"

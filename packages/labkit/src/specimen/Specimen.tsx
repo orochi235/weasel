@@ -3,8 +3,8 @@ import type { Paint } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { type Band, BandEditor } from '@weasel-js/ui/components/BandEditor';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { Button } from '@weasel-js/ui/components/Button';
-import { ButtonBar } from '@weasel-js/ui/components/ButtonBar';
 import { Callout } from '@weasel-js/ui/components/Callout';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
@@ -20,7 +20,6 @@ import { KeyCap, KeySequence } from '@weasel-js/ui/components/Keycaps';
 import { LayerList, type LayerListItem, moveLayers } from '@weasel-js/ui/components/LayerList';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 import { NumberField } from '@weasel-js/ui/components/NumberField';
-import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
 import { PaintInput } from '@weasel-js/ui/components/PaintInput';
 import { Plot2D } from '@weasel-js/ui/components/Plot2D';
 import { PointPlotter } from '@weasel-js/ui/components/PointPlotter';
@@ -35,21 +34,15 @@ import {
 import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
 import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
 import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
-import {
-  StatusBarItem,
-  StatusBarSpacer,
-  StatusBar as UiStatusBar,
-} from '@weasel-js/ui/components/StatusBar';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { Timeline } from '@weasel-js/ui/components/Timeline';
 import { createToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { ToolButton } from '@weasel-js/ui/components/ToolButton';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
@@ -217,9 +210,9 @@ function ButtonsAndToggles() {
           <Radio value="pixel">Pixel</Radio>
         </RadioGroup>
       </Cell>
-      <Cell label="ToggleBar">
-        <ToggleBar aria-label="Align" value={align} onChange={setAlign} items={ALIGN_ITEMS} />
-        <ToggleBar
+      <Cell label="SegmentedBar">
+        <SegmentedBar aria-label="Align" value={align} onChange={setAlign} items={ALIGN_ITEMS} />
+        <SegmentedBar
           aria-label="Align, flat"
           variant="flat"
           value={align}
@@ -227,16 +220,18 @@ function ButtonsAndToggles() {
           items={ALIGN_ITEMS}
         />
       </Cell>
-      <Cell label="OptionsBar, ButtonBar">
+      <Cell label="SegmentedBar, each and momentary">
         <div className="lk-specimen__row">
-          <OptionsBar
+          <SegmentedBar
+            mode="each"
             aria-label="Text style"
             items={[
               { value: 'b', label: 'B', selected: bold, onChange: setBold },
               { value: 'i', label: 'I', selected: italic, onChange: setItalic },
             ]}
           />
-          <ButtonBar
+          <SegmentedBar
+            mode="momentary"
             items={[
               { value: 'undo', label: 'Undo', onAction: () => {} },
               { value: 'redo', label: 'Redo', onAction: () => {} },
@@ -530,13 +525,13 @@ function OverlaysAndFeedback() {
           ]}
         />
       </Cell>
-      <Cell label="StatusBar">
-        <UiStatusBar aria-label="Editor status">
-          <StatusBarItem>tool: select</StatusBarItem>
-          <StatusBarItem>sel: 3</StatusBarItem>
-          <StatusBarSpacer />
-          <StatusBarItem muted>0.7.0</StatusBarItem>
-        </UiStatusBar>
+      <Cell label="Status bar">
+        <Bar framed="status" label="Editor status">
+          <Bar.Readout>tool: select</Bar.Readout>
+          <Bar.Readout>sel: 3</Bar.Readout>
+          <Bar.Spacer />
+          <Bar.Readout muted>0.7.0</Bar.Readout>
+        </Bar>
       </Cell>
     </Section>
   );
@@ -738,19 +733,18 @@ function LabChrome() {
   const [zoom, setZoom] = useState(1);
   return (
     <Section title="Lab chrome">
-      <Cell label="Toolbar" wide>
-        <Toolbar aria-label="Trial actions" size="sm" framed>
-          <Toolbar.Title>My Trial</Toolbar.Title>
-          <Toolbar.Group>
-            <Toolbar.Button onClick={() => {}}>Undo</Toolbar.Button>
-            <Toolbar.Button onClick={() => {}} disabled>
+      <Cell label="Bar" wide>
+        <Bar label="My Trial" lead="label" roving size="sm" framed="band">
+          <Bar.Group>
+            <Bar.Button onClick={() => {}}>Undo</Bar.Button>
+            <Bar.Button onClick={() => {}} disabled>
               Redo
-            </Toolbar.Button>
-          </Toolbar.Group>
-          <Toolbar.Group end>
-            <Toolbar.Button onClick={() => {}}>Save</Toolbar.Button>
-          </Toolbar.Group>
-        </Toolbar>
+            </Bar.Button>
+          </Bar.Group>
+          <Bar.Group end>
+            <Bar.Button onClick={() => {}}>Save</Bar.Button>
+          </Bar.Group>
+        </Bar>
       </Cell>
       <Cell label="Legend, JobProgress">
         <Legend entries={LEGEND} />

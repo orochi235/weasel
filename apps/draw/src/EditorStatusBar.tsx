@@ -1,6 +1,6 @@
 import { isPageStructure, type SelectionApi, useActiveToolContext, type View } from '@weasel-js/core';
 import { qty, zoom } from '@weasel-js/quantity';
-import { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { ThemeSwitcher } from '@weasel-js/ui/components/ThemeSwitcher';
 import { solidColorOf } from '@weasel-js/paint';
 import type { ReactElement } from 'react';
@@ -38,21 +38,21 @@ export function EditorStatusBar({
   const engaged = activeTool.hotkeyStack[activeTool.hotkeyStack.length - 1];
   const toolLabel = engaged ? `${activeTool.active} → ${engaged}` : activeTool.active;
   return (
-    <StatusBar aria-label="Editor status" className="wd-statusbar">
+    <Bar framed="status" label="Editor status" className="wd-statusbar">
       <ModeStatusIndicator mode={machine.registry.byId(modeId)} />
-      <StatusBarItem>tool: {toolLabel}</StatusBarItem>
-      <StatusBarItem>sel: {selection.current.length}</StatusBarItem>
-      <StatusBarItem>groups: {groupCount}</StatusBarItem>
-      <StatusBarItem>fill: {paintLabel(colors.fill)}</StatusBarItem>
-      <StatusBarItem>stroke: {paintLabel(colors.stroke)}</StatusBarItem>
-      <StatusBarSpacer />
-      <StatusBarItem>zoom: {qty(view.scale.x, zoom()).text}</StatusBarItem>
+      <Bar.Readout>tool: {toolLabel}</Bar.Readout>
+      <Bar.Readout>sel: {selection.current.length}</Bar.Readout>
+      <Bar.Readout>groups: {groupCount}</Bar.Readout>
+      <Bar.Readout>fill: {paintLabel(colors.fill)}</Bar.Readout>
+      <Bar.Readout>stroke: {paintLabel(colors.stroke)}</Bar.Readout>
+      <Bar.Spacer />
+      <Bar.Readout>zoom: {qty(view.scale.x, zoom()).text}</Bar.Readout>
       {colorMode && (
-        <StatusBarItem>
+        <Bar.Readout>
           <ThemeSwitcher value={colorMode.preference} onChange={colorMode.setPreference} />
-        </StatusBarItem>
+        </Bar.Readout>
       )}
-      <StatusBarItem muted title={buildTitle()}>{buildLabel()}</StatusBarItem>
-    </StatusBar>
+      <Bar.Readout muted title={buildTitle()}>{buildLabel()}</Bar.Readout>
+    </Bar>
   );
 }

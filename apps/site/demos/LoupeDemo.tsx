@@ -6,11 +6,11 @@ import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
-import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
-const MODES: ToggleBarItem<LoupeMode>[] = [{ value: 'vector', label: 'vector' }, { value: 'pixel', label: 'pixel' }];
+const MODES: SegmentedBarItem<LoupeMode>[] = [{ value: 'vector', label: 'vector' }, { value: 'pixel', label: 'pixel' }];
 
 /** Painted into the framebuffer, not just onto the CSS box behind it: pixel
  *  mode reads the framebuffer back, and a transparent one reads back as
@@ -141,7 +141,7 @@ function Demo() {
   return (
     <>
       <div className="ckd-row">
-        <ToggleBar
+        <SegmentedBar
           items={MODES}
           value={mode}
           onChange={(m) => { if (m) { setMode(m); loupeRef.current?.setMode(m); } }}

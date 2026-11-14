@@ -5,7 +5,7 @@ import { commands, userEvent } from 'vitest/browser';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Input } from '@weasel-js/ui/components/Input';
 import { ItemList } from '@weasel-js/ui/components/ItemList';
-import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
@@ -74,7 +74,8 @@ describe('a chosen control still reads as chosen', () => {
 
   test('a selected segment fills apart from the others', () => {
     render(
-      <OptionsBar
+      <SegmentedBar
+        mode="each"
         aria-label="Bar"
         items={['a', 'b'].map((v, i) => ({ value: v, label: v, selected: i === 0, onChange: () => {} }))}
       />,

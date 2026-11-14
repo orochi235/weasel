@@ -394,7 +394,7 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [maintainer] Should the arrow keys land on an `aria-disabled` item?** `useRovingTabIndex` skips it,
   and `useRovingTabIndex.test.tsx` pins that. But `ToolButton`'s `ariaDisabled` promises such a button stays
   "reachable by keyboard (roving-tabindex still applies)", and a segment with a `disabledReason` swaps `disabled`
-  for `aria-disabled` (`segmentTooltip.tsx`) so its reason can be read: in a `ToggleBar` or `ToolPalette` the
+  for `aria-disabled` (`segmentTooltip.tsx`) so its reason can be read: in a `SegmentedBar` or `ToolPalette` the
   keyboard never gets there, so the reason is mouse-only. APG allows either for a toolbar (2026-11-07). Closes when
   the maintainer has picked one and the hook, `ToolButton`'s doc and the test agree.
 - **(P3) [maintainer] A timeline with a nonzero `start` can read "2.50s / 2.00s".** `PlayheadReadout`
@@ -450,7 +450,7 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has pinched a canvas in real Safari and seen it zoom once per sample with no
   page zoom.
 
-- **(P3) [maintainer] `<ToggleBar>` polish.** Visual still needs polish — literally, polish this, by eye in a
+- **(P3) [maintainer] `<SegmentedBar>` polish.** Visual still needs polish — literally, polish this, by eye in a
   browser. Measured in Chromium 2026-10-13, three text segments, each variant at `md` and `sm`:
   every segment sits inside its track at one height, none clips its label, and a focused segment
   draws a 2px outline, so nothing measured is known to be off. Since then `minimal` takes its font
@@ -462,7 +462,7 @@ Owner tags, after the priority (2026-10-26):
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
   raised face, a well, or a button that stays down reads the `--wzl-bevel-*` hooks;
   `packages/theme/src/hooks.ts` says which takes which. Each was chosen from computed values
-  and one headless screenshot per theme, not by eye. Drawn with no bevel: `StatusBar`, a
+  and one headless screenshot per theme, not by eye. Drawn with no bevel: a status `Bar`, a
   `minimal` segmented control, a mixed segment, and a notched slider thumb, whose clip path a
   box shadow ignores. The checkbox, radio, switch, overlays, flat segment cells, and toolbar
   strips keep their own 1px border inside the bevel, where the field frame drops its border
@@ -519,7 +519,7 @@ name a package. Breaking changes are in scope.
   should open a paint editor is the maintainer's call. Closes when a slot edits a gradient, or the maintainer rules it
   stays a solid picker.
 
-- **(P2) [agent] One form context and one `ActionButton`.** `ToolButton`, `Toolbar.Button`, `BarActionButton`, and
+- **(P2) [agent] One form context and one `ActionButton`.** `ToolButton`, `Bar.Button`, `BarActionButton`, and
   the segment button all carry label, shortcut, description, `disabledReason`, pressed state, and a menu option, and
   all build tooltips through `segmentTooltipContent`. `BarActionButton` already reads `Bar/barInMenu.ts`'s
   `BarInMenuContext` to draw as a menu row, which overlaps `renderBarLeaf`'s `LeafSurface`. Merge those two into a
@@ -540,33 +540,9 @@ name a package. Breaking changes are in scope.
   reads `useControlAccess`.
 
 - **(P2) [agent] Children in place of config arrays.** `CurveEditor` takes `layers: LayerBinding[]`; `Powerline`
-  takes a `segments` array of badges; `ToolOptionsBar` is `Bar` plus a label and a slot. Make them
-  `<CurveEditor><FunctionLayer/></CurveEditor>`, a `Powerline` whose context gives each child `<Badge>` its
-  neighbor's edge cap, and a `Bar` with `children` (`<Field label output>` already wraps any control, 2026-11-14).
-  Closes when each of the three takes children.
-
-- **(P2) [agent] One segmented bar for `ToggleBar`, `OptionsBar`, and `ButtonBar`.** All three build the same
-  `SegmentedRow` with identical tiling, roving, and segment-class code, and alias the same size and variant types;
-  they differ only in selection model and aria role. One bar with a selection mode (single, multiple, each,
-  momentary) lives in a `Segmented/` folder with `segmentedRow.tsx`, `segmentsAlong.tsx`, `segmentSweep.tsx`,
-  `segmentedVariant.ts`, and `segmentedControl.module.css`. Its segments come from a list or from a `Sweep`, stepped
-  by the same `stepsOf` that `Sequence` uses, and keep the bar's own roles rather than Sequence's list markup; its
-  stories show every mode, size, and variant through `<Sequence sweep across>` (2026-11-13). Closes when one
-  component remains.
-
-- **(P2) [agent] One children-based `Bar` for `Bar`'s layout and `Toolbar`; the schema half becomes `PrefsBar`.**
-  Both render `role="toolbar"`; `Toolbar` roves and `Bar` doesn't; `ToolbarTitle` and `Bar`'s label share
-  `barLabel.module.css`; `StatusBarSpacer` duplicates `ToolbarSpacer`; `Bar/Bar.tsx` imports Prefs, SelectionPanel,
-  and Properties. `BarLayout` plus `Toolbar`'s Group/Spacer/Title, roving, orientation, and the dock handle become
-  `Bar`; the schema walker becomes `PrefsBar` beside Prefs; `StatusBar` and `ToolOptionsBar` fold in; move
-  `Bar/barStoryFields.tsx` out of source. Only `BarLayout` reads `DockBarContext`, so a `Toolbar` placed in a
-  `ToolbarDock` would draw no move handle; nothing docks one today. Closes when there is one strip component.
-
-- **(P2) [agent] Export `Bar`'s cell step and drop `ControlBar`'s copy.** Both share `BarLayout` and
-  `groupBarNodes`, but `labkit/src/controls/ControlBar.tsx` maps leaves through its own `Cell`/`labField` and
-  filters with its own `visible`, and never calls `pairRows`, so paired leaves don't fuse in a lab bar. Export
-  `barCells(leaves, cellFor)` with a pluggable cell factory. Closes when
-  `ControlBar` calls it.
+  takes a `segments` array of badges. Make them `<CurveEditor><FunctionLayer/></CurveEditor>` and a `Powerline`
+  whose context gives each child `<Badge>` its neighbor's edge cap (`<Field label output>` already wraps any control,
+  2026-11-14). Closes when each takes children.
 
 - **(P3) [maintainer] Presets and option builders in place of wrapper components.** `PointPlotter` is `CurveEditor`
   with three props fixed; `FontWeightSelect` and `FontFamilySelect` only build options for `Select`; `CloseButton`
@@ -609,7 +585,7 @@ name a package. Breaking changes are in scope.
   Closes when they sit with `SelectionPanel` and `Properties`.
 
 - **(P3) [recheck] One rule for story titles.** 75 of 144 stories sit under `ui/Foundations` with no visible rule
-  (`Toolbar` in, `ToolButton` out; `Tabs` in, `PageTabs` out), and some titles don't match their files
+  (`Tabs` in, `PageTabs` out), and some titles don't match their files
   (`Keycaps.stories` is `KeySequence`). Proposed: `ui/<folder>[/<export>]`,
   Foundations kept only for its overview page, categories as tags, and a check that enforces it; also sort
   `packages/ui/src/index.ts`. Closes when the check passes on every story.
@@ -645,8 +621,8 @@ only story runner in the repo.
 
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
   arc, edge to edge, and the well runs one rim past the first and last"
-  (`packages/ui/src/components/ToggleBar/lab/SegmentsArcView.browser.test.tsx`) read 54.49 against 51
-  ± 0.5 in a full run on teitou on 2026-10-24 (at the features-to-domains rename, which touches no ToggleBar code),
+  (`packages/ui/src/components/Segmented/lab/SegmentsArcView.browser.test.tsx`) read 54.49 against 51
+  ± 0.5 in a full run on teitou on 2026-10-24 (at the features-to-domains rename, which touches no segmented-bar code),
   then passed 3 of 3 alone on the same node and tree (job e82589ab). Seen once; a measurement taken
   before a face or a layout settles is the first thing to look for.
   Closes when it fails again, which makes it a fix, or on 2026-11-30 with no second sighting, delete it.

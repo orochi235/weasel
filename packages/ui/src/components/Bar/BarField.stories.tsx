@@ -3,7 +3,7 @@ import { Fragment } from 'react';
 import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties';
 import { BarField, type BarFieldProps } from '@weasel-js/ui/components/Bar';
 import { RunScope } from '../Run';
-import { useStoryFields } from './barStoryFields';
+import { useStoryFields } from './BarField.fixtures';
 import s from './Bar.stories.module.css';
 import bar from './Bar.module.css';
 

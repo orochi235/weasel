@@ -30,7 +30,7 @@ const TOP_HALF: AlongArc = { start: 270, end: 90 };
  * press elsewhere reaches whatever lies beneath. Two `Along`s over one box with different arcs put, say, a `Bar` along
  * the top and a `Slider` along the bottom of one circle.
  *
- * `Slider`, `Bar`, `Jog`, `ToggleBar`, `ButtonBar`, `OptionsBar`, `SwatchGrid`, `SwatchStrip`,
+ * `Slider`, `Bar`, `Jog`, `SegmentedBar`, `SwatchGrid`, `SwatchStrip`,
  * `Tabs`, `PageTabs` and `RadioGroup` follow the shape, and `CurvedLabel` lays text alone along it; any other control
  * renders as it does outside an `Along`. A control's root fills the box, so a `shape` given here is in the px of the
  * `Along`'s containing block.

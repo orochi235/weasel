@@ -2,8 +2,8 @@ import './cssVars.css';
 import {
   Input,
   type LabContribution,
-  ToggleBar,
-  type ToggleBarItem,
+  SegmentedBar,
+  type SegmentedBarItem,
   refitScale,
   type TokenCategory,
   TokenPanel,
@@ -36,7 +36,7 @@ import { useVarsHistory, type VarsState } from './varsHistory';
 
 type Tab = 'theme' | 'story';
 
-const TABS: readonly ToggleBarItem<Tab>[] = [
+const TABS: readonly SegmentedBarItem<Tab>[] = [
   { value: 'theme', label: 'Theme' },
   { value: 'story', label: 'Story' },
 ];
@@ -225,7 +225,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
     >
       <div className="fg-css-vars__controls">
         <div className="fg-css-vars__bar">
-          <ToggleBar
+          <SegmentedBar
             aria-label="Variables"
             variant="flat"
             size="sm"

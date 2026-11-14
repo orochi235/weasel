@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { SEGMENTS_ARC_DEFAULTS, SegmentsArcView } from '../ToggleBar/lab/SegmentsArcView';
+import { SEGMENTS_ARC_DEFAULTS, SegmentsArcView } from '../Segmented/lab/SegmentsArcView';
 
 afterEach(cleanup);
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { orderPrefGroup, type PrefGroup, type PrefOrder } from '@weasel-js/prefs';
-import { Bar, BarMenu } from '@weasel-js/ui/components/Bar';
+import { BarMenu } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { useContextMenu } from '@weasel-js/ui/components/ContextMenu';
 import { resolveIcon } from '@weasel-js/ui/components/Icon';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
@@ -60,7 +61,7 @@ export function SchemaBar({ asset, order, onReorder }: { asset: SurfaceAsset; or
   const openSwitch = useContextMenu(switchMenuId(asset.id));
   return (
     <div className={s.slot} onContextMenu={openSwitch}>
-      <Bar
+      <PrefsBar
         schema={asset.schema} label={asset.label} values={values} onChange={onChange} renderers={asset.renderers?.bar}
         framed="segmented" overflow="menu"
         {...(order ? { order } : {})} {...(onReorder ? { onReorder } : {})}

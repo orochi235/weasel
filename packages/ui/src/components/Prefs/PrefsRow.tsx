@@ -9,7 +9,7 @@ import {
   type PrefsSource,
   prefDrawsSeveral,
 } from '@weasel-js/prefs';
-import type { BarCell, BarLeafNode } from '../Bar/BarLayout';
+import type { BarCell, BarLeafNode } from '../PrefsBar/barNodes';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { prefDrawsActionRow } from './registeredActions';
 import { aliasOfNothing, prefDrawsNoControl, PrefWords } from './PrefWords';

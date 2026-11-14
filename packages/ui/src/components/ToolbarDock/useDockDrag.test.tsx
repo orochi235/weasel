@@ -2,7 +2,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefOrder } from '@weasel-js/prefs';
-import { BarLayout, BarMenu, type BarNode, type BarOrientation } from '../Bar';
+import { Bar, BarMenu, type BarOrientation } from '../Bar';
+import { barNodeChildren, type BarNode } from '../PrefsBar';
 import { ToolbarDock } from './ToolbarDock';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
 
@@ -53,14 +54,14 @@ function bar(id: string, extra: Partial<DockBar> = {}, nodes?: readonly BarNode[
     docks: ['top', 'left', 'bottom'],
     vertical: true,
     render: (orientation: BarOrientation) => (
-      <BarLayout
+      <Bar
         label={label}
         lead="label"
         orientation={orientation}
-        nodes={nodes ?? [{ kind: 'cell', path: `${id}.go`, content: <button type="button" onClick={() => ran(id)}>{`${label} go`}</button> }]}
-        cells={() => []}
         onReorder={onReorder}
-      />
+      >
+        {barNodeChildren(nodes ?? [{ kind: 'cell', path: `${id}.go`, content: <button type="button" onClick={() => ran(id)}>{`${label} go`}</button> }], { cells: () => [] })}
+      </Bar>
     ),
     ...extra,
   };
@@ -457,7 +458,7 @@ describe('a bar nested inside a docked bar', () => {
       path: 'more',
       name: 'More things',
       body: () => (
-        <BarLayout label="Inner" lead="label" nodes={[{ kind: 'cell', path: 'x', content: <button type="button">x</button> }]} cells={() => []} />
+        <Bar label="Inner" lead="label">{barNodeChildren([{ kind: 'cell', path: 'x', content: <button type="button">x</button> }], { cells: () => [] })}</Bar>
       ),
     };
     setup(start([['outer']]), [bar('outer', {}, [nested])]);

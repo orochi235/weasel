@@ -154,9 +154,9 @@
 }
 
 /* ── Segmented toggle ─────────────────────────────────────────────
-   A `ToggleBar`, filling the row the way a field does and standing at the
+   A `SegmentedBar`, filling the row the way a field does and standing at the
    row's field height rather than its own small size. */
-.row > .toggleBar {
+.row > .segmentedBar {
   display: flex;
   width: 100%;
   height: var(--wzl-field-h, var(--wzl-control-h));

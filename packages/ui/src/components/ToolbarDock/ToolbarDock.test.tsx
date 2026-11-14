@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import type { PrefBarLead } from '@weasel-js/prefs';
-import { BarLayout, type BarOrientation } from '../Bar';
+import { Bar, type BarOrientation } from '../Bar';
+import { barNodeChildren } from '../PrefsBar';
 import { ToolbarDock } from './ToolbarDock';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
 
@@ -17,13 +18,13 @@ function bar(id: string, label: string, lead?: PrefBarLead, vertical?: boolean):
     docks: ['top', 'left'],
     vertical,
     render: (orientation: BarOrientation) => (
-      <BarLayout
+      <Bar
         label={label}
         lead={lead}
         orientation={orientation}
-        nodes={[{ kind: 'cell', path: `${id}.go`, content: <button type="button">{`${label} go`}</button> }]}
-        cells={() => []}
-      />
+      >
+        {barNodeChildren([{ kind: 'cell', path: `${id}.go`, content: <button type="button">{`${label} go`}</button> }], { cells: () => [] })}
+      </Bar>
     ),
   };
 }

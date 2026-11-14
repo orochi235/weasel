@@ -22,7 +22,7 @@ import {
 import { isApplePlatform } from '@weasel-js/gestures';
 import type { Fill } from '@weasel-js/core';
 import { modeShortcuts } from '@weasel-js/routing';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import styles from './ModesDemo.module.css';
 import { DemoStage } from './DemoStage';
@@ -144,7 +144,7 @@ export function ModesDemo() {
   return (
     <div className={styles.demo}>
       <div className={styles.bar}>
-        <ToggleBar
+        <SegmentedBar
           items={registry.list().map((m) => ({
             value: m.id,
             label: <>{modeLabel(m)} <kbd className={styles.key}>{shortcutOn(m.entry?.shortcut, isApplePlatform())}</kbd></>,

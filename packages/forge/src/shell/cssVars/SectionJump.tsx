@@ -1,6 +1,6 @@
 import type { IconRef } from '@weasel-js/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
-import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { TOKEN_CATEGORIES, type TokenCategory } from '@weasel-js/ui/components/TokenPanel';
 import { useEffect, useRef, useState } from 'react';
 import { icon } from '../../icons.gen';
@@ -66,7 +66,7 @@ export function SectionJump() {
     };
   }, []);
 
-  const items: ToggleBarItem<TokenCategory>[] = TOKEN_CATEGORIES.map(({ id, title }) => ({
+  const items: SegmentedBarItem<TokenCategory>[] = TOKEN_CATEGORIES.map(({ id, title }) => ({
     value: id,
     label: <Icon name={ICONS[id]} size={14} />,
     ariaLabel: title,
@@ -86,7 +86,7 @@ export function SectionJump() {
 
   return (
     <div ref={ref} className="fg-css-vars__jump">
-      <ToggleBar aria-label="Jump to section" variant="flat" size="sm" items={items} value={current} onChange={jump} />
+      <SegmentedBar aria-label="Jump to section" variant="flat" size="sm" items={items} value={current} onChange={jump} />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { asNodeId, createScene, IDENTITY_POSE_COMPOSITION, type NodePropertiesEn
 import type { PrefAction, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 import { useLeafAction } from './useLeafAction';
-import { Bar } from '../Bar/Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { SelectionPanel } from '../SelectionPanel/SelectionPanel';
 import { renderWithIcons } from '../../testing/withIcons';
 
@@ -53,7 +53,7 @@ describe('a run-only action leaf', () => {
   });
 
   it('latches in a bar, and over a selection where it holds for every node', () => {
-    renderWithIcons(<Bar schema={{ ...schema(), as: 'bar' }} values={{ armed: true }} />);
+    renderWithIcons(<PrefsBar schema={{ ...schema(), as: 'bar' }} values={{ armed: true }} />);
     expect(screen.getByRole('button', { name: 'Clear all' })).toHaveAttribute('aria-pressed', 'true');
     cleanup();
 

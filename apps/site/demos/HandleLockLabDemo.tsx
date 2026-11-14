@@ -1,7 +1,7 @@
 import { defineInstrument, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { handleLocksPreset } from '@weasel-js/path-tools';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import s from './HandleLockLabDemo.module.css';
 import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
@@ -30,7 +30,7 @@ function HandleLockTrial({ ctx }: { ctx: RenderContext<PathLabState, Record<stri
         pathEdit={pathEdit}
         trial={ctx.trial}
       />
-      <Bar schema={LOCK_BAR} label="Handle locks" className={s.locks} />
+      <PrefsBar schema={LOCK_BAR} label="Handle locks" className={s.locks} />
     </div>
   );
 }

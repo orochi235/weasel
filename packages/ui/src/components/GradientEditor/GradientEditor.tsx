@@ -10,13 +10,13 @@ import {
 } from '@weasel-js/core';
 import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';
 import { paintKindEditor } from '../paintKindEditor';
-import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import { GradientStops } from './GradientStops';
 import s from './GradientEditor.module.css';
 import { useDisabled, type DisableableProps } from '../Disabled';
 import { useHoldReason } from '../Disabled/HoldReason';
 
-const SPACES: readonly ToggleBarItem<ColorSpace>[] = [
+const SPACES: readonly SegmentedBarItem<ColorSpace>[] = [
   { value: 'rgb', label: 'sRGB' },
   { value: 'oklab', label: 'OKLab' },
   { value: 'oklch', label: 'OKLCh' },
@@ -100,7 +100,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
   const space: ColorSpace = (value as { interpolate?: ColorSpace }).interpolate ?? 'rgb';
 
   const entry = usePaintKind(kind);
-  const kinds: readonly ToggleBarItem<PaintKind>[] = useGradientKinds()
+  const kinds: readonly SegmentedBarItem<PaintKind>[] = useGradientKinds()
     .filter((entry) => !svg || nativeSvgKind(entry.id) || entry.id === kind)
     .map((entry) => ({ value: entry.id, label: entry.label }));
   const spaces = SPACES.filter((item) => !svg || nativeSvgSpace(item.value) || item.value === space);
@@ -120,7 +120,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
     >
       <div className={s.body} ref={inertWhen(disabled)}>
         {kindSwitch && (
-          <ToggleBar<PaintKind>
+          <SegmentedBar<PaintKind>
             items={kinds}
             value={kind}
             size="sm"
@@ -136,7 +136,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
 
   function renderBody(): ReactElement {
     const spaceBar = spaceSwitch && spaces.length > 1 && (
-      <ToggleBar<ColorSpace>
+      <SegmentedBar<ColorSpace>
         items={spaces}
         value={space}
         size="sm"

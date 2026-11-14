@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
-import { Bar } from './Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 
 afterEach(cleanup);
 
@@ -16,7 +16,7 @@ const schema: PrefGroup = {
 
 describe('Bar readouts', () => {
   it('draws a readout leaf as its named value, beside editable neighbors', () => {
-    render(<Bar schema={schema} values={{ zoom: 150, snap: true, size: 12 }} />);
+    render(<PrefsBar schema={schema} values={{ zoom: 150, snap: true, size: 12 }} />);
     expect(screen.getByRole('status', { name: 'Zoom' }).textContent).toBe('150');
     expect(screen.getByRole('status', { name: 'Snap' }).textContent).toBe('On');
     expect(screen.queryByRole('button', { name: 'Snap' })).toBeNull();

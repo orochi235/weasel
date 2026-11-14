@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { Along } from '@weasel-js/ui/components/Along';
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { actionsSchema, LabActions } from './labActions';
@@ -54,7 +54,7 @@ export function InputTraceView({ config }: { config: InputTraceConfig }): ReactE
             <Button size="sm">Before</Button>
             <div className={s.dial}>
               <Along arc={{ start: 300, end: 60, inset: 18 }}>
-                <Bar label="Lens" schema={actionsSchema(config.actions, 'Lens')} overflow={config.overflow} />
+                <PrefsBar label="Lens" schema={actionsSchema(config.actions, 'Lens')} overflow={config.overflow} />
               </Along>
               {config.slider && (
                 <Along arc={{ start: 240, end: 120, direction: 'ccw', inset: 16 }}>

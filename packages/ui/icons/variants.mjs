@@ -38,7 +38,7 @@ const PERIODS = 12;
 const DASH = n((PERIM / PERIODS) * 0.45);
 const GAP = n(PERIM / PERIODS - DASH);
 
-// Segmented controls (ToggleBar, ButtonBar, OptionsBar) vary the track, not
+// Segmented bars (SegmentedBar, in every mode) vary the track, not
 // the chip: a pill track holding the selected segment, no track at all, or
 // square cells sharing their borders. Same 2..18 by 6..14 box in all three.
 const SEG_SELECTED = `<rect x="7.25" y="8.5" width="5.5" height="3" rx="1.5" fill="currentColor" stroke="none"/>`;

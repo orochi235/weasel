@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Button } from '../Button';
-import { Toolbar } from '../Toolbar';
-import { ToggleBar } from '../ToggleBar';
+import { Bar } from '../Bar';
+import { SegmentedBar } from '../Segmented';
 import { ThemeSwitcher } from '../ThemeSwitcher';
 import { ToolOptionsBar } from '../ToolOptionsBar';
 import { Density } from './Density';
@@ -26,7 +26,7 @@ describe('Density', () => {
   });
 
   it('reaches a segmented bar', () => {
-    render(<Density size="sm"><ToggleBar aria-label="Pick" items={ITEMS} value="a" onChange={() => {}} /></Density>);
+    render(<Density size="sm"><SegmentedBar aria-label="Pick" items={ITEMS} value="a" onChange={() => {}} /></Density>);
     expect(screen.getByRole('radiogroup', { name: 'Pick' }).className).toMatch(/size_sm/);
   });
 
@@ -39,19 +39,19 @@ describe('Density', () => {
 });
 
 describe('a container\'s size', () => {
-  it('reaches the buttons in a Toolbar', () => {
+  it('reaches the buttons in a Bar', () => {
     render(
-      <Toolbar aria-label="T" size="sm">
-        <Toolbar.Button onClick={() => {}}>Undo</Toolbar.Button>
-      </Toolbar>,
+      <Bar label="T" size="sm">
+        <Bar.Button onClick={() => {}}>Undo</Bar.Button>
+      </Bar>,
     );
     expect(screen.getByRole('button', { name: 'Undo' }).className).toMatch(/size_sm/);
   });
 
-  it('is the scope a Toolbar inside one takes, with no size of its own', () => {
+  it('is the scope a Bar inside one takes, with no size of its own', () => {
     render(
       <Density size="sm">
-        <Toolbar aria-label="T"><Toolbar.Button onClick={() => {}}>Undo</Toolbar.Button></Toolbar>
+        <Bar label="T"><Bar.Button onClick={() => {}}>Undo</Bar.Button></Bar>
       </Density>,
     );
     expect(screen.getByRole('toolbar', { name: 'T' }).className).toMatch(/sm/);

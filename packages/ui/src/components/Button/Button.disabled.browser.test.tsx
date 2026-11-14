@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { Button } from '@weasel-js/ui/components/Button';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 
 afterEach(cleanup);
 // React Aria opens a tooltip on hover only once the last interaction was a pointer one; a fresh tab has had none.
@@ -20,7 +20,7 @@ test('hovering a disabled button opens its tooltip, which says why', async () =>
 test('hovering a disabled segment opens its tooltip', async () => {
   render(
     <div style={{ margin: 40 }}>
-      <ToggleBar
+      <SegmentedBar
         aria-label="Align"
         value="l"
         onChange={() => {}}

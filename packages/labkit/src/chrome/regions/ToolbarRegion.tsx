@@ -1,6 +1,6 @@
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import type { ReactNode } from 'react';
 import type {
@@ -63,7 +63,7 @@ function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: strin
     onActivate,
   } = item;
   return (
-    <Toolbar.Button
+    <Bar.Button
       key={c.id}
       iconOnly={!showLabel}
       grade={danger ? 'danger' : undefined}
@@ -77,7 +77,7 @@ function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: strin
       onClick={() => onActivate(ctx)}
     >
       {showLabel ? label : <Icon name={icon} size={16} />}
-    </Toolbar.Button>
+    </Bar.Button>
   );
 }
 
@@ -93,12 +93,12 @@ export function ToolbarRegion<TCtx = TrialChromeContext>({
   // A trial's bar is a compact strip of its own; the lab's sits in the shell header, which draws the strip.
   const strip = region !== 'header';
   return (
-    <Toolbar aria-label={label} size={strip ? 'sm' : undefined} framed={strip}>
+    <Bar label={label} roving size={strip ? 'sm' : undefined} framed={strip ? 'band' : undefined}>
       {groups.map((g) => (
-        <Toolbar.Group key={g.id} end={g.end} aria-label={g.key}>
+        <Bar.Group key={g.id} end={g.end} aria-label={g.key}>
           {g.entries.map((c) => renderEntry(c, ctx, region))}
-        </Toolbar.Group>
+        </Bar.Group>
       ))}
-    </Toolbar>
+    </Bar>
   );
 }

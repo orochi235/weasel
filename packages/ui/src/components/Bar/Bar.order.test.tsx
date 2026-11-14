@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { Bar } from './Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { movedOrder } from './barOrder';
 import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
 
@@ -35,30 +35,30 @@ const withActions = (node: ReactNode) => (
 
 describe('Bar order', () => {
   it('draws cells in the stored order', () => {
-    render(<Bar schema={schema} order={{ '': ['b', 'a', 'g', 'arrange'], g: ['q', 'p'] }} />);
+    render(<PrefsBar schema={schema} order={{ '': ['b', 'a', 'g', 'arrange'], g: ['q', 'p'] }} />);
     expect(names().slice(0, 4)).toEqual(['B', 'A', 'Q', 'P']);
   });
 
   it('marks each cell with its key and its container when onReorder is given', () => {
-    const { container } = render(withActions(<Bar schema={schema} onReorder={() => {}} />));
+    const { container } = render(withActions(<PrefsBar schema={schema} onReorder={() => {}} />));
     const marks = [...container.querySelectorAll('[data-bar-unit]')].map((el) => [el.getAttribute('data-bar-in'), el.getAttribute('data-bar-unit')]);
     expect(marks).toEqual([['', 'a'], ['', 'b'], ['g', 'p'], ['g', 'q'], ['', 'arrange'], ['arrange', 'front'], ['arrange', 'back']]);
   });
 
   it('marks an actions run button by its wrapper, leaving the button bare', () => {
-    const { container } = render(withActions(<Bar schema={schema} onReorder={() => {}} />));
+    const { container } = render(withActions(<PrefsBar schema={schema} onReorder={() => {}} />));
     const wrapper = container.querySelector('[data-bar-in="arrange"][data-bar-unit="front"]')!;
     expect(wrapper.tagName).toBe('SPAN');
     expect(wrapper.querySelector('button')).not.toHaveAttribute('data-bar-unit');
   });
 
   it('draws an actions run in its stored order', () => {
-    render(withActions(<Bar schema={schema} order={{ arrange: ['back', 'front'] }} />));
+    render(withActions(<PrefsBar schema={schema} order={{ arrange: ['back', 'front'] }} />));
     expect(names().slice(-2)).toEqual(['back', 'front']);
   });
 
   it('marks nothing without onReorder', () => {
-    const { container } = render(withActions(<Bar schema={schema} order={{ '': ['b', 'a'] }} />));
+    const { container } = render(withActions(<PrefsBar schema={schema} order={{ '': ['b', 'a'] }} />));
     expect(container.querySelector('[data-bar-unit]')).toBeNull();
     expect(container.querySelector('[data-bar-in]')).toBeNull();
   });

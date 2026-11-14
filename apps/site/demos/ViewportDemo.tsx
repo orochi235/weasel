@@ -3,7 +3,7 @@ import { SceneCanvas, useScene, textCommandFromRuns, meanScale } from '@weasel-j
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useColorHex } from '@weasel-js/theme/react';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
 type Layer = 'scene';
@@ -51,7 +51,7 @@ export function ViewportDemo() {
       <div className="ckd-toolbar">
         <Checkbox isSelected={inertiaOn} onChange={setInertiaOn}>inertia</Checkbox>
         <span className="ckd-toolbar-note">boundary:</span>
-        <ToggleBar
+        <SegmentedBar
           items={BOUNDARIES.map((b) => ({ value: b, label: b, disabled: !inertiaOn }))}
           value={boundary}
           onChange={(b) => b && setBoundary(b)}

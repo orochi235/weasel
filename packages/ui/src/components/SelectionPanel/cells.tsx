@@ -10,7 +10,7 @@ import { prefDrawsActionRow } from '../Prefs/registeredActions';
 import { prefFieldProps } from '../Prefs/prefField';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import type { PropertyBooleanFieldProps } from '../Properties/PropertyField';
-import { ToggleBar } from '../ToggleBar';
+import { SegmentedBar } from '../Segmented';
 import { perNodeState } from '../Prefs/leafField';
 import type { LeafContext, LeafRenderer } from './renderContext';
 import s from './SelectionPanel.module.css';
@@ -135,7 +135,7 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
   });
   const on = flags.filter((f) => !f.field.mixed && f.field.value === true).map((f) => f.cell.key);
   return (
-    <ToggleBar<string>
+    <SegmentedBar<string>
       mode="multiple"
       size="sm"
       variant="flat"

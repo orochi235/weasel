@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
-import type { BarOrientation } from '../Bar/BarLayout';
+import type { BarOrientation } from '../Bar/Bar';
 import { withDrop, type PrefDrop } from './drop';
 import { useDropMotion } from './dropMotion';
 import { formAttrs, useDropFrame } from './dropTarget';

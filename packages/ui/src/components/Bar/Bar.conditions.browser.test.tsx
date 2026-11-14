@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 
 // A disabled cell's control dims itself and its name is the bar's own, so whether the two read as one
 // disabled cell, and whether anything is dimmed twice, is the stylesheet's, which jsdom does not resolve.
@@ -44,7 +44,7 @@ function wordsOf(control: Element): Element {
 }
 
 it('dims the name of a disabled cell with its control, and nothing twice', () => {
-  render(<Bar schema={schema} values={{ on: false }} onChange={() => {}} />);
+  render(<PrefsBar schema={schema} values={{ on: false }} onChange={() => {}} />);
   for (const [role, name] of [['spinbutton', 'Step'], ['slider', 'Blur'], ['textbox', 'Title'], ['switch', 'Snap'], ['checkbox', 'Grid']] as const) {
     const control = screen.getByRole(role, { name });
     expect(control).toBeDisabled();
@@ -57,7 +57,7 @@ it('dims the name of a disabled cell with its control, and nothing twice', () =>
 });
 
 it('leaves the name of an enabled cell beside a disabled one alone', () => {
-  render(<Bar schema={schema} values={{ on: false }} onChange={() => {}} />);
+  render(<PrefsBar schema={schema} values={{ on: false }} onChange={() => {}} />);
   expect(drawnAt(wordsOf(screen.getByRole('spinbutton', { name: 'Size' })))).toBe(1);
   expect(drawnAt(wordsOf(screen.getByRole('switch', { name: 'Wrap' })))).toBe(1);
   expect(drawnAt(screen.getByRole('spinbutton', { name: 'Size' }))).toBe(1);

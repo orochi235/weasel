@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { Bar } from './Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 
 afterEach(cleanup);
 
@@ -31,7 +31,7 @@ const schema: PrefGroup = {
 
 describe('Bar conditions', () => {
   it('draws no cell for a hidden leaf, no run for a hidden section, and no button for a hidden group', () => {
-    const { container } = renderWithIcons(<Bar schema={schema} values={{ on: false }} />);
+    const { container } = renderWithIcons(<PrefsBar schema={schema} values={{ on: false }} />);
     expect(screen.queryByRole('spinbutton', { name: 'Gone' })).toBeNull();
     expect(screen.queryByRole('spinbutton', { name: 'Tight' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
@@ -39,7 +39,7 @@ describe('Bar conditions', () => {
   });
 
   it('draws them while the condition holds', () => {
-    renderWithIcons(<Bar schema={schema} values={{ on: true }} />);
+    renderWithIcons(<PrefsBar schema={schema} values={{ on: true }} />);
     expect(screen.getByRole('spinbutton', { name: 'Gone' })).toBeEnabled();
     expect(screen.getByRole('spinbutton', { name: 'Tight' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'More' })).toBeInTheDocument();
@@ -47,7 +47,7 @@ describe('Bar conditions', () => {
   });
 
   it('disables a cell, an action, and the fused flags of a disabled run', () => {
-    renderWithIcons(<Bar schema={schema} values={{ on: false }} />);
+    renderWithIcons(<PrefsBar schema={schema} values={{ on: false }} />);
     expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Go' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Bold' })).toBeDisabled();
@@ -56,7 +56,7 @@ describe('Bar conditions', () => {
   });
 
   it('opens a disabled group, with its rows disabled', () => {
-    renderWithIcons(<Bar schema={schema} values={{ on: false }} />);
+    renderWithIcons(<PrefsBar schema={schema} values={{ on: false }} />);
     const opener = screen.getByRole('button', { name: 'Spacing' });
     expect(opener).toBeEnabled();
     fireEvent.click(opener);
@@ -66,7 +66,7 @@ describe('Bar conditions', () => {
   });
 
   it('disables a field a vertical bar draws', () => {
-    renderWithIcons(<Bar schema={schema} values={{ on: false }} orientation="vertical" />);
+    renderWithIcons(<PrefsBar schema={schema} values={{ on: false }} orientation="vertical" />);
     expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeDisabled();
   });
 });
@@ -86,7 +86,7 @@ describe('Bar conditions that read the entry', () => {
   };
 
   it('hides and disables a field in each entry of a list a bar opens, by that entry', () => {
-    renderWithIcons(<Bar schema={stops} values={{ held: false, stops: [{ held: true }, { held: false }] }} />);
+    renderWithIcons(<PrefsBar schema={stops} values={{ held: false, stops: [{ held: true }, { held: false }] }} />);
     fireEvent.click(screen.getByRole('button', { name: 'Stops' }));
     expect(screen.getAllByRole('spinbutton', { name: 'Hold' })).toHaveLength(1);
     expect(screen.getAllByRole('spinbutton', { name: 'Gain' }).map((g) => (g as HTMLInputElement).disabled)).toEqual([false, true]);

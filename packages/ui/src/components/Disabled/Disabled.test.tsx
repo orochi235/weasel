@@ -5,8 +5,8 @@ import { Checkbox } from '../Checkbox';
 import { Input } from '../Input';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
-import { ToggleBar } from '../ToggleBar';
-import { Toolbar } from '../Toolbar';
+import { SegmentedBar } from '../Segmented';
+import { Bar } from '../Bar';
 import { Disabled, ReadOnly, useDisabled } from './Disabled';
 
 function Probe(props: { disabled?: boolean; disabledReason?: string }) {
@@ -50,7 +50,7 @@ describe('Disabled', () => {
   });
 
   it('is what a container disabled prop does', () => {
-    render(<Toolbar disabled disabledReason="Locked"><Button>Save</Button></Toolbar>);
+    render(<Bar disabled disabledReason="Locked"><Button>Save</Button></Bar>);
     expect(screen.getByRole('button').getAttribute('aria-disabled')).toBe('true');
   });
 
@@ -96,12 +96,12 @@ describe('ReadOnly', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('holds a toggle bar but not an action button', () => {
+  it('holds a single-mode SegmentedBar but not an action button', () => {
     const onChange = vi.fn();
     const onClick = vi.fn();
     render(
       <ReadOnly reason="Shared">
-        <ToggleBar items={[{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }]} value="a" onChange={onChange} />
+        <SegmentedBar items={[{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }]} value="a" onChange={onChange} />
         <Button onClick={onClick}>Export</Button>
       </ReadOnly>,
     );

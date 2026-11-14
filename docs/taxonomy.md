@@ -651,7 +651,7 @@ A **sweep** (`sweepAction`) is that rule set put to use: an action on a
 rank a drag binding holds, that sets each item of its surface the pointer
 crosses. Any drag naming a target or a modifier outranks it, an item's own
 drag takes the press first, and its `begin` returning `null` hands the drag
-on. The `sweep` prop of `ToggleBar` and `OptionsBar` mounts one on the bar's
+on. The `sweep` prop of a `multiple` or `each` `SegmentedBar` mounts one on the bar's
 row, setting segments through the bar's selection model (ui-input's
 `selection`).
 

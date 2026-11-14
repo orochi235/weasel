@@ -5,8 +5,8 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Disabled, ReadOnly } from '@weasel-js/ui/components/Disabled';
 import { Input } from '@weasel-js/ui/components/Input';
 import { Select } from '@weasel-js/ui/components/Select';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
+import { Bar } from '@weasel-js/ui/components/Bar';
 
 const meta: Meta<typeof Disabled> = {
   title: 'ui/Foundations/Disabled',
@@ -21,13 +21,13 @@ const ALIGN = [{ value: 'start', label: 'Start' }, { value: 'center', label: 'Ce
 function Controls() {
   const [align, setAlign] = useState<string | null>('start');
   return (
-    <Toolbar aria-label="Controls" wrap>
+    <Bar label="Controls" wrap>
       <Button>Export</Button>
       <Checkbox defaultSelected>Snap</Checkbox>
       <Input aria-label="Name" defaultValue="Layer 1" />
       <Select aria-label="Align" options={ALIGN} defaultSelectedKey="center" />
-      <ToggleBar aria-label="Align" items={ALIGN} value={align} onChange={setAlign} />
-    </Toolbar>
+      <SegmentedBar aria-label="Align" items={ALIGN} value={align} onChange={setAlign} />
+    </Bar>
   );
 }
 

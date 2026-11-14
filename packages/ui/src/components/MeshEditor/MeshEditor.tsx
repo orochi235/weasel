@@ -2,11 +2,11 @@ import { type ReactElement } from 'react';
 import { asPaint, type ColorSpace, type Paint } from '@weasel-js/core';
 import type { MeshGradientPaint } from '@weasel-js/core/mesh';
 import { ColorField } from '../ColorField';
-import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import { paintPreviewCss } from '@weasel-js/paint';
 import s from './MeshEditor.module.css';
 
-const SPACES: readonly ToggleBarItem<ColorSpace>[] = [
+const SPACES: readonly SegmentedBarItem<ColorSpace>[] = [
   { value: 'rgb', label: 'sRGB' },
   { value: 'oklab', label: 'OKLab' },
   { value: 'oklch', label: 'OKLCh' },
@@ -80,7 +80,7 @@ export function MeshEditor(props: MeshEditorProps): ReactElement {
       ))}
 
       {spaceSwitch && (
-        <ToggleBar<ColorSpace>
+        <SegmentedBar<ColorSpace>
           items={SPACES}
           value={space}
           size="sm"

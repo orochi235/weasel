@@ -1,6 +1,6 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
-import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { Tree, type TreeNode as UiTreeNode, type TreeProps } from '@weasel-js/ui/components/Tree';
 import { type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { formatRoute } from '../../route/url';
@@ -19,7 +19,7 @@ import { LibraryBadge as PackageBadge } from '../../frame/index/LibraryBadge';
 /** Which shape the sidebar lists the index in. */
 type View = 'tree' | 'components' | 'gallery';
 
-const VIEWS: readonly ToggleBarItem<View>[] = [
+const VIEWS: readonly SegmentedBarItem<View>[] = [
   { value: 'tree', label: 'Tree' },
   { value: 'components', label: 'Components' },
   { value: 'gallery', label: 'Gallery' },
@@ -256,7 +256,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
           No story <code>{route}</code>
         </p>
       ) : null}
-      <ToggleBar
+      <SegmentedBar
         aria-label="Sidebar view"
         variant="flat"
         size="sm"

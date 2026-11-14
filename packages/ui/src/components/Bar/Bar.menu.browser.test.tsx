@@ -4,7 +4,7 @@ import { afterEach, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 
 afterEach(cleanup);
 
@@ -16,7 +16,7 @@ const ACTIONS: Action[] = [
 function Setup() {
   useAction(ACTIONS[0]!);
   useAction(ACTIONS[1]!);
-  return <Bar framed label="Tools" schema={pref.group('', { arrange: pref.group('Arrange', { order: pref.actions('arrange') }, { as: 'menu' }) })} />;
+  return <PrefsBar framed label="Tools" schema={pref.group('', { arrange: pref.group('Arrange', { order: pref.actions('arrange') }, { as: 'menu' }) })} />;
 }
 
 it('opens the menu under its button, on screen, and gives focus back when it closes', async () => {

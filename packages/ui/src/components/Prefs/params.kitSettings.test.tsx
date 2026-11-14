@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { asNodeId } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
-import { Bar } from '../Bar/Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { SelectionPanel } from '../SelectionPanel/SelectionPanel';
 import { makeScene, properties, routing, selectionOf, type Data } from '../SelectionPanel/testing/rectScene';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS } from './commitPolicy';
@@ -133,7 +133,7 @@ describe('params.<surface>.textWaitMs', () => {
     vi.useFakeTimers();
     const onChange = vi.fn();
     const bar = pref.group('Doc', { title: pref.string('Title', '') });
-    render(under(live('panel', 100), <Bar schema={{ ...bar, as: 'bar' }} onChange={onChange} />));
+    render(under(live('panel', 100), <PrefsBar schema={{ ...bar, as: 'bar' }} onChange={onChange} />));
     waits(() => onChange.mock.calls.map(([, v]) => [v]), () => screen.getByLabelText('Title'));
   });
 

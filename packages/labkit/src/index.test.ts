@@ -57,8 +57,8 @@ describe('public export surface', () => {
 });
 
 describe('ui re-exports', () => {
-  it('carries ToggleBar and Button from the package root', () => {
-    expect(labkit).toHaveProperty('ToggleBar');
+  it('carries SegmentedBar and Button from the package root', () => {
+    expect(labkit).toHaveProperty('SegmentedBar');
     expect(labkit).toHaveProperty('Button');
   });
 });

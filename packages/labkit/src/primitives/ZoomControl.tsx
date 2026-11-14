@@ -25,7 +25,7 @@ const toTrack = (zoom: number): number => Math.log2(zoom);
 const fromTrack = (v: number): number => 2 ** v;
 
 /** Zoom as a log-scaled slider with an editable percentage beside it. Pair it
- *  with zoom-in / zoom-out buttons in a `<Toolbar.Group>`; this component owns
+ *  with zoom-in / zoom-out buttons in a `<Bar.Group>`; this component owns
  *  only the continuous part. */
 export function ZoomControl({
   zoom,

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { chromaAt, oklchDegToHex, type ChromaCurve } from '@weasel-js/paint';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
-import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
 import type { Dims, RenderLayer } from '@weasel-js/core';
@@ -16,7 +16,7 @@ type CThumb = Thumb & { key: 'cTop' | 'cPeak' | 'cBot' };
  *  sliders, plus the diagram's range-line annotations. Tied together so
  *  the slider constraints and the visualization stay in sync. */
 type BoundsMode = 'unconstrained' | 'default' | 'conservative';
-const BOUNDS_MODES: ToggleBarItem<BoundsMode>[] = [
+const BOUNDS_MODES: SegmentedBarItem<BoundsMode>[] = [
   { value: 'unconstrained', label: 'unconstrained' },
   { value: 'default', label: 'default' },
   { value: 'conservative', label: 'conservative' },
@@ -321,7 +321,7 @@ export function PerceptualColorSlidersDemo() {
 
       <div style={{ position: 'sticky', top: 16 }}>
         <h3 style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--wzl-fg-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>C as function of L</h3>
-        <ToggleBar
+        <SegmentedBar
           className={s.boundsMode}
           items={BOUNDS_MODES}
           value={boundsMode}

@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
-import { ToggleBar, type ToggleBarItem, type ToggleBarVariant } from '../ToggleBar/ToggleBar';
+import { SegmentedBar, type SegmentedBarItem, type SegmentedVariant } from '../Segmented';
 import { useDensity, type ControlSize } from '../Density';
 import { COLOR_MODES } from '../colorModes';
 import { Icon } from '../../icons/Icon';
@@ -13,11 +13,11 @@ export interface ColorModeControlProps {
   'aria-label'?: string;
   /** Default: the nearest `Density` scope's, else `md`. */
   size?: ControlSize;
-  variant?: ToggleBarVariant;
+  variant?: SegmentedVariant;
   className?: string;
 }
 
-function items(glyph: number): ToggleBarItem<ColorModePreference>[] {
+function items(glyph: number): SegmentedBarItem<ColorModePreference>[] {
   return COLOR_MODES.map((m) => ({
     value: m.value,
     label: <Icon name={m.glyph} size={glyph} />,
@@ -44,7 +44,7 @@ export function ColorModeControl({
 }: ColorModeControlProps): ReactElement {
   const resolved = useDensity(size);
   return (
-    <ToggleBar
+    <SegmentedBar
       items={ITEMS[resolved]}
       value={value}
       onChange={(next) => {

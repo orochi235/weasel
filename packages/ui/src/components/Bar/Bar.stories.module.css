@@ -1,49 +1,4 @@
-/* A stand-in for the bar these cells sit on: one line at the toolbar's height. */
-.strip {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-4);
-  height: var(--wzl-tb-height);
-  padding: 0 var(--wzl-space-4);
-  background: var(--wzl-surface);
-  border: 1px solid var(--wzl-border);
-  color: var(--wzl-fg);
-}
-
-/* The same stand-in, run down the side. */
-.column {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--wzl-space-4);
-  padding: var(--wzl-space-4) var(--wzl-space-3);
-  background: var(--wzl-surface);
-  border: 1px solid var(--wzl-border);
-  color: var(--wzl-fg);
-}
-
-.matrix {
-  display: grid;
-  grid-template-columns: 96px 280px auto;
-  gap: var(--wzl-space-3) var(--wzl-space-6);
-  align-items: center;
-  justify-items: start;
-}
-
-.matrix > .row {
-  justify-self: stretch;
-}
-
-.head,
-.kind {
-  font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-fg-muted);
-}
-
-.head {
-  text-transform: uppercase;
-  letter-spacing: var(--wzl-tracking-wider);
-}
+.narrow { width: 260px; }
 
 /* A stand-in for a strip down the side of a workspace. */
 .rail {
@@ -52,23 +7,4 @@
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   color: var(--wzl-fg);
-}
-
-/* A lens: the controls lie along its rim, and what it shows fills it. */
-.lens {
-  position: relative;
-  width: 240px;
-  height: 240px;
-  margin: 120px;
-  border: 1px dotted var(--wzl-border-strong);
-  border-radius: 50%;
-}
-
-.lensImage {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--wzl-surface);
-  color: var(--wzl-fg-muted);
 }

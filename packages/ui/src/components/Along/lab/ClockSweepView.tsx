@@ -1,7 +1,7 @@
 import { useState, type CSSProperties, type ReactElement } from 'react';
 import { arcShape, trackRun, wrapPositive } from '@weasel-js/geom';
 import { Along, arcInBox, type AlongArc } from '@weasel-js/ui/components/Along';
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { range as rangeSweep, Sequence, type Sweep as SweepOf } from '@weasel-js/ui/components/Sequence';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { actionsSchema, LabActions } from './labActions';
@@ -54,7 +54,7 @@ function Dial({ at, config }: { at: number; config: ClockSweepConfig }): ReactEl
     >
       {config.show !== 'slider' && (
         <Along arc={sweepArc(at, config.span, BAR_INSET)}>
-          <Bar label={`Bar at ${label}`} schema={BAR} />
+          <PrefsBar label={`Bar at ${label}`} schema={BAR} />
         </Along>
       )}
       {config.show !== 'bar' && (

@@ -2,7 +2,7 @@ import { useCallback, useId, useMemo, useRef, useState, type KeyboardEvent } fro
 import { createPortal } from 'react-dom';
 import { useLatest, type OpenMenu } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Bar, barReader } from '../Bar/Bar';
+import { PrefsBar, barReader } from '../PrefsBar/PrefsBar';
 import { useBarMenuResolver } from '../Bar/BarMenu';
 import { barMenuRoot } from '../Bar/barMenuRoot';
 import { OpenPanels } from '../ContextMenu/ContextMenuHost';
@@ -145,7 +145,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
           ))}
         </div>
         {titles.map((t) => t.kind === 'other' && (
-          <Bar key={t.key} schema={t.schema} over={over ?? schema} values={values} onChange={onChange} />
+          <PrefsBar key={t.key} schema={t.schema} over={over ?? schema} values={values} onChange={onChange} />
         ))}
       </div>
       {opened && target && createPortal(

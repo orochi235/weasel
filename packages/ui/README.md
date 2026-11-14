@@ -20,7 +20,7 @@ import '@weasel-js/ui/style.css';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 
-export function Toolbar({ snap, setSnap }: { snap: boolean; setSnap: (on: boolean) => void }) {
+export function SnapControls({ snap, setSnap }: { snap: boolean; setSnap: (on: boolean) => void }) {
   return (
     <>
       <Button onClick={() => setSnap(false)}>Reset</Button>

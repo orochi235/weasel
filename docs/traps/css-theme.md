@@ -47,6 +47,6 @@ test sees it, and the row reads as an empty highlight bar in a screenshot.
 **`theme/base.less` element defaults live in `:where()` on purpose.** Bare `button` nested under
 `.lk-root` is specificity (0,1,1) and outranks every component class. Don't unwrap them. The flip
 side bites too: specificity cannot stop a default from filling in a property a component never
-sets — its `height` crushed a 16px glyph to 2px and forced ToggleBar segments out of their track.
+sets — its `height` crushed a 16px glyph to 2px and forced segmented-bar segments out of their track.
 So the button default matches only a class-less or `lk-` button; widen that selector and every
 weasel-ui button inside a lab inherits it again.

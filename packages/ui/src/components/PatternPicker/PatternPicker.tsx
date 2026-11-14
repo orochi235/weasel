@@ -18,7 +18,7 @@ import { tilePreviewCssUrl } from '@weasel-js/svg';
 import { Icon } from '../../icons';
 import { icon } from '../../icons.gen';
 import { UnitField } from '../NumberField';
-import { ToggleBar } from '../ToggleBar';
+import { SegmentedBar } from '../Segmented';
 import f from '../field.module.css';
 import { readImageFile, type ReadImage } from './readImageFile';
 import s from './PatternPicker.module.css';
@@ -198,7 +198,7 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
           onChange={upload}
         />
       </div>
-      <ToggleBar<number>
+      <SegmentedBar<number>
         items={image ? IMAGE_TILE_SIZES : TILE_SIZES}
         value={image ? longestSide(image) : size}
         size="sm"

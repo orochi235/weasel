@@ -107,9 +107,9 @@ describe('StatusRegion', () => {
       />,
     );
     const bar = container.querySelector('footer') as HTMLElement;
-    const kids = [...bar.children].map((el) =>
-      el.getAttribute('aria-hidden') === 'true' ? '|' : el.textContent,
-    );
+    const kids = [...bar.children]
+      .filter((el) => el.getAttribute('role') !== 'separator')
+      .map((el) => (el.getAttribute('aria-hidden') === 'true' ? '|' : el.textContent));
     expect(kids).toEqual(['A', '|', 'B', 'C']);
   });
 

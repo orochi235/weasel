@@ -3,7 +3,7 @@ import { createTarget, type AnimationKind, type HoldHandle } from '@weasel-js/an
 import { useAnimator } from '@weasel-js/animator/react';
 import { DrawCanvas, solid, type Dims } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './AnimatorDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -96,7 +96,7 @@ export function AnimatorDemo() {
         <Button onClick={stagger}>Stagger</Button>
         <Button pressed={held} onClick={hold}>Hold</Button>
         <Button pressed={paused} onClick={pause}>Pause</Button>
-        <ToggleBar
+        <SegmentedBar
           items={SPEEDS}
           value={speed}
           onChange={(v) => { if (v) { animator.setTimeScale(v); setSpeed(v); } }}
