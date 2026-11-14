@@ -27,7 +27,7 @@ export {
   type KeyframeLayerState,
 } from './createKeyframeLayer';
 
-export { attract as snapToNearest } from '@weasel-js/ui-input';
+export { attract } from '@weasel-js/ui-input';
 
 export {
   LayeredCurveEditor,
