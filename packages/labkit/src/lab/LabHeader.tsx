@@ -1,6 +1,6 @@
+import { COLOR_MODE_OPTIONS, CycleButton } from '@weasel-js/ui/components/CycleButton';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
-import { CycleButton, COLOR_MODE_OPTIONS } from '@weasel-js/ui/components/CycleButton';
 import type { ReactNode } from 'react';
 import { LabHeaderRegion } from '../chrome/LabChrome';
 import type { LabContribution } from '../chrome/labTypes';
@@ -44,7 +44,14 @@ export function LabHeader({ addTrial = true }: { addTrial?: boolean }) {
  *  after a consumer's own header content. */
 export function LabThemeSwitcher() {
   const lab = useLabContext();
-  return <CycleButton value={lab.mode} onChange={lab.setMode} options={COLOR_MODE_OPTIONS} aria-label="Theme" />;
+  return (
+    <CycleButton
+      value={lab.mode}
+      onChange={lab.setMode}
+      options={COLOR_MODE_OPTIONS}
+      aria-label="Theme"
+    />
+  );
 }
 
 /** Controls the menu bar also offers, which give way to it in a narrow header. A lab with no menu
