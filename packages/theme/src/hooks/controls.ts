@@ -90,7 +90,7 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     name: 'disclosure-target',
     type: 'dimension',
     value: '20px',
-    description: 'Hit-target square of a Disclosure twisty, and the twisty column of a LayerList row.',
+    description: 'Hit-target square of a Disclosure twisty.',
   },
   {
     name: 'input-surface',
