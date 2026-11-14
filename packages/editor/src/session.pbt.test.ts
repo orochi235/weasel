@@ -1,11 +1,13 @@
 /**
  * Stateful property test of the session store: runs of saves into a store that refuses some keys' writes and some
  * keys' removals, and reads through `readStored`, against a model of what the store holds. A save whose document
- * fails leaves the store as it was; one whose dependent fails leaves the document and none of its dependents; and a
- * read answers the parsed entry or the fallback, never a throw. Also the file-warning toast text.
+ * fails leaves the document and the dependents it held where removing or rewriting them is allowed; one whose
+ * dependent fails leaves the document and none of its dependents; and a read answers the stored value or the
+ * fallback, never a throw. Also the file-warning toast text.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
+import { openRecordsSync, type SyncStorageAdapter } from '@weasel-js/storage';
 import { readStored, writeSession, type SessionEntry } from './sessionStore';
 import { describeFileWarnings, type FileDeed } from './fileWarnings';
 import { runs, tally, timeoutFor } from './pbt.fixture';
@@ -23,35 +25,56 @@ const save: fc.Arbitrary<Save> = fc.uniqueArray(key, { minLength: 1, maxLength: 
   fullRemove: fc.subarray(keys),
 })) as fc.Arbitrary<Save>;
 
+function refusing(store: Map<string, unknown>, s: Save): SyncStorageAdapter {
+  const listSync = (prefix: string): [string, unknown][] => [...store].filter(([k]) => k.startsWith(prefix));
+  return {
+    get: async (k) => store.get(k),
+    list: async (prefix) => listSync(prefix),
+    listSync,
+    set: async (k, v) => { if (s.fullSet.includes(k)) throw new Error('quota'); store.set(k, v); },
+    delete: async (k) => { if (s.fullRemove.includes(k)) throw new Error('denied'); store.delete(k); },
+  };
+}
+
+/** What the store holds after `s`, by the order `writeSlots` writes in. */
+function model(before: Map<string, unknown>, s: Save): Map<string, unknown> {
+  const after = new Map(before);
+  const [doc, docValue] = s.primary;
+  const lands = (k: string) => !s.fullSet.includes(k);
+  const removable = (k: string) => !s.fullRemove.includes(k);
+  if (!lands(doc)) {
+    for (const [k] of s.dependents) if (before.has(k) && removable(k) && !lands(k)) after.delete(k);
+    return after;
+  }
+  after.set(doc, docValue);
+  const allLand = s.dependents.every(([k]) => lands(k));
+  for (const [k, v] of s.dependents) {
+    if (allLand) after.set(k, v);
+    else if (removable(k)) after.delete(k);
+    else if (lands(k)) after.set(k, v);
+  }
+  return after;
+}
+
 describe('writeSession', () => {
-  it('holds what a model of the store holds through saves that fail anywhere', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+  it('holds what a model of the store holds through saves that fail anywhere', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     const seen = tally();
-    fc.assert(fc.property(fc.array(save, { minLength: 1, maxLength: 8 }), (saves) => {
-      const store = new Map<string, string>();
-      const model = new Map<string, string>();
+    await fc.assert(fc.asyncProperty(fc.array(save, { minLength: 1, maxLength: 8 }), async (saves) => {
+      const store = new Map<string, unknown>();
+      let want = new Map<string, unknown>();
       for (const s of saves) {
-        const storage = {
-          setItem: (k: string, v: string) => { if (s.fullSet.includes(k)) throw new Error('quota'); store.set(k, v); },
-          removeItem: (k: string) => { if (s.fullRemove.includes(k)) throw new Error('denied'); store.delete(k); },
-        };
-        const ok = writeSession(storage, s.primary, s.dependents);
-        if (s.fullSet.includes(s.primary[0])) {
-          seen.count('document failed');
-          expect(ok).toBe(false);
-        } else {
-          expect(ok).toBe(true);
-          model.set(s.primary[0], s.primary[1]);
-          const failAt = s.dependents.findIndex(([k]) => s.fullSet.includes(k));
-          if (failAt < 0) {
-            for (const [k, v] of s.dependents) model.set(k, v);
-            seen.count(s.dependents.length > 0 ? 'all saved' : 'document alone');
-          } else {
-            seen.count('dependent failed');
-            for (const [k, v] of s.dependents.slice(0, failAt)) model.set(k, v);
-            for (const [k] of s.dependents) if (!s.fullRemove.includes(k)) model.delete(k);
-          }
-        }
-        expect(new Map([...store].sort())).toEqual(new Map([...model].sort()));
+        const records = openRecordsSync({ storage: refusing(store, s), prefix: '', retryMs: false });
+        const ok = await writeSession(s.primary, s.dependents, records);
+        await records.close();
+        const docFailed = s.fullSet.includes(s.primary[0]);
+        expect(ok).toBe(!docFailed);
+        seen.count(docFailed ? 'document failed'
+          : s.dependents.some(([k]) => s.fullSet.includes(k)) ? 'dependent failed'
+            : s.dependents.length > 0 ? 'all saved' : 'document alone');
+        want = model(want, s);
+        expect(new Map([...store].sort())).toEqual(new Map([...want].sort()));
       }
     }), runs(RUNS));
     for (const what of ['document failed', 'all saved', 'dependent failed']) seen.atLeast(what, RUNS / 4);
@@ -60,17 +83,18 @@ describe('writeSession', () => {
 
 describe('readStored', () => {
   afterEach(() => { vi.restoreAllMocks(); localStorage.clear(); });
-  it('answers the parsed entry, or the fallback when there is none, parsing fails, or storage is unreachable', () => {
+  it('answers the stored value, or the fallback when there is none or storage is unreachable', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     const seen = tally();
     fc.assert(fc.property(key, fc.option(fc.oneof(json, fc.string({ maxLength: 6 }))), fc.boolean(), (k, raw, unreachable) => {
-      vi.restoreAllMocks();
+      vi.spyOn(window, 'localStorage', 'get').mockRestore();
       localStorage.clear();
       if (raw !== null) localStorage.setItem(k, raw);
       if (unreachable) vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('denied'); });
       const FALLBACK = Symbol('fallback');
-      const got = readStored<unknown>(k, (text) => JSON.parse(text) as unknown, () => FALLBACK);
+      const got = readStored<unknown>(k, (value) => value, () => FALLBACK);
       let want: unknown = FALLBACK;
-      if (!unreachable && raw) { try { want = JSON.parse(raw); } catch { want = FALLBACK; } }
+      if (!unreachable && raw !== null) { try { want = JSON.parse(raw); } catch { want = raw; } }
       seen.count(want === FALLBACK ? 'fallback' : 'read');
       expect(got).toEqual(want);
     }), runs(RUNS));

@@ -1,4 +1,4 @@
-// Typed-array and snapshot helpers shared by every editor app's localStorage persistence.
+// Typed-array and snapshot helpers shared by every editor app's session persistence.
 //
 // A path keeps its commands and coords in typed arrays, which `JSON.stringify`
 // writes as `{"0":1,"1":2,...}`. Saves tag them with `@weasel-js/geom`'s
@@ -22,6 +22,11 @@ const isPathKey = (k: string): k is 'commands' | 'coords' => k === 'commands' ||
  *  {@link reviveTypedArrays} would read as something else, an older save's untagged path arrays included. */
 export const serializeReplacer: (this: unknown, key: string, value: unknown) => unknown =
   typedArrayReplacerWrapping((key, value) => isPathKey(key) && legacyNumbers(value) !== undefined);
+
+/** `value` as {@link serializeReplacer} writes it, read back as JSON: a value every storage adapter keeps exactly, as
+ *  a session entry holds it. {@link reviveTypedArrays} reads it back. */
+export const snapshotValue = (value: unknown): unknown =>
+  JSON.parse(JSON.stringify(value, serializeReplacer) ?? 'null') as unknown;
 
 /** Walk a parsed snapshot and rebuild any tagged / numeric-key typed arrays in
  *  place. Returns the same node for call-site convenience, unless the node itself is one. */

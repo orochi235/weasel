@@ -47,16 +47,19 @@ export function chartToJson(scene: ChartScene): string {
   return JSON.stringify(scene.toJSON(), serializeReplacer);
 }
 
-/** The chart a saved file holds. Throws on text that is not one, or on one chart's scene cannot hold. */
-export function chartFromJson(text: string): ChartFile {
-  const json: unknown = JSON.parse(text);
+/** The chart a saved scene holds, as `JSON.parse` reads its text. Throws on a value that is not one, or on one chart's
+ *  scene cannot hold. */
+export function chartFromSaved(json: unknown): ChartFile {
   if (!isSerializedScene<ChartData, ChartLayer, ChartPose>(json)) throw new Error('Not a saved chart');
   return chartOf(json);
 }
 
+/** The chart a saved file holds. Throws on text that is not one, or on one chart's scene cannot hold. */
+export const chartFromJson = (text: string): ChartFile => chartFromSaved(JSON.parse(text));
+
 /** The chart the last session left, or an empty one. */
 export function loadChartSession(): ChartFile {
-  return readStored(CHART_SCENE_KEY, chartFromJson, () => emptyChart());
+  return readStored(CHART_SCENE_KEY, chartFromSaved, () => emptyChart());
 }
 
 /** Where `useSessionPersistence` keeps the chart and its undo stack. Its default drops a stack saved beside a

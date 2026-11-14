@@ -329,15 +329,6 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [maintainer] draw's guides are not saved with the document.** Guides dragged off draw's
   rulers live for the session (`apps/draw/src/useRulers.ts`); saving them is a change to the saved
   SVG. Closes when the maintainer rules whether and how a document keeps its guides, and draw does it.
-- **(P2) [agent] An editor's session can only be saved to `localStorage`.** `useSessionPersistence`,
-  `useAutosave` and `readStored` (`packages/editor/src/`) call `localStorage` directly, so an app that wants
-  its document in IndexedDB rebuilds all of them over `@weasel-js/storage`'s `openRecords`: the debounce, the
-  flush on leave, the undo stack dropped beside a snapshot that loads rebuilt (`snapshotRebuildsTree`), and the
-  unreadable entry kept aside. An image the canvas ingests is embedded as a `data:` URI by default, so a
-  document holding a few photos passes `localStorage`'s quota and every save fails. The seam is the hooks
-  taking a `RecordCache` opened before the scene is made (its reads are synchronous once open), with
-  `localStorage` the default; whether entries stay JSON text or become structured-clone values is the call
-  to make. Closes when an app can keep its session in IndexedDB through the editor's hooks (filed 2026-11-12).
 - **(P3) [maintainer] A container with an output-grid `drawn` pose clips its children at its stored
   pose.** `buildSceneTree` paints and culls a node at the quantize rule's drawn pose (2026-11-11), but
   takes its `clip: 'outline'` (`ownClipOf`) from the pose it is stored at, so the clip can sit up to

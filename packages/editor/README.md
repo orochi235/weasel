@@ -27,7 +27,7 @@ It runs beside `@weasel-js/core`, `@weasel-js/geom`, `@weasel-js/guides`,
 | Preferences | `useEditorPrefs`, `useOpenPreferences`, `EditorPrefsDialog` |
 | Menu bar | `editorMenuBar`, `menu`, `menuRun`, `EDITOR_MENU_TITLES` |
 | Session | `useSessionPersistence`, `useAutosave`, `readStored`, `writeSession`, `isUnreadableKey`, `sessionSaveReporter` |
-| Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `adoptSnapshotPages`, `snapshotRebuildsTree`, `serializeReplacer`, `reviveTypedArrays` |
+| Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `adoptSnapshotPages`, `snapshotRebuildsTree`, `serializeReplacer`, `snapshotValue`, `reviveTypedArrays` |
 | Clipboard | `useDocClipboard`, `DOC_CLIPBOARD_ACTIONS`, `DOC_CLIPBOARD_KEYS` |
 | Files | `downloadBlob`, `pickFile`, `describeFileWarnings`, `reportFileWarnings` |
 | File commands | `useNewCommand`, `useOpenCommand`, `useSaveCommand`, `FILE_KEYS` |
@@ -70,15 +70,16 @@ const ambient = [{
 
 ## Saving the session
 
-The session hooks keep the document in `localStorage`. `useSessionPersistence`
-saves the scene and its undo stack 300 ms after each change, and at once when
-the page goes away or turns hidden; on mount it restores the undo stack. The
-scene itself is read before the scene is made, and handed to `useScene`:
+The session hooks keep the document in `localStorage` unless they are given a
+`RecordCache` from `@weasel-js/storage` to keep it in instead.
+`useSessionPersistence` saves the scene and its undo stack 300 ms after each
+change, and at once when the page goes away or turns hidden; on mount it
+restores the undo stack. The scene itself is read before the scene is made,
+and handed to `useScene`:
 
 ```tsx
 function loadSaved() {
-  return readStored('myapp:scene', (raw) => {
-    const json: unknown = JSON.parse(raw);
+  return readStored('myapp:scene', (json) => {
     if (!isSerializedScene<Data, Layer, RectPose>(json)) throw new Error('not a saved document');
     return { initial: nodeSpecsFromSnapshot(json), doc: docFromSnapshot(json) };
   }, () => ({ initial: [], doc: undefined }));
@@ -92,10 +93,37 @@ function useDocument() {
 }
 ```
 
-An entry `readStored` cannot read is kept aside under `<key>:unreadable` rather
-than lost to the next save. A saved snapshot keeps a path's typed arrays tagged
-(`serializeReplacer`), and loading reads the tags back, along with the untagged
-shapes older saves wrote.
+An entry is a value JSON reads back as itself, so every adapter keeps it
+exactly: `readStored` hands its reader the value, not text, and a snapshot is
+written through `snapshotValue`, which tags a path's typed arrays
+(`serializeReplacer`); loading reads the tags back with `reviveTypedArrays`,
+along with the untagged shapes older saves wrote. Entries already in
+`localStorage` read as they always have.
+
+To keep the session in IndexedDB, which holds far more than `localStorage`'s
+few megabytes (a document with a few embedded photos passes that), open the
+records before the scene is made, and pass them to every call. Their reads are
+synchronous once open, and the keys are the records' names:
+
+```tsx
+const records = await openRecords({ storage: indexedDbAdapter, prefix: 'myapp:' });
+
+function loadSaved() {
+  return readStored('scene', readScene, () => ({ initial: [], doc: undefined }), records);
+}
+// …
+useSessionPersistence(scene, { sceneKey: 'scene', historyKey: 'history', records });
+```
+
+`useAutosave` and `writeSession` take `records` too. A save removes the undo
+stack before it writes the scene and writes the stack once the scene has
+landed, so storage that writes each record on its own never holds a stack
+beside a scene it was not saved with, even when the page goes away partway.
+When the scene's write fails, the scene and stack are put back as they were.
+`onSaved` hears each save once its entries have landed or failed.
+
+An entry `readStored` cannot read is kept aside under `<key>:unreadable`, in
+the same records, rather than lost to the next save.
 
 ## Pages
 

@@ -1,7 +1,12 @@
+import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DOC_KEY, loadDoc } from './docPersistence';
+import { DOC_KEY, loadDoc, retireLegacyDoc } from './docPersistence';
+import { closeSession, openSession } from './openSession';
 
-afterEach(() => localStorage.clear());
+afterEach(async () => {
+  await closeSession();
+  localStorage.clear();
+});
 
 describe('document persistence', () => {
   it('starts a fresh document as an untitled white Letter page', () => {
@@ -21,5 +26,14 @@ describe('document persistence', () => {
   it('falls back to Letter for a paper size it does not know', () => {
     localStorage.setItem(DOC_KEY, JSON.stringify({ filename: 'x.svg', backgroundColor: '#fff', paperSize: 'toString' }));
     expect(loadDoc().paperSize).toBe('letter');
+  });
+
+  it('lets go of an older document\'s paper size and background in the IndexedDB session', async () => {
+    localStorage.setItem(DOC_KEY, JSON.stringify({ filename: 'a.svg', paperSize: 'a4', backgroundColor: '#ff0000' }));
+    const records = await openSession('weaseldraw-doc-test');
+    expect(loadDoc()).toEqual({ filename: 'a.svg', paperSize: 'a4', backgroundColor: '#ff0000' });
+    retireLegacyDoc();
+    expect(records?.get(DOC_KEY)).toEqual({ filename: 'a.svg' });
+    expect(localStorage.getItem(DOC_KEY)).toBeNull();
   });
 });

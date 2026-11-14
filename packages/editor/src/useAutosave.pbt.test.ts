@@ -23,10 +23,15 @@ const op: fc.Arbitrary<Op> = fc.oneof(
 );
 const delay = fc.constantFrom<number | undefined>(undefined, 0, 1, 300, 2 ** 31, Infinity);
 
+/** Let a save's writes, which wait on one another, land without moving the clock. */
+const settle = async (): Promise<void> => {
+  for (let i = 0; i < 20; i++) await Promise.resolve();
+};
+
 describe('useAutosave', () => {
-  it('writes each change once, with the latest document, after its delay or when the page goes away', () => {
+  it('writes each change once, with the latest document, after its delay or when the page goes away', async () => {
     const seen = tally();
-    fc.assert(fc.property(delay, fc.boolean(), fc.array(op, { maxLength: 25 }), (debounceMs, tracked, ops) => {
+    await fc.assert(fc.asyncProperty(delay, fc.boolean(), fc.array(op, { maxLength: 25 }), async (debounceMs, tracked, ops) => {
       vi.useFakeTimers();
       localStorage.clear();
       const ms = debounceMs ?? 300;
@@ -43,7 +48,7 @@ describe('useAutosave', () => {
       const expectWritten = (n: number) => {
         expect(writes).toHaveLength(n);
         expect(reports).toEqual(writes.map(() => true));
-        if (n > 0) expect([writes[n - 1], localStorage.getItem('doc')]).toEqual([stored, stored]);
+        if (n > 0) expect([writes[n - 1], JSON.parse(localStorage.getItem('doc') ?? 'null')]).toEqual([stored, stored]);
       };
       let written = 0;
       let stored = '';
@@ -62,12 +67,14 @@ describe('useAutosave', () => {
           window.dispatchEvent(new Event('pagehide'));
           if (dueAt !== null) { written++; stored = doc; dueAt = null; seen.count('flushed'); }
         }
+        await settle();
         expectWritten(written);
       }
       hook.unmount();
       if (dueAt !== null) { written++; stored = doc; }
       // Nothing pending is left to fire.
       vi.advanceTimersByTime(3e9);
+      await settle();
       expectWritten(written);
       vi.useRealTimers();
     }), runs(RUNS));

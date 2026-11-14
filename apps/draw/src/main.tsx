@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
-import { StrictMode, Suspense, lazy, useEffect, useState } from 'react';
+import { StrictMode, Suspense, lazy, use, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { IconRegistryProvider, WeaselProvider } from '@weasel-js/core';
 import { ThemeProvider } from '@weasel-js/theme/react';
@@ -13,6 +13,7 @@ import { registerAvailableFonts } from './fonts';
 import { registerDefaultFont } from '../../shared/defaultFont';
 import { migrateLegacyPanelFlags } from './surfaces/surfaceState';
 import { drawPrefs, importLegacyPrefs } from './prefs';
+import { openSession } from './openSession';
 const ICON_VARIANTS = {
   all: () => import('virtual:weasel-icons/all'),
   draw: () => import('virtual:weasel-icons/draw'),
@@ -29,6 +30,15 @@ const RegistryInspector = lazy(() =>
 
 const AssetsPage = lazy(() =>
   import('./dev/AssetsPage').then((m) => ({ default: m.AssetsPage })));
+
+// The scene is made from the session's records, which read synchronously only once open: the editor waits on them
+// behind the `<Suspense>` below rather than painting a starter drawing first.
+const sessionOpened = openSession();
+
+function SessionApp() {
+  use(sessionOpened);
+  return <App />;
+}
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -67,7 +77,7 @@ function Root() {
   ) : hash.startsWith('#/dev/assets') ? (
     <AssetsPage />
   ) : null;
-  const surface = dev ? <WeaselProvider>{dev}</WeaselProvider> : <App />;
+  const surface = dev ? <WeaselProvider>{dev}</WeaselProvider> : <SessionApp />;
   return (
     <ColorModeProvider>
       {(mode) => (

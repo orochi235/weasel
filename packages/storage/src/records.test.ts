@@ -291,6 +291,27 @@ describe('writing', () => {
     warn.mockRestore();
   });
 
+  it('says which records a flush left pending', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const memory = createMemoryAdapter();
+    const refusing: StorageAdapter = {
+      ...memory,
+      set: async (key, value) => {
+        if (key.endsWith('big')) throw new Error('quota');
+        await memory.set(key, value);
+      },
+    };
+    const cache = await openRecords({ storage: refusing, prefix: PREFIX, retryMs: false });
+    cache.set('big', 1);
+    cache.set('small', 2);
+    expect([cache.pending('big'), cache.pending('small')]).toEqual([true, true]);
+    const flushed = cache.flush();
+    expect(cache.pending('small')).toBe(true);
+    expect(await flushed).toBe(false);
+    expect([cache.pending('big'), cache.pending('small')]).toEqual([true, false]);
+    warn.mockRestore();
+  });
+
   it('stops sending a rejected write once closed, or once writing stops', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const set = vi.fn(async () => {
