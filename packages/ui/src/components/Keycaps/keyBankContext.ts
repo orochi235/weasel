@@ -1,10 +1,9 @@
 import { createContext } from 'react';
-import type { BankFitter } from './bankFitter';
+import type { KeySpellings } from './legendFit';
 
 export interface KeyBankContextValue {
   wrap: boolean;
-  minScale: number;
-  fitter: BankFitter;
+  spellings: KeySpellings;
 }
 
 export const KeyBankContext = createContext<KeyBankContextValue | null>(null);

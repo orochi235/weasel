@@ -1,5 +1,5 @@
-import { useLayoutEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { BankFitter } from './bankFitter';
+import { useMemo, useRef, type ReactNode } from 'react';
+import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { KeyBankContext, type KeyBankContextValue } from './keyBankContext';
 import s from './Keycaps.module.css';
 import { KEY_MIN_SCALE, KEY_SPELLINGS, type KeySpellings } from './legendFit';
@@ -29,30 +29,21 @@ export interface KeyBankProps {
  * fits it best; every single-line legend then prints at the smallest scale
  * any member needs, floored at `minScale`. A key on a two-line spelling sizes
  * itself. Keys outside a bank are never fitted.
+ *
+ * A bank is a fit scope running a scale stage (`useFitScope`'s `scale`), so a
+ * `FitLabel` inside it steps as in any other scope.
  */
 export function KeyBank({ children, wrap = false, spellings = KEY_SPELLINGS, minScale = KEY_MIN_SCALE, className }: KeyBankProps) {
-  const [scale, setScale] = useState<number | null>(null);
-  const [fitter] = useState(() => new BankFitter(setScale));
-
-  useLayoutEffect(() => {
-    fitter.attach();
-    return () => fitter.detach();
-  }, [fitter]);
-  useLayoutEffect(() => fitter.configure(spellings, minScale), [fitter, spellings, minScale]);
-  // Members join in their own layout effects, which run before this one, so
-  // a commit's keys are all measured here in one pass, before paint.
-  useLayoutEffect(() => fitter.flush());
-
-  const value = useMemo<KeyBankContextValue>(() => ({ wrap, minScale, fitter }), [wrap, minScale, fitter]);
-  // A measured value has no static home in the stylesheet, so the scale rides
-  // an inline custom property; nothing else is set inline.
-  const style = scale === null ? undefined : ({ '--key-legend-scale': String(scale) } as CSSProperties);
-
+  const ref = useRef<HTMLDivElement>(null);
+  const fit = useFitScope(ref, { scale: { min: minScale, property: '--key-legend-scale' } });
+  const value = useMemo<KeyBankContextValue>(() => ({ wrap, spellings }), [wrap, spellings]);
   return (
-    <KeyBankContext.Provider value={value}>
-      <div className={[s.bank, className].filter(Boolean).join(' ')} style={style}>
-        {children}
-      </div>
-    </KeyBankContext.Provider>
+    <FitScope value={fit}>
+      <KeyBankContext.Provider value={value}>
+        <div ref={ref} className={[s.bank, className].filter(Boolean).join(' ')}>
+          {children}
+        </div>
+      </KeyBankContext.Provider>
+    </FitScope>
   );
 }
