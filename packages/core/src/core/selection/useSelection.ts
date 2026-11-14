@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { createSelectionStore, intentOf, select, type SelectContext, type SelectionStore as Store } from '@weasel-js/select';
-import { isApplePlatform } from '@weasel-js/gestures';
+import { modKey } from '@weasel-js/gestures';
 import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
 
@@ -74,7 +74,7 @@ function paintOrderOf(store: SelectionStore): (() => Iterable<NodeId>) | undefin
  * `selection.current`.
  */
 export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
-  const { mode = 'single', extend = isApplePlatform() ? 'meta' : 'ctrl', initial = [], lock = false, scene, order } = opts;
+  const { mode = 'single', extend = modKey(), initial = [], lock = false, scene, order } = opts;
   const range = opts.range ?? (extend === 'shift' ? undefined : 'shift');
   // Without a `scene` the hook still keeps its ids in a store, so `get()` reads one store either
   // way and a write is visible before the re-render it causes.

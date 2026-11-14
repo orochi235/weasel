@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isApplePlatform } from './platform';
+import { isApplePlatform, modHeld, modKey } from './platform';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -38,5 +38,16 @@ describe('isApplePlatform', () => {
   it('is false under jsdom on any host, whose user agent names the host OS', () => {
     withNavigator({ platform: '', userAgent: 'Mozilla/5.0 (darwin) AppleWebKit/537.36 (KHTML, like Gecko) jsdom/26.1.0' });
     expect(isApplePlatform()).toBe(false);
+  });
+});
+
+describe('modHeld and modKey', () => {
+  it('read Command on an Apple platform and Ctrl elsewhere, never the other', () => {
+    expect(modHeld({ metaKey: true, ctrlKey: false }, true)).toBe(true);
+    expect(modHeld({ metaKey: false, ctrlKey: true }, true)).toBe(false);
+    expect(modHeld({ metaKey: false, ctrlKey: true }, false)).toBe(true);
+    expect(modHeld({ metaKey: true, ctrlKey: false }, false)).toBe(false);
+    expect(modKey(true)).toBe('meta');
+    expect(modKey(false)).toBe('ctrl');
   });
 });

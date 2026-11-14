@@ -3,6 +3,9 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PrefsForm } from './PrefsForm';
 import { MARKED, shownPath } from './selection';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(cleanup);
 
@@ -96,9 +99,9 @@ describe('a run of tabs', () => {
   it('reports a Cmd or Ctrl press of a tab as a toggle, and a plain press as a pick, once each', () => {
     const onSelect = vi.fn();
     render(<PrefsForm layout="rail" schema={TABS} onChange={() => {}} selected={['light']} onSelect={onSelect} />);
-    fireEvent.pointerDown(screen.getByRole('tab', { name: 'Dark' }), { metaKey: true, button: 0, pointerType: 'mouse' });
+    fireEvent.pointerDown(screen.getByRole('tab', { name: 'Dark' }), { ...MOD, button: 0, pointerType: 'mouse' });
     expect(onSelect.mock.calls).toEqual([['dark', { toggle: true }]]);
-    fireEvent.pointerDown(screen.getByRole('tab', { name: 'Light' }), { ctrlKey: true, button: 0, pointerType: 'mouse' });
+    fireEvent.pointerDown(screen.getByRole('tab', { name: 'Light' }), { ...MOD, button: 0, pointerType: 'mouse' });
     expect(onSelect.mock.calls.at(-1)).toEqual(['light', { toggle: true }]);
     expect(onSelect).toHaveBeenCalledTimes(2);
   });

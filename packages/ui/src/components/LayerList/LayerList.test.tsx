@@ -3,6 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { LayerList, type LayerListItem, moveLayers } from './LayerList';
 import { BG, click, drag, FLAT, list, ROW_H, row, stampRows, TREE } from './layerList.fixture';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 stampRows();
 
@@ -56,19 +59,22 @@ describe('LayerList selection', () => {
     const committed = { selectedIds: ['a'], onSelectionChange: vi.fn() };
     const abandoned = { selectedIds: ['c'], onSelectionChange: vi.fn() };
     renderThenAbandon(committed, abandoned, (p) => <LayerList items={FLAT} {...p} />);
-    click('Beta', { metaKey: true });
+    click('Beta', MOD);
     expect(abandoned.onSelectionChange).not.toHaveBeenCalled();
     expect(committed.onSelectionChange).toHaveBeenLastCalledWith(['a', 'b']);
   });
 
-  it('adds and removes a row on Cmd-click and on Ctrl-click', () => {
+  it('adds and removes a row on Cmd-click (Ctrl-click off Apple platforms), and selects it alone with the other key', () => {
     const onSelectionChange = vi.fn();
     const { rerender } = list({ selectedIds: ['a'], onSelectionChange });
-    click('Gamma', { metaKey: true });
+    click('Gamma', MOD);
     expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'c']);
     rerender(<LayerList items={FLAT} selectedIds={['a', 'c']} onSelectionChange={onSelectionChange} />);
-    click('Alpha', { ctrlKey: true });
+    click('Alpha', MOD);
     expect(onSelectionChange).toHaveBeenLastCalledWith(['c']);
+    rerender(<LayerList items={FLAT} selectedIds={['c']} onSelectionChange={onSelectionChange} />);
+    click('Beta', isApplePlatform() ? { ctrlKey: true } : { metaKey: true });
+    expect(onSelectionChange).toHaveBeenLastCalledWith(['b']);
   });
 
   it('selects every row from the last click to a shift-click', () => {
@@ -92,7 +98,7 @@ describe('LayerList selection', () => {
   it('selects a fixed row alone, on Cmd-click and on Shift-click', () => {
     const onSelectionChange = vi.fn();
     const { rerender } = list({ items: [...FLAT, BG], selectedIds: ['a'], onSelectionChange });
-    click('Background', { metaKey: true });
+    click('Background', MOD);
     expect(onSelectionChange).toHaveBeenLastCalledWith(['bg']);
     rerender(<LayerList items={[...FLAT, BG]} selectedIds={['a']} onSelectionChange={onSelectionChange} />);
     click('Background', { shiftKey: true });
@@ -102,7 +108,7 @@ describe('LayerList selection', () => {
   it('drops a fixed row from the selection a Cmd-click builds on', () => {
     const onSelectionChange = vi.fn();
     list({ items: [...FLAT, BG], selectedIds: ['bg'], onSelectionChange });
-    click('Beta', { metaKey: true });
+    click('Beta', MOD);
     expect(onSelectionChange).toHaveBeenLastCalledWith(['b']);
   });
 

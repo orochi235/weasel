@@ -2,6 +2,9 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PrefsForm } from './PrefsForm';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(cleanup);
 
@@ -54,7 +57,15 @@ describe('a press with Shift held', () => {
 
   it('toggles, and reports no range, with Cmd held as well', () => {
     const onSelect = form(['view.grid']);
-    fireEvent.pointerDown(screen.getByText('Zoom'), { shiftKey: true, metaKey: true });
+    fireEvent.pointerDown(screen.getByText('Zoom'), { shiftKey: true, ...MOD });
     expect(onSelect).toHaveBeenLastCalledWith('view.zoom', { toggle: true });
+  });
+});
+
+describe('a press with the other of Cmd and Ctrl held', () => {
+  it('is a plain pick: Ctrl-click is the secondary click on a Mac, and Cmd is no modifier elsewhere', () => {
+    const onSelect = form(['view.grid']);
+    fireEvent.pointerDown(screen.getByText('Zoom'), isApplePlatform() ? { ctrlKey: true } : { metaKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith('view.zoom', { toggle: false });
   });
 });

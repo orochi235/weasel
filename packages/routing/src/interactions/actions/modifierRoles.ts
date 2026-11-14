@@ -3,7 +3,7 @@
  * by what they do rather than which key they are, so a binding or a tuning can
  * move one to another key without forking the action.
  */
-import { isApplePlatform, type ModifierKey, type ModSpec } from '@weasel-js/gestures';
+import { isApplePlatform, modKey, type ModifierKey, type ModSpec } from '@weasel-js/gestures';
 import { setOwn } from '@weasel-js/registry';
 import type { ModifierState } from '../../vocabulary';
 
@@ -46,7 +46,7 @@ const ownOf = <V>(record: Readonly<Record<string, V>> | undefined, id: string): 
 /** Whether any of `keys` is held. */
 export function keysHeld(keys: RoleKeys, modifiers: ModifierState, apple: boolean): boolean {
   return keys.some((k) => {
-    if (k === 'mod') return apple ? modifiers.meta : modifiers.ctrl;
+    if (k === 'mod') return modifiers[modKey(apple)];
     return modifiers[k];
   });
 }

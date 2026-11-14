@@ -4,6 +4,9 @@ import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 /** Types `value` and leaves the field, which is when a typed field commits. */
 const settle = (el: HTMLElement, value: string): void => {
@@ -42,7 +45,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   it('adds a row to the selection with Cmd held, and a range with Shift', () => {
     renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
-    fireEvent.click(row('dock'), { metaKey: true });
+    fireEvent.click(row('dock'), MOD);
     expect(item('grid')).toHaveAttribute('aria-selected', 'true');
     expect(item('dock')).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(row('grid'));
@@ -61,14 +64,14 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   it('says how many are selected', () => {
     renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
-    fireEvent.click(row('dock'), { metaKey: true });
+    fireEvent.click(row('dock'), MOD);
     expect(within(attributes()).getByText('2 selected')).toBeInTheDocument();
   });
 
   it('removes every selected node as one step, and undo brings them back selected', () => {
     renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
-    fireEvent.click(row('dock'), { metaKey: true });
+    fireEvent.click(row('dock'), MOD);
     fireEvent.keyDown(structure(), { key: 'Delete' });
     expect(queryRow('grid')).toBeNull();
     expect(queryRow('dock')).toBeNull();
@@ -79,7 +82,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
 
   const pickTwo = () => {
     fireEvent.click(row('grid'));
-    fireEvent.click(row('snap'), { metaKey: true });
+    fireEvent.click(row('snap'), MOD);
   };
   const field = (name: string) => within(attributes()).getByRole('textbox', { name });
 
@@ -130,10 +133,10 @@ describe('PrefSchemaEditor with several nodes selected', () => {
   it('adds a preview row to the selection with Cmd held, and takes it out again', () => {
     renderWithIcons(<Live />);
     fireEvent.click(row('grid'));
-    fireEvent.pointerDown(previewRow('Snap'), { metaKey: true });
+    fireEvent.pointerDown(previewRow('Snap'), MOD);
     expect(item('grid')).toHaveAttribute('aria-selected', 'true');
     expect(item('snap')).toHaveAttribute('aria-selected', 'true');
-    fireEvent.pointerDown(previewRow('Show grid'), { metaKey: true });
+    fireEvent.pointerDown(previewRow('Show grid'), MOD);
     expect(item('grid')).toHaveAttribute('aria-selected', 'false');
     expect(item('snap')).toHaveAttribute('aria-selected', 'true');
   });
@@ -154,7 +157,7 @@ describe('PrefSchemaEditor with several nodes selected', () => {
     renderWithIcons(<Live />);
     fireEvent.click(row('zoom'));
     expect(field('Min')).toBeInTheDocument();
-    fireEvent.click(row('grid'), { metaKey: true });
+    fireEvent.click(row('grid'), MOD);
     expect(field('Name')).toBeInTheDocument();
     expect(within(attributes()).queryByRole('textbox', { name: 'Min' })).toBeNull();
   });

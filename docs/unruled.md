@@ -2353,3 +2353,13 @@ Calls the lanes made without a ruling:
   degrees.
 - 2026-11-14 (the lane's call): `make…` factories on testing entries are `create…` (`createGLRecorder`,
   `createUploadTracker`, `createEditAnchorsDepForTests`); `makeBooleanGroup` and `makeHandlesSymmetric` keep their verb.
+
+## Audit round twenty-four (2026-11-14): one pathway per decision
+
+- 2026-11-14 (the lane's call): a list's toggle key is `mod`, Command on Apple platforms and Ctrl elsewhere, as core's
+  `useSelection` and every `mod` binding read it. `Tree`, `LayerList`, `PrefsForm` and the pref schema editor had
+  toggled on either key (2026-10-11), which made a Mac's Ctrl-click, its secondary click, toggle a row as well as open
+  a menu. The alias drag's key (`mod` with Alt) follows it.
+- 2026-11-14 (the lane's call): the pref schema editor's preview zoom reads through quantity's `zoom` display, as
+  draw's status bar does: a percentage up to 2x and a factor past it, so its 2.25 step shows `2.3x`. It had written a
+  percentage throughout (`225%`).

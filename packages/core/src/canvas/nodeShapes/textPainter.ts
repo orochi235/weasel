@@ -4,6 +4,7 @@ import {
   PATH_Z,
   type PolygonPath,
   type Rect,
+  unionRects,
 } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { StyledRun, TextFit, TextPose, TextStyle, TextVerticalAlign } from '@weasel-js/text';
@@ -152,14 +153,9 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
     const lines = stroke ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose, ctx?.inherited)), strokeOutsetPerAxis(stroke, ctx)) : null;
     const shadow = textShadowBox(d, pose);
-    return shadow ? unionBox(lines ?? pose, shadow) : lines;
+    return shadow ? unionRects([lines ?? pose, shadow]) : lines;
   },
 };
-
-function unionBox(a: Box, b: Box): Rect {
-  const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
-  return { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y };
-}
 
 /** Each of `rects` cut to `box`, leaving out any it does not overlap. */
 function cutRects(rects: readonly Box[], box: Box): Box[] {

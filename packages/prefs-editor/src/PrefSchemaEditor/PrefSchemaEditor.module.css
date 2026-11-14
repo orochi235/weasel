@@ -106,7 +106,7 @@
 /* A bar is as wide or as tall as what it holds, magnified as the reader sets it. */
 .previewBar { flex: none; zoom: var(--preview-zoom, 1); }
 .zoom { display: flex; align-items: center; gap: var(--wzl-space-2); inline-size: 160px; }
-/* Sized for 400%, so the range beside it holds still as the figure changes. */
+/* Sized for its widest figure, 200%, so the range beside it holds still as the figure changes. */
 .zoomReadout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   flex: none;

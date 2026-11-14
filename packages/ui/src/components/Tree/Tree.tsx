@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { isInControlWithin } from '@weasel-js/core';
 import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
-import { LIST_KEYS, modsOf, selectModifiers, type PressModifiers } from '../../useReorderDragList';
+import { listKeys, modsOf, selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { useRowNavigation } from '../../useRowNavigation';
 import { useControlHold } from '../Disabled/controlHold';
 import { TreeDragGhost } from './TreeGhost';
@@ -115,7 +115,7 @@ export const Tree = forwardRef(function Tree(
   };
 
   const select = (id: string, mods: PressModifiers) => {
-    const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multi' : 'single', ...LIST_KEYS };
+    const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multi' : 'single', ...listKeys() };
     const result = selectFrom({ ids: [...selected], anchor: anchor.current }, id, intentOf(selectModifiers(mods), policy), {
       order: order(), forceSingle: single,
     });

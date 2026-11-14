@@ -2,6 +2,9 @@ import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LayerList } from './LayerList';
 import { BG, FLAT, list, row, TREE } from './layerList.fixture';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 describe('LayerList keyboard', () => {
   it('is a tree with one row in the tab order while its rows have no toggles', () => {
@@ -86,7 +89,7 @@ describe('LayerList keyboard', () => {
     list({ selectedIds: ['a'], onSelectionChange });
     fireEvent.keyDown(row('Beta'), { key: 'Enter' });
     expect(onSelectionChange).toHaveBeenLastCalledWith(['b']);
-    fireEvent.keyDown(row('Gamma'), { key: ' ', metaKey: true });
+    fireEvent.keyDown(row('Gamma'), { key: ' ', ...MOD });
     expect(onSelectionChange).toHaveBeenLastCalledWith(['a', 'c']);
   });
 

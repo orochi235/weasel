@@ -16,6 +16,7 @@ import { useEditorSize } from './editorPrefs';
 import { useHeldPlace } from './useHeldPlace';
 import { DraggedNodes } from './NodeGhost';
 import { keysOf, pathOf, placedOnly, type SchemaRoot } from '@weasel-js/prefs/edit';
+import { qty, zoom as zoomDisplay } from '@weasel-js/quantity';
 import { drawsNode } from './previewDrop';
 import { PaneHeader } from './PaneHeader';
 import { panelPathOf, treePathOfPanel } from './panelPaths';
@@ -108,7 +109,7 @@ function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRe
         <Switch isSelected={vertical} onChange={setVertical}>Vertical</Switch>
         <label className={s.zoom}>
           <InlineRange aria-label="Zoom" min={1} max={4} step={0.25} value={zoom} onChange={(e) => setZoom(Number(e.currentTarget.value))} />
-          <span className={s.zoomReadout}>{Math.round(zoom * 100)}%</span>
+          <span className={s.zoomReadout}>{qty(zoom, zoomDisplay()).text}</span>
         </label>
       </PaneHeader>
       <div className={s.previewStage} ref={stage} onPointerDown={onStagePointerDown} {...held} style={{ '--preview-zoom': zoom, ...heldAt } as CSSProperties}>

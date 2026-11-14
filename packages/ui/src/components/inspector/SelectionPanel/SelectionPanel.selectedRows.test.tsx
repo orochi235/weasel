@@ -4,6 +4,9 @@ import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PrefSelectHow } from '../../Prefs';
 import { SelectionPanel } from './SelectionPanel';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(cleanup);
 
@@ -93,7 +96,7 @@ describe('a paired row', () => {
     onSelect.mockClear();
     fireEvent.pointerDown(screen.getByRole('textbox', { name: 'Position Y' }));
     expect(onSelect).toHaveBeenLastCalledWith('pose.x', { toggle: false });
-    fireEvent.pointerDown(screen.getByRole('textbox', { name: 'Join' }), { metaKey: true });
+    fireEvent.pointerDown(screen.getByRole('textbox', { name: 'Join' }), MOD);
     expect(onSelect).toHaveBeenLastCalledWith('data.stroke.cap', { toggle: true });
   });
 
@@ -138,7 +141,7 @@ describe('a section', () => {
     panel(undefined, onSelect);
     fireEvent.pointerDown(screen.getByRole('heading', { name: 'Place' }));
     expect(onSelect).toHaveBeenLastCalledWith('place', { toggle: false });
-    fireEvent.pointerDown(screen.getByRole('heading', { name: 'Look' }), { ctrlKey: true });
+    fireEvent.pointerDown(screen.getByRole('heading', { name: 'Look' }), MOD);
     expect(onSelect).toHaveBeenLastCalledWith('look', { toggle: true });
     fireEvent.pointerDown(screen.getByText('Tint'));
     expect(onSelect).toHaveBeenLastCalledWith('data.tint', { toggle: false });
