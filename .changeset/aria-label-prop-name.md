@@ -5,15 +5,15 @@
 
 Every `@weasel-js/ui` component names itself through `aria-label`, as `MenuButton` and the DOM do, in place of `ariaLabel`.
 
-The components that took `ariaLabel` were `Button`, `CloseButton`, `ToggleBar`, `ButtonBar`, `OptionsBar`, `Slider`, `DetentSlider`, `Sidebar`, `StatusBar`, `ToolPalette`, `ToolGroup`, `ThemeSwitcher`, `ColorModeControl`, `EffectList`, `ResizeHandle` and `PrefsRail`. A row or segment in a data list (`SegmentedBarItem`, `DetentItem`) keeps its `ariaLabel` field.
+The components that took `ariaLabel` are `Button`, `Slider`, `Sidebar`, `ToolPalette`, `ToolGroup`, `ColorModeControl`, `EffectList`, `ResizeHandle` and `PrefsRail`; `SegmentedBar` and `CycleButton`, which replace `ToggleBar`, `ButtonBar`, `OptionsBar` and `ThemeSwitcher`, take `aria-label` too. A row or segment in a data list (`SegmentedBarItem`, `DetentItem`) keeps its `ariaLabel` field.
 
 ```tsx
 // before
 <Button iconOnly ariaLabel="Add"><Icon name="core:plus" /></Button>
-<ToggleBar ariaLabel="Align" items={items} value={v} onChange={setV} />
+<Slider ariaLabel="Opacity" thumbs={thumbs} onInput={setThumbs} />
 // after
 <Button iconOnly aria-label="Add"><Icon name="core:plus" /></Button>
-<ToggleBar aria-label="Align" items={items} value={v} onChange={setV} />
+<Slider aria-label="Opacity" thumbs={thumbs} onInput={setThumbs} />
 ```
 
 <!-- entry: breaking api -->
