@@ -569,7 +569,10 @@ name a package. Breaking changes are in scope.
   `SegmentedRow` with identical tiling, roving, and segment-class code, and alias the same size and variant types;
   they differ only in selection model and aria role. One bar with a selection mode (single, multiple, each,
   momentary) lives in a `Segmented/` folder with `segmentedRow.tsx`, `segmentsAlong.tsx`, `segmentSweep.tsx`,
-  `segmentedVariant.ts`, and `segmentedControl.module.css`. Closes when one component remains.
+  `segmentedVariant.ts`, and `segmentedControl.module.css`. Its segments come from a list or from a `Sweep`, stepped
+  by the same `stepsOf` that `Sequence` uses, and keep the bar's own roles rather than Sequence's list markup; its
+  stories show every mode, size, and variant through `<Sequence sweep across>` (2026-11-13). Closes when one
+  component remains.
 
 - **(P2) [agent] One children-based `Bar` for `Bar`'s layout and `Toolbar`; the schema half becomes `PrefsBar`.**
   Both render `role="toolbar"`; `Toolbar` roves and `Bar` doesn't; `ToolbarTitle` and `Bar`'s label share
