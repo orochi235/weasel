@@ -13,12 +13,12 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./export": {
-      "import": "./dist/export.js",
-      "types": "./dist/export.d.ts"
+      "types": "./dist/export.d.ts",
+      "import": "./dist/export.js"
     },
     "./package.json": "./package.json"
   },

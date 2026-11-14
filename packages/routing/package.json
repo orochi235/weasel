@@ -13,20 +13,20 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./react": {
-      "import": "./dist/react.js",
-      "types": "./dist/react.d.ts"
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
     },
     "./internal": {
-      "import": "./dist/internal.js",
-      "types": "./dist/internal.d.ts"
+      "types": "./dist/internal.d.ts",
+      "import": "./dist/internal.js"
     },
     "./testing/registerAction": {
-      "import": "./dist/testing/registerAction.js",
-      "types": "./dist/testing/registerAction.d.ts"
+      "types": "./dist/testing/registerAction.d.ts",
+      "import": "./dist/testing/registerAction.js"
     },
     "./package.json": "./package.json"
   },

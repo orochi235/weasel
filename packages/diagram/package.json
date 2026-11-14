@@ -13,24 +13,24 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./layout": {
-      "import": "./dist/layout.js",
-      "types": "./dist/layout.d.ts"
+      "types": "./dist/layout.d.ts",
+      "import": "./dist/layout.js"
     },
     "./effect": {
-      "import": "./dist/effect.js",
-      "types": "./dist/effect.d.ts"
+      "types": "./dist/effect.d.ts",
+      "import": "./dist/effect.js"
     },
     "./effect-audio": {
-      "import": "./dist/effect-audio.js",
-      "types": "./dist/effect-audio.d.ts"
+      "types": "./dist/effect-audio.d.ts",
+      "import": "./dist/effect-audio.js"
     },
     "./icons": {
-      "import": "./dist/icons.table.js",
-      "types": "./dist/icons.table.d.ts"
+      "types": "./dist/icons.table.d.ts",
+      "import": "./dist/icons.table.js"
     },
     "./package.json": "./package.json"
   },

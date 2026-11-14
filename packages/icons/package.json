@@ -12,8 +12,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" },
-    "./shapes": { "import": "./dist/shapes.js", "types": "./dist/shapes.d.ts" },
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./shapes": { "types": "./dist/shapes.d.ts", "import": "./dist/shapes.js" },
     "./package.json": "./package.json"
   },
   "weaselIcons": { "table": "./dist/icons.table.json" },

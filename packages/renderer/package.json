@@ -14,28 +14,28 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./mesh": {
-      "import": "./dist/mesh.js",
-      "types": "./dist/mesh.d.ts"
+      "types": "./dist/mesh.d.ts",
+      "import": "./dist/mesh.js"
     },
     "./patterns-builtin": {
-      "import": "./dist/patterns-builtin.js",
-      "types": "./dist/patterns-builtin.d.ts"
+      "types": "./dist/patterns-builtin.d.ts",
+      "import": "./dist/patterns-builtin.js"
     },
     "./testing/glRecorder": {
-      "import": "./dist/testing/glRecorder.js",
-      "types": "./dist/testing/glRecorder.d.ts"
+      "types": "./dist/testing/glRecorder.d.ts",
+      "import": "./dist/testing/glRecorder.js"
     },
     "./testing/vertexUploads": {
-      "import": "./dist/testing/vertexUploads.js",
-      "types": "./dist/testing/vertexUploads.d.ts"
+      "types": "./dist/testing/vertexUploads.d.ts",
+      "import": "./dist/testing/vertexUploads.js"
     },
     "./test-seams": {
-      "import": "./dist/test-seams.js",
-      "types": "./dist/test-seams.d.ts"
+      "types": "./dist/test-seams.d.ts",
+      "import": "./dist/test-seams.js"
     },
     "./package.json": "./package.json"
   },

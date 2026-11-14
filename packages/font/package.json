@@ -13,16 +13,16 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./metrics": {
-      "import": "./dist/metrics.js",
-      "types": "./dist/metrics.d.ts"
+      "types": "./dist/metrics.d.ts",
+      "import": "./dist/metrics.js"
     },
     "./test-seams": {
-      "import": "./dist/test-seams.js",
-      "types": "./dist/test-seams.d.ts"
+      "types": "./dist/test-seams.d.ts",
+      "import": "./dist/test-seams.js"
     },
     "./package.json": "./package.json"
   },
