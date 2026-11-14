@@ -8,6 +8,7 @@ import { Tooltip, TooltipTrigger } from '../Tooltip';
 import { HELP_ICON, useRowHelp } from './rowHelp';
 import s from './PropertyHelp.module.css';
 import row from './Properties.module.css';
+import type {} from '../../kitSettings';
 
 /** Props for `<PropertyHelp>`. */
 export interface PropertyHelpProps {

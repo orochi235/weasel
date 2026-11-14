@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
+import type {} from './kitSettings';
 
 /** How long typing rests before a field that settles when idle commits its draft. */
 export const IDLE_SETTLE_MS = 800;

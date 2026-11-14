@@ -18,6 +18,7 @@ import s from './CurveEditor.module.css';
 import type {
   CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint,
 } from './layerTypes';
+import type {} from '../../kitSettings';
 
 type Bezier = readonly [number, number, number, number];
 

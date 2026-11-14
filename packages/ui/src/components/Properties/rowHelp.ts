@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type RefObject } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
+import type {} from '../../kitSettings';
 
 const CONTROLS = 'input, select, textarea, button, [tabindex]:not([tabindex="-1"])';
 

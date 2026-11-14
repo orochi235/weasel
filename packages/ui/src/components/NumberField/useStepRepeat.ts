@@ -1,6 +1,7 @@
 import { useEffect, useState, type RefObject } from 'react';
 import { createStepRepeat, REPEAT_DELAY_MS, REPEAT_EVERY_MS, type StepRepeat } from '@weasel-js/ui-input';
 import { useKitSetting, useLatest } from '@weasel-js/react';
+import type {} from '../../kitSettings';
 
 type StepKey = 'ArrowUp' | 'ArrowDown';
 

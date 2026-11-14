@@ -4,6 +4,7 @@ import { useKitSetting } from '@weasel-js/react';
 import { STOP_SNAP_PX } from '../Slider/stops';
 import shared from '../range.module.css';
 import { cssPx } from '../../cssPx';
+import type {} from '../../kitSettings';
 
 /** The first stop a move from `from` to `to` crosses, or `to` where it crosses none. */
 export function catchStop(from: number, to: number, stops: readonly number[]): number {

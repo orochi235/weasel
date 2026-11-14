@@ -5,6 +5,7 @@ import { evenMap, sliderAt, usableStops, type TrackMap } from '@weasel-js/ui-inp
 import { linearScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
 import { STOP_SNAP_PX } from './stops';
 import type { SliderProps } from './types';
+import type {} from '../../kitSettings';
 
 /** The reachable stops and the value span the track runs over: the first stop
  *  to the last under `spacing: 'even'`, else `min` to `max`. */

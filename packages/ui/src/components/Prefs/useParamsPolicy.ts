@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useKitSetting } from '@weasel-js/react';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type LiveControl, type ParamsSurface } from './commitPolicy';
+import type {} from '../../kitSettings';
 
 /** How a params surface writes, with the kit settings a provider sets over the defaults. */
 export interface ParamsPolicy {
