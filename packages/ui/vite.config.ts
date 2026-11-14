@@ -28,7 +28,9 @@ assertPackageBuild(import.meta.dirname);
  * with no change here or in package.json.
  *
  * A directory with no `index.ts` (Foundations) is not a component entry point
- * and is skipped; it still reaches consumers through whatever imports it.
+ * and is skipped; it still reaches consumers through whatever imports it. A
+ * lowercase one (`inspector`) groups components, each reached as
+ * `./components/<group>/<Name>`.
  */
 const componentsDir = resolve(import.meta.dirname, 'src/components');
 const entries: Record<string, string> = {
@@ -42,12 +44,16 @@ const entries: Record<string, string> = {
   kitSettings: resolve(import.meta.dirname, 'src/kitSettings.ts'),
   useRovingTabIndex: resolve(import.meta.dirname, 'src/useRovingTabIndex.ts'),
 };
-for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
-  if (!dirent.isDirectory()) continue;
-  const dir = resolve(componentsDir, dirent.name);
-  if (!readdirSync(dir).includes('index.ts')) continue;
-  entries[`components/${dirent.name}/index`] = resolve(dir, 'index.ts');
+function addComponents(rel: string): void {
+  for (const dirent of readdirSync(resolve(componentsDir, rel), { withFileTypes: true })) {
+    if (!dirent.isDirectory()) continue;
+    const name = rel ? `${rel}/${dirent.name}` : dirent.name;
+    const dir = resolve(componentsDir, name);
+    if (readdirSync(dir).includes('index.ts')) entries[`components/${name}/index`] = resolve(dir, 'index.ts');
+    else if (!rel && /^[a-z]/.test(dirent.name)) addComponents(name);
+  }
 }
+addComponents('');
 
 const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as {
   dependencies?: Record<string, string>;

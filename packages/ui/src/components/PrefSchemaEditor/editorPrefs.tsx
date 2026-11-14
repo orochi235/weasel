@@ -3,7 +3,7 @@ import { prefValueAtPath, type PrefGroup, type PrefPath, type PrefsStore } from 
 import { Icon } from '../Icon';
 import { ActionButton } from '../ActionButton/ActionButton';
 import { PrefsDialog } from '../Prefs';
-import { setAtPath } from '../SelectionPanel';
+import { setAtPath } from '../inspector/SelectionPanel';
 import { icon } from '../../icons.gen';
 
 /** The editor's own settings, as the schema a host opens a prefs store over to keep them. */

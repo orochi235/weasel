@@ -179,6 +179,7 @@
       "@weasel-js/theme/testing/*": ["../theme/src/testing/*"],
       "@weasel-js/ui": ["../ui/src/index.ts"],
       "@weasel-js/ui/components/Badge/geometry": ["../ui/src/components/Badge/geometry.ts"],
+      "@weasel-js/ui/components/inspector/*": ["../ui/src/components/inspector/*/index.ts"],
       "@weasel-js/ui/components/*": ["../ui/src/components/*/index.ts"],
       "@weasel-js/ui/icons": ["../ui/src/icons.table.ts"],
       "@weasel-js/ui/kit-icons": ["../ui/src/kitIcons.ts"],

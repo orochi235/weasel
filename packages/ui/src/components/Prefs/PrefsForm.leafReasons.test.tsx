@@ -5,7 +5,7 @@ import type { PrefAction, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 import { useLeafAction } from './useLeafAction';
 import { PrefsBar } from '../PrefsBar/PrefsBar';
-import { SelectionPanel } from '../SelectionPanel/SelectionPanel';
+import { SelectionPanel } from '../inspector/SelectionPanel/SelectionPanel';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);

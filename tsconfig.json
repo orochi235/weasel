@@ -192,6 +192,7 @@
       "@weasel-js/theme/testing/*": ["./packages/theme/src/testing/*"],
       "@weasel-js/ui": ["./packages/ui/src/index.ts"],
       "@weasel-js/ui/components/Badge/geometry": ["./packages/ui/src/components/Badge/geometry.ts"],
+      "@weasel-js/ui/components/inspector/*": ["./packages/ui/src/components/inspector/*/index.ts"],
       "@weasel-js/ui/components/*": ["./packages/ui/src/components/*/index.ts"],
       "@weasel-js/ui/icons": ["./packages/ui/src/icons.table.ts"],
       "@weasel-js/ui/kit-icons": ["./packages/ui/src/kitIcons.ts"],

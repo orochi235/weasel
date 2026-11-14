@@ -1,6 +1,6 @@
 import { useOngoingAction } from '@weasel-js/core';
 import { PaintInput } from '@weasel-js/ui/components/PaintInput';
-import { nestedPaintValue, type LeafContext, type LeafRenderer } from '@weasel-js/ui/components/SelectionPanel';
+import { nestedPaintValue, type LeafContext, type LeafRenderer } from '@weasel-js/ui/components/inspector/SelectionPanel';
 
 /**
  * A paint leaf routed through an action, so a scrub coalesces into one undo

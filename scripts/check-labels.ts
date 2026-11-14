@@ -25,7 +25,7 @@ export const SURFACES = [
   'packages/ui/src/components/MotifFrame',
   'packages/ui/src/components/DetailList',
   'packages/ui/src/components/Prefs',
-  'packages/ui/src/components/SelectionPanel',
+  'packages/ui/src/components/inspector/SelectionPanel',
   'packages/labkit/src/controls',
 ];
 

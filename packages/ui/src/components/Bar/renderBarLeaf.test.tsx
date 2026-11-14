@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { renderPrefControl, type LeafContext } from '../Prefs/PrefsRow';
 import { loneLeafContext } from '../PrefsSource/leafContext';
-import { renderBuiltin } from '../SelectionPanel/renderLeaf';
+import { renderBuiltin } from '../inspector/SelectionPanel/renderLeaf';
 import { renderBarLeaf, withBarLabel } from './renderBarLeaf';
 
 const size: PrefLeaf = { kind: 'number', name: 'Size', description: 'Type size.', default: 12 };

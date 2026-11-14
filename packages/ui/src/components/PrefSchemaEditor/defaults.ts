@@ -1,5 +1,5 @@
 import { isPrefLeaf, isPrefSection, type PrefLeaf } from '@weasel-js/prefs';
-import { setAtPath } from '../SelectionPanel';
+import { setAtPath } from '../inspector/SelectionPanel';
 import { childrenOf, joinPath, replaceNode, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** A value and where it is stored: the steps of its path, as a form or a node holds it. */

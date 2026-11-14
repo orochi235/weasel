@@ -8,7 +8,7 @@ import { InlineRange } from '../InlineRange';
 import { useRegisteredActions } from '../Prefs/registeredActions';
 import { PrefsDialog, PrefsForm, type PrefDrop, type LeafRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
-import { SelectionPanel, setAtPath } from '../SelectionPanel';
+import { SelectionPanel, setAtPath } from '../inspector/SelectionPanel';
 import { SidebarPanel } from '../SidebarPanel';
 import { Switch } from '../Switch';
 import type { DefaultEdit } from './defaults';

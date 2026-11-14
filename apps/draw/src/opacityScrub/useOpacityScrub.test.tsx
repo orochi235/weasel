@@ -19,7 +19,7 @@ import {
   type Fill,
   type Tool,
 } from '@weasel-js/core';
-import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
 import { WD_RENDERERS } from '../paintRenderers';
 import { useOpacityScrub } from './useOpacityScrub';
 import { withIcons } from '../testIcons';

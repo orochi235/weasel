@@ -6,7 +6,7 @@ import { PREF_KINDS, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
-import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
 import { PropertyField, PropertyList, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { PropertyFieldKind } from './fieldTypes';
 import type { PropertyRowLayout } from './PropertyRow';

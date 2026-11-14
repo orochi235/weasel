@@ -73,7 +73,7 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
   });
 
   it.each(['SeveralAnchors', 'OneAnchor'])('AnchorFields %s', async (name) => {
-    const mod = (await import('./AnchorFields/AnchorFields.stories')) as unknown as Record<string, Story>;
+    const mod = (await import('./inspector/AnchorFields/AnchorFields.stories')) as unknown as Record<string, Story>;
     draw(mod[name], { unit: 'furlongs' });
     expect(screen.getAllByText('furlongs').length).toBeGreaterThan(0);
   });

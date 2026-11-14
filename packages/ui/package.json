@@ -22,6 +22,10 @@
       "types": "./dist/components/Badge/geometry.d.ts",
       "import": "./dist/components/Badge/geometry.js"
     },
+    "./components/inspector/*": {
+      "types": "./dist/components/inspector/*/index.d.ts",
+      "import": "./dist/components/inspector/*/index.js"
+    },
     "./components/*": {
       "types": "./dist/components/*/index.d.ts",
       "import": "./dist/components/*/index.js"

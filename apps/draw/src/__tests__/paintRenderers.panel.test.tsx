@@ -3,7 +3,7 @@ import { screen, within } from '@testing-library/react';
 import {
   ActionsProvider, asNodeId, createScene, inferredNodeProperties, inferredNodeRouting, rectPath, solid,
 } from '@weasel-js/core';
-import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
 import { WD_RENDERERS } from '../paintRenderers';
 import { renderWithIcons } from '../testIcons';
 

@@ -6,7 +6,7 @@ import { MotifFrame } from '@weasel-js/ui/components/MotifFrame';
 import type { Motif } from './MotifFrame';
 import { FORM_FRAMES } from '@weasel-js/ui/testing/prefs';
 import prefs from './Prefs/Prefs.module.css';
-import selection from './SelectionPanel/SelectionPanel.module.css';
+import selection from './inspector/SelectionPanel/SelectionPanel.module.css';
 
 // Light mode sets --wzl-border and --wzl-surface-sunken to one gray, so whether a
 // sunken box's edge shows is a question of resolved colors, which jsdom has none of.

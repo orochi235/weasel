@@ -8,7 +8,7 @@ import {
   strokeOf,
 } from '@weasel-js/core';
 import type { Stroke, Fill } from '@weasel-js/core';
-import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
+import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
 import { DemoStage } from './DemoStage';
 
 /** `kind` routes the node to its properties; `shape` is what the kit's shape painter draws. */

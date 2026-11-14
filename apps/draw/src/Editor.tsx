@@ -14,7 +14,7 @@ import {
 import type { ModeRegistry } from '@weasel-js/modes';
 import { PATH_EDIT_TOOLS, PATH_OVERLAYS_GROUP, PATH_TOOLS_TOOLS, RESHAPE_TOOLS, WARP_TOOLS } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
-import { CharacterOptions } from '@weasel-js/ui/components/CharacterOptions';
+import { CharacterOptions } from '@weasel-js/ui/components/inspector/CharacterOptions';
 import { ActiveToolOptions } from './ui/ToolOptions';
 import { drawToolOptionValues } from './toolOptions';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';

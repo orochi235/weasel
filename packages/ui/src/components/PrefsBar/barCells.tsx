@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { pairRows } from '../SelectionPanel/model';
-import { renderCells } from '../SelectionPanel/cells';
-import type { LeafContext, LeafRenderer } from '../SelectionPanel/renderContext';
+import { pairRows } from '../inspector/SelectionPanel/model';
+import { renderCells } from '../inspector/SelectionPanel/cells';
+import type { LeafContext, LeafRenderer } from '../inspector/SelectionPanel/renderContext';
 import type { BarCell, BarLeafNode } from './barNodes';
 
 /** One leaf's cell as a surface draws it, before the bar knows whether it fuses with its neighbors. */

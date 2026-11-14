@@ -258,7 +258,7 @@ Owner tags, after the priority (2026-10-26):
 - **(P2) [maintainer] Tune anchor fields hands-on, with the maintainer driving.** First-draft behavior: the
   panel shows X and Y for any selection and handles only for a lone anchor, a typed handle mirrors
   on a smooth anchor, `+=`/`-=` offsets each anchor by its own amount, and draw shows it at the
-  top of Properties in points (`packages/ui/src/components/AnchorFields/`,
+  top of Properties in points (`packages/ui/src/components/inspector/AnchorFields/`,
   `packages/geom/src/paths/anchorFields.ts`, `apps/draw/src/RightSidebar.tsx`).
   Closes when the maintainer has driven anchor fields hands-on and the defaults and keys he picks are
   committed.
@@ -538,10 +538,6 @@ name a package. Breaking changes are in scope.
   `kindSchemas`, `draft`). Only `apps/draw/src/dev` uses it, and `PrefConditionEditor` is used only by its
   `AttributesPane`. The model goes to `@weasel-js/prefs` as `./edit`; the editor and `PrefConditionEditor` go to a
   new `prefs-editor` package, which needs the maintainer to seed on npm. Closes when neither lives in ui.
-
-- **(P3) [agent] Group `AnchorFields` and `CharacterOptions` with the editor panels.** Both are core-bound panels
-  (on `PropertyList` + `useAnchorFields`, and on `ToolOptionsBar` + `useTextTool`) filed among the form controls.
-  Closes when they sit with `SelectionPanel` and `Properties`.
 
 - **(P3) [recheck] One rule for story titles.** 75 of 144 stories sit under `ui/Foundations` with no visible rule
   (`Tabs` in, `PageTabs` out), and some titles don't match their files
