@@ -19,11 +19,11 @@ export {
   enumControlAt,
   withRowControl,
   withSurfaceControl,
-  type ControlPlace,
   type EnumControlName,
   type SurfaceControls,
 } from './surfaceControls';
-export { PrefActionButton, PrefActionRows } from './PrefActionButton';
+export { ActionLeaf, type ActionLeafProps } from './ActionLeaf';
+export { ActionsLeaf, type ActionsLeafProps } from './ActionsLeaf';
 export { actionLeafVariants, actionsLeafActions, prefDrawsActionRow, useRegisteredActions, type ActionsLeafOptions } from './registeredActions';
 export { PrefMixed } from './PrefMixed';
 export { PrefLabelLine, PrefRule, PrefWords, prefDrawsNoControl } from './PrefWords';

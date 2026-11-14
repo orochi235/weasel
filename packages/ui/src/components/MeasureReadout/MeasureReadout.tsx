@@ -14,7 +14,7 @@ import {
 import { decimal, qty } from '@weasel-js/quantity';
 import { useActionStates } from '../ActionBar/useActionStates';
 import { reasonLabel } from '../ActionBar/reasonLabels';
-import { BarActionButton } from '../Bar/BarAction';
+import { ActionButton } from '../ActionButton/ActionButton';
 import s from './MeasureReadout.module.css';
 import { RAD_TO_DEG } from '@weasel-js/geom';
 
@@ -86,7 +86,7 @@ export function MeasureReadout({ scene, measurements: ms, className }: MeasureRe
           if (i < 0) return null;
           const state = states[i]!;
           return (
-            <BarActionButton
+            <ActionButton
               key={cmd}
               label={label}
               description={items[i]!.description}

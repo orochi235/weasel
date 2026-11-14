@@ -106,7 +106,7 @@
     "longestFunction": 154
   },
   "packages/labkit/src/annotations/ExportMenu.tsx": {
-    "longestFunction": 126
+    "longestFunction": 123
   },
   "packages/labkit/src/annotations/store.ts": {
     "longestFunction": 293
@@ -136,7 +136,7 @@
     "longestFunction": 181
   },
   "packages/labkit/src/specimen/Specimen.tsx": {
-    "lines": 799,
+    "lines": 797,
     "longestFunction": 126
   },
   "packages/labkit/src/state/bindLabStore.ts": {

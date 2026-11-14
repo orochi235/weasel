@@ -342,11 +342,9 @@ describe('ToolPalette — mode eligibility', () => {
 
     const selectBtn = screen.getByRole('button', { name: /select/i });
     expect(selectBtn.getAttribute('aria-disabled')).toBe('true');
-    expect(selectBtn.className).toMatch(/disabledBtn/);
 
     const anchorBtn = screen.getByRole('button', { name: /anchor/i });
     expect(anchorBtn.getAttribute('aria-disabled')).toBeNull();
-    expect(anchorBtn.className).not.toMatch(/disabledBtn/);
   });
 
   it('ineligible button does not invoke setActive when clicked', () => {

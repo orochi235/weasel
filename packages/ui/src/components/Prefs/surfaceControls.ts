@@ -1,4 +1,4 @@
-import type { LeafSurface } from '../Bar/renderBarLeaf';
+import type { ControlForm } from '../ActionButton/controlForm';
 import type { PropertyControlProps, PropertyEnumFieldProps } from '../Properties/PropertyField';
 import type { ParamsSurface } from './commitPolicy';
 
@@ -24,24 +24,25 @@ export const PARAMS_CONTROLS: Record<ParamsSurface, SurfaceControls> = {
 /** A control an enum can ask for. */
 export type EnumControlName = NonNullable<PropertyEnumFieldProps['control']>;
 
-/** Where a field is drawn: a labeled row, a cell of a bar, or the popover a cell opens. */
-export type ControlPlace = LeafSurface | 'popover';
-
 /**
- * The control an enum asking for one draws, by place, where the place has no room for it: a radio group's
- * column does not fit a bar's one line, and a dropdown or a menu opened in a popover is a popup inside a popup.
+ * The control an enum asking for one draws, by form, where the form has no room for it: a radio group's
+ * column does not fit a bar's one line or a palette's, and a dropdown or a menu opened in a popover is a popup inside
+ * a popup.
  * Every other control draws as asked, on every surface.
  */
-export const PARAMS_ENUM_PLACES: Record<ControlPlace, Partial<Record<EnumControlName, EnumControlName>>> = {
+export const PARAMS_ENUM_PLACES: Record<ControlForm, Partial<Record<EnumControlName, EnumControlName>>> = {
   row: {},
   bar: { radio: 'toggle' },
+  palette: { radio: 'toggle' },
   popover: { select: 'radio', menu: 'radio' },
+  // A bar's overflow draws its cells in the forms they have on the bar.
+  menu: { radio: 'toggle' },
 };
 
-/** The control an enum asking for `control` draws at `place`. One naming none asks for a select. */
-export function enumControlAt(control: EnumControlName | undefined, place: ControlPlace): EnumControlName {
+/** The control an enum asking for `control` draws in `form`. One naming none asks for a select. */
+export function enumControlAt(control: EnumControlName | undefined, form: ControlForm): EnumControlName {
   const asked = control ?? 'select';
-  return PARAMS_ENUM_PLACES[place][asked] ?? asked;
+  return PARAMS_ENUM_PLACES[form][asked] ?? asked;
 }
 
 /** `field` with the control `surface` draws for the one its leaf asked for. One naming none is left without. */

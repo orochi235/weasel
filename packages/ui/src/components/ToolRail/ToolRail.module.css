@@ -17,10 +17,6 @@
 /* Marker only: `useRovingTabIndex` finds the rail's buttons by this class. Deleting it breaks keyboard navigation. */
 .item {}
 
-.disabledBtn {
-  cursor: not-allowed;
-}
-
 :where(.rule) {
   flex: none;
   border: 0;

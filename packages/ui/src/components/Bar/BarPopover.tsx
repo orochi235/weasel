@@ -14,6 +14,7 @@ import { PopFace, popIconAttr } from './popFace';
 import s from './Bar.module.css';
 import { holdScope, type HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
+import { FormScope } from '../ActionButton/controlForm';
 
 /** Props for {@link BarPopover}. */
 export interface BarPopoverProps extends OverlayPortalProps, HoldProps {
@@ -54,7 +55,7 @@ export function BarPopover(props: BarPopoverProps) {
         <Popover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.popBody}`} aria-label={label}>
             {/* Context crosses the portal, and the bar's run is not the run of what opens from it. */}
-            <RunScope fresh><BarMarkContext.Provider value={false}>{children}</BarMarkContext.Provider></RunScope>
+            <RunScope fresh><BarMarkContext.Provider value={false}><FormScope form="popover">{children}</FormScope></BarMarkContext.Provider></RunScope>
           </RACDialog>
         </Popover>,
       ))}

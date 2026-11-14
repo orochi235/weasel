@@ -6,7 +6,7 @@ import { Tree, treeBranchIds, type TreeDragEffect, type TreeDropHandle } from '.
 import { seekRows } from './rowSearch';
 import type { LeafRenderer } from '../Prefs';
 import { Button } from '../Button';
-import { ToolButton } from '../ToolButton';
+import { ActionButton } from '../ActionButton/ActionButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import type { ActionCatalog } from './useActionCatalog';
@@ -234,11 +234,11 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
       </div>
       {toolSlot && createPortal(
         <Palette items={palette} sections={isPrefSection(schema)} ghost={!outsideDraws} disabled={readOnly} pages={!pageless} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
-          <ToolButton icon={<Icon name={icon('core:tune')} mark={icon('markAdd')} />} label="Add pref" disabled={readOnly || pageless} onClick={() => setAdding('pref')} />
-          <ToolButton icon={<Icon name={GROUP_ICON.section} mark={icon('markAdd')} />} label={`Add ${branch}`} disabled={readOnly || (branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth))} onClick={() => setAdding('branch')} />
-          <ToolButton icon={<Icon name={icon('link')} mark={icon('markAdd')} />} label={links.label} title={links.title}
-            disabled={aliasAt === null} onClick={() => { if (aliasAt) alias(selected, aliasAt); }} />
-          <ToolButton icon={<Icon name={icon('core:delete')} />} label="Remove" disabled={readOnly || selected.length === 0} onClick={onRemove} />
+          <ActionButton icon={<Icon name={icon('core:tune')} mark={icon('markAdd')} />} label="Add pref" disabled={readOnly || pageless} onPress={() => setAdding('pref')} />
+          <ActionButton icon={<Icon name={GROUP_ICON.section} mark={icon('markAdd')} />} label={`Add ${branch}`} disabled={readOnly || (branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth))} onPress={() => setAdding('branch')} />
+          <ActionButton icon={<Icon name={icon('link')} mark={icon('markAdd')} />} label={links.label} tooltip={links.title}
+            disabled={aliasAt === null} onPress={() => { if (aliasAt) alias(selected, aliasAt); }} />
+          <ActionButton icon={<Icon name={icon('core:delete')} />} label="Remove" disabled={readOnly || selected.length === 0} onPress={onRemove} />
         </Palette>,
         toolSlot,
       )}

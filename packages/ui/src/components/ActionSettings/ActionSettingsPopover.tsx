@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { Dialog as RACDialog } from 'react-aria-components';
 import { Popover } from '../Popover';
 import { useOverlayPortal } from '../../overlays/portalHost';
-import { BarActionButton, type BarActionButtonProps } from '../Bar/BarAction';
+import { ActionButton, type ActionButtonProps } from '../ActionButton/ActionButton';
+import { FormScope } from '../ActionButton/controlForm';
 import { PrefsForm } from '../Prefs/PrefsForm';
 import type { ActionSettingsForm } from './useActionSettings';
 import bar from '../Bar/Bar.module.css';
@@ -10,8 +11,8 @@ import listbox from '../listbox.module.css';
 import s from './ActionSettings.module.css';
 
 /** Props for {@link ActionSettingsPopover}: the action's button, less what opening the form decides. */
-export interface ActionSettingsPopoverProps extends Omit<BarActionButtonProps, 'onPress' | 'expanded'> {
-  form: ActionSettingsForm;
+export interface ActionSettingsPopoverProps extends Omit<ActionButtonProps, 'onPress' | 'popup'> {
+  settings: ActionSettingsForm;
 }
 
 /**
@@ -20,7 +21,7 @@ export interface ActionSettingsPopoverProps extends Omit<BarActionButtonProps, '
  * each change in the form triggers it. Disabled as the action is, so a form
  * with nothing to edit never opens.
  */
-export function ActionSettingsPopover({ form, ...button }: ActionSettingsPopoverProps) {
+export function ActionSettingsPopover({ settings, ...button }: ActionSettingsPopoverProps) {
   const trigger = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
   const { anchor, provide, ready } = useOverlayPortal();
@@ -32,7 +33,7 @@ export function ActionSettingsPopover({ form, ...button }: ActionSettingsPopover
     <>
       <span ref={trigger} className={s.trigger}>
         {anchor}
-        <BarActionButton {...button} expanded={shown} onPress={() => setOpen((was) => !was)} />
+        <ActionButton {...button} popup={{ type: 'dialog', expanded: shown }} onPress={() => setOpen((was) => !was)} />
       </span>
       {ready && provide(
         <Popover
@@ -43,9 +44,11 @@ export function ActionSettingsPopover({ form, ...button }: ActionSettingsPopover
           className={bar.popover}
           data-weasel-overlay=""
         >
-          <RACDialog className={`${listbox.surface} ${bar.popBody} ${s.body}`} aria-label={form.schema.name || button.label}>
-            {form.schema.name && <p className={s.title}>{form.schema.name}</p>}
-            <PrefsForm schema={form.schema} layout="list" values={form.values} mixed={form.mixed} onChange={form.onChange} />
+          <RACDialog className={`${listbox.surface} ${bar.popBody} ${s.body}`} aria-label={settings.schema.name || button.label}>
+            {settings.schema.name && <p className={s.title}>{settings.schema.name}</p>}
+            <FormScope form="popover">
+              <PrefsForm schema={settings.schema} layout="list" values={settings.values} mixed={settings.mixed} onChange={settings.onChange} />
+            </FormScope>
           </RACDialog>
         </Popover>,
       )}

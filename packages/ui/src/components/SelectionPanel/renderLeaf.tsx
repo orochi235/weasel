@@ -4,7 +4,7 @@
  * renders a tool's options through the same function.
  */
 import type { ReactNode } from 'react';
-import type { LeafSurface } from '../Bar/renderBarLeaf';
+import type { ControlForm } from '../ActionButton/controlForm';
 import { renderLeaf, type LeafParts } from '../Prefs/renderLeaf';
 import { withRowControl } from '../Prefs/surfaceControls';
 import { PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
@@ -19,7 +19,7 @@ export interface RenderBuiltinOptions {
   /** True for a field of an object leaf, which writes itself into its parent:
    *  "None" on a nested paint removes the field. */
   nested?: boolean;
-  surface?: LeafSurface;
+  surface?: ControlForm;
 }
 
 /** A one-control field, sized as a panel sizes it. */

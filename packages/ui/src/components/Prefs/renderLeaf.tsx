@@ -4,14 +4,16 @@
  */
 import type { ReactNode } from 'react';
 import { prefVariantOf, type PrefAction, type PrefActions, type PrefAlias, type PrefLeaf, type PrefMap, type PrefUnion } from '@weasel-js/prefs';
-import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
+import { renderBarLeaf, withBarLabel } from '../Bar/renderBarLeaf';
+import { drawsBarForm, type ControlForm } from '../ActionButton/controlForm';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import type { ParamsSurface } from './commitPolicy';
 import { entryConditions } from './entry';
 import { leafField } from './leafField';
 import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
-import { PrefActionButton, PrefActionRows } from './PrefActionButton';
+import { ActionLeaf } from './ActionLeaf';
+import { ActionsLeaf } from './ActionsLeaf';
 import { PrefMixed } from './PrefMixed';
 import { aliasOfNothing, prefDrawsNoControl, PrefWords } from './PrefWords';
 import type { LeafContext, LeafRenderer } from './renderContext';
@@ -65,10 +67,10 @@ export function renderNestedLeaf(ctx: LeafContext, parts: LeafParts, name = ctx.
   return custom ? custom(ctx) : renderLeaf(ctx, { ...parts, nested: true }, name);
 }
 
-/** A built-in leaf's control: its bar form where `bar`, else its row form. `name` is its accessible name. */
-export function renderLeaf(ctx: LeafContext, parts: LeafParts, name = ctx.pref.name, bar: LeafSurface = 'row'): ReactNode {
+/** A built-in leaf's control in `form`: its bar form in a bar's, else its row form. `name` is its accessible name. */
+export function renderLeaf(ctx: LeafContext, parts: LeafParts, name = ctx.pref.name, form: ControlForm = 'row'): ReactNode {
   const { pref, value, mixed, setValue } = ctx;
-  if (bar === 'bar') {
+  if (drawsBarForm(form)) {
     return renderBarLeaf({
       leaf: pref,
       path: ctx.path,
@@ -125,8 +127,8 @@ export function renderLeaf(ctx: LeafContext, parts: LeafParts, name = ctx.pref.n
       </UnionPicker>
     );
   }
-  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} active={ctx.active} />;
-  if (pref.kind === 'actions') return <PrefActionRows pref={pref as PrefActions} path={ctx.path} disabled={ctx.disabled} />;
+  if (pref.kind === 'action') return <ActionLeaf leaf={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} active={ctx.active} form={form} />;
+  if (pref.kind === 'actions') return <ActionsLeaf leaf={pref as PrefActions} path={ctx.path} disabled={ctx.disabled} form={form} />;
   if (prefDrawsNoControl(pref)) return <PrefWords pref={pref} />;
   // A surface draws a resolved alias as its target, so one that reaches here points at nothing.
   if (pref.kind === 'alias') return <span className={s.unrenderable}>{aliasOfNothing(pref as PrefAlias)}</span>;
@@ -137,8 +139,8 @@ export function renderLeaf(ctx: LeafContext, parts: LeafParts, name = ctx.pref.n
 }
 
 /** A leaf's renderer for its kind where the surface has one, else the built-in; for a bar, with its words. */
-export function renderLeafControl(ctx: LeafContext, parts: LeafParts, bar: LeafSurface = 'row', name?: string): ReactNode {
+export function renderLeafControl(ctx: LeafContext, parts: LeafParts, form: ControlForm = 'row', name?: string): ReactNode {
   const custom = parts.renderers?.[ctx.pref.kind];
-  if (!custom) return renderLeaf(ctx, parts, name, bar);
-  return bar === 'bar' ? withBarLabel(ctx.pref, custom(ctx)) : custom(ctx);
+  if (!custom) return renderLeaf(ctx, parts, name, form);
+  return drawsBarForm(form) ? withBarLabel(ctx.pref, custom(ctx)) : custom(ctx);
 }

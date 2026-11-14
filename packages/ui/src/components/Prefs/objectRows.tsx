@@ -2,7 +2,7 @@ import { Fragment, type ReactNode } from 'react';
 import { isPrefLeaf, prefSectionPath, prefTabRuns, type PrefLeaf, type PrefObject, type PrefSection } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
 import { barNodeChildren, type BarNode } from '../PrefsBar/barNodes';
-import type { LeafSurface } from '../Bar/renderBarLeaf';
+import type { ControlForm } from '../ActionButton/controlForm';
 import { GroupTabs, type GroupTab } from './GroupTabs';
 
 /** Where a section sits when a surface is asked to frame it. */
@@ -28,7 +28,7 @@ export interface ObjectLeafParts<Cell> {
   /** The object leaf's own path, which a field's and a section's are under. */
   path: string;
   /** One field, for a row or for a bar. */
-  cell(key: string, leaf: PrefLeaf, surface: LeafSurface): Cell;
+  cell(key: string, leaf: PrefLeaf, surface: ControlForm): Cell;
   /** The rows of a run of neighboring fields. */
   rows(cells: readonly Cell[]): ReactNode[];
   /** The bar cells of a run of neighboring fields. */

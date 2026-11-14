@@ -6,7 +6,7 @@ import {
 import { nodeText } from '../../nodeText';
 import type { DomTarget } from '../../domMeasureEnv';
 import s from './Button.module.css';
-import { SegmentTooltip, type SegmentTooltipFields } from '../segmentTooltip';
+import { ButtonTooltip, type TooltipFields } from '../Tooltip/buttonTooltip';
 import type { DisableableProps } from '../Disabled';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import { useDensity } from '../Density';
@@ -39,7 +39,7 @@ export type ButtonBase = {
   id?: string;
   /** Passed through to the `<button>`, for test ids and consumer hooks. */
   [data: `data-${string}`]: string | undefined;
-} & AppearanceProps & SegmentTooltipFields & DisableableProps;
+} & AppearanceProps & TooltipFields & DisableableProps;
 
 /** A button with a visible label, which names it. */
 export type ButtonRegular = ButtonBase & {
@@ -90,7 +90,7 @@ function Spinner(): ReactNode {
  * button, so pass `disabled` too if the click should be blocked.
  *
  * `shortcut` adds a kit tooltip reading `Name (⌘S)`, named by `aria-label` or
- * string children, the way `ToolButton` and `SegmentedBar` items show theirs;
+ * string children, the way `ActionButton` and `SegmentedBar` items show theirs;
  * `tooltip` replaces that text with any content. A disabled button with a
  * `disabledReason` keeps its tooltip, which reads `Name: reason`.
  *
@@ -142,7 +142,7 @@ export const Button = forwardRef(function Button(
   const appearance = useAppearance({ stance, grade, emphasis, tint });
 
   return (
-    <SegmentTooltip
+    <ButtonTooltip
       tip={{ tooltip, shortcut, ariaLabel, label: children }}
       disabled={disabled}
       disabledReason={disabledReason}
@@ -164,7 +164,7 @@ export const Button = forwardRef(function Button(
       >
         {buttonParts(face).map((part) => <ButtonPartSlot key={part} part={part} face={face} label={children} />)}
       </button>
-    </SegmentTooltip>
+    </ButtonTooltip>
   );
 });
 

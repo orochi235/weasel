@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect, within } from '@weasel-js/forge/play';
 import { LabShell } from '@weasel-js/labkit';
+import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Select } from '@weasel-js/ui/components/Select';
@@ -66,7 +67,7 @@ export const HeaderControlsLineUp: Story = {
         />
         <Bar label="Actions" roving>
           <Bar.Group>
-            <Bar.Button onClick={() => {}}>Undo</Bar.Button>
+            <ActionButton label="Undo" onPress={() => {}} />
           </Bar.Group>
         </Bar>
       </>

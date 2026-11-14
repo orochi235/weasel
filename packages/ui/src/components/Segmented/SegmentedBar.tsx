@@ -18,7 +18,7 @@ import { selectionRoving } from '../../selectionRoving';
 import type { ControlSize } from '../Density';
 import { useRovingTabIndex, type UseRovingTabIndexOptions } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
-import { SegmentTooltip, useSegmentAccess, type SegmentTooltipFields } from '../segmentTooltip';
+import { ButtonTooltip, useButtonAccess, type TooltipFields } from '../Tooltip/buttonTooltip';
 import { holdScope, type DisableableProps, type ReadOnlyProps } from '../Disabled';
 import type { Orientation } from '../Run';
 
@@ -32,7 +32,7 @@ export type SegmentedBarItem<V extends string | number = string> = {
   value: V;
   label?: ReactNode;
   ariaLabel?: string;
-} & SegmentTooltipFields & DisableableProps;
+} & TooltipFields & DisableableProps;
 
 /** A segment of an `'each'` bar: it carries its own on/off state and its own `onChange`. */
 export type SegmentedEachItem<V extends string | number = string> = SegmentedBarItem<V> & OwnSelection;
@@ -142,7 +142,7 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
   const { 'aria-label': ariaLabel, className, height, size, variant, orientation } = props;
   const items = itemsOf(props);
   const holdsValue = props.mode !== 'momentary';
-  const held = useSegmentAccess({ ...props, holdsValue }).state !== 'enabled';
+  const held = useButtonAccess({ ...props, holdsValue }).state !== 'enabled';
   const usable = (i: number): boolean => !held && items[i] !== undefined && !items[i].disabled;
   const behavior = behaviorOf(props, items, usable);
   const sweep = props.mode === 'multiple' || props.mode === 'each' ? props.sweep : undefined;
@@ -174,7 +174,7 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
           key: String(item.value),
           state,
           draw: (place) => (
-            <SegmentTooltip tip={item} disabled={item.disabled} disabledReason={item.disabledReason} holdsValue={holdsValue}>
+            <ButtonTooltip tip={item} disabled={item.disabled} disabledReason={item.disabledReason} holdsValue={holdsValue}>
               <button
                 type="button"
                 {...behavior.aria(state)}
@@ -187,7 +187,7 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
               >
                 {item.label}
               </button>
-            </SegmentTooltip>
+            </ButtonTooltip>
           ),
         };
       })}

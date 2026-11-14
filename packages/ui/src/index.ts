@@ -77,12 +77,11 @@ export {
 } from './components/MotifFrame';
 export * as motifs from './components/MotifFrame/motifs';
 export { type AppearanceAttrs, type AppearanceProps, EMPHASIS_ICONS, type Emphasis, GRADE_ICONS, type Grade, type Stance, useAppearance } from './components/appearance';
-export type { SegmentTooltipFields } from './components/segmentTooltip';
 export * from './components/SelectionPanel';
 export * from './components/ResizeHandle';
 export * from './components/Sidebar';
 export * from './components/SidebarPanel';
-export * from './components/ToolButton';
+export * from './components/ActionButton';
 export * from './components/ToolGroup';
 export * from './components/ToolPalette';
 export * from './components/ToolRail';

@@ -3,7 +3,7 @@ import { taggedActionItems } from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { PrefsBar } from '../PrefsBar/PrefsBar';
-import { BarActions } from '../Bar/BarActions';
+import { ActionsLeaf } from '../Prefs/ActionsLeaf';
 import type { Orientation } from '../Run';
 import type { DensityProps } from '../Density';
 import type { LeafRenderer } from '../SelectionPanel/renderContext';
@@ -71,7 +71,7 @@ export function ActionBar(props: ActionBarProps) {
     const pick = tag === undefined ? undefined : (all: Parameters<typeof taggedActionItems>[0]) => taggedActionItems(all, tag);
     return {
       actions: (ctx) => (
-        <BarActions leaf={ctx.pref as PrefActions} path={ctx.path} disabled={ctx.disabled} pick={pick} only={only} icons={icons} labels={labels} />
+        <ActionsLeaf leaf={ctx.pref as PrefActions} path={ctx.path} disabled={ctx.disabled} pick={pick} only={only} icons={icons} labels={labels} />
       ),
     };
   }, [tag, only, icons, labels]);

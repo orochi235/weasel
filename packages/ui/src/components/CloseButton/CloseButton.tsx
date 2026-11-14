@@ -1,6 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
 import { Icon } from '../../icons/Icon';
-import { SegmentTooltip } from '../segmentTooltip';
+import { ButtonTooltip } from '../Tooltip/buttonTooltip';
 import type { DisableableProps } from '../Disabled';
 import s from './CloseButton.module.css';
 import { icon } from '../../icons.gen';
@@ -28,7 +28,7 @@ export const CloseButton = forwardRef(function CloseButton(
   ref: Ref<HTMLButtonElement>,
 ) {
   return (
-    <SegmentTooltip
+    <ButtonTooltip
       tip={{ tooltip, ariaLabel }}
       disabled={disabled}
       disabledReason={disabledReason}
@@ -43,6 +43,6 @@ export const CloseButton = forwardRef(function CloseButton(
       >
         <Icon name={icon('close')} size={16} />
       </button>
-    </SegmentTooltip>
+    </ButtonTooltip>
   );
 });

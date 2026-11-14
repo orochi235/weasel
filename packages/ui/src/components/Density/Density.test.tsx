@@ -42,7 +42,7 @@ describe('a container\'s size', () => {
   it('reaches the buttons in a Bar', () => {
     render(
       <Bar label="T" size="sm">
-        <Bar.Button onClick={() => {}}>Undo</Bar.Button>
+        <Button onClick={() => {}}>Undo</Button>
       </Bar>,
     );
     expect(screen.getByRole('button', { name: 'Undo' }).className).toMatch(/size_sm/);
@@ -51,7 +51,7 @@ describe('a container\'s size', () => {
   it('is the scope a Bar inside one takes, with no size of its own', () => {
     render(
       <Density size="sm">
-        <Bar label="T"><Bar.Button onClick={() => {}}>Undo</Bar.Button></Bar>
+        <Bar label="T"><Button onClick={() => {}}>Undo</Button></Bar>
       </Density>,
     );
     expect(screen.getByRole('toolbar', { name: 'T' }).className).toMatch(/sm/);

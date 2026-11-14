@@ -6,7 +6,7 @@ import { Caret } from '../Caret';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
 import f from '../field.module.css';
 import s from './MenuButton.module.css';
-import { SegmentTooltip, type SegmentTooltipFields } from '../segmentTooltip';
+import { ButtonTooltip, type TooltipFields } from '../Tooltip/buttonTooltip';
 import { useDisabled, type DisableableProps } from '../Disabled';
 import type { ListOption } from '../listOption';
 
@@ -39,7 +39,7 @@ export type MenuButtonProps<T extends string = string> = {
   'aria-label'?: string;
   /** Receives the trigger `<button>`, to move focus to it. */
   buttonRef?: Ref<HTMLButtonElement>;
-} & MenuButtonRows<T> & SegmentTooltipFields & OverlayPortalProps & DisableableProps;
+} & MenuButtonRows<T> & TooltipFields & OverlayPortalProps & DisableableProps;
 
 /** A {@link MenuButton}'s list: flat `items` it acts on through `onAction`, or `entries` in `@weasel-js/menu`'s
  *  model, which run themselves and can hold separators, submenus and value rows. Given both, `entries` is drawn. A
@@ -104,7 +104,7 @@ export function MenuButton<T extends string = string>({
   return (
     <>
       {trigger.anchor}
-      <SegmentTooltip
+      <ButtonTooltip
         tip={{ tooltip, shortcut, ariaLabel, label }}
         disabled={disabled}
         disabledReason={disabledReason}
@@ -126,7 +126,7 @@ export function MenuButton<T extends string = string>({
           <span className={s.label}>{label}</span>
           <Caret className={s.chevron} />
         </button>
-      </SegmentTooltip>
+      </ButtonTooltip>
       {trigger.portal}
     </>
   );

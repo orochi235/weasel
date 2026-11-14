@@ -2,14 +2,11 @@ import type { ReactNode } from 'react';
 import { prefIsCompound, type PrefAction, type PrefActions, type PrefLeaf } from '@weasel-js/prefs';
 import { resolveIcon } from '../../icons/resolveIcon';
 import type { PropertyControlProps } from '../Properties/PropertyField';
-import { BarAction } from './BarAction';
-import { BarActions } from './BarActions';
+import { ActionLeaf } from '../Prefs/ActionLeaf';
+import { ActionsLeaf } from '../Prefs/ActionsLeaf';
 import { BarField, BarLabel, barLabels } from './BarField';
 import { BarPopover } from './BarPopover';
 import s from './Bar.module.css';
-
-/** What a leaf is being drawn into: a labeled row of a form or a panel, or a cell of a bar. */
-export type LeafSurface = 'row' | 'bar';
 
 /** A leaf to draw in a bar, as either dispatcher hands it over. */
 export interface BarLeaf {
@@ -40,8 +37,8 @@ export function renderBarLeaf({ leaf, path, name, field, disabled, active, row }
     const icon = field.kind === 'boolean' ? undefined : resolveIcon(leaf.icon);
     return <BarField {...field} name={name} short={leaf.short} icon={icon} />;
   }
-  if (leaf.kind === 'action') return <BarAction leaf={leaf as PrefAction} path={path} disabled={disabled} active={active} />;
-  if (leaf.kind === 'actions') return <BarActions leaf={leaf as PrefActions} path={path} disabled={disabled} />;
+  if (leaf.kind === 'action') return <ActionLeaf leaf={leaf as PrefAction} path={path} disabled={disabled} active={active} />;
+  if (leaf.kind === 'actions') return <ActionsLeaf leaf={leaf as PrefActions} path={path} disabled={disabled} />;
   if (leaf.kind === 'label') return <span className={s.words}>{leaf.name}</span>;
   const body = row();
   if (body == null || !prefIsCompound(leaf)) return body;

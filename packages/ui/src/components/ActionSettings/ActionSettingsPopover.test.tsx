@@ -16,12 +16,12 @@ const form = {
 };
 
 it('stays shut when an action disabled while its form is open comes back', () => {
-  const { rerender } = renderWithIcons(<ActionSettingsPopover form={form} label="Snap" />);
+  const { rerender } = renderWithIcons(<ActionSettingsPopover settings={form} label="Snap" />);
   fireEvent.click(screen.getByRole('button', { name: 'Snap' }));
   expect(screen.getByRole('dialog', { name: 'Snap Settings' })).toBeInTheDocument();
-  rerender(<ActionSettingsPopover form={form} label="Snap" disabled />);
+  rerender(<ActionSettingsPopover settings={form} label="Snap" disabled />);
   expect(screen.queryByRole('dialog')).toBeNull();
-  rerender(<ActionSettingsPopover form={form} label="Snap" />);
+  rerender(<ActionSettingsPopover settings={form} label="Snap" />);
   expect(screen.queryByRole('dialog')).toBeNull();
 });
 

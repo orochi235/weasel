@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
-import { ToolButton } from '@weasel-js/ui/components/ToolButton';
+import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { RunScope } from '@weasel-js/ui/components/Run';
 
 function Dot() {
@@ -13,9 +13,9 @@ function Dot() {
 
 const sampleButtons = (
   <>
-    <ToolButton icon={<Dot />} label="One" onClick={() => {}} />
-    <ToolButton icon={<Dot />} label="Two" onClick={() => {}} />
-    <ToolButton icon={<Dot />} label="Three" onClick={() => {}} />
+    <ActionButton icon={<Dot />} label="One" onPress={() => {}} />
+    <ActionButton icon={<Dot />} label="Two" onPress={() => {}} />
+    <ActionButton icon={<Dot />} label="Three" onPress={() => {}} />
   </>
 );
 

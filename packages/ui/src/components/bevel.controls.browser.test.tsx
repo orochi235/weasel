@@ -5,7 +5,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
-import { ToolButton } from '@weasel-js/ui/components/ToolButton';
+import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import bar from './Bar/Bar.module.css';
 import slider from './Slider/Slider.module.css';
 import frames from './Bar/barFrames.module.css';
@@ -164,10 +164,10 @@ describe('a toolbar', () => {
       <div className={`${bar.bar} ${bar.framed}`} data-testid="framed" />
       <div className={bar.bar} data-testid="bare" />
       <div className={`${bar.bar} ${frames.band}`} data-testid="band" />
-      <ToolButton icon={null} label="Held" active onClick={() => {}} />
-      <ToolButton icon={null} label="Up" onClick={() => {}} />
-      <button type="button" className={bar.action} aria-pressed="true">Down</button>
-      <button type="button" className={bar.action}>Rest</button>
+      <ActionButton form="palette" label="Held" active onPress={() => {}} />
+      <ActionButton form="palette" label="Up" onPress={() => {}} />
+      <ActionButton form="bar" label="Down" active onPress={() => {}} />
+      <ActionButton form="bar" label="Rest" onPress={() => {}} />
     </>
   );
   const STRIPS = ['palette', 'actions', 'framed', 'band'];
