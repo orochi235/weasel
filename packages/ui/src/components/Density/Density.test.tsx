@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { Button } from '../Button';
 import { Bar } from '../Bar';
 import { SegmentedBar } from '../Segmented';
-import { ThemeSwitcher } from '../ThemeSwitcher';
+import { CycleButton, COLOR_MODE_OPTIONS } from '../CycleButton';
 import { ToolOptionsBar } from '../ToolOptionsBar';
 import { Density } from './Density';
 
@@ -31,9 +31,9 @@ describe('Density', () => {
   });
 
   it("keeps a control's own default with no scope, and yields it to one", () => {
-    const { rerender } = render(<ThemeSwitcher value="auto" onChange={() => {}} />);
+    const { rerender } = render(<CycleButton value="auto" onChange={() => {}} options={COLOR_MODE_OPTIONS} aria-label="Theme" />);
     expect(screen.getByRole('button').className).toMatch(/size_sm/);
-    rerender(<Density size="md"><ThemeSwitcher value="auto" onChange={() => {}} /></Density>);
+    rerender(<Density size="md"><CycleButton value="auto" onChange={() => {}} options={COLOR_MODE_OPTIONS} aria-label="Theme" /></Density>);
     expect(screen.getByRole('button').className).toMatch(/size_md/);
   });
 });

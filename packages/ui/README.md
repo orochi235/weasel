@@ -36,7 +36,7 @@ Both stylesheets are required: component styles ship as one bundled file, and re
 family shares one: `PrefsForm` and `PrefsDialog` come from `components/Prefs`, and `PropertyPanel`, `PropertyField`
 and `PropertyRow` from `components/Properties`.
 
-Components that draw glyphs (`Transport`'s play and pause buttons, `ThemeSwitcher`, the paint and stroke rows of
+Components that draw glyphs (`Transport`'s play and pause buttons, `COLOR_MODE_OPTIONS`, the paint and stroke rows of
 `SelectionPanel`, tool palettes) look them up by name in the icon registry. Mount one at the app's root; `kitIcons`
 holds core's, the shapes' and ui's tables (`@weasel-js/ui/icons` has ui's alone):
 

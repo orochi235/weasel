@@ -5,8 +5,8 @@ import { useDensity, type ControlSize } from '../Density';
 import { COLOR_MODES } from '../ColorModeControl/colorModes';
 import { Icon } from '../Icon/Icon';
 
-/** One stop in a {@link ThemeSwitcher}'s rotation. */
-export interface ThemeSwitcherOption<T extends string = string> {
+/** One stop in a {@link CycleButton}'s rotation. */
+export interface CycleButtonOption<T extends string = string> {
   value: T;
   /** Drawn in the button while this option is current. */
   icon: ReactNode;
@@ -14,22 +14,22 @@ export interface ThemeSwitcherOption<T extends string = string> {
   label: string;
 }
 
-/** The color modes, in rotation order, as {@link ThemeSwitcher} cycles them by default. */
-export const COLOR_MODE_OPTIONS: readonly ThemeSwitcherOption<ColorModePreference>[] = COLOR_MODES.map((m) => ({
+/** The color modes, in rotation order: `options` for a {@link CycleButton} that switches the color mode. */
+export const COLOR_MODE_OPTIONS: readonly CycleButtonOption<ColorModePreference>[] = COLOR_MODES.map((m) => ({
   value: m.value,
   icon: <Icon name={m.glyph} size={16} />,
   label: m.label,
 }));
 
-/** Props for {@link ThemeSwitcher}. */
-export interface ThemeSwitcherProps<T extends string = ColorModePreference> {
+/** Props for {@link CycleButton}. */
+export interface CycleButtonProps<T extends string = string> {
   value: T;
   onChange: (next: T) => void;
-  /** The rotation, in order. Defaults to {@link COLOR_MODE_OPTIONS}. */
-  options?: readonly ThemeSwitcherOption<T>[];
+  /** The rotation, in order. */
+  options: readonly CycleButtonOption<T>[];
   /** What is being switched, leading the accessible name and tooltip
-   *  (`Theme: Auto — click for Light`). Defaults to `'Theme'`. */
-  'aria-label'?: string;
+   *  (`Theme: Auto — click for Light`). */
+  'aria-label': string;
   /** Default: the nearest `Density` scope's, else `sm`, the size of a header's icon buttons. */
   size?: ControlSize;
   /** Defaults to `ghost`. */
@@ -41,19 +41,19 @@ export interface ThemeSwitcherProps<T extends string = ColorModePreference> {
  * One icon button that steps through a list of options: a click moves to the
  * next, a shift-click to the previous, both wrapping. It shows the current
  * option's icon, and its name and tooltip say what is current and what a
- * click chooses. The compact alternative to `ColorModeControl`'s three
- * segments. Controlled: pair the default color modes with
- * `useColorModePreference` from `@weasel-js/theme/react`.
+ * click chooses. With {@link COLOR_MODE_OPTIONS} it is the compact alternative
+ * to `ColorModeControl`'s three segments; pair it with `useColorModePreference`
+ * from `@weasel-js/theme/react`. Controlled.
  */
-export function ThemeSwitcher<T extends string = ColorModePreference>({
+export function CycleButton<T extends string = string>({
   value,
   onChange,
-  options = COLOR_MODE_OPTIONS as unknown as readonly ThemeSwitcherOption<T>[],
-  'aria-label': ariaLabel = 'Theme',
+  options,
+  'aria-label': ariaLabel,
   size,
   variant = 'ghost',
   className,
-}: ThemeSwitcherProps<T>): ReactElement {
+}: CycleButtonProps<T>): ReactElement {
   const resolved = useDensity(size, 'sm');
   const count = options.length;
   const index = Math.max(0, options.findIndex((o) => o.value === value));

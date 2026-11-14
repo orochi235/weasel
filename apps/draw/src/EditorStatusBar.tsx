@@ -1,7 +1,7 @@
 import { isPageStructure, type SelectionApi, useActiveToolContext, type View } from '@weasel-js/core';
 import { qty, zoom } from '@weasel-js/quantity';
 import { Bar } from '@weasel-js/ui/components/Bar';
-import { ThemeSwitcher } from '@weasel-js/ui/components/ThemeSwitcher';
+import { CycleButton, COLOR_MODE_OPTIONS } from '@weasel-js/ui/components/CycleButton';
 import { solidColorOf } from '@weasel-js/paint';
 import type { ReactElement } from 'react';
 import { buildLabel, buildTitle } from '../../shared/buildInfo';
@@ -49,7 +49,7 @@ export function EditorStatusBar({
       <Bar.Readout>zoom: {qty(view.scale.x, zoom()).text}</Bar.Readout>
       {colorMode && (
         <Bar.Readout>
-          <ThemeSwitcher value={colorMode.preference} onChange={colorMode.setPreference} />
+          <CycleButton value={colorMode.preference} onChange={colorMode.setPreference} options={COLOR_MODE_OPTIONS} aria-label="Theme" />
         </Bar.Readout>
       )}
       <Bar.Readout muted title={buildTitle()}>{buildLabel()}</Bar.Readout>

@@ -1,34 +1,39 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
+import type { ColorModePreference } from '@weasel-js/theme';
 import { renderWithIcons } from '../../testing/withIcons';
-import { ThemeSwitcher, type ThemeSwitcherOption } from './ThemeSwitcher';
+import { CycleButton, COLOR_MODE_OPTIONS, type CycleButtonOption } from './CycleButton';
 
-describe('ThemeSwitcher', () => {
-  it('names the current mode and what a click does', () => {
-    renderWithIcons(<ThemeSwitcher value="auto" onChange={() => {}} />);
+function Mode({ value, onChange }: { value: ColorModePreference; onChange: (next: ColorModePreference) => void }) {
+  return <CycleButton value={value} onChange={onChange} options={COLOR_MODE_OPTIONS} aria-label="Theme" />;
+}
+
+describe('CycleButton', () => {
+  it('names the current option and what a click does', () => {
+    renderWithIcons(<Mode value="auto" onChange={() => {}} />);
     expect(screen.getByRole('button', { name: 'Theme: Auto — click for Light' })).toBeTruthy();
   });
 
   it('shows only the current option, as a glyph', () => {
-    renderWithIcons(<ThemeSwitcher value="dark" onChange={() => {}} />);
+    renderWithIcons(<Mode value="dark" onChange={() => {}} />);
     const button = screen.getByRole('button', { name: /^Theme: Dark/ });
     expect(button.querySelectorAll('svg')).toHaveLength(1);
     expect(button).toHaveTextContent('');
   });
 
-  it('rotates auto, light, dark in order', () => {
+  it('rotates the color modes auto, light, dark in order', () => {
     const onChange = vi.fn();
-    const { rerender } = renderWithIcons(<ThemeSwitcher value="auto" onChange={onChange} />);
+    const { rerender } = renderWithIcons(<Mode value="auto" onChange={onChange} />);
     fireEvent.click(screen.getByRole('button'));
     expect(onChange).toHaveBeenLastCalledWith('light');
-    rerender(<ThemeSwitcher value="light" onChange={onChange} />);
+    rerender(<Mode value="light" onChange={onChange} />);
     fireEvent.click(screen.getByRole('button'));
     expect(onChange).toHaveBeenLastCalledWith('dark');
   });
 
   it('wraps from the last option back to the first', () => {
     const onChange = vi.fn();
-    renderWithIcons(<ThemeSwitcher value="dark" onChange={onChange} />);
+    renderWithIcons(<Mode value="dark" onChange={onChange} />);
     expect(screen.getByRole('button', { name: 'Theme: Dark — click for Auto' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button'));
     expect(onChange).toHaveBeenCalledWith('auto');
@@ -36,30 +41,30 @@ describe('ThemeSwitcher', () => {
 
   it('rotates backwards on a shift-click, wrapping too', () => {
     const onChange = vi.fn();
-    renderWithIcons(<ThemeSwitcher value="auto" onChange={onChange} />);
+    renderWithIcons(<Mode value="auto" onChange={onChange} />);
     fireEvent.click(screen.getByRole('button'), { shiftKey: true });
     expect(onChange).toHaveBeenCalledWith('dark');
   });
 
   it('is controlled: a click reports the next value and changes nothing itself', () => {
     const onChange = vi.fn();
-    const { rerender } = renderWithIcons(<ThemeSwitcher value="light" onChange={onChange} />);
+    const { rerender } = renderWithIcons(<Mode value="light" onChange={onChange} />);
     fireEvent.click(screen.getByRole('button'));
     fireEvent.click(screen.getByRole('button'));
     expect(onChange.mock.calls).toEqual([['dark'], ['dark']]);
     expect(screen.getByRole('button', { name: /^Theme: Light/ })).toBeTruthy();
-    rerender(<ThemeSwitcher value="dark" onChange={onChange} />);
+    rerender(<Mode value="dark" onChange={onChange} />);
     expect(screen.getByRole('button', { name: /^Theme: Dark/ })).toBeTruthy();
   });
 
   it('cycles any option list, under its own name', () => {
-    const options: ThemeSwitcherOption<'a' | 'b'>[] = [
+    const options: CycleButtonOption<'a' | 'b'>[] = [
       { value: 'a', icon: <svg data-testid="a" />, label: 'Alpha' },
       { value: 'b', icon: <svg data-testid="b" />, label: 'Beta' },
     ];
     const onChange = vi.fn();
     renderWithIcons(
-      <ThemeSwitcher value="b" onChange={onChange} options={options} aria-label="Palette" className="mine" />,
+      <CycleButton value="b" onChange={onChange} options={options} aria-label="Palette" className="mine" />,
     );
     const button = screen.getByRole('button', { name: 'Palette: Beta — click for Alpha' });
     expect(button.querySelector('[data-testid="b"]')).not.toBeNull();
@@ -70,7 +75,7 @@ describe('ThemeSwitcher', () => {
 
   it('treats a value outside the list as the first option', () => {
     const onChange = vi.fn();
-    renderWithIcons(<ThemeSwitcher value={'sepia' as 'auto'} onChange={onChange} />);
+    renderWithIcons(<Mode value={'sepia' as 'auto'} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Theme: Auto — click for Light' }));
     expect(onChange).toHaveBeenCalledWith('light');
   });

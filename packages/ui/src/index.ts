@@ -118,7 +118,7 @@ export * from './components/SwatchStrip';
 export * from './components/Switch';
 export * from './components/Tabs';
 export * from './components/TextArea';
-export * from './components/ThemeSwitcher';
+export * from './components/CycleButton';
 export * from './components/Timeline';
 export * from './components/Toast';
 export * from './components/TokenField';
