@@ -70,14 +70,14 @@ afterAll(() => {
   host.remove();
 });
 
-const UNDO = '{Meta>}z{/Meta}';
-const REDO = '{Meta>}{Shift>}z{/Shift}{/Meta}';
+const UNDO = '{ControlOrMeta>}z{/ControlOrMeta}';
+const REDO = '{ControlOrMeta>}{Shift>}z{/Shift}{/ControlOrMeta}';
 
 describe('undo inside the edit overlay', () => {
   it('takes back a restyle, then what was typed before it', async () => {
     const overlay = await open({ text: 'abc', caret: 3 });
     await userEvent.keyboard('d');
-    await userEvent.keyboard('{Shift>}{ArrowLeft}{ArrowLeft}{/Shift}{Meta>}b{/Meta}');
+    await userEvent.keyboard('{Shift>}{ArrowLeft}{ArrowLeft}{/Shift}{ControlOrMeta>}b{/ControlOrMeta}');
     expect(overlay.querySelector('span[style*="700"]')?.textContent).toBe('cd');
     await userEvent.keyboard(UNDO);
     expect(overlay.querySelector('span[style*="700"]')).toBeNull();
@@ -90,7 +90,7 @@ describe('undo inside the edit overlay', () => {
 
   it('redoes what it undid', async () => {
     await open({ text: 'abc', caret: 3 });
-    await userEvent.keyboard('{Meta>}b{/Meta}XY');
+    await userEvent.keyboard('{ControlOrMeta>}b{/ControlOrMeta}XY');
     await userEvent.keyboard(UNDO);
     await userEvent.keyboard(REDO);
     expect(committed().runs).toEqual([{ text: 'abc' }, { text: 'XY', bold: true }]);

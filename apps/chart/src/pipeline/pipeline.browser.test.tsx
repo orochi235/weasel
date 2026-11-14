@@ -12,7 +12,6 @@ import {
   type EffectDoc,
 } from '@weasel-js/diagram/effect';
 import { registerCanvasFont } from '@weasel-js/font';
-import { isApplePlatform } from '@weasel-js/gestures';
 import '@weasel-js/theme/tokens.css';
 import { makeChoose } from '../testing/choose';
 import { canvasSettled, mountChartApp, unmountChartApp } from '../testing/mountChartApp';
@@ -66,7 +65,7 @@ describe('WeaselChart pipeline mode', () => {
     const canvas = document.querySelector<HTMLCanvasElement>('.wc-host canvas')!;
     const { width, height } = canvas.getBoundingClientRect();
     await userEvent.click(canvas, { position: { x: width - 20, y: height - 20 } });
-    await userEvent.keyboard(isApplePlatform() ? '{Meta>}z{/Meta}' : '{Control>}z{/Control}');
+    await userEvent.keyboard('{ControlOrMeta>}z{/ControlOrMeta}');
     await expect.poll(stages).toEqual(['source', 'blur']);
   });
 

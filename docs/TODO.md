@@ -518,18 +518,6 @@ only story runner in the repo.
   `focusIframe` calls `window.focus()` only with focus on `body`); and an earlier file's frame, which vitest
   removes before it creates the next.
   Closes when the cause is found and fixed, or after 20 fleet full runs with the file green.
-- **(P2) [maintainer] `theme.browser.test.tsx`'s "grows a shape with its text" saves no typed text in Linux CI.**
-  On 179f2409d (2026-10-21, run 39523286313) and again on 33efd3167 (2026-10-22, run 39761178968)
-  `savedBody().row.data.text` stayed `''` past the poll after Escape, so the six typed `M`s
-  presumably went somewhere other than the open editor overlay (inferred; no screenshot survives).
-  Twice in two Linux runs, so likely Linux-specific rather than a flake; not reproduced in 158
-  fleet runs of the test on 2026-10-21. The fleet sweep's failures of this
-  test were a different thing, pixels read from the frame before the repaint, fixed 2026-10-21.
-  Repro lane: `onto do --kind test --node studio -- node scripts/browser-linux.mjs --project=browser <files>`
-  (Playwright's Linux image under Docker, arm64 rather than CI's x86), not yet run end to end because
-  Docker is not running on studio (2026-10-26).
-  Closes when the test saves its typed text in two consecutive Linux CI runs, or the Linux lane
-  reproduces the failure and the fix lands.
 
 - **(P3) [waiting] `effect-chart.spec.ts`'s `maxDiffRatio` of 0.004 was copied from `diagram.spec.ts`.** Its
   baselines were first captured on 2026-10-26 (CI run 40266349908); once a few CI runs have compared

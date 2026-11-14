@@ -45,6 +45,12 @@ change.** Bisecting with the file in isolation at one end and the whole suite at
 other produced a clean, entirely false "both parents green, merge red" — the two ends
 were different experiments. Use one probe across the whole range.
 
+**A browser test that presses `{Meta>}` for a platform chord passes on every Mac and fails in Linux CI.**
+Chromium raises `beforeinput`'s `historyUndo`, and other editing commands, only for the platform's own chord,
+so on Linux `Meta+Z` undoes nothing, while a handler that accepts either modifier (`toggleForKey`'s bold) hides
+the mismatch. Press `{ControlOrMeta>}`, Playwright's name for the platform modifier. `overlayHistory.browser.test.tsx`
+failed four CI runs in a row this way (2026-11-14).
+
 **A browser test file that loads no tests, beside `weasel-request … net::ERR_NETWORK_CHANGED`
 lines, lost its imports to the node's network and not to the change under test.** Chromium on
 macOS drops every request in flight when the network changes, those to vite on localhost included;

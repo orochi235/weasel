@@ -10,7 +10,6 @@ import { fitViewToBounds as fitOrNull, viewToTransform, type RectPose } from '@w
 import { diagramGroupOf, diagramScene, isBodyOrRegion } from '@weasel-js/diagram';
 import { EFFECT_MIN_SCALE, editorScene, type EffectDoc, type EffectGroup } from '@weasel-js/diagram/effect';
 import { registerCanvasFont } from '@weasel-js/font';
-import { isApplePlatform } from '@weasel-js/gestures';
 import '@weasel-js/theme/tokens.css';
 import { makeChoose } from '../testing/choose';
 import { canvasSettled, mountChartApp, unmountChartApp } from '../testing/mountChartApp';
@@ -91,14 +90,14 @@ describe('WeaselChart pipeline groups', () => {
     expect(groups()[1]!.members).toEqual(['b']);
     await expect.element(page.getByRole('textbox', { name: 'Name' })).toBeVisible();
 
-    await userEvent.keyboard(isApplePlatform() ? '{Meta>}{Shift>}g{/Shift}{/Meta}' : '{Control>}{Shift>}g{/Shift}{/Control}');
+    await userEvent.keyboard('{ControlOrMeta>}{Shift>}g{/Shift}{/ControlOrMeta}');
     await expect.poll(() => groups().map((g) => g.id)).toEqual(['g']);
   });
 
   it('groups the picked stage by Mod+G, as one step Edit › Undo takes back', async () => {
     const { canvas, at } = await openCanvas();
     await userEvent.click(canvas, { position: at(600, 70) });
-    await userEvent.keyboard(isApplePlatform() ? '{Meta>}g{/Meta}' : '{Control>}g{/Control}');
+    await userEvent.keyboard('{ControlOrMeta>}g{/ControlOrMeta}');
     await expect.poll(() => groups().map((g) => g.id)).toEqual(['g', 'group']);
     await choose('Edit', /^Undo/);
     await expect.poll(() => JSON.parse(localStorage.getItem(PIPELINE_STORAGE_KEY)!)).toEqual(DOC);
