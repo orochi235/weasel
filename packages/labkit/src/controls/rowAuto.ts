@@ -1,11 +1,11 @@
 import {
+  leafAtReset,
   type PrefLeaf,
   type PrefNumber,
   prefAutoValue,
   prefCanAuto,
   prefLeafValue,
 } from '@weasel-js/prefs';
-import { leafAtReset } from '@weasel-js/ui/components/PrefsSource';
 import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
 import { createElement, type ReactNode, useMemo } from 'react';
 import { autoQuotes, autoResolverOf, resolveAutoConfig } from '../config/autoConfig';

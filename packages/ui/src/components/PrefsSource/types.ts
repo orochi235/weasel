@@ -1,23 +1,9 @@
 import type { ReactNode } from 'react';
 import type { Paint } from '@weasel-js/core';
-import type { LeafReading, PrefLeaf } from '@weasel-js/prefs';
+import type { LeafReading, PrefLeaf, PrefsSource } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
-import type { PrefsSource } from './PrefsSource';
-
-/** What the conditions over a path leave it: an `enableIf` that fails, a `showIf` that fails, an `activeIf` that holds. */
-export interface LeafState {
-  disabled: boolean;
-  hidden: boolean;
-  active: boolean;
-}
-
-/** How a write lands. `draft` is a value an edit passes through on its way to the one it settles on, as a
- *  slider's drag does: written, and kept out of undo, where the surface has a place for drafts. */
-export interface WriteOptions {
-  draft?: boolean;
-}
 
 /** What a fill or stroke would take from its container, and which of the selected nodes take it now. */
 export interface PanelInherit {

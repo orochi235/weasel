@@ -3,12 +3,12 @@ import {
   type PrefGroup,
   type PrefLeaf,
   type PrefSection,
+  type PrefsSource,
   pairRuns,
   prefTabRuns,
 } from '@weasel-js/prefs';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { GroupTabs } from '@weasel-js/ui/components/Prefs';
-import type { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import {
   type CollapseProps,
   type PropertyAlign,

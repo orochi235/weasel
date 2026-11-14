@@ -12,7 +12,7 @@ import { HiddenBadge, marksHidden, type MarkHiddenProps } from './hidden';
 import { NoMatches } from './NoMatches';
 import { filterPrefRoot, prefFieldChoices, type PrefFieldChoice } from './schema';
 import type { LeafRenderer, WalkCtx } from './PrefsRow';
-import { useValuesSource } from '../PrefsSource/useValuesSource';
+import { useValuesSource } from '../PrefsSource/hooks';
 import { PrefsSource } from '../PrefsSource/PrefsSource';
 import { paneChildren } from './PrefsPane';
 import { BarRootLayout } from './BarRootLayout';

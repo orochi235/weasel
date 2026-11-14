@@ -1,6 +1,6 @@
 import { prefLeafValue, type PrefLeaf } from '@weasel-js/prefs';
 import type { EntryAt } from './entry';
-import { loneLeafContext } from '../PrefsSource/recordSource';
+import { loneLeafContext } from '../PrefsSource/leafContext';
 import { renderPrefControl, type LeafRenderer } from './PrefsRow';
 import { useParamsPolicy } from './useParamsPolicy';
 import type { PrefFieldChoice } from './schema';

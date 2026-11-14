@@ -1,9 +1,11 @@
 import {
   AUTO,
   type LeafReading,
+  type LeafState,
   type PrefGroup,
   type PrefLeaf,
   type PrefSection,
+  type PrefsSource,
   prefAutoValue,
   prefCanAuto,
   prefLeafAt,
@@ -11,14 +13,9 @@ import {
   prefNodeAt,
   prefResets,
   prefShownValue,
-} from '@weasel-js/prefs';
-import {
-  type LeafContext,
-  type LeafState,
-  type PrefsSource,
-  sourceLeafContext,
   sourceResetPlan,
-} from '@weasel-js/ui/components/PrefsSource';
+} from '@weasel-js/prefs';
+import { type LeafContext, sourceLeafContext } from '@weasel-js/ui/components/PrefsSource';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { isRecord, valueAtPath, withValueAtPath } from '../config/path';

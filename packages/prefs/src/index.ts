@@ -170,3 +170,7 @@ export {
 } from './schema';
 export { mergePrefGroups } from './merge';
 export { orderPrefGroup, resolveOrder, type PrefOrder } from './order';
+export { LEAF_FREE, sharedReading, type LeafState, type PrefsSource, type SourceWriteOptions } from './sources/prefsSource';
+export { leafAtReset, resetReading, sourceIsAtReset, sourceResetPlan, writePlan } from './sources/policy';
+export { recordSource, valuesSource, type ValuesSourceOptions } from './sources/valuesSource';
+export { selectionSource, type SelectionSource, type SelectionSourceInput } from './sources/selectionSource';

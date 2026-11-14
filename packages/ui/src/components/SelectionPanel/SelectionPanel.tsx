@@ -10,7 +10,7 @@ import {
   useLatest,
 } from '@weasel-js/core';
 import { leafWrites } from './commitLeaf';
-import { selectionSource } from './selectionSource';
+import { panelSource } from './panelSource';
 import { PrefsSource } from '../PrefsSource/PrefsSource';
 import type { LeafRenderer } from './renderContext';
 import { classifyKind, kindBreakdown, panelRowsOf, type AnyNode } from './model';
@@ -144,7 +144,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     renderers,
     commit: (leaf, next) => writes.commit(selection, leaf, next),
     draft: (leaf, next) => writes.draft(selection, leaf, next),
-    source: selectionSource({
+    source: panelSource({
       nodes,
       leaves: panelLeaves,
       selection,

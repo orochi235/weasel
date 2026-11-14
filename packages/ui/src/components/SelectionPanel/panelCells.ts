@@ -3,9 +3,8 @@
  * and the control it draws in a row or in a bar.
  */
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import type { PrefAliasTargets } from '@weasel-js/prefs';
-import { sourceLeafContext, sourceResetPlan } from '../PrefsSource/policy';
-import type { SelectionSource } from './selectionSource';
+import { sourceResetPlan, type PrefAliasTargets, type SelectionSource } from '@weasel-js/prefs';
+import { sourceLeafContext } from '../PrefsSource/leafContext';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
