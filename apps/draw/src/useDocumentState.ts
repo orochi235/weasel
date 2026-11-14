@@ -4,6 +4,7 @@ import { useBackground } from './docBackground';
 import { DOC_KEY, docEntry, loadDoc, type PersistedDoc } from './docPersistence';
 import type { DrawScene } from './drawDocument';
 import { paperSizeOf } from './pages/drawPages';
+import { sessionRecords } from './sessionRecords';
 import { DEFAULT_PAPER_SIZE, PAPER_PRESETS, type PaperSizeKey } from './paperSizes';
 
 /**
@@ -22,7 +23,7 @@ export function useDocumentState(scene: DrawScene, pages: DocPages, hasSelection
   if (hasSelection && docSelected) setDocSelected(false);
 
   const doc = useMemo((): PersistedDoc => ({ filename }), [filename]);
-  useAutosave(() => ({ primary: [DOC_KEY, docEntry(doc)] }), { revision: doc });
+  useAutosave(() => ({ primary: [DOC_KEY, docEntry(doc)] }), { revision: doc, records: sessionRecords() });
 
   const { shown } = pages;
   const paperSize = shown ? paperSizeOf(shown) : DEFAULT_PAPER_SIZE;

@@ -1,5 +1,6 @@
 import { readStored } from '@weasel-js/editor';
 import { DEFAULT_PAPER_SIZE, isPaperSize, PAPER_PRESETS, type PaperSizeKey } from './paperSizes';
+import { sessionRecords } from './sessionRecords';
 
 export { PAPER_PRESETS };
 
@@ -24,7 +25,7 @@ export interface LoadedDoc extends PersistedDoc {
 const DEFAULT_DOC: LoadedDoc = { filename: DEFAULT_FILENAME, backgroundColor: DEFAULT_BG_COLOR, paperSize: DEFAULT_PAPER_SIZE };
 
 export function loadDoc(): LoadedDoc {
-  return readStored(DOC_KEY, parseDoc, () => DEFAULT_DOC);
+  return readStored(DOC_KEY, parseDoc, () => DEFAULT_DOC, sessionRecords());
 }
 
 function parseDoc(value: unknown): LoadedDoc {
@@ -47,7 +48,7 @@ function storedDocWith(change: (stored: DocEntry) => DocEntry): DocEntry | null 
   return readStored(DOC_KEY, (stored) => {
     if (stored === null || typeof stored !== 'object' || Array.isArray(stored)) throw new Error('Not a document entry');
     return change(stored as DocEntry);
-  }, () => null);
+  }, () => null, sessionRecords());
 }
 
 /** `doc` as its entry holds it, keeping the fields an older drawing kept beside it until the scene has taken them in
@@ -66,8 +67,11 @@ export function retireLegacyDoc(): void {
     return out;
   });
   if (next === null) return;
+  const records = sessionRecords();
   try {
     const text = JSON.stringify(next);
-    if (text !== localStorage.getItem(DOC_KEY)) localStorage.setItem(DOC_KEY, text);
+    if (records) {
+      if (text !== JSON.stringify(records.get(DOC_KEY))) records.set(DOC_KEY, next);
+    } else if (text !== localStorage.getItem(DOC_KEY)) localStorage.setItem(DOC_KEY, text);
   } catch { /* the next save tries again */ }
 }

@@ -1,6 +1,6 @@
 /**
  * WeaselDraw's editor: one `<SceneCanvas features={['draw', pathTools]}>` with every built-in tool over a
- * `useScene` document, saved to local storage 300 ms after each change.
+ * `useScene` document, saved to the session (IndexedDB, or localStorage without it) 300 ms after each change.
  */
 import { useScene, useSelection } from '@weasel-js/core';
 import { createRecentColorsStore, RecentColorsProvider } from '@weasel-js/ui/components/RecentColors';

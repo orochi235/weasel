@@ -18,6 +18,7 @@ import { DEFAULT_BG_COLOR, loadDoc, PAPER_PRESETS } from './docPersistence';
 import { DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { onePage } from './pages/drawPages';
 import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
+import { removeSessionEntry, sessionRecords } from './sessionRecords';
 
 export const LS_KEY = 'weaseldraw:scene-v1';
 
@@ -29,7 +30,7 @@ type DrawSpec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/** Restore the persisted scene (if any) from localStorage, shaped for
+/** Restore the persisted scene (if any) from the session's records, shaped for
  *  `useScene`'s full-form call signature: the full tree, page run and pages
  *  included, so groups, nesting and pages survive a reload. A drawing saved
  *  before its pages were nodes loads with them as nodes. Best-effort: any
@@ -43,14 +44,14 @@ export function loadInitial(): DrawSpec[] {
   }, () => {
     rebuilt = true;
     return starterScene();
-  });
+  }, sessionRecords());
 }
 
 /** The persisted scene's document values, or `undefined` for none. Its pages are nodes, not among them. A
  *  background saved beside the scene, as one was before it was the scene's, is taken in where the scene
  *  names none. */
 export function loadInitialDoc(): SerializedDoc | undefined {
-  const saved = readStored(LS_KEY, (value) => docFromSnapshot(savedScene(value)), () => undefined);
+  const saved = readStored(LS_KEY, (value) => docFromSnapshot(savedScene(value)), () => undefined, sessionRecords());
   const legacy = loadDoc().backgroundColor;
   if (saved?.[BACKGROUND_KEY] !== undefined || legacy === DEFAULT_BG_COLOR) return saved;
   return { ...saved, [BACKGROUND_KEY]: legacy };
@@ -103,11 +104,10 @@ export const SCENE_HISTORY_KEY = 'weaseldraw:scene-history-v1';
  *  one saved beside a drawing whose pages were not yet nodes or that cannot be opened, returns null
  *  AND removes the key so a broken snapshot can't wedge every boot. */
 export function loadSceneHistory(): SerializedSceneHistory | null {
-  const stale = rebuilt ?? readStored(LS_KEY, (value) => snapshotRebuildsTree(savedScene(value), { pages: fallbackPages() }), () => true);
-  const snap = stale ? null : readStored(SCENE_HISTORY_KEY, parseSceneHistory, () => null);
-  if (snap === null) {
-    try { localStorage.removeItem(SCENE_HISTORY_KEY); } catch { /* best-effort */ }
-  }
+  const stale = rebuilt ?? readStored(LS_KEY, (value) => snapshotRebuildsTree(savedScene(value), { pages: fallbackPages() }), () => true,
+    sessionRecords());
+  const snap = stale ? null : readStored(SCENE_HISTORY_KEY, parseSceneHistory, () => null, sessionRecords());
+  if (snap === null) removeSessionEntry(SCENE_HISTORY_KEY);
   return snap;
 }
 
