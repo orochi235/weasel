@@ -1,4 +1,4 @@
-import { normalizeZoom as clampToFloor, ZOOM_FLOOR } from '@weasel-js/geom';
+import { normalizeZoom, ZOOM_FLOOR } from '@weasel-js/geom';
 import { isDev } from '@weasel-js/registry';
 
 /**
@@ -14,19 +14,7 @@ export const DEFAULT_MIN_ZOOM = 0.1;
 /** Upper end of the kit's default zoom clamp — 800%. See {@link DEFAULT_MIN_ZOOM}. */
 export const DEFAULT_MAX_ZOOM = 8;
 
-export { ZOOM_FLOOR };
-
-/**
- * The one rule for a zoom magnitude: a finite number no smaller than
- * {@link ZOOM_FLOOR}. Anything else (0, negative, NaN, ±Infinity) becomes the
- * floor. Dev builds warn once when a zoom that was never valid arrives; a
- * positive zoom that merely undershoots the floor clamps silently.
- */
-export function normalizeZoom(zoom: number): number {
-  const held = clampToFloor(zoom);
-  if (held !== zoom && (!(zoom > 0) || zoom === Infinity)) warnInvalidView(`a zoom of ${zoom}`);
-  return held;
-}
+export { normalizeZoom, ZOOM_FLOOR };
 
 let warned = false;
 

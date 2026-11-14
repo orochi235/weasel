@@ -1,0 +1,18 @@
+/* A fixed cap, so new entries scroll inside the list instead of growing it
+   and pushing whatever sits below it down. */
+.scroller {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+/* The row box itself is `ItemList`'s. Every row jumps to its state. */
+.row {
+  cursor: pointer;
+}
+
+/* The current row rules a line under itself, so the boundary between what is
+   applied and what is redoable reads without an extra divider element. */
+.current {
+  border-bottom: var(--wzl-border-w) solid var(--wzl-fg);
+  border-radius: var(--wzl-radius-sm) var(--wzl-radius-sm) 0 0;
+}

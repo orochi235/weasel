@@ -1,4 +1,4 @@
-import { normalizeZoom } from './zoomBounds';
+import { normalizeZoom } from '@weasel-js/geom';
 import { hasExtent } from './fitViewToBounds';
 
 /**

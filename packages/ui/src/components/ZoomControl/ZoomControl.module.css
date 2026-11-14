@@ -1,0 +1,23 @@
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+  min-width: 0;
+}
+
+/* Narrow enough to sit in a toolbar, wide enough for the octave detents to be
+   separately hittable. */
+.slider {
+  flex: 0 1 108px;
+  width: 108px;
+  min-width: 64px;
+}
+
+/* `width: fit` sizes the field from this rather than from the input's
+   20-character intrinsic width. "800%" measures 33px against the 35px a 5ch
+   box gives, which is no margin at all in another UI font; 6ch also holds the
+   "1600%" a consumer raising `max` can reach. */
+.field {
+  flex: 0 0 auto;
+  --wzl-number-field-width: 6ch;
+}

@@ -544,12 +544,6 @@ name a package. Breaking changes are in scope.
   `AttributesPane`. The model goes to `@weasel-js/prefs` as `./edit`; the editor and `PrefConditionEditor` go to a
   new `prefs-editor` package, which needs the maintainer to seed on npm. Closes when neither lives in ui.
 
-- **(P3) [agent] Move labkit's and draw's general pieces into ui.** `labkit/src/primitives/Legend.tsx` and
-  `FpsMeter.tsx` have no labkit dependencies; `FloatingPanel` needs value/onChange in place of `usePersistedState`;
-  `ZoomControl` is built on ui; `Readout` wraps `DetailList`; `apps/draw/src/ui/HistoryList` is a general undo list
-  on `ItemList`; draw's `ToolIcon` repeats each tool's declared `icon`. `JobProgress`, `Split`, and `HeldClock` stay
-  in labkit. Closes when the five live in ui, `Readout` folds into `DetailList`, and `ToolIcon` reads `ToolDef.icon`.
-
 - **(P3) [agent] Rename and split folders to match what they hold.** `ContextMenu/` holds the whole menu layer
   (`MenuPanel`, `MenuRow`, `useMenuTrigger`, `useDismiss`) that `MenuButton`, `MenuBar`, `BarMenu`, and `RailStack`
   import; `src/floating/` is a drag-and-snap panel hook, not overlay positioning; `Timeline/` also holds `Ruler`,

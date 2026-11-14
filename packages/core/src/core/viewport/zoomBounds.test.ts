@@ -87,14 +87,16 @@ describe('zoom producers stay inside the invariant', () => {
 describe('invalid-zoom dev warning', () => {
   afterEach(() => { vi.restoreAllMocks(); vi.resetModules(); });
 
-  it('warns once, and only for a zoom that was never valid', async () => {
+  it('warns once, and only for a view whose zoom was never valid', async () => {
     vi.resetModules();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const fresh = await import('./zoomBounds');
-    fresh.normalizeZoom(fresh.ZOOM_FLOOR / 1000);
+    const fresh = await import('./view');
+    const at = (s: number) => fresh.normalizeView({ x: 0, y: 0, scale: { x: s, y: 1 } });
+    at(ZOOM_FLOOR / 1000);
+    at(-ZOOM_FLOOR / 1000);
     expect(warn).not.toHaveBeenCalled();
-    fresh.normalizeZoom(0);
-    fresh.normalizeZoom(Number.NaN);
+    at(0);
+    at(Number.NaN);
     expect(warn).toHaveBeenCalledTimes(1);
   });
 });

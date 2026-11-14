@@ -1,5 +1,7 @@
 import { copyText } from '@weasel-js/react';
+import { FpsMeter } from '@weasel-js/ui/components/FpsMeter';
 import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
+import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
 import { withOverValues } from '../config/over';
@@ -8,8 +10,6 @@ import { ControlPanel } from '../controls/ControlPanel';
 import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { undoCapability } from '../instrument/undo';
-import { FpsMeter } from '../primitives/FpsMeter';
-import { ZoomControl } from '../primitives/ZoomControl';
 import type { TrialTool } from '../tools/types';
 import { REDO_SHORTCUT, UNDO_SHORTCUT } from '../undo/useUndoKeys';
 import type { TrialChromeContext, TrialContribution } from './types';

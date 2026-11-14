@@ -1,0 +1,7 @@
+.host {
+  position: relative;
+  width: 520px;
+  height: 340px;
+  background: var(--wzl-surface-sunken);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+}

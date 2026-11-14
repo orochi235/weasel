@@ -1,0 +1,47 @@
+.legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-sm);
+  line-height: 1.4;
+  color: var(--wzl-fg-muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+  padding: 1px 0;
+  white-space: nowrap;
+}
+
+.swatch {
+  flex: none;
+  width: 15px;
+}
+
+.swatch[data-mark='line'] {
+  height: 4px;
+  border-radius: var(--wzl-radius-sm);
+  background: var(--legend-ink);
+}
+
+.swatch[data-mark='dash'] {
+  height: 0;
+  border-top: 2px dashed var(--legend-ink);
+}
+
+.swatch[data-mark='dot'] {
+  width: 6px;
+  height: 6px;
+  margin: 0 var(--wzl-space-2) 0 5px;
+  border-radius: 50%;
+  background: var(--legend-ink);
+}
+
+.swatch[data-mark='band'] {
+  height: 9px;
+  border-radius: var(--wzl-radius-sm);
+  background: var(--legend-ink);
+}

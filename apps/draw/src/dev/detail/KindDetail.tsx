@@ -1,8 +1,8 @@
 import { Code } from '@weasel-js/ui/components/Code';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
 import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import traitSchemas from 'virtual:weasel-trait-schemas';
-import { ToolIcon } from '../../ui/ToolIcon';
 import s from '../RegistryInspector.module.css';
 import { SchemaTable } from '../SchemaTable';
 import type { PropertiesKindEntry, ShapeKindEntry } from '../registryEntries';
@@ -10,6 +10,7 @@ import { findSourceMatch } from '../sourceLookup';
 import { collectOpFactoriesTargeting } from './OpDetail';
 import { Jsdoc, EntryLink, KindBadge, type Props } from './shared';
 import { SourceLink } from './sourceLinks';
+import { icon } from '../../icons.gen';
 
 export function ShapeKindDetail({
   entry, onNavigate,
@@ -23,7 +24,7 @@ export function ShapeKindDetail({
     <div>
       <div className={s.toolHeader}>
         <span className={s.toolIcon} aria-hidden>
-          <ToolIcon tool={entry.tool ?? entry.id} />
+          {entry.icon ?? <Icon name={icon('core:unknown')} />}
         </span>
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>

@@ -47,13 +47,6 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     expect(document.querySelector('.arg-here')).not.toBeNull();
   });
 
-  it('Readout ValuesComeAndGo', async () => {
-    draw(stories(await import('./primitives/Readout.stories')).ValuesComeAndGo, {
-      className: 'arg-here',
-    });
-    expect(document.querySelector('.arg-here')).not.toBeNull();
-  });
-
   it('AutoControls Interactive', async () => {
     draw(stories(await import('./controls/AutoControls.stories')).Interactive, {
       className: 'arg-here',

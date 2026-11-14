@@ -128,7 +128,7 @@ export type { ZoomBound, ZoomFactor } from '../core/viewport/view';
 export { viewportWorldRect } from '../core/viewport/viewportWorldRect';
 export { screenToWorld, worldToScreen } from '../core/viewport/viewTransform';
 export type { ViewTransform } from '../core/viewport/viewTransform';
-export { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM, normalizeZoom } from '../core/viewport/zoomBounds';
+export { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from '../core/viewport/zoomBounds';
 export { SHAPE_COUNT_RANGE, STAR_RATIO_RANGE, clampShapeGenerator, isShapeGenerator, regenerateShape, settleShapeGenerator, shapeGeneratorOf, shapeGeneratorPath, withoutShapeGenerator } from '../domains/paths/shapeGenerator';
 export type { GeneratedShape, PolygonGenerator, ShapeGenerator, StarGenerator } from '../domains/paths/shapeGenerator';
 export { createEnteredGroupScope } from '../domains/selection/enteredGroupScope';
@@ -144,6 +144,7 @@ export type { AngleCandidate, AngleCollect, Locus, SceneCanvasSnap, SnapAnchors,
 export { aimRectOf, aimSpace2d, isRectAim, rectAim, viewForAim } from '../domains/viewports/aim';
 export type { AimOutline, AimPoint, AimRect, AimSpace, RectAim, ViewAim } from '../domains/viewports/aim';
 export { IconRegistryProvider } from '../iconRegistry/IconRegistryProvider';
+export type { CoreIconName } from '../icons.gen';
 export { commitOps, commitSelectionOps, defaultCommitAdapter, selectCommitted } from '../interactions/actions/defaultCommitAdapter';
 export type { CommitSelection } from '../interactions/actions/defaultCommitAdapter';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';

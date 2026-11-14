@@ -42,6 +42,15 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
+  it.each([
+    ['HistoryList', 'Default', () => import('./HistoryList/HistoryList.stories')],
+    ['ZoomControl', 'Default', () => import('./ZoomControl/ZoomControl.stories')],
+  ] as const)('%s %s', async (_, name, load) => {
+    const mod = (await load()) as unknown as Record<string, Story>;
+    draw(mod[name], { className: 'arg-here' });
+    expect(document.querySelector('.arg-here')).not.toBeNull();
+  });
+
   it('SwatchGrid Default', async () => {
     const { Default } = await import('./SwatchGrid/SwatchGrid.stories');
     draw(Default as Story, { 'aria-label': 'Swatches here' });

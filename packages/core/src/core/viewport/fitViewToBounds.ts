@@ -1,7 +1,7 @@
 import type { View } from './view';
-import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, normalizeZoom } from './zoomBounds';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
-import type { FramedBox as Bounds } from '@weasel-js/geom';
+import { type FramedBox as Bounds, normalizeZoom } from '@weasel-js/geom';
 export type { Bounds };
 
 /** Pixel dimensions of the canvas viewport. */

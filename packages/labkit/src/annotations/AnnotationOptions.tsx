@@ -3,7 +3,7 @@ import { setToolOption } from '@weasel-js/routing';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { useDeferredValue, useRef } from 'react';
 import { useLabChromeContext } from '../chrome/LabChrome';
-import { FloatingPanel } from '../primitives/FloatingPanel';
+import { PersistedFloatingPanel } from '../primitives/PersistedFloatingPanel';
 import type { TrialTool } from '../tools/types';
 import { GESTURE_MS } from '../trial/writeGesture';
 import { useLabMarkStores } from './labMarkStores';
@@ -77,13 +77,13 @@ export function AnnotationOptions({ tools }: AnnotationOptionsProps) {
   const shown = useDeferredValue(bar !== null);
   if (!bar || !shown) return null;
   return (
-    <FloatingPanel
+    <PersistedFloatingPanel
       className="lk-annotation-options"
       anchor="bottom-right"
       persist="annotation-options"
     >
       <ToolOptionsBar {...bar} />
-    </FloatingPanel>
+    </PersistedFloatingPanel>
   );
 }
 

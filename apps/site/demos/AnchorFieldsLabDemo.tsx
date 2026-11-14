@@ -11,13 +11,13 @@ import {
   type ConfigOf,
   defineInstrument,
   f,
-  FloatingPanel,
   Lab,
   type RenderContext,
   type SceneTrialState,
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
+import { FloatingPanel } from '@weasel-js/ui/components/FloatingPanel';
 import { AnchorFields } from '@weasel-js/ui/components/AnchorFields';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';

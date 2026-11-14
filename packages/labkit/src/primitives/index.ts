@@ -1,13 +1,6 @@
-export type { FloatingPanelProps } from './FloatingPanel';
-export { FloatingPanel } from './FloatingPanel';
-export { FpsMeter } from './FpsMeter';
 export type { JobProgressProps } from './JobProgress';
 export { JobProgress } from './JobProgress';
-export type { LegendEntry, LegendMark, LegendProps } from './Legend';
-export { Legend } from './Legend';
-export type { ReadoutProps, ReadoutRow } from './Readout';
-export { Readout } from './Readout';
+export type { PersistedFloatingPanelProps } from './PersistedFloatingPanel';
+export { PersistedFloatingPanel } from './PersistedFloatingPanel';
 export type { SplitProps } from './Split';
 export { Split } from './Split';
-export type { ZoomControlProps } from './ZoomControl';
-export { ZoomControl } from './ZoomControl';
