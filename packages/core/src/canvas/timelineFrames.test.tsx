@@ -71,7 +71,7 @@ describe('renderTimelineFrames', () => {
   it('renders a span of its own, with args per frame, and leaves a paused timeline paused', async () => {
     const { timeline, log } = fakeTimeline(1000, 0, true);
     const { session, render } = fakeSession();
-    const args = vi.fn(() => ARGS);
+    const args = vi.fn((_frame: { index: number; time: number }) => ARGS);
     await collect(renderTimelineFrames({ timeline, fps: 10, from: 200, to: 400, includeEnd: true, render: args, session }));
     expect(args.mock.calls.map(([f]) => f)).toEqual([{ index: 0, time: 200 }, { index: 1, time: 300 }, { index: 2, time: 400 }]);
     expect(render).toHaveBeenCalledTimes(3);
