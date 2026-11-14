@@ -55,4 +55,10 @@ describe('kit:text drawn bounds', () => {
     const box = drawn({ text: 'AB', style: STYLE, stroke: { paint: RED, width: { px: 8 } } }, pose, 2);
     expect(box).toEqual({ x: -2, y: -2, width: 402, height: 202 });
   });
+
+  it('takes in the background\'s shadow', () => {
+    const shadow = { x: 10, y: 20, blur: 8, alpha: 0.5 };
+    const box = drawn({ text: 'AB', style: STYLE, background: { paint: RED }, shadow }, pose);
+    expect(box).toEqual({ x: 0, y: 0, width: 414, height: 224 });
+  });
 });
