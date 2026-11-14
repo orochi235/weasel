@@ -15,6 +15,7 @@ import {
   PAGES_DOC_KEY, adoptLegacyPages, asNodeId, createScene, sceneFromJSON, setPages, specsFromSerialized,
 } from '@weasel-js/core';
 import { isRawWrapper, typedArrayReplacerWrapping, untagTypedArray } from '@weasel-js/geom';
+import { freshId } from '@weasel-js/registry';
 
 const isPathKey = (k: string): k is 'commands' | 'coords' => k === 'commands' || k === 'coords';
 
@@ -103,11 +104,9 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
   if (saved !== undefined) checkPagesDoc(saved);
   const { descriptor, pages, systemLayers: _layers, ...read } = opts;
   const taken = new Set<unknown>(json.nodes.map((n) => (n as { id?: unknown } | null)?.id));
-  let n = 0;
   // The run is the one node adoption mints; a fixed id loads the same snapshot the same way every time.
   const generateId = () => {
-    let id = 'page-run';
-    while (taken.has(id)) id = `page-run-${++n}`;
+    const id = freshId('page-run', taken, { bare: true });
     taken.add(id);
     return asNodeId(id);
   };
