@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { Tooltip } from '../Tooltip';
 import { useUntoldReason } from './Disabled';
 
@@ -10,7 +10,7 @@ export interface HoldReasonParts {
   describedBy: string | undefined;
   /** Follows the control with the reason's description and tooltip, which pointing at the control or focusing it
    *  opens. With no reason it adds nothing, and either way the control keeps its place, so it is not remounted. */
-  wrap(node: ReactNode): ReactNode;
+  wrap(node: ReactNode): ReactElement;
 }
 
 /**

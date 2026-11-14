@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import type { ControlAccess } from '@weasel-js/ui-logic';
 import { useControlAccess, type HoldProps } from './Disabled';
 import { describedBy, useHoldReason } from './HoldReason';
@@ -31,7 +31,7 @@ export interface RacHold<P> {
   /** Spread onto the React Aria component: its `isDisabled`/`isReadOnly`, and `aria-describedby` with the reason. */
   rac: RacHoldProps & { 'aria-describedby'?: string };
   /** Wraps the control so it shows its reason in a tooltip. */
-  wrap(node: ReactNode): ReactNode;
+  wrap(node: ReactNode): ReactElement;
 }
 
 /** A React Aria wrapper's hold: reads its own `disabled`/`readOnly` props and the scopes around it. */

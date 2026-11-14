@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import type { ControlAccess } from '@weasel-js/ui-logic';
 import { useControlAccess, type HoldProps } from './Disabled';
 import { describedBy, useHoldReason } from './HoldReason';
@@ -22,7 +22,7 @@ export interface NativeHold {
   /** Whether the control must drop every change: it is disabled or read-only. */
   refuses: boolean;
   /** Wraps the control so it shows its reason in a tooltip. */
-  wrap(node: ReactNode): ReactNode;
+  wrap(node: ReactNode): ReactElement;
 }
 
 /** A native control's hold, from its own props and the scopes around it. `aria-readonly` is left off for a role

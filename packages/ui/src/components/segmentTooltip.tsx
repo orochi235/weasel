@@ -79,7 +79,7 @@ export function SegmentTooltip({ tip, children, ...own }: SegmentTooltipProps): 
   const access = { ...held, reason: useUntoldReason(held.reason) };
   const content = segmentTooltipContent({ ...tip, reason: access.reason });
   const off = !access.reachable;
-  const button = off ? cloneElement(children, { disabled: true })
+  const button = off ? (cloneElement(children, { disabled: true }) as ButtonElement)
     : access.state === 'enabled' ? children : stillReachable(children, access);
   if (content === undefined || content === null || content === false) return button;
   // The same wrappers whatever the state, so a button that becomes disabled is not remounted.
