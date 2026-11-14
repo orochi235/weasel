@@ -519,12 +519,6 @@ name a package. Breaking changes are in scope.
   should open a paint editor is the maintainer's call. Closes when a slot edits a gradient, or the maintainer rules it
   stays a solid picker.
 
-- **(P2) [agent] Make `<Along>` the only way to curve a control.** `Slider` (`Slider/SliderBody.tsx:61`), `Jog`
-  (`Jog/Jog.tsx:61`), `DetentSlider`, `Bar`, `Tabs`, `SwatchGrid`, `SwatchStrip`, and `segmentedRow.tsx` each do
-  `props.shape ?? along?.shape`; `RadioGroup` already reads only the context. `Along/CurvedLabel.tsx` takes its own
-  `arc`/`shape`/`align` and calls `useBoxShape` itself. First confirm that the prop's containing-block coordinates
-  match what `Along` measures. Closes when no leaf control declares `shape` and `CurvedLabel` reads `useTrackShape`.
-
 - **(P2) [agent] One run context in place of `OrientationContext`, `AlongContext`, and `BarSideContext`.** All
   three say which way the run goes, and `Bar/barSide.ts` derives its side from the run. `ToolGroup` takes an
   `orientation` prop defaulting to vertical instead of reading the context; `ToolPalette`, `ResizeHandle`, and

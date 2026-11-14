@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactElement } from 'react';
-import { CurvedLabel, type AlongArc } from '@weasel-js/ui/components/Along';
+import { Along, CurvedLabel, type AlongArc } from '@weasel-js/ui/components/Along';
 import lab from './lab.stories.module.css';
 import s from './CurvedLabel.stories.module.css';
 
@@ -22,7 +22,9 @@ export function CurvedLabelView({ config }: { config: CurvedLabelConfig }): Reac
     <div className={lab.lab}>
       {(['top', 'bottom'] as const).map((name) => (
         <div key={name} className={s.box} style={{ '--box': `${config.size}px` } as CSSProperties}>
-          <CurvedLabel text={config.text} arc={LABEL_ARCS[name]} align={config.align} />
+          <Along arc={LABEL_ARCS[name]} align={config.align}>
+            <CurvedLabel text={config.text} />
+          </Along>
         </div>
       ))}
     </div>

@@ -3,6 +3,7 @@ import { cleanup, render } from '@testing-library/react';
 import { bidi } from '@weasel-js/bidi';
 import { lineShape } from '@weasel-js/geom';
 import { registerBidi } from '@weasel-js/text';
+import { Along } from './Along';
 import { CurvedLabel } from './CurvedLabel';
 
 // jsdom lays nothing out: every grapheme is 10 wide.
@@ -25,18 +26,18 @@ const x = (el: HTMLElement) => Number.parseFloat(el.style.getPropertyValue('--at
 const shown = () => spans().sort((a, b) => x(a) - x(b)).map((el) => el.textContent).join('');
 
 test('a Hebrew word in a left-to-right label shows in display order', () => {
-  render(<CurvedLabel text="ab אבג" shape={shape} />);
+  render(<Along shape={shape}><CurvedLabel text="ab אבג" /></Along>);
   expect(shown()).toBe('ab גבא');
 });
 
 test('right to left, align start puts the text against the right end, still reading forward', () => {
-  render(<div dir="rtl"><CurvedLabel text="abc" shape={shape} align="start" /></div>);
+  render(<div dir="rtl"><Along shape={shape} align="start"><CurvedLabel text="abc" /></Along></div>);
   expect(shown()).toBe('abc');
   expect(Math.max(...spans().map(x))).toBeCloseTo(195);
 });
 
 test('right to left, a Hebrew label shows reversed and lays its first letter rightmost', () => {
-  render(<div dir="rtl"><CurvedLabel text="אבג (1)" shape={shape} align="start" /></div>);
+  render(<div dir="rtl"><Along shape={shape} align="start"><CurvedLabel text="אבג (1)" /></Along></div>);
   expect(shown()).toBe('(1) גבא');
   const first = spans().find((el) => el.textContent === 'א')!;
   expect(x(first)).toBeCloseTo(195);
@@ -44,7 +45,14 @@ test('right to left, a Hebrew label shows reversed and lays its first letter rig
 });
 
 test('right to left, an Arabic word keeps each joined stretch in one span, laid from the right', () => {
-  render(<div dir="rtl"><CurvedLabel text="سلام" shape={shape} align="start" /></div>);
+  render(<div dir="rtl"><Along shape={shape} align="start"><CurvedLabel text="سلام" /></Along></div>);
   expect(spans().sort((a, b) => x(b) - x(a)).map((el) => el.textContent)).toEqual(['سلا', 'م']);
   expect(document.querySelector('[role="img"]')).toHaveAttribute('aria-label', 'سلام');
+});
+
+test('outside an Along it is its text on one line, still named by it', () => {
+  render(<CurvedLabel text="abc" />);
+  expect(spans()).toHaveLength(0);
+  expect(document.querySelector('[role="img"]')).toHaveTextContent('abc');
+  expect(document.querySelector('[role="img"]')).toHaveAttribute('aria-label', 'abc');
 });
