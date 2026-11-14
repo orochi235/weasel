@@ -37,4 +37,27 @@ describe('<ControlPanel> renderer context', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit Items' }));
     expect(seen).toContain('c:em');
   });
+
+  it('hands a renderer the config source, which a reset of its leaf goes through', () => {
+    const setConfig = vi.fn();
+    const seen: unknown[] = [];
+    const schema = resolveConfigSchema(
+      f.schema({
+        unit: f.string('px'),
+        a: f.number(1).render((ctx) => {
+          seen.push(ctx.source.valueAt('unit').value);
+          return (
+            <button type="button" onClick={ctx.reset}>
+              reset a
+            </button>
+          );
+        }),
+      }),
+      [],
+    );
+    render(<ControlPanel schema={schema} config={{ unit: 'em', a: 3 }} setConfig={setConfig} />);
+    expect(seen[0]).toBe('em');
+    fireEvent.click(screen.getByRole('button', { name: 'reset a' }));
+    expect(setConfig).toHaveBeenCalledWith('a', 1);
+  });
 });

@@ -11,6 +11,7 @@ import {
 } from '@weasel-js/core';
 import { leafWrites } from './commitLeaf';
 import { selectionSource } from './selectionSource';
+import { PrefsSource } from '../PrefsSource/PrefsSource';
 import type { LeafRenderer } from './renderContext';
 import { classifyKind, kindBreakdown, panelRowsOf, type AnyNode } from './model';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
@@ -165,6 +166,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   };
 
   return (
+    <PrefsSource source={cells.source}>
     <PanelMarksContext.Provider value={marks}>
     <div className={[s.root, className].filter(Boolean).join(' ')} {...rowSelection}>
       <header className={s.header}>
@@ -180,5 +182,6 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
       {panelSections(sections, cells, marks)}
     </div>
     </PanelMarksContext.Provider>
+    </PrefsSource>
   );
 }

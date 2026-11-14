@@ -13,6 +13,7 @@ import { NoMatches } from './NoMatches';
 import { filterPrefRoot, prefFieldChoices, type PrefFieldChoice } from './schema';
 import type { LeafRenderer, WalkCtx } from './PrefsRow';
 import { useValuesSource } from '../PrefsSource/useValuesSource';
+import { PrefsSource } from '../PrefsSource/PrefsSource';
 import { paneChildren } from './PrefsPane';
 import { BarRootLayout } from './BarRootLayout';
 import type { BarOrientation } from '../Bar/BarLayout';
@@ -241,32 +242,25 @@ export function PrefsForm(props: PrefsFormProps) {
     </div>
   ) : null;
 
-  if (root?.as === 'bar') {
-    return (
-      <BarRootLayout root={root} ctx={ctx} drop={props.drop} selection={selection} orientation={props.orientation}
-        filterField={field} className={className} />
-    );
-  }
-
-  if (layout === 'rail') {
-    return (
-      <RailLayout
-        {...props}
-        root={root}
-        ctx={ctx}
-        query={query}
-        selection={selection}
-        filterField={field}
-        onClearFilter={() => setQuery('')}
-      />
-    );
-  }
-
-  return (
+  const body = root?.as === 'bar' ? (
+    <BarRootLayout root={root} ctx={ctx} drop={props.drop} selection={selection} orientation={props.orientation}
+      filterField={field} className={className} />
+  ) : layout === 'rail' ? (
+    <RailLayout
+      {...props}
+      root={root}
+      ctx={ctx}
+      query={query}
+      selection={selection}
+      filterField={field}
+      onClearFilter={() => setQuery('')}
+    />
+  ) : (
     <FlatLayout root={root} ctx={ctx} drop={props.drop} list={layout === 'list'} across={layout === 'list' && props.rowsAcross === 2}
       selection={selection} className={className}
       filterField={field} noMatches={<NoMatches query={query} onClear={() => setQuery('')} />} />
   );
+  return <PrefsSource source={source}>{body}</PrefsSource>;
 }
 
 /** The columns and list layouts: every group drawn at once, a column each or one under another. */

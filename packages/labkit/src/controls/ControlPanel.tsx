@@ -1,6 +1,7 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
+import { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import {
   type CollapseProps,
   type PropertyAlign,
@@ -326,5 +327,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         {list}
       </PropertyPanel>
     );
-  return <FieldChoicesContext.Provider value={choices}>{panel}</FieldChoicesContext.Provider>;
+  return (
+    <PrefsSource source={prefs}>
+      <FieldChoicesContext.Provider value={choices}>{panel}</FieldChoicesContext.Provider>
+    </PrefsSource>
+  );
 }
