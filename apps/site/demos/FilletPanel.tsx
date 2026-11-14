@@ -1,5 +1,5 @@
 /**
- * The corner panel of the corner-shape lab: path-tools' fillet controls over the
+ * The panel of the Fillet lab: path-tools' fillet controls over the
  * selected corners of the open path, mixed where they differ.
  */
 import {
