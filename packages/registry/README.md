@@ -2,8 +2,8 @@
 
 Keyed registries with a uniform reflection surface: enumerate the entries, see which ones displaced others, release any one of them, and subscribe to changes. Also the small shared pieces registries are built from: an emitter, a plain-object test, and the MIXED sentinel. No React, no DOM.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/registry).
 
 ## Install

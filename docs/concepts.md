@@ -796,10 +796,10 @@ them:
   under id `tool.offhand` for hold-to-engage hotkeys (e.g. Space-for-hand).
   `defaultBinding` is a `BoundGesture[]` of `keyHeld` specs, each carrying
   `opts.params.toolId`. On `start` the invoker pushes the tool id onto the
-  active-tool context's hotkey stack; `onEnd` pops it. The dispatcher's
-  `inFlightOwners` machinery advances the channel through the same
-  `[initial]` → `[engaged]` → `[initial]` lifecycle that drag uses. Build
-  entries with `buildToolOffhandBindings(specs)`.
+  active-tool context's hotkey stack; `onEnd` pops it. While the key is held
+  the press is in flight (`dispatcher.inFlight()`), and its channel moves
+  through the same `[initial]` → `[engaged]` → `[initial]` lifecycle a drag
+  does. Build entries with `buildToolOffhandBindings(specs)`.
 
 A tool's activation key is the `keybinding` on its `ToolDef`, the built-in tools'
 included; `useKeybindings` (`packages/core/src/tools/useKeybindings.ts`) appends an

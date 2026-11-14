@@ -139,7 +139,7 @@ Where there is no room for a straight run, hang the head on the shaft instead of
 walk one trail of arc back from the tip and put the two barb ends on the curve's normal there, the
 same distance either side. That holds down to a bend radius of about 1.2 head lengths; tighter,
 the inner barb fills the bend, and the head wants to be solid. `chevronOn` in `packages/icons/scripts/lib/base.mjs`
-draws this head, and `turn` in `packages/ui/icons/camera.mjs` uses it.
+draws this head, and `turn` in `packages/kernel3d/icons/camera.mjs` uses it.
 
 **Where one stroke passes behind another, cut it along the front stroke's outline grown by a fixed
 gap.** The cut end is parallel to the stroke in front, not square to the stroke being cut: a butt

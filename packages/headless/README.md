@@ -4,8 +4,8 @@ Render a weasel scene to pixels from Node — on a server, in a build script, in
 runs core's `renderSceneToPixels` in a headless Chromium page, so the pixels come from the same
 WebGL2 renderer a browser draws with. Node itself has no WebGL2 binding the renderer can rely on.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/headless).
 
 ## Install

@@ -7,8 +7,8 @@ the way `layered` or `tree` is. ELK places ports, edge labels and nested groups
 well; use it to lay a diagram out from a `DiagramView`, to lay a generated
 diagram out once, or to check one of the diagram package's layouts against it.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/diagram-elk).
 
 ```sh

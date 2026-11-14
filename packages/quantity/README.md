@@ -3,8 +3,8 @@
 Numbers with a unit and a display — how they show, how a screen reader says
 them, and how typed text reads back. No React, no DOM.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/quantity).
 
 ```sh

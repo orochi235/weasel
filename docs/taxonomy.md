@@ -699,7 +699,7 @@ says where a non-rect pose's `origin` probe is. See [snapping.md](./snapping.md)
 `childPoses`, `getDropTargets`, `reflowPoses`, `commitDrop`, `snap`, and
 optional hooks (`contains`, `dropRegion`, `acceptsDrop`, `releaseDrop`, `arrive`,
 `depart`, `contentExtent`). A container declares one on its scene node
-(`ContainerNode.layout`, swapped undoably by `scene.setLayout`). The scene's layout pass hands children
+(`SceneNode.layout`, swapped undoably by `scene.setLayout`). The scene's layout pass hands children
 that leave the container to `depart`, children that join it to `arrive`, and
 any other change to its child set, order or size to `childPoses`, recording the
 writes in the same undo entry as the change.

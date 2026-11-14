@@ -2,8 +2,8 @@
 
 App-level modality primitives: capability tags, mode definitions, mode registry, and decoration layer.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/modes).
 
 ## Install

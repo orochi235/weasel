@@ -2,8 +2,8 @@
 
 SVG import/export for @weasel-js/core: parse SVG strings into weasel-native shapes and serialize them back.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/svg).
 
 ## Install

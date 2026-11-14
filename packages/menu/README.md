@@ -5,8 +5,8 @@ text and color rows edited in place), a
 controller that owns the highlight, open submenus, keyboard and typeahead behavior, and placement
 that keeps a menu on screen. No React, no DOM.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/menu).
 
 ## Install

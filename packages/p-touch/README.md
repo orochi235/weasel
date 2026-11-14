@@ -3,8 +3,8 @@
 Brother P-touch labels from weasel scenes: `.lbx` files P-touch Editor opens, and printing from
 the browser over WebUSB or Web Serial.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/p-touch).
 
 ```sh

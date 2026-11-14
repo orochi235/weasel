@@ -11,8 +11,8 @@ two they join, so they re-route whenever either end moves. An optional body
 builder composes ordinary scene nodes for nodes that should *look* like a
 flowchart box.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/diagram).
 
 ## Install

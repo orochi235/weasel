@@ -14,8 +14,8 @@ Generic React pieces the weasel packages share. No weasel domain in it.
 | `usePrefersReducedMotion`, `useSystemColorScheme` | The system's motion and color-scheme preferences |
 | `adoptCss`, `adoptCssOnce` | A stylesheet in an element's document or shadow root |
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/react).
 
 ## Install
