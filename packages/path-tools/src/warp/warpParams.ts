@@ -30,9 +30,9 @@ type Field = keyof typeof WARP_SETTING_FIELDS;
 
 /** The settings each kind of warp holds. */
 const KIND_FIELDS: Record<WarpKind, readonly Field[]> = {
-  distort: ['mode', 'tolerance'],
+  plane: ['mode', 'tolerance'],
   cloth: ['rows', 'cols', 'mapping', 'tolerance'],
-  puppet: ['tolerance'],
+  pin: ['tolerance'],
 };
 
 function groupOf(name: string, fields: readonly Field[]): PrefGroup {
@@ -53,7 +53,7 @@ export function configureWarpParams(params: Readonly<Record<string, unknown>>): 
 /** The settings `held` was made with, as its kind holds them. */
 export function settingsOfWarp(held: HeldPathWarp): WarpSettings {
   const { warp, tolerance } = held;
-  if (warp.kind === 'distort') return { mode: warp.mode, tolerance };
+  if (warp.kind === 'plane') return { mode: warp.mode, tolerance };
   if (warp.kind === 'cloth') return { rows: warp.mesh.rows, cols: warp.mesh.cols, mapping: warp.mapping, tolerance };
   return { tolerance };
 }

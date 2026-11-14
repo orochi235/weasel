@@ -3,7 +3,7 @@ import * as core from '@weasel-js/geom';
 import { pathUnion, splitPathBySegment } from '@weasel-js/geom/booleans';
 import { CURVE_REPS } from '@weasel-js/geom/curves';
 import { tessellate, extractPolylines, trimPolyline } from '@weasel-js/geom/tessellate';
-import { applyPathWarp, puppetMap } from '@weasel-js/geom/warp';
+import { applyPathWarp, pinWarpMap } from '@weasel-js/geom/warp';
 
 describe('package exports', () => {
   it('core barrel exposes the tiers', () => {
@@ -17,6 +17,6 @@ describe('package exports', () => {
   });
   it('curves, tessellate, and warp subpaths resolve', () => {
     expect(Object.keys(CURVE_REPS)).toContain('spiro');
-    for (const fn of [tessellate, extractPolylines, trimPolyline, applyPathWarp, puppetMap]) expect(typeof fn).toBe('function');
+    for (const fn of [tessellate, extractPolylines, trimPolyline, applyPathWarp, pinWarpMap]) expect(typeof fn).toBe('function');
   });
 });

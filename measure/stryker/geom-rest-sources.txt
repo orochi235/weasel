@@ -10,7 +10,7 @@ packages/geom/src/constraints/pathsEdit.ts
 packages/geom/src/paths/tugPathEnd.ts
 packages/geom/src/tessellate/tessellate.ts
 packages/geom/src/warp/arap.ts
-packages/geom/src/warp/puppetMesh.ts
+packages/geom/src/warp/pinWarpMesh.ts
 packages/geom/src/paths/pathMeasure.ts
 packages/geom/src/paths/builder.ts
 packages/geom/src/paths/drape.ts
@@ -35,7 +35,7 @@ packages/geom/src/3d/mat4.ts
 packages/geom/src/paths/winding.ts
 packages/geom/src/tessellate/evenOdd.ts
 packages/geom/src/3d/ray3.ts
-packages/geom/src/warp/puppet.ts
+packages/geom/src/warp/pinWarp.ts
 packages/geom/src/warp/profileCholesky.ts
 packages/geom/src/warp/pathWarp.ts
 packages/geom/src/constraints/pathConstraints.ts

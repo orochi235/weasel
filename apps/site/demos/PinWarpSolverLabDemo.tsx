@@ -1,5 +1,5 @@
 import { asNodeId, createScene, type RectPose, solid, useSelection } from '@weasel-js/core';
-import { usePuppetTool, warpPreset, withPathWarp } from '@weasel-js/path-tools';
+import { usePinWarpTool, warpPreset, withPathWarp } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -11,11 +11,11 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { useCallback, useMemo, useState } from 'react';
-import { createMeshLayers, type MeshShow } from './puppetSolverLab/meshLayer';
-import type { StepPick } from './puppetSolverLab/meshModel';
-import { createReadout, SolverPanel } from './puppetSolverLab/SolverPanel';
-import { PRESETS, type PresetId } from './puppetSolverLab/presets';
-import s from './puppetSolverLab/PuppetSolverLab.module.css';
+import { createMeshLayers, type MeshShow } from './pinWarpSolverLab/meshLayer';
+import type { StepPick } from './pinWarpSolverLab/meshModel';
+import { createReadout, SolverPanel } from './pinWarpSolverLab/SolverPanel';
+import { PRESETS, type PresetId } from './pinWarpSolverLab/presets';
+import s from './pinWarpSolverLab/PinWarpSolverLab.module.css';
 import { pathLeaf } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -42,7 +42,7 @@ const SELECTED = [asNodeId(SHAPE_ID)];
 export function createLabScene(preset: PresetId) {
   const { shape, pins } = PRESETS[preset];
   const bare = pathLeaf(SHAPE_ID, shape, '#ffffff1f', { stroke: { paint: solid('#14141a'), width: 2 } });
-  const pinned = withPathWarp(bare, { kind: 'puppet', pins });
+  const pinned = withPathWarp(bare, { kind: 'pin', pins });
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [{ ...bare, ...(pinned as { pose: RectPose; data: unknown }) }],
@@ -55,7 +55,7 @@ function SolverTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const create = useCallback(() => createLabScene(preset), [preset]);
   const scene = useTrialScene(ctx, create);
   const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
-  const puppet = usePuppetTool();
+  const pin = usePinWarpTool();
   const [readout] = useState(createReadout);
   const layers = useMemo(() => {
     const built = createMeshLayers({ scene: scene as never, nodeId: SHAPE_ID, display: () => ({ step, show: mesh }), onModel: readout.set });
@@ -68,7 +68,7 @@ function SolverTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         selection={selection}
         trial={ctx.trial}
-        tools={{ puppet }}
+        tools={{ pin }}
         layers={layers}
       />
       <SolverPanel readout={readout} caption={PRESETS[preset].caption} onPick={setStep} />
@@ -77,7 +77,7 @@ function SolverTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 }
 
 const solverInstrument = defineInstrument<State, Config>({
-  name: 'Puppet solver',
+  name: 'Pin warp solver',
   config,
   initialState: () => ({ scene: null }),
   // A new pin set opens on its own shape: the scene goes back to `create`'s.
@@ -85,18 +85,18 @@ const solverInstrument = defineInstrument<State, Config>({
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select') },
-      { id: 'puppet', label: 'Puppet Warp', icon: icon('path-tools:puppetWarp') },
+      { id: 'pin', label: 'Pin Warp', icon: icon('path-tools:pinWarp') },
     ],
-    initial: 'puppet',
+    initial: 'pin',
   },
   // Keyed, so a trial still on the scene `create` built (state `null`) builds the new preset's.
   render: (ctx) => <SolverTrial key={ctx.config.preset} ctx={ctx} />,
 });
 
-export function PuppetSolverLabDemo() {
+export function PinWarpSolverLabDemo() {
   return (
     <div className={s.frame}>
-      <Lab title="Inside the puppet solver" instruments={[solverInstrument]} />
+      <Lab title="Inside the pin warp solver" instruments={[solverInstrument]} />
     </div>
   );
 }

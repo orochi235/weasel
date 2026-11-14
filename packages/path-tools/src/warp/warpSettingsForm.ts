@@ -14,12 +14,12 @@ import { WARP_SETTING_FIELDS } from './warpParams';
 export const WARP_SETTINGS_SCHEMA: PrefGroup = {
   name: 'Warp Settings',
   children: {
-    distorts: { kind: 'number', name: 'Selected distorts', description: '', default: 0, hidden: true },
+    planes: { kind: 'number', name: 'Selected plane warps', description: '', default: 0, hidden: true },
     cloths: { kind: 'number', name: 'Selected cloth warps', description: '', default: 0, hidden: true },
-    distort: {
-      name: 'Distort',
+    plane: {
+      name: 'Plane Warp',
       as: 'section',
-      showIf: { path: 'distorts', above: 0 },
+      showIf: { path: 'planes', above: 0 },
       children: { mode: WARP_SETTING_FIELDS.mode },
     },
     cloth: {
@@ -35,15 +35,15 @@ export const WARP_SETTINGS_SCHEMA: PrefGroup = {
 /** What the form shows for the selected paths' warps. */
 export function readWarpSettings(deps: ActionDeps): ActionSettingsState {
   const fields = new SettingsFields();
-  let distorts = 0;
+  let planes = 0;
   let cloths = 0;
   for (const { shown } of selectedWarpPaths(deps)) {
     const resolved = resolvePathWarp(shown);
     if (!resolved) continue;
     const { warp, tolerance } = resolved.held;
-    if (warp.kind === 'distort') {
-      distorts++;
-      fields.add('distort.mode', warp.mode);
+    if (warp.kind === 'plane') {
+      planes++;
+      fields.add('plane.mode', warp.mode);
     } else if (warp.kind === 'cloth') {
       cloths++;
       fields.add('cloth.rows', warp.mesh.rows);
@@ -52,7 +52,7 @@ export function readWarpSettings(deps: ActionDeps): ActionSettingsState {
     }
     fields.add('tolerance', tolerance);
   }
-  return fields.state({ distorts, cloths });
+  return fields.state({ planes, cloths });
 }
 
 /** A field's change as `configureWarp` params: a kind's own field reaches
@@ -60,7 +60,7 @@ export function readWarpSettings(deps: ActionDeps): ActionSettingsState {
 export function warpSettingsParams(path: string, value: unknown): Record<string, unknown> | null {
   const [section, field] = path.split('.');
   if (field === undefined) return section === 'tolerance' ? { tolerance: value } : null;
-  return section === 'distort' || section === 'cloth' ? { kind: section, [field]: value } : null;
+  return section === 'plane' || section === 'cloth' ? { kind: section, [field]: value } : null;
 }
 
 /** `configureWarp`'s form. */

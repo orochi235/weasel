@@ -8,7 +8,7 @@ import { createEmitter } from '@weasel-js/registry';
 import { useSyncExternalStore } from 'react';
 import { LEGEND } from './meshLayer';
 import type { MeshModel, StepPick } from './meshModel';
-import s from './PuppetSolverLab.module.css';
+import s from './PinWarpSolverLab.module.css';
 
 export interface Shown {
   triangles: number;

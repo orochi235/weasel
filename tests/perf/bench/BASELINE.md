@@ -354,9 +354,9 @@ Every file was measured in one run on 2026-10-27, with Node importing the code n
 | 10% overridden | 0.8137 | 0.7185 | 1,231 | ±0.9% | 1224 |
 | 100% overridden | 3.74 | 3.36 | 269 | ±0.4% | 269 |
 
-## tests/perf/bench/puppet.bench.ts
+## tests/perf/bench/pinWarp.bench.ts
 
-### puppet warp — setup per pin set
+### pin warp — setup per pin set
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|
@@ -364,7 +364,7 @@ Every file was measured in one run on 2026-10-27, with Node importing the code n
 | mesh + factor, ~400 vertices | 15.49 | 15.07 | 64 | ±0.5% | 65 |
 | mesh + factor, ~800 vertices | 31.10 | 30.44 | 32 | ±0.4% | 64 |
 
-### puppet warp — per drag frame
+### pin warp — per drag frame
 
 | benchmark | median (ms) | min (ms) | ops/sec | rme | samples |
 |---|---:|---:|---:|---:|---:|

@@ -20,7 +20,7 @@ const square = (x: number) =>
 
 function setup() {
   const t = outlineScene();
-  const actions = [createWarpDragAction('distort'), createWarpDragAction('cloth'), configureWarpAction];
+  const actions = [createWarpDragAction('plane'), createWarpDragAction('cloth'), configureWarpAction];
   const harness = lastOperationHarness(t.deps as Record<string, unknown>, actions);
   const addSquare = (id: string, x: number, parent?: string) => t.scene.add({
     id: asNodeId(id), kind: 'mark', layer: 'default', ...(parent ? { parent: asNodeId(parent) } : {}),
@@ -46,19 +46,19 @@ function setup() {
 beforeEach(loadTestFont);
 
 describe('a warp drag in the last-operation panel', () => {
-  it('replays a fresh distort as Perspective, the corner where it was dragged, as one undo entry', () => {
+  it('replays a fresh plane warp as Perspective, the corner where it was dragged, as one undo entry', () => {
     const { scene, addSquare, drag, warpOf, store, adjust } = setup();
     addSquare('a', 0);
     scene.setSelection([asNodeId('a')]);
     scene.history.clear();
-    drag('distort', null, 2, { x: 100, y: 100 }, { x: 140, y: 130 });
-    expect(store.get()).toMatchObject({ id: 'distort.drag', label: 'Distort', values: { mode: 'free', tolerance: 0.5 } });
+    drag('plane', null, 2, { x: 100, y: 100 }, { x: 140, y: 130 });
+    expect(store.get()).toMatchObject({ id: 'plane.drag', label: 'Plane Warp', values: { mode: 'free', tolerance: 0.5 } });
     const free = warpOf('a')!;
     adjust({ mode: 'perspective' });
     const persp = warpOf('a')!;
-    expect(persp.warp).toMatchObject({ kind: 'distort', mode: 'perspective' });
-    expect(persp.warp.kind === 'distort' && free.warp.kind === 'distort' && persp.warp.corners).toEqual(free.warp.kind === 'distort' && free.warp.corners);
-    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['Distort']);
+    expect(persp.warp).toMatchObject({ kind: 'plane', mode: 'perspective' });
+    expect(persp.warp.kind === 'plane' && free.warp.kind === 'plane' && persp.warp.corners).toEqual(free.warp.kind === 'plane' && free.warp.corners);
+    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['Plane Warp']);
     expect([...scene.getSelection()]).toEqual(['a']);
     act(() => { scene.undo(); });
     expect(warpOf('a')).toBeNull();
@@ -68,11 +68,11 @@ describe('a warp drag in the last-operation panel', () => {
     const { scene, addSquare, drag, warpOf, store, adjust } = setup();
     addSquare('a', 0);
     scene.setSelection([asNodeId('a')]);
-    drag('distort', null, 2, { x: 100, y: 100 }, { x: 140, y: 130 }, { mode: 'perspective' });
+    drag('plane', null, 2, { x: 100, y: 100 }, { x: 140, y: 130 }, { mode: 'perspective' });
     const id = warpOf('a')!.id;
     scene.history.clear();
     // The binding's settings say Free; the warp the drag moves is Perspective.
-    drag('distort', id, 0, { x: 0, y: 0 }, { x: -20, y: -10 }, { mode: 'free' });
+    drag('plane', id, 0, { x: 0, y: 0 }, { x: -20, y: -10 }, { mode: 'free' });
     expect(store.get()?.values).toEqual({ mode: 'perspective', tolerance: 0.5 });
     adjust({ tolerance: 2 });
     expect(warpOf('a')).toMatchObject({ tolerance: 2, warp: { mode: 'perspective' } });
@@ -100,7 +100,7 @@ describe('a warp drag in the last-operation panel', () => {
     addSquare('b', 200, 'g');
     scene.setSelection([asNodeId('g')]);
     scene.history.clear();
-    drag('distort', null, 2, { x: 300, y: 100 }, { x: 330, y: 140 });
+    drag('plane', null, 2, { x: 300, y: 100 }, { x: 330, y: 140 });
     adjust({ mode: 'perspective' });
     expect(warpOf('a')?.warp).toMatchObject({ mode: 'perspective' });
     expect(warpOf('b')?.id).toBe(warpOf('a')?.id);
@@ -113,13 +113,13 @@ describe('a warp drag in the last-operation panel', () => {
     add('t', TEXT());
     scene.setSelection([asNodeId('t')]);
     scene.history.clear();
-    drag('distort', null, 2, { x: 200, y: 120 }, { x: 240, y: 160 });
+    drag('plane', null, 2, { x: 200, y: 120 }, { x: 240, y: 160 });
     adjust({ tolerance: 1.5 });
     expect(scene.get(asNodeId('t'))).toBeUndefined();
     const warped = scene.renderOrderNodes().map((n) => heldPathWarpOf(n.data)).filter((w) => w !== null);
     expect(warped.length).toBeGreaterThan(0);
     expect(warped.every((w) => w!.tolerance === 1.5)).toBe(true);
-    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['Distort']);
+    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['Plane Warp']);
     act(() => { scene.undo(); });
     expect(scene.get(asNodeId('t'))?.data.text).toBe('Hi');
     expect([...scene.getSelection()]).toEqual(['t']);

@@ -1,5 +1,5 @@
 /**
- * The layers drawing a puppet warp's mesh: each triangle filled by how much
+ * The layers drawing a pin warp's mesh: each triangle filled by how much
  * its area changed, turned-over ones in magenta and ringed, and the stretches
  * of outline those own drawn heavy. They follow a pin mid-drag by reading the
  * drag's preview off their draw envelope.
@@ -144,8 +144,8 @@ export function createMeshLayers(src: MeshLayerSource): { mesh: RenderLayer<unkn
   const px = (view: View) => 1 / Math.abs(view.scale.x);
   return {
     mesh: {
-      id: 'puppet-mesh',
-      label: 'Puppet mesh',
+      id: 'pin-warp-mesh',
+      label: 'Pin warp mesh',
       draw: (envelope, view) => {
         const model = modelFor(envelope);
         src.onModel?.(model);
@@ -153,7 +153,7 @@ export function createMeshLayers(src: MeshLayerSource): { mesh: RenderLayer<unkn
       },
     },
     backward: {
-      id: 'puppet-backward',
+      id: 'pin-warp-backward',
       label: 'Backward outline',
       draw: (envelope, view) => {
         const model = modelFor(envelope);

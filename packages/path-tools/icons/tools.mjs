@@ -24,7 +24,7 @@ export const TOOLS = {
   // A quad pulled out of square by its corner handles, every corner on a pixel center at a one-pixel stroke.
   // A square with one corner pushed in by its handle. The two edges it moves run two pixels along for each one
   // across, the steepest slope short of the diagonal that still meets a pixel center every other step.
-  distort: `
+  planeWarp: `
     <path d="M${P(1, 1)}H${px(13)}V${px(13)}L${P(5, 9)}Z" stroke-width="1.25"/>
     ${handle(1, 1)}${handle(13, 1)}${handle(13, 13)}${handle(5, 9)}`,
   // A two-by-two mesh whose rows bow upward, each bow a level run between two pixel diagonals and its columns on
@@ -33,7 +33,7 @@ export const TOOLS = {
     <path d="M${P(1, 14)}V${px(4)}L${bow(4).slice(1)}V${px(14)}${bow(14, true)}" stroke-width="1.25"/>
     <path d="M${P(7, 2)}V${px(12)}${bow(9)}" stroke-width="1.25"/>
     ${dot(1, 4)}${dot(13, 4)}${dot(13, 14)}${dot(1, 14)}`,
-  puppetWarp: `
+  pinWarp: `
     <path d="${rounded([[0, 10.5], [0, 8], [4, 8], [11, 1], [15, 1], [15, 6], [11, 6], [4, 13], [0, 13], [0, 10.5]], 1.25)}Z" stroke-width="1.25"/>
     ${dot(2.5, 10.5, 1.5)}${dot(12.5, 3.5, 1.5)}`,
   blend: `

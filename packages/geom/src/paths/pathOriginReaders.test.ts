@@ -16,7 +16,7 @@ import { pathUnion } from '../booleans';
 import { pathToMultiPolygon } from '../booleans/adapter';
 import { pointInPath, polygonContainsPath, strokeHitTest } from '../pathHitTest';
 import { rotatePathAround } from '../poseRotation';
-import { puppetMesh } from '../warp/puppetMesh';
+import { pinWarpMesh } from '../warp/pinWarpMesh';
 import type { PolygonPath } from '../path';
 
 const FAR = 262_144;
@@ -89,9 +89,9 @@ describe('readers of a path measured from an origin', () => {
     expect(worldCoords(turned)[1]).toBeCloseTo(0.3, 6);
   });
 
-  it('decodes cubic contours and puppet meshes in the path\'s own space', () => {
+  it('decodes cubic contours and pin warp meshes in the path\'s own space', () => {
     expect(pathToCubicContours(square())[0].segs[0].c[0]).toBeCloseTo(X, 6);
-    const mesh = puppetMesh(square(), [], { vertices: 20 });
+    const mesh = pinWarpMesh(square(), [], { vertices: 20 });
     expect(Math.min(...mesh.vertices.filter((_, i) => i % 2 === 0))).toBeCloseTo(X, 4);
   });
 });

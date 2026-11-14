@@ -9,7 +9,7 @@ Status: designed and approved by the maintainer (2026-10-31); built on branch `p
 
 - Path edit's palette holds its tools and the overlay toggles. One-shot anchor commands (Join, Average,
   Cut at Crossings, segment type) stay in the Path strip.
-- The reshape column (Girth, Snip/Reach, Knead, Distort/Cloth warp/Puppet) folds into the main
+- The reshape column (Girth, Snip/Reach, Knead, Plane Warp/Cloth warp/Pin warp) folds into the main
   palette as groups after the core tools. Draw has one left column in every mode.
 - One palette, filtered by mode, rather than a draw-side component swap or a per-mode tool-set map: the
   mode's capabilities already say which tools it allows.

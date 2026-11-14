@@ -102,8 +102,8 @@ export { useReachTool, type UseReachToolOptions } from './reach/useReachTool';
 export { KNEAD_TOOL_OPTIONS, useKneadTool, type UseKneadToolOptions } from './knead/useKneadTool';
 export type { StrokeClickToolOptions } from './shared/strokeClickTool';
 export {
-  useDistortTool, useClothWarpTool, usePuppetTool,
-  type UseDistortToolOptions, type UseClothWarpToolOptions, type UsePuppetToolOptions, type WarpTool, type WarpToolOptions,
+  usePlaneWarpTool, useClothWarpTool, usePinWarpTool,
+  type UsePlaneWarpToolOptions, type UseClothWarpToolOptions, type UsePinWarpToolOptions, type WarpTool, type WarpToolOptions,
 } from './warp/useWarpTool';
 export { warpLayerId } from './warp/warpHandles';
 export {

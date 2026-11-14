@@ -1,5 +1,5 @@
 import { asNodeId, createScene, ellipsePath, PathBuilder, type PolygonPath, type RectPose, useSelection } from '@weasel-js/core';
-import { useDistortTool, warpPreset } from '@weasel-js/path-tools';
+import { usePlaneWarpTool, warpPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -53,43 +53,43 @@ const createLabScene = () =>
 
 const SELECTED = [asNodeId('board'), asNodeId('disc')];
 
-function DistortTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function PlaneWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { mode, tolerance } = ctx.config;
   const settings = useMemo(() => ({ mode, tolerance }), [mode, tolerance]);
-  useWarpLabActions(ctx.trial.id, 'distort', settings);
-  const distort = useDistortTool(settings);
+  useWarpLabActions(ctx.trial.id, 'plane', settings);
+  const plane = usePlaneWarpTool(settings);
   return (
     <TrialSceneCanvas
       features={FEATURES}
       scene={scene}
       selection={selection}
       trial={ctx.trial}
-      tools={{ distort }}
+      tools={{ plane }}
     />
   );
 }
 
-const distortInstrument = defineInstrument<State, Config>({
-  name: 'Distort',
+const planeWarpInstrument = defineInstrument<State, Config>({
+  name: 'Plane Warp',
   config,
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select') },
-      { id: 'distort', label: 'Distort', icon: icon('path-tools:distort') },
+      { id: 'plane', label: 'Plane Warp', icon: icon('path-tools:planeWarp') },
     ],
-    initial: 'distort',
+    initial: 'plane',
   },
   chrome: [expandWarpCommand],
-  render: (ctx) => <DistortTrial ctx={ctx} />,
+  render: (ctx) => <PlaneWarpTrial ctx={ctx} />,
 });
 
-export function DistortLabDemo() {
+export function PlaneWarpLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Perspective and free distort" instruments={[distortInstrument]} />
+      <Lab title="Plane warp" instruments={[planeWarpInstrument]} />
     </div>
   );
 }

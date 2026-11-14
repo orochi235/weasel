@@ -5,7 +5,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { PuppetSolverLabDemo, SHAPE_ID } from '../PuppetSolverLabDemo';
+import { PinWarpSolverLabDemo, SHAPE_ID } from '../PinWarpSolverLabDemo';
 import { stubResizeObserver } from './pathEditLabHarness';
 import { withIcons } from '../../testIcons';
 
@@ -40,15 +40,15 @@ async function until(id: string, ok: (v: string | null) => boolean) {
 const pinsOf = () => {
   const node = window.__weaselTest!.getScene().nodes.find((n) => n.id === SHAPE_ID)!;
   const held = heldPathWarpOf(node.data);
-  return held?.warp.kind === 'puppet' ? held.warp.pins : [];
+  return held?.warp.kind === 'pin' ? held.warp.pins : [];
 };
 
 const scrubTo = (index: number) =>
   act(() => { fireEvent.change(screen.getByRole('slider', { name: 'Step of the solve' }), { target: { value: String(index) } }); });
 
-describe('PuppetSolverLabDemo', () => {
+describe('PinWarpSolverLabDemo', () => {
   it('opens the squashed disc on the untangled result, and scrubbing back to step 2 shows the fold', async () => {
-    await renderSettled(<StrictMode><PuppetSolverLabDemo /></StrictMode>, { wrapper: withIcons });
+    await renderSettled(<StrictMode><PinWarpSolverLabDemo /></StrictMode>, { wrapper: withIcons });
     const at = await until('step', (v) => /^\d+\/\d+$/.test(v ?? ''));
     const [i, n] = at!.split('/').map(Number);
     expect(i).toBe(n);
@@ -62,7 +62,7 @@ describe('PuppetSolverLabDemo', () => {
   });
 
   it('swaps the shape and its pins with the pin set', async () => {
-    await renderSettled(<StrictMode><PuppetSolverLabDemo /></StrictMode>, { wrapper: withIcons });
+    await renderSettled(<StrictMode><PinWarpSolverLabDemo /></StrictMode>, { wrapper: withIcons });
     const discTriangles = await until('triangles', (v) => v !== '–');
 
     await userEvent.click(screen.getByRole('radio', { name: 'Bend' }));

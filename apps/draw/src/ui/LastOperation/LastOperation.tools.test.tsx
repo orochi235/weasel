@@ -1,5 +1,5 @@
 /**
- * In draw, a Knead stroke and a Distort drag leave the last-operation panel up, and a change there replays
+ * In draw, a Knead stroke and a Plane Warp drag leave the last-operation panel up, and a change there replays
  * the gesture in place. The brush's Size in the panel and in the options row are one setting: a change in the panel
  * is the value the row shows and the next stroke uses.
  */
@@ -83,16 +83,16 @@ describe('the last-operation panel in draw', () => {
     expect(registry().paramsOf('knead')).toMatchObject({ radiusPx: 90 });
   });
 
-  it('replays a Distort drag as Perspective, as one undo entry', () => {
+  it('replays a Plane Warp drag as Perspective, as one undo entry', () => {
     const { scene, canvas, use } = setup();
-    use('distort');
+    use('plane');
     const depth = scene.history.undoDepth();
     drag(canvas, [220, 150], [250, 180]);
     const warpOf = () => (scene.get(A)!.data.warp as { warp: { kind: string; mode: string } } | undefined)?.warp;
-    expect(warpOf()).toMatchObject({ kind: 'distort', mode: 'free' });
-    expect(screen.getByRole('region', { name: 'Distort' })).toBeInTheDocument();
+    expect(warpOf()).toMatchObject({ kind: 'plane', mode: 'free' });
+    expect(screen.getByRole('region', { name: 'Plane Warp' })).toBeInTheDocument();
     act(() => { fireEvent.click(screen.getByRole('radio', { name: 'Perspective' })); });
-    expect(warpOf()).toMatchObject({ kind: 'distort', mode: 'perspective' });
+    expect(warpOf()).toMatchObject({ kind: 'plane', mode: 'perspective' });
     expect(scene.history.undoDepth()).toBe(depth + 1);
     expect([...scene.getSelection()]).toEqual([A]);
   });

@@ -43,10 +43,10 @@ declare module '@weasel-js/routing' {
     'spiro.placePoint': { kind?: SpiroKind };
     constrainAnchors: ConstrainAnchorsParams;
     unconstrainAnchors: { kind?: PathConstraintKind };
-    'distort.drag': WarpSettings;
+    'plane.drag': WarpSettings;
     'cloth.drag': WarpSettings;
-    'puppet.drag': WarpSettings;
-    'puppet.addPin': WarpSettings;
+    'pin.drag': WarpSettings;
+    'pin.addPin': WarpSettings;
     configureWarp: WarpSettings & { kind?: WarpKind };
     convertSegments: { to?: SegmentType };
     convertSegmentAt: { to?: SegmentType };

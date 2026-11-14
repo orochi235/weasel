@@ -2,7 +2,7 @@ import { ANY_MODS } from '@weasel-js/routing';
 import { useMemo } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import { useLatest } from '@weasel-js/react';
-import type { DistortMode, ClothMapping } from '@weasel-js/geom/warp';
+import type { PlaneMode, ClothMapping } from '@weasel-js/geom/warp';
 import type { Action, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
 import {
   type CanvasExtensionApi, type ContributionDepReader, defineTool, type SurfaceContribution, type Tool,
@@ -14,7 +14,7 @@ import { WARP_LABELS, type WarpKind, type WarpSettings } from './warpTargets';
 import { createWarpHandleLayer, warpLayerId } from './warpHandles';
 import { icon } from '../icons.gen';
 
-const WARP_ICONS = { distort: icon('distort'), cloth: icon('clothWarp'), puppet: icon('puppetWarp') } satisfies Record<WarpKind, IconRef>;
+const WARP_ICONS = { plane: icon('planeWarp'), cloth: icon('clothWarp'), pin: icon('pinWarp') } satisfies Record<WarpKind, IconRef>;
 
 /** A warp tool: a `Tool` that also registers the layer showing its controls. */
 export type WarpTool = Tool & Pick<SurfaceContribution, 'attach'>;
@@ -23,7 +23,7 @@ export type WarpTool = Tool & Pick<SurfaceContribution, 'attach'>;
 export interface WarpToolOptions {
   /** Palette label. */
   label?: string;
-  /** Override the default keybinding (Distort `F`, Cloth Warp `Shift+F`, Puppet Warp
+  /** Override the default keybinding (Plane Warp `F`, Cloth Warp `Shift+F`, Pin Warp
    *  `B`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
   /** How far, in world units, a warped path's refitted curves may stray from
@@ -31,11 +31,11 @@ export interface WarpToolOptions {
   tolerance?: number;
 }
 
-/** Options for {@link useDistortTool}. */
-export interface UseDistortToolOptions extends WarpToolOptions {
-  /** The map a new distort starts with: `'free'` (bilinear, the default) or
+/** Options for {@link usePlaneWarpTool}. */
+export interface UsePlaneWarpToolOptions extends WarpToolOptions {
+  /** The map a new plane warp starts with: `'free'` (bilinear, the default) or
    *  `'perspective'` (projective). */
-  mode?: DistortMode;
+  mode?: PlaneMode;
 }
 
 /** Options for {@link useClothWarpTool}. */
@@ -47,15 +47,15 @@ export interface UseClothWarpToolOptions extends WarpToolOptions {
   mapping?: ClothMapping;
 }
 
-/** Options for {@link usePuppetTool}. */
-export type UsePuppetToolOptions = WarpToolOptions;
+/** Options for {@link usePinWarpTool}. */
+export type UsePinWarpToolOptions = WarpToolOptions;
 
 function bindingsFor(kind: WarpKind, settings: () => Record<string, unknown>): GestureBinding[] {
   const target = `affordance:layer:${warpLayerId(kind)}` as const;
   const out: GestureBinding[] = [];
-  if (kind === 'puppet') {
-    out.push({ spec: { kind: 'click', target, mods: { alt: true } }, actionId: 'puppet.removePin', opts: { id: 'puppet.removePin' } });
-    out.push({ spec: { kind: 'click', target: 'selected-body' }, actionId: 'puppet.addPin', opts: { id: 'puppet.addPin', params: settings } });
+  if (kind === 'pin') {
+    out.push({ spec: { kind: 'click', target, mods: { alt: true } }, actionId: 'pin.removePin', opts: { id: 'pin.removePin' } });
+    out.push({ spec: { kind: 'click', target: 'selected-body' }, actionId: 'pin.addPin', opts: { id: 'pin.addPin', params: settings } });
   }
   out.push(
     { spec: { kind: 'drag', target }, actionId: `${kind}.drag`, opts: { id: `${kind}.drag`, params: settings } },
@@ -70,7 +70,7 @@ function definedOf(settings: WarpSettings): Record<string, unknown> {
   return Object.fromEntries(Object.entries(settings).filter(([, v]) => v !== undefined));
 }
 
-const KEYS: Record<WarpKind, ToolKeybinding> = { distort: { key: 'F' }, cloth: { key: 'F', shift: true }, puppet: { key: 'B' } };
+const KEYS: Record<WarpKind, ToolKeybinding> = { plane: { key: 'F' }, cloth: { key: 'F', shift: true }, pin: { key: 'B' } };
 
 /** What a warp tool keeps between renders: whether it is active, the canvas
  *  it is attached to, and the in-flight drag its controls follow. */
@@ -127,7 +127,7 @@ function useWarpTool(kind: WarpKind, options: WarpToolOptions, settings: WarpSet
   const actions = useMemo<Action[]>(() => [
     createWarpDragAction(kind, state.live),
     createWarpGrabAction(kind),
-    ...(kind === 'puppet' ? [createAddPinAction(), createRemovePinAction()] : []),
+    ...(kind === 'pin' ? [createAddPinAction(), createRemovePinAction()] : []),
   ], [kind, state]);
 
   return useMemo(() => {
@@ -136,7 +136,7 @@ function useWarpTool(kind: WarpKind, options: WarpToolOptions, settings: WarpSet
       ...(keybinding ? { keybinding } : {}),
       hookName: `use${kind[0].toUpperCase()}${kind.slice(1)}Tool`,
       capabilities: ['creates-shapes'],
-      cursor: kind === 'puppet' ? 'crosshair' : 'default',
+      cursor: kind === 'pin' ? 'crosshair' : 'default',
       actions,
       presentation: { label: label ?? WARP_LABELS[kind], group: 'warp', icon: WARP_ICONS[kind] },
       // Its controls stand in for the selection's transform handles.
@@ -150,15 +150,15 @@ function useWarpTool(kind: WarpKind, options: WarpToolOptions, settings: WarpSet
 }
 
 /**
- * Distort the selected paths by their box's four corners, each dragged on its
- * own. The first drag gives the selection a distort, kept on each path as
+ * Plane warp: warp the selected paths by their box's four corners, each dragged on its
+ * own. The first drag gives the selection a plane warp, kept on each path as
  * `data.warp` until it is expanded (`expandWarp`); selecting the paths again
  * with this tool shows its corners where they were left. `configureWarp`
- * switches a held distort between free and perspective.
+ * switches a held plane warp between free and perspective.
  */
-export function useDistortTool(options: UseDistortToolOptions = {}): WarpTool {
+export function usePlaneWarpTool(options: UsePlaneWarpToolOptions = {}): WarpTool {
   const { mode, tolerance } = options;
-  return useWarpTool('distort', options, { mode, tolerance });
+  return useWarpTool('plane', options, { mode, tolerance });
 }
 
 /**
@@ -178,6 +178,6 @@ export function useClothWarpTool(options: UseClothWarpToolOptions = {}): WarpToo
  * alone holds its place. Alt-click a pin to take it out. The pins are held on
  * each path until it is expanded.
  */
-export function usePuppetTool(options: UsePuppetToolOptions = {}): WarpTool {
-  return useWarpTool('puppet', options, { tolerance: options.tolerance });
+export function usePinWarpTool(options: UsePinWarpToolOptions = {}): WarpTool {
+  return useWarpTool('pin', options, { tolerance: options.tolerance });
 }

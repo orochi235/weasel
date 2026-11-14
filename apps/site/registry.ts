@@ -1138,14 +1138,14 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/RepeatAlongLabDemo.tsx',
   },
   {
-    id: 'lab-distort',
-    title: 'Perspective and free distort',
+    id: 'lab-plane-warp',
+    title: 'Plane warp',
     package: 'path-tools',
     description:
-      "`useDistortTool` puts a handle on each corner of the box around the selected paths. The first drag gives every selected path one shared distort, held on each path as `data.warp` beside the geometry it made, so the corners come back where they were left the next time the paths are selected with the tool — after a move, a resize or a rotation too. Free maps the box bilinearly, so the checkerboard's inner lines bend; Perspective maps it projectively, so every line stays straight and the far side foreshortens. Each segment is carried through the map and refitted as cubics within the refit tolerance, keeping every anchor, and a segment the map keeps straight stays a line. Switching Mode or the tolerance remakes the held warp through `configureWarp`; Expand warp (`expandWarp`) drops it and leaves plain paths.",
+      "`usePlaneWarpTool` puts a handle on each corner of the box around the selected paths. The first drag gives every selected path one shared plane warp, held on each path as `data.warp` beside the geometry it made, so the corners come back where they were left the next time the paths are selected with the tool — after a move, a resize or a rotation too. Free maps the box bilinearly, so the checkerboard's inner lines bend; Perspective maps it projectively, so every line stays straight and the far side foreshortens. Each segment is carried through the map and refitted as cubics within the refit tolerance, keeping every anchor, and a segment the map keeps straight stays a line. Switching Mode or the tolerance remakes the held warp through `configureWarp`; Expand warp (`expandWarp`) drops it and leaves plain paths.",
     hint: 'Drag any corner handle. Switch Mode between Free and Perspective to see the same corners remapped. Press Expand warp in the palette to keep the shape as plain paths, then undo with <kbd>Mod+Z</kbd>.',
-    load: () => import('./demos/DistortLabDemo').then((m) => m.DistortLabDemo),
-    path: 'apps/site/demos/DistortLabDemo.tsx',
+    load: () => import('./demos/PlaneWarpLabDemo').then((m) => m.PlaneWarpLabDemo),
+    path: 'apps/site/demos/PlaneWarpLabDemo.tsx',
   },
   {
     id: 'lab-cloth-warp',
@@ -1158,14 +1158,14 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/ClothWarpLabDemo.tsx',
   },
   {
-    id: 'lab-puppet-warp',
-    title: 'Puppet warp',
+    id: 'lab-pin-warp',
+    title: 'Pin warp',
     package: 'path-tools',
     description:
-      "`usePuppetTool` pins a path where it is clicked and bends it when a pin is dragged. The shape's fill is triangulated with its outline as edges (`puppetMesh`), and the triangles are moved as rigidly as the pins allow (`createArapSolver`): two linear steps, then local/global rounds, then, if any triangle is still turned over, an untangling pass that rights it with the pins held. A pin's pull travels through the fill, so two limbs that nearly touch move apart, and a pin left alone holds its place. The Inside the puppet solver lab steps through the solve. The eel opens with three pins placed by `withPathWarp`.",
+      "`usePinWarpTool` pins a path where it is clicked and bends it when a pin is dragged. The shape's fill is triangulated with its outline as edges (`pinWarpMesh`), and the triangles are moved as rigidly as the pins allow (`createArapSolver`): two linear steps, then local/global rounds, then, if any triangle is still turned over, an untangling pass that rights it with the pins held. A pin's pull travels through the fill, so two limbs that nearly touch move apart, and a pin left alone holds its place. The Inside the pin warp solver lab steps through the solve. The eel opens with three pins placed by `withPathWarp`.",
     hint: 'Drag the pin at the eel\'s head and the tail holds. Click on the eel to add a pin, <kbd>Alt</kbd>-click a pin to take it out. Press Expand warp in the palette to keep the bent shape as a plain path.',
-    load: () => import('./demos/PuppetLabDemo').then((m) => m.PuppetLabDemo),
-    path: 'apps/site/demos/PuppetLabDemo.tsx',
+    load: () => import('./demos/PinWarpLabDemo').then((m) => m.PinWarpLabDemo),
+    path: 'apps/site/demos/PinWarpLabDemo.tsx',
   },
   {
     id: 'lab-stroke-width',
@@ -1251,14 +1251,14 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/EasingsDemo.tsx',
   },
   {
-    id: 'lab-puppet-solver',
-    title: 'Inside the puppet solver',
+    id: 'lab-pin-warp-solver',
+    title: 'Inside the pin warp solver',
     package: 'geom',
     description:
-      "What the puppet warp does with its pins, drawn under the shape. `puppetMesh` fills the shape with triangles: the outline's points are their outer edges, a near-even lattice of points fills the inside, and every pin gets a point of its own, so the pull of a pin travels through the fill rather than across gaps. `createArapSolver` then moves the points as rigidly as the pins allow, and its `trace` option hands back every step, which the panel's scrubber walks. The first two are Igarashi, Moscovich and Hughes's linear steps (2005): each triangle may turn and scale to fit, then an unscaled copy of each is fitted to that and the copies are averaged. Local/global rounds (Sorkine and Alexa 2007, Liu et al. 2008) follow, each turning every copy to fit the last result and solving again: they take out stretch but do not stop a triangle turning over. When one still has, an untangling pass (Garanzha et al. 2021) starts from the folded shape with the pins held and rights it. Each triangle is colored by its area now over its area at rest, blue for shrunk and orange for grown; one whose area has gone to zero or below has turned over, mirrored, and is magenta and ringed. A turned-over triangle on the outline owns a stretch of it that runs backward, drawn heavy: a warp that stopped there would loop or spike its outline. The outline drawn is always the result's.",
+      "What the pin warp does with its pins, drawn under the shape. `pinWarpMesh` fills the shape with triangles: the outline's points are their outer edges, a near-even lattice of points fills the inside, and every pin gets a point of its own, so the pull of a pin travels through the fill rather than across gaps. `createArapSolver` then moves the points as rigidly as the pins allow, and its `trace` option hands back every step, which the panel's scrubber walks. The first two are Igarashi, Moscovich and Hughes's linear steps (2005): each triangle may turn and scale to fit, then an unscaled copy of each is fitted to that and the copies are averaged. Local/global rounds (Sorkine and Alexa 2007, Liu et al. 2008) follow, each turning every copy to fit the last result and solving again: they take out stretch but do not stop a triangle turning over. When one still has, an untangling pass (Garanzha et al. 2021) starts from the folded shape with the pins held and rights it. Each triangle is colored by its area now over its area at rest, blue for shrunk and orange for grown; one whose area has gone to zero or below has turned over, mirrored, and is magenta and ringed. A turned-over triangle on the outline owns a stretch of it that runs backward, drawn heavy: a warp that stopped there would loop or spike its outline. The outline drawn is always the result's.",
     hint: 'The squashed disc and the S-bent bar fold after the two linear steps and come out clean; drag the scrubber back to Step 2 to see the fold, then forward through the rounds to watch it go. The gentle bend never folds. Drag a pin and the mesh and count follow it at whichever step is shown. Switch Mesh to Wire to see the shape through the triangles.',
-    load: () => import('./demos/PuppetSolverLabDemo').then((m) => m.PuppetSolverLabDemo),
-    path: 'apps/site/demos/PuppetSolverLabDemo.tsx',
+    load: () => import('./demos/PinWarpSolverLabDemo').then((m) => m.PinWarpSolverLabDemo),
+    path: 'apps/site/demos/PinWarpSolverLabDemo.tsx',
   },
   {
     id: 'alignment-guides',

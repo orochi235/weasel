@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { DistortLabDemo } from '../DistortLabDemo';
+import { PlaneWarpLabDemo } from '../PlaneWarpLabDemo';
 import { drag, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
 import { withIcons } from '../../testIcons';
 
@@ -19,9 +19,9 @@ afterEach(() => {
 
 const node = (id: string) => window.__weaselTest!.getScene().nodes.find((n) => n.id === id)!;
 
-describe('DistortLabDemo', () => {
-  it('drags a corner of the selection box and distorts both shapes, which Expand turns to plain paths', async () => {
-    const { container } = await renderSettled(<StrictMode><DistortLabDemo /></StrictMode>, { wrapper: withIcons });
+describe('PlaneWarpLabDemo', () => {
+  it('drags a corner of the selection box and warps both shapes, which Expand turns to plain paths', async () => {
+    const { container } = await renderSettled(<StrictMode><PlaneWarpLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = sceneCanvas(container);
     const before = node('board').data;
 
@@ -30,7 +30,7 @@ describe('DistortLabDemo', () => {
 
     for (const id of ['board', 'disc']) {
       const warp = heldPathWarpOf(node(id).data);
-      expect(warp?.warp.kind).toBe('distort');
+      expect(warp?.warp.kind).toBe('plane');
     }
     expect(node('board').data).not.toBe(before);
     expect(node('board').pose).toMatchObject({ x: 80, y: 80 });

@@ -5,14 +5,14 @@
  * spaced relative to the shape's size and the solve is linear in position.
  */
 import { PathBuilder, transformPath, type Point, type PolygonPath } from '@weasel-js/geom';
-import type { PuppetPin } from '@weasel-js/geom/warp';
+import type { WarpPin } from '@weasel-js/geom/warp';
 
 export type PresetId = 'disc' | 'bar-s' | 'bend';
 
 export interface Preset {
   label: string;
   shape: PolygonPath;
-  pins: PuppetPin[];
+  pins: WarpPin[];
   /** What to look at and what to try, under the readout. */
   caption: string;
 }
@@ -33,10 +33,10 @@ function disc(): PolygonPath {
 
 const bar = () => new PathBuilder().moveTo(0, 0).lineTo(200, 0).lineTo(200, 20).lineTo(0, 20).close().build();
 
-const hold = (x: number, y: number): PuppetPin => ({ from: { x, y }, to: { x, y } });
-const drag = (x: number, y: number, tx: number, ty: number): PuppetPin => ({ from: { x, y }, to: { x: tx, y: ty } });
+const hold = (x: number, y: number): WarpPin => ({ from: { x, y }, to: { x, y } });
+const drag = (x: number, y: number, tx: number, ty: number): WarpPin => ({ from: { x, y }, to: { x: tx, y: ty } });
 
-function placed(shape: PolygonPath, pins: PuppetPin[], scale: number, dx: number, dy: number) {
+function placed(shape: PolygonPath, pins: WarpPin[], scale: number, dx: number, dy: number) {
   const at = (p: Point) => ({ x: scale * p.x + dx, y: scale * p.y + dy });
   return {
     shape: transformPath(shape, [scale, 0, 0, scale, dx, dy]) as PolygonPath,

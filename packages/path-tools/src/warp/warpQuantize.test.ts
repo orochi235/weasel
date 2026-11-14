@@ -27,10 +27,10 @@ describe('a warp drag under a quantize rule', () => {
       deps: { scene, selection: { get: () => ['a'], set: () => {}, clear: () => {} } } as unknown as InvocationCtx['deps'],
       drag: {
         start: from, current: at, delta: { x: at.x - from.x, y: at.y - from.y },
-        affordance: { kind: 'layer:warp-distort', payload: { warpId: null, index: 2 } },
+        affordance: { kind: 'layer:warp-plane', payload: { warpId: null, index: 2 } },
       },
     });
-    const handle = (createWarpDragAction('distort').invoker as OngoingInvoker).start(ctx(from), { params: {} });
+    const handle = (createWarpDragAction('plane').invoker as OngoingInvoker).start(ctx(from), { params: {} });
     const to = { x: 120.37, y: 110.41 };
     handle.onMove!(ctx(to));
     const pose = handle.previewPose!('a');

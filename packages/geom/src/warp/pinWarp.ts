@@ -1,7 +1,7 @@
 /**
- * Puppet deformation: pins placed on a shape and dragged, with everything
+ * Pin warp deformation: pins placed on a shape and dragged, with everything
  * between them moved as rigidly as the pins allow. The shape's fill is
- * triangulated (`puppetMesh`) and deformed as-rigid-as-possible (`arap`), so
+ * triangulated (`pinWarpMesh`) and deformed as-rigid-as-possible (`arap`), so
  * the pull of a pin travels through the shape: two limbs that nearly touch
  * share no triangle and move apart. A point is carried by a smooth
  * (Clough–Tocher) interpolation of the deformed mesh, so a bend has no kink
@@ -12,10 +12,10 @@ import type { Point } from '../paths/cubicMath';
 import { createArapSolver, type ArapSolveOptions, type ArapSolver } from './arap';
 import { cloughTocherMap, restFrames, type RestFrames } from './cloughTocher';
 import { meshLocator, type MeshSpot } from './meshMap';
-import { puppetMesh, type PuppetMesh } from './puppetMesh';
+import { pinWarpMesh, type PinWarpMesh } from './pinWarpMesh';
 
 /** A pin: where it was placed on the unwarped shape, and where it is now. */
-export interface PuppetPin {
+export interface WarpPin {
   from: Point;
   to: Point;
 }
@@ -23,7 +23,7 @@ export interface PuppetPin {
 /** What a pin set costs to set up once: the mesh, its factored solve, and its point lookup. */
 interface Rig {
   key: string;
-  mesh: PuppetMesh;
+  mesh: PinWarpMesh;
   frames: RestFrames;
   solver: ArapSolver;
   locate: (x: number, y: number) => MeshSpot | null;
@@ -33,11 +33,11 @@ interface Rig {
 
 const rigs = new WeakMap<PolygonPath, Rig>();
 
-function rigFor(source: PolygonPath, pins: readonly PuppetPin[]): Rig {
+function rigFor(source: PolygonPath, pins: readonly WarpPin[]): Rig {
   const key = pins.map((p) => `${p.from.x},${p.from.y}`).join(';');
   const held = rigs.get(source);
   if (held?.key === key) return held;
-  const mesh = puppetMesh(source, pins.map((p) => p.from));
+  const mesh = pinWarpMesh(source, pins.map((p) => p.from));
   const pinned = [...new Set(Array.from(mesh.pinVertex).filter((v) => v >= 0))];
   const rig: Rig = { key, mesh, frames: restFrames(mesh), solver: createArapSolver(mesh, pinned), locate: meshLocator(mesh), spots: new Map(), remembered: 0 };
   rigs.set(source, rig);
@@ -51,7 +51,7 @@ function rigFor(source: PolygonPath, pins: readonly PuppetPin[]): Rig {
  * moving pins only re-solves. No pins, or none moved, is the identity, and
  * one pin moves the whole shape with it.
  */
-export function puppetMap(source: PolygonPath, pins: readonly PuppetPin[]): (p: Point) => Point {
+export function pinWarpMap(source: PolygonPath, pins: readonly WarpPin[]): (p: Point) => Point {
   if (pins.every((p) => p.to.x === p.from.x && p.to.y === p.from.y)) return (p) => ({ x: p.x, y: p.y });
   const rig = rigFor(source, pins);
   const at = solveRig(rig, pins);
@@ -67,7 +67,7 @@ export function puppetMap(source: PolygonPath, pins: readonly PuppetPin[]): (p: 
 }
 
 /** The rig's vertices under `pins`, or null when no pin landed on the mesh. */
-function solveRig(rig: Rig, pins: readonly PuppetPin[], opts?: ArapSolveOptions): Float64Array | null {
+function solveRig(rig: Rig, pins: readonly WarpPin[], opts?: ArapSolveOptions): Float64Array | null {
   const targets: number[] = [];
   const seen = new Set<number>();
   pins.forEach((pin, k) => {
@@ -81,17 +81,17 @@ function solveRig(rig: Rig, pins: readonly PuppetPin[], opts?: ArapSolveOptions)
 }
 
 /**
- * The mesh `puppetMap` deforms for `pins` and where its vertices land, solved
+ * The mesh `pinWarpMap` deforms for `pins` and where its vertices land, solved
  * with `opts` — its `trace` reports every stage of the solve, and its round
  * caps bound it. With the default options the vertices are the ones
- * `puppetMap` places points by. Null with no pins, or when none landed on the
- * mesh (then `puppetMap` moves the shape with the first pin).
+ * `pinWarpMap` places points by. Null with no pins, or when none landed on the
+ * mesh (then `pinWarpMap` moves the shape with the first pin).
  */
-export function puppetSolve(
+export function pinWarpSolve(
   source: PolygonPath,
-  pins: readonly PuppetPin[],
+  pins: readonly WarpPin[],
   opts?: ArapSolveOptions,
-): { mesh: PuppetMesh; vertices: Float64Array } | null {
+): { mesh: PinWarpMesh; vertices: Float64Array } | null {
   if (pins.length === 0) return null;
   const rig = rigFor(source, pins);
   const vertices = solveRig(rig, pins, opts);
@@ -117,7 +117,7 @@ function spotOf(rig: Rig, p: Point): MeshSpot | null {
 /**
  * The point `map` sends to `target`, found by stepping from `guess` by the
  * miss until it is within `tolerance` — for a map that stays close to rigid,
- * as a puppet's does, a few steps suffice. Returns the best point found.
+ * as a pin warp's does, a few steps suffice. Returns the best point found.
  */
 export function unwarpPoint(
   map: (p: Point) => Point,

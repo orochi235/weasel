@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PathBuilder, transformPoint, transformPath, translate, worldCoords, type PolygonPath,
 } from '@weasel-js/geom';
-import type { DistortWarp } from '@weasel-js/geom/warp';
+import type { PlaneWarp } from '@weasel-js/geom/warp';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import {
   IDENTITY_POSE_COMPOSITION, asNodeId, commitOps, createScene, createTransformOp, type Scene,
@@ -14,7 +14,7 @@ type S = Scene<unknown, string, unknown>;
 
 const FAR = 262_144;
 
-const cornerOf = (w: DistortWarp, i: number): [number, number] => [w.corners[i].x, w.corners[i].y];
+const cornerOf = (w: PlaneWarp, i: number): [number, number] => [w.corners[i].x, w.corners[i].y];
 
 const depsOf = (scene: S) => ({
   scene,
@@ -33,12 +33,12 @@ describe('a warp on a polygon pose measured from an origin', () => {
     const from = { x: FAR + 100, y: 100 }, to = { x: FAR + 125, y: 110 };
     const drag = (at: { x: number; y: number }) => ({
       start: from, current: at, delta: { x: at.x - from.x, y: at.y - from.y },
-      affordance: { kind: 'layer:warp-distort', payload: { warpId: null, index: 2 } },
+      affordance: { kind: 'layer:warp-plane', payload: { warpId: null, index: 2 } },
     });
     const ctx = (at: { x: number; y: number }): InvocationCtx => ({
       world: at, modifiers: { alt: false, ctrl: false, meta: false, shift: false }, deps: depsOf(scene), drag: drag(at),
     });
-    const handle = (createWarpDragAction('distort').invoker as OngoingInvoker).start(ctx(from), { params: {} });
+    const handle = (createWarpDragAction('plane').invoker as OngoingInvoker).start(ctx(from), { params: {} });
     handle.onMove?.(ctx(to));
     handle.onEnd?.(ctx(to), 'commit');
     const warped = scene.get(asNodeId('a'))!.pose as PolygonPath;
@@ -50,7 +50,7 @@ describe('a warp on a polygon pose measured from an origin', () => {
     const resolved = resolvePathWarp(scene.get(asNodeId('a')))!;
     expect(resolved).not.toBeNull();
     // The dragged corner's handle moved with the pose.
-    const [x, y] = transformPoint(resolved.toWorld, ...cornerOf(resolved.held.warp as DistortWarp, 2));
+    const [x, y] = transformPoint(resolved.toWorld, ...cornerOf(resolved.held.warp as PlaneWarp, 2));
     expect(x).toBeCloseTo(FAR + 155, 2);
     expect(y).toBeCloseTo(110, 2);
   });

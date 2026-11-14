@@ -4,21 +4,21 @@ import { pathToAnchors } from '../paths/anchors';
 import type { Point } from '../paths/cubicMath';
 import { createArapSolver } from './arap';
 import { meshLocator, placeSpot } from './meshMap';
-import { puppetMesh } from './puppetMesh';
-import { puppetMap, type PuppetPin } from './puppet';
+import { pinWarpMesh } from './pinWarpMesh';
+import { pinWarpMap, type WarpPin } from './pinWarp';
 import { warpPath } from './warpPath';
 
 /** A bar 200 long and 40 tall, held at its left end and bent down at its right. */
 const bar = () => new PathBuilder().moveTo(0, 0).lineTo(200, 0).lineTo(200, 40).lineTo(0, 40).close().build();
-const bend: PuppetPin[] = [
+const bend: WarpPin[] = [
   { from: { x: 10, y: 10 }, to: { x: 10, y: 10 } },
   { from: { x: 10, y: 30 }, to: { x: 10, y: 30 } },
   { from: { x: 190, y: 20 }, to: { x: 170, y: 100 } },
 ];
 
-/** The map a puppet made before it was smoothed: each point carried by the deformed triangle holding it. */
-function piecewiseAffine(pins: readonly PuppetPin[]): (p: Point) => Point {
-  const mesh = puppetMesh(bar(), pins.map((p) => p.from));
+/** The map a pin warp made before it was smoothed: each point carried by the deformed triangle holding it. */
+function piecewiseAffine(pins: readonly WarpPin[]): (p: Point) => Point {
+  const mesh = pinWarpMesh(bar(), pins.map((p) => p.from));
   const pinned = Array.from(mesh.pinVertex);
   const at = createArapSolver(mesh, pinned).solve(pins.flatMap((p) => [p.to.x, p.to.y]));
   const locate = meshLocator(mesh);
@@ -57,7 +57,7 @@ function jacobian(map: (p: Point) => Point, p: Point, d: number): number[] {
 
 /** The largest jump in the map's derivative across any edge two triangles of the bar's mesh share. */
 function worstKink(map: (p: Point) => Point): number {
-  const mesh = puppetMesh(bar(), bend.map((p) => p.from));
+  const mesh = pinWarpMesh(bar(), bend.map((p) => p.from));
   const V = mesh.vertices, T = mesh.triangles;
   const uses = new Map<string, number>();
   for (let t = 0; t < T.length / 3; t++) {
@@ -83,19 +83,19 @@ function worstKink(map: (p: Point) => Point): number {
   return worst;
 }
 
-describe('puppetMap smoothness', () => {
+describe('pinWarpMap smoothness', () => {
   it('has no kink across a triangle edge', () => {
     expect(worstKink(piecewiseAffine(bend))).toBeGreaterThan(1e-2);
-    expect(worstKink(puppetMap(bar(), bend))).toBeLessThan(1e-4);
+    expect(worstKink(pinWarpMap(bar(), bend))).toBeLessThan(1e-4);
   });
 
   it('bends a straight edge without corners', () => {
     expect(sharpestTurn(piecewiseAffine(bend))).toBeGreaterThan(1);
-    expect(sharpestTurn(puppetMap(bar(), bend))).toBeLessThan(0.3);
+    expect(sharpestTurn(pinWarpMap(bar(), bend))).toBeLessThan(0.3);
   });
 
   it('sends every pin exactly where it was dragged', () => {
-    const map = puppetMap(bar(), bend);
+    const map = pinWarpMap(bar(), bend);
     for (const pin of bend) {
       const at = map(pin.from);
       expect(at.x).toBeCloseTo(pin.to.x, 9);
@@ -104,13 +104,13 @@ describe('puppetMap smoothness', () => {
   });
 
   it('is the identity while no pin has moved', () => {
-    const map = puppetMap(bar(), bend.map((p) => ({ from: p.from, to: { ...p.from } })));
+    const map = pinWarpMap(bar(), bend.map((p) => ({ from: p.from, to: { ...p.from } })));
     for (const p of [{ x: 0, y: 0 }, { x: 37.25, y: 11.5 }, { x: 200, y: 40 }, { x: 250, y: -30 }]) expect(map(p)).toEqual(p);
     expect(warpPath(bar(), map)).toEqual(warpPath(bar(), (p) => ({ x: p.x, y: p.y })));
   });
 
   it('carries a point off the shape smoothly on from the outline', () => {
-    const map = puppetMap(bar(), bend);
+    const map = pinWarpMap(bar(), bend);
     const on = map({ x: 100, y: 40 });
     const off = map({ x: 100, y: 40 + 1e-6 });
     expect(Math.hypot(off.x - on.x, off.y - on.y)).toBeLessThan(1e-5);

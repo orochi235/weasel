@@ -50,4 +50,4 @@ become that command's values for its next run in the session.
   Offset keep their live sliders; variant-driven actions, live path effects (edited on the selection through
   `editPathEffect`), `setFillets` (the fillet controls' action), selection-only commands, and plain manipulation
   drags (move, resize, rotate, anchor edits) get none. Not built yet: Knead, Sand, and the
-  warps (Distort, Cloth warp, Puppet warp).
+  warps (Plane Warp, Cloth warp, Pin warp).

@@ -9,19 +9,19 @@ import { useSandTool } from './sand/useSandTool';
 import { useKneadTool } from './knead/useKneadTool';
 import { useSpiroTool } from './spiro/useSpiroTool';
 import { useSnipTool } from './snip/useSnipTool';
-import { useDistortTool, useClothWarpTool, usePuppetTool } from './warp/useWarpTool';
+import { usePlaneWarpTool, useClothWarpTool, usePinWarpTool } from './warp/useWarpTool';
 
 /** The ids {@link usePathToolsTools} keys its tools by. */
 export type PathToolId =
-  | 'girth' | 'snip' | 'reach' | 'knead' | 'distort' | 'cloth' | 'puppet' | 'spiro' | 'shapeBuilder'
+  | 'girth' | 'snip' | 'reach' | 'knead' | 'plane' | 'cloth' | 'pin' | 'spiro' | 'shapeBuilder'
   | PathEditToolId;
 
 /** The ids {@link usePathEditTools} keys its tools by. */
 export type PathEditToolId = 'sand' | 'tug';
 
-/** The tools that pull a selected path's shape around as a whole: distort, cloth warp, and puppet warp.
+/** The tools that pull a selected path's shape around as a whole: plane warp, cloth warp, and pin warp.
  *  A palette stacks them on one button. */
-export const WARP_TOOLS: ToolSet<PathToolId> = toolSet('warp', ['distort', 'cloth', 'puppet'], { stack: true, label: 'Warp' });
+export const WARP_TOOLS: ToolSet<PathToolId> = toolSet('warp', ['plane', 'cloth', 'pin'], { stack: true, label: 'Warp' });
 
 /** The tools that reshape paths already drawn: girth, the stroke tools, Knead, and the warps. */
 export const RESHAPE_TOOLS: ToolSet<PathToolId> = toolSet('reshape', ['girth', 'snip', 'reach', 'knead', WARP_TOOLS], { label: 'Reshape' });
@@ -51,14 +51,14 @@ export function usePathToolsTools(): Record<PathToolId, Tool> {
   const snip = useSnipTool();
   const reach = useReachTool();
   const knead = useKneadTool();
-  const distort = useDistortTool();
+  const plane = usePlaneWarpTool();
   const cloth = useClothWarpTool();
-  const puppet = usePuppetTool();
+  const pin = usePinWarpTool();
   const spiro = useSpiroTool();
   const shapeBuilder = useShapeBuilderTool();
   const pathEdit = usePathEditTools();
   return useMemo(
-    () => ({ girth, snip, reach, knead, distort, cloth, puppet, spiro, shapeBuilder, ...pathEdit }),
-    [girth, snip, reach, knead, distort, cloth, puppet, spiro, shapeBuilder, pathEdit],
+    () => ({ girth, snip, reach, knead, plane, cloth, pin, spiro, shapeBuilder, ...pathEdit }),
+    [girth, snip, reach, knead, plane, cloth, pin, spiro, shapeBuilder, pathEdit],
   );
 }

@@ -28,22 +28,22 @@ describe('tool sets', () => {
   });
 
   it('lists the stacked sets at any depth, opened, and keeps the mark through withoutTools', () => {
-    const warps = toolSet('warp', ['distort', toolSet('bend', ['cloth'])], { stack: true });
+    const warps = toolSet('warp', ['plane', toolSet('bend', ['cloth'])], { stack: true });
     const reshape = toolSet('reshape', ['snip', toolSet('outer', [warps])]);
     expect(toolStacksOf([reshape, toolSet('pens', ['pen', 'pencil'], { stack: true })]))
-      .toEqual([['distort', 'cloth'], ['pen', 'pencil']]);
+      .toEqual([['plane', 'cloth'], ['pen', 'pencil']]);
     expect(toolStacksOf([shapes])).toEqual([]);
     expect(withoutTools(warps, 'cloth').stack).toBe(true);
     expect('stack' in withoutTools(shapes, 'rect')).toBe(false);
   });
 
   it('keeps a stack nested in the set withoutTools cuts from, and drops a nested set it empties', () => {
-    const warps = toolSet('warp', ['distort', 'cloth'], { stack: true });
+    const warps = toolSet('warp', ['plane', 'cloth'], { stack: true });
     const reshape = toolSet('reshape', ['girth', 'snip', warps]);
     const cut = withoutTools(reshape, 'girth');
-    expect(toolStacksOf([cut])).toEqual([['distort', 'cloth']]);
-    expect(toolIdsOf([cut])).toEqual(['snip', 'distort', 'cloth']);
-    expect(toolStacksOf([withoutTools(reshape, 'cloth')])).toEqual([['distort']]);
+    expect(toolStacksOf([cut])).toEqual([['plane', 'cloth']]);
+    expect(toolIdsOf([cut])).toEqual(['snip', 'plane', 'cloth']);
+    expect(toolStacksOf([withoutTools(reshape, 'cloth')])).toEqual([['plane']]);
     const emptied = withoutTools(reshape, warps);
     expect(toolStacksOf([emptied])).toEqual([]);
     expect(emptied.members).toEqual(['girth', 'snip']);
@@ -51,8 +51,8 @@ describe('tool sets', () => {
 
   it('draws no stack for a stacked set cut down to nothing', () => {
     // Shrunk by path-tools' tool-set property: the warp stack less all three warps.
-    const warps = toolSet('warp', ['distort', 'cloth', 'puppet'], { stack: true });
-    expect(toolStacksOf([withoutTools(warps, 'distort', 'cloth', 'puppet')])).toEqual([]);
+    const warps = toolSet('warp', ['plane', 'cloth', 'pin'], { stack: true });
+    expect(toolStacksOf([withoutTools(warps, 'plane', 'cloth', 'pin')])).toEqual([]);
     expect(toolStacksOf([toolSet('empty', [], { stack: true })])).toEqual([]);
   });
 });

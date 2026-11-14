@@ -17,21 +17,21 @@ import type { DepRegistry } from '@weasel-js/routing/react';
 import { kneadAction } from '../knead/knead';
 import { freshWarpBox } from './warpTargets';
 import { selectedWarpLeaves } from './warpSelection';
-import { useDistortTool } from './useWarpTool';
+import { usePlaneWarpTool } from './useWarpTool';
 import { renderHook } from '@testing-library/react';
 
 const square = (x: number) =>
   new PathBuilder().moveTo(x, 0).lineTo(x + 100, 0).lineTo(x + 100, 100).lineTo(x, 100).close().build();
 
-/** Drag control `index` of the fresh distort from `from` to `to`, ending with `reason`. */
+/** Drag control `index` of the fresh plane warp from `from` to `to`, ending with `reason`. */
 function dragFresh(deps: never, from: { x: number; y: number }, to: { x: number; y: number }, reason: 'commit' | 'cancel' = 'commit') {
   const scratch: WarpHandleScratch = { warpId: null, index: 2 };
   const drag = (at: { x: number; y: number }) => ({
     start: from, current: at, delta: { x: at.x - from.x, y: at.y - from.y },
-    affordance: { kind: 'layer:warp-distort', payload: scratch },
+    affordance: { kind: 'layer:warp-plane', payload: scratch },
   });
   const ctx = (at: { x: number; y: number }) => ({ deps, world: at, drag: drag(at) }) as unknown as InvocationCtx;
-  const handle = (createWarpDragAction('distort').invoker as OngoingInvoker).start(ctx(from), { params: {} });
+  const handle = (createWarpDragAction('plane').invoker as OngoingInvoker).start(ctx(from), { params: {} });
   if (to !== from) handle.onMove?.(ctx(to));
   handle.onEnd?.(ctx(to), reason);
 }
@@ -56,7 +56,7 @@ describe('a warp over a selected group', () => {
   it('lays one set of controls around all of its paths', () => {
     const { scene, deps } = groupScene();
     expect(selectedWarpLeaves(deps).paths.map((n) => n.id)).toEqual(['a', 'b']);
-    expect(freshWarpBox(scene, selectedWarpLeaves(deps), 'distort')).toEqual({ x: 0, y: 0, width: 300, height: 100 });
+    expect(freshWarpBox(scene, selectedWarpLeaves(deps), 'plane')).toEqual({ x: 0, y: 0, width: 300, height: 100 });
   });
 
   it('warps every path inside it together, as one undo step', () => {
@@ -64,7 +64,7 @@ describe('a warp over a selected group', () => {
     dragFresh(deps, { x: 300, y: 100 }, { x: 330, y: 140 });
     const a = heldPathWarpOf(scene.get(asNodeId('a'))!.data);
     const b = heldPathWarpOf(scene.get(asNodeId('b'))!.data);
-    expect(a?.warp.kind).toBe('distort');
+    expect(a?.warp.kind).toBe('plane');
     expect(b?.id).toBe(a?.id);
     expect(scene.history.undoDepth()).toBe(1);
   });
@@ -81,7 +81,7 @@ describe('a warp over a selected group', () => {
     dragFresh(deps, { x: 300, y: 100 }, { x: 330, y: 140 });
     expect(heldPathWarpOf(scene.get(asNodeId('a'))!.data)).toBeNull();
     expect(heldPathWarpOf(scene.get(asNodeId('c'))!.data)).toBeNull();
-    expect(heldPathWarpOf(scene.get(asNodeId('b'))!.data)?.warp.kind).toBe('distort');
+    expect(heldPathWarpOf(scene.get(asNodeId('b'))!.data)?.warp.kind).toBe('plane');
   });
 });
 
@@ -96,7 +96,7 @@ describe('a warp over selected text', () => {
 
   it('shows its controls around the text', () => {
     const { scene, deps } = textScene();
-    expect(freshWarpBox(scene, selectedWarpLeaves(deps), 'distort')).toMatchObject({ x: 0, y: 0, width: 200, height: 120 });
+    expect(freshWarpBox(scene, selectedWarpLeaves(deps), 'plane')).toMatchObject({ x: 0, y: 0, width: 200, height: 120 });
   });
 
   it('shows its controls around text in a group where the group draws it', () => {
@@ -104,7 +104,7 @@ describe('a warp over selected text', () => {
     t.scene.add({ id: asNodeId('g'), kind: 'group', layer: 'default', pose: { x: 500, y: 500, width: 200, height: 120 }, data: {} });
     t.add('t', TEXT(), { parent: asNodeId('g') });
     t.scene.setSelection([asNodeId('t')]);
-    expect(freshWarpBox(t.scene, selectedWarpLeaves(t.deps), 'distort')).toMatchObject({ x: 500, y: 500, width: 200, height: 120 });
+    expect(freshWarpBox(t.scene, selectedWarpLeaves(t.deps), 'plane')).toMatchObject({ x: 500, y: 500, width: 200, height: 120 });
   });
 
   it('converts the text to outlines and warps them, as one undo step', () => {
@@ -113,7 +113,7 @@ describe('a warp over selected text', () => {
     expect(scene.get(asNodeId('t'))).toBeUndefined();
     const warped = scene.renderOrderNodes().filter((n) => heldPathWarpOf(n.data));
     expect(warped.length).toBeGreaterThan(0);
-    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['Distort']);
+    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['Plane Warp']);
     scene.undo();
     expect(scene.get(asNodeId('t'))?.data.text).toBe('Hi');
   });
@@ -153,7 +153,7 @@ describe('a warp over selected text', () => {
 
 describe('a warp tool', () => {
   it("hides the selection's transform handles while it is active", () => {
-    const { result } = renderHook(() => useDistortTool());
+    const { result } = renderHook(() => usePlaneWarpTool());
     expect(result.current.hides).toEqual(['selection.resize-handles', 'selection.rotation-handle']);
   });
 });

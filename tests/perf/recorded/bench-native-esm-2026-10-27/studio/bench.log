@@ -324,7 +324,7 @@ npm warn Unknown project config "link-workspace-packages". This will stop workin
      50 boxes, spacing 1.6   [34m374.46[39m  [36m1.3520[39m  [36m12.1132[39m  [36m3.6141[39m  [36m4.6256[39m  [36m10.4739[39m  [36m10.9351[39m  [36m11.8269[39m  [2m±7.12%[22m  [2m    300[22m
      200 boxes, spacing 3    [34m274.64[39m  [36m1.6269[39m  [36m15.8443[39m  [36m5.0857[39m  [36m5.6917[39m  [36m15.4205[39m  [36m15.5279[39m  [36m15.7714[39m  [2m±7.71%[22m  [2m    300[22m
      200 boxes, spacing 1.6  [34m198.29[39m  [36m1.5903[39m  [36m15.2460[39m  [36m6.6354[39m  [36m8.6712[39m  [36m12.5948[39m  [36m13.5381[39m  [36m14.9719[39m  [2m±5.40%[22m  [2m    300[22m[1m[90m   slowest[39m[22m
- [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/puppet.bench.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 14027[2mms[22m[39m
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/pinWarp.bench.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 14027[2mms[22m[39m
    [33m[2m✓[22m[39m puppet warp — setup per pin set[33m 5131[2mms[22m[39m
      [1mname                        [22m  [1m     hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
      mesh + factor, ~200 vertices  [34m 115.31[39m  [36m 8.1645[39m  [36m 9.2273[39m  [36m 8.6795[39m  [36m 8.8598[39m  [36m 9.1924[39m  [36m 9.2103[39m  [36m 9.2239[39m  [2m±0.52%[22m  [2m    116[22m[1m[32m   fastest[39m[22m

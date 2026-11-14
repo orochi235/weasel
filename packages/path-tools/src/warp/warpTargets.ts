@@ -13,11 +13,11 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import {
-  distortOver,
+  planeOver,
   clothOver,
   resizeCloth,
   warpControls,
-  type DistortMode,
+  type PlaneMode,
   type ClothMapping,
   type PathWarp,
   type WarpBox,
@@ -34,13 +34,13 @@ type AnyNode = SceneNode<unknown, string, unknown>;
 export type WarpKind = PathWarp['kind'];
 
 /** Each kind's name, as its tool and its actions are labeled. */
-export const WARP_LABELS: Record<WarpKind, string> = { distort: 'Distort', cloth: 'Cloth Warp', puppet: 'Puppet Warp' };
+export const WARP_LABELS: Record<WarpKind, string> = { plane: 'Plane Warp', cloth: 'Cloth Warp', pin: 'Pin Warp' };
 
 /** The settings a warp is made or remade with. Each applies only to the kinds
  *  it names; absent ones leave a held warp as it is. */
 export interface WarpSettings {
-  /** A distort's map. Default `'free'`. */
-  mode?: DistortMode;
+  /** A plane warp's map. Default `'free'`. */
+  mode?: PlaneMode;
   /** An cloth warp's interpolation. Default `'bicubic'`. */
   mapping?: ClothMapping;
   /** An cloth warp's patch rows and columns. Default 3 each. */
@@ -71,7 +71,7 @@ export interface WarpTarget {
 /** A fresh warp of `kind` over `box` that leaves it where it is. */
 export function freshWarp(kind: WarpKind, box: WarpBox, settings: WarpSettings): PathWarp {
   switch (kind) {
-    case 'distort': return distortOver(box, settings.mode ?? 'free');
+    case 'plane': return planeOver(box, settings.mode ?? 'free');
     case 'cloth':
       return clothOver(
         box,
@@ -79,7 +79,7 @@ export function freshWarp(kind: WarpKind, box: WarpBox, settings: WarpSettings):
         count(settings.cols, DEFAULT_CLOTH_SIZE),
         settings.mapping ?? 'bicubic',
       );
-    case 'puppet': return { kind: 'puppet', pins: [] };
+    case 'pin': return { kind: 'pin', pins: [] };
   }
 }
 
@@ -88,7 +88,7 @@ export function freshWarp(kind: WarpKind, box: WarpBox, settings: WarpSettings):
 export function withWarpSettings(held: HeldPathWarp, settings: WarpSettings): HeldPathWarp {
   const { warp } = held;
   let next: PathWarp = warp;
-  if (warp.kind === 'distort' && settings.mode && settings.mode !== warp.mode) next = { ...warp, mode: settings.mode };
+  if (warp.kind === 'plane' && settings.mode && settings.mode !== warp.mode) next = { ...warp, mode: settings.mode };
   if (warp.kind === 'cloth') {
     const sized = resizeCloth(
       warp,

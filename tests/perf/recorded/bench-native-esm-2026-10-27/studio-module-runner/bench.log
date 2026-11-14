@@ -935,7 +935,7 @@ Tracked exports:
      0% overridden    [34m819.65[39m  [36m1.2091[39m  [36m1.3325[39m  [36m1.2202[39m  [36m1.2213[39m  [36m1.2901[39m  [36m1.3045[39m  [36m1.3253[39m  [2m±0.07%[22m  [2m    820[22m[1m[32m   fastest[39m[22m
      10% overridden   [34m554.51[39m  [36m1.7395[39m  [36m2.2841[39m  [36m1.8063[39m  [36m1.8218[39m  [36m2.0679[39m  [36m2.1312[39m  [36m2.2315[39m  [2m±0.35%[22m  [2m    554[22m
      100% overridden  [34m190.16[39m  [36m5.1220[39m  [36m7.4470[39m  [36m5.2764[39m  [36m5.1778[39m  [36m6.4942[39m  [36m6.5698[39m  [36m7.2716[39m  [2m±0.90%[22m  [2m    190[22m[1m[90m   slowest[39m[22m
-[90mstderr[2m | tests/perf/bench/puppet.bench.ts[2m > [22m[2mpuppet warp — setup per pin set
+[90mstderr[2m | tests/perf/bench/pinWarp.bench.ts[2m > [22m[2mpuppet warp — setup per pin set
 [22m[39m[33m[1mBenchmark Warning[22m[39m
 Benchmark [1m"puppet warp — setup per pin set"[22m accessed module export getters too many times.
 
@@ -945,7 +945,7 @@ See https://vitest.dev/guide/benchmarking#module-runner-overhead
 Tracked exports:
   - packages/geom/src/warp/profileCholesky.ts > addSymmetric
 
-[90mstderr[2m | tests/perf/bench/puppet.bench.ts[2m > [22m[2mpuppet warp — per drag frame
+[90mstderr[2m | tests/perf/bench/pinWarp.bench.ts[2m > [22m[2mpuppet warp — per drag frame
 [22m[39m[33m[1mBenchmark Warning[22m[39m
 Benchmark [1m"puppet warp — per drag frame"[22m accessed module export getters too many times.
 
@@ -956,7 +956,7 @@ Tracked exports:
   - packages/geom/src/paths/cubicMath.ts > cubicPointAt
   - packages/geom/src/curve.ts > cubicEvalAt
 
- [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/puppet.bench.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 14645[2mms[22m[39m
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/pinWarp.bench.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 14645[2mms[22m[39m
    [33m[2m✓[22m[39m puppet warp — setup per pin set[33m 5748[2mms[22m[39m
      [1mname                        [22m  [1m     hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m   rme[22m  [1msamples[22m
      mesh + factor, ~200 vertices  [34m95.4638[39m  [36m 9.9080[39m  [36m17.3126[39m  [36m10.5197[39m  [36m10.6351[39m  [36m12.3717[39m  [36m14.8421[39m  [36m16.8185[39m  [2m±1.58%[22m  [2m     96[22m[1m[32m   fastest[39m[22m

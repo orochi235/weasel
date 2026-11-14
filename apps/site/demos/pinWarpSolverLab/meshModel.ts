@@ -1,5 +1,5 @@
 /**
- * What the lab draws from a puppet-warped node: its mesh at one step of the
+ * What the lab draws from a pin-warped node: its mesh at one step of the
  * solve, placed in world space, each triangle's area ratio, and the stretches
  * of outline whose triangle has turned over.
  */
@@ -50,10 +50,10 @@ function outlineOf(T: Uint32Array, n: number): { a: number; b: number; tri: numb
 
 const outlines = new WeakMap<Uint32Array, { a: number; b: number; tri: number }[]>();
 
-/** The mesh `node`'s puppet warp deforms, at step `pick` of the solve, or null when it holds no puppet warp. */
+/** The mesh `node`'s pin warp deforms, at step `pick` of the solve, or null when it holds no pin warp. */
 export function meshModelOf(node: EditableShape | null | undefined, pick: StepPick): MeshModel | null {
   const resolved = resolvePathWarp(node);
-  if (!resolved || resolved.held.warp.kind !== 'puppet') return null;
+  if (!resolved || resolved.held.warp.kind !== 'pin') return null;
   const trace = solverTrace(resolved.held.source, resolved.held.warp.pins);
   if (!trace) return null;
   const index = pick === null ? trace.steps.length - 1 : Math.max(0, Math.min(trace.steps.length - 1, pick));

@@ -1,6 +1,6 @@
 /**
  * The warp actions. A warp tool binds the per-kind ones (`<kind>.drag`,
- * `puppet.addPin`, `puppet.removePin`) and owns them; `expandWarp` and
+ * `pin.addPin`, `pin.removePin`) and owns them; `expandWarp` and
  * `configureWarp` work on whatever warp the selection holds and ship with
  * the `paths` preset.
  */
@@ -123,8 +123,8 @@ function shapesWith(
 type QuantizedScene = Parameters<typeof quantizedShape>[0] | undefined;
 
 /**
- * Drag one control of the selection's `kind` warp: a distort's corner, an
- * cloth warp's mesh point, a puppet's pin. Every selected path sharing that warp
+ * Drag one control of the selection's `kind` warp: a plane warp's corner, an
+ * cloth warp's mesh point, a pin warp's pin. Every selected path sharing that warp
  * follows the control. A press on the controls shown over a selection with no
  * warp of this kind yet makes one, from the binding's params
  * ({@link WarpSettings}), and the drag is its first edit. One undo step, which
@@ -137,7 +137,7 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
   return {
     id: `${kind}.drag`,
     label: `${label} — drag control`,
-    tags: pathOperationTags(kind === 'puppet' ? 'brush' : 'box'),
+    tags: pathOperationTags(kind === 'pin' ? 'brush' : 'box'),
     requires: [...BEGINS],
     params: warpDragParams(kind),
     invoker: {
@@ -198,14 +198,14 @@ function clickPoint(params: Record<string, unknown> | undefined): Point | null {
 
 /**
  * Place a pin where the click landed on the selected paths, giving them a
- * puppet warp if they hold none. The pin goes where the shape is now: its
+ * pin warp if they hold none. The pin goes where the shape is now: its
  * unwarped point is found by inverting the warp, so the shape keeps its
  * place until the pin is dragged.
  */
 export function createAddPinAction(): Action {
   return {
-    id: 'puppet.addPin',
-    label: `${WARP_LABELS.puppet} — add pin`,
+    id: 'pin.addPin',
+    label: `${WARP_LABELS.pin} — add pin`,
     tags: pathOperationTags('brush'),
     requires: [...BEGINS],
     invoker: {
@@ -213,12 +213,12 @@ export function createAddPinAction(): Action {
       run: (deps, params) => {
         const at = clickPoint(params);
         if (!at) return;
-        const { session, box } = beginOnText(deps, 'puppet', 'Add Pin');
+        const { session, box } = beginOnText(deps, 'pin', 'Add Pin');
         const next = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
-        for (const target of warpTargets(deps, 'puppet', (params ?? {}) as WarpSettings, box)) {
+        for (const target of warpTargets(deps, 'pin', (params ?? {}) as WarpSettings, box)) {
           const { warp } = target.held;
           const back = invert(target.toWorld);
-          if (warp.kind !== 'puppet' || !back) continue;
+          if (warp.kind !== 'pin' || !back) continue;
           const [lx, ly] = transformPoint(back, at.x, at.y);
           const to = { x: lx, y: ly };
           const from = unwarpPoint(pathWarpMap(warp, target.held.source), to);
@@ -240,8 +240,8 @@ export function createAddPinAction(): Action {
 /** Take out the pin the click landed on, from every path sharing its warp. */
 export function createRemovePinAction(): Action {
   return {
-    id: 'puppet.removePin',
-    label: `${WARP_LABELS.puppet} — remove pin`,
+    id: 'pin.removePin',
+    label: `${WARP_LABELS.pin} — remove pin`,
     tags: pathOperationTags('brush'),
     requires: REQUIRES,
     invoker: {
@@ -250,9 +250,9 @@ export function createRemovePinAction(): Action {
         const scratch = warpHandleScratchOf(params?.affordance);
         if (!scratch || scratch.warpId === null) return;
         const next = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
-        for (const target of warpTargets(deps, 'puppet', {})) {
+        for (const target of warpTargets(deps, 'pin', {})) {
           const { warp } = target.held;
-          if (target.held.id !== scratch.warpId || warp.kind !== 'puppet') continue;
+          if (target.held.id !== scratch.warpId || warp.kind !== 'pin') continue;
           const held = { ...target.held, warp: { ...warp, pins: warp.pins.filter((_, i) => i !== scratch.index) } };
           const shape = storeWarp(target.node, held, target.toWorld);
           if (shape) next.set(target.node.id, { target, shape });
@@ -308,7 +308,7 @@ export const expandWarpAction: Action = {
 /**
  * Remake the selection's warps under new settings (`params`, a
  * {@link WarpSettings}, plus an optional `kind` limiting it to one kind of
- * warp): switch a distort between free and perspective, a cloth warp between
+ * warp): switch a plane warp between free and perspective, a cloth warp between
  * its mappings or to a finer grid, or refit at another tolerance. One undo
  * step. Its settings form shows what the selection holds, and the
  * last-operation panel the settings a run changed (`configureWarpParams`).

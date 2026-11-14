@@ -30,7 +30,7 @@ function presetActions(preset: FeaturePreset): Action[] {
   return [...(preset.actions ?? []), ...(preset.includes ?? []).flatMap(presetActions)];
 }
 
-const WARPS: WarpKind[] = ['distort', 'cloth', 'puppet'];
+const WARPS: WarpKind[] = ['plane', 'cloth', 'pin'];
 
 /** Core's `paths` preset and the slice tool, `pathTools`, and the warp tools'
  *  own actions: everything that can carry a path operation. */

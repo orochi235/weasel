@@ -738,15 +738,15 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   states `data-weasel-line-height`, since its pitch no longer does. A line the layout justified
   writes every word with its own `x`; `LaidOutLineBox.justified` (new text API) says which lines
   those are. Draw's exports and clipboard SVG pass it.
-- 2026-10-18: A puppet warp's solve runs five local/global rounds after its two linear steps, then,
+- 2026-10-18: A pin warp's solve runs five local/global rounds after its two linear steps, then,
   only when a triangle is left turned over, an injective pass (untangling energy of Garanzha et al.,
-  2021) with the pins held. Every puppet-warped shape redraws differently, and a drag that starts to
+  2021) with the pins held. Every pin-warped shape redraws differently, and a drag that starts to
   fold jumps to the injective shape rather than easing into it. The solve is deterministic from the
   pins: it does not warm-start from the previous frame, so a reopened document draws what the drag
   last drew. A pass that runs out of rounds still tangled returns the folded result. Uniform edge
   weights, not cotangent ones, so each system stays the one already factored.
-- 2026-10-18: A puppet warp's map is smooth across its mesh (Clough–Tocher) where it was affine
-  per triangle, so every puppet-warped shape, saved ones included, redraws slightly differently:
+- 2026-10-18: A pin warp's map is smooth across its mesh (Clough–Tocher) where it was affine
+  per triangle, so every pin-warped shape, saved ones included, redraws slightly differently:
   its bends lose their small corners.
 - 2026-10-19: Constraint links on whole-node transforms. The transformed nodes are held as
   transformed and every node a link reaches gives way, its own constraints kept; their own
@@ -2081,7 +2081,7 @@ Calls the lanes made without a ruling:
   undoing them. `image`, `eyedropper` and `measure` need arguments, so they are in no built-in tool set and no
   `BUILTIN_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
 - No two tool keys collide, in core or across path-tools and rig, and no action binds a bare letter. The star and
-  image tools have no key; the bare letters no tool takes are C, D, O, Q, X and Z (B is puppet, F distort, J bone,
+  image tools have no key; the bare letters no tool takes are C, D, O, Q, X and Z (B is pin warp, F plane warp, J bone,
   U knead, W weight and Y snip).
 - Open: the sticky tool's cursor is the rectangle's (`cursorFor('crosshair', { mark: 'rect' })`), so the two are
   not told apart from the pointer, which the shape cursors were drawn to fix. A `sticky` mark is a new glyph.

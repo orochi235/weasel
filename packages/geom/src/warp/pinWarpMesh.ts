@@ -1,5 +1,5 @@
 /**
- * The mesh a puppet warp deforms: the path's filled region triangulated with
+ * The mesh a pin warp deforms: the path's filled region triangulated with
  * its outline as the triangles' edges, so two parts of the shape share a
  * triangle only where the fill joins them. Interior points on an even lattice
  * keep the triangles near equilateral, and each pin gets a vertex of its own.
@@ -18,13 +18,13 @@ import { addOrigin } from '../paths/pathOrigin';
 import { nearestOnLine } from '../nearest';
 import { pointSegmentDist } from '../points2';
 
-/** A puppet's mesh, and the vertex standing for each pin. */
-export interface PuppetMesh extends ArapMesh {
+/** A pin warp's mesh, and the vertex standing for each pin. */
+export interface PinWarpMesh extends ArapMesh {
   pinVertex: Int32Array;
 }
 
-/** Options for {@link puppetMesh}. */
-export interface PuppetMeshOptions {
+/** Options for {@link pinWarpMesh}. */
+export interface PinWarpMeshOptions {
   /** Roughly how many vertices to spread over the region. Default 400. */
   vertices?: number;
 }
@@ -191,11 +191,11 @@ function fillLattice(region: Region, h: number): void {
 }
 
 /**
- * The mesh a puppet with pins at `pins` deforms over `path`'s fill. A pin
+ * The mesh a pin warp with pins at `pins` deforms over `path`'s fill. A pin
  * inside the fill gets a vertex where it is; one on the outline, or off the
  * shape, gets the nearest point of the outline. Pins on one spot share a vertex.
  */
-export function puppetMesh(path: PolygonPath, pins: readonly Point[], opts: PuppetMeshOptions = {}): PuppetMesh {
+export function pinWarpMesh(path: PolygonPath, pins: readonly Point[], opts: PinWarpMeshOptions = {}): PinWarpMesh {
   const box = boundsOfPath(path);
   const size = Math.max(box.width, box.height);
   const empty = { vertices: new Float64Array(0), triangles: new Uint32Array(0), pinVertex: new Int32Array(pins.length).fill(-1) };

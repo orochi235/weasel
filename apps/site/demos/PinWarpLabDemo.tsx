@@ -1,5 +1,5 @@
 import { asNodeId, createScene, PathBuilder, type RectPose, useSelection } from '@weasel-js/core';
-import { usePuppetTool, warpPreset, withPathWarp } from '@weasel-js/path-tools';
+import { usePinWarpTool, warpPreset, withPathWarp } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -37,7 +37,7 @@ const PINS = [{ x: 110, y: 195 }, { x: 290, y: 195 }, { x: 480, y: 195 }].map((p
 
 const createLabScene = () => {
   const bare = pathLeaf('eel', eel(), '#7fb069');
-  const pinned = withPathWarp(bare, { kind: 'puppet', pins: PINS });
+  const pinned = withPathWarp(bare, { kind: 'pin', pins: PINS });
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [{ ...bare, ...(pinned as { pose: RectPose; data: unknown }) }],
@@ -46,43 +46,43 @@ const createLabScene = () => {
 
 const SELECTED = [asNodeId('eel')];
 
-function PuppetTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function PinWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { tolerance } = ctx.config;
   const settings = useMemo(() => ({ tolerance }), [tolerance]);
-  useWarpLabActions(ctx.trial.id, 'puppet', settings);
-  const puppet = usePuppetTool(settings);
+  useWarpLabActions(ctx.trial.id, 'pin', settings);
+  const pin = usePinWarpTool(settings);
   return (
     <TrialSceneCanvas
       features={FEATURES}
       scene={scene}
       selection={selection}
       trial={ctx.trial}
-      tools={{ puppet }}
+      tools={{ pin }}
     />
   );
 }
 
-const puppetInstrument = defineInstrument<State, Config>({
-  name: 'Puppet Warp',
+const pinWarpInstrument = defineInstrument<State, Config>({
+  name: 'Pin Warp',
   config,
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select') },
-      { id: 'puppet', label: 'Puppet Warp', icon: icon('path-tools:puppetWarp') },
+      { id: 'pin', label: 'Pin Warp', icon: icon('path-tools:pinWarp') },
     ],
-    initial: 'puppet',
+    initial: 'pin',
   },
   chrome: [expandWarpCommand],
-  render: (ctx) => <PuppetTrial ctx={ctx} />,
+  render: (ctx) => <PinWarpTrial ctx={ctx} />,
 });
 
-export function PuppetLabDemo() {
+export function PinWarpLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Puppet warp" instruments={[puppetInstrument]} />
+      <Lab title="Pin warp" instruments={[pinWarpInstrument]} />
     </div>
   );
 }

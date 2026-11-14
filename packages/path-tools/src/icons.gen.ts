@@ -5,9 +5,9 @@ import { scopedIcon } from '@weasel-js/icons';
 /** A glyph this package draws, by its bare name. */
 export type PathToolsIconName =
   | 'knead'
-  | 'distort'
+  | 'planeWarp'
   | 'clothWarp'
-  | 'puppetWarp'
+  | 'pinWarp'
   | 'blend'
   | 'bendAlong'
   | 'repeatAlong'
@@ -59,9 +59,9 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
     "label": "Tools",
     "names": [
       "knead",
-      "distort",
+      "planeWarp",
       "clothWarp",
-      "puppetWarp",
+      "pinWarp",
       "blend",
       "bendAlong",
       "repeatAlong",
@@ -135,9 +135,9 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
 declare module '@weasel-js/icons' {
   interface IconName {
     'path-tools:knead': true;
-    'path-tools:distort': true;
+    'path-tools:planeWarp': true;
     'path-tools:clothWarp': true;
-    'path-tools:puppetWarp': true;
+    'path-tools:pinWarp': true;
     'path-tools:blend': true;
     'path-tools:bendAlong': true;
     'path-tools:repeatAlong': true;

@@ -1,9 +1,9 @@
 import { asNodeId, type EditableShape } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
-import { createLabScene, SHAPE_ID } from '../PuppetSolverLabDemo';
-import { areaColor, backwardCommands, INVERTED, meshCommands } from '../puppetSolverLab/meshLayer';
-import { meshModelOf, type StepPick } from '../puppetSolverLab/meshModel';
-import type { PresetId } from '../puppetSolverLab/presets';
+import { createLabScene, SHAPE_ID } from '../PinWarpSolverLabDemo';
+import { areaColor, backwardCommands, INVERTED, meshCommands } from '../pinWarpSolverLab/meshLayer';
+import { meshModelOf, type StepPick } from '../pinWarpSolverLab/meshModel';
+import type { PresetId } from '../pinWarpSolverLab/presets';
 
 /** Index 1 is the second linear step: what the two-step solve alone returns. */
 const TWO_STEP = 1;
@@ -14,7 +14,7 @@ const modelOf = (preset: PresetId, pick: StepPick = null) =>
 const colorsOf = (cmds: ReturnType<typeof meshCommands>) =>
   cmds.flatMap((c) => (c.kind === 'path' && c.fill ? [(c.fill.paint as { color: string }).color] : []));
 
-describe('the puppet solver lab mesh', () => {
+describe('the pin warp solver lab mesh', () => {
   it('traces the two linear steps first, and ends on the result', () => {
     const disc = modelOf('disc');
     expect(disc.steps.slice(0, 2).map((s) => s.stage)).toEqual(['similarity', 'rigid']);

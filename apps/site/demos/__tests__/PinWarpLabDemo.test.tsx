@@ -4,7 +4,7 @@ import { heldPathWarpOf } from '@weasel-js/path-tools';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { PuppetLabDemo } from '../PuppetLabDemo';
+import { PinWarpLabDemo } from '../PinWarpLabDemo';
 import { click, drag, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
 import { withIcons } from '../../testIcons';
 
@@ -20,15 +20,15 @@ afterEach(() => {
 const eel = () => window.__weaselTest!.getScene().nodes.find((n) => n.id === 'eel')!;
 const pinsOf = () => {
   const held = heldPathWarpOf(eel().data);
-  return held?.warp.kind === 'puppet' ? held.warp.pins : [];
+  return held?.warp.kind === 'pin' ? held.warp.pins : [];
 };
 const worldCoords = () => Array.from(
   (pathInWorld((eel().data as { path: Path }).path, eel().pose as never) as { coords: ArrayLike<number> }).coords,
 );
 
-describe('PuppetLabDemo', () => {
+describe('PinWarpLabDemo', () => {
   it('bends the eel by its head pin while the tail pin holds, adds a pin on a click and takes it out on an Alt-click', async () => {
-    const { container } = await renderSettled(<StrictMode><PuppetLabDemo /></StrictMode>, { wrapper: withIcons });
+    const { container } = await renderSettled(<StrictMode><PinWarpLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = sceneCanvas(container);
     expect(pinsOf()).toHaveLength(3);
     const tail = worldCoords().slice(0, 2);

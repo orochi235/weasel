@@ -4,8 +4,8 @@ import { asNodeId, type EditableShape } from '@weasel-js/core';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { createLabScene, PuppetSolverLabDemo, SHAPE_ID } from '../PuppetSolverLabDemo';
-import { meshModelOf } from '../puppetSolverLab/meshModel';
+import { createLabScene, PinWarpSolverLabDemo, SHAPE_ID } from '../PinWarpSolverLabDemo';
+import { meshModelOf } from '../pinWarpSolverLab/meshModel';
 import { withIcons } from '../../testIcons';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
@@ -33,7 +33,7 @@ function magentaIn(canvas: HTMLCanvasElement, x0 = 0, y0 = 0, x1 = Infinity, y1 
 
 async function mount() {
   await page.viewport(1100, 800);
-  const { container } = render(<PuppetSolverLabDemo />, { wrapper: withIcons });
+  const { container } = render(<PinWarpSolverLabDemo />, { wrapper: withIcons });
   await expect.poll(() => container.querySelector('.lk-trial-scene canvas'), { timeout: 8000 }).toBeTruthy();
   await expect.poll(() => screen.queryByTestId('step')?.textContent, { timeout: 8000 }).toMatch(/^\d+\/\d+$/);
   return { container, canvas: () => container.querySelector<HTMLCanvasElement>('.lk-trial-scene canvas')! };

@@ -1,14 +1,14 @@
 /**
- * `@weasel-js/geom/warp` — warping paths: distorts, cloth warps, and puppets, as
- * maps and as data a shape can hold. A puppet triangulates the shape's fill,
+ * `@weasel-js/geom/warp` — warping paths: plane warps, cloth warps, and pin warps, as
+ * maps and as data a shape can hold. A pin warp triangulates the shape's fill,
  * which needs `earcut`, an optional peer of geom.
  *
  * @packageDocumentation
  */
 export { bilinearQuad, projectiveQuad, squareToQuadHomography, type Quad, type UvMap } from './quad';
 export { bicubicMesh, coonsMesh, meshGridFrom, meshGridOver, type MeshGrid } from './mesh';
-export { puppetMap, puppetSolve, unwarpPoint, type PuppetPin } from './puppet';
-export { puppetMesh, type PuppetMesh, type PuppetMeshOptions } from './puppetMesh';
+export { pinWarpMap, pinWarpSolve, unwarpPoint, type WarpPin } from './pinWarp';
+export { pinWarpMesh, type PinWarpMesh, type PinWarpMeshOptions } from './pinWarpMesh';
 export {
   ARAP_INJECTIVE_ROUNDS,
   ARAP_ROUNDS,
@@ -22,17 +22,17 @@ export {
 export { warpPath, type WarpPathOptions } from './warpPath';
 export {
   applyPathWarp,
-  distortOver,
+  planeOver,
   clothOver,
   moveWarpControl,
   pathWarpMap,
   resizeCloth,
   warpControls,
-  type DistortMode,
-  type DistortWarp,
+  type PlaneMode,
+  type PlaneWarp,
   type ClothMapping,
   type ClothWarp,
   type PathWarp,
-  type PuppetWarp,
+  type PinWarp,
   type WarpBox,
 } from './pathWarp';

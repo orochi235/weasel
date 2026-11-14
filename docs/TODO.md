@@ -191,34 +191,33 @@ Owner tags, after the priority (2026-10-26):
   (`pathCommands/pathNodes.ts`).
   Closes when the maintainer has driven path constraints hands-on and the defaults and keys he picks
   are committed.
-- **(P2) [maintainer] Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
+- **(P2) [maintainer] Tune Plane warp hands-on, with the maintainer driving.** First-draft
   corner handles (8 screen px squares, 8 px hit reach, `packages/path-tools/src/warp/warpHandles.ts`), that a
-  new distort starts Free rather than Perspective, the refit tolerance (0.5,
+  new plane warp starts Free rather than Perspective, the refit tolerance (0.5,
   `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`; Mode and Tolerance are in the
   last-operation panel after a drag, which replays it, `warpParams.ts`), that a selected group warps as
   one under a single quad around its paths, and that selected text converts to outlines when the drag begins,
   conversion and warp one undo step (both ruled 2026-10-31; `warpSelection.ts`,
   `packages/path-tools/src/shared/outlineSession.ts`), that the selection's resize and rotation handles hide
   while a warp tool is active (`hides` in `useWarpTool.ts`), and its tool key, F
-  (`KEYS` in `packages/path-tools/src/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
-  name may change.
-  Closes when the maintainer has driven Perspective and free distort hands-on and the defaults and keys
+  (`KEYS` in `packages/path-tools/src/warp/useWarpTool.ts`).
+  Closes when the maintainer has driven Plane warp hands-on and the defaults and keys
   he picks are committed.
 - **(P2) [maintainer] Tune Cloth warp hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
   mesh (`DEFAULT_CLOTH_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
   between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change through
   `configureWarp` or the last-operation panel after a drag, which resamples the mesh the drag bent, and its tool
-  key, Shift+F beside Distort's F, since draw's crop mode holds C (`packages/path-tools/src/warp/useWarpTool.ts`).
+  key, Shift+F beside Plane Warp's F, since draw's crop mode holds C (`packages/path-tools/src/warp/useWarpTool.ts`).
   Closes when the maintainer has driven Cloth warp hands-on and the defaults and keys he picks are
   committed.
-- **(P2) [maintainer] Tune Puppet warp hands-on, with the maintainer driving.** First-draft mesh density (about
-  400 vertices, `puppetMesh` in `packages/geom/src/warp/puppetMesh.ts`), the solve's round caps
+- **(P2) [maintainer] Tune Pin warp hands-on, with the maintainer driving.** First-draft mesh density (about
+  400 vertices, `pinWarpMesh` in `packages/geom/src/warp/pinWarpMesh.ts`), the solve's round caps
   (`ARAP_ROUNDS` and `ARAP_INJECTIVE_ROUNDS` in `packages/geom/src/warp/arap.ts`), that a click on the
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), the refit tolerance (in the last-operation panel after a pin
   drag), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
-  Closes when the maintainer has driven Puppet warp hands-on and the defaults and keys he picks are
+  Closes when the maintainer has driven Pin warp hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,

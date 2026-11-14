@@ -7,7 +7,7 @@
       "group": "Tools",
       "tags": []
     },
-    "distort": {
+    "planeWarp": {
       "body": "<path d=\"M1.875 1.875H16.875V16.875L6.875 11.875Z\" stroke-width=\"1.25\"/><rect x=\"0\" y=\"0\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15\" y=\"0\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"15\" y=\"15\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"5\" y=\"10\" width=\"3.75\" height=\"3.75\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Tools",
       "tags": []
@@ -17,7 +17,7 @@
       "group": "Tools",
       "tags": []
     },
-    "puppetWarp": {
+    "pinWarp": {
       "body": "<path d=\"M0.625 13.75L0.625 11.875A1.25 1.25 0 0 1 1.875 10.625L5.1072 10.625A1.25 1.25 0 0 0 5.9911 10.2589L14.0089 2.2411A1.25 1.25 0 0 1 14.8928 1.875L18.125 1.875A1.25 1.25 0 0 1 19.375 3.125L19.375 6.875A1.25 1.25 0 0 1 18.125 8.125L14.8928 8.125A1.25 1.25 0 0 0 14.0089 8.4911L5.9911 16.5089A1.25 1.25 0 0 1 5.1072 16.875L1.875 16.875A1.25 1.25 0 0 1 0.625 15.625L0.625 13.75Z\" stroke-width=\"1.25\"/><circle cx=\"3.75\" cy=\"13.75\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.25\" cy=\"5\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Tools",
       "tags": []
