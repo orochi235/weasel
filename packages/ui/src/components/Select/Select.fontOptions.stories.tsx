@@ -22,7 +22,7 @@ function FontPickers({ initialFamily }: { initialFamily?: string }) {
 }
 
 const meta: Meta<typeof FontPickers> = {
-  title: 'ui/Select/Font options',
+  title: 'ui/Select',
   component: FontPickers,
 };
 export default meta;
@@ -31,9 +31,9 @@ type Story = StoryObj<typeof FontPickers>;
 
 /** `useFontFamilyOptions` offers every family the font registry can paint; `useFontWeightOptions` offers the
  *  chosen family's faces, or the nine CSS weights for a family with none on file. */
-export const Default: Story = {};
+export const FontOptions: Story = {};
 
 /** A family nobody registered stays on offer as its own entry, naming what paints in its place. */
-export const NotLoaded: Story = {
+export const FontNotLoaded: Story = {
   args: { initialFamily: 'Comic Neue' },
 };

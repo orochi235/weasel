@@ -38,7 +38,7 @@ function Interactive(props: InteractiveProps) {
 }
 
 const meta: Meta<typeof Interactive> = {
-  title: 'ui/CurveEditor/Point plotter',
+  title: 'ui/CurveEditor',
   component: Interactive,
   argTypes: {
     initial: { control: false },
@@ -66,7 +66,7 @@ const COMMON: Partial<InteractiveProps> = {
   width: 400,
 };
 
-export const Default: Story = {
+export const PointPlotter: Story = {
   args: {
     ...COMMON,
     initial: [
@@ -77,7 +77,7 @@ export const Default: Story = {
   },
 };
 
-export const Bounded: Story = {
+export const PointPlotterBounded: Story = {
   args: {
     ...COMMON,
     initial: [{ x: 0.5, y: 0.5 }],
@@ -86,11 +86,11 @@ export const Bounded: Story = {
   },
 };
 
-export const Empty: Story = {
+export const PointPlotterEmpty: Story = {
   args: { ...COMMON, initial: [] },
 };
 
-export const NoInsert: Story = {
+export const PointPlotterNoInsert: Story = {
   args: {
     ...COMMON,
     initial: [{ x: 0.25, y: 0.5 }, { x: 0.75, y: 0.5 }],
@@ -98,7 +98,7 @@ export const NoInsert: Story = {
   },
 };
 
-export const CustomRange: Story = {
+export const PointPlotterCustomRange: Story = {
   args: {
     ...COMMON,
     initial: [{ x: 0, y: 0 }],
