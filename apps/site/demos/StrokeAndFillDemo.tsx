@@ -17,7 +17,7 @@ import {
   vertexHalfWidths,
   useScene,
   useSelection,
-  type DragSample,
+  type InsertNodeFactories,
   type Paint,
   type GradientPaint,
   type Path,
@@ -149,11 +149,10 @@ function StrokeAndFill() {
   // `vertexWidths[i]` lines up with anchor i exactly. Mapping the pointer
   // trail to geometry is the consumer's call, which is why the pressure curve
   // lives in an `insertNodeFactories` entry rather than on the pencil tool.
-  const insertNodeFactories = useMemo(() => ({
-    pencil: (_bounds: unknown, extras: unknown) => {
-      const samples = (extras as { samples?: ReadonlyArray<DragSample> }).samples ?? [];
+  const insertNodeFactories = useMemo((): InsertNodeFactories => ({
+    pencil: (_bounds, { samples }) => {
       if (samples.length < 2) return null;
-      const path = polygonFromPoints(samples as { x: number; y: number }[]);
+      const path = polygonFromPoints(samples);
       const { x, y, width, height } = boundsOfPath(path);
       return {
         data: {

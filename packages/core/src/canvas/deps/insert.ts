@@ -56,10 +56,24 @@ interface OpsApplier {
  * of an insert's drag, inserting nothing, so a preview can show where the
  * scene's quantize rule lands the node: it must not count or mint anything.
  */
-export type InsertNodeFactory = (
-  bounds: { x: number; y: number; width: number; height: number },
-  extras: InsertExtras,
-) => { data: unknown; pose?: unknown } | null;
+export type InsertNodeFactory<E extends InsertExtras = InsertExtras> = {
+  // Method syntax makes `extras` bivariant, so a factory typed for one kind's extras fits the map's string index.
+  factory(
+    bounds: { x: number; y: number; width: number; height: number },
+    extras: E,
+  ): { data: unknown; pose?: unknown } | null;
+}['factory'];
+
+/** The kinds the kit's tools insert with extras of their own shape. */
+type KitInsertKind = InsertExtras extends infer E
+  ? E extends { kind: infer K extends string } ? (string extends K ? never : K) : never
+  : never;
+
+/** `<SceneCanvas insertNodeFactories>`: a factory per insert `kind`. A kit kind's entry
+ *  receives that kind's extras (`pencil` gets `samples`); any other kind gets the open shape. */
+export type InsertNodeFactories =
+  & { [K in KitInsertKind]?: InsertNodeFactory<Extract<InsertExtras, { kind: K }>> }
+  & { [kind: string]: InsertNodeFactory | undefined };
 
 interface Painted { fill?: Fill | null; stroke?: Stroke | null }
 
@@ -175,7 +189,7 @@ function kitData(
 export function useInsertDepSource(
   scene: Scene<unknown, string, unknown>,
   adapter: OpsApplier,
-  factories?: Record<string, InsertNodeFactory>,
+  factories?: InsertNodeFactories,
 ): void {
   const sceneRef = useLatest(scene);
   const adapterRef = useLatest(adapter);
