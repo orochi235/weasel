@@ -22,7 +22,6 @@ import type {
   ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerConfig, FunctionLayerState,
 } from './functionLayerTypes';
 import { isPrimaryPress } from '@weasel-js/gestures';
-import type {} from '../../kitSettings';
 
 export type {
   ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerConfig, FunctionLayerState,

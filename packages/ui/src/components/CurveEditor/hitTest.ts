@@ -4,6 +4,9 @@
  * proximity).
  */
 import type { Point } from '../Plot2D/geometry';
+// The layers that hit-test through this file read ui's kit settings; loading their declarations here keeps those
+// layers under their size cap.
+import type {} from '../../kitSettings';
 
 /**
  * Nearest-anchor hit test. Anchors are already in plot/screen coords.
