@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties';
+import { PropertyField, PropertyList, RowScope } from '@weasel-js/ui/components/Properties';
 
 // Where a row's message lands is a layout question, so only a real browser can answer it.
 
@@ -18,16 +18,19 @@ test.each([
     <div style={{ width: 260 }}>
       <PropertyList>
         {kind === 'color' ? (
-          <PropertyField kind="color" label="Ink" value="#ff0000" onChange={() => {}} error="too red" />
+          <RowScope error="too red">
+            <PropertyField kind="color" label="Ink" value="#ff0000" onChange={() => {}} />
+          </RowScope>
         ) : (
-          <PropertyField
-            kind="number"
-            layout={kind === 'block' ? 'block' : 'inline'}
-            label="Gap"
-            value={1}
-            onChange={() => {}}
-            error="too small"
-          />
+          <RowScope error="too small">
+            <PropertyField
+              kind="number"
+              layout={kind === 'block' ? 'block' : 'inline'}
+              label="Gap"
+              value={1}
+              onChange={() => {}}
+            />
+          </RowScope>
         )}
       </PropertyList>
     </div>,

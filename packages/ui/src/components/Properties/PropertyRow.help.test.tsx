@@ -4,6 +4,7 @@ import { KitSettingsProvider } from '@weasel-js/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PropertyField } from './PropertyField';
 import { PropertyRow } from './PropertyRow';
+import { RowScope } from './rowScope';
 
 describe('PropertyRow help with no icon', () => {
   it('draws no ⓘ, keeps the label as the control\'s name, and gives the control the description', () => {
@@ -88,9 +89,11 @@ describe('PropertyRow with the help icon', () => {
 
   it('ends the help tooltip with what the row reads when auto, and shows it alone with no description', () => {
     const { rerender } = render(
-      <PropertyRow label="Opacity" description="How see-through it is." autoValue="0.5">
-        <input type="text" defaultValue="x" />
-      </PropertyRow>,
+      <RowScope autoValue="0.5">
+        <PropertyRow label="Opacity" description="How see-through it is.">
+          <input type="text" defaultValue="x" />
+        </PropertyRow>
+      </RowScope>,
     );
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => screen.getByText('ⓘ').focus());
@@ -98,9 +101,11 @@ describe('PropertyRow with the help icon', () => {
     expect(tip).toHaveTextContent('How see-through it is.auto 0.5');
     expect(tip.lastElementChild).toHaveTextContent(/^auto 0\.5$/);
     rerender(
-      <PropertyRow label="Opacity" autoValue="0.5">
-        <input type="text" defaultValue="x" />
-      </PropertyRow>,
+      <RowScope autoValue="0.5">
+        <PropertyRow label="Opacity">
+          <input type="text" defaultValue="x" />
+        </PropertyRow>
+      </RowScope>,
     );
     expect(screen.getByText('ⓘ')).toBeInTheDocument();
     expect(screen.getByRole('textbox')).toHaveAccessibleDescription('auto 0.5');

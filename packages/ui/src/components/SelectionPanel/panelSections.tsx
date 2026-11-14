@@ -16,6 +16,7 @@ import { prefDrawsActionRow } from '../Prefs/registeredActions';
 import { RAIL_ATTR, selectionAttrs } from '../Prefs/selection';
 import type { RenderedCell } from './cells';
 import { LabeledRow } from './LabeledRow';
+import { RowScope } from '../Properties/rowScope';
 import { isPanelSection, panelLeafKey, panelOwnRows, panelRowsOf, type PanelRow, type PanelSection } from './model';
 import { panelResets, rowCells, type PanelCellScope } from './panelCells';
 import { PanelTabs, sectionHeaded, sectionHolds, sectionNamed, type PanelMarks } from './selection';
@@ -87,20 +88,20 @@ function labeledRow(row: PanelRow, controls: readonly RenderedCell[], marks: Pan
   // A row several leaves share is drawn for its first, and is hidden only when they all are.
   const shared = row.leaves.length > 1;
   return (
-    <LabeledRow
-      key={panelLeafKey(first)}
-      label={row.label}
-      title={first.leaf.description}
-      marked={marked}
-      disabled={controls.every((cell) => cell.disabled)}
-      disabledReason={first.leaf.disabledReason}
-      onReset={due.length > 0 ? () => scope.source.resetAs(due, row.label) : undefined}
-      attrs={{ ...selectionAttrs(panelLeafKey(first), shared ? selectedOnly(marks) : marks, true), ...(shared ? hiddenAttrs(marked) : {}) }}
-    >
-      {controls.map(({ key, content }) => (
-        <Fragment key={key}>{content}</Fragment>
-      ))}
-    </LabeledRow>
+    <RowScope key={panelLeafKey(first)} onReset={due.length > 0 ? () => scope.source.resetAs(due, row.label) : undefined}>
+      <LabeledRow
+        label={row.label}
+        title={first.leaf.description}
+        marked={marked}
+        disabled={controls.every((cell) => cell.disabled)}
+        disabledReason={first.leaf.disabledReason}
+        attrs={{ ...selectionAttrs(panelLeafKey(first), shared ? selectedOnly(marks) : marks, true), ...(shared ? hiddenAttrs(marked) : {}) }}
+      >
+        {controls.map(({ key, content }) => (
+          <Fragment key={key}>{content}</Fragment>
+        ))}
+      </LabeledRow>
+    </RowScope>
   );
 }
 

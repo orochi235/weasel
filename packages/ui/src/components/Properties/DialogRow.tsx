@@ -6,7 +6,7 @@ import { type PropertyMetricProps } from './metrics';
 import s from './Properties.module.css';
 import { useDisabled, type DisableableProps } from '../Disabled';
 
-/** Props for `<DialogRow>`. */
+/** Props for `<DialogRow>`. Its auto, changed, reset, and error state come from the `<RowScope>` around it. */
 export interface DialogRowProps extends PropertyMetricProps, DisableableProps {
   label: ReactNode;
   /** What the row shows of the value, on the button that opens the dialog. One
@@ -32,18 +32,6 @@ export interface DialogRowProps extends PropertyMetricProps, DisableableProps {
   readout?: ReactNode;
   /** Take the full width of the enclosing grid — see `<PropertyRow span>`. */
   span?: boolean;
-  /** The row is auto — see `<PropertyRow auto>`. */
-  auto?: boolean;
-  /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
-  onAutoChange?: (next: boolean) => void;
-  /** Resets the row's setting — see `<PropertyRow onReset>`. */
-  onReset?: () => void;
-  /** What the row reads when it is auto — see `<PropertyRow autoValue>`. */
-  autoValue?: ReactNode;
-  /** The value differs from a baseline of the caller's — see `<PropertyRow changed>`. */
-  changed?: boolean;
-  /** What is wrong with the value — see `<PropertyRow error>`. */
-  error?: ReactNode;
 }
 
 /**
@@ -67,14 +55,8 @@ export function DialogRow({
   span,
   density,
   align,
-  auto,
-  onAutoChange,
-  onReset,
-  autoValue,
   disabled: own,
   disabledReason,
-  changed,
-  error,
 }: DialogRowProps) {
   const [open, setOpen] = useState(false);
   // Disabled, its button opens nothing and still reads the summary; with a reason it stays focusable.
@@ -97,14 +79,8 @@ export function DialogRow({
       span={span}
       density={density}
       align={align}
-      auto={auto}
-      onAutoChange={onAutoChange}
-      onReset={onReset}
-      autoValue={autoValue}
       disabled={own}
       disabledReason={disabledReason}
-      changed={changed}
-      error={error}
       // A `<label>` hands a click on its text to its button, which would open
       // the dialog from the label — and the label is the auto toggle.
       group

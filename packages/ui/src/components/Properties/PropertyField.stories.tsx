@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { type ReactNode, useState } from 'react';
-import { PropertyField, PropertyList, type PropertyFieldProps } from '@weasel-js/ui/components/Properties';
+import { PropertyField, PropertyList, type PropertyFieldProps, RowScope } from '@weasel-js/ui/components/Properties';
 import { SideBySide } from './storyLayouts';
 import s from './PropertyField.stories.module.css';
 import { compact, decimal, endless, unit, type Display, type Endless } from '@weasel-js/quantity';
@@ -332,27 +332,27 @@ export const Auto: Story = {
     const [gap, setGap] = useState(12);
     return (
       <div className={s.column}>
-        <PropertyField
-          kind="number"
-          control="slider"
-          label={label}
-          description={description}
-          layout={layout}
-          span={span}
-          density={density}
-          align={align}
-          disabled={disabled}
-          value={gap}
-          min={0}
-          max={48}
-          onChange={(next) => {
-            setGap(next);
-            setAuto(false);
-          }}
-          auto={auto}
-          onAutoChange={setAuto}
-          readout={auto ? 'auto' : undefined}
-        />
+        <RowScope auto={auto} onAutoChange={setAuto}>
+          <PropertyField
+            kind="number"
+            control="slider"
+            label={label}
+            description={description}
+            layout={layout}
+            span={span}
+            density={density}
+            align={align}
+            disabled={disabled}
+            value={gap}
+            min={0}
+            max={48}
+            onChange={(next) => {
+              setGap(next);
+              setAuto(false);
+            }}
+            readout={auto ? 'auto' : undefined}
+          />
+        </RowScope>
       </div>
     );
   },

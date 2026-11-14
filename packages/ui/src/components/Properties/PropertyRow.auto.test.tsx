@@ -2,39 +2,48 @@ import { createEvent, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PropertyField } from './PropertyField';
 import { PropertyRow } from './PropertyRow';
+import { RowScope } from './rowScope';
 
 describe('auto rows', () => {
   it('marks an auto row and makes its label the toggle only when it can be toggled', () => {
     const { rerender, container } = render(
-      <PropertyRow label="Gap" auto onAutoChange={() => {}}>
-        <input />
-      </PropertyRow>,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyRow label="Gap">
+          <input />
+        </PropertyRow>
+      </RowScope>,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Gap' })).toBeInTheDocument();
 
     rerender(
-      <PropertyRow label="Gap" auto>
-        <input />
-      </PropertyRow>,
+      <RowScope auto>
+        <PropertyRow label="Gap">
+          <input />
+        </PropertyRow>
+      </RowScope>,
     );
     expect(screen.queryByRole('button', { name: 'Pin Gap' })).toBeNull();
   });
 
   it('shows the readout a caller gives an auto row', () => {
     render(
-      <PropertyRow label="Gap" auto readout="auto · 18 px" onAutoChange={() => {}}>
-        <input />
-      </PropertyRow>,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyRow label="Gap" readout="auto · 18 px">
+          <input />
+        </PropertyRow>
+      </RowScope>,
     );
     expect(screen.getByText('auto · 18 px')).toBeInTheDocument();
   });
 
   it('puts the label before the readout, so live text stays last in the row', () => {
     const { container } = render(
-      <PropertyRow label="Gap" auto readout="auto · 18 px" onAutoChange={() => {}}>
-        <input />
-      </PropertyRow>,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyRow label="Gap" readout="auto · 18 px">
+          <input />
+        </PropertyRow>
+      </RowScope>,
     );
     const kids = [...(container.querySelector('label > span')?.children ?? [])];
     const toggle = kids.findIndex((el) => el.getAttribute('aria-label') === 'Pin Gap');
@@ -46,9 +55,11 @@ describe('auto rows', () => {
   it('toggles auto when the label is clicked', () => {
     const onAutoChange = vi.fn();
     render(
-      <PropertyRow label="Gap" htmlFor="gap" onAutoChange={onAutoChange}>
-        <input id="gap" />
-      </PropertyRow>,
+      <RowScope onAutoChange={onAutoChange}>
+        <PropertyRow label="Gap" htmlFor="gap">
+          <input id="gap" />
+        </PropertyRow>
+      </RowScope>,
     );
     const click = createEvent.click(screen.getByRole('button', { name: 'Pin Gap' }));
     fireEvent(screen.getByRole('button', { name: 'Pin Gap' }), click);
@@ -72,17 +83,17 @@ describe('auto rows', () => {
 
   it('leaves a row label naming its control, not the toggle it doubles as', () => {
     const { container } = render(
-      <PropertyField
-        kind="number"
-        control="slider"
-        label="Gap"
-        value={12}
-        min={0}
-        max={48}
-        onChange={() => {}}
-        auto
-        onAutoChange={() => {}}
-      />,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyField
+          kind="number"
+          control="slider"
+          label="Gap"
+          value={12}
+          min={0}
+          max={48}
+          onChange={() => {}}
+        />
+      </RowScope>,
     );
     const label = container.querySelector('label') as HTMLLabelElement;
     expect(label.control).not.toBe(screen.getByRole('button', { name: 'Pin Gap' }));
@@ -91,17 +102,17 @@ describe('auto rows', () => {
 
   it('slider field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <PropertyField
-        kind="number"
-        control="slider"
-        label="Gap"
-        value={12}
-        min={0}
-        max={48}
-        onChange={() => {}}
-        auto
-        onAutoChange={() => {}}
-      />,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyField
+          kind="number"
+          control="slider"
+          label="Gap"
+          value={12}
+          min={0}
+          max={48}
+          onChange={() => {}}
+        />
+      </RowScope>,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Gap' })).toBeInTheDocument();
@@ -109,7 +120,9 @@ describe('auto rows', () => {
 
   it('number field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <PropertyField kind="number" label="Count" value={3} onChange={() => {}} auto onAutoChange={() => {}} />,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyField kind="number" label="Count" value={3} onChange={() => {}} />
+      </RowScope>,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Count' })).toBeInTheDocument();
@@ -117,18 +130,18 @@ describe('auto rows', () => {
 
   it('select field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <PropertyField
-        kind="enum"
-        label="Mode"
-        value="a"
-        options={[
-          { value: 'a', label: 'A' },
-          { value: 'b', label: 'B' },
-        ]}
-        onChange={() => {}}
-        auto
-        onAutoChange={() => {}}
-      />,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyField
+          kind="enum"
+          label="Mode"
+          value="a"
+          options={[
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+          ]}
+          onChange={() => {}}
+        />
+      </RowScope>,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     // The Select's own trigger is a button named "Mode" too, so the dot is
@@ -138,19 +151,19 @@ describe('auto rows', () => {
 
   it('toggle field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <PropertyField
-        kind="enum"
-        control="toggle"
-        label="Fit"
-        value="a"
-        options={[
-          { value: 'a', label: 'A' },
-          { value: 'b', label: 'B' },
-        ]}
-        onChange={() => {}}
-        auto
-        onAutoChange={() => {}}
-      />,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyField
+          kind="enum"
+          control="toggle"
+          label="Fit"
+          value="a"
+          options={[
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+          ]}
+          onChange={() => {}}
+        />
+      </RowScope>,
     );
     expect((container.firstElementChild as HTMLElement | null)?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Fit' })).toBeInTheDocument();
@@ -158,7 +171,9 @@ describe('auto rows', () => {
 
   it('checkbox field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <PropertyField kind="boolean" label="Snap" value={true} onChange={() => {}} auto onAutoChange={() => {}} />,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyField kind="boolean" label="Snap" value={true} onChange={() => {}} />
+      </RowScope>,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Snap' })).toBeInTheDocument();
@@ -166,7 +181,9 @@ describe('auto rows', () => {
 
   it('color field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <PropertyField kind="color" label="Fill" value="#ff0000" onChange={() => {}} auto onAutoChange={() => {}} />,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyField kind="color" label="Fill" value="#ff0000" onChange={() => {}} />
+      </RowScope>,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Fill' })).toBeInTheDocument();
@@ -174,7 +191,9 @@ describe('auto rows', () => {
 
   it('text field forwards auto and onAutoChange', () => {
     const { container } = render(
-      <PropertyField kind="string" label="Name" value="foo" onChange={() => {}} auto onAutoChange={() => {}} />,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyField kind="string" label="Name" value="foo" onChange={() => {}} />
+      </RowScope>,
     );
     expect(container.querySelector('label')?.className).toMatch(/rowAuto/);
     expect(screen.getByRole('button', { name: 'Pin Name' })).toBeInTheDocument();
@@ -186,18 +205,18 @@ describe('auto readouts', () => {
 
   it('slider field shows a static readout, not an editable field, when given one', () => {
     render(
-      <PropertyField
-        kind="number"
-        control="slider"
-        label="Gap"
-        value={12}
-        min={0}
-        max={48}
-        onChange={() => {}}
-        readout={READOUT}
-        auto
-        onAutoChange={() => {}}
-      />,
+      <RowScope auto onAutoChange={() => {}}>
+        <PropertyField
+          kind="number"
+          control="slider"
+          label="Gap"
+          value={12}
+          min={0}
+          max={48}
+          onChange={() => {}}
+          readout={READOUT}
+        />
+      </RowScope>,
     );
     expect(screen.getByText(READOUT)).toBeInTheDocument();
     expect(screen.queryByDisplayValue(READOUT)).toBeNull();
@@ -205,53 +224,55 @@ describe('auto readouts', () => {
   });
 
   it('number field shows its auto readout', () => {
-    render(<PropertyField kind="number" label="Count" value={3} onChange={() => {}} readout={READOUT} auto />);
+    render(<RowScope auto><PropertyField kind="number" label="Count" value={3} onChange={() => {}} readout={READOUT} /></RowScope>);
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 
   it('select field shows its auto readout', () => {
     render(
-      <PropertyField
-        kind="enum"
-        label="Mode"
-        value="a"
-        options={[{ value: 'a', label: 'A' }]}
-        onChange={() => {}}
-        readout={READOUT}
-        auto
-      />,
+      <RowScope auto>
+        <PropertyField
+          kind="enum"
+          label="Mode"
+          value="a"
+          options={[{ value: 'a', label: 'A' }]}
+          onChange={() => {}}
+          readout={READOUT}
+        />
+      </RowScope>,
     );
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 
   it('toggle field shows its auto readout', () => {
     render(
-      <PropertyField
-        kind="enum"
-        control="toggle"
-        label="Fit"
-        value="a"
-        options={[{ value: 'a', label: 'A' }]}
-        onChange={() => {}}
-        readout={READOUT}
-        auto
-      />,
+      <RowScope auto>
+        <PropertyField
+          kind="enum"
+          control="toggle"
+          label="Fit"
+          value="a"
+          options={[{ value: 'a', label: 'A' }]}
+          onChange={() => {}}
+          readout={READOUT}
+        />
+      </RowScope>,
     );
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 
   it('checkbox field shows its auto readout', () => {
-    render(<PropertyField kind="boolean" label="Snap" value onChange={() => {}} readout={READOUT} auto />);
+    render(<RowScope auto><PropertyField kind="boolean" label="Snap" value onChange={() => {}} readout={READOUT} /></RowScope>);
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 
   it('color field shows its auto readout', () => {
-    render(<PropertyField kind="color" label="Fill" value="#ff0000" onChange={() => {}} readout={READOUT} auto />);
+    render(<RowScope auto><PropertyField kind="color" label="Fill" value="#ff0000" onChange={() => {}} readout={READOUT} /></RowScope>);
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 
   it('text field shows its auto readout', () => {
-    render(<PropertyField kind="string" label="Name" value="foo" onChange={() => {}} readout={READOUT} auto />);
+    render(<RowScope auto><PropertyField kind="string" label="Name" value="foo" onChange={() => {}} readout={READOUT} /></RowScope>);
     expect(screen.getByText(READOUT)).toBeInTheDocument();
   });
 });

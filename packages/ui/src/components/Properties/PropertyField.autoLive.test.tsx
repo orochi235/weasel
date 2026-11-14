@@ -1,22 +1,23 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PropertyField } from './PropertyField';
+import { RowScope } from './rowScope';
 
 const slider = (readout?: string) => {
   const onChange = vi.fn();
   render(
-    <PropertyField
-      kind="number"
-      control="slider"
-      label="Gap"
-      value={12}
-      min={0}
-      max={48}
-      onChange={onChange}
-      auto={readout !== undefined}
-      onAutoChange={() => {}}
-      readout={readout}
-    />,
+    <RowScope auto={readout !== undefined} onAutoChange={() => {}}>
+      <PropertyField
+        kind="number"
+        control="slider"
+        label="Gap"
+        value={12}
+        min={0}
+        max={48}
+        onChange={onChange}
+        readout={readout}
+      />
+    </RowScope>,
   );
   return onChange;
 };

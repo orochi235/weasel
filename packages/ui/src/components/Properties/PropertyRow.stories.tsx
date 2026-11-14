@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { PropertyRow } from '@weasel-js/ui/components/Properties';
+import { PropertyRow, RowScope } from '@weasel-js/ui/components/Properties';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof PropertyRow> = {
@@ -44,14 +44,18 @@ export const WithError: Story = {
   render: (args) => (
     <SideBySide
       block={
-        <PropertyRow {...args} label="Name" error="needs a name">
-          <input type="text" />
-        </PropertyRow>
+        <RowScope error="needs a name">
+          <PropertyRow {...args} label="Name">
+            <input type="text" />
+          </PropertyRow>
+        </RowScope>
       }
       inline={
-        <PropertyRow {...args} label="Name" layout="inline" error="needs a name">
-          <input type="text" />
-        </PropertyRow>
+        <RowScope error="needs a name">
+          <PropertyRow {...args} label="Name" layout="inline">
+            <input type="text" />
+          </PropertyRow>
+        </RowScope>
       }
     />
   ),
@@ -81,18 +85,20 @@ export const AutoValue: Story = {
   render: (args) => (
     // Headroom for the tooltip, which opens above its row.
     <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 80 }}>
-      <PropertyRow {...args}
-        label="Gap"
-        layout="inline"
-        description="Space between tiles, in pixels."
-        autoValue="13.3333"
-        onAutoChange={() => {}}
-      >
-        <input type="text" defaultValue="12" />
-      </PropertyRow>
-      <PropertyRow {...args} label="Columns" layout="inline" auto readout="auto" autoValue="4" onAutoChange={() => {}}>
-        <input type="text" defaultValue="3" />
-      </PropertyRow>
+      <RowScope autoValue="13.3333" onAutoChange={() => {}}>
+        <PropertyRow {...args}
+          label="Gap"
+          layout="inline"
+          description="Space between tiles, in pixels."
+        >
+          <input type="text" defaultValue="12" />
+        </PropertyRow>
+      </RowScope>
+      <RowScope auto autoValue="4" onAutoChange={() => {}}>
+        <PropertyRow {...args} label="Columns" layout="inline" readout="auto">
+          <input type="text" defaultValue="3" />
+        </PropertyRow>
+      </RowScope>
     </div>
   ),
 };

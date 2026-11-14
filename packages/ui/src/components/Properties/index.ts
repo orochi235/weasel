@@ -41,6 +41,8 @@ export type { PropertyAlign, PropertyDensity, PropertyMetricProps } from './metr
 export { PropertyList, PropertyNote, PropertySpan } from './PropertyList';
 export { PropertyPanel } from './PropertyPanel';
 export { PropertyRow } from './PropertyRow';
+export type { PropertyRowScope, RowScopeProps, RowState } from './rowScope';
+export { RowScope, usePropertyRow } from './rowScope';
 export type { ResetControlProps } from './ResetControl';
 export { ResetControl } from './ResetControl';
 export type { SubpanelProps } from './Subpanel';

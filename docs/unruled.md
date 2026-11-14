@@ -1083,6 +1083,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `resolveTheme` has no token. Only a definition with issues does this. The same holds across `extends`: a child
   that redefines a ramp with fewer steps still shows the parent's dropped steps at runtime, and `derive` of the
   child lists none of them, with no issue. Whether derive should report a step it drops from the parent is open.
+- 2026-11-14 (the lane's call): a row's auto, changed, reset, and error state is set by `<RowScope>` around the row
+  rather than by props on it, as `<Disabled>` holds it. A scope inside another overrides only the fields it names,
+  and a row takes the state for itself, so a row nested in its control starts with none. `PropertyRow` is the one
+  row that draws it; `PropertyField` and `DialogRow` stay as a row with its control already in it, and the selection
+  panel's `LabeledRow` keeps its own grid layout and reads only `onReset`. labkit's `ControlRow` and the form's
+  `LeafRow` set the scope; a labkit custom row renderer is not wrapped in one, and sets its own.
 
 ## Diagram, audio, and labkit
 
@@ -1845,8 +1851,8 @@ Calls the lanes made without a ruling:
   consumer to set number fields' locale with that one. ui pins `react-aria-components` exactly, so a provider from a
   consumer's own copy of another version holds a locale the fields never read.
 - 2026-11-12 (the lane's call): `PrefsForm` takes `errors`, a `ReadonlyMap` from leaf path to message, shown under the
-  leaf's row through `PropertyRow`'s `error`. A map, as `auto` and `mixed` are sets, rather than a `validate` field on
-  the leaf: what counts as wrong is the caller's to say. `SelectionPanel` has no such prop yet.
+  leaf's row as its `error` (set through `<RowScope>` since 2026-11-14). A map, as `auto` and `mixed` are sets,
+  rather than a `validate` field on the leaf: what counts as wrong is the caller's to say. `SelectionPanel` has no such prop yet.
 - 2026-11-12 (the lane's call): `usePrefsValues` returns `setAuto(path, next)` for `PrefsForm`'s `onAutoChange`, where
   its JSDoc had offered `reset`. It pins at `store.get(path)`; theme-editor keeps its own, which pins at the value the
   pinned theme shows.
