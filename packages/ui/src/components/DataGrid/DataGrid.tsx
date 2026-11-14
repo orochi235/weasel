@@ -8,6 +8,8 @@ import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { dropSide } from '@weasel-js/ui-input';
 import { useReorderDragList } from '../../useReorderDragList';
 import { Disclosure } from '../Disclosure';
+import type { HoldProps } from '../Disabled';
+import { useControlHold } from '../Disabled/controlHold';
 import { ReorderHandle, type ReorderHandleProps } from '../ReorderHandle/ReorderHandle';
 import s from './DataGrid.module.css';
 
@@ -31,8 +33,12 @@ export interface DataGridColumn<Row> {
   numeric?: boolean;
 }
 
-/** Props for {@link DataGrid}. */
-export interface DataGridProps<Row extends { id: string }> {
+/**
+ * Props for {@link DataGrid}. Disabled, by `disabled` or a scope, nothing sorts, expands, activates, or moves, and with
+ * no reason anywhere the rows leave the tab order. Read-only, rows still sort, expand, and activate, since those only
+ * look; nothing moves. Either way the controls in its cells are held with it.
+ */
+export interface DataGridProps<Row extends { id: string }> extends HoldProps {
   rows: readonly Row[];
   columns: readonly DataGridColumn<Row>[];
   /** Initial sort. Omit for unsorted (rows render in input order). */
@@ -100,20 +106,14 @@ function fromControl(e: MouseEvent | KeyboardEvent): boolean {
 export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) {
   const {
     rows, columns, defaultSort, onReorder, rowLabel, empty = '—', className,
-    rowClassName, onRowClick, renderDetail, rowExpandable, expandedIds, defaultExpandedIds, onExpandedChange,
+    rowClassName, renderDetail, rowExpandable, expandedIds, defaultExpandedIds, onExpandedChange,
   } = props;
+  const hold = useControlHold(props, { readonlyRole: false });
+  const onRowClick = hold.disabled ? undefined : props.onRowClick;
+  const activates = !!props.onRowClick;
   const [sort, setSort] = useState<SortState>(defaultSort ?? null);
-  const [ownExpanded, setOwnExpanded] = useState<ReadonlySet<string>>(() => new Set(defaultExpandedIds));
-  const expanded = expandedIds ?? ownExpanded;
+  const [expanded, toggleExpanded] = useExpanded(expandedIds, defaultExpandedIds, onExpandedChange);
   const detailIdBase = useId();
-
-  const toggleExpanded = (id: string) => {
-    const next = new Set(expanded);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    if (!expandedIds) setOwnExpanded(next);
-    onExpandedChange?.(next);
-  };
 
   const sortedRows = useMemo(() => {
     if (!sort) return [...rows];
@@ -134,6 +134,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
   }, [rows, columns, sort]);
 
   const cycleSort = (columnId: string) => {
+    if (hold.disabled) return;
     setSort((cur) => {
       if (!cur || cur.columnId !== columnId) return { columnId, direction: 'asc' };
       if (cur.direction === 'asc') return { columnId, direction: 'desc' };
@@ -154,10 +155,8 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
 
   const cls = [s.grid, className].filter(Boolean).join(' ');
 
-  return (
-    <div
-      className={cls}
-    >
+  return hold.wrap(hold.scope(
+    <div className={cls} data-held={hold.held}>
       <table className={s.table}>
         <thead>
           <tr>
@@ -174,7 +173,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                   aria-sort={sortable ? (active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
                 >
                   {sortable ? (
-                    <button type="button" className={s.sortButton} onClick={() => cycleSort(col.id)}>
+                    <button type="button" className={s.sortButton} {...hold.button(false)} onClick={() => cycleSort(col.id)}>
                       {col.header}{indicator}
                     </button>
                   ) : (
@@ -201,7 +200,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
             const detail = isExpanded ? renderDetail!(row) : null;
             const detailId = `${detailIdBase}-detail-${row.id}`;
             const rowCls = [
-              onRowClick && s.clickable,
+              activates && s.clickable,
               isDragging && s.dragging,
               side === 'before' && s.dropBefore,
               side === 'after' && s.dropAfter,
@@ -212,7 +211,8 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                 <tr
                   className={rowCls || undefined}
                   data-expanded={isExpanded || undefined}
-                  tabIndex={onRowClick ? 0 : undefined}
+                  tabIndex={activates ? (hold.access.reachable ? 0 : -1) : undefined}
+                  {...(activates ? hold.focus : {})}
                   onClick={onRowClick ? (e) => { if (!fromControl(e)) onRowClick(row); } : undefined}
                   onKeyDown={onRowClick ? (e) => {
                     if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
@@ -225,6 +225,8 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                       label={rowLabel?.(row) ?? `row ${i + 1}`}
                       onPointerDown={drag.rowProps(row.id, i).onPointerDown}
                       onNudge={(delta) => drag.nudge(row.id, i, delta)}
+                      disabled={hold.refuses}
+                      disabledReason={hold.access.reason}
                     />
                   )}
                   {detailEnabled && (
@@ -232,7 +234,8 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                       {expandable && (
                         <Disclosure
                           open={isExpanded}
-                          onToggle={() => toggleExpanded(row.id)}
+                          disabled={hold.disabled}
+                          onToggle={() => { if (!hold.disabled) toggleExpanded(row.id); }}
                           label={isExpanded ? 'Hide details' : 'Show details'}
                           controls={detail != null ? detailId : undefined}
                         />
@@ -258,12 +261,30 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
           })}
         </tbody>
       </table>
-    </div>
-  );
+    </div>,
+  ));
+}
+
+/** The expanded rows, held here unless `given` is, and a toggle of one that reports the next set either way. */
+function useExpanded(
+  given: ReadonlySet<string> | undefined,
+  initial: Iterable<string> | undefined,
+  onChange: ((ids: ReadonlySet<string>) => void) | undefined,
+): [ReadonlySet<string>, (id: string) => void] {
+  const [own, setOwn] = useState<ReadonlySet<string>>(() => new Set(initial));
+  const expanded = given ?? own;
+  const toggle = (id: string) => {
+    const next = new Set(expanded);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    if (!given) setOwn(next);
+    onChange?.(next);
+  };
+  return [expanded, toggle];
 }
 
 /** A row's leading cell, holding its drag handle. */
-function HandleCell(props: Pick<ReorderHandleProps, 'label' | 'onPointerDown' | 'onNudge'>) {
+function HandleCell(props: Pick<ReorderHandleProps, 'label' | 'onPointerDown' | 'onNudge' | 'disabled' | 'disabledReason'>) {
   return (
     <td className={s.handleCell}>
       <ReorderHandle className={s.handle} {...props} />

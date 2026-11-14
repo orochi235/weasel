@@ -101,3 +101,9 @@
   padding: var(--wzl-space-2) var(--wzl-space-3) var(--wzl-space-3);
   background: var(--wzl-surface-sunken);
 }
+
+.grid[data-held='disabled'] tbody {
+  color: var(--wzl-fg-subtle);
+}
+.grid[data-held='disabled'] .clickable,
+.sortButton[data-disabled] { cursor: not-allowed; }
