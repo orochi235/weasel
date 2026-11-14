@@ -1,5 +1,5 @@
 import { useState, type MouseEvent } from 'react';
-import { formatShortcut, isApplePlatform } from '@weasel-js/gestures';
+import { formatShortcut, modHeld } from '@weasel-js/gestures';
 import type { MenuEntry } from '@weasel-js/menu';
 import { ActionButton } from '../ActionButton/ActionButton';
 import { useMenuTrigger } from '../Menu/useMenuTrigger';
@@ -13,7 +13,7 @@ export type StackCycleModifier = 'alt' | 'mod' | 'shift';
 const held = (e: MouseEvent, mod: StackCycleModifier): boolean =>
   mod === 'alt' ? e.altKey
     : mod === 'shift' ? e.shiftKey
-      : isApplePlatform() ? e.metaKey : e.ctrlKey;
+      : modHeld(e);
 
 /**
  * One rail button standing for several. It shows the active member when it holds one, and otherwise the one last

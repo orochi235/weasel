@@ -1,3 +1,4 @@
+import { modHeld, modKey } from '@weasel-js/gestures';
 import type {
   ClickSpec, ContextMenuSpec, DoubleClickSpec, DragSpec, EventModifiers, KeyHeldSpec, KeySpec, ModSpec,
 } from '@weasel-js/gestures';
@@ -11,10 +12,10 @@ export type CapturedSpec = KeySpec | KeyHeldSpec | ClickSpec | DoubleClickSpec |
 /** An event's modifiers as a spec's, with the platform's primary one as `mod`. */
 function modSpecOf(e: EventModifiers, apple: boolean): ModSpec | undefined {
   const mods: ModSpec = {};
-  if (apple ? e.metaKey : e.ctrlKey) mods.mod = true;
+  if (modHeld(e, apple)) mods.mod = true;
   if (e.shiftKey) mods.shift = true;
   if (e.altKey) mods.alt = true;
-  if (apple ? e.ctrlKey : e.metaKey) mods[apple ? 'ctrl' : 'meta'] = true;
+  if (modHeld(e, !apple)) mods[modKey(!apple)] = true;
   return Object.keys(mods).length > 0 ? mods : undefined;
 }
 

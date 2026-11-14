@@ -14,3 +14,14 @@ export function isApplePlatform(): boolean {
   const raw = nav.userAgentData?.platform || nav.platform || nav.userAgent || '';
   return /mac|iphone|ipad|ipod/i.test(raw);
 }
+
+/** The key `mod` stands for: `'meta'` (Command) on an Apple platform, `'ctrl'` elsewhere. */
+export function modKey(apple: boolean = isApplePlatform()): 'meta' | 'ctrl' {
+  return apple ? 'meta' : 'ctrl';
+}
+
+/** Whether an event holds `mod`: Command on an Apple platform, Ctrl elsewhere. The other of the two is not read,
+ *  so a Ctrl-click on a Mac, the secondary click there, never reads as a Command-click. */
+export function modHeld(e: { metaKey: boolean; ctrlKey: boolean }, apple: boolean = isApplePlatform()): boolean {
+  return apple ? e.metaKey : e.ctrlKey;
+}

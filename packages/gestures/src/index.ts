@@ -111,7 +111,7 @@ export { matchSpec, matchModifiers, matchKey, matchKeyEvent, matchTarget, matchP
 export { CHORD_MODIFIERS } from '@weasel-js/ui-input';
 export { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ui/ingestTypes';
 export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
-export { isApplePlatform } from './ui/platform';
+export { isApplePlatform, modHeld, modKey } from './ui/platform';
 export { historyKey } from './ui/historyKey';
 
 // Shortcut legends: how a keyboard prints a binding's keys, per platform
