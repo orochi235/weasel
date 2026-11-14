@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FocusEvent, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
+import { modHeld } from '@weasel-js/gestures';
 import { prefersReducedMotion } from '@weasel-js/react';
 import { dropSlot, isDropPath } from './drop';
 import { hiddenAttrs, marksHidden } from './hidden';
@@ -22,7 +23,7 @@ export interface PrefMarks {
 
 /** How a row was picked. */
 export interface PrefSelectHow {
-  /** Cmd or Ctrl was held: the row joins or leaves the selection. */
+  /** Cmd (Ctrl off Apple platforms) was held: the row joins or leaves the selection. */
   toggle: boolean;
   /** Shift was held, alone: the rows drawn from the first selected to the one picked, in that order, the two
    *  included. Absent where the first selected is not drawn, as on another page, and the pick is a plain one. */
@@ -169,7 +170,7 @@ export function useSelectedRow(
     doc.addEventListener('pointercancel', release, true);
     if (path === null) return;
     // With Alt as well the press is the start of an alias drag, not a toggle.
-    if ((e.metaKey || e.ctrlKey) && !e.altKey) report(path, true);
+    if (modHeld(e) && !e.altKey) report(path, true);
     else if (e.shiftKey && !e.altKey) report(path, false, drawnRange(ref.current, selected[0], path));
     else if (!selected.includes(path)) report(path, false);
     else if (selected.length > 1) held.current = path;

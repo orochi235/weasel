@@ -5,6 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PrefSelectHow } from '../../Prefs';
 import { panelShownPath } from './selection';
 import { SelectionPanel } from './SelectionPanel';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(cleanup);
 
@@ -144,9 +147,9 @@ describe('onSelect', () => {
   it('reports a press with Cmd or Ctrl held as a toggle', () => {
     const onSelect = vi.fn();
     panel(['data.name'], onSelect);
-    fireEvent.pointerDown(screen.getByText('Tint'), { metaKey: true });
+    fireEvent.pointerDown(screen.getByText('Tint'), MOD);
     expect(onSelect).toHaveBeenLastCalledWith('data.tint', { toggle: true });
-    fireEvent.pointerDown(screen.getByText('Name'), { ctrlKey: true });
+    fireEvent.pointerDown(screen.getByText('Name'), MOD);
     expect(onSelect).toHaveBeenLastCalledWith('data.name', { toggle: true });
   });
 

@@ -3,7 +3,8 @@ import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from '
 import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
 import { gapByMidpoint, isNoopDrop, nudgeGap } from '@weasel-js/ui-input';
 import { useKitSetting } from '@weasel-js/react';
-import type { SelectModifiers } from '@weasel-js/select';
+import { modKey } from '@weasel-js/gestures';
+import type { SelectModifiers, SelectPolicy } from '@weasel-js/select';
 
 /** One row in a reorderable list. */
 export interface ReorderItem {
@@ -65,8 +66,8 @@ export function modsOf(e: PressModifiers): PressModifiers {
   return { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };
 }
 
-/** A list's convention: Cmd/Ctrl toggles a row, shift ranges from the anchor. */
-export const LIST_KEYS = { toggle: ['meta', 'ctrl'], range: 'shift' } as const;
+/** A list's convention: Cmd toggles a row (Ctrl off Apple platforms), shift ranges from the anchor. */
+export const listKeys = (): Pick<SelectPolicy, 'toggle' | 'range'> => ({ toggle: modKey(), range: 'shift' });
 
 /** A press's modifiers as `@weasel-js/select` reads them. */
 export function selectModifiers(mods: PressModifiers): SelectModifiers {

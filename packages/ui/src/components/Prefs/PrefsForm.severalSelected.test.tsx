@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './index';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(cleanup);
 
@@ -31,9 +34,9 @@ describe('PrefsForm selection', () => {
     const onSelect = form(['a']);
     fireEvent.pointerDown(rowOf('Beta'));
     expect(onSelect).toHaveBeenLastCalledWith('b', { toggle: false });
-    fireEvent.pointerDown(rowOf('Gamma'), { metaKey: true });
+    fireEvent.pointerDown(rowOf('Gamma'), MOD);
     expect(onSelect).toHaveBeenLastCalledWith('c', { toggle: true });
-    fireEvent.pointerDown(rowOf('Alpha'), { ctrlKey: true });
+    fireEvent.pointerDown(rowOf('Alpha'), MOD);
     expect(onSelect).toHaveBeenLastCalledWith('a', { toggle: true });
   });
 

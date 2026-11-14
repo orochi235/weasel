@@ -3,6 +3,9 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react';
 import { Tree, type TreeNode } from './Tree';
 import { filterTree, treeBranchIds } from './treeFilter';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(() => { cleanup(); });
 
@@ -207,9 +210,9 @@ describe('Tree — selection', () => {
       />,
     );
     fireEvent.click(screen.getByText('Apple'));
-    fireEvent.click(screen.getByText('Water'), { metaKey: true });
+    fireEvent.click(screen.getByText('Water'), MOD);
     expect(onSelectionChange).toHaveBeenLastCalledWith(new Set(['apple', 'water']));
-    fireEvent.click(screen.getByText('Apple'), { ctrlKey: true });
+    fireEvent.click(screen.getByText('Apple'), MOD);
     expect(onSelectionChange).toHaveBeenLastCalledWith(new Set(['water']));
     fireEvent.click(screen.getByText('Apple'));
     fireEvent.click(screen.getByText('Citrus'), { shiftKey: true });

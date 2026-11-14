@@ -2299,3 +2299,10 @@ Calls the lanes made without a ruling:
   arrow keys and a double-click reset) and the command palette's `/` key. Neither is a demo, and the shell mounts no
   dispatcher; running each through one would mean an actions registry, a dep registry and a dispatcher for one
   affordance.
+
+## Audit round twenty-four (2026-11-14): one pathway per decision
+
+- 2026-11-14 (the lane's call): a list's toggle key is `mod`, Command on Apple platforms and Ctrl elsewhere, as core's
+  `useSelection` and every `mod` binding read it. `Tree`, `LayerList`, `PrefsForm` and the pref schema editor had
+  toggled on either key (2026-10-11), which made a Mac's Ctrl-click, its secondary click, toggle a row as well as open
+  a menu. The alias drag's key (`mod` with Alt) follows it.

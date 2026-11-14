@@ -5,6 +5,9 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import type { CustomKinds } from '@weasel-js/prefs/edit';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 /** Types `value` and leaves the field, which is when a typed field commits. */
 const settle = (el: HTMLElement, value: string): void => {
@@ -81,7 +84,7 @@ describe('PrefSchemaEditor custom kinds', () => {
     }
     renderWithIcons(<Both />);
     select('one');
-    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('two'), { metaKey: true });
+    fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('two'), MOD);
     expect(attributes().getByRole('textbox', { name: 'Edge' })).toHaveValue('');
     settle(attributes().getByRole('textbox', { name: 'Fill' }), 'blue');
     expect(leaf('one').frame).toEqual({ edge: 'thin', fill: 'blue' });

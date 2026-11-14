@@ -6,6 +6,9 @@ import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from '@weasel-js/prefs-editor';
 import { drag } from './pointerDrag.fixture';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(cleanup);
 
@@ -37,7 +40,7 @@ test('a row dragged onto another group with Alt held is copied there, and stays 
 
 test('with Alt and Cmd held the drag sets an alias there, and the preview draws the one setting twice', () => {
   renderWithIcons(<Live />);
-  drag(row('grid'), row('panels'), { altKey: true, metaKey: true });
+  drag(row('grid'), row('panels'), { altKey: true, ...MOD });
   expect(Object.keys((latest.children.view as PrefGroup).children)).toEqual(['grid']);
   expect((latest.children.panels as PrefGroup).children.grid).toEqual({ kind: 'alias', name: '', description: '', default: undefined, of: 'view.grid' });
   expect(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('alias')).toBeInTheDocument();
@@ -45,7 +48,7 @@ test('with Alt and Cmd held the drag sets an alias there, and the preview draws 
 
 test('a group cannot be aliased: the drag lands nothing', () => {
   renderWithIcons(<Live />);
-  drag(row('view'), row('dock'), { altKey: true, metaKey: true });
+  drag(row('view'), row('dock'), { altKey: true, ...MOD });
   expect(latest).toBe(START);
 });
 

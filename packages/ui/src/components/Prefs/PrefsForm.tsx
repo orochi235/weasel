@@ -129,7 +129,7 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps, HoldPro
   selected?: readonly string[];
   /** The reader pressed or focused into a leaf's row, a group, or a group's
    *  entry in a rail. The empty path is the root, from the rail entry for its
-   *  own leaves. `how.toggle` is true when Cmd or Ctrl was held. A press on
+   *  own leaves. `how.toggle` is true when Cmd (Ctrl off Apple platforms) was held. A press on
    *  one of several selected rows is reported on its click, so a drag can
    *  carry them all. */
   onSelect?: (path: string, how: PrefSelectHow) => void;

@@ -8,7 +8,7 @@ import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
 import type { TreeNode } from './Tree';
 import { modsOf } from '../../useReorderDragList';
 import { useOutsideDrop, type TreeDropHandle } from './useOutsideDrop';
-import { isPrimaryPress } from '@weasel-js/gestures';
+import { isPrimaryPress, modHeld } from '@weasel-js/gestures';
 import type {} from '../../kitSettings';
 
 export const HOVER_EXPAND_MS = 600;
@@ -17,7 +17,7 @@ const GHOST_OFFSET = 10;
 
 /**
  * What a drag would do with its rows where it lands. `copy`, with Alt held in a tree that takes copies, and
- * `link`, with Alt and Cmd or Ctrl held in one that takes links, both leave the rows where they are.
+ * `link`, with Alt and Cmd (Ctrl off Apple platforms) held in one that takes links, both leave the rows where they are.
  */
 export type TreeDragEffect = 'move' | 'copy' | 'link';
 
@@ -157,7 +157,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     let last = { clientX: e.clientX, clientY: e.clientY };
     const effectOf = (ev: Modifiers): TreeDragEffect => {
       if (!ev.altKey) return 'move';
-      if ((ev.metaKey || ev.ctrlKey) && o.current.onLink) return 'link';
+      if (modHeld(ev) && o.current.onLink) return 'link';
       return o.current.onCopy ? 'copy' : 'move';
     };
     const update = (ev: { clientX: number; clientY: number } & Modifiers) => {

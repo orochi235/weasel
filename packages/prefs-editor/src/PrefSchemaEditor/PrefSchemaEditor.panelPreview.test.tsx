@@ -5,6 +5,9 @@ import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { keyedRow } from './treeRows.fixture';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(cleanup);
 
@@ -51,7 +54,7 @@ describe('PrefSchemaEditor with a properties-panel preview', () => {
     fireEvent.pointerDown(within(preview()).getByText('Tint'));
     expect(item('data.tint')).toHaveAttribute('aria-selected', 'true');
     expect(item('width')).toHaveAttribute('aria-selected', 'false');
-    fireEvent.pointerDown(within(preview()).getByText('Shade'), { metaKey: true });
+    fireEvent.pointerDown(within(preview()).getByText('Shade'), MOD);
     expect(item('data.tint')).toHaveAttribute('aria-selected', 'true');
     expect(item('data.shade')).toHaveAttribute('aria-selected', 'true');
     expect(marked()).toEqual(['data.tint', 'data.shade']);

@@ -5,6 +5,9 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { nodeAt } from '@weasel-js/prefs/edit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(cleanup);
 
@@ -104,7 +107,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   it('draws conditions that differ as none, marked as mixed, and writes the first edit over them all', () => {
     renderWithIcons(<Live start={CONDITIONED} />);
     select('grid');
-    fireEvent.click(within(structure()).getByText('size'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('size'), MOD);
     const shown = attr('Shown if');
     expect(within(shown).queryByRole('group', { name: 'Condition 1' })).toBeNull();
     expect(shown.closest('[data-mixed]')).not.toBeNull();
@@ -118,7 +121,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   it('sets one condition on several prefs at once', () => {
     renderWithIcons(<Live start={CONDITIONED} />);
     select('grid');
-    fireEvent.click(within(structure()).getByText('units'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('units'), MOD);
     pick(attr('Shown if'), /Add a condition/, /Grid size/);
     expect(held('view/grid').showIf).toEqual({ path: 'view.size', above: 0 });
     expect(held('view/units').showIf).toEqual({ path: 'view.size', above: 0 });
@@ -134,7 +137,7 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
     };
     select('size');
     expect(offered()).toEqual(['Show grid', 'Units']);
-    fireEvent.click(within(structure()).getByText('units'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('units'), MOD);
     expect(offered()).toEqual(['Show grid']);
     select('view');
     expect(within(attr('Shown if')).getByRole('button', { name: /Add a condition/ })).toBeDisabled();

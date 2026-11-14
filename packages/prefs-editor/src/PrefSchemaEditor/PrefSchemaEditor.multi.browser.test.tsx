@@ -7,6 +7,9 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from '@weasel-js/prefs-editor';
 import { drag, grip, pointer } from './pointerDrag.fixture';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 // Wide enough that the live preview, the editor's last column, is on screen to be pressed.
 beforeAll(() => page.viewport(1600, 900));
@@ -64,7 +67,7 @@ test('two rows selected in the tree drag to another group together, in their ord
 test('a Cmd press on a preview row adds it to the selection', () => {
   renderWithIcons(<Live />);
   pickInTree('grid');
-  press(label('Snap'), { metaKey: true });
+  press(label('Snap'), MOD);
   expect(selected().sort()).toEqual(['view/grid', 'view/snap']);
   expect(within(screen.getByRole('region', { name: 'Attributes' })).getByText('2 selected')).toBeInTheDocument();
 });

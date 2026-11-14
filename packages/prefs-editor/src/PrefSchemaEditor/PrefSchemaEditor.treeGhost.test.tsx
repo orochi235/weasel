@@ -4,6 +4,9 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { keyedRow } from './treeRows.fixture';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(cleanup);
 
@@ -46,7 +49,7 @@ describe('PrefSchemaEditor, a drag begun in the structure tree', () => {
     tree.setPointerCapture = vi.fn();
     tree.releasePointerCapture = vi.fn();
     fireEvent.click(row('grid'));
-    fireEvent.click(row('snap'), { metaKey: true });
+    fireEvent.click(row('snap'), MOD);
     fireEvent.pointerDown(row('snap'), { pointerId: 1, button: 0, clientX: 20, clientY: 20 });
     fireEvent.pointerMove(document, { pointerId: 1, clientX: 400, clientY: 200 });
     expect(ghost()!.textContent).toContain('2');

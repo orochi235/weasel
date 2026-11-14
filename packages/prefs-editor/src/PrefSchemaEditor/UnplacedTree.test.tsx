@@ -8,6 +8,9 @@ import type { PaletteDrag } from './Palette';
 import { UnplacedTree } from './UnplacedTree';
 import { rowKey } from './treeRows.fixture';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { isApplePlatform } from '@weasel-js/gestures';
+
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 
 afterEach(cleanup);
 
@@ -34,7 +37,7 @@ describe('several unplaced nodes at once', () => {
   it('adds a row to the selection on Cmd-click, and replaces it on a plain click', () => {
     renderWithIcons(<Live />);
     fireEvent.click(within(unplaced()).getByText('author'));
-    fireEvent.click(within(unplaced()).getByText('owner'), { metaKey: true });
+    fireEvent.click(within(unplaced()).getByText('owner'), MOD);
     expect(selectedIn(unplaced())).toEqual(['author', 'owner']);
     expect(screen.getByRole('region', { name: 'Attributes' })).toHaveTextContent('2 selected');
     fireEvent.click(within(unplaced()).getByText('author'));
@@ -44,7 +47,7 @@ describe('several unplaced nodes at once', () => {
   it('keeps a row selected in the structure tree when one here joins it', () => {
     renderWithIcons(<Live />);
     fireEvent.click(within(structure()).getByText('view'));
-    fireEvent.click(within(unplaced()).getByText('author'), { metaKey: true });
+    fireEvent.click(within(unplaced()).getByText('author'), MOD);
     expect(selectedIn(structure())).toEqual(['view']);
     expect(selectedIn(unplaced())).toEqual(['author']);
   });
@@ -83,7 +86,7 @@ describe('Add alias with several prefs selected', () => {
   it('adds an alias of each, together after the one picked last', () => {
     renderWithIcons(<Editor />);
     fireEvent.click(within(structure()).getByText('snap'));
-    fireEvent.click(within(structure()).getByText('grid'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('grid'), MOD);
     expect(add()).toBeEnabled();
     fireEvent.click(add());
     expect(keys()).toEqual(['view', 'grid', 'snap2', 'grid2', 'snap', 'zoom']);
@@ -93,7 +96,7 @@ describe('Add alias with several prefs selected', () => {
   it('offers none while one of them is a group, which has no alias', () => {
     renderWithIcons(<Editor />);
     fireEvent.click(within(structure()).getByText('snap'));
-    fireEvent.click(within(structure()).getByText('view'), { metaKey: true });
+    fireEvent.click(within(structure()).getByText('view'), MOD);
     expect(add()).toBeDisabled();
   });
 });
