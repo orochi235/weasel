@@ -17,7 +17,7 @@ export const dropPathToolsChrome: PrefsMigration = (records) => {
   records.set('ui.surfaces', rest);
 };
 
-const PATH_AIDS = ['pathDirection', 'pathComb', 'pathPoise', 'pathFillets'];
+const PATH_AIDS = ['pathDirection', 'pathComb', 'pathBalance', 'pathCorners'];
 
 /** Version 2 to 3: the path editing aids moved into the view's Path editing group, and the left sidebar width, which
  *  nothing read, was dropped. */
@@ -40,4 +40,20 @@ export const fillRuleToToolOptions: PrefsMigration = (records) => {
   const to = 'tools.shared.fillRule';
   if (!records.has(to)) records.set(to, records.get(from));
   records.delete(from);
+};
+
+const RENAMED_AIDS: readonly (readonly [string, string])[] = [
+  ['pathBalance', 'pathPoise'],
+  ['pathCorners', 'pathFillets'],
+];
+
+/** Version 4 to 5: Balance handles became Poise and Corner shape became Fillet, and their view toggles with them. */
+export const renamePathAids: PrefsMigration = (records) => {
+  for (const [old, now] of RENAMED_AIDS) {
+    const from = `view.pathEditing.${old}`;
+    if (!records.has(from)) continue;
+    const to = `view.pathEditing.${now}`;
+    if (!records.has(to)) records.set(to, records.get(from));
+    records.delete(from);
+  }
 };
