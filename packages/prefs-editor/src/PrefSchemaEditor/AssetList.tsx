@@ -1,7 +1,7 @@
 import { useState, type ReactElement } from 'react';
-import { Header, ListBox, ListBoxItem, ListBoxSection, Text } from 'react-aria-components';
+import { Header } from 'react-aria-components';
 import type { IconRef } from '@weasel-js/icons';
-import { Badge, byRank, Icon } from '@weasel-js/ui';
+import { Badge, byRank, Icon, RailListBox, RailName, RailOption, RailSection } from '@weasel-js/ui';
 import { PaneHeader } from './PaneHeader';
 import { headingOf, type AssetHeading, type ListedAsset, type ShownAsset } from '@weasel-js/prefs/edit';
 
@@ -72,7 +72,7 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
   return (
     <>
       <PaneHeader title="Assets" />
-      <ListBox aria-label="Assets" className={s.list} selectionMode="single" disallowEmptySelection selectedKeys={[selected]}
+      <RailListBox aria-label="Assets" className={s.list} selectionMode="single" disallowEmptySelection selectedKeys={[selected]}
         onSelectionChange={(keys) => {
           if (keys === 'all') return;
           const [id] = keys;
@@ -84,7 +84,7 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
           const held = rows.filter((row) => row.under === title);
           const open = !folded.has(title);
           return held.length === 0 ? null : (
-            <ListBoxSection key={title} className={open ? `${s.group} ${s.open}` : s.group}>
+            <RailSection key={title} className={s.group} guide={open}>
               <Header className={s.heading}>
                 <button type="button" className={s.fold} aria-expanded={open} onClick={() => fold(title)}>
                   <Icon name={HEADING_ICON[title]} size={16} className={s.headingIcon} />
@@ -92,18 +92,18 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
                 </button>
               </Header>
               {open && held.map((row) => (
-                <ListBoxItem key={row.id} id={row.id} textValue={row.label} data-changed={row.changed || undefined}
-                  data-rail-mark={row.id === selected ? 'current' : undefined} className={s.row}>
+                <RailOption key={row.id} id={row.id} textValue={row.label} data-changed={row.changed || undefined}
+                  current={row.id === selected} className={s.row}>
                   <Icon name={row.icon ?? HEADING_ICON[title]} size={16} className={s.rowIcon} />
-                  <Text slot="label" className={row.changed ? `${s.label} ${s.changed}` : s.label}>{row.label}</Text>
+                  <RailName slot="label" className={row.changed ? s.changed : undefined}>{row.label}</RailName>
                   <Badge size="xs" variant="subtle" tint={{ ref: '--_heading' }} className={`${s.badge} ${HEADING_BADGE[title].tint}`}>{HEADING_BADGE[title].word}</Badge>
                   {row.readOnly && <Icon name={icon('ui:bolt')} size={16} label="Dynamic" className={s.dynamic} />}
-                </ListBoxItem>
+                </RailOption>
               ))}
-            </ListBoxSection>
+            </RailSection>
           );
         })}
-      </ListBox>
+      </RailListBox>
     </>
   );
 }

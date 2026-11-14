@@ -1,0 +1,57 @@
+/* A rail's entries sit a pixel apart, one under another, as do a section's. */
+.list,
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  border: none;
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  color: var(--wzl-fg);
+  font: inherit;
+  /* The size of a control's text in the pane beside it. */
+  font-size: var(--wzl-font-size);
+  text-align: start;
+  cursor: default;
+}
+
+.item:hover {
+  background: var(--wzl-surface-raised);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+}
+
+.item[data-rail-mark='current'] {
+  background: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
+}
+
+.name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* An open section's bracket starts below a heading a control tall, under the middle of a 16px glyph at an entry's
+   inline padding. A class of the consumer's moves it by setting `--guide-at` and `--guide-from`. */
+.guide {
+  composes: guide from '../Tree/treeGuide.module.css';
+}
+
+:where(.guide) {
+  --guide-from: var(--wzl-control-h);
+  --guide-at: calc(var(--wzl-space-3) + 8px);
+}

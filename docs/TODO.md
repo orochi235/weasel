@@ -481,19 +481,6 @@ Owner tags, after the priority (2026-10-26):
 
 ---
 
-## UI library consolidation (pre-2.0 audit)
-
-From a read-only audit of `@weasel-js/ui` (2026-11-13): https://claude.ai/artifact/7Dz6X1nKtyLXYAYH3Lbisb, which
-also maps every set of components that overlap in functionality. An entry marked *(inferred)* rests on reasoning
-from the code, not a reading of it; check that first. Paths are under `packages/ui/src/components/` unless they
-name a package. Breaking changes are in scope.
-
-- **(P3) [agent] A rail list has no public part, so prefs-editor copies its CSS.** The prefs dialog's page list draws
-  through `railList` and `railItem` in `Prefs/Prefs.module.css`; `prefs-editor`'s
-  `PrefSchemaEditor/AssetList.module.css` repeats those rules and the tree guide's, because a package outside ui
-  can't compose ui's stylesheets. A `RailList`/`RailItem` part in ui, which both draw through, makes it one rule.
-  Closes when `AssetList.module.css` holds no copy of a ui rule.
-
 ## forge
 
 `@weasel-js/forge` is the component workshop built on labkit: each story renders

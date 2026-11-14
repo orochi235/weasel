@@ -1,47 +1,13 @@
-/* Set as the prefs dialog's own list of pages is (ui's `railList` and `railItem`, which a package outside ui cannot
-   compose): a heading, and its assets a step in under it. */
-.list { display: flex; flex-direction: column; gap: 1px; user-select: none; -webkit-user-select: none; }
+/* ui's rail parts set the list, its options and an open heading's bracket: this sets a heading, and its assets a step
+   in under it, past the heading's glyph. */
+.list { user-select: none; -webkit-user-select: none; }
 .row {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-2);
-  padding: var(--wzl-space-2) var(--wzl-space-3);
-  border: none;
-  border-radius: var(--wzl-radius-sm);
-  background: none;
-  color: var(--wzl-fg);
-  font: inherit;
-  font-size: var(--wzl-font-size);
-  text-align: start;
-  cursor: default;
   margin-inline-start: calc(var(--heading-icon) + var(--wzl-space-2));
   font-weight: var(--wzl-font-weight-light);
 }
-.row:hover { background: var(--wzl-surface-raised); }
-.row:focus-visible { outline: 2px solid var(--wzl-focus-ring); outline-offset: -2px; }
-.row[data-rail-mark='current'] {
-  background: var(--wzl-accent);
-  color: var(--wzl-fg-on-accent);
-  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
-  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
-}
-.label { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; min-width: 0; white-space: nowrap; }
 .changed { composes: changed from './PrefSchemaEditor.module.css'; }
 .row[data-rail-mark='current'] .changed { color: var(--wzl-secondary-strong); }
-.group { --heading-icon: 16px; display: flex; flex-direction: column; gap: 1px; }
-/* Bracketed as the structure tree brackets an open branch (ui's Tree `guide`), from under the heading's glyph. */
-.open { position: relative; }
-.open::before {
-  content: '';
-  position: absolute;
-  inset-block: var(--wzl-control-h) var(--wzl-space-1);
-  inset-inline-start: calc(var(--wzl-space-3) + var(--heading-icon) / 2);
-  inline-size: 10px;
-  border-inline-start: 1px solid var(--wzl-tree-guide, var(--wzl-fg-subtle));
-  border-block-end: 1px solid transparent;
-  border-end-start-radius: 10px;
-  pointer-events: none;
-}
+.group { --heading-icon: 16px; }
 .group + .group { margin-block-start: var(--wzl-space-3); }
 .heading {
   font-size: var(--wzl-font-size);

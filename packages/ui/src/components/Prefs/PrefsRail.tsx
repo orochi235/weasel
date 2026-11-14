@@ -2,6 +2,7 @@ import { Fragment, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { arrowDir } from '@weasel-js/ui-input';
 import { inlineDirection, useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
+import { RailItem, RailList, RailName } from '../RailList';
 import { dropSlot, isDropPath } from './drop';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { prefRailAbove, type PrefRailItem } from './schema';
@@ -92,11 +93,9 @@ export function PrefsRail(props: PrefsRailProps) {
       const open = item.path === section;
       const nested = nests.has(item.path);
       const entry = (
-        <button
-          type="button"
+        <RailItem
+          current={open}
           className={[s.railItem, item.passes && s.railPasses].filter(Boolean).join(' ')}
-          aria-current={open ? 'page' : undefined}
-          data-rail-mark={open ? 'current' : undefined}
           data-rail-fold={foldable && nested ? item.path : undefined}
           data-pref-rail={isDropPath(item.path) ? undefined : item.path}
           data-drop-placeholder={isDropPath(item.path) ? dropSlot(item.path) ?? '' : undefined}
@@ -105,10 +104,10 @@ export function PrefsRail(props: PrefsRailProps) {
           {...hiddenAttrs(hidden?.has(item.path) === true)}
           onClick={() => onOpen(item.path)}
         >
-          <span className={s.railName}>{item.name}</span>
+          <RailName className={s.railName}>{item.name}</RailName>
           {marksHidden(hidden, item.path) && <HiddenBadge gapped />}
           {showCounts ? <span className={s.railCount}>{item.matches}</span> : null}
-        </button>
+        </RailItem>
       );
       return (
         <Fragment key={key}>
@@ -136,9 +135,9 @@ export function PrefsRail(props: PrefsRailProps) {
   return (
     <nav className={s.rail} ref={markRail} aria-label={ariaLabel} data-pref-scroll="">
       {header}
-      <div className={s.railList} ref={roving.rootRef} onKeyDown={onKeyDown}>
+      <RailList ref={roving.rootRef} onKeyDown={onKeyDown}>
         {entries(null)}
-      </div>
+      </RailList>
     </nav>
   );
 }
