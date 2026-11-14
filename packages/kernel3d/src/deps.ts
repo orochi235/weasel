@@ -29,6 +29,7 @@ import { castOntoPlane, rayAt, rectOf, viewProjectionOf, type Viewport3d } from 
 import { worldPickIndex } from './pickIndex';
 import { projectAabbToScreen } from './screen';
 import { createSession3d } from './snap/session3d';
+import { landing3dOf, shiftedBy } from './snap/landing';
 
 import { DEFAULT_UP, measuredBoxAt, viewportOf, type Node3d, type World3d } from './world';
 
@@ -199,10 +200,10 @@ function warnGestureSources(): void {
 /**
  * The `snap` dep over a 3D world. A gesture's `omit` is honored; its 2D
  * `sources` are not asked. A move snaps its subject's world box on the
- * plane it already moves on; an insert snaps the pointer on the ground. Both
- * answer in screen points, which `translate` and `createInsert` cast back
- * onto the same plane, landing where the snap put them to within rounding: a
- * grid snap can store a coordinate a few ulps off the line (docs/TODO.md).
+ * plane it already moves on, or along `along` when the gesture names one; an
+ * insert snaps the pointer on the ground. Each answers with a screen point and,
+ * as its `landing`, the exact world point (`Landing3d`) that `translate` and
+ * `createInsert` store, so a snap to a grid line stores the line's own coordinate.
  */
 export function createSnap<TData, TLayer extends string>(
   world: World3d<TData, TLayer>, opts: Snap3dOptions = {},
@@ -352,9 +353,13 @@ export function createPoseDescriptor<TData, TLayer extends string>(
       /**
        * Screen-space deltas resolve against the plane the node already sits on. That
        * plane differs per node, so in a move of several each takes the lead's change
-       * whole (it kept its height already), and the group moves as one body. */
-      translate(pose, dx, dy, lead) {
-        if (lead) return { ...pose, position: add(pose.position, sub(lead.to.position, lead.from.position)) };
+       * whole (it kept its height already), and the group moves as one body. A snap
+       * session's landing (`Landing3d`) is taken as it is, so what it snapped to is
+       * stored exactly. */
+      translate(pose, dx, dy, lead, landing) {
+        const landed = landing3dOf(landing);
+        if (landed) return { ...pose, position: shiftedBy(pose.position, landed.from, landed.to) };
+        if (lead) return { ...pose, position: shiftedBy(pose.position, lead.from.position, lead.to.position) };
         const vp = castableViewport();
         const box = vp && boundsIn(vp, pose);
         if (!vp || !box) return pose;

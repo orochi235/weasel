@@ -25,6 +25,11 @@ function expectDir(f: Flat, deg: number) {
 }
 
 describe('inputFlat', () => {
+  it('is the line along `along`, whatever is held', () => {
+    expectDir(inputFlat(req({ gesture: 'move', along: [0, 2] }), OFF, { x: 3, y: 4 }), 90);
+    expectDir(inputFlat(req({ gesture: 'move', along: [1, 1], constrain: 'axis' }), ON, { x: 3, y: 0 }), 45);
+  });
+
   it('is the whole plane for a free gesture', () => {
     expect(flatDim(inputFlat(req({}), ON, { x: 3, y: 4 }))).toBe(2);
   });

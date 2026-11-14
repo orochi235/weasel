@@ -20,6 +20,15 @@ export function beginDragSnap(ctx: InvocationCtx, ids: readonly string[], exclud
   };
 }
 
+interface Landed {
+  readonly dx: number;
+  readonly dy: number;
+  readonly landing: unknown;
+}
+
+/** Each session's latest landing, with the delta it was reported for. */
+const landings = new WeakMap<SnapSession, Landed>();
+
 /** The pointer's delta, moved so the subject lands on what the snap session
  *  holds it to. */
 export function snappedDelta(drag: DragSnap, moveCtx: InvocationCtx): { dx: number; dy: number } {
@@ -27,5 +36,16 @@ export function snappedDelta(drag: DragSnap, moveCtx: InvocationCtx): { dx: numb
   if (!drag.snap) return { dx: d.x, dy: d.y };
   const { press } = drag;
   const out = drag.snap.at({ x: press.x + d.x, y: press.y + d.y }, snapMods(moveCtx));
-  return { dx: out.point.x - press.x, dy: out.point.y - press.y };
+  const dx = out.point.x - press.x;
+  const dy = out.point.y - press.y;
+  if (out.landing === undefined) landings.delete(drag.snap);
+  else landings.set(drag.snap, { dx, dy, landing: out.landing });
+  return { dx, dy };
+}
+
+/** The host's landing (`SnapOutcome.landing`) for the drag `(dx, dy)`, when
+ *  that is the delta the session last snapped to; otherwise undefined. */
+export function snapLanding(drag: DragSnap, dx: number, dy: number): unknown {
+  const last = drag.snap ? landings.get(drag.snap) : undefined;
+  return last && last.dx === dx && last.dy === dy ? last.landing : undefined;
 }

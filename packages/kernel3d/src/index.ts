@@ -35,6 +35,7 @@ export {
   alignPlaneSource, boxSnapSource, groundGridSource, type GroundGridSourceOptions,
 } from './snap/sources';
 export { projectSnapMarks, type ScreenLine, type ScreenPoint } from './snap/marks';
+export type { Landing3d } from './snap/landing';
 export { collectOverlayBoxes } from './overlays';
 export { HEAD, HEAD_OVERDRAW, headFor, layoutLine, type HeadShape, type HeadSize, type LineLayout } from './lines/head';
 export {

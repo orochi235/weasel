@@ -60,6 +60,10 @@ export interface SnapBegin {
   origin?: WorldPoint;
   also?: SnapGeometry;
   constrain?: SnapConstrain;
+  /** Move: the one direction the subject moves in, in the host's world
+   *  coordinates — two numbers in 2D, three in a 3D host. The session holds
+   *  δ to the line through the press along it, whatever modifiers are held. */
+  along?: readonly number[];
   /** How the camera's world maps into the parallax plane the gesture's points
    *  are in, read each frame; absent or null in the camera's own world. */
   plane?: () => PlaneMap | null;
@@ -88,6 +92,15 @@ export interface SnapOutcome {
   /** Whether some target holds the point. */
   held: boolean;
   marks: readonly SnapMark[];
+  /**
+   * The host's own exact reading of where the subject landed, in whatever
+   * terms its poses use: a 3D host's world position, which `point`, a ctx
+   * point, can only say to within rounding. Core never reads it. It holds for
+   * this `point` only: a move hands it to the pose descriptor's `translate` for
+   * the delta `point` makes, and an insert to `InsertEnds.landings` for an end
+   * at `point`, and neither passes it on once a behavior has moved the point.
+   */
+  landing?: unknown;
 }
 
 /** One gesture's snapping, from press to release. */

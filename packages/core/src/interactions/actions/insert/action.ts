@@ -83,7 +83,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
           // sides ticking via ArrowUp mid-drag) reflect in the live preview.
           const resolved = resolveParams(session.opts?.params);
           if (shapeKindInfo(insertKind(resolved))?.insertPreview === false) return null;
-          const { bounds, extras, start, ends } = insertShape(resolved, frame, frame.points, gesture.userRotation);
+          const { bounds, extras, start, ends } = insertShape(resolved, frame, frame.points, gesture.userRotation, session.snap.landingAt);
           const lands = scene && insertLanding(scene, session.dep, bounds, extras, ends);
           return {
             kind: 'insertPreview',
