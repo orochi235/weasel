@@ -8,7 +8,8 @@ import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { selectionRoving } from '../../selectionRoving';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
-import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import { SegmentTooltip, useSegmentAccess, type SegmentTooltipFields } from '../segmentTooltip';
+import { holdScope, type DisableableProps, type HoldProps } from '../Disabled';
 import type { Orientation } from '../orientation';
 
 /**
@@ -19,11 +20,7 @@ export type OptionsBarItem<V extends string | number = string> = OwnSelection & 
   value: V;
   label?: ReactNode;
   ariaLabel?: string;
-  disabled?: boolean;
-  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
-   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
-  disabledReason?: string;
-} & SegmentTooltipFields;
+} & SegmentTooltipFields & DisableableProps;
 
 /** Segment height and type scale for an {@link OptionsBar}. */
 export type OptionsBarSize = SegmentedSize;
@@ -31,7 +28,7 @@ export type OptionsBarSize = SegmentedSize;
 export type OptionsBarVariant = SegmentedVariant;
 
 /** Props for {@link OptionsBar}. */
-export type OptionsBarProps<V extends string | number = string> = SegmentedGridProps & {
+export type OptionsBarProps<V extends string | number = string> = SegmentedGridProps & HoldProps & {
   items: readonly OptionsBarItem<V>[];
   'aria-label'?: string;
   className?: string;
@@ -59,7 +56,8 @@ export function OptionsBar<V extends string | number = string>(props: OptionsBar
   const { items, 'aria-label': ariaLabel, className, height, size, variant, orientation } = props;
 
   const model = selectionOfEach(items);
-  const usable = (i: number): boolean => items[i] !== undefined && !items[i].disabled;
+  const held = useSegmentAccess({ ...props, holdsValue: true }).state !== 'enabled';
+  const usable = (i: number): boolean => !held && items[i] !== undefined && !items[i].disabled;
   const { sweep } = props;
   const guard = useSweepGuard();
   const toggle = (i: number) => {
@@ -92,7 +90,7 @@ export function OptionsBar<V extends string | number = string>(props: OptionsBar
           key: String(item.value),
           state,
           draw: (place) => (
-            <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled} disabledReason={item.disabledReason}>
+            <SegmentTooltip tip={item} disabled={item.disabled} disabledReason={item.disabledReason} holdsValue>
               <button
                 type="button"
                 aria-pressed={item.selected}
@@ -111,10 +109,10 @@ export function OptionsBar<V extends string | number = string>(props: OptionsBar
       })}
     />
   );
-  if (!sweep) return row;
+  if (!sweep) return <>{holdScope(props, row)}</>;
   return (
     <>
-      {row}
+      {holdScope(props, row)}
       <SegmentSweeper rootRef={roving.rootRef} values={items.map((it) => it.value)} sweepable={usable} model={model} sweep={sweep} swept={guard.swept} />
     </>
   );

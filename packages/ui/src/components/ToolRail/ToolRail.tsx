@@ -8,9 +8,10 @@ import { Icon } from '../../icons/Icon';
 import { isActive, isSlot, isStack, railRuns, type ToolRailButton, type ToolRailItem } from './items';
 import { RailStack, type StackCycleModifier } from './RailStack';
 import s from './ToolRail.module.css';
+import { holdScope, type DisableableProps } from '../Disabled';
 
 /** Props for {@link ToolRail}. */
-export interface ToolRailProps {
+export interface ToolRailProps extends DisableableProps {
   items: readonly ToolRailItem[];
   orientation?: Orientation;
   /** Lays each run out as a grid this many buttons across, the runs stacked; `orientation` then says nothing. */
@@ -74,7 +75,7 @@ export function ToolRail(props: ToolRailProps) {
       aria-label={ariaLabel}
       aria-orientation={columns ? undefined : orientation}
     >
-      {runs.map((run, i) => (
+      {holdScope(props, runs.map((run, i) => (
         <Fragment key={run.key}>
           {i > 0 && <hr className={s.rule} aria-orientation={horizontal ? 'vertical' : 'horizontal'} />}
           <ToolGroup orientation={orientation} columns={columns} groupKey={run.group} aria-label={run.group}>
@@ -84,7 +85,7 @@ export function ToolRail(props: ToolRailProps) {
                   : button(item))}
           </ToolGroup>
         </Fragment>
-      ))}
+      )))}
     </div>
   );
 }

@@ -2,9 +2,10 @@ import { Children, type ReactNode } from 'react';
 import type { Orientation } from '../orientation';
 import { tiling } from '../../tiling';
 import s from './ToolGroup.module.css';
+import { holdScope, type HoldProps } from '../Disabled';
 
 /** Props for {@link ToolGroup}. */
-export interface ToolGroupProps {
+export interface ToolGroupProps extends HoldProps {
   children: ReactNode;
   /**
    * Lays children along an axis. `'vertical'` (default) stacks them in
@@ -37,7 +38,7 @@ export function ToolGroup(props: ToolGroupProps) {
   const style = tiles?.style;
   return (
     <div className={cls} style={style} role="group" data-group={groupKey} aria-label={ariaLabel}>
-      {children}
+      {holdScope(props, children)}
     </div>
   );
 }

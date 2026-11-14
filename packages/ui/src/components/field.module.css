@@ -99,7 +99,7 @@
   border-color: var(--wzl-danger);
 }
 
-.field[data-disabled] .frame,
+.field:is([data-disabled], [data-held='disabled']) .frame,
 .frame[data-disabled] {
   opacity: 0.5;
   filter: var(--wzl-disabled-filter);

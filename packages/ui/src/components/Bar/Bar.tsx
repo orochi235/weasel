@@ -16,9 +16,10 @@ import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { barLeafName, BarLayout, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode, type BarOrientation, type BarOverflowMode } from './BarLayout';
 import { childKeysAt } from './barOrder';
 import { withBarLabel, type LeafSurface } from './renderBarLeaf';
+import type { HoldProps } from '../Disabled';
 
-/** Props for {@link Bar}. */
-export interface BarProps {
+/** Props for {@link Bar}. `disabled` and `readOnly` hold every cell. */
+export interface BarProps extends HoldProps {
   /**
    * What the bar holds, as a `PrefGroup`: a group's key is a segment of its
    * leaves' paths. A leaf is a cell. A nested `section` or `bar` is a run
@@ -106,6 +107,10 @@ export function Bar(props: BarProps) {
       keysOf={(container) => childKeysAt(orderPrefGroup(schema, props.order), container)}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}
+      disabled={props.disabled}
+      disabledReason={props.disabledReason}
+      readOnly={props.readOnly}
+      readOnlyReason={props.readOnlyReason}
     />
   );
 }

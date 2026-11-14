@@ -5,12 +5,14 @@ import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import { OpacityRange } from './OpacityRange';
 import { usePickerClose } from './usePickerClose';
 import s from './ColorField.module.css';
+import { holdScope, type HoldProps } from '../Disabled';
+import { useNativeHold } from '../Disabled/nativeHold';
 
 /**
  * Props for {@link ColorField}. `onInput` fires throughout a gesture and
  * `onChange` once at its end.
  */
-export interface ColorFieldProps {
+export interface ColorFieldProps extends HoldProps {
   /** Current color, `#rrggbb` or `#rrggbbaa`. Omit when `mixed` or `unset`. */
   value?: string;
   /** Indeterminate presentation (multi-selection with differing colors):
@@ -26,8 +28,6 @@ export interface ColorFieldProps {
   alpha?: boolean;
   /** Draw the opacity slider inert, for a consumer that drops alpha. */
   alphaDisabled?: boolean;
-  /** The swatch and the opacity slider take no input. */
-  disabled?: boolean;
   /** Live value during interaction (picker drag, slider drag). Optional —
    *  wire it for live preview; omit it for commit-only consumers. */
   onInput?: (hex: string) => void;
@@ -59,7 +59,7 @@ function hex8Of(value: string): string {
  * commit-on-change would emit one undo entry per tick.
  */
 export function ColorField(props: ColorFieldProps) {
-  const { value, mixed = false, unset = false, alpha = false, alphaDisabled = false, disabled = false, onInput, onChange, id, className } = props;
+  const { value, mixed = false, unset = false, alpha = false, alphaDisabled = false, onInput, onChange, id, className } = props;
   const hex8 = hex8Of(value ?? '#000000');
   const rgb6 = hex8.slice(0, 7);
   const alpha01 = getAlpha01(hex8);
@@ -93,6 +93,7 @@ export function ColorField(props: ColorFieldProps) {
   };
 
   const swatch = usePickerClose(() => commit(visibleRgb, visibleAlpha));
+  const hold = useNativeHold(props, { readonlyRole: false });
 
   return (
     <span
@@ -100,27 +101,29 @@ export function ColorField(props: ColorFieldProps) {
       {...(mixed && colorDraft === null ? { 'data-mixed': '' } : {})}
       {...(unset && !mixed && colorDraft === null ? { 'data-unset': '' } : {})}
     >
-      <span className={s.chip}>
+      {hold.wrap(<span className={s.chip}>
         <input
           ref={swatch}
           id={id}
           className={s.color}
           type="color"
           value={visibleRgb}
-          disabled={disabled}
+          {...hold.attrs}
           aria-label={props['aria-label'] ?? 'Color'}
+          onClick={hold.refuses ? (e) => e.preventDefault() : undefined}
           onInput={(e) => {
+            if (hold.refuses) return;
             const rgb = (e.target as HTMLInputElement).value;
             setColorDraft(rgb);
             onInput?.(compose(rgb, visibleAlpha));
           }}
           onBlur={() => commit(visibleRgb, visibleAlpha)}
         />
-      </span>
-      {alpha && (
+      </span>)}
+      {alpha && holdScope(props, (
         <OpacityRange
           value={visibleAlpha}
-          disabled={alphaLocked || alphaDisabled || disabled}
+          disabled={alphaLocked || alphaDisabled}
           aria-label={props['aria-label']}
           onInput={(a01) => {
             setAlphaDraft(a01);
@@ -128,7 +131,7 @@ export function ColorField(props: ColorFieldProps) {
           }}
           onChange={(a01) => commit(visibleRgb, a01)}
         />
-      )}
+      ))}
     </span>
   );
 }

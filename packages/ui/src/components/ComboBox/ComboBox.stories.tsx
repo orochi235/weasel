@@ -29,7 +29,7 @@ export const ExplicitChildren: Story = {
     <ComboBox {...args}>
       <ComboBoxItem id="r">Red</ComboBoxItem>
       <ComboBoxItem id="g">Green</ComboBoxItem>
-      <ComboBoxItem id="b" isDisabled>Blue (unavailable)</ComboBoxItem>
+      <ComboBoxItem id="b" disabled>Blue (unavailable)</ComboBoxItem>
     </ComboBox>
   ),
 };

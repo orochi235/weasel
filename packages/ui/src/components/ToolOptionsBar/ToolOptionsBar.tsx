@@ -4,9 +4,10 @@ import type { PropertyRenderer } from '../SelectionPanel/renderContext';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { Bar } from '../Bar/Bar';
 import s from './ToolOptionsBar.module.css';
+import { holdScope, type HoldProps } from '../Disabled';
 
 /** Props for {@link ToolOptionsBar}. */
-export interface ToolOptionsBarProps {
+export interface ToolOptionsBarProps extends HoldProps {
   /**
    * Context label for the row — e.g. the active tool's name. Rendered
    * before the children and doubles as the toolbar's `aria-label`. A label
@@ -65,10 +66,14 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
       {label !== undefined && <span className={s.label}>{label}</span>}
       <div className={s.controls} ref={controls}>
         <FitScope value={fit}>
-          {schema !== undefined && (
-            <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} over={over} onChange={onChange} />
-          )}
-          {children}
+          {holdScope(props, (
+            <>
+              {schema !== undefined && (
+                <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} over={over} onChange={onChange} />
+              )}
+              {children}
+            </>
+          ))}
         </FitScope>
       </div>
     </div>

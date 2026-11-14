@@ -1,9 +1,10 @@
 import type { DragEvent, MouseEvent, PointerEvent, ReactNode, RefObject } from 'react';
-import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
+import { SegmentTooltip } from '../segmentTooltip';
+import type { DisableableProps } from '../Disabled';
 import s from './ToolButton.module.css';
 
 /** Props for {@link ToolButton}. */
-export interface ToolButtonProps {
+export interface ToolButtonProps extends DisableableProps {
   /** Icon node (typically an SVG component). */
   icon: ReactNode;
   /** Human-readable label shown under the icon. */
@@ -14,11 +15,6 @@ export interface ToolButtonProps {
   description?: string;
   /** Selected/active state — toggles the active visual treatment. */
   active?: boolean;
-  /** Disabled state — passes through to the underlying button. */
-  disabled?: boolean;
-  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
-   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
-  disabledReason?: string;
   /**
    * When true, sets `aria-disabled="true"` on the button without using the
    * native `disabled` attribute. This keeps the button focusable and reachable
@@ -58,10 +54,9 @@ export function ToolButton(props: ToolButtonProps) {
     icon, label, shortcut, description, active, disabled, disabledReason, ariaDisabled,
     onClick, onPointerDown, onDragStart, title, className, menu,
   } = props;
-  const content = segmentTooltipContent({ tooltip: title, shortcut, label, description, disabled, disabledReason }) ?? label;
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
   return (
-    <SegmentTooltip content={content} disabled={disabled} disabledReason={disabledReason}>
+    <SegmentTooltip tip={{ tooltip: title ?? (description || shortcut ? undefined : label), shortcut, label, description }} disabled={disabled} disabledReason={disabledReason}>
       <button
         ref={menu?.ref}
         id={menu?.id}

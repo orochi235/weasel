@@ -6,6 +6,7 @@ import { Bar } from '../Bar/Bar';
 import { BarActions } from '../Bar/BarActions';
 import type { Orientation } from '../orientation';
 import type { PropertyRenderer } from '../SelectionPanel/renderContext';
+import type { DisableableProps } from '../Disabled';
 
 /** Which actions an {@link ActionBar} draws: one group's, or every one carrying a tag. */
 export type ActionBarSource =
@@ -25,7 +26,7 @@ export type ActionBarSource =
 export type ActionBarProps = ActionBarSource & ActionBarOptions;
 
 /** What an {@link ActionBar} takes besides its {@link ActionBarSource}. */
-export interface ActionBarOptions {
+export interface ActionBarOptions extends DisableableProps {
   /** Layout direction. Defaults to `'horizontal'`. */
   orientation?: Orientation;
   /**
@@ -82,6 +83,8 @@ export function ActionBar(props: ActionBarProps) {
       label={`${tag ?? group} actions`}
       framed="segmented"
       className={className}
+      disabled={props.disabled}
+      disabledReason={props.disabledReason}
     />
   );
 }

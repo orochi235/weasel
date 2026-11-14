@@ -23,11 +23,12 @@ import { panelSections } from './panelSections';
 import { sectionsInScopes } from './scopes';
 import { PanelMarksContext, panelMarkedPaths, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
+import { holdScope, type HoldProps } from '../Disabled';
 
 export type { PropertyRenderContext, PropertyRenderer } from './renderContext';
 
 /** Props for {@link SelectionPanel}. */
-export interface SelectionPanelProps<TData, TLayer extends string, TPose> extends MarkHiddenProps {
+export interface SelectionPanelProps<TData, TLayer extends string, TPose> extends MarkHiddenProps, HoldProps {
   /** The scene handle (`useScene`). The panel subscribes itself, so it
    *  re-renders on scene mutations regardless of parent renders. */
   scene: Scene<TData, TLayer, TPose>;
@@ -170,7 +171,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
           </>
         )}
       </header>
-      {panelSections(sections, cells, marks)}
+      {holdScope(props, panelSections(sections, cells, marks))}
     </div>
     </PanelMarksContext.Provider>
   );

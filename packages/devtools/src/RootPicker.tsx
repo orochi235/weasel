@@ -17,7 +17,7 @@ export function RootPicker({ roots, value, onChange }: RootPickerProps): ReactEl
       aria-label="Canvas"
       width="fit"
       placeholder="No canvas"
-      isDisabled={roots.length === 0}
+      disabled={roots.length === 0}
       selectedKey={value}
       onSelectionChange={onChange}
       options={roots.map((r) => ({

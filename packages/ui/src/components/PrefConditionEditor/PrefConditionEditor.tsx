@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { checkPrefCondition, isPrefCondition, type PrefCondition, type PrefConditionSite, type PrefGroup, type PrefList, type PrefMap, type PrefSection } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { Code } from '../Code';
-import type { SelectOption } from '../Select';
+import type { ListOption } from '../listOption';
 import { ConditionClipboard } from './ConditionClipboard';
 import { ConditionGroupRows } from './ConditionGroupRows';
 import type { ConditionScope } from './ConditionRow';
@@ -61,7 +61,7 @@ export interface PrefConditionEditorProps {
 export function PrefConditionEditor({ value, onChange, schema, over, exclude = NO_PATHS, entryOf, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
   const leaves = useMemo(() => conditionLeaves(schema, entryOf, over), [schema, entryOf, over]);
   const site = useMemo<PrefConditionSite>(() => (entryOf ? { within: entryOf } : {}), [entryOf]);
-  const prefOptions = useMemo<SelectOption[]>(() => leaves
+  const prefOptions = useMemo<ListOption[]>(() => leaves
     .filter((found) => found.from === 'item' || found.over || !exclude.some((out) => found.path === out || found.path.startsWith(`${out}.`)))
     .map((found) => {
       const { path, leaf, from } = found;

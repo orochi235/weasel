@@ -6,13 +6,14 @@ import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import type { Orientation } from '../orientation';
 import { ToolRail, type StackCycleModifier, type ToolRailButton, type ToolRailItem } from '../ToolRail';
 import s from './ToolPalette.module.css';
+import type { DisableableProps } from '../Disabled';
 import { icon } from '../../icons.gen';
 import { groupTools } from './order';
 import { slotsOf, stackIndex } from './stacks';
 import { useToolCarry } from './useToolCarry';
 
 /** Props for {@link ToolPalette}. */
-export interface ToolPaletteProps {
+export interface ToolPaletteProps extends DisableableProps {
   tools: ToolsApi;
   orientation?: Orientation;
   className?: string;
@@ -91,7 +92,7 @@ export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, modeRegistry, ineligible = 'dim',
     groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, 'aria-label': ariaLabel = 'Tools', stacks, stackCycle = 'alt',
-    columns, onToolDragStart, carryTool, carryGhost,
+    columns, onToolDragStart, carryTool, carryGhost, disabled, disabledReason: ownReason,
   } = props;
   const carry = useToolCarry(carryTool, carryGhost);
   const shows = include === undefined ? () => true
@@ -135,6 +136,8 @@ export function ToolPalette(props: ToolPaletteProps) {
         stackCycle={stackCycle}
         aria-label={ariaLabel}
         className={className}
+        disabled={disabled}
+        disabledReason={ownReason}
       />
       {carry.ghost}
     </>

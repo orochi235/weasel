@@ -34,7 +34,7 @@ export const Invalid: Story = {
 };
 
 export const Disabled: Story = {
-  args: { label: 'Name', isDisabled: true, defaultValue: 'Pico' },
+  args: { label: 'Name', disabled: true, defaultValue: 'Pico' },
 };
 
 export const Adornments: Story = {

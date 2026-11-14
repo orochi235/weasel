@@ -1,8 +1,9 @@
 import { listCanvasFonts, listFonts, resolveFontVariant } from '@weasel-js/font';
 import { Select } from '../Select';
+import type { HoldProps } from '../Disabled';
 
 /** Props for {@link FontFamilySelect}. */
-export interface FontFamilySelectProps {
+export interface FontFamilySelectProps extends HoldProps {
   /** Current family, or `undefined` when the sources disagree (`mixed`). */
   value?: string;
   /** Indeterminate presentation — the aggregated sources name different families. */
@@ -12,8 +13,6 @@ export interface FontFamilySelectProps {
    *  probe reports the variant that paints rather than a nominal 400/normal. */
   weight?: number;
   fontStyle?: 'normal' | 'italic';
-  /** The picker shows its value and opens nothing. */
-  isDisabled?: boolean;
   'aria-label'?: string;
   className?: string;
 }
@@ -55,7 +54,10 @@ export function FontFamilySelect(props: FontFamilySelectProps) {
       options={options}
       selectedKey={value ?? null}
       mixed={mixed}
-      isDisabled={props.isDisabled}
+      disabled={props.disabled}
+      disabledReason={props.disabledReason}
+      readOnly={props.readOnly}
+      readOnlyReason={props.readOnlyReason}
       onSelectionChange={onChange}
       aria-label={props['aria-label'] ?? 'Font'}
     />

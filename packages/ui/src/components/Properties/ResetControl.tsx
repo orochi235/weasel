@@ -3,6 +3,7 @@ import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Properties.module.css';
+import { useControlAccess } from '../Disabled';
 
 /** Props for {@link ResetControl}. */
 export interface ResetControlProps {
@@ -20,7 +21,10 @@ export interface ResetControlProps {
  * A span with a button's role and keys, not a `<button>`: inside a row's `<label>` a button would take the
  * row's name off its control, and a press on it would reach that control.
  */
-export function ResetControl({ name, onReset, disabled = false, className }: ResetControlProps) {
+export function ResetControl({ name, onReset, disabled: nothing = false, className }: ResetControlProps) {
+  // A reset changes the value, so a disabled or read-only scope stops it too.
+  const held = useControlAccess().state !== 'enabled';
+  const disabled = nothing || held;
   const press = (e: MouseEvent | KeyboardEvent): void => {
     e.preventDefault();
     e.stopPropagation();

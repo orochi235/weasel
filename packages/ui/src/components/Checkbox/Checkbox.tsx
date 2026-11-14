@@ -9,9 +9,11 @@ import {
 } from 'react';
 import shared from '../checkbox.module.css';
 import s from './Checkbox.module.css';
+import type { HoldProps } from '../Disabled';
+import { useNativeHold } from '../Disabled/nativeHold';
 
 /** Props for {@link Checkbox}. The label is passed as children. */
-export type CheckboxProps = {
+export type CheckboxProps = HoldProps & {
   children?: ReactNode;
   className?: string;
   /** Controlled selection. */
@@ -21,9 +23,6 @@ export type CheckboxProps = {
   onChange?: (isSelected: boolean) => void;
   /** Draws the mixed mark; the input's `indeterminate` is set to match. */
   isIndeterminate?: boolean;
-  isDisabled?: boolean;
-  /** Focusable and announced, but a click does not change it. */
-  isReadOnly?: boolean;
   isInvalid?: boolean;
   isRequired?: boolean;
   name?: string;
@@ -53,23 +52,26 @@ export const Checkbox = forwardRef(function Checkbox(
     defaultSelected = false,
     onChange,
     isIndeterminate = false,
-    isDisabled,
-    isReadOnly,
+    disabled,
+    disabledReason,
+    readOnly,
+    readOnlyReason,
     isInvalid,
     isRequired,
     ...rest
   } = props;
+  const hold = useNativeHold({ disabled, disabledReason, readOnly, readOnlyReason, 'aria-describedby': rest['aria-describedby'] });
   const [uncontrolled, setUncontrolled] = useState(defaultSelected);
   const checked = isSelected ?? uncontrolled;
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (input.current) input.current.indeterminate = isIndeterminate;
   });
-  return (
+  return hold.wrap(
     <label
       ref={ref}
       className={[s.checkbox, className].filter(Boolean).join(' ')}
-      data-disabled={isDisabled || undefined}
+      data-disabled={hold.access.state === 'disabled' || undefined}
     >
       <input
         {...rest}
@@ -77,19 +79,19 @@ export const Checkbox = forwardRef(function Checkbox(
         type="checkbox"
         className={shared.checkbox}
         checked={checked}
-        disabled={isDisabled}
+        {...hold.attrs}
+        data-disabled={undefined}
         required={isRequired}
         aria-invalid={isInvalid || undefined}
-        aria-readonly={isReadOnly || undefined}
         onChange={(e) => {
           // A click clears `indeterminate`, and the effect only puts it back if something renders.
           e.target.indeterminate = isIndeterminate;
-          if (isReadOnly) return;
+          if (hold.refuses) return;
           if (isSelected === undefined) setUncontrolled(e.target.checked);
           onChange?.(e.target.checked);
         }}
       />
       {children !== undefined && <span className={s.label}>{children}</span>}
-    </label>
+    </label>,
   );
 });

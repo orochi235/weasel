@@ -15,12 +15,14 @@ export function AddEntry<T>({
   kinds,
   label,
   disabled,
+  disabledReason,
   onAdd,
   buttonRef,
 }: {
   kinds: readonly ListEntryKind<T>[];
   label: string;
   disabled: boolean;
+  disabledReason?: string;
   onAdd: (make: () => T) => void;
   buttonRef: RefObject<HTMLButtonElement | null>;
 }) {
@@ -31,6 +33,7 @@ export function AddEntry<T>({
         buttonRef={buttonRef}
         label={label}
         disabled={disabled}
+        disabledReason={disabledReason}
         items={kinds.map((kind, i) => ({ value: String(i), label: kind.label }))}
         onAction={(i) => {
           const kind = kinds[Number(i)];
@@ -40,7 +43,7 @@ export function AddEntry<T>({
     );
   }
   return (
-    <Button ref={buttonRef} size="sm" disabled={disabled || !only} onClick={() => only && onAdd(only.make)}>
+    <Button ref={buttonRef} size="sm" disabled={disabled || !only} disabledReason={disabledReason} onClick={() => only && onAdd(only.make)}>
       {label}
     </Button>
   );

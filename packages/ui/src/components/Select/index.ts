@@ -1,8 +1,8 @@
 export { Select, SelectItem, SelectSection } from './Select';
+export type { ListOption } from '../listOption';
 export type {
   SelectProps,
   SelectItemProps,
-  SelectOption,
   SelectOptionGroup,
   SelectSectionProps,
   SelectIndicator,

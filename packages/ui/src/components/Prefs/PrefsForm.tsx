@@ -20,6 +20,7 @@ import { selectionAttrs, shownPath, useSelectedRow, type PrefSelectHow, type Sel
 import { useSplitRows, type PrefSplitProps } from './splitRows';
 import { useParamsPolicy } from './useParamsPolicy';
 import s from './Prefs.module.css';
+import { holdScope, type HoldProps } from '../Disabled';
 
 export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
 
@@ -27,7 +28,7 @@ export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
 export type PrefsLayout = 'columns' | 'rail' | 'list';
 
 /** Props for {@link PrefsForm}. */
-export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
+export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps, HoldProps {
   /** Root of the schema tree. A root drawn `as: 'bar'` is the form: one bar,
    *  whatever `layout` says. */
   schema: PrefGroup;
@@ -140,8 +141,9 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
   /** Dotted paths of the leaves, groups and fields to draw disabled, beside what the schema's own `enableIf`s
    *  disable: for a caller that judged the conditions itself, against values `values` does not hold the way the
    *  schema's paths name them (labkit's `sectionTree`). Named as `applyPrefConditions` names what it disables, so a
-   *  group's path dims only its name, and a field's (`stroke.width`) disables that field. */
-  disabled?: ReadonlySet<string>;
+   *  group's path dims only its name, and a field's (`stroke.width`) disables that field. Disable the whole form
+   *  with `disabled`. */
+  disabledPaths?: ReadonlySet<string>;
   /** A drag over the form. The form lays out as it would after the drop,
    *  with the dragged nodes drawn where they would land: `prefDropTargetAt`
    *  finds where that is from a pointer position. */
@@ -160,9 +162,13 @@ const NO_SELECTION: readonly string[] = [];
  * panels, or a navigation rail beside one group at a time.
  *
  * Storage-agnostic: pair with `PrefsDialog` for the modal composition, and
- * persist however the app likes via `onChange`.
+ * persist however the app likes via `onChange`. `disabled` and `readOnly` hold every control in it.
  */
 export function PrefsForm(props: PrefsFormProps) {
+  return holdScope(props, <PrefsFormBody {...props} />);
+}
+
+function PrefsFormBody(props: PrefsFormProps) {
   const {
     schema,
     values,
@@ -199,7 +205,7 @@ export function PrefsForm(props: PrefsFormProps) {
     [visible, judge, keepEmpty, markHidden, over, targets],
   );
   const entryAt = useMemo(() => entryApplier(judge, markHidden), [judge, markHidden]);
-  const given = props.disabled;
+  const given = props.disabledPaths;
   const disabled = useMemo(() => {
     const own = applied?.disabled;
     if (!given || given.size === 0) return own;

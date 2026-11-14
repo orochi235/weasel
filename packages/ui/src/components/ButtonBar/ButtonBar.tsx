@@ -4,7 +4,8 @@ import { SegmentedRow, segmentClassName, segmentPlaceProps, useSegmentedTiling, 
 import { tilingRoving } from '../../tiling';
 import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
-import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import { SegmentTooltip, useSegmentAccess, type SegmentTooltipFields } from '../segmentTooltip';
+import { holdScope, type DisableableProps } from '../Disabled';
 import type { Orientation } from '../orientation';
 
 /**
@@ -15,12 +16,8 @@ export type ButtonBarItem<V extends string | number = string> = {
   value: V;
   label?: ReactNode;
   ariaLabel?: string;
-  disabled?: boolean;
-  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
-   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
-  disabledReason?: string;
   onAction: () => void;
-} & SegmentTooltipFields;
+} & SegmentTooltipFields & DisableableProps;
 
 /** Segment height and type scale for an {@link ButtonBar}. */
 export type ButtonBarSize = SegmentedSize;
@@ -28,7 +25,7 @@ export type ButtonBarSize = SegmentedSize;
 export type ButtonBarVariant = SegmentedVariant;
 
 /** Props for {@link ButtonBar}. */
-export type ButtonBarProps<V extends string | number = string> = SegmentedGridProps & {
+export type ButtonBarProps<V extends string | number = string> = SegmentedGridProps & DisableableProps & {
   items: readonly ButtonBarItem<V>[];
   'aria-label'?: string;
   className?: string;
@@ -50,16 +47,17 @@ export type ButtonBarProps<V extends string | number = string> = SegmentedGridPr
 export function ButtonBar<V extends string | number = string>(props: ButtonBarProps<V>): ReactElement {
   const { items, 'aria-label': ariaLabel, className, height, size, variant, orientation } = props;
 
+  const held = useSegmentAccess(props).state !== 'enabled';
   const fire = (index: number) => {
     const item = items[index];
-    if (item.disabled) return;
+    if (held || item.disabled) return;
     item.onAction();
   };
 
   const tiles = useSegmentedTiling(props);
   const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, ...(tiles ? tilingRoving(tiles) : {}), onActivate: fire });
 
-  return (
+  return <>{holdScope(props, (
     <SegmentedRow
       roving={roving}
       role="toolbar"
@@ -74,7 +72,7 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
         key: String(item.value),
         state: 'off' as const,
         draw: (place) => (
-          <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled} disabledReason={item.disabledReason}>
+          <SegmentTooltip tip={item} disabled={item.disabled} disabledReason={item.disabledReason}>
             <button
               type="button"
               aria-label={item.ariaLabel}
@@ -89,5 +87,5 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
         ),
       }))}
     />
-  );
+  ))}</>;
 }

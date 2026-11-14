@@ -2,11 +2,11 @@ import { useState, type ReactElement } from 'react';
 import { InlineRange } from '../InlineRange';
 import shared from '../range.module.css';
 import s from './OpacityRange.module.css';
+import type { HoldProps } from '../Disabled';
 
 /** Props for {@link OpacityRange}. Alphas are 0..1 at 1% resolution. */
-export interface OpacityRangeProps {
+export interface OpacityRangeProps extends HoldProps {
   value: number;
-  disabled?: boolean;
   /** Names what the opacity belongs to; the slider is `<label> opacity`. */
   'aria-label'?: string;
   onInput?: (alpha01: number) => void;
@@ -20,7 +20,7 @@ export interface OpacityRangeProps {
  * under a paint with no single color to carry an alpha.
  */
 export function OpacityRange(props: OpacityRangeProps): ReactElement {
-  const { value, disabled = false, onInput, onChange } = props;
+  const { value, disabled, disabledReason, readOnly, readOnlyReason, onInput, onChange } = props;
   const label = props['aria-label'];
   // Tracks the thumb during a gesture — the committed prop only updates after
   // onChange — then resets to follow the prop again.
@@ -42,6 +42,9 @@ export function OpacityRange(props: OpacityRangeProps): ReactElement {
         step={1}
         value={pct}
         disabled={disabled}
+        disabledReason={disabledReason}
+        readOnly={readOnly}
+        readOnlyReason={readOnlyReason}
         aria-label={label ? `${label} opacity` : 'Opacity'}
         onInput={(e) => {
           const next = Number((e.target as HTMLInputElement).value);

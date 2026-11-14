@@ -22,21 +22,24 @@ import s from './Tabs.module.css';
 export const TabSlotsContext = createContext<RunSlots | null>(null);
 
 /** Props for {@link Tabs}, on top of React Aria's `Tabs` props. */
-export type TabsProps = Omit<RACTabsProps, 'className' | 'children'> & {
+export type TabsProps = Omit<RACTabsProps, 'className' | 'children' | 'isDisabled'> & {
   children?: ReactNode;
   className?: string;
+  /** No tab can be chosen. */
+  disabled?: boolean;
 };
 
 /**
  * Tab set wrapping React Aria's Tabs, skinned against the `--wzl-*` tokens.
- * Holds a {@link TabList} and one {@link TabPanel} per tab.
+ * Holds a {@link TabList} and one {@link TabPanel} per tab. Tabs move between views rather than set a value, so a
+ * `Disabled` scope around them leaves them usable, and every panel can still be read.
  */
-export function Tabs({ children, className, ...rest }: TabsProps) {
+export function Tabs({ children, className, disabled, ...rest }: TabsProps) {
   const outer = useContext(TabSlotsContext);
   const own = useMemo(() => createRunSlots(), []);
   return (
     <TabSlotsContext.Provider value={outer?.held ? outer : own}>
-      <RACTabs {...rest} className={[s.tabs, className].filter(Boolean).join(' ')}>
+      <RACTabs {...rest} isDisabled={disabled} className={[s.tabs, className].filter(Boolean).join(' ')}>
         {children}
       </RACTabs>
     </TabSlotsContext.Provider>
@@ -69,24 +72,26 @@ export const TabList = forwardRef(function TabList<T extends object>(
 }) as <T extends object>(props: TabListProps<T> & RefAttributes<HTMLDivElement>) => ReactElement;
 
 /** Props for {@link Tab}, on top of React Aria's `Tab` props. */
-export type TabProps = Omit<RACTabProps, 'className' | 'children'> & {
+export type TabProps = Omit<RACTabProps, 'className' | 'children' | 'isDisabled'> & {
   children?: ReactNode;
   className?: string;
+  /** The tab cannot be chosen. */
+  disabled?: boolean;
 };
 
 /** One tab button. Its `id` selects the {@link TabPanel} it reveals. */
-export function Tab({ children, className, ...rest }: TabProps) {
+export function Tab({ children, className, disabled, ...rest }: TabProps) {
   const slot = useRunSlot(TabSlotsContext, rest.id === undefined ? undefined : String(rest.id));
   if (slot === undefined) {
     return (
-      <RACTab {...rest} className={[s.tab, className].filter(Boolean).join(' ')}>
+      <RACTab {...rest} isDisabled={disabled} className={[s.tab, className].filter(Boolean).join(' ')}>
         {children}
       </RACTab>
     );
   }
   const { className: _, style, ...at } = slot;
   return (
-    <RACTab {...rest} {...at} className={slotClass(slot, [s.tab, className].filter(Boolean).join(' '))} style={{ ...(typeof rest.style === 'object' ? rest.style : null), ...style }}>
+    <RACTab {...rest} isDisabled={disabled} {...at} className={slotClass(slot, [s.tab, className].filter(Boolean).join(' '))} style={{ ...(typeof rest.style === 'object' ? rest.style : null), ...style }}>
       {children}
     </RACTab>
   );

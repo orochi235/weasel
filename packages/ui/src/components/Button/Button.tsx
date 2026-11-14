@@ -6,7 +6,8 @@ import {
 import { nodeText } from '../../nodeText';
 import type { DomTarget } from '../../domMeasureEnv';
 import s from './Button.module.css';
-import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import { SegmentTooltip, type SegmentTooltipFields } from '../segmentTooltip';
+import type { DisableableProps } from '../Disabled';
 import { type AppearanceProps, useAppearance } from '../appearance';
 
 /** Visual weight of a button. Defaults to `solid`. `link` drops the
@@ -26,10 +27,6 @@ export type ButtonBase = {
    *  firing an action -- a panel toggle, a mode switch. Left off, the button
    *  announces no pressed state at all, which is what an action button wants. */
   pressed?: boolean;
-  disabled?: boolean;
-  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
-   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
-  disabledReason?: string;
   loading?: boolean;
   leadingIcon?: ReactNode;
   trailingIcon?: ReactNode;
@@ -42,7 +39,7 @@ export type ButtonBase = {
   id?: string;
   /** Passed through to the `<button>`, for test ids and consumer hooks. */
   [data: `data-${string}`]: string | undefined;
-} & AppearanceProps & SegmentTooltipFields;
+} & AppearanceProps & SegmentTooltipFields & DisableableProps;
 
 /** A button with a visible label, which names it. */
 export type ButtonRegular = ButtonBase & {
@@ -146,9 +143,10 @@ export const Button = forwardRef(function Button(
 
   return (
     <SegmentTooltip
-      content={segmentTooltipContent({ tooltip, shortcut, ariaLabel, label: children, disabled, disabledReason })}
+      tip={{ tooltip, shortcut, ariaLabel, label: children }}
       disabled={disabled}
       disabledReason={disabledReason}
+      holdsValue={pressed !== undefined}
     >
       <button
         ref={ref}

@@ -31,7 +31,7 @@ describe('Checkbox', () => {
   });
 
   it('marks the underlying input as disabled', () => {
-    render(<Checkbox isDisabled>x</Checkbox>);
+    render(<Checkbox disabled>x</Checkbox>);
     expect((screen.getByRole('checkbox') as HTMLInputElement).disabled).toBe(true);
   });
 
@@ -41,7 +41,7 @@ describe('Checkbox', () => {
   });
 
   it('keeps the mixed mark through a click that changes nothing', () => {
-    render(<Checkbox isIndeterminate isReadOnly>x</Checkbox>);
+    render(<Checkbox isIndeterminate readOnly>x</Checkbox>);
     const cb = screen.getByRole('checkbox') as HTMLInputElement;
     fireEvent.click(cb);
     expect(cb.indeterminate).toBe(true);

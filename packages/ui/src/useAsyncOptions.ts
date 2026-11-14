@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
-import type { ComboBoxOption } from './components/ComboBox/ComboBox';
+import type { ListOption } from './components/listOption';
 import type { OptionKey } from './optionKey';
 
 /** An option list keyed to the value type its combo box commits. */
-export type AsyncOption<T extends OptionKey> = ComboBoxOption & { value: T };
+export type AsyncOption<T extends OptionKey> = ListOption<T>;
 
 /** Options for {@link useAsyncOptions}. */
 export type UseAsyncOptionsProps<T extends OptionKey> = {

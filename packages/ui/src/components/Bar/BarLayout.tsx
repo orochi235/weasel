@@ -14,6 +14,7 @@ import { useBarLead } from './barLeadHandle';
 import { DockBarContext, useReportDockLeast } from '../ToolbarDock/dockContext';
 import { OrientationContext, type Orientation } from '../orientation';
 import s from './Bar.module.css';
+import { holdScope, useDisabled, type HoldProps } from '../Disabled';
 
 /** Which way a bar runs. */
 export type BarOrientation = Orientation;
@@ -64,7 +65,7 @@ export interface BarCell {
 }
 
 /** Props for {@link BarLayout}. */
-export interface BarLayoutProps {
+export interface BarLayoutProps extends HoldProps {
   nodes: readonly BarNode[];
   orientation?: BarOrientation;
   /** Leaves that sit side by side, as the cells they make. Fewer cells than
@@ -81,8 +82,6 @@ export interface BarLayoutProps {
   lead?: PrefBarLead;
   /** The glyph naming the bar, which `lead: 'icon'` starts its line with. */
   icon?: IconSpec;
-  /** The bar's group is disabled, and its lead dims as a heading's name does. The cells say so for themselves. */
-  disabled?: boolean;
   /** Draw the strip the bar sits on, for a bar set among other things with
    *  no strip of the host's under it. `'segmented'` is a compact strip with
    *  the cells almost touching. */
@@ -121,10 +120,12 @@ export interface BarLayoutProps {
  * Focus keeps plain tab order. A bar of number boxes and selects has to
  * leave the arrow keys to them, so it does not rove.
  */
-export function BarLayout(props: BarLayoutProps) {
+export function BarLayout(own: BarLayoutProps) {
   const along = useTrackShape();
+  // Disabled, the bar's lead dims as a heading's name does, and every cell is disabled.
+  const props = { ...own, disabled: useDisabled(own).disabled };
   const bar = along !== null && along.shape.kind !== 'line' ? <BarAlong {...props} shape={along.shape} align={along.align} /> : <BarLine {...props} />;
-  return <BarMarkContext.Provider value={props.onReorder !== undefined}>{bar}</BarMarkContext.Provider>;
+  return holdScope(own, <BarMarkContext.Provider value={props.onReorder !== undefined}>{bar}</BarMarkContext.Provider>);
 }
 
 function BarLine(props: BarLayoutProps) {
