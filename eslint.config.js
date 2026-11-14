@@ -219,6 +219,7 @@ export default [
       'apps/draw/**/*.{ts,tsx}',
       'apps/chart/**/*.{ts,tsx}',
       'apps/theme-editor/**/*.{ts,tsx}',
+      'apps/ui-lab/**/*.{ts,tsx}',
       'apps/site/**/*.{ts,tsx}',
       'packages/forge/src/**/*.{ts,tsx}',
       'packages/labkit/src/**/*.{ts,tsx}',

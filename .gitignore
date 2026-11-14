@@ -40,6 +40,7 @@ packages/cursor/scripts/probe/warp
 # Output collected from onto jobs run on other machines
 /.onto-out/
 dist-theme-editor
+dist-ui-lab
 __pycache__/
 
 # Written by typedoc/packageOptions.mjs each time the API reference builds
