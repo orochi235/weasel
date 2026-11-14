@@ -1,18 +1,16 @@
 import { type ReactElement } from 'react';
 import {
   Button as RACButton,
-  Dialog as RACDialog,
   DialogTrigger,
 } from 'react-aria-components';
-import { Popover } from '../Popover';
+import { Popover, PopoverDialog } from '../Popover';
 import { INHERIT, usePaintKind, type Inherit, type Paint, type PaintKind } from '@weasel-js/core';
 import type { PaintInherit } from '../PaintInput';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { paintPreviewCss } from '@weasel-js/paint';
 import { PaintInput } from '../PaintInput';
 import { ownPaint } from '../PaintInput/PaintInput';
-import listbox from '../listbox.module.css';
-import { MIXED_HINT } from '../mixedHint';
+import { MIXED_HINT } from '../Field/mixedHint';
 import s from './PaintField.module.css';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
@@ -98,7 +96,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
           outside the subtree the trigger sits in. */}
       {ready && provide(
         <Popover className={s.popover} data-weasel-overlay="">
-          <RACDialog className={`${listbox.surface} ${s.body}`} aria-label={ariaLabel ? `${ariaLabel} editor` : 'Paint editor'}>
+          <PopoverDialog className={s.body} aria-label={ariaLabel ? `${ariaLabel} editor` : 'Paint editor'}>
             <PaintInput
               value={value}
               mixed={mixed}
@@ -110,7 +108,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
               onChange={onChange}
               aria-label={ariaLabel}
             />
-          </RACDialog>
+          </PopoverDialog>
         </Popover>
       )}
     </DialogTrigger>,

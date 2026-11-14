@@ -1,9 +1,7 @@
 import { useState, type ReactNode, type RefObject } from 'react';
-import { Dialog } from 'react-aria-components';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import { Input } from '../Input';
-import listbox from '../listbox.module.css';
-import { Popover } from '../Popover';
+import { Popover, PopoverDialog } from '../Popover';
 import s from './TokenField.module.css';
 
 interface TokenEditorProps {
@@ -32,9 +30,9 @@ export function TokenEditor({ anchor, title, onClose, children }: TokenEditorPro
           className={s.popover}
           data-weasel-overlay=""
         >
-          <Dialog aria-label={title} className={`${listbox.surface} ${s.editor}`}>
+          <PopoverDialog aria-label={title} className={s.editor}>
             {children}
-          </Dialog>
+          </PopoverDialog>
         </Popover>,
       )}
     </>

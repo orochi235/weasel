@@ -1,7 +1,7 @@
 import { useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import { actionItems, useActionsRegistry, type Action } from '@weasel-js/core';
 import type { PrefAction, PrefLeaf } from '@weasel-js/prefs';
-import { actionShortcutText } from '../actionShortcutText';
+import { actionShortcutText } from '../Prefs/actionShortcutText';
 import { actionIcon } from '../Icon/actionIcon';
 import { childrenOf, undigit, type SchemaNode, type SchemaRoot } from './schemaEdit';
 

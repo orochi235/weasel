@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
-import { Callout } from './Callout';
-import { ComboBox } from './ComboBox';
-import { Dialog } from './Dialog';
-import { Select } from './Select';
-import { Tooltip, TooltipTrigger } from './Tooltip';
+import { Callout } from '../components/Callout';
+import { ComboBox } from '../components/ComboBox';
+import { Dialog } from '../components/Dialog';
+import { Select } from '../components/Select';
+import { Tooltip, TooltipTrigger } from '../components/Tooltip';
 import { renderWithIcons } from '../testing/withIcons';
 
 /**

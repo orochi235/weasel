@@ -1,10 +1,8 @@
 import { useSyncExternalStore, type RefObject } from 'react';
-import { Dialog as RACDialog } from 'react-aria-components';
 import type { MenuColorEntry, MenuController } from '@weasel-js/menu';
 import { ColorField } from '../ColorField';
-import { Popover } from '../Popover';
+import { Popover, PopoverDialog } from '../Popover';
 import { Swatch } from '../Properties/PropertyReadout';
-import listbox from '../listbox.module.css';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import { useMenuPart } from './menuParts';
 import s from './Menu.module.css';
@@ -36,17 +34,16 @@ export function MenuColorValue({ entry: e, controller: c, row, picking, onPicked
           isNonModal
           onOpenChange={(open) => { if (!open) onPicked(); }}
           placement="end top"
-          className={listbox.surface}
           data-weasel-overlay=""
         >
-          <RACDialog className={s.picker} aria-label={`${e.label} color`}>
+          <PopoverDialog className={s.picker} aria-label={`${e.label} color`}>
             <ColorField
               value={value}
               alpha={e.alpha}
               aria-label={e.label}
               onChange={(hex) => c.setColor(e, hex)}
             />
-          </RACDialog>
+          </PopoverDialog>
         </Popover>,
       )}
     </span>

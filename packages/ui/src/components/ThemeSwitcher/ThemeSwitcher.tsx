@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
 import { Button, type ButtonVariant } from '../Button/Button';
 import { useDensity, type ControlSize } from '../Density';
-import { COLOR_MODES } from '../colorModes';
+import { COLOR_MODES } from '../ColorModeControl/colorModes';
 import { Icon } from '../Icon/Icon';
 
 /** One stop in a {@link ThemeSwitcher}'s rotation. */

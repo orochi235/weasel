@@ -1,5 +1,5 @@
 import type { ReactNode, CSSProperties } from 'react';
-import type { TrackCtx } from './components/Slider';
+import type { TrackCtx } from './';
 import { GradientCurve } from './paintGradientCurve';
 import { sampledCssStops } from '@weasel-js/paint';
 

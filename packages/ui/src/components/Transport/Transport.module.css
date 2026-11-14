@@ -61,7 +61,7 @@
 }
 
 .sizer {
-  composes: sizer from '../sizer.module.css';
+  composes: sizer from '@weasel-js/theme/sizer.module.css';
 }
 
 .transportButton:is(:disabled, [data-disabled]) {

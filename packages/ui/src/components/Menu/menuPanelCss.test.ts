@@ -6,7 +6,7 @@ import { MENU_BORDER_WIDTH, MENU_CARET_SIZE, MENU_ICON_SIZE, MENU_MIN_WIDTH } fr
 // The DOM menu's stylesheet sets out the lengths `menuPanelMetrics` reads, which size the HUD menu too. jsdom
 // resolves no var(), so this reads them as text; `measure.browser.test.tsx` holds the laid-out box to the measure.
 const menuCss = readFileSync(resolve(__dirname, 'Menu.module.css'), 'utf8');
-const surfaceCss = readFileSync(resolve(__dirname, '../listbox.module.css'), 'utf8');
+const surfaceCss = readFileSync(resolve(__dirname, '../Popover/Popover.module.css'), 'utf8');
 
 /** The declarations of `selector`'s first rule in `css`. */
 function rule(selector: string, css = menuCss): Record<string, string> {

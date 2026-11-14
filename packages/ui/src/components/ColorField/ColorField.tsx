@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { getAlpha01, withAlpha01 } from '@weasel-js/core';
 import { normalizeHex, parseColor, rgbaToHex } from '@weasel-js/paint';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
-import { OpacityRange } from './OpacityRange';
+import { OpacityRange } from '../OpacityRange/OpacityRange';
 import { usePickerClose } from './usePickerClose';
 import s from './ColorField.module.css';
 import { holdScope, type HoldProps } from '../Disabled';

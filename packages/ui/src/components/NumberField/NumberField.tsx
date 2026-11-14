@@ -7,12 +7,12 @@ import {
   Button as RACButton,
   type NumberFieldProps as RACNumberFieldProps,
 } from 'react-aria-components';
-import { MIXED_HINT } from '../mixedHint';
+import { MIXED_HINT } from '../Field/mixedHint';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import type { StepperSide } from './UnitField';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
-import f from '../field.module.css';
+import f from '../Field/Field.module.css';
 import s from './NumberField.module.css';
 
 /** Props for {@link NumberField}, on top of React Aria's `NumberField` props. */

@@ -1,10 +1,10 @@
 import { forwardRef, type Ref } from 'react';
 import { Label, TextArea as RACTextArea, TextField, type TextFieldProps as RACTextFieldProps } from 'react-aria-components';
-import { MIXED_HINT } from '../mixedHint';
+import { MIXED_HINT } from '../Field/mixedHint';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
-import f from '../field.module.css';
+import f from '../Field/Field.module.css';
 import s from './TextArea.module.css';
 
 /** Props for {@link TextArea}, on top of React Aria's `TextField` props. */

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { FieldError, Text, type ValidationResult } from 'react-aria-components';
 import type { FieldOrientation } from './Field';
-import f from '../field.module.css';
+import f from './Field.module.css';
 
 /** The label, layout, description, and error slots every boxed form control takes. */
 export type FieldSlotProps = {

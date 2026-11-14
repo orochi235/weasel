@@ -21,7 +21,7 @@ import { UnitField } from '../NumberField';
 import { SegmentedBar } from '../Segmented';
 import { holdScope, type HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
-import f from '../field.module.css';
+import f from '../Field/Field.module.css';
 import { readImageFile, type ReadImage } from './readImageFile';
 import s from './PatternPicker.module.css';
 

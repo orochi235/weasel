@@ -9,7 +9,7 @@ import {
   type PaintKind,
 } from '@weasel-js/core';
 import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';
-import { paintKindEditor } from '../paintKindEditor';
+import { paintKindEditor } from '../PaintInput/paintKindEditor';
 import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import { GradientStops } from './GradientStops';
 import s from './GradientEditor.module.css';

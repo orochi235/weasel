@@ -4,7 +4,7 @@ import type { PrefAction } from '@weasel-js/prefs';
 import type { Grade } from '@weasel-js/theme';
 import { resolveIcon } from '../Icon/resolveIcon';
 import { actionIcon } from '../Icon/actionIcon';
-import { actionShortcutText } from '../actionShortcutText';
+import { actionShortcutText } from './actionShortcutText';
 import { useActionStates } from '../ActionBar/useActionStates';
 import { reasonLabel } from '../ActionBar/reasonLabels';
 import { useRegisteredActions } from './registeredActions';

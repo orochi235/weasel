@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { Checkbox } from './Checkbox/Checkbox';
-import { PropertyField } from './Properties/PropertyField';
-import shared from './checkbox.module.css';
+import { Checkbox } from './Checkbox';
+import { PropertyField } from '../Properties/PropertyField';
+import shared from './box.module.css';
 
 // CSS modules are not processed in the `weasel-ui` vitest project, so these
 // assert the contract — that the shared class is on the native input — not

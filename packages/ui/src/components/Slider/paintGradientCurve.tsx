@@ -1,6 +1,6 @@
 import { useId, type ReactElement } from 'react';
 import { trackShapeD, type TrackRun } from '@weasel-js/geom';
-import type { TrackCtx } from './components/Slider';
+import type { TrackCtx } from './';
 import type { GradientTrackOptions } from './paintGradientTrack';
 import s from './paintGradientTrack.module.css';
 

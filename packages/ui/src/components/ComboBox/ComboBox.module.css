@@ -104,6 +104,6 @@
 }
 
 .sizer {
-  composes: sizer from '../sizer.module.css';
+  composes: sizer from '@weasel-js/theme/sizer.module.css';
   padding: 0 var(--wzl-field-pad-x);
 }

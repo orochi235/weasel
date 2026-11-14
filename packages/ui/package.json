@@ -43,8 +43,8 @@
       "import": "./dist/overlays/portalHost.js"
     },
     "./paint-gradient-track": {
-      "types": "./dist/paintGradientTrack.d.ts",
-      "import": "./dist/paintGradientTrack.js"
+      "types": "./dist/components/Slider/paintGradientTrack.d.ts",
+      "import": "./dist/components/Slider/paintGradientTrack.js"
     },
     "./kit-settings": {
       "types": "./dist/kitSettings.d.ts",

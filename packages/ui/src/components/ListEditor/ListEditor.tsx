@@ -3,7 +3,7 @@ import { dropSide, imeKey } from '@weasel-js/ui-input';
 import type { ReorderDragState } from '../../useReorderDragList';
 import { CloseButton } from '../CloseButton';
 import { ReorderHandle } from '../ReorderHandle/ReorderHandle';
-import f from '../field.module.css';
+import f from '../Field/Field.module.css';
 import { AddEntry, type ListEntryKind } from './AddEntry';
 import { useEntryDraft } from './entryDraft';
 import { useEntryMoves, useListFocus } from './listEntries';

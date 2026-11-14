@@ -160,7 +160,7 @@
 
 /* The bar's own name or glyph at the start of its line. */
 .lead {
-  composes: label from '../barLabel.module.css';
+  composes: label from './barLabel.module.css';
   display: flex;
   align-items: center;
   flex: none;

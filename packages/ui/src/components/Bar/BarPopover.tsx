@@ -1,13 +1,8 @@
 import type { ReactNode } from 'react';
-import {
-  Button as RACButton,
-  Dialog as RACDialog,
-  DialogTrigger,
-} from 'react-aria-components';
-import { Popover } from '../Popover';
+import { Button as RACButton, DialogTrigger } from 'react-aria-components';
+import { Popover, PopoverDialog } from '../Popover';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
-import f from '../field.module.css';
-import listbox from '../listbox.module.css';
+import f from '../Field/Field.module.css';
 import { BarMarkContext } from './barOrder';
 import { RunScope, useRun } from '../Run';
 import { PopFace, popIconAttr } from './popFace';
@@ -53,10 +48,10 @@ export function BarPopover(props: BarPopoverProps) {
           outside the subtree the trigger sits in. */}
       {ready && holdScope(props, provide(
         <Popover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
-          <RACDialog className={`${listbox.surface} ${s.popBody}`} aria-label={label}>
+          <PopoverDialog className={s.popBody} aria-label={label}>
             {/* Context crosses the portal, and the bar's run is not the run of what opens from it. */}
             <RunScope fresh><BarMarkContext.Provider value={false}><FormScope form="popover">{children}</FormScope></BarMarkContext.Provider></RunScope>
-          </RACDialog>
+          </PopoverDialog>
         </Popover>,
       ))}
     </DialogTrigger>,

@@ -1,13 +1,11 @@
 import { useRef, useState } from 'react';
-import { Dialog as RACDialog } from 'react-aria-components';
-import { Popover } from '../Popover';
+import { Popover, PopoverDialog } from '../Popover';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import { ActionButton, type ActionButtonProps } from '../ActionButton/ActionButton';
 import { FormScope } from '../ActionButton/controlForm';
 import { PrefsForm } from '../Prefs/PrefsForm';
 import type { ActionSettingsForm } from './useActionSettings';
 import bar from '../Bar/Bar.module.css';
-import listbox from '../listbox.module.css';
 import s from './ActionSettings.module.css';
 
 /** Props for {@link ActionSettingsPopover}: the action's button, less what opening the form decides. */
@@ -44,12 +42,12 @@ export function ActionSettingsPopover({ settings, ...button }: ActionSettingsPop
           className={bar.popover}
           data-weasel-overlay=""
         >
-          <RACDialog className={`${listbox.surface} ${bar.popBody} ${s.body}`} aria-label={settings.schema.name || button.label}>
+          <PopoverDialog className={`${bar.popBody} ${s.body}`} aria-label={settings.schema.name || button.label}>
             {settings.schema.name && <p className={s.title}>{settings.schema.name}</p>}
             <FormScope form="popover">
               <PrefsForm schema={settings.schema} layout="list" values={settings.values} mixed={settings.mixed} onChange={settings.onChange} />
             </FormScope>
-          </RACDialog>
+          </PopoverDialog>
         </Popover>,
       )}
     </>

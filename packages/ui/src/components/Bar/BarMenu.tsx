@@ -10,7 +10,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import type { MenuEntry } from '@weasel-js/menu';
 import { useMenuTrigger } from '../Menu/useMenuTrigger';
 import { ButtonTooltip } from '../Tooltip/buttonTooltip';
-import f from '../field.module.css';
+import f from '../Field/Field.module.css';
 import { DockBarContext } from '../ToolbarDock/dockContext';
 import { useBarLead } from './barLeadHandle';
 import { useRun } from '../Run';

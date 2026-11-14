@@ -8,7 +8,7 @@ import { TokenField } from '../TokenField';
 import { NumberText } from './NumberText';
 import { IconAttrField } from './IconAttrField';
 import { UnitEditor } from './UnitAttr';
-import { MIXED_HINT } from '../mixedHint';
+import { MIXED_HINT } from '../Field/mixedHint';
 import s from './PrefSchemaEditor.module.css';
 
 /** A number that may be unset: empty text clears it, and text that is not a number is left uncommitted. */

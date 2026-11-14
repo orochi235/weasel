@@ -123,7 +123,7 @@
 }
 
 .option {
-  composes: option from '../listbox.module.css';
+  composes: option from './listbox.module.css';
 }
 
 :is(.option, .section) + .section,
@@ -200,5 +200,5 @@
 }
 
 .sizer {
-  composes: sizer from '../sizer.module.css';
+  composes: sizer from '@weasel-js/theme/sizer.module.css';
 }

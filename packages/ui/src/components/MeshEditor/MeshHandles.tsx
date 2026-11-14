@@ -16,7 +16,7 @@ import {
   HandleOverlay,
   type EditPhase,
   type OverlayPoint as Point,
-} from '../handleOverlay';
+} from '../GradientEditor/handleOverlay';
 
 /** Props for {@link MeshHandles}. `onInput` fires throughout a drag and
  *  `onChange` once at its end, or `onCancel` if it is abandoned. */

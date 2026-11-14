@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import type { CSSProperties, ReactElement } from 'react';
 import { paintGradientTrack } from './paintGradientTrack';
 import { arcShape, lineShape, trackRun, trackShapeD, type TrackRun } from '@weasel-js/geom';
-import type { TrackCtx } from './components/Slider';
+import type { TrackCtx } from './';
 
 const ctx: TrackCtx = {
   shape: trackRun(lineShape({ x: 0, y: 12 }, { x: 200, y: 12 })),

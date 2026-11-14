@@ -16,13 +16,13 @@ import { Popover } from '../Popover';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
-import { optionLabels, withIcon } from '../optionLabels';
+import { optionLabels, withIcon } from '../Select/optionLabels';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import type { ListOption } from '../listOption';
 import type { OptionKey } from '../../optionKey';
-import f from '../field.module.css';
-import listbox from '../listbox.module.css';
+import f from '../Field/Field.module.css';
+import listbox from '../Select/listbox.module.css';
 import s from './ComboBox.module.css';
 
 
@@ -154,7 +154,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       {ready && provide(
         <Popover className={s.popover} data-weasel-overlay="">
           <RACListBox
-            className={`${listbox.surface} ${listbox.list}`}
+            className={listbox.list}
             renderEmptyState={() =>
               loadError !== null ? (
                 <div className={s.error} role="alert">{errorLabel}</div>

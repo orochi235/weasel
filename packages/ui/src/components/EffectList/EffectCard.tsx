@@ -1,7 +1,7 @@
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode, Ref } from 'react';
 import { Icon } from '../Icon/Icon';
 import { icon } from '../../icons.gen';
-import f from '../field.module.css';
+import f from '../Field/Field.module.css';
 import { ReorderHandle } from '../ReorderHandle/ReorderHandle';
 import { Switch } from '../Switch';
 import type { EffectKind, EffectListItem } from './EffectList';

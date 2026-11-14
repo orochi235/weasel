@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 // First, so the panel's sheet lands after the checkbox's: a consumer's bundle may order them either way.
-import '../checkbox.module.css';
+import '../Checkbox/box.module.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';

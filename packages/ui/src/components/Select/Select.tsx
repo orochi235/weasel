@@ -16,16 +16,16 @@ import { Popover } from '../Popover';
 import { AlignOverTrigger, NO_NUDGE, type Press } from './alignOverTrigger';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
-import f from '../field.module.css';
-import listbox from '../listbox.module.css';
+import f from '../Field/Field.module.css';
+import listbox from './listbox.module.css';
 import s from './Select.module.css';
 import { TriggerTooltip, tooltipContent, type TooltipFields } from '../Tooltip/buttonTooltip';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import type { ListOption } from '../listOption';
 import { Caret } from '../Caret';
-import { optionLabels, withIcon } from '../optionLabels';
-import { MIXED_HINT } from '../mixedHint';
+import { optionLabels, withIcon } from './optionLabels';
+import { MIXED_HINT } from '../Field/mixedHint';
 import type { OptionKey } from '../../optionKey';
 
 /** A titled group of options in a {@link Select}'s `options` list. */
@@ -231,7 +231,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
 /** A select's list: its `options`, or else its `children`. */
 function SelectList<T extends OptionKey>({ options, children }: Pick<SelectProps<T>, 'options' | 'children'>) {
   return (
-    <RACListBox className={`${listbox.surface} ${listbox.list}`}>
+    <RACListBox className={listbox.list}>
       {options !== undefined
         ? options.map((entry, i) =>
             isGroup(entry) ? (

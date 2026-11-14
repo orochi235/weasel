@@ -7,7 +7,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import shared from '../checkbox.module.css';
+import shared from './box.module.css';
 import s from './Checkbox.module.css';
 import type { HoldProps } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';

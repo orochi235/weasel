@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { afterEach, expect, test } from 'vitest';
 import callout from './Callout/Callout.module.css';
 import dialog from './Dialog/Dialog.module.css';
-import listbox from './listbox.module.css';
+import popover from './Popover/Popover.module.css';
 import toast from './Toast/Toast.module.css';
 import tooltip from './Tooltip/Tooltip.module.css';
 
@@ -28,7 +28,7 @@ test.each([
   ['a toast', toast.toast],
   ['a tooltip', tooltip.tooltip],
   ['a callout', callout.popover],
-  ['a menu or picker popover', listbox.surface],
+  ['a menu or picker popover', popover.surface],
 ])('%s casts its shadow in the theme’s shadow color', (_, className) => {
   expect(styled(className, { '--wzl-shadow': 'rgb(1, 2, 3)' }).boxShadow).toContain('rgb(1, 2, 3)');
 });

@@ -5,11 +5,11 @@ import { useDebouncedText } from '../../useDebouncedText';
 import { FontFamilySelect } from '../FontFamilySelect';
 import { FontWeightSelect } from '../FontWeightSelect';
 import { Input } from '../Input';
-import { MIXED_HINT } from '../mixedHint';
+import { MIXED_HINT } from '../Field/mixedHint';
 import { Switch } from '../Switch';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { SegmentedBar } from '../Segmented';
-import sharedCheckbox from '../checkbox.module.css';
+import sharedCheckbox from '../Checkbox/box.module.css';
 import { NumberInput } from './NumberControls';
 import type {
   PropertyBooleanFieldProps,

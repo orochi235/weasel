@@ -1,7 +1,7 @@
 import { Children, isValidElement, type ReactNode } from 'react';
 import listbox from './listbox.module.css';
-import type { ListOption } from './listOption';
-import type { OptionKey } from '../optionKey';
+import type { ListOption } from '../listOption';
+import type { OptionKey } from '../../optionKey';
 
 /** The part of an option a label is drawn from. */
 type LabeledOption = Pick<ListOption<OptionKey>, 'label' | 'icon'>;

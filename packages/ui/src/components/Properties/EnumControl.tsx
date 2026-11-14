@@ -3,7 +3,7 @@ import { dlog } from '../../dlog';
 import { MenuButton } from '../MenuButton';
 import { Radio, RadioGroup } from '../RadioGroup';
 import { Select } from '../Select';
-import { MIXED_HINT } from '../mixedHint';
+import { MIXED_HINT } from '../Field/mixedHint';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { SegmentedBar } from '../Segmented';
 import type { PropertyEnumFieldProps, PropertyOption } from './fieldTypes';

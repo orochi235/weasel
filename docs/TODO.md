@@ -539,15 +539,6 @@ name a package. Breaking changes are in scope.
   `AttributesPane`. The model goes to `@weasel-js/prefs` as `./edit`; the editor and `PrefConditionEditor` go to a
   new `prefs-editor` package, which needs the maintainer to seed on npm. Closes when neither lives in ui.
 
-- **(P3) [agent] Move loose stylesheets and helpers into the component that owns them.** `field.module.css` (15
-  importers beside `Field/`'s own helpers), `checkbox.module.css` (also used by `Properties/fieldControls.tsx:127`),
-  `listbox.module.css` (whose `surface` styles 8 popovers while `Popover` draws nothing), `colorModes.ts`,
-  `stanceCss.ts`/`stanceSurfaces.ts` (build-time only), `mixedHint.ts`,
-  `sizer.module.css`, `optionLabels.tsx`, `src/paintGradientTrack.tsx`/`paintGradientCurve.tsx` (a Slider
-  `renderTrack`), and `ColorField/OpacityRange` (used by `PaintInput`). Closes when `components/` holds only
-  component folders and genuinely shared files (`orientation.ts`, `appearance.ts`, `checker.module.css`,
-  `Caret.tsx`, `dropTarget.ts`).
-
 - **(P3) [agent] Group `AnchorFields` and `CharacterOptions` with the editor panels.** Both are core-bound panels
   (on `PropertyList` + `useAnchorFields`, and on `ToolOptionsBar` + `useTextTool`) filed among the form controls.
   Closes when they sit with `SelectionPanel` and `Properties`.

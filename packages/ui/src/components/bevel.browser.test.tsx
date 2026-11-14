@@ -10,7 +10,7 @@ import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import dialog from './Dialog/Dialog.module.css';
-import listbox from './listbox.module.css';
+import popover from './Popover/Popover.module.css';
 import radio from './RadioGroup/RadioGroup.module.css';
 import toggle from './Switch/Switch.module.css';
 import tooltip from './Tooltip/Tooltip.module.css';
@@ -162,7 +162,7 @@ describe('the marks and the overlays', () => {
   );
   const overlays = (
     <>
-      <div className={listbox.surface} data-testid="popover" />
+      <div className={popover.surface} data-testid="popover" />
       <div className={tooltip.tooltip} data-testid="tooltip" />
       <Dialog inline title="Box">body</Dialog>
     </>

@@ -3,21 +3,21 @@ import { resolve } from 'node:path';
 import { screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
-import { ComboBox } from './ComboBox/ComboBox';
-import { Field, fieldClasses } from './Field/Field';
-import { Input } from './Input/Input';
-import { ListEditor } from './ListEditor/ListEditor';
-import { MenuButton } from './MenuButton/MenuButton';
-import { NumberField } from './NumberField/NumberField';
-import { UnitField } from './NumberField/UnitField';
-import { Select } from './Select/Select';
-import f from './field.module.css';
-import { renderWithIcons } from '../testing/withIcons';
+import { ComboBox } from '../ComboBox/ComboBox';
+import { Field, fieldClasses } from './Field';
+import { Input } from '../Input/Input';
+import { ListEditor } from '../ListEditor/ListEditor';
+import { MenuButton } from '../MenuButton/MenuButton';
+import { NumberField } from '../NumberField/NumberField';
+import { UnitField } from '../NumberField/UnitField';
+import { Select } from '../Select/Select';
+import f from './Field.module.css';
+import { renderWithIcons } from '../../testing/withIcons';
 
 // CSS modules are not processed in the `weasel-ui` vitest project, so these
 // assert the contract — which shared classes each control wears — and read the
 // stylesheet for the rules those classes key off. The pixels are a browser check.
-const css = readFileSync(resolve(__dirname, 'field.module.css'), 'utf8');
+const css = readFileSync(resolve(__dirname, 'Field.module.css'), 'utf8');
 const OPTIONS = [
   { value: 'a', label: 'Alpha' },
   { value: 'b', label: 'Beta' },

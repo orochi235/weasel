@@ -3,9 +3,9 @@ import { imeKey } from '@weasel-js/ui-input';
 import {
   canSpin, clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
 } from '@weasel-js/quantity';
-import f from '../field.module.css';
+import f from '../Field/Field.module.css';
 import { fieldRootClass } from '../Field/fieldSlots';
-import { MIXED_HINT } from '../mixedHint';
+import { MIXED_HINT } from '../Field/mixedHint';
 import s from './NumberField.module.css';
 import type { HoldProps } from '../Disabled';
 import { useNativeHold, type NativeHold } from '../Disabled/nativeHold';

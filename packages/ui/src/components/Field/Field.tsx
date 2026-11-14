@@ -1,6 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import s from '../field.module.css';
-import own from './Field.module.css';
+import s from './Field.module.css';
 
 /**
  * Whether a {@link Field} stacks its label above the control or sits them
@@ -42,14 +41,14 @@ export function Field({ orientation = 'stacked', label, output, className, child
   const named = label !== undefined;
   const labelEl = named && <span id={labelId} className={s.label}>{label}</span>;
   // The control announces its own value; a live region here would say it twice through a drag.
-  const outputEl = output !== undefined && <output aria-live="off" className={own.output}>{output}</output>;
+  const outputEl = output !== undefined && <output aria-live="off" className={s.output}>{output}</output>;
   const group = named ? { role: 'group', 'aria-labelledby': labelId } : {};
   if (orientation === 'row') {
     return <div className={cls} {...group}>{labelEl}{children}{outputEl}</div>;
   }
   return (
     <div className={cls} {...group}>
-      {(labelEl || outputEl) && <div className={own.head}>{labelEl}{outputEl}</div>}
+      {(labelEl || outputEl) && <div className={s.head}>{labelEl}{outputEl}</div>}
       {children}
     </div>
   );

@@ -4,7 +4,7 @@ import type { MenuEntry } from '@weasel-js/menu';
 import { type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
 import { useMenuTrigger } from '../Menu/useMenuTrigger';
-import f from '../field.module.css';
+import f from '../Field/Field.module.css';
 import s from './MenuButton.module.css';
 import { ButtonTooltip, type TooltipFields } from '../Tooltip/buttonTooltip';
 import { useDisabled, type DisableableProps } from '../Disabled';

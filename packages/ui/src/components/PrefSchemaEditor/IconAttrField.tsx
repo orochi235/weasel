@@ -5,7 +5,7 @@ import { Button } from '../Button';
 import { Dialog } from '../Dialog';
 import { Icon } from '../Icon/Icon';
 import { MARK_GROUP } from '../../icons.gen';
-import { MIXED_HINT } from '../mixedHint';
+import { MIXED_HINT } from '../Field/mixedHint';
 import { IconPicker } from './IconPicker';
 import s from './IconAttrField.module.css';
 
