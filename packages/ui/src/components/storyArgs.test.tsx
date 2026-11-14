@@ -70,7 +70,7 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     expect(screen.getAllByText('furlongs').length).toBeGreaterThan(0);
   });
 
-  it.each(['Selectable', 'Nested', 'Cards'])('LayerList %s', async (name) => {
+  it.each(['Selectable', 'Nested'])('LayerList %s', async (name) => {
     const mod = (await import('./LayerList/LayerList.stories')) as unknown as Record<string, Story>;
     draw(mod[name], { title: 'Layers here' });
     expect(screen.getByRole('heading', { name: 'Layers here' })).toBeInTheDocument();

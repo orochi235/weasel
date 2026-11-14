@@ -71,7 +71,7 @@ A map of the library so agents can find what they need quickly.
 | `useLayerScheduler` (DPR-aware rAF dirty-flag scheduler) | `src/canvas/useLayerScheduler.ts` |
 | Pan, zoom and tap on a trial canvas (weasel's dispatcher) | `src/canvas/CameraInput.tsx` |
 | `screenToWorld` / `worldToScreen` | `src/canvas/canvasCoords.ts` |
-| `<LayerList>` (reorder, visibility, nesting, cards) | `@weasel-js/ui` (re-exported by labkit) |
+| `<LayerList>` (reorder, visibility, locking, renaming, nesting) | `@weasel-js/ui` (re-exported by labkit) |
 | Trial state undo (a weasel-history `History` on `TrialRecord.history`, entries from `stateOp`) | `src/trial/Trial.tsx`, `src/undo/stateOp.ts` |
 | Trial clock, its registry, the lab's frame loop, `useTrialClock` / `useClockFrame` | `src/clock/` |
 | `<Palette>` (drag source) | `src/dragdrop/Palette.tsx` |

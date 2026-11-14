@@ -11,7 +11,7 @@ import { buildSceneLayers, type SceneSlotConfig } from '../buildSceneLayer';
 import type { HierarchicalAdapter } from '../buildSceneTree';
 import { isCustomEntry, type LayersMap, type SceneSlotLayers } from '../layerSlots';
 import { wireSceneSlotToScene } from '../sceneSlotWiring';
-import { useSceneLayerList } from '../useSceneLayerList';
+import { useSceneLayersKey } from '../useSceneLayersKey';
 
 type SceneSlot<TData, TLayer extends string, TPose> =
   LayersMap<Node<TData, TLayer, TPose>, TPose>['scene'];
@@ -46,7 +46,7 @@ export function useSceneSlotLayers<TData, TLayer extends string, TPose>(args: {
     );
   }, [slot, alphaFor, scene, paintOverrides]);
 
-  const sceneLayersKey = useSceneLayerList(adapter);
+  const sceneLayersKey = useSceneLayersKey(adapter);
   const layers = useMemo<SceneSlotLayers | undefined>(() => {
     if (isCustomEntry(config)) return { layers: [{ key: 'scene', layer: config.layer }] };
     if (!config || !config.drawOne) return undefined;

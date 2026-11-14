@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { decimal } from '@weasel-js/quantity';
 import { EMPHASES, GRADES, STANCES } from '@weasel-js/theme';
-import { LayerList, type LayerListItem, moveLayers } from '@weasel-js/ui/components/LayerList';
+import { EffectList, type EffectKind, type EffectListItem } from '@weasel-js/ui/components/EffectList';
 import { Subpanel, PropertyField, PropertyList, type PropertyListPack, PropertySpan, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
 import { Switch } from '@weasel-js/ui/components/Switch';
 
@@ -562,28 +562,37 @@ export const Sidebar: Story = {
   ),
 };
 
+const TAIL_KINDS: Record<string, EffectKind> = {
+  classic: { label: 'Classic', color: 0 },
+  bubbles: { label: 'Bubbles', color: 1 },
+  wavy: { label: 'Wavy', color: 2 },
+};
+
 /**
- * A panel of like items, each a group that reorders, folds and goes away: a
- * `LayerList` of cards inside the panel. Each tail takes the next tint of the theme's
- * list, which colors its edge and handle and every control inside it, and its
- * ordinal is its handle. Its body pairs its rows and gives the shape's own
+ * A panel of like items, each a card that reorders, opens and goes away: an
+ * `EffectList` inside the panel. Each tail's kind takes the next tint of the theme's
+ * list, which colors its edge and number and every control inside it, and its
+ * number is its handle. The open card's body pairs its rows and gives the shape's own
  * parameters a `Subpanel`.
  */
 export const TintList: Story = {
   render: () => {
     function Tails() {
-      const [tails, setTails] = useState<LayerListItem[]>([
-        { id: '1', label: 'classic', tint: 0 },
-        { id: '2', label: 'bubbles', tint: 1 },
-        { id: '3', label: 'wavy', tint: 2 },
+      const [tails, setTails] = useState<EffectListItem[]>([
+        { id: '1', kind: 'classic', name: 'classic', on: true },
+        { id: '2', kind: 'bubbles', name: 'bubbles', on: true },
+        { id: '3', kind: 'wavy', name: 'wavy', on: true },
       ]);
-      const numbered = tails.map((tail, i) => ({ ...tail, badge: String(i + 1) }));
+      const [open, setOpen] = useState<string | null>('1');
       return (
         <PropertyPanel title="Tails">
-          <LayerList
-            items={numbered}
-            onReorder={(move) => setTails(moveLayers(tails, move))}
-            onRemove={(id) => setTails(tails.filter((t) => t.id !== id))}
+          <EffectList
+            aria-label="Tails"
+            items={tails}
+            kinds={TAIL_KINDS}
+            onChange={setTails}
+            selected={open}
+            onSelectionChange={setOpen}
             renderBody={() => <TailBody />}
           />
         </PropertyPanel>

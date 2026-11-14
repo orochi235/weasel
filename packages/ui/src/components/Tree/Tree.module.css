@@ -33,7 +33,7 @@
   width: calc(var(--tree-gutter) - var(--wzl-space-2));
 }
 
-.tree[data-hang]:not([data-guides]) .item:not([aria-expanded]) > .row > .leading {
+.tree[data-hang]:not([data-guides]) .item:not([data-branch]) > .row .leading {
   inline-size: var(--tree-hung);
   margin-inline-start: calc(-1 * (var(--tree-hung) + var(--wzl-space-2)));
 }
@@ -49,12 +49,12 @@
 }
 
 /* A branch's mark is the start of its name, so a row with no mark starts its name where a branch beside it starts its mark. */
-.tree[data-guides] .item:not([aria-expanded]) > .row {
+.tree[data-guides] .item:not([data-branch]) > .row {
   padding-inline-start: var(--wzl-tree-leaf-indent, 0);
 }
 
 /* `--wzl-tree-root-leaf-indent`: the same for a leaf no branch holds, for a host whose own text stands at another edge. */
-.tree[data-guides] > .item:not([aria-expanded]) > .row {
+.tree[data-guides] > .item:not([data-branch]) > .row {
   padding-inline-start: var(--wzl-tree-root-leaf-indent, var(--wzl-tree-leaf-indent, 0));
 }
 
@@ -98,18 +98,19 @@
   background: var(--wzl-surface-hover);
 }
 
-.item:focus-visible > .row {
+.item:focus-visible > .row,
+.row:focus-visible {
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: -2px;
 }
 
-.item[aria-selected='true'] > .row {
+:is(.item[aria-selected='true'] > .row, .row[aria-selected='true']) {
   background: var(--wzl-tree-selected, var(--wzl-border));
 }
 
 /* Forced colors repaint the selected row's fill as Canvas, so no row would read as selected. */
 @media (forced-colors: active) {
-  .item[aria-selected='true'] > .row {
+  :is(.item[aria-selected='true'] > .row, .row[aria-selected='true']) {
     forced-color-adjust: none;
     background: Highlight;
     color: HighlightText;
@@ -121,7 +122,7 @@
   cursor: pointer;
 }
 
-.item[aria-current='true'] > .row {
+:is(.item[aria-current='true'] > .row, .row[aria-current='true']) {
   color: var(--wzl-tree-current, var(--wzl-accent-fg));
 }
 
@@ -129,7 +130,7 @@
   color: var(--wzl-fg-subtle);
 }
 
-.item[aria-disabled='true'] > .row {
+:is(.item[aria-disabled='true'] > .row, .row[aria-disabled='true']) {
   color: var(--wzl-fg-subtle);
   cursor: not-allowed;
 }
@@ -147,7 +148,7 @@
   color: var(--wzl-fg-muted);
 }
 
-.row:hover > .twisty {
+.row:hover .twisty {
   color: var(--wzl-fg);
 }
 
@@ -184,11 +185,22 @@
   text-overflow: ellipsis;
 }
 
-.trailing {
+.trailing,
+.controls {
   flex: none;
   display: inline-flex;
   align-items: center;
   gap: var(--wzl-space-2);
+}
+
+/* A treegrid row's first cell: it adds no box, so the row lays its content out as a tree row's own. */
+.cell {
+  display: contents;
+}
+
+/* A treegrid's row box takes focus; the ring is drawn by `:focus-visible` alone. */
+.row[role='row']:not(:focus-visible) {
+  outline: none;
 }
 
 .empty {

@@ -17,7 +17,7 @@ const swatch = (color: string) => (
 
 /** A document's objects: click to select, Cmd/Ctrl-click to add, shift-click for a range, drag a selected
  *  row to move the whole selection. The fixed Background row selects alone
- *  and walls off drops below it. */
+ *  and no drop lands below it. */
 export const Selectable: Story = {
   render: (args) => {
     const [items, setItems] = useState<LayerListItem[]>([
@@ -43,7 +43,7 @@ export const Selectable: Story = {
 };
 
 /** Layers that hold layers, each with a visibility checkbox. A drag reorders a
- *  row among its own siblings and never moves it to another parent. */
+ *  row among its siblings or drops it into another layer; Right steps from a row to its checkbox. */
 export const Nested: Story = {
   render: (args) => {
     const [items, setItems] = useState<LayerListItem[]>([
@@ -94,36 +94,6 @@ export const Nested: Story = {
               return next;
             })
           }
-        />
-      </div>
-    );
-  },
-};
-
-/** A stack of effects, each a card whose settings fold away. Each takes the
- *  next tint of the theme's list, and the palette adds more. */
-export const Cards: Story = {
-  args: { title: 'Effects' },
-  render: (args) => {
-    const [items, setItems] = useState<LayerListItem[]>([
-      { id: '1', label: 'fill', tint: 0 },
-      { id: '2', label: 'stroke', tint: 1 },
-      { id: '3', label: 'shadow', tint: 2, defaultCollapsed: true },
-    ]);
-    const [next, setNext] = useState(4);
-    return (
-      <div className={s.wide}>
-        <LayerList
-          {...args}
-          items={items}
-          addKinds={['fill', 'stroke', 'shadow']}
-          onAdd={(kind) => {
-            setItems([...items, { id: String(next), label: kind, tint: next - 1 }]);
-            setNext(next + 1);
-          }}
-          onRemove={(id) => setItems(items.filter((it) => it.id !== id))}
-          onReorder={(move) => setItems(moveLayers(items, move))}
-          renderBody={(item) => <div className={s.note}>settings for {item.label}</div>}
         />
       </div>
     );

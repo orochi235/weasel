@@ -120,7 +120,7 @@ describe('WeaselDraw context menus', () => {
       rightClick(row, { x: box.left + 10, y: box.top + box.height / 2 });
     };
     const [pageRow, shapeRow] = rows();
-    expect(pageRow!.dataset.fixed).toBe('true');
+    expect(pageRow!.querySelector('[role="img"][aria-label="Locked"]')).not.toBeNull();
     rightClickRow(pageRow!);
     expect(document.querySelector('[role="menu"]')).toBeNull();
     expect(status()).toContain('sel: 0');

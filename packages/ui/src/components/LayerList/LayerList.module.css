@@ -1,5 +1,4 @@
-/* Row box, hover and selection are `ItemList`'s, so a layer list and the
-   history list stacked under it agree. What is here is only what a layer has. */
+/* Row box, hover and selection are `Tree`'s. What is here is only what a layer has. */
 .root,
 .root * {
   box-sizing: border-box;
@@ -47,92 +46,11 @@
   color: var(--wzl-fg);
 }
 
-.level {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  position: relative;
-  width: 100%;
-}
-
-/* A level of cards is a `PropertyList`, so the controls in each body take the
-   panel's density; its rows are spaced like cards rather than lines. */
-.level.cards {
-  display: grid;
-  row-gap: var(--wzl-space-3);
-}
-
-.entry {
-  min-width: 0;
-}
-
-/* A run of rows among cards is a grid to assistive tech and no box: its rows stay the level's own items. */
-.run {
-  display: contents;
-}
-
-/* `PropertyList` spans its own children across its two columns; a run's rows are one step further in. */
-.run > .entry {
-  grid-column: 1 / -1;
-}
-
-.row {
-  user-select: none;
-}
-
-/* The cell a row must own. It adds no box: the row lays its content out. */
-.cell {
-  display: contents;
-}
-
-/* A child's twisty sits under its parent's grip. */
-.children {
-  padding-left: calc(var(--wzl-disclosure-target, var(--wzl-control-h-sm)) + var(--wzl-space-4));
-}
-
-/* The layer the drag picked up holds its place, faded, while its ghost follows the pointer. */
-.dragging {
-  opacity: 0.5;
-}
-
-/* Where the drop would land: a line on the edge of the layer it would land against. */
-.dropBefore {
-  box-shadow: 0 -2px 0 var(--wzl-accent);
-}
-
-.dropAfter {
-  box-shadow: 0 2px 0 var(--wzl-accent);
-}
-
-/* One width for the grip and the lock, so a fixed row's label lines up. */
-.grip,
+/* The fixed row's padlock, a mark and not a control. */
 .lock {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  min-width: 13px;
   color: var(--wzl-fg-muted);
-}
-
-.row:not([data-fixed]):not([data-locked]) {
-  cursor: grab;
-}
-
-.row:not([data-fixed]):not([data-locked]):active {
-  cursor: grabbing;
-}
-
-.stop {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-}
-
-/* Holds the twisty column open on rows with nothing to expand, so labels line up down a level. */
-.twistyGap {
-  flex: 0 0 auto;
-  width: var(--wzl-disclosure-target, var(--wzl-control-h-sm));
 }
 
 /* Sized, so the empty column a fixed row keeps is the checkbox's width. */
@@ -144,35 +62,8 @@
   accent-color: var(--wzl-accent);
 }
 
-.handle {
-  padding: var(--wzl-space-1) var(--wzl-space-2);
-  min-width: var(--wzl-icon-button-size);
-  height: var(--wzl-icon-button-size);
-  border-radius: var(--wzl-radius-sm);
-  font-weight: var(--wzl-font-weight-bold);
-  font-size: var(--wzl-font-size);
-}
-
-.card[data-tint] .handle {
-  background: var(--wzl-tint);
-  color: var(--wzl-fg-on-accent);
-  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
-  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
-}
-
-.entry[data-selected] > .card {
-  outline: 2px solid var(--wzl-accent);
-  outline-offset: -1px;
-}
-
-/* An annotation row: dimmed, so content reads first, and marked as left out of export. */
-.nonPrinting {
-  color: var(--wzl-fg-muted);
-}
-
+/* An annotation row is muted, so content reads first, and marked as left out of export. */
 .nonPrintingMark {
-  flex: none;
-  margin-inline-start: auto;
   color: var(--wzl-fg-subtle);
   font-size: var(--wzl-font-size-xs);
 }
@@ -196,15 +87,14 @@
   color: var(--wzl-fg);
 }
 
-/* An unlocked layer's padlock shows only on a hovered row or card, or once focused.
-   Hidden by opacity, so it keeps its column and its place in the tab order. */
+/* An unlocked layer's padlock shows only on a hovered row, or once focused.
+   Hidden by opacity, so it keeps its column. */
 @media (hover: hover) {
   .lockToggle[aria-pressed='false'] {
     opacity: 0;
   }
 
-  .row:hover .lockToggle,
-  .card:hover .lockToggle,
+  .root [role='row']:hover .lockToggle,
   .lockToggle:focus-visible {
     opacity: 1;
   }
@@ -212,7 +102,7 @@
 
 /* The field a rename opens in place of the label. */
 .rename {
-  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
   font: inherit;
   padding: 0 var(--wzl-space-1);

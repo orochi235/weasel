@@ -83,7 +83,10 @@ function indentAt(
   return [{ x: flip * x, y }, indent];
 }
 
-const IDLE: TreeDragState = { dragging: null, effect: 'move', mark: null, ghost: null, pointer: null };
+/** A press on this node starts no drag. */
+const stays = (node: TreeNode | undefined) => !!node && (!!node.disabled || !!node.immovable);
+
+const IDLE: TreeDragState ={ dragging: null, effect: 'move', mark: null, ghost: null, pointer: null };
 
 /** Pointer drag-to-reorder for `Tree`. Inert unless `enabled`. */
 export function useTreeDrag(opts: UseTreeDragOptions) {
@@ -143,7 +146,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     const { enabled, container } = o.current;
     const box = container();
     if (!enabled || !box || drag.current || !isPrimaryPress(e)) return;
-    if (o.current.visible.find((v) => v.node.id === id)?.node.disabled) return;
+    if (stays(o.current.visible.find((v) => v.node.id === id)?.node)) return;
     if ((e.target as Element).closest('[data-tree-twisty]')) return;
     if (isInControlWithin(e.target, e.currentTarget)) return;
     const mods = modsOf(e);

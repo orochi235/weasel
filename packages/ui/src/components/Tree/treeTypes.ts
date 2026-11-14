@@ -1,4 +1,4 @@
-import type { ReactNode, Ref } from 'react';
+import type { KeyboardEvent, MouseEvent, ReactNode, Ref } from 'react';
 import type { TreeDropTarget } from '../../dropTarget';
 import type { PressModifiers } from '../../useReorderDragList';
 import type { TreeGhost, TreeGhostWhere } from './TreeGhost';
@@ -14,9 +14,13 @@ export interface TreeNode {
   textValue?: string;
   /** Decoration before the label — an icon, not a control. `--wzl-tree-leading-size` sets each in a square of that side. */
   leading?: ReactNode;
-  /** Decoration after the label — a count badge. Not a control. Read as part
-   *  of the row's accessible name. */
+  /** Decoration after the label — a count badge. Not a control: those go in `controls`. Read as part of the
+   *  row's accessible name. */
   trailing?: ReactNode;
+  /** Buttons and toggles at the row's end — visibility, lock, remove. They keep their own clicks and keys, and a
+   *  node with any makes the whole tree a treegrid (see `Tree`'s Semantics). A control that edits with the arrow
+   *  keys does not belong here. */
+  controls?: ReactNode;
   /** Shown beside the row once the pointer, or keyboard focus, has rested on it. A string is also the row's
    *  accessible description. */
   tooltip?: ReactNode;
@@ -25,6 +29,12 @@ export interface TreeNode {
   muted?: boolean;
   /** Focusable and announced, but cannot be activated, expanded or selected. */
   disabled?: boolean;
+  /** Stays where it is: a drag cannot start on it, and a drag or a keyboard move of a selection holding it leaves
+   *  it behind. It can still be selected, and still takes drops. */
+  immovable?: boolean;
+  /** Selected only on its own: a press on it, with any modifier, selects it alone, a press elsewhere drops it from
+   *  the selection, and a Shift range or Cmd/Ctrl+A passes over it. */
+  selectsAlone?: boolean;
   /** Draws the row as a link to this address. A plain or Shift click activates the row as any click does; a
    *  click with Cmd, Ctrl or Alt, and a middle click, are left to the browser, which opens a tab, a window or a
    *  download. The link stays out of the tab order: the treeitem holds focus. */
@@ -83,6 +93,11 @@ export interface TreeProps {
 
   /** A row was activated — click, Enter or Space — with the modifiers held. */
   onAction?(id: string, mods: PressModifiers): void;
+  /** A key pressed on a row itself, ahead of the tree's own keys: `preventDefault()` keeps the tree out. Keys on a
+   *  row's controls do not reach it. */
+  onRowKeyDown?(id: string, e: KeyboardEvent<HTMLElement>): void;
+  /** A right-click on a row. The handler decides whether the browser's menu is blocked. */
+  onRowContextMenu?(id: string, e: MouseEvent<HTMLElement>): void;
 
   /** Drag-to-reorder and keyboard moves. Off unless given. Called with the
    *  dragged ids in tree order and where they land; `Tree` never reorders

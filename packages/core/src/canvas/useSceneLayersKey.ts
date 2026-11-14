@@ -1,13 +1,13 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
-interface LayerListSource {
+interface LayerSource {
   getLayers?: () => readonly { id: string }[];
   subscribeLayers?: (listener: () => void) => () => void;
 }
 
 const UNSUBSCRIBED = (): void => {};
 
-const read = (adapter: LayerListSource | undefined): string =>
+const read = (adapter: LayerSource | undefined): string =>
   typeof adapter?.getLayers === 'function' ? adapter.getLayers().map((l) => l.id).join('\n') : '';
 
 /**
@@ -15,7 +15,7 @@ const read = (adapter: LayerListSource | undefined): string =>
  * a layer is added, removed, or reordered. A scene write repaints without
  * re-rendering, so the adapter's `subscribeLayers` is what tells React.
  */
-export function useSceneLayerList(adapter: LayerListSource | undefined): string {
+export function useSceneLayersKey(adapter: LayerSource | undefined): string {
   const subscribe = useCallback(
     (listener: () => void) => adapter?.subscribeLayers?.(listener) ?? UNSUBSCRIBED,
     [adapter],

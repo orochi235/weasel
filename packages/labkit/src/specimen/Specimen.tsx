@@ -502,7 +502,6 @@ function PanelsAndRows() {
         <LayerList
           items={layers}
           onReorder={(move) => setLayers(moveLayers(layers, move))}
-          renderBody={(item) => <div>settings for {item.label}</div>}
         />
       </Cell>
       <Cell label="Sidebar, SidebarPanel">

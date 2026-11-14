@@ -1,5 +1,5 @@
 import {
-  asNodeId, createDeleteOp, createMoveToIndexOp, createSetDataOp, createSetHiddenOp, createSetLockedOp,
+  asNodeId, createDeleteOp, createMoveToIndexOp, createReparentOp, createSetDataOp, createSetHiddenOp, createSetLockedOp,
   defaultCommitAdapter, dispatchApplyBatch, isAnnotationLayer, pageName, pageOfNode, pageRunOf, placedPagesOf,
   withoutPageStructure,
 } from '@weasel-js/core';
@@ -8,6 +8,10 @@ import type { LayerListItem, LayerListProps } from './LayerList';
 
 /** The id prefix of an annotation layer's own row, which holds its nodes. */
 export const ANNOTATION_LAYER_ROW = 'annotation-layer:';
+
+/** The annotation layer whose row `row` is, if it is one. */
+const annotationLayerOf = (row: string | null): string | null =>
+  row?.startsWith(ANNOTATION_LAYER_ROW) ? row.slice(ANNOTATION_LAYER_ROW.length) : null;
 
 /** How a {@link useSceneLayerList} list shows annotation layers. */
 export interface SceneLayerListAnnotations {
@@ -41,16 +45,17 @@ export interface UseSceneLayerListOptions<TData, TLayer extends string, TPose> {
 }
 
 /** The `<LayerList>` props `useSceneLayerList` answers. */
-export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelectionChange' | 'onReorder' | 'onVisibilityChange' | 'onLockChange'>>
+export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelectionChange' | 'onReorder' | 'canMove' | 'onVisibilityChange' | 'onLockChange'>>
   & Pick<LayerListProps, 'onRemove' | 'onRename'>;
 
 /**
  * The props that put a scene in a `<LayerList>`: a row per node, a container's
  * children nested under it, the front-most at the top, selection read from and
- * written to `selection`, a drag dispatched as a `MoveToIndexOp`, and each
- * row's visibility and lock toggling the node's own (`setHidden` / `setLocked`
- * ops), each one undo step.
- * Annotation layers are left out unless `annotations` says how to show them.
+ * written to `selection`, a drag — among siblings or into another container —
+ * dispatched as a `MoveToIndexOp`, and each row's visibility and lock toggling
+ * the node's own (`setHidden` / `setLocked` ops), each one undo step.
+ * Annotation layers are left out unless `annotations` says how to show them;
+ * shown, an annotation moves only within its own layer's row.
  */
 export function useSceneLayerList<TData, TLayer extends string, TPose>(
   args: UseSceneLayerListOptions<TData, TLayer, TPose>,
@@ -122,17 +127,29 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
       }
       selection.set([...withoutPageStructure(scene, ids.filter((id) => !id.startsWith(ANNOTATION_LAYER_ROW)).map(asNodeId))]);
     },
+    canMove: ({ ids, parentId }) => {
+      if (ids.some((id) => id.startsWith(ANNOTATION_LAYER_ROW))) return false;
+      const into = annotationLayerOf(parentId);
+      return ids.every((id) => (isAnnotation(id) ? scene.get(asNodeId(id))?.layer === into : into === null));
+    },
     onReorder: ({ ids, parentId, index }) => {
-      const parent = parentId ?? topParent(ids);
+      // An annotation layer's row holds roots on that layer; it is no node of the scene.
+      const layer = annotationLayerOf(parentId);
+      const parent = layer !== null ? null : (parentId ?? topParent(ids));
       const moved = new Set(ids);
       const left = (parent === null ? scene.roots : scene.childrenOf(asNodeId(parent))).filter((id) => !moved.has(id));
       // `index` counts from the front among the rows the drag left behind, the annotation rows heading the top
-      // level among them; the content rows stand for the siblings that are not annotations.
-      const shown = left.filter((id) => !isAnnotation(id));
+      // level among them; the rows shown stand for the siblings of the list's own level.
+      const shown = left.filter((id) => (layer !== null ? scene.get(id)?.layer === layer : !isAnnotation(id)));
       const at = parentId === null ? Math.max(0, index - annotationRows.length) : index;
       const back = Math.max(0, shown.length - at);
       const to = back < shown.length ? left.indexOf(shown[back]!) : shown.length > 0 ? left.indexOf(shown.at(-1)!) + 1 : left.length;
-      commit([createMoveToIndexOp({ ids, parentId: parent, index: to })], label);
+      // A node from another container joins this one first, back to front as the scene orders children.
+      const joining = [...ids].reverse().flatMap((id) => {
+        const from = scene.get(asNodeId(id))?.parent ?? null;
+        return from === parent ? [] : [createReparentOp({ id, fromParentId: from, toParentId: parent })];
+      });
+      commit([...joining, createMoveToIndexOp({ ids, parentId: parent, index: to })], label);
     },
     onVisibilityChange: (id, visible) => {
       if (id.startsWith(ANNOTATION_LAYER_ROW)) scene.setLayerVisible(id.slice(ANNOTATION_LAYER_ROW.length) as TLayer, visible);
