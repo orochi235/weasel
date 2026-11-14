@@ -93,3 +93,8 @@
   white-space: nowrap;
   user-select: none;
 }
+
+.add:is(:disabled, [data-disabled]) {
+  filter: var(--wzl-disabled-filter);
+  cursor: not-allowed;
+}

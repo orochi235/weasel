@@ -4,6 +4,7 @@ import { useCallback, useLayoutEffect, useRef, useState, type KeyboardEvent, typ
 import type { Key } from 'react-aria-components';
 import { useReorderDragList, type ReorderDragHandlers, type ReorderLine } from '../../useReorderDragList';
 import { inlineDirection } from '../../useRovingTabIndex';
+import { useControlHold, type ButtonHoldAttrs, type ControlHold } from '../Disabled/controlHold';
 import { DragGhost } from '../DragGhost';
 import { Tab } from '../Tabs';
 import type { PageTabItem, PageTabsProps } from './PageTabs';
@@ -28,6 +29,10 @@ export interface PageTabsParts {
   onPointerDownCapture: () => void;
   tabs: ReactElement[];
   ghost: ReactElement | null;
+  /** The strip's hold. Its `wrap` goes around the + button, the one control it refuses outright. */
+  hold: ControlHold;
+  /** Spread onto the + button. */
+  add: ButtonHoldAttrs & { 'aria-describedby'?: string; onClick(): void };
 }
 
 /**
@@ -35,7 +40,10 @@ export interface PageTabsParts {
  * it, a drag or Alt+arrow moves it. `line`, when given, is what a drag measures the tabs and the pointer along.
  */
 export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line?: ReorderLine): PageTabsParts {
-  const { pages, current, onSelect, onRename, onMove, onTabContextMenu } = props;
+  const { pages, current, onSelect, onTabContextMenu } = props;
+  const hold = useControlHold(props, { readonlyRole: false });
+  const onRename = hold.refuses ? undefined : props.onRename;
+  const onMove = hold.refuses ? undefined : props.onMove;
   const labelOf = props.labelOf ?? pageName;
   const [editing, setEditing] = useState<string | null>(null);
   const lastPress = useRef<{ id: string; at: number } | null>(null);
@@ -119,7 +127,7 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
         onPointerDown={(e) => { if (isPrimaryPress(e) && editing !== page.id) drag.rowProps(page.id, i).onPointerDown(e); }}
         onContextMenu={(e) => onTabContextMenu?.(page.id, e)}
       >
-        {editing === page.id
+        {editing === page.id && onRename
           ? <RenameField initial={page.name ?? labelOf(page, i)} onDone={(name) => commit(page.id, name)} />
           : labelOf(page, i)}
       </Tab>
@@ -133,6 +141,12 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
     onKeyDownCapture,
     onPointerDownCapture: () => { selectedByPress.current = null; },
     tabs,
+    hold,
+    add: {
+      ...hold.button(true),
+      'aria-describedby': hold.focus['aria-describedby'],
+      onClick: () => { if (!hold.refuses) props.onAdd?.(); },
+    },
     ghost: ghost && listRef.current
       ? (
         <DragGhost at={ghost} from={listRef.current}>
