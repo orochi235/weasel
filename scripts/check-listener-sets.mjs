@@ -33,7 +33,7 @@ const ALLOWED = new Map([
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-examples', 'public', 'coverage']);
 const isSource = (name) =>
   /\.(ts|tsx|mts)$/.test(name) &&
-  !/\.(test|spec|stories)\.(ts|tsx)$/.test(name) &&
+  !/\.(test|spec|stories|fixtures?)\.(ts|tsx)$/.test(name) &&
   !name.endsWith('.d.ts') &&
   name !== 'test-setup.ts';
 
