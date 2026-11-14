@@ -37,7 +37,7 @@ export async function exportRegionSvg(
   if (background != null) {
     nodes.push({ kind: 'path', path: { kind: 'rect', x, y, width, height }, fill: { kind: 'solid', color: background } });
   }
-  nodes.push(...regionSvgNodes(scene, region, painters ? { painters } : {}));
+  nodes.push(...regionSvgNodes(scene, region, { ...(painters ? { painters } : {}), ...(given.onWarn ? { onWarn: given.onWarn } : {}) }));
   const serialize: SerializeOptions = {
     ...given,
     ...(title !== undefined ? { title } : {}),
