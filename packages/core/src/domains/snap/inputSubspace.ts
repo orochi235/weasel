@@ -11,6 +11,7 @@ const AXES = [[1, 0], [0, 1]] as const;
  *  in. `resize` is the box a resize drags, which an edge handle's axis and an
  *  aspect lock are read from; without it they run along the ctx axes. */
 export function inputFlat(req: SnapBegin, mods: SnapMods, delta0: Point, resize?: ResizeSubject | null): Flat {
+  if (req.along) return { at: [0, 0], dirs: [[req.along[0]!, req.along[1]!]] };
   const h = req.handle;
   if (h && (h.x === 'free') !== (h.y === 'free')) {
     const axis = resize ? edgeAxis(resize)! : h.y === 'free' ? { x: 1, y: 0 } : { x: 0, y: 1 };

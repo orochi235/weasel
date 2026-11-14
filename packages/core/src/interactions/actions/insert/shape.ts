@@ -72,6 +72,8 @@ export function insertShape(
   frame: Pick<InsertFrame, 'shaped' | 'altHeld'>,
   points: ReadonlyArray<DragSample> | null,
   userRotation: number,
+  /** The snap's landing for an end at `p` (`SpanSnap.landingAt`). */
+  landingAt?: (p: InsertPoint) => unknown,
 ): InsertShape {
   const mode = effectiveOriginMode(resolved?.['originMode'], frame.altHeld);
   const kind = insertKind(resolved);
@@ -90,12 +92,19 @@ export function insertShape(
   if (min) (extras as { minSize?: MinSize }).minSize = min;
   const style = insertStyleOf(resolved);
   if (style) (extras as { style?: InsertStyle }).style = style;
+  const landings = landingAt && endLandings(landingAt(start), landingAt(current));
   const drag: InsertEnds = {
     start: { x: start.x, y: start.y },
     end: { x: current.x, y: current.y },
     ...(mode === 'center' ? { fromCenter: true } : {}),
+    ...(landings ? { landings } : {}),
   };
   return { bounds, extras, start, ends: drag };
+}
+
+function endLandings(start: unknown, end: unknown): InsertEnds['landings'] | undefined {
+  if (start === undefined && end === undefined) return undefined;
+  return { ...(start !== undefined ? { start } : {}), ...(end !== undefined ? { end } : {}) };
 }
 
 /** Whether a drag produced enough extent to be worth committing. The test

@@ -4,6 +4,7 @@ import { toPlane } from 'core/viewport/parallax';
 import { composeWorldPose, type PoseAdapter } from 'core/scene/composePose';
 import { planeOf } from '../planeInput';
 import type { MoveSession } from './session';
+import { snapLanding } from './dragSnap';
 
 /**
  * The world drag `(dx, dy)` as a translation of `id`'s stored pose. A pose is
@@ -49,7 +50,10 @@ function moveLead(session: MoveSession, dx0: number, dy0: number): MoveLead {
   if (id !== undefined) {
     const from = session.frames.get(id)?.world ?? session.startPoses.get(id);
     const { dx, dy } = planeDelta(session, id, dx0, dy0);
-    next = { dx0, dy0, dx, dy, lead: { from, to: translatePoseViaDescriptor(from, dx, dy, session.descriptorOf(id)) } };
+    // A landing is the snap's answer for the drag as the edited plane measured it.
+    const landing = dx === dx0 && dy === dy0 ? snapLanding(session, dx0, dy0) : undefined;
+    const to = translatePoseViaDescriptor(from, dx, dy, session.descriptorOf(id), undefined, landing);
+    next = { dx0, dy0, dx, dy, lead: { from, to } };
   }
   leads.set(session, next);
   return next;

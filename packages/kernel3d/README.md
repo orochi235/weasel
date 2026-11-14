@@ -92,6 +92,26 @@ measured against the dep's `size()`. Each holds the camera inside the dep's `lim
 through `clampCamera`, which `orbitBy` and `dollyBy` take as well. labkit's
 `orbit` capability is these actions on a dep the trial owns.
 
+## Moving along an axis
+
+Core's `move` keeps a dragged node at its height. `createAxisMove(world, {
+selection })` adds the other three directions: a red, green and blue arrow per
+world axis out of the selection's center (`handles(viewport)`, screen-space
+geometry for the host to draw), a press claim on them for the dispatcher's
+`affordanceAt` (`handleAt`), and a `contribution` binding a drag on one to
+`move3d.axis`. The action is core's move with its snap session held to the
+axis (`SnapBegin.along`): the pointer casts onto the plane through the axis
+that faces the camera, the move previews and commits as one undoable batch, and
+it snaps along the axis to whatever `createSnap`'s sources offer.
+
+## Snapping lands exactly
+
+A snap session answers core in screen points, which a descriptor would cast
+back onto a plane to within rounding. `createSnap`'s sessions also report the
+world point they landed on as `SnapOutcome.landing` (`Landing3d`), taking a
+target's own coordinate on each axis it pins; core carries it to `translate`
+and to `createInsert`, so a box snapped to a grid line at 0.5 is stored at 0.5.
+
 ## The depth a screen rectangle does not name
 
 `PoseDescriptor` reads `Bounds` as the screen box a solid covers. `getBounds`

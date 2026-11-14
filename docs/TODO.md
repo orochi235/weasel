@@ -30,23 +30,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P2) [recheck] A kernel3d host has no way to drag a node up or down, or along one axis.** kernel3d's
-  `translate` keeps a node at its height (`movedOnLevel` in `packages/kernel3d/src/deps.ts`), and the kernel
-  ships no translate gizmo: an editor building one writes its own action, chrome, hit test and snap plane
-  (found building a z-up scene editor, audit round 20, 2026-11-12). New API of real size: an axis-constrained
-  move action whose plane faces the camera along the dragged axis, handles a `PoseDescriptor` or pick can
-  report, and chrome drawn in screen space. Whether the handles' look is the maintainer's call is the open
-  question. Closes when a kernel3d host can drag a selected node along each world axis, up included, with
-  the kernel's own action and handles.
-
-- **(P3) [agent] A 3D snap stores a coordinate a few ulps off where it snapped.** kernel3d's snap session
-  resolves an exact world delta, then hands the move or insert back a screen point (`SnapOutcome.point`),
-  which `PoseDescriptor.translate` and `createInsert` cast onto the plane again: a box snapped to a
-  ground-grid line at y = 0.5 is stored at 0.4999999999999929 (measured 2026-11-12, audit round 20). Not
-  fixed in the pass: the exact delta has no way through core's move and insert actions, whose outcome and
-  `translate(pose, dx, dy)` are 2D points, so the fix is a core contract that carries a host's own snapped
-  position (or delta) from the session to the commit. Closes when a ground-grid snap in kernel3d stores
-  `k * step` exactly.
 
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable

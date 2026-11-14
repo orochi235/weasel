@@ -6,6 +6,7 @@ import type { NodeId } from '@weasel-js/routing';
 import { scale as scaleBy, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { groundAxes, groundHit } from './ground';
 import type { Pose3 } from './pose3';
+import { landing3dOf } from './snap/landing';
 import { DEFAULT_UP, type Scene3d, type World3d } from './world';
 
 /** The ground-plane rectangle a drag swept out, in world units. */
@@ -17,20 +18,22 @@ export interface Footprint {
   depth: number;
 }
 
-/** The ground points a footprint spans. A drag's two ends are cast rather
- *  than its box's corners: in perspective the other two corners land outside
- *  the rectangle the ends make, and would carry the footprint past a corner
- *  the drag snapped to. */
+/** The ground points a footprint spans, and its center when the drag names
+ *  one. A drag's two ends are cast rather than its box's corners: in
+ *  perspective the other two corners land outside the rectangle the ends make,
+ *  and would carry the footprint past a corner the drag snapped to. */
 function footprintPoints(
   bounds: { x: number; y: number; width: number; height: number },
   ends: InsertEnds | undefined,
   cast: (p: { x: number; y: number }) => Vec3 | null,
-): Vec3[] {
+): { points: Vec3[]; center: Vec3 | null } {
+  const none = { points: [], center: null };
   if (ends) {
-    const start = cast(ends.start);
-    const end = cast(ends.end);
-    if (!start || !end) return [];
-    return ends.fromCenter ? [end, sub(scaleBy(start, 2), end)] : [start, end];
+    // An end a snap placed is where the snap put it, not where its screen point casts back to.
+    const start = landing3dOf(ends.landings?.start)?.to ?? cast(ends.start);
+    const end = landing3dOf(ends.landings?.end)?.to ?? cast(ends.end);
+    if (!start || !end) return none;
+    return ends.fromCenter ? { points: [end, sub(scaleBy(start, 2), end)], center: start } : { points: [start, end], center: null };
   }
   const corners = [
     { x: bounds.x, y: bounds.y },
@@ -41,10 +44,10 @@ function footprintPoints(
   const hits: Vec3[] = [];
   for (const corner of corners) {
     const hit = cast(corner);
-    if (!hit) return [];
+    if (!hit) return none;
     hits.push(hit);
   }
-  return hits;
+  return { points: hits, center: null };
 }
 
 /** The node a `createInsert` `node` factory makes: what it holds and where it sits, in world terms. */
@@ -154,7 +157,7 @@ export function createInsert<TData = unknown, TLayer extends string = string>(op
     bounds: { x: number; y: number; width: number; height: number }, ends: InsertEnds | undefined,
   ): Footprint | null => {
     const vp = viewport(opts.viewId);
-    const hits = footprintPoints(bounds, ends, (p) => groundHit(vp, p, up));
+    const { points: hits, center: given } = footprintPoints(bounds, ends, (p) => groundHit(vp, p, up));
     if (hits.length === 0) return null;
 
     let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
@@ -164,8 +167,8 @@ export function createInsert<TData = unknown, TLayer extends string = string>(op
     }
 
     const center = { x: 0, y: 0, z: 0 };
-    center[u] = (minU + maxU) / 2;
-    center[v] = (minV + maxV) / 2;
+    center[u] = given ? given[u] : (minU + maxU) / 2;
+    center[v] = given ? given[v] : (minV + maxV) / 2;
     return { center, width: Math.max(minExtent, maxU - minU), depth: Math.max(minExtent, maxV - minV) };
   };
 

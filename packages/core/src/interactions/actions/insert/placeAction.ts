@@ -55,14 +55,18 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       const parent = insertParent(deps.scene, deps.insertInto?.get(), deps.canDropInto, { x, y });
       const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
       const mods = snapMods({ modifiers: (params?.['mods'] as ModifierState | undefined) ?? NO_KEYS });
-      const at = snap ? snap.at({ x, y }, mods).point : { x, y };
+      const out = snap?.at({ x, y }, mods);
+      const at = out ? out.point : { x, y };
       snap?.end();
       const extras: Record<string, unknown> = { ...params, kind: insertKind(params) };
       for (const k of [...CLICK_FIELDS, 'size']) delete extras[k];
       const style = insertStyleOf(params);
       if (style) extras['style'] = style;
       const bounds = { x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height };
-      const ends = { start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true };
+      const ends = {
+        start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true,
+        ...(out?.landing !== undefined ? { landings: { start: out.landing } } : {}),
+      };
       const id = dep.commit(bounds, extras as InsertExtras, ends, clearedSelection(prior));
       if (id === null) {
         restoreSelection({ priorSelection: prior, selection: deps.selection });

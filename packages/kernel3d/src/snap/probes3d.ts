@@ -11,7 +11,7 @@ export interface Subject3d {
   /** The node whose `translate` the session answers for exactly: the first
    *  of the subject still in the scene, which is the move's lead, so every
    *  other root follows it onto what it snapped to. */
-  anchor: { box: Aabb; height: number };
+  anchor: { box: Aabb; height: number; position: Vec3 };
 }
 
 export function subjectOf<TData, TLayer extends string>(
@@ -23,7 +23,11 @@ export function subjectOf<TData, TLayer extends string>(
   const lead = ids.find((id) => nodeOf(id) !== undefined);
   if (lead === undefined) return null;
   const leadPose = poseOf(lead as NodeId);
-  const anchor = { box: measuredBoxAt(world, nodeOf(lead)!, leadPose), height: dot(up, leadPose.position) };
+  const anchor = {
+    box: measuredBoxAt(world, nodeOf(lead)!, leadPose),
+    height: dot(up, leadPose.position),
+    position: leadPose.position,
+  };
   let box: Aabb | null = null;
   for (const id of withDescendants(scene, ids)) {
     const node = nodeOf(id);

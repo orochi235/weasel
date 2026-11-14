@@ -56,6 +56,11 @@ export interface InsertEnds {
   start: { x: number; y: number };
   end: { x: number; y: number };
   fromCenter?: boolean;
+  /** The host's own exact reading of an end a snap put where it is
+   *  (`SnapOutcome.landing`), for a host that would otherwise recover it from
+   *  the point to within rounding. Absent for an end no snap placed, or one a
+   *  behavior or the kind's own geometry moved after it snapped. */
+  landings?: { start?: unknown; end?: unknown };
 }
 
 /** Adapter dep for `insertAction`. The `extras` carry the active tool's kind

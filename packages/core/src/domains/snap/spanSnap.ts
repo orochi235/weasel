@@ -16,6 +16,9 @@ export interface SpanSnap {
   anchor(p: Point): void;
   /** Whether a target holds the start. */
   startHeld(): boolean;
+  /** The host's landing (`SnapOutcome.landing`) for an end at `p`: the start's
+   *  or the end's, when `p` is where that one last snapped to. */
+  landingAt(p: Point): unknown;
   /** Clears the gesture's marks. */
   close(): void;
 }
@@ -37,6 +40,8 @@ export function spanSnap(
   let raw: Point = { x: 0, y: 0 };
   let start: Point = raw;
   let held = false;
+  let startOut: SnapOutcome | null = null;
+  let endOut: SnapOutcome | null = null;
   let live: { session: SnapSession; key: string } | null = null;
   // The start's own session, kept open so its marks stay drawn until the end
   // snaps: the end's session drops a point target on its origin, the start.
@@ -67,19 +72,27 @@ export function spanSnap(
     const landed = placed.at(p, mods);
     start = landed.point;
     held = landed.held;
+    startOut = landed;
     return landed;
   };
+  const at = (out: SnapOutcome | null, p: Point): unknown =>
+    (out && out.point.x === p.x && out.point.y === p.y ? out.landing : undefined);
 
   return {
     start: place,
     carry: (dx, dy, mods) => place({ x: raw.x + dx, y: raw.y + dy }, mods),
-    end: (p, mods) => open().at(p, mods),
+    end(p, mods) {
+      endOut = open().at(p, mods);
+      return endOut;
+    },
     anchor(p) {
       if (p.x === start.x && p.y === start.y) return;
       start = p;
+      startOut = null;
       drop();
     },
     startHeld: () => held,
+    landingAt: (p) => at(startOut, p) ?? at(endOut, p),
     close: drop,
   };
 }
