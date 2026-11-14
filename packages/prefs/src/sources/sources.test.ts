@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { AUTO } from '../autoReset';
 import type { PrefGroup } from '../groups';
 import type { PrefLeaf } from '../schema';
-import { selectionSource } from './selectionSource';
-import { recordSource, valuesSource } from './valuesSource';
+import { createSelectionSource } from './selectionSource';
+import { createRecordSource, createValuesSource } from './valuesSource';
 
 const SCHEMA = {
   name: 'Settings',
@@ -20,19 +20,19 @@ const SCHEMA = {
   },
 } as unknown as PrefGroup;
 
-describe('valuesSource', () => {
+describe('createValuesSource', () => {
   it('reads a leaf as shown, with its auto state only where the owner keeps one', () => {
-    const kept = valuesSource(SCHEMA, () => ({ view: { gap: 9 } }), () => {}, { auto: new Set(['view.gap']), onAutoChange: () => {} });
+    const kept = createValuesSource(SCHEMA, () => ({ view: { gap: 9 } }), () => {}, { auto: new Set(['view.gap']), onAutoChange: () => {} });
     expect(kept.valueAt('view.gap')).toEqual({ value: 9, mixed: false, each: [9], auto: true });
     expect(kept.valueAt('view.grid')).toEqual({ value: true, mixed: false, each: [true] });
-    const plain = valuesSource(SCHEMA, () => ({ view: { gap: 9 } }), () => {});
+    const plain = createValuesSource(SCHEMA, () => ({ view: { gap: 9 } }), () => {});
     expect(plain.autoAt('view.gap')).toBeUndefined();
   });
 
   it('resets a group leaf by leaf: unpinning through onAutoChange, pinning through onChange', () => {
     const onChange = vi.fn();
     const onAutoChange = vi.fn();
-    const source = valuesSource(SCHEMA, () => ({ view: { gap: 9, grid: false } }), onChange, { auto: new Set(), onAutoChange });
+    const source = createValuesSource(SCHEMA, () => ({ view: { gap: 9, grid: false } }), onChange, { auto: new Set(), onAutoChange });
     source.reset(['view']);
     expect(onAutoChange.mock.calls).toEqual([['view.gap', true]]);
     expect(onChange.mock.calls).toEqual([['view.grid', true]]);
@@ -41,35 +41,35 @@ describe('valuesSource', () => {
   });
 });
 
-describe('valuesSource reads through its getter', () => {
+describe('createValuesSource reads through its getter', () => {
   it('answers from the values the getter holds now, not those it held when built', () => {
     let values: unknown = { view: { gap: 2 } };
-    const source = valuesSource(SCHEMA, () => values, () => {});
+    const source = createValuesSource(SCHEMA, () => values, () => {});
     expect(source.valueAt('view.gap').value).toBe(2);
     values = { view: { gap: 5 } };
     expect(source.valueAt('view.gap').value).toBe(5);
   });
 
   it('shows the default for a leaf holding nothing', () => {
-    expect(valuesSource(SCHEMA, () => ({}), () => {}).valueAt('view.gap').value).toBe(4);
+    expect(createValuesSource(SCHEMA, () => ({}), () => {}).valueAt('view.gap').value).toBe(4);
   });
 });
 
-describe('recordSource', () => {
+describe('createRecordSource', () => {
   it('reads a value as held, and a mixed path as mixed', () => {
     const leaf = { kind: 'number', name: 'Size', description: '', default: 3 } as PrefLeaf;
-    const source = recordSource({ 'tools.size': leaf }, { 'tools.size': 7 }, () => {}, { mixed: new Set(['tools.other']) });
+    const source = createRecordSource({ 'tools.size': leaf }, { 'tools.size': 7 }, () => {}, { mixed: new Set(['tools.other']) });
     expect(source.valueAt('tools.size')).toEqual({ value: 7, mixed: false, each: [7] });
     expect(source.valueAt('tools.other').mixed).toBe(true);
   });
 });
 
-describe('selectionSource', () => {
+describe('createSelectionSource', () => {
   const size = { kind: 'number', name: 'Size', description: '', default: 12 } as PrefLeaf;
   const targets = (held: Array<number | undefined>) => {
     const write = vi.fn();
     const reset = vi.fn();
-    const source = selectionSource({ leaves: { size }, read: () => held, write, reset });
+    const source = createSelectionSource({ leaves: { size }, read: () => held, write, reset });
     return { source, write, reset };
   };
 
@@ -80,7 +80,7 @@ describe('selectionSource', () => {
 
   it('shows a target holding nothing as `shown` says', () => {
     expect(targets([undefined]).source.valueAt('size').value).toBe(12);
-    const unset = selectionSource({ leaves: { size }, read: () => [undefined], shown: () => undefined, write: () => {}, reset: () => {} });
+    const unset = createSelectionSource({ leaves: { size }, read: () => [undefined], shown: () => undefined, write: () => {}, reset: () => {} });
     expect(unset.valueAt('size').value).toBeUndefined();
   });
 

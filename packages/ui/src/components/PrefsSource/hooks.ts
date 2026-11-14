@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import {
-  selectionSource,
-  valuesSource,
+  createSelectionSource,
+  createValuesSource,
   type PrefGroup,
   type PrefSection,
   type PrefsSource,
@@ -10,7 +10,7 @@ import {
   type ValuesSourceOptions,
 } from '@weasel-js/prefs';
 
-/** `valuesSource` (`@weasel-js/prefs`) over `values`, rebuilt only when what it reads changes. */
+/** `createValuesSource` (`@weasel-js/prefs`) over `values`, rebuilt only when what it reads changes. */
 export function useValuesSource(
   schema: PrefGroup | PrefSection,
   values: unknown,
@@ -19,13 +19,13 @@ export function useValuesSource(
 ): PrefsSource {
   const { auto, onAutoChange, canAuto, mixed, onReset, stateAt, over } = options;
   return useMemo(
-    () => valuesSource(schema, () => values, onChange, { auto, onAutoChange, canAuto, mixed, onReset, stateAt, over }),
+    () => createValuesSource(schema, () => values, onChange, { auto, onAutoChange, canAuto, mixed, onReset, stateAt, over }),
     [schema, values, onChange, auto, onAutoChange, canAuto, mixed, onReset, stateAt, over],
   );
 }
 
-/** `selectionSource` (`@weasel-js/prefs`) over `input`. What a selection holds changes with every edit, so it is
- *  built fresh each render. */
+/** `createSelectionSource` (`@weasel-js/prefs`) over `input`. What a selection holds changes with every edit, so
+ *  it is built fresh each render. */
 export function useSelectionSource(input: SelectionSourceInput): SelectionSource {
-  return selectionSource(input);
+  return createSelectionSource(input);
 }

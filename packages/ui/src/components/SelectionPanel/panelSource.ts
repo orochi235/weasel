@@ -1,5 +1,5 @@
 import type { SelectionApi } from '@weasel-js/core';
-import { selectionSource, type LeafState, type SelectionSource } from '@weasel-js/prefs';
+import { createSelectionSource, type LeafState, type SelectionSource } from '@weasel-js/prefs';
 import type { LeafWrites } from './commitLeaf';
 import { nodeLeafValue, nodeValueAt, panelLeafKey, type AnyNode, type PanelLeaf } from './model';
 
@@ -16,8 +16,8 @@ export interface PanelSourceInput {
   active?: ReadonlySet<string>;
 }
 
-/** The selected nodes as a `selectionSource`'s targets: a node holding nothing at a leaf has no such property, and
- *  reads as unset unless the leaf is `absentIsDefault`. */
+/** The selected nodes as the targets of a `createSelectionSource`: a node holding nothing at a leaf has no such
+ *  property, and reads as unset unless the leaf is `absentIsDefault`. */
 export function panelSource(input: PanelSourceInput): SelectionSource {
   const { nodes, selection, writes, disabled, hidden, active } = input;
   const byPath = new Map(input.leaves.map((l) => [l.path, l] as const));
@@ -25,7 +25,7 @@ export function panelSource(input: PanelSourceInput): SelectionSource {
     const at = byPath.get(path);
     return at ? panelLeafKey(at) : path;
   };
-  return selectionSource({
+  return createSelectionSource({
     leaves: Object.fromEntries(input.leaves.map((l) => [l.path, l.leaf])),
     read: (path) => nodes.map((n) => nodeValueAt(n, path)),
     shown: nodeLeafValue,

@@ -1,4 +1,4 @@
-import { leafIsAtReset, recordSource, type PrefLeaf, type PrefsSource } from '@weasel-js/prefs';
+import { leafIsAtReset, createRecordSource, type PrefLeaf, type PrefsSource } from '@weasel-js/prefs';
 import type { LeafContext } from './types';
 
 /**
@@ -28,5 +28,5 @@ export function sourceLeafContext(source: PrefsSource, path: string, pref: PrefL
 
 /** The context of one leaf drawn on its own, holding `value` and writing through `setValue`. */
 export function loneLeafContext(path: string, pref: PrefLeaf, value: unknown, setValue: (value: unknown) => void): LeafContext {
-  return sourceLeafContext(recordSource({ [path]: pref }, { [path]: value }, (_path, next) => setValue(next)), path, pref);
+  return sourceLeafContext(createRecordSource({ [path]: pref }, { [path]: value }, (_path, next) => setValue(next)), path, pref);
 }

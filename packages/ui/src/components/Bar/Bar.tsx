@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
-import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefLeafValue, prefReader, prefValueAtPath, recordSource, valuesSource, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefOrder, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefLeafValue, prefReader, prefValueAtPath, createRecordSource, createValuesSource, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefOrder, type PrefSection } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { useParamsPolicy } from '../Prefs/useParamsPolicy';
@@ -185,7 +185,7 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, dr
     setValue: (v) => onChange?.(path, v),
     // One set of values, so there is one prior value to derive from.
     update: (fn) => onChange?.(path, fn(shown)),
-    source: recordSource({ [path]: leaf }, values, onChange, { mixed }),
+    source: createRecordSource({ [path]: leaf }, values, onChange, { mixed }),
     setAuto: () => {},
     fields,
     disabled: draw.disabled.has(own),
@@ -245,7 +245,7 @@ function GroupBody({ draw, group, path }: { draw: Draw; group: PrefGroup; path: 
   const onChange = draw.onChange ?? ignore;
   const ctx: WalkCtx = {
     // The bar draws its own leaves: the source answers only what the pane's groups ask of it.
-    source: valuesSource(group, () => values, onChange, { mixed: draw.mixed }),
+    source: createValuesSource(group, () => values, onChange, { mixed: draw.mixed }),
     values,
     onChange,
     mixed: draw.mixed,

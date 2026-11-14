@@ -33,7 +33,7 @@ export interface SelectionSource extends PrefsSource {
  * A source over a selection: each selected thing is a target, so a reading's `each` holds one value per target
  * and a write lands in every one. A target keeps no auto state, so no leaf is auto here.
  */
-export function selectionSource(input: SelectionSourceInput): SelectionSource {
+export function createSelectionSource(input: SelectionSourceInput): SelectionSource {
   const { leaves, read, shown = prefLeafValue, write, stateAt = () => LEAF_FREE } = input;
   const schema: PrefSection = { name: '', members: leaves };
   const source: SelectionSource = {

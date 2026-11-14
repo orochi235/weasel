@@ -3,7 +3,7 @@ import { AUTO, type PrefGroup } from '@weasel-js/prefs';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import type { ResolvedConfig } from '../config/types';
-import { labConfigSource } from './labSource';
+import { createLabConfigSource } from './labSource';
 import { ResetGroup } from './ResetGroup';
 
 const italic = {
@@ -30,7 +30,8 @@ const at = (
   config: Record<string, unknown>,
   setConfig = vi.fn(),
   auto = new Set<string>(['type.gap']),
-) => labConfigSource({ resolved, config, shown: config, setConfig, auto, setRowAuto: () => {} });
+) =>
+  createLabConfigSource({ resolved, config, shown: config, setConfig, auto, setRowAuto: () => {} });
 
 describe('ResetGroup', () => {
   it('reads an encoded leaf through its encoding, and resets it to holding nothing', () => {

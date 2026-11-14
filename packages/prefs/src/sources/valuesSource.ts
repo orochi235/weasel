@@ -34,7 +34,7 @@ const parentOf = (values: unknown, path: string): Record<string, unknown> | unde
  * A source over one values map, read through `get` each time it is asked, so a host keeping the map in a store
  * can hand out one source for good. Writes go to `set`; a leaf holding nothing shows its default.
  */
-export function valuesSource(
+export function createValuesSource(
   schema: PrefGroup | PrefSection,
   get: () => unknown,
   set: (path: string, value: unknown) => void,
@@ -86,7 +86,7 @@ export function valuesSource(
  * handed them. `leaves` says what each path holds; `mixed` the paths whose values disagree. A value is read as
  * held, with no default put in for one holding nothing.
  */
-export function recordSource(
+export function createRecordSource(
   leaves: Readonly<Record<string, PrefLeaf>>,
   values: Readonly<Record<string, unknown>> | undefined,
   onChange: ((path: string, value: unknown) => void) | undefined,
