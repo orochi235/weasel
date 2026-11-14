@@ -22,5 +22,5 @@ export const Invalid: Story = {
 };
 
 export const Disabled: Story = {
-  args: { label: 'Description', isDisabled: true, defaultValue: 'Read only for now.' },
+  args: { label: 'Description', disabled: true, defaultValue: 'Read only for now.' },
 };

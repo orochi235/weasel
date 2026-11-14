@@ -4,9 +4,10 @@ import { CloseButton } from '../CloseButton';
 import { DisclosureMark } from '../Disclosure';
 import { type CollapseProps, useCollapse } from '../Properties/collapse';
 import s from './SidebarPanel.module.css';
+import { holdScope, type HoldProps } from '../Disabled';
 
 /** Props for {@link SidebarPanel}. */
-export interface SidebarPanelProps extends AppearanceProps, Omit<CollapseProps, 'twisty'> {
+export interface SidebarPanelProps extends AppearanceProps, Omit<CollapseProps, 'twisty'>, HoldProps {
   /** Title rendered in the panel's header row. */
   title?: ReactNode;
   /**
@@ -91,7 +92,7 @@ export function SidebarPanel(props: SidebarPanelProps) {
       )}
       {!collapsed && (
         <div id={fold.body.id} className={cx(s.body, props.bodyClassName)}>
-          {children}
+          {holdScope(props, children)}
         </div>
       )}
     </div>

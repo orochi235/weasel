@@ -43,7 +43,7 @@ export function FrameView({ client, rootId }: DevtoolsViewProps): ReactElement {
 
   return (
     <div className={s.frame}>
-      <Switch isSelected={fps} onChange={setFps} isDisabled={!state.data}>fps overlay</Switch>
+      <Switch isSelected={fps} onChange={setFps} disabled={!state.data}>fps overlay</Switch>
       {!fps ? (
         <p className={s.note}>The canvas measures its paints only while the fps overlay is on.</p>
       ) : isFrameStats(frame) ? (

@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 import { withDensity, type DensityProps } from '../Density';
 import s from './StatusBar.module.css';
+import { holdScope, type HoldProps } from '../Disabled';
 
 /** Props for {@link StatusBar}. */
-export interface StatusBarProps extends DensityProps {
+export interface StatusBarProps extends DensityProps, HoldProps {
   /**
    * Accessible label for the bar. Deliberately not a live region — a status
    * bar's readouts change on every pointer move (zoom, cursor position,
@@ -30,7 +31,7 @@ export function StatusBar(props: StatusBarProps) {
   const { 'aria-label': ariaLabel, divided, children, size, className } = props;
   return (
     <footer className={[s.bar, divided && s.divided, className].filter(Boolean).join(' ')} aria-label={ariaLabel}>
-      {withDensity(size, children)}
+      {holdScope(props, withDensity(size, children))}
     </footer>
   );
 }

@@ -20,40 +20,22 @@ import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './Select.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import type { HoldProps } from '../Disabled';
+import { useRacHold } from '../Disabled/racHold';
+import type { ListOption } from '../listOption';
 import { Caret } from '../Caret';
 import { optionLabels, withIcon } from '../optionLabels';
 import { MIXED_HINT } from '../mixedHint';
 import type { OptionKey } from '../../optionKey';
 
-/** One option in a {@link Select}'s `options` list. */
-export type SelectOption = {
-  value: string;
-  label: ReactNode;
-  isDisabled?: boolean;
-  /** A glyph drawn before `label`, in the list and in the trigger. */
-  icon?: ReactNode;
-  /** A line under `label` in the list, saying what the option does. */
-  description?: string;
-  /** Why the option is disabled, read in the list in place of `description` while `isDisabled`. */
-  disabledReason?: string;
-  /**
-   * Plain-text form of `label`, for type-to-select and screen readers.
-   * Only needed when `label` isn't a bare string — a label built from
-   * elements has no text React Aria can read off it. A string label
-   * supplies this itself.
-   */
-  textValue?: string;
-};
-
 /** A titled group of options in a {@link Select}'s `options` list. */
 export type SelectOptionGroup<T extends OptionKey = string> = {
   title: ReactNode;
-  options: ReadonlyArray<SelectOption & { value: T }>;
+  options: ReadonlyArray<ListOption<T>>;
 };
 
-
 function isGroup<T extends OptionKey>(
-  entry: (SelectOption & { value: T }) | SelectOptionGroup<T>,
+  entry: ListOption<T> | SelectOptionGroup<T>,
 ): entry is SelectOptionGroup<T> {
   return 'options' in entry;
 }
@@ -68,7 +50,7 @@ export type SelectPopup = 'over' | 'below';
  * Props for {@link Select}, on top of React Aria's `Select` props, with the
  * selection key narrowed to the option value type.
  */
-export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & FieldSlotProps & {
+export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'isDisabled'> & FieldSlotProps & HoldProps & {
   placeholder?: string;
   /** The select stands for several values that differ: nothing is selected,
    *  and the trigger reads `Mixed` in place of `placeholder`. */
@@ -77,7 +59,7 @@ export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<obje
    * Either pass `options` for a quick render, or `children` for full control.
    * An entry with `title` and `options` of its own is a titled section.
    */
-  options?: ReadonlyArray<(SelectOption & { value: T }) | SelectOptionGroup<T>>;
+  options?: ReadonlyArray<ListOption<T> | SelectOptionGroup<T>>;
   children?: ReactNode;
   selectedKey?: T | null;
   defaultSelectedKey?: T;
@@ -124,9 +106,13 @@ export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<obje
  *
  * `shortcut` puts a kit tooltip on the trigger reading `Name (⌘K)`, named by
  * `aria-label` or a string `label`, as `Button` does; `tooltip` replaces that
- * text.
+ * text. Held disabled for a reason, or read-only, its trigger stays focusable and shows the reason, and its list
+ * does not open.
  */
 export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
+  const hold = useRacHold(props);
+  // React Aria's Select has no read-only: a held one keeps its list shut and drops every change.
+  const { isReadOnly: held, ...racHeld } = hold.rac;
   const {
     label,
     orientation,
@@ -149,7 +135,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
     shortcut,
     tooltip,
     ...rest
-  } = props;
+  } = hold.rest;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const placeholder = mixed ? MIXED_HINT : placeholderProp;
@@ -157,12 +143,14 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const pressRef = useRef<Press | null>(null);
   const [nudge, setNudge] = useState(NO_NUDGE);
 
-  return (
+  return hold.wrap(
     <RACSelect
       {...rest}
+      {...racHeld}
+      {...(held ? { isOpen: false, onOpenChange: undefined } : {})}
       selectedKey={mixed ? null : selectedKey}
       defaultSelectedKey={defaultSelectedKey}
-      onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T) : undefined}
+      onSelectionChange={onSelectionChange && !held ? (k) => onSelectionChange(k as T) : undefined}
       className={fieldRootClass({
         orientation,
         width,
@@ -183,7 +171,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <TriggerTooltip
         content={segmentTooltipContent({ tooltip, shortcut, ariaLabel: rest['aria-label'], label })}
-        disabled={rest.isDisabled}
+        disabled={!hold.access.reachable || hold.access.reason !== undefined}
       >
         <RACButton
           id={triggerId}
@@ -233,22 +221,29 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
               onMeasure={setNudge}
             />
           )}
-          <RACListBox className={`${listbox.surface} ${listbox.list}`}>
-            {options !== undefined
-              ? options.map((entry, i) =>
-                  isGroup(entry) ? (
-                    <SelectSection key={`section-${i}`} title={entry.title}>
-                      {entry.options.map(renderOption)}
-                    </SelectSection>
-                  ) : (
-                    renderOption(entry)
-                  ),
-                )
-              : children}
-          </RACListBox>
+          <SelectList options={options}>{children}</SelectList>
         </Popover>
       )}
-    </RACSelect>
+    </RACSelect>,
+  );
+}
+
+/** A select's list: its `options`, or else its `children`. */
+function SelectList<T extends OptionKey>({ options, children }: Pick<SelectProps<T>, 'options' | 'children'>) {
+  return (
+    <RACListBox className={`${listbox.surface} ${listbox.list}`}>
+      {options !== undefined
+        ? options.map((entry, i) =>
+            isGroup(entry) ? (
+              <SelectSection key={`section-${i}`} title={entry.title}>
+                {entry.options.map(renderOption)}
+              </SelectSection>
+            ) : (
+              renderOption(entry)
+            ),
+          )
+        : children}
+    </RACListBox>
   );
 }
 
@@ -265,10 +260,10 @@ function CheckMark() {
   );
 }
 
-function renderOption<T extends OptionKey>(o: SelectOption & { value: T }) {
+function renderOption<T extends OptionKey>(o: ListOption<T>) {
   return (
     <SelectItem
-      key={String(o.value)} id={o.value} isDisabled={o.isDisabled} icon={o.icon} textValue={o.textValue}
+      key={String(o.value)} id={o.value} disabled={o.disabled} icon={o.icon} textValue={o.textValue}
       description={o.description} disabledReason={o.disabledReason}
     >
       {o.label}
@@ -296,13 +291,15 @@ export function SelectSection({ title, children, className }: SelectSectionProps
 }
 
 /** Props for {@link SelectItem}, on top of React Aria's `ListBoxItem` props. */
-export type SelectItemProps = Omit<RACListBoxItemProps, 'className' | 'children'> & {
+export type SelectItemProps = Omit<RACListBoxItemProps, 'className' | 'children' | 'isDisabled'> & {
   children?: ReactNode;
+  /** The row cannot be chosen. */
+  disabled?: boolean;
   /** A glyph drawn before the label, in the list and in the trigger. */
   icon?: ReactNode;
   /** A line under the label in the list, and the row's accessible description. */
   description?: string;
-  /** Why the row is disabled, in place of `description` while `isDisabled`. */
+  /** Why the row is disabled, in place of `description` while `disabled`. */
   disabledReason?: string;
   className?: string;
 };
@@ -326,11 +323,12 @@ function textValueOf(children: ReactNode, explicit: string | undefined): string 
  * selected. A string child supplies its own `textValue`; anything richer must
  * pass one so type-to-select and screen readers have something to read.
  */
-export function SelectItem({ children, icon, className, textValue, description, disabledReason, ...rest }: SelectItemProps) {
-  const note = (rest.isDisabled && disabledReason) || description;
+export function SelectItem({ children, icon, className, textValue, description, disabled, disabledReason, ...rest }: SelectItemProps) {
+  const note = (disabled && disabledReason) || description;
   return (
     <RACListBoxItem
       {...rest}
+      isDisabled={disabled}
       textValue={textValueOf(children, textValue)}
       className={[s.option, className].filter(Boolean).join(' ')}
     >

@@ -17,9 +17,10 @@ import { barLeafName, BarLayout, groupBarNodes, shownBarNodes, type BarCell, typ
 import { childKeysAt } from './barOrder';
 import { withBarLabel, type LeafSurface } from './renderBarLeaf';
 import type { DensityProps } from '../Density';
+import type { HoldProps } from '../Disabled';
 
-/** Props for {@link Bar}. */
-export interface BarProps extends DensityProps {
+/** Props for {@link Bar}. `disabled` and `readOnly` hold every cell. */
+export interface BarProps extends DensityProps, HoldProps {
   /**
    * What the bar holds, as a `PrefGroup`: a group's key is a segment of its
    * leaves' paths. A leaf is a cell. A nested `section` or `bar` is a run
@@ -108,6 +109,10 @@ export function Bar(props: BarProps) {
       keysOf={(container) => childKeysAt(orderPrefGroup(schema, props.order), container)}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}
+      disabled={props.disabled}
+      disabledReason={props.disabledReason}
+      readOnly={props.readOnly}
+      readOnlyReason={props.readOnlyReason}
     />
   );
 }

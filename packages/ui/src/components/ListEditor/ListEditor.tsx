@@ -8,11 +8,13 @@ import { AddEntry, type ListEntryKind } from './AddEntry';
 import { useEntryDraft } from './entryDraft';
 import { useEntryMoves, useListFocus } from './listEntries';
 import s from './ListEditor.module.css';
+import { holdScope, useControlAccess, type HoldProps } from '../Disabled';
 
 export type { ListEntryKind };
 
-/** Props for {@link ListEditor}. */
-export interface ListEditorProps<T = string> {
+/** Props for {@link ListEditor}. Disabled or read-only, no entry is typed in, added, moved, or removed, and a
+ *  `renderEntry`'s controls read the scope. */
+export interface ListEditorProps<T = string> extends HoldProps {
   value: readonly T[];
   /** Every edit, add, removal and move, with the whole list. A text entry is written like any typed field: on
    *  blur or Enter, or once typing rests where it settles when idle. An empty one stays until it is removed. */
@@ -37,8 +39,6 @@ export interface ListEditorProps<T = string> {
   empty?: string;
   /** Text of the add button. */
   addLabel?: string;
-  /** The list takes no input: no entry is typed in, added, moved, or removed. A `renderEntry` disables what it draws. */
-  disabled?: boolean;
   /** Whether the text field of the entry at `index` takes no typing. The entry can still be removed. */
   entryDisabled?: (index: number) => boolean;
   /** Names the list for assistive tech; each entry is named from it. */
@@ -89,10 +89,12 @@ export function ListEditor<T>({
   reorder = false,
   minItems = 0,
   maxItems = Infinity,
-  disabled = false,
   entryDisabled,
   settleWhenIdle,
+  ...hold
 }: ListEditorProps<T>) {
+  const access = useControlAccess(hold);
+  const disabled = access.state !== 'enabled';
   const focus = useListFocus();
   const kinds = useMemo(() => kindsOf(newEntry, addLabel), [newEntry, addLabel]);
   const entries = useEntryDraft(value, onChange, settleWhenIdle);
@@ -122,7 +124,7 @@ export function ListEditor<T>({
   const name = (i: number): string => `${ariaLabel ?? 'Entry'} ${i + 1}`;
   const set = (at: number, next: T): void => entries.write(list.map((v, j) => (j === at ? next : v)));
 
-  return (
+  return holdScope(hold, (
     <div className={[s.editor, className].filter(Boolean).join(' ')} role="group" aria-label={ariaLabel}>
       {value.length === 0 ? (
         <div className={s.empty}>{empty}</div>
@@ -141,6 +143,7 @@ export function ListEditor<T>({
                   className={s.handle}
                   label={name(i)}
                   disabled={disabled}
+                  disabledReason={access.reason}
                   ref={(el) => {
                     focus.handles.current[i] = el;
                   }}
@@ -159,7 +162,8 @@ export function ListEditor<T>({
                   aria-label={name(i)}
                   value={entries.shown(i)}
                   placeholder={placeholder}
-                  disabled={disabled || entryDisabled?.(i) === true}
+                  disabled={(disabled && !access.reachable) || entryDisabled?.(i) === true}
+                  readOnly={disabled} aria-disabled={access.state === 'disabled' || undefined}
                   onFocus={() => entries.focus(i)}
                   onChange={(e) => entries.type(i, e.target.value)}
                   onBlur={entries.settle}
@@ -172,6 +176,7 @@ export function ListEditor<T>({
                 }}
                 aria-label={`Remove ${name(i)}`}
                 disabled={disabled || value.length <= minItems}
+                disabledReason={access.reason}
                 onClick={() => remove(i)}
               />
             </li>
@@ -183,10 +188,11 @@ export function ListEditor<T>({
           kinds={kinds}
           label={addLabel}
           disabled={disabled || value.length >= maxItems}
+          disabledReason={access.reason}
           onAdd={(make) => insert(value.length, make)}
           buttonRef={focus.add}
         />
       </div>
     </div>
-  );
+  ));
 }

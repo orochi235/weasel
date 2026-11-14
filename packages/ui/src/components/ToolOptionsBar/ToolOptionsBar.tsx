@@ -5,9 +5,10 @@ import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { Bar } from '../Bar/Bar';
 import { withDensity, type DensityProps } from '../Density';
 import s from './ToolOptionsBar.module.css';
+import { holdScope, type HoldProps } from '../Disabled';
 
 /** Props for {@link ToolOptionsBar}. */
-export interface ToolOptionsBarProps extends DensityProps {
+export interface ToolOptionsBarProps extends DensityProps, HoldProps {
   /**
    * Context label for the row — e.g. the active tool's name. Rendered
    * before the children and doubles as the toolbar's `aria-label`. A label
@@ -67,10 +68,14 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
       <div className={s.controls} ref={controls}>
         {withDensity(size, (
           <FitScope value={fit}>
-            {schema !== undefined && (
-              <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} over={over} onChange={onChange} />
-            )}
-            {children}
+            {holdScope(props, (
+              <>
+                {schema !== undefined && (
+                  <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} over={over} onChange={onChange} />
+                )}
+                {children}
+              </>
+            ))}
           </FitScope>
         ))}
       </div>

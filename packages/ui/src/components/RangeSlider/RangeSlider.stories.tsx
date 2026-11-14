@@ -31,7 +31,7 @@ export const Vertical: Story = {
 };
 
 export const Disabled: Story = {
-  args: { label: 'Locked', defaultValue: 30, minValue: 0, maxValue: 100, isDisabled: true },
+  args: { label: 'Locked', defaultValue: 30, minValue: 0, maxValue: 100, disabled: true },
 };
 
 export const Controlled: Story = {

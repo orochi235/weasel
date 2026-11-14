@@ -20,6 +20,7 @@ import { ColorControl, PaintControl } from './ColorControls';
 import { EnumControl } from './EnumControl';
 import { PropertyReadout } from './PropertyReadout';
 import s from './Properties.module.css';
+import { useNativeHold } from '../Disabled/nativeHold';
 
 /** The control a field's `kind` and `control` choose, for every kind but a slider. */
 export function ControlBody(props: PropertyControlProps) {
@@ -46,7 +47,8 @@ export function ControlBody(props: PropertyControlProps) {
           onChange={props.onChange}
           weight={props.weight}
           fontStyle={props.fontStyle}
-          isDisabled={props.disabled}
+          disabled={props.disabled}
+          disabledReason={props.disabledReason}
           aria-label={props.name}
         />
       );
@@ -58,7 +60,8 @@ export function ControlBody(props: PropertyControlProps) {
           mixed={props.mixed}
           family={props.family}
           onChange={props.onChange}
-          isDisabled={props.disabled}
+          disabled={props.disabled}
+          disabledReason={props.disabledReason}
           aria-label={props.name}
         />
       );
@@ -87,6 +90,7 @@ function Dimmed({ mixed, unset, children }: { mixed?: boolean; unset?: boolean; 
 function BooleanControl(p: PropertyBooleanFieldProps) {
   const on = !p.mixed && p.value === true;
   const box = useRef<HTMLInputElement>(null);
+  const hold = useNativeHold(p);
   useEffect(() => {
     if (box.current) box.current.indeterminate = p.mixed === true;
   });
@@ -111,7 +115,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
   if (p.control === 'switch') {
     return (
       <Dimmed mixed={p.mixed} unset={p.unset}>
-        <Switch className={p.className} isSelected={on} isDisabled={p.disabled} onChange={p.onChange} aria-label={p.name} />
+        <Switch className={p.className} isSelected={on} disabled={p.disabled} disabledReason={p.disabledReason} onChange={p.onChange} aria-label={p.name} />
       </Dimmed>
     );
   }
@@ -120,20 +124,20 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
   // label text would no longer toggle it.
   return (
     <Dimmed unset={p.unset}>
-      <input
+      {hold.wrap(<input
         ref={box}
         id={p.id}
         type="checkbox"
         className={p.className ? `${sharedCheckbox.checkbox} ${p.className}` : sharedCheckbox.checkbox}
         aria-label={p.name}
         checked={on}
-        disabled={p.disabled}
+        {...hold.attrs}
         onChange={(e) => {
           // A click clears `indeterminate`, and the effect only puts it back if something renders.
           e.target.indeterminate = p.mixed === true;
-          p.onChange(e.target.checked);
+          if (!hold.refuses) p.onChange(e.target.checked);
         }}
-      />
+      />)}
     </Dimmed>
   );
 }
@@ -145,6 +149,7 @@ function StringControl(p: PropertyStringFieldProps) {
   const waits = p.onInput !== undefined && (p.inputWaitMs ?? 0) > 0;
   const input = useDebouncedText(value, p.onInput ?? noInput, p.inputWaitMs ?? 0);
   const typed = useTextDraft({ ...p, value, onInput: waits ? input.type : p.onInput });
+  const hold = useNativeHold(p);
   const edit = waits
     ? {
         ...typed,
@@ -155,7 +160,7 @@ function StringControl(p: PropertyStringFieldProps) {
       }
     : typed;
   if (p.control === 'textarea') {
-    return (
+    return hold.wrap(
       <textarea
         id={p.id}
         className={p.className ? `${s.textarea} ${p.className}` : s.textarea}
@@ -163,14 +168,15 @@ function StringControl(p: PropertyStringFieldProps) {
         value={edit.shown}
         placeholder={p.mixed ? MIXED_HINT : p.placeholder}
         maxLength={p.maxLength}
-        disabled={p.disabled}
+        {...hold.attrs}
+        readOnly={hold.refuses}
         rows={3}
         onChange={(e) => edit.type(e.target.value)}
         onBlur={edit.settle}
         onKeyDown={(e) => {
           if (!imeKey(e.nativeEvent)) edit.keyDown(e);
         }}
-      />
+      />,
     );
   }
   return (
@@ -181,7 +187,8 @@ function StringControl(p: PropertyStringFieldProps) {
       placeholder={p.placeholder}
       mixed={p.mixed}
       maxLength={p.maxLength}
-      isDisabled={p.disabled}
+      disabled={p.disabled}
+      disabledReason={p.disabledReason}
       aria-label={p.name}
       onChange={edit.type}
       onBlur={edit.settle}

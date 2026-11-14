@@ -153,7 +153,7 @@ export function ResolutionWidget({
             label="target"
             orientation="row"
             width="fit"
-            isDisabled={!targetApplies}
+            disabled={!targetApplies}
             options={targetOptions}
             selectedKey={target}
             onSelectionChange={setTarget}

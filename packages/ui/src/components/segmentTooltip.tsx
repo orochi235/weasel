@@ -1,6 +1,9 @@
 import { cloneElement, type DOMAttributes, type ReactElement, type ReactNode, type SyntheticEvent } from 'react';
+import { controlAccess, NO_HOLD, type ControlAccess } from '@weasel-js/ui-logic';
 import { Focusable } from './Tooltip/Focusable';
 import { Tooltip, TooltipTrigger } from './Tooltip';
+import { useDisabled, useReadOnly, type HoldProps } from './Disabled';
+import { useUntoldReason } from './Disabled/Disabled';
 
 /** The tooltip fields a segmented bar's item carries. */
 export interface SegmentTooltipFields {
@@ -12,20 +15,19 @@ export interface SegmentTooltipFields {
   shortcut?: string;
 }
 
-/** Tooltip content for an item, or `undefined` for none. A disabled item with
- *  a `disabledReason` reads its name and the reason. */
-export function segmentTooltipContent(
-  item: SegmentTooltipFields & {
-    label?: ReactNode;
-    ariaLabel?: string;
-    /** What the tooltip reads in place of the name, before the shortcut. */
-    description?: string;
-    disabled?: boolean;
-    disabledReason?: string;
-  },
-): ReactNode | undefined {
+/** What a segment's tooltip is built from. */
+export interface SegmentTip extends SegmentTooltipFields {
+  label?: ReactNode;
+  ariaLabel?: string;
+  /** What the tooltip reads in place of the name, before the shortcut. */
+  description?: string;
+}
+
+/** Tooltip content for an item, or `undefined` for none. An item held for a `reason` (disabled or read-only) reads
+ *  its name and the reason. */
+export function segmentTooltipContent(item: SegmentTip & { reason?: string }): ReactNode | undefined {
   const name = item.description || (item.ariaLabel ?? (typeof item.label === 'string' ? item.label : undefined));
-  if (item.disabled && item.disabledReason) return name ? `${name}: ${item.disabledReason}` : item.disabledReason;
+  if (item.reason) return name ? `${name}: ${item.reason}` : item.reason;
   if (item.tooltip !== undefined) return item.tooltip;
   if (!item.shortcut) return item.description || undefined;
   return name ? `${name} (${item.shortcut})` : item.shortcut;
@@ -35,37 +37,55 @@ type ButtonElement = ReactElement<DOMAttributes<HTMLButtonElement> & { disabled?
 
 const refuse = (e: SyntheticEvent) => e.preventDefault();
 
-/** `button` disabled by `aria-disabled`, since native `disabled` takes it out of hover and focus and so out of its
- *  tooltip's reach. Stylesheets dim `data-disabled`: `ToolButton`'s `ariaDisabled` sets `aria-disabled` undimmed. */
-function stillReachable(button: ButtonElement, reason: string): ButtonElement {
+/** `button` held by `aria-disabled` or `data-readonly`, since native `disabled` takes it out of hover and focus and
+ *  so out of its tooltip's reach. Stylesheets dim `data-disabled`: `ToolButton`'s `ariaDisabled` sets
+ *  `aria-disabled` undimmed. */
+function stillReachable(button: ButtonElement, access: ControlAccess): ButtonElement {
   return cloneElement(button as ReactElement<Record<string, unknown>>, {
     disabled: false,
-    'aria-disabled': true,
-    'data-disabled': '',
-    'aria-description': reason,
+    ...(access.state === 'disabled' ? { 'aria-disabled': true, 'data-disabled': '' } : { 'data-readonly': '' }),
+    'aria-description': access.reason,
     onClick: refuse,
     onPointerDown: undefined,
     onMouseDown: undefined,
   }) as ButtonElement;
 }
 
-/** Wraps a segment's `<button>` in a kit tooltip when there is content for
- *  one. A disabled button turns its tooltip off, unless it has a
- *  `disabledReason`: then it stays hoverable and focusable, marked
- *  `aria-disabled`, ignores presses, and its tooltip says why. */
-export function SegmentTooltip({ content, disabled, disabledReason, children }: {
-  content: ReactNode | undefined;
-  disabled?: boolean;
-  /** Why it is disabled, read as the button's description while it is. */
-  disabledReason?: string;
+/** Props for {@link SegmentTooltip}. */
+export interface SegmentTooltipProps extends HoldProps {
+  /** What the tooltip says, while the segment is not held for a reason. */
+  tip: SegmentTip;
+  /** It shows a value, so a read-only scope holds it: a toggle, not an action button. */
+  holdsValue?: boolean;
   children: ButtonElement;
-}): ReactElement {
-  if (content === undefined || content === null || content === false) return children;
-  const explained = disabled && disabledReason ? disabledReason : undefined;
-  const off = disabled && explained === undefined;
+}
+
+/** How a segment responds, from its own props and the scopes around it. */
+export function useSegmentAccess({ holdsValue = false, ...own }: HoldProps & { holdsValue?: boolean }): ControlAccess {
+  const disabled = useDisabled(own);
+  const readOnly = useReadOnly(own);
+  return controlAccess(
+    { on: disabled.disabled, reason: disabled.reason },
+    holdsValue ? { on: readOnly.readOnly, reason: readOnly.reason } : NO_HOLD,
+  );
+}
+
+/** Wraps a segment's `<button>` in a kit tooltip when there is content for one, and applies its disabled and
+ *  read-only state, its own or a scope's. Disabled with no reason, the button is natively disabled and has no
+ *  tooltip. Held for a reason, it stays hoverable and focusable, marked `aria-disabled` (or `data-readonly`),
+ *  ignores presses, and its tooltip and description say why. */
+export function SegmentTooltip({ tip, children, ...own }: SegmentTooltipProps): ReactElement {
+  const held = useSegmentAccess(own);
+  const access = { ...held, reason: useUntoldReason(held.reason) };
+  const content = segmentTooltipContent({ ...tip, reason: access.reason });
+  const off = !access.reachable;
+  const button = off ? (cloneElement(children, { disabled: true }) as ButtonElement)
+    : access.state === 'enabled' ? children : stillReachable(children, access);
+  if (content === undefined || content === null || content === false) return button;
+  // The same wrappers whatever the state, so a button that becomes disabled is not remounted.
   return (
     <TooltipTrigger isDisabled={off}>
-      <Focusable isDisabled={off}>{explained !== undefined ? stillReachable(children, explained) : children}</Focusable>
+      <Focusable isDisabled={off}>{button}</Focusable>
       <Tooltip>{content}</Tooltip>
     </TooltipTrigger>
   );

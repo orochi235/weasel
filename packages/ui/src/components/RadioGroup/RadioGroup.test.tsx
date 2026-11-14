@@ -3,9 +3,9 @@ import { render, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { RadioGroup, Radio } from './RadioGroup';
 
-function Sample(props: { value?: string; onChange?: (v: string) => void; isDisabled?: boolean }) {
+function Sample(props: { value?: string; onChange?: (v: string) => void; disabled?: boolean }) {
   return (
-    <RadioGroup label="Color" value={props.value} onChange={props.onChange} isDisabled={props.isDisabled}>
+    <RadioGroup label="Color" value={props.value} onChange={props.onChange} disabled={props.disabled}>
       <Radio value="r">Red</Radio>
       <Radio value="g">Green</Radio>
       <Radio value="b">Blue</Radio>
@@ -39,7 +39,7 @@ describe('RadioGroup', () => {
   });
 
   it('marks all radios disabled when group is disabled', () => {
-    render(<Sample isDisabled />);
+    render(<Sample disabled />);
     for (const r of screen.getAllByRole('radio') as HTMLInputElement[]) {
       expect(r.disabled).toBe(true);
     }

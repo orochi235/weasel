@@ -3,9 +3,11 @@ import { assignRef } from '@weasel-js/react';
 import { nudgeOf } from '@weasel-js/ui-input';
 import { DragGrip } from '../DragGrip';
 import s from './ReorderHandle.module.css';
+import { useDisabled, type DisableableProps } from '../Disabled';
+import { useHoldReason } from '../Disabled/HoldReason';
 
 /** Props for {@link ReorderHandle}. */
-export interface ReorderHandleProps {
+export interface ReorderHandleProps extends DisableableProps {
   /** What the item is called; the handle is named "Drag to reorder <label>". */
   label: string;
   onPointerDown?: ((e: PointerEvent) => void) | undefined;
@@ -19,16 +21,18 @@ export interface ReorderHandleProps {
   badge?: ReactNode | undefined;
   /** The grip's height in px. Default 13. */
   size?: number;
-  disabled?: boolean;
   /** The owner's sizing and placement. */
   className?: string;
 }
 
 /** The button a reorderable item is dragged by, which Alt+Up/Down also move it from. */
 export const ReorderHandle = forwardRef(function ReorderHandle(
-  { label, onPointerDown, onClick, pressed, onNudge, badge, size = 13, disabled = false, className }: ReorderHandleProps,
+  props: ReorderHandleProps,
   ref: Ref<HTMLButtonElement>,
 ) {
+  const { label, onPointerDown, onClick, pressed, onNudge, badge, size = 13, className } = props;
+  const { disabled, reason } = useDisabled(props);
+  const why = useHoldReason(reason);
   const button = useRef<HTMLButtonElement | null>(null);
   const refocus = useRef(false);
 
@@ -39,7 +43,7 @@ export const ReorderHandle = forwardRef(function ReorderHandle(
     button.current?.focus();
   });
 
-  const onKeyDown = onNudge
+  const onKeyDown = onNudge && !disabled
     ? (e: KeyboardEvent) => {
         const delta = nudgeOf(e);
         if (delta === null) return;
@@ -48,7 +52,7 @@ export const ReorderHandle = forwardRef(function ReorderHandle(
       }
     : undefined;
 
-  return (
+  return why.wrap(
     <button
       ref={(el) => {
         button.current = el;
@@ -59,12 +63,14 @@ export const ReorderHandle = forwardRef(function ReorderHandle(
       aria-label={`Drag to reorder ${label}`}
       aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
       aria-pressed={pressed}
-      disabled={disabled}
+      disabled={disabled && reason === undefined}
+      aria-disabled={(disabled && reason !== undefined) || undefined}
+      aria-describedby={why.describedBy}
       onPointerDown={disabled ? undefined : onPointerDown}
       onKeyDown={onKeyDown}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
     >
       {badge ?? <DragGrip size={size} />}
-    </button>
+    </button>,
   );
 });

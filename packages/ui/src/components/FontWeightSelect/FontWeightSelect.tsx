@@ -1,8 +1,9 @@
 import { listFontWeights } from '@weasel-js/font';
 import { Select } from '../Select';
+import type { HoldProps } from '../Disabled';
 
 /** Props for {@link FontWeightSelect}. */
-export interface FontWeightSelectProps {
+export interface FontWeightSelectProps extends HoldProps {
   /** Current weight, or `undefined` when the sources disagree (`mixed`). */
   value?: number;
   /** Indeterminate presentation — the aggregated sources differ in weight. */
@@ -10,8 +11,6 @@ export interface FontWeightSelectProps {
   /** The family whose weights to offer. Absent offers the CSS weights. */
   family?: string;
   onChange: (weight: number) => void;
-  /** The picker shows its value and opens nothing. */
-  isDisabled?: boolean;
   'aria-label'?: string;
   className?: string;
 }
@@ -60,7 +59,10 @@ export function FontWeightSelect(props: FontWeightSelectProps) {
       options={options}
       selectedKey={value === undefined ? null : String(value)}
       mixed={mixed}
-      isDisabled={props.isDisabled}
+      disabled={props.disabled}
+      disabledReason={props.disabledReason}
+      readOnly={props.readOnly}
+      readOnlyReason={props.readOnlyReason}
       onSelectionChange={(key) => onChange(Number(key))}
       aria-label={props['aria-label'] ?? 'Weight'}
     />

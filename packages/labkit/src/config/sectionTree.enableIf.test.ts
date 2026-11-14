@@ -27,9 +27,9 @@ describe('sectionTree enableIf', () => {
 
   it('judges a condition by path against the config, across the section it was renested under', () => {
     const on = sectionTree(orbs, { orbs: { commitOrbs: true, fanDown: 3 } });
-    expect([...on.disabled]).toEqual([]);
+    expect([...on.disabledPaths]).toEqual([]);
     const off = sectionTree(orbs, { orbs: { commitOrbs: false, fanDown: 3 } });
-    expect([...off.disabled]).toEqual(['change.orbs.fanDown']);
+    expect([...off.disabledPaths]).toEqual(['change.orbs.fanDown']);
   });
 
   it('leaves no condition in the tree for the form to misread against the renested values', () => {
@@ -47,8 +47,8 @@ describe('sectionTree enableIf', () => {
           .enableIf((c) => c.order !== 'queue'),
       }),
     );
-    expect([...sectionTree(resolved, { order: 'time', overlap: 1 }).disabled]).toEqual([]);
-    expect([...sectionTree(resolved, { order: 'queue', overlap: 1 }).disabled]).toEqual([
+    expect([...sectionTree(resolved, { order: 'time', overlap: 1 }).disabledPaths]).toEqual([]);
+    expect([...sectionTree(resolved, { order: 'queue', overlap: 1 }).disabledPaths]).toEqual([
       'change.overlap',
     ]);
   });
@@ -67,14 +67,14 @@ describe('sectionTree enableIf', () => {
       }),
     );
     const off = sectionTree(resolved, { listing: { on: false, dim: 1, weight: 0 } });
-    expect([...off.disabled].sort()).toEqual([
+    expect([...off.disabledPaths].sort()).toEqual([
       'view.listing',
       'view.listing.dim',
       'view.listing.weight',
     ]);
     expect(nodeAt(off.group, 'view.listing')).not.toHaveProperty('enableIf');
     const on = sectionTree(resolved, { listing: { on: true, dim: 1, weight: 0 } });
-    expect([...on.disabled]).toEqual([]);
+    expect([...on.disabledPaths]).toEqual([]);
   });
 
   it("judges the conditions on an object leaf's fields against the config, and cuts the fields a showIf hides", () => {
@@ -92,14 +92,14 @@ describe('sectionTree enableIf', () => {
       }),
     );
     const off = sectionTree(resolved, { look: { stroke: { on: false, width: 1, cap: 1 } } });
-    expect([...off.disabled]).toEqual(['style.look.stroke.width']);
+    expect([...off.disabledPaths]).toEqual(['style.look.stroke.width']);
     const stroke = nodeAt(off.group, 'style.look.stroke') as PrefLeaf & {
       children: Record<string, PrefLeaf>;
     };
     expect(Object.keys(stroke.children)).toEqual(['on', 'width']);
     expect(stroke.children.width).not.toHaveProperty('enableIf');
     const on = sectionTree(resolved, { look: { stroke: { on: true, width: 1, cap: 1 } } });
-    expect([...on.disabled]).toEqual([]);
+    expect([...on.disabledPaths]).toEqual([]);
     expect(Object.keys((nodeAt(on.group, 'style.look.stroke') as typeof stroke).children)).toEqual([
       'on',
       'width',

@@ -4,9 +4,10 @@ import { Dialog } from '../Dialog';
 import { type PropertyRowLayout, PropertyRow } from './PropertyRow';
 import { type PropertyMetricProps } from './metrics';
 import s from './Properties.module.css';
+import { useDisabled, type DisableableProps } from '../Disabled';
 
 /** Props for `<DialogRow>`. */
-export interface DialogRowProps extends PropertyMetricProps {
+export interface DialogRowProps extends PropertyMetricProps, DisableableProps {
   label: ReactNode;
   /** What the row shows of the value, on the button that opens the dialog. One
    *  line; a longer one is cut off with an ellipsis. */
@@ -39,8 +40,6 @@ export interface DialogRowProps extends PropertyMetricProps {
   onReset?: () => void;
   /** What the row reads when it is auto — see `<PropertyRow autoValue>`. */
   autoValue?: ReactNode;
-  /** The row takes no input: its button is disabled, and still reads the summary. */
-  disabled?: boolean;
   /** The value differs from a baseline of the caller's — see `<PropertyRow changed>`. */
   changed?: boolean;
   /** What is wrong with the value — see `<PropertyRow error>`. */
@@ -72,11 +71,14 @@ export function DialogRow({
   onAutoChange,
   onReset,
   autoValue,
-  disabled,
+  disabled: own,
+  disabledReason,
   changed,
   error,
 }: DialogRowProps) {
   const [open, setOpen] = useState(false);
+  // Disabled, its button opens nothing and still reads the summary; with a reason it stays focusable.
+  const { disabled, reason } = useDisabled({ disabled: own, disabledReason });
   const close = (): void => {
     setOpen(false);
     onDone?.();
@@ -99,7 +101,8 @@ export function DialogRow({
       onAutoChange={onAutoChange}
       onReset={onReset}
       autoValue={autoValue}
-      disabled={disabled}
+      disabled={own}
+      disabledReason={disabledReason}
       changed={changed}
       error={error}
       // A `<label>` hands a click on its text to its button, which would open
@@ -111,8 +114,10 @@ export function DialogRow({
         className={s.dialogTrigger}
         aria-haspopup="dialog"
         aria-label={name === undefined ? undefined : `Edit ${name}`}
-        disabled={disabled}
+        disabled={disabled && reason === undefined}
+        aria-disabled={disabled || undefined}
         onClick={() => {
+          if (disabled) return;
           setOpen(true);
           onOpen?.();
         }}

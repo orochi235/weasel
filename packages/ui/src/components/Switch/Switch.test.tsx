@@ -25,7 +25,7 @@ describe('Switch', () => {
   });
 
   it('marks the underlying input as disabled', () => {
-    render(<Switch isDisabled>x</Switch>);
+    render(<Switch disabled>x</Switch>);
     expect((screen.getByRole('switch') as HTMLInputElement).disabled).toBe(true);
   });
 

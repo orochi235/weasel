@@ -4,6 +4,8 @@ import { PropertyHelp } from './PropertyHelp';
 import { ResetControl } from './ResetControl';
 import { PropertyRowContext } from './rowContext';
 import s from './Properties.module.css';
+import { holdScope, useDisabled, type DisableableProps } from '../Disabled';
+import { ReasonTold } from '../Disabled/Disabled';
 
 /** Which control shape a row holds, which decides its intrinsic layout. */
 export type PropertyRowVariant = 'default' | 'color' | 'checkbox';
@@ -14,7 +16,7 @@ const ROW_ATTR = 'data-property-row';
 export type PropertyRowLayout = 'block' | 'inline';
 
 /** Props for `<PropertyRow>`. */
-export interface PropertyRowProps extends PropertyMetricProps {
+export interface PropertyRowProps extends PropertyMetricProps, DisableableProps {
   label: ReactNode;
   /** Right-aligned readout shown next to the label (e.g. current value). */
   readout?: ReactNode;
@@ -69,10 +71,6 @@ export interface PropertyRowProps extends PropertyMetricProps {
   changed?: boolean;
   /** The row stands for several values that differ: its label is drawn in the warning color. Outranks `changed`. */
   mixed?: boolean;
-  /** The row's control takes no input: its label is drawn as a disabled control's is. */
-  disabled?: boolean;
-  /** Why the row is disabled, read in its help tooltip while it is. */
-  disabledReason?: string;
   /** What the row reads when it is auto, whether or not it is now. Shown as the
    *  last line of the help tooltip, after the word `auto`; with no `description`
    *  the tooltip is that line alone. */
@@ -84,32 +82,32 @@ export interface PropertyRowProps extends PropertyMetricProps {
 
 /** The label-plus-control frame `<PropertyField>` draws its rows in. Use it
  *  directly for a control no field kind covers. */
-export function PropertyRow({
-  label,
-  readout,
-  description,
-  variant = 'default',
-  layout,
-  span,
-  hug,
-  children,
-  htmlFor,
-  group,
-  className,
-  density,
-  align,
-  auto,
-  onAutoChange,
-  onReset,
-  hint,
-  changed = false,
-  mixed = false,
-  disabled = false,
-  disabledReason,
-  autoValue,
-  error,
-}: PropertyRowProps) {
-  const why = disabled ? disabledReason : undefined;
+export function PropertyRow(props: PropertyRowProps) {
+  const {
+    label,
+    readout,
+    description,
+    variant = 'default',
+    layout,
+    span,
+    hug,
+    children,
+    htmlFor,
+    group,
+    className,
+    density,
+    align,
+    auto,
+    onAutoChange,
+    onReset,
+    hint,
+    changed = false,
+    mixed = false,
+    autoValue,
+    error,
+  } = props;
+  // A disabled row disables its control, and its help reads the reason.
+  const { disabled, reason: why } = useDisabled(props);
   const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
   // Each variant already lays out one way; a class is only needed for the
   // other one. The default variant stacks, so it needs `.rowInline`; color and
@@ -180,7 +178,7 @@ export function PropertyRow({
   return group ? (
     <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
       {head}
-      <PropertyRowContext.Provider value={scope}>{children}</PropertyRowContext.Provider>
+      <PropertyRowContext.Provider value={scope}><ReasonTold reason={why}>{holdScope(props, children)}</ReasonTold></PropertyRowContext.Provider>
       {tail}
       {message}
     </div>
@@ -192,7 +190,7 @@ export function PropertyRow({
       {...multi}
     >
       {head}
-      <PropertyRowContext.Provider value={scope}>{children}</PropertyRowContext.Provider>
+      <PropertyRowContext.Provider value={scope}><ReasonTold reason={why}>{holdScope(props, children)}</ReasonTold></PropertyRowContext.Provider>
       {tail}
       {message}
     </label>

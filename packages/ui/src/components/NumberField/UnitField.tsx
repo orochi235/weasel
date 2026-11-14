@@ -7,12 +7,14 @@ import f from '../field.module.css';
 import { fieldRootClass } from '../Field/fieldSlots';
 import { MIXED_HINT } from '../mixedHint';
 import s from './NumberField.module.css';
+import type { HoldProps } from '../Disabled';
+import { useNativeHold, type NativeHold } from '../Disabled/nativeHold';
 import { Steppers } from './Steppers';
 import { useIdleSettle } from '../../useIdleSettle';
 import { useFieldLocale } from '../../useFieldLocale';
 
 /** Props for {@link UnitField}. */
-export interface UnitFieldProps {
+export interface UnitFieldProps extends HoldProps {
   /** The value in the unit the field shows. NaN shows an empty field. */
   value: number;
   /** The committed value, read and clamped, in the unit the field shows: on
@@ -62,8 +64,6 @@ export interface UnitFieldProps {
   mixed?: boolean;
   /** Up and down buttons beside the value, which repeat while held. */
   steppers?: boolean;
-  /** The field and its steppers take no input. */
-  disabled?: boolean;
   /** Commit typed text once typing rests, as well as on blur or Enter: text that reads as a value inside the
    *  bounds, while the field keeps the text as typed. Defaults to the `typing.settleWhenIdle` kit setting. */
   settleWhenIdle?: boolean;
@@ -116,7 +116,12 @@ function stepStart(typed: number, value: number, endless: Endless | undefined): 
  * and optional steppers. React Aria's `NumberField` refuses letters as they
  * are typed, which is why this is not that.
  */
-export function UnitField({
+export function UnitField({ disabled, disabledReason, readOnly, readOnlyReason, ...props }: UnitFieldProps) {
+  const hold = useNativeHold({ disabled, disabledReason, readOnly, readOnlyReason });
+  return hold.wrap(<UnitFieldBody {...props} hold={hold} />);
+}
+
+function UnitFieldBody({
   value: valueProp,
   onChange,
   onInput,
@@ -133,7 +138,7 @@ export function UnitField({
   placeholder,
   mixed = false,
   steppers,
-  disabled = false,
+  hold: { attrs: held, refuses: disabled, access },
   settleWhenIdle,
   stepperSide = 'start',
   ghost,
@@ -141,7 +146,7 @@ export function UnitField({
   className,
   id,
   'aria-label': ariaLabel,
-}: UnitFieldProps) {
+}: Omit<UnitFieldProps, keyof HoldProps> & { hold: NativeHold }) {
   const value = mixed ? Number.NaN : valueProp;
   const [draft, setDraft] = useState<string | null>(null);
   const canceled = useRef(false);
@@ -168,7 +173,7 @@ export function UnitField({
     if (next !== value) onChange(next);
   };
   const spin = (key: string): boolean => {
-    const next = spinKey(key, from(), bounds);
+    const next = disabled ? null : spinKey(key, from(), bounds);
     if (next === null) return false;
     stepTo(next);
     return true;
@@ -205,7 +210,7 @@ export function UnitField({
       <div
         className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}
         data-stepper-side={stepperSide}
-        {...(disabled ? { 'data-disabled': '' } : {})}
+        {...(access.state === 'disabled' ? { 'data-disabled': '' } : {})}
       >
         <input
           ref={input}
@@ -220,7 +225,7 @@ export function UnitField({
           aria-valuemin={minValue}
           aria-valuemax={maxValue}
           placeholder={mixed ? MIXED_HINT : placeholder}
-          disabled={disabled}
+          {...held} readOnly={disabled}
           value={draft ?? shown?.text ?? ''}
           onChange={(e) => {
             const typed = e.target.value;

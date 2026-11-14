@@ -18,7 +18,8 @@ import { selectionRoving } from '../../selectionRoving';
 import type { ControlSize } from '../Density';
 import { useRovingTabIndex, type UseRovingTabIndexOptions } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
-import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import { SegmentTooltip, useSegmentAccess, type SegmentTooltipFields } from '../segmentTooltip';
+import { holdScope, type DisableableProps, type ReadOnlyProps } from '../Disabled';
 import type { Orientation } from '../Run';
 
 /** What a press on a {@link SegmentedBar}'s segment does: choose one value (`'single'`), flip one of a list of
@@ -31,11 +32,7 @@ export type SegmentedBarItem<V extends string | number = string> = {
   value: V;
   label?: ReactNode;
   ariaLabel?: string;
-  disabled?: boolean;
-  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
-   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
-  disabledReason?: string;
-} & SegmentTooltipFields;
+} & SegmentTooltipFields & DisableableProps;
 
 /** A segment of an `'each'` bar: it carries its own on/off state and its own `onChange`. */
 export type SegmentedEachItem<V extends string | number = string> = SegmentedBarItem<V> & OwnSelection;
@@ -48,8 +45,9 @@ export type SegmentedSource<V extends string | number, I> =
   | { items: readonly I[]; steps?: never }
   | { /** One segment per step, walked by `stepsOf` as `Sequence` walks it. */ steps: Sweep<V>; items?: never };
 
-/** What a {@link SegmentedBar} takes in every mode. */
-export type SegmentedBarCommonProps = SegmentedGridProps & {
+/** What a {@link SegmentedBar} takes in every mode. `disabled` holds every segment; in a mode that shows a value,
+ *  `readOnly` and a `ReadOnly` scope hold them too, and a momentary bar's action buttons ignore read-only. */
+export type SegmentedBarCommonProps = SegmentedGridProps & DisableableProps & {
   'aria-label'?: string;
   className?: string;
   height?: number;
@@ -67,6 +65,9 @@ export type SegmentedBarCommonProps = SegmentedGridProps & {
  *  decides per press. A segment that runs a drag of its own takes the press instead. */
 type Sweepable<V> = { sweep?: SegmentSweep<NoInfer<V>> };
 
+/** A mode that shows a value, so read-only holds it. */
+type Valued = ReadOnlyProps;
+
 /**
  * Props for {@link SegmentedBar}, discriminated on `mode`:
  *
@@ -76,9 +77,9 @@ type Sweepable<V> = { sweep?: SegmentSweep<NoInfer<V>> };
  * - `'momentary'`: buttons that fire and stay unselected: each item's `onAction`, else the bar's.
  */
 export type SegmentedBarProps<V extends string | number = string> =
-  | (SegmentedBarCommonProps & SegmentedSource<V, SegmentedBarItem<V>> & SingleSelection<V>)
-  | (SegmentedBarCommonProps & SegmentedSource<V, SegmentedBarItem<V>> & MultipleSelection<V> & Sweepable<V>)
-  | (SegmentedBarCommonProps & { mode: 'each'; items: readonly SegmentedEachItem<V>[] } & Sweepable<V>)
+  | (SegmentedBarCommonProps & SegmentedSource<V, SegmentedBarItem<V>> & SingleSelection<V> & Valued)
+  | (SegmentedBarCommonProps & SegmentedSource<V, SegmentedBarItem<V>> & MultipleSelection<V> & Sweepable<V> & Valued)
+  | (SegmentedBarCommonProps & { mode: 'each'; items: readonly SegmentedEachItem<V>[] } & Sweepable<V> & Valued)
   | (SegmentedBarCommonProps & SegmentedSource<V, SegmentedMomentaryItem<V>> & {
       mode: 'momentary';
       /** Called with the pressed segment's value, unless the item has an `onAction` of its own. */
@@ -111,7 +112,7 @@ function behaviorOf<V extends string | number>(
   if (props.mode === 'momentary') {
     const fire = (i: number): void => {
       const item = items[i];
-      if (item === undefined || item.disabled) return;
+      if (item === undefined || !usable(i)) return;
       if (item.onAction) item.onAction();
       else props.onAction?.(item.value);
     };
@@ -140,7 +141,9 @@ function behaviorOf<V extends string | number>(
 export function SegmentedBar<V extends string | number = string>(props: SegmentedBarProps<V>): ReactElement {
   const { 'aria-label': ariaLabel, className, height, size, variant, orientation } = props;
   const items = itemsOf(props);
-  const usable = (i: number): boolean => items[i] !== undefined && !items[i].disabled;
+  const holdsValue = props.mode !== 'momentary';
+  const held = useSegmentAccess({ ...props, holdsValue }).state !== 'enabled';
+  const usable = (i: number): boolean => !held && items[i] !== undefined && !items[i].disabled;
   const behavior = behaviorOf(props, items, usable);
   const sweep = props.mode === 'multiple' || props.mode === 'each' ? props.sweep : undefined;
   const guard = useSweepGuard();
@@ -171,7 +174,7 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
           key: String(item.value),
           state,
           draw: (place) => (
-            <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled} disabledReason={item.disabledReason}>
+            <SegmentTooltip tip={item} disabled={item.disabled} disabledReason={item.disabledReason} holdsValue={holdsValue}>
               <button
                 type="button"
                 {...behavior.aria(state)}
@@ -190,10 +193,10 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
       })}
     />
   );
-  if (!sweep || !behavior.model) return row;
+  if (!sweep || !behavior.model) return holdScope(props, row);
   return (
     <>
-      {row}
+      {holdScope(props, row)}
       <SegmentSweeper rootRef={roving.rootRef} values={items.map((it) => it.value)} sweepable={usable} model={behavior.model} sweep={sweep} swept={guard.swept} />
     </>
   );

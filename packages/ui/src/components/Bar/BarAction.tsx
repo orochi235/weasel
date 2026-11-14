@@ -4,13 +4,14 @@ import type { Grade } from '@weasel-js/theme';
 import { actionLeafVariants, useRegisteredActions } from '../Prefs/registeredActions';
 import { useLeafAction } from '../Prefs/useLeafAction';
 import { ActionSettingsPopover } from '../ActionSettings/ActionSettingsPopover';
-import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
+import { SegmentTooltip } from '../segmentTooltip';
+import { useDisabled, type DisableableProps } from '../Disabled';
 import { useAppearance } from '../appearance';
 import { BarInMenuContext } from './barInMenu';
 import s from './Bar.module.css';
 
 /** Props for {@link BarActionButton}. */
-export interface BarActionButtonProps {
+export interface BarActionButtonProps extends DisableableProps {
   label: string;
   /** What the tooltip reads in place of the label. */
   description?: string;
@@ -26,11 +27,6 @@ export interface BarActionButtonProps {
   row?: boolean;
   /** Drawn as a menu's row: icon, label, and shortcut across the row's width. Implies `labeled`. */
   menu?: boolean;
-  /** It cannot be pressed now. */
-  disabled?: boolean;
-  /** Why it cannot be pressed. Given, a disabled button keeps its tooltip, which reads the reason after the label,
-   *  and stays focusable, so the reason can be read. */
-  disabledReason?: string;
   /** Held down. Leave unset for an action with no pressed state. */
   active?: boolean;
   /** It opens a dialog, which is open now. Leave unset for a button that opens nothing. */
@@ -50,24 +46,23 @@ export interface BarActionButtonProps {
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, description, grade, icon, shortcut, row = false, menu = false, disabled = false, active, expanded, missing, onPress, disabledReason, preview } = props;
+  const { label, description, grade, icon, shortcut, row = false, menu = false, active, expanded, missing, onPress, preview } = props;
   const labeled = row || menu || props.labeled === true;
   const dead = missing !== undefined;
+  const { disabled, reason } = useDisabled(props);
   const { show, hide } = usePreviewWhileNear(disabled || dead ? undefined : preview);
   const appearance = useAppearance({ grade });
-  const tip = dead
-    ? `${label}: no action “${missing}”`
-    : segmentTooltipContent({ description: description || label, shortcut, disabled, disabledReason });
+  const tip = dead ? { tooltip: `${label}: no action “${missing}”` } : { description: description || label, shortcut };
   const words = labeled || icon == null;
   return (
     // A dead or explained button keeps its tooltip, which is the only thing that says why.
-    <SegmentTooltip content={tip} disabled={disabled && !dead} disabledReason={disabledReason}>
+    <SegmentTooltip tip={tip} disabled={disabled && !dead} disabledReason={reason}>
       <button
         type="button"
         data-testid={props['data-testid']}
         aria-label={label}
         aria-disabled={disabled || dead || undefined}
-        disabled={disabled && !dead && disabledReason === undefined}
+        disabled={disabled && !dead && reason === undefined}
         aria-pressed={active}
         {...appearance}
         {...(expanded !== undefined ? { 'aria-haspopup': 'dialog' as const, 'aria-expanded': expanded } : {})}

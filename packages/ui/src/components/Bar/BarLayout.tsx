@@ -14,6 +14,7 @@ import { DockBarContext, useReportDockLeast } from '../ToolbarDock/dockContext';
 import { RunScope, useRun, type Orientation } from '../Run';
 import { withDensity, type DensityProps } from '../Density';
 import s from './Bar.module.css';
+import { holdScope, useDisabled, type HoldProps } from '../Disabled';
 
 /** Which way a bar runs. */
 export type BarOrientation = Orientation;
@@ -64,7 +65,7 @@ export interface BarCell {
 }
 
 /** Props for {@link BarLayout}. */
-export interface BarLayoutProps extends DensityProps {
+export interface BarLayoutProps extends DensityProps, HoldProps {
   nodes: readonly BarNode[];
   /** Which way the bar runs. Default: the way the run it sits in goes, else `'horizontal'`. */
   orientation?: BarOrientation;
@@ -82,8 +83,10 @@ export interface BarLayoutProps extends DensityProps {
   lead?: PrefBarLead;
   /** The glyph naming the bar, which `lead: 'icon'` starts its line with. */
   icon?: IconSpec;
-  /** The bar's group is disabled, and its lead dims as a heading's name does. The cells say so for themselves. */
-  disabled?: boolean;
+  /** The bar's group is turned off, as an `enableIf` turns it off: its lead dims as a heading's name does, and the
+   *  cells say so for themselves, so a switch among them that turns it back on stays live. `disabled` holds every
+   *  cell. */
+  off?: boolean;
   /** Draw the strip the bar sits on, for a bar set among other things with
    *  no strip of the host's under it. `'segmented'` is a compact strip with
    *  the cells almost touching. */
@@ -122,12 +125,14 @@ export interface BarLayoutProps extends DensityProps {
  * Focus keeps plain tab order. A bar of number boxes and selects has to
  * leave the arrow keys to them, so it does not rove.
  */
-export function BarLayout(props: BarLayoutProps) {
+export function BarLayout(own: BarLayoutProps) {
   const run = useRun();
+  // Off or disabled, the bar's lead dims as a heading's name does; disabled, every cell is disabled too.
+  const props = { ...own, disabled: useDisabled(own).disabled || own.off === true };
   const bar = run.shape !== undefined && run.shape.kind !== 'line'
     ? <BarAlong {...props} shape={run.shape} align={run.align ?? 'center'} />
     : <BarLine {...props} orientation={props.orientation ?? run.orientation} />;
-  return <BarMarkContext.Provider value={props.onReorder !== undefined}>{withDensity(props.size, bar)}</BarMarkContext.Provider>;
+  return holdScope(own, <BarMarkContext.Provider value={props.onReorder !== undefined}>{withDensity(own.size, bar)}</BarMarkContext.Provider>);
 }
 
 function BarLine(props: BarLayoutProps) {
