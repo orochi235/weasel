@@ -1,5 +1,5 @@
 import { useRef, type ReactElement, type ReactNode } from 'react';
-import type { RunAlign, TrackShape } from '@weasel-js/geom';
+import type { RunAlign } from '@weasel-js/geom';
 import { useTrackShape } from '../Along/alongContext';
 import { SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, useSwatchStop, type SwatchChange } from './SwatchButton';
 import { tiling } from '../../tiling';
@@ -34,11 +34,8 @@ export interface SwatchGridProps {
   onAltChange?: SwatchChange;
   /** Swatches per row; also the step for ArrowUp/ArrowDown. Default 6. */
   columns?: number;
-  /** A track shape to lay the rows along. A curved one lays each row on a ring of its own, row k shifted k rows in
-   *  toward the shape's center of curvature; a line keeps the grid. Default: the nearest `Along`'s shape, else none. */
-  shape?: TrackShape;
-  /** Where a row shorter than its run sits: a ring on a curved shape, the last row in a grid. Default: the nearest
-   *  `Along`'s, else `'center'` on a ring and `'start'` in a grid. */
+  /** Where the last row sits in a grid when it is shorter than the rest. Default: the nearest `Along`'s, else
+   *  `'start'`. On a ring the `Along`'s own decides. */
   align?: RunAlign;
   'aria-label'?: string;
   className?: string;
@@ -53,20 +50,19 @@ export interface SwatchGridProps {
  * swatch to the app, which decides what "apply" means: set its active paint,
  * write the selection through `useOngoingAction`'s `commit`, or both.
  *
- * Given a curved shape, or inside an `Along`, each row lies on a ring of its
+ * Inside a curved `Along`, each row lies on a ring of its
  * own, row k shifted k rows in toward the shape's center of curvature, the
  * way a color wheel's rim reads. There each arrow moves to the neighbor
  * along the ring or on the next ring in or out that lies its way on screen.
  */
 export function SwatchGrid(props: SwatchGridProps): ReactElement {
   const along = useTrackShape();
-  const shape = props.shape ?? along?.shape;
-  if (shape !== undefined && shape.kind !== 'line') {
+  if (along !== null && along.shape.kind !== 'line') {
     const { options, value, columns = 6, onChange, onAltChange, className } = props;
     return (
       <SwatchRings
-        shape={shape}
-        align={props.align ?? along?.align ?? 'center'}
+        shape={along.shape}
+        align={along.align}
         onChange={onChange}
         onAltChange={onAltChange}
         groups={[{ key: 'grid', label: props['aria-label'], options, value, columns, className }]}

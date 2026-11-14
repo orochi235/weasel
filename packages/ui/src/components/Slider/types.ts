@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { TrackRun, TrackShape } from '@weasel-js/geom';
+import type { TrackRun } from '@weasel-js/geom';
 import type { SliderStop as Stop } from '@weasel-js/ui-input';
 import type { Display, Endless, Quantity } from '@weasel-js/quantity';
 import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
@@ -183,11 +183,6 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
    *  left them; a consumer holding that preview drops it here. */
   onCancel?: () => void;
   thumbFit?: 'inside' | 'overhang';
-  /** The track to lie along, in the coordinates of the slider's containing
-   *  block; it wins over an enclosing `Along`'s. A line is laid where its
-   *  ends say, as a curve is; with no shape the slider keeps the straight
-   *  layout. */
-  shape?: TrackShape;
   /** The track's height: a number in px, or a CSS length such as `var(--wzl-slider-track-h)`. On a curve it defaults to
    *  half the stop ticks' length, which `--rp-tick-length` sets (14px). */
   trackHeight?: number | string;

@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vite
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithIcons as render } from '../../testing/withIcons';
 import { arcShape, lineShape, type ArcTrackSpec } from '@weasel-js/geom';
+import { Along } from '../Along';
 import { createRecentColorsStore } from '../RecentColors';
 import { SwatchStrip } from '../SwatchStrip';
 import type { SwatchPalette } from '../SwatchStrip';
@@ -48,7 +49,7 @@ const ring = (k: number) => [...document.querySelectorAll(`[data-ring="${k}"] [d
 describe('SwatchGrid along a curve', () => {
   for (const [name, [shape, fromLeft]] of Object.entries(ARCS)) {
     test(`${name}: row k lies on the arc k rows in, its swatches a pitch apart from the arc's start`, () => {
-      render(<SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={shape} />);
+      render(<Along shape={shape}><SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" /></Along>);
       expect(ring(0)).toHaveLength(3);
       expect(ring(1)).toHaveLength(3);
       for (const el of ring(0)) expect(radius(el)).toBeCloseTo(100, 2);
@@ -64,7 +65,7 @@ describe('SwatchGrid along a curve', () => {
   }
 
   test('right to left, every ring starts at its right end', () => {
-    render(<div dir="rtl"><SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise'][0]} /></div>);
+    render(<div dir="rtl"><Along shape={ARCS['top, clockwise'][0]}><SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" /></Along></div>);
     for (const [k, r] of [[0, 100], [1, 80]] as const) {
       for (const el of ring(k)) expect(radius(el)).toBeCloseTo(r, 2);
       const xs = ring(k).map((el) => at(el).x);
@@ -74,13 +75,13 @@ describe('SwatchGrid along a curve', () => {
   });
 
   test('outside a curve it is the grid it always was', () => {
-    render(<SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={lineShape({ x: 0, y: 0 }, { x: 100, y: 0 })} />);
+    render(<Along shape={lineShape({ x: 0, y: 0 }, { x: 100, y: 0 })}><SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" /></Along>);
     expect(document.querySelector('[data-ring]')).toBeNull();
     expect((screen.getAllByRole('button')[0] as HTMLElement).style.getPropertyValue('--at-x')).toBe('');
   });
 
   test('Home and End still reach the first and last swatch', () => {
-    render(<SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise'][0]} />);
+    render(<Along shape={ARCS['top, clockwise'][0]}><SwatchGrid options={options(6)} columns={3} onChange={() => {}} aria-label="Colors" /></Along>);
     const b = (i: number) => screen.getByRole('button', { name: `c${i}` });
     b(1).focus();
     fireEvent.keyDown(b(1), { key: 'End' });
@@ -90,7 +91,7 @@ describe('SwatchGrid along a curve', () => {
   });
 
   test('one tab stop, on the current swatch', () => {
-    render(<SwatchGrid options={options(6)} columns={3} value={options(6)[4]!.value} onChange={() => {}} aria-label="Colors" shape={ARCS['top, clockwise'][0]} />);
+    render(<Along shape={ARCS['top, clockwise'][0]}><SwatchGrid options={options(6)} columns={3} value={options(6)[4]!.value} onChange={() => {}} aria-label="Colors" /></Along>);
     const stops = screen.getAllByRole('button').filter((el) => el.tabIndex === 0);
     expect(stops.map((el) => el.getAttribute('aria-label'))).toEqual(['c4']);
     expect(stops[0]).toHaveAttribute('aria-current', 'true');
@@ -99,7 +100,7 @@ describe('SwatchGrid along a curve', () => {
   test('two swatches of one color are told apart by id', () => {
     const onChange = vi.fn();
     const same = [{ id: 'a', value: '#2a7ab0ff', label: 'A' }, { id: 'b', value: '#2a7ab0ff', label: 'B', glyph: 'B' }];
-    render(<SwatchGrid options={same} columns={3} value="b" onChange={onChange} aria-label="Colors" shape={ARCS['top, clockwise'][0]} />);
+    render(<Along shape={ARCS['top, clockwise'][0]}><SwatchGrid options={same} columns={3} value="b" onChange={onChange} aria-label="Colors" /></Along>);
     expect(screen.getByRole('button', { name: 'B' })).toHaveAttribute('aria-current', 'true');
     expect(screen.getByRole('button', { name: 'A' })).not.toHaveAttribute('aria-current');
     fireEvent.click(screen.getByRole('button', { name: 'A' }));
@@ -108,7 +109,7 @@ describe('SwatchGrid along a curve', () => {
 
   test('rows past where the arc bends too tight share the last ring that fits', () => {
     // Radius 50, rows 20 apart: ring 1 at 30 keeps a row's clearance off the center, ring 2 at 10 would not.
-    render(<SwatchGrid options={options(12)} columns={3} onChange={() => {}} aria-label="Colors" shape={arc({ radius: 50 })} />);
+    render(<Along shape={arc({ radius: 50 })}><SwatchGrid options={options(12)} columns={3} onChange={() => {}} aria-label="Colors" /></Along>);
     expect(document.querySelector('[data-ring="2"]')).toBeNull();
     expect(ring(0)).toHaveLength(3);
     expect(ring(1)).toHaveLength(9);
@@ -123,7 +124,7 @@ describe('SwatchStrip along a curve', () => {
   test('the recent rows lie outermost, the palette rows go on further in, each led by its heading', () => {
     const store = createRecentColorsStore({ storage: null });
     store.record(['#111111ff', '#222222ff', '#333333ff']);
-    render(<SwatchStrip store={store} palettes={[WARM]} columns={2} onChange={() => {}} shape={ARCS['top, clockwise'][0]} />);
+    render(<Along shape={ARCS['top, clockwise'][0]}><SwatchStrip store={store} palettes={[WARM]} columns={2} onChange={() => {}} /></Along>);
     const recent = screen.getByRole('group', { name: 'Recent colors' });
     const warm = screen.getByRole('group', { name: 'Warm' });
     expect([...recent.querySelectorAll('[data-ring]')].map((el) => el.getAttribute('data-ring'))).toEqual(['0', '1']);
@@ -140,7 +141,7 @@ describe('SwatchStrip along a curve', () => {
   });
 
   test('with more than one palette the picker leads the palette ring, and no recents is said on its ring', () => {
-    render(<SwatchStrip store={createRecentColorsStore({ storage: null })} palettes={[WARM, COOL]} onChange={() => {}} shape={ARCS['top, clockwise'][0]} />);
+    render(<Along shape={ARCS['top, clockwise'][0]}><SwatchStrip store={createRecentColorsStore({ storage: null })} palettes={[WARM, COOL]} onChange={() => {}} /></Along>);
     const recent = screen.getByRole('group', { name: 'Recent colors' });
     expect(within(recent).getByText('No recent colors').closest('[data-ring-item]')).toHaveAttribute('data-ring-item', 'empty');
     const lead = screen.getByRole('group', { name: 'Warm' }).querySelector('[data-ring-item="lead"]')!;

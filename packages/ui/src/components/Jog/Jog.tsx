@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TrackShape } from '@weasel-js/geom';
-import { AlongContext, useTrackShape, type RunAlign } from '../Along/alongContext';
+import { AlongContext, useTrackShape } from '../Along/alongContext';
 import { Button } from '../Button';
 import { Slider } from '../Slider/Slider';
 import { JogAlong } from './JogAlong';
@@ -24,11 +24,6 @@ export interface JogProps {
   unit?: string;
   /** Drawn after the readout — a beat's caption, a snapshot's date. */
   caption?: ReactNode;
-  /** A curved shape to lay the controls along. Default: the nearest `Along`'s, else a straight row. */
-  shape?: TrackShape;
-  /** Where the controls sit on a curve too long for them, when there is no scrubber to fill it. Default: the `Along`'s,
-   *  else `'center'`. */
-  align?: RunAlign;
   className?: string;
 }
 
@@ -48,7 +43,7 @@ export interface JogParts {
  * `<Transport>` is the continuous-time one, and wants a playhead in milliseconds, a rate and
  * a loop, none of which a list of steps has.
  *
- * Inside an `Along`, or given a curved `shape`, its buttons, readout and caption lie along the shape and the scrubber
+ * Inside a curved `Along`, its buttons, readout and caption lie along the shape and the scrubber
  * follows it between them.
  *
  * It reads left to right in a right-to-left locale too, as playback controls do; its caption takes its own text's
@@ -58,10 +53,8 @@ export interface JogParts {
  */
 export function Jog(props: JogProps) {
   const along = useTrackShape();
-  const shape = props.shape ?? along?.shape;
   const parts = jogParts(props);
-  if (shape !== undefined && shape.kind !== 'line')
-    return <JogAlong parts={parts} shape={shape} align={props.align ?? along?.align ?? 'center'} className={props.className} />;
+  if (along !== null && along.shape.kind !== 'line') return <JogAlong parts={parts} shape={along.shape} align={along.align} className={props.className} />;
 
   return (
     <div className={[s.jog, props.className].filter(Boolean).join(' ')} dir="ltr">
@@ -124,10 +117,9 @@ function jogParts(props: JogProps): JogParts {
       onScrub && count > 0
         ? (shape) => (
             // Only the shape it is handed: on a straight row an enclosing `Along` must not bend it.
-            <AlongContext.Provider value={null}>
+            <AlongContext.Provider value={shape ? { shape, align: 'center' } : null}>
               <Slider
                 className={s.scrub}
-                shape={shape}
                 min={0}
                 max={last}
                 step={1}

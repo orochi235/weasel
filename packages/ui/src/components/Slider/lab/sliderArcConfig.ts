@@ -44,8 +44,8 @@ export function spreadThumbs(n: number, min: number, max: number, step: number):
   return Array.from({ length: n }, (_, i) => on((i + 1) / (n + 1)));
 }
 
-/** The props both twins are given: everything but the thumbs, their handlers and the shape. */
-export type TwinProps = Omit<SliderProps, 'thumbs' | 'onInput' | 'onChange' | 'shape'>;
+/** The props both twins are given: everything but the thumbs and their handlers. */
+export type TwinProps = Omit<SliderProps, 'thumbs' | 'onInput' | 'onChange'>;
 
 export function twinProps(c: SliderArcConfig): TwinProps {
   const { values: v, stops: st, behavior: b, look: l } = c;

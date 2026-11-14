@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { arcShape } from '@weasel-js/geom';
+import { Along } from '../Along';
 import { DetentSlider } from './DetentSlider';
+import s from './DetentSlider.module.css';
 
 const RATES = [0.25, 0.5, 1, 2, 4];
 
@@ -234,9 +236,19 @@ describe('DetentSlider degenerate input', () => {
 });
 
 describe('DetentSlider on a curve', () => {
-  it('a shape reaches its slider', () => {
+  it("an Along's shape reaches its slider, and the root fills the Along's box the shape is measured in", () => {
     const top = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 });
-    const { thumb } = renderRate({ shape: top });
-    expect(thumb.hasAttribute('aria-orientation')).toBe(false);
+    const { container } = render(
+      <Along shape={top}>
+        <DetentSlider aria-label="Playback rate" items={RATES} value={1} onInput={() => {}} />
+      </Along>,
+    );
+    expect(container.querySelector('[role="slider"]')!.hasAttribute('aria-orientation')).toBe(false);
+    expect(container.firstElementChild!.firstElementChild).toHaveClass(s.along!);
+  });
+
+  it('outside an Along its root stays in flow', () => {
+    const { container } = renderRate();
+    expect(container.firstElementChild).not.toHaveClass(s.along!);
   });
 });

@@ -102,7 +102,7 @@ describe('Jog along a curve', () => {
   const partOf = (el: Element) => el.closest('[data-jog-part]')!;
 
   it('lays its buttons and readout along the shape, in reading order, each tipped to it', () => {
-    renderWithIcons(<Jog {...props} shape={shape} />);
+    renderWithIcons(<Along shape={shape}><Jog {...props} /></Along>);
     const [prev, play, next, readout] = [
       screen.getByRole('button', { name: 'Previous step' }),
       screen.getByRole('button', { name: 'Play' }),
@@ -139,7 +139,7 @@ describe('Jog along a curve', () => {
   });
 
   it('stays a straight row on a line', () => {
-    renderWithIcons(<Jog {...props} onScrub={() => {}} shape={lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })} />);
+    renderWithIcons(<Along shape={lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })}><Jog {...props} onScrub={() => {}} /></Along>);
     expect(screen.getByRole('slider').closest('[data-shape]')).toBeNull();
     expect(screen.getByTestId('jog-readout').closest('[data-jog-part]')).toBeNull();
   });

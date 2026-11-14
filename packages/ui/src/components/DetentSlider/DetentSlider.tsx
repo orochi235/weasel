@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactElement, type ReactNode } from 'react';
-import type { TrackShape } from '@weasel-js/geom';
+import { useTrackShape } from '../Along/alongContext';
 import { Slider, type SliderStop, type Thumb } from '../Slider/Slider';
 import s from './DetentSlider.module.css';
 
@@ -35,8 +35,6 @@ export type DetentSliderProps<V extends DetentValue = number> = {
   formatLabel?: (value: V, index: number) => ReactNode;
   labels?: 'all' | 'ends' | 'none';
   trackHeight?: number;
-  /** The track to lie along; see `SliderProps.shape`. */
-  shape?: TrackShape;
   'aria-label'?: string;
   className?: string;
 };
@@ -88,6 +86,9 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
   const items = normalize(props.items);
   const index = resolveIndex(items, value);
   const lastIndex = Math.max(0, items.length - 1);
+  // Inside an `Along` the slider lies over the whole box, so this root must fill it too.
+  const along = useTrackShape();
+  const rootClass = [s.root, along !== null && s.along, className].filter(Boolean).join(' ');
 
   const labelOf = (item: DetentItem<V>, i: number): ReactNode =>
     item.label ?? formatLabel?.(item.value, i) ?? String(item.value);
@@ -119,7 +120,7 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
   };
 
   const current = items[index];
-  if (!current) return <div className={className ? `${s.root} ${className}` : s.root} />;
+  if (!current) return <div className={rootClass} />;
 
   const thumbs: Thumb[] = [
     { value: index, valueText: current.ariaLabel ?? plainText(labelOf(current, index), current.value) },
@@ -128,7 +129,7 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
   const stops: SliderStop[] = items.map((item, i) => ({ value: i, label: labelOf(item, i) }));
 
   return (
-    <div className={className ? `${s.root} ${className}` : s.root}>
+    <div className={rootClass}>
       <Slider
         className={s.slider}
         min={0}
@@ -138,7 +139,6 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
         stopLabels={props.labels ?? 'all'}
         trackClick="move-nearest"
         trackHeight={props.trackHeight ?? 8}
-        shape={props.shape}
         aria-label={ariaLabel}
         thumbs={thumbs}
         onInput={handleInput}
