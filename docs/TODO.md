@@ -527,8 +527,8 @@ name a package. Breaking changes are in scope.
 
 - **(P2) [agent] One run context in place of `OrientationContext`, `AlongContext`, and `BarSideContext`.** All
   three say which way the run goes, and `Bar/barSide.ts` derives its side from the run. `ToolGroup` takes an
-  `orientation` prop defaulting to vertical instead of reading the context; `ToolPalette`, `ResizeHandle`, and
-  `PrefsForm` take the prop too. A `useRun()` returns shape, alignment, orientation, and the side at a point;
+  `orientation` prop defaulting to vertical instead of reading the context; `ToolRail`, `ToolPalette`, `ResizeHandle`,
+  and `PrefsForm` take the prop too. A `useRun()` returns shape, alignment, orientation, and the side at a point;
   `BarMarkContext` stays private. Closes when those three contexts are one and no component inside a run takes
   `orientation` as a prop.
 
@@ -603,10 +603,6 @@ name a package. Breaking changes are in scope.
   `ItemList`'s CSS; `Tree`'s `trailing` is documented "Not a control". Also resolve the `useSceneLayerList` name
   clash with core. Closes when `LayerList` is a `Tree` preset.
 
-- **(P2) [agent] Split `ToolPalette` into a rail of items plus a `ToolsApi` adapter.** `ToolPalette` accepts only
-  `tools: ToolsApi`, so labkit's `PaletteRegion` rebuilds its frame. The rail takes items (icon, label, shortcut,
-  active, onPress, group). Closes when `PaletteRegion` renders the rail.
-
 - **(P2) [agent] Export `Bar`'s cell step and drop `ControlBar`'s copy.** Both share `BarLayout` and
   `groupBarNodes`, but `labkit/src/controls/ControlBar.tsx` maps leaves through its own `Cell`/`labField` and
   filters with its own `visible`, and never calls `pairRows`, so paired leaves don't fuse in a lab bar. Export
@@ -647,7 +643,7 @@ name a package. Breaking changes are in scope.
   when `Badge/lab/` is gone from ui.
 
 - **(P3) [agent] Rename and split folders to match what they hold.** `ContextMenu/` holds the whole menu layer
-  (`MenuPanel`, `MenuRow`, `useMenuTrigger`, `useDismiss`) that `MenuButton`, `MenuBar`, `BarMenu`, and `ToolStack`
+  (`MenuPanel`, `MenuRow`, `useMenuTrigger`, `useDismiss`) that `MenuButton`, `MenuBar`, `BarMenu`, and `RailStack`
   import; `src/floating/` is a drag-and-snap panel hook, not overlay positioning; `Timeline/` also holds `Ruler`,
   `Transport`, and `EasingPicker` (a Properties control); `Icon/index.ts` is a one-line re-export of `src/icons`;
   `Keycaps/index.ts` re-exports gestures' `keySpecsFrom*` and `detectPlatform`. Closes when there is a `Menu/`

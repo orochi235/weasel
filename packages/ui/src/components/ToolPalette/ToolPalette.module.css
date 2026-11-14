@@ -1,42 +1,4 @@
-.palette {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-2);
-  background: var(--wzl-surface);
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  padding: var(--wzl-space-2);
-  box-shadow: var(--wzl-bevel-raised, none);
-  user-select: none;
-}
-.palette.horizontal {
-  flex-direction: row;
-}
-
-/* Marker only — `useRovingTabIndex` finds the palette's buttons by this class.
-   Carries no styles; deleting it breaks keyboard navigation. */
-.paletteBtn {}
-
 /* A button a press carries out: a touch drag carries rather than scrolls. */
 .carrySource {
   touch-action: none;
-}
-
-/* A tool button the active mode makes ineligible: disabled, as far as the eye goes. */
-.disabledBtn {
-  opacity: 0.35;
-  filter: var(--wzl-disabled-filter);
-  cursor: not-allowed;
-}
-
-.separator {
-  background: var(--wzl-border);
-}
-.palette:not(.horizontal) .separator {
-  height: 1px;
-  margin: var(--wzl-space-1) 0;
-}
-.palette.horizontal .separator {
-  width: 1px;
-  margin: 0 var(--wzl-space-1);
 }

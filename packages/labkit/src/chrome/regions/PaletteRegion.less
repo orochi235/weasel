@@ -1,14 +1,17 @@
 .lk-palette-region {
   display: flex;
   flex-direction: column;
+  gap: 0;
   padding: var(--wzl-space-xs);
-  border-right: var(--wzl-border-w) solid var(--wzl-line-subtle);
-  background: var(--wzl-surface-sunken);
-}
-
-.lk-palette-region__rule {
   border: 0;
-  height: var(--wzl-border-w);
-  margin: var(--wzl-space-xs) 0;
-  background: var(--wzl-line-subtle);
+  border-right: var(--wzl-border-w) solid var(--wzl-line-subtle);
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--wzl-surface-sunken);
+
+  > hr {
+    height: var(--wzl-border-w);
+    margin: var(--wzl-space-xs) 0;
+    background: var(--wzl-line-subtle);
+  }
 }
