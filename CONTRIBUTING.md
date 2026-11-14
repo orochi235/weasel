@@ -2,8 +2,8 @@
 
 ## Fast inner-loop tests (Test Impact Analysis)
 
-The full vitest suite (~1500+ tests) runs in ~12s, but for tight inner loops
-the kit ships two scoped test scripts that ride on vitest's import-graph
+The full vitest suite (`npm test`) takes minutes; for tight inner loops the
+kit ships two scoped test scripts that ride on vitest's import-graph
 analysis:
 
 - `npm run test:changed` — runs only specs whose import graph touches files
@@ -20,8 +20,8 @@ both run the full `npm run test`. Affected-test selection has known gaps
 the authoritative gate. Don't rely on `test:changed` to clear a PR — push
 and let CI run the full thing.
 
-Playwright suites (`test:visual`, `test:smoke:step1`) don't have native TIA
-and are small enough to run in full when needed.
+Playwright suites (`test:visual`, `test:e2e:draw`, `test:e2e:demos`) don't
+have native TIA and are small enough to run in full when needed.
 
 ## Benchmarks
 
