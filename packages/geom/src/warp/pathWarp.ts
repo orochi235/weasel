@@ -114,7 +114,7 @@ export function applyPathWarp(source: PolygonPath, warp: PathWarp, tolerance = 0
   return warpPath(source, pathWarpMap(warp, source), { tolerance });
 }
 
-/** The points a user drags to change `warp`: a plane warp's corners, an
+/** The points a user drags to change `warp`: a plane warp's corners, a
  *  cloth warp's mesh points, a pin warp's pins where they are now. */
 export function warpControls(warp: PathWarp): readonly Point[] {
   switch (warp.kind) {
