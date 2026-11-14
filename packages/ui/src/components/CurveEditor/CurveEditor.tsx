@@ -26,6 +26,8 @@ import {
 } from './createFunctionLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
 import { useLatest } from '@weasel-js/core';
+import type { HoldProps } from '../Disabled';
+import { ownHold } from '../Disabled/controlHold';
 
 export type { GridSettings, AxesSettings, TickSettings };
 export type {
@@ -38,8 +40,9 @@ export type {
  * `onChange` once at its end, with the pre-gesture points as `prev`. An undo
  * or redo of the built-in `history` is reported through both, like any other
  * finished change; a consumer that keeps its own undo turns `history` off.
+ * Disabled or read-only, it is held as a {@link LayeredCurveEditor} is.
  */
-export interface CurveEditorProps {
+export interface CurveEditorProps extends HoldProps {
   value: readonly ControlPoint[];
   onInput: (next: ControlPoint[]) => void;
   onChange?: (next: ControlPoint[], prev: readonly ControlPoint[]) => void;
@@ -129,6 +132,7 @@ export function CurveEditor(props: CurveEditorProps) {
 
   return (
     <LayeredCurveEditor
+      {...ownHold(props)}
       layers={layers}
       onLayerChange={handleLayerChange}
       onLayerCommit={handleLayerCommit}

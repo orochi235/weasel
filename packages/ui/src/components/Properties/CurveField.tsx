@@ -5,6 +5,7 @@ import { type ControlPoint, CurveEditor } from '../CurveEditor';
 import { CurveMarks, type CurveMark } from './CurveMarks';
 import s from './CurveField.module.css';
 import { useControlAccess, type HoldProps } from '../Disabled';
+import { ownHold } from '../Disabled/controlHold';
 
 export type { CurveMark } from './CurveMarks';
 
@@ -49,7 +50,7 @@ export function CurveField({
   marks,
   ...own
 }: CurveFieldProps) {
-  // Disabled or read-only, the plot ignores the pointer and the buttons are disabled.
+  // Disabled or read-only, the plot holds itself and the buttons are disabled.
   const access = useControlAccess(own);
   const disabled = access.state !== 'enabled';
   const host = useRef<HTMLDivElement>(null);
@@ -108,9 +109,10 @@ export function CurveField({
   }, [values, min, max, onChange]);
 
   return (
-    <div ref={host} className={disabled ? `${s.field} ${s.disabled}` : s.field} aria-disabled={disabled || undefined}>
+    <div ref={host} className={s.field}>
       <div className={s.plot}>
         <CurveEditor
+          {...ownHold(own)}
           value={points}
           onInput={handleInput}
           onChange={handleSettled}

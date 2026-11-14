@@ -2,6 +2,7 @@ import { useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type
 import { tileKey, type LastRow } from '@weasel-js/ui-input';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
+import type { ControlHold, HeldAttrs } from '../Disabled/controlHold';
 import type { SwatchGridOption } from './SwatchGrid';
 import s from './SwatchGrid.module.css';
 
@@ -32,6 +33,11 @@ export function useSwatchApply(onChange: SwatchChange, onAltChange?: SwatchChang
     if (o.value !== null) record(o.value);
   };
   return { onChange: recorded(onChange), onAltChange: onAltChange && recorded(onAltChange) };
+}
+
+/** `apply`, or, held, applies that apply nothing. */
+export function heldApply(apply: SwatchApply, hold: ControlHold): SwatchApply {
+  return { onChange: hold.gate(apply.onChange), onAltChange: hold.gate(apply.onAltChange) };
 }
 
 const GRID_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
@@ -90,11 +96,13 @@ export interface SwatchButtonProps {
   style?: CSSProperties;
   /** Data attributes a layout reads off the swatch. */
   data?: Record<`data-${string}`, string | undefined>;
+  /** How its palette is held: `aria-disabled` or `aria-readonly`, and the reason's description. */
+  held?: HeldAttrs;
 }
 
 /** One swatch: its color over the checker, its glyph centered over that in its ink, named by its label, applying on
  *  click and to the alternate target on shift-click or right-click. */
-export function SwatchButton({ option: o, tabStop, current, apply, onKeyDown, onFocus, className, style, data }: SwatchButtonProps): ReactElement {
+export function SwatchButton({ option: o, tabStop, current, apply, onKeyDown, onFocus, className, style, data, held }: SwatchButtonProps): ReactElement {
   const name = nameOf(o);
   const paint = {
     ...style,
@@ -110,6 +118,7 @@ export function SwatchButton({ option: o, tabStop, current, apply, onKeyDown, on
       tabIndex={tabStop ? 0 : -1}
       aria-current={current ? 'true' : undefined}
       data-swatch=""
+      {...held}
       {...data}
       {...(o.value === null ? { 'data-none': '' } : {})}
       style={paint}

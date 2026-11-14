@@ -11,6 +11,7 @@ import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
 import { unitScale } from './scale';
 import { arrowStep, pct } from './track';
 import { isPrimaryPress } from '@weasel-js/gestures';
+import type { ControlHold } from '../Disabled/controlHold';
 
 /** A rescale of the whole range: the new ends and the bands refitted between them. `bands` is the committed
  *  array itself when the end is where it started. */
@@ -36,6 +37,8 @@ export interface RangeEdgeHandleProps<T> {
   drag: (down: ReactPointerEvent<HTMLElement>, onMove: (ev: PointerEvent) => void, onEnd: () => void) => void;
   onInput: (edit: RangeEdit<T>) => void;
   onCommit: (edit: RangeEdit<T>) => void;
+  /** The editor's hold: held, the end neither drags nor steps. */
+  hold: ControlHold;
 }
 
 /**
@@ -106,7 +109,8 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
   return (
     <div
       role="slider"
-      tabIndex={0}
+      tabIndex={props.hold.tabIndex(0)}
+      {...props.hold.attrs}
       className={[s.seam, s.edge].join(' ')}
       style={{ '--be-at': pct(props.toUnit(at)) } as CSSProperties}
       aria-label={edge === 'min' ? 'Range start' : 'Range end'}
@@ -116,8 +120,8 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
       aria-valuenow={at}
       aria-valuetext={qty(props.tagged ?? at, display).spoken}
       data-range-edge={edge}
-      onPointerDown={onPointerDown}
-      onKeyDown={onKeyDown}
+      onPointerDown={props.hold.gate(onPointerDown)}
+      onKeyDown={props.hold.gate(onKeyDown)}
     />
   );
 }

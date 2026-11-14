@@ -21,7 +21,13 @@ const jogKeyOf = (child: Element): string | null => child.getAttribute(JOG_PART)
  * A Jog laid along a curved shape: buttons, readout and caption each centered on their spot and tipped to it, in reading
  * order. The scrubber takes the stretch of the run the rest leave, and follows it.
  */
-export function JogAlong({ parts, shape, align, className }: { parts: JogParts; shape: TrackShape; align: RunAlign; className?: string | undefined }): ReactElement {
+export function JogAlong({ parts, shape, align, className, held }: {
+  parts: JogParts;
+  shape: TrackShape;
+  align: RunAlign;
+  className?: string | undefined;
+  held?: 'disabled' | 'readOnly' | undefined;
+}): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const run = useMemo(() => trackRun(shape), [shape]);
   const scrubs = parts.scrub !== null;
@@ -46,7 +52,7 @@ export function JogAlong({ parts, shape, align, className }: { parts: JogParts; 
   };
 
   return (
-    <div ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} dir="ltr">
+    <div ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} dir="ltr" data-held={held}>
       <RunScope fresh>
         {part('prev', parts.prev)}
         {part('play', parts.play)}

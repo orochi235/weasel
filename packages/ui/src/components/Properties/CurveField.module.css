@@ -14,11 +14,6 @@
   width: 100%;
 }
 
-.disabled .plot {
-  pointer-events: none;
-  opacity: 0.5;
-  filter: var(--wzl-disabled-filter);
-}
 
 .marks {
   position: absolute;

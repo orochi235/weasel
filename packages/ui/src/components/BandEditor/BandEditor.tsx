@@ -25,6 +25,8 @@ import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
 import { DraftGhost, type DraftGhostAt } from './DraftGhost';
 import { BandRuler, rulerDisplay, type BandTick } from './BandRuler';
 import { BandStrip } from './BandStrip';
+import type { HoldProps } from '../Disabled';
+import { useControlHold } from '../Disabled/controlHold';
 import {
   bandBounds,
   mergeBand,
@@ -39,8 +41,9 @@ import { sameSeams, seamGhost } from './seamGhost';
 
 export type { Band, RangeEdge, BandTick };
 
-/** Props for {@link BandEditor}. */
-export interface BandEditorProps<T, F extends Quantity = number> {
+/** Props for {@link BandEditor}. Disabled or read-only, no seam, edge, or band moves, and nothing splits, merges, or
+ *  locks; read-only, a band can still be selected. */
+export interface BandEditorProps<T, F extends Quantity = number> extends HoldProps {
   /** Ascending by `from`. `value[0].from` is normalized to `min` on read. A
    *  tagged `from` stays tagged through every edit, with its display and unit. */
   value: Band<T, F>[];
@@ -145,6 +148,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     label,
     className,
   } = props;
+  const hold = useControlHold(props);
   const snap = props.snap ?? true;
   const splitBand = props.splitBand ?? keepData;
 
@@ -223,13 +227,10 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   };
 
   const onBandPointerDown = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>): void => {
-    if (!isPrimaryPress(e)) return;
-    if (index !== selectedIndex) onSelectionChange?.(index);
+    if (isPrimaryPress(e) && index !== selectedIndex) onSelectionChange?.(index);
   };
 
-  const onBandFocus = (index: number) => (): void => {
-    if (index !== selectedIndex) onSelectionChange?.(index);
-  };
+  const onBandFocus = (index: number) => (): void => { if (index !== selectedIndex) onSelectionChange?.(index); };
 
   const rangeInput = (edge: RangeEdge, edit: RangeEdit<T>): void => {
     setDraft({ bands: edit.bands, range: edit.range, ghost: { at: edge === 'min' ? min : max } });
@@ -253,6 +254,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
       toUnit={toUnit}
       pointerUnit={(clientX, altKey) => snapped(rawUnitAt(clientX), altKey)}
       drag={drag}
+      hold={hold}
       onInput={(edit) => rangeInput(edge, edit)}
       onCommit={rangeCommit}
     />
@@ -309,13 +311,13 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     else onSelectionChange?.(selectedIndex - 1);
   };
 
-  return (
+  return hold.wrap(
     <div
       className={[s.root, className].filter(Boolean).join(' ')} role="group"
       aria-label={typeof label === 'string' ? label : undefined}
       aria-labelledby={label !== undefined && typeof label !== 'string' ? labelId : undefined}
-      onKeyDown={onRootKeyDown}
-      data-dragging={draft ? ('at' in draft.ghost ? 'seam' : 'band') : undefined}
+      onKeyDown={hold.gate(onRootKeyDown)}
+      data-dragging={draft ? ('at' in draft.ghost ? 'seam' : 'band') : undefined} data-held={hold.held}
     >
       {label !== undefined && <div id={labelId} className={s.label}>{label}</div>}
       <BandRuler
@@ -329,7 +331,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
             { edge: 'max', at: hi, label: <QuantityText value={hi} display={rulerDisplay(display)} mute /> },
           ]
         }
-        onPointerDown={onTrackPointerDown}
+        onPointerDown={hold.gate(onTrackPointerDown)}
       />
       <div className={s.bands}>
         {props.onRangeChange && edgeHandle('min')}
@@ -349,6 +351,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
           onBandPointerDown={onBandPointerDown}
           onBandFocus={onBandFocus}
           onBandContextMenu={onBandContextMenu}
+          hold={hold}
           onInput={seamInput}
           onChange={seamCommit}
           onCancel={() => setDraft(null)}

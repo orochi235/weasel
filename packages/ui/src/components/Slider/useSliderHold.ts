@@ -1,14 +1,11 @@
 import type { KeyboardEvent, MouseEvent, PointerEvent, ReactElement, ReactNode } from 'react';
 import type { ControlAccess } from '@weasel-js/ui-logic';
-import { useControlAccess, type HoldProps } from '../Disabled';
-import { describedBy, useHoldReason } from '../Disabled/HoldReason';
+import type { HoldProps } from '../Disabled';
+import { useControlHold, type HeldAttrs } from '../Disabled/controlHold';
 
 /** What a held thumb takes beyond its usual attributes. */
-export interface ThumbHoldAttrs {
+export interface ThumbHoldAttrs extends HeldAttrs {
   tabIndex: 0 | -1;
-  'aria-disabled'?: true;
-  'aria-readonly'?: true;
-  'aria-describedby'?: string;
 }
 
 /** What {@link useSliderHold} gives a slider. */
@@ -40,23 +37,14 @@ const REFUSED: SliderPresses = { onThumbPointerDown: () => ignore, onThumbContex
 
 /** A slider's hold, from its own props and the scopes around it. */
 export function useSliderHold(own: HoldProps): SliderHold {
-  const access = useControlAccess(own);
-  const reason = useHoldReason(access.reason);
-  const refuses = access.state !== 'enabled';
-  const thumb: ThumbHoldAttrs = {
-    tabIndex: refuses && !access.reachable ? -1 : 0,
-    ...(access.state === 'disabled' ? { 'aria-disabled': true } : {}),
-    ...(access.state === 'readOnly' ? { 'aria-readonly': true } : {}),
-  };
-  const describe = describedBy(reason.describedBy);
-  if (describe) thumb['aria-describedby'] = describe;
+  const hold = useControlHold(own);
   return {
-    access,
-    refuses,
-    thumb,
-    held: refuses ? (access.state as 'disabled' | 'readOnly') : undefined,
-    wrap: reason.wrap,
-    pointer: (live) => (refuses ? REFUSED : live),
-    keys: (live) => (refuses ? () => ignore : live),
+    access: hold.access,
+    refuses: hold.refuses,
+    thumb: { tabIndex: hold.tabIndex(0), ...hold.attrs },
+    held: hold.held,
+    wrap: hold.wrap,
+    pointer: (live) => (hold.refuses ? REFUSED : live),
+    keys: (live) => (hold.refuses ? () => ignore : live),
   };
 }

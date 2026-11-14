@@ -99,3 +99,18 @@
 .ringExtra {
   white-space: nowrap;
 }
+
+/* A held palette's swatches apply nothing, so they neither invite a click nor answer the pointer. */
+.swatch[aria-readonly] {
+  cursor: default;
+}
+
+.swatch[aria-disabled] {
+  opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
+  cursor: not-allowed;
+}
+
+.swatch:is([aria-disabled], [aria-readonly]):hover:not([aria-current]) {
+  border-color: var(--wzl-border);
+}

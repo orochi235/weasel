@@ -19,6 +19,8 @@ import { Icon } from '../../icons';
 import { icon } from '../../icons.gen';
 import { UnitField } from '../NumberField';
 import { SegmentedBar } from '../Segmented';
+import { holdScope, type HoldProps } from '../Disabled';
+import { useControlHold } from '../Disabled/controlHold';
 import f from '../field.module.css';
 import { readImageFile, type ReadImage } from './readImageFile';
 import s from './PatternPicker.module.css';
@@ -91,8 +93,8 @@ function imageExtent(size: { width: number; height: number }, longest: number): 
   return { width: size.width * k, height: size.height * k };
 }
 
-/** Props for {@link PatternPicker}. */
-export interface PatternPickerProps {
+/** Props for {@link PatternPicker}. Disabled or read-only, no tile, upload, size, or rotation commits. */
+export interface PatternPickerProps extends HoldProps {
   /** The pattern paint being edited. */
   value: PatternPaint;
   /** The color new tiles are seeded with — the paint's own, normally. */
@@ -118,7 +120,9 @@ export interface PatternPickerProps {
  * swatch cannot drift from the texture it selects.
  */
 export function PatternPicker(props: PatternPickerProps): ReactElement {
-  const { value, color, onChange, className, readImage = readImageFile } = props;
+  const { value, color, className, readImage = readImageFile } = props;
+  const hold = useControlHold(props);
+  const onChange = hold.gate(props.onChange);
   // A `texture` paint names no tile, so the picker shows none selected and
   // replaces it wholesale on the next click.
   const tile = isTilePaint(value) ? value : null;
@@ -158,65 +162,76 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
   };
 
   return (
-    <div className={[s.root, className].filter(Boolean).join(' ')}>
-      <div className={s.grid}>
-        {TILE_KINDS.map((kind) => {
-          const preview: TilePatternSpec = { ...seedTile(kind, color), size: PREVIEW_SIZE };
-          const selected = tile?.kind === kind;
-          return (
-            <button
-              key={kind}
-              type="button"
-              className={[s.swatch, selected && s.swatchActive].filter(Boolean).join(' ')}
-              style={{ ['--tile-preview' as string]: tilePreviewCssUrl(preview) } as CSSProperties}
-              title={kind}
-              aria-label={kind}
-              aria-pressed={selected}
-              onClick={() => pick(kind)}
+    <div className={[s.root, className].filter(Boolean).join(' ')} data-held={hold.held}>
+      {hold.wrap(
+        <div className={s.grid}>
+          {TILE_KINDS.map((kind) => {
+            const preview: TilePatternSpec = { ...seedTile(kind, color), size: PREVIEW_SIZE };
+            const selected = tile?.kind === kind;
+            return (
+              <button
+                key={kind}
+                type="button"
+                className={[s.swatch, selected && s.swatchActive].filter(Boolean).join(' ')}
+                style={{ ['--tile-preview' as string]: tilePreviewCssUrl(preview) } as CSSProperties}
+                title={kind}
+                aria-label={kind}
+                aria-pressed={selected}
+                tabIndex={hold.tabIndex(0)}
+                {...hold.attrs}
+                onClick={() => pick(kind)}
+              />
+            );
+          })}
+          <button
+            type="button"
+            className={[s.swatch, s.imageSwatch, image && s.swatchActive].filter(Boolean).join(' ')}
+            style={image ? { ['--tile-preview' as string]: `url(${JSON.stringify(image.src)})` } as CSSProperties : undefined}
+            title="Upload an image to tile"
+            aria-label="image"
+            aria-pressed={image !== null}
+            tabIndex={hold.tabIndex(0)}
+            {...hold.attrs}
+            onClick={hold.gate(() => fileInput.current?.click())}
+          >
+            {image ? null : <Icon name={icon('add')} size={14} />}
+          </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            className={s.fileInput}
+            tabIndex={-1}
+            aria-hidden
+            data-testid="pattern-image-file"
+            onChange={upload}
+          />
+        </div>,
+      )}
+      {holdScope(
+        props,
+        <>
+          <SegmentedBar<number>
+            items={image ? IMAGE_TILE_SIZES : TILE_SIZES}
+            value={image ? longestSide(image) : size}
+            size="sm"
+            aria-label="Tile size"
+            onChange={(v) => v != null && resize(v)}
+          />
+          <div className={`${f.field} ${f.control} ${f.fit} ${f.row}`}>
+            <label className={f.label} htmlFor={rotationId}>Rotation</label>
+            <UnitField
+              id={rotationId}
+              width="fit"
+              steppers
+              value={toDegrees(decomposePatternTransform(value.transform).rotation)}
+              step={15}
+              display={DEGREES}
+              onChange={(deg) => onChange(withRotation(value, deg))}
             />
-          );
-        })}
-        <button
-          type="button"
-          className={[s.swatch, s.imageSwatch, image && s.swatchActive].filter(Boolean).join(' ')}
-          style={image ? { ['--tile-preview' as string]: `url(${JSON.stringify(image.src)})` } as CSSProperties : undefined}
-          title="Upload an image to tile"
-          aria-label="image"
-          aria-pressed={image !== null}
-          onClick={() => fileInput.current?.click()}
-        >
-          {image ? null : <Icon name={icon('add')} size={14} />}
-        </button>
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/*"
-          className={s.fileInput}
-          tabIndex={-1}
-          aria-hidden
-          data-testid="pattern-image-file"
-          onChange={upload}
-        />
-      </div>
-      <SegmentedBar<number>
-        items={image ? IMAGE_TILE_SIZES : TILE_SIZES}
-        value={image ? longestSide(image) : size}
-        size="sm"
-        aria-label="Tile size"
-        onChange={(v) => v != null && resize(v)}
-      />
-      <div className={`${f.field} ${f.control} ${f.fit} ${f.row}`}>
-        <label className={f.label} htmlFor={rotationId}>Rotation</label>
-        <UnitField
-          id={rotationId}
-          width="fit"
-          steppers
-          value={toDegrees(decomposePatternTransform(value.transform).rotation)}
-          step={15}
-          display={DEGREES}
-          onChange={(deg) => onChange(withRotation(value, deg))}
-        />
-      </div>
+          </div>
+        </>,
+      )}
     </div>
   );
 }

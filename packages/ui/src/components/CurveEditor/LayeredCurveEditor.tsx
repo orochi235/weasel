@@ -20,7 +20,9 @@ import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
 import { dispatchContextMenu } from './contextMenuDispatch';
 import { CurveLayers } from './CurveLayers';
-import { layerCtxOver } from './layerCtx';
+import { layerCtxOver, NO_MODIFIERS, readModifiers } from './layerCtx';
+import type { HoldProps } from '../Disabled';
+import { useControlHold } from '../Disabled/controlHold';
 import { sameFields } from './sameFields';
 import { useLayerHistory, type LayerSnapshot } from './useLayerHistory';
 import type {
@@ -36,8 +38,9 @@ export interface LayerBinding<S = unknown> {
   state: S;
 }
 
-/** Props for {@link LayeredCurveEditor}. */
-export interface LayeredCurveEditorProps {
+/** Props for {@link LayeredCurveEditor}. Disabled or read-only, no press, key, or context menu reaches a layer, and
+ *  undo and redo do nothing; disabled with no reason, the plot and every mark in it leave the tab order. */
+export interface LayeredCurveEditorProps extends HoldProps {
   /** Bottom-to-top render order: `layers[0]` paints first, `layers[N-1]`
    *  paints on top. Hit-testing runs in reverse (topmost claim wins). */
   layers: ReadonlyArray<LayerBinding<unknown>>;
@@ -92,18 +95,6 @@ interface ActiveGesture {
   startSelfState: unknown;
 }
 
-/** A cancel carries no event, so a layer's `onCancel` sees no modifiers held. */
-const NO_MODIFIERS: LayerModifiers = { shift: false, alt: false, meta: false, ctrl: false };
-
-function readModifiers(e: PointerEvent | ReactPointerEvent | ReactMouseEvent | KeyboardEvent | ReactKeyboardEvent): LayerModifiers {
-  return {
-    shift: e.shiftKey,
-    alt: e.altKey,
-    meta: e.metaKey,
-    ctrl: e.ctrlKey,
-  };
-}
-
 /**
  * A `Plot2D` that hosts a stack of composable curve layers. It owns the
  * pointer gestures and the coordinate mapping; each layer supplies its own
@@ -124,6 +115,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   } = props;
 
   const historyEnabled = props.history !== false;
+  const hold = useControlHold(props);
 
   const modelRange: ModelRange = useMemo(
     () => ({ xMin: xRange[0], xMax: xRange[1], yMin: yRange[0], yMax: yRange[1] }),
@@ -273,9 +265,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
         return;
       }
       if (committed !== undefined) {
-        if (historyEnabled) {
-          record(preEventSnapshot);
-        }
+        if (historyEnabled) record(preEventSnapshot);
         onLayerCommit?.(b.layer.id, committed, prevState);
       }
       return;
@@ -319,9 +309,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       }
     }
     if (pendingCommit) {
-      if (historyEnabled) {
-        record(preEventSnapshot);
-      }
+      if (historyEnabled) record(preEventSnapshot);
       onLayerCommit?.(pendingCommit.id, pendingCommit.next, pendingCommit.prev);
     }
   }, [makeCtx, installGesture, onLayerChange, onLayerCommit, historyEnabled, snapshot, record, layersRef]);
@@ -349,9 +337,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
         commit(next) { committed = next; onLayerChange(b.layer.id, next); },
       });
       if (committed !== undefined) {
-        if (historyEnabled) {
-          record(preEventSnapshot);
-        }
+        if (historyEnabled) record(preEventSnapshot);
         onLayerCommit?.(b.layer.id, committed, b.state);
       }
       // The layer prevents default on the native event, which the synthetic
@@ -379,7 +365,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
 
   const cls = [s.root, className].filter(Boolean).join(' ');
 
-  return (
+  return hold.wrap(
     <Plot2D
       ref={plotRef}
       className={cls}
@@ -392,12 +378,16 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       axes={axes}
       xTicks={xTicks}
       yTicks={yTicks}
-      tabIndex={historyEnabled ? 0 : undefined}
+      tabIndex={historyEnabled ? hold.tabIndex(0) : undefined}
       role="group"
       aria-label={props['aria-label']}
-      onPointerDown={onSvgPointerDown}
-      onContextMenu={onSvgContextMenu}
-      onKeyDown={onSvgKeyDown}
+      aria-disabled={hold.attrs['aria-disabled']}
+      aria-describedby={hold.attrs['aria-describedby']}
+      data-held={hold.held}
+      inert={hold.unreachable || undefined}
+      onPointerDown={hold.gate(onSvgPointerDown)}
+      onContextMenu={hold.gate(onSvgContextMenu)}
+      onKeyDown={hold.gate(onSvgKeyDown)}
     >
       {children}
       <CurveLayers layers={layers} base={renderCtxBase} activeLayerId={activeLayerId} />
