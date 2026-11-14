@@ -13,7 +13,7 @@ import type { SceneCanvasSampleProps } from './sampleProps';
 export type { SceneCanvasLongPress } from './longPressProps';
 import { Yoke } from '@weasel-js/routing/react';
 import type { Op } from 'core/ops/types';
-import type { Node, Scene, SerializedScene } from 'core/scene/types';
+import type { Node } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
 import type { SceneCanvasSnap } from 'domains/snap/types';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
@@ -32,9 +32,10 @@ import type { SceneSlotConfig } from '../buildSceneLayer';
 import type { CanvasProps } from '../Canvas';
 import type { LayersMap } from '../layerSlots';
 import type { CanvasViewProps } from '../CanvasView';
-import type { InsertNodeFactory } from '../deps';
+import type { InsertNodeFactories } from '../deps';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { SceneCameraProps } from './sceneViewBounds';
+import type { SceneCanvasSceneProps } from './sceneProps';
 import type { FeatureEntry } from './features';
 import type { BuiltinToolOptions } from './useBuiltinShapeTools';
 import type { VersionCheck } from './useContributionRoles';
@@ -81,21 +82,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'contentVersion'  // SceneCanvas wires this to the scene's own version
     | 'layerVisibility' | 'layerOrder' // re-declared below: they gate picking here too
     | 'debug' | 'worker' // `debug` re-declared below with `slops`; `worker` in `SceneCanvasPaintedBy`
-  > & SceneCameraProps
+  > & SceneCameraProps & SceneCanvasSceneProps<TData, TLayer, TPose>
   & {
-    /** A `Scene` (typically from `useScene`) — or a `SerializedScene` JSON
-     *  object, which SceneCanvas bakes into a Scene on first render. The
-     *  serialized form is read once; pass a `key` on `<SceneCanvas>` to force
-     *  a fresh canvas from updated JSON.
-     *
-     *  The JSON shape is relaxed (`version: number` rather than the `1`
-     *  literal) so an `import json from './x.json'` result satisfies the type
-     *  without an `as` cast. */
-    scene:
-      | Scene<TData, TLayer, TPose>
-      | SerializedScene<TData, TLayer, TPose>
-      | { version: number; systemLayers?: ReadonlyArray<{ id: string }>; nodes: ReadonlyArray<unknown> };
-
     /** Layer configuration. When omitted, SceneCanvas applies kit defaults
      *  (a scene slot that paints `node.data.fill` rects + a default
      *  selection overlay). A partial scene or selection-overlay config is
@@ -164,7 +152,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  `{ path, fill }` node for that kind; a factory for a novel kind (e.g.
      *  `text`) adds insert support the kit doesn't ship. The dep supplies id,
      *  layer, and the undoable op. Return `null` to reject an insert. */
-    insertNodeFactories?: Record<string, InsertNodeFactory>;
+    insertNodeFactories?: InsertNodeFactories;
 
     /** External-content ingestion: OS drop, clipboard paste, the file picker. See {@link SceneCanvasIngestion}. */
     ingestion?: SceneCanvasIngestion;

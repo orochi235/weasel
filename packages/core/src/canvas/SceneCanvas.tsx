@@ -64,7 +64,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const devtools = useDevtoolsOverride(props.debug), { debug } = devtools;
   const descriptor = (props.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const deviceProfile = useDeviceProfile();
-  const scene = useBakedScene(props.scene);
+  const scene = useBakedScene(props.scene, props.composition);
   const getActiveMode = useMemo(() => (modes ? getActiveModeFor(modes) : undefined), [modes]);
   const heldModifiers = useHeldModifiers();
 

@@ -21,6 +21,7 @@ export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLo
 export type { SceneCanvasTextEditor } from '../canvas/SceneCanvas/defaultTextEditor';
 export type { SceneCanvasGeometry } from '../canvas/SceneCanvas/geometryProps';
 export type { SceneCanvasIngestion } from '../canvas/SceneCanvas/ingestionProps';
+export type { SceneCanvasSceneProps } from '../canvas/SceneCanvas/sceneProps';
 export type { SceneCanvasSelectTool } from '../canvas/SceneCanvas/selectToolProps';
 export type { SceneCanvasViewport } from '../canvas/SceneCanvas/viewportProp';
 export type { EdgePanOptions } from '../canvas/SceneCanvas/useEdgePan';

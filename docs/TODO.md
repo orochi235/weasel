@@ -30,15 +30,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P3) [agent] An `insertNodeFactories` entry for a kit kind cannot read its own extras without a cast.**
-  `InsertNodeFactory` takes the whole `InsertExtras` union, whose last member is `{ kind: string; [extra]:
-  unknown }`, so `extras.kind === 'pencil'` narrows to that member too and `extras.samples` is `unknown`:
-  StrokeAndFillDemo's pencil factory casts `extras` for that reason. The seam is a factory map typed per key
-  (`{ pencil?: (bounds, extras: Extract<InsertExtras, { kind: 'pencil' }>) => … }` beside an open string
-  index), which needs the factory type made bivariant so the narrower entries still fit the record; new API,
-  too big for audit round 20's pass (2026-11-12). Closes when the demo's factory reads `extras.samples` with no
-  cast.
-
 - **(P2) [recheck] A kernel3d host has no way to drag a node up or down, or along one axis.** kernel3d's
   `translate` keeps a node at its height (`movedOnLevel` in `packages/kernel3d/src/deps.ts`), and the kernel
   ships no translate gizmo: an editor building one writes its own action, chrome, hit test and snap plane
@@ -289,14 +280,6 @@ Owner tags, after the priority (2026-10-26):
   hands frames to `VideoEncoder` or `MediaRecorder` (2026-11-12, audit round 20). Closes when a
   helper renders a timeline span at a given rate to a sequence of rasters, with a site demo that
   saves the frames.
-
-- **(P3) [agent] `<SceneCanvas scene={json}>` cannot load a scene that needs its own composition.**
-  `useBakedScene` bakes through `sceneFromJSON(json, {})`, and `<SceneCanvas>` has no prop naming a
-  composition, so a serialized scene with nested non-rect poses (a kernel3d `Pose3` scene with groups) is
-  refused there; `sceneFromJSON` throws on one rather than fold it under `RIGID_POSE_COMPOSITION` (audit
-  round 20, 2026-11-12). It never worked: before the throw it loaded with `NaN` in every nested pose. Pass a
-  live `Scene` instead. Closes when the serialized `scene` prop can be given a composition, or is documented
-  as rect-only and refuses with that message.
 
 - **(P3) [agent] SVG export leaves out a node only a consumer painter draws.** `svgNodesFromKit` writes what
   core's built-in painters draw, so a kind registered with `registerNodeShape` vanishes from the file unless the
