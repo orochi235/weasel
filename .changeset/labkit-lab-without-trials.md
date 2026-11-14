@@ -4,7 +4,7 @@
 
 A `<Lab>` with no `instruments` runs with no trials, and its children are the page's body.
 
-A history the body hands over with `useTrialHistory` gets the lab's Undo and Redo and their keys. `instruments` and `defaultInstrument` are optional; `defaultInstrument` defaults to the first instrument. With instruments, `children` still go to the header.
+A history the body hands over with `useTrialHistory` gets the lab's Undo and Redo and their keys. `instruments` is optional. With instruments, `children` still go to the header.
 
 ```tsx
 <Lab title="Palette" pages={PAGES} path={PALETTE.href}>
