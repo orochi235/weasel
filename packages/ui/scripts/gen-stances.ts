@@ -2,8 +2,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { withStanceCss } from '../src/components/stanceCss';
-import { STANCE_SURFACES } from '../src/components/stanceSurfaces';
+import { withStanceCss } from './stanceCss';
+import { STANCE_SURFACES } from './stanceSurfaces';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 for (const surface of STANCE_SURFACES) {

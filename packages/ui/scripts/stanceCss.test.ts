@@ -2,11 +2,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { STANCE_SLOTS, STANCES } from '@weasel-js/theme';
 import { describe, expect, it } from 'vitest';
-import { CASE, TRACKING } from '../../../../scripts/check-labels';
+import { CASE, TRACKING } from '../../../scripts/check-labels';
 import { stanceCss, withStanceCss } from './stanceCss';
 import { STANCE_SURFACES } from './stanceSurfaces';
 
-const root = resolve(__dirname, '../../../..');
+const root = resolve(__dirname, '../../..');
 
 describe('stance rules', () => {
   it.each(STANCE_SURFACES.map((s) => [s.id, s] as const))('%s carries its region as `npm run gen:stances` writes it', (_, surface) => {

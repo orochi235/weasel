@@ -532,7 +532,7 @@ panel reads `-nested-<slot>` first. The generated rules apply stance, then
 emphasis, then grade, so grade wins the hue, and a named tint wins over both.
 
 To give another surface the props, add it to
-`packages/ui/src/components/stanceSurfaces.ts` with its base look, put an empty
+`packages/ui/scripts/stanceSurfaces.ts` with its base look, put an empty
 generated region in its stylesheet, run `npm run gen:stances`, paint its
 properties from the `--_s-*` names, and spread `useAppearance()` on its root.
 
