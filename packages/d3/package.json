@@ -13,8 +13,8 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -22,17 +22,8 @@
     "@weasel-js/animator": "1.19.1",
     "@weasel-js/core": "1.19.1"
   },
-  "peerDependenciesMeta": {
-    "d3-force": {
-      "optional": true
-    },
-    "d3-ease": {
-      "optional": true
-    }
-  },
   "dependencies": {
-    "@weasel-js/registry": "1.19.1",
-    "d3-interpolate": "^3.0.1"
+    "@weasel-js/registry": "1.19.1"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

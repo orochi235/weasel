@@ -144,6 +144,9 @@ jobs:
       # A build carrying its own copy of a dependency it declares splits that
       # dependency's contexts. See scripts/check-bundled-deps.mjs.
       - run: npm run check:bundled-deps
+      # A public declaration naming a type its package does not export. See
+      # scripts/check-unnameable-types.mjs.
+      - run: npm run check:unnameable
       # Build the two Vite-built packages a SECOND time and re-check. This is the
       # only step that exercises a WARM build, and a warm build is precisely the
       # blind spot that let @weasel-js/ui@0.5.0 and @weasel-js/hud@0.5.0 ship with

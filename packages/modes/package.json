@@ -13,12 +13,12 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./presets/default": {
-      "import": "./dist/presets/default.js",
-      "types": "./dist/presets/default.d.ts"
+      "types": "./dist/presets/default.d.ts",
+      "import": "./dist/presets/default.js"
     },
     "./package.json": "./package.json"
   },

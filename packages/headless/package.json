@@ -16,12 +16,12 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./page": {
-      "import": "./dist/page.js",
-      "types": "./dist/page.d.ts"
+      "types": "./dist/page.d.ts",
+      "import": "./dist/page.js"
     },
     "./package.json": "./package.json"
   },

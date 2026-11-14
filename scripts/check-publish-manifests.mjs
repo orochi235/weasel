@@ -154,6 +154,23 @@ if (provenanceGaps.length > 0) {
   process.exit(1);
 }
 
+// TypeScript takes the first condition it recognizes, so a `types` after
+// `import` is never read: it resolves `import` and guesses the sibling `.d.ts`.
+const typesNotFirst = packages.flatMap(({ manifest }) =>
+  Object.entries(manifest.exports ?? {})
+    .filter(([, v]) => v && typeof v === 'object' && 'types' in v && Object.keys(v)[0] !== 'types')
+    .map(([sub]) => `  ${manifest.name} ${sub}`),
+);
+
+if (typesNotFirst.length > 0) {
+  console.error(
+    `[manifests] ${typesNotFirst.length} export(s) list \`types\` after another condition:\n\n` +
+      typesNotFirst.join('\n') +
+      '\n\nPut `types` first in every condition object.\n',
+  );
+  process.exit(1);
+}
+
 const total = packages.reduce((n, { manifest }) => n + advertisedPaths(manifest).length, 0);
 console.log(
   `[manifests] OK — ${total} advertised path(s) across ${packages.length} publishable ` +

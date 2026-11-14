@@ -33,8 +33,7 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE",
-    "CHANGELOG.md"
+    "LICENSE"
   ],
   "weaselIcons": {
     "table": "./dist/icons.table.json"
@@ -44,73 +43,73 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./style.css": "./dist/style.css",
     "./icons": {
-      "import": "./dist/icons.js",
-      "types": "./dist/icons.d.ts"
+      "types": "./dist/icons.d.ts",
+      "import": "./dist/icons.js"
     },
     "./math": {
-      "import": "./dist/math.js",
-      "types": "./dist/math.d.ts"
+      "types": "./dist/math.d.ts",
+      "import": "./dist/math.js"
     },
     "./mesh": {
-      "import": "./dist/mesh.js",
-      "types": "./dist/mesh.d.ts"
+      "types": "./dist/mesh.d.ts",
+      "import": "./dist/mesh.js"
     },
     "./move": {
-      "import": "./dist/move.js",
-      "types": "./dist/move.d.ts"
+      "types": "./dist/move.d.ts",
+      "import": "./dist/move.js"
     },
     "./resize": {
-      "import": "./dist/resize.js",
-      "types": "./dist/resize.d.ts"
+      "types": "./dist/resize.d.ts",
+      "import": "./dist/resize.js"
     },
     "./clipboard": {
-      "import": "./dist/clipboard.js",
-      "types": "./dist/clipboard.d.ts"
+      "types": "./dist/clipboard.d.ts",
+      "import": "./dist/clipboard.js"
     },
     "./clone": {
-      "import": "./dist/clone.js",
-      "types": "./dist/clone.d.ts"
+      "types": "./dist/clone.d.ts",
+      "import": "./dist/clone.js"
     },
     "./json": {
-      "import": "./dist/json.js",
-      "types": "./dist/json.d.ts"
+      "types": "./dist/json.d.ts",
+      "import": "./dist/json.js"
     },
     "./devtools": {
-      "import": "./dist/devtools.js",
-      "types": "./dist/devtools.d.ts"
+      "types": "./dist/devtools.d.ts",
+      "import": "./dist/devtools.js"
     },
     "./devtools-protocol": {
-      "import": "./dist/devtools-protocol.js",
-      "types": "./dist/devtools-protocol.d.ts"
+      "types": "./dist/devtools-protocol.d.ts",
+      "import": "./dist/devtools-protocol.js"
     },
     "./patterns-builtin": {
-      "import": "./dist/patterns-builtin.js",
-      "types": "./dist/patterns-builtin.d.ts"
+      "types": "./dist/patterns-builtin.d.ts",
+      "import": "./dist/patterns-builtin.js"
     },
     "./renderer": {
-      "import": "./dist/renderer.js",
-      "types": "./dist/renderer.d.ts"
+      "types": "./dist/renderer.d.ts",
+      "import": "./dist/renderer.js"
     },
     "./routing": {
-      "import": "./dist/routing.js",
-      "types": "./dist/routing.d.ts"
+      "types": "./dist/routing.d.ts",
+      "import": "./dist/routing.js"
     },
     "./engine": {
-      "import": "./dist/engine.js",
-      "types": "./dist/engine.d.ts"
+      "types": "./dist/engine.d.ts",
+      "import": "./dist/engine.js"
     },
     "./render-worker": {
-      "import": "./dist/render-worker.js",
-      "types": "./dist/render-worker.d.ts"
+      "types": "./dist/render-worker.d.ts",
+      "import": "./dist/render-worker.js"
     },
     "./test-seams": {
-      "import": "./dist/test-seams.js",
-      "types": "./dist/test-seams.d.ts"
+      "types": "./dist/test-seams.d.ts",
+      "import": "./dist/test-seams.js"
     },
     "./package.json": "./package.json"
   },

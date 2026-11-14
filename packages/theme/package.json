@@ -15,28 +15,28 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./react": {
-      "import": "./dist/react.js",
-      "types": "./dist/react.d.ts"
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
     },
     "./engine": {
-      "import": "./dist/engine.js",
-      "types": "./dist/engine.d.ts"
+      "types": "./dist/engine.d.ts",
+      "import": "./dist/engine.js"
     },
     "./prefs": {
-      "import": "./dist/prefs.js",
-      "types": "./dist/prefs.d.ts"
+      "types": "./dist/prefs.d.ts",
+      "import": "./dist/prefs.js"
     },
     "./themes/win9x": {
-      "import": "./dist/themes/win9x.js",
-      "types": "./dist/themes/win9x.d.ts"
+      "types": "./dist/themes/win9x.d.ts",
+      "import": "./dist/themes/win9x.js"
     },
     "./themes/platinum": {
-      "import": "./dist/themes/platinum.js",
-      "types": "./dist/themes/platinum.d.ts"
+      "types": "./dist/themes/platinum.d.ts",
+      "import": "./dist/themes/platinum.js"
     },
     "./tokens.css": "./dist/tokens.css",
     "./fonts.css": "./dist/fonts.css",

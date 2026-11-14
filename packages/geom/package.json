@@ -13,37 +13,37 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./booleans": {
-      "import": "./dist/booleans/index.js",
-      "types": "./dist/booleans/index.d.ts"
+      "types": "./dist/booleans/index.d.ts",
+      "import": "./dist/booleans/index.js"
     },
     "./3d": {
-      "import": "./dist/3d/index.js",
-      "types": "./dist/3d/index.d.ts"
+      "types": "./dist/3d/index.d.ts",
+      "import": "./dist/3d/index.js"
     },
     "./nd": {
-      "import": "./dist/nd/index.js",
-      "types": "./dist/nd/index.d.ts"
+      "types": "./dist/nd/index.d.ts",
+      "import": "./dist/nd/index.js"
     },
     "./curves": {
-      "import": "./dist/curves/index.js",
-      "types": "./dist/curves/index.d.ts"
+      "types": "./dist/curves/index.d.ts",
+      "import": "./dist/curves/index.js"
     },
     "./tessellate": {
-      "import": "./dist/tessellate/index.js",
-      "types": "./dist/tessellate/index.d.ts"
+      "types": "./dist/tessellate/index.d.ts",
+      "import": "./dist/tessellate/index.js"
     },
     "./warp": {
-      "import": "./dist/warp/index.js",
-      "types": "./dist/warp/index.d.ts"
+      "types": "./dist/warp/index.d.ts",
+      "import": "./dist/warp/index.js"
     },
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "earcut": "3.2.4",
+    "earcut": "^3.2.4",
     "polygon-clipping": "^0.15.7"
   },
   "peerDependenciesMeta": {
