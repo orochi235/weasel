@@ -1,5 +1,5 @@
 /**
- * Trim: remove the piece of a stroke between the crossings on either side of
+ * Snip: remove the piece of a stroke between the crossings on either side of
  * a point, as a drafting trim does.
  */
 
@@ -12,14 +12,14 @@ import { crossingStops } from '../intersect/pathCrossings';
 import { writeSubpaths, type SegmentRun } from '../intersect/writeSubpaths';
 import { keepCorners } from './cornerRestore';
 
-/** Options for {@link trimPathAt}. */
-export interface TrimPathOptions {
+/** Options for {@link snipPathAt}. */
+export interface SnipPathOptions {
   /** How far from the stroke `probe` may be. Default: any distance. */
   radius?: number;
 }
 
-/** What {@link trimPathAt} did. */
-export interface TrimResult {
+/** What {@link snipPathAt} did. */
+export interface SnipResult {
   /** The path with the piece gone; it has no commands when nothing is left. */
   path: PolygonPath;
   /** The piece removed, as an open path. */
@@ -61,12 +61,12 @@ function stretch(segs: readonly Seg[], a: number, b: number): Seg[] {
  * when nothing crosses or touches the subpath it is on. Curves are split where they are
  * cut and keep their type; other subpaths are left as they were.
  */
-export function trimPathAt(
+export function snipPathAt(
   path: Path,
   cutters: readonly Path[],
   probe: Point,
-  opts: TrimPathOptions = {},
-): TrimResult | null {
+  opts: SnipPathOptions = {},
+): SnipResult | null {
   const subs = parseSubpaths(path, false);
   let hit: { sub: number; at: number; dist: number } | null = null;
   subs.forEach(({ segs }, sub) => segs.forEach((s, k) => {

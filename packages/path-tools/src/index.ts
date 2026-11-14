@@ -36,7 +36,7 @@ export {
   resamplePreset,
   sandPreset,
   kneadPreset,
-  trimPreset,
+  snipPreset,
   warpPreset,
 } from './presets';
 export type { ActionParamSchema } from './actionParamSchema';
@@ -50,7 +50,7 @@ export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/han
 export {
   BRIDGE_PARAMS, bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,
 } from './bridge/bridge';
-export { planTrim, TRIM_PATH_PARAMS, trimPathAction } from './trim/trimSegment';
+export { planSnip, SNIP_PATH_PARAMS, snipPathAction } from './snip/snip';
 export { EXTEND_TO_MEET_PARAMS, extendToMeetAction, type ExtendToMeetParams } from './extend/extendToMeet';
 export { LENGTHEN_PATH_PARAMS, lengthenPathAction, type LengthenPathParams } from './lengthen/lengthenPath';
 export { useLengthenTool } from './lengthen/useLengthenTool';
@@ -97,7 +97,7 @@ export {
 } from './fillet/filletCommands';
 
 // ─── Tools ─────────────────────────────────────────────────────────────────
-export { useTrimTool, type UseTrimToolOptions } from './trim/useTrimTool';
+export { useSnipTool, type UseSnipToolOptions } from './snip/useSnipTool';
 export { useExtendTool, type UseExtendToolOptions } from './extend/useExtendTool';
 export { KNEAD_TOOL_OPTIONS, useKneadTool, type UseKneadToolOptions } from './knead/useKneadTool';
 export type { StrokeClickToolOptions } from './shared/strokeClickTool';

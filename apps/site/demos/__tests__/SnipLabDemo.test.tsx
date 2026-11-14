@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { pathInWorld, type Path } from '@weasel-js/core';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { TrimLabDemo } from '../TrimLabDemo';
+import { SnipLabDemo } from '../SnipLabDemo';
 import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
@@ -46,9 +46,9 @@ function click(canvas: Element, x: number, y: number) {
   });
 }
 
-describe('TrimLabDemo', () => {
+describe('SnipLabDemo', () => {
   it('clicking a piece between two crossings cuts it away, and Undo puts it back', async () => {
-    const { container } = await renderSettled(<StrictMode><TrimLabDemo /></StrictMode>, { wrapper: withIcons });
+    const { container } = await renderSettled(<StrictMode><SnipLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     const before = worldCoords('top');

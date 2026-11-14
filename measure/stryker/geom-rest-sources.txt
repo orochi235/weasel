@@ -53,7 +53,7 @@ packages/geom/src/paths/pathStructure.ts
 packages/geom/src/tessellate/trim.ts
 packages/geom/src/paths/handleEdits.ts
 packages/geom/src/poseFrame.ts
-packages/geom/src/paths/trimPath.ts
+packages/geom/src/paths/snipPath.ts
 packages/geom/src/warp/mesh.ts
 packages/geom/src/paths/anchorSelection.ts
 packages/geom/src/paths/bendAlongPath.ts

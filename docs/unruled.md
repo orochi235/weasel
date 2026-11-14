@@ -395,7 +395,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): `addPage` (and `addTemplatePage`, which hands its index on) holds an
   `index` past either end of the page order to that end, as `movePage` already did, rather than reading a negative
   one from the end as `splice` does: one rule for an index into the page order.
-- Ruled 2026-11-10 (my call, overnight sweep): Trim segment and the Girth tool's `girth.clear`, click commands, are
+- Ruled 2026-11-10 (my call, overnight sweep): Snip and the Girth tool's `girth.clear`, click commands, are
   enabled outright by a click's point, as Extend to next path is, so the tool keeps the click and the run decides; with
   no click, `enabled` asks whether the press in their params reaches a piece to cut or a set width point to clear, and
   answers `NotApplicable` otherwise. Before, both were always enabled.
@@ -2082,7 +2082,7 @@ Calls the lanes made without a ruling:
   `BUILTIN_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
 - No two tool keys collide, in core or across path-tools and rig, and no action binds a bare letter. The star and
   image tools have no key; the bare letters no tool takes are C, D, O, Q, X and Z (B is puppet, F distort, J bone,
-  U knead, W weight and Y trim).
+  U knead, W weight and Y snip).
 - Open: the sticky tool's cursor is the rectangle's (`cursorFor('crosshair', { mark: 'rect' })`), so the two are
   not told apart from the pointer, which the shape cursors were drawn to fix. A `sticky` mark is a new glyph.
 

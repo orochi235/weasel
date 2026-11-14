@@ -19,7 +19,7 @@ export type PathToolsIconName =
   | 'balanceHandles'
   | 'equalizeHandles'
   | 'lengthen'
-  | 'trim'
+  | 'snip'
   | 'extend'
   | 'girth'
   | 'spiro'
@@ -73,7 +73,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
       "balanceHandles",
       "equalizeHandles",
       "lengthen",
-      "trim",
+      "snip",
       "extend",
       "girth",
       "spiro"
@@ -149,7 +149,7 @@ declare module '@weasel-js/icons' {
     'path-tools:balanceHandles': true;
     'path-tools:equalizeHandles': true;
     'path-tools:lengthen': true;
-    'path-tools:trim': true;
+    'path-tools:snip': true;
     'path-tools:extend': true;
     'path-tools:girth': true;
     'path-tools:spiro': true;

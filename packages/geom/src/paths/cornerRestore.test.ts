@@ -8,7 +8,7 @@ import { restoreCorners, cornerTraces } from './cornerRestore';
 import { resolveCorners } from './corners';
 import { extendToMeet } from './extendPath';
 import { pathFromD } from './pathFromD';
-import { trimPathAt } from './trimPath';
+import { snipPathAt } from './snipPath';
 
 const ROUND: CornerSpec = { shape: 'round', radius: 3 };
 const BEVEL: CornerSpec = { shape: 'bevel', radius: 2 };
@@ -55,16 +55,16 @@ describe('restoreCorners', () => {
 describe('operations keep the corners they leave whole', () => {
   const run = () => withCorners('M0 0 L10 0 L10 10 L0 10', { 1: ROUND, 2: BEVEL });
 
-  it('Trim segment keeps the corners away from the cut', () => {
+  it('Snip keeps the corners away from the cut', () => {
     const cut = pathFromD('M5 -5 L5 5');
-    const trimmed = trimPathAt(run(), [cut], { x: 1, y: 0 })!.path;
+    const trimmed = snipPathAt(run(), [cut], { x: 1, y: 0 })!.path;
     expect(cornersByPoint(trimmed)).toEqual({ '10,0': ROUND, '10,10': BEVEL });
   });
 
-  it('Trim segment drops a corner it cuts through', () => {
+  it('Snip drops a corner it cuts through', () => {
     // Through the round corner's middle, crossing nothing else.
     const cut = pathFromD('M7 3 L12 -2');
-    const trimmed = trimPathAt(run(), [cut], { x: 1, y: 0 })!.path;
+    const trimmed = snipPathAt(run(), [cut], { x: 1, y: 0 })!.path;
     expect(cornersByPoint(trimmed)).toEqual({ '10,10': BEVEL });
   });
 

@@ -35,7 +35,7 @@ and an app that imports only some never loads the others:
 | `bridgePreset` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
 | `spiroPreset` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
 | `lengthenPreset` | `lengthenPath`, which `useLengthenTool` binds: Lengthen, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
-| `trimPreset`, `extendPreset`, `kneadPreset` | The actions `useTrimTool`, `useExtendTool`, and `useKneadTool` bind |
+| `snipPreset`, `extendPreset`, `kneadPreset` | The actions `useSnipTool`, `useExtendTool`, and `useKneadTool` bind |
 | `harmonizePreset` | Harmonize curvature |
 | `anchorSelectionPreset` | Grow and shrink the anchor selection along the path, or select every Nth anchor, the corners, the smooth anchors, or the rest |
 | `resamplePreset` | Resample: anchors spread evenly by arc length, adjusted afterward in the last-operation panel |

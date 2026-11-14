@@ -1,5 +1,5 @@
 /**
- * Each path-effect command and Trim puts its selection change in its own undo
+ * Each path-effect command and Snip puts its selection change in its own undo
  * entry, so a consumer's `applyOps` history that knows nothing of the
  * selection still restores it on undo.
  */
@@ -12,7 +12,7 @@ import {
 import { blendAction, expandPathEffectAction, textAlongAction } from './actions';
 import { releaseBlendSpineAction, setBlendSpineAction } from './spine';
 import { releasePathEffectAction, setEffectPathAction } from './retarget';
-import { trimPathAction } from '../trim/trimSegment';
+import { snipPathAction } from '../snip/snip';
 
 type TestScene = Scene<unknown, 'default', unknown>;
 
@@ -108,7 +108,7 @@ describe('undo restores the selection a path command started from', () => {
   it('trimming a stroke away entirely', () => {
     const pathNode = (id: string, d: string) => ({ id: id as NodeId, kind: 'mark' as const, layer: 'default' as const, pose: pathFromD(d), data: {} });
     const r = rig([pathNode('stub', 'M10 0 H20'), pathNode('w1', 'M10 -10 V10'), pathNode('w2', 'M20 -10 V10')], ['stub', 'w1']);
-    run(trimPathAction, r.deps, { press: { x: 15, y: 0 }, radiusPx: 3 });
+    run(snipPathAction, r.deps, { press: { x: 15, y: 0 }, radiusPx: 3 });
     expect(r.scene.get('stub' as NodeId)).toBeUndefined();
     expect(r.selected()).toEqual(['w1']);
     r.undo();

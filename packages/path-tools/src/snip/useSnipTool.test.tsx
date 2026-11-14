@@ -4,7 +4,7 @@ import { matchSpec, type InputEvent } from '@weasel-js/gestures';
 import { pathFromD } from '@weasel-js/geom';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId, type RenderLayer } from '@weasel-js/core';
-import { useTrimTool } from './useTrimTool';
+import { useSnipTool } from './useSnipTool';
 
 const NO_MODS = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 
@@ -20,7 +20,7 @@ function setup() {
     renderOrderNodes: () => [...nodes.values()],
   };
   const deps = { scene, view: { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) } } as never;
-  const { result } = renderHook(() => useTrimTool());
+  const { result } = renderHook(() => useSnipTool());
   const tool = result.current;
   /** Run every binding the event matches, as the dispatcher runs every live hover. */
   const dispatch = (e: InputEvent & { x: number; y: number }) => {
@@ -34,7 +34,7 @@ function setup() {
   return { dispatch, drawn };
 }
 
-describe('useTrimTool', () => {
+describe('useSnipTool', () => {
   it('clears the piece it previews when the pointer leaves the canvas', () => {
     const t = setup();
     t.dispatch({ kind: 'hover', x: 15, y: 1, clientX: 15, clientY: 1, bodyTarget: 'empty', ...NO_MODS } as InputEvent & { x: number; y: number });

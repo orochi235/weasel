@@ -54,7 +54,7 @@ import { Workspace } from './Workspace';
 
 /** The palette's groups: core's, then path-tools' reshaping tools and its warps. */
 const TOOL_GROUPS = [...TOOL_GROUP_ORDER, 'path', 'warp'];
-const TOOL_STACKS = [withoutTools(SHAPE_TOOLS, 'line'), ['pen', 'spiro', 'pencil'], ['trim', 'extend'], WARP_TOOLS];
+const TOOL_STACKS = [withoutTools(SHAPE_TOOLS, 'line'), ['pen', 'spiro', 'pencil'], ['snip', 'extend'], WARP_TOOLS];
 /** What the shortcut sheet groups the tools by: core's sets, then path-tools' path-edit, reshaping, and the rest. */
 const SHEET_TOOL_SETS = [...BUILTIN_TOOL_GROUPS, PATH_EDIT_TOOLS, RESHAPE_TOOLS, PATH_TOOLS_TOOLS];
 /** What the view fits before the scene has a page to fit. */

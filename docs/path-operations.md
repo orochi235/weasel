@@ -44,7 +44,7 @@ Tag: `path-click`
 | Insert anchor | `insertPathAnchor` | Adds an anchor on the segment | Alt+click | main | core |
 | Cut path at anchor | `cutPathAtAnchor` | Opens the path there | Alt+Shift+click | main | core |
 | Equalize handles | `equalizeHandles` | Gives a segment's two handles one proportion of the way to their corner | Double-click a balance grip | main | path-tools |
-| Trim segment | `trimPath` | Removes the piece between the nearest crossings | Click with the Trim tool (Y) | main | path-tools |
+| Snip | `snipPath` | Removes the piece between the nearest crossings | Click with the Snip tool (Y) | main | path-tools |
 | Extend to next path | `extendToMeet` | Carries an open end to the next stroke | Click with the Extend tool (Shift+U) | main | path-tools |
 | Convert segment | `convertSegmentAt` | Flips the segment between straight and curved | Shift+double-click in path edit | main | path-tools |
 | Slice | `slice` | Cuts shapes along a drawn line | Slice tool (K) | main | core |

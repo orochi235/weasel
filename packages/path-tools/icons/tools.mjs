@@ -92,7 +92,7 @@ export const TOOLS = {
     <path d="M2.5 17 C6.5 17 8.5 15.5 11 13"/>
     <path d="M13 11 L16.5 7.5" stroke-dasharray="1 3"/>
     <rect x="9.5" y="11.5" width="3" height="3" fill="currentColor" stroke="none"/>`,
-  trim: `
+  snip: `
     <path d="M6.875 3 V17 M13.125 3 V17" stroke-width="1.25"/>
     <path d="M2.5 10.625 H6.875 M13.125 10.625 H17.5"/>
     <path d="M8.6 10.625 H11.4" stroke-width="1" stroke-dasharray="1.2 1.2"/>`,

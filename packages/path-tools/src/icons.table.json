@@ -77,7 +77,7 @@
       "group": "Tools",
       "tags": []
     },
-    "trim": {
+    "snip": {
       "body": "<path d=\"M6.875 3 V17 M13.125 3 V17\" stroke-width=\"1.25\"/><path d=\"M2.5 10.625 H6.875 M13.125 10.625 H17.5\"/><path d=\"M8.6 10.625 H11.4\" stroke-width=\"1\" stroke-dasharray=\"1.2 1.2\"/>",
       "group": "Tools",
       "tags": []

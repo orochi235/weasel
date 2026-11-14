@@ -40,7 +40,7 @@ import { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spin
 import { sandAction } from './sand/sand';
 import { kneadAction } from './knead/knead';
 import { spiroPreset } from './spiro/spiroPreset';
-import { trimPathAction } from './trim/trimSegment';
+import { snipPathAction } from './snip/snip';
 import { showBalanceAction, showCombAction, showFilletsAction, showDirectionAction } from './overlays/showOverlay';
 import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 
@@ -84,8 +84,8 @@ export const bridgePreset: FeaturePreset = {
   actions: [bridgeAnchorsAction, bridgePathsAction],
 };
 
-/** `trimPath`, which `useTrimTool` binds. */
-export const trimPreset: FeaturePreset = { id: 'trim', actions: [trimPathAction] };
+/** `snipPath`, which `useSnipTool` binds. */
+export const snipPreset: FeaturePreset = { id: 'snip', actions: [snipPathAction] };
 
 /** `extendToMeet`, which `useExtendTool` binds. */
 export const extendPreset: FeaturePreset = { id: 'extend', actions: [extendToMeetAction] };
@@ -241,7 +241,7 @@ export const warpPreset: FeaturePreset = {
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
-    sandPreset, handleLocksPreset, bridgePreset, spiroPreset, trimPreset, extendPreset, lengthenPreset,
+    sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, extendPreset, lengthenPreset,
     kneadPreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     filletPreset, pathEffectsPreset, warpPreset,

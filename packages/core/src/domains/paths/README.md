@@ -157,7 +157,7 @@ horizontal and vertical read. What a transform breaks is reported by
 `constraintConflictsOf`, the same report a conflicting add gets, and later edits
 leave it out of the solve.
 
-The whole-path commands — Simplify, Offset, Trim segment, Extend to next path,
+The whole-path commands — Simplify, Offset, Snip, Extend to next path,
 and the rest built on `pathCommands/pathNodes.ts` — rebuild the anchor list
 without origins to renumber it through, so they drop the constraints, as they
 drop a skin.

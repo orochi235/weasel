@@ -110,7 +110,7 @@ export {
   type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery, type PathSnapTarget,
   type StaticPathSnapKind,
 } from './snap/pathSnap';
-export { trimPathAt, type TrimPathOptions, type TrimResult } from './paths/trimPath';
+export { snipPathAt, type SnipPathOptions, type SnipResult } from './paths/snipPath';
 export { pathAwayFromAnchors, type PathAwayFromAnchors } from './paths/pathAwayFromAnchors';
 export {
   extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ExtendToMeetOptions, type OpenPathEnd,

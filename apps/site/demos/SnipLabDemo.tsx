@@ -1,5 +1,5 @@
 import { IDENTITY_POSE_COMPOSITION, createScene, ellipsePath, pathFromD } from '@weasel-js/core';
-import { trimPreset, useTrimTool } from '@weasel-js/path-tools';
+import { snipPreset, useSnipTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -16,7 +16,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', trimPreset] as const;
+const FEATURES = ['draw', snipPreset] as const;
 
 const config = f.schema({
   reach: f.number(6).range(2, 20).step(1).suffix('px').label('Click reach'),
@@ -39,8 +39,8 @@ const createLabScene = () =>
 
 function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const trim = useTrimTool({ radiusPx: ctx.config.reach });
-  const tools = useMemo(() => ({ trim }), [trim]);
+  const snip = useSnipTool({ radiusPx: ctx.config.reach });
+  const tools = useMemo(() => ({ snip }), [snip]);
   return (
     <TrialSceneCanvas
       features={FEATURES}
@@ -51,24 +51,24 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
 }
 
-const trimInstrument = defineInstrument<State, Config>({
-  name: 'Trim segment',
+const snipInstrument = defineInstrument<State, Config>({
+  name: 'Snip',
   config,
   initialState: () => ({ scene: null }),
   tools: {
-    initial: 'trim',
+    initial: 'snip',
     tools: [
-      { id: 'trim', label: 'Trim segment', icon: icon('core:slice') },
+      { id: 'snip', label: 'Snip', icon: icon('core:slice') },
       { id: 'select', label: 'Select', icon: icon('core:select') },
     ],
   },
   render: (ctx) => <TrimTrial ctx={ctx} />,
 });
 
-export function TrimLabDemo() {
+export function SnipLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Trim segment" instruments={[trimInstrument]} />
+      <Lab title="Snip" instruments={[snipInstrument]} />
     </div>
   );
 }

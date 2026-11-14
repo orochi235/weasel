@@ -1,6 +1,6 @@
 /**
  * Stateful property test of the commands that act on a scene's strokes from outside path edit, on a real scene of
- * random paths: Extend to next path, Trim segment, and Knead, with node selections, undo, and redo at
+ * random paths: Extend to next path, Snip, and Knead, with node selections, undo, and redo at
  * random. After every step each stroke is well formed and finite; a command changed the scene exactly when it was
  * enabled and recorded one undo step; and undo and redo land on the scenes the model recorded.
  */
@@ -9,7 +9,7 @@ import fc from 'fast-check';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { Action, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { asNodeId, createScene, defaultCommitAdapter, IDENTITY_POSE_COMPOSITION, type NodeId, type Op, type Scene } from '@weasel-js/core';
-import { extendToMeetAction, kneadAction, trimPathAction } from './index';
+import { extendToMeetAction, kneadAction, snipPathAction } from './index';
 import { checkPath, densePath, penPath, point, runs, snap, tally, timeoutFor } from './pbt.fixture';
 
 const VIEW = { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) };
@@ -70,17 +70,17 @@ class Extend implements fc.Command<Model, H> {
   toString(): string { return `Extend(${JSON.stringify(this.params)} ${JSON.stringify(this.press)})`; }
 }
 
-/** A trim click at `press`, or the command with no click at all. */
-class Trim implements fc.Command<Model, H> {
+/** A snip click at `press`, or the command with no click at all. */
+class Snip implements fc.Command<Model, H> {
   constructor(readonly press: { x: number; y: number } | null, readonly radiusPx: number) {}
   check(): boolean { return true; }
   run(m: Model, h: H): void {
     const binding = { radiusPx: this.radiusPx };
-    const on = isOn(trimPathAction, h.deps, this.press ?? undefined, binding);
+    const on = isOn(snipPathAction, h.deps, this.press ?? undefined, binding);
     const params = this.press ? { ...binding, press: this.press } : binding;
-    step(m, h, 'trimPath', on, () => { if (on) (trimPathAction.invoker as ImmediateInvoker).run(h.deps, params); }, { idleOk: !!this.press });
+    step(m, h, 'snipPath', on, () => { if (on) (snipPathAction.invoker as ImmediateInvoker).run(h.deps, params); }, { idleOk: !!this.press });
   }
-  toString(): string { return `Trim(${JSON.stringify(this.press)} ${this.radiusPx})`; }
+  toString(): string { return `Snip(${JSON.stringify(this.press)} ${this.radiusPx})`; }
 }
 
 /** A knead stroke from `from` through `moves`, committed or canceled. */
@@ -142,7 +142,7 @@ const extendParams = fc.record({ shape: fc.constantFrom('eased', 'straight'), ea
 
 const commands = fc.commands([
   fc.tuple(extendParams, fc.option(point, { nil: null })).map(([p, at]) => new Extend(p, at)),
-  fc.tuple(fc.option(point, { freq: 8, nil: null }), fc.integer({ min: 1, max: 30 })).map(([at, r]) => new Trim(at, r)),
+  fc.tuple(fc.option(point, { freq: 8, nil: null }), fc.integer({ min: 1, max: 30 })).map(([at, r]) => new Snip(at, r)),
   fc.tuple(point, fc.array(point, { maxLength: 4 }), fc.record({ radiusPx: fc.integer({ min: 2, max: 120 }), strength: fc.constantFrom(0.05, 0.6, 1) }, { requiredKeys: [] }), fc.constantFrom(true, true, false))
     .map(([from, moves, p, commit]) => new Knead(from, moves, p, commit)),
   fc.array(fc.nat({ max: 8 }), { maxLength: 3 }).map((ks) => new Select(ks)),
@@ -162,7 +162,7 @@ describe('scene stroke commands on a real scene, stateful property', () => {
       const model: Model = { states: [sceneSnap(h)], cursor: 0, base: h.scene.historyIndex() };
       fc.modelRun(() => ({ model, real: h }), cmds);
     }), runs(200));
-    for (const k of ['extendToMeet:ran', 'trimPath:ran', 'knead:ran', 'undo', 'redo']) {
+    for (const k of ['extendToMeet:ran', 'snipPath:ran', 'knead:ran', 'undo', 'redo']) {
       expect(t.get(k), `${k} ${t}`).toBeGreaterThan(8);
     }
   }, timeoutFor(200, 200));
