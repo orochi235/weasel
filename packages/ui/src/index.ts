@@ -90,7 +90,6 @@ export * from './components/PaintInput';
 export * from './components/PatternPicker';
 export * from './components/Plot2D';
 export * from './components/PlotDataPanel';
-export * from './components/PointPlotter';
 export * from './components/Popover';
 export * from './components/Powerline';
 export * from './components/Prefs';

@@ -1,19 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
-import { PointPlotter } from './PointPlotter';
-import type { ControlPoint } from '../CurveEditor';
+import { CurveEditor } from './CurveEditor';
+import { POINT_PLOTTER_PROPS } from './presets';
+import type { ControlPoint } from './createFunctionLayer';
 
 // jsdom returns 0,0 rect by default, so plot coords equal client coords
 // in these tests (no transform). That's the simplest case to test.
 
-describe('PointPlotter — rendering', () => {
+describe('CurveEditor with POINT_PLOTTER_PROPS — rendering', () => {
   it('renders one anchor per value entry at the right plot position', () => {
     const value: ControlPoint[] = [
       { x: 0.25, y: 0.5 },
       { x: 0.75, y: 0.5 },
     ];
     const { container } = render(
-      <PointPlotter value={value} onInput={() => {}} width={200} height={100} />,
+      <CurveEditor {...POINT_PLOTTER_PROPS} value={value} onInput={() => {}} width={200} height={100} />,
     );
     const circles = container.querySelectorAll('circle[data-anchor-index]');
     expect(circles.length).toBe(2);
@@ -24,7 +25,7 @@ describe('PointPlotter — rendering', () => {
   it('does not render a curve <path>', () => {
     const value: ControlPoint[] = [{ x: 0.2, y: 0.3 }, { x: 0.8, y: 0.7 }];
     const { container } = render(
-      <PointPlotter value={value} onInput={() => {}} width={200} height={100} />,
+      <CurveEditor {...POINT_PLOTTER_PROPS} value={value} onInput={() => {}} width={200} height={100} />,
     );
     expect(container.querySelector('path')).toBeNull();
   });
@@ -32,20 +33,20 @@ describe('PointPlotter — rendering', () => {
   it('renders a locked point as a diamond rect', () => {
     const value: ControlPoint[] = [{ x: 0.5, y: 0.5, locked: true }];
     const { container } = render(
-      <PointPlotter value={value} onInput={() => {}} width={200} height={100} />,
+      <CurveEditor {...POINT_PLOTTER_PROPS} value={value} onInput={() => {}} width={200} height={100} />,
     );
     expect(container.querySelector('circle[data-anchor-index]')).toBeNull();
     expect(container.querySelector('rect[data-anchor-index]')).not.toBeNull();
   });
 });
 
-describe('PointPlotter — drag', () => {
+describe('CurveEditor with POINT_PLOTTER_PROPS — drag', () => {
   it('fires onInput during drag and onChange on release', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();
     const initial: ControlPoint[] = [{ x: 0.5, y: 0.5 }];
     const { container } = render(
-      <PointPlotter
+      <CurveEditor {...POINT_PLOTTER_PROPS}
         value={initial}
         onInput={onInput}
         onChange={onChange}
@@ -68,12 +69,12 @@ describe('PointPlotter — drag', () => {
   });
 });
 
-describe('PointPlotter — add / delete', () => {
+describe('CurveEditor with POINT_PLOTTER_PROPS — add / delete', () => {
   it('inserts a point when clicking empty space (addPointMode=click-empty)', () => {
     const onInput = vi.fn();
     const value: ControlPoint[] = [{ x: 0.2, y: 0.5 }];
     const { container } = render(
-      <PointPlotter
+      <CurveEditor {...POINT_PLOTTER_PROPS}
         value={value}
         onInput={onInput}
         width={200} height={100}
@@ -90,7 +91,7 @@ describe('PointPlotter — add / delete', () => {
   it('refuses insertion when value.length >= maxPoints', () => {
     const onInput = vi.fn();
     const { container } = render(
-      <PointPlotter
+      <CurveEditor {...POINT_PLOTTER_PROPS}
         value={[{ x: 0.2, y: 0.5 }, { x: 0.8, y: 0.5 }]}
         onInput={onInput}
         width={200} height={100}
@@ -105,7 +106,7 @@ describe('PointPlotter — add / delete', () => {
   it('refuses insertion when addPointMode=never', () => {
     const onInput = vi.fn();
     const { container } = render(
-      <PointPlotter
+      <CurveEditor {...POINT_PLOTTER_PROPS}
         value={[{ x: 0.5, y: 0.5 }]}
         onInput={onInput}
         width={200} height={100}
@@ -124,7 +125,7 @@ describe('PointPlotter — add / delete', () => {
       { x: 0.75, y: 0.5 },
     ];
     const { container } = render(
-      <PointPlotter value={value} onInput={onInput} width={200} height={100} />,
+      <CurveEditor {...POINT_PLOTTER_PROPS} value={value} onInput={onInput} width={200} height={100} />,
     );
     const anchor = container.querySelectorAll('circle[data-anchor-index]')[1];
     fireEvent.pointerDown(anchor, { clientX: 150, clientY: 50, pointerId: 1, shiftKey: true });
@@ -137,7 +138,7 @@ describe('PointPlotter — add / delete', () => {
   it('refuses delete when value.length <= minPoints', () => {
     const onInput = vi.fn();
     const { container } = render(
-      <PointPlotter
+      <CurveEditor {...POINT_PLOTTER_PROPS}
         value={[{ x: 0.5, y: 0.5 }]}
         onInput={onInput}
         width={200} height={100}

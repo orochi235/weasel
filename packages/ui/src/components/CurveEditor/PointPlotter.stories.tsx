@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { PointPlotter } from '@weasel-js/ui/components/PointPlotter';
-import type { ControlPoint } from '@weasel-js/ui/components/CurveEditor';
+import { CurveEditor, POINT_PLOTTER_PROPS, type ControlPoint } from '@weasel-js/ui/components/CurveEditor';
 
 interface InteractiveProps {
   initial: ControlPoint[];
@@ -21,7 +20,8 @@ interface InteractiveProps {
 function Interactive(props: InteractiveProps) {
   const [value, setValue] = useState<ControlPoint[]>(props.initial);
   return (
-    <PointPlotter
+    <CurveEditor
+      {...POINT_PLOTTER_PROPS}
       value={value}
       onInput={setValue}
       xRange={[props.xMin, props.xMax]}
@@ -38,7 +38,7 @@ function Interactive(props: InteractiveProps) {
 }
 
 const meta: Meta<typeof Interactive> = {
-  title: 'ui/PointPlotter',
+  title: 'ui/CurveEditor/Point plotter',
   component: Interactive,
   argTypes: {
     initial: { control: false },

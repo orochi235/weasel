@@ -57,3 +57,5 @@ export {
   type CreateSetCurveOpArgs,
 } from './setCurveOp';
 
+
+export { POINT_PLOTTER_PROPS } from './presets';
