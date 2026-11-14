@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { HudDrawCtx } from '../widget';
 import type { MenuTextEntry } from '@weasel-js/menu';
-import { DEFAULT_MENU_METRICS as m, drawPanel, OPENED_VALUES } from './drawPanel';
+import { drawPanel, OPENED_VALUES } from './drawPanel';
+import { menuTokens, THEME_METRICS as m } from './menu.fixture';
 import { composeEdit, editKey, editMods, insertText, startEdit, type EditMods, type HudTextEdit } from './textEdit';
 
 const entry: MenuTextEntry = { kind: 'text', key: 'name', label: 'Name', value: undefined, set: vi.fn() };
@@ -160,15 +161,15 @@ describe('editKey', () => {
 
 const ctx = {
   dims: { width: 800, height: 600 }, defaultFont: 'Inter',
-  tokens: {
+  tokens: menuTokens({
     '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee', '--wzl-accent-soft': '#246',
     '--wzl-fg-muted': '#888', '--wzl-border': '#444', '--wzl-shadow': '#0008', '--wzl-radius-md': '6px',
-  },
+  }),
   color: () => undefined,
 } as never as HudDrawCtx;
 const b = { x: 100, y: 50, w: 240, h: 40 };
 const measure = (t: string) => Array.from(t).length * 7;
-const draw = (edit: HudTextEdit) => drawPanel(ctx, b, [entry], null, m, undefined, { ...OPENED_VALUES, editing: edit, measure });
+const draw = (edit: HudTextEdit) => drawPanel(ctx, b, [entry], null, undefined, { ...OPENED_VALUES, editing: edit, measure });
 /** The x of the caret: the last stroke-only path, a vertical line. */
 const caretX = (cmds: readonly DrawCommand[]): number => {
   const c = cmds.filter((x) => x.kind === 'path' && x.stroke && !x.fill).at(-1)!;

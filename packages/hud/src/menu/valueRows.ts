@@ -2,7 +2,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { pathFromD, textCommandFromRuns } from '@weasel-js/core';
 import { menuNumberCanStep, menuNumberText, type MenuColorEntry, type MenuEntry, type MenuNumberEntry } from '@weasel-js/menu';
 import type { WidgetBounds } from '../widget';
-import type { MenuMetrics } from './drawPanel';
+import type { MenuPanelMetrics } from '@weasel-js/ui-logic';
 import { clusterStops, selectionOf, shownEdit, type HudTextEdit } from './textEdit';
 import { typedLine } from './typedLine';
 
@@ -13,25 +13,26 @@ export interface Span { x: number; w: number }
  * Where a number row's step chips and value sit, at the row's end: a minus chip, the value in a cell of fixed
  * width so a changing value moves nothing, and a plus chip. `width` is all three.
  */
-export function numberChips(panelW: number, m: MenuMetrics): { minus: Span; value: Span; plus: Span; width: number } {
+export function numberChips(panelW: number, m: MenuPanelMetrics): { minus: Span; value: Span; plus: Span; width: number } {
   const s = m.rowHeight;
   const end = panelW - m.padX;
   return { minus: { x: end - 4 * s, w: s }, value: { x: end - 3 * s, w: 2 * s }, plus: { x: end - s, w: s }, width: 4 * s };
 }
 
 /** Which way the chip under panel-local `x` steps a number row: 1, -1, or null off both. */
-export function chipAt(panelW: number, m: MenuMetrics, x: number): 1 | -1 | null {
+export function chipAt(panelW: number, m: MenuPanelMetrics, x: number): 1 | -1 | null {
   const { minus, plus } = numberChips(panelW, m);
   const inside = (s: Span) => x >= s.x && x < s.x + s.w;
   return inside(plus) ? 1 : inside(minus) ? -1 : null;
 }
 
-/** What a value row needs past its label, for sizing the panel; undefined for any other row. */
-export function valueRowWidth(e: MenuEntry, m: MenuMetrics, measure: (text: string, fontSize: number) => number): number | undefined {
-  if (e.kind === 'number') return m.padX + numberChips(0, m).width;
-  if (e.kind === 'color') return Math.max(m.rowHeight, m.padX + measure(e.value ?? '—', m.fontSize));
+/** A value row's trailing column's width, for sizing the panel; undefined for any other row. `measure` gives the
+ *  width of a run of the row's text. */
+export function valueRowWidth(e: MenuEntry, m: MenuPanelMetrics, measure: (text: string) => number): number | undefined {
+  if (e.kind === 'number') return numberChips(0, m).width;
+  if (e.kind === 'color') return measure(e.value ?? '—');
   // Room to type into, as the DOM menu's 12ch field gives.
-  if (e.kind === 'text') return m.padX + Math.max(measure(e.value ?? '—', m.fontSize), m.fontSize * 7);
+  if (e.kind === 'text') return Math.max(measure(e.value ?? '—'), m.font.size * 7);
   return undefined;
 }
 
@@ -45,7 +46,7 @@ export interface ValueInk { fg: string; muted: string; border: string; font: { f
 
 /** A number row's chips and value. A chip with nowhere to step to is muted, as is all of a disabled row. */
 export function numberCommands(
-  b: WidgetBounds, r: { y: number; h: number }, e: MenuNumberEntry, value: number | undefined, m: MenuMetrics, ink: ValueInk,
+  b: WidgetBounds, r: { y: number; h: number }, e: MenuNumberEntry, value: number | undefined, m: MenuPanelMetrics, ink: ValueInk,
   locale?: string,
 ): DrawCommand[] {
   const { minus, value: cell, plus } = numberChips(b.w, m);
@@ -66,7 +67,7 @@ export function numberCommands(
 
 /** A text row's value at the row's end, muted while disabled. */
 export function textCommands(
-  b: WidgetBounds, r: { y: number; h: number }, value: string | undefined, m: MenuMetrics, ink: ValueInk,
+  b: WidgetBounds, r: { y: number; h: number }, value: string | undefined, m: MenuPanelMetrics, ink: ValueInk,
   mode: 'off' | 'live' = 'live',
 ): DrawCommand[] {
   return [textCommandFromRuns(
@@ -76,11 +77,11 @@ export function textCommands(
 }
 
 /** The right edge typed text is set against in a row of panel width `w`, leaving room for a caret after it. */
-const typedRight = (w: number, m: MenuMetrics) => w - m.padX - 3;
+const typedRight = (w: number, m: MenuPanelMetrics) => w - m.padX - 3;
 
 /** The code-point offset in `draft`, typed into a row of panel width `w`, at the grapheme cluster boundary nearest
  *  panel-local `x`, or undefined when `x` is left of the text, over the row's label. `measure` gives the width of a run of the row's text. */
-export function caretAt(draft: string, w: number, m: MenuMetrics, x: number, measure: (text: string) => number): number | undefined {
+export function caretAt(draft: string, w: number, m: MenuPanelMetrics, x: number, measure: (text: string) => number): number | undefined {
   const line = typedLine(draft, typedRight(w, m), measure);
   if (x < line.left - m.padX) return undefined;
   let best = 0;
@@ -89,7 +90,7 @@ export function caretAt(draft: string, w: number, m: MenuMetrics, x: number, mea
 }
 
 /** Panel-local x of the caret `edit` draws, after any composition in progress. */
-export function caretX(edit: HudTextEdit, w: number, m: MenuMetrics, measure: (text: string) => number): number {
+export function caretX(edit: HudTextEdit, w: number, m: MenuPanelMetrics, measure: (text: string) => number): number {
   const shown = shownEdit(edit).edit;
   return typedLine(shown.draft, typedRight(w, m), measure).xAt(shown.caret) + 1;
 }
@@ -98,7 +99,7 @@ export function caretX(edit: HudTextEdit, w: number, m: MenuMetrics, measure: (t
  *  method's composition underlined in place of the selection, and a caret where `edit` has it. `measure` gives the
  *  width of a run of the row's text. */
 export function typingCommands(
-  b: WidgetBounds, r: { y: number; h: number }, edit: HudTextEdit, m: MenuMetrics, ink: ValueInk, selection: string,
+  b: WidgetBounds, r: { y: number; h: number }, edit: HudTextEdit, m: MenuPanelMetrics, ink: ValueInk, selection: string,
   measure: (text: string) => number,
 ): DrawCommand[] {
   const { edit: shown, preedit } = shownEdit(edit);
@@ -130,10 +131,10 @@ export function typingCommands(
 
 /** A swatch of `color` in a row's icon column, outlined in `edge`; `width` 2 marks the color a picker holds. */
 export function swatchCommand(
-  b: WidgetBounds, r: { y: number; h: number }, color: string, m: MenuMetrics, edge: string, width = 1,
+  b: WidgetBounds, r: { y: number; h: number }, color: string, m: MenuPanelMetrics, edge: string, width = 1,
 ): DrawCommand {
   const size = 12;
-  const x = b.x + m.padX + (m.rowHeight - size) / 2;
+  const x = b.x + m.padX + (m.iconSize - size) / 2;
   const y = b.y + r.y + (r.h - size) / 2;
   return {
     kind: 'path', path: { kind: 'rect', x, y, width: size, height: size },
@@ -143,7 +144,7 @@ export function swatchCommand(
 
 /** The swatch a color row draws in its icon column, and its hex at the row's end. */
 export function colorCommands(
-  b: WidgetBounds, r: { y: number; h: number }, e: MenuColorEntry, m: MenuMetrics, ink: ValueInk,
+  b: WidgetBounds, r: { y: number; h: number }, e: MenuColorEntry, m: MenuPanelMetrics, ink: ValueInk,
 ): DrawCommand[] {
   const out: DrawCommand[] = e.value === undefined ? [] : [swatchCommand(b, r, e.value, m, ink.border)];
   out.push(textCommandFromRuns(

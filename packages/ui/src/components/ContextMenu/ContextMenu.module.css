@@ -1,19 +1,25 @@
+/* Every length here is one `menuPanelMetrics` in @weasel-js/ui-logic reads, which sizes the HUD menu too:
+   change one and change it there. */
 .panel {
   composes: surface from '../listbox.module.css';
   position: fixed;
   z-index: var(--wzl-z-popover);
+  box-sizing: border-box;
   min-width: 180px;
   padding: var(--wzl-space-2);
   color: var(--wzl-fg);
+  line-height: var(--wzl-leading-snug);
   user-select: none;
 }
 
 .row {
   display: grid;
-  grid-template-columns: 1.25em 1fr auto;
+  grid-template-columns: 16px 1fr auto;
   align-items: center;
   gap: var(--wzl-space-2);
-  padding: var(--wzl-space-1) var(--wzl-space-2);
+  box-sizing: border-box;
+  height: var(--wzl-control-h-sm);
+  padding: 0 var(--wzl-space-2);
   border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);
   cursor: default;

@@ -5,6 +5,7 @@ import type { MenuColorEntry, MenuEntry, MenuItemEntry, MenuTextEntry, SubmenuEn
 import type { HudDrawCtx, HudKeyEvent } from '../widget';
 import { hexColor, withColorPickers } from './colorPicker';
 import { createMenuWidget } from './menuWidget';
+import { menuTokens } from './menu.fixture';
 
 const fill = (color: string): MenuColorEntry => ({ kind: 'color', key: 'fill', label: 'Fill', value: color, set: vi.fn() });
 
@@ -69,10 +70,10 @@ const keydown = (key: string): HudKeyEvent => ({
 });
 const ctx = {
   dims: { width: 800, height: 600 }, defaultFont: 'Inter',
-  tokens: {
+  tokens: menuTokens({
     '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee',
     '--wzl-fg-muted': '#888', '--wzl-border': '#444', '--wzl-shadow': '#0008', '--wzl-radius-md': '6px',
-  },
+  }),
   color: () => undefined,
 } as never as HudDrawCtx;
 

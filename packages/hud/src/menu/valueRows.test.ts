@@ -5,22 +5,26 @@ import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/ui-input';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import type { HudDrawCtx, HudKeyEvent } from '../widget';
-import { DEFAULT_MENU_METRICS as m, drawPanel, OPENED_VALUES, panelSize } from './drawPanel';
+import { drawPanel, OPENED_VALUES, panelSize } from './drawPanel';
+import { charEnv, menuTokens, THEME_METRICS as m } from './menu.fixture';
 import { createMenuWidget } from './menuWidget';
 import { caretAt, numberChips } from './valueRows';
 import { startEdit } from './textEdit';
 
 const ctx = {
   dims: { width: 800, height: 600 }, defaultFont: 'Inter',
-  tokens: {
+  tokens: menuTokens({
     '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee',
     '--wzl-fg-muted': '#888', '--wzl-border': '#444', '--wzl-shadow': '#0008', '--wzl-radius-md': '6px',
-  },
+  }),
   color: () => undefined,
 } as never as HudDrawCtx;
 
 const b = { x: 100, y: 50, w: 240, h: 80 };
 const measure = (t: string) => t.length * 7;
+const env = charEnv(7);
+/** A row's icon, gaps, and padding: everything but its label and its trailing column. */
+const columns = m.padX * 2 + m.iconSize + m.gap * 2;
 const textOf = (cmds: readonly DrawCommand[]) =>
   cmds.flatMap((c) => (c.kind === 'text' ? [c.runs.map((r) => r.text).join('')] : []));
 
@@ -33,7 +37,7 @@ const textRow = (extra: Partial<MenuTextEntry> = {}): MenuTextEntry => ({ ...tex
 
 describe('drawPanel: value rows', () => {
   it('draws a number row as its label, its value and unit, and a step chip either side', () => {
-    const cmds = drawPanel(ctx, b, [zoomRow()], null, m);
+    const cmds = drawPanel(ctx, b, [zoomRow()], null);
     expect(textOf(cmds)).toEqual(['Magnification', '8×']);
     const chips = numberChips(b.w, m);
     // One mark per chip: the minus and the plus.
@@ -44,13 +48,13 @@ describe('drawPanel: value rows', () => {
   });
 
   it('draws what it is given to show over what the row opened with', () => {
-    expect(textOf(drawPanel(ctx, b, [zoomRow()], null, m, undefined, { ...OPENED_VALUES, number: () => 12 }))).toContain('12×');
-    expect(textOf(drawPanel(ctx, b, [zoomRow({ value: undefined })], null, m))).toContain('—');
-    expect(textOf(drawPanel(ctx, b, [zoomRow({ value: 0.5, suffix: undefined, display: percent() })], null, m))).toContain('50%');
+    expect(textOf(drawPanel(ctx, b, [zoomRow()], null, undefined, { ...OPENED_VALUES, number: () => 12 }))).toContain('12×');
+    expect(textOf(drawPanel(ctx, b, [zoomRow({ value: undefined })], null))).toContain('—');
+    expect(textOf(drawPanel(ctx, b, [zoomRow({ value: 0.5, suffix: undefined, display: percent() })], null))).toContain('50%');
   });
 
   it('draws infinity as its word with no unit, and keeps the step chip live at an endless end', () => {
-    const at = (value: number) => drawPanel(ctx, b, [zoomRow({ endless: 'max', infinity: 'never' })], null, m, undefined, { ...OPENED_VALUES, number: () => value });
+    const at = (value: number) => drawPanel(ctx, b, [zoomRow({ endless: 'max', infinity: 'never' })], null, undefined, { ...OPENED_VALUES, number: () => value });
     expect(textOf(at(Infinity))).toContain('never');
     const plusColor = (cmds: readonly DrawCommand[]) => JSON.stringify(cmds.filter((c) => c.kind === 'path' && c.stroke && !c.fill).at(-1));
     expect(plusColor(at(16))).toContain('#eee');
@@ -58,26 +62,25 @@ describe('drawPanel: value rows', () => {
   });
 
   it('draws a color row as its label, a swatch of the color in the icon column, and the hex, muted', () => {
-    const cmds = drawPanel(ctx, b, [color], null, m);
+    const cmds = drawPanel(ctx, b, [color], null);
     expect(textOf(cmds)).toEqual(['Color', '#336699']);
     expect(JSON.stringify(cmds)).toContain('"color":"#336699"');
     expect(JSON.stringify(cmds.filter((c) => c.kind === 'text')[0])).toContain('#888');
   });
 
   it('draws a text row as its label and its value, muted only while disabled, with room to type', () => {
-    const cmds = drawPanel(ctx, b, [text], null, m);
+    const cmds = drawPanel(ctx, b, [text], null);
     expect(textOf(cmds)).toEqual(['Name', 'Layer 1']);
     for (const c of cmds.filter((x) => x.kind === 'text')) expect(JSON.stringify(c)).toContain('#eee');
-    const off = drawPanel(ctx, b, [textRow({ disabled: true })], null, m);
+    const off = drawPanel(ctx, b, [textRow({ disabled: true })], null);
     for (const c of off.filter((x) => x.kind === 'text')) expect(JSON.stringify(c)).toContain('#888');
     const label = 'L'.repeat(30);
-    expect(panelSize([{ ...text, label } as MenuEntry], m, measure).w)
-      .toBe(label.length * 7 + m.padX + m.fontSize * 7 + m.padX * 2 + m.rowHeight);
+    expect(panelSize([{ ...text, label } as MenuEntry], env).w).toBe(columns + label.length * 7 + m.font.size * 7);
   });
 
   it('draws what is typed into a text row, and a caret after it', () => {
-    const plain = drawPanel(ctx, b, [text], null, m);
-    const typing = drawPanel(ctx, b, [text], null, m, undefined, { ...OPENED_VALUES, editing: startEdit(text, 'Lay') });
+    const plain = drawPanel(ctx, b, [text], null);
+    const typing = drawPanel(ctx, b, [text], null, undefined, { ...OPENED_VALUES, editing: startEdit(text, 'Lay') });
     expect(textOf(typing)).toEqual(['Name', 'Lay']);
     expect(typing.filter((c) => c.kind === 'path').length).toBe(plain.filter((c) => c.kind === 'path').length + 1);
   });
@@ -85,9 +88,8 @@ describe('drawPanel: value rows', () => {
   it('widens the panel for a number row\'s chips and a color row\'s swatch and hex', () => {
     const label = 'L'.repeat(30);
     const chips = numberChips(0, m);
-    expect(panelSize([zoomRow({ label })], m, measure).w).toBe(label.length * 7 + m.padX + chips.width + m.padX * 2 + m.rowHeight);
-    expect(panelSize([{ ...color, label } as MenuEntry], m, measure).w)
-      .toBe(label.length * 7 + m.padX + 7 * 7 + m.padX * 2 + m.rowHeight);
+    expect(panelSize([zoomRow({ label })], env).w).toBe(columns + label.length * 7 + chips.width);
+    expect(panelSize([{ ...color, label } as MenuEntry], env).w).toBe(columns + label.length * 7 + 7 * 7);
   });
 });
 

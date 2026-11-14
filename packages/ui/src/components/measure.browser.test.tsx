@@ -1,14 +1,18 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { fixedWidth, UNBOUNDED } from '@weasel-js/ui-logic';
+import { pref } from '@weasel-js/prefs';
+import { ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost } from '@weasel-js/core';
+import { fixedWidth, measureMenuPanel, MENU_CARET_SIZE, UNBOUNDED, type MenuRowFace } from '@weasel-js/ui-logic';
+import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
 import { domMeasureEnv } from '@weasel-js/ui';
 import { Button, domButton, type ButtonProps } from '@weasel-js/ui/components/Button';
 import { domItemList } from '@weasel-js/ui/components/ItemList';
 import s from './ItemList/ItemList.module.css';
+import menu from './ContextMenu/ContextMenu.module.css';
 
-// The DOM half of the measure/draw contract: CSS lays a button and a list out from the tokens `measure` reads, so
-// what `measure` says must be what the browser draws. Only a real layout engine can say so.
+// The DOM half of the measure/draw contract: CSS lays a button, a list, and a menu panel out from the tokens
+// `measure` reads, so what `measure` says must be what the browser draws. Only a real layout engine can say so.
 
 afterEach(cleanup);
 beforeAll(async () => { await document.fonts.ready; });
@@ -96,3 +100,57 @@ describe('a DOM item list is the box measureRowList gives', () => {
 function ItemListHost({ rows }: { rows: Parameters<typeof domItemList.draw>[0]['props']['rows'] }) {
   return domItemList.draw({ props: { rows, onActivate: () => {} } }, {});
 }
+
+describe('a DOM menu panel is the box measureMenuPanel gives, as the HUD menu draws it', () => {
+  const action = (id: string, label: string) => ({ id, label, invoker: { timing: 'immediate' as const, run: () => {} } });
+  const MENUS: MenuDef[] = [{
+    id: 'm',
+    menu: pref.group('', {
+      edit: pref.group('', { cut: pref.action('cut'), all: pref.action('all') }),
+      arr: pref.group('Arrange', { forward: pref.action('forward') }, { as: 'menu' }),
+    }),
+  }];
+  let host: MenuHost | null = null;
+  function Setup() {
+    useAction(action('cut', 'Cut'));
+    useAction(action('all', 'Select every shape on the page'));
+    useAction(action('forward', 'Forward'));
+    useMenus(MENUS);
+    host = useMenuHost();
+    return <ContextMenuHost />;
+  }
+
+  test('rows, separators, labels, and its size', () => {
+    render(<ActionsProvider><Setup /></ActionsProvider>);
+    act(() => { host!.open({ menu: 'm', client: { x: 20, y: 20 }, source: 'pointer' }); });
+    const panel = screen.getByRole('menu');
+    const lines = [...panel.children].filter((el) => /^(separator|menuitem)/.test(el.getAttribute('role') ?? ''));
+    const face = {
+      rows: lines.map((el): MenuRowFace => (el.getAttribute('role') === 'separator' ? { kind: 'separator' } : {
+        kind: 'row', label: el.querySelector(`.${menu.label}`)!.textContent!,
+        ...(el.getAttribute('aria-haspopup') === 'menu' ? { trailing: MENU_CARET_SIZE } : {}),
+      })),
+    };
+    expect(face.rows.map((r) => r.kind)).toEqual(['row', 'row', 'separator', 'row']);
+    const m = measureMenuPanel(face, UNBOUNDED, domMeasureEnv(panel));
+    const box = panel.getBoundingClientRect();
+    near(box.width, m.width);
+    near(box.height, m.height);
+    m.layout.rows.forEach((row, i) => {
+      const got = boxIn(lines[i]!, panel);
+      if (row.kind === 'separator') {
+        near(got.x, row.line.x);
+        near(got.y, row.line.y);
+        near(got.width, row.line.width);
+        near(got.height, row.line.height);
+        return;
+      }
+      near(got.y, row.rect.y);
+      near(got.height, row.rect.height);
+      near(got.x, row.rect.x);
+      near(got.width, row.rect.width);
+      near(boxIn(lines[i]!.querySelector(`.${menu.label}`)!, panel).x, row.label.x);
+      if (row.trailing) near(boxIn(lines[i]!.lastElementChild!, panel).x, row.trailing.x);
+    });
+  });
+});

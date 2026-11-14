@@ -33,7 +33,7 @@ export type { HudContentCtx } from './widget';
 export { attachMenuHost, type AttachMenuHostOptions } from './menu/attachMenuHost';
 export { measureLabel } from './menu/measureLabel';
 export { createMenuWidget, type MenuWidgetOptions } from './menu/menuWidget';
-export { DEFAULT_MENU_METRICS, type MenuIcons, type MenuMetrics } from './menu/drawPanel';
+export type { MenuIcons } from './menu/drawPanel';
 export { DEFAULT_MENU_PALETTE } from './menu/colorPicker';
 export { glyphCommands, iconCommands, type GlyphPlacement, type GlyphSource } from './glyph';
 export { boxShadowCommands } from './boxShadow';

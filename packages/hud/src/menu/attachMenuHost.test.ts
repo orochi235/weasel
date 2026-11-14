@@ -9,6 +9,7 @@ import { attachHud } from '../attach';
 import { createHud, type Hud } from '../hud';
 import type { Widget } from '../widget';
 import { attachMenuHost } from './attachMenuHost';
+import { THEME_METRICS as m } from './menu.fixture';
 
 const trigger = vi.fn<(id: string, params?: Record<string, unknown>) => boolean>(() => true);
 const immediate = { timing: 'immediate' as const, run: () => {} };
@@ -314,7 +315,8 @@ describe('attachMenuHost with a hud drawing in another font', () => {
     wide.open({ menu: 'wide', client: { x: 10, y: 10 } });
     layer!.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 800, height: 600, dpr: 1 });
     const advance = FIXTURE_FONT.chars[0]!.xadvance;
-    expect(own.widgets()[0]!.bounds.w).toBe(Math.ceil(20 * advance * 13 / FIXTURE_FONT.info.size) + 16 + 48);
+    expect(own.widgets()[0]!.bounds.w)
+      .toBe(Math.ceil(20 * advance * m.font.size / FIXTURE_FONT.info.size) + m.padX * 2 + m.iconSize + m.gap * 2);
     off();
     unhud();
   });

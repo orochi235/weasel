@@ -7,19 +7,14 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createMenuController, type Rect } from '@weasel-js/menu';
 import { menuLevel, openPath, runs, tally, timeoutFor } from '../pbt.fixture';
-import { DEFAULT_MENU_METRICS, panelSize, rowLayout, type MenuMetrics } from './drawPanel';
+import { menuRowSpans } from '@weasel-js/ui-logic';
+import { panelSize } from './drawPanel';
+import { menuTheme } from './menu.fixture';
+import { menuMeasureEnv } from './menuEnv';
 import { estimateWidth } from './measureLabel';
 import { createPlacer } from './placePanels';
 
 const RUNS = 200;
-
-const metrics: fc.Arbitrary<MenuMetrics> = fc.oneof(
-  fc.constant(DEFAULT_MENU_METRICS),
-  fc.record({
-    rowHeight: fc.integer({ min: 12, max: 40 }), padX: fc.integer({ min: 0, max: 16 }), padY: fc.integer({ min: 0, max: 12 }),
-    separatorHeight: fc.integer({ min: 1, max: 16 }), minWidth: fc.integer({ min: 0, max: 300 }), fontSize: fc.integer({ min: 8, max: 24 }),
-  }),
-);
 
 /** Where across the canvas, often near its far end, where a panel has to flip. */
 const across = fc.oneof(fc.double({ min: 0, max: 1, noNaN: true }), fc.double({ min: 0.7, max: 1, noNaN: true }));
@@ -27,7 +22,7 @@ const across = fc.oneof(fc.double({ min: 0, max: 1, noNaN: true }), fc.double({ 
 const scene = fc.record({
   entries: menuLevel(3),
   path: fc.array(fc.nat(), { maxLength: 4 }),
-  m: metrics,
+  theme: menuTheme,
   canvas: fc.record({ width: fc.integer({ min: 50, max: 1600 }), height: fc.integer({ min: 50, max: 1200 }) }),
   anchor: fc.record({ x: across, y: across }),
   under: fc.option(fc.record({
@@ -45,8 +40,8 @@ function placeAll(s: Scene) {
   const anchor = { x: s.anchor.x * s.canvas.width, y: s.anchor.y * s.canvas.height };
   const under = s.under && { ...s.under, x: s.under.x * Math.max(0, s.canvas.width - s.under.w), y: s.under.y * Math.max(0, s.canvas.height - s.under.h) };
   const measure = (t: string, size: number) => t.length * size * s.perChar;
-  const place = createPlacer({ anchor, under, canvasSize: () => s.canvas, measure, metrics: s.m });
-  const rects = place(c, s.family);
+  const place = createPlacer({ anchor, under, canvasSize: () => s.canvas, measure });
+  const rects = place(c, s.family, s.theme.tokens).map((p) => p.rect);
   const sized = (t: string, size: number) => (s.family === null ? estimateWidth(t, size) : measure(t, size));
   return { c, rects, anchor, under, place, sized };
 }
@@ -61,7 +56,7 @@ describe('createPlacer', () => {
       expect(rects).toHaveLength(c.stack().length);
       rects.forEach((r, level) => {
         expect([r.x, r.y, r.w, r.h].every(Number.isFinite)).toBe(true);
-        const size = panelSize(c.entriesAt(level), s.m, sized);
+        const size = panelSize(c.entriesAt(level), menuMeasureEnv(s.theme.tokens, '', sized));
         expect({ w: r.w, h: r.h }).toEqual(size);
         if (fits(r.w, s.canvas.width)) { expect(r.x).toBeGreaterThanOrEqual(0); expect(r.x + r.w).toBeLessThanOrEqual(s.canvas.width); seen.hit('fits x'); }
         else expect(r.x).toBe(0);
@@ -109,7 +104,7 @@ describe('createPlacer', () => {
       const stack = c.stack();
       for (let level = 1; level < rects.length; level++) {
         const parent = rects[level - 1]!, r = rects[level]!;
-        const row = rowLayout(c.entriesAt(level - 1), s.m)[stack[level - 1]!]!;
+        const row = menuRowSpans(c.entriesAt(level - 1), s.theme.m)[stack[level - 1]!]!;
         const right = parent.x + parent.w;
         if (right + r.w <= s.canvas.width) { expect(r.x).toBe(right); seen.hit('right'); }
         else if (parent.x - r.w >= 0) { expect(r.x + r.w).toBeCloseTo(parent.x, 9); seen.hit('left'); }
@@ -123,10 +118,10 @@ describe('createPlacer', () => {
     const seen = tally();
     fc.assert(fc.property(scene, fc.array(fc.nat(), { maxLength: 3 }), (s, more) => {
       const { c, rects, place } = placeAll(s);
-      expect(place(c, s.family)).toEqual(rects);
+      expect(place(c, s.family, s.theme.tokens).map((p) => p.rect)).toEqual(rects);
       const depth = c.stack().length;
       openPath(c, more);
-      const after: Rect[] = place(c, s.family);
+      const after: Rect[] = place(c, s.family, s.theme.tokens).map((p) => p.rect);
       if (c.stack().length > depth) seen.hit('deeper');
       expect(after.slice(0, depth)).toEqual(rects);
     }), runs(RUNS));
