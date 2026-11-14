@@ -431,7 +431,7 @@ adds itself:
 | `snapToContainer(...)` | `@weasel-js/core/move` | After the pointer dwells over a container, snaps each dragged node to the slot `findTarget` gives it, and reparents on release. | in `behaviors` |
 | `snapBackOrDelete(...)` | `@weasel-js/core/move` | Released near where it started, the selection returns home; released far away, it returns or is deleted. | in `behaviors` |
 | `momentum(...)` | `@weasel-js/core` | Keeps a flicked node coasting after release, and records the whole flick as one undo step. | in `behaviors` |
-| layout drop | the move action | Drops the selection into the layout container under it: previews the slot and the siblings that make room, and commits the container's `commitDrop`. Released outside every layout container, each source container's `releaseDrop` decides, and a node let go outside its container leaves it. | a layout on a container (`ContainerNode.layout`, or `<SceneCanvas layouts>`) |
+| layout drop | the move action | Drops the selection into the layout container under it: previews the slot and the siblings that make room, and commits the container's `commitDrop`. Released outside every layout container, each source container's `releaseDrop` decides, and a node let go outside its container leaves it. | a layout on a container (`SceneNode.layout`) |
 | reparent on drop | the move action | Reparents the selection under the node the pointer is released over, keeping where it was dropped. | the move binding's `reparentOnDrop: 'top' \| 'above'` param |
 
 Order decides two things:

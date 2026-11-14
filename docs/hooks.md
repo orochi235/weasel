@@ -148,23 +148,8 @@ the cursor is.
 standard set; `<SceneCanvas>` registers them under the `view` preset, from its
 `viewport.pan` / `viewport.zoom` flags.
 
-### Where the old hooks went
-
-| Removed hook | Replacement |
-|---|---|
-| `useMove` | `move` action (`actions/move/action.ts`); `UseMoveOptions` type survives |
-| `useResize` | `resize` action; `UseResizeOptions`, `PoseDescriptor`, `RECT_POSE_DESCRIPTOR`, `cornerResizeHandles`, `hitCornerHandle` survive |
-| `useRotate` | `rotate` action; `rotationHandle`, `hitRotationHandle`, `pointInRotatedRect`, `DEFAULT_ROTATION_HANDLE_DISTANCE` survive |
-| `useInsert` | `insert` action, configured by binding params and the `insert` dep |
-| `useAreaSelect` | `areaSelect` action (marquee is its built-in behavior, not opt-in) |
-| `useClone` | `clone` action, alt-gated by its binding; `CloneBehavior`s go on the binding |
-| `useEditAnchors` | `editAnchors` action, plus the `nudgeAnchors.*` / `deleteAnchors` / `marqueeAnchors` / `selectAnchor` / `cutPathAtAnchor` set; `hitAnchor`, `enumerateAnchors`, `withCoord` survive |
-| `useEscape`, `useSelectAll`, `useDelete`, `useDuplicate`, `useNudge`, `useReorder`, `useGroup`, `useUngroup`, `useUndoRedo` | same-named actions in the table above |
-| `useClipboard` | `useClipboardOps` (logic only) + the `ingest` action for inbound payloads |
-| `usePan` | `viewport.dragPan` / `viewport.wheelPan` actions |
-
-`options.behaviors` moved onto the action's
-binding opts. See [extending.md](./extending.md) for the behavior contract.
+An action's behaviors (`MoveBehavior`, `CloneBehavior`, …) go on its binding's
+opts. See [extending.md](./extending.md) for the behavior contract.
 
 ## State primitives
 
