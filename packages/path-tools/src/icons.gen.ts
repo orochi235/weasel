@@ -8,7 +8,7 @@ export type PathToolsIconName =
   | 'planeWarp'
   | 'clothWarp'
   | 'pinWarp'
-  | 'blend'
+  | 'tween'
   | 'bendAlong'
   | 'repeatAlong'
   | 'textAlong'
@@ -25,8 +25,8 @@ export type PathToolsIconName =
   | 'spiro'
   | 'resamplePath'
   | 'releaseSpiro'
-  | 'setBlendSpine'
-  | 'releaseBlendSpine'
+  | 'setTweenSpine'
+  | 'releaseTweenSpine'
   | 'reversePath'
   | 'setPathStart'
   | 'cornerRadius'
@@ -62,7 +62,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
       "planeWarp",
       "clothWarp",
       "pinWarp",
-      "blend",
+      "tween",
       "bendAlong",
       "repeatAlong",
       "textAlong",
@@ -84,8 +84,8 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
     "names": [
       "resamplePath",
       "releaseSpiro",
-      "setBlendSpine",
-      "releaseBlendSpine",
+      "setTweenSpine",
+      "releaseTweenSpine",
       "reversePath",
       "setPathStart",
       "cornerRadius",
@@ -138,7 +138,7 @@ declare module '@weasel-js/icons' {
     'path-tools:planeWarp': true;
     'path-tools:clothWarp': true;
     'path-tools:pinWarp': true;
-    'path-tools:blend': true;
+    'path-tools:tween': true;
     'path-tools:bendAlong': true;
     'path-tools:repeatAlong': true;
     'path-tools:textAlong': true;
@@ -155,8 +155,8 @@ declare module '@weasel-js/icons' {
     'path-tools:spiro': true;
     'path-tools:resamplePath': true;
     'path-tools:releaseSpiro': true;
-    'path-tools:setBlendSpine': true;
-    'path-tools:releaseBlendSpine': true;
+    'path-tools:setTweenSpine': true;
+    'path-tools:releaseTweenSpine': true;
     'path-tools:reversePath': true;
     'path-tools:setPathStart': true;
     'path-tools:cornerRadius': true;

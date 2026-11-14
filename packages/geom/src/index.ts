@@ -93,7 +93,7 @@ export { segmentLength, segmentTAtLength } from './paths/segmentLength';
 export {
   pathToCubicContours, cubicContoursToPath, type CubicContour, type CubicSegment,
 } from './paths/cubicContours';
-export { blendPaths, prepareBlend, type BlendPathsOptions, type PathBlend } from './paths/blendPaths';
+export { tweenPaths, prepareTween, type TweenPathsOptions, type PathTween } from './paths/tweenPaths';
 export { bendAlongPath, type BendAlongPathOptions } from './paths/bendAlongPath';
 export {
   repeatAlongPath, stationsAlongPath, type RepeatAlongPathOptions, type RepeatStation,

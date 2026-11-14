@@ -46,7 +46,7 @@ and an app that imports only some never loads the others:
 | `pathStructurePreset` | Make start point and Reverse path direction, and arrows showing which way the open path runs, under chrome id `path-edit.direction` |
 | `segmentTypePreset` | Turn segments straight or curved, from the selection (Shift+C) or under a Shift+double-click |
 | `filletPreset` | Fillet: a widget in each corner anchor whose drag sets its radius (`editFillet`), and `setFillets` and `cycleFillet` on the selected corners; `FILLET_CONTROLS` and `useFilletControls` are a panel over them |
-| `pathEffectsPreset` | Blend, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
+| `pathEffectsPreset` | Tween, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
 | `warpPreset` | Expand and configure a held warp; `usePlaneWarpTool`, `useClothWarpTool`, and `usePinWarpTool` bring their own drags |
 
 `PATH_EDIT_TOOLS` names the path-edit tools, Sand and Tug, and `usePathEditTools` builds them,

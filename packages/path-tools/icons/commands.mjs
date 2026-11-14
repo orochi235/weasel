@@ -20,17 +20,17 @@ const releaseSpiro = `<path d="M${px(2)} ${px(13)}C${px(2)} ${px(5)} ${px(13)} $
   + `<path d="M${px(3)} ${px(7)}H${px(12)}" stroke-width="1"/>` + anchor(px(7.5), px(7), 3)
   + dot(px(3), px(7), 1.1) + dot(px(12), px(7), 1.1);
 
-// A blend's two ends, `blend`'s circle and box, joined by its spine: a path the steps follow, or the straight
+// A tween's two ends, `tween`'s circle and box, joined by its spine: a path the steps follow, or the straight
 // run they take once it is released.
-const BLEND_ENDS = `<circle cx="${px(3)}" cy="${px(12)}" r="2.5"/><rect x="${px(10)}" y="${px(1)}" width="3.75" height="3.75" rx="0.6"/>`;
-const setBlendSpine = BLEND_ENDS + `<path d="M${px(5)} ${px(12)}C11 ${px(12)} 9 ${px(4)} ${px(10)} ${px(4)}" stroke-width="1"/>`;
-const releaseBlendSpine = BLEND_ENDS + `<path d="M6.25 13.75L${px(10)} 6.875" stroke-width="1" stroke-dasharray="1.3 1.3"/>`;
+const TWEEN_ENDS = `<circle cx="${px(3)}" cy="${px(12)}" r="2.5"/><rect x="${px(10)}" y="${px(1)}" width="3.75" height="3.75" rx="0.6"/>`;
+const setTweenSpine = TWEEN_ENDS + `<path d="M${px(5)} ${px(12)}C11 ${px(12)} 9 ${px(4)} ${px(10)} ${px(4)}" stroke-width="1"/>`;
+const releaseTweenSpine = TWEEN_ENDS + `<path d="M6.25 13.75L${px(10)} 6.875" stroke-width="1" stroke-dasharray="1.3 1.3"/>`;
 
 export const COMMANDS = {
   resamplePath,
   releaseSpiro,
-  setBlendSpine,
-  releaseBlendSpine,
+  setTweenSpine,
+  releaseTweenSpine,
   reversePath: `
     <path d="M4.5 6.875 H15.5 M15.5 13.125 H4.5"/>
     <path d="M6.5 5.175 L4.5 6.875 L6.5 8.575 M13.5 11.425 L15.5 13.125 L13.5 14.825"/>`,

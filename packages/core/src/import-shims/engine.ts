@@ -76,7 +76,7 @@ export type { Bivariant, ClipFromPoseFn, CopiesFromPoseFn, DerivePathFn, DeriveP
 export { contentRoots, hidesSubtree, isNodeHidden, isNodeLocked, isPageStructure, nodeGates, withoutPageStructure } from '../core/scene/nodeGates';
 export type { GateSource, GatedLayer, GatedNode, NodeGates } from '../core/scene/nodeGates';
 export { OUTPUT_GRID_KEY, outputGridOf, quantizeSize, quantizedShape } from '../core/scene/outputGrid';
-export type { BlendEffect } from '../core/scene/pathEffects/blend';
+export type { TweenEffect } from '../core/scene/pathEffects/tween';
 export { PATH_EFFECT, createPathEffectDerivations, pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects } from '../core/scene/pathEffects/derive';
 export type { PathEffectDerivations } from '../core/scene/pathEffects/derive';
 export type { BendAlongEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, ZigzagEffect } from '../core/scene/pathEffects/effects';

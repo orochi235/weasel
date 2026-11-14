@@ -9,13 +9,13 @@ import { SettingsFields } from '../settingsFields';
 import { effectSettingDefaults, PATH_EFFECT_PARAMS } from './effectForms';
 
 type Kind = PathEffect['kind'];
-const KINDS: readonly Kind[] = ['blend', 'bendAlong', 'repeatAlong', 'textAlong', 'roughen', 'zigzag', 'puckerBloat'];
+const KINDS: readonly Kind[] = ['tween', 'bendAlong', 'repeatAlong', 'textAlong', 'roughen', 'zigzag', 'puckerBloat'];
 const COUNT: Record<Kind, string> = {
-  blend: 'blends', bendAlong: 'bends', repeatAlong: 'repeats', textAlong: 'texts',
+  tween: 'tweens', bendAlong: 'bends', repeatAlong: 'repeats', textAlong: 'texts',
   roughen: 'roughens', zigzag: 'zigzags', puckerBloat: 'puckerBloats',
 };
 const COUNT_NAME: Record<Kind, string> = {
-  blend: 'Selected blends', bendAlong: 'Selected bends', repeatAlong: 'Selected repeats', textAlong: 'Selected texts',
+  tween: 'Selected tweens', bendAlong: 'Selected bends', repeatAlong: 'Selected repeats', textAlong: 'Selected texts',
   roughen: 'Selected roughens', zigzag: 'Selected zigzags', puckerBloat: 'Selected puckers and bloats',
 };
 

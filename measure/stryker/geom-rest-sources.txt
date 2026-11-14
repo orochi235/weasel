@@ -21,7 +21,7 @@ packages/geom/src/paths/joinAnchors.ts
 packages/geom/src/warp/cloughTocher.ts
 packages/geom/src/track/ellipse.ts
 packages/geom/src/paths/resamplePath.ts
-packages/geom/src/paths/blendPaths.ts
+packages/geom/src/paths/tweenPaths.ts
 packages/geom/src/bvh/bvhQuery.ts
 packages/geom/src/paths/anchorSymmetry.ts
 packages/geom/src/paths/poiseHandles.ts

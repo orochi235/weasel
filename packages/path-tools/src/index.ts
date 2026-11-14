@@ -76,12 +76,12 @@ export {
   type ConstrainAnchorsParams,
 } from './constraints/anchorConstraints';
 export {
-  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
+  bendAlongAction, tweenAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
   roughenAction, textAlongAction, zigzagAction,
   PATH_EFFECTS_GROUP,
 } from './pathEffects/actions';
 export { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
-export { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
+export { releaseTweenSpineAction, setTweenSpineAction } from './pathEffects/spine';
 export {
   configureWarpAction, expandWarpAction, warpHandleScratchOf, type WarpHandleScratch,
 } from './warp/warpActions';

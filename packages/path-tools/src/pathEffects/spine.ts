@@ -1,8 +1,8 @@
 /**
- * A blend's spine after the blend is made: lay it along a path, swap that
- * path for another, or let it go. The spine is the blend's third source, so
- * each is a retarget of the blend's `dependsOn`, undone as one step, that
- * moves the `hidden` flag with it as Set Path does where the blend hides its
+ * A tween's spine after the tween is made: lay it along a path, swap that
+ * path for another, or let it go. The spine is the tween's third source, so
+ * each is a retarget of the tween's `dependsOn`, undone as one step, that
+ * moves the `hidden` flag with it as Set Path does where the tween hides its
  * sources.
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
@@ -17,32 +17,32 @@ import { icon } from '../icons.gen';
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
 
-const isBlend = (node: AnyNode | undefined): node is AnyNode =>
-  node !== undefined && pathEffectOf(node)?.kind === 'blend' && sourcesOf(node).length >= 2;
+const isTween = (node: AnyNode | undefined): node is AnyNode =>
+  node !== undefined && pathEffectOf(node)?.kind === 'tween' && sourcesOf(node).length >= 2;
 
-/** The blend and the path to lay it along, from a selection of exactly those
+/** The tween and the path to lay it along, from a selection of exactly those
  *  two in either order; a reason when the selection is not that. */
-function spineTarget(deps: ActionDeps | undefined): { blend: AnyNode; spine: AnyNode } | ActionDisabledReason {
+function spineTarget(deps: ActionDeps | undefined): { tween: AnyNode; spine: AnyNode } | ActionDisabledReason {
   const scene = deps?.scene as AnyScene | undefined;
   const nodes = (deps?.selection?.get() ?? []).map((id) => scene?.get(id as NodeId));
   if (!scene || nodes.length !== 2) return ActionDisabledReason.SelectionRequired;
-  const blend = nodes.find(isBlend);
-  const spine = nodes.find((n) => n !== blend);
-  if (!blend || !spine || spine.kind !== 'mark' || closesLoop(scene, blend, spine)) return ActionDisabledReason.NotApplicable;
-  return { blend, spine };
+  const tween = nodes.find(isTween);
+  const spine = nodes.find((n) => n !== tween);
+  if (!tween || !spine || spine.kind !== 'mark' || closesLoop(scene, tween, spine)) return ActionDisabledReason.NotApplicable;
+  return { tween, spine };
 }
 
 const SET_LABEL = 'Set Spine';
 
 /**
- * Lay a blend's steps along a path: select the blend and the path, in either
- * order. A blend that already has a spine swaps it for this one, and the old
- * spine stays in the scene, shown again if the blend hid it.
+ * Lay a tween's steps along a path: select the tween and the path, in either
+ * order. A tween that already has a spine swaps it for this one, and the old
+ * spine stays in the scene, shown again if the tween hid it.
  */
-export const setBlendSpineAction: Action & { requires: string[] } = {
-  id: 'setBlendSpine',
+export const setTweenSpineAction: Action & { requires: string[] } = {
+  id: 'setTweenSpine',
   label: SET_LABEL,
-  icon: icon('setBlendSpine'),
+  icon: icon('setTweenSpine'),
   group: PATH_EFFECTS_GROUP,
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps'],
@@ -52,13 +52,13 @@ export const setBlendSpineAction: Action & { requires: string[] } = {
       const target = spineTarget(deps);
       if (typeof target === 'string') return;
       const scene = deps.scene as AnyScene;
-      const { blend, spine } = target;
-      const [a, b, old] = sourcesOf(blend);
+      const { tween, spine } = target;
+      const [a, b, old] = sourcesOf(tween);
       commitOps(deps, [
-        createSetDependsOnOp({ id: blend.id, from: blend.dependsOn, to: [a!, b!, spine.id], label: SET_LABEL }),
-        ...(old !== undefined ? releasedOps(scene, old, [blend], SET_LABEL) : []),
-        ...takenOps(scene, blend, 2, spine.id, SET_LABEL),
-      ], SET_LABEL, { select: [blend.id] });
+        createSetDependsOnOp({ id: tween.id, from: tween.dependsOn, to: [a!, b!, spine.id], label: SET_LABEL }),
+        ...(old !== undefined ? releasedOps(scene, old, [tween], SET_LABEL) : []),
+        ...takenOps(scene, tween, 2, spine.id, SET_LABEL),
+      ], SET_LABEL, { select: [tween.id] });
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
@@ -67,26 +67,26 @@ export const setBlendSpineAction: Action & { requires: string[] } = {
   },
 };
 
-/** The selected blends that have a spine. */
-function blendsWithSpines(deps: ActionDeps | undefined): AnyNode[] {
+/** The selected tweens that have a spine. */
+function tweensWithSpines(deps: ActionDeps | undefined): AnyNode[] {
   const scene = deps?.scene as AnyScene | undefined;
   if (!scene) return [];
   return (deps?.selection?.get() ?? [])
     .map((id) => scene.get(id as NodeId))
-    .filter((n): n is AnyNode => isBlend(n) && sourcesOf(n).length >= 3);
+    .filter((n): n is AnyNode => isTween(n) && sourcesOf(n).length >= 3);
 }
 
 const RELEASE_LABEL = 'Release Spine';
 
 /**
- * Take each selected blend off its spine, back to a straight run between its
+ * Take each selected tween off its spine, back to a straight run between its
  * two shapes, and select the spines: ordinary paths again, where they were,
- * and shown again where the blend hid them and nothing else still does.
+ * and shown again where the tween hid them and nothing else still does.
  */
-export const releaseBlendSpineAction: Action & { requires: string[] } = {
-  id: 'releaseBlendSpine',
+export const releaseTweenSpineAction: Action & { requires: string[] } = {
+  id: 'releaseTweenSpine',
   label: RELEASE_LABEL,
-  icon: icon('releaseBlendSpine'),
+  icon: icon('releaseTweenSpine'),
   group: PATH_EFFECTS_GROUP,
   requires: ['selection', 'scene', 'applyOps'],
   invoker: {
@@ -94,18 +94,18 @@ export const releaseBlendSpineAction: Action & { requires: string[] } = {
     run: (deps) => {
       const ops: Op[] = [];
       const bySpine = new Map<NodeId, AnyNode[]>();
-      for (const blend of blendsWithSpines(deps)) {
-        const [a, b, spine] = sourcesOf(blend);
-        ops.push(createSetDependsOnOp({ id: blend.id, from: blend.dependsOn, to: [a!, b!], label: RELEASE_LABEL }));
-        bySpine.set(spine!, [...(bySpine.get(spine!) ?? []), blend]);
+      for (const tween of tweensWithSpines(deps)) {
+        const [a, b, spine] = sourcesOf(tween);
+        ops.push(createSetDependsOnOp({ id: tween.id, from: tween.dependsOn, to: [a!, b!], label: RELEASE_LABEL }));
+        bySpine.set(spine!, [...(bySpine.get(spine!) ?? []), tween]);
       }
       if (ops.length === 0) return;
-      for (const [spine, blends] of bySpine) ops.push(...releasedOps(deps.scene as AnyScene, spine, blends, RELEASE_LABEL));
+      for (const [spine, tweens] of bySpine) ops.push(...releasedOps(deps.scene as AnyScene, spine, tweens, RELEASE_LABEL));
       commitOps(deps, ops, RELEASE_LABEL, { select: [...bySpine.keys()] });
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
-    if (blendsWithSpines(deps).length > 0) return true;
+    if (tweensWithSpines(deps).length > 0) return true;
     return (deps?.selection?.get() ?? []).length > 0 ? ActionDisabledReason.NotApplicable : ActionDisabledReason.SelectionRequired;
   },
 };

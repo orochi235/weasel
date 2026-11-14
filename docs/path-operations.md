@@ -95,7 +95,7 @@ Tag: `path-command`
 | Resample | `resamplePath` | Spreads anchors evenly by arc length, to a count or a spacing, holding corners | — | main | path-tools |
 | Add extremes | `addExtremeAnchors` | Adds anchors at each curve's leftmost, rightmost, top, and bottom, on segments with both ends selected, or the whole path while none is | Alt+X in path edit | main | path-tools |
 | Grow, shrink, and every-Nth selection | `growAnchorSelection`, `shrinkAnchorSelection`, `selectEveryNthAnchor`, `selectCornerAnchors`, `selectSmoothAnchors`, `invertAnchorSelection` | Selects anchors along the path: one further each way, one fewer, every Nth, the corners, the smooth ones, or the rest | ] / [, Alt+N, Alt+C, Alt+M, Alt+I in path edit | main | path-tools |
-| Blend | `blend` | Live steps between two shapes | — | main | path-tools |
+| Tween | `tween` | Live steps between two shapes | — | main | path-tools |
 | Bend along a path | `bendAlong` | Lays a shape along a spine | — | main | path-tools |
 | Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main | path-tools |
 | Text along a path | `textAlong` | Lays a text's glyphs along another shape's outline, hiding both sources | Alt+Shift+X | main | path-tools |

@@ -4,7 +4,7 @@ import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } f
 import {
   createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, resolveFill, type Scene, sceneFromJSON, withPathEffectsRegistry,
 } from '@weasel-js/core';
-import { blendAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
+import { tweenAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
 import { pathEffectSettingsParams, readPathEffectSettings } from './settingsForm';
 
 type TestScene = Scene<unknown, 'default', RectPose>;
@@ -49,19 +49,19 @@ function partsOf(scene: TestScene, id: string) {
 describe('a scene that does not register path effects', () => {
   it('refuses to make one, where it could neither paint nor save it', () => {
     const { scene, deps } = setup(['a', 'b'], false);
-    expect(blendAction.enabled!(deps)).toBe('not-applicable');
-    run(blendAction, deps, {});
+    expect(tweenAction.enabled!(deps)).toBe('not-applicable');
+    run(tweenAction, deps, {});
     expect(scene.roots).toHaveLength(3);
   });
 });
 
-describe('blend', () => {
+describe('tween', () => {
   it('adds a live node of steps between the two selected shapes, just under the upper', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
-    run(blendAction, deps, { steps: 3 });
+    run(tweenAction, deps, { steps: 3 });
     const [id] = selected();
     const node = scene.get(id as NodeId)!;
-    expect(pathEffectOf(node)).toMatchObject({ kind: 'blend', steps: 3 });
+    expect(pathEffectOf(node)).toMatchObject({ kind: 'tween', steps: 3 });
     expect(scene.roots.indexOf(id as NodeId)).toBe(1);
 
     const parts = partsOf(scene, id!);
@@ -83,7 +83,7 @@ describe('blend', () => {
 
   it('paints each step in its own color', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
-    run(blendAction, deps, { steps: 2 });
+    run(tweenAction, deps, { steps: 2 });
     const node = scene.get(selected()[0] as NodeId)!;
     const path = PATH_EFFECT_DERIVATIONS.derivePath(node, (node.dependsOn as NodeId[]).map((d) => derivedDepOf(scene, d)));
     expect(derivedPartsOf(path)).toHaveLength(2);
@@ -91,7 +91,7 @@ describe('blend', () => {
 
   it('survives a save and load', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
-    run(blendAction, deps, { steps: 2 });
+    run(tweenAction, deps, { steps: 2 });
     const loaded = sceneFromJSON<unknown, 'default', RectPose>(scene.toJSON(), { registry: withPathEffectsRegistry() });
     const node = loaded.get(selected()[0] as NodeId)!;
     expect(node.derivePath).toBe(PATH_EFFECT_DERIVATIONS.derivePath);
@@ -100,24 +100,24 @@ describe('blend', () => {
 
   it('changes its settings in one undoable edit, and commits nothing for no change', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
-    run(blendAction, deps, { steps: 2 });
+    run(tweenAction, deps, { steps: 2 });
     const id = selected()[0]!;
     run(editPathEffectAction, deps, { ids: [id], steps: 5 });
     expect(partsOf(scene, id)).toHaveLength(5);
     run(editPathEffectAction, deps, { ids: [id], steps: 5 });
     scene.undo();
     expect(partsOf(scene, id)).toHaveLength(2);
-    // The next undo is the blend's own insert: the no-change edit left no entry.
+    // The next undo is the tween's own insert: the no-change edit left no entry.
     scene.undo();
     expect(scene.get(id as NodeId)).toBeUndefined();
   });
 });
 
-describe('a blend spaced by distance', () => {
+describe('a tween spaced by distance', () => {
   it('puts a step every `distance` from the first source, as many as fit short of the second', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
     // Middles at 10 and 210: a run of 200.
-    run(blendAction, deps, { spaceBy: 'distance', distance: 60 });
+    run(tweenAction, deps, { spaceBy: 'distance', distance: 60 });
     const middles = partsOf(scene, selected()[0]!).map((p) => {
       const b = boundsOfPath(p.path);
       return b.x + b.width / 2;
@@ -132,7 +132,7 @@ describe('a blend spaced by distance', () => {
   });
 });
 
-describe('a blend along a spine', () => {
+describe('a tween along a spine', () => {
   const middleOf = (path: Parameters<typeof boundsOfPath>[0]) => {
     const b = boundsOfPath(path);
     return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2), width: Math.round(b.width), height: Math.round(b.height) };
@@ -140,7 +140,7 @@ describe('a blend along a spine', () => {
 
   it('lays its steps along a third selected path, and follows it', () => {
     const { scene, deps, selected } = setup(['a', 'b', 'spine']);
-    run(blendAction, deps, { steps: 3, rotate: false });
+    run(tweenAction, deps, { steps: 3, rotate: false });
     const id = selected()[0]!;
     expect(scene.get(id as NodeId)!.dependsOn).toEqual(['a', 'b', 'spine']);
     // The spine runs (0,100)-(200,100).
@@ -160,7 +160,7 @@ describe('a blend along a spine', () => {
       path: { kind: 'polygon', commands: new Uint8Array([0, 1]), coords: new Float32Array([0, 0, 0, 200]), fillRule: 'nonzero' },
     } });
     scene.setPose('b' as NodeId, { x: 200, y: 0, width: 60, height: 20 });
-    run(blendAction, deps, { steps: 1, rotate: false });
+    run(tweenAction, deps, { steps: 1, rotate: false });
     const id = selected()[0]!;
     expect(middleOf(partsOf(scene, id)[0]!.path)).toEqual({ x: 0, y: 100, width: 40, height: 20 });
     run(editPathEffectAction, deps, { ids: [id], orient: true });
@@ -169,13 +169,13 @@ describe('a blend along a spine', () => {
 
   it('spaces by distance along the spine', () => {
     const { scene, deps, selected } = setup(['a', 'b', 'spine']);
-    run(blendAction, deps, { spaceBy: 'distance', distance: 90 });
+    run(tweenAction, deps, { spaceBy: 'distance', distance: 90 });
     expect(partsOf(scene, selected()[0]!).map((p) => middleOf(p.path).x)).toEqual([90, 180]);
   });
 
   it('paints nothing while its spine is gone', () => {
     const { scene, deps, selected } = setup(['a', 'b', 'spine']);
-    run(blendAction, deps, { steps: 2 });
+    run(tweenAction, deps, { steps: 2 });
     const node = scene.get(selected()[0] as NodeId)!;
     expect(pathEffectParts(node, [derivedDepOf(scene, 'a' as NodeId), derivedDepOf(scene, 'b' as NodeId), undefined])).toBeNull();
   });
@@ -201,16 +201,16 @@ describe('bend and repeat along a path', () => {
 });
 
 describe('the Edit Path Effect form', () => {
-  /** A blend of a and b, and a repeat of a along the spine, both selected. */
+  /** A tween of a and b, and a repeat of a along the spine, both selected. */
   function twoEffects() {
     const { scene, deps, selected } = setup(['a', 'b']);
-    run(blendAction, deps, {});
-    const blend = selected()[0]!;
+    run(tweenAction, deps, {});
+    const tween = selected()[0]!;
     (deps.selection as unknown as { set(ids: string[]): void }).set(['a', 'spine']);
     run(repeatAlongAction, deps, { count: 3 });
     const repeat = selected()[0]!;
-    (deps.selection as unknown as { set(ids: string[]): void }).set([blend, repeat]);
-    return { scene, deps, blend, repeat };
+    (deps.selection as unknown as { set(ids: string[]): void }).set([tween, repeat]);
+    return { scene, deps, tween, repeat };
   }
   const effectOf = (scene: TestScene, id: string) => pathEffectOf(scene.get(id as NodeId))!;
 
@@ -222,13 +222,13 @@ describe('the Edit Path Effect form', () => {
   it('reads each selected kind, filling what an effect leaves unset', () => {
     const { deps } = twoEffects();
     const { values } = readPathEffectSettings(deps);
-    expect(values).toMatchObject({ blends: 1, bends: 0, repeats: 1, blend: { steps: 4, orient: false }, repeatAlong: { count: 3, orient: true } });
+    expect(values).toMatchObject({ tweens: 1, bends: 0, repeats: 1, tween: { steps: 4, orient: false }, repeatAlong: { count: 3, orient: true } });
   });
 
   it('changes a field only on effects of the kind whose section it was made in', () => {
-    const { scene, deps, blend, repeat } = twoEffects();
-    run(editPathEffectAction, deps, pathEffectSettingsParams('blend.orient', true)!);
-    expect(effectOf(scene, blend)).toMatchObject({ orient: true });
+    const { scene, deps, tween, repeat } = twoEffects();
+    run(editPathEffectAction, deps, pathEffectSettingsParams('tween.orient', true)!);
+    expect(effectOf(scene, tween)).toMatchObject({ orient: true });
     expect(effectOf(scene, repeat)).toMatchObject({ kind: 'repeatAlong' });
     expect((effectOf(scene, repeat) as { orient?: boolean }).orient).toBeUndefined();
   });
@@ -273,17 +273,17 @@ describe('in a scene whose containers compose frames', () => {
     return { scene, deps, select: (ids: string[]) => { current = ids; }, selected: () => current };
   }
 
-  it('makes a blend of two shapes in one container inside it', () => {
+  it('makes a tween of two shapes in one container inside it', () => {
     const { scene, deps, select, selected } = framedSetup();
     select(['a', 'c']);
-    run(blendAction, deps, { steps: 1 });
+    run(tweenAction, deps, { steps: 1 });
     expect(scene.get(selected()[0] as NodeId)!.parent).toBe('g');
   });
 
-  it('expands a blend across frames where its steps are painted', () => {
+  it('expands a tween across frames where its steps are painted', () => {
     const { scene, deps, select, selected } = framedSetup();
     select(['a', 'b']);
-    run(blendAction, deps, { steps: 1, rotate: false });
+    run(tweenAction, deps, { steps: 1, rotate: false });
     expect(scene.get(selected()[0] as NodeId)!.parent).toBeNull();
     run(expandPathEffectAction, deps);
     // a is painted 10 wide by 20 tall about (295,110), b about (100,110).
@@ -306,7 +306,7 @@ describe('moving and reshaping an effect', () => {
 
   it('drags its sources with it, so it follows them, as one undo step', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
-    run(blendAction, deps, { steps: 3 });
+    run(tweenAction, deps, { steps: 3 });
     const effect = selected()[0]!;
     const handle = (moveAction.invoker as OngoingInvoker).start(dragCtx(deps), {}) as OngoingHandle;
     handle.onMove!(dragCtx(deps, { x: 0, y: 50 }));

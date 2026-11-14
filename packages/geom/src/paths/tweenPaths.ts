@@ -1,5 +1,5 @@
 /**
- * Shape interpolation between two paths: the steps of a blend, or the frames
+ * Shape interpolation between two paths: the steps of a tween, or the frames
  * of a morph.
  *
  * The two shapes are matched once — contour to contour, then segment to
@@ -13,8 +13,8 @@ import {
   type CubicContour, type CubicSegment,
 } from './cubicContours';
 
-/** How a blend matches the second shape's anchors to the first's. */
-export interface BlendPathsOptions {
+/** How a tween matches the second shape's anchors to the first's. */
+export interface TweenPathsOptions {
   /**
    * Choose, for each pair of contours, the start point (and, when `reverse`
    * is unset, the direction) of the second that keeps matched anchors
@@ -34,7 +34,7 @@ export interface BlendPathsOptions {
 }
 
 /** Two shapes matched for interpolation. */
-export interface PathBlend {
+export interface PathTween {
   /** The shape `t` of the way from the first to the second: exactly the
    *  first at 0 and the second at 1, up to the anchors matching added. */
   at(t: number): PolygonPath;
@@ -43,13 +43,13 @@ export interface PathBlend {
 }
 
 /** The shape `t` of the way from `a` to `b`. Matching once with
- *  {@link prepareBlend} is cheaper when several steps are wanted. */
-export function blendPaths(a: Path, b: Path, t: number, opts: BlendPathsOptions = {}): PolygonPath {
-  return prepareBlend(a, b, opts).at(t);
+ *  {@link prepareTween} is cheaper when several steps are wanted. */
+export function tweenPaths(a: Path, b: Path, t: number, opts: TweenPathsOptions = {}): PolygonPath {
+  return prepareTween(a, b, opts).at(t);
 }
 
 /** Match `a` to `b` for interpolation. */
-export function prepareBlend(a: Path, b: Path, opts: BlendPathsOptions = {}): PathBlend {
+export function prepareTween(a: Path, b: Path, opts: TweenPathsOptions = {}): PathTween {
   const ca = pathToCubicContours(a);
   const cb = pathToCubicContours(b);
   const n = Math.max(ca.length, cb.length);
@@ -74,7 +74,7 @@ function fillRuleOf(path: Path): PathFillRule {
   return path.kind === 'polygon' ? path.fillRule : 'nonzero';
 }
 
-/** A contour with nothing to blend against grows from, or shrinks to, a
+/** A contour with nothing to tween against grows from, or shrinks to, a
  *  point at its own middle. */
 function collapsed(contour: CubicContour): CubicContour {
   const [cx, cy] = centroid(contour);
@@ -98,7 +98,7 @@ function centroid(contour: CubicContour): [number, number] {
 
 /** `a` and `b` with equal segment counts and `b` started where it best
  *  corresponds to `a`. Both closed stay closed; otherwise both open. */
-function matchContours(a: CubicContour, b: CubicContour, opts: BlendPathsOptions): [CubicContour, CubicContour] {
+function matchContours(a: CubicContour, b: CubicContour, opts: TweenPathsOptions): [CubicContour, CubicContour] {
   const closed = a.closed && b.closed;
   const x: CubicContour = { closed, segs: a.segs };
   const y: CubicContour = { closed, segs: b.segs };

@@ -145,7 +145,7 @@ describe('LayersPanel — path-effect rows', () => {
     });
     scene.add({
       id: asNodeId('fx-2'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 },
-      data: { pathEffect: { kind: 'blend' } as never, label: 'Fade' },
+      data: { pathEffect: { kind: 'tween' } as never, label: 'Fade' },
     });
     renderWithIcons(<Host scene={scene} />);
     expect(screen.getByText('Text Along Path')).toBeTruthy();

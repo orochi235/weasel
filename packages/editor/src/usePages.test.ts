@@ -191,7 +191,7 @@ describe('usePages', () => {
       const { scene, on, pages } = twoPages();
       on('p', 'a', { hidden: true });
       on('q', 'b', { hidden: true });
-      const effect = { kind: 'blend', steps: 3, hideSources: true } as PathEffect;
+      const effect = { kind: 'tween', steps: 3, hideSources: true } as PathEffect;
       scene.add({ ...pathEffectNode(effect, [asNodeId('p'), asNodeId('q')], 'main', PATH_EFFECT_DERIVATIONS), id: asNodeId('fx') } as never);
       act(() => pages().remove('a'));
       expect(['p', 'q', 'fx'].map((id) => scene.get(asNodeId(id)) !== undefined)).toEqual([false, false, false]);

@@ -36,7 +36,7 @@ export const TOOLS = {
   pinWarp: `
     <path d="${rounded([[0, 10.5], [0, 8], [4, 8], [11, 1], [15, 1], [15, 6], [11, 6], [4, 13], [0, 13], [0, 10.5]], 1.25)}Z" stroke-width="1.25"/>
     ${dot(2.5, 10.5, 1.5)}${dot(12.5, 3.5, 1.5)}`,
-  blend: `
+  tween: `
     <circle cx="3.125" cy="9.375" r="2.5" stroke-width="1.25"/>
     <rect x="8.125" y="5.625" width="3.75" height="7.5" rx="1.25" stroke-width="1.25"/>
     <rect x="14.375" y="4.375" width="3.75" height="10" rx="0.5" stroke-width="1.25"/>`,

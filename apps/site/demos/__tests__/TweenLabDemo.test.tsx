@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { BlendLabDemo } from '../BlendLabDemo';
+import { TweenLabDemo } from '../TweenLabDemo';
 import type { PathEffectProbe } from '../pathEffectLab';
 import { withIcons } from '../../testIcons';
 
@@ -31,9 +31,9 @@ afterEach(() => {
 
 const nodes = () => window.__weaselTest!.getScene().nodes;
 
-/** Where each step the blend paints sits, as the live scene has it. */
+/** Where each step the tween paints sits, as the live scene has it. */
 const stepCenters = () =>
-  window.__weaselTest!.probe<PathEffectProbe>('pathEffects')!.blend!.map((b) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 }));
+  window.__weaselTest!.probe<PathEffectProbe>('pathEffects')!.tween!.map((b) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 }));
 
 // jsdom's canvas rect is all zeros and the view is identity, so client
 // coords are world coords.
@@ -48,9 +48,9 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[]) {
   });
 }
 
-describe('BlendLabDemo', () => {
-  it('opens on a live blend whose steps follow a dragged source', async () => {
-    const { container } = await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>, { wrapper: withIcons });
+describe('TweenLabDemo', () => {
+  it('opens on a live tween whose steps follow a dragged source', async () => {
+    const { container } = await renderSettled(<StrictMode><TweenLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     const before = stepCenters();
@@ -65,8 +65,8 @@ describe('BlendLabDemo', () => {
     expect(after[0]!.y - before[0]!.y).toBeLessThan(after[4]!.y - before[4]!.y);
   });
 
-  it('drags both sources when the blend itself is dragged, and the steps go with them', async () => {
-    const { container } = await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>, { wrapper: withIcons });
+  it('drags both sources when the tween itself is dragged, and the steps go with them', async () => {
+    const { container } = await renderSettled(<StrictMode><TweenLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     const pose = (id: string) => nodes().find((n) => n.id === id)!.pose as { y: number };
@@ -80,11 +80,11 @@ describe('BlendLabDemo', () => {
     expect(stepCenters()[2]!.y).toBeCloseTo(middle.y + 50, 3);
   });
 
-  it('expands the selected blend into ordinary paths', async () => {
-    await renderSettled(<StrictMode><BlendLabDemo /></StrictMode>, { wrapper: withIcons });
+  it('expands the selected tween into ordinary paths', async () => {
+    await renderSettled(<StrictMode><TweenLabDemo /></StrictMode>, { wrapper: withIcons });
     expect(nodes()).toHaveLength(3);
     await userEvent.click(screen.getByRole('button', { name: 'Expand to Paths' }));
-    expect(nodes().find((n) => n.id === 'blend')).toBeUndefined();
+    expect(nodes().find((n) => n.id === 'tween')).toBeUndefined();
     expect(nodes()).toHaveLength(7);
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(nodes()).toHaveLength(3);

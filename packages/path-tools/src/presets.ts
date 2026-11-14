@@ -32,11 +32,11 @@ import {
 import { addExtremeAnchorsAction } from './extremes/addExtremes';
 import { resamplePathAction } from './resample/resample';
 import {
-  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
+  bendAlongAction, tweenAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
   roughenAction, textAlongAction, zigzagAction,
 } from './pathEffects/actions';
 import { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
-import { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
+import { releaseTweenSpineAction, setTweenSpineAction } from './pathEffects/spine';
 import { sandAction } from './sand/sand';
 import { kneadAction } from './knead/knead';
 import { spiroPreset } from './spiro/spiroPreset';
@@ -216,15 +216,15 @@ export const segmentTypePreset: FeaturePreset = {
   actions: [convertSegmentsAction, convertSegmentAtAction],
 };
 
-/** Blend, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker
+/** Tween, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker
  *  & Bloat, live, and the actions that edit, expand, and release them, set an
- *  along effect's path, and set or release a blend's spine. The scene must
+ *  along effect's path, and set or release a tween's spine. The scene must
  *  hold `withPathEffectsRegistry`'s derivations. */
 export const pathEffectsPreset: FeaturePreset = {
   id: 'pathEffects',
   actions: [
-    blendAction, bendAlongAction, repeatAlongAction, roughenAction, zigzagAction, puckerBloatAction,
-    editPathEffectAction, expandPathEffectAction, setBlendSpineAction, releaseBlendSpineAction, textAlongAction,
+    tweenAction, bendAlongAction, repeatAlongAction, roughenAction, zigzagAction, puckerBloatAction,
+    editPathEffectAction, expandPathEffectAction, setTweenSpineAction, releaseTweenSpineAction, textAlongAction,
     releasePathEffectAction, setEffectPathAction,
   ],
 };

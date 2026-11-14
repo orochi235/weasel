@@ -37,7 +37,7 @@ const make = (aFill: unknown = 'inherit', gFill: unknown = BLUE) => createScene<
     { id: G, kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { fill: gFill } },
     leaf('a', { x: 0, y: 0, width: 10, height: 10 }, aFill, 'g'),
     leaf('b', { x: 200, y: 0, width: 10, height: 10 }, RED),
-    { ...pathEffectNode({ kind: 'blend', steps: 1, rotate: false }, [A, B], 'main', PATH_EFFECT_DERIVATIONS), id: FX },
+    { ...pathEffectNode({ kind: 'tween', steps: 1, rotate: false }, [A, B], 'main', PATH_EFFECT_DERIVATIONS), id: FX },
   ],
 });
 

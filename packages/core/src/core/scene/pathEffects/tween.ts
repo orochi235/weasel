@@ -1,10 +1,10 @@
 /**
- * A blend's steps: where each sits between its two sources — evenly by
+ * A tween's steps: where each sits between its two sources — evenly by
  * count, or a fixed distance apart — and, with a spine, laid along it.
  */
 import {
-  boundsOfPath, measurePath, multiply, prepareBlend, rotate, rotatePathAround, transformPath, translate, wrapAngle,
-  type BlendPathsOptions, type Path, type PathMeasure,
+  boundsOfPath, measurePath, multiply, prepareTween, rotate, rotatePathAround, transformPath, translate, wrapAngle,
+  type TweenPathsOptions, type Path, type PathMeasure,
 } from '@weasel-js/geom';
 import { lerpFill, lerpStroke } from '@weasel-js/paint';
 import type { DerivedPart } from '../derivedParts';
@@ -12,8 +12,8 @@ import type { EffectSource, PathEffectOptions } from './source';
 
 /** Steps between two shapes. Its sources are `[from, to]`, or
  *  `[from, to, spine]` to lay the steps along a third path. */
-export interface BlendEffect extends BlendPathsOptions, PathEffectOptions {
-  kind: 'blend';
+export interface TweenEffect extends TweenPathsOptions, PathEffectOptions {
+  kind: 'tween';
   /** How many shapes stand between the two sources, spacing by count. */
   steps: number;
   /**
@@ -43,7 +43,7 @@ const EPS = 1e-9;
 
 /** The fractions of the way from the first source to the second that the
  *  steps sit at, over a run `length` long. */
-export function blendStations(effect: BlendEffect, length: number): number[] {
+export function tweenStations(effect: TweenEffect, length: number): number[] {
   const out: number[] = [];
   const d = effect.distance;
   if (effect.spaceBy === 'distance' && d !== undefined && d > 0) {
@@ -66,25 +66,25 @@ function middleOf(source: EffectSource): { x: number; y: number } {
 
 /** The parts of `effect` between `a` and `b`, along `spine` when given.
  *  `null` when the spine has no length to measure. */
-export function blendParts(effect: BlendEffect, a: EffectSource, b: EffectSource, spine?: Path): DerivedPart[] | null {
+export function tweenParts(effect: TweenEffect, a: EffectSource, b: EffectSource, spine?: Path): DerivedPart[] | null {
   const from = middleOf(a);
   const to = middleOf(b);
   const along: PathMeasure | null = spine === undefined ? null : measurePath(spine);
   if (spine !== undefined && along === null) return null;
-  const stations = blendStations(effect, along ? along.length : Math.hypot(to.x - from.x, to.y - from.y));
+  const stations = tweenStations(effect, along ? along.length : Math.hypot(to.x - from.x, to.y - from.y));
   if (stations.length === 0) return [];
 
   const turned = (effect.rotate ?? true) && a.framed !== undefined && b.framed !== undefined
     ? { a: a.framed, b: b.framed }
     : null;
-  const blend = turned
-    ? prepareBlend(turned.a.path, turned.b.path, effect)
-    : prepareBlend(a.world, b.world, effect);
+  const tween = turned
+    ? prepareTween(turned.a.path, turned.b.path, effect)
+    : prepareTween(a.world, b.world, effect);
   // The shorter way round, so a turn of 350° reads as -10°.
   const turn = turned ? wrapAngle(turned.b.rotation - turned.a.rotation, 'sign') : 0;
   const chord = Math.atan2(to.y - from.y, to.x - from.x);
   return stations.map((t) => {
-    let path: Path = blend.at(t);
+    let path: Path = tween.at(t);
     if (turned) {
       const cx = turned.a.cx + (turned.b.cx - turned.a.cx) * t;
       const cy = turned.a.cy + (turned.b.cy - turned.a.cy) * t;

@@ -9,8 +9,8 @@ import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import {
   createScene, defaultCommitAdapter, type NodeId, type Op, type RectPose, type Scene, withPathEffectsRegistry,
 } from '@weasel-js/core';
-import { blendAction, expandPathEffectAction, textAlongAction } from './actions';
-import { releaseBlendSpineAction, setBlendSpineAction } from './spine';
+import { tweenAction, expandPathEffectAction, textAlongAction } from './actions';
+import { releaseTweenSpineAction, setTweenSpineAction } from './spine';
 import { releasePathEffectAction, setEffectPathAction } from './retarget';
 import { snipPathAction } from '../snip/snip';
 
@@ -57,7 +57,7 @@ const run = (action: { invoker?: unknown }, deps: ActionDeps, params?: Record<st
 describe('undo restores the selection a path command started from', () => {
   it('applying an effect', () => {
     const r = rig([box('a', 0), box('b', 180)], ['a', 'b']);
-    run(blendAction, r.deps);
+    run(tweenAction, r.deps);
     expect(r.selected()).toHaveLength(1);
     r.undo();
     expect(r.selected()).toEqual(['a', 'b']);
@@ -65,28 +65,28 @@ describe('undo restores the selection a path command started from', () => {
 
   it('expanding an effect', () => {
     const r = rig([box('a', 0), box('b', 180)], ['a', 'b']);
-    run(blendAction, r.deps);
-    const blend = r.selected();
+    run(tweenAction, r.deps);
+    const tween = r.selected();
     run(expandPathEffectAction, r.deps);
-    expect(r.selected()).not.toEqual(blend);
+    expect(r.selected()).not.toEqual(tween);
     r.undo();
-    expect(r.selected()).toEqual(blend);
+    expect(r.selected()).toEqual(tween);
   });
 
-  it('setting and releasing a blend spine', () => {
+  it('setting and releasing a tween spine', () => {
     const r = rig([box('a', 0), box('b', 180), line('s1', 100)], ['a', 'b']);
-    run(blendAction, r.deps);
-    const blend = r.selected()[0]!;
-    r.select([blend, 's1']);
-    run(setBlendSpineAction, r.deps);
-    expect(r.selected()).toEqual([blend]);
+    run(tweenAction, r.deps);
+    const tween = r.selected()[0]!;
+    r.select([tween, 's1']);
+    run(setTweenSpineAction, r.deps);
+    expect(r.selected()).toEqual([tween]);
     r.undo();
-    expect(r.selected()).toEqual([blend, 's1']);
-    run(setBlendSpineAction, r.deps);
-    run(releaseBlendSpineAction, r.deps);
+    expect(r.selected()).toEqual([tween, 's1']);
+    run(setTweenSpineAction, r.deps);
+    run(releaseTweenSpineAction, r.deps);
     expect(r.selected()).toEqual(['s1']);
     r.undo();
-    expect(r.selected()).toEqual([blend]);
+    expect(r.selected()).toEqual([tween]);
   });
 
   it('setting and releasing an effect path', () => {

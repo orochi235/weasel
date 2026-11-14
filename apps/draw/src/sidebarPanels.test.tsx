@@ -10,7 +10,7 @@ import { renderWithIcons } from './testIcons';
 
 const EFFECTS: [PathEffect['kind'], string][] = [
   ['textAlong', 'Text Along Path'],
-  ['blend', 'Blend'],
+  ['tween', 'Tween'],
   ['bendAlong', 'Bend Along Path'],
   ['repeatAlong', 'Repeat Along Path'],
   ['roughen', 'Roughen'],

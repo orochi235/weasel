@@ -1108,14 +1108,14 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/ShapeBuilderLabDemo.tsx',
   },
   {
-    id: 'lab-blend',
-    title: 'Blend',
+    id: 'lab-tween',
+    title: 'Tween',
     package: 'path-tools',
     description:
-      "Steps between two shapes, live. The blend is one scene node whose `dependsOn` names its two sources and whose `derivePath` interpolates them: anchors matched contour to contour, the shape with fewer split at its longest segments until the counts agree, and the second shape's start point picked to keep matched anchors closest. Fill and stroke mix through OKLab, and a turned source turns its neighbors rather than squashing them. Each step paints in its own color because the derived path is built with `pathFromParts`. Its pose derives too — the bounds of its steps — so it selects like any shape, and Expand to Paths swaps it for ordinary paths in one undo step.",
-    hint: 'Drag either end shape and the steps follow, or drag the blend itself to carry both; double-click an end shape to edit its anchors. The panel sets the step count, the start point and direction, and whether rotation turns. Select two shapes and press Blend (<kbd>Alt+Shift+B</kbd>) for a new blend; select a blend and press Expand to Paths (<kbd>Alt+Shift+E</kbd>) to make its steps real.',
-    load: () => import('./demos/BlendLabDemo').then((m) => m.BlendLabDemo),
-    path: 'apps/site/demos/BlendLabDemo.tsx',
+      "Steps between two shapes, live. The tween is one scene node whose `dependsOn` names its two sources and whose `derivePath` interpolates them: anchors matched contour to contour, the shape with fewer split at its longest segments until the counts agree, and the second shape's start point picked to keep matched anchors closest. Fill and stroke mix through OKLab, and a turned source turns its neighbors rather than squashing them. Each step paints in its own color because the derived path is built with `pathFromParts`. Its pose derives too — the bounds of its steps — so it selects like any shape, and Expand to Paths swaps it for ordinary paths in one undo step.",
+    hint: 'Drag either end shape and the steps follow, or drag the tween itself to carry both; double-click an end shape to edit its anchors. The panel sets the step count, the start point and direction, and whether rotation turns. Select two shapes and press Tween (<kbd>Alt+Shift+B</kbd>) for a new tween; select a tween and press Expand to Paths (<kbd>Alt+Shift+E</kbd>) to make its steps real.',
+    load: () => import('./demos/TweenLabDemo').then((m) => m.TweenLabDemo),
+    path: 'apps/site/demos/TweenLabDemo.tsx',
   },
   {
     id: 'lab-bend-along',

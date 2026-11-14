@@ -28,9 +28,9 @@ const leaf = (id: string, pose: RectPose, parent?: string): Spec => ({
 });
 
 // `rotate: false` so the steps interpolate outlines alone: an override's path carries no turn
-// for the blend to read, and the comparison is of where the outline is.
-const blend = (): Spec => ({
-  ...pathEffectNode({ kind: 'blend', steps: 3, rotate: false }, [A, B], 'main', PATH_EFFECT_DERIVATIONS),
+// for the tween to read, and the comparison is of where the outline is.
+const tween = (): Spec => ({
+  ...pathEffectNode({ kind: 'tween', steps: 3, rotate: false }, [A, B], 'main', PATH_EFFECT_DERIVATIONS),
   id: FX,
 });
 
@@ -47,7 +47,7 @@ describe('a path effect over a source shown by a pose override', () => {
     const make = () => createScene<unknown, 'main', RectPose>({
       systemLayers: [{ id: 'main' }],
       registry: withPathEffectsRegistry(),
-      initial: [leaf('a', turned), leaf('b', { x: 200, y: 0, width: 10, height: 10 }), blend()],
+      initial: [leaf('a', turned), leaf('b', { x: 200, y: 0, width: 10, height: 10 }), tween()],
     });
     const plain = make();
     const shown = make();
@@ -64,7 +64,7 @@ describe('a path effect over a source shown by a pose override', () => {
         { id: G, kind: 'group', layer: 'main', pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 }, data: {} },
         leaf('a', { x: 0, y: 0, width: 40, height: 10 }, 'g'),
         leaf('b', { x: 400, y: 0, width: 10, height: 10 }),
-        blend(),
+        tween(),
       ],
     });
 

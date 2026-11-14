@@ -1,6 +1,6 @@
 /**
  * A derived path that paints in several parts, each with its own fill and
- * stroke: the steps of a blend, the copies of a repeat.
+ * stroke: the steps of a tween, the copies of a repeat.
  *
  * A derivation returns one `Path`, which is what picking, bounds and every
  * reader of `DerivedDep.path` see. {@link pathFromParts} makes that path out

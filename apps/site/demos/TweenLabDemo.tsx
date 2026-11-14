@@ -43,7 +43,7 @@ const config = f.schema({
 type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
 
-/** The control panel as `blend` and `editPathEffect` params. */
+/** The control panel as `tween` and `editPathEffect` params. */
 const settingsOf = (c: Config) => ({
   spaceBy: c.spaceBy,
   steps: c.steps,
@@ -55,7 +55,7 @@ const settingsOf = (c: Config) => ({
   orient: c.orient,
 });
 
-const BLEND = asNodeId('blend');
+const BLEND = asNodeId('tween');
 
 function createLabScene() {
   const from = pathNode('from', 'M120 90 L138 136 L188 140 L150 172 L162 222 L120 194 L78 222 L90 172 L52 140 L102 136 Z', {
@@ -67,26 +67,26 @@ function createLabScene() {
     stroke: strokeOf('#123f52', 6),
   }, Math.PI / 4);
   const { spaceBy, steps, distance, autoAlign, startOffset, rotate, orient } = config.defaults();
-  const blend = {
-    ...pathEffectNode({ kind: 'blend', spaceBy, steps, distance, autoAlign, startOffset, rotate, orient }, [from.id, to.id], 'default', PATH_EFFECT_DERIVATIONS),
+  const tween = {
+    ...pathEffectNode({ kind: 'tween', spaceBy, steps, distance, autoAlign, startOffset, rotate, orient }, [from.id, to.id], 'default', PATH_EFFECT_DERIVATIONS),
     id: BLEND,
   };
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     registry: withPathEffectsRegistry(),
-    initial: [from, blend, to],
+    initial: [from, tween, to],
     coalesceWindowMs: 600,
   });
 }
 
-function BlendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function TweenTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ scene, initial: [BLEND] });
   const settings = settingsOf(ctx.config);
   const latest = useLatest(settings);
-  // A blend made from the bar or with Alt+Shift+B takes the panel's settings.
-  const tune = useMemo<ActionTunings>(() => ({ blend: { params: () => latest.current } }), [latest]);
-  usePathEffectSettings(scene, 'blend', settings);
+  // A tween made from the bar or with Alt+Shift+B takes the panel's settings.
+  const tune = useMemo<ActionTunings>(() => ({ tween: { params: () => latest.current } }), [latest]);
+  usePathEffectSettings(scene, 'tween', settings);
   usePathEffectProbe(scene);
 
   return (
@@ -103,8 +103,8 @@ function BlendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
 }
 
-const blendInstrument = defineInstrument<State, Config>({
-  name: 'Blend',
+const tweenInstrument = defineInstrument<State, Config>({
+  name: 'Tween',
   config,
   initialState: () => ({ scene: null }),
   tools: {
@@ -114,13 +114,13 @@ const blendInstrument = defineInstrument<State, Config>({
       { id: 'pen', label: 'Pen', icon: icon('core:pen') },
     ],
   },
-  render: (ctx) => <BlendTrial ctx={ctx} />,
+  render: (ctx) => <TweenTrial ctx={ctx} />,
 });
 
-export function BlendLabDemo() {
+export function TweenLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Blend" instruments={[blendInstrument]} />
+      <Lab title="Tween" instruments={[tweenInstrument]} />
     </div>
   );
 }

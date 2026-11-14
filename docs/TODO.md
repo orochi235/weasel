@@ -151,10 +151,10 @@ Owner tags, after the priority (2026-10-26):
   `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/FilletLabDemo.tsx`).
   Closes when the maintainer has driven Fillet hands-on and the defaults and keys he picks are
   committed.
-- **(P2) [maintainer] Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
+- **(P2) [maintainer] Tune Tween, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `domains/pathEffects/`).
-  Closes when the maintainer has driven Blend, Bend along a path, and Repeat along a path hands-on and
+  Closes when the maintainer has driven Tween, Bend along a path, and Repeat along a path hands-on and
   the defaults and keys he picks are committed.
 - **(P2) [maintainer] Tune Tug hands-on, with the maintainer driving.** First-draft behavior and keys: the
   path-edit tool (`useTugTool`) has no key; a plain drag grows along the end tangent and Shift along the end

@@ -55,7 +55,7 @@ export interface EffectSource {
   world: Path;
   /**
    * The same outline before its pose turns it, with the turn: what lets a
-   * blend interpolate rotation as a rotation rather than squash a turned
+   * tween interpolate rotation as a rotation rather than squash a turned
    * shape through its neighbors. Absent where the outline comes from
    * somewhere other than the pose — a drag's override, a derivation — or the
    * pose holds a skew a turn cannot say.
