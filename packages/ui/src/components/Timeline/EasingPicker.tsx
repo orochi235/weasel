@@ -1,4 +1,6 @@
 import type { ReactElement } from 'react';
+import type { HoldProps } from '../Disabled';
+import { useNativeHold } from '../Disabled/nativeHold';
 import { usePropertyRow } from '../Properties/rowContext';
 import { EASING_NAMES, easingBezier, easingLabel, sampleEasing, type EasingSpec } from '@weasel-js/geom';
 import s from './Timeline.module.css';
@@ -23,8 +25,9 @@ const BEZIER_OF: Partial<Record<string, readonly [number, number, number, number
 
 const DEFAULT_BEZIER: readonly [number, number, number, number] = [0.25, 0.1, 0.25, 1];
 
-/** Props for {@link EasingPicker}. `undefined` is linear. */
-export interface EasingPickerProps {
+/** Props for {@link EasingPicker}. `undefined` is linear. Disabled or read-only, by its own props or a scope, it
+ *  changes nothing. */
+export interface EasingPickerProps extends HoldProps {
   value: EasingSpec | undefined;
   onChange: (next: EasingSpec | undefined) => void;
   /** The menu's label, and its accessible name. `false` draws none, naming the menu `Easing`. Inside a
@@ -35,7 +38,9 @@ export interface EasingPickerProps {
 /** A key's easing: a menu of the named curves, a button converting a named
  *  curve to its cubic-bezier control points, and a plot of the curve. */
 export function EasingPicker(props: EasingPickerProps): ReactElement {
-  const { value, onChange } = props;
+  const { value } = props;
+  const hold = useNativeHold(props);
+  const onChange = (next: EasingSpec | undefined) => { if (!hold.refuses) props.onChange(next); };
   const row = usePropertyRow();
   const shown = props.label ?? (row ? false : 'Easing');
   const name = shown !== false ? shown : typeof row?.label === 'string' && row.label !== '' ? row.label : 'Easing';
@@ -50,6 +55,7 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
 
   const menu = (
     <select
+      {...hold.attrs}
       aria-label={shown === false ? name : undefined}
       value={selectValue}
       onChange={(e) => onChange(e.target.value === 'linear' ? undefined : e.target.value as EasingSpec)}
@@ -60,7 +66,7 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
     </select>
   );
 
-  return (
+  return hold.wrap(
     <div className={s.easingPicker}>
       {shown === false ? menu : (
         <label>
@@ -73,6 +79,8 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
         <button
           type="button"
           className={s.transportButton}
+          {...hold.attrs}
+          aria-readonly={undefined}
           onClick={() => onChange({ bezier: BEZIER_OF[selectValue] ?? DEFAULT_BEZIER })}
         >
           Convert to bezier
@@ -82,6 +90,6 @@ export function EasingPicker(props: EasingPickerProps): ReactElement {
       <svg className={s.easingPreview} data-testid="easing-preview" viewBox="0 0 100 100" preserveAspectRatio="none">
         <polyline points={points} vectorEffect="non-scaling-stroke" />
       </svg>
-    </div>
+    </div>,
   );
 }

@@ -33,6 +33,8 @@ export interface LaneGraphProps {
   onKeysInput?: (keys: readonly Keyframe<number>[]) => void;
   /** Once per edit: a drag's end, a handle's release, a key press. */
   onKeysCommit: (keys: readonly Keyframe<number>[]) => void;
+  /** False: keys and segments still select, and nothing drags or steps. Default true. */
+  edits?: boolean;
 }
 
 /** The value range a lane plots: its keys' extent, padded so no key sits on
@@ -51,7 +53,7 @@ function valueRange(keys: readonly Keyframe<number>[]): [number, number] {
 export function LaneGraph(props: LaneGraphProps): ReactElement {
   const {
     keys, label, window: win, offset, snapTimes, selection, selectedSegment,
-    onSelect, onSelectSegment, onKeysInput, onKeysCommit,
+    onSelect, onSelectSegment, onKeysInput, onKeysCommit, edits = true,
   } = props;
 
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -84,7 +86,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
     const prev = stateRef.current;
     if (next.selectedKey !== null && next.selectedKey !== prev.selectedKey) onSelect(next.selectedKey);
     if (next.selectedSegment !== null && next.selectedSegment !== prev.selectedSegment) onSelectSegment?.(next.selectedSegment);
-    if (!next.drag) { setLive(null); return; }
+    if (!next.drag || !edits) { setLive(null); return; }
     setLive(next);
     // A handle drag writes a fresh easing spec per move; publishing those
     // would grow the consumer's easing cache by one entry per pixel.
@@ -96,7 +98,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   const onLayerCommit = (_id: string, raw: unknown, rawPrev: unknown): void => {
     setLive(null);
     const next = raw as KeyframeLayerState;
-    if (next.keys !== (rawPrev as KeyframeLayerState).keys) onKeysCommit(next.keys);
+    if (edits && next.keys !== (rawPrev as KeyframeLayerState).keys) onKeysCommit(next.keys);
   };
 
   const [yLo, yHi] = valueRange(state.keys);

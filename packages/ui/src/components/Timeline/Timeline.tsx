@@ -2,9 +2,11 @@ import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type React
 import type { EasingSpec } from '@weasel-js/core';
 import { isEditableTarget } from '@weasel-js/gestures';
 import type { Keyframe, SampledTrack, Track } from '@weasel-js/animator';
+import type { HoldProps } from '../Disabled';
+import { useControlHold, type ControlHold } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
 import { EasingPicker } from './EasingPicker';
-import { Lane } from './Lane';
+import { Lane, type LaneHold } from './Lane';
 import { TimeRuler } from './TimeRuler';
 import { PlayheadReadout, Transport, type TransportProps } from './Transport';
 import { buildLanes, trackAtPath, type LaneRow } from './lanes';
@@ -27,8 +29,10 @@ export interface KeyEditorCtx<T = unknown> {
 }
 
 /** Props for {@link Timeline}. Times are in ms. `mode`, `selection`, and
- *  `window` are controlled when given and held internally otherwise. */
-export interface TimelineProps {
+ *  `window` are controlled when given and held internally otherwise. Read-only, by `readOnly` or a scope, keys and
+ *  segments still select, rows fold, and the view zooms, pans, and switches to the graph, but nothing scrubs or edits;
+ *  disabled, nothing responds but focus, and with no reason anywhere the marks leave the tab order. */
+export interface TimelineProps extends HoldProps {
   tracks: readonly Track[];
   duration: number;
   playhead: number;
@@ -68,6 +72,7 @@ export function Timeline(props: TimelineProps): ReactElement {
     renderKeyEditor, label, className,
   } = props;
 
+  const hold = useControlHold(props, { readonlyRole: false });
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
   // Null until the user zooms in, so the window follows a duration that changes.
   const [ownWindow, setOwnWindow] = useState<TimeWindow | null>(null);
@@ -113,7 +118,7 @@ export function Timeline(props: TimelineProps): ReactElement {
       setSegmentSelection(null);
       return;
     }
-    if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+    if ((e.key !== 'Delete' && e.key !== 'Backspace') || hold.refuses) return;
     const marked = markedKey(e.target as Element, rows);
     const target = marked === undefined ? selection : marked;
     if (target && trackAtPath(tracks, target.trackPath)?.kind === 'sampled') {
@@ -133,37 +138,23 @@ export function Timeline(props: TimelineProps): ReactElement {
     ? (segmentTrack as SampledTrack<unknown>).keys[segmentSelection!.keyIndex]
     : undefined;
 
-  return (
+  const edits = !hold.refuses;
+  const laneHold: LaneHold = { edits, looks: !hold.disabled, tabIndex: hold.access.reachable ? 0 : -1, focus: hold.focus };
+  return hold.wrap(hold.scope(
     <div
       className={[s.root, className].filter(Boolean).join(' ')}
       data-testid="timeline-root"
+      data-held={hold.held}
       tabIndex={-1}
       onKeyDown={onRootKeyDown}
     >
       {label ? <div className={s.label}>{label}</div> : null}
 
       {props.transport === false ? null : (
-        <div className={s.transportRow}>
-          {props.transport ? (
-            <Transport {...props.transport} playhead={playhead} duration={duration} />
-          ) : (
-            <div className={s.transport}>
-              <PlayheadReadout playhead={playhead} duration={duration} />
-            </div>
-          )}
-          <button
-            type="button"
-            role="switch"
-            aria-checked={mode === 'graph'}
-            aria-label="Graph mode"
-            className={s.transportButton}
-            onClick={() => {
-              setMode(mode === 'graph' ? 'dope' : 'graph');
-            }}
-          >
-            Graph
-          </button>
-        </div>
+        <TransportRow
+          transport={props.transport} playhead={playhead} duration={duration} hold={hold}
+          graph={mode === 'graph'} onGraphChange={(on) => setMode(on ? 'graph' : 'dope')}
+        />
       )}
 
       <div className={s.body}>
@@ -173,8 +164,8 @@ export function Timeline(props: TimelineProps): ReactElement {
             window={win}
             bounds={bounds}
             playhead={playhead}
-            onScrub={onScrub}
-            onWindowChange={setWindow}
+            onScrub={edits ? onScrub : ignore}
+            onWindowChange={hold.disabled ? ignore : setWindow}
           />
         </div>
       </div>
@@ -191,6 +182,7 @@ export function Timeline(props: TimelineProps): ReactElement {
               selection={selection && samePath(selection.trackPath, trackPath) ? selection.keyIndex : null}
               expanded={expanded.has(row.key)}
               snapTimes={snapTimes}
+              hold={laneHold}
               onToggleExpand={() => toggle(row.key)}
               onSelect={(keyIndex) => selectKey({ trackPath, keyIndex })}
               onKeyInput={(keyIndex, toMs) => {
@@ -222,8 +214,8 @@ export function Timeline(props: TimelineProps): ReactElement {
             key: selectedKey,
             track: selectedTrack as SampledTrack<unknown>,
             selection,
-            commit: (next) => onChange(setKeyValue(tracks, selection, next.value)),
-            setEasing: (easing) => onChange(setKeyEasing(tracks, selection, easing)),
+            commit: (next) => { if (edits) onChange(setKeyValue(tracks, selection, next.value)); },
+            setEasing: (easing) => { if (edits) onChange(setKeyEasing(tracks, selection, easing)); },
           })}
         </div>
       ) : null}
@@ -232,10 +224,45 @@ export function Timeline(props: TimelineProps): ReactElement {
         <div className={s.inspector}>
           <EasingPicker
             value={segmentKey.easing}
-            onChange={(next) => onChange(setKeyEasing(tracks, segmentSelection, next))}
+            onChange={(next) => { if (edits) onChange(setKeyEasing(tracks, segmentSelection, next)); }}
           />
         </div>
       ) : null}
+    </div>,
+  ));
+}
+
+const ignore = (): void => {};
+
+/** The transport, or the time readout alone, and the Graph switch beside it. */
+function TransportRow({ transport, playhead, duration, hold, graph, onGraphChange }: {
+  transport: TimelineProps['transport'];
+  playhead: number;
+  duration: number;
+  hold: ControlHold;
+  graph: boolean;
+  onGraphChange: (on: boolean) => void;
+}): ReactElement {
+  return (
+    <div className={s.transportRow}>
+      {transport ? (
+        <Transport {...transport} playhead={playhead} duration={duration} />
+      ) : (
+        <div className={s.transport}>
+          <PlayheadReadout playhead={playhead} duration={duration} />
+        </div>
+      )}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={graph}
+        aria-label="Graph mode"
+        className={s.transportButton}
+        {...hold.button(false)}
+        onClick={() => { if (!hold.disabled) onGraphChange(!graph); }}
+      >
+        Graph
+      </button>
     </div>
   );
 }
