@@ -10,7 +10,7 @@ import { Callout } from '@weasel-js/ui/components/Callout';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { ComboBox } from '@weasel-js/ui/components/ComboBox';
-import { type ControlPoint, CurveEditor } from '@weasel-js/ui/components/CurveEditor';
+import { type ControlPoint, CurveEditor, POINT_PLOTTER_PROPS } from '@weasel-js/ui/components/CurveEditor';
 import { DataGrid } from '@weasel-js/ui/components/DataGrid';
 import { Dialog } from '@weasel-js/ui/components/Dialog';
 import { Disclosure } from '@weasel-js/ui/components/Disclosure';
@@ -25,7 +25,6 @@ import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 import { NumberField } from '@weasel-js/ui/components/NumberField';
 import { PaintInput } from '@weasel-js/ui/components/PaintInput';
 import { Plot2D } from '@weasel-js/ui/components/Plot2D';
-import { PointPlotter } from '@weasel-js/ui/components/PointPlotter';
 import { Powerline } from '@weasel-js/ui/components/Powerline';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import {
@@ -687,15 +686,15 @@ function EditorsAndPlots() {
           height={130}
         />
       </Cell>
-      <Cell label="PointPlotter">
-        <PointPlotter
+      <Cell label="CurveEditor, point plotter">
+        <CurveEditor
+          {...POINT_PLOTTER_PROPS}
           value={points}
           onInput={setPoints}
           xRange={[0, 1]}
           yRange={[0, 1]}
           grid={{ divisions: 3 }}
           axes={{}}
-          addPointMode="click-empty"
           width={260}
           height={130}
         />
