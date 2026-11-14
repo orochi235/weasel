@@ -1,6 +1,5 @@
-import { rectBetween, type Rect } from '@weasel-js/geom';
+import { normalizeZoom, rectBetween, type Rect } from '@weasel-js/geom';
 import type { View } from './view';
-import { normalizeZoom } from './zoomBounds';
 
 /** One value for both axes, or a separate value per axis. */
 export type ScalarOrXY = number | { x: number; y: number };

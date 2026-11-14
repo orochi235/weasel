@@ -1,7 +1,7 @@
 import type { ViewTransform } from './viewTransform';
 import type { View } from '@weasel-js/geom';
-import { meanScale } from '@weasel-js/geom';
-import { normalizeZoom, warnInvalidView } from './zoomBounds';
+import { meanScale, normalizeZoom } from '@weasel-js/geom';
+import { warnInvalidView } from './zoomBounds';
 
 /**
  * Every view the kit keeps is total: each `scale` axis is finite with a
@@ -62,7 +62,10 @@ export function normalizeView(view: View): View {
 }
 
 function normalizeAxis(s: number): number {
-  return s < 0 && s > -Infinity ? -normalizeZoom(-s) : normalizeZoom(s);
+  const held = s < 0 && s > -Infinity ? -normalizeZoom(-s) : normalizeZoom(s);
+  // A magnitude that merely undershoots the floor clamps silently; one that was never a zoom warns.
+  if (held !== s && (s === 0 || !Number.isFinite(s))) warnInvalidView(`a zoom of ${s}`);
+  return held;
 }
 
 function finiteTranslation(v: number): number {

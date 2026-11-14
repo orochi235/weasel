@@ -1,6 +1,6 @@
-import { viewScreenToWorld } from '@weasel-js/geom';
+import { normalizeZoom, viewScreenToWorld } from '@weasel-js/geom';
 import { normalizeView, type View, type ZoomFactor, type ZoomBound } from './view';
-import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, normalizeZoom } from './zoomBounds';
+import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
 /** Optional clamp bounds for `zoomAt`. Defaults: {@link DEFAULT_MIN_ZOOM} /
  *  {@link DEFAULT_MAX_ZOOM} (per axis). */
