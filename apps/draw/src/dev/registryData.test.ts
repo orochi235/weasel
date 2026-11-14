@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { IconRef } from '@weasel-js/icons';
 import { collectIcons, collectBundles, collectExports, collectPropertiesTrait, collectOpFactories, collectOpKinds, collectShapeTrait } from './registryData';
-import type { ActionEntry } from './registryEntries';
+import type { ActionEntry, ToolEntry } from './registryEntries';
 import { icon } from '../icons.gen';
 import * as Weasel from '@weasel-js/core';
 import { defaultNodeProperties, type NodePropertiesEntry } from '@weasel-js/core';
@@ -81,6 +81,16 @@ describe('registryData static collectors', () => {
     for (const k of kinds) {
       expect(k.kind).toBe('shapeKind');
     }
+  });
+});
+
+describe('collectShapeTrait — authoring tool', () => {
+  it("carries the tool's hook name and declared icon, and nothing for a kind no tool authors", () => {
+    const glyph = 'rect-glyph';
+    const rect = { kind: 'tool', id: 'rect', hookName: 'useRectTool', presentation: { icon: glyph } } as unknown as ToolEntry;
+    const byId = new Map(collectShapeTrait([rect]).map((k) => [k.id, k]));
+    expect(byId.get('rect')).toMatchObject({ hookName: 'useRectTool', icon: glyph });
+    expect(byId.get('ellipse')?.icon).toBeUndefined();
   });
 });
 

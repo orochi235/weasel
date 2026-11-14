@@ -175,15 +175,15 @@ export const parseRoute = kitParseRoute;
 export function collectShapeTrait(
   tools: readonly ToolEntry[] = [],
 ): readonly ShapeKindEntry[] {
-  const hookByToolId = new Map<string, string>();
-  for (const t of tools) if (t.hookName) hookByToolId.set(t.id, t.hookName);
+  const toolById = new Map(tools.map((t) => [t.id, t]));
   return SHAPE_KIND_IDS.map((id) => ({
     kind: 'shapeKind',
     trait: 'shape',
     id,
     label: id,
     tool: id,
-    hookName: hookByToolId.get(id),
+    hookName: toolById.get(id)?.hookName,
+    icon: toolById.get(id)?.presentation?.icon,
   }));
 }
 

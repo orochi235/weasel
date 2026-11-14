@@ -181,6 +181,8 @@ export interface ShapeKindEntry {
   /** Hook the authoring tool is exported as. Read off the live tool's
    *  `hookName` field (set by each builtin hook on its `defineTool` spec). */
   hookName?: string;
+  /** The authoring tool's rendered `presentation.icon`, when it declares one. */
+  icon?: import('react').ReactNode;
 }
 
 /** One properties-trait kind. `leafPaths` lists the schema's dotted node
