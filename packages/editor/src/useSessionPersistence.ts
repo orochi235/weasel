@@ -1,16 +1,20 @@
 import { defaultCommitAdapter, isSerializedScene, type PagesDoc, type Scene, useLatest } from '@weasel-js/core';
+import type { RecordCache } from '@weasel-js/storage';
 import { useEffect, useRef } from 'react';
-import { keptUnreadable, readStored } from './sessionStore';
-import { reviveTypedArrays, serializeReplacer, snapshotRebuildsTree } from './snapshot';
+import { keptUnreadable, readSlot, type SessionSlot, sessionSlots } from './sessionStore';
+import { reviveTypedArrays, snapshotRebuildsTree, snapshotValue } from './snapshot';
 import { useAutosave } from './useAutosave';
 
 /** Where `useSessionPersistence` keeps a scene and its undo stack, and what it reports after a save. */
 export interface SessionPersistenceOptions {
-  /** The local-storage key the scene is saved under. */
+  /** The key the scene is saved under. */
   sceneKey: string;
-  /** The local-storage key the undo stack is saved under. */
+  /** The key the undo stack is saved under. */
   historyKey: string;
-  /** Read the saved undo snapshot; defaults to the parsed `historyKey` entry. Return null for none. */
+  /** Where the scene and its undo stack are kept, the keys their records' names: a cache opened before the scene is
+   *  made, so its reads are ready. Defaults to `localStorage`, under the keys themselves. */
+  records?: RecordCache;
+  /** Read the saved undo snapshot; defaults to the `historyKey` entry. Return null for none. */
   loadHistory?: () => unknown;
   /** How long after a change the save runs, as `useAutosave` takes it. Defaults to 300 ms. */
   debounceMs?: number;
@@ -20,20 +24,15 @@ export interface SessionPersistenceOptions {
   pages?: PagesDoc;
 }
 
-const parseHistory = (raw: string): unknown => reviveTypedArrays(JSON.parse(raw));
-
-/** Whether an undo stack saved beside the scene under `key` would replay wrongly: the scene loads with its
+/** Whether an undo stack saved beside the scene in `slot` would replay wrongly: the scene loads with its
  *  tree rebuilt (`snapshotRebuildsTree`), or there is no saved scene it can be read as, so the scene
  *  starts from something else, as it does from one its load kept aside as unreadable. */
-const savedStale = (key: string, pages: PagesDoc | undefined): boolean =>
-  readStored(key, (raw) => {
-    if (keptUnreadable(key, raw)) return true;
-    const json: unknown = JSON.parse(raw);
-    return !isSerializedScene(json) || snapshotRebuildsTree(json, { pages });
-  }, () => true);
+const savedStale = (slot: SessionSlot, pages: PagesDoc | undefined): boolean =>
+  readSlot(slot, (json) => keptUnreadable(slot, json) || !isSerializedScene(json) || snapshotRebuildsTree(json, { pages }),
+    () => true);
 
 /**
- * Keeps a scene and its undo stack in local storage: restores the stack once on mount,
+ * Keeps a scene and its undo stack in storage, `localStorage` unless `opts.records` says otherwise: restores the stack once on mount,
  * then saves them through `useAutosave` after each render. A stack saved beside a scene that loads
  * with its tree rebuilt (`snapshotRebuildsTree`, with `opts.pages`), or beside none that can be read, is
  * dropped, not restored.
@@ -56,12 +55,14 @@ export function useSessionPersistence<D, L extends string, P>(
   // history with the empty initial stack first.
   const restoredRef = useRef(false);
   useEffect(() => {
-    const { sceneKey, historyKey, loadHistory, pages } = optsRef.current;
+    const { sceneKey, historyKey, loadHistory, pages, records } = optsRef.current;
+    const slots = sessionSlots(records);
+    const history = slots.slot(historyKey);
+    const drop = (): void => history.records.delete(history.name);
     let snap: unknown = null;
-    if (savedStale(sceneKey, pages)) {
-      try { localStorage.removeItem(historyKey); } catch { /* best-effort */ }
-    } else {
-      try { snap = loadHistory ? loadHistory() : readStored(historyKey, parseHistory, () => null); } catch { /* treated as none */ }
+    if (savedStale(slots.slot(sceneKey), pages)) drop();
+    else {
+      try { snap = loadHistory ? loadHistory() : readSlot(history, reviveTypedArrays, () => null); } catch { /* treated as none */ }
     }
     if (snap) {
       try {
@@ -69,9 +70,10 @@ export function useSessionPersistence<D, L extends string, P>(
       } catch {
         // A parseable-but-malformed snapshot must not wedge every boot:
         // drop it and start with an empty undo stack.
-        try { localStorage.removeItem(historyKey); } catch { /* best-effort */ }
+        drop();
       }
     }
+    void slots.close();
     restoredRef.current = true;
     // Run once; the scene is stable for the app lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,11 +84,12 @@ export function useSessionPersistence<D, L extends string, P>(
     if (!restoredRef.current) return null;
     const { sceneKey, historyKey } = optsRef.current;
     return {
-      primary: [sceneKey, JSON.stringify(scene.toJSON(), serializeReplacer)],
-      dependents: [[historyKey, JSON.stringify(scene.serializeHistory(), serializeReplacer)]],
+      primary: [sceneKey, snapshotValue(scene.toJSON())],
+      dependents: [[historyKey, snapshotValue(scene.serializeHistory())]],
     };
   }, {
     onSaved: (ok) => optsRef.current.onSaved?.(ok),
+    ...(opts.records ? { records: opts.records } : {}),
     ...(opts.debounceMs !== undefined ? { debounceMs: opts.debounceMs } : {}),
   });
 }

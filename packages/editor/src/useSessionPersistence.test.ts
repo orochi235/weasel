@@ -9,11 +9,11 @@ afterEach(() => {
 });
 
 describe('useSessionPersistence', () => {
-  it('saves the scene with no onSaved to report to', () => {
+  it('saves the scene with no onSaved to report to', async () => {
     vi.useFakeTimers();
     const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     renderHook(() => useSessionPersistence(scene, { sceneKey: 'test:scene', historyKey: 'test:history' }));
-    vi.advanceTimersByTime(300);
+    await vi.advanceTimersByTimeAsync(300);
     expect(JSON.parse(localStorage.getItem('test:scene')!)).toMatchObject({ version: 3, nodes: [] });
     expect(localStorage.getItem('test:history')).not.toBeNull();
   });

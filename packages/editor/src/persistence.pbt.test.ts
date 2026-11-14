@@ -1,14 +1,14 @@
 /**
  * Stateful property test of an editor session saved and reloaded at any point: two scenes take the same edits, undos,
  * redos, and history jumps, and one of them is now and then written out the way `useSessionPersistence` writes it
- * (`serializeReplacer`) and rebuilt the way an editor boots (`nodeSpecsFromSnapshot`, `docFromSnapshot`, and the undo
+ * (`snapshotValue`) and rebuilt the way an editor boots (`nodeSpecsFromSnapshot`, `docFromSnapshot`, and the undo
  * stack revived and restored). After every step the two hold the same nodes, document values, and history, so an
  * undo after a reload puts back what it would have without one.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { asNodeId, createScene, defaultCommitAdapter, type NodeId, type Scene, type SerializedScene } from '@weasel-js/core';
-import { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './snapshot';
+import { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, snapshotValue } from './snapshot';
 import { dataKey, dataValue, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 120;
@@ -58,14 +58,12 @@ function historyOf(scene: S): unknown {
 }
 
 function boot(scene: S): S {
-  const sceneText = JSON.stringify(scene.toJSON(), serializeReplacer);
-  const historyText = JSON.stringify(scene.serializeHistory(), serializeReplacer);
-  const json = JSON.parse(sceneText) as SerializedScene<Data, 'main', Pose>;
+  const json = snapshotValue(scene.toJSON()) as SerializedScene<Data, 'main', Pose>;
   const doc = docFromSnapshot(json);
   const next = createScene<Data, 'main', Pose>({ systemLayers: LAYERS, initial: nodeSpecsFromSnapshot(json), ...(doc ? { doc } : {}) });
   const adapter = defaultCommitAdapter(next);
   next.setHistoryAdapter(() => adapter);
-  next.restoreHistory(reviveTypedArrays(JSON.parse(historyText)) as Parameters<S['restoreHistory']>[0]);
+  next.restoreHistory(reviveTypedArrays(snapshotValue(scene.serializeHistory())) as Parameters<S['restoreHistory']>[0]);
   return next;
 }
 

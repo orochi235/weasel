@@ -10,12 +10,12 @@ afterEach(() => {
 });
 
 describe("draw's useSessionPersistence", () => {
-  it('lets go of the paper size and background an older drawing kept beside it once the scene holding them is saved', () => {
+  it('lets go of the paper size and background an older drawing kept beside it once the scene holding them is saved', async () => {
     vi.useFakeTimers();
     localStorage.setItem(DOC_KEY, JSON.stringify({ filename: 'a.svg', paperSize: 'a4', backgroundColor: '#ff0000' }));
     renderHook(() => useSessionPersistence(drawScene()));
     expect(JSON.parse(localStorage.getItem(DOC_KEY)!)).toMatchObject({ paperSize: 'a4' });
-    act(() => { vi.advanceTimersByTime(300); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(300); });
     expect(JSON.parse(localStorage.getItem(DOC_KEY)!)).toEqual({ filename: 'a.svg' });
   });
 });

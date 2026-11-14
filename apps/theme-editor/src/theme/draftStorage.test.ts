@@ -45,9 +45,11 @@ describe('loadDraft', () => {
     localStorage.setItem(key, '{"definition":');
     vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(loadDraft('harbor')).toBeNull();
-    expect(localStorage.getItem(`${key}:unreadable`)).toBe('{"definition":');
+    // Kept as the value it read: text that is not JSON, written as a JSON string.
+    const aside = () => JSON.parse(localStorage.getItem(`${key}:unreadable`)!) as unknown;
+    expect(aside()).toBe('{"definition":');
     persistDraft({ definition: { name: 'harbor' }, baseHash: null });
-    expect(localStorage.getItem(`${key}:unreadable`)).toBe('{"definition":');
+    expect(aside()).toBe('{"definition":');
     expect(draftNames()).toEqual(['harbor']);
   });
 });

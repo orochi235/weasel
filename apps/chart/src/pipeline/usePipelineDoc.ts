@@ -21,12 +21,14 @@ const isDoc = (v: unknown): v is EffectDoc => {
 /** An empty pipeline, as New makes. */
 export const emptyPipeline = (): EffectDoc => EMPTY;
 
-/** The pipeline a `.weaselpipeline.json` file holds. Throws on text that is not one. */
-export function pipelineFromJson(text: string): EffectDoc {
-  const parsed: unknown = JSON.parse(text);
+/** The pipeline a saved one holds, as `JSON.parse` reads its text. Throws on a value that is not one. */
+export function pipelineFromSaved(parsed: unknown): EffectDoc {
   if (!isDoc(parsed)) throw new Error('Not a saved pipeline');
   return parsed.pipeline.types ? parsed : { ...parsed, pipeline: { ...parsed.pipeline, types: EMPTY.pipeline.types } };
 }
+
+/** The pipeline a `.weaselpipeline.json` file holds. Throws on text that is not one. */
+export const pipelineFromJson = (text: string): EffectDoc => pipelineFromSaved(JSON.parse(text));
 
 export interface PipelineDoc {
   doc: EffectDoc;
@@ -42,7 +44,7 @@ export interface PipelineDoc {
 /** Pipeline mode's document: an `EffectDoc` with its own undo history, autosaved under `storageKey`.
  *  Held above the mode switch, so the history survives a visit to chart mode. */
 export function usePipelineDoc(storageKey: string = PIPELINE_STORAGE_KEY): PipelineDoc {
-  const [doc, setDoc] = useState(() => readStored(storageKey, pipelineFromJson, emptyPipeline));
+  const [doc, setDoc] = useState(() => readStored(storageKey, pipelineFromSaved, emptyPipeline));
   const current = useRef(doc);
   const history = useMemo(() => createHistory(null, { coalesceWindowMs: COALESCE_MS }), []);
   const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -52,7 +54,7 @@ export function usePipelineDoc(storageKey: string = PIPELINE_STORAGE_KEY): Pipel
     current.current = next;
     setDoc(next);
   }, []);
-  useAutosave(() => ({ primary: [storageKey, JSON.stringify(doc)] }), { revision: doc, onSaved: reportPipelineSave });
+  useAutosave(() => ({ primary: [storageKey, doc] }), { revision: doc, onSaved: reportPipelineSave });
 
   const change = useCallback((next: EffectDoc, label: string, coalesceKey?: string) => {
     history.apply(swapOp({

@@ -23,12 +23,15 @@ export const clearDraftHistory = (name: string): void => clearSavedHistory(histo
 
 export function parseDraft(raw: string | null, name: string): StoredDraft | null {
   if (!raw) return null;
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(raw);
+    return draftOf(JSON.parse(raw), name);
   } catch {
     return null;
   }
+}
+
+/** The draft of theme `name` that `parsed`, a stored draft as `JSON.parse` reads it, holds, or null for none. */
+function draftOf(parsed: unknown, name: string): StoredDraft | null {
   if (typeof parsed !== 'object' || parsed === null) return null;
   const { definition, baseHash } = parsed as { definition?: unknown; baseHash?: unknown };
   if (typeof definition !== 'object' || definition === null || (definition as { name?: unknown }).name !== name) return null;
@@ -39,8 +42,8 @@ export function parseDraft(raw: string | null, name: string): StoredDraft | null
 /** Theme `name`'s draft, or null for none. One that cannot be read is kept aside (`readStored`), since the next edit
  *  saves over it. */
 export function loadDraft(name: string): StoredDraft | null {
-  return readStored(draftKey(name), (raw) => {
-    const draft = parseDraft(raw, name);
+  return readStored(draftKey(name), (value) => {
+    const draft = draftOf(value, name);
     if (draft === null) throw new Error(`not a draft of theme "${name}"`);
     return draft;
   }, () => null);

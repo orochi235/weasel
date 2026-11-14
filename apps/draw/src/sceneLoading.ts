@@ -36,8 +36,8 @@ type DrawSpec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
  *  parse error, or a drawing draw's scene cannot hold, yields a fresh starter scene, one page with one example
  *  rectangle on it, so the canvas isn't empty on first run. */
 export function loadInitial(): DrawSpec[] {
-  return readStored(LS_KEY, (raw) => {
-    const json = savedScene(raw);
+  return readStored(LS_KEY, (value) => {
+    const json = savedScene(value);
     rebuilt = snapshotRebuildsTree(json, { pages: fallbackPages() });
     return specsOf(json);
   }, () => {
@@ -50,7 +50,7 @@ export function loadInitial(): DrawSpec[] {
  *  background saved beside the scene, as one was before it was the scene's, is taken in where the scene
  *  names none. */
 export function loadInitialDoc(): SerializedDoc | undefined {
-  const saved = readStored(LS_KEY, (raw) => docFromSnapshot(savedScene(raw)), () => undefined);
+  const saved = readStored(LS_KEY, (value) => docFromSnapshot(savedScene(value)), () => undefined);
   const legacy = loadDoc().backgroundColor;
   if (saved?.[BACKGROUND_KEY] !== undefined || legacy === DEFAULT_BG_COLOR) return saved;
   return { ...saved, [BACKGROUND_KEY]: legacy };
@@ -64,8 +64,7 @@ let rebuilt: boolean | null = null;
 /** The pages a drawing saved before draw had pages gets: one of the paper size its document settings kept. */
 export const fallbackPages = (): PagesDoc => onePage(PAPER_PRESETS[loadDoc().paperSize]);
 
-function savedScene(raw: string): DrawSnapshot {
-  const json: unknown = JSON.parse(raw);
+function savedScene(json: unknown): DrawSnapshot {
   if (!isSerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>(json)) throw new Error('Not a saved drawing');
   return json;
 }
@@ -104,7 +103,7 @@ export const SCENE_HISTORY_KEY = 'weaseldraw:scene-history-v1';
  *  one saved beside a drawing whose pages were not yet nodes or that cannot be opened, returns null
  *  AND removes the key so a broken snapshot can't wedge every boot. */
 export function loadSceneHistory(): SerializedSceneHistory | null {
-  const stale = rebuilt ?? readStored(LS_KEY, (raw) => snapshotRebuildsTree(savedScene(raw), { pages: fallbackPages() }), () => true);
+  const stale = rebuilt ?? readStored(LS_KEY, (value) => snapshotRebuildsTree(savedScene(value), { pages: fallbackPages() }), () => true);
   const snap = stale ? null : readStored(SCENE_HISTORY_KEY, parseSceneHistory, () => null);
   if (snap === null) {
     try { localStorage.removeItem(SCENE_HISTORY_KEY); } catch { /* best-effort */ }
@@ -112,7 +111,7 @@ export function loadSceneHistory(): SerializedSceneHistory | null {
   return snap;
 }
 
-function parseSceneHistory(raw: string): SerializedSceneHistory | null {
-  const snap = JSON.parse(raw) as SerializedSceneHistory;
+function parseSceneHistory(value: unknown): SerializedSceneHistory | null {
+  const snap = value as SerializedSceneHistory | null;
   return snap?.version === 1 && snap.form === SCENE_HISTORY_FORM ? reviveSnapshot(snap) : null;
 }
