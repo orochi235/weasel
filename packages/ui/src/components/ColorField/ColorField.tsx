@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { getAlpha01, withAlpha01 } from '@weasel-js/core';
 import { normalizeHex, parseColor, rgbaToHex } from '@weasel-js/paint';
-import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import { OpacityRange } from '../OpacityRange/OpacityRange';
-import { usePickerClose } from './usePickerClose';
+import { ColorChip, useRecordApplied, type AppliedColor } from './ColorChip';
 import s from './ColorField.module.css';
 import { holdScope, type HoldProps } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
@@ -32,8 +31,9 @@ export interface ColorFieldProps extends HoldProps {
    *  wire it for live preview; omit it for commit-only consumers. */
   onInput?: (hex: string) => void;
   /** Committed value — picker close or blur, or slider release. One call
-   *  per user gesture; pair with an undoable write. */
-  onChange: (hex: string) => void;
+   *  per user gesture; pair with an undoable write. Return the color actually
+   *  applied when it differs, and the recent colors record that instead. */
+  onChange: (hex: string) => AppliedColor;
   /** Id for the color input, for a `<label htmlFor>` outside it. */
   id?: string;
   'aria-label'?: string;
@@ -64,11 +64,11 @@ export function ColorField(props: ColorFieldProps) {
   const rgb6 = hex8.slice(0, 7);
   const alpha01 = getAlpha01(hex8);
 
-  // Drafts track the control during a gesture (the committed prop only
-  // updates after onChange), then reset to follow the prop again.
-  const [colorDraft, setColorDraft] = useState<string | null>(null);
+  // The chip holds the color through a pick; this is the pick it last reported, until it commits, so the
+  // opacity slider composes against it and an indeterminate chip stops looking indeterminate once edited.
+  const [picked, setPicked] = useState<string | null>(null);
   const [alphaDraft, setAlphaDraft] = useState<number | null>(null);
-  const visibleRgb = colorDraft ?? rgb6;
+  const visibleRgb = picked ?? rgb6;
   // The slider moves in whole percents; an alpha it has not moved keeps its exact byte.
   const visibleAlpha = alphaDraft ?? alpha01;
 
@@ -78,46 +78,36 @@ export function ColorField(props: ColorFieldProps) {
   // Mixed with no color edit yet: the alpha slider has nothing real to
   // compose against (rgb6 is the placeholder black), so keep it disabled
   // until the first color edit lands.
-  const alphaLocked = (mixed || unset) && colorDraft === null;
+  const alphaLocked = (mixed || unset) && picked === null;
 
-  // Commit only when a gesture actually changed something — blur with no
-  // preceding input must not emit (it would create a no-op undo entry).
-  const record = useRecordRecentColor();
-  const commit = (rgb: string, a01: number): void => {
-    if (colorDraft === null && alphaDraft === null) return;
-    const next = compose(rgb, a01);
-    onChange(next);
-    record(next);
-    setColorDraft(null);
-    setAlphaDraft(null);
-  };
+  const recordApplied = useRecordApplied();
+  const apply = (next: string) => onChange(next) ?? next;
 
-  const swatch = usePickerClose(() => commit(visibleRgb, visibleAlpha));
   const hold = useNativeHold(props, { readonlyRole: false });
 
   return (
     <span
       className={[s.root, className].filter(Boolean).join(' ')}
-      {...(mixed && colorDraft === null ? { 'data-mixed': '' } : {})}
-      {...(unset && !mixed && colorDraft === null ? { 'data-unset': '' } : {})}
+      {...(mixed && picked === null ? { 'data-mixed': '' } : {})}
+      {...(unset && !mixed && picked === null ? { 'data-unset': '' } : {})}
     >
       {hold.wrap(<span className={s.chip}>
-        <input
-          ref={swatch}
+        <ColorChip
           id={id}
           className={s.color}
-          type="color"
-          value={visibleRgb}
+          value={rgb6}
+          refuses={hold.refuses}
           {...hold.attrs}
           aria-label={props['aria-label'] ?? 'Color'}
-          onClick={hold.refuses ? (e) => e.preventDefault() : undefined}
-          onInput={(e) => {
-            if (hold.refuses) return;
-            const rgb = (e.target as HTMLInputElement).value;
-            setColorDraft(rgb);
+          onInput={(rgb) => {
+            setPicked(rgb);
             onInput?.(compose(rgb, visibleAlpha));
           }}
-          onBlur={() => commit(visibleRgb, visibleAlpha)}
+          onChange={(rgb) => {
+            setPicked(null);
+            setAlphaDraft(null);
+            return apply(compose(rgb, visibleAlpha));
+          }}
         />
       </span>)}
       {alpha && holdScope(props, (
@@ -129,7 +119,14 @@ export function ColorField(props: ColorFieldProps) {
             setAlphaDraft(a01);
             onInput?.(compose(visibleRgb, a01));
           }}
-          onChange={(a01) => commit(visibleRgb, a01)}
+          onChange={(a01) => {
+            // Only a slider that moved commits: a release with no drag would add a no-op undo entry.
+            if (alphaDraft === null) return;
+            setAlphaDraft(null);
+            setPicked(null);
+            const next = compose(visibleRgb, a01);
+            recordApplied(apply(next), next);
+          }}
         />
       ))}
     </span>
