@@ -375,6 +375,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P3) [agent] A fit scope observes its parent, so a fitted `Bar` can join a ResizeObserver loop.** A
+  `FitScope` with a registered label watches the bar and its parent to know how much room it has. labkit's
+  `presentation.browser.test.tsx` failed with "ResizeObserver loop completed with undelivered notifications" when
+  every `Bar` did this; `2eccdd936` made a scope observe nothing until a label registers, which fixed that case.
+  A `Bar` with `fit` inside a parent that a deeper observer resizes can still loop. Closes when a fit scope sizes its
+  labels without observing its parent, or a browser test with a fitted `Bar` in such a parent shows no loop.
+
 - **(P3) [maintainer] A labkit tile drag shows its node's UUID as the ghost.** `<Workspace reorderable>` mounts
   windease's `DragProvider` with its default overlay, which labels the chip with the node's `meta.title` and falls
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
