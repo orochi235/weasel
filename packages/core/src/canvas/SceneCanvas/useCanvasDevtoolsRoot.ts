@@ -6,8 +6,8 @@ import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { DebugConfig } from '../../debug/types';
-import { resolveDebugConfig } from '../../debug/parseDebugFlags';
+import type { DebugFlags } from '../../debug/types';
+import { resolveDebugFlags } from '../../debug/parseDebugFlags';
 import { recordHistory } from '../../devtools/history';
 import type { DevtoolsHistoryRecord } from '../../devtools/protocol';
 import { useDevtoolsLabel } from '../../devtools/label';
@@ -29,7 +29,7 @@ export interface CanvasTraces {
 
 /** What `<SceneCanvas>` hands its input wiring for devtools: the `debug` in effect and the override's setter. */
 export interface CanvasDevtools {
-  debug: DebugConfig | false | undefined;
+  debug: DebugFlags | false | undefined;
   setOverride(override: DevtoolsOverride | null): void;
 }
 
@@ -75,7 +75,7 @@ export function useCanvasDevtoolsRoot(c: {
     trace: traces.dispatch,
     coords: traces.coords,
     frame: () => c.api.current?.getDebug()?.snapshot().frame ?? null,
-    overlays: () => resolveDebugConfig(c.devtools.debug),
+    overlays: () => resolveDebugFlags(c.devtools.debug),
     setOverride: (o) => c.devtools.setOverride(o),
     subscribeView: c.viewState.subscribeView,
     registry: () => describeRegistry({

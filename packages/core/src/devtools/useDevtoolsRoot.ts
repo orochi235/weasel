@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { isDev, useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
-import type { DebugConfig } from '../debug/types';
-import { resolveDebugConfig } from '../debug/parseDebugFlags';
+import type { DebugFlags } from '../debug/types';
+import { resolveDebugFlags } from '../debug/parseDebugFlags';
 import { installDevtoolsHook } from './hook';
 import { createDevtoolsRoot, type DevtoolsRoot, type DevtoolsRootSource } from './root';
 import type { DevtoolsOverlays } from './protocol';
@@ -14,17 +14,17 @@ export interface DevtoolsOverride {
 }
 
 /** `debug` as the canvas resolves it, with `override` over it. Absent `debug` reads `?debug=` from the URL. */
-export function withOverride<D extends DebugConfig>(
+export function withOverride<D extends DebugFlags>(
   debug: D | false | undefined,
   override: DevtoolsOverride | null,
-): D | DebugConfig | false | undefined {
+): D | DebugFlags | false | undefined {
   if (!override) return debug;
-  const base: DebugConfig = resolveDebugConfig(debug) ?? {};
+  const base: DebugFlags = resolveDebugFlags(debug) ?? {};
   return { ...base, ...override.overlays, ...(override.highlight.length ? { highlight: override.highlight } : {}) };
 }
 
 /** A canvas's `debug` prop with the override a connected panel holds. */
-export function useDevtoolsOverride<T extends DebugConfig | false | undefined>(debug: T) {
+export function useDevtoolsOverride<T extends DebugFlags | false | undefined>(debug: T) {
   const [override, setOverride] = useState<DevtoolsOverride | null>(null);
   // An override only adds feature flags, so the canvas's own config type still describes the result.
   const effective = useMemo(() => withOverride(debug, override) as T, [debug, override]);

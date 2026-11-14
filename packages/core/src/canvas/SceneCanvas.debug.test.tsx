@@ -11,7 +11,7 @@ import type { SceneCanvasApi } from './canvasExtension';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { dragPanContribution } from '../tools/builtin/hand/dragPanContribution';
-import type { CanvasDebugSink, DebugConfig } from '../debug/types';
+import type { CanvasDebugSink, DebugFlags } from '../debug/types';
 import type { Contribution } from '../tools/overlayBinding';
 
 beforeAll(() => {
@@ -25,7 +25,7 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-function mount(debug: DebugConfig | false, ambient: Contribution[] = []) {
+function mount(debug: DebugFlags | false, ambient: Contribution[] = []) {
   const scene = createScene<unknown, 'main', { x: number; y: number }>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const sinkRef = { current: null as CanvasDebugSink | null };
   const ref = { current: null as SceneCanvasApi | null };

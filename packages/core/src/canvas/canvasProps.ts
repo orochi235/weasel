@@ -7,7 +7,7 @@ import type { LayerGroup, RedrawSource, RenderLayer } from 'core/layers/render';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { CanvasDebugSink, DebugConfig } from '../debug/types';
+import type { CanvasDebugSink, DebugFlags } from '../debug/types';
 import type { ToolsApi } from '../tools/overlayBinding';
 import type { DrawnBoundsScene } from './drawnBounds';
 import type { CanvasBackend } from './canvasBackend';
@@ -196,13 +196,13 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    * Debug overlay configuration.
    *  - `undefined` (default): read `?debug=…` from the URL.
    *  - `false`: force off, ignore URL.
-   *  - `DebugConfig` object: force on with that config, ignore URL.
+   *  - `DebugFlags` object: force on with that config, ignore URL.
    *
    * When enabled, the Canvas appends a screen-space `debug-overlay` layer and builds the
    * sink it paints: each paint records into it, and the layer helpers and the ref handle's
    * `getDebug` hand it to whatever else records.
    */
-  debug?: DebugConfig | false;
+  debug?: DebugFlags | false;
 
   /** Test-only escape hatch: writes the live debug sink to this ref so tests
    *  can call `snapshot()` after a render. No effect when debug is off. */

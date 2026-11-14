@@ -24,7 +24,7 @@ import type { PoseTransitionSeat } from '../../animation/poseTransition';
 import { HANDLE_BASE_PX } from '../../core/device/targets';
 import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
-import type { DebugConfig } from '../../debug/types';
+import type { DebugFlags } from '../../debug/types';
 import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
 import type { FlattenTolerance, ShaderProgramHandle } from '@weasel-js/renderer';
 import type { Tool, ToolsApi } from '../../tools/overlayBinding';
@@ -409,7 +409,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * translucent halos at every affordance hit zone. `false` turns it off;
      * absent reads `?debug=…` from the URL, as `<Canvas>` does.
      */
-    debug?: (DebugConfig & { slops?: boolean }) | false;
+    debug?: (DebugFlags & { slops?: boolean }) | false;
     /**
      * Dev HUD: when true (or object), mounts a fixed-position widget below
      * the pick HUD showing the active modality mode, active-slot tool, and

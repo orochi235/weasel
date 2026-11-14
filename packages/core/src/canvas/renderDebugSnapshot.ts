@@ -4,7 +4,7 @@
  */
 import { renderSceneToPixels, type RasterImage, type RenderSceneToPixelsArgs } from './renderSceneToPixels';
 import { buildDebugOverlayCommands } from '../debug/createDebugOverlayLayer';
-import type { DebugConfig, DebugSnapshot } from '../debug/types';
+import type { DebugFlags, DebugSnapshot } from '../debug/types';
 import type { View } from '../core/viewport/view';
 import { viewportWorldRect } from '../core/viewport/viewportWorldRect';
 import { mat3 } from '@weasel-js/geom';
@@ -24,7 +24,7 @@ export interface RenderDebugSnapshotArgs<TData, TLayer extends string, TPose>
   debug: DebugSnapshot;
   /** Which overlay features to draw, as on `<Canvas debug>`. The frame panel
    *  shows the recorded paint cost but no rate: a still image has no frames. */
-  config: DebugConfig;
+  config: DebugFlags;
   /** Draw the scene's annotation layers. Default `true`, as the canvas did. */
   annotations?: boolean;
 }
