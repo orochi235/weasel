@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
-import { Button, type ButtonBase, type ButtonVariant, type ButtonSize, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
+import { Button, type ButtonBase, type ButtonVariant, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
+import type { ControlSize } from '@weasel-js/ui/components/Density';
 import { ToggleBar as KitToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
@@ -209,7 +210,7 @@ const VARIANTS: ButtonVariant[] = ['solid', 'ghost'];
 type LabVariant = 'confirm' | 'solid' | 'ghost';
 const labVariant = (v: LabVariant): Pick<ButtonBase, 'variant' | 'stance'> =>
   v === 'confirm' ? { variant: 'solid', stance: 'confirm' } : { variant: v };
-const SIZES: ButtonSize[] = ['sm', 'md'];
+const SIZES: ControlSize[] = ['sm', 'md'];
 
 export const Matrix: Story = {
   tags: ['gallery'],

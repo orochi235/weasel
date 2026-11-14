@@ -1,10 +1,11 @@
 import { Children, type ReactNode } from 'react';
 import type { Orientation } from '../orientation';
 import { tiling } from '../../tiling';
+import { withDensity, type DensityProps } from '../Density';
 import s from './ToolGroup.module.css';
 
 /** Props for {@link ToolGroup}. */
-export interface ToolGroupProps {
+export interface ToolGroupProps extends DensityProps {
   children: ReactNode;
   /**
    * Lays children along an axis. `'vertical'` (default) stacks them in
@@ -30,14 +31,14 @@ export interface ToolGroupProps {
  * beyond layout; theming lives on the buttons.
  */
 export function ToolGroup(props: ToolGroupProps) {
-  const { children, orientation = 'vertical', columns, groupKey, 'aria-label': ariaLabel, className } = props;
+  const { children, orientation = 'vertical', columns, groupKey, 'aria-label': ariaLabel, size, className } = props;
   const tiles = columns ? tiling(Children.count(children), { columns }) : null;
   const cls = [s.group, tiles ? tiles.className : orientation === 'horizontal' && s.horizontal, className]
     .filter(Boolean).join(' ');
   const style = tiles?.style;
   return (
     <div className={cls} style={style} role="group" data-group={groupKey} aria-label={ariaLabel}>
-      {children}
+      {withDensity(size, children)}
     </div>
   );
 }

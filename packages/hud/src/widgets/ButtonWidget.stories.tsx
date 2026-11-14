@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import { IDLE_PRESS } from '@weasel-js/ui-input';
-import { fixedWidth } from '@weasel-js/ui-logic';
+import { fixedWidth, type ControlSize } from '@weasel-js/ui-logic';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { useThemeOptional } from '@weasel-js/theme/react';
 import { DEFAULT_FONT_FAMILY, hudButton, hudMeasureEnv } from '@weasel-js/hud';
@@ -12,7 +12,7 @@ import s from './widgets.stories.module.css';
 
 interface ButtonWidgetArgs {
   label: string;
-  size: 'sm' | 'md';
+  size: ControlSize;
   width: number;
 }
 

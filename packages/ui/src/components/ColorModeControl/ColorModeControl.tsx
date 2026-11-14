@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
-import { ToggleBar, type ToggleBarItem, type ToggleBarSize, type ToggleBarVariant } from '../ToggleBar/ToggleBar';
+import { ToggleBar, type ToggleBarItem, type ToggleBarVariant } from '../ToggleBar/ToggleBar';
+import { useDensity, type ControlSize } from '../Density';
 import { COLOR_MODES } from '../colorModes';
 import { Icon } from '../../icons/Icon';
 
@@ -10,7 +11,8 @@ export interface ColorModeControlProps {
   onChange: (next: ColorModePreference) => void;
   /** Accessible name of the group. Defaults to `'Color mode'`. */
   'aria-label'?: string;
-  size?: ToggleBarSize;
+  /** Default: the nearest `Density` scope's, else `md`. */
+  size?: ControlSize;
   variant?: ToggleBarVariant;
   className?: string;
 }
@@ -40,15 +42,16 @@ export function ColorModeControl({
   variant,
   className,
 }: ColorModeControlProps): ReactElement {
+  const resolved = useDensity(size);
   return (
     <ToggleBar
-      items={ITEMS[size ?? 'md']}
+      items={ITEMS[resolved]}
       value={value}
       onChange={(next) => {
         if (next) onChange(next);
       }}
       aria-label={ariaLabel}
-      size={size}
+      size={resolved}
       variant={variant}
       className={className}
     />

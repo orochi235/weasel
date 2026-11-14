@@ -1,26 +1,26 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactElement, type ReactNode, type Ref } from 'react';
 import {
-  buttonParts, measureButton, type ButtonFace, type ButtonLayout, type ButtonPart,
-  type ButtonSize as HeadlessButtonSize, type HeadlessComponent,
+  buttonParts, measureButton, type ButtonFace, type ButtonLayout, type ButtonPart, type ControlSize,
+  type HeadlessComponent,
 } from '@weasel-js/ui-logic';
 import { nodeText } from '../../nodeText';
 import type { DomTarget } from '../../domMeasureEnv';
 import s from './Button.module.css';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 import { type AppearanceProps, useAppearance } from '../appearance';
+import { useDensity } from '../Density';
 
 /** Visual weight of a button. Defaults to `solid`. `link` drops the
  *  control box entirely and reads as a hyperlink in running text -- for an
  *  in-page navigation that is still a button, not an `<a href>`. The
  *  confirming button is `stance="confirm"` on a `solid` one. */
 export type ButtonVariant = 'solid' | 'ghost' | 'link';
-/** Button height and type scale. */
-export type ButtonSize = HeadlessButtonSize;
 
 /** What every {@link Button} takes. */
 export type ButtonBase = {
   variant?: ButtonVariant;
-  size?: ButtonSize;
+  /** Default: the nearest `Density` scope's, else `'md'`. */
+  size?: ControlSize;
   /** A button that stays down: renders `aria-pressed` and holds the active
    *  treatment while it is on. For a control that reports a state rather than
    *  firing an action -- a panel toggle, a mode switch. Left off, the button
@@ -105,7 +105,6 @@ export const Button = forwardRef(function Button(
 ) {
   const {
     variant = 'solid',
-    size = 'md',
     stance,
     grade,
     emphasis,
@@ -127,6 +126,7 @@ export const Button = forwardRef(function Button(
     id,
   } = props;
   const dataAttrs = Object.fromEntries(Object.entries(props).filter(([k]) => k.startsWith('data-')));
+  const size = useDensity(props.size);
 
   const cls = [
     s.button,
@@ -141,7 +141,7 @@ export const Button = forwardRef(function Button(
     .filter(Boolean)
     .join(' ');
 
-  const face = buttonFaceOf(props);
+  const face = buttonFaceOf({ ...props, size });
   const appearance = useAppearance({ stance, grade, emphasis, tint });
 
   return (

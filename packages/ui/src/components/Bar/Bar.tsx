@@ -16,9 +16,10 @@ import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { barLeafName, BarLayout, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode, type BarOrientation, type BarOverflowMode } from './BarLayout';
 import { childKeysAt } from './barOrder';
 import { withBarLabel, type LeafSurface } from './renderBarLeaf';
+import type { DensityProps } from '../Density';
 
 /** Props for {@link Bar}. */
-export interface BarProps {
+export interface BarProps extends DensityProps {
   /**
    * What the bar holds, as a `PrefGroup`: a group's key is a segment of its
    * leaves' paths. A leaf is a cell. A nested `section` or `bar` is a run
@@ -99,6 +100,7 @@ export function Bar(props: BarProps) {
       lead={props.lead ?? schema.lead}
       icon={props.icon ?? schema.icon}
       framed={framed}
+      size={props.size}
       overflow={props.overflow ?? schema.overflow}
       overflowLabel={props.overflowLabel}
       order={props.order}

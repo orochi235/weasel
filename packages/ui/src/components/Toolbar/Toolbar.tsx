@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { ToolbarButton } from './ToolbarButton';
+import { useDensity, withDensity, type DensityProps } from '../Density';
 import s from './Toolbar.module.css';
 
 /** Props for {@link Toolbar}. */
-export interface ToolbarProps {
+export interface ToolbarProps extends DensityProps {
   children: ReactNode;
   /** Names the toolbar for assistive tech. The APG pattern needs one when a view holds more than one. */
   'aria-label'?: string;
@@ -13,9 +14,6 @@ export interface ToolbarProps {
   roving?: boolean;
   /** Lets the controls run onto a second line rather than overflow. */
   wrap?: boolean;
-  /** `sm` is the compact height, for chrome around a working surface rather than a page's own strip. It lowers
-   *  the control height itself, so a slider or a number box inside keeps step with the buttons. */
-  size?: 'md' | 'sm';
   /** Draws its own strip, a raised surface ruled off below, where the host paints none. */
   framed?: boolean;
   className?: string;
@@ -27,18 +25,22 @@ export interface ToolbarProps {
  * {@link ToolbarButton}s. It lays them out and draws no strip of its own unless
  * `framed`; otherwise the host paints that. Its gap and padding sit in
  * `:where()`, so a host class overrides them.
+ *
+ * `size="sm"` is the compact strip, for chrome around a working surface rather than a page's own strip: the buttons
+ * inside draw at `sm`, and the control height drops with them, so a slider or a number box keeps step.
  */
-export function Toolbar({ children, 'aria-label': ariaLabel, roving = true, wrap, size = 'md', framed, className }: ToolbarProps) {
+export function Toolbar({ children, 'aria-label': ariaLabel, roving = true, wrap, size, framed, className }: ToolbarProps) {
   const { rootRef, onKeyDown } = useRovingTabIndex<HTMLDivElement>({ orientation: 'horizontal' });
+  const sm = useDensity(size) === 'sm';
   return (
     <div
       ref={roving ? rootRef : undefined}
-      className={[s.toolbar, wrap && s.wrap, size === 'sm' && s.sm, framed && s.framed, className].filter(Boolean).join(' ')}
+      className={[s.toolbar, wrap && s.wrap, sm && s.sm, framed && s.framed, className].filter(Boolean).join(' ')}
       role="toolbar"
       aria-label={ariaLabel}
       onKeyDown={roving ? onKeyDown : undefined}
     >
-      {children}
+      {withDensity(size, children)}
     </div>
   );
 }

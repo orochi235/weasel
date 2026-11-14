@@ -93,7 +93,7 @@ export function ToolbarRegion<TCtx = TrialChromeContext>({
   // A trial's bar is a compact strip of its own; the lab's sits in the shell header, which draws the strip.
   const strip = region !== 'header';
   return (
-    <Toolbar aria-label={label} size={strip ? 'sm' : 'md'} framed={strip}>
+    <Toolbar aria-label={label} size={strip ? 'sm' : undefined} framed={strip}>
       {groups.map((g) => (
         <Toolbar.Group key={g.id} end={g.end} aria-label={g.key}>
           {g.entries.map((c) => renderEntry(c, ctx, region))}

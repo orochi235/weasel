@@ -1,8 +1,6 @@
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from '../icons.gen';
 
-/** Segment height and type scale for a segmented bar — `ToggleBar`, `ButtonBar`, or `OptionsBar`. */
-export type SegmentedSize = 'sm' | 'md';
 /** Visual treatment of a segmented bar. */
 export type SegmentedVariant = 'default' | 'minimal' | 'flat';
 

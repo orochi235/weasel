@@ -13,6 +13,7 @@ import { BAR_MORE, useBarOverflow } from './useBarOverflow';
 import { useBarLead } from './barLeadHandle';
 import { DockBarContext, useReportDockLeast } from '../ToolbarDock/dockContext';
 import { OrientationContext, type Orientation } from '../orientation';
+import { withDensity, type DensityProps } from '../Density';
 import s from './Bar.module.css';
 
 /** Which way a bar runs. */
@@ -64,7 +65,7 @@ export interface BarCell {
 }
 
 /** Props for {@link BarLayout}. */
-export interface BarLayoutProps {
+export interface BarLayoutProps extends DensityProps {
   nodes: readonly BarNode[];
   orientation?: BarOrientation;
   /** Leaves that sit side by side, as the cells they make. Fewer cells than
@@ -124,7 +125,7 @@ export interface BarLayoutProps {
 export function BarLayout(props: BarLayoutProps) {
   const along = useTrackShape();
   const bar = along !== null && along.shape.kind !== 'line' ? <BarAlong {...props} shape={along.shape} align={along.align} /> : <BarLine {...props} />;
-  return <BarMarkContext.Provider value={props.onReorder !== undefined}>{bar}</BarMarkContext.Provider>;
+  return <BarMarkContext.Provider value={props.onReorder !== undefined}>{withDensity(props.size, bar)}</BarMarkContext.Provider>;
 }
 
 function BarLine(props: BarLayoutProps) {
