@@ -15,7 +15,7 @@ export interface FolderTitleRule {
  * cover it. A story in a component folder is `<library>/<folder>`, or `<library>/<folder>/<export>` for one of the
  * names `exportsOf(folder)` returns; `<folder>` is the path under `components`, two segments when the first is a
  * lowercase group (`inspector/SelectionPanel`). Outside a `lab/` directory the file is named for its title's last
- * segment, an aspect after a dot aside (`Slider.detents.stories.tsx`). A story elsewhere under `src` is titled for its
+ * segment, ignoring case, an aspect after a dot aside (`Slider.detents.stories.tsx`). A story elsewhere under `src` is titled for its
  * directory.
  */
 export function folderTitles(rel: string, rule: FolderTitleRule, exportsOf: (folder: string) => ReadonlySet<string>): { expected: string; fits: (title: string) => boolean } | null {
@@ -40,7 +40,7 @@ export function folderTitles(rel: string, rule: FolderTitleRule, exportsOf: (fol
     if (title === base) return lab || name === own;
     if (!title.startsWith(`${base}/`)) return false;
     const exported = title.slice(base.length + 1);
-    return !exported.includes('/') && exportsOf(folder.join('/')).has(exported) && (lab || name === exported);
+    return !exported.includes('/') && exportsOf(folder.join('/')).has(exported) && (lab || name.toLowerCase() === exported.toLowerCase());
   };
   return { expected, fits };
 }

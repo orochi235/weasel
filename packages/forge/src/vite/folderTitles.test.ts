@@ -24,6 +24,10 @@ describe('folderTitles', () => {
     expect(folderTitles('pkg/ui/src/components/Keycaps/KeyBank.stories.tsx', RULE, exportsOf)?.expected).toBe('ui/Keycaps/KeyBank');
   });
 
+  it('matches a file to its export ignoring case, so no case-only rename is needed', () => {
+    expect(fits('pkg/ui/src/components/Keycaps/Keycap.stories.tsx', 'ui/Keycaps/KeyCap')).toBe(true);
+  });
+
   it('lets a lab story take its folder or one of its exports, whatever its file is named', () => {
     expect(fits('pkg/ui/src/components/Slider/lab/SliderArc.stories.tsx', 'ui/Slider')).toBe(true);
     expect(fits('pkg/ui/src/components/Keycaps/lab/Arc.stories.tsx', 'ui/Keycaps/KeyCap')).toBe(true);
