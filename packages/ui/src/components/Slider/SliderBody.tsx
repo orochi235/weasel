@@ -17,6 +17,7 @@ import type { SliderProps, Thumb } from './types';
 import { useBoxes } from './useBoxes';
 import { useSliderPointer } from './useSliderPointer';
 import { trackCtxOf, useSliderGeometry } from './useSliderGeometry';
+import { useSliderHold } from './useSliderHold';
 import { useScale, useSpan } from './useSpan';
 import { useThumbDrags } from './useThumbDrags';
 
@@ -66,10 +67,10 @@ export function SliderBody<T extends Thumb = Thumb>(
   const scale = useScale(span, strict, step, { scale: props.scale, stopSnapPx: props.stopSnapPx, stepOrigin: props.range?.[0] });
   const { valueToFraction, valueAt } = scale;
   const drags = useThumbDrags<T>({ props, span, scale, geometry });
-  const regionAt = useSliderRegions<T>({ props, min, max, scale, geometry, direction });
-
-  const pointer = useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: props.onInput, drags });
-  const keyDown = onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: props.onInput, onChange: props.onChange, direction: run ? screenDirection(run) : direction });
+  const hold = useSliderHold(props);
+  const regionAt = useSliderRegions<T>({ props: hold.refuses ? { ...props, regionDrag: false } : props, min, max, scale, geometry, direction });
+  const pointer = hold.pointer(useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: props.onInput, drags }));
+  const keyDown = hold.keys(onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: props.onInput, onChange: props.onChange, direction: run ? screenDirection(run) : direction }));
 
   const placement = props.readoutPlacement ?? 'none';
   const { renderReadout, display } = props;
@@ -99,6 +100,7 @@ export function SliderBody<T extends Thumb = Thumb>(
           min={min}
           max={max}
           ariaLabel={props['aria-label']}
+          hold={hold.thumb}
           display={display}
           locale={locale}
           spoken={props.spokenAt?.(thumb.value, thumb)}
@@ -115,20 +117,20 @@ export function SliderBody<T extends Thumb = Thumb>(
 
   // On a curve there is no row beside the track, so 'inline-after' is drawn as 'below-thumb'.
   if (curved) {
-    return (
-      <div className={rootClass} style={rootVarsOf(props)} ref={trackRef} data-shape={shape.kind}>
+    return hold.wrap(
+      <div className={rootClass} style={rootVarsOf(props)} ref={trackRef} data-shape={shape.kind} data-held={hold.held}>
         <SliderBand shape={shape} faceRef={bandRef} onPointerDown={pointer.onTrackPointerDown} />
         {props.renderTrack && <div className={s.paintLayer} ref={paintRef}>{painted}</div>}
         {marks}
         {run && placement !== 'none' && (
           <ReadoutsAlong readouts={thumbs.map((t, i) => ({ g: valueToFraction(t.value), content: readoutOf(t, i) }))} place={geometry.place} length={run.length} />
         )}
-      </div>
+      </div>,
     );
   }
 
-  return (
-    <div className={rootClass} style={rootVarsOf(props)}>
+  return hold.wrap(
+    <div className={rootClass} style={rootVarsOf(props)} data-held={hold.held}>
       <div className={s.row}>
       <div className={s.track} ref={trackRef} onPointerDown={pointer.onTrackPointerDown} data-slider-track>
         {props.renderTrack && <div className={s.trackInner} ref={paintRef}>{painted}</div>}
@@ -148,6 +150,6 @@ export function SliderBody<T extends Thumb = Thumb>(
       {placement === 'below-thumb' && (
         <ReadoutsBelow readouts={thumbs.map((t, i) => ({ fraction: valueToFraction(t.value), content: readoutOf(t, i) }))} place={geometry.place} />
       )}
-    </div>
+    </div>,
   );
 }

@@ -3,6 +3,7 @@ import { qty } from '@weasel-js/quantity';
 import on from '../Along/onRun.module.css';
 import s from './Slider.module.css';
 import type { SliderGeometry } from './sliderGeometry';
+import type { ThumbHoldAttrs } from './useSliderHold';
 import type { SliderProps, Thumb, ThumbShape } from './types';
 
 /** What one thumb draws from: its value and place, the span it sits in, the box it measured, and its handlers. */
@@ -15,6 +16,7 @@ export interface SliderThumbProps<T extends Thumb> {
   min: number;
   max: number;
   ariaLabel: string | undefined;
+  hold: ThumbHoldAttrs;
   display: SliderProps<T>['display'];
   /** The locale `display` speaks the value in. */
   locale: string;
@@ -36,7 +38,7 @@ export function SliderThumb<T extends Thumb>(p: SliderThumbProps<T>): ReactEleme
     <div
       ref={p.elRef}
       role="slider"
-      tabIndex={0}
+      {...p.hold}
       aria-orientation={p.geometry.curved ? undefined : 'horizontal'}
       aria-valuemin={p.min}
       aria-valuemax={p.max}

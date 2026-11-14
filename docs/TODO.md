@@ -532,10 +532,10 @@ name a package. Breaking changes are in scope.
   `mixed` stays a prop. Closes when those row props are read from the scope rather than declared on each row.
 
 - **(P2) [agent] `disabled` and `readOnly` on the controls that take neither.** The `<Disabled>`/`<ReadOnly>`
-  scopes (2026-11-13) reach every kit control that already took `disabled`, but these never took one, so a scope
-  passes over them: `Slider`, `SwatchGrid`, `SwatchStrip`, `RecentColors`, `PatternPicker`, `CurveEditor`,
-  `BandEditor`, `MeshEditor`, `Jog`, `LayerList`, `ItemList`, `DataGrid`, `Timeline`, `PageTabs`, and `TokenPanel`.
-  Each needs its own refusal (a drag, a keyboard step, a swatch press) and the reason's tooltip through
+  scopes (2026-11-13) reach every kit control that already took `disabled`, and `Slider` (2026-11-14), but these
+  never took one, so a scope passes over them: `SwatchGrid`, `SwatchStrip`, `RecentColors`, `PatternPicker`,
+  `CurveEditor`, `BandEditor`, `MeshEditor`, `Jog`, `LayerList`, `ItemList`, `DataGrid`, `Timeline`, `PageTabs`, and
+  `TokenPanel`. Each needs its own refusal (a drag, a keyboard step, a swatch press) and the reason's tooltip through
   `useHoldReason`, which is new behavior per component rather than a rename, hence a pass of its own. Closes when each
   reads `useControlAccess`.
 

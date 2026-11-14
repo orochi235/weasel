@@ -9,6 +9,25 @@
   touch-action: none;
 }
 
+/* Held: nothing on it moves, so nothing invites a press. */
+.root[data-held] {
+  --rp-track-cursor: default;
+}
+
+.root[data-held] .thumb {
+  cursor: default;
+}
+
+.root[data-held='disabled'] {
+  opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
+  --rp-track-cursor: not-allowed;
+}
+
+.root[data-held='disabled'] .thumb {
+  cursor: not-allowed;
+}
+
 /* Under `snap: 'strict'` every stop is a detent the thumb rests on: the marks run
  * the full height of the track, so they read as notches rather than as tally
  * marks beside it, and a press anywhere on the track picks one. */

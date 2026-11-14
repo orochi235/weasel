@@ -3,6 +3,7 @@ import type { TrackRun } from '@weasel-js/geom';
 import type { SliderStop as Stop } from '@weasel-js/ui-input';
 import type { Display, Endless, Quantity } from '@weasel-js/quantity';
 import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import type { HoldProps } from '../Disabled';
 
 /**
  * Passed to a custom thumb renderer: the thumb box in CSS px as it is laid
@@ -143,12 +144,16 @@ export type SliderStop = Stop<ReactNode>;
  * `@weasel-js/plot/scales` gives even ratios even steps. The arrow keys still
  * step by value; pass `keyStep` to step along the track instead.
  *
+ * `disabled` and `readOnly`, from its own props or a `Disabled` or `ReadOnly` scope, refuse every drag, key step,
+ * and press. Held for a reason, or read-only, its thumbs stay focusable and describe why; disabled with no reason
+ * anywhere, they leave the tab order.
+ *
  * `thumbFit: 'inside'`, the default, runs the value span half a thumb short of
  * each end of the track, so a thumb at `min` or `max` sits flush with the
  * track's edge. `'overhang'` runs the span edge to edge and centers an end
  * thumb on the edge.
  */
-export type SliderProps<T extends Thumb<Quantity> = Thumb> = {
+export type SliderProps<T extends Thumb<Quantity> = Thumb> = HoldProps & {
   thumbs: readonly T[];
   onInput: (next: T[]) => void;
   onChange?: (next: T[]) => void;
