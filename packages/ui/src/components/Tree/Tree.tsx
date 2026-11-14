@@ -5,21 +5,22 @@ import {
   useMemo,
   useRef,
   type KeyboardEvent,
-  type MouseEvent,
   type ReactNode,
   type Ref,
 } from 'react';
+import { isInControlWithin } from '@weasel-js/core';
 import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
 import { LIST_KEYS, modsOf, selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { useRowNavigation } from '../../useRowNavigation';
 import { TreeDragGhost } from './TreeGhost';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Tree.module.css';
+import { controlCellKey, enterControls, useUntabbedControls } from './treeGridKeys';
 import { handleMoveKey } from './treeKeyboardMove';
-import { TreeRowBox, TreeRowLead } from './TreeRowLead';
+import { TreeRow } from './TreeRow';
 import type { TreeNode, TreeProps } from './treeTypes';
 import { nodeById } from './treeMoves';
-import { textOf, useControlledSet } from './treeUtils';
+import { hasControls, idsWhere, textOf, useControlledSet } from './treeUtils';
 import { useRowTip } from './useRowTip';
 import { useTreeDrag } from './useTreeDrag';
 export type { TreeNode, TreeProps, TreeSelectionMode } from './treeTypes';
@@ -39,7 +40,13 @@ const NO_MODS: PressModifiers = { shiftKey: false, ctrlKey: false, metaKey: fals
  *
  * **Semantics.** WAI-ARIA `tree`. A treeitem may not contain interactive
  * content, so `leading` and `trailing` are decoration — an icon, a count —
- * and the twisty is a drawn `DisclosureMark`, not a button.
+ * and the twisty is a drawn `DisclosureMark`, not a button. A node with
+ * `controls` makes the tree a `treegrid` instead: each row a `row` with the
+ * same states, its leading, label and trailing in one `gridcell` and its
+ * controls in a second. The controls leave the tab order; Right on a leaf or
+ * an open branch steps from the row into them, Left and Right walk them, Left
+ * past the first or Escape steps back to the row, and Up and Down from one
+ * move between rows. Right on an open branch with no controls steps into it.
  *
  * **Keyboard.** One treeitem is in the tab order: the one last focused, else
  * the first selected, else the first. Up/Down move between visible rows,
@@ -70,7 +77,8 @@ export const Tree = forwardRef(function Tree(
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', pressFolds = true, hang = false, guides = false,
     selectionMode = 'none', selectionFollowsFocus = false, selectedIds, defaultSelectedIds, onSelectionChange,
-    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, dropRef,
+    onAction, onRowKeyDown, onRowContextMenu,
+    onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, dropRef,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
@@ -79,6 +87,8 @@ export const Tree = forwardRef(function Tree(
   const selectable = selectionMode !== 'none';
   const rowTip = useRowTip();
   const baseId = useId();
+  const grid = useMemo(() => hasControls(nodes), [nodes]);
+  const alone = useMemo(() => idsWhere(nodes, (n) => !!n.selectsAlone), [nodes]);
 
   const visible = useMemo(() => {
     const out: Visible[] = [];
@@ -105,6 +115,8 @@ export const Tree = forwardRef(function Tree(
 
   const order = () => visible.map((v) => v.node.id);
   const disabled = (id: string) => !!nodeAt(id)?.disabled;
+  // Neither joins a selection of more than one row.
+  const single = (id: string) => disabled(id) || alone.has(id);
   const commitSelection = (ids: readonly string[]) => {
     const next = new Set(ids);
     if (next.size !== selected.size || [...next].some((x) => !selected.has(x))) setSelected(next);
@@ -113,7 +125,7 @@ export const Tree = forwardRef(function Tree(
   const select = (id: string, mods: PressModifiers) => {
     const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multi' : 'single', ...LIST_KEYS };
     const result = selectFrom({ ids: [...selected], anchor: anchor.current }, id, intentOf(selectModifiers(mods), policy), {
-      order: order(), forceSingle: disabled,
+      order: order(), forceSingle: single,
     });
     anchor.current = result.anchor;
     commitSelection(result.ids);
@@ -126,7 +138,7 @@ export const Tree = forwardRef(function Tree(
     onAction?.(node.id, mods);
   };
 
-  const nav = useRowNavigation<HTMLLIElement>({
+  const nav = useRowNavigation<HTMLElement>({
     rows: useMemo(() => visible.map((v) => ({ id: v.node.id, parentId: v.parentId })), [visible]),
     isSelected: (id) => selectable && selected.has(id),
     // Selection with focus, and Shift's range, pass over disabled rows: focus alone moves there.
@@ -134,10 +146,10 @@ export const Tree = forwardRef(function Tree(
       if (selectable && selectionFollowsFocus && !disabled(id)) select(id, NO_MODS);
     },
     ...(selectionMode === 'multiple' ? {
-      onExtend: (id: string) => { if (!disabled(id)) select(id, { ...NO_MODS, shiftKey: true }); },
+      onExtend: (id: string) => { if (!single(id)) select(id, { ...NO_MODS, shiftKey: true }); },
       onSelectAll: () => {
         const ids = order();
-        commitSelection(rangeOf(ids, ids[0]!, ids[ids.length - 1]!, disabled));
+        commitSelection(rangeOf(ids, ids[0]!, ids[ids.length - 1]!, single));
       },
     } : {}),
     onActivate: (id, mods) => { const node = nodeAt(id); if (node) activate(node, mods); },
@@ -156,12 +168,15 @@ export const Tree = forwardRef(function Tree(
   // The element behind the ref changes when the tree swaps with the empty state.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useImperativeHandle(ref, () => treeEl.current as HTMLUListElement, [isEmpty]);
+  useUntabbedControls(grid, treeEl);
+  // A treegrid's focused element is the row box; a tree's is the `li` around it.
+  const rowBox = (id: string) => (grid ? items.current.get(id) : items.current.get(id)?.firstElementChild) as HTMLElement | undefined;
   const drag = useTreeDrag({
     enabled: !!onMove,
     onDragOutside, onDropOutside, externalDrag, dropRef,
     nodes, visible, expanded, selected,
     container: () => treeEl.current,
-    rowEl: (id) => items.current.get(id)?.firstElementChild as HTMLElement | undefined,
+    rowEl: rowBox,
     canDrop, onMove, onCopy, onLink,
     onPress: (id, mods) => { const v = visible[indexOf.get(id) ?? -1]; if (v) activate(v.node, mods); },
     expand: (id) => { if (!expanded.has(id)) setExpanded(new Set(expanded).add(id)); },
@@ -171,74 +186,58 @@ export const Tree = forwardRef(function Tree(
     return <div className={[s.empty, className].filter(Boolean).join(' ')}>{empty ?? '—'}</div>;
   }
 
-  const onKeyDown = (node: TreeNode) => (e: KeyboardEvent<HTMLLIElement>) => {
+  const onKeyDown = (node: TreeNode) => (e: KeyboardEvent<HTMLElement>) => {
+    if (grid && controlCellKey(e, (delta, extend) => nav.go(node.id, (indexOf.get(node.id) ?? 0) + delta, extend))) return;
     if (e.target !== e.currentTarget) return;
+    onRowKeyDown?.(node.id, e);
+    if (e.defaultPrevented) return;
     if (onMove && handleMoveKey(e, node.id, { nodes, selected, expanded, setExpanded, canDrop, onMove, focusAfterMove: nav.focusLater })) return;
+    if (grid && enterControls(e, !!node.children && !expanded.has(node.id))) return;
     nav.onKeyDown(node.id, e);
   };
 
   const tipNode = rowTip.tip && !drag.state.dragging ? visible[indexOf.get(rowTip.tip.id) ?? -1]?.node : undefined;
 
-  const onRowClick = (node: TreeNode) => (e: MouseEvent<HTMLElement>) => activate(node, modsOf(e));
-  const onTwistyClick = (node: TreeNode) => () => toggle(node);
-
   let seq = 0;
   const renderLevel = (list: readonly TreeNode[], level: number): ReactNode =>
     list.map((node, pos) => {
-      const n = seq++;
-      const branch = !!node.children;
-      const open = branch && expanded.has(node.id);
-      const labelId = `${baseId}-${n}`;
-      const trailingId = node.trailing != null ? `${baseId}-${n}-t` : undefined;
+      const open = !!node.children && expanded.has(node.id);
       return (
-        <li
+        <TreeRow
           key={node.id}
-          ref={nav.rowRef(node.id)}
-          role="treeitem"
-          className={[s.item, node.className].filter(Boolean).join(' ')}
-          aria-level={level}
-          aria-setsize={list.length}
-          aria-posinset={pos + 1}
-          aria-expanded={branch ? open : undefined}
-          aria-selected={selectable ? selected.has(node.id) : undefined}
-          aria-disabled={node.disabled || undefined}
-          aria-current={node.current ? 'true' : undefined}
-          aria-labelledby={trailingId ? `${labelId} ${trailingId}` : labelId}
-          aria-description={typeof node.tooltip === 'string' ? node.tooltip : undefined}
-          data-tree-id={node.id}
-          data-muted={node.muted ? 'true' : undefined}
-          data-drop={drag.state.mark?.id === node.id ? drag.state.mark.where : undefined}
-          data-dragging={drag.state.effect === 'move' && drag.state.dragging?.includes(node.id) ? 'true' : undefined}
-          tabIndex={node.id === nav.tabStop ? 0 : -1}
+          node={node} grid={grid} level={level} setSize={list.length} posInSet={pos + 1} open={open}
+          selected={selectable ? selected.has(node.id) : undefined}
+          tabStop={node.id === nav.tabStop}
+          labelId={`${baseId}-${seq++}`}
+          foldBy={foldBy}
+          drop={drag.state.mark?.id === node.id ? drag.state.mark.where : undefined}
+          dragging={drag.state.effect === 'move' && !!drag.state.dragging?.includes(node.id)}
+          drags={!!onMove}
+          rowRef={nav.rowRef(node.id)}
           onKeyDown={onKeyDown(node)}
           onFocus={(e) => {
             if (e.target !== e.currentTarget) return;
             nav.onFocus(node.id);
             // A press focuses the item too, and the pointer's own rest is what opens the tooltip then.
-            if (node.tooltip != null && e.currentTarget.matches(':focus-visible')) rowTip.rest(node.id, e.currentTarget.firstElementChild as HTMLElement);
+            if (node.tooltip != null && e.currentTarget.matches(':focus-visible')) rowTip.rest(node.id, rowBox(node.id)!);
           }}
           onBlur={(e) => { if (e.target === e.currentTarget) rowTip.clear(); }}
+          onPress={(e) => { if (!isInControlWithin(e.target, e.currentTarget)) activate(node, modsOf(e)); }}
+          onToggle={() => toggle(node)}
+          onPointerEnter={node.tooltip != null ? (e) => rowTip.rest(node.id, e.currentTarget) : undefined}
+          onPointerLeave={node.tooltip != null ? rowTip.clear : undefined}
+          onPointerDown={(e) => {
+            rowTip.clear();
+            if (onMove) drag.onPointerDown(node.id, e);
+          }}
+          onContextMenu={onRowContextMenu ? (e) => onRowContextMenu(node.id, e) : undefined}
         >
-          <TreeRowBox
-            className={s.row} href={node.href} draggable={onMove ? false : undefined}
-            onPress={onRowClick(node)}
-            onPointerEnter={node.tooltip != null ? (e) => rowTip.rest(node.id, e.currentTarget) : undefined}
-            onPointerLeave={node.tooltip != null ? rowTip.clear : undefined}
-            onPointerDown={(e) => {
-              rowTip.clear();
-              if (onMove) drag.onPointerDown(node.id, e);
-            }}
-          >
-            <TreeRowLead foldBy={foldBy} branch={branch} open={open} leading={node.leading} onToggle={onTwistyClick(node)} />
-            <span id={labelId} className={s.label}>{node.label}</span>
-            {trailingId && <span id={trailingId} className={s.trailing}>{node.trailing}</span>}
-          </TreeRowBox>
           {open && node.children!.length > 0 && (
-            <ul role="group" className={guides ? `${s.group} ${s.guide}` : s.group}>
+            <ul role={grid ? 'none' : 'group'} className={guides ? `${s.group} ${s.guide}` : s.group}>
               {renderLevel(node.children!, level + 1)}
             </ul>
           )}
-        </li>
+        </TreeRow>
       );
     });
 
@@ -246,7 +245,7 @@ export const Tree = forwardRef(function Tree(
     <>
       <ul
         ref={treeEl}
-        role="tree"
+        role={grid ? 'treegrid' : 'tree'}
         className={[s.tree, className].filter(Boolean).join(' ')}
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}

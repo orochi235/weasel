@@ -1,4 +1,4 @@
-import type { HTMLAttributes, MouseEvent, ReactNode } from 'react';
+import { forwardRef, type HTMLAttributes, type MouseEvent, type ReactNode, type Ref } from 'react';
 import { DisclosureMark } from '../Disclosure';
 import s from './Tree.module.css';
 
@@ -42,16 +42,25 @@ interface RowBoxProps extends Omit<HTMLAttributes<HTMLElement>, 'onClick'> {
 }
 
 /**
- * A row's box: a link when the row has an `href`, out of the tab order, which leaves a click with Cmd, Ctrl or Alt
- * to the browser. A click it takes focuses the treeitem around it, which would otherwise lose focus to the link.
+ * A row's box: a link when the row has an `href`, which leaves a click with Cmd, Ctrl or Alt to the browser. The
+ * link is out of the tab order unless it is itself the row a treegrid focuses; a click it takes focuses whichever
+ * element is the row, which would otherwise lose focus to the link.
  */
-export function TreeRowBox({ href, onPress, draggable, ...props }: RowBoxProps) {
-  if (href == null) return <div {...props} onClick={onPress} />;
+export const TreeRowBox = forwardRef(function TreeRowBox(
+  { href, onPress, draggable, ...props }: RowBoxProps,
+  ref: Ref<HTMLElement>,
+) {
+  if (href == null) return <div ref={ref as Ref<HTMLDivElement>} {...props} onClick={onPress} />;
   const onClick = (e: MouseEvent<HTMLElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.altKey) return;
     e.preventDefault();
-    e.currentTarget.parentElement?.focus();
+    (props.role === 'row' ? e.currentTarget : e.currentTarget.parentElement)?.focus();
     onPress(e);
   };
-  return <a {...props} href={href} tabIndex={-1} draggable={draggable} onClick={onClick} />;
-}
+  return (
+    <a
+      ref={ref as Ref<HTMLAnchorElement>} {...props} href={href} tabIndex={props.tabIndex ?? -1} draggable={draggable}
+      onClick={onClick}
+    />
+  );
+});

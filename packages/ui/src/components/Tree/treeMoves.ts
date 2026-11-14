@@ -39,9 +39,9 @@ export function siblingsOf(nodes: readonly TreeNode[], parentId: string | null):
   return find(nodes) ?? [];
 }
 
-function treeOrder(nodes: readonly TreeNode[]): string[] {
-  const out: string[] = [];
-  const walk = (list: readonly TreeNode[]) => { for (const n of list) { out.push(n.id); if (n.children) walk(n.children); } };
+function treeOrder(nodes: readonly TreeNode[]): TreeNode[] {
+  const out: TreeNode[] = [];
+  const walk = (list: readonly TreeNode[]) => { for (const n of list) { out.push(n); if (n.children) walk(n.children); } };
   walk(nodes);
   return out;
 }
@@ -52,11 +52,13 @@ function hasAncestorIn(parents: Map<string, string | null>, id: string, set: Rea
 }
 
 /** What a drag from `id` carries: the selection in tree order if `id` is in it, else `id` alone. A node travels
- *  with a selected ancestor rather than on its own. */
+ *  with a selected ancestor rather than on its own, and an immovable one stays behind. */
 export function draggedIdsFor(nodes: readonly TreeNode[], selected: ReadonlySet<string>, id: string): string[] {
   if (!selected.has(id)) return [id];
   const parents = parentsOf(nodes);
-  return treeOrder(nodes).filter((x) => selected.has(x) && !hasAncestorIn(parents, x, selected));
+  return treeOrder(nodes)
+    .filter((n) => selected.has(n.id) && !n.immovable && !hasAncestorIn(parents, n.id, selected))
+    .map((n) => n.id);
 }
 
 /** Whether `target` is one of `ids` or sits beneath one. */

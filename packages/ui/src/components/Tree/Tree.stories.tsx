@@ -156,6 +156,34 @@ export const Reorderable: Story = {
   },
 };
 
+/** A node with `controls` makes the tree a treegrid: each row ends in its toggles, which Right reaches from the row
+ *  and Left or Escape leaves. A click on one is the toggle's own, not the row's. */
+export const WithControls: Story = {
+  render: function Render(args) {
+    const [starred, setStarred] = useState<ReadonlySet<string>>(new Set(['index.ts']));
+    const withStar = (list: readonly TreeNode[]): TreeNode[] => list.map((n) => ({
+      ...n,
+      controls: (
+        <input
+          type="checkbox" aria-label={`Star ${n.id}`} checked={starred.has(n.id)}
+          onChange={(e) => setStarred((prev) => {
+            const next = new Set(prev);
+            if (e.target.checked) next.add(n.id);
+            else next.delete(n.id);
+            return next;
+          })}
+        />
+      ),
+      ...(n.children ? { children: withStar(n.children) } : {}),
+    }));
+    return (
+      <div style={{ width: 240 }}>
+        <Tree {...args} aria-label="Files" nodes={withStar(FILES)} defaultExpandedIds={['src']} selectionMode="single" />
+      </div>
+    );
+  },
+};
+
 /** With `onCopy` too, a drag with Alt held leaves the rows where they are and lands copies of them. The rows
  *  are not dimmed while it is held, and the ghost carries a plus. */
 export const Copyable: Story = {
