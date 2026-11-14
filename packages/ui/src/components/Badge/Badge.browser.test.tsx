@@ -6,7 +6,7 @@ import { contrastOver, parseComputedColor, type Rgba } from '@weasel-js/theme/te
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { painted } from '@weasel-js/ui/testing/paintedContrast';
-import { GestureRoute } from '@weasel-js/ui/components/GestureRoute';
+import { Powerline } from '@weasel-js/ui/components/Powerline';
 import { Badge, type BadgeBase } from '@weasel-js/ui/components/Badge';
 import { BADGE_LOOKS, BASES, lookProps } from '@weasel-js/ui/testing/badge';
 import type { BadgeShape, BadgeSize } from './types';
@@ -56,10 +56,17 @@ const PLAIN_INK_FLOOR = 1.9;
 
 
 describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
-  test('a gesture route\'s modifier chord is legible on its fill', async () => {
+  // The chain devtools' GestureRoute draws for `[*:*] drag => anchor +shift`.
+  test('a modifier chord in a powerline is legible on its fill', async () => {
     const { container } = render(
       <Surface mode={mode}>
-        <GestureRoute route="[*:*] drag => anchor +shift" />
+        <Powerline
+          segments={[
+            { text: 'drag', grade: 'info', variant: 'outline', endCap: 'chevron' },
+            { text: '+⇧', emphasis: 'low', variant: 'solid', endCap: 'chevron' },
+            { text: 'anchor', emphasis: 'low', variant: 'outline' },
+          ]}
+        />
       </Surface>,
     );
     const chord = [...container.querySelectorAll<HTMLElement>('[data-variant="solid"]')].find((el) => el.textContent?.includes('⇧'))!;
