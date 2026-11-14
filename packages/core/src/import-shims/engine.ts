@@ -76,13 +76,13 @@ export type { Bivariant, ClipFromPoseFn, CopiesFromPoseFn, DerivePathFn, DeriveP
 export { contentRoots, hidesSubtree, isNodeHidden, isNodeLocked, isPageStructure, nodeGates, withoutPageStructure } from '../core/scene/nodeGates';
 export type { GateSource, GatedLayer, GatedNode, NodeGates } from '../core/scene/nodeGates';
 export { OUTPUT_GRID_KEY, outputGridOf, quantizeSize, quantizedShape } from '../core/scene/outputGrid';
-export type { TweenEffect } from '../core/scene/pathEffects/tween';
 export { PATH_EFFECT, createPathEffectDerivations, pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects } from '../core/scene/pathEffects/derive';
 export type { PathEffectDerivations } from '../core/scene/pathEffects/derive';
 export type { BendAlongEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, ZigzagEffect } from '../core/scene/pathEffects/effects';
 export type { EffectBand, EffectItem, EffectSource, EffectSourceReader, PathEffectOptions } from '../core/scene/pathEffects/source';
 export { textAlongParts } from '../core/scene/pathEffects/textAlong';
 export type { TextAlongEffect } from '../core/scene/pathEffects/textAlong';
+export type { TweenEffect } from '../core/scene/pathEffects/tween';
 export { createPoseFeed } from '../core/scene/poseFeed';
 export type { FeedDelta } from '../core/scene/poseFeed';
 export { createPoseOverrides } from '../core/scene/poseOverrides';
