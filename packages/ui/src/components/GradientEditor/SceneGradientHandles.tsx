@@ -19,10 +19,7 @@ import {
 import { isMeshGradientPaint, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { MeshHandles } from '../MeshEditor/MeshHandles';
 import { GradientHandles } from './GradientHandles';
-
-/** The paint slots a node carries. Either may hold a gradient, and each has
- *  its own action, so the overlay is told which one it is editing. */
-export type PaintSlot = 'fill' | 'stroke';
+import type { PaintSlot } from '../paintValue';
 
 /** What `SceneGradientHandles` reads off a node. Every field is optional, so
  *  any richer app data shape satisfies it. */

@@ -612,11 +612,6 @@ name a package. Breaking changes are in scope.
   `Rulers`. A 1D `Ruler` over a `ContinuousScale`, with thinning built in and Timeline's playhead and BandEditor's
   range ends as children *(design inferred)*. Closes when the tick logic lives in one place.
 
-- **(P2) [agent] Register mesh as a paint kind instead of branching in `GradientEditor`.** `GradientEditor.tsx:163`
-  returns `<MeshEditor>` for a mesh, `MeshEditor/MeshHandles` imports `../GradientEditor/handleOverlay`, and
-  `PaintInput` already picks editors through `valueKind.Editor`. Move `PaintSlot` beside the paint helpers. Closes
-  when `GradientEditor` has no mesh branch.
-
 - **(P3) [agent] Make `LayerList` a `Tree` with a row-controls slot.** `Tree` is `role="tree"` with cross-parent
   drops; `LayerList` is `role="treegrid"` with a `useReorderDragList` per level, its own `layerTree.ts`, and
   `ItemList`'s CSS; `Tree`'s `trailing` is documented "Not a control". Also resolve the `useSceneLayerList` name

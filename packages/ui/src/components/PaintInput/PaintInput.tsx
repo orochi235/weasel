@@ -22,6 +22,7 @@ import { icon } from '../../icons.gen';
 import { ColorField } from '../ColorField';
 import { OpacityRange } from '../ColorField/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
+import { paintKindEditor } from '../paintKindEditor';
 import { PatternPicker } from '../PatternPicker';
 import { paintPreviewCss } from '../../paintPreview';
 import { solidColorOf } from '../paintValue';
@@ -280,12 +281,8 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
     }
     // Absence has nothing to edit. The lit segment is the whole statement.
     if (value === null) return null;
-    // A registered `Editor` wins even for a built-in id: re-registering one is
-    // how a consumer replaces a kit control.
-    if (valueKind?.Editor) {
-      const Editor = valueKind.Editor;
-      return withOpacity(value, <Editor value={value} onInput={onInput} onChange={onChange} />);
-    }
+    // Every gradient kind is `GradientEditor`'s, which mounts the kind's own
+    // `Editor` when it has one.
     if (valueKind?.stopsOf) {
       return withOpacity(value, (
         <GradientEditor
@@ -295,6 +292,10 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
           onChange={onChange}
         />
       ));
+    }
+    const Editor = paintKindEditor(valueKind);
+    if (Editor) {
+      return withOpacity(value, <Editor value={value} onInput={onInput} onChange={onChange} />);
     }
     if (isPatternPaint(value)) {
       return withOpacity(

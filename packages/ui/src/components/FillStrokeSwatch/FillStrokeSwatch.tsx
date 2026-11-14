@@ -5,7 +5,7 @@ import { solidColorOf } from '../paintValue';
 import { Button } from '../Button';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import { usePickerClose } from '../ColorField/usePickerClose';
-import type { PaintSlot } from '../GradientEditor';
+import type { PaintSlot } from '../paintValue';
 import s from './FillStrokeSwatch.module.css';
 
 /** Props for {@link FillStrokeSwatch}. */

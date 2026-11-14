@@ -7,6 +7,10 @@
 
 import { isPaint, isSolidPaint, type Paint } from '@weasel-js/paint';
 
+/** The paint slots a node carries, `fill` and `stroke`. Either may hold any
+ *  paint, and each has its own action. */
+export type PaintSlot = 'fill' | 'stroke';
+
 /** The color of a solid paint, or `undefined` for anything else — including a
  *  value that isn't a paint at all. */
 export function solidColorOf(value: unknown): string | undefined {
