@@ -1,5 +1,12 @@
 import { Popover } from '@weasel-js/ui/components/Popover';
-import { createContext, type ReactNode, useContext, useRef, useState } from 'react';
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Dialog as RACDialog } from 'react-aria-components';
 import type { TrialContribution } from '../chrome/types';
 import { icon } from '../icons.gen';
@@ -32,6 +39,12 @@ function FloatSidebar() {
   const value = useContext(FloatSidebarContext);
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement | null>(null);
+  const body = useRef<HTMLElement | null>(null);
+  // Undocking a section takes its focused button out of the panel, leaving focus on <body>, where the panel's
+  // Escape never hears it. Only lost focus is pulled back, so a select's menu outside the panel keeps its own.
+  useLayoutEffect(() => {
+    if (open && document.activeElement === document.body) body.current?.focus();
+  });
   if (!value) return null;
   return (
     <>
@@ -61,7 +74,11 @@ function FloatSidebar() {
         className="lk-float-sidebar"
         data-weasel-overlay=""
       >
-        <RACDialog className="lk-float-sidebar__body" aria-label={`${value.title} settings`}>
+        <RACDialog
+          ref={body}
+          className="lk-float-sidebar__body"
+          aria-label={`${value.title} settings`}
+        >
           {value.sections}
         </RACDialog>
       </Popover>
