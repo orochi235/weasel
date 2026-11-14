@@ -547,12 +547,13 @@ name a package. Breaking changes are in scope.
   `disabled`/`disabledReason`. `Properties/rowContext.ts` carries only `{ label }`, read only by `EasingPicker`.
   `mixed` stays a prop. Closes when those row props are read from the scope rather than declared on each row.
 
-- **(P2) [maintainer] Pick one name for disabled, then add a `<Disabled reason>` scope.** About 30 components take
-  `disabled` or `isDisabled` and 15 take `disabledReason`: the React Aria-shaped ones say `isDisabled`, and
-  `Button`, `CloseButton`, `MenuButton`, `Disclosure`, and the font selects say `disabled`. Every reason ends up in
-  `segmentTooltipContent`, so a scope that it and `stillReachable` read can replace the per-component pair,
-  overridable per control; per-option disabling stays a field. The name is the maintainer's call; the scope is agent
-  work after it. Closes when one name is used library-wide and the scope ships.
+- **(P2) [agent] `disabled` and `readOnly` on the controls that take neither.** The `<Disabled>`/`<ReadOnly>`
+  scopes (2026-11-13) reach every kit control that already took `disabled`, but these never took one, so a scope
+  passes over them: `Slider`, `SwatchGrid`, `SwatchStrip`, `RecentColors`, `PatternPicker`, `CurveEditor`,
+  `BandEditor`, `MeshEditor`, `Jog`, `LayerList`, `ItemList`, `DataGrid`, `Timeline`, `PageTabs`, and `TokenPanel`.
+  Each needs its own refusal (a drag, a keyboard step, a swatch press) and the reason's tooltip through
+  `useHoldReason`, which is new behavior per component rather than a rename, hence a pass of its own. Closes when each
+  reads `useControlAccess`.
 
 - **(P3) [agent] A `<Density>` scope for the `sm`/`md` controls.** `ButtonBar`, `ToggleBar`, `OptionsBar`, and
   `ColorModeControl` alias `SegmentedSize`, ui-logic's `ButtonSize` is the same, and `Toolbar` declares `'md'|'sm'`
@@ -599,10 +600,6 @@ name a package. Breaking changes are in scope.
   `ThemeSwitcher` is a generic cycle button. The renames (`ThemeSwitcher`'s especially) are the maintainer's; the
   folding is agent work. Closes when each is a preset, a builder (`fontWeightOptions()`,
   `useFontFamilyOptions()`), or gone.
-
-- **(P3) [agent] One `Option` type for `Select`, `ComboBox`, and `MenuButton`.** `SelectOption` has `isDisabled`,
-  icon, description, and `disabledReason`; `ComboBoxOption` has only `isDisabled`; `MenuButtonItem` says
-  `disabled`; `optionLabels.tsx` types its input loosely to cope. Closes when all three take one type.
 
 - **(P2) [maintainer] Move `PrefSchemaEditor` out of ui.** 8,341 source lines plus 10,308 of tests; 43 files
   (3,624 lines) are pure model with no React or CSS (`schemaEdit`, `schemaExport`, `workspaceCodec`, `bundle*`,
