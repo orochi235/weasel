@@ -18,8 +18,10 @@ reports the records as `remote` changes and starts writing, beginning with
 whatever was set while it waited; those writes win over what it read.
 
 A write storage rejects stays queued and is sent again on the same backoff,
-and `flush()` resolves false until it lands. While a write is queued or on its
-way, another writer's change to that record is ignored. With `retryMs: false`
+and `flush()` resolves false until it lands; `pending(name)` says whether one
+record's write is still queued or on its way, so a caller can tell which of a
+flush's writes failed. While a write is queued or on its way, another writer's
+change to that record is ignored. With `retryMs: false`
 a rejected write waits for the next flush.
 
 A cache flushes when the page goes away or turns hidden, the last moment a

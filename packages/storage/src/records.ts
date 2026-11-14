@@ -42,6 +42,9 @@ export interface RecordCache {
    *  none was queued; false when a write threw (it stays queued) or writing
    *  is off and writes were queued. */
   flush(): Promise<boolean>;
+  /** Whether a write to `name` is queued or on its way to storage. After a
+   *  flush, one the flush sent that is still pending did not land. */
+  pending(name: string): boolean;
   /** Try a failed first read again now, ahead of the backoff. Resolves
    *  whether the records have been read. */
   read(): Promise<boolean>;
@@ -147,9 +150,8 @@ function buildCache(
     applied: emit,
     overruled: overruledEmitter.emit,
   });
-  const applyRemote = remote.apply;
 
-  let unsubscribe = writable() ? storage.subscribe?.(prefix, applyRemote) : undefined;
+  let unsubscribe = writable() ? storage.subscribe?.(prefix, remote.apply) : undefined;
 
   const stopRetrying = (): void => {
     if (retryTimer) clearTimeout(retryTimer);
@@ -190,10 +192,10 @@ function buildCache(
       return false;
     }
     unread = false;
-    unsubscribe = storage.subscribe?.(prefix, applyRemote);
+    unsubscribe = storage.subscribe?.(prefix, remote.apply);
     stopEarly?.();
     // Skips every name with a write queued while unread, so those win.
-    applyRemote([...listed, ...early]);
+    remote.apply([...listed, ...early]);
     if (queue.size > 0) queue.schedule();
     landed();
     return true;
@@ -236,6 +238,7 @@ function buildCache(
     delete: remove,
     subscribe: changed.subscribe,
     flush: queue.flush,
+    pending: (name) => queue.owns(name),
     read,
     whenRead: () => hasRead,
     close: async () => {
