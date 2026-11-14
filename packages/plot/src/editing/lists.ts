@@ -1,5 +1,7 @@
 /** List edits every chart kind's structural edits are built from, as plain data in and out. */
 
+import { freshId } from '@weasel-js/registry';
+
 /** `list` with `item` inserted before index `at`; `at` equal to the length appends. Throws on any other index. */
 export function insertAt<T>(list: readonly T[], at: number, item: T, who: string): T[] {
   if (!Number.isInteger(at) || at < 0 || at > list.length) throw new Error(`${who}: cannot insert at ${at} in a list of ${list.length}`);
@@ -28,10 +30,7 @@ export function updateAt<T>(list: readonly T[], at: number, change: (item: T) =>
 
 /** `base`, `sep`, and the first number from `from` up that makes a name `taken` does not hold: `Slice 3`. */
 export function freshName(base: string, taken: Iterable<string>, from = 1, sep = ' '): string {
-  const used = new Set(taken);
-  let n = from;
-  while (used.has(`${base}${sep}${n}`)) n++;
-  return `${base}${sep}${n}`;
+  return freshId(base, new Set(taken), { from, sep });
 }
 
 /** `obj` with `key` set to `value`, or without it when `value` is `undefined`. */
