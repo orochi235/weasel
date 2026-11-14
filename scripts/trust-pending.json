@@ -1,7 +1,3 @@
 [
-  "@weasel-js/brush",
-  "@weasel-js/dither",
-  "@weasel-js/p-touch",
-  "@weasel-js/prefs-editor",
-  "@weasel-js/ui-input"
+  "@weasel-js/prefs-editor"
 ]
