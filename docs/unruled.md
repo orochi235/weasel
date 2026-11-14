@@ -1490,7 +1490,7 @@ Calls the round made:
 - `lerpHueDeg` with `longer` and two equal hues stays put, where CSS goes a full turn, because an achromatic endpoint
   takes the other side's hue and a full turn would spin a ramp to white or black. Left as is.
 - Marquee and lasso extend the selection only with Shift, whatever key the selection extends with. Left as is.
-- `ActionSettingsDialog` stays editable when its action turns disabled; the popover disables. Left as is.
+- `CommandPalette`'s action-settings dialog stays editable when its action turns disabled; the popover disables. Left as is.
 - `CommandPalette`'s `reasonLabels` replaces the default wording rather than merging with it. Left as is.
 - `createMarkdownRenderer` ignores a run's own `fill`, and under a `textBaseline` other than alphabetic places each
   run by its own font's metrics. Left as is. `PositionedRun.lineSize` is new, after `size` was removed.

@@ -14,7 +14,8 @@ import {
 } from '@weasel-js/core';
 import { Dialog } from '../Dialog';
 import { useAppearance } from '../appearance';
-import { ActionSettingsDialog } from '../ActionSettings/ActionSettingsDialog';
+import { PrefsDialog } from '../Prefs/PrefsDialog';
+import { useActionSettings } from '../ActionSettings/useActionSettings';
 import { DEFAULT_REASON_LABELS, reasonLabel } from '../ActionBar/reasonLabels';
 import { KeySequence, ShortcutKeys } from '../Keycaps';
 import { keySpecFromKey } from '@weasel-js/gestures';
@@ -170,6 +171,7 @@ export function CommandPalette({ isOpen: open, onOpenChange, reasonLabels }: Com
   }
   // An entry carrying settings, whose form opens once the palette has closed.
   const [settingsOf, setSettingsOf] = useState<ActionItem | null>(null);
+  const settings = useActionSettings(settingsOf ?? undefined);
   const items = usePaletteItems(open, query);
   const { registry, filtered } = items;
 
@@ -214,7 +216,15 @@ export function CommandPalette({ isOpen: open, onOpenChange, reasonLabels }: Com
 
   return (
     <>
-      <ActionSettingsDialog item={settingsOf} onClose={() => setSettingsOf(null)} />
+      {settingsOf && settings && (
+        <PrefsDialog
+          {...settings}
+          isOpen
+          onOpenChange={(next) => { if (!next) setSettingsOf(null); }}
+          title={settings.schema.name || settingsOf.label}
+          layout="list"
+        />
+      )}
       <Dialog
         isOpen={open}
         onOpenChange={onOpenChange}
