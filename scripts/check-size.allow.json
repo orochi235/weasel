@@ -136,7 +136,7 @@
     "longestFunction": 181
   },
   "packages/labkit/src/specimen/Specimen.tsx": {
-    "lines": 793,
+    "lines": 797,
     "longestFunction": 126
   },
   "packages/labkit/src/state/bindLabStore.ts": {
@@ -202,10 +202,10 @@
     "longestFunction": 136
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
-    "longestFunction": 289
+    "longestFunction": 286
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
-    "lines": 405,
+    "lines": 404,
     "longestFunction": 309
   },
   "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {

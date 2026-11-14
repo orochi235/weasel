@@ -1,9 +1,8 @@
 /**
- * Built-in function/curve layer for LayeredCurveEditor. Bundles the
- * curve-render + anchor-render + drag/insert/delete gestures that were
- * the entirety of the original `CurveEditor`. Multiple instances coexist
- * by id; consumers can compose several to plot e.g. a primary function
- * and a derived (read-only) curve on the same chart.
+ * Built-in function/curve layer for LayeredCurveEditor, drawn by a
+ * `FunctionLayer` child. Bundles the curve-render + anchor-render +
+ * drag/insert/delete gestures. Several coexist on one editor, e.g. a
+ * primary function and a derived (read-only) curve on the same chart.
  */
 import type { ReactNode } from 'react';
 import { CurveFill } from './CurveFill';

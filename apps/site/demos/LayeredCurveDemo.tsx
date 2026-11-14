@@ -1,18 +1,21 @@
 import { useMemo, useState } from 'react';
-import { LayeredCurveEditor, createFunctionLayer, type ControlPoint, type CurveLayer, type FunctionLayerState } from '@weasel-js/ui/components/CurveEditor';
+import {
+  CustomLayer, FunctionLayer, LayeredCurveEditor, type ControlPoint, type CurveLayer, type FunctionLayerState,
+} from '@weasel-js/ui/components/CurveEditor';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 
 /**
  * The rim → contour curve of a beveled solid of revolution, as two function
  * layers on one plot: the bevel covers x ∈ [0, b] and the spline x ∈ [b, half].
  * The curves are held C0 continuous at the seam b — the bevel's last anchor and
- * the spline's first share their y, kept in sync in `onLayerChange`. A third
+ * the spline's first share their y, kept in sync in each layer's `onChange`. A third
  * layer is the draggable handle for b.
  */
 
 const HALF_WIDTH = 1.0;
 const PLOT_W = 640;
 const PLOT_H = 380;
+const BEVEL_FILL = { side: 'below' } as const;
 
 // ─── partition handle (custom layer) ───────────────────────────────
 
@@ -104,50 +107,33 @@ export function LayeredCurveDemo() {
     setPartitionState((prev) => prev.x === next ? prev : { x: next });
   };
 
-  // Layers carry b in their config (via xClamp), so they're rebuilt
-  // when b changes. Cheap; only happens on a discrete b update.
-  const bevelLayer = useMemo(() => createFunctionLayer({
-    id: 'bevel', domain: '1d', endpoints: 'pinned-x', constrain: 'function',
-    addPointMode: 'click-curve', fill: { side: 'below' },
-    xClamp: [0, b], minPoints: 2,
-  }), [b]);
-  const splineLayer = useMemo(() => createFunctionLayer({
-    id: 'spline', domain: '1d', endpoints: 'pinned-x', constrain: 'function',
-    addPointMode: 'click-curve', xClamp: [b, HALF_WIDTH], minPoints: 2,
-  }), [b]);
+  // The curves' x bounds follow b.
+  const bevelClamp = useMemo(() => [0, b] as const, [b]);
+  const splineClamp = useMemo(() => [b, HALF_WIDTH] as const, [b]);
   const partitionLayer = useMemo(() => createPartitionLayer(), []);
 
-  const layers = useMemo(() => [
-    { layer: bevelLayer, state: bevelState },
-    { layer: splineLayer, state: splineState },
-    { layer: partitionLayer, state: partitionState },
-  ], [bevelLayer, bevelState, splineLayer, splineState, partitionLayer, partitionState]);
-
-  const onLayerChange = (id: string, nextUnknown: unknown) => {
-    if (id === 'bevel') {
-      const next = nextUnknown as FunctionLayerState;
-      setBevelState(next);
-      // C0: the spline's first anchor's y mirrors the bevel's last.
-      const seamY = next.points[next.points.length - 1].y;
-      setSplineState((curr) => ({
-        ...curr,
-        points: curr.points.map((p, i) => (i === 0 ? { ...p, y: seamY } : p)),
-      }));
-    } else if (id === 'spline') {
-      const next = nextUnknown as FunctionLayerState;
-      setSplineState(next);
-      const seamY = next.points[0].y;
-      setBevelState((curr) => ({
-        ...curr,
-        points: curr.points.map((p, i) =>
-          (i === curr.points.length - 1 ? { ...p, y: seamY } : p),
-        ),
-      }));
-    } else if (id === 'partition') {
-      const next = nextUnknown as PartitionState;
-      setPartitionState(next);
-      moveSeam(next.x);
-    }
+  const onBevelChange = (next: FunctionLayerState) => {
+    setBevelState(next);
+    // C0: the spline's first anchor's y mirrors the bevel's last.
+    const seamY = next.points[next.points.length - 1].y;
+    setSplineState((curr) => ({
+      ...curr,
+      points: curr.points.map((p, i) => (i === 0 ? { ...p, y: seamY } : p)),
+    }));
+  };
+  const onSplineChange = (next: FunctionLayerState) => {
+    setSplineState(next);
+    const seamY = next.points[0].y;
+    setBevelState((curr) => ({
+      ...curr,
+      points: curr.points.map((p, i) =>
+        (i === curr.points.length - 1 ? { ...p, y: seamY } : p),
+      ),
+    }));
+  };
+  const onPartitionChange = (next: PartitionState) => {
+    setPartitionState(next);
+    moveSeam(next.x);
   };
 
   return (
@@ -167,8 +153,6 @@ export function LayeredCurveDemo() {
         </label>
       </div>
       <LayeredCurveEditor
-        layers={layers}
-        onLayerChange={onLayerChange}
         width={PLOT_W}
         height={PLOT_H}
         xRange={[0, HALF_WIDTH]}
@@ -185,6 +169,15 @@ export function LayeredCurveDemo() {
             --curve-line: rebeccapurple;
           }
         `}</style>
+        <FunctionLayer
+          id="bevel" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
+          fill={BEVEL_FILL} xClamp={bevelClamp} minPoints={2} state={bevelState} onChange={onBevelChange}
+        />
+        <FunctionLayer
+          id="spline" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
+          xClamp={splineClamp} minPoints={2} state={splineState} onChange={onSplineChange}
+        />
+        <CustomLayer layer={partitionLayer} state={partitionState} onChange={onPartitionChange} />
       </LayeredCurveEditor>
     </div>
   );

@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useMemo, useState, type ReactNode } from 'react';
-import { LayeredCurveEditor, createKeyframeLayer, keyframeLayerState, type KeyframeLayerState, createFunctionLayer, functionLayerState, type ControlPoint, type CurveLayer, type FunctionLayerState } from '@weasel-js/ui/components/CurveEditor';
+import {
+  CustomLayer, FunctionLayer, KeyframeLayer, LayeredCurveEditor, functionLayerState, keyframeLayerState,
+  type ControlPoint, type CurveLayer, type FunctionLayerState, type KeyframeLayerState,
+} from '@weasel-js/ui/components/CurveEditor';
 
 // ─────────────────────────────────────────────────────────────────────
 // Story 1 — function + numerical derivative (read-only derived layer)
@@ -22,20 +25,6 @@ function numericalDerivative(points: readonly ControlPoint[]): ControlPoint[] {
 }
 
 function TwoLayersDemo() {
-  const fnLayer = useMemo(
-    () => createFunctionLayer({
-      id: 'fn',
-      domain: '1d',
-      endpoints: 'pinned-x',
-      constrain: 'function',
-    }),
-    [],
-  );
-  const derivativeLayer = useMemo(
-    () => createFunctionLayer({ id: 'derivative', domain: '1d', interactive: false }),
-    [],
-  );
-
   const [fnState, setFnState] = useState<FunctionLayerState>(
     () => functionLayerState([
       { x: 0, y: 0.1 },
@@ -49,36 +38,18 @@ function TwoLayersDemo() {
     () => functionLayerState(numericalDerivative(fnState.points)),
   );
 
-  const layers = useMemo(
-    () => [
-      { layer: derivativeLayer, state: derivState },
-      { layer: fnLayer, state: fnState },
-    ],
-    [derivativeLayer, derivState, fnLayer, fnState],
-  );
-
-  const onLayerChange = (id: string, next: unknown) => {
-    if (id === 'fn') {
-      const fn = next as FunctionLayerState;
-      setFnState(fn);
-      setDerivState((prev) => ({ ...prev, points: numericalDerivative(fn.points) }));
-    } else if (id === 'derivative') {
-      setDerivState(next as FunctionLayerState);
-    }
+  const onFnChange = (fn: FunctionLayerState) => {
+    setFnState(fn);
+    setDerivState((prev) => ({ ...prev, points: numericalDerivative(fn.points) }));
   };
 
   return (
-    <LayeredCurveEditor
-      layers={layers}
-      onLayerChange={onLayerChange}
-      width={500}
-      height={300}
-      grid={{ divisions: 3 }}
-      axes={{}}
-    >
+    <LayeredCurveEditor width={500} height={300} grid={{ divisions: 3 }} axes={{}}>
       <style>{`
         [data-layer-id="derivative"] { --curve-line: var(--wzl-fg-subtle, #888); }
       `}</style>
+      <FunctionLayer id="derivative" domain="1d" interactive={false} state={derivState} onChange={setDerivState} />
+      <FunctionLayer id="fn" domain="1d" endpoints="pinned-x" constrain="function" state={fnState} onChange={onFnChange} />
     </LayeredCurveEditor>
   );
 }
@@ -91,11 +62,12 @@ function TwoLayersDemo() {
 // width). The bevel layer (goldenrod, filled below) covers x ∈ [0, b];
 // the contour spline (purple) covers [b, halfWidth]. The seam at x=b
 // is held C0 — the two layers' seam anchors share y, kept in sync by
-// the consumer inside `onLayerChange`. A third draggable handle layer
+// the consumer inside each layer's `onChange`. A third draggable handle layer
 // lets the user adjust b live; a control slider provides the initial
 // value.
 
 const HALF_WIDTH = 1.0;
+const BEVEL_FILL = { side: 'below' } as const;
 
 interface PartitionState {
   x: number;
@@ -213,65 +185,36 @@ function RimContourDemo(args: RimContourArgs) {
     moveSeam(args.initialB);
   }
 
-  // Layers are recreated on b changes so xClamp tracks the partition.
-  const bevelLayer = useMemo(() => createFunctionLayer({
-    id: 'bevel',
-    domain: '1d',
-    endpoints: 'pinned-x',
-    constrain: 'function',
-    addPointMode: 'click-curve',
-    fill: { side: 'below' },
-    xClamp: [0, b],
-    minPoints: 2,
-  }), [b]);
-  const splineLayer = useMemo(() => createFunctionLayer({
-    id: 'spline',
-    domain: '1d',
-    endpoints: 'pinned-x',
-    constrain: 'function',
-    addPointMode: 'click-curve',
-    xClamp: [b, HALF_WIDTH],
-    minPoints: 2,
-  }), [b]);
+  const bevelClamp = useMemo(() => [0, b] as const, [b]);
+  const splineClamp = useMemo(() => [b, HALF_WIDTH] as const, [b]);
   const partitionLayer = useMemo(() => createPartitionLayer(), []);
 
-  const layers = useMemo(() => [
-    { layer: bevelLayer, state: bevelState },
-    { layer: splineLayer, state: splineState },
-    { layer: partitionLayer, state: partitionState },
-  ], [bevelLayer, bevelState, splineLayer, splineState, partitionLayer, partitionState]);
-
-  const onLayerChange = (id: string, nextUnknown: unknown) => {
-    if (id === 'bevel') {
-      const next = nextUnknown as FunctionLayerState;
-      setBevelState(next);
-      // C0: spline's first anchor's y follows bevel's last anchor's y.
-      const seamY = next.points[next.points.length - 1].y;
-      setSplineState((curr) => ({
-        ...curr,
-        points: curr.points.map((p, i) => (i === 0 ? { ...p, y: seamY } : p)),
-      }));
-    } else if (id === 'spline') {
-      const next = nextUnknown as FunctionLayerState;
-      setSplineState(next);
-      const seamY = next.points[0].y;
-      setBevelState((curr) => ({
-        ...curr,
-        points: curr.points.map((p, i) =>
-          (i === curr.points.length - 1 ? { ...p, y: seamY } : p),
-        ),
-      }));
-    } else if (id === 'partition') {
-      const next = nextUnknown as PartitionState;
-      setPartitionState(next);
-      moveSeam(next.x);
-    }
+  const onBevelChange = (next: FunctionLayerState) => {
+    setBevelState(next);
+    // C0: spline's first anchor's y follows bevel's last anchor's y.
+    const seamY = next.points[next.points.length - 1].y;
+    setSplineState((curr) => ({
+      ...curr,
+      points: curr.points.map((p, i) => (i === 0 ? { ...p, y: seamY } : p)),
+    }));
+  };
+  const onSplineChange = (next: FunctionLayerState) => {
+    setSplineState(next);
+    const seamY = next.points[0].y;
+    setBevelState((curr) => ({
+      ...curr,
+      points: curr.points.map((p, i) =>
+        (i === curr.points.length - 1 ? { ...p, y: seamY } : p),
+      ),
+    }));
+  };
+  const onPartitionChange = (next: PartitionState) => {
+    setPartitionState(next);
+    moveSeam(next.x);
   };
 
   return (
     <LayeredCurveEditor
-      layers={layers}
-      onLayerChange={onLayerChange}
       width={args.width}
       height={Math.round(args.width * 0.6)}
       xRange={[0, HALF_WIDTH]}
@@ -288,6 +231,15 @@ function RimContourDemo(args: RimContourArgs) {
           --curve-line: rebeccapurple;
         }
       `}</style>
+      <FunctionLayer
+        id="bevel" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
+        fill={BEVEL_FILL} xClamp={bevelClamp} minPoints={2} state={bevelState} onChange={onBevelChange}
+      />
+      <FunctionLayer
+        id="spline" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
+        xClamp={splineClamp} minPoints={2} state={splineState} onChange={onSplineChange}
+      />
+      <CustomLayer layer={partitionLayer} state={partitionState} onChange={onPartitionChange} />
     </LayeredCurveEditor>
   );
 }
@@ -330,8 +282,10 @@ export const RimContour: StoryObj<RimContourArgs> = {
 // Story 3 — keyframes: value over time, eased per segment
 // ─────────────────────────────────────────────────────────────────────
 
+const OPACITY_TIME = [0, 1000] as const;
+const OPACITY_RANGE = [0, 100] as const;
+
 function KeyframesDemo() {
-  const layer = useMemo(() => createKeyframeLayer({ label: 'Opacity', xClamp: [0, 1000], yClamp: [0, 100] }), []);
   const [state, setState] = useState<KeyframeLayerState>(() => ({
     ...keyframeLayerState([
       { t: 0, value: 10 },
@@ -344,14 +298,14 @@ function KeyframesDemo() {
   return (
     <LayeredCurveEditor
       aria-label="Opacity over time"
-      layers={[{ layer, state }]}
-      onLayerChange={(_id, next) => setState(next as KeyframeLayerState)}
       width={480}
       height={220}
       xRange={[0, 1000]}
       yRange={[0, 100]}
       grid={{ divisions: 3 }}
-    />
+    >
+      <KeyframeLayer label="Opacity" xClamp={OPACITY_TIME} yClamp={OPACITY_RANGE} state={state} onChange={setState} />
+    </LayeredCurveEditor>
   );
 }
 

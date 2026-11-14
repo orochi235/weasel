@@ -32,8 +32,11 @@ export { attract as snapToNearest } from '@weasel-js/ui-input';
 export {
   LayeredCurveEditor,
   type LayeredCurveEditorProps,
-  type LayerBinding,
 } from './LayeredCurveEditor';
+
+export { FunctionLayer, type FunctionLayerProps } from './FunctionLayer';
+export { KeyframeLayer, type KeyframeLayerProps } from './KeyframeLayer';
+export { CustomLayer, type CustomLayerProps, type LayerStateProps } from './CustomLayer';
 
 export type {
   CurveLayer,

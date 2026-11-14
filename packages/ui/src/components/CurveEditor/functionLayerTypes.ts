@@ -58,8 +58,7 @@ export interface FillSettings {
 
 /** Configuration for {@link createFunctionLayer}. */
 export interface FunctionLayerConfig {
-  /** Layer id; default `'function'`. Two instances on the same editor
-   *  must have distinct ids. */
+  /** Layer id, the group's `data-layer-id`; default `'function'`. */
   id?: string;
   domain?: CurveDomain;
   endpoints?: EndpointMode;
@@ -87,13 +86,13 @@ export interface FunctionLayerConfig {
 
 /**
  * The state a function layer owns. Treat it as opaque and round-trip it
- * through `LayeredCurveEditor`'s `onLayerChange`; `points` is the part worth
+ * through the layer's `onChange`; `points` is the part worth
  * reading.
  */
 export interface FunctionLayerState {
   points: readonly ControlPoint[];
   /** Layer-internal: the index of the anchor currently being dragged.
    *  Cleared between gestures. Consumers treat the whole state as
-   *  opaque and round-trip it via onLayerChange. */
+   *  opaque and round-trip it via the layer's `onChange`. */
   activeIndex: number | null;
 }

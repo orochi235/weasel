@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { useMemo, useState, type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import {
-  createKeyframeLayer,
   keyframeLayerState,
   type KeyframeLayerConfig,
   type KeyframeLayerState,
 } from './createKeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
+import { KeyframeLayer } from './KeyframeLayer';
 import { handleSize } from '../../handles';
 
 // Plot is 200×100 over t 0..1000, value 0..10; jsdom's svg rect sits at the
@@ -26,19 +26,17 @@ interface HarnessProps {
 }
 
 function Harness({ config, initial, onChange, onCommit }: HarnessProps): ReactElement {
-  const layer = useMemo(() => createKeyframeLayer({ label: 'x', ...config }), [config]);
   const [state, setState] = useState<KeyframeLayerState>(() => ({ ...keyframeLayerState(KEYS), ...initial }));
   return (
-    <LayeredCurveEditor
-      layers={[{ layer, state }]}
-      onLayerChange={(_id, next) => { setState(next as KeyframeLayerState); onChange?.(next as KeyframeLayerState); }}
-      onLayerCommit={(_id, next, prev) => onCommit?.(next as KeyframeLayerState, prev as KeyframeLayerState)}
-      width={200}
-      height={100}
-      xRange={[0, 1000]}
-      yRange={[0, 10]}
-      history={false}
-    />
+    <LayeredCurveEditor width={200} height={100} xRange={[0, 1000]} yRange={[0, 10]} history={false}>
+      <KeyframeLayer
+        label="x"
+        {...config}
+        state={state}
+        onChange={(next) => { setState(next); onChange?.(next); }}
+        onCommit={onCommit}
+      />
+    </LayeredCurveEditor>
   );
 }
 
