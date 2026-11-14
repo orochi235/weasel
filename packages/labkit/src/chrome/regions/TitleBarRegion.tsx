@@ -1,5 +1,6 @@
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import type { ReactNode } from 'react';
-import { formatShortcut, Icon } from '../../passthrough/weasel-ui';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Which end of the title bar a `<TitleBarRegion>` lays out: `'lead'` renders

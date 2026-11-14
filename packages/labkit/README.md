@@ -601,9 +601,10 @@ per tile with `lightbox={(id) => …}`; the same behavior is available outside a
 workspace as `<Lightbox>`. In a `<Lab>` every trial has the toggle in its title
 bar, and its shared-surface pixels — annotation marks, a 3D view — come along.
 
-`<Toolbar>`, `<Sidebar>`, `<StatusBar>`, `<FpsMeter>`, `<ScaleBar>`,
-`<Legend>`, `<FloatingPanel>`, `<ZoomControl>` and the `@weasel-js/ui` property
-rows re-exported from the root are all usable this way. `<Trial>` is not: it
+`<FpsMeter>`, `<Legend>`, `<FloatingPanel>`, `<ZoomControl>` and the
+`@weasel-js/ui` property rows re-exported from the root are all usable this
+way, as is anything imported from `@weasel-js/ui` itself (`<Toolbar>`,
+`<StatusBar>`, `<ScaleBar>`). `<Trial>` is not: it
 reads the lab store and only mounts inside a `<Lab>`.
 
 ## Driving your own renderer
@@ -667,7 +668,7 @@ directly. Several expose more than the root does, `/state` most of all.
 | --- | --- |
 | `@weasel-js/labkit` | Everything but `/loupe` and `/overview` |
 | `/styles.css` | The one stylesheet |
-| `/primitives` | Toolbar, Sidebar, StatusBar, Legend, FloatingPanel, meters |
+| `/primitives` | Legend, FloatingPanel, Readout, Split, ZoomControl, meters |
 | `/chrome` | Regions, contribution types, built-in contributions |
 | `/controls` | `<ControlPanel>` and the config field types |
 | `/canvas` | `<CanvasStack>`, `<Stage>`, `<Orbit>`, `<CameraInput>`, coordinate helpers |
@@ -679,7 +680,7 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/state` | The lab store, storage adapters (re-exported from `@weasel-js/storage`), `useTrialState`, serialization helpers |
 | `/undo` | Undo stack |
 | `/dragdrop` | `<Palette>`, `<DragGhost>`, `useDragDrop` |
-| `/weasel-ui`, `/weasel-canvas` | Passthroughs to `@weasel-js/ui` and `@weasel-js/core` |
+| `/weasel-canvas` | Scene-view and minimap passthroughs from `@weasel-js/core` and `@weasel-js/minimap` |
 
 ## Development
 

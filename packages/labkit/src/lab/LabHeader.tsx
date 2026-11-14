@@ -1,9 +1,10 @@
 import { Icon } from '@weasel-js/ui/components/Icon';
+import { MenuButton } from '@weasel-js/ui/components/MenuButton';
+import { ThemeSwitcher } from '@weasel-js/ui/components/ThemeSwitcher';
 import type { ReactNode } from 'react';
 import { LabHeaderRegion } from '../chrome/LabChrome';
 import type { LabContribution } from '../chrome/labTypes';
 import { icon } from '../icons.gen';
-import { MenuButton, ThemeSwitcher } from '../passthrough/weasel-ui';
 import { useLabContext } from './LabContext';
 import { LabMenuBar } from './LabMenuBar';
 import { LabZoom } from './LabZoom';

@@ -1,6 +1,7 @@
 import { normalizeZoom } from '@weasel-js/core';
 import { clamp } from '@weasel-js/geom';
-import { NumberField, Slider } from '../passthrough/weasel-ui';
+import { NumberField } from '@weasel-js/ui/components/NumberField';
+import { Slider } from '@weasel-js/ui/components/Slider';
 
 /** Props for `<ZoomControl>`. */
 export interface ZoomControlProps {

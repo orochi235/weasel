@@ -223,10 +223,6 @@ export default [
       'packages/forge/src/**/*.{ts,tsx}',
       'packages/labkit/src/**/*.{ts,tsx}',
     ],
-    ignores: [
-      // labkit's `weasel-ui` subpath re-exports the barrel on purpose.
-      'packages/labkit/src/passthrough/weasel-ui.ts',
-    ],
     languageOptions,
     plugins,
     rules: {

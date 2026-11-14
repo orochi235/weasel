@@ -88,10 +88,6 @@
       "types": "./dist/overview/index.d.ts",
       "import": "./dist/overview/index.js"
     },
-    "./weasel-ui": {
-      "types": "./dist/passthrough/weasel-ui.d.ts",
-      "import": "./dist/passthrough/weasel-ui.js"
-    },
     "./weasel-canvas": {
       "types": "./dist/passthrough/weasel-canvas.d.ts",
       "import": "./dist/passthrough/weasel-canvas.js"

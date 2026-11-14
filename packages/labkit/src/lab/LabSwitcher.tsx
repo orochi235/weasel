@@ -1,4 +1,4 @@
-import { MenuButton } from '../passthrough/weasel-ui';
+import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 
 /** One page in a project's set of labs. */
 export interface LabPage {

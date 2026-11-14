@@ -1,5 +1,5 @@
+import { Transport } from '@weasel-js/ui/components/Timeline';
 import { useEffect, useRef } from 'react';
-import { Transport } from '../passthrough/weasel-ui';
 import { useTrialClock } from './hooks';
 import { useTransportControl } from './useTransportControl';
 import { useTransportKeys } from './useTransportKeys';

@@ -607,11 +607,6 @@ name a package. Breaking changes are in scope.
   `tools: ToolsApi`, so labkit's `PaletteRegion` rebuilds its frame. The rail takes items (icon, label, shortcut,
   active, onPress, group). Closes when `PaletteRegion` renders the rail.
 
-- **(P2) [agent] Delete labkit's hand-kept copy of ui's exports.** `labkit/src/passthrough/weasel-ui.ts` re-exports
-  about 206 names as `@weasel-js/labkit/weasel-ui`, and nothing outside labkit imports it;
-  `labkit/src/primitives/index.ts` also re-exports `StatusBar` and `Toolbar`. Closes when labkit imports
-  `@weasel-js/ui` directly and the subpath is gone.
-
 - **(P2) [agent] Export `Bar`'s cell step and drop `ControlBar`'s copy.** Both share `BarLayout` and
   `groupBarNodes`, but `labkit/src/controls/ControlBar.tsx` maps leaves through its own `Cell`/`labField` and
   filters with its own `visible`, and never calls `pairRows`, so paired leaves don't fuse in a lab bar. Export
