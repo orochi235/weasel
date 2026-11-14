@@ -28,7 +28,8 @@ import {
   type Fill,
 } from '@weasel-js/core';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
-import { SceneGradientHandles, type PaintSlot } from '@weasel-js/ui/components/GradientEditor';
+import type { PaintSlot } from '@weasel-js/ui/paint-value';
+import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { PaintField } from '@weasel-js/ui/components/PaintField';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';

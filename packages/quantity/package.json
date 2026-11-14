@@ -28,6 +28,9 @@
   "bugs": {
     "url": "https://github.com/orochi235/weasel/issues"
   },
+  "dependencies": {
+    "@weasel-js/geom": "1.19.1"
+  },
   "engines": {
     "node": ">=24"
   },

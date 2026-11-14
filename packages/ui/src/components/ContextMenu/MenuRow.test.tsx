@@ -57,6 +57,13 @@ describe('a disabled item row in a DOM menu', () => {
   });
 });
 
+describe('an item row\'s shortcut text', () => {
+  it('prints a string shortcut as written', () => {
+    open([{ kind: 'item', key: 'lock', label: 'Lock', shortcut: 'Hold L', run }]);
+    expect(screen.getByRole('menuitem', { name: /Lock/ }).textContent).toContain('Hold L');
+  });
+});
+
 describe('a row hint and grade in a DOM menu', () => {
   it('reads its description as its description, and its disabled reason over it', () => {
     open([

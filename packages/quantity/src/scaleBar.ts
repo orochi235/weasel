@@ -1,3 +1,4 @@
+import { niceStep } from '@weasel-js/geom';
 import { magnificationOf, toRoot, type UnitScope } from './scope';
 import { entryScale, formatUnit, resolveUnit, type Unit, type UnitValue } from './units';
 
@@ -30,8 +31,9 @@ export interface ScaleBar {
   magnification: number;
 }
 
-const STEPS = [1, 2, 5];
-const DECADES = [-3, -2, -1, 0, 1, 2, 3, 4];
+/** The shortest and longest default length, in a unit: a thousandth of the smallest, fifty thousand of any. */
+const SHORTEST = 1e-3;
+const LONGEST = 5e4;
 const plain = (unit: Unit, entry: ReturnType<typeof entryScale>) => ({ unit, factor: entry.factor, offset: entry.offset });
 
 /**
@@ -50,15 +52,32 @@ export function scaleBar(opts: ScaleBarOptions): ScaleBar {
     .map(([unit, entry]) => plain(unit, entryScale(entry)))
     .filter((u) => u.offset === 0 && u.factor > 0)
     .sort((a, b) => a.factor - b.factor);
-  // Below one of a unit only the smallest unit counts: a tenth of a foot is 1.2″.
-  const lengths = opts.lengths?.map((v) => resolveUnit(v, system))
-    ?? units.flatMap(({ factor }, i) => DECADES.filter((d) => i === 0 || d >= 0)
-      .flatMap((d) => STEPS.map((s) => Number((s * 10 ** d * factor).toPrecision(12)))));
-  const sorted = [...new Set(lengths)].sort((a, b) => a - b);
-  let length = sorted[0]!;
-  for (const l of sorted) if (l * pxPerBase <= maxPx) length = l;
+  const fit = maxPx / pxPerBase;
+  const length = opts.lengths
+    ? longestFitting(opts.lengths.map((v) => resolveUnit(v, system)), fit)
+    : longestNice(units.map((u) => u.factor), fit);
   const fills = [...units].reverse().filter((u) => length / u.factor >= 1 - 1e-9);
   const whole = fills.find((u) => Math.abs(length / u.factor - Math.round(length / u.factor)) < 1e-9);
   const unit = (whole ?? fills[0])?.unit ?? system.base;
   return { length, px: length * pxPerBase, label: formatUnit(length, unit, system, { precision: 3 }), unit, magnification };
+}
+
+/** The longest of `lengths` no longer than `fit`, or the shortest when none is. */
+function longestFitting(lengths: readonly number[], fit: number): number {
+  const sorted = [...lengths].sort((a, b) => a - b);
+  let length = sorted[0]!;
+  for (const l of sorted) if (l <= fit) length = l;
+  return length;
+}
+
+/** The longest 1-2-5 length of any unit no longer than `fit`, or a thousandth of the smallest unit when none is.
+ *  Below one of a unit only the smallest unit counts: a tenth of a foot is 1.2″. */
+function longestNice(factors: readonly number[], fit: number): number {
+  let length = SHORTEST * (factors[0] ?? 1);
+  factors.forEach((factor, i) => {
+    const n = Math.min(niceStep(fit / factor, 'down'), LONGEST);
+    const l = Number((n * factor).toPrecision(12));
+    if (n >= (i === 0 ? SHORTEST : 1) && l > length) length = l;
+  });
+  return length;
 }

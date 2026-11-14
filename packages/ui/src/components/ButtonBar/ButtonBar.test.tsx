@@ -78,4 +78,9 @@ describe('ButtonBar tooltips', () => {
     act(() => container.querySelector('button')!.focus());
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
+
+  it('runs its segments the way orientation says', () => {
+    const { container } = render(<ButtonBar items={items()} orientation="vertical" />);
+    expect(container.firstElementChild?.getAttribute('data-orientation')).toBe('vertical');
+  });
 });

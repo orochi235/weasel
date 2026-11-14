@@ -5,6 +5,7 @@ import { tilingRoving } from '../../tiling';
 import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import type { Orientation } from '../orientation';
 
 /**
  * One button in an {@link ButtonBar}. `value` is only a React key; the item
@@ -33,6 +34,8 @@ export type ButtonBarProps<V extends string | number = string> = SegmentedGridPr
   className?: string;
   height?: number;
   size?: ButtonBarSize;
+  /** Which way the segments run. Defaults to the way the row the bar sits in runs; a vertical bar keeps its labels upright. */
+  orientation?: Orientation;
   variant?: ButtonBarVariant;
 };
 
@@ -45,7 +48,7 @@ export type ButtonBarProps<V extends string | number = string> = SegmentedGridPr
  * registry, use `ActionBar` instead.
  */
 export function ButtonBar<V extends string | number = string>(props: ButtonBarProps<V>): ReactElement {
-  const { items, 'aria-label': ariaLabel, className, height, size, variant } = props;
+  const { items, 'aria-label': ariaLabel, className, height, size, variant, orientation } = props;
 
   const fire = (index: number) => {
     const item = items[index];
@@ -66,6 +69,7 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
       height={height}
       size={size}
       variant={variant}
+      orientation={orientation}
       segments={items.map((item, i) => ({
         key: String(item.value),
         state: 'off' as const,

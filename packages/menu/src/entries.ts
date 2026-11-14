@@ -26,7 +26,8 @@ export interface MenuItemEntry {
   label: string;
   /** Opaque to the model; each renderer knows what it can draw. */
   icon?: unknown;
-  shortcut?: MenuShortcut;
+  /** Keys a renderer draws as chips, or text it prints as written. */
+  shortcut?: MenuShortcut | string;
   disabled?: boolean;
   /** Why a disabled row cannot be chosen: a sentence, or a symbolic code a renderer maps to words, such as
    *  `@weasel-js/routing`'s `ActionDisabledReason`. */

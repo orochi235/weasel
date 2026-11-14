@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { Sequence, values } from '@weasel-js/ui/components/Sequence';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
 
 // NOTE: native <button> triggers wrapped in <Focusable>, not the kit
@@ -27,16 +28,16 @@ export const Basic: Story = {
 
 export const Placements: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      {(['top', 'bottom', 'left', 'right'] as const).map((p) => (
-        <TooltipTrigger key={p}>
+    <Sequence label="Placements" sweep={values(['top', 'bottom', 'left', 'right'] as const)} caption={false}>
+      {(p) => (
+        <TooltipTrigger>
           <Focusable>
             <button type="button">{p}</button>
           </Focusable>
           <Tooltip {...args} placement={p}>Placement: {p}</Tooltip>
         </TooltipTrigger>
-      ))}
-    </div>
+      )}
+    </Sequence>
   ),
 };
 

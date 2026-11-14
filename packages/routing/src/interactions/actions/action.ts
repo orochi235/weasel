@@ -68,9 +68,8 @@ export interface ActionPresentation {
    *  `actionsTagged` / `taggedActionItems` gather every action or entry
    *  carrying one, for a bar or a menu built from a tag. */
   tags?: readonly string[];
-  /** Display override for the keyboard shortcut. When omitted, palette
-   *  surfaces derive a label from `defaultBinding` via their own
-   *  formatter. */
+  /** Display text for the keyboard shortcut, shown in place of the keys the
+   *  action's bindings name (`actionItemShortcuts`). */
   shortcut?: string;
   /** The distinct things a parametric action does, one per set of params —
    *  `flip` flips horizontally or vertically, `reorder.forward` moves one step

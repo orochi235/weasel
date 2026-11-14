@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dropSide, listMode, measureRowList, rowAtY } from './rowList';
+import { listMode, measureRowList, rowAtY } from './rowList';
 import { exactly, UNBOUNDED, type MeasureEnv } from './measure';
 
 const TOKENS: Record<string, string> = {
@@ -17,15 +17,6 @@ describe('listMode', () => {
     expect(listMode({ selection: 'multi', activatable: true })).toBe('listbox');
     expect(listMode({ activatable: true })).toBe('grid');
     expect(listMode({ selection: 'single', controls: true })).toBe('grid');
-  });
-});
-
-describe('dropSide', () => {
-  it('seams the row a gap sits before, and the last row for the end gap', () => {
-    expect(dropSide(1, 1, 3)).toBe('before');
-    expect(dropSide(3, 2, 3)).toBe('after');
-    expect(dropSide(1, 0, 3)).toBeUndefined();
-    expect(dropSide(null, 0, 3)).toBeUndefined();
   });
 });
 

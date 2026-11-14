@@ -5,6 +5,7 @@
 import type { GestureSpec } from '@weasel-js/gestures';
 import type { MenuShortcut } from '@weasel-js/menu';
 import type { Action } from './action';
+import type { ActionItem } from './actionItems';
 import { actionBindings } from './binding';
 import { resolveParams } from './bindingOpts';
 import { invokedParams } from './tuning';
@@ -71,6 +72,15 @@ export function actionShortcuts(
     out.push(shortcut);
   }
   return out;
+}
+
+/**
+ * The shortcut an entry shows: its own `shortcut` text (the variant's, else the
+ * action's) when it declares one, else every binding {@link actionShortcuts}
+ * finds for its params.
+ */
+export function actionItemShortcuts(item: ActionItem): string | readonly ActionShortcut[] {
+  return item.shortcut ?? actionShortcuts(item.action, item.params);
 }
 
 /** Whether `bound` (a binding's `opts.params`) carries every value in `wanted`. */

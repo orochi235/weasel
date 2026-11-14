@@ -20,6 +20,7 @@ const actions: Action[] = [
     { key: 'v', label: 'Vertical', params: { axis: 'y' } },
   ] },
   { id: 'front', label: 'To Front', group: 'arrange', invoker: immediate },
+  { id: 'lock', label: 'Lock', invoker: immediate, shortcut: 'Hold L', defaultBinding: { kind: 'key', key: 'l' } },
   { id: 'drag', label: 'Drag', group: 'arrange', invoker: { timing: 'ongoing', start: () => ({}) as never } },
 ];
 
@@ -44,6 +45,9 @@ describe('resolveSchemaMenu: action leaves', () => {
     const es = resolveSchemaMenu(menu({ cut: act('cut'), snap: act('snap') }), sources());
     expect(es[0]).toMatchObject({ kind: 'item', label: 'Cut', shortcut: expect.objectContaining({ key: 'x' }) });
     expect(es[1]).toMatchObject({ checked: true });
+  });
+  it('shows an action\'s declared shortcut text over its binding', () => {
+    expect(resolveSchemaMenu(menu({ lock: act('lock') }), sources())[0]).toMatchObject({ shortcut: 'Hold L' });
   });
   it('shows the leaf label or name over the action label', () => {
     const es = resolveSchemaMenu(menu({

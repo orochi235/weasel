@@ -28,9 +28,9 @@ For one real input, the dispatcher's `DispatchRecord` holds every binding that
 matched, what the claim and eligibility filters dropped, the ranked survivors
 with the step that placed each, and what the walk did with each. In dev builds
 every dispatch leaves one in the trace buffer, and `Dispatcher.explain` builds
-one without invoking anything. `FallthroughDiagram` (`@weasel-js/ui`) draws a
-record. apps/draw's dispatch trace opens it from any row, under a Live row
-that predicts a press at the pointer.
+one without invoking anything. The devtools panel's dispatch trace
+(`@weasel-js/devtools`) draws one as a fallthrough diagram from any row, under a
+live row that predicts a press at the pointer.
 
 ## Which binding wins
 

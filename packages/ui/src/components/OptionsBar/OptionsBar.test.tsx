@@ -54,4 +54,22 @@ describe('OptionsBar', () => {
     fireEvent.keyDown(btns[0], { key: 'ArrowRight' });
     expect(document.activeElement).toBe(btns[2]);
   });
+
+  it('keeps a disabled segment with a reason focusable, and says why', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <OptionsBar items={[{ value: 'snap', label: 'Snap', selected: false, onChange, disabled: true, disabledReason: 'Turn on the grid first' }]} />,
+    );
+    const btn = container.querySelector('button')!;
+    expect(btn.disabled).toBe(false);
+    expect(btn.getAttribute('aria-disabled')).toBe('true');
+    expect(btn.getAttribute('aria-description')).toBe('Turn on the grid first');
+    fireEvent.click(btn);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('runs its segments the way orientation says', () => {
+    const { container } = render(<OptionsBar items={items()} orientation="vertical" />);
+    expect(container.querySelector('[role="group"]')?.getAttribute('data-orientation')).toBe('vertical');
+  });
 });

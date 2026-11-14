@@ -27,19 +27,6 @@
   margin: 0;
 }
 
-.cells {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
 .plot {
   background: color-mix(in srgb, var(--wzl-fg) 4%, transparent);
   border-radius: var(--wzl-radius-sm);

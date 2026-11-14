@@ -3,7 +3,7 @@
 // policy panels (document props) live in their consuming app.
 export { dlog, isDebugEnabled } from './dlog';
 export * from './icons';
-export { solidColorOf, strokeColorOf } from './components/paintValue';
+export { solidColorOf, strokeColorOf, type PaintSlot } from './components/paintValue';
 export * from './components/ActionBar';
 export * from './components/ActionSettings';
 export * from './components/Badge';
@@ -50,8 +50,6 @@ export * from './components/RecentColors';
 export * from './components/MeshEditor';
 export * from './components/PatternPicker';
 export * from './components/Powerline';
-export * from './components/GestureRoute';
-export * from './components/FallthroughDiagram';
 export * from './components/Prefs';
 export * from './components/PrefConditionEditor';
 export * from './components/PrefSchemaEditor';

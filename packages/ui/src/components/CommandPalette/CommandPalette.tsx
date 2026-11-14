@@ -5,10 +5,10 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { imeKey } from '@weasel-js/ui-input';
+import { imeKey, stepStop } from '@weasel-js/ui-input';
 import {
+  actionItemShortcuts,
   actionItemTitle,
-  actionShortcuts,
   useSelectionContext,
   type ActionItem,
 } from '@weasel-js/core';
@@ -25,8 +25,8 @@ import styles from './CommandPalette.module.css';
  *  bound more than once — Bring to Front has two — so each binding gets its
  *  own group rather than one being picked as canonical. */
 function ShortcutChips({ item }: { item: ActionItem }) {
-  if (item.shortcut) return <span className={styles.shortcuts}>{item.shortcut}</span>;
-  const shortcuts = actionShortcuts(item.action, item.params);
+  const shortcuts = actionItemShortcuts(item);
+  if (typeof shortcuts === 'string') return <span className={styles.shortcuts}>{shortcuts}</span>;
   if (shortcuts.length === 0) return null;
   return (
     <span className={styles.shortcuts}>
@@ -176,17 +176,9 @@ export function CommandPalette({ isOpen: open, onOpenChange, reasonLabels }: Com
   if (picked !== null && picked >= filtered.length) setPicked(null);
   const highlight = picked ?? Math.max(0, filtered.findIndex((i) => items.enabledOf(i).enabled));
 
-  /** Move the highlight to the next/prev *enabled* row. */
-  const moveHighlight = (delta: 1 | -1): void => {
-    if (filtered.length === 0) return;
-    let i = highlight;
-    for (let step = 0; step < filtered.length; step++) {
-      i = (i + delta + filtered.length) % filtered.length;
-      if (items.enabledOf(filtered[i]).enabled) {
-        setPicked(i);
-        return;
-      }
-    }
+  const moveHighlight = (dir: 1 | -1): void => {
+    const next = stepStop(filtered, highlight, dir, { canStop: (i) => items.enabledOf(i).enabled });
+    if (next !== null) setPicked(next);
   };
 
   const run = (item: ActionItem) => {

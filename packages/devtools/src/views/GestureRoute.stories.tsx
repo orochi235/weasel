@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { GestureRoute } from '@weasel-js/ui/components/GestureRoute';
+import { GestureRoute } from './GestureRoute';
 import s from './GestureRoute.stories.module.css';
 
 const meta: Meta<typeof GestureRoute> = {
-  title: 'ui/Foundations/GestureRoute',
+  title: 'devtools/GestureRoute',
   component: GestureRoute,
   args: { route: '[initial] drag => node +mod ?shift' },
 };

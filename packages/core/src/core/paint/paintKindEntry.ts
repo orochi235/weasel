@@ -25,8 +25,9 @@ export interface PaintKindFamily {
   icon?: IconSpec;
 }
 
-/** What a registered kind's editor renders. `PaintInput` in `@weasel-js/ui`
- *  is the control that mounts it. */
+/** What a registered kind's editor renders. `PaintInput` and `GradientEditor`
+ *  in `@weasel-js/ui` mount it, and draw a gradient kind's blend-space switch
+ *  beneath it. */
 export interface PaintKindEditorProps {
   value: Paint;
   onInput?(next: Paint): void;

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useArgs } from '@weasel-js/forge/preview-api';
 import type { CanvasLayerDescriptor } from '@weasel-js/labkit/canvas';
 import { CanvasStack, type CanvasStackProps } from '@weasel-js/labkit/canvas';
-import { ScaleIndicator } from '@weasel-js/labkit/primitives';
+import { ScaleBar } from '@weasel-js/labkit/primitives';
 
 const meta: Meta<typeof CanvasStack> = {
   title: 'labkit/Canvas/CanvasStack',
@@ -38,16 +38,17 @@ function Harness({
   ...args
 }: Partial<CanvasStackProps> & { layers: CanvasLayerDescriptor[] }) {
   const [, updateArgs] = useArgs();
+  const shown = view ?? { zoom: 1, pan: { x: 50, y: 50 } };
   return (
     <div style={{ width: '100cqi', height: '100cqb' }}>
       <CanvasStack
         {...args}
         layers={layers}
-        view={view ?? { zoom: 1, pan: { x: 50, y: 50 } }}
+        view={shown}
         onViewChange={(next) => updateArgs({ view: next })}
       >
         <div style={{ position: 'absolute', top: 8, right: 8 }}>
-          <ScaleIndicator />
+          <ScaleBar zoom={shown.zoom} />
         </div>
       </CanvasStack>
     </div>
@@ -71,6 +72,6 @@ export const MultiLayer: Story = {
   ),
 };
 
-export const WithScaleIndicator: Story = {
+export const WithScaleBar: Story = {
   render: (args) => <Harness {...args} layers={[makeColoredLayer('a', '#06d6a0', 0, 0)]} />,
 };

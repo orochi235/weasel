@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/faces.css';
 import { cleanup } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { BankFitter } from '@weasel-js/ui/testing/geometry';
+import { ScaleStage } from '@weasel-js/ui/testing/geometry';
 import { KeyboardLayouts } from './KeyboardLayout.stories';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -25,9 +25,9 @@ const PASSES_PER_BANK = 4;
 it('fits a workshop page of banked keys in a few passes, forcing no layout per spelling', async () => {
   const rects = vi.spyOn(Element.prototype, 'getBoundingClientRect');
   const styles = vi.spyOn(window, 'getComputedStyle');
-  const flush = BankFitter.prototype.flush;
-  const passes = new Map<BankFitter, number>();
-  vi.spyOn(BankFitter.prototype, 'flush').mockImplementation(function (this: BankFitter) {
+  const flush = ScaleStage.prototype.flush;
+  const passes = new Map<ScaleStage, number>();
+  vi.spyOn(ScaleStage.prototype, 'flush').mockImplementation(function (this: ScaleStage) {
     const read = styles.mock.calls.length;
     flush.call(this);
     if (styles.mock.calls.length > read) passes.set(this, (passes.get(this) ?? 0) + 1);

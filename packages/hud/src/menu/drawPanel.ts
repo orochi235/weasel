@@ -39,8 +39,10 @@ export function rowLayout(entries: readonly MenuEntry[], m: MenuMetrics): { y: n
 }
 
 /** A row's shortcut as the DOM menu prints it, or undefined. */
-const shortcutOf = (e: MenuEntry): string | undefined =>
-  (e.kind === 'item' ? formatShortcut(e.shortcut) : undefined);
+const shortcutOf = (e: MenuEntry): string | undefined => {
+  if (e.kind !== 'item') return undefined;
+  return typeof e.shortcut === 'string' ? e.shortcut : formatShortcut(e.shortcut);
+};
 
 /** A panel's size: its widest row — label, then a shortcut or the caret column —
  *  plus the icon column, never under `minWidth`. */

@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { act, screen, fireEvent, within } from '@testing-library/react';
 import {
   asPaint,
+  getPaintKind,
   registerPaintKind,
   type Paint,
   type GradStop,
@@ -189,9 +190,25 @@ describe('GradientEditor', () => {
       expect(screen.getByLabelText('Patch 1 corner 1')).toBeInTheDocument();
       expect(screen.queryByRole('slider', { name: /Gradient stop/ })).toBeNull();
       expect(screen.getByRole('radio', { name: 'Mesh' })).toBeChecked();
+      expect(screen.getAllByRole('radiogroup', { name: 'Blend space' })).toHaveLength(1);
 
       fireEvent.click(screen.getByRole('radio', { name: 'Linear' }));
       expect(onChange.mock.calls[0][0]).toMatchObject({ kind: 'linear-gradient', stops: [{ offset: 0, color: '#ff0000ff' }, { offset: 1 }] });
+    });
+
+    it("mounts a registered mesh Editor in place of the kit's, under the same space switch", () => {
+      const dispose = registerPaintKind({
+        ...getPaintKind('mesh-gradient')!,
+        Editor: () => <div data-testid="custom-mesh" />,
+      });
+      try {
+        renderWithIcons(<GradientEditor value={seedMeshPatch('#ff0000ff') as unknown as Paint} onChange={() => {}} />);
+        expect(screen.getByTestId('custom-mesh')).toBeInTheDocument();
+        expect(screen.queryByLabelText('Patch 1 corner 1')).toBeNull();
+        expect(screen.getAllByRole('radiogroup', { name: 'Blend space' })).toHaveLength(1);
+      } finally {
+        act(() => { dispose(); });
+      }
     });
   });
 

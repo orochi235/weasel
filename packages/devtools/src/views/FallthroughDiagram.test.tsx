@@ -2,10 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { screen, within } from '@testing-library/react';
 import type { DispatchRecord } from '@weasel-js/core/routing';
 import { FallthroughDiagram } from './FallthroughDiagram';
-import { gestureRouteSegments } from '../GestureRoute';
-import * as fixtures from './fixtures';
-import * as PkgRoot from '../../index';
-import { renderWithIcons } from '../../testing/withIcons';
+import { gestureRouteSegments } from './GestureRoute';
+import * as fixtures from './FallthroughDiagram.fixtures';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 const records: [string, DispatchRecord][] = Object.entries(fixtures);
 
@@ -122,9 +121,5 @@ describe('FallthroughDiagram', () => {
     expect(screen.getByText('Nothing matched this input.')).toBeTruthy();
     expect(screen.queryByRole('region')).toBeNull();
     expect(container.querySelector('[data-key=" "]')?.textContent).toBe('Space');
-  });
-
-  it('is exported from the package root', () => {
-    expect(PkgRoot.FallthroughDiagram).toBe(FallthroughDiagram);
   });
 });

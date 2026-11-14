@@ -11,6 +11,11 @@ describe('ScaleBar', () => {
     expect(screen.getByRole('img', { name: 'Scale: 1ft' })).toHaveTextContent('1ft');
   });
 
+  it('measures in pixels when it is given no scopes', () => {
+    render(<ScaleBar zoom={2} />);
+    expect(screen.getByRole('img', { name: 'Scale: 50px' })).toHaveTextContent('50px');
+  });
+
   it('reads a magnified frame by its true lengths and says what size it is drawn at', () => {
     render(<ScaleBar zoom={10} scopes={[BOARD, { ...BOARD, drawnAt: 0.4 }]} />);
     expect(screen.getByRole('img', { name: 'Scale: 2ft, drawn at 0.4×' })).toHaveTextContent('2ftdrawn at 0.4×');

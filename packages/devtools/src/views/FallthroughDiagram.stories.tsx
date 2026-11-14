@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { FallthroughDiagram } from '@weasel-js/ui/components/FallthroughDiagram';
-import { bareDragSelect, claimDropped, escapeInPathEdit, nothingMatched, predictedHover } from './fixtures';
+import { FallthroughDiagram } from './FallthroughDiagram';
+import { bareDragSelect, claimDropped, escapeInPathEdit, nothingMatched, predictedHover } from './FallthroughDiagram.fixtures';
 
 const meta: Meta<typeof FallthroughDiagram> = {
-  title: 'ui/Foundations/FallthroughDiagram',
+  title: 'devtools/FallthroughDiagram',
   component: FallthroughDiagram,
   args: { record: escapeInPathEdit },
 };

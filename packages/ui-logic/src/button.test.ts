@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buttonParts, IDLE_PRESS, measureButton, pressStep } from './button';
+import { buttonParts, measureButton } from './button';
 import { exactly, UNBOUNDED, type MeasureEnv } from './measure';
 
 /** A theme with round numbers and text 6px a character, ascent 10, descent 2. */
@@ -50,37 +50,5 @@ describe('measureButton', () => {
     expect(wide.layout.parts[0]!.rect.x).toBe(38);
     const narrow = measureButton({ label: 'Save' }, exactly(30, 28), env());
     expect(narrow.layout.parts[0]!.rect).toMatchObject({ x: 12, width: 6 });
-  });
-});
-
-describe('pressStep', () => {
-  it('presses on a release over the control it went down on', () => {
-    let s = pressStep(IDLE_PRESS, { type: 'down' }).state;
-    expect(s.held).toBe(true);
-    const up = pressStep(s, { type: 'up', inside: true });
-    expect(up).toEqual({ state: IDLE_PRESS, pressed: true });
-    s = pressStep(pressStep(IDLE_PRESS, { type: 'down' }).state, { type: 'move', inside: false }).state;
-    expect(s.held).toBe(false);
-    expect(pressStep(s, { type: 'up', inside: false }).pressed).toBe(false);
-  });
-
-  it('holds nothing for a move with no press down, and presses nothing on its release', () => {
-    const moved = pressStep(IDLE_PRESS, { type: 'move', inside: true });
-    expect(moved.state.held).toBe(false);
-    expect(pressStep(moved.state, { type: 'up', inside: true }).pressed).toBe(false);
-  });
-
-  it('takes the hold back when a press dragged off comes back on', () => {
-    let s = pressStep(IDLE_PRESS, { type: 'down' }).state;
-    s = pressStep(s, { type: 'move', inside: false }).state;
-    s = pressStep(s, { type: 'move', inside: true }).state;
-    expect(s.held).toBe(true);
-    expect(pressStep(s, { type: 'up', inside: true }).pressed).toBe(true);
-  });
-
-  it('tracks hover apart from the hold', () => {
-    const s = pressStep(IDLE_PRESS, { type: 'enter' }).state;
-    expect(s).toEqual({ hovered: true, held: false, down: false });
-    expect(pressStep(s, { type: 'leave' }).state).toEqual(IDLE_PRESS);
   });
 });

@@ -125,11 +125,18 @@ indices `at` into gap `to`; `isNoopDrop` says whether that leaves them where the
 one-place move takes them to, and `nudgeOf` reads the Alt+arrow chord that asks for one. A pointer finds its gap by
 `gapByMidpoint`, for items side by side, each split at its middle, or by `nearestGap`, for gaps drawn at places of
 their own. `dropBand(f, band)` says which part of one item the pointer is over: before it, after it, or, with a
-`band` under a half, into it.
+`band` under a half, into it. `dropSide(gap, i, count)` says which edge of row `i` draws the seam for a drop in
+`gap`: its top for the gap before it, the last row's bottom for the end gap.
 
 A drag near the edge of a scrolling box scrolls it. `edgePush(span, p, margin)` is how hard, from -1 to 1: nothing
 until the pointer is within `margin` of an end, full strength at the end and past it. `edgeScroll(bounds, point)`
 reads both axes of a box; multiply by a top speed.
+
+## Presses
+
+`pressStep(state, input)` is a press's hover-and-hold state machine, from `IDLE_PRESS`: a press completes on a
+release over the control it went down on, and a drag off lets go of the hold until it comes back. `isPressKey` says
+whether a key presses a focused button: Enter or Space. `@weasel-js/hud`'s buttons and lists press through it.
 
 ## Hold-to-repeat
 

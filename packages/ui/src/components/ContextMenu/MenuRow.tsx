@@ -79,7 +79,9 @@ export function MenuRow(props: {
     <>
       <span className={s.icon} aria-hidden="true">{e.kind === 'item' && e.checked ? '✓' : resolveIcon(e.kind !== 'color' && typeof e.icon === 'string' ? e.icon : undefined, 16)}</span>
       <AccessLabel label={e.label} access={e.access} />
-      {e.kind === 'item' && e.shortcut && <span className={s.shortcut}>{formatShortcut(e.shortcut)}</span>}
+      {e.kind === 'item' && e.shortcut && (
+        <span className={s.shortcut}>{typeof e.shortcut === 'string' ? e.shortcut : formatShortcut(e.shortcut)}</span>
+      )}
       {e.kind === 'number' && <MenuNumberValue entry={e} rowId={id} controller={props.controller} />}
       {e.kind === 'color' && (
         <MenuColorValue entry={e} controller={props.controller} row={row} picking={props.picking} onPicked={props.onPicked} />

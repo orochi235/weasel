@@ -9,8 +9,7 @@ import {
   type PaintKind,
 } from '@weasel-js/core';
 import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';
-import { isMeshGradientPaint } from '@weasel-js/core/mesh';
-import { MeshEditor } from '../MeshEditor';
+import { paintKindEditor } from '../paintKindEditor';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import { GradientStops } from './GradientStops';
 import s from './GradientEditor.module.css';
@@ -76,9 +75,8 @@ const inertWhen = (off: boolean) => (el: HTMLElement | null): void => {
 
 /**
  * Editor for a gradient's kind and colors: the stops of a linear, radial or
- * conic gradient, a mesh's corner colors, or a registered kind's own
- * `Editor`. Switching kind goes through `switchGradientKind`, so the colors
- * carry across.
+ * conic gradient, or the kind's own `Editor`, such as a mesh's corner colors.
+ * Switching kind goes through `switchGradientKind`, so the colors carry across.
  *
  * Stops are handles on the track, each drawn in its own color. One is
  * selected at a time — by a press, or by focus — and a single row under the
@@ -142,9 +140,8 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
         onChange={(next) => next && onChange({ ...value, interpolate: next } as Paint)}
       />
     );
-    // A registered `Editor` wins even for a built-in id, as it does in `PaintInput`.
-    if (entry?.Editor) {
-      const Editor = entry.Editor;
+    const Editor = paintKindEditor(entry);
+    if (Editor) {
       return <><Editor value={value} onInput={onInput} onChange={onChange} />{spaceBar}</>;
     }
     if (isGradientPaint(value)) {
@@ -159,9 +156,6 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
           onChange={onChange}
         />
       );
-    }
-    if (isMeshGradientPaint(value)) {
-      return <><MeshEditor value={value} spaceSwitch={false} onInput={onInput} onChange={onChange} />{spaceBar}</>;
     }
     return <div className={s.noEditor}>{entry?.label ?? kind}: no editor</div>;
   }
