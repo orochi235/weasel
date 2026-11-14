@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useRef, useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsPane } from '@weasel-js/ui/components/Prefs';
+import { useValuesSource } from '@weasel-js/ui/components/PrefsSource';
 
 const PAGE: PrefGroup = {
   name: 'Canvas',
@@ -49,10 +50,12 @@ export const Default: Story = {
   render: (args) => {
     const [values, setValues] = useState<Record<string, unknown>>({});
     const scrollRef = useRef<HTMLDivElement | null>(null);
+    const onChange = (path: string, value: unknown) => setValues((prev) => withValueAt(prev, path, value));
+    const source = useValuesSource(PAGE, values, onChange);
     return (
       <PrefsPane
         className={args.className}
-        ctx={{ values, onChange: (path, value) => setValues((prev) => withValueAt(prev, path, value)) }}
+        ctx={{ source, values, onChange }}
         group={PAGE}
         path=""
         scrollRef={scrollRef}

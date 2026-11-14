@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { PrefsForm } from './PrefsForm';
 import { PrefsPane } from './PrefsPane';
 import type { WalkCtx } from './PrefsRow';
+import { valuesSource } from '../PrefsSource';
 
 afterEach(cleanup);
 
@@ -24,7 +25,8 @@ const PAGE: PrefGroup = {
 const tabs = (): Array<string | null> => within(screen.getByRole('tablist')).getAllByRole('tab').map((t) => t.textContent);
 
 function pane(more: Partial<WalkCtx> = {}) {
-  const ctx: WalkCtx = { values: {}, onChange: () => {}, ...more };
+  const onChange = () => {};
+  const ctx: WalkCtx = { source: valuesSource(PAGE, {}, onChange), values: {}, onChange, ...more };
   render(<PrefsPane ctx={ctx} group={PAGE} path="" scrollRef={createRef()} />);
 }
 

@@ -69,7 +69,7 @@ export function SwatchGrid(props: SwatchGridProps): ReactElement {
       />
     );
   }
-  return <SwatchGridLine {...props} align={props.align ?? enclosing.align ?? 'start'} />;
+  return <SwatchGridLine {...props} align={props.align ?? run.align ?? 'start'} />;
 }
 
 function SwatchGridLine(props: SwatchGridProps): ReactElement {
