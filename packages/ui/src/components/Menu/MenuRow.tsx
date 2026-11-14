@@ -2,7 +2,7 @@ import { useRef, type MouseEvent, type PointerEvent } from 'react';
 import type { MenuController, MenuEntry } from '@weasel-js/menu';
 import { formatShortcut } from '@weasel-js/gestures';
 import { Caret } from '../Caret';
-import { resolveIcon } from '../../icons/resolveIcon';
+import { resolveIcon } from '../Icon/resolveIcon';
 import { reasonLabel } from '../ActionBar/reasonLabels';
 import { useAppearance } from '../appearance';
 import { AccessLabel } from './AccessLabel';

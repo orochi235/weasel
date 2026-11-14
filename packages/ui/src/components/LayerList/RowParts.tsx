@@ -5,7 +5,7 @@ import { useNativeHold } from '../Disabled/nativeHold';
 import type { LayerListItem, LayerListProps } from './layerListProps';
 import s from './LayerList.module.css';
 import { icon } from '../../icons.gen';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 
 // Keeps a press or a double-click in the rename field the field's own.
 const stop = (e: { stopPropagation(): void }) => e.stopPropagation();

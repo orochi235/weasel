@@ -3,7 +3,7 @@ import { formatShortcut, isApplePlatform } from '@weasel-js/gestures';
 import type { MenuEntry } from '@weasel-js/menu';
 import { ActionButton } from '../ActionButton/ActionButton';
 import { useMenuTrigger } from '../Menu/useMenuTrigger';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import type { ToolRailButton, ToolRailStack } from './items';
 import s from './ToolRail.module.css';
 

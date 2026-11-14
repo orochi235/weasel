@@ -92,7 +92,7 @@ picker. In JSX, `<Icon name={spec} />` takes a spec, and `mark` beside it replac
 Every renderer draws the pair the same way, from `markLayers` in `@weasel-js/icons`: the mark goes
 in the lower-right slot (`ICON_SLOTS.mark`), stroked at the subject's weight, and the subject is cut
 away around it with a band of clearance. `<Icon>` cuts with an SVG mask (`inset` in
-`packages/ui/src/icons/layers.ts`), and hud's canvas menus with a `destination-out` group
+`packages/ui/src/components/Icon/layers.ts`), and hud's canvas menus with a `destination-out` group
 (`iconCommands`). So:
 
 - Draw the subject whole. Don't draw a plus, check or badge into it, and don't notch it to make

@@ -1,7 +1,7 @@
 import { useState, type ReactElement } from 'react';
 import { Header, ListBox, ListBoxItem, ListBoxSection, Text } from 'react-aria-components';
 import type { IconRef } from '@weasel-js/icons';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import { Badge } from '../Badge';
 import { byRank } from '../../byRank';
 import { PaneHeader } from './PaneHeader';

@@ -15,7 +15,7 @@ import {
 import { DEG_TO_RAD, RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { unit } from '@weasel-js/quantity';
 import { tilePreviewCssUrl } from '@weasel-js/svg';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import { icon } from '../../icons.gen';
 import { UnitField } from '../NumberField';
 import { SegmentedBar } from '../Segmented';

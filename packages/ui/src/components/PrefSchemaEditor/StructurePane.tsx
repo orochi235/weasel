@@ -11,7 +11,7 @@ import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import type { ActionCatalog } from './useActionCatalog';
 import { holdsPages, looseKeys, looseTarget, mayUnplace, schemaTarget, topLevelAllows } from './loose';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
 import { GROUP_ICON, Palette, type PaletteDrag, type PaletteItem } from './Palette';
 import type { PartsCatalog } from './PartsList';

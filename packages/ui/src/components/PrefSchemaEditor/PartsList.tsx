@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { Tree, treeBranchIds, type TreeNode } from '../Tree';
 import { seekRows, soughtRow } from './rowSearch';

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Button as RACButton, Dialog as RACDialog, DialogTrigger } from 'react-aria-components';
 import { Popover } from '../Popover';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import listbox from '../listbox.module.css';
 import { BarMarkContext } from './barOrder';

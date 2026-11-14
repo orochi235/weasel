@@ -9,7 +9,7 @@ import { Slider } from '../Slider/Slider';
 import { JogAlong } from './JogAlong';
 import s from './Jog.module.css';
 import { icon } from '../../icons.gen';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 
 /** Props for {@link Jog}. Disabled or read-only, it neither plays, steps, nor scrubs: the step showing is its value. */
 export interface JogProps extends HoldProps {

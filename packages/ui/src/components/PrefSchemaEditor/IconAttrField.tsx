@@ -3,7 +3,7 @@ import { useIconGlyph, useIconVariant } from '@weasel-js/core';
 import { iconParts, toIconRef, toIconSpec, type IconSpec } from '@weasel-js/icons';
 import { Button } from '../Button';
 import { Dialog } from '../Dialog';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import { MARK_GROUP } from '../../icons.gen';
 import { MIXED_HINT } from '../mixedHint';
 import { IconPicker } from './IconPicker';

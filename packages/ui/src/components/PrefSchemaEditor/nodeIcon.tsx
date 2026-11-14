@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { isPrefLeaf, isPrefSection, type PrefAction, type PrefKind } from '@weasel-js/prefs';
 import type { IconRef } from '@weasel-js/icons';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import { icon } from '../../icons.gen';
 import type { EditorAction } from './editorActions';
 import { GROUP_ICON } from './Palette';

@@ -3,7 +3,7 @@ import { useControlAccess } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
 import type { TreeNode } from '../Tree';
 import { icon } from '../../icons.gen';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import type { LayerListItem, LayerListProps } from './layerListProps';
 import s from './LayerList.module.css';
 import { LockToggle, RowLabel } from './RowParts';

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { DragGhost } from '../DragGhost';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import type { TreeDragEffect, TreeDragState } from './useTreeDrag';
 import s from './Tree.module.css';
 import { icon } from '../../icons.gen';

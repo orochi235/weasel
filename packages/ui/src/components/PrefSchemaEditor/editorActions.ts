@@ -2,7 +2,7 @@ import { useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import { actionItems, useActionsRegistry, type Action } from '@weasel-js/core';
 import type { PrefAction, PrefLeaf } from '@weasel-js/prefs';
 import { actionShortcutText } from '../actionShortcutText';
-import { actionIcon } from '../../icons/actionIcon';
+import { actionIcon } from '../Icon/actionIcon';
 import { childrenOf, undigit, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** An action a schema editor offers to place: one a host has registered, by the key an action pref fires. */

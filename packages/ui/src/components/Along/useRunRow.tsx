@@ -1,7 +1,7 @@
 import { useRef, type CSSProperties, type FocusEvent as ReactFocusEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type RefObject } from 'react';
 import { placeAlongRun, runLength, runStationAt, trackShapeD, type RunAlign, type RunPlace, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { icon } from '../../icons.gen';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import { placeStyle } from './placeOnRun';
 import type { RunItemsOf, RunKeyOf } from './useItemLengths';
 import { useRunScroll } from './useRunScroll';

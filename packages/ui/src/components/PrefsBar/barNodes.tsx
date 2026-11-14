@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
 import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
-import { resolveIcon } from '../../icons/resolveIcon';
+import { resolveIcon } from '../Icon/resolveIcon';
 import { BarMenu, type BarMenuSources } from '../Bar/BarMenu';
 import { barMenuRoot } from '../Bar/barMenuRoot';
 import { BarPopover } from '../Bar/BarPopover';

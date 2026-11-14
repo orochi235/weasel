@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { prefIsCompound, type PrefAction, type PrefActions, type PrefLeaf } from '@weasel-js/prefs';
-import { resolveIcon } from '../../icons/resolveIcon';
+import { resolveIcon } from '../Icon/resolveIcon';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import { ActionLeaf } from '../Prefs/ActionLeaf';
 import { ActionsLeaf } from '../Prefs/ActionsLeaf';

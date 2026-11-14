@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { withBarLabel } from '../Bar/renderBarLeaf';
 import { drawsBarForm, type ControlForm } from '../ActionButton/controlForm';
-import { resolveIcon } from '../../icons/resolveIcon';
+import { resolveIcon } from '../Icon/resolveIcon';
 import { objectFieldContext } from '../Prefs/objectFieldContext';
 import { nodeLeafValue } from './model';
 import type { LeafCell } from './cells';

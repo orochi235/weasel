@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from 'react';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import { isPrefSection, prefAliasTarget, prefLeafAt, prefSectionLeaves, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
-import { resolveIcon } from '../../icons/resolveIcon';
+import { resolveIcon } from '../Icon/resolveIcon';
 import { BarMenu, useBarMenuResolver } from '../Bar/BarMenu';
 import { DragGhost } from '../DragGhost';
 import { InlineRange } from '../InlineRange';

@@ -1,5 +1,5 @@
 import { Children, Fragment, isValidElement, type CSSProperties, type ReactElement, type ReactNode } from 'react';
-import { resolveIcon } from '../../icons/resolveIcon';
+import { resolveIcon } from '../Icon/resolveIcon';
 import { offTitle } from '../Prefs/offTitle';
 import type { BarSide } from './barSide';
 import { RunScope } from '../Run';

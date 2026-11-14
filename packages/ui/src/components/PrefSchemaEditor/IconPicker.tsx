@@ -1,7 +1,7 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useIconVariant } from '@weasel-js/core';
 import { Input } from '../Input';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { groupIcons, pageIndex, stepIndex } from './iconPickerModel';
 import s from './IconPicker.module.css';

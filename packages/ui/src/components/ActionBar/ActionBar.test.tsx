@@ -15,7 +15,7 @@ import {
 import type { IconRef } from '@weasel-js/icons';
 import { ActionBar } from './ActionBar';
 import { icon } from '../../icons.gen';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import { renderWithIcons } from '../../testing/withIcons';
 import barStyles from '../Bar/Bar.module.css';
 import { RegisterAction, RegisterActions } from '@weasel-js/routing/testing/registerAction';

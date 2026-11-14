@@ -1,5 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import { ButtonTooltip } from '../Tooltip/buttonTooltip';
 import type { DisableableProps } from '../Disabled';
 import s from './CloseButton.module.css';

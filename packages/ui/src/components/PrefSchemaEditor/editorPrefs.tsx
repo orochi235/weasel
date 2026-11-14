@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useSyncExternalStore } from 'react';
 import { prefValueAtPath, type PrefGroup, type PrefPath, type PrefsStore } from '@weasel-js/prefs';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import { ActionButton } from '../ActionButton/ActionButton';
 import { PrefsDialog } from '../Prefs';
 import { setAtPath } from '../SelectionPanel';

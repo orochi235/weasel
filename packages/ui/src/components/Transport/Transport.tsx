@@ -7,7 +7,7 @@ import { QuantityText } from '../QuantityText';
 import { Slider, useDetents } from '../Slider';
 import s from './Transport.module.css';
 import { icon } from '../../icons.gen';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 
 const RATE = multiplier({ symbol: 'x' });
 

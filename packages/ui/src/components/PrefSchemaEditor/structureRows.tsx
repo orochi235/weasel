@@ -3,7 +3,7 @@ import { isPrefLeaf, type PrefActions, type PrefAlias, type PrefLeaf } from '@we
 import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import type { TreeNode } from '../Tree';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import { kindIcon, nodeIcon } from './nodeIcon';
 import type { EditorAction } from './editorActions';
 import { drawnLeaf } from './pointers';

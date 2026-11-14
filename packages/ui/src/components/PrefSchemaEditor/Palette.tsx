@@ -3,7 +3,7 @@ import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { useKitSetting } from '@weasel-js/react';
 import type { IconRef } from '@weasel-js/icons';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import { icon } from '../../icons.gen';
 import { DragGhost } from '../DragGhost';
 import { ActionButton } from '../ActionButton/ActionButton';

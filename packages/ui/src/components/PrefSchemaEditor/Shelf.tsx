@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ResizeHandle } from '../ResizeHandle';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import { Button } from '../Button';
 import { ActionList } from './ActionList';
 import { useEditorSize } from './editorPrefs';

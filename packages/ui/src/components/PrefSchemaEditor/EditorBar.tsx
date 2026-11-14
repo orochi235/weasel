@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Icon } from '../../icons';
+import { Icon } from '../Icon';
 import { ActionButton } from '../ActionButton/ActionButton';
 import { ToolGroup } from '../ToolGroup';
 import s from './PrefSchemaEditor.module.css';

@@ -4,7 +4,7 @@ import { ActionButton } from '../ActionButton/ActionButton';
 import { ToolGroup } from '../ToolGroup';
 import { RunScope, type Orientation } from '../Run';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import { isActive, isSlot, isStack, railRuns, type ToolRailButton, type ToolRailItem } from './items';
 import { RailStack, type StackCycleModifier } from './RailStack';
 import type { DensityProps } from '../Density';

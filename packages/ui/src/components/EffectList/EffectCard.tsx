@@ -1,5 +1,5 @@
 import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode, Ref } from 'react';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import { icon } from '../../icons.gen';
 import f from '../field.module.css';
 import { ReorderHandle } from '../ReorderHandle/ReorderHandle';

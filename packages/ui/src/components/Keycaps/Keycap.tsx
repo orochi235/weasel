@@ -1,5 +1,5 @@
 import { useRef, type CSSProperties } from 'react';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import type { IconRef } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
 import s from './Keycaps.module.css';

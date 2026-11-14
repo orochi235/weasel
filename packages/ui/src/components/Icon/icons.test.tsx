@@ -4,9 +4,9 @@ import { icons as coreIcons } from '@weasel-js/core/icons';
 import { icons as shapeIcons } from '@weasel-js/icons/shapes';
 import { Icon } from './Icon';
 import { isFillable } from './Icon';
-import { ICON_GROUPS, MARK_GROUP, icon, type UiIconName } from '../icons.gen';
-import { icons as uiIcons } from '../icons.table';
-import { renderWithIcons } from '../testing/withIcons';
+import { ICON_GROUPS, MARK_GROUP, icon, type UiIconName } from '../../icons.gen';
+import { icons as uiIcons } from '../../icons.table';
+import { renderWithIcons } from '../../testing/withIcons';
 
 const NAMES = Object.keys(uiIcons.icons) as UiIconName[];
 const body = (name: string) => uiIcons.icons[name]!.body;

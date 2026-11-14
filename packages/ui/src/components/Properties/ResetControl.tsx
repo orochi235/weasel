@@ -1,6 +1,6 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { icon } from '../../icons.gen';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Properties.module.css';
 import { useControlAccess } from '../Disabled';

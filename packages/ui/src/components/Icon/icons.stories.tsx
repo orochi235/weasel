@@ -4,8 +4,8 @@ import { icons as coreIcons } from '@weasel-js/core/icons';
 import { icons as shapeIcons } from '@weasel-js/icons/shapes';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icons as uiIcons } from '@weasel-js/ui/icons';
-import { ICON_GROUPS, icon } from '../icons.gen';
-import { MARK_GROUP } from '../icons.gen';
+import { ICON_GROUPS, icon } from '../../icons.gen';
+import { MARK_GROUP } from '../../icons.gen';
 import s from './icons.stories.module.css';
 
 const meta: Meta = { title: 'ui/Icons/Gallery', tags: ['gallery'] };

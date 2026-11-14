@@ -2,7 +2,7 @@
 // that stay generic over consumer data (SelectionPanel). App-specific
 // policy panels (document props) live in their consuming app.
 export { dlog, isDebugEnabled } from './dlog';
-export * from './icons';
+export * from './components/Icon';
 export * from './components/ActionBar';
 export * from './components/ActionSettings';
 export * from './components/Badge';

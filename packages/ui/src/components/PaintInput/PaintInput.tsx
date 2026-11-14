@@ -16,7 +16,7 @@ import {
   type PaintKind,
   type PaintKindEntry,
 } from '@weasel-js/core';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 import type { IconSpec } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
 import { ColorField } from '../ColorField';

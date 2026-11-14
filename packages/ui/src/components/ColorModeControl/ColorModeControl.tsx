@@ -3,7 +3,7 @@ import type { ColorModePreference } from '@weasel-js/theme';
 import { SegmentedBar, type SegmentedBarItem, type SegmentedVariant } from '../Segmented';
 import { useDensity, type ControlSize } from '../Density';
 import { COLOR_MODES } from '../colorModes';
-import { Icon } from '../../icons/Icon';
+import { Icon } from '../Icon/Icon';
 
 /** Props for {@link ColorModeControl}. */
 export interface ColorModeControlProps {

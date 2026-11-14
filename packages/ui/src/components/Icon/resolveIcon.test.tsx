@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
-import { withIcons } from '../testing/withIcons';
-import { icon } from '../icons.gen';
+import { withIcons } from '../../testing/withIcons';
+import { icon } from '../../icons.gen';
 import { resolveIcon } from './resolveIcon';
 
 /** Path data from `core:unknown`'s question mark, which a name the registry lacks draws in development. */
