@@ -1,9 +1,9 @@
 import { copyText } from '@weasel-js/react';
+import { Callout } from '@weasel-js/ui/components/Callout';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { useId, useState } from 'react';
 import { icon } from '../icons.gen';
-import { Callout } from '../passthrough/weasel-ui';
 import { useAnnotationsOptional } from './AnnotationsContext';
 import type { CaptureResult } from './types';
 

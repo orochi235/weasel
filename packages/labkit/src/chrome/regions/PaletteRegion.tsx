@@ -1,11 +1,9 @@
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { ToolButton } from '@weasel-js/ui/components/ToolButton';
+import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
+import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
+import { useRovingTabIndex } from '@weasel-js/ui/roving-tab-index';
 import { Fragment } from 'react';
-import {
-  formatShortcut,
-  Icon,
-  ToolButton,
-  ToolGroup,
-  useRovingTabIndex,
-} from '../../passthrough/weasel-ui';
 import type { RailItem, RegionContribution, ToolSlotContext, TrialChromeContext } from '../types';
 import { groupsOf } from './groupsOf';
 

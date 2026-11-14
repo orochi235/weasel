@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useArgs } from '@weasel-js/forge/preview-api';
 import type { CanvasLayerDescriptor } from '@weasel-js/labkit/canvas';
 import { CanvasStack, type CanvasStackProps } from '@weasel-js/labkit/canvas';
-import { ScaleBar } from '@weasel-js/labkit/primitives';
+import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 
 const meta: Meta<typeof CanvasStack> = {
   title: 'labkit/Canvas/CanvasStack',

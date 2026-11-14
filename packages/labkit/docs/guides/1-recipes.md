@@ -78,7 +78,7 @@ surface to the expanded trial so no other tile paints over it.
 ### A toolbar with undo/redo and a save button
 
 ```tsx
-import { Toolbar } from "@weasel-js/labkit";
+import { Toolbar } from "@weasel-js/ui/components/Toolbar";
 
 <Toolbar aria-label="Trial actions" size="sm" framed>
   <Toolbar.Title>My Trial</Toolbar.Title>
@@ -96,7 +96,8 @@ import { Toolbar } from "@weasel-js/labkit";
 ### A status bar with several readouts
 
 ```tsx
-import { StatusBar, StatusBarItem, StatusBarSpacer, FpsMeter } from "@weasel-js/labkit";
+import { FpsMeter } from "@weasel-js/labkit";
+import { StatusBar, StatusBarItem, StatusBarSpacer } from "@weasel-js/ui/components/StatusBar";
 
 <StatusBar divided>
   <StatusBarItem>Items: {items.length}</StatusBarItem>

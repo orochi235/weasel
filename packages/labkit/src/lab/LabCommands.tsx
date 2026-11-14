@@ -1,8 +1,8 @@
 import { ActionDisabledReason, useCommand } from '@weasel-js/core';
+import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import { MARKS_COMMAND, takesMarks } from '../annotations/labMarks';
 import { type LabContribution, type LabHeaderItem, useLabChromeContext } from '../chrome';
 import { labItemCommandId } from '../chrome/labTypes';
-import { formatShortcut } from '../passthrough/weasel-ui';
 import type { LabMode } from '../state/types';
 import { useLabContext } from './LabContext';
 import { MODES } from './labModes';

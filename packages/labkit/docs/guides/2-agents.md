@@ -15,9 +15,6 @@ A map of the library so agents can find what they need quickly.
 | The lab body and its shared surface's layers | `src/lab/LabSurface.tsx` |
 | Presentation mode: `usePresentation`, `?present`, the seed and its store, the refit and the play controls | `src/lab/presentation.tsx`, `src/lab/openLab.ts`, `src/lab/presentation.less`, `src/lab/PresentedTransport.tsx`, `src/trial/useViewPlacement.ts` |
 | A still for a poster (`<Lab still>`, `?still`), and the host page's `postMessage` play and pause | `src/lab/still.ts`, `src/lab/presentationMessages.ts`, `src/clock/transportHold.ts` |
-| `<Toolbar>` + subcomponents | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
-| `<StatusBar>`, `<StatusBarItem>`, `<StatusBarSpacer>` | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
-| `<ScaleBar>` | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
 | `<FpsMeter>` | `src/primitives/FpsMeter.tsx` |
 | `<Legend>` | `src/primitives/Legend.tsx` |
 | `<FloatingPanel>` | `src/primitives/FloatingPanel.tsx` |
@@ -246,7 +243,6 @@ visible from the code:
 | `<PropertyGroup>` (subpanel grouping with `hidden`) | `@weasel-js/ui` (re-exported by labkit) |
 | `<CurveField>` (1D y=f(x) curve editor) | `@weasel-js/ui` (re-exported by labkit) |
 | `<SingletonExperimentProvider>` (one-trial state runtime) | `src/state/SingletonExperiment.tsx` |
-| Weasel-ui passthroughs (`CurveEditor`, `useReorderDragList`, `formatNumber`, …) | `src/passthrough/weasel-ui.ts` (exported as `@weasel-js/labkit/weasel-ui`) |
 
 ## Conventions
 

@@ -1,10 +1,10 @@
+import type { LayerListItem } from '@weasel-js/ui/components/LayerList';
 import { useMemo } from 'react';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera } from '../canvas/worldSpec';
 import type { TrialClock } from '../clock/trialClock';
 import type { OverAccess } from '../config/over';
 import type { Instrument, LayerDescriptor } from '../instrument/types';
-import type { LayerListItem } from '../passthrough/weasel-ui';
 
 interface TrialLayersInput {
   instrument: Instrument;

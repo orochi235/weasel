@@ -1,6 +1,6 @@
+import { Button } from '@weasel-js/ui/components/Button';
 import { useContext } from 'react';
 import { useStore } from 'zustand/react';
-import { Button } from '../passthrough/weasel-ui';
 import { LabStoreContext } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { UnreadableRecord } from '../state/types';

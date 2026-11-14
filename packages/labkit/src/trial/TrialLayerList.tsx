@@ -1,5 +1,5 @@
+import { LayerList, type LayerListItem, moveLayers } from '@weasel-js/ui/components/LayerList';
 import { type Dispatch, type ReactElement, type SetStateAction, useState } from 'react';
-import { LayerList, type LayerListItem, moveLayers } from '../passthrough/weasel-ui';
 
 export interface TrialLayerListProps {
   items: LayerListItem[];

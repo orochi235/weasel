@@ -1,4 +1,7 @@
-import { Button, formatShortcut, Icon, useRovingTabIndex } from '../../passthrough/weasel-ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Icon } from '@weasel-js/ui/components/Icon';
+import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
+import { useRovingTabIndex } from '@weasel-js/ui/roving-tab-index';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Props for `<ViewportRegion>`. */

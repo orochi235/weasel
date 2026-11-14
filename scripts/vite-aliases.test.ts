@@ -71,7 +71,7 @@ describe('weaselAliases', () => {
     expect(inRepo('@weasel-js/diagram/layout')).toBe('packages/diagram/src/layout.entry.ts');
     expect(inRepo('@weasel-js/core/move')).toBe('packages/core/src/import-shims/move.ts');
     expect(inRepo('@weasel-js/forge/play')).toBe('packages/forge/src/test/play.ts');
-    expect(inRepo('@weasel-js/labkit/weasel-ui')).toBe('packages/labkit/src/passthrough/weasel-ui.ts');
+    expect(inRepo('@weasel-js/labkit/weasel-canvas')).toBe('packages/labkit/src/passthrough/weasel-canvas.ts');
     expect(inRepo('@weasel-js/ui/components/Button')).toBe('packages/ui/src/components/Button/index.ts');
     expect(inRepo('@weasel-js/theme/tokens.css')).toBe('packages/theme/src/generated/tokens.css');
   });

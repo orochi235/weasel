@@ -1,4 +1,5 @@
-import { CloseButton, Input } from '../passthrough/weasel-ui';
+import { CloseButton } from '@weasel-js/ui/components/CloseButton';
+import { Input } from '@weasel-js/ui/components/Input';
 import { useAnnotations } from './AnnotationsContext';
 import type { AnnotationMeaning } from './types';
 

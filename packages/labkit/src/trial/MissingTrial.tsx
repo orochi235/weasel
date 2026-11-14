@@ -1,5 +1,5 @@
+import { CloseButton } from '@weasel-js/ui/components/CloseButton';
 import { useLabCommands } from '../lab/LabContext';
-import { CloseButton } from '../passthrough/weasel-ui';
 
 /**
  * Stands in for a trial whose record or instrument is gone, such as a saved layout naming a story

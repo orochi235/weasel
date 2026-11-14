@@ -319,11 +319,8 @@ await writeFile(
     `import * as paintGradientTrack from '@weasel-js/ui/paint-gradient-track';\n` +
     `import * as kitSettings from '@weasel-js/ui/kit-settings';\n` +
     `import * as floating from '@weasel-js/ui/floating';\n` +
-    // labkit re-exports @weasel-js/ui through its own `./weasel-ui` subpath, so
-    // that path is only importable if labkit *declares* ui as a runtime
-    // dependency.
+    `import * as roving from '@weasel-js/ui/roving-tab-index';\n` +
     `import * as labkit from '@weasel-js/labkit';\n` +
-    `import * as labkitUi from '@weasel-js/labkit/weasel-ui';\n` +
     `import * as labkitPrimitives from '@weasel-js/labkit/primitives';\n` +
     `import * as toastSub from '@weasel-js/ui/components/Toast';\n` +
     `import * as hud from '@weasel-js/hud';\n` +
@@ -336,7 +333,7 @@ await writeFile(
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
     `  guides, devtools, rig, editor,\n` +
-    `  toolPalette, prefs, callout, icon, paintValue, appearance, portalHost, color, paintGradientTrack, kitSettings, floating,\n` +
+    `  toolPalette, prefs, callout, icon, paintValue, appearance, portalHost, color, paintGradientTrack, kitSettings, floating, roving,\n` +
     `  toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +

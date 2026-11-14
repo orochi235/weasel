@@ -1,9 +1,9 @@
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { Popover } from '@weasel-js/ui/components/Popover';
 import { createContext, type ReactNode, useContext, useRef, useState } from 'react';
 import { Dialog as RACDialog } from 'react-aria-components';
 import type { TrialContribution } from '../chrome/types';
 import { icon } from '../icons.gen';
-import { Icon } from '../passthrough/weasel-ui';
 
 /** What the toggle opens: the trial's sidebar sections, and the trial they belong to. */
 export interface FloatSidebarValue {

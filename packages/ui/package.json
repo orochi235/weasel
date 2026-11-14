@@ -54,6 +54,10 @@
       "types": "./dist/kitSettings.d.ts",
       "import": "./dist/kitSettings.js"
     },
+    "./roving-tab-index": {
+      "types": "./dist/useRovingTabIndex.d.ts",
+      "import": "./dist/useRovingTabIndex.js"
+    },
     "./floating": {
       "types": "./dist/floating/index.d.ts",
       "import": "./dist/floating/index.js"
