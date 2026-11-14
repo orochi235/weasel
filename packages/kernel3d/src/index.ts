@@ -16,6 +16,7 @@ export {
 } from './camera';
 export { UNIT_CUBE, pose3, poseMatrix, aabbOfPose, type Pose3 } from './pose3';
 export { POSE3_COMPOSITION } from './composePose3';
+export { pathMotion3, type PathMotion3, type PathMotion3Options } from './pathMotion3';
 export {
   screenToNdc, ndcToScreen, rayThroughScreenPoint, projectAabbToScreen,
   type ChromeBox, type ScreenBox,

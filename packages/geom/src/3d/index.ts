@@ -10,7 +10,7 @@
  */
 export {
   add, sub, scale, dot, cross, len, len2, normalize, vec3, distance, distance2, lerpPoint,
-  quatIdentity, quatFromAxisAngle, quatMultiply, quatConjugate, quatRotate,
+  quatIdentity, quatFromAxisAngle, quatMultiply, quatConjugate, quatRotate, quatFromBasis, quatSlerp,
   type Vec3, type Quat,
 } from './vec3';
 export {
@@ -24,4 +24,5 @@ export {
   type Ray, type Aabb,
 } from './ray3';
 export { PORT_REACH, portControls, portCurvePoints, cubicPointAt } from './portCurve3';
-export { pointAtLength } from './along3';
+export { pointAtLength, lengthTable3 } from './along3';
+export type { LengthTable } from '../along/lengthTable';

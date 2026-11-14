@@ -331,6 +331,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PoseBlendDemo.tsx',
   },
   {
+    id: 'path-motion',
+    title: 'Path motion',
+    category: 'Animation',
+    description: "A node rides a path. `pathMotion(path, { orient })` is a pose descriptor whose `lerp` places the pose by length along the path, built on `pathLengthTable` and `pointAtLength`, and `at(pose, 1)` is the pose at the path's end. Ride passes both to `tweenPose`, as `geometry` and `to`: the scene takes the destination at once, and the block on screen follows the curve rather than the straight line between its ends, at an even speed along it that the easing shapes. With turn with the path ticked the block's rotation follows the tangent. `@weasel-js/kernel3d`'s `pathMotion3` is the same for a `Pose3` on a 3D path.",
+    hint: 'Press ride. Untick turn with the path and press it again.',
+    load: () => import('./demos/PathMotionDemo').then((m) => m.PathMotionDemo),
+    path: 'apps/site/demos/PathMotionDemo.tsx',
+  },
+  {
     id: 'vertex-color-animation',
     title: 'Vertex-color animation',
     category: 'Animation',
@@ -347,6 +356,15 @@ const DEMO_META: DemoMeta[] = [
     hint: 'play/pause · drag scrub (it pauses first) and watch the event log stay still · toggle loop · time-scale · add x keyframe.',
     load: () => import('./demos/TimelineDemo').then((m) => m.TimelineDemo),
     path: 'apps/site/demos/TimelineDemo.tsx',
+  },
+  {
+    id: 'timeline-frames',
+    title: 'Timeline to frames',
+    category: 'Animation',
+    description: "A timeline saved as a sequence of PNGs. `renderTimelineFrames` pauses the timeline, seeks it to each frame's time at 12 frames a second, renders the scene through one raster session, and yields the frames in order; the demo encodes each with `rasterToPng` and downloads it. An `AbortSignal` cancels the run between frames, `onProgress` reports each frame, and the timeline goes back to where it was, playing, when the run ends.",
+    hint: 'Press save frames: the browser may ask once to allow several downloads. Press cancel partway.',
+    load: () => import('./demos/TimelineFramesDemo').then((m) => m.TimelineFramesDemo),
+    path: 'apps/site/demos/TimelineFramesDemo.tsx',
   },
   {
     id: 'clip',

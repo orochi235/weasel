@@ -30,6 +30,7 @@ export {
   type TweenPoseOptions, type SpringPoseOptions, type StaggerSpringPoseOptions,
   type PoseAnimationAdapter,
 } from './poseHelpers';
+export { pathMotion, type PathMotion, type PathMotionOptions } from './pathMotion';
 export * from './wrappers';
 export {
   createReflowTransition, useAnimatedReflow,
