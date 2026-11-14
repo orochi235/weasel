@@ -602,11 +602,6 @@ name a package. Breaking changes are in scope.
   `sliderSlop.module.css` into their owners. Closes when `RangeSlider` and `DetentSlider` are gone and
   NumberControls renders `InlineRange`.
 
-- **(P2) [agent] Replace labkit's `ScaleIndicator` with ui's `ScaleBar`.** `labkit/src/primitives/ScaleIndicator.tsx`
-  has its own 1/2/5 `niceNumber` and a bare `unit = 'px'` with no magnification, and `plot`'s `niceStep` is a third
-  copy of the rounding. `ScaleBar` reads zoom from the view context by default; `labkit/src/chrome/builtins.tsx:309`
-  and `Specimen.tsx:814` render it. Closes when `ScaleIndicator` is deleted and one nice-step function remains.
-
 - **(P2) [agent] One `Ruler` for three rulers.** `Timeline/Ruler.tsx` (`spacedTicks`), `BandEditor/Ruler.tsx`
   (label thinning), `Rulers/Rulers.tsx`, and `Plot2D`'s own tick spacing; the root exports both `Ruler` and
   `Rulers`. A 1D `Ruler` over a `ContinuousScale`, with thinning built in and Timeline's playhead and BandEditor's
