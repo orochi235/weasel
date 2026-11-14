@@ -9,7 +9,7 @@ import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { selectionRoving } from '../../selectionRoving';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
-import type { Orientation } from '../orientation';
+import type { Orientation } from '../Run';
 
 /**
  * One segment of an {@link OptionsBar}. Unlike `ToggleBar`, each item carries

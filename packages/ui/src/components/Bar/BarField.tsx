@@ -4,7 +4,7 @@ import { type DistributiveOmit, PropertyControl, type PropertyControlProps } fro
 import { PropertyReadout } from '../Properties/PropertyReadout';
 import { enumControlAt } from '../Prefs/surfaceControls';
 import { BarPopover } from './BarPopover';
-import { useOrientation } from '../orientation';
+import { useRun } from '../Run';
 import s from './Bar.module.css';
 import t from './barTurn.module.css';
 import { useTurnToFit } from './useTurnToFit';
@@ -34,7 +34,7 @@ export type BarFieldProps<T extends string = string> = DistributiveOmit<Property
  */
 export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
   const { icon, ...p } = typed as unknown as PropertyControlProps & BarFieldCellProps;
-  const o = useOrientation();
+  const o = useRun().orientation;
   const turn = useTurnToFit(o === 'vertical', s.bar);
   const field = (className: string) => ({
     className: turn.turned ? `${className} ${t.turned}` : className,

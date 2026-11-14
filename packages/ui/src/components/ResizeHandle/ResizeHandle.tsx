@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, type KeyboardEvent, type PointerEvent }
 import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import { COARSE_STEPS } from '@weasel-js/ui-input';
 import { snapToStep } from '@weasel-js/quantity';
-import type { Orientation } from '../orientation';
+import type { Orientation } from '../Run';
 import s from './ResizeHandle.module.css';
 import { isPrimaryPress } from '@weasel-js/gestures';
 

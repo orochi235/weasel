@@ -1,7 +1,7 @@
 import { useId, useState, type ReactElement } from 'react';
 import { getAlpha01 } from '@weasel-js/core';
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
-import { useTrackShape } from '../Along/alongContext';
+import { useRun } from '../Run';
 import { SwatchGrid, swatchId, type SwatchChange, type SwatchGridOption } from '../SwatchGrid';
 import { SwatchRings, type SwatchRingGroup } from '../SwatchGrid/SwatchRings';
 import { Select } from '../Select';
@@ -103,8 +103,8 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
     return match && swatchId(match);
   };
 
-  const along = useTrackShape();
-  const shape = props.shape ?? along?.shape;
+  const enclosing = useRun();
+  const shape = props.shape ?? enclosing.shape;
   const curved = shape !== undefined && shape.kind !== 'line' ? shape : undefined;
 
   // On a ring the picker's own name says the palette, so its label is only heard: a visible one would stand out of the ring.
@@ -130,7 +130,7 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
   if (shown) rings.push({ key: `palette:${shown.id}`, label: shown.name, options: shown.colors, value: currentIn(shown.colors), columns: shown.columns ?? columns, lead: paletteLead });
 
   const grids = curved ? (
-    <SwatchRings shape={curved} align={props.align ?? along?.align ?? 'center'} groups={rings} onChange={onChange} onAltChange={onAltChange} />
+    <SwatchRings shape={curved} align={props.align ?? enclosing.align ?? 'center'} groups={rings} onChange={onChange} onAltChange={onAltChange} />
   ) : (
     <>
       {store && (

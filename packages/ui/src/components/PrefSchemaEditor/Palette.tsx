@@ -129,7 +129,7 @@ export function Palette({ items, sections = false, ghost = true, disabled = fals
   };
   return (
     <div className={s.palette} ref={root}>
-      <ToolGroup orientation="horizontal" aria-label="Drag to add">
+      <ToolGroup aria-label="Drag to add">
         {(items ?? (sections ? SECTION_PALETTE : PALETTE)).map((item) => (
           // The drag rides on a wrapper: a ToolButton takes a press and nothing else.
           <span key={item.id} className={s.paletteTool} onPointerDown={(e) => press(item, e)}>
@@ -140,7 +140,7 @@ export function Palette({ items, sections = false, ghost = true, disabled = fals
       {children != null && (
         <>
           <span className={s.paletteRule} role="separator" aria-orientation="vertical" />
-          <ToolGroup orientation="horizontal" aria-label="Add or remove">{children}</ToolGroup>
+          <ToolGroup aria-label="Add or remove">{children}</ToolGroup>
         </>
       )}
       {drag && ghost && root.current && (

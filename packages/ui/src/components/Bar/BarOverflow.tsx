@@ -7,7 +7,7 @@ import listbox from '../listbox.module.css';
 import { BarMarkContext } from './barOrder';
 import { BarInMenuContext } from './barInMenu';
 import type { BarSide } from './barSide';
-import { OrientationContext } from '../orientation';
+import { RunScope } from '../Run';
 import s from './Bar.module.css';
 import { icon } from '../../icons.gen';
 
@@ -23,7 +23,7 @@ export function BarOverflow({ label, children, side }: { label: string; children
       {ready && provide(
         <Popover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.menu}`} aria-label={label}>
-            <OrientationContext.Provider value="horizontal"><BarMarkContext.Provider value={false}><BarInMenuContext.Provider value>{children}</BarInMenuContext.Provider></BarMarkContext.Provider></OrientationContext.Provider>
+            <RunScope fresh><BarMarkContext.Provider value={false}><BarInMenuContext.Provider value>{children}</BarInMenuContext.Provider></BarMarkContext.Provider></RunScope>
           </RACDialog>
         </Popover>
       )}

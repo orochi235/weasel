@@ -4,7 +4,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { ActionsProvider, useCommand } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { BarMenu } from './BarMenu';
-import { BarSideContext } from './barSide';
+import { RunScope } from '../Run';
 
 afterEach(cleanup);
 
@@ -27,7 +27,7 @@ describe('BarMenu', () => {
       await renderSettled(
         <ActionsProvider>
           <Command />
-          <BarSideContext.Provider value="right"><BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen /></BarSideContext.Provider>
+          <RunScope side="right"><BarMenu label="File" schema={FILE} values={() => undefined} defaultOpen /></RunScope>
         </ActionsProvider>,
       );
       const menu = screen.getByRole('menu');

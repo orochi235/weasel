@@ -5,7 +5,7 @@ import {
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
-import type { Orientation } from '../orientation';
+import { RunScope, type Orientation } from '../Run';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import s from './ToolPalette.module.css';
 import { formatShortcut } from '@weasel-js/gestures';
@@ -23,6 +23,7 @@ function toolGlyph(tool: Tool): ReactNode {
 /** Props for {@link ToolPalette}. */
 export interface ToolPaletteProps {
   tools: ToolsApi;
+  /** Which way the palette runs, and so the run its groups lay their buttons along. Default `'vertical'`. */
   orientation?: Orientation;
   className?: string;
   /**
@@ -149,6 +150,7 @@ export function ToolPalette(props: ToolPaletteProps) {
       aria-label={ariaLabel}
       aria-orientation={columns ? undefined : orientation}
     >
+      <RunScope orientation={orientation}>
       {slotGroups.map(({ key, slots }, i) => (
         <Fragment key={key}>
           {i > 0 && (
@@ -158,7 +160,7 @@ export function ToolPalette(props: ToolPaletteProps) {
               aria-orientation={horizontal ? 'vertical' : 'horizontal'}
             />
           )}
-          <ToolGroup orientation={orientation} columns={columns} groupKey={key}>
+          <ToolGroup columns={columns} groupKey={key}>
             {slots.map((slot) => {
               if (slot.kind === 'stack') {
                 return (
@@ -195,6 +197,7 @@ export function ToolPalette(props: ToolPaletteProps) {
           </ToolGroup>
         </Fragment>
       ))}
+      </RunScope>
       {carry.ghost}
     </div>
   );

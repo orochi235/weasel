@@ -2,7 +2,7 @@ import { forwardRef, useContext, useRef, type Ref } from 'react';
 import { TabList as RACTabList, TabListStateContext, type TabListProps as RACTabListProps } from 'react-aria-components';
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
 import { useRowRun } from '../Along/useRowRun';
-import { AlongContext } from '../Along/alongContext';
+import { RunScope } from '../Run';
 import { useRunGap } from '../Along/useItemLengths';
 import { RunBand, RunEnds } from '../Along/useRunRow';
 import { RUN_HOST, useRunSlotHost, type RunSlots } from '../Along/runSlots';
@@ -31,9 +31,9 @@ export const TabListAlong = forwardRef(function TabListAlong(
     <div ref={root} {...{ [RUN_HOST]: '' }} {...host.rootProps} className={s.along} data-shape={shape.kind}>
       <RunBand row={host} shape={shape} />
       <TabRule run={run} host={host} selected={selected} />
-      <AlongContext.Provider value={null}>
+      <RunScope fresh>
         <RACTabList {...(rest as RACTabListProps<object>)} ref={ref} className={[s.list, s.joined, className].filter(Boolean).join(' ')} />
-      </AlongContext.Provider>
+      </RunScope>
       <RunEnds row={host} run={run} />
     </div>
   );

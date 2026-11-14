@@ -1,18 +1,12 @@
 import { Children, type ReactNode } from 'react';
-import type { Orientation } from '../orientation';
+import { useRun } from '../Run';
 import { tiling } from '../../tiling';
 import s from './ToolGroup.module.css';
 
 /** Props for {@link ToolGroup}. */
 export interface ToolGroupProps {
   children: ReactNode;
-  /**
-   * Lays children along an axis. `'vertical'` (default) stacks them in
-   * a column; `'horizontal'` lays them in a row. Independent of the
-   * parent toolbar's own orientation.
-   */
-  orientation?: Orientation;
-  /** Lays children in a grid this many across, in place of `orientation`'s single line. */
+  /** Lays children in a grid this many across, in place of the run's single line. */
   columns?: number;
   /**
    * Optional `data-group` attribute — useful for parents that want to
@@ -26,11 +20,13 @@ export interface ToolGroupProps {
 
 /**
  * Generic toolbar group — a `role="group"` flex container that arranges
- * `<ToolButton>`s (or any children) along a chosen axis. No visual chrome
- * beyond layout; theming lives on the buttons.
+ * `<ToolButton>`s (or any children) along the run it sits in: a column in a
+ * vertical one, a row otherwise. No visual chrome beyond layout; theming
+ * lives on the buttons.
  */
 export function ToolGroup(props: ToolGroupProps) {
-  const { children, orientation = 'vertical', columns, groupKey, 'aria-label': ariaLabel, className } = props;
+  const { children, columns, groupKey, 'aria-label': ariaLabel, className } = props;
+  const { orientation } = useRun();
   const tiles = columns ? tiling(Children.count(children), { columns }) : null;
   const cls = [s.group, tiles ? tiles.className : orientation === 'horizontal' && s.horizontal, className]
     .filter(Boolean).join(' ');

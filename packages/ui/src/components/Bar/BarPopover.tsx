@@ -1,4 +1,4 @@
-import { useContext, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   Button as RACButton,
   Dialog as RACDialog,
@@ -9,8 +9,7 @@ import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portal
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import { BarMarkContext } from './barOrder';
-import { BarSideContext } from './barSide';
-import { OrientationContext } from '../orientation';
+import { RunScope, useRun } from '../Run';
 import { PopFace, popIconAttr } from './popFace';
 import s from './Bar.module.css';
 
@@ -34,7 +33,7 @@ export interface BarPopoverProps extends OverlayPortalProps {
  */
 export function BarPopover({ label, icon, children, disabled, className, portalContainer }: BarPopoverProps) {
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
-  const side = useContext(BarSideContext);
+  const { side } = useRun();
   return (
     <DialogTrigger>
       {anchor}
@@ -46,8 +45,8 @@ export function BarPopover({ label, icon, children, disabled, className, portalC
       {ready && provide(
         <Popover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.popBody}`} aria-label={label}>
-            {/* Context crosses the portal, and a side belongs to the curved bar's line, not to what opens from it. */}
-            <OrientationContext.Provider value="horizontal"><BarSideContext.Provider value={undefined}><BarMarkContext.Provider value={false}>{children}</BarMarkContext.Provider></BarSideContext.Provider></OrientationContext.Provider>
+            {/* Context crosses the portal, and the bar's run is not the run of what opens from it. */}
+            <RunScope fresh><BarMarkContext.Provider value={false}>{children}</BarMarkContext.Provider></RunScope>
           </RACDialog>
         </Popover>
       )}

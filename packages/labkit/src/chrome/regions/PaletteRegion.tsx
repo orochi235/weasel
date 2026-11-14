@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import {
   formatShortcut,
   Icon,
+  RunScope,
   ToolButton,
   ToolGroup,
   useRovingTabIndex,
@@ -57,14 +58,16 @@ export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>
       aria-orientation="vertical"
       onKeyDown={onKeyDown}
     >
-      {railRuns(contributions, region).map((run, i) => (
-        <Fragment key={run.id}>
-          {i > 0 && <hr className="lk-palette-region__rule" />}
-          <ToolGroup orientation="vertical" groupKey={run.group} aria-label={run.group}>
-            {run.entries.map(entry)}
-          </ToolGroup>
-        </Fragment>
-      ))}
+      <RunScope orientation="vertical">
+        {railRuns(contributions, region).map((run, i) => (
+          <Fragment key={run.id}>
+            {i > 0 && <hr className="lk-palette-region__rule" />}
+            <ToolGroup groupKey={run.group} aria-label={run.group}>
+              {run.entries.map(entry)}
+            </ToolGroup>
+          </Fragment>
+        ))}
+      </RunScope>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Fragment } from 'react';
 import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties';
 import { BarField, type BarFieldProps } from '@weasel-js/ui/components/Bar';
-import { OrientationContext } from '../orientation';
+import { RunScope } from '../Run';
 import { useStoryFields } from './barStoryFields';
 import s from './Bar.stories.module.css';
 import bar from './Bar.module.css';
@@ -20,7 +20,7 @@ type Shared = Partial<Omit<BarFieldProps, 'kind' | 'value' | 'onChange' | 'onInp
 function Strip({ args, only, vertical = false }: { args: Story['args']; only: (id: string) => boolean; vertical?: boolean }) {
   const fields = useStoryFields().filter(({ id }) => only(id));
   return (
-    <OrientationContext.Provider value={vertical ? 'vertical' : 'horizontal'}>
+    <RunScope orientation={vertical ? 'vertical' : 'horizontal'}>
       <div
         className={vertical ? `${bar.bar} ${s.column}` : s.strip}
         data-orientation={vertical ? 'vertical' : undefined}
@@ -29,7 +29,7 @@ function Strip({ args, only, vertical = false }: { args: Story['args']; only: (i
           <BarField key={id} {...(args as Shared)} {...field} />
         ))}
       </div>
-    </OrientationContext.Provider>
+    </RunScope>
   );
 }
 

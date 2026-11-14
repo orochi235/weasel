@@ -2,7 +2,8 @@ import { useRef, type PointerEvent as ReactPointerEvent, type ReactElement } fro
 import type { TrackShape } from '@weasel-js/geom';
 import { screenDirection } from '../Along/rowRun';
 import { useRowRun } from '../Along/useRowRun';
-import { AlongContext, type RunAlign } from '../Along/alongContext';
+import type { RunAlign } from '../Along/alongContext';
+import { RunScope } from '../Run';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { RUN_SLACK, RunBand, RunEnds, useRunRow } from '../Along/useRunRow';
 import { positionAt } from '../Along/useRunScroll';
@@ -71,7 +72,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
       <RunBand row={along} shape={shape} />
       {props.onReorder && <span aria-live="polite" aria-atomic="true" data-bar-announce="" className={b.status}>{keys.announcement}</span>}
       <DockBarContext.Provider value={null}>
-        <AlongContext.Provider value={null}>
+        <RunScope fresh>
           {leading != null && <span className={`${b.lead} ${s.item}`} {...leading.attrs} style={place(0).style} data-clipped={place(0).clipped}>{leading.content}</span>}
           {line.map((item, i) => drawBarItem(item, false, attrs, place(first + i)))}
           {rest.length > 0 && (
@@ -79,7 +80,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
               <BarOverflow label={overflowLabel} side={place(order.length - 1).side}>{rest.map((item) => drawBarItem(inBarMenu(item), true, attrs))}</BarOverflow>
             </span>
           )}
-        </AlongContext.Provider>
+        </RunScope>
       </DockBarContext.Provider>
       <RunEnds row={along} run={run} />
     </div>

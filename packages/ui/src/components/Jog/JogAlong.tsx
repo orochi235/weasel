@@ -1,6 +1,7 @@
 import { useMemo, useRef, type ReactElement, type ReactNode } from 'react';
 import { runLength, trackRun, trackSlice, type TrackRun, type TrackShape } from '@weasel-js/geom';
-import { AlongContext, type RunAlign } from '../Along/alongContext';
+import type { RunAlign } from '../Along/alongContext';
+import { RunScope } from '../Run';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { useRunRow } from '../Along/useRunRow';
 import type { JogParts } from './Jog';
@@ -46,14 +47,14 @@ export function JogAlong({ parts, shape, align, className }: { parts: JogParts; 
 
   return (
     <div ref={root} className={[s.root, className].filter(Boolean).join(' ')} data-shape={shape.kind} dir="ltr">
-      <AlongContext.Provider value={null}>
+      <RunScope fresh>
         {part('prev', parts.prev)}
         {part('play', parts.play)}
         {part('next', parts.next)}
         {parts.scrub?.(scrubShape)}
         {part('readout', parts.readout)}
         {parts.caption != null && part('caption', parts.caption)}
-      </AlongContext.Provider>
+      </RunScope>
     </div>
   );
 }

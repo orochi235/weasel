@@ -2,7 +2,7 @@ import { useMemo, useRef, type PointerEvent as ReactPointerEvent, type ReactElem
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
 import { useRowRun } from '../Along/useRowRun';
 import type { ReorderLine } from '../../useReorderDragList';
-import { AlongContext } from '../Along/alongContext';
+import { RunScope } from '../Run';
 import { createRunSlots, RUN_HOST, slotClass, useRunSlot, useRunSlotHost, type RunSlotHost } from '../Along/runSlots';
 import { useRunGap } from '../Along/useItemLengths';
 import { RunBand, RunEnds } from '../Along/useRunRow';
@@ -64,14 +64,14 @@ export function PageTabsAlong<P extends PageTabItem>(props: PageTabsAlongProps<P
       <RunBand row={host} shape={shape} />
       <TabRule run={run} host={host} selected={current} drop={drop} ref={frame} />
       <TabSlotsContext.Provider value={slots}>
-        <AlongContext.Provider value={null}>
+        <RunScope fresh>
           <Tabs className={s.tabs} selectedKey={current ?? NONE} onSelectionChange={parts.onSelectionChange}>
             <TabList aria-label={props['aria-label'] ?? 'Pages'} ref={parts.bindList}>
               {parts.tabs}
             </TabList>
           </Tabs>
           {props.onAdd && <AddOnRun onAdd={props.onAdd} />}
-        </AlongContext.Provider>
+        </RunScope>
       </TabSlotsContext.Provider>
       <RunEnds row={host} run={run} />
       {parts.ghost}

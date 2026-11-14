@@ -12,7 +12,7 @@ import {
   type TabPanelProps as RACTabPanelProps,
   TabListStateContext,
 } from 'react-aria-components';
-import { useTrackShape } from '../Along/alongContext';
+import { useRun } from '../Run';
 import { createRunSlots, slotClass, useRunSlot, type RunSlots } from '../Along/runSlots';
 import { TabListAlong } from './TabListAlong';
 import s from './Tabs.module.css';
@@ -57,13 +57,13 @@ export const TabList = forwardRef(function TabList<T extends object>(
   { className, ...rest }: TabListProps<T>,
   ref: Ref<HTMLDivElement>,
 ) {
-  const along = useTrackShape();
+  const enclosing = useRun();
   const slots = useContext(TabSlotsContext);
   // React Aria renders a tab list twice: once to collect its tabs, with no state, and once for real.
   const real = useContext(TabListStateContext) !== null;
   if (slots?.held) return <RACTabList<T> {...rest} ref={ref} className={[s.list, s.joined, className].filter(Boolean).join(' ')} />;
-  if (real && slots !== null && along !== null && along.shape.kind !== 'line') {
-    return <TabListAlong {...(rest as TabListProps<object>)} ref={ref} className={className} shape={along.shape} align={along.align} slots={slots} />;
+  if (real && slots !== null && enclosing.shape !== undefined && enclosing.shape.kind !== 'line') {
+    return <TabListAlong {...(rest as TabListProps<object>)} ref={ref} className={className} shape={enclosing.shape} align={enclosing.align ?? 'center'} slots={slots} />;
   }
   return <RACTabList<T> {...rest} ref={ref} className={[s.list, className].filter(Boolean).join(' ')} />;
 }) as <T extends object>(props: TabListProps<T> & RefAttributes<HTMLDivElement>) => ReactElement;

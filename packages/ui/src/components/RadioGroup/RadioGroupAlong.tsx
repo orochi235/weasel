@@ -2,7 +2,7 @@ import { createContext, useMemo, useRef, type CSSProperties, type ReactElement }
 import { Label, RadioGroup as RACRadioGroup } from 'react-aria-components';
 import { runStationAt, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { useRowRun } from '../Along/useRowRun';
-import { AlongContext } from '../Along/alongContext';
+import { RunScope } from '../Run';
 import { placeStyle } from '../Along/placeOnRun';
 import { bendAt } from '../Along/runBend';
 import { createRunSlots, RUN_HOST, slotClass, slotOf, useRunSlotHost, type RunSlots } from '../Along/runSlots';
@@ -39,10 +39,10 @@ export function RadioGroupAlong({ label, description, errorMessage, children, cl
       <RunBand row={host} shape={shape} />
       <RACRadioGroup {...rest} className={[s.group, s.alongGroup, className].filter(Boolean).join(' ')}>
         <RadioSlotsContext.Provider value={slots}>
-          <AlongContext.Provider value={null}>
+          <RunScope fresh>
             {label !== undefined && <Label {...leadAt} className={slotClass(lead, `${s.legend} ${s.lead}`)}>{label}</Label>}
             {children}
-          </AlongContext.Provider>
+          </RunScope>
         </RadioSlotsContext.Provider>
         <span className={s.hint} style={hintStyle(run, host.thickness / 2 + gap)} data-radio-hint="">
           <FieldFoot description={description} errorMessage={errorMessage} />

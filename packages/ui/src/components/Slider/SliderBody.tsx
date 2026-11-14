@@ -1,5 +1,5 @@
 import { useRef, type CSSProperties, type ReactElement } from 'react';
-import { useTrackShape } from '../Along/alongContext';
+import { useRun } from '../Run';
 import { useInlineDirection } from '../Along/useRowRun';
 import { screenDirection } from '../Along/rowRun';
 import { QuantityText } from '../QuantityText';
@@ -57,8 +57,8 @@ export function SliderBody<T extends Thumb = Thumb>(
   // The track, the rail and the painted layer, then each thumb, in their own px as the pointers are.
   const boxes = useBoxes(() => [trackRef.current, railRef.current, paintRef.current, ...thumbs.map((_, i) => thumbEls.current[i] ?? null)], thumbs.length, { untransformed: true });
   const thumbLength = useBoxes(() => [thumbEls.current[0] ?? null], thumbs.length, { untransformed: true })[0]?.width || 14;
-  const along = useTrackShape();
-  const shape = props.shape ?? along?.shape;
+  const enclosing = useRun();
+  const shape = props.shape ?? enclosing.shape;
   const direction = useInlineDirection(trackRef);
   const { geometry, run } = useSliderGeometry({
     shape, thumbFit: props.thumbFit ?? 'inside', thumbLength, direction,
