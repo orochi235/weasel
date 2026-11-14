@@ -2,8 +2,6 @@ import { type ReactNode, useEffect, useRef } from 'react';
 import { imeKey } from '@weasel-js/ui-input';
 import { useTextDraft } from '../../useTextDraft';
 import { useDebouncedText } from '../../useDebouncedText';
-import { FontFamilySelect } from '../FontFamilySelect';
-import { FontWeightSelect } from '../FontWeightSelect';
 import { Input } from '../Input';
 import { MIXED_HINT } from '../Field/mixedHint';
 import { Switch } from '../Switch';
@@ -18,6 +16,7 @@ import type {
 } from './fieldTypes';
 import { ColorControl, PaintControl } from './ColorControls';
 import { EnumControl } from './EnumControl';
+import { FontFamilyControl, FontWeightControl } from './FontControls';
 import { PropertyReadout } from './PropertyReadout';
 import s from './Properties.module.css';
 import { useNativeHold } from '../Disabled/nativeHold';
@@ -39,32 +38,9 @@ export function ControlBody(props: PropertyControlProps) {
     case 'paint':
       return <PaintControl {...props} />;
     case 'font-family':
-      return (
-        <FontFamilySelect
-          className={props.className}
-          value={props.mixed ? undefined : props.value}
-          mixed={props.mixed}
-          onChange={props.onChange}
-          weight={props.weight}
-          fontStyle={props.fontStyle}
-          disabled={props.disabled}
-          disabledReason={props.disabledReason}
-          aria-label={props.name}
-        />
-      );
+      return <FontFamilyControl {...props} />;
     case 'font-weight':
-      return (
-        <FontWeightSelect
-          className={props.className}
-          value={props.mixed ? undefined : props.value}
-          mixed={props.mixed}
-          family={props.family}
-          onChange={props.onChange}
-          disabled={props.disabled}
-          disabledReason={props.disabledReason}
-          aria-label={props.name}
-        />
-      );
+      return <FontWeightControl {...props} />;
     default: {
       // Unreachable while every kind has an arm; a new kind without one is a
       // compile error here rather than an empty cell.
