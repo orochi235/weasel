@@ -1,5 +1,7 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { imeKey } from '@weasel-js/ui-input';
+import { useControlAccess } from '../Disabled';
+import { useNativeHold } from '../Disabled/nativeHold';
 import type { LayerListItem, LayerListProps } from './layerListProps';
 import s from './LayerList.module.css';
 import { icon } from '../../icons.gen';
@@ -29,7 +31,8 @@ export function RowLabel({
   renaming: boolean;
   setRenaming: (on: boolean) => void;
 }) {
-  const renamable = canRename(props, item);
+  const held = useControlAccess().state !== 'enabled';
+  const renamable = canRename(props, item) && !held;
   if (renaming && renamable) return <RenameField item={item} props={props} close={() => setRenaming(false)} />;
   return (
     <span onDoubleClick={renamable ? () => setRenaming(true) : undefined}>
@@ -76,18 +79,20 @@ function RenameField({ item, props, close }: { item: LayerListItem; props: Layer
 /** The lock toggle on a layer that is not fixed, when the list has `onLockChange`. */
 export function LockToggle({ item, props }: { item: LayerListItem; props: LayerListProps }) {
   const { onLockChange } = props;
+  const hold = useNativeHold({}, { readonlyRole: false });
   if (!onLockChange) return null;
   if (item.fixed) return <span className={s.lockToggle} />;
   const locked = item.locked === true;
-  return (
+  return hold.wrap(
     <button
       type="button"
       className={s.lockToggle}
       aria-label={`Lock ${item.label}`}
       aria-pressed={locked}
-      onClick={() => onLockChange(item.id, !locked)}
+      {...hold.attrs}
+      onClick={() => { if (!hold.refuses) onLockChange(item.id, !locked); }}
     >
       <Icon name={icon(locked ? 'lock' : 'unlock')} size={12} />
-    </button>
+    </button>,
   );
 }

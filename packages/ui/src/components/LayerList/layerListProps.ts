@@ -1,4 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
+import type { HoldProps } from '../Disabled';
 
 /** One layer: a row of the list, which can hold child layers. */
 export interface LayerListItem {
@@ -44,8 +45,9 @@ export interface LayerMove {
   index: number;
 }
 
-/** Props for `<LayerList>`. */
-export interface LayerListProps {
+/** Props for `<LayerList>`. Disabled, by `disabled` or a scope, nothing in it responds but focus; read-only, rows
+ *  still select and fold, and nothing is moved, renamed, shown or hidden, locked, removed, or added. */
+export interface LayerListProps extends HoldProps {
   items: LayerListItem[];
   /** Omit for a list the user cannot reorder. */
   onReorder?: (move: LayerMove) => void;
