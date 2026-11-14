@@ -1,6 +1,7 @@
 import { toolShortcutsOf, type Action, type ActionShortcut, type ToolDef } from '@weasel-js/core';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
-import { KeySequence, keySpecsFromShortcut } from '@weasel-js/ui/components/Keycaps';
+import { KeySequence } from '@weasel-js/ui/components/Keycaps';
+import { keySpecsFromShortcut } from '@weasel-js/gestures';
 import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { ReactElement } from 'react';
 import s from '../ToolkitBuilder.module.css';

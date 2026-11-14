@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { keySpecFromKey } from '@weasel-js/ui/components/Keycaps';
+import { keySpecFromKey } from '@weasel-js/gestures';
 import { renderWithIcons } from '../testIcons';
 import { RegistryDetail } from './RegistryDetail';
 import { icon } from '../icons.gen';

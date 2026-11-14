@@ -11,7 +11,8 @@ import type {
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { Code } from '@weasel-js/ui/components/Code';
 import { GestureRoute } from './GestureRoute';
-import { KeyCap, KeySequence, keySpecFromKey, keySpecsFromMods, type LogicalModSpec } from '@weasel-js/ui/components/Keycaps';
+import { KeyCap, KeySequence } from '@weasel-js/ui/components/Keycaps';
+import { keySpecFromKey, keySpecsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
 import s from './FallthroughDiagram.module.css';
 
 function placedByLabel(p: PlacedBy): string {

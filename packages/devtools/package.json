@@ -44,6 +44,7 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
+    "@weasel-js/gestures": "1.19.1",
     "@weasel-js/icons": "1.19.1",
     "@weasel-js/react": "1.19.1",
     "@weasel-js/registry": "1.19.1",

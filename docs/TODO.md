@@ -539,14 +539,6 @@ name a package. Breaking changes are in scope.
   `AttributesPane`. The model goes to `@weasel-js/prefs` as `./edit`; the editor and `PrefConditionEditor` go to a
   new `prefs-editor` package, which needs the maintainer to seed on npm. Closes when neither lives in ui.
 
-- **(P3) [agent] Rename and split folders to match what they hold.** `ContextMenu/` holds the whole menu layer
-  (`MenuPanel`, `MenuRow`, `useMenuTrigger`, `useDismiss`) that `MenuButton`, `MenuBar`, `BarMenu`, and `RailStack`
-  import; `src/floating/` is a drag-and-snap panel hook, not overlay positioning; `Timeline/` also holds `Ruler`,
-  `Transport`, and `EasingPicker` (a Properties control); `Icon/index.ts` is a one-line re-export of `src/icons`;
-  `Keycaps/index.ts` re-exports gestures' `keySpecsFrom*` and `detectPlatform`. Closes when there is a `Menu/`
-  folder, `floating/` is renamed or folded into `ToolbarDock`, `Timeline/` holds only the timeline, and the two
-  re-export shims are gone.
-
 - **(P3) [agent] Move loose stylesheets and helpers into the component that owns them.** `field.module.css` (15
   importers beside `Field/`'s own helpers), `checkbox.module.css` (also used by `Properties/fieldControls.tsx:127`),
   `listbox.module.css` (whose `surface` styles 8 popovers while `Popover` draws nothing), `colorModes.ts`,

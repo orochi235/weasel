@@ -9,7 +9,8 @@ import type { ReactNode } from 'react';
 import { Badge, type BadgeVariant } from '@weasel-js/ui/components/Badge';
 import { Powerline, type EdgeCap, type PowerlineProps } from '@weasel-js/ui/components/Powerline';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
-import { KeyCap, keySpecFromKey, keySpecsFromMods, type KeySpec, type LogicalModSpec } from '@weasel-js/ui/components/Keycaps';
+import { KeyCap, type KeySpec } from '@weasel-js/ui/components/Keycaps';
+import { keySpecFromKey, keySpecsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
 import s from './GestureRoute.module.css';
 
 const MOD_DISPLAY_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
