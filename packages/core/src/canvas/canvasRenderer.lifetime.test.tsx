@@ -8,7 +8,7 @@ import { act, render } from '@testing-library/react';
 import { StrictMode, type ReactElement } from 'react';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
-import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { SceneViewCanvas } from './SceneViewCanvas';
 import { DrawCanvas } from './DrawCanvas';
 import { Canvas } from '@weasel-js/core/testing/BareCanvas';
@@ -18,7 +18,7 @@ import { cachedCanvasRenderer, leaseCanvasRenderer } from './canvasRenderer';
 let rec: GLRecorder;
 
 beforeEach(() => {
-  rec = makeGLRecorder();
+  rec = createGLRecorder();
   Object.defineProperty(window, 'devicePixelRatio', { value: 1, configurable: true, writable: true });
   // The recorder answers `canvas` with a function; a context names its element.
   HTMLCanvasElement.prototype.getContext = (function (this: HTMLCanvasElement, kind: string) {
@@ -183,7 +183,7 @@ describe('a context lost before its renderer is built', () => {
 
 describe('a context the renderer refuses', () => {
   it('says why once, and does not build a renderer again on every paint', () => {
-    rec = makeGLRecorder({ contextAttributes: { stencil: false } });
+    rec = createGLRecorder({ contextAttributes: { stencil: false } });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const lease = leaseCanvasRenderer();
     const canvas = document.createElement('canvas');

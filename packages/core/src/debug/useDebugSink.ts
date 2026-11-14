@@ -2,8 +2,8 @@ import { useCallback, useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { RenderStats } from '@weasel-js/renderer';
 import type { LayerDrawSpan, RenderLayer } from 'core/layers/render';
-import type { CanvasDebugSink, DebugConfig } from './types';
-import { resolveDebugConfig } from './parseDebugFlags';
+import type { CanvasDebugSink, DebugFlags } from './types';
+import { resolveDebugFlags } from './parseDebugFlags';
 import { createDebugSink } from './createDebugSink';
 import { createDebugOverlayLayer, DEBUG_OVERLAY_ID } from './createDebugOverlayLayer';
 import { frameStatsOf } from './frameStats';
@@ -28,10 +28,10 @@ const OFF = { sink: null, overlay: null, frameStats: false };
  * on. Keyed on the config's content, so one written inline keeps its sink, and
  * what the sink and the overlay have accumulated, from render to render.
  */
-export function useDebugSink(debug: DebugConfig | false | undefined): SurfaceDebug {
+export function useDebugSink(debug: DebugFlags | false | undefined): SurfaceDebug {
   const key = debug === undefined ? undefined : JSON.stringify(debug);
   const state = useMemo(() => {
-    const config = resolveDebugConfig(key === undefined ? undefined : JSON.parse(key) as DebugConfig | false);
+    const config = resolveDebugFlags(key === undefined ? undefined : JSON.parse(key) as DebugFlags | false);
     if (!config) return OFF;
     const sink = createDebugSink(config);
     return { sink, overlay: createDebugOverlayLayer({ sink, config }), frameStats: config.fps === true };

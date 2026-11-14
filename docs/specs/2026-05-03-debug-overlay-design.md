@@ -32,7 +32,7 @@ Examples:
 - `?debug=bounds,origins` — bounds and pose origins
 - `?debug=all` — everything
 
-The Canvas reads the query param once at mount via `parseDebugFlags(window.location.search)`. The result is stored in a `DebugConfig` and passed down via React context. Consumers who want to override (force-on for tests, force-off in production regardless of URL) pass a `debug` prop on `<Canvas>`:
+The Canvas reads the query param once at mount via `parseDebugFlags(window.location.search)`. The result is stored in a `DebugFlags` and passed down via React context. Consumers who want to override (force-on for tests, force-off in production regardless of URL) pass a `debug` prop on `<Canvas>`:
 
 ```tsx
 <Canvas debug={{ hitboxes: true, bounds: true }} … />
@@ -84,7 +84,7 @@ Two safeguards:
 The Canvas owns one sink instance per mount, created lazily only when `debug` is enabled. The sink stores recorded primitives in arrays keyed by frame; the overlay layer renders from those arrays.
 
 ```ts
-export function createDebugSink(config: DebugConfig): DebugSink & { snapshot(): DebugSnapshot };
+export function createDebugSink(config: DebugFlags): DebugSink & { snapshot(): DebugSnapshot };
 ```
 
 The sink is wired:
@@ -176,7 +176,7 @@ Color palette (high contrast against the demo's dark backdrop):
 - Snap candidates: `#ffa726` 4-px open circle (considered) or filled circle (chosen)
 - Layer annotations: 11-px monospace, `#e0e0e0` on `rgba(0,0,0,0.6)` background
 
-Configurable via a `theme?: Partial<DebugTheme>` on `DebugConfig` for consumers with different backgrounds.
+Configurable via a `theme?: Partial<DebugTheme>` on `DebugFlags` for consumers with different backgrounds.
 
 ## Testing surface
 

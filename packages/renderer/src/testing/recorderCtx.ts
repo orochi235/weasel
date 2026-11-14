@@ -6,7 +6,7 @@
 
 import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 import type { PolygonPath } from '@weasel-js/geom';
-import { makeGLRecorder } from './glRecorder';
+import { createGLRecorder } from './glRecorder';
 import { WeaselRenderer } from '../WeaselRenderer';
 import { flushBatch, type DrawContext } from '../draw';
 import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from '../drawBatch';
@@ -18,8 +18,8 @@ import { glProgramHandle } from '../gpu/webgl/GlProgram';
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
  * assembles internally, using the _*() accessors exposed for testing.
  */
-export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeGLRecorder>['calls']; gl: ReturnType<typeof makeGLRecorder>['gl'] } {
-  const recorder = makeGLRecorder();
+export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof createGLRecorder>['calls']; gl: ReturnType<typeof createGLRecorder>['gl'] } {
+  const recorder = createGLRecorder();
   const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   // Built before the reset, as they were when the renderer built them all eagerly.
   const programs = {

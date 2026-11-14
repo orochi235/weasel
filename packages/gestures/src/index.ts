@@ -115,12 +115,12 @@ export { isApplePlatform } from './ui/platform';
 export { historyKey } from './ui/historyKey';
 
 // Shortcut legends: how a keyboard prints a binding's keys, per platform
-export { keySpecsFromMods, keySpecFromKey, detectPlatform, MODIFIER_LABELS } from './ui/keySpecsFromMods';
+export { keyLegendsFromMods, keyLegendFromKey, detectPlatform, MODIFIER_LABELS } from './ui/keyLegendsFromMods';
 export type {
-  KeyLegend, LogicalMod, LogicalModSpec, Platform, LegendStyle, KeySpecsFromModsOptions, KeyLabels,
-} from './ui/keySpecsFromMods';
-export { keySpecsFromShortcut } from './ui/keySpecsFromShortcut';
-export { keySpecFromCode } from './ui/keySpecFromCode';
+  KeyLegend, LogicalMod, LogicalModSpec, Platform, LegendStyle, KeyLegendOptions, KeyLabels,
+} from './ui/keyLegendsFromMods';
+export { keyLegendsFromShortcut } from './ui/keyLegendsFromShortcut';
+export { keyLegendFromCode } from './ui/keyLegendFromCode';
 export { formatShortcut, formatShortcutParts, SHORTCUT_LEADER_SEPARATOR } from './ui/formatShortcut';
 export { bindingSpec, held, key, keySpecRoute, unbound } from './ui/keySugar';
 export type { BindingOverrideInput } from './ui/keySugar';

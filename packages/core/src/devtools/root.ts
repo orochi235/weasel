@@ -7,7 +7,7 @@ import { createEmitter } from '@weasel-js/registry';
 import type { DispatchTrace, TraceRing } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import type { CoordTraceEntry } from '../canvas/SceneCanvas/coordTrace';
-import type { DebugConfig } from '../debug/types';
+import type { DebugFlags } from '../debug/types';
 import type {
   DevtoolsArea, DevtoolsHistoryRecord, DevtoolsOverlays, DevtoolsRegistry, DevtoolsRootInfo,
 } from './protocol';
@@ -28,7 +28,7 @@ export interface DevtoolsRootSource {
   /** The debug sink's stats for the last paint, or null while the frame panel is off. */
   frame(): unknown;
   /** The debug overlay config in effect, or null when the overlay is off. */
-  overlays(): DebugConfig | null;
+  overlays(): DebugFlags | null;
   /** Lay the panel's overlay flags and highlight over the canvas's own `debug`; null drops them. */
   setOverride(override: { overlays: DevtoolsOverlays; highlight: readonly string[] } | null): void;
   /** What the canvas has registered, described when asked. Absent, `get-registry` is refused. */

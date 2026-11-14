@@ -1,5 +1,5 @@
 import type { ShortcutInput } from './formatShortcut';
-import { keySpecFromKey, keySpecsFromMods, type KeyLegend, type KeySpecsFromModsOptions, type LogicalModSpec } from './keySpecsFromMods';
+import { keyLegendFromKey, keyLegendsFromMods, type KeyLegend, type KeyLegendOptions, type LogicalModSpec } from './keyLegendsFromMods';
 
 /**
  * A shortcut as key legends, one per key, as `@weasel-js/ui`'s `KeySequence` draws them: mod, shift, alt, then the
@@ -9,12 +9,12 @@ import { keySpecFromKey, keySpecsFromMods, type KeyLegend, type KeySpecsFromMods
  * renders its first key. Returns `undefined` for no shortcut.
  *
  * ```tsx
- * <KeySequence keys={keySpecsFromShortcut({ key: 'z', mod: true, shift: true })} />
+ * <KeySequence keys={keyLegendsFromShortcut({ key: 'z', mod: true, shift: true })} />
  * ```
  */
-export function keySpecsFromShortcut(
+export function keyLegendsFromShortcut(
   shortcut: ShortcutInput | undefined,
-  opts: KeySpecsFromModsOptions = {},
+  opts: KeyLegendOptions = {},
 ): readonly KeyLegend[] | undefined {
   if (!shortcut) return undefined;
   const mods: LogicalModSpec[] = [];
@@ -22,6 +22,6 @@ export function keySpecsFromShortcut(
   if (shortcut.shift) mods.push(shortcut.shift === 'optional' ? { name: 'shift', optional: true } : { name: 'shift' });
   if (shortcut.alt) mods.push({ name: 'alt' });
   const key = typeof shortcut.key === 'string' ? shortcut.key : shortcut.key[0];
-  const keys = keySpecsFromMods(mods, opts);
-  return key === undefined ? keys : [...keys, keySpecFromKey(key, opts)];
+  const keys = keyLegendsFromMods(mods, opts);
+  return key === undefined ? keys : [...keys, keyLegendFromKey(key, opts)];
 }

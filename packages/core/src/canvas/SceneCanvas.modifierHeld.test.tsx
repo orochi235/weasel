@@ -8,12 +8,12 @@ import { createScene } from 'core/scene/scene';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { modifierHeld } from 'domains/chrome-caps';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type P = { x: number; y: number; width: number; height: number };
 
 // Without a context that answers like WebGL2 every paint bails before it draws.
-const recorder = makeGLRecorder();
+const recorder = createGLRecorder();
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));

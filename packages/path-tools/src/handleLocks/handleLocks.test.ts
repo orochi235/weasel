@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
-import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks';
 
 const run = (action: { invoker?: unknown }, deps: ActionDeps) =>

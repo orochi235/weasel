@@ -3,7 +3,7 @@ import { Code } from '@weasel-js/ui/components/Code';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import { actionIcon } from '@weasel-js/ui/components/Icon';
 import { KeySequence } from '@weasel-js/ui/components/Keycaps';
-import { keySpecsFromMods, keySpecsFromShortcut, type LogicalModSpec } from '@weasel-js/gestures';
+import { keyLegendsFromMods, keyLegendsFromShortcut, type LogicalModSpec } from '@weasel-js/gestures';
 import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { ReactElement, ReactNode } from 'react';
 import s from '../ToolkitBuilder.module.css';
@@ -59,7 +59,7 @@ const MOD_ORDER = ['mod', 'ctrl', 'meta', 'shift', 'alt'] as const;
 
 function renderSpec(spec: GestureSpec): ReactNode {
   const shortcut = keySpecShortcut(spec);
-  if (shortcut) return <KeySequence keys={keySpecsFromShortcut(shortcut)} variant="inverse" />;
+  if (shortcut) return <KeySequence keys={keyLegendsFromShortcut(shortcut)} variant="inverse" />;
   const mods: LogicalModSpec[] = [];
   if ('mods' in spec && spec.mods) {
     for (const name of MOD_ORDER) {
@@ -81,7 +81,7 @@ function renderSpec(spec: GestureSpec): ReactNode {
       {mods.length > 0 && (
         <>
           <span className={s.bindingSep}>+</span>
-          <KeySequence keys={keySpecsFromMods(mods)} variant="inverse" />
+          <KeySequence keys={keyLegendsFromMods(mods)} variant="inverse" />
         </>
       )}
     </>

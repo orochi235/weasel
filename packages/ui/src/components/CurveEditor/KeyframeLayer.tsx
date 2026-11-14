@@ -1,9 +1,9 @@
 import { useMemo, type ReactElement } from 'react';
-import { createKeyframeLayer, type KeyframeLayerConfig, type KeyframeLayerState } from './createKeyframeLayer';
+import { createKeyframeLayer, type KeyframeLayerOptions, type KeyframeLayerState } from './createKeyframeLayer';
 import { CustomLayer, type LayerStateProps } from './CustomLayer';
 
 /** Props for {@link KeyframeLayer}: a keyframe layer's configuration, and its state. */
-export interface KeyframeLayerProps extends KeyframeLayerConfig, LayerStateProps<KeyframeLayerState> {}
+export interface KeyframeLayerProps extends KeyframeLayerOptions, LayerStateProps<KeyframeLayerState> {}
 
 /**
  * Keyframes and the easing between them, as a child of a `LayeredCurveEditor`: drag keys and bezier handles, select

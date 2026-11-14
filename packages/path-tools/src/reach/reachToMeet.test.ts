@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { pathFromD, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId, type NodeId, type Op } from '@weasel-js/core';
-import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { reachToMeetAction } from './reachToMeet';
 
 interface StubNode { id: NodeId; kind: 'mark'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }

@@ -7,7 +7,7 @@ import { useDepSource } from '@weasel-js/routing/react';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import type { NodeId, Scene } from 'core/scene/types';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { DEVTOOLS_PROTOCOL, type PageMessage, type PanelMessage } from '../devtools/protocol';
 import { createInPageTransports } from '../devtools/transport';
 import { DevtoolsLabel } from '../devtools/label';
@@ -17,7 +17,7 @@ type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
 });

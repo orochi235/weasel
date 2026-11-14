@@ -15,7 +15,7 @@ export function windowScale(window: TimeWindow, widthPx: number): LinearScale {
 }
 
 /** Where `ms` sits in the window, as a fraction, and a duration as a fraction of it. */
-export { spanPlace as toFraction, spanShare as spanFraction };
+export { spanPlace, spanShare };
 
 /** Where `ms` sits in the window, as a CSS percentage. */
 export function toPercent(window: TimeWindow, ms: number): string {

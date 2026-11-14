@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { detectPlatform } from './keySpecsFromMods';
+import { detectPlatform } from './keyLegendsFromMods';
 
 afterEach(() => vi.unstubAllGlobals());
 

@@ -42,7 +42,7 @@ function payload(call: GLCall): Float32Array | null {
 }
 
 /** A tracker over `recorder`; keep one across frames. */
-export function makeUploadTracker(recorder: GLRecorder): UploadTracker {
+export function createUploadTracker(recorder: GLRecorder): UploadTracker {
   // Keyed on the recorder's synthetic buffer handle, which is a stable object.
   const strides = new Map<unknown, number>();
 

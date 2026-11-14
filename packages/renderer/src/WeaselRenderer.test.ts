@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { maxImageTextureSide } from './cache/GLImageCache';
 import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
@@ -14,9 +14,9 @@ void main() { outColor = vec4(0.0, 0.5, 1.0, 1.0); }
 `;
 
 describe('WeaselRenderer (constructor)', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
   });
 
   it('configures alpha blending', () => {
@@ -36,9 +36,9 @@ describe('WeaselRenderer (constructor)', () => {
   });});
 
 describe('WeaselRenderer.resize', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
   });
 
   it('draws the next frame over the new size after a resize', () => {
@@ -82,9 +82,9 @@ describe('WeaselRenderer.resize', () => {
 });
 
 describe('WeaselRenderer context loss', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
   });
 
   function makeFakeCanvas() {
@@ -235,7 +235,7 @@ describe('WeaselRenderer.render — frame isolation', () => {
   }
 
   it('a frame that throws mid-tree does not shift the next frame', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     expect(() => r.render([tooDeep()])).toThrow(/clip nesting depth exceeded/);
 
@@ -265,7 +265,7 @@ describe('dispose', () => {
   beforeEach(() => _resetProgramRegistryForTests());
 
   it('deletes owned GL programs and shared geometry, removes canvas listeners', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     // The solid batch takes its buffers on the first flush, not at construction.
     r.render([{
@@ -286,7 +286,7 @@ describe('dispose', () => {
   });
 
   it('deletes a consumer-registered program alongside the built-ins', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     const handle = registerProgram('dispose-test-prog', { glsl: { frag: MINIMAL_FRAG } });
     r.registerProgram(handle);
@@ -299,7 +299,7 @@ describe('dispose', () => {
   });
 
   it('builds the batch program alone until a frame draws with another', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     const links = () => rec.calls.filter((c) => c.name === 'linkProgram').length;
     expect(links()).toBe(1);
@@ -329,7 +329,7 @@ describe('dispose', () => {
 
   it('builds a lazy program again on a restored context', () => {
     const canvas = document.createElement('canvas');
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, canvas, width: 10, height: 10, dpr: 1 });
     const first = r._pathFill();
     canvas.dispatchEvent(new Event('webglcontextlost'));
@@ -338,7 +338,7 @@ describe('dispose', () => {
   });
 
   it('looks up a uniform the program declares in its own vertex shader', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     const vert = `#version 300 es
 in vec2 a_position;
@@ -362,7 +362,7 @@ void main() { gl_Position = vec4((u_ownMatrix * u_model * vec3(a_position, 1.0))
   });
 
   it('deletes the program it replaces when a handle is re-registered', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     const handle = registerProgram('reregister-test-prog', { glsl: { frag: MINIMAL_FRAG } });
     r.registerProgram(handle);
@@ -372,7 +372,7 @@ void main() { gl_Position = vec4((u_ownMatrix * u_model * vec3(a_position, 1.0))
   });
 
   it('ignores registerProgram() after dispose (does not compile into the cleared registry)', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     r.dispose();
     const handle = registerProgram('post-dispose-prog', { glsl: { frag: MINIMAL_FRAG } });
@@ -384,7 +384,7 @@ void main() { gl_Position = vec4((u_ownMatrix * u_model * vec3(a_position, 1.0))
   });
 
   it('is idempotent', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     r.dispose();
     const countAfterFirst = rec.calls.filter((c) => c.name === 'deleteProgram').length;
@@ -393,7 +393,7 @@ void main() { gl_Position = vec4((u_ownMatrix * u_model * vec3(a_position, 1.0))
   });
 
   it('removes context-loss listeners from a supplied canvas, using the same function references passed to addEventListener', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const addEventListener = vi.fn();
     const removeEventListener = vi.fn();
     const canvas = {

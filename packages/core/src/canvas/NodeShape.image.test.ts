@@ -5,7 +5,7 @@ import { getImageBitmap } from '@weasel-js/renderer';
 import { __setImageLoaderForTests, _resetImageCacheForTests } from '@weasel-js/renderer/test-seams';
 import type { Node } from 'core/scene/types';
 import type { ImageNodeData, ImageRasterSize } from '@weasel-js/renderer';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import { FLOATS_PER_VERTEX } from '@weasel-js/renderer/test-seams';
 
@@ -153,7 +153,7 @@ describe('kit:image painter', () => {
     });
 
     it('reaches the quad as UVs over the source window, mirrored, with the quad on the pose', () => {
-      const recorder = makeGLRecorder();
+      const recorder = createGLRecorder();
       const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
       recorder.reset();
       r.render(paint({

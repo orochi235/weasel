@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makeGLRecorder } from '../testing/glRecorder';
+import { createGLRecorder } from '../testing/glRecorder';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import {
   buildGradientRamp, GradientRampAtlas, RAMP_ATLAS_MAX_ROWS, RAMP_WIDTH,
@@ -93,7 +93,7 @@ describe('GradientRampAtlas', () => {
   }
 
   it('upload() creates one texture and specifies it 256 wide', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     atlas.upload(BLACK_WHITE);
     expect(calls.filter((c) => c.name === 'createTexture')).toHaveLength(1);
@@ -101,7 +101,7 @@ describe('GradientRampAtlas', () => {
   });
 
   it('upload() writes the baked ramp into the row it hands back', () => {
-    const { gl, calls, reset } = makeGLRecorder();
+    const { gl, calls, reset } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     reset();
     const row = atlas.upload(RED_BLUE);
@@ -112,7 +112,7 @@ describe('GradientRampAtlas', () => {
   });
 
   it('upload() for identical stops reuses the row without rewriting it', () => {
-    const { gl, calls, reset } = makeGLRecorder();
+    const { gl, calls, reset } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     const first = atlas.upload(BLACK_WHITE);
     reset();
@@ -121,13 +121,13 @@ describe('GradientRampAtlas', () => {
   });
 
   it('upload() for different stops takes a different row', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     expect(atlas.upload(BLACK_WHITE)).not.toBe(atlas.upload(RED_BLUE));
   });
 
   it('every ramp in the atlas shares one texture', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     for (const stops of distinctRamps(40)) atlas.upload(stops);
     expect(calls.filter((c) => c.name === 'createTexture')).toHaveLength(1);
@@ -137,7 +137,7 @@ describe('GradientRampAtlas', () => {
   // sample, so a row's `v` is what tells it apart. LINEAR filtering means a
   // `v` off the row center blends the ramp beside it in.
   it('rowV() is the center of the row, in the atlas as it now stands', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     const row = atlas.upload(BLACK_WHITE);
     expect(atlas.rowV(row)).toBeCloseTo((row + 0.5) / atlas.height, 12);
@@ -145,7 +145,7 @@ describe('GradientRampAtlas', () => {
   });
 
   it('growing keeps a row at the index it was handed out under', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     const ramps = distinctRamps(40);
     const rows = ramps.map((stops) => atlas.upload(stops));
@@ -157,7 +157,7 @@ describe('GradientRampAtlas', () => {
   });
 
   it('growing carries the rows already in the atlas into the new texture', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     const row = atlas.upload(RED_BLUE);
     for (const stops of distinctRamps(40)) atlas.upload(stops);
@@ -168,7 +168,7 @@ describe('GradientRampAtlas', () => {
   });
 
   it('recycles the least recently used row once it cannot grow', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     const ramps = distinctRamps(RAMP_ATLAS_MAX_ROWS);
     const rows = ramps.map((stops) => atlas.upload(stops));
@@ -183,19 +183,19 @@ describe('GradientRampAtlas', () => {
 
   describe('wouldReshape()', () => {
     it('is false on an empty atlas, whose first growth moves nothing', () => {
-      const { gl } = makeGLRecorder();
+      const { gl } = createGLRecorder();
       expect(new GradientRampAtlas(webglDevice(gl)).wouldReshape(BLACK_WHITE)).toBe(false);
     });
 
     it('is false for a stop list already in a row', () => {
-      const { gl } = makeGLRecorder();
+      const { gl } = createGLRecorder();
       const atlas = new GradientRampAtlas(webglDevice(gl));
       atlas.upload(BLACK_WHITE);
       expect(atlas.wouldReshape([...BLACK_WHITE])).toBe(false);
     });
 
     it('is false while there are rows left, and true for the one that grows it', () => {
-      const { gl } = makeGLRecorder();
+      const { gl } = createGLRecorder();
       const atlas = new GradientRampAtlas(webglDevice(gl));
       const ramps = distinctRamps(RAMP_ATLAS_MAX_ROWS);
       atlas.upload(ramps[0]);
@@ -209,7 +209,7 @@ describe('GradientRampAtlas', () => {
   });
 
   it('atlas() is null until a ramp is uploaded, then the one texture every ramp shares', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     expect(atlas.atlas()).toBeNull();
     atlas.upload(BLACK_WHITE);
@@ -220,7 +220,7 @@ describe('GradientRampAtlas', () => {
   });
 
   it('hitRate() is the share of uploads that found their ramp already there', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     atlas.upload(BLACK_WHITE);
     atlas.upload(BLACK_WHITE);
@@ -229,7 +229,7 @@ describe('GradientRampAtlas', () => {
   });
 
   it('free() deletes the atlas texture and forgets its rows', () => {
-    const { gl, calls, reset } = makeGLRecorder();
+    const { gl, calls, reset } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     atlas.upload(BLACK_WHITE);
     atlas.upload(RED_BLUE);
@@ -312,7 +312,7 @@ describe('the interpolation space is part of a row identity', () => {
   });
 
   it('gives the same stops under two spaces two rows, not one', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     const rgbRow = atlas.upload(RED_BLUE, 'rgb');
     const lchRow = atlas.upload(RED_BLUE, 'oklch');
@@ -321,7 +321,7 @@ describe('the interpolation space is part of a row identity', () => {
   });
 
   it('defaults to rgb, so an unnamed space hits the row rgb already took', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
     expect(atlas.upload(RED_BLUE)).toBe(atlas.upload(RED_BLUE, 'rgb'));
   });

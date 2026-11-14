@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } from 'core/paint/paintKinds';
 import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
 import { seedMeshPatch, isMeshGradientPaint, meshGradientXml, MESH_GRADIENT_KIND } from '@weasel-js/renderer/mesh';
@@ -25,7 +25,7 @@ function bindContext(deviceScale = 1): {
   calls: () => string[];
   argsOf: (name: string) => readonly unknown[][];
 } {
-  const rec = makeGLRecorder();
+  const rec = createGLRecorder();
   const releases: Array<() => void> = [];
   const gpu = webglDevice(rec.gl);
   const sampling = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' } as const;

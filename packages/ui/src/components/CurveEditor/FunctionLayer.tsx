@@ -1,9 +1,9 @@
 import { useMemo, type ReactElement } from 'react';
-import { createFunctionLayer, type FunctionLayerConfig, type FunctionLayerState } from './createFunctionLayer';
+import { createFunctionLayer, type FunctionLayerOptions, type FunctionLayerState } from './createFunctionLayer';
 import { CustomLayer, type LayerStateProps } from './CustomLayer';
 
 /** Props for {@link FunctionLayer}: a function layer's configuration, and its state. */
-export interface FunctionLayerProps extends FunctionLayerConfig, LayerStateProps<FunctionLayerState> {}
+export interface FunctionLayerProps extends FunctionLayerOptions, LayerStateProps<FunctionLayerState> {}
 
 /**
  * A curve through control points, as a child of a `LayeredCurveEditor` or `CurveEditor`: drag anchors, click to

@@ -3,8 +3,8 @@ import type { CSSProperties, ReactElement } from 'react';
 import { KeyCap, type KeyCapVariant, type KeyCapProps, KEYCAP_VARIANT_ICONS } from '@weasel-js/ui/components/Keycaps';
 import { FONT_OPTIONS, resolveFont } from './keycapStoryFonts';
 import {
-  keySpecFromKey,
-  keySpecsFromMods,
+  keyLegendFromKey,
+  keyLegendsFromMods,
   type LegendStyle,
   type LogicalMod,
   type Platform,
@@ -23,20 +23,20 @@ function relabel(label: string, platform: Platform, legend: LegendStyle): string
   };
   const mod = modByGlyph[label];
   if (mod) {
-    const [spec] = keySpecsFromMods([{ name: mod }], { platform, legend });
+    const [spec] = keyLegendsFromMods([{ name: mod }], { platform, legend });
     return spec.label;
   }
   const namedByGlyph: Record<string, string | undefined> = {
     '⎋': 'Escape', '↵': 'Enter', '⇥': 'Tab', '␣': 'Space', '⌫': 'Backspace', '⌦': 'Delete',
   };
   const named = namedByGlyph[label];
-  if (named) return keySpecFromKey(named, { platform, legend }).label;
+  if (named) return keyLegendFromKey(named, { platform, legend }).label;
   return label;
 }
 
 interface StoryArgs extends KeyCapProps {
   /** Story-only — substitutes the input modifier or named-key glyph
-   *  for the platform-native form via `keySpecsFromMods` / `keySpecFromKey`. */
+   *  for the platform-native form via `keyLegendsFromMods` / `keyLegendFromKey`. */
   platform?: Platform;
   /** Story-only — `auto` (default) picks the per-entry, per-platform
    *  label; `symbol` and `text` force one form across the board. */

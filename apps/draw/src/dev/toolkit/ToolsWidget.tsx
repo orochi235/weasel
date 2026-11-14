@@ -1,7 +1,7 @@
 import { toolShortcutsOf, type Action, type ActionShortcut, type ToolDef } from '@weasel-js/core';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import { KeySequence } from '@weasel-js/ui/components/Keycaps';
-import { keySpecsFromShortcut } from '@weasel-js/gestures';
+import { keyLegendsFromShortcut } from '@weasel-js/gestures';
 import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { ReactElement } from 'react';
 import s from '../ToolkitBuilder.module.css';
@@ -52,6 +52,6 @@ const TOOL_COLUMNS: readonly DataGridColumn<ToolRow>[] = [
     id: 'shortcut',
     header: 'Switch',
     sortable: false,
-    render: (r) => <KeySequence keys={keySpecsFromShortcut(r.shortcut)} variant="inverse" />,
+    render: (r) => <KeySequence keys={keyLegendsFromShortcut(r.shortcut)} variant="inverse" />,
   },
 ];

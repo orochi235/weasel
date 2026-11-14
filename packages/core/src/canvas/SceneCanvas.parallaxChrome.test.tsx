@@ -10,13 +10,13 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type Pose = { x: number; y: number; width: number; height: number };
 type Helpers = { getEffectiveBounds(id: string): { x: number; y: number; width: number; height: number } | null };
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
 });

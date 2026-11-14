@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z, viewToMat3 } from '@weasel-js/geom';
 import type { PolygonPath } from '@weasel-js/geom';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import type { ShaderProgram } from './shaders/ShaderProgram';
@@ -41,7 +41,7 @@ const SQUARE: PolygonPath = stencilledEvenOdd({
 });
 
 function frame(paint: unknown, px: number) {
-  const rec = makeGLRecorder();
+  const rec = createGLRecorder();
   const r = new WeaselRenderer({ gl: rec.gl, width: 800, height: 600, dpr: 1 });
   rec.reset();
   const view = viewToMat3({ x: WORLD_X - px / ZOOM, y: 0, scale: { x: ZOOM, y: ZOOM } });
@@ -53,7 +53,7 @@ function frame(paint: unknown, px: number) {
 }
 
 /** The last `name` call that sent `prog` its `uniform`. */
-function sent(rec: ReturnType<typeof makeGLRecorder>, prog: ShaderProgram, name: string, uniform: string) {
+function sent(rec: ReturnType<typeof createGLRecorder>, prog: ShaderProgram, name: string, uniform: string) {
   const loc = glUniformLocation(prog, uniform);
   expect(loc, `${uniform} has no location`).toBeDefined();
   return rec.calls.filter((c) => c.name === name && c.args[0] === loc).at(-1);
@@ -61,7 +61,7 @@ function sent(rec: ReturnType<typeof makeGLRecorder>, prog: ShaderProgram, name:
 
 /** The program that was asked for `name`, as {@link sent} reads one: by the
  *  locations the recorder handed back for it. */
-function programDeclaring(rec: ReturnType<typeof makeGLRecorder>, name: string): ShaderProgram {
+function programDeclaring(rec: ReturnType<typeof createGLRecorder>, name: string): ShaderProgram {
   const handle = rec.calls.find((c) => c.name === 'getUniformLocation' && c.args[1] === name)!.args[0];
   const uniform = (u: string) =>
     rec.calls.find((c) => c.name === 'getUniformLocation' && c.args[0] === handle && c.args[1] === u)?.result as

@@ -1,4 +1,4 @@
-import { keySpecFromKey, keySpecsFromMods, ownValue, type KeyLegend, type KeySpecsFromModsOptions, type LogicalMod } from './keySpecsFromMods';
+import { keyLegendFromKey, keyLegendsFromMods, ownValue, type KeyLegend, type KeyLegendOptions, type LogicalMod } from './keyLegendsFromMods';
 
 const MOD_CODES: Readonly<Record<string, LogicalMod>> = {
   ShiftLeft: 'shift', ShiftRight: 'shift',
@@ -16,18 +16,18 @@ const PRINTED: Readonly<Record<string, string>> = {
 
 /**
  * The legend of the physical key a `KeyboardEvent.code` names (`KeyA`, `ShiftLeft`, `ArrowUp`), as
- * {@link keySpecFromKey} prints that key on the platform: `MetaLeft` is `⌘` on macOS and `⊞` on
+ * {@link keyLegendFromKey} prints that key on the platform: `MetaLeft` is `⌘` on macOS and `⊞` on
  * Windows. Letters and punctuation print as a US keyboard prints them. `opts.labels` answers by code
- * first, then as it does for {@link keySpecFromKey} and {@link keySpecsFromMods}.
+ * first, then as it does for {@link keyLegendFromKey} and {@link keyLegendsFromMods}.
  */
-export function keySpecFromCode(code: string, opts: KeySpecsFromModsOptions = {}): KeyLegend {
+export function keyLegendFromCode(code: string, opts: KeyLegendOptions = {}): KeyLegend {
   const own = ownValue(opts.labels, code);
   if (own !== undefined) return { label: own };
   const mod = ownValue(MOD_CODES, code);
-  if (mod) return keySpecsFromMods([{ name: mod }], opts)[0]!;
+  if (mod) return keyLegendsFromMods([{ name: mod }], opts)[0]!;
   const char = /^Key([A-Z])$/.exec(code) ?? /^Digit(\d)$/.exec(code);
-  if (char) return keySpecFromKey(char[1]!, opts);
-  if (code === 'NumpadEnter') return keySpecFromKey('Enter', opts);
+  if (char) return keyLegendFromKey(char[1]!, opts);
+  if (code === 'NumpadEnter') return keyLegendFromKey('Enter', opts);
   const printed = ownValue(PRINTED, code);
-  return printed !== undefined ? { label: printed } : keySpecFromKey(code, opts);
+  return printed !== undefined ? { label: printed } : keyLegendFromKey(code, opts);
 }

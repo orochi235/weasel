@@ -1,4 +1,4 @@
-import type { InertiaConfig } from 'core/viewport/useDecayLoop';
+import type { InertiaOptions } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
 import type { EdgePanOptions } from './useEdgePan';
 import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
@@ -16,7 +16,7 @@ import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactio
  *    (`actions: { 'viewport.wheelPan': null }`) also works and runs after
  *    this. */
 export interface SceneCanvasViewport {
-  inertia?: boolean | InertiaConfig;
+  inertia?: boolean | InertiaOptions;
   /** Two-finger pinch zoom. `true`/omitted = on with the kit's 0.1–8
    *  clamp; `false` disables. An object sets the scale clamp and holds the
    *  zoom to one axis (`axis`). */

@@ -3,7 +3,7 @@ import { viewportDragPanAction } from './viewportDragPan';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 import type { InvocationCtx } from '@weasel-js/routing';
-import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
+import type { DecayLoopOptions } from 'core/viewport/useDecayLoop';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -21,8 +21,8 @@ function makeView(initial: View = { x: 0, y: 0, scale: { x: 1, y: 1 } }): ViewAp
 /** A view that also publishes `decay`, recording the config it was handed. */
 function makeDecayView(initial?: View) {
   const view = makeView(initial) as ViewApi & { _value: View };
-  const calls: DecayLoopConfig[] = [];
-  view.decay = (config: DecayLoopConfig) => { calls.push(config); };
+  const calls: DecayLoopOptions[] = [];
+  view.decay = (config: DecayLoopOptions) => { calls.push(config); };
   view.stopDecay = () => {};
   return { view, calls };
 }

@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import { keySpecFromKey } from '@weasel-js/gestures';
+import { keyLegendFromKey } from '@weasel-js/gestures';
 import { renderWithIcons } from '../testIcons';
 import { RegistryDetail } from './RegistryDetail';
 import { icon } from '../icons.gen';
@@ -114,11 +114,11 @@ describe('RouteBadge v3', () => {
   it('renders keyDown arg as a default KeyCap with the canonical label (no parens)', () => {
     const { container } = renderWithIcons(<RouteBadge route="[initial] keyDown(Escape)" />);
     const cap = container.querySelector('kbd:not([data-variant])');
-    // Compare against keySpecFromKey rather than a literal glyph — the label
+    // Compare against keyLegendFromKey rather than a literal glyph — the label
     // is platform-dependent (⎋ on macOS, Esc elsewhere), and the detected
     // platform follows the host OS via jsdom's user agent. The contract under
-    // test is that the arg routes through keySpecFromKey into a KeyCap.
-    expect(cap?.textContent).toBe(keySpecFromKey('Escape').label);
+    // test is that the arg routes through keyLegendFromKey into a KeyCap.
+    expect(cap?.textContent).toBe(keyLegendFromKey('Escape').label);
     // No parenthesized fallback rendering when arg is a key.
     expect(container.textContent).not.toMatch(/\(Escape\)/);
   });
@@ -131,6 +131,6 @@ describe('RouteBadge v3', () => {
   it('renders keyHeld arg as a default KeyCap (same path as keyDown)', () => {
     const { container } = renderWithIcons(<RouteBadge route="[initial] keyHeld(Space)" />);
     const cap = container.querySelector('kbd:not([data-variant])');
-    expect(cap?.textContent).toBe(keySpecFromKey(' ').label);
+    expect(cap?.textContent).toBe(keyLegendFromKey(' ').label);
   });
 });

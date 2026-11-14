@@ -3,7 +3,7 @@ import { act, render } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { createScene } from 'core/scene/scene';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { type Animator } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 
@@ -13,7 +13,7 @@ const POSE = { x: 0, y: 0, width: 10, height: 10 };
 
 describe('SceneCanvas — override repaint', () => {
   // Without a context that answers like WebGL2 every paint bails before it draws.
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   beforeAll(() => {
     const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
     proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));

@@ -4,7 +4,7 @@ import type { Animator } from '@weasel-js/animator';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
 import { createScene } from 'core/scene/scene';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 const built = new Set<Animator>();
 
@@ -25,7 +25,7 @@ type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
 });

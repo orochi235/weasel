@@ -14,7 +14,7 @@ import type { View } from 'core/viewport/view';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { SurfaceContribution } from './surfaceContribution';
 import { useContributionFrameHooks } from './SceneCanvas/contributionFrameHooks';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -22,7 +22,7 @@ type P = { x: number; y: number; width: number; height: number };
 const VIEW: View = { x: 5, y: 6, scale: { x: 1, y: 1 } };
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
   proto.setPointerCapture = vi.fn();

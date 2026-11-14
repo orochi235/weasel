@@ -210,7 +210,6 @@ export type {
 } from '../core/viewport/useViewAnimation';
 export type {
   UseHandToolOptions,
-  InertiaConfig as HandToolInertiaConfig,
 } from '../tools/builtin/hand/useHandTool';
 // UseWheelPanToolOptions and WheelPanInertiaConfig removed (useWheelPanTool dissolved).
 export type { SelectAdapter } from '../tools/builtin/select/useSelectTool';

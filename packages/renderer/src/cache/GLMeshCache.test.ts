@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeGLRecorder } from '../testing/glRecorder';
+import { createGLRecorder } from '../testing/glRecorder';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { GLMeshCache } from './GLMeshCache';
@@ -12,11 +12,11 @@ const sampleMesh: Mesh = {
 };
 
 describe('GLMeshCache', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let cache: GLMeshCache;
 
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     cache = new GLMeshCache(webglDevice(recorder.gl));
   });
 
@@ -104,7 +104,7 @@ describe('GLMeshCache', () => {
       cache.uploadRecurring(mesh);
       cache.uploadRecurring(mesh);
 
-      const otherRecorder = makeGLRecorder();
+      const otherRecorder = createGLRecorder();
       const other = new GLMeshCache(webglDevice(otherRecorder.gl));
       other.uploadRecurring(mesh);
       expect(other._transientCount()).toBe(1);

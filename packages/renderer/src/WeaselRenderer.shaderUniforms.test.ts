@@ -7,7 +7,7 @@
  * that name — `array-uniforms.browser.test.ts` is what proves the pixels.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { makeGLRecorder, type GLRecorder } from './testing/glRecorder';
+import { createGLRecorder, type GLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { registerProgram, _resetProgramRegistryForTests, type ShaderProgramHandle, type ShaderUniform } from './shaders/registerProgram';
 import type { DrawCommand } from './DrawCommand';
@@ -44,7 +44,7 @@ let rec: GLRecorder;
 let r: WeaselRenderer;
 beforeEach(() => {
   _resetProgramRegistryForTests();
-  rec = makeGLRecorder();
+  rec = createGLRecorder();
   since = 0;
   r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
 });

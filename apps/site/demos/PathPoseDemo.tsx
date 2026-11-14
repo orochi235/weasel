@@ -9,13 +9,13 @@ import { IDENTITY_POSE_COMPOSITION,
 import { gridSnapSource } from '@weasel-js/guides';
 import type {
   Path,
-  DebugConfig,
+  DebugFlags,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
-const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [
+const DEBUG_STATES: Array<{ label: string; config: DebugFlags | false }> = [
   { label: 'off',          config: false },
   { label: 'bounds',       config: { bounds: true } },
   { label: '+origins',     config: { bounds: true, origins: true } },

@@ -13,7 +13,7 @@ export {
   type AnchorRenderProps,
   createFunctionLayer,
   functionLayerState,
-  type FunctionLayerConfig,
+  type FunctionLayerOptions,
   type FunctionLayerState,
 } from './createFunctionLayer';
 
@@ -23,11 +23,11 @@ export {
   applyKeyframeDrag,
   type KeyframeDrag,
   type KeyframeDragResult,
-  type KeyframeLayerConfig,
+  type KeyframeLayerOptions,
   type KeyframeLayerState,
 } from './createKeyframeLayer';
 
-export { attract as snapToNearest } from '@weasel-js/ui-input';
+export { attract } from '@weasel-js/ui-input';
 
 export {
   LayeredCurveEditor,

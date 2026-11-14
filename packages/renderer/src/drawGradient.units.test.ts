@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mat3, type GlMat3, PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 import type { RectPath, PolygonPath } from '@weasel-js/geom';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
@@ -10,7 +10,7 @@ import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
 import { glUniformLocation } from './gpu/webgl/GlProgram';
 
 describe('gradient units — which space a gradient measures its geometry in', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
 
   const STOPS = [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }];
@@ -33,7 +33,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
   let worldInvLocs: unknown[];
 
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     r._gradFill();
     worldInvLocs = recorder.calls

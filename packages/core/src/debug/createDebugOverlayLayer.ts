@@ -7,7 +7,7 @@ import { rotatePoint } from 'interactions/actions/rotate/geometry';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { textCommandFromRuns } from '@weasel-js/renderer';
 import type {
-  DebugConfig,
+  DebugFlags,
   DebugSnapshot,
   DebugStroke,
   DebugStrokes,
@@ -20,7 +20,7 @@ import { emitFramePanel, emitLayersPanel, emitTextPanel, LINE_H, rectPath } from
 /** What `createDebugOverlayLayer` paints from: a sink to snapshot and the features to draw. */
 export interface CreateDebugOverlayLayerOptions {
   sink: { snapshot(): DebugSnapshot };
-  config: DebugConfig;
+  config: DebugFlags;
 }
 
 export const DEBUG_OVERLAY_ID = 'debug-overlay';
@@ -65,7 +65,7 @@ export function createDebugOverlayLayer({
  */
 export function buildDebugOverlayCommands(
   snapshot: DebugSnapshot,
-  config: DebugConfig,
+  config: DebugFlags,
   view: View,
   dims: Dims,
   frameTimes: readonly number[] = [],

@@ -13,7 +13,7 @@ import {
   bitmapSrc,
 } from './imageCache';
 import { GLImageCache } from '../cache/GLImageCache';
-import { makeGLRecorder } from '../testing/glRecorder';
+import { createGLRecorder } from '../testing/glRecorder';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 
 const fakeBitmap = (): ImageBitmap =>
@@ -303,7 +303,7 @@ describe('imageCache — vector sources re-raster at their drawn size', () => {
   });
 
   it('frees the replaced raster’s GL texture when the new one lands', async () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const glCache = new GLImageCache(webglDevice(gl));
     const requests = manualLoader();
     const natural = await primeNatural(requests, 100, 50);
@@ -368,7 +368,7 @@ describe('imageCache — release and retry', () => {
     __setImageLoaderForTests(() => { calls++; return Promise.resolve(bmp); });
     getImageBitmap('a');
     await flush();
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const gl = new GLImageCache(webglDevice(rec.gl));
     gl.upload(bmp, bmp);
     rec.reset();
@@ -454,7 +454,7 @@ describe('the image cache byte budget', () => {
 
   it('spares an image a live renderer drew in its latest frame', async () => {
     setImageCacheBudget(BUDGET_FOR_ONE);
-    const gl = makeGLRecorder().gl;
+    const gl = createGLRecorder().gl;
     const textures = new GLImageCache(webglDevice(gl));
     const a = await load('a');
     textures.beginFrame();
@@ -484,7 +484,7 @@ describe('the image cache byte budget', () => {
 
   it('frees the texture of an image it drops', async () => {
     setImageCacheBudget(BUDGET_FOR_ONE);
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const textures = new GLImageCache(webglDevice(recorder.gl));
     const a = await load('a');
     textures.beginFrame();
@@ -519,7 +519,7 @@ describe('bitmapSrc', () => {
   it('frees the texture and the name on releaseImage, and a later read does not try to load it', () => {
     let calls = 0;
     __setImageLoaderForTests(() => { calls++; return new Promise<ImageBitmap>(() => {}); });
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const textures = new GLImageCache(webglDevice(recorder.gl));
     const bmp = fakeBitmap();
     const src = bitmapSrc(bmp);

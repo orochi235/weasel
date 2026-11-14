@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { TilePatternSpec } from '@weasel-js/paint';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { _resetTextureRegistryForTests, textureRegistry } from './textures/registerTexture';
@@ -25,7 +25,7 @@ describe('a pattern tile evicted while a draw command still holds its handle', (
   });
 
   function setup() {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     const handle = resolvePatternSpec({ kind: 'dots', color: '#fff' })!;
     // A memoized painter's output: built once, drawn on every later frame.

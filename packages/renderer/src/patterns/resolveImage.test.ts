@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/geom';
 import type { ImagePatternPaint } from '@weasel-js/paint';
-import { makeGLRecorder } from '../testing/glRecorder';
+import { createGLRecorder } from '../testing/glRecorder';
 import { glUniformLocation } from '../gpu/webgl/GlProgram';
 import { WeaselRenderer } from '../WeaselRenderer';
 import type { DrawCommand } from '../DrawCommand';
@@ -82,7 +82,7 @@ const SQUARE: PolygonPath = stencilledEvenOdd({
 });
 
 function draw(paint: unknown) {
-  const rec = makeGLRecorder();
+  const rec = createGLRecorder();
   const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
   rec.reset();
   r.render([{ kind: 'path', path: SQUARE, fill: { paint } } as DrawCommand]);
@@ -161,7 +161,7 @@ describe('releasing a picture an image pattern drew', () => {
 
   it('drops its registry entry, and the renderer frees its texture on the next frame', async () => {
     const paint = resolveFillPattern({ kind: 'image', src: SRC });
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     const cmd = [{ kind: 'path', path: SQUARE, fill: { paint } } as DrawCommand];
     r.render(cmd);
@@ -196,7 +196,7 @@ describe('an image pattern under the image cache budget', () => {
     setImageCacheBudget(20);
     __setImageLoaderForTests(async () => fakeBitmap(2, 2));
     const paint = resolveFillPattern({ kind: 'image', src: SRC });
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     const cmd = [{ kind: 'path', path: SQUARE, fill: { paint } } as DrawCommand];
     r.render(cmd);

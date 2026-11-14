@@ -10,7 +10,7 @@ import {
 } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type {
-  DebugConfig,
+  DebugFlags,
   DebugFeature,
   Dims,
   SceneCanvasApi,
@@ -75,7 +75,7 @@ export function DebugOverlayDemo() {
     setEnabled(Object.fromEntries(Object.keys(NONE).map((k) => [k, true])) as Record<DebugFeature, boolean>);
   const allOff = () => setEnabled(NONE);
 
-  const debug: DebugConfig | false = Object.values(enabled).some(Boolean) ? enabled : false;
+  const debug: DebugFlags | false = Object.values(enabled).some(Boolean) ? enabled : false;
 
   const snapshot = async () => {
     const api = canvasRef.current;

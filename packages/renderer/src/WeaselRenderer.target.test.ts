@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 
 describe('WeaselRenderer stencil requirement', () => {
   it('throws when the injected context has no stencil buffer', () => {
-    const { gl } = makeGLRecorder({ contextAttributes: { stencil: false } });
+    const { gl } = createGLRecorder({ contextAttributes: { stencil: false } });
     expect(() => new WeaselRenderer({ gl, width: 100, height: 100, dpr: 1 }))
       .toThrow(/stencil/i);
   });
@@ -12,7 +12,7 @@ describe('WeaselRenderer stencil requirement', () => {
   it('constructs when the context reports no attributes at all', () => {
     // A stub that answers `undefined` must not be read as "no stencil": only an
     // explicit `stencil: false` is. Every non-browser harness passes one of these.
-    const { gl } = makeGLRecorder({ contextAttributes: undefined });
+    const { gl } = createGLRecorder({ contextAttributes: undefined });
     const noAnswer = new Proxy(gl, {
       get: (t, p, r) => (p === 'getContextAttributes' ? () => undefined : Reflect.get(t, p, r)),
     });
@@ -21,7 +21,7 @@ describe('WeaselRenderer stencil requirement', () => {
   });
 
   it('constructs when the context lacks getContextAttributes entirely', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     const absent = new Proxy(gl, {
       get: (t, p, r) => (p === 'getContextAttributes' ? undefined : Reflect.get(t, p, r)),
     });
@@ -33,7 +33,7 @@ describe('WeaselRenderer stencil requirement', () => {
 
 describe('WeaselRenderer per-frame GL state', () => {
   it('re-establishes blend, depth, cull and clear colour on every render', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 100, dpr: 1 });
     // Constructor state is not the claim — a co-tenant moves all of it between
     // our frames, so the second frame must set it again just like the first.
@@ -54,7 +54,7 @@ describe('WeaselRenderer per-frame GL state', () => {
   });
 
   it('restores the color mask, the bound VAO, and the unpack flip before clearing', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 100, dpr: 1 });
     r.render([]);
     recorder.reset();
@@ -76,7 +76,7 @@ describe('WeaselRenderer per-frame GL state', () => {
 
 describe('WeaselRenderer.setTarget', () => {
   it('owns the whole buffer by default', () => {
-    const recorder = makeGLRecorder({ drawingBufferWidth: 800, drawingBufferHeight: 600 });
+    const recorder = createGLRecorder({ drawingBufferWidth: 800, drawingBufferHeight: 600 });
     const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
     r.render([]);
@@ -91,7 +91,7 @@ describe('WeaselRenderer.setTarget', () => {
   it('flips the origin to GL bottom-left and scissors to the same rect', () => {
     // Buffer 820x400 CSS at dpr 1; a 380x360 renderer at CSS (420, 20).
     // GL y = 400 - 20 - 360 = 20.
-    const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
+    const recorder = createGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
     const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });
     r.setTarget({ origin: { x: 420, y: 20 } });
     recorder.reset();
@@ -106,7 +106,7 @@ describe('WeaselRenderer.setTarget', () => {
   });
 
   it('scales origin and size by dpr', () => {
-    const recorder = makeGLRecorder({ drawingBufferWidth: 1640, drawingBufferHeight: 800 });
+    const recorder = createGLRecorder({ drawingBufferWidth: 1640, drawingBufferHeight: 800 });
     const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 2 });
     r.setTarget({ origin: { x: 420, y: 20 } });
     recorder.reset();
@@ -122,7 +122,7 @@ describe('WeaselRenderer.setTarget', () => {
     // tile's origin and size separately ends it at 1 + 1 = 2 while the second
     // starts at 3.
     const rectAt = (x: number, y: number): number[] => {
-      const recorder = makeGLRecorder({ drawingBufferWidth: 100, drawingBufferHeight: 100 });
+      const recorder = createGLRecorder({ drawingBufferWidth: 100, drawingBufferHeight: 100 });
       const r = new WeaselRenderer({ gl: recorder.gl, width: 1, height: 1, dpr: 1.25 });
       r.setTarget({ origin: { x, y } });
       recorder.reset();
@@ -139,7 +139,7 @@ describe('WeaselRenderer.setTarget', () => {
   });
 
   it('re-applies the target on every frame, not just when it is set', () => {
-    const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
+    const recorder = createGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
     const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });
     r.setTarget({ origin: { x: 420, y: 20 } });
     r.render([]);
@@ -151,7 +151,7 @@ describe('WeaselRenderer.setTarget', () => {
   });
 
   it('follows a resize without the target being set again', () => {
-    const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
+    const recorder = createGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
     const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });
     r.setTarget({ origin: { x: 420, y: 20 } });
     r.resize({ width: 200, height: 100, dpr: 1 });
@@ -164,7 +164,7 @@ describe('WeaselRenderer.setTarget', () => {
   });
 
   it('setTarget(null) returns the whole buffer and drops the scissor', () => {
-    const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
+    const recorder = createGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
     const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });
     r.setTarget({ origin: { x: 420, y: 20 } });
     r.setTarget(null);
@@ -180,11 +180,11 @@ describe('WeaselRenderer.setTarget', () => {
 });
 
 describe('WeaselRenderer clear policy', () => {
-  const clearCalls = (recorder: ReturnType<typeof makeGLRecorder>) =>
+  const clearCalls = (recorder: ReturnType<typeof createGLRecorder>) =>
     recorder.calls.filter((c) => c.name === 'clear');
 
   it('clears colour and stencil by default', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 100, dpr: 1 });
     recorder.reset();
     r.render([]);
@@ -193,7 +193,7 @@ describe('WeaselRenderer clear policy', () => {
   });
 
   it('clears by default under a target too', () => {
-    const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
+    const recorder = createGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
     const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });
     r.setTarget({ origin: { x: 420, y: 20 } });
     recorder.reset();
@@ -202,7 +202,7 @@ describe('WeaselRenderer clear policy', () => {
   });
 
   it('skips the frame clear when the target says clear: false', () => {
-    const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
+    const recorder = createGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
     const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });
     r.setTarget({ origin: { x: 420, y: 20 }, clear: false });
     recorder.reset();
@@ -214,7 +214,7 @@ describe('WeaselRenderer clear policy', () => {
   it('enables the scissor before clearing, so the clear cannot outrun the rect', () => {
     // Ordering is the whole mechanism: gl.clear respects SCISSOR_TEST, so a
     // clear issued before the scissor is enabled erases every co-tenant.
-    const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
+    const recorder = createGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
     const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });
     r.setTarget({ origin: { x: 420, y: 20 } });
     recorder.reset();

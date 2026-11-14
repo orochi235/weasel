@@ -3,7 +3,7 @@
  * pixels, so these pin the calls; the browser tests read what they paint.
  */
 import { describe, expect, it } from 'vitest';
-import { makeGLRecorder, type GLRecorder } from '../../testing/glRecorder';
+import { createGLRecorder, type GLRecorder } from '../../testing/glRecorder';
 import { PREMULTIPLIED } from '../blend';
 import type { GpuDrawState, GpuStencilState } from '../types';
 import { WebGLDevice } from './WebGLDevice';
@@ -13,7 +13,7 @@ const FRAG = '#version 300 es\nprecision highp float;\nuniform sampler2D u_a;\nu
   + 'out vec4 o;\nvoid main() { o = texture(u_a, vec2(0.0)) + texture(u_b, vec2(0.0)); }\n';
 
 function setup(): { rec: GLRecorder; gpu: WebGLDevice } {
-  const rec = makeGLRecorder();
+  const rec = createGLRecorder();
   const gpu = new WebGLDevice(rec.gl);
   gpu.beginFrame();
   return { rec, gpu };

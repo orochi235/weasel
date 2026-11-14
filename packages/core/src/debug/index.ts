@@ -6,7 +6,7 @@ export { createDebugOverlayLayer, buildDebugOverlayCommands } from './createDebu
 export type { CreateDebugOverlayLayerOptions } from './createDebugOverlayLayer';
 export { DEFAULT_DEBUG_THEME, DEFAULT_DEBUG_STROKES } from './defaultTheme';
 export type {
-  DebugConfig,
+  DebugFlags,
   DebugFeature,
   DebugTheme,
   DebugStroke,

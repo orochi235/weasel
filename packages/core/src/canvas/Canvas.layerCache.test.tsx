@@ -7,10 +7,10 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import type { RenderLayer } from '../core/layers/render';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
     setPointerCapture: (...args: unknown[]) => void;

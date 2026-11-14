@@ -8,14 +8,14 @@ import { Canvas, type BareCanvasProps as CanvasProps } from '@weasel-js/core/tes
 import type { CanvasDebugSink } from '../debug/types';
 import type { RenderLayer } from 'core/layers/render';
 import type { ToolsApi } from '../tools/overlayBinding';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import type { ReactNode } from 'react';
 import { ViewRegistryProvider } from './viewRegistry';
 import { ViewMarker } from './ViewMarker';
 import { CanvasView } from './CanvasView';
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
 });

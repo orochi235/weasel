@@ -3,11 +3,9 @@ import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
-import type { InertiaConfig } from 'core/viewport/useDecayLoop';
+import type { InertiaOptions } from 'core/viewport/useDecayLoop';
 import { icon } from '../../../icons.gen';
 import { THROUGH_CHROME } from '../throughChrome';
-
-export type { InertiaConfig };
 
 /** Options for `useHandTool`. Both are forwarded to `viewport.dragPan` as
  *  binding params; momentum additionally needs a `view` dep publishing
@@ -15,7 +13,7 @@ export type { InertiaConfig };
 export interface UseHandToolOptions {
   /** Momentum after release: `true` for the kit defaults, or the settings.
    *  Omit or pass `false` for none. */
-  inertia?: boolean | InertiaConfig;
+  inertia?: boolean | InertiaOptions;
   /**
    * Which axes the drag responds to. Default `'both'`.
    *

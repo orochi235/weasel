@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetDynamicFontsForTests } from '@weasel-js/font/test-seams';
-import type { makeGLRecorder } from './testing/glRecorder';
+import type { createGLRecorder } from './testing/glRecorder';
 import { dispatch, type DrawContext } from './draw';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { createRecorderCtx, stagedVertices } from './testing/recorderCtx';
@@ -31,7 +31,7 @@ describe('drawText — letterSpacing reaches the GPU', () => {
   });
 
   /** x of each staged quad's first corner. */
-  function quadX0s(ctx: DrawContext, calls: ReturnType<typeof makeGLRecorder>['calls']): number[] {
+  function quadX0s(ctx: DrawContext, calls: ReturnType<typeof createGLRecorder>['calls']): number[] {
     const data = stagedVertices(ctx, calls);
     if (data.length === 0) throw new Error('no text vertex upload recorded');
     const out: number[] = [];

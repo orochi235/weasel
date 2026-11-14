@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 import type { RectPath, PolygonPath } from '@weasel-js/geom';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
@@ -15,11 +15,11 @@ const notch = (): PolygonPath => ({
 });
 
 describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
 
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
   });
@@ -42,11 +42,11 @@ describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
 });
 
 describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
 
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
   });
@@ -86,11 +86,11 @@ describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () =
 });
 
 describe('WeaselRenderer.render — kind: path with stroke', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
 
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
   });
@@ -178,11 +178,11 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
 });
 
 describe('WeaselRenderer.render — stencil bit discipline', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
 
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
   });

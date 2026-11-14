@@ -1,6 +1,6 @@
 import type { MenuShortcut } from '@weasel-js/menu';
-import { keySpecsFromShortcut } from './keySpecsFromShortcut';
-import { detectPlatform, type KeyLegend, type LegendStyle, type Platform } from './keySpecsFromMods';
+import { keyLegendsFromShortcut } from './keyLegendsFromShortcut';
+import { detectPlatform, type KeyLegend, type LegendStyle, type Platform } from './keyLegendsFromMods';
 
 /** A keyboard shortcut as the formatters read it: `@weasel-js/menu`'s `MenuShortcut`. */
 export type ShortcutInput = MenuShortcut;
@@ -39,9 +39,9 @@ export function formatShortcutParts(
   b: ShortcutInput | undefined,
   opts: FormatShortcutOptions = {},
 ): ShortcutParts | undefined {
-  const keys = keySpecsFromShortcut(b, opts);
+  const keys = keyLegendsFromShortcut(b, opts);
   if (!b || !keys) return undefined;
-  const leader = (b.leader ?? []).map((l) => ({ label: l.label, keys: keySpecsFromShortcut(l.shortcut, opts) ?? [] }));
+  const leader = (b.leader ?? []).map((l) => ({ label: l.label, keys: keyLegendsFromShortcut(l.shortcut, opts) ?? [] }));
   return { leader, keys };
 }
 

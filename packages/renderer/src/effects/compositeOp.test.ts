@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mat3 } from '@weasel-js/geom';
-import { makeGLRecorder } from '../testing/glRecorder';
+import { createGLRecorder } from '../testing/glRecorder';
 import { WeaselRenderer } from '../WeaselRenderer';
 import { _resetProgramRegistryForTests } from '../shaders/registerProgram';
 import type { DrawCommand } from '../DrawCommand';
@@ -19,7 +19,7 @@ const RECT: DrawCommand = {
 };
 
 function blendsOf(commands: DrawCommand[]): number[][] {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const renderer = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 50, dpr: 1 });
   recorder.reset();
   renderer.render(commands);
@@ -29,7 +29,7 @@ function blendsOf(commands: DrawCommand[]): number[][] {
 beforeEach(() => { _resetProgramRegistryForTests(); });
 
 describe('a group composite operator', () => {
-  const gl = makeGLRecorder().gl;
+  const gl = createGLRecorder().gl;
 
   it('reads six distinct blend factors off the recorder, so the assertions below can tell them apart', () => {
     const factors = [
@@ -58,7 +58,7 @@ describe('a group composite operator', () => {
   });
 
   it('leaves source-over on the plain path, with no buffer', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const renderer = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 50, dpr: 1 });
     renderer.render([{ kind: 'group', composite: 'source-over', children: [RECT] }]);
     expect(recorder.calls.map((c) => c.name)).not.toContain('createFramebuffer');

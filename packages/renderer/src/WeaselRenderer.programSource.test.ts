@@ -1,6 +1,6 @@
 /** Which language's source a WebGL renderer draws a program from, and what it does without one. */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import {
   registerProgram, sameProgramSource, getProgramSource, _resetProgramRegistryForTests, type ShaderProgramHandle,
@@ -40,7 +40,7 @@ describe('a program registered in GLSL, WGSL or both', () => {
   });
 
   it('compiles the GLSL of a program that carries WGSL beside it', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     const h = registerProgram('both', { glsl: { frag: GLSL }, wgsl: { frag: WGSL } });
     rec.reset();
@@ -52,7 +52,7 @@ describe('a program registered in GLSL, WGSL or both', () => {
   });
 
   it('draws nothing for a WGSL-only program, compiles nothing, and says so once across frames', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     const h = registerProgram('wgsl-only', { wgsl: { frag: WGSL } });
     rec.reset();
@@ -67,12 +67,12 @@ describe('a program registered in GLSL, WGSL or both', () => {
   });
 
   it('throws from an ahead-of-time compile of a WGSL-only program', () => {
-    const r = new WeaselRenderer({ gl: makeGLRecorder().gl, width: 10, height: 10, dpr: 1 });
+    const r = new WeaselRenderer({ gl: createGLRecorder().gl, width: 10, height: 10, dpr: 1 });
     expect(() => r.registerProgram(registerProgram('wgsl-ahead', { wgsl: { frag: WGSL } }))).toThrow(/no GLSL source/);
   });
 
   it('compiles a WGSL-only program once GLSL is registered for it', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     const h = registerProgram('wgsl-then-glsl', { wgsl: { frag: WGSL } });
     r.render([shader(h)]);

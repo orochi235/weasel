@@ -1,6 +1,6 @@
 /** The answer to each devtools request, for one root. The session owns the override a steering request changes. */
 import type { Node, NodeId, Scene } from 'core/scene/types';
-import type { DebugConfig } from '../debug/types';
+import type { DebugFlags } from '../debug/types';
 import type { DevtoolsRoot } from './root';
 import type {
   DevtoolsNodeDetail, DevtoolsNodeSummary, DevtoolsOverlays, DevtoolsRequest, DevtoolsResult,
@@ -53,7 +53,7 @@ export function nodeDetail(root: DevtoolsRoot, nodeId: string): DevtoolsNodeDeta
 }
 
 /** The on/off features of a debug config, leaving out its theme and strokes. */
-export function overlayFlags(config: DebugConfig | null): DevtoolsOverlays {
+export function overlayFlags(config: DebugFlags | null): DevtoolsOverlays {
   const flags: DevtoolsOverlays = {};
   if (!config) return flags;
   for (const [key, value] of Object.entries(config)) {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PathBuilder, viewToMat3, type PolygonPath } from '@weasel-js/geom';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { FLOATS_PER_VERTEX } from './drawBatch';
@@ -30,7 +30,7 @@ function triangle(origin: boolean): PolygonPath {
 }
 
 function frame(cmd: DrawCommand, px: number) {
-  const rec = makeGLRecorder();
+  const rec = createGLRecorder();
   const r = new WeaselRenderer({ gl: rec.gl, width: 800, height: 600, dpr: 1 });
   rec.reset();
   const view = viewToMat3({ x: WORLD_X - px / ZOOM, y: 0, scale: { x: ZOOM, y: ZOOM } });

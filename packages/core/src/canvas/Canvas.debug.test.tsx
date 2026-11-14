@@ -10,10 +10,10 @@ import type { CanvasExtensionApi } from './canvasExtension';
 import type { CanvasDebugSink } from '../debug/types';
 import type { RenderLayer } from 'core/layers/render';
 import { WeaselRenderer } from '@weasel-js/renderer';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
 });

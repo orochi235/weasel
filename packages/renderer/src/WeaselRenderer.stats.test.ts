@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
@@ -22,13 +22,13 @@ const ownDrawFill = {
   fill: { paint: { color: '#f00' } },
 } as unknown as DrawCommand;
 
-function drawCallsIn(rec: ReturnType<typeof makeGLRecorder>): number {
+function drawCallsIn(rec: ReturnType<typeof createGLRecorder>): number {
   return rec.calls.filter((c) => c.name === 'drawElements' || c.name === 'drawArrays').length;
 }
 
 describe('WeaselRenderer frame stats', () => {
   it('counts every GL draw the frame issued', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     rec.reset();
     r.render([rect(0), ownDrawFill, rect(20)]);
@@ -39,7 +39,7 @@ describe('WeaselRenderer frame stats', () => {
   });
 
   it('starts every frame from zero', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     r.render([rect(0), ownDrawFill]);
     rec.reset();
@@ -48,7 +48,7 @@ describe('WeaselRenderer frame stats', () => {
   });
 
   it('splits the count across spans, a staged run counting toward the span that closes it', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     rec.reset();
     r.render([rect(0), ownDrawFill, rect(20)], undefined, {
@@ -69,7 +69,7 @@ describe('WeaselRenderer frame stats', () => {
   });
 
   it('reports no spans when none were asked for', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
     r.render([rect(0)]);
     expect(r.lastFrameStats().spans).toEqual([]);
@@ -80,7 +80,7 @@ describe('WeaselRenderer retained surfaces', () => {
   const group = (): DrawCommand => ({ kind: 'group', retain: 'g', children: [rect(0)] });
 
   it('draws a retained group again after the image minification changes', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1, imageMinification: 'auto' });
     const cmds = [group()];
     r.render(cmds);

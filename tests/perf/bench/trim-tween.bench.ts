@@ -13,7 +13,7 @@ import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 import { markerDrawCommands, WeaselRenderer, type DrawCommand } from '@weasel-js/renderer';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
-import { makeGLRecorder } from '../../../packages/renderer/src/testing/glRecorder';
+import { createGLRecorder } from '../../../packages/renderer/src/testing/glRecorder';
 import { group } from './group';
 
 function wave(n: number): PolygonPath {
@@ -41,7 +41,7 @@ const FRAMES = 60;
 
 function tween(stroke: CommandStroke, rebuilt: boolean): () => void {
   const path = wave(1000);
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   if (rebuilt) Object.defineProperty(r._batchVariants(), 'trimClip', { value: false });
   let f = 0;
@@ -68,7 +68,7 @@ for (const [name, stroke] of CASES) {
 
 group('trim tween step — 40 anchors, which the batch takes and rebuilds', (bench) => {
   const path = wave(40);
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   let f = 0;
   bench('rebuilt', () => {

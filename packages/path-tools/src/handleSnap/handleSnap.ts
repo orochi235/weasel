@@ -9,12 +9,12 @@ import { stepAngles, type AngleCandidate, type PathEditExtension, type SnapMark,
 
 /** Angle snapping for a control-handle drag. */
 export interface HandleSnapOptions {
-  /** Snap to every multiple of this many degrees. Default 45; 0 turns the
+  /** Snap to every multiple of this angle, in radians. Default 45°; 0 turns the
    *  steps off and leaves only the opposite handle. */
-  stepDeg?: number;
-  /** How near, in degrees, the handle must come to an angle to snap. Read
-   *  by the drag as it starts. Default 6. */
-  reachDeg?: number;
+  angleStep?: number;
+  /** How near, in radians, the handle must come to an angle to snap. Read
+   *  by the drag as it starts. Default 6°. */
+  reachRad?: number;
   /** Also snap onto the line through the anchor's other handle. Default true. */
   opposite?: boolean;
 }
@@ -25,15 +25,15 @@ export type HandleSnapOptionsInput = HandleSnapOptions | (() => HandleSnapOption
 
 type Point = { x: number; y: number };
 
-const DEFAULT_STEP_DEG = 45;
-const DEFAULT_REACH_DEG = 6;
+const DEFAULT_ANGLE_STEP = 45 * DEG_TO_RAD;
+const DEFAULT_REACH_RAD = 6 * DEG_TO_RAD;
 /** How far a guide reaches past the handle, as a share of its length at the press. */
 const LINE_OVERSHOOT = 1.25;
 
 const reader = (options: HandleSnapOptionsInput) => (typeof options === 'function' ? options : () => options);
 
 /**
- * A handle drag's angle targets: the multiples of `stepDeg` either side of
+ * A handle drag's angle targets: the multiples of `angleStep` either side of
  * the handle, and the angle that puts it in line with the anchor's other
  * handle, which the drag brings as `also.anchors`, ahead of a step it ties
  * with. Each draws its line.
@@ -56,7 +56,7 @@ export function handleSnapSource(options: HandleSnapOptionsInput = {}): SnapSour
         const angle = Math.atan2(pivot.y - other.y, pivot.x - other.x);
         yield { angle, mark: { kind: 'line', from: other, to: along(pivot, angle, reach) } };
       }
-      const step = (opts.stepDeg ?? DEFAULT_STEP_DEG) * DEG_TO_RAD;
+      const step = opts.angleStep ?? DEFAULT_ANGLE_STEP;
       if (step <= 0) return;
       for (const angle of stepAngles(q.theta, step)) yield { angle, mark: guideLine(pivot, angle, reach) };
     },
@@ -88,7 +88,7 @@ export function createHandleSnapExtension(options: HandleSnapOptionsInput = {}):
         pivot: anchor,
         ids: [start.id],
         theta0: Math.atan2(handle.y - anchor.y, handle.x - anchor.x),
-        reachRad: (read()?.reachDeg ?? DEFAULT_REACH_DEG) * DEG_TO_RAD,
+        reachRad: read()?.reachRad ?? DEFAULT_REACH_RAD,
         ...(other ? { also: { anchors: [{ x: other.x, y: other.y }] } } : {}),
       });
       if (!session) return null;

@@ -7,7 +7,7 @@ import type { DEBUG_FEATURES } from './features';
 export type { DebugSink, HitShape, HandleKind, ViewportGestureKind };
 
 /** One bit per debug feature; absent keys are off. */
-export interface DebugConfig {
+export interface DebugFlags {
   hitboxes?: boolean;
   handles?: boolean;
   bounds?: boolean;
@@ -37,7 +37,7 @@ export interface DebugConfig {
   strokes?: Partial<DebugStrokes>;
 }
 
-/** The name of one debug-overlay feature — the keys of {@link DebugConfig}
+/** The name of one debug-overlay feature — the keys of {@link DebugFlags}
  *  that toggle a visualization. */
 export type DebugFeature = (typeof DEBUG_FEATURES)[number];
 

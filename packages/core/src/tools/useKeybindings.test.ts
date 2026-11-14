@@ -251,12 +251,12 @@ describe('useKeybindings', () => {
     expect(result.current.active).toBe('select');
   });
 
-  it('disable: true skips all wiring', () => {
+  it('enabled: false skips all wiring', () => {
     const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
     const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
-      useKeybindings(tools, { disable: true });
+      useKeybindings(tools, { enabled: false });
       return tools;
     }, { wrapper: makeWrapper('select', true) });
 
@@ -264,22 +264,22 @@ describe('useKeybindings', () => {
     expect(result.current.active).toBe('select');
   });
 
-  it('follows disable when it changes', () => {
+  it('follows enabled when it changes', () => {
     const registry = {
       select: defineTool({ id: 'select', keybinding: { key: 'v' } }),
       pen: defineTool({ id: 'pen', keybinding: { key: 'p' } }),
     };
     const ids = (reg: ReturnType<typeof useActionsRegistry>) => (reg?.list() ?? []).map((a) => a.id);
-    const { result, rerender } = renderHook(({ disable }: { disable: boolean }) => {
+    const { result, rerender } = renderHook(({ enabled }: { enabled: boolean }) => {
       const tools = useTools({ active: 'select', registry });
-      useKeybindings(tools, { disable });
+      useKeybindings(tools, { enabled });
       return useActionsRegistry();
-    }, { wrapper: makeWrapper('select'), initialProps: { disable: false } });
+    }, { wrapper: makeWrapper('select'), initialProps: { enabled: true } });
 
     expect(ids(result.current)).toContain('tool.activate');
-    rerender({ disable: true });
+    rerender({ enabled: false });
     expect(ids(result.current)).not.toContain('tool.activate');
-    rerender({ disable: false });
+    rerender({ enabled: true });
     expect(ids(result.current)).toContain('tool.activate');
   });
 

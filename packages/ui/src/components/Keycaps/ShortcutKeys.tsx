@@ -1,7 +1,7 @@
 import { formatShortcutParts, SHORTCUT_LEADER_SEPARATOR, type ShortcutInput } from '@weasel-js/gestures';
 import { KeySequence } from './Keycaps';
 import s from './Keycaps.module.css';
-import { keySpecsFromLegend } from './keySpecsFromLegend';
+import { keyLegendsFromFormatted } from './keyLegendsFromFormatted';
 
 /** Props for {@link ShortcutKeys}: a shortcut written out, or one held as data. */
 export type ShortcutKeysProps = { className?: string } & (
@@ -11,7 +11,7 @@ export type ShortcutKeysProps = { className?: string } & (
 
 function partsFromLegend(legend: string) {
   const steps = legend.split(SHORTCUT_LEADER_SEPARATOR);
-  return { leader: steps.slice(0, -1).map((label) => ({ label })), keys: keySpecsFromLegend(steps.at(-1)!) };
+  return { leader: steps.slice(0, -1).map((label) => ({ label })), keys: keyLegendsFromFormatted(steps.at(-1)!) };
 }
 
 /**

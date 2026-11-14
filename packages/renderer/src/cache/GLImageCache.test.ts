@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { makeGLRecorder } from '../testing/glRecorder';
+import { createGLRecorder } from '../testing/glRecorder';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import { GLImageCache, maxImageTextureSide, releaseImageSource } from './GLImageCache';
 
@@ -13,7 +13,7 @@ const fakeImgData = { width: 8, height: 8, data: new Uint8ClampedArray(8 * 8 * 4
 
 describe('GLImageCache', () => {
   it('upload() creates a texture and returns a GL texture handle', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const cache = new GLImageCache(webglDevice(gl));
     const tex = cache.upload(fakeImg1, fakeImgData);
     expect(tex).toBeTruthy();
@@ -22,7 +22,7 @@ describe('GLImageCache', () => {
   });
 
   it('upload() is idempotent — second call for same identity skips createTexture', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const cache = new GLImageCache(webglDevice(gl));
     cache.upload(fakeImg1, fakeImgData);
     const countBefore = calls.filter((c) => c.name === 'createTexture').length;
@@ -32,7 +32,7 @@ describe('GLImageCache', () => {
   });
 
   it('upload() for different identity creates separate textures', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const cache = new GLImageCache(webglDevice(gl));
     cache.upload(fakeImg1, fakeImgData);
     cache.upload(fakeImg2, fakeImgData);
@@ -40,7 +40,7 @@ describe('GLImageCache', () => {
   });
 
   it('texture() hands back what upload() made, and counts it drawn this frame', () => {
-    const { gl } = makeGLRecorder();
+    const { gl } = createGLRecorder();
     const cache = new GLImageCache(webglDevice(gl));
     const made = cache.upload(fakeImg1, fakeImgData);
     cache.beginFrame();
@@ -50,7 +50,7 @@ describe('GLImageCache', () => {
   });
 
   it('sets CLAMP_TO_EDGE wrap by default', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const cache = new GLImageCache(webglDevice(gl));
     cache.upload(fakeImg1, fakeImgData);
     const wrapCalls = calls.filter((c) => c.name === 'texParameteri');
@@ -59,7 +59,7 @@ describe('GLImageCache', () => {
   });
 
   it('sets REPEAT wrap when repetition is "repeat"', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const cache = new GLImageCache(webglDevice(gl));
     cache.upload(fakeImg1, fakeImgData, 'repeat');
     const wrapCalls = calls.filter((c) => c.name === 'texParameteri');
@@ -70,7 +70,7 @@ describe('GLImageCache', () => {
 
 describe('releasing a source', () => {
   it('release() deletes the texture, and a later draw re-uploads', () => {
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const cache = new GLImageCache(webglDevice(gl));
     const tex = cache.upload(fakeImg1, fakeImgData);
     cache.release(fakeImg1);
@@ -81,8 +81,8 @@ describe('releasing a source', () => {
   });
 
   it('releaseImageSource() reaches every live cache, and none that is disposed', () => {
-    const a = makeGLRecorder();
-    const b = makeGLRecorder();
+    const a = createGLRecorder();
+    const b = createGLRecorder();
     const cacheA = new GLImageCache(webglDevice(a.gl));
     const cacheB = new GLImageCache(webglDevice(b.gl));
     const key = {};
@@ -97,7 +97,7 @@ describe('releasing a source', () => {
   });
 
   it('dispose() deletes every texture it uploaded, once', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const cache = new GLImageCache(webglDevice(rec.gl));
     const t1 = cache.upload(fakeImg1, fakeImgData);
     const t2 = cache.upload(fakeImg2, fakeImgData);
@@ -110,7 +110,7 @@ describe('releasing a source', () => {
   });
 
   it('abandon() forgets its textures without deleting them', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const cache = new GLImageCache(webglDevice(rec.gl));
     cache.upload(fakeImg1, fakeImgData);
     rec.reset();
@@ -122,7 +122,7 @@ describe('releasing a source', () => {
 
 describe('maxImageTextureSide', () => {
   it('is the smallest MAX_TEXTURE_SIZE among live caches', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const asked: unknown[] = [];
     const gl = new Proxy(rec.gl, {
       get: (t, p) => (p === 'getParameter'
@@ -138,12 +138,12 @@ describe('maxImageTextureSide', () => {
 });
 
 describe('minification: mipmap', () => {
-  const minFilters = (rec: ReturnType<typeof makeGLRecorder>): unknown[] => rec.calls
+  const minFilters = (rec: ReturnType<typeof createGLRecorder>): unknown[] => rec.calls
     .filter((c) => c.name === 'texParameteri' && c.args[1] === rec.gl.TEXTURE_MIN_FILTER)
     .map((c) => c.args[2]);
 
   it('generates mipmaps at upload, and a draw that asks for them samples through them', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const cache = new GLImageCache(webglDevice(rec.gl), 'mipmap');
     const key = {};
     cache.upload(key, {} as ImageBitmap);
@@ -153,7 +153,7 @@ describe('minification: mipmap', () => {
   });
 
   it('a draw that does not ask for them keeps one bilinear tap', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const cache = new GLImageCache(webglDevice(rec.gl), 'mipmap');
     const key = {};
     cache.upload(key, {} as ImageBitmap);
@@ -163,7 +163,7 @@ describe('minification: mipmap', () => {
   });
 
   it("'linear' never builds them, whatever a draw asks", () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const cache = new GLImageCache(webglDevice(rec.gl), 'linear');
     const key = {};
     cache.upload(key, {} as ImageBitmap);
@@ -201,7 +201,7 @@ describe('GLImageCache — a source the garbage collector reclaimed', () => {
 
   it('deletes the texture at the next drain', () => {
     const gc = stubFinalizers();
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const cache = new GLImageCache(webglDevice(gl));
     const tex = cache.upload(fakeImg1, fakeImgData);
     cache.upload(fakeImg2, fakeImgData);
@@ -219,7 +219,7 @@ describe('GLImageCache — a source the garbage collector reclaimed', () => {
 
   it('stops watching a source released by hand', () => {
     const gc = stubFinalizers();
-    const { gl, calls } = makeGLRecorder();
+    const { gl, calls } = createGLRecorder();
     const cache = new GLImageCache(webglDevice(gl));
     cache.upload(fakeImg1, fakeImgData);
     cache.release(fakeImg1);

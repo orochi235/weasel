@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { mat3, pathFromD } from '@weasel-js/geom';
-import { makeGLRecorder } from '../testing/glRecorder';
+import { createGLRecorder } from '../testing/glRecorder';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import { RetainedSurfaces } from './RetainedSurfaces';
 import type { RetainedKey } from './retainedKey';
@@ -26,7 +26,7 @@ function key(): RetainedKey {
 
 describe('RetainedSurfaces', () => {
   it('allocates each surface and the scratch buffer at the rect it covers, not the drawing buffer', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const store = new RetainedSurfaces(webglDevice(rec.gl), Infinity);
     store.beginFrame([]);
     store.reserve('a', W, H, { x: 100, y: 50, width: 40, height: 30 })!.commit(key());
@@ -42,7 +42,7 @@ describe('RetainedSurfaces', () => {
   });
 
   it('keeps one scratch buffer as large as the largest surface, and shrinks it when that one goes', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const store = new RetainedSurfaces(webglDevice(rec.gl), Infinity);
     const k = key();
     store.beginFrame([]);
@@ -58,7 +58,7 @@ describe('RetainedSurfaces', () => {
   });
 
   it('holds no texture for a group with nothing on screen, and still keeps its key', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const store = new RetainedSurfaces(webglDevice(rec.gl), Infinity);
     store.beginFrame([]);
     const draw = store.reserve('gone', W, H, { x: 0, y: 0, width: 0, height: 0 })!;
@@ -71,7 +71,7 @@ describe('RetainedSurfaces', () => {
   });
 
   it('counts the surfaces it keeps against the budget, not the scratch buffer they are drawn in', () => {
-    const store = new RetainedSurfaces(webglDevice(makeGLRecorder().gl), 40 * 30 * 4 + 10 * 10 * 4);
+    const store = new RetainedSurfaces(webglDevice(createGLRecorder().gl), 40 * 30 * 4 + 10 * 10 * 4);
     store.beginFrame([]);
     expect(store.reserve('a', W, H, { x: 0, y: 0, width: 40, height: 30 })).not.toBeNull();
     expect(store.reserve('b', W, H, { x: 0, y: 0, width: 10, height: 11 })).toBeNull();
@@ -79,7 +79,7 @@ describe('RetainedSurfaces', () => {
   });
 
   it('frees the scratch buffer after a frame that redraws nothing', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const store = new RetainedSurfaces(webglDevice(rec.gl), Infinity);
     const k = key();
     store.beginFrame([]);
@@ -96,7 +96,7 @@ describe('RetainedSurfaces', () => {
   });
 
   it('draws a surface larger than a tile in tiles, through a scratch buffer no larger than one', () => {
-    const rec = makeGLRecorder();
+    const rec = createGLRecorder();
     const store = new RetainedSurfaces(webglDevice(rec.gl), Infinity);
     store.tile = 32;
     store.beginFrame([]);

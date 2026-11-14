@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { PolygonPath } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { mat3 } from '@weasel-js/geom';
@@ -33,7 +33,7 @@ function horizontalLine(): PolygonPath {
 const HEAD = 'test-green-arrow';
 const LINE_PAINT = { color: '#ff0000' };
 
-type Recorder = ReturnType<typeof makeGLRecorder>;
+type Recorder = ReturnType<typeof createGLRecorder>;
 
 interface Extent { minX: number; maxX: number; height: number }
 
@@ -62,7 +62,7 @@ describe('renderer — stroke markers', () => {
 
   beforeEach(() => {
     _resetStrokeMeshCacheForTests();
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     dispose = registerMarker({
       id: HEAD,

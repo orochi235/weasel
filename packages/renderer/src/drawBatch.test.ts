@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { makeGLRecorder, type GLCall } from './testing/glRecorder';
+import { createGLRecorder, type GLCall } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { registerTexture } from './textures/registerTexture';
 import { registerOwnDrawPaint, ownDrawRect } from './testing/ownDrawPaint';
@@ -41,13 +41,13 @@ const STENCIL_TEST = 0x0B90;
 const POST_OFFSET = 8;
 
 describe('renderer — consecutive solid-fill batching', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
 
   let unregister: () => void;
   beforeEach(() => {
     unregister = registerOwnDrawPaint();
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
   });
@@ -928,7 +928,7 @@ describe('renderer — consecutive solid-fill batching', () => {
  * run around them.
  */
 describe('renderer — text in the batch', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: ReturnType<typeof createGLRecorder>;
   let r: WeaselRenderer;
 
   beforeEach(async () => {
@@ -948,7 +948,7 @@ describe('renderer — text in the batch', () => {
     } as unknown as ImageBitmap);
     await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
 
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     recorder.reset();
   });

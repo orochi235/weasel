@@ -10,7 +10,7 @@
  * frame into a texture nobody shows, and every existing test still passes.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import { registerEffect } from '@weasel-js/renderer';
 import { registerProgram } from '@weasel-js/renderer';
@@ -34,7 +34,7 @@ const RECT: DrawCommand = {
 };
 
 function setup(effectIds: string[]) {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const renderer = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 50, dpr: 2 });
   const effects = effectIds.map((id) => ({ program: registerEffect(id, { glsl: TINT_FRAG }) }));
   return { recorder, renderer, effects };

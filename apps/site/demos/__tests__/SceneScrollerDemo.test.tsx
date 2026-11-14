@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, beforeAll, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Profiler } from 'react';
 import type { View } from '@weasel-js/core';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { SceneScrollerDemo } from '../SceneScrollerDemo';
 import { WORLD } from '../platformer/worldLevel';
 import { tileNodes } from '../platformer/sceneWorld';
@@ -43,7 +43,7 @@ vi.mock('@weasel-js/core', async (importOriginal) => {
 // Without a context that answers like WebGL2 the paint bails before any layer
 // draws, and `paintedViews` would stay empty for the wrong reason.
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
   };

@@ -18,7 +18,7 @@ import { PrefsDialog } from '../Prefs/PrefsDialog';
 import { useActionSettings } from '../ActionSettings/useActionSettings';
 import { DEFAULT_REASON_LABELS, reasonLabel } from '../ActionBar/reasonLabels';
 import { KeySequence, ShortcutKeys } from '../Keycaps';
-import { keySpecFromKey } from '@weasel-js/gestures';
+import { keyLegendFromKey } from '@weasel-js/gestures';
 import { describeSelection } from './selectionSummary';
 import { usePaletteItems, type PaletteItems } from './usePaletteItems';
 import styles from './CommandPalette.module.css';
@@ -40,9 +40,9 @@ function ShortcutChips({ item }: { item: ActionItem }) {
 }
 
 const HINTS = [
-  { keys: [keySpecFromKey('ArrowUp'), keySpecFromKey('ArrowDown')], label: 'navigate' },
-  { keys: [keySpecFromKey('Enter')], label: 'run' },
-  { keys: [keySpecFromKey('Escape')], label: 'close' },
+  { keys: [keyLegendFromKey('ArrowUp'), keyLegendFromKey('ArrowDown')], label: 'navigate' },
+  { keys: [keyLegendFromKey('Enter')], label: 'run' },
+  { keys: [keyLegendFromKey('Escape')], label: 'close' },
 ];
 
 /** How much is selected, when known, and the keys the palette answers to. */

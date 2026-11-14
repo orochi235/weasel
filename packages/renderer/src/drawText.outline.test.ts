@@ -5,7 +5,7 @@ import {
 import {
   _resetFontRegistryForTests, _resetDynamicFontsForTests, _resetFontOutlinesForTests,
 } from '@weasel-js/font/test-seams';
-import type { makeGLRecorder } from './testing/glRecorder';
+import type { createGLRecorder } from './testing/glRecorder';
 import type { DrawCommand } from './DrawCommand';
 import { _resetOutlineMeshCacheForTests } from './cache/outlineMeshCache';
 import { dispatch, type DrawContext } from './draw';
@@ -61,7 +61,7 @@ describe('drawText — outline tier', () => {
   } as DrawCommand);
 
   /** The (x, y) of every vertex this frame staged, in staging order. */
-  const outlineXY = (ctx: DrawContext, calls: ReturnType<typeof makeGLRecorder>['calls']): number[] =>
+  const outlineXY = (ctx: DrawContext, calls: ReturnType<typeof createGLRecorder>['calls']): number[] =>
     positionsOfMode(ctx, calls, 0);
 
   /**
@@ -74,7 +74,7 @@ describe('drawText — outline tier', () => {
    */
   const indicesColored = (
     ctx: DrawContext,
-    calls: ReturnType<typeof makeGLRecorder>['calls'],
+    calls: ReturnType<typeof createGLRecorder>['calls'],
     rgba: number[],
   ): number[] => {
     const v = stagedVertices(ctx, calls);

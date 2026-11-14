@@ -133,7 +133,7 @@ const tools = useTools({
 
 useKeybindings(tools);                                 // wires declared bindings
 useKeybindings(tools, { overrides: { v: 'pen' } });    // remap
-useKeybindings(tools, { disable: true });              // touch app, no keyboard
+useKeybindings(tools, { enabled: false });            // touch app, no keyboard
 
 return <Canvas tools={tools} ... />;
 ```

@@ -7,7 +7,7 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import type { RenderLayer } from '../core/layers/render';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 const imageReady = vi.hoisted(() => new Set<() => void>());
 vi.mock('@weasel-js/renderer', async (original) => ({
@@ -19,7 +19,7 @@ vi.mock('@weasel-js/renderer', async (original) => ({
 }));
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
 });

@@ -5,10 +5,10 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { useAction, useOngoingAction } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
 });

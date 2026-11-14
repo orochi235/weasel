@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { detectPlatform, keySpecFromCode, type KeyLabels, type LegendStyle, type Platform } from '@weasel-js/gestures';
+import { detectPlatform, keyLegendFromCode, type KeyLabels, type LegendStyle, type Platform } from '@weasel-js/gestures';
 import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import { tintSource } from '../appearance';
@@ -92,7 +92,7 @@ export function KeyDiagram({
         data-tinted={tint ? true : undefined}
         data-dimmed={mark?.dimmed || undefined}
       >
-        <KeyCap className={s.cap} label={key.label ?? keySpecFromCode(key.code, legendOpts).label} font={font} fixed={place !== undefined} />
+        <KeyCap className={s.cap} label={key.label ?? keyLegendFromCode(key.code, legendOpts).label} font={font} fixed={place !== undefined} />
         {under === undefined ? null : <span className={s.caption}>{under}</span>}
       </span>
     );

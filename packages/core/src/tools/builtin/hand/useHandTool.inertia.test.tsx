@@ -17,7 +17,7 @@ import { useTools } from '../../overlayBinding';
 import { useHandTool } from './useHandTool';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from 'interactions/actions/depSchema';
-import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
+import type { DecayLoopOptions } from 'core/viewport/useDecayLoop';
 import type { UseHandToolOptions } from './useHandTool';
 
 beforeAll(() => {
@@ -45,7 +45,7 @@ function drag(el: HTMLElement, path: Array<[number, number]>) {
 }
 
 /** Mounts the real hand tool + dispatcher over a view dep we can inspect. */
-function mount(handOpts: UseHandToolOptions, decay?: (c: DecayLoopConfig) => void) {
+function mount(handOpts: UseHandToolOptions, decay?: (c: DecayLoopOptions) => void) {
   const state: { view: View } = { view: { x: 0, y: 0, scale: { x: 1, y: 1 } } };
 
   function ViewDep() {
@@ -108,7 +108,7 @@ describe('useHandTool options reach viewport.dragPan through the dispatcher', ()
   });
 
   it('starts a coast on release when inertia is configured', () => {
-    const calls: DecayLoopConfig[] = [];
+    const calls: DecayLoopOptions[] = [];
     const { canvas } = mount({ inertia: { friction: 0.8 } }, (c) => calls.push(c));
     drag(canvas, [[0, 0], [10, 10], [25, 25], [45, 45]]);
     expect(calls).toHaveLength(1);
@@ -116,7 +116,7 @@ describe('useHandTool options reach viewport.dragPan through the dispatcher', ()
   });
 
   it('starts a coast with the kit defaults when inertia is true', () => {
-    const calls: DecayLoopConfig[] = [];
+    const calls: DecayLoopOptions[] = [];
     const { canvas } = mount({ inertia: true }, (c) => calls.push(c));
     drag(canvas, [[0, 0], [10, 10], [25, 25], [45, 45]]);
     expect(calls).toHaveLength(1);
@@ -124,14 +124,14 @@ describe('useHandTool options reach viewport.dragPan through the dispatcher', ()
   });
 
   it('starts no coast when inertia is false', () => {
-    const calls: DecayLoopConfig[] = [];
+    const calls: DecayLoopOptions[] = [];
     const { canvas } = mount({ inertia: false }, (c) => calls.push(c));
     drag(canvas, [[0, 0], [10, 10], [45, 45]]);
     expect(calls).toHaveLength(0);
   });
 
   it('starts no coast when inertia is not asked for', () => {
-    const calls: DecayLoopConfig[] = [];
+    const calls: DecayLoopOptions[] = [];
     const { canvas } = mount({}, (c) => calls.push(c));
     drag(canvas, [[0, 0], [10, 10], [45, 45]]);
     expect(calls).toHaveLength(0);

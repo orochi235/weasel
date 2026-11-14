@@ -33,11 +33,11 @@ export function useToolKeybindings({
   versionCheck?: VersionCheck;
 }): void {
   useKeybindings(internalTools, {
-    disable: !!toolsTakeover || !enableKeybindings,
+    enabled: !toolsTakeover && enableKeybindings,
     modes,
   });
   useKeybindings(toolsTakeover ?? internalTools, {
-    disable: !toolsTakeover || !enableKeybindings,
+    enabled: !!toolsTakeover && enableKeybindings,
     modes,
   });
   // Entry-owned roles live here and not in the tool hooks because the hooks

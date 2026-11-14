@@ -1,6 +1,6 @@
 import type {
   CanvasDebugSink,
-  DebugConfig,
+  DebugFlags,
   DebugSnapshot,
   HandleKind,
   HitShape,
@@ -15,7 +15,7 @@ import type {
  * record, and the last frame's stats survive across frames. `snapshot()`
  * returns live references — no copy.
  */
-export function createDebugSink(config: DebugConfig): CanvasDebugSink {
+export function createDebugSink(config: DebugFlags): CanvasDebugSink {
   const snap: DebugSnapshot = {
     hitboxes: [],
     handles: [],

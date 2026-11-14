@@ -11,14 +11,14 @@ import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { View } from 'core/viewport/view';
 import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
-import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type D = { kind: 'rect' };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
 beforeAll(() => {
-  const recorder = makeGLRecorder();
+  const recorder = createGLRecorder();
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
   proto.getContext = vi.fn((kind: unknown) => (kind === 'webgl2' ? recorder.gl : null));
 });

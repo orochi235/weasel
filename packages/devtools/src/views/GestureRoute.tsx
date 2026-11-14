@@ -9,20 +9,20 @@ import type { ReactNode } from 'react';
 import { Badge, type BadgeVariant } from '@weasel-js/ui/components/Badge';
 import { Powerline, type EdgeCap, type PowerlineProps } from '@weasel-js/ui/components/Powerline';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
-import { KeyCap, type KeySpec } from '@weasel-js/ui/components/Keycaps';
-import { keySpecFromKey, keySpecsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
+import { KeyCap, type KeyLegend } from '@weasel-js/ui/components/Keycaps';
+import { keyLegendFromKey, keyLegendsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
 import s from './GestureRoute.module.css';
 
 const MOD_DISPLAY_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
-function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefined {
+function modifierKeys(modifiers: ParsedModifiers): readonly KeyLegend[] | undefined {
   const specs: LogicalModSpec[] = [];
   for (const name of MOD_DISPLAY_ORDER) {
     const req = modifiers[name];
     if (req !== undefined) specs.push({ name, optional: req === 'optional' });
   }
   if (specs.length === 0) return undefined;
-  return keySpecsFromMods(specs);
+  return keyLegendsFromMods(specs);
 }
 
 /** One badge of a {@link GestureRoute}. */
@@ -58,7 +58,7 @@ export function gestureRouteSegments(route: string): RouteSegment[] {
       argIsKey ? (
         <>
           {parsed.gesture}{' '}
-          <KeyCap label={keySpecFromKey(parsed.arg!).label} className={s.keyCap} />
+          <KeyCap label={keyLegendFromKey(parsed.arg!).label} className={s.keyCap} />
         </>
       ) : (
         <>

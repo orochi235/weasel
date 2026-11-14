@@ -15,8 +15,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT, registerFontOutlines, glyphOutline } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
-import { makeGLRecorder } from './testing/glRecorder';
-import { makeUploadTracker, type UploadTracker } from './testing/vertexUploads';
+import { createGLRecorder } from './testing/glRecorder';
+import { createUploadTracker, type UploadTracker } from './testing/vertexUploads';
 import { WeaselRenderer } from './WeaselRenderer';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import type { DrawCommand } from './DrawCommand';
@@ -24,7 +24,7 @@ import type { ResolvedRun } from '@weasel-js/text';
 import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from './drawBatch';
 import { paintModeOf } from './shaders/batchFill';
 
-let recorder: ReturnType<typeof makeGLRecorder>;
+let recorder: ReturnType<typeof createGLRecorder>;
 let tracker: UploadTracker;
 let r: WeaselRenderer;
 
@@ -47,8 +47,8 @@ beforeEach(async () => {
   } as unknown as ImageBitmap);
   await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
 
-  recorder = makeGLRecorder();
-  tracker = makeUploadTracker(recorder);
+  recorder = createGLRecorder();
+  tracker = createUploadTracker(recorder);
   r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   recorder.reset();
 });

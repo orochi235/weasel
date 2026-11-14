@@ -3,7 +3,7 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { resolveTextStyle, layoutRuns, verticalAlignOffset } from '@weasel-js/text';
 import type { ResolvedRun } from '@weasel-js/text';
-import type { makeGLRecorder } from './testing/glRecorder';
+import type { createGLRecorder } from './testing/glRecorder';
 import { dispatch, type DrawContext } from './draw';
 import { createRecorderCtx, stagedVertices } from './testing/recorderCtx';
 
@@ -25,7 +25,7 @@ describe('drawText verticalAlign', () => {
   });
 
   /** Top-left y of the first glyph quad the run staged. */
-  function firstQuadY0(ctx: DrawContext, calls: ReturnType<typeof makeGLRecorder>['calls']): number {
+  function firstQuadY0(ctx: DrawContext, calls: ReturnType<typeof createGLRecorder>['calls']): number {
     const verts = stagedVertices(ctx, calls);
     if (verts.length === 0) throw new Error('no text vertex upload recorded');
     return verts[1];

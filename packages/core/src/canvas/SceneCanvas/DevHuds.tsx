@@ -6,7 +6,7 @@ import { useCallback, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
 import type { WorldPoint } from '@weasel-js/routing';
-import type { DebugConfig } from '../../debug/types';
+import type { DebugFlags } from '../../debug/types';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import { CursorCoordsHud } from '../CursorCoordsHud';
 import { ModalityHud } from '../ModalityHud';
@@ -84,7 +84,7 @@ export function DevHuds(props: DevHudsProps) {
 }
 
 /** `<SceneCanvas debug>` minus the flag only SceneCanvas reads. */
-export function canvasDebug(debug: (DebugConfig & { slops?: boolean }) | false): DebugConfig | false {
+export function canvasDebug(debug: (DebugFlags & { slops?: boolean }) | false): DebugFlags | false {
   if (debug === false) return false;
   const { slops: _slops, ...rest } = debug;
   return rest;

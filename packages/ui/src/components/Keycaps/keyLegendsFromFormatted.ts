@@ -1,16 +1,16 @@
-import type { KeySpec } from './Keycaps';
+import type { KeyLegend } from './Keycaps';
 import { MODIFIER_LABELS } from '@weasel-js/gestures';
 
 /**
  * A shortcut already written out, as `formatShortcut` writes one (`⇧⌘Z`,
  * `Ctrl+Shift+Z`, `Space`), as `KeySequence` keys: each modifier a key of its
- * own, then the key. For a shortcut held as data, use `keySpecsFromShortcut`.
+ * own, then the key. For a shortcut held as data, use `keyLegendsFromShortcut`.
  */
-export function keySpecsFromLegend(legend: string): readonly KeySpec[] {
+export function keyLegendsFromFormatted(legend: string): readonly KeyLegend[] {
   // Joined by `+`, as the platforms that spell their modifiers out write one. A lone `+` is a key.
   const spelled = legend.split('+').filter((part) => part !== '');
   if (spelled.length > 1) return spelled.map((label) => ({ label }));
-  const keys: KeySpec[] = [];
+  const keys: KeyLegend[] = [];
   const glyphs = [...legend];
   let at = 0;
   while (at < glyphs.length - 1 && MODIFIER_LABELS.has(glyphs[at]!)) keys.push({ label: glyphs[at++]! });

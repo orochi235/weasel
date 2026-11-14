@@ -12,7 +12,7 @@ import type { Path } from '@weasel-js/geom';
 import { pointSegmentDist } from '@weasel-js/geom/nd';
 import type { Stroke } from '@weasel-js/paint';
 import { linePath, mat3, type GlMat3 } from '@weasel-js/geom';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { FLOATS_PER_VERTEX } from './drawBatch';
@@ -21,7 +21,7 @@ import { _resetStrokeMeshCacheForTests } from './cache/strokeMeshCache';
 import { _resetMarkerCommandCacheForTests } from './cache/markerCommandCache';
 import { registerMarker } from '@weasel-js/stroke';
 
-type Recorder = ReturnType<typeof makeGLRecorder>;
+type Recorder = ReturnType<typeof createGLRecorder>;
 type Point = [number, number];
 
 const FOUR_TO_ONE = mat3.scaled(mat3.identity(), 4, 1);
@@ -60,7 +60,7 @@ describe('renderer — { px } strokes under a non-uniform transform', () => {
   beforeEach(() => {
     _resetStrokeMeshCacheForTests();
     _resetMarkerCommandCacheForTests();
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     dispose = registerMarker({
       id: 'test-green-arrow',

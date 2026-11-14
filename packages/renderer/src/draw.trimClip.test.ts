@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PATH_L, PATH_M, type Path, type PolygonPath } from '@weasel-js/geom';
 import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
-import { makeGLRecorder } from './testing/glRecorder';
+import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { _resetStrokeMeshCacheForTests } from './cache/strokeMeshCache';
 import { _markerShapesBuiltForTests, _resetMarkerCommandCacheForTests } from './cache/markerCommandCache';
@@ -43,7 +43,7 @@ function wave(): PolygonPath {
 
 const STROKE: CommandStroke = { width: 6, cap: 'round', paint: { color: '#204080' }, markerEnd: 'arrow' };
 
-type Recorder = ReturnType<typeof makeGLRecorder>;
+type Recorder = ReturnType<typeof createGLRecorder>;
 const named = (rec: Recorder, name: string) => rec.calls.filter((c) => c.name === name);
 
 describe('a trim tween on a 1,000-anchor path', () => {
@@ -54,7 +54,7 @@ describe('a trim tween on a 1,000-anchor path', () => {
     _resetStrokeMeshCacheForTests();
     _resetMarkerCommandCacheForTests();
     built.length = 0;
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   });
 

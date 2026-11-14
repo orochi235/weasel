@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { keySpecsFromLegend } from './keySpecsFromLegend';
+import { keyLegendsFromFormatted } from './keyLegendsFromFormatted';
 
-const labels = (legend: string) => keySpecsFromLegend(legend).map((k) => k.label);
+const labels = (legend: string) => keyLegendsFromFormatted(legend).map((k) => k.label);
 
-describe('keySpecsFromLegend', () => {
+describe('keyLegendsFromFormatted', () => {
   it('sets each modifier glyph apart from the key after it', () => {
     expect(labels('⌘Z')).toEqual(['⌘', 'Z']);
     expect(labels('⇧⌘Z')).toEqual(['⇧', '⌘', 'Z']);

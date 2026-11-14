@@ -8,7 +8,7 @@ import type { PolygonPath, Stroke, Paint } from '@weasel-js/core';
 import { parseSvg, svgNodesToKitDrafts } from '@weasel-js/svg';
 import type { Node } from 'core/scene/types';
 import { findNodeShape } from './NodeShape';
-import { glProgramHandle, makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { glProgramHandle, createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { WeaselRenderer } from '@weasel-js/renderer';
 import { MAX_EVENODD_RESOLVE_WORK } from '@weasel-js/geom/tessellate';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -66,7 +66,7 @@ function statesAtDraws(rec: Recorder): DrawState[] {
   return states;
 }
 
-type Recorder = ReturnType<typeof makeGLRecorder>;
+type Recorder = ReturnType<typeof createGLRecorder>;
 
 describe('renderer — non-solid stroke paint', () => {
   let recorder: Recorder;
@@ -74,7 +74,7 @@ describe('renderer — non-solid stroke paint', () => {
 
   beforeEach(() => {
     _resetStrokeMeshCacheForTests();
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   });
 
@@ -140,7 +140,7 @@ describe('renderer — non-solid even-odd fill', () => {
   let r: WeaselRenderer;
 
   beforeEach(() => {
-    recorder = makeGLRecorder();
+    recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   });
 
@@ -221,7 +221,7 @@ describe('renderer — a gradient stroke that came from SVG import', () => {
   });
 
   it('renders it, baking the imported stops into a ramp', () => {
-    const recorder = makeGLRecorder();
+    const recorder = createGLRecorder();
     const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     _resetStrokeMeshCacheForTests();
     const { commands } = importedRect();
