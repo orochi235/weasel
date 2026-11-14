@@ -618,11 +618,6 @@ name a package. Breaking changes are in scope.
   `barCells(leaves, cellFor)` with a pluggable cell factory. Closes when
   `ControlBar` calls it.
 
-- **(P3) [agent] Draw hud's menu from a shared headless panel.** `hud/src/menu/drawPanel.ts` hard-codes
-  `DEFAULT_MENU_METRICS`, "close to the DOM menu's", while the DOM menu lays out from CSS. A ui-logic menu panel
-  reads tokens through `MeasureEnv`, as `measureButton` and `measureRowList` already do. Closes when both menus
-  take their geometry from it.
-
 - **(P3) [maintainer] Presets and option builders in place of wrapper components.** `PointPlotter` is `CurveEditor`
   with three props fixed; `FontWeightSelect` and `FontFamilySelect` only build options for `Select`; `CloseButton`
   repeats `Button`'s `iconOnly`, tooltip, and reason handling; `ActionSettingsDialog` repeats `PrefsDialog`;

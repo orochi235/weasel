@@ -13,3 +13,7 @@ export { listMode, LIST_ROLES, ROW_GAP, rowListMetrics, measureRowList, rowAtY }
 export type {
   ListMode, ListModeInput, RowFace, RowListFace, RowListMetrics, RowBox, RowListLayout,
 } from './rowList';
+export {
+  MENU_MIN_WIDTH, MENU_BORDER_WIDTH, MENU_ICON_SIZE, MENU_CARET_SIZE, menuPanelMetrics, menuRowSpans, menuRowAtY, measureMenuPanel,
+} from './menuPanel';
+export type { MenuPanelMetrics, MenuRowFace, MenuPanelFace, MenuRowBox, MenuPanelLayout } from './menuPanel';

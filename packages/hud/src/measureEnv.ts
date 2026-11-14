@@ -18,14 +18,16 @@ export function hudMeasureEnv(
       const raw = overrides?.[name] ?? tokens[name];
       return raw !== undefined && raw.includes('var(') ? expandVars(raw, tokens) : raw;
     },
-    text(text, spec) {
-      const metrics = metricsOf(cachedFontVariant(family, 400, 'normal'));
-      const em = metrics ? spec.size / metrics.size : 0;
-      return {
-        width: measureLabel(text, spec.size, family),
-        ascent: metrics ? metrics.ascent * em : spec.size * 0.8,
-        descent: metrics?.descent !== undefined ? metrics.descent * em : spec.size * 0.2,
-      };
-    },
+    text: (text, spec) => ({ width: measureLabel(text, spec.size, family), ...lineExtent(family, spec.size) }),
+  };
+}
+
+/** The ascent and descent a line of `size` px text in `family` is set with: its face's, else an estimate. */
+export function lineExtent(family: string, size: number): { ascent: number; descent: number } {
+  const metrics = metricsOf(cachedFontVariant(family, 400, 'normal'));
+  const em = metrics ? size / metrics.size : 0;
+  return {
+    ascent: metrics ? metrics.ascent * em : size * 0.8,
+    descent: metrics?.descent !== undefined ? metrics.descent * em : size * 0.2,
   };
 }

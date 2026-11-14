@@ -7,19 +7,14 @@ import fc from 'fast-check';
 import { createMenuController, type MenuNumberEntry, type Rect } from '@weasel-js/menu';
 import { draftText, grapheme, menuLevel, openPath, runs, tally } from '../pbt.fixture';
 import { chipUnder, levelAt } from './chipRepeat';
-import { DEFAULT_MENU_METRICS, panelSize, rowAt, rowLayout, type MenuMetrics } from './drawPanel';
+import { menuRowSpans } from '@weasel-js/ui-logic';
+import { panelSize, rowAt } from './drawPanel';
+import { envOf, menuTheme } from './menu.fixture';
 import { clusterStops, startEdit, type HudTextEdit } from './textEdit';
 import { caretAt, caretX, chipAt, numberChips, typingCommands } from './valueRows';
 
 const RUNS = 300;
 
-const metrics: fc.Arbitrary<MenuMetrics> = fc.oneof(
-  fc.constant(DEFAULT_MENU_METRICS),
-  fc.record({
-    rowHeight: fc.integer({ min: 12, max: 40 }), padX: fc.integer({ min: 0, max: 16 }), padY: fc.integer({ min: 0, max: 12 }),
-    separatorHeight: fc.integer({ min: 1, max: 16 }), minWidth: fc.integer({ min: 0, max: 300 }), fontSize: fc.integer({ min: 8, max: 24 }),
-  }),
-);
 
 const rect = fc.record({
   x: fc.integer({ min: -100, max: 600 }), y: fc.integer({ min: -100, max: 600 }),
@@ -32,9 +27,9 @@ const inside = (r: Rect, x: number, y: number) => x >= r.x && x < r.x + r.w && y
 describe('menu hit tests', () => {
   it('finds the row drawn under a point, and none in the padding', () => {
     const seen = tally();
-    fc.assert(fc.property(menuLevel(0, 12), metrics, between(-0.1, 1.1), (entries, m, f) => {
-      const y = f * panelSize(entries, m, () => 0).h;
-      const rows = rowLayout(entries, m);
+    fc.assert(fc.property(menuLevel(0, 12), menuTheme, between(-0.1, 1.1), (entries, { m, tokens }, f) => {
+      const y = f * panelSize(entries, envOf(tokens, () => 0)).h;
+      const rows = menuRowSpans(entries, m);
       const i = rowAt(entries, m, y);
       if (i === null) {
         expect(rows.some((r) => y >= r.y && y < r.y + r.h)).toBe(false);
@@ -45,7 +40,7 @@ describe('menu hit tests', () => {
       }
       rows.forEach((r, k) => { if (k > 0) expect(r.y).toBe(rows[k - 1]!.y + rows[k - 1]!.h); });
       const last = rows.at(-1)!;
-      expect(panelSize(entries, m, () => 0).h).toBe(last.y + last.h + m.padY);
+      expect(panelSize(entries, envOf(tokens, () => 0)).h).toBe(last.y + last.h + m.padY);
     }), runs(RUNS));
     seen.atLeast('miss', 20);
     seen.atLeast('row', 20);
@@ -60,7 +55,7 @@ describe('menu hit tests', () => {
 
   it('steps a number row from a press inside its minus or plus chip only', () => {
     const seen = tally();
-    fc.assert(fc.property(fc.integer({ min: 0, max: 400 }), metrics, between(-0.2, 1.2), (w, m, f) => {
+    fc.assert(fc.property(fc.integer({ min: 0, max: 400 }), menuTheme, between(-0.2, 1.2), (w, { m }, f) => {
       const x = w - m.padX - f * 4 * m.rowHeight;
       const { minus, value, plus } = numberChips(w, m);
       expect(minus.x + minus.w).toBe(value.x);
@@ -76,16 +71,16 @@ describe('menu hit tests', () => {
 
   it('finds a chip only on an enabled number row of the topmost panel under the point', () => {
     const seen = tally();
-    fc.assert(fc.property(menuLevel(2), fc.array(fc.nat(), { maxLength: 3 }), metrics, fc.nat(), fc.nat(), (entries, path, m, px, py) => {
+    fc.assert(fc.property(menuLevel(2), fc.array(fc.nat(), { maxLength: 3 }), menuTheme, fc.nat(), fc.nat(), (entries, path, { m, tokens }, px, py) => {
       const c = createMenuController({ entries, onClose: () => {} });
       openPath(c, path);
       const panels = c.stack().map((_, level) => {
-        const size = panelSize(c.entriesAt(level), m, (t) => t.length * 6);
+        const size = panelSize(c.entriesAt(level), envOf(tokens, (t) => t.length * 6));
         return { x: level * (size.w - 20), y: level * 30, ...size };
       });
       const top = panels.at(-1)!;
       const deepest = c.entriesAt(panels.length - 1);
-      const rows = rowLayout(deepest, m);
+      const rows = menuRowSpans(deepest, m);
       const numbers = rows.filter((_, i) => deepest[i]!.kind === 'number' && py % 4 !== 0);
       const row = numbers[py % Math.max(1, numbers.length)];
       const x = top.x + top.w - m.padX - (px % (4 * m.rowHeight + 4));
@@ -113,8 +108,8 @@ const measureWith = (w: Record<string, number>) => (text: string) => Array.from(
 describe('typed text', () => {
   it('lands a press on the cluster stop nearest it, or on none left of the text', () => {
     const seen = tally();
-    fc.assert(fc.property(draftText, fc.integer({ min: 60, max: 400 }), metrics, between(-1.5, 0.1), widths,
-      (draft, w, m, f, ws) => {
+    fc.assert(fc.property(draftText, fc.integer({ min: 60, max: 400 }), menuTheme, between(-1.5, 0.1), widths,
+      (draft, w, { m }, f, ws) => {
         const measure = measureWith(ws);
         const x = w - m.padX + f * Math.max(40, measure(draft) * 1.5);
         const right = w - m.padX - 3;
@@ -136,11 +131,11 @@ describe('typed text', () => {
       const e = startEdit({ kind: 'text', key: 't', label: 'T', value: d, set: () => {} }, d);
       return { ...e, caret: a % (n + 1), anchor: b % (n + 1), ...(pre ? { preedit: pre } : {}) };
     });
-    fc.assert(fc.property(edits, fc.integer({ min: 60, max: 400 }), metrics, widths, (edit, w, m, ws) => {
+    fc.assert(fc.property(edits, fc.integer({ min: 60, max: 400 }), menuTheme, widths, (edit, w, { m }, ws) => {
       const measure = measureWith(ws);
       const b = { x: 10, y: 20, w, h: 200 };
       const cmds = typingCommands(b, { y: 4, h: m.rowHeight }, edit, m,
-        { fg: '#fff', muted: '#888', border: '#444', font: { fontFamily: 'Inter', fontSize: m.fontSize } }, '#00f', measure);
+        { fg: '#fff', muted: '#888', border: '#444', font: { fontFamily: 'Inter', fontSize: m.font.size } }, '#00f', measure);
       const nums: number[] = [];
       JSON.stringify(cmds, (_k, v) => { if (typeof v === 'number') nums.push(v); return v; });
       expect(nums.every(Number.isFinite)).toBe(true);

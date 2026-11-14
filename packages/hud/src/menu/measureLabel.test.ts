@@ -5,6 +5,7 @@ import type { OpenMenu } from '@weasel-js/core';
 import type { HudDrawCtx } from '../widget';
 import { measureLabel } from './measureLabel';
 import { createMenuWidget } from './menuWidget';
+import { menuTokens, THEME_METRICS as m } from './menu.fixture';
 
 const FAMILY = 'Fixture Face';
 const A = FIXTURE_FONT.chars[0]!.xadvance;
@@ -40,7 +41,7 @@ describe('measureLabel', () => {
 describe('a menu widget with no measure of its own', () => {
   const ctx = {
     dims: { width: 800, height: 600 }, defaultFont: FAMILY,
-    tokens: { '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee', '--wzl-fg-muted': '#888', '--wzl-border': '#444', '--wzl-shadow': '#0008' },
+    tokens: menuTokens({ '--wzl-surface-popover': '#222', '--wzl-surface-hover': '#333', '--wzl-fg': '#eee', '--wzl-fg-muted': '#888', '--wzl-border': '#444', '--wzl-shadow': '#0008' }),
     color: () => undefined,
   } as never as HudDrawCtx;
 
@@ -64,7 +65,6 @@ describe('a menu widget with no measure of its own', () => {
       open, close: () => {}, toCanvas: (p) => p, canvasSize: () => ({ width: 800, height: 600 }), onChange: () => {},
     });
     w.draw(ctx);
-    // padX 8 on each side plus the icon and caret columns, one row height each.
-    expect(w.bounds.w).toBe(Math.ceil(20 * A * 13 / SIZE) + 16 + 48);
+    expect(w.bounds.w).toBe(Math.ceil(20 * A * m.font.size / SIZE) + m.padX * 2 + m.iconSize + m.gap * 2);
   });
 });

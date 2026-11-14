@@ -3,7 +3,7 @@ import { bidi } from '@weasel-js/bidi';
 import { registerBidi, type OpenMenu } from '@weasel-js/core';
 import type { MenuTextEntry } from '@weasel-js/menu';
 import type { HudKeyEvent } from '../widget';
-import { DEFAULT_MENU_METRICS as m } from './drawPanel';
+import { THEME_METRICS as m } from './menu.fixture';
 import { createMenuWidget } from './menuWidget';
 import { typedLine } from './typedLine';
 

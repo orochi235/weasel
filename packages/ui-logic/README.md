@@ -1,7 +1,7 @@
 # @weasel-js/ui-logic
 
 Headless components: what a DOM component and a canvas-drawn widget share past their drawing. Today that is
-the measure/draw contract a button and a row list implement on both targets, and keyboard focus as one
+the measure/draw contract a button, a row list, and a menu panel implement on both targets, and keyboard focus as one
 contract. No React, no DOM. What a key or a pointer does to a control is `@weasel-js/ui-input`.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
@@ -31,9 +31,12 @@ target)` renders it in the target's own output. `measure` is shared: it reads on
 measure alike. `draw` is per target and does not take the measured box: a target that positions by
 coordinates measures with `exactly(w, h)` itself, and the DOM lays out by CSS from the same tokens.
 
-`measureButton` and `measureRowList` are the two so far, with `buttonParts` and `listMode` saying which
-parts and roles a state shows. `@weasel-js/ui`'s
-`domButton` and `domItemList` and `@weasel-js/hud`'s `hudButton` and `hudList` implement them.
+`measureButton`, `measureRowList`, and `measureMenuPanel` are the ones so far, with `buttonParts` and
+`listMode` saying which parts and roles a state shows. `@weasel-js/ui`'s
+`domButton` and `domItemList` and `@weasel-js/hud`'s `hudButton` and `hudList` implement the first two. A menu
+panel's rows, separators, icon, label, and trailing columns are sized by `menuPanelMetrics`: `@weasel-js/ui`'s
+`ContextMenu` stylesheet lays its panel out from the same tokens, and `@weasel-js/hud`'s menu widget places and
+draws its panels from `measureMenuPanel`.
 
 ## License
 

@@ -1,6 +1,7 @@
 import { createStepRepeat, type StepRepeatOptions } from '@weasel-js/ui-input';
 import { menuNumberCanStep, type MenuController, type MenuNumberEntry, type Rect } from '@weasel-js/menu';
-import { rowAt, type MenuMetrics } from './drawPanel';
+import type { MenuPanelMetrics } from '@weasel-js/ui-logic';
+import { rowAt } from './drawPanel';
 import { chipAt } from './valueRows';
 
 /** A number row's step chip: the row, and which way it steps. */
@@ -17,7 +18,7 @@ export function levelAt(panels: readonly Rect[], x: number, y: number): number {
 
 /** The step chip under (x, y) of a number row that takes input, or null. */
 export function chipUnder(
-  c: Pick<MenuController, 'entriesAt'>, panels: readonly Rect[], m: MenuMetrics, x: number, y: number,
+  c: Pick<MenuController, 'entriesAt'>, panels: readonly Rect[], m: MenuPanelMetrics, x: number, y: number,
 ): MenuChip | null {
   const level = levelAt(panels, x, y);
   if (level < 0) return null;

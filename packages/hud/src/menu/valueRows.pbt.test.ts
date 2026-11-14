@@ -9,7 +9,7 @@ import fc from 'fast-check';
 import { tryNormalizeHex } from '@weasel-js/paint';
 import type { MenuColorEntry, MenuEntry, MenuTextEntry } from '@weasel-js/menu';
 import { draftText, runs, tally } from '../pbt.fixture';
-import { DEFAULT_MENU_METRICS, type MenuMetrics } from './drawPanel';
+import { menuTheme } from './menu.fixture';
 import { DEFAULT_MENU_PALETTE, hexColor, withColorPickers } from './colorPicker';
 import { clusterStops } from './textEdit';
 import { caretAt, chipAt, numberChips } from './valueRows';
@@ -89,17 +89,9 @@ describe('withColorPickers', () => {
   });
 });
 
-const metrics: fc.Arbitrary<MenuMetrics> = fc.oneof(
-  fc.constant(DEFAULT_MENU_METRICS),
-  fc.record({
-    rowHeight: fc.integer({ min: 12, max: 40 }), padX: fc.integer({ min: 0, max: 16 }), padY: fc.integer({ min: 0, max: 12 }),
-    separatorHeight: fc.integer({ min: 1, max: 16 }), minWidth: fc.integer({ min: 0, max: 300 }), fontSize: fc.integer({ min: 8, max: 24 }),
-  }),
-);
-
 describe('number row chips', () => {
   it('step down over the minus chip, up over the plus chip, and neither elsewhere, alike at any panel width', () => {
-    fc.assert(fc.property(metrics, fc.integer({ min: 0, max: 600 }), fc.integer({ min: -50, max: 650 }), fc.integer({ min: -300, max: 300 }), (m, w, x, d) => {
+    fc.assert(fc.property(menuTheme.map((t) => t.m), fc.integer({ min: 0, max: 600 }), fc.integer({ min: -50, max: 650 }), fc.integer({ min: -300, max: 300 }), (m, w, x, d) => {
       const { minus, value, plus, width } = numberChips(w, m);
       expect(minus.x + minus.w).toBeLessThanOrEqual(value.x);
       expect(value.x + value.w).toBeLessThanOrEqual(plus.x);
@@ -115,7 +107,7 @@ describe('number row chips', () => {
 describe('caretAt', () => {
   it('lands on the cluster boundary nearest the point, left to right in order, and nowhere left of the text', () => {
     const seen = tally();
-    fc.assert(fc.property(draftText, metrics, fc.integer({ min: 60, max: 400 }), fc.double({ min: 2, max: 12, noNaN: true }),
+    fc.assert(fc.property(draftText, menuTheme.map((t) => t.m), fc.integer({ min: 60, max: 400 }), fc.double({ min: 2, max: 12, noNaN: true }),
       fc.array(fc.integer({ min: -100, max: 450 }), { minLength: 2, maxLength: 8 }), (draft, m, w, perChar, xs) => {
         const measure = (t: string) => Array.from(t).length * perChar;
         const right = w - m.padX - 3;
