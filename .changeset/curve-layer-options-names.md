@@ -2,7 +2,9 @@
 '@weasel-js/ui': major
 ---
 
-`FunctionLayerConfig` and `KeyframeLayerConfig` are now `FunctionLayerOptions` and `KeyframeLayerOptions`, the options bags of `createFunctionLayer` and `createKeyframeLayer`.
+`FunctionLayerConfig` and `KeyframeLayerConfig` are now `FunctionLayerOptions` and `KeyframeLayerOptions`.
+
+They are the options bags of `createFunctionLayer` and `createKeyframeLayer`.
 
 ```ts
 // before
