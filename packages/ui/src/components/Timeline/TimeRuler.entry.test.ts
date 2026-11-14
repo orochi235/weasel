@@ -3,7 +3,7 @@ import * as ui from '../../index';
 
 describe('the time ruler from the package entry', () => {
   it('exports the ruler and its scale helpers', () => {
-    expect(typeof ui.Ruler).toBe('function');
+    expect(typeof ui.TimeRuler).toBe('function');
     const w = { from: 1000, to: 3000 };
     expect(ui.toFraction(w, 1500)).toBe(0.25);
     expect(ui.toPercent(w, 1500)).toBe('25%');

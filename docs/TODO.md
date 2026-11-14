@@ -593,11 +593,6 @@ name a package. Breaking changes are in scope.
   `sliderSlop.module.css` into their owners. Closes when `RangeSlider` and `DetentSlider` are gone and
   NumberControls renders `InlineRange`.
 
-- **(P2) [agent] One `Ruler` for three rulers.** `Timeline/Ruler.tsx` (`spacedTicks`), `BandEditor/Ruler.tsx`
-  (label thinning), `Rulers/Rulers.tsx`, and `Plot2D`'s own tick spacing; the root exports both `Ruler` and
-  `Rulers`. A 1D `Ruler` over a `ContinuousScale`, with thinning built in and Timeline's playhead and BandEditor's
-  range ends as children *(design inferred)*. Closes when the tick logic lives in one place.
-
 - **(P3) [agent] Make `LayerList` a `Tree` with a row-controls slot.** `Tree` is `role="tree"` with cross-parent
   drops; `LayerList` is `role="treegrid"` with a `useReorderDragList` per level, its own `layerTree.ts`, and
   `ItemList`'s CSS; `Tree`'s `trailing` is documented "Not a control". Also resolve the `useSceneLayerList` name
@@ -681,7 +676,7 @@ name a package. Breaking changes are in scope.
 
 - **(P3) [recheck] One rule for story titles.** 75 of 144 stories sit under `ui/Foundations` with no visible rule
   (`Toolbar` in, `ToolButton` out; `Tabs` in, `PageTabs` out), and some titles don't match their files
-  (`Timeline/Ruler` is `ui/Ruler`, `Keycaps.stories` is `KeySequence`). Proposed: `ui/<folder>[/<export>]`,
+  (`Keycaps.stories` is `KeySequence`). Proposed: `ui/<folder>[/<export>]`,
   Foundations kept only for its overview page, categories as tags, and a check that enforces it; also sort
   `packages/ui/src/index.ts`. Closes when the check passes on every story.
 

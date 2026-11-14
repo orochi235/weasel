@@ -5,7 +5,7 @@ import type { Keyframe, SampledTrack, Track } from '@weasel-js/animator';
 import s from './Timeline.module.css';
 import { EasingPicker } from './EasingPicker';
 import { Lane } from './Lane';
-import { Ruler } from './Ruler';
+import { TimeRuler } from './TimeRuler';
 import { PlayheadReadout, Transport, type TransportProps } from './Transport';
 import { buildLanes, trackAtPath, type LaneRow } from './lanes';
 import { deleteKey, insertKey, moveKey, samePath, setKeyEasing, setKeys, setKeyValue, type KeySelection } from './keys';
@@ -169,7 +169,7 @@ export function Timeline(props: TimelineProps): ReactElement {
       <div className={s.body}>
         <div className={s.gutter} />
         <div className={s.rulerWrap}>
-          <Ruler
+          <TimeRuler
             window={win}
             bounds={bounds}
             playhead={playhead}

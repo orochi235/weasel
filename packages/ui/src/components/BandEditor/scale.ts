@@ -6,10 +6,11 @@ export function unitScale(scale: ContinuousScaleFactory, min: number, max: numbe
   return scale({ domain: [min, max], range: [0, 1] });
 }
 
-/** A value's place along the track and back, both held to the track's ends. */
+/** The axis onto the track, and a value's place along it and back, both held to the track's ends. */
 export function trackOf(scale: ContinuousScaleFactory, min: number, max: number) {
   const unit = unitScale(scale, min, max);
   return {
+    unit,
     toUnit: (v: number): number => clamp01(unit.map(v)),
     fromUnit: (u: number): number => unit.invert(clamp01(u)),
   };

@@ -22,6 +22,7 @@ export * from './components/Keycaps';
 export * from './components/LayerList';
 export * from './components/MeasureReadout';
 export * from './components/ScaleBar';
+export * from './components/Ruler';
 export * from './components/Rulers';
 export * from './components/KeymapHint';
 export * from './components/Slider';

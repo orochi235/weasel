@@ -1,16 +1,17 @@
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import { openPointerSession, useElementSize, useLatest, type PointerSession } from '@weasel-js/core';
+import { useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
+import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
-import { decimalsOf, type TickSet } from '@weasel-js/plot/scales';
+import { decimalsOf, linearScale, type TickSet } from '@weasel-js/plot/scales';
 import { sliderAt, spanMap, spanPan, spanZoom } from '@weasel-js/ui-input';
-import { MIN_SPAN_MS, TICK_SPACING_PX, toPercent, windowScale, type TimeWindow } from './timeScale';
+import { Ruler, RulerMark, type RulerSpacing } from '../Ruler';
+import { MIN_SPAN_MS, TICK_SPACING_PX, type TimeWindow } from './timeScale';
 import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;
 
-/** Props for {@link Ruler}. */
-export interface RulerProps {
+/** Props for {@link TimeRuler}. */
+export interface TimeRulerProps {
   /** The span of time the ruler shows. */
   window: TimeWindow;
   /** The full extent the window may cover — normally `{ from: 0, to: duration }`. */
@@ -32,14 +33,16 @@ function formatMs(ms: number, { step, decimals }: TickSet): string {
   return `${ms.toFixed(decimals)}ms`;
 }
 
-/** A time ruler: tick labels across `window`, a playhead line, scrubbing by pointer, and wheel pan and zoom. */
-export function Ruler(props: RulerProps): ReactElement {
+const TIME_TICKS: RulerSpacing = { minSpacing: TICK_SPACING_PX, format: formatMs };
+
+/** A {@link Ruler} over time: a playhead line, scrubbing by pointer, and wheel pan and zoom. */
+export function TimeRuler(props: TimeRulerProps): ReactElement {
   const { window: win, bounds, playhead, onScrub, onWindowChange } = props;
   const trackRef = useRef<HTMLDivElement | null>(null);
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
-  const { width } = useElementSize(trackRef);
+  const scale = useMemo(() => linearScale({ domain: [win.from, win.to], range: [0, 1] }), [win.from, win.to]);
 
   const widthOf = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;
   const msAt = (clientX: number): number => {
@@ -88,31 +91,17 @@ export function Ruler(props: RulerProps): ReactElement {
     return () => el.removeEventListener('wheel', listener);
   }, [onWheel]);
 
-  const ticks = windowScale(win, width).spacedTicks({ minSpacing: TICK_SPACING_PX });
-  const pct = (ms: number): string => toPercent(win, ms);
-
   return (
-    <div
-      className={s.ruler}
+    <Ruler
       ref={trackRef}
+      className={s.ruler}
+      look="line"
+      scale={scale}
+      ticks={TIME_TICKS}
       data-testid="timeline-ruler"
       onPointerDown={onPointerDown}
     >
-      {ticks.values.map((t) => (
-        <span
-          key={t}
-          className={s.tick}
-          data-testid="timeline-tick"
-          style={{ left: pct(t) }}
-        >
-          {formatMs(t, ticks)}
-        </span>
-      ))}
-      <div
-        className={s.playhead}
-        data-testid="timeline-playhead"
-        style={{ left: pct(playhead) }}
-      />
-    </div>
+      <RulerMark at={playhead} cursor data-testid="timeline-playhead" />
+    </Ruler>
   );
 }
