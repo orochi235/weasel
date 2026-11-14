@@ -1,4 +1,5 @@
 import { copyText } from '@weasel-js/react';
+import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
 import { withOverValues } from '../config/over';
@@ -8,7 +9,6 @@ import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { undoCapability } from '../instrument/undo';
 import { FpsMeter } from '../primitives/FpsMeter';
-import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { ZoomControl } from '../primitives/ZoomControl';
 import type { TrialTool } from '../tools/types';
 import { REDO_SHORTCUT, UNDO_SHORTCUT } from '../undo/useUndoKeys';
@@ -306,7 +306,7 @@ export function builtinContributions(
       id: 'scale',
       region: 'status',
       group: 'view',
-      render: (c) => <ScaleIndicator zoom={c.zoom ?? 1} />,
+      render: (c) => <ScaleBar zoom={c.zoom ?? 1} className="lk-scale-bar" />,
     });
     if (instrument.canvas != null) {
       out.push({

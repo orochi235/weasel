@@ -17,8 +17,8 @@ A map of the library so agents can find what they need quickly.
 | A still for a poster (`<Lab still>`, `?still`), and the host page's `postMessage` play and pause | `src/lab/still.ts`, `src/lab/presentationMessages.ts`, `src/clock/transportHold.ts` |
 | `<Toolbar>` + subcomponents | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
 | `<StatusBar>`, `<StatusBarItem>`, `<StatusBarSpacer>` | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
+| `<ScaleBar>` | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
 | `<FpsMeter>` | `src/primitives/FpsMeter.tsx` |
-| `<ScaleIndicator>` | `src/primitives/ScaleIndicator.tsx` |
 | `<Legend>` | `src/primitives/Legend.tsx` |
 | `<FloatingPanel>` | `src/primitives/FloatingPanel.tsx` |
 | Element defaults, in `:where()` | `src/theme/base.less` |

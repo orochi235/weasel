@@ -37,6 +37,7 @@ import {
 import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
 import { RangeSlider } from '@weasel-js/ui/components/RangeSlider';
 import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
+import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
@@ -61,7 +62,6 @@ import type { JobHandle } from '../job/types';
 import { FloatingPanel } from '../primitives/FloatingPanel';
 import { JobProgress } from '../primitives/JobProgress';
 import { Legend, type LegendEntry } from '../primitives/Legend';
-import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { Split } from '../primitives/Split';
 import { ZoomControl } from '../primitives/ZoomControl';
 import { ALIGN_ITEMS } from './alignItems';
@@ -810,8 +810,8 @@ function LabChrome() {
         <Legend entries={LEGEND} />
         <JobProgress job={JOB} />
       </Cell>
-      <Cell label="ScaleIndicator, ZoomControl">
-        <ScaleIndicator zoom={zoom} unit="ft" pixelsPerUnit={50} />
+      <Cell label="ScaleBar, ZoomControl">
+        <ScaleBar zoom={zoom} />
         <ZoomControl zoom={zoom} onZoomChange={setZoom} min={0.1} max={8} />
       </Cell>
       <Cell label="FloatingPanel">

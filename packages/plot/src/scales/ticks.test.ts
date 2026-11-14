@@ -1,27 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { decimalsOf, linearScale, niceStep } from './linear';
+import { decimalsOf, linearScale } from './linear';
 import { logScale } from './log';
 import { formatTick, tickDecimals } from './tickFormat';
 
 /** `spacedTicks` over `domain` laid `px` long. */
 const spaced = (domain: readonly [number, number], px: number, minSpacing: number, inset?: number) =>
   linearScale({ domain, range: [0, px] }).spacedTicks({ minSpacing, inset });
-
-describe('niceStep', () => {
-  it('rounds up to 1, 2 or 5 times a power of ten', () => {
-    expect(niceStep(0.7)).toBe(1);
-    expect(niceStep(1)).toBe(1);
-    expect(niceStep(1.3)).toBe(2);
-    expect(niceStep(2.1)).toBe(5);
-    expect(niceStep(6)).toBe(10);
-    expect(niceStep(47.6)).toBe(50);
-    expect(niceStep(0.0031)).toBeCloseTo(0.005, 12);
-  });
-
-  it('never returns less than it was asked for', () => {
-    for (const rough of [0.013, 0.3, 3.3, 19, 201, 7777]) expect(niceStep(rough)).toBeGreaterThanOrEqual(rough);
-  });
-});
 
 describe('decimalsOf', () => {
   it('is the places a multiple of the step needs', () => {

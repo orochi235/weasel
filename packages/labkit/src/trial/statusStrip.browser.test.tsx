@@ -27,7 +27,7 @@ test('a trial’s status strip is as tall in any face as in the numeric one', as
     await document.fonts.load(`12px ${root.getPropertyValue(face)}`, '0');
   }
   const { container } = renderWithIcons(<Lab instruments={[Painted]} />);
-  await expect.poll(() => container.querySelector('.lk-scale-indicator')).not.toBeNull();
+  await expect.poll(() => container.querySelector('.lk-scale-bar')).not.toBeNull();
   const strip = container.querySelector<HTMLElement>('.lk-trial__status') as HTMLElement;
   const height = () => strip.getBoundingClientRect().height;
   const faced = height();

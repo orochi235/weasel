@@ -601,7 +601,7 @@ per tile with `lightbox={(id) => …}`; the same behavior is available outside a
 workspace as `<Lightbox>`. In a `<Lab>` every trial has the toggle in its title
 bar, and its shared-surface pixels — annotation marks, a 3D view — come along.
 
-`<Toolbar>`, `<Sidebar>`, `<StatusBar>`, `<FpsMeter>`, `<ScaleIndicator>`,
+`<Toolbar>`, `<Sidebar>`, `<StatusBar>`, `<FpsMeter>`, `<ScaleBar>`,
 `<Legend>`, `<FloatingPanel>`, `<ZoomControl>` and the `@weasel-js/ui` property
 rows re-exported from the root are all usable this way. `<Trial>` is not: it
 reads the lab store and only mounts inside a `<Lab>`.

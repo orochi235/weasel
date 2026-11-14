@@ -1,3 +1,5 @@
+export type { ScaleBarProps } from '@weasel-js/ui/components/ScaleBar';
+export { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 export type { StatusBarItemProps, StatusBarProps } from '@weasel-js/ui/components/StatusBar';
 export { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
 export type {
@@ -15,8 +17,6 @@ export type { LegendEntry, LegendMark, LegendProps } from './Legend';
 export { Legend } from './Legend';
 export type { ReadoutProps, ReadoutRow } from './Readout';
 export { Readout } from './Readout';
-export type { ScaleIndicatorProps } from './ScaleIndicator';
-export { ScaleIndicator } from './ScaleIndicator';
 export type { SplitProps } from './Split';
 export { Split } from './Split';
 export type { ZoomControlProps } from './ZoomControl';
