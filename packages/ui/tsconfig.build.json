@@ -49,8 +49,12 @@
     "**/*.test.tsx",
     "**/*.stories.ts",
     "**/*.stories.tsx",
+    "**/*.fixture.ts",
+    "**/*.fixture.tsx",
     "**/*.fixtures.ts",
     "**/*.fixtures.tsx",
-    "**/__tests__/**"
+    "**/__tests__/**",
+    "**/testing/**",
+    "**/lab/**"
   ]
 }
