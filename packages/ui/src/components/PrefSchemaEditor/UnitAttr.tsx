@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { PrefLinearUnit } from '@weasel-js/prefs';
 import { deepEqual } from '@weasel-js/registry';
 import { entryScale, type UnitEntry, type UnitScale } from '@weasel-js/quantity';
-import type { PrefRenderContext } from '../Prefs';
+import type { LeafContext } from '../Prefs';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { Input } from '../Input';
@@ -34,7 +34,7 @@ function tidy({ suffix, compact, scale, offset, accepts, precision }: PrefLinear
  * the places it shows, and the suffixes a person may type in its place. A row for a suffix not yet named is held
  * here and written once it has a name.
  */
-export function UnitEditor({ ctx }: { ctx: PrefRenderContext }) {
+export function UnitEditor({ ctx }: { ctx: LeafContext }) {
   const unit = (ctx.value as PrefLinearUnit | undefined) ?? { scale: 1 };
   const write = (patch: Partial<PrefLinearUnit>) => ctx.setValue(tidy({ ...unit, ...patch }));
   const held: Accepted = Object.entries(unit.accepts ?? {});

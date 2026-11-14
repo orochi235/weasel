@@ -5,6 +5,7 @@ import {
   prefCanAuto,
   prefLeafValue,
 } from '@weasel-js/prefs';
+import { leafAtReset } from '@weasel-js/ui/components/PrefsSource';
 import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
 import { createElement, type ReactNode, useMemo } from 'react';
 import { autoQuotes, autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
@@ -12,7 +13,7 @@ import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { leafValueAt } from './fields';
 import { numberText, summarizeLeaf, summarizeValue } from './inDialog';
-import { leafIsReset, resetWrite } from './leafReset';
+import { labConfigSource } from './labSource';
 
 /** An auto value as tooltip text. A number with a unit or a display reads as its field shows it. Any other computed
  *  number is cut to 6 significant digits, so `0.1 + 0.2` reads `0.3`. */
@@ -38,8 +39,6 @@ export interface RowAutoSource {
   /** Writes one value, the `auto` sentinel included: what a reset goes through. */
   setConfig: (path: string, value: unknown) => void;
 }
-
-const NO_AUTO: ReadonlySet<string> = new Set();
 
 /** What a row would read as auto, pinned or not; `cycles` where unpinning it would close a resolver cycle. */
 function useUnpinned(
@@ -104,18 +103,17 @@ export function useRowAuto(source: RowAutoSource) {
   };
 }
 
-/** The row's reset, where its leaf holds a value it can be given and is not already as a reset leaves it. */
+/** The row's reset, where its leaf is not already as a reset leaves it (`leafIsAtReset`). */
 function rowReset({
   path,
   leaf,
+  resolved,
   config,
+  shown,
   auto,
+  setRowAuto,
   setConfig,
 }: RowAutoSource): (() => void) | undefined {
-  if (
-    (leaf as { readout?: boolean }).readout === true ||
-    leafIsReset(config, path, leaf, auto ?? NO_AUTO)
-  )
-    return undefined;
-  return () => setConfig(path, resetWrite(leaf));
+  const source = labConfigSource({ resolved, config, shown, setConfig, auto, setRowAuto });
+  return leafAtReset(source, path, leaf) ? undefined : () => source.reset([path]);
 }

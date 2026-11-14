@@ -1,6 +1,6 @@
 import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
-import { PrefsForm, type PrefRenderer } from '../Prefs';
+import { PrefsForm, type LeafRenderer } from '../Prefs';
 import type { SchemaNode, SchemaRoot } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
 
@@ -23,7 +23,7 @@ export function NodeGhost({ node, topLevel = false, renderers, over }: {
   node: SchemaNode;
   /** The node sits, or will sit, directly under the root, where a group with no `as` is a page. */
   topLevel?: boolean;
-  renderers?: Record<string, PrefRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /** The schema a pointer names its setting in, which the ghost of one is drawn as. */
   over?: SchemaRoot;
 }) {
@@ -45,7 +45,7 @@ export function DraggedNodes({ node, topLevel, count, renderers, over }: {
   node: SchemaNode;
   topLevel: boolean;
   count: number;
-  renderers?: Record<string, PrefRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   over?: SchemaRoot;
 }) {
   return (

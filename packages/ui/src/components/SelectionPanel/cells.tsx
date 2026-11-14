@@ -11,8 +11,8 @@ import { prefFieldProps } from '../Prefs/prefField';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import type { PropertyBooleanFieldProps } from '../Properties/PropertyField';
 import { ToggleBar } from '../ToggleBar';
-import { perNodeState } from './leafField';
-import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
+import { perNodeState } from '../Prefs/leafField';
+import type { LeafContext, LeafRenderer } from './renderContext';
 import s from './SelectionPanel.module.css';
 
 /**
@@ -25,7 +25,7 @@ import s from './SelectionPanel.module.css';
 export interface LeafCell {
   key: string;
   leaf: PrefLeaf;
-  ctx: PropertyRenderContext;
+  ctx: LeafContext;
   /** The accessible name this leaf's control carries — qualified by the row's
    *  pair where the row holds more than one leaf. */
   ariaLabel: string;
@@ -51,7 +51,7 @@ export interface RenderedCell {
 
 /** True for a leaf that joins a flag bar where it shares a pair: a toggle boolean the consumer has not claimed
  *  with a renderer of its own. `path` is where its value lives. */
-export function isFlagLeaf(leaf: PrefLeaf, path: string, renderers?: Record<string, PropertyRenderer>): boolean {
+export function isFlagLeaf(leaf: PrefLeaf, path: string, renderers?: Record<string, LeafRenderer>): boolean {
   return (
     leaf.kind === 'boolean' &&
     (leaf as PrefBoolean).control === 'toggle' &&
@@ -62,12 +62,12 @@ export function isFlagLeaf(leaf: PrefLeaf, path: string, renderers?: Record<stri
 }
 
 /** True for an action leaf drawn as its own buttons, which read their own words and want no row label. */
-function builtinActionRow(cell: LeafCell, renderers?: Record<string, PropertyRenderer>): boolean {
+function builtinActionRow(cell: LeafCell, renderers?: Record<string, LeafRenderer>): boolean {
   return prefDrawsActionRow(cell.leaf) && renderers?.[cell.ctx.path] === undefined && renderers?.[cell.leaf.kind] === undefined;
 }
 
 /** True for a leaf that can join a flag bar: a paired {@link isFlagLeaf}. */
-export function isFlagCell(cell: LeafCell, renderers?: Record<string, PropertyRenderer>): boolean {
+export function isFlagCell(cell: LeafCell, renderers?: Record<string, LeafRenderer>): boolean {
   return cell.pair !== undefined && isFlagLeaf(cell.leaf, cell.ctx.path, renderers);
 }
 
@@ -78,7 +78,7 @@ export function isFlagCell(cell: LeafCell, renderers?: Record<string, PropertyRe
  */
 export function renderCells(
   cells: readonly LeafCell[],
-  renderers?: Record<string, PropertyRenderer>,
+  renderers?: Record<string, LeafRenderer>,
 ): RenderedCell[] {
   const out: RenderedCell[] = [];
   for (let i = 0; i < cells.length; ) {

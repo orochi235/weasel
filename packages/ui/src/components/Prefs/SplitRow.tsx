@@ -4,7 +4,7 @@ import { Badge } from '../Badge';
 import { Disclosure } from '../Disclosure';
 import { PropertyRow } from '../Properties/PropertyRow';
 import type { RowWidth } from './compound';
-import type { PrefRenderContext } from './PrefsRow';
+import type { LeafContext } from './PrefsRow';
 import { splitMember, splitName, splitShape, type SplitCtx, type SplitLevel, type SplitMember, type SplitShape } from './splitRows';
 import s from './Prefs.module.css';
 import c from './Split.module.css';
@@ -49,7 +49,7 @@ export function SplitMarks({ levels }: { levels: readonly SplitLevel[] }) {
 }
 
 /** The marks alone, for a leaf drawn where there is no row to open: a heading's control, a bar's cell. */
-export function splitMarks(split: SplitCtx | undefined, values: unknown, ctx: PrefRenderContext, aliased: boolean): ReactNode {
+export function splitMarks(split: SplitCtx | undefined, values: unknown, ctx: LeafContext, aliased: boolean): ReactNode {
   const state = splitRowState(split, values, ctx.pref, ctx.path, ctx.path, aliased, true);
   return state && state.shape.levels.length > 0 ? <SplitMarks levels={state.shape.levels} /> : null;
 }
@@ -77,9 +77,9 @@ export function SplitHead({ state, onToggle }: { state: SplitRowState; onToggle:
 /** What {@link SplitBody} is given to draw the leaf's own control for each member. */
 export interface SplitMemberParts {
   /** Draws the leaf's control from a render context. */
-  renderControl: (ctx: PrefRenderContext) => ReactNode;
+  renderControl: (ctx: LeafContext) => ReactNode;
   /** Whether the control's row is a group and not a `<label>`. */
-  isGroup: (ctx: PrefRenderContext) => boolean;
+  isGroup: (ctx: LeafContext) => boolean;
   /** The room the leaf's control needs. */
   width: RowWidth;
 }
@@ -91,7 +91,7 @@ export interface SplitMemberParts {
  */
 export function SplitBody({ ctx, state, split, parts }: {
   /** The leaf's own render context: its row's. */
-  ctx: PrefRenderContext;
+  ctx: LeafContext;
   state: SplitRowState;
   split: SplitCtx;
   parts: SplitMemberParts;
@@ -101,16 +101,19 @@ export function SplitBody({ ctx, state, split, parts }: {
   const { pref, path } = ctx;
   const stacked = parts.width !== 'column' || pref.block === true;
   const row = (member: SplitMember): ReactNode => {
-    const of: PrefRenderContext = {
+    const of: LeafContext = {
       ...ctx,
       pref: { ...pref, name: [pref.name, ...member.labels].join(', ') },
       value: member.value,
       mixed: false,
+      each: [member.value],
       mixedAt: undefined,
       setValueAt: undefined,
       auto: false,
       setAuto: () => {},
+      reset: undefined,
       setValue: (value) => onChangeAt?.(path, value, member.at),
+      update: (fn) => onChangeAt?.(path, fn(member.value), member.at),
     };
     return (
       <PropertyRow

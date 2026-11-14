@@ -2,7 +2,7 @@ import type { ClockRegistry } from '@weasel-js/clock';
 import { useMemo } from 'react';
 import { useStore } from 'zustand/react';
 import type { LabMarks } from '../annotations/labMarks';
-import type { ConfigRule, ControlRenderer } from '../config/types';
+import type { ConfigRule, LeafRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
@@ -25,7 +25,7 @@ export interface StoreCommandsOptions {
   /** Move the focus to a trial: one a command opened, or put in the focused one's place. */
   focus(id: string): void;
   configRules?: readonly ConfigRule[] | undefined;
-  renderers?: Record<string, ControlRenderer> | undefined;
+  renderers?: Record<string, LeafRenderer> | undefined;
   marks: LabMarks;
 }
 

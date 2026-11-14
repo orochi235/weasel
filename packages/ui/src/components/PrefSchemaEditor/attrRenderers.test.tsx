@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
-import type { PrefRenderContext } from '../Prefs';
+import type { LeafContext } from '../Prefs';
+import { loneLeafContext } from '../PrefsSource';
 import { ATTR_RENDERERS } from './attrRenderers';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
 
-const ctx = (kind: string, value: unknown, setValue = vi.fn()): PrefRenderContext => ({
-  path: 'x', pref: { kind, name: 'X', description: '', default: undefined }, value, setValue, auto: false, setAuto: () => {},
-});
+const ctx = (kind: string, value: unknown, setValue = vi.fn()): LeafContext =>
+  loneLeafContext('x', { kind, name: 'X', description: '', default: undefined }, value, setValue);
 
 describe('attribute controls', () => {
   it('marks the option list and the pair editor, each several controls, as groups a label may not wrap', () => {

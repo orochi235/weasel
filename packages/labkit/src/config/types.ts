@@ -17,15 +17,10 @@ import type {
 } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
-import type { PrefRenderer } from '@weasel-js/ui/components/Prefs';
+import type { LeafRenderer } from '@weasel-js/ui/components/PrefsSource';
 import type { ReactNode } from 'react';
 
-/**
- * Renders the control cell for one config leaf. Identical to weasel-ui's
- * `PrefRenderer` on purpose — aliased rather than redeclared so the two
- * cannot drift.
- */
-export type ControlRenderer = PrefRenderer;
+export type { LeafRenderer };
 
 /** One labeled choice in an `enum` leaf. */
 export interface ConfigOption<V extends string = string> {
@@ -184,7 +179,7 @@ export interface ResolvedConfig {
   /** The `.enableIf` predicates written as functions, as `showIf`. */
   enableIf?: ReadonlyMap<string, ConfigPredicate>;
   /** Node-level `.render` overrides, keyed by path. */
-  renderers: Readonly<Record<string, ControlRenderer>>;
+  renderers: Readonly<Record<string, LeafRenderer>>;
   /** Node-level `.dialog` rows, keyed by path. */
   dialogs: Readonly<Record<string, DialogSpec>>;
   /** The motif each group set with `.motif()` is drawn in, keyed by the group's path. */
@@ -210,7 +205,7 @@ export interface InDialogOptions {
 /** A `.dialog` row: `body` is the dialog's content, handed the context a row
  *  renderer gets. */
 export interface DialogSpec extends InDialogOptions {
-  body: ControlRenderer;
+  body: LeafRenderer;
 }
 
 /** How a node names the section it belongs to: the heading, and how that
@@ -231,7 +226,7 @@ export interface SectionOption {
 
 /** Per-node extras that do not belong on a `PrefLeaf`. */
 export interface NodeOptions extends BranchOptions {
-  render?: ControlRenderer;
+  render?: LeafRenderer;
   /** Draw the row as a button that opens a dialog. Set by `.dialog`; the
    *  config entry records it, and `ControlPanel` draws it. */
   dialog?: DialogSpec;

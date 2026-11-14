@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
-import type { ControlRenderer } from '../config/types';
+import type { LeafRenderer } from '../config/types';
 import { ControlPanel } from './ControlPanel';
 
 const on = { path: 'on' };
@@ -10,7 +10,7 @@ const on = { path: 'on' };
 function panel(
   nodes: Parameters<typeof f.schema>[0],
   config: Record<string, unknown>,
-  controls?: Record<string, ControlRenderer>,
+  controls?: Record<string, LeafRenderer>,
 ) {
   const schema = resolveConfigSchema(f.schema(nodes), []);
   return render(
@@ -111,7 +111,7 @@ describe('<ControlPanel> enableIf', () => {
 
   it('tells a custom control', () => {
     const seen: Array<boolean | undefined> = [];
-    const size: ControlRenderer = (ctx) => {
+    const size: LeafRenderer = (ctx) => {
       seen.push(ctx.disabled);
       return <span>own</span>;
     };

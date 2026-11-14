@@ -2,8 +2,8 @@ export {
   PrefsForm,
   type PrefsFormProps,
   type PrefsLayout,
-  type PrefRenderer,
-  type PrefRenderContext,
+  type LeafRenderer,
+  type LeafContext,
 } from './PrefsForm';
 export type { PrefSelectHow } from './selection';
 export type { PrefSplitProps, SplitCtx } from './splitRows';

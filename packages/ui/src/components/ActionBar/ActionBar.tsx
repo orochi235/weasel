@@ -5,7 +5,7 @@ import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
 import { BarActions } from '../Bar/BarActions';
 import type { Orientation } from '../Run';
-import type { PropertyRenderer } from '../SelectionPanel/renderContext';
+import type { LeafRenderer } from '../SelectionPanel/renderContext';
 
 /** Which actions an {@link ActionBar} draws: one group's, or every one carrying a tag. */
 export type ActionBarSource =
@@ -64,7 +64,7 @@ export function ActionBar(props: ActionBarProps) {
     const leaf: PrefActions = { kind: 'actions', name: '', description: '', default: undefined, group: group ?? '' };
     return { name: '', children: { actions: leaf } };
   }, [group]);
-  const renderers = useMemo((): Record<string, PropertyRenderer> | undefined => {
+  const renderers = useMemo((): Record<string, LeafRenderer> | undefined => {
     if (tag === undefined && !only && !icons && !labels) return undefined;
     const pick = tag === undefined ? undefined : (all: Parameters<typeof taggedActionItems>[0]) => taggedActionItems(all, tag);
     return {

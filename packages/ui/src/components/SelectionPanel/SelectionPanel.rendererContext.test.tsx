@@ -21,7 +21,7 @@ import {
  * font picker naming the variant that will actually paint — could not see the
  * rest of the node.
  */
-describe('SelectionPanel — valueAt', () => {
+describe('SelectionPanel — source.valueAt', () => {
   interface SpanData { kind: string; a?: unknown; b?: unknown }
 
   const spanRouting: NodeRoutingEntry[] = [
@@ -68,7 +68,7 @@ describe('SelectionPanel — valueAt', () => {
         routing={spanRouting}
         renderers={{
           'data.a': (ctx) => {
-            seen.push(ctx.valueAt('data.b'));
+            seen.push(ctx.source.valueAt('data.b'));
             return <span>a</span>;
           },
         }}
@@ -79,19 +79,19 @@ describe('SelectionPanel — valueAt', () => {
   it("hands a renderer another leaf's aggregated value", () => {
     const seen: unknown[] = [];
     renderSpan([{ id: 'n1', a: 'x', b: 700 }], seen);
-    expect(seen[0]).toEqual({ value: 700, mixed: false });
+    expect(seen[0]).toEqual({ value: 700, mixed: false, each: [700] });
   });
 
   it('reports a disagreeing selection as mixed, not as one node\'s value', () => {
     const seen: unknown[] = [];
     renderSpan([{ id: 'n1', a: 'x', b: 700 }, { id: 'n2', a: 'x', b: 400 }], seen);
-    expect(seen[0]).toEqual({ value: undefined, mixed: true });
+    expect(seen[0]).toEqual({ value: undefined, mixed: true, each: [700, 400] });
   });
 
   it('reports a path no node carries as an undefined value, not as mixed', () => {
     const seen: unknown[] = [];
     renderSpan([{ id: 'n1', a: 'x', b: undefined }], seen);
-    expect(seen[0]).toEqual({ value: undefined, mixed: false });
+    expect(seen[0]).toEqual({ value: undefined, mixed: false, each: [undefined] });
   });
 });
 

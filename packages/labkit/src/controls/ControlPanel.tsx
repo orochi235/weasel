@@ -1,6 +1,7 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
+import { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import {
   type CollapseProps,
   type PropertyAlign,
@@ -15,9 +16,10 @@ import { auto as autoValue, isAuto } from '../config/auto';
 import { applyConfigWrite, autoPathsOf, resolveAutoConfig } from '../config/autoConfig';
 import { type AutoReports, withAutoReports } from '../config/autoReports';
 import { valueAtPath } from '../config/path';
-import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { type ControlPack, gridOf } from './controlPack';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
+import { useLabConfigSource } from './labSource';
 import { panelRows } from './panelRows';
 
 export type { ControlPack } from './controlPack';
@@ -47,7 +49,7 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends A
    * paths (checked first) or leaf kinds. A renderer returning `null` collapses
    * the row; entries override the built-in rows on collision.
    */
-  renderers?: Record<string, ControlRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /**
    * The schema this one's aliases point into. Default: this schema itself. A
    * panel drawn from a schema of aliases into another passes that other: each
@@ -237,6 +239,16 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   });
 
   const shown = useShown(resolved, config, auto, reported);
+  const prefs = useLabConfigSource({
+    resolved,
+    config,
+    shown,
+    setConfig: writes.setConfig,
+    draftConfig: writes.draftConfig,
+    auto,
+    setRowAuto,
+    over,
+  });
 
   const gridPack = gridOf(pack);
   // A section that declares how it opens is foldable whether or not the lab
@@ -270,6 +282,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     auto,
     setRowAuto,
     changed,
+    prefs,
     motif,
     fold,
   });
@@ -314,5 +327,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         {list}
       </PropertyPanel>
     );
-  return <FieldChoicesContext.Provider value={choices}>{panel}</FieldChoicesContext.Provider>;
+  return (
+    <PrefsSource source={prefs}>
+      <FieldChoicesContext.Provider value={choices}>{panel}</FieldChoicesContext.Provider>
+    </PrefsSource>
+  );
 }

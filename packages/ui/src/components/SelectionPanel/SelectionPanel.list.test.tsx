@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, screen } from '@testing-library/react';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefLeaf } from '@weasel-js/prefs';
-import { SelectionPanel, type PropertyRenderer } from './index';
+import { SelectionPanel, type LeafRenderer } from './index';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
@@ -14,7 +14,7 @@ const counts: PrefLeaf = {
   item: { kind: 'number', name: 'Count', description: '', default: 5 },
 } as PrefLeaf;
 
-function setup(held: unknown[], renderers?: Record<string, PropertyRenderer>) {
+function setup(held: unknown[], renderers?: Record<string, LeafRenderer>) {
   const scene = createScene<Data, 'default', Record<string, number>>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: {}, data: { kind: 'thing', counts: held } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members: { 'data.counts': counts } } }];

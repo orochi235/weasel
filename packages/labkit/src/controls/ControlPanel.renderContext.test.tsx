@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
-import type { ControlRenderer } from '../config/types';
+import type { LeafRenderer } from '../config/types';
 import { ControlPanel } from './ControlPanel';
 
 afterEach(cleanup);
@@ -11,7 +11,7 @@ describe('<ControlPanel> renderer context', () => {
   it("carries the panel's whole config, to a node's .render, a lab renderer, and a dialog body", () => {
     const seen: string[] = [];
     const note =
-      (tag: string): ControlRenderer =>
+      (tag: string): LeafRenderer =>
       (ctx) => {
         seen.push(`${tag}:${(ctx.values as { unit: string }).unit}`);
         return <span>{tag}</span>;
@@ -43,7 +43,7 @@ describe('<ControlPanel> renderer context', () => {
     const schema = resolveConfigSchema(
       f.schema({
         curve: f.custom('curve', 0).render((ctx) => {
-          if (ctx.draftValue) drafts.push(ctx.draftValue);
+          if (ctx.drafts) drafts.push(ctx.drafts.setValue);
           return <span>curve</span>;
         }),
       }),
@@ -64,5 +64,28 @@ describe('<ControlPanel> renderer context', () => {
     drafts.length = 0;
     render(<ControlPanel schema={schema} config={{ curve: 0 }} setConfig={vi.fn()} />);
     expect(drafts).toEqual([]);
+  });
+
+  it('hands a renderer the config source, which a reset of its leaf goes through', () => {
+    const setConfig = vi.fn();
+    const seen: unknown[] = [];
+    const schema = resolveConfigSchema(
+      f.schema({
+        unit: f.string('px'),
+        a: f.number(1).render((ctx) => {
+          seen.push(ctx.source.valueAt('unit').value);
+          return (
+            <button type="button" onClick={ctx.reset}>
+              reset a
+            </button>
+          );
+        }),
+      }),
+      [],
+    );
+    render(<ControlPanel schema={schema} config={{ unit: 'em', a: 3 }} setConfig={setConfig} />);
+    expect(seen[0]).toBe('em');
+    fireEvent.click(screen.getByRole('button', { name: 'reset a' }));
+    expect(setConfig).toHaveBeenCalledWith('a', 1);
   });
 });

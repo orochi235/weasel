@@ -10,7 +10,9 @@ import {
   useLatest,
 } from '@weasel-js/core';
 import { leafWrites } from './commitLeaf';
-import type { PropertyRenderer } from './renderContext';
+import { selectionSource } from './selectionSource';
+import { PrefsSource } from '../PrefsSource/PrefsSource';
+import type { LeafRenderer } from './renderContext';
 import { classifyKind, kindBreakdown, panelRowsOf, type AnyNode } from './model';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { conditionedSections } from './conditions';
@@ -24,7 +26,7 @@ import { sectionsInScopes } from './scopes';
 import { PanelMarksContext, panelMarkedPaths, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
-export type { PropertyRenderContext, PropertyRenderer } from './renderContext';
+export type { LeafContext, LeafRenderer } from './renderContext';
 
 /** Props for {@link SelectionPanel}. */
 export interface SelectionPanelProps<TData, TLayer extends string, TPose> extends MarkHiddenProps {
@@ -43,7 +45,7 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
    *  leaf paths (`data.fill`, checked first) or leaf kinds (`color`).
    *  A renderer returning `null` collapses its leaf (and the row, when
    *  every leaf in it collapses). */
-  renderers?: Record<string, PropertyRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /**
    * The schema the properties schemas' `alias` leaves point into. Default:
    * each kind's own. A panel drawn from layouts of aliases into another
@@ -125,9 +127,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const selectionKey = nodes.map((n) => n.id).join(',');
   const scope = conditionedSections(kinds, properties, nodes, renderers?.alias !== undefined, props.markHidden === true, props.over);
   const sections = sectionsInScopes(scope.sections, scene, nodes, props.units);
-  const leaves = new Map(
-    sections.flatMap(panelRowsOf).flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf] as const)),
-  );
+  const panelLeaves = sections.flatMap(panelRowsOf).flatMap((row) => row.leaves);
+  const leaves = new Map(panelLeaves.map(({ path, leaf }) => [path, leaf] as const));
   const fields = prefFieldChoices({ name: '', members: Object.fromEntries(leaves) });
   const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS, renderers);
   const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null, ...(props.markHidden ? { hidden: scope.hidden } : {}) };
@@ -143,10 +144,17 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     renderers,
     commit: (leaf, next) => writes.commit(selection, leaf, next),
     draft: (leaf, next) => writes.draft(selection, leaf, next),
-    reset: (leaves, label) => writes.reset(selection, leaves, label),
+    source: selectionSource({
+      nodes,
+      leaves: panelLeaves,
+      selection,
+      writes,
+      disabled: scope.disabled,
+      hidden: scope.hidden,
+      active: scope.active,
+    }),
     selectionKey,
     fields,
-    leafAt: (path) => leaves.get(path),
     disabled: scope.disabled,
     active: scope.active,
     hidden: scope.hidden,
@@ -158,6 +166,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   };
 
   return (
+    <PrefsSource source={cells.source}>
     <PanelMarksContext.Provider value={marks}>
     <div className={[s.root, className].filter(Boolean).join(' ')} {...rowSelection}>
       <header className={s.header}>
@@ -173,5 +182,6 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
       {panelSections(sections, cells, marks)}
     </div>
     </PanelMarksContext.Provider>
+    </PrefsSource>
   );
 }

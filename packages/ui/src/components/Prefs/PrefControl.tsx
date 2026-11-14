@@ -1,6 +1,7 @@
 import { prefLeafValue, type PrefLeaf } from '@weasel-js/prefs';
 import type { EntryAt } from './entry';
-import { renderPrefControl, type PrefRenderer } from './PrefsRow';
+import { loneLeafContext } from '../PrefsSource/recordSource';
+import { renderPrefControl, type LeafRenderer } from './PrefsRow';
 import { useParamsPolicy } from './useParamsPolicy';
 import type { PrefFieldChoice } from './schema';
 
@@ -16,7 +17,7 @@ export interface PrefControlProps {
   /** Every edit, with the leaf's whole value. */
   onChange: (value: unknown) => void;
   /** Controls for app-defined kinds, wherever in the value they turn up. */
-  renderers?: Record<string, PrefRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /** The fields a `field` leaf may name. */
   fields?: readonly PrefFieldChoice[];
   /** The control takes no input. */
@@ -38,13 +39,8 @@ export function PrefControl({ pref, path = '', value, values, onChange, renderer
   const { settles, textWaitMs } = useParamsPolicy('form');
   return renderPrefControl(
     {
-      path,
-      pref,
-      value: prefLeafValue(pref, value),
+      ...loneLeafContext(path, pref, prefLeafValue(pref, value), onChange),
       values,
-      setValue: onChange,
-      auto: false,
-      setAuto: () => {},
       ...(fields ? { fields } : {}),
       disabled,
       disabledAt,

@@ -12,7 +12,7 @@ import { pathWithin, selectionAttrs } from '../Prefs/selection';
 import { renderCells, type LeafCell } from './cells';
 import { objectFieldCell, type ObjectFieldOwner } from './objectField';
 import { objectFieldRows } from './objectFieldRows';
-import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
+import type { LeafContext, LeafRenderer } from './renderContext';
 import { PanelMarksContext, PanelTabs } from './selection';
 import s from './SelectionPanel.module.css';
 
@@ -50,8 +50,8 @@ export function ObjectLeaf({
   renderers,
   selectionKey = '',
 }: {
-  ctx: PropertyRenderContext;
-  renderers?: Record<string, PropertyRenderer>;
+  ctx: LeafContext;
+  renderers?: Record<string, LeafRenderer>;
   selectionKey?: string;
 }): ReactNode {
   const pref = ctx.pref as PrefObject;

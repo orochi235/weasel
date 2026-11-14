@@ -1,4 +1,4 @@
-import { type ControlRenderer, ControlPanel, f, type ResolvedConfig, resolveConfigSchema } from '@weasel-js/labkit';
+import { type LeafRenderer, ControlPanel, f, type ResolvedConfig, resolveConfigSchema } from '@weasel-js/labkit';
 import { BADGE_EFFECTS, type BadgeEffect, badgeEffectZone } from '@weasel-js/ui/components/Badge';
 import { EffectList, type EffectListItem } from '@weasel-js/ui/components/EffectList';
 import { Select } from '@weasel-js/ui/components/Select';
@@ -9,7 +9,7 @@ import {
 } from '../effects';
 import s from './Compose.module.css';
 
-type RowContext = Parameters<ControlRenderer>[0];
+type RowContext = Parameters<LeafRenderer>[0];
 
 /** A lab effect as the effect list draws it: its id as a string, and its zone as its kind. */
 interface Card extends EffectListItem {
@@ -89,7 +89,7 @@ function EffectsEditor({ effects, onChange }: { effects: readonly LabEffect[]; o
 }
 
 /** Draws the `effects` leaf as the effect stack. */
-export const effectsRenderer: ControlRenderer = Object.assign(
+export const effectsRenderer: LeafRenderer = Object.assign(
   (ctx: RowContext) => <EffectsEditor effects={(ctx.value as LabEffect[] | undefined) ?? []} onChange={ctx.setValue} />,
   { wide: true },
 );

@@ -4,7 +4,7 @@ import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
 import { pathWithin, useHeldTab, type PrefMarks } from '../Prefs/selection';
 import { isFlagLeaf } from './cells';
 import { isPanelSection, pairRows, panelLeafKey, panelOwnRows, type PanelRow, type PanelSection } from './model';
-import type { PropertyRenderer } from './renderContext';
+import type { LeafRenderer } from './renderContext';
 
 /** What a panel marks while it draws, and the one of those it brings into view. */
 export interface PanelMarks extends PrefMarks {
@@ -48,7 +48,7 @@ function sharedRows(rows: readonly PanelRow[], out = new Map<string, string>()):
 }
 
 /** Each flag a bar fuses into a cell with the flags before it, by the flag that cell is drawn for: the run's first. */
-function fusedFlags(rows: readonly PanelRow[], renderers: Record<string, PropertyRenderer> | undefined): Map<string, string> {
+function fusedFlags(rows: readonly PanelRow[], renderers: Record<string, LeafRenderer> | undefined): Map<string, string> {
   const out = new Map<string, string>();
   for (const row of rows) {
     if (row.pair === undefined) continue;
@@ -85,7 +85,7 @@ function everySection(sections: readonly PanelSection[], inBar = false): Array<{
  * bar's line among them. `renderers` are the panel's, since a flag one of them draws joins no run.
  */
 export function panelMarkedPaths(
-  sections: readonly PanelSection[], selected: readonly string[], renderers?: Record<string, PropertyRenderer>,
+  sections: readonly PanelSection[], selected: readonly string[], renderers?: Record<string, LeafRenderer>,
 ): string[] {
   const all = everySection(sections);
   const rowsIn = (bar: boolean): PanelRow[] => all.filter((at) => at.inBar === bar).flatMap((at) => panelOwnRows(at.section));

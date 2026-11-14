@@ -1,4 +1,4 @@
-import { type ControlRenderer, valueAtPath } from '@weasel-js/labkit';
+import { type LeafRenderer, valueAtPath } from '@weasel-js/labkit';
 import type { BadgeBase } from '@weasel-js/ui/components/Badge';
 import { OCTANT_SPLINE_MAX_ANCHORS, OCTANT_SPLINE_MIN_ANCHORS } from '@weasel-js/ui/components/Badge/geometry';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
@@ -9,10 +9,10 @@ import {
   anchorCount, readAnchors, splineEvaluator, splineMode, withAnchor, withAnchorCount, withInsertedAnchor, withoutAnchor,
 } from './splineAnchors';
 
-type RowContext = Parameters<ControlRenderer>[0];
+type RowContext = Parameters<LeafRenderer>[0];
 
 /** The curve leaf of a spline base's group: the base is the group's key, the mode its sibling. */
-function SplineRow({ path, value, values, setValue, draftValue, disabled }: RowContext) {
+function SplineRow({ path, value, values, setValue, drafts, disabled }: RowContext) {
   const group = path.slice(0, path.lastIndexOf('.'));
   const base = group.slice(group.lastIndexOf('.') + 1) as BadgeBase;
   const curve = value as SplineCurve;
@@ -22,7 +22,7 @@ function SplineRow({ path, value, values, setValue, draftValue, disabled }: RowC
   const slotsOf = ({ mode: _mode, ...slots }: Params): Params => slots;
   const write = (next: Params) => setValue(slotsOf(next));
   // A drag drafts each move where the panel keeps drafts, so its release settles them as one step.
-  const draft = (next: Params) => (draftValue ?? setValue)(slotsOf(next));
+  const draft = (next: Params) => (drafts?.setValue ?? setValue)(slotsOf(next));
   const anchors = readAnchors(bag);
   return (
     <>
@@ -51,4 +51,4 @@ function SplineRow({ path, value, values, setValue, draftValue, disabled }: RowC
 }
 
 /** Draws a spline base's anchors as a curve editor, with the anchor count above it. */
-export const splineRenderer: ControlRenderer = Object.assign((ctx: RowContext) => <SplineRow {...ctx} />, { wide: true });
+export const splineRenderer: LeafRenderer = Object.assign((ctx: RowContext) => <SplineRow {...ctx} />, { wide: true });

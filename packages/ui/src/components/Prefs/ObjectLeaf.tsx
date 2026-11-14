@@ -9,7 +9,7 @@ import { HiddenBadge, hiddenAttrs } from './hidden';
 import { leafAtValues } from './leafAtValues';
 import { objectRows, type ObjectLeafParts } from './objectRows';
 import { offTitle } from './offTitle';
-import type { PrefRenderContext } from './PrefsRow';
+import type { LeafContext } from './PrefsRow';
 import s from './Prefs.module.css';
 
 /**
@@ -23,11 +23,11 @@ export function ObjectLeaf({
   isGroup,
   rowWidth = rowWidthOf,
 }: {
-  ctx: PrefRenderContext;
+  ctx: LeafContext;
   /** Draws one field, for a row or for a bar. `siblings` is the object it is a field of. */
-  renderField: (ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined, surface?: LeafSurface) => ReactNode;
+  renderField: (ctx: LeafContext, siblings: Record<string, unknown> | undefined, surface?: LeafSurface) => ReactNode;
   /** Whether a field's row is a group and not a `<label>`. */
-  isGroup: (ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined) => boolean;
+  isGroup: (ctx: LeafContext, siblings: Record<string, unknown> | undefined) => boolean;
   /** The room a field's control needs. Default: by its kind alone. */
   rowWidth?: (leaf: PrefLeaf) => RowWidth;
 }) {
@@ -38,15 +38,21 @@ export function ObjectLeaf({
     : undefined;
   const { mixedAt, setValueAt } = ctx;
   const split = setValueAt !== undefined && (ctx.mixed === true || mixedAt?.(ctx.path, true) === true);
-  const fieldCtx = (key: string, child: PrefLeaf): PrefRenderContext => {
+  const fieldCtx = (key: string, child: PrefLeaf): LeafContext => {
     const path = `${ctx.path}.${key}`;
     const mixed = ctx.mixed === true || mixedAt?.(path) === true;
+    const shown = mixed ? undefined : held?.[key];
+    const set = split ? (v: unknown) => setValueAt(path, v) : (v: unknown) => setValue(prefObjectWithField(pref, value, key, v));
     return {
       path,
       pref: leafAtValues(child, ctx.values),
-      value: mixed ? undefined : held?.[key],
+      source: ctx.source,
+      value: shown,
       mixed,
-      setValue: split ? (v) => setValueAt(path, v) : (v) => setValue(prefObjectWithField(pref, value, key, v)),
+      each: mixed ? [] : [shown],
+      siblings: held,
+      setValue: set,
+      update: (fn) => set(fn(shown, held)),
       mixedAt,
       setValueAt,
       // A field is not pinned on its own — it shares the state of
@@ -68,7 +74,7 @@ export function ObjectLeaf({
     };
   };
   const off = (path: string): boolean => (ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true);
-  const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: PrefRenderContext }> = {
+  const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: LeafContext }> = {
     path: ctx.path,
     off,
     cell: (key, child) => ({ key, child, field: fieldCtx(key, child) }),

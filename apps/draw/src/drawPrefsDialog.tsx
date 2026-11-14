@@ -5,7 +5,7 @@ import type { EditorPrefsDialogProps } from '@weasel-js/editor';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Code } from '@weasel-js/ui/components/Code';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
-import type { PrefRenderContext } from '@weasel-js/ui/components/Prefs';
+import type { LeafContext } from '@weasel-js/ui/components/Prefs';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import type { WeaselDrawPrefData, WeaselDrawPrefRegistryEnum } from './prefs';
@@ -43,7 +43,7 @@ export function useDrawPrefsDialog(): EditorPrefsDialogProps {
   }), [dev, showHidden]);
 }
 
-export function RegistryEnumControl(ctx: PrefRenderContext) {
+export function RegistryEnumControl(ctx: LeafContext) {
   const pref = ctx.pref as WeaselDrawPrefRegistryEnum;
   return (
     <RegistrySelect
@@ -57,9 +57,9 @@ export function RegistryEnumControl(ctx: PrefRenderContext) {
   );
 }
 
-RegistryEnumControl.group = (ctx: PrefRenderContext) => (ctx.pref as WeaselDrawPrefRegistryEnum).control === 'radio';
+RegistryEnumControl.group = (ctx: LeafContext) => (ctx.pref as WeaselDrawPrefRegistryEnum).control === 'radio';
 
-export function DataControl(ctx: PrefRenderContext) {
+export function DataControl(ctx: LeafContext) {
   // Only `ui.surfaces` has a known shape; any other data pref belongs to other
   // code, so it shows read-only as a placeholder.
   if (ctx.path === 'ui.surfaces') return <SurfacesEditor ctx={ctx} />;
@@ -76,7 +76,7 @@ const CHROME_ROWS: readonly ChromeRow[] = ALL_CHROME.map((item) => {
   return asset ? { ...item, asset } : item;
 });
 
-export function SurfacesEditor({ ctx }: { ctx: PrefRenderContext }) {
+export function SurfacesEditor({ ctx }: { ctx: LeafContext }) {
   const pref = ctx.pref as WeaselDrawPrefData;
   const surfaces = (ctx.value ?? {}) as SurfacesValue;
   const update = (id: string, patch: SurfacesValue[string]): void => {

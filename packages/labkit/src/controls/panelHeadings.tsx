@@ -2,13 +2,13 @@ import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import type { ReactNode } from 'react';
 import { headingLeaf } from '../config/headingLeaf';
 import { valueAtPath } from '../config/path';
-import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
+import type { LeafRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { BareControl, leafValueAt } from './fields';
 
 /** What a lifted heading control reads and writes through. */
 export interface LiftScope<TC extends Record<string, unknown>> {
   resolved: ResolvedConfig;
-  renderers: Record<string, ControlRenderer> | undefined;
+  renderers: Record<string, LeafRenderer> | undefined;
   shown: TC;
   setConfig: (path: string, value: unknown) => void;
   draftConfig: ((path: string, value: unknown) => void) | undefined;

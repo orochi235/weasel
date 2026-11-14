@@ -3,6 +3,7 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup, PrefLinearUnit, PrefNumber } from '@weasel-js/prefs';
 import { ATTR_RENDERERS } from './attrRenderers';
+import { loneLeafContext } from '../PrefsSource';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { renderWithIcons } from '../../testing/withIcons';
 
@@ -13,10 +14,9 @@ interface Seen { unit?: PrefLinearUnit }
 function Unit({ seen, start }: { seen: Seen; start?: PrefLinearUnit }) {
   const [value, setValue] = useState<PrefLinearUnit | undefined>(start);
   seen.unit = value;
-  return <>{ATTR_RENDERERS.unit({
-    path: 'unit', pref: { kind: 'unit', name: 'Unit', description: '', default: undefined }, value,
-    setValue: (v) => setValue(v as PrefLinearUnit | undefined), auto: false, setAuto: () => {},
-  })}</>;
+  return <>{ATTR_RENDERERS.unit(
+    loneLeafContext('unit', { kind: 'unit', name: 'Unit', description: '', default: undefined }, value, (v) => setValue(v as PrefLinearUnit | undefined)),
+  )}</>;
 }
 
 const box = (name: string) => screen.getByRole('textbox', { name });

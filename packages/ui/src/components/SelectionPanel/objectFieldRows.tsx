@@ -7,7 +7,7 @@ import { HiddenBadge, hiddenAttrs } from '../Prefs/hidden';
 import { selectionAttrs } from '../Prefs/selection';
 import { renderCells, type LeafCell, type RenderedCell } from './cells';
 import { LabeledRow } from './LabeledRow';
-import type { PropertyRenderer } from './renderContext';
+import type { LeafRenderer } from './renderContext';
 import type { PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
@@ -64,7 +64,7 @@ function pairedRows(rendered: readonly RenderedCell[]): ObjectRow[] {
  */
 export function objectFieldRows(
   cells: readonly LeafCell[],
-  renderers: Record<string, PropertyRenderer> | undefined,
+  renderers: Record<string, LeafRenderer> | undefined,
   marks: PanelMarks,
   leafHidden: boolean,
 ): ReactNode[] {

@@ -1,3 +1,5 @@
+import { AUTO } from '@weasel-js/prefs';
+
 /**
  * Written at a config path to mean "do not pin this — let the instrument
  * decide". Accepted by `setConfig`, by a trial's `configSeed`, and by
@@ -5,10 +7,10 @@
  * paths on the way into the store and is never itself stored, so a serialized
  * trial contains no sentinel and the last pinned value survives.
  */
-export const auto: unique symbol = Symbol('weasel.auto');
+export const auto: typeof AUTO = AUTO;
 
 /** The type of the `auto` sentinel, for widening a value parameter. */
-export type Auto = typeof auto;
+export type Auto = typeof AUTO;
 
 /** Whether `value` is the `auto` sentinel. */
 export function isAuto(value: unknown): value is Auto {

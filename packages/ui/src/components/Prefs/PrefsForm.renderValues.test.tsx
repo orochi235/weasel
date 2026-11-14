@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
-import { PrefsForm, type PrefRenderContext } from './PrefsForm';
+import { PrefsForm, type LeafContext } from './PrefsForm';
 import { renderWithIcons } from '../../testing/withIcons';
 
 describe('PrefsForm renderer context', () => {
@@ -9,7 +9,7 @@ describe('PrefsForm renderer context', () => {
       name: '',
       children: { unit: pref.string('Unit', 'px'), size: { ...pref.number('Size', 1), kind: 'sized' } },
     };
-    const seen: PrefRenderContext[] = [];
+    const seen: LeafContext[] = [];
     const values = { unit: 'em', size: 3 };
     renderWithIcons(
       <PrefsForm

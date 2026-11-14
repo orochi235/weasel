@@ -3,51 +3,46 @@ import {
   prefAliasName,
   prefLeafValue,
   prefValueAtPath,
-  type PrefAction,
-  type PrefActions,
   type PrefAlias,
   type PrefAliasTargets,
   type PrefLeaf,
-  type PrefMap,
-  type PrefUnion,
   prefDrawsSeveral,
 } from '@weasel-js/prefs';
 import type { BarCell, BarLeafNode } from '../Bar/BarLayout';
-import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import { PrefActionButton, PrefActionRows } from './PrefActionButton';
+import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { prefDrawsActionRow } from './registeredActions';
-import { PrefMixed } from './PrefMixed';
 import { aliasOfNothing, prefDrawsNoControl, PrefWords } from './PrefWords';
 import { rowWidthOf } from './compound';
-import { entryConditions, type EntryAt } from './entry';
-import { ListLeaf } from './ListLeaf';
-import { MapEditor } from './MapEditor';
+import type { EntryAt } from './entry';
 import { leafAtValues } from './leafAtValues';
 import { ObjectLeaf } from './ObjectLeaf';
-import { UnionPicker } from './UnionPicker';
-import { controlIsGroup, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
+import { controlIsGroup, PropertyControl } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyRow';
 import type { LiveControl } from './commitPolicy';
-import { prefFieldProps } from './prefField';
+import { leafField } from './leafField';
+import { renderLeaf, renderLeafControl, type LeafParts } from './renderLeaf';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
 import { withRowControl } from './surfaceControls';
 import { autoTracked, rowReset } from './reset';
+import type { PrefsSource } from '../PrefsSource/PrefsSource';
 import { selectionAttrs } from './selection';
 import { SplitBody, SplitHead, SplitMarks, SplitToggle, splitRowState } from './SplitRow';
 import type { SplitCtx } from './splitRows';
 import s from './Prefs.module.css';
 
-import type { PrefRenderContext, PrefRenderer } from './renderContext';
+import type { LeafContext, LeafRenderer } from './renderContext';
 
-export type { PrefRenderContext, PrefRenderer };
+export type { LeafContext, LeafRenderer };
 
 /** What a prefs form hands every row it draws: the values, the callbacks, and how the form is set up. */
 export interface WalkCtx {
+  /** Where the form reads, writes, and resets its leaves. */
+  source: PrefsSource;
   values: unknown;
   onChange: (path: string, value: unknown) => void;
-  renderers?: Record<string, PrefRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   auto?: ReadonlySet<string>;
   mixed?: ReadonlySet<string>;
   onAutoChange?: (path: string, next: boolean) => void;
@@ -129,7 +124,7 @@ export function PrefRow({ ctx, path, pref, at }: { ctx: WalkCtx; path: string; p
  */
 export function prefRenderContext(
   ctx: WalkCtx, own: string, pref: PrefLeaf, at?: string,
-): { renderCtx: PrefRenderContext; toggles: boolean } {
+): { renderCtx: LeafContext; toggles: boolean } {
   const path = at ?? own;
   // A placeholder shows what its node shows where it was dragged from.
   const from = at ?? dropValuePath(ctx.drop, own);
@@ -138,15 +133,21 @@ export function prefRenderContext(
   const { onAutoChange } = ctx;
   const inside = at === undefined ? undefined : ctx.targets;
   const entryAt = inside?.entryAt ?? ctx.entryAt;
-  const toggles = autoTracked(ctx, path, pref);
-  const renderCtx: PrefRenderContext = {
+  const toggles = autoTracked(ctx, path);
+  const value = mixed ? undefined : prefLeafValue(pref, stored);
+  const reset = rowReset(ctx, path, pref);
+  const renderCtx: LeafContext = {
     path,
     pref: leafAtValues(pref, ctx.values),
-    value: mixed ? undefined : prefLeafValue(pref, stored),
+    source: ctx.source,
+    value,
+    each: mixed ? [] : [value],
     values: ctx.values,
     ...(ctx.changed?.has(path) ? { changed: true } : {}),
     mixed,
     setValue: (v) => ctx.onChange(path, v),
+    update: (fn) => ctx.source.update(path, fn),
+    ...(reset ? { reset } : {}),
     mixedAt: (at, below = false) => pathIsMixed(ctx.mixed, from + at.slice(path.length), below),
     setValueAt: ctx.onChange,
     auto: ctx.auto?.has(from) ?? false,
@@ -231,7 +232,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       // control keeps drawing it; editing it pins, through `onChange`.
       auto={inherited}
       onAutoChange={toggles ? setAuto : undefined}
-      onReset={rowReset(ctx, path, pref)}
+      onReset={renderCtx.reset}
       hint={marked || split ? <>{marked && <HiddenBadge />}{inheritHint}{split && <SplitMarks levels={split.shape.levels} />}</> : inheritHint}
       disabled={renderCtx.disabled}
       disabledReason={pref.disabledReason}
@@ -246,109 +247,53 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
   );
 }
 
-/** A leaf's control with no row around it, as it is drawn nested in another's value: by the app's renderer for its kind, where it has one. */
-export function renderPrefControl(
-  ctx: PrefRenderContext,
-  renderers: Record<string, PrefRenderer> | undefined,
-  siblings?: Record<string, unknown>,
-  surface: LeafSurface = 'row',
-): ReactNode {
-  const custom = renderers?.[ctx.pref.kind];
-  if (!custom) return renderBuiltin(ctx, renderers, siblings, surface);
-  return surface === 'bar' ? withBarLabel(ctx.pref, custom(ctx)) : custom(ctx);
+/** What a form draws its own way around the one leaf switch: an object leaf's rows, and a field's control. */
+function formParts(renderers: Record<string, LeafRenderer> | undefined): LeafParts {
+  return {
+    surface: 'form',
+    renderers,
+    object: (ctx) => (
+      <ObjectLeaf
+        ctx={ctx}
+        renderField={(field, held, on) => renderPrefControl(field, renderers, held, on)}
+        isGroup={(field, held) => rowIsGroup(field, renderers, held)}
+        rowWidth={(leaf) => rowWidthOf(leaf, renderers)}
+      />
+    ),
+    control: (field, _ctx, name) =>
+      field.kind === 'number'
+        ? <PropertyControl {...field} name={name} steppers={field.accepts === undefined} />
+        : <PropertyControl {...withRowControl(field, 'form')} name={name} />,
+  };
 }
 
-function renderBuiltin(
-  ctx: PrefRenderContext,
-  renderers: Record<string, PrefRenderer> | undefined,
-  // The object a nested leaf is a field of — what an enum `encoding` and a
-  // font's weight and slant read against. Undefined for a top-level leaf.
+const within = (ctx: LeafContext, siblings: Record<string, unknown> | undefined): LeafContext =>
+  (siblings === undefined ? ctx : { ...ctx, siblings });
+
+/** A leaf's control with no row around it, as it is drawn nested in another's value: by the app's renderer for its
+ *  kind, where it has one. `siblings` is the object it is a field of. */
+export function renderPrefControl(
+  ctx: LeafContext,
+  renderers: Record<string, LeafRenderer> | undefined,
   siblings?: Record<string, unknown>,
   surface: LeafSurface = 'row',
 ): ReactNode {
-  const { pref, value, setValue } = ctx;
-  if (surface === 'bar') {
-    return renderBarLeaf({
-      leaf: pref,
-      path: ctx.path,
-      name: pref.name,
-      field: leafField(ctx, siblings),
-      disabled: ctx.disabled,
-      active: ctx.active,
-      row: () => renderBuiltin(ctx, renderers, siblings),
-    });
-  }
-  const object = (of: PrefRenderContext): ReactNode => (
-    <ObjectLeaf
-      ctx={of}
-      renderField={(field, held, on) => renderPrefControl(field, renderers, held, on)}
-      isGroup={(field, held) => rowIsGroup(field, renderers, held)}
-      rowWidth={(leaf) => rowWidthOf(leaf, renderers)}
-    />
-  );
-  if (pref.kind === 'object') return object(ctx);
-  if (ctx.mixed && (pref.kind === 'list' || pref.kind === 'map')) return <PrefMixed onReplace={ctx.disabled ? undefined : () => ctx.setValue(pref.kind === 'list' ? [] : {})} />;
-  if (pref.kind === 'list')
-    return <ListLeaf ctx={ctx} renderers={renderers} renderItem={(item) => renderPrefControl(item, renderers)} />;
-  if (pref.kind === 'map') {
-    const map = pref as PrefMap;
-    return (
-      <MapEditor
-        pref={map}
-        value={value}
-        onChange={setValue}
-        disabled={ctx.disabled}
-        renderValue={(held, set, name, key) => {
-          const { item, ...conditions } = entryConditions(ctx, `${ctx.path}.${key}`, map.item, held);
-          return renderPrefControl(
-            { ...ctx, ...conditions, path: `${ctx.path}.${key}`, pref: { ...item, name }, value: held, setValue: set },
-            renderers,
-          );
-        }}
-      />
-    );
-  }
-  if (pref.kind === 'union') {
-    return (
-      <UnionPicker pref={pref as PrefUnion} value={value} mixed={ctx.mixed} disabled={ctx.disabled} onChange={setValue}>
-        {(variant) => object({ ...ctx, pref: variant })}
-      </UnionPicker>
-    );
-  }
-  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} active={ctx.active} />;
-  if (pref.kind === 'actions') return <PrefActionRows pref={pref as PrefActions} path={ctx.path} disabled={ctx.disabled} />;
-  const field = leafField(ctx, siblings);
-  if (field === null) {
-    // App-defined kind with no `renderers` entry: labeled placeholder, not a
-    // crash — a missing wiring should be visible and recoverable.
-    return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
-  }
-  if (field.kind === 'number') {
-    return <PropertyControl {...field} name={pref.name} steppers={field.accepts === undefined} />;
-  }
-  return <PropertyControl {...withRowControl(field, 'form')} name={pref.name} />;
+  return renderLeafControl(within(ctx, siblings), formParts(renderers), surface);
+}
+
+function renderBuiltin(ctx: LeafContext, renderers: Record<string, LeafRenderer> | undefined): ReactNode {
+  return renderLeaf(ctx, formParts(renderers));
 }
 
 /** Whether a leaf's row is a group and not a `<label>`: its control is several, or one a label may not wrap. */
 function rowIsGroup(
-  ctx: PrefRenderContext,
-  renderers: Record<string, PrefRenderer> | undefined,
+  ctx: LeafContext,
+  renderers: Record<string, LeafRenderer> | undefined,
   siblings?: Record<string, unknown>,
 ): boolean {
   if (prefDrawsSeveral(ctx.pref)) return true;
   const custom = renderers?.[ctx.pref.kind];
   if (custom) return typeof custom.group === 'function' ? custom.group(ctx) : custom.group === true;
-  const field = leafField(ctx, siblings);
+  const field = leafField(within(ctx, siblings), 'form');
   return field !== null && controlIsGroup(field);
-}
-
-/** A leaf as one control's props, writing when a form writes. Null for a leaf that is not one control. */
-function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined): PropertyControlProps | null {
-  return prefFieldProps(
-    ctx.pref,
-    { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields, disabled: ctx.disabled },
-    'form',
-    ctx.settles,
-    ctx.textWaitMs,
-  );
 }

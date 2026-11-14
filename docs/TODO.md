@@ -526,14 +526,12 @@ name a package. Breaking changes are in scope.
   form context (bar cell, menu row, popover row, palette) and draw one `ActionButton` from it. Closes when the four
   buttons are one component.
 
-- **(P1.5) [agent] A `<PrefsSource>` behind every params surface.** `SelectionPanel` imports 19 modules from
-  `../Prefs/` yet keeps its own `ListLeaf`, `ObjectLeaf`, and `renderContext`; the leaf-kind switch exists twice
-  (`Prefs/PrefsRow.tsx:280`, `SelectionPanel/renderLeaf.tsx:83`); `PropertyRenderContext` repeats about 15 fields
-  of `PrefRenderContext`, so `PrefSchemaEditor` needs both `renderers` and `propertyRenderers`. The reset policy is
-  written three times: `Prefs/reset.tsx`, `labkit/src/controls/leafReset.ts`, and `SelectionPanel/panelCells.ts:139`.
-  A source context exposes `valueAt(path) → { value, mixed, each }`, `write`, `autoAt`, and `reset(paths)`, with a
-  provider for a values map, a node selection, and a lab config. Closes when `PrefsForm`, `SelectionPanel`, and
-  `ControlPanel` render leaves through one renderer and reset through one policy.
+- **(P2) [agent] One object-field context for `PrefsForm` and `SelectionPanel`.** Both draw an object leaf through
+  `objectRows` and the one leaf renderer (`Prefs/renderLeaf.tsx`), but `Prefs/ObjectLeaf.tsx`'s `fieldCtx` and
+  `SelectionPanel/objectField.tsx`'s `fieldContext` each build a field's `LeafContext`. The form writes a field of a
+  mixed object at its own path (`setValueAt`) and reads an absent field raw; the panel derives each node's object
+  (`update`) and reads an absent field as unset unless `absentIsDefault`. Merging them changes what an absent field
+  shows in a form, which needs a look in a browser. Closes when one function builds a field's context for both.
 
 - **(P2) [agent] Grow `PropertyRowContext` into a row scope.** `auto`, `onAutoChange`, `onReset`, `changed`, and
   `error` are declared on `PropertyRow`, `DialogRow`, and `PropertyFieldRow`; `SelectionPanel/LabeledRow.tsx` adds

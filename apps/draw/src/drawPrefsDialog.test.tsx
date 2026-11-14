@@ -1,19 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { PrefRenderContext } from '@weasel-js/ui/components/Prefs';
+import type { LeafContext } from '@weasel-js/ui/components/Prefs';
+import { loneLeafContext } from '@weasel-js/ui/components/PrefsSource';
 import { RegistryEnumControl, SurfacesEditor } from './drawPrefsDialog';
 import { PREFS, type WeaselDrawPrefRegistryEnum } from './prefs';
 import { RegistryEnumSourcesContext } from './registry/RegistrySelect';
 
-function ctxFor(value: unknown, setValue = vi.fn()): PrefRenderContext {
-  return {
-    path: 'ui.surfaces',
-    pref: PREFS.children.ui.children.surfaces as PrefRenderContext['pref'],
-    value,
-    setValue,
-    auto: false,
-    setAuto: () => {},
-  };
+function ctxFor(value: unknown, setValue = vi.fn()): LeafContext {
+  return loneLeafContext('ui.surfaces', PREFS.children.ui.children.surfaces as LeafContext['pref'], value, setValue);
 }
 
 describe('SurfacesEditor', () => {
@@ -51,9 +45,8 @@ describe('RegistryEnumControl', () => {
   const pref = (control?: 'select' | 'radio'): WeaselDrawPrefRegistryEnum => ({
     kind: 'registry-enum', source: 'tools', name: 'Last used tool', description: '', default: 'rect', ...(control ? { control } : {}),
   });
-  const ctx = (control: 'select' | 'radio' | undefined, setValue = vi.fn()): PrefRenderContext => ({
-    path: 'tools.lastTool', pref: pref(control) as PrefRenderContext['pref'], value: 'rect', setValue, auto: false, setAuto: () => {},
-  });
+  const ctx = (control: 'select' | 'radio' | undefined, setValue = vi.fn()): LeafContext =>
+    loneLeafContext('tools.lastTool', pref(control) as LeafContext['pref'], 'rect', setValue);
 
   it('draws radios for a leaf whose control is radio, and its row as a group', () => {
     const setValue = vi.fn();

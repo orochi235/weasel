@@ -1,7 +1,7 @@
 import { themeTokenOf, type ThemePrefsReference } from '@weasel-js/theme/prefs';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { Button } from '@weasel-js/ui/components/Button';
-import { PrefControl, type PrefRenderContext, type PrefRenderer } from '@weasel-js/ui/components/Prefs';
+import { PrefControl, type LeafContext, type LeafRenderer } from '@weasel-js/ui/components/Prefs';
 import { useState } from 'react';
 import styles from './ThemePrefs.module.css';
 
@@ -13,14 +13,14 @@ import styles from './ThemePrefs.module.css';
 export function tokenReferenceRenderer(
   refer: (css: unknown) => ThemePrefsReference | undefined,
   onOpen: (path: string) => void,
-): PrefRenderer {
-  const render = (ctx: PrefRenderContext) => <TokenReference ctx={ctx} refer={refer} onOpen={onOpen} />;
+): LeafRenderer {
+  const render = (ctx: LeafContext) => <TokenReference ctx={ctx} refer={refer} onOpen={onOpen} />;
   // A link and a button, so the row is a group and each names itself.
   return Object.assign(render, { group: true });
 }
 
 function TokenReference({ ctx, refer, onOpen }: {
-  ctx: PrefRenderContext;
+  ctx: LeafContext;
   refer: (css: unknown) => ThemePrefsReference | undefined;
   onOpen: (path: string) => void;
 }) {

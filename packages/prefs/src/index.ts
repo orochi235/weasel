@@ -76,6 +76,14 @@ export {
   prefStoredReset,
   type PrefReset,
   type PrefResetEntry,
+  AUTO,
+  leafIsAtReset,
+  resetPlan,
+  resetPlanAt,
+  prefNodeAt,
+  type Auto,
+  type LeafReading,
+  type ResetWrite,
 } from './autoReset';
 export {
   isPrefScope,

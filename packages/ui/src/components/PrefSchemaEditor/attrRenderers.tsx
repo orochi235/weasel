@@ -1,6 +1,6 @@
 import type { PrefEnumOption, PrefPair } from '@weasel-js/prefs';
 import { Checkbox } from '../Checkbox';
-import type { PrefRenderContext, PrefRenderer } from '../Prefs';
+import type { LeafContext, LeafRenderer } from '../Prefs';
 import { CloseButton } from '../CloseButton';
 import { Input } from '../Input';
 import { Select } from '../Select';
@@ -12,7 +12,7 @@ import { MIXED_HINT } from '../mixedHint';
 import s from './PrefSchemaEditor.module.css';
 
 /** A number that may be unset: empty text clears it, and text that is not a number is left uncommitted. */
-function OptionalNumber({ ctx }: { ctx: PrefRenderContext }) {
+function OptionalNumber({ ctx }: { ctx: LeafContext }) {
   return <NumberText label={ctx.pref.name} value={ctx.mixed ? undefined : (ctx.value as number | undefined)} placeholder={ctx.mixed ? MIXED_HINT : undefined} onCommit={ctx.setValue} />;
 }
 
@@ -35,7 +35,7 @@ function optionProblem(rows: readonly Option[], i: number): string | undefined {
 }
 
 /** An enum's options as chips: each shows its label, and its stored value on hover; typing adds one stored as typed. */
-function EnumOptions({ ctx }: { ctx: PrefRenderContext }) {
+function EnumOptions({ ctx }: { ctx: LeafContext }) {
   const rows = (ctx.value as Option[] | undefined) ?? [];
   return (
     <TokenField<Option>
@@ -66,7 +66,7 @@ function EnumOptions({ ctx }: { ctx: PrefRenderContext }) {
 
 /** The fields sharing a leaf's row, each picked from the schema's fields by path, and the row's label override.
  *  Picking none removes the pairing. */
-function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
+function PairEditor({ ctx }: { ctx: LeafContext }) {
   const pair = ctx.value as PrefPair | undefined;
   const partners = pair === undefined ? [] : typeof pair.with === 'string' ? [pair.with] : [...pair.with];
   const label = pair?.label ?? '';
@@ -99,16 +99,16 @@ function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
   );
 }
 
-export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' | 'symbol' | 'unit' | 'icon', PrefRenderer> = {
+export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' | 'symbol' | 'unit' | 'icon', LeafRenderer> = {
   // Four fields across, which the control column has no room for.
-  unit: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>((ctx) => <UnitEditor ctx={ctx} />, { group: true, wide: true }),
+  unit: Object.assign<LeafRenderer, { group: boolean; wide: boolean }>((ctx) => <UnitEditor ctx={ctx} />, { group: true, wide: true }),
   // A search box and a grid of glyphs, which the control column has no room for.
-  icon: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>((ctx) => (
+  icon: Object.assign<LeafRenderer, { group: boolean; wide: boolean }>((ctx) => (
     <IconAttrField value={ctx.value} mixed={ctx.mixed} onChange={ctx.setValue} />
   ), { group: true, wide: true }),
-  pair: Object.assign<PrefRenderer, { group: boolean }>((ctx) => <PairEditor ctx={ctx} />, { group: true }),
+  pair: Object.assign<LeafRenderer, { group: boolean }>((ctx) => <PairEditor ctx={ctx} />, { group: true }),
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,
-  'enum-options': Object.assign<PrefRenderer, { group: boolean }>((ctx) => <EnumOptions ctx={ctx} />, { group: true }),
+  'enum-options': Object.assign<LeafRenderer, { group: boolean }>((ctx) => <EnumOptions ctx={ctx} />, { group: true }),
   symbol: (ctx) => (
     <Input className={s.symbol} aria-label={ctx.pref.name} mixed={ctx.mixed}
       value={typeof ctx.value === 'string' ? ctx.value : ''} onChange={ctx.setValue} />

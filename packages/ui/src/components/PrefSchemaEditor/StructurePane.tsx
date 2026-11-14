@@ -4,7 +4,7 @@ import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { Tree, treeBranchIds, type TreeDragEffect, type TreeDropHandle } from '../Tree';
 import { seekRows } from './rowSearch';
-import type { PrefRenderer } from '../Prefs';
+import type { LeafRenderer } from '../Prefs';
 import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
@@ -46,7 +46,7 @@ export interface StructurePaneProps {
   /** The custom kinds' attributes, which say what a new leaf of one starts with. */
   custom?: CustomKinds;
   /** Renderers for custom kinds, which a dragged node's ghost is drawn with. */
-  renderers?: Record<string, PrefRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /** The types a new pref may be made from, offered beside the kinds. */
   types: PrefTypes;
   expanded: ReadonlySet<string>;

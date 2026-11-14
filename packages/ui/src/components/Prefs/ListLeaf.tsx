@@ -2,8 +2,9 @@ import type { ReactNode } from 'react';
 import { prefLeafValue, type PrefList, type PrefString } from '@weasel-js/prefs';
 import { ListEditor, type ListEditorProps } from '../ListEditor';
 import { TokenField } from '../TokenField';
-import { entriesDisabled, entryConditions, entryDisabledAt } from './entry';
-import type { PrefRenderContext, PrefRenderer } from './PrefsRow';
+import { entriesDisabled, entryDisabledAt } from './entry';
+import type { LeafContext } from './renderContext';
+import { entryContext } from './renderLeaf';
 
 /**
  * Whether a list's entries are plain text, drawn by {@link PrefTextList} as `ListEditor`'s own fields or as
@@ -35,15 +36,19 @@ export function prefListEntry(pref: PrefList, entry: unknown): unknown {
   return prefLeafValue(pref.item, entry);
 }
 
-/** A `list` leaf: one control per entry, each drawn as the list's `item` leaf, and every edit commits the whole array. */
+/**
+ * A `list` leaf: one control per entry, each drawn as the list's `item` leaf, and every edit commits the whole
+ * array to every target. Targets whose lists differ are drawn mixed before this is reached.
+ */
 export function ListLeaf({
   ctx,
-  renderers,
+  drawsStrings,
   renderItem,
 }: {
-  ctx: PrefRenderContext;
-  renderers?: Record<string, PrefRenderer>;
-  renderItem: (ctx: PrefRenderContext) => ReactNode;
+  ctx: LeafContext;
+  /** The surface has a renderer of its own for strings, which then draws each entry. */
+  drawsStrings: boolean;
+  renderItem: (ctx: LeafContext) => ReactNode;
 }) {
   const pref = ctx.pref as PrefList;
   const { item } = pref;
@@ -54,34 +59,17 @@ export function ListLeaf({
     maxItems: pref.maxItems,
     disabled: ctx.disabled,
   };
-  const entries = Array.isArray(ctx.value) ? (ctx.value as unknown[]) : [];
-  if (prefListIsText(pref, renderers?.string !== undefined)) {
+  if (prefListIsText(pref, drawsStrings)) {
     const texts = prefListTexts(ctx.value);
     return <PrefTextList {...shared} pref={pref} disabled={entriesDisabled(ctx)} entryDisabled={entryDisabledAt(ctx, item, texts)} value={texts} />;
   }
   return (
     <ListEditor<unknown>
       {...shared}
-      value={entries}
+      value={Array.isArray(ctx.value) ? (ctx.value as unknown[]) : []}
       newEntry={() => item.default}
-      renderEntry={(entry, set, name, i) => {
-        const value = prefListEntry(pref, entry);
-        const { item: drawn, ...conditions } = entryConditions(ctx, `${ctx.path}.${i}`, item, value);
-        return renderItem({
-          ...conditions,
-          path: `${ctx.path}.${i}`,
-          pref: { ...drawn, name },
-          value,
-          setValue: set,
-          // An entry is not pinned on its own: it shares the state of its list.
-          auto: ctx.auto,
-          setAuto: ctx.setAuto,
-          values: ctx.values,
-          ...(ctx.fields ? { fields: ctx.fields } : {}),
-          ...(ctx.settles ? { settles: ctx.settles } : {}),
-          ...(ctx.textWaitMs ? { textWaitMs: ctx.textWaitMs } : {}),
-        });
-      }}
+      // An entry is not pinned on its own: it shares the auto state of its list.
+      renderEntry={(entry, set, name, i) => renderItem(entryContext(ctx, i, item, prefListEntry(pref, entry), set, name))}
     />
   );
 }

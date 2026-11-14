@@ -9,10 +9,10 @@ import { f } from './builder';
 import { configFromPrefs } from './fromPrefs';
 import { resolveConfigSchema } from './resolve';
 import { prefsFromConfig } from './toPrefs';
-import type { ControlRenderer } from './types';
+import type { LeafRenderer } from './types';
 
-const swatch: ControlRenderer = () => null;
-const listBody: ControlRenderer = () => null;
+const swatch: LeafRenderer = () => null;
+const listBody: LeafRenderer = () => null;
 const wide = (config: Record<string, unknown>) => (config.cell as number) > 10;
 
 const schema = f.schema({

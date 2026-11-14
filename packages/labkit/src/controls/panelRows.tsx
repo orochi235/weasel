@@ -8,6 +8,7 @@ import {
 } from '@weasel-js/prefs';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { GroupTabs } from '@weasel-js/ui/components/Prefs';
+import type { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import {
   type CollapseProps,
   type PropertyAlign,
@@ -21,7 +22,7 @@ import {
 import { Fragment, type ReactNode } from 'react';
 import { drawsOwn } from '../config/drawsOwn';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
-import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { isLeafActive, isLeafEnabled, isLeafVisible } from '../config/visible';
 import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
@@ -52,7 +53,7 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   setConfig: (path: string, value: unknown) => void;
   draftConfig: ((path: string, value: unknown) => void) | undefined;
   errors: Readonly<Record<string, ReactNode>> | undefined;
-  renderers: Record<string, ControlRenderer> | undefined;
+  renderers: Record<string, LeafRenderer> | undefined;
   /** The schema the panel's aliases point into, where that is not `resolved`'s. */
   over: PrefGroup | PrefSection | undefined;
   showHidden: boolean;
@@ -62,6 +63,8 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   setRowAuto: (path: string, next: boolean, value: unknown) => void;
   /** Paths whose rows are marked as changed. */
   changed?: ReadonlySet<string>;
+  /** Where the panel's leaves are read and reset. */
+  prefs: PrefsSource;
   /** The motif each group and section is drawn in where it names none of its own. */
   motif?: Motif;
   /** The fold of the heading keyed `key`, which starts as `declared` says. */
@@ -174,7 +177,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       return <Fragment key={path}>{body(found, path, rows)}</Fragment>;
     const lifted = lift(found.name, loosePaths(found, path));
     const reset = found.resettable ? (
-      <ResetGroup {...{ group: found, path, config, auto, setConfig }} />
+      <ResetGroup group={found} path={path} source={source.prefs} />
     ) : undefined;
     // `as: 'section'` is a heading over the rows, unframed: the panel's motif doesn't reach it.
     if (found.as === 'section') {

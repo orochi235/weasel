@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefsForm, type PrefRenderContext } from './PrefsForm';
+import { PrefsForm, type LeafContext } from './PrefsForm';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
@@ -97,7 +97,7 @@ describe('PrefsForm list leaf', () => {
       },
     };
     const paths = new Set<string>();
-    const tag = (ctx: PrefRenderContext) => {
+    const tag = (ctx: LeafContext) => {
       paths.add(ctx.path);
       return <button onClick={() => ctx.setValue('z')}>{`tag ${String(ctx.value)}`}</button>;
     };

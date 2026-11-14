@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { SelectionPanel, type PropertyRenderer } from './SelectionPanel';
+import { SelectionPanel, type LeafRenderer } from './SelectionPanel';
 
 afterEach(cleanup);
 
@@ -15,7 +15,7 @@ const selectionOf = (ids: string[]): SelectionApi => ({ current: ids }) as unkno
 const locked: PrefLeaf = { kind: 'boolean', name: 'Locked', description: '', default: false, control: 'checkbox' };
 const alias = (of: string, name = ''): PrefLeaf => ({ kind: 'alias', name, description: '', default: undefined, of });
 
-function setup(members: PrefSection['members'], renderers?: Record<string, PropertyRenderer>) {
+function setup(members: PrefSection['members'], renderers?: Record<string, LeafRenderer>) {
   const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', locked: false } });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members } }];

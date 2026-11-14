@@ -3,6 +3,7 @@ import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefPair } from '@weasel-js/prefs';
 import { ATTR_RENDERERS } from './attrRenderers';
+import { loneLeafContext } from '../PrefsSource';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
@@ -10,10 +11,9 @@ afterEach(cleanup);
 function Pair({ seen }: { seen: { pair?: PrefPair } }) {
   const [value, setValue] = useState<PrefPair | undefined>({ with: 'pose.y' });
   seen.pair = value;
-  return <>{ATTR_RENDERERS.pair({
-    path: 'pair', pref: { kind: 'pair', name: 'Pair', description: '', default: undefined }, value,
-    setValue: (v) => setValue(v as PrefPair | undefined), auto: false, setAuto: () => {},
-  })}</>;
+  return <>{ATTR_RENDERERS.pair(
+    loneLeafContext('pair', { kind: 'pair', name: 'Pair', description: '', default: undefined }, value, (v) => setValue(v as PrefPair | undefined)),
+  )}</>;
 }
 
 describe('the pair attribute', () => {

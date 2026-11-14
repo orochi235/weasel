@@ -1,10 +1,10 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { ownAt } from './path';
-import type { ControlRenderer, DialogSpec, ResolvedConfig } from './types';
+import type { DialogSpec, LeafRenderer, ResolvedConfig } from './types';
 
 /** The entry `map` holds for `key`, by path or by kind: not one every object inherits, so a leaf keyed
  *  `toString` is not drawn by `Object.prototype.toString`. */
-export function entryAt<T extends ControlRenderer | DialogSpec>(
+export function entryAt<T extends LeafRenderer | DialogSpec>(
   map: Readonly<Record<string, T>> | undefined,
   key: string,
 ): T | undefined {
@@ -14,7 +14,7 @@ export function entryAt<T extends ControlRenderer | DialogSpec>(
 /** Whether the lab or the instrument draws the control of the leaf at `path` itself: by path, in a dialog, or by kind. */
 export function drawsOwn(
   resolved: ResolvedConfig,
-  renderers: Record<string, ControlRenderer> | undefined,
+  renderers: Record<string, LeafRenderer> | undefined,
   path: string,
   leaf: PrefLeaf,
 ): boolean {

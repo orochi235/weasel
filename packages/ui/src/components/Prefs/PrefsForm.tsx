@@ -11,7 +11,9 @@ import { formAttrs, useDropFrame } from './dropTarget';
 import { HiddenBadge, marksHidden, type MarkHiddenProps } from './hidden';
 import { NoMatches } from './NoMatches';
 import { filterPrefRoot, prefFieldChoices, type PrefFieldChoice } from './schema';
-import type { PrefRenderer, WalkCtx } from './PrefsRow';
+import type { LeafRenderer, WalkCtx } from './PrefsRow';
+import { useValuesSource } from '../PrefsSource/useValuesSource';
+import { PrefsSource } from '../PrefsSource/PrefsSource';
 import { paneChildren } from './PrefsPane';
 import { BarRootLayout } from './BarRootLayout';
 import type { BarOrientation } from '../Bar/BarLayout';
@@ -21,7 +23,7 @@ import { useSplitRows, type PrefSplitProps } from './splitRows';
 import { useParamsPolicy } from './useParamsPolicy';
 import s from './Prefs.module.css';
 
-export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
+export type { LeafRenderer, LeafContext } from './PrefsRow';
 
 /** How a {@link PrefsForm} lays its groups out. */
 export type PrefsLayout = 'columns' | 'rail' | 'list';
@@ -45,7 +47,7 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
    * kinds with no renderer show a labeled placeholder instead of
    * crashing.
    */
-  renderers?: Record<string, PrefRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /** Reveal `hidden` leaves (dev tooling). Default false. */
   showHidden?: boolean;
   /**
@@ -223,7 +225,12 @@ export function PrefsForm(props: PrefsFormProps) {
   const selection = useSelectedRow(selected, lead, props.onSelect);
   const split = useSplitRows(props, schema, props.over);
   const { settles, textWaitMs } = useParamsPolicy('form');
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, onReset: props.onReset, canInherit, inheritHint, fields, targets, changed: props.changed, errors: props.errors, selected: shown, lead, disabled, active: applied?.active, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles, textWaitMs };
+  const stateAt = useMemo(
+    () => (path: string) => ({ disabled: disabled?.has(path) ?? false, hidden: applied?.hidden.has(path) ?? false, active: applied?.active.has(path) ?? false }),
+    [disabled, applied],
+  );
+  const source = useValuesSource(schema, values, onChange, { auto, onAutoChange, canAuto: canInherit, mixed: props.mixed, onReset: props.onReset, over, stateAt });
+  const ctx: WalkCtx = { source, values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, onReset: props.onReset, canInherit, inheritHint, fields, targets, changed: props.changed, errors: props.errors, selected: shown, lead, disabled, active: applied?.active, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles, textWaitMs };
   const field = filterable ? (
     <div className={s.filter}>
       <Input
@@ -235,32 +242,25 @@ export function PrefsForm(props: PrefsFormProps) {
     </div>
   ) : null;
 
-  if (root?.as === 'bar') {
-    return (
-      <BarRootLayout root={root} ctx={ctx} drop={props.drop} selection={selection} orientation={props.orientation}
-        filterField={field} className={className} />
-    );
-  }
-
-  if (layout === 'rail') {
-    return (
-      <RailLayout
-        {...props}
-        root={root}
-        ctx={ctx}
-        query={query}
-        selection={selection}
-        filterField={field}
-        onClearFilter={() => setQuery('')}
-      />
-    );
-  }
-
-  return (
+  const body = root?.as === 'bar' ? (
+    <BarRootLayout root={root} ctx={ctx} drop={props.drop} selection={selection} orientation={props.orientation}
+      filterField={field} className={className} />
+  ) : layout === 'rail' ? (
+    <RailLayout
+      {...props}
+      root={root}
+      ctx={ctx}
+      query={query}
+      selection={selection}
+      filterField={field}
+      onClearFilter={() => setQuery('')}
+    />
+  ) : (
     <FlatLayout root={root} ctx={ctx} drop={props.drop} list={layout === 'list'} across={layout === 'list' && props.rowsAcross === 2}
       selection={selection} className={className}
       filterField={field} noMatches={<NoMatches query={query} onClear={() => setQuery('')} />} />
   );
+  return <PrefsSource source={source}>{body}</PrefsSource>;
 }
 
 /** The columns and list layouts: every group drawn at once, a column each or one under another. */

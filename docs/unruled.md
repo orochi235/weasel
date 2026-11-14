@@ -347,7 +347,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `pageAt`, `pageOfBounds`, `pagesBounds`, `adjacentPage`, `createPagesLayer`, and `fitViewToPage`. An
   object is on the page it overlaps most.
 - 2026-10-13 (pass 6): A slider drag in `SelectionPanel` is one undo step: moves are written
-  through `scene.untracked`, and letting go records one batch. `PropertyRenderContext` gains
+  through `scene.untracked`, and letting go records one batch. `LeafContext` gains
   `drafts`.
 - 2026-10-13 (pass 6): `overChildren`, `isOverChildren`, and `splitOverChildren` are new core
   exports; a container's `data.label` draws over its children through them.

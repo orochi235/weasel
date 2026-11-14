@@ -120,7 +120,7 @@ function useShownChanges(changedAssets: WorkspaceChanges, assetId: string, types
  * one from `actionCatalog`. With none the pane lists the host's actions by their keys, and nothing sorts them.
  */
 export function AssetEditor(
-  { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, onChangedAssets, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
+  { workspace, onChange, original, codec, same = sameRoots, list = false, elsewhere, order, onElsewhere, onChangedAssets, startOn, preview, kinds = NO_KINDS, types = NO_TYPES, renderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
   const [first] = useState(workspace);
   const base = original ?? first;
@@ -283,7 +283,7 @@ export function AssetEditor(
           kinds={kindList} custom={kindsShown} types={types} renderers={renderers} actions={actionList ?? undefined} over={over} readOnly={readOnly || bundles?.locked(selection.paths)} onNotice={setNotice} />}
       </div>
       <ResizeHandle {...attributesSize} {...RANGE.attributes} aria-label="Resize attributes" />
-      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}
+      <PreviewPane schema={schema} renderers={renderers} selected={selection.paths}
         onSelect={(path, how) => {
           // The root's own entry names no node to add to a selection.
           if (how.toggle && path !== null) { selection.toggle(path); picked(); }

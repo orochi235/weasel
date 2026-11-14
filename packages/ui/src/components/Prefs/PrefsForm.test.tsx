@@ -8,7 +8,7 @@ import {
   type PrefNumber,
 } from '@weasel-js/prefs';
 import { PrefsDialog } from './PrefsDialog';
-import { PrefsForm, type PrefRenderContext } from './PrefsForm';
+import { PrefsForm, type LeafContext } from './PrefsForm';
 import { rotationDegreesUnit } from '@weasel-js/core';
 import { renderWithIcons } from '../../testing/withIcons';
 
@@ -133,7 +133,7 @@ describe('PrefsForm', () => {
   });
 
   it('dispatches unknown kinds to the renderers map with full context', () => {
-    const seen: PrefRenderContext[] = [];
+    const seen: LeafContext[] = [];
     renderWithIcons(
       <PrefsForm
         schema={SCHEMA}
@@ -622,7 +622,7 @@ describe('PrefsForm — inherited leaves', () => {
   });
 
   it('draws plain labels with no onAutoChange, and tells a custom renderer the truth', () => {
-    const seen: PrefRenderContext[] = [];
+    const seen: LeafContext[] = [];
     const schema: PrefGroup = {
       name: 'Looks',
       children: { tint: { kind: 'swatch', name: 'Tint', description: '', default: 'red' } },

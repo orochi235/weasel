@@ -1,6 +1,6 @@
 import { Children, useRef, type ReactNode } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import type { PropertyRenderer } from '../SelectionPanel/renderContext';
+import type { LeafRenderer } from '../SelectionPanel/renderContext';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { Bar } from '../Bar/Bar';
 import s from './ToolOptionsBar.module.css';
@@ -31,7 +31,7 @@ export interface ToolOptionsBarProps {
   /** Paths whose sources disagree — drawn as the control's mixed state. */
   mixed?: ReadonlySet<string>;
   /** Control overrides, by dotted path or by leaf kind, as the panel takes. */
-  renderers?: Record<string, PropertyRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /** The schema `schema`'s `alias` leaves point into, handed to the `Bar`. Default: `schema` itself. */
   over?: PrefGroup | PrefSection;
   children?: ReactNode;

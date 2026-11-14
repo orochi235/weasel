@@ -97,7 +97,7 @@ function labeledRow(row: PanelRow, controls: readonly RenderedCell[], marks: Pan
       marked={marked}
       disabled={controls.every((cell) => cell.disabled)}
       disabledReason={first.leaf.disabledReason}
-      onReset={due.length > 0 ? () => scope.reset(due, row.label) : undefined}
+      onReset={due.length > 0 ? () => scope.source.resetAs(due, row.label) : undefined}
       attrs={{ ...selectionAttrs(panelLeafKey(first), shared ? selectedOnly(marks) : marks, true), ...(shared ? hiddenAttrs(marked) : {}) }}
     >
       {controls.map(({ key, content }) => (
@@ -190,7 +190,7 @@ function rowsSection(section: PanelSection, scope: PanelCellScope, marks: PanelM
 function sectionReset(section: PanelSection, scope: PanelCellScope): ReactNode {
   if (!section.resettable) return null;
   const due = panelResets(panelRowsOf(section).flatMap((row) => row.leaves), scope);
-  return <ResetControl name={section.name || 'all'} disabled={due.length === 0} onReset={() => scope.reset(due, section.name)} />;
+  return <ResetControl name={section.name || 'all'} disabled={due.length === 0} onReset={() => scope.source.resetAs(due, section.name)} />;
 }
 
 /** `section` as drawn, `depth` sections deep, or `undefined` when it draws nothing. */

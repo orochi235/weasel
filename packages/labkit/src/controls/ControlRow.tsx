@@ -33,7 +33,7 @@ import {
 import type { ReactNode } from 'react';
 import { drawsOwn, entryAt } from '../config/drawsOwn';
 import { valueAtPath, withValueAtPath } from '../config/path';
-import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf, isLeafActive } from '../config/visible';
 import { boundAction } from './boundAction';
 import { CurveRow } from './CurveRow';
@@ -42,6 +42,7 @@ import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField, useLabSettles, useTextWaitMs } from './fields';
 import { inDialog, summarizeLeaf } from './inDialog';
+import { labRowContext } from './labSource';
 import { useRowAuto } from './rowAuto';
 import { UnwiredRow } from './rows';
 
@@ -58,7 +59,7 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   draftConfig?: (path: string, value: unknown) => void;
   /** What is wrong with the row's value, shown under it. */
   error?: ReactNode;
-  renderers?: Record<string, ControlRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   pack: ControlPack;
   layout?: PropertyRowLayout;
   auto?: ReadonlySet<string>;
@@ -142,7 +143,7 @@ function CompoundControl({
   label: string;
   value: unknown;
   onChange: (value: unknown) => void;
-  renderers: Record<string, ControlRenderer> | undefined;
+  renderers: Record<string, LeafRenderer> | undefined;
 }) {
   const choices = useFieldChoices();
   const inside = given ? { leaf, ...given } : conditionedLeaf(resolved, path, leaf, config, over);
@@ -213,10 +214,10 @@ function CompoundRow({
  *  beats the instrument's: controls[path] -> node .render/.dialog -> controls[kind]. */
 function customRow(
   resolved: ResolvedConfig,
-  renderers: Record<string, ControlRenderer> | undefined,
+  renderers: Record<string, LeafRenderer> | undefined,
   path: string,
   leaf: PrefLeaf,
-): ControlRenderer | undefined {
+): LeafRenderer | undefined {
   const dialog = entryAt(resolved.dialogs, path);
   return (
     entryAt(renderers, path) ??
@@ -300,7 +301,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   const settles = useLabSettles();
   const textWaitMs = useTextWaitMs(leaf);
   const rowAuto = useRowAuto({ path, leaf, resolved, config, shown, auto, setRowAuto, setConfig });
-  const { isAutoRow, value, setAuto, readout: autoReadout, props: autoProps } = rowAuto;
+  const { value, setAuto, readout: autoReadout, props: autoProps } = rowAuto;
 
   const changed = changedPaths?.has(path) === true;
   const custom = customRow(resolved, renderers, path, leaf);
@@ -310,20 +311,15 @@ function LeafRow<TC extends Record<string, unknown>>({
     const offered = autoProps.onAutoChange !== undefined;
     const bound = boundAction(leaf, config, setConfig);
     return spanned(
-      custom({
-        path,
-        pref: offered ? bound : withoutAuto(bound),
-        value,
-        values: config,
-        changed,
-        setValue: write,
-        ...(draft ? { draftValue: draft } : {}),
-        auto: isAutoRow,
-        setAuto: offered ? setAuto : () => {},
-        fields: choices,
-        disabled,
-        error,
-      }),
+      custom(
+        labRowContext(
+          { resolved, config, shown, setConfig, draftConfig, auto, setRowAuto, over },
+          path,
+          offered ? bound : withoutAuto(bound),
+          { value, changed, draft, error, disabled, fields: choices },
+          offered ? setAuto : undefined,
+        ),
+      ),
     );
   }
 
