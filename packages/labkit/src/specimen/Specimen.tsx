@@ -516,8 +516,12 @@ function OverlaysAndFeedback() {
       </Cell>
       <Cell label="Powerline">
         <Powerline variant="solid" size="sm">
-          <Badge emphasis="high" endCap="chevron">main</Badge>
-          <Badge grade="info" endCap="slant">✓ 12</Badge>
+          <Badge emphasis="high" endCap="chevron">
+            main
+          </Badge>
+          <Badge grade="info" endCap="slant">
+            ✓ 12
+          </Badge>
           <Badge emphasis="low">~/proj</Badge>
         </Powerline>
       </Cell>
