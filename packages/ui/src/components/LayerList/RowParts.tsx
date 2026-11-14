@@ -1,13 +1,12 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { imeKey } from '@weasel-js/ui-input';
-import rows from '../ItemList/ItemList.module.css';
 import type { LayerListItem, LayerListProps } from './layerListProps';
 import s from './LayerList.module.css';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 
-// Keeps a press on a control inside a row from also starting the row's press.
-export const stop = (e: { stopPropagation(): void }) => e.stopPropagation();
+// Keeps a press or a double-click in the rename field the field's own.
+const stop = (e: { stopPropagation(): void }) => e.stopPropagation();
 
 /** Whether `item`'s label can be edited in place under `props`. */
 export function canRename(props: LayerListProps, item: LayerListItem): boolean {
@@ -33,7 +32,7 @@ export function RowLabel({
   const renamable = canRename(props, item);
   if (renaming && renamable) return <RenameField item={item} props={props} close={() => setRenaming(false)} />;
   return (
-    <span className={rows.label} onDoubleClick={renamable ? () => setRenaming(true) : undefined}>
+    <span onDoubleClick={renamable ? () => setRenaming(true) : undefined}>
       {item.title ?? item.label}
     </span>
   );
@@ -55,7 +54,7 @@ function RenameField({ item, props, close }: { item: LayerListItem; props: Layer
     e.stopPropagation();
     if ((e.key !== 'Enter' && e.key !== 'Escape') || imeKey(e.nativeEvent)) return;
     e.preventDefault();
-    finish(e.key === 'Enter', e.currentTarget.closest<HTMLElement>('[role="row"]'));
+    finish(e.key === 'Enter', e.currentTarget.closest<HTMLElement>('[role="row"], [role="treeitem"]'));
   };
   return (
     <input
@@ -86,11 +85,7 @@ export function LockToggle({ item, props }: { item: LayerListItem; props: LayerL
       className={s.lockToggle}
       aria-label={`Lock ${item.label}`}
       aria-pressed={locked}
-      onPointerDown={stop}
-      onClick={(e) => {
-        e.stopPropagation();
-        onLockChange(item.id, !locked);
-      }}
+      onClick={() => onLockChange(item.id, !locked)}
     >
       <Icon name={icon(locked ? 'lock' : 'unlock')} size={12} />
     </button>

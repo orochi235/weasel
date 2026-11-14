@@ -2,10 +2,6 @@
   width: 240px;
 }
 
-.wide {
-  width: 320px;
-}
-
 .swatch {
   flex: 0 0 auto;
   width: 12px;
@@ -13,9 +9,4 @@
   border-radius: var(--wzl-radius-sm);
   border: 1px solid var(--wzl-border);
   background: var(--swatch);
-}
-
-.note {
-  color: var(--wzl-fg-subtle);
-  font-size: var(--wzl-font-size-sm);
 }

@@ -66,6 +66,15 @@ describe('useSceneLayerList', () => {
     hook.result.current.onReorder({ ids: ['g1'], parentId: 'g', index: 0 });
     expect(scene.childrenOf(asNodeId('g'))).toEqual(['g2', 'g1']);
   });
+
+  it('moves a root into a container, and a child out of one', () => {
+    const { hook, scene } = setup();
+    hook.result.current.onReorder({ ids: ['b'], parentId: 'g', index: 0 });
+    expect(scene.childrenOf(asNodeId('g'))).toEqual(['g1', 'g2', 'b']);
+    hook.rerender();
+    hook.result.current.onReorder({ ids: ['g1'], parentId: null, index: 0 });
+    expect(scene.roots).toEqual(['a', 'g', 'g1']);
+  });
 });
 
 describe('useSceneLayerList — hide, lock, rename', () => {
@@ -162,6 +171,23 @@ describe('useSceneLayerList — annotation layers', () => {
     hook.result.current.onReorder({ ids: ['box'], parentId: null, index: 1 });
     hook.rerender();
     expect(ids(hook.result.current.items)).toEqual([[row, ['n2', 'n1']], 'box', 'c']);
+  });
+
+  it('moves a note only within its own layer\'s row, and never the row itself', () => {
+    const { hook } = annotated({ picked: null, pick: vi.fn() });
+    const { canMove } = hook.result.current;
+    expect(canMove({ ids: ['n1'], parentId: row, index: 0 })).toBe(true);
+    expect(canMove({ ids: ['n1'], parentId: null, index: 1 })).toBe(false);
+    expect(canMove({ ids: ['box'], parentId: row, index: 0 })).toBe(false);
+    expect(canMove({ ids: ['box'], parentId: null, index: 1 })).toBe(true);
+    expect(canMove({ ids: [row], parentId: null, index: 1 })).toBe(false);
+  });
+
+  it('reorders the notes in an annotation layer\'s row', () => {
+    const { hook } = annotated({ picked: null, pick: vi.fn() });
+    hook.result.current.onReorder({ ids: ['n1'], parentId: row, index: 0 });
+    hook.rerender();
+    expect(ids(hook.result.current.items)).toEqual([[row, ['n1', 'n2']], 'box']);
   });
 
   it('hides the annotation layer from its row, and removes a node from its row', () => {

@@ -598,11 +598,6 @@ name a package. Breaking changes are in scope.
   `Rulers`. A 1D `Ruler` over a `ContinuousScale`, with thinning built in and Timeline's playhead and BandEditor's
   range ends as children *(design inferred)*. Closes when the tick logic lives in one place.
 
-- **(P3) [agent] Make `LayerList` a `Tree` with a row-controls slot.** `Tree` is `role="tree"` with cross-parent
-  drops; `LayerList` is `role="treegrid"` with a `useReorderDragList` per level, its own `layerTree.ts`, and
-  `ItemList`'s CSS; `Tree`'s `trailing` is documented "Not a control". Also resolve the `useSceneLayerList` name
-  clash with core. Closes when `LayerList` is a `Tree` preset.
-
 - **(P2) [agent] Split `ToolPalette` into a rail of items plus a `ToolsApi` adapter.** `ToolPalette` accepts only
   `tools: ToolsApi`, so labkit's `PaletteRegion` rebuilds its frame. The rail takes items (icon, label, shortcut,
   active, onPress, group). Closes when `PaletteRegion` renders the rail.
