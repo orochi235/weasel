@@ -1,5 +1,6 @@
 import { inferredNodeProperties, toHex8, useOngoingAction } from '@weasel-js/core';
 import { AnchorFields } from '@weasel-js/ui/components/AnchorFields';
+import { HistoryList } from '@weasel-js/ui/components/HistoryList';
 import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 import { SwatchStrip } from '@weasel-js/ui/components/SwatchStrip';
 import { solidColorOf } from '@weasel-js/paint';
@@ -11,7 +12,6 @@ import { DRAW_NODE_ROUTING, drawKindLabel } from './nodeKinds';
 import { WD_RENDERERS } from './paintRenderers';
 import { useSurfaceHost } from './surfaces/hostContext';
 import { useColorContext } from './tools/colorContext';
-import { HistoryList } from './ui/HistoryList';
 
 /** The selection's anchor and properties: what the Properties asset shows while no document row is picked. */
 export function SelectionProperties(): ReactElement {
@@ -39,11 +39,11 @@ export function HistoryEntries(): ReactElement {
   useSyncExternalStore(subscribe, () => scene.getVersion());
   return (
     <HistoryList
-      items={[
+      entries={[
         { id: '__initial__', label: 'Initial' },
         ...scene.historyEntries().map((e) => ({ id: e.id, label: e.label })),
       ]}
-      currentIndex={scene.historyIndex()}
+      current={scene.historyIndex()}
       onJump={(index) => scene.jumpToHistoryIndex(index)}
     />
   );
