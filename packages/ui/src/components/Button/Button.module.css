@@ -116,6 +116,8 @@
 .size_sm { --btn-height: var(--wzl-control-h-sm); --btn-padx: var(--wzl-button-pad-x, var(--wzl-space-4)); --btn-fontsize: var(--wzl-font-size-sm); }
 .size_md { --btn-height: var(--wzl-control-h); --btn-padx: var(--wzl-button-pad-x, var(--wzl-space-6)); --btn-fontsize: var(--wzl-font-size); }
 
+/* A square never gives up width to its row. */
+.iconOnly { flex: 0 0 auto; }
 .iconOnly.size_sm { width: var(--wzl-control-h-sm); --btn-padx: 0; }
 .iconOnly.size_md { width: var(--wzl-control-h); --btn-padx: 0; }
 
@@ -230,16 +232,20 @@
 }
 .variant_solid:active::before { opacity: calc(0.2 * var(--wzl-gloss)); }
 
-/* Ghost: silhouette only — no glass body, no gloss. */
+/* Ghost: silhouette only — no glass body, no gloss. Low emphasis mutes it until pointed at. */
 .variant_ghost {
   background: transparent;
-  color: var(--wzl-fg);
+  color: var(--wzl-emphasis-fg, var(--wzl-fg));
   box-shadow: none;
 }
 .variant_ghost::before { display: none; }
 
 .variant_ghost:hover:not(:disabled, [data-disabled]):not(.pressed) {
   background: var(--wzl-surface-hover);
+}
+
+.variant_ghost[data-emphasis='low']:hover:not(:disabled, [data-disabled]) {
+  color: var(--wzl-fg);
 }
 
 /* A graded ghost stays quiet until pointed at, then shows its grade: a discard in a toolbar reddens on hover. */
