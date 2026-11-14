@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
 import { ToolButton } from '@weasel-js/ui/components/ToolButton';
+import { RunScope } from '@weasel-js/ui/components/Run';
 
 function Dot() {
   return (
@@ -27,8 +28,11 @@ export default meta;
 
 type Story = StoryObj<typeof ToolGroup>;
 
-export const Vertical: Story = {};
-export const Horizontal: Story = { args: { orientation: 'horizontal' } };
+/** A group reads which way it runs from the run it sits in: a row by default, a column in a vertical one. */
+export const Horizontal: Story = {};
+export const Vertical: Story = {
+  render: (args) => <RunScope orientation="vertical"><ToolGroup {...args} /></RunScope>,
+};
 export const Labeled: Story = {
   args: { groupKey: 'shape', 'aria-label': 'Shape tools' },
 };

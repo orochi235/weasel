@@ -519,13 +519,6 @@ name a package. Breaking changes are in scope.
   should open a paint editor is the maintainer's call. Closes when a slot edits a gradient, or the maintainer rules it
   stays a solid picker.
 
-- **(P2) [agent] One run context in place of `OrientationContext`, `AlongContext`, and `BarSideContext`.** All
-  three say which way the run goes, and `Bar/barSide.ts` derives its side from the run. `ToolGroup` takes an
-  `orientation` prop defaulting to vertical instead of reading the context; `ToolRail`, `ToolPalette`, `ResizeHandle`,
-  and `PrefsForm` take the prop too. A `useRun()` returns shape, alignment, orientation, and the side at a point;
-  `BarMarkContext` stays private. Closes when those three contexts are one and no component inside a run takes
-  `orientation` as a prop.
-
 - **(P2) [agent] One form context and one `ActionButton`.** `ToolButton`, `Toolbar.Button`, `BarActionButton`, and
   the segment button all carry label, shortcut, description, `disabledReason`, pressed state, and a menu option, and
   all build tooltips through `segmentTooltipContent`. `BarActionButton` already reads `Bar/barInMenu.ts`'s

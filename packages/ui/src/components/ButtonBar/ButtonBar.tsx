@@ -5,7 +5,7 @@ import { tilingRoving } from '../../tiling';
 import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
-import type { Orientation } from '../orientation';
+import type { Orientation } from '../Run';
 
 /**
  * One button in an {@link ButtonBar}. `value` is only a React key; the item

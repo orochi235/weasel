@@ -4,7 +4,7 @@ import type { IconSpec } from '@weasel-js/icons';
 import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
 import { BarActions } from '../Bar/BarActions';
-import type { Orientation } from '../orientation';
+import type { Orientation } from '../Run';
 import type { PropertyRenderer } from '../SelectionPanel/renderContext';
 
 /** Which actions an {@link ActionBar} draws: one group's, or every one carrying a tag. */
@@ -26,7 +26,7 @@ export type ActionBarProps = ActionBarSource & ActionBarOptions;
 
 /** What an {@link ActionBar} takes besides its {@link ActionBarSource}. */
 export interface ActionBarOptions {
-  /** Layout direction. Defaults to `'horizontal'`. */
+  /** Layout direction. Defaults to the way the run the bar sits in goes, else `'horizontal'`. */
   orientation?: Orientation;
   /**
    * Per-entry icon overrides, keyed by `ActionItem.key` — the action id, or
@@ -59,7 +59,7 @@ export interface ActionBarOptions {
  * No keyboard navigation (roving tabindex).
  */
 export function ActionBar(props: ActionBarProps) {
-  const { group, tag, orientation = 'horizontal', icons, labels, only, className } = props;
+  const { group, tag, orientation, icons, labels, only, className } = props;
   const schema = useMemo((): PrefGroup => {
     const leaf: PrefActions = { kind: 'actions', name: '', description: '', default: undefined, group: group ?? '' };
     return { name: '', children: { actions: leaf } };

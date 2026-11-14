@@ -1,6 +1,6 @@
 import { useRef, type ReactElement, type ReactNode } from 'react';
 import type { RunAlign } from '@weasel-js/geom';
-import { useTrackShape } from '../Along/alongContext';
+import { useRun } from '../Run';
 import { SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, useSwatchStop, type SwatchChange } from './SwatchButton';
 import { tiling } from '../../tiling';
 import { SwatchRings } from './SwatchRings';
@@ -56,20 +56,20 @@ export interface SwatchGridProps {
  * along the ring or on the next ring in or out that lies its way on screen.
  */
 export function SwatchGrid(props: SwatchGridProps): ReactElement {
-  const along = useTrackShape();
-  if (along !== null && along.shape.kind !== 'line') {
+  const run = useRun();
+  if (run.shape !== undefined && run.shape.kind !== 'line') {
     const { options, value, columns = 6, onChange, onAltChange, className } = props;
     return (
       <SwatchRings
-        shape={along.shape}
-        align={along.align}
+        shape={run.shape}
+        align={run.align ?? 'center'}
         onChange={onChange}
         onAltChange={onAltChange}
         groups={[{ key: 'grid', label: props['aria-label'], options, value, columns, className }]}
       />
     );
   }
-  return <SwatchGridLine {...props} align={props.align ?? along?.align ?? 'start'} />;
+  return <SwatchGridLine {...props} align={props.align ?? enclosing.align ?? 'start'} />;
 }
 
 function SwatchGridLine(props: SwatchGridProps): ReactElement {

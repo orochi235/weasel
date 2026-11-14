@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { formatShortcut } from '@weasel-js/gestures';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
-import type { Orientation } from '../orientation';
+import { RunScope, type Orientation } from '../Run';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Icon } from '../../icons/Icon';
 import { isActive, isSlot, isStack, railRuns, type ToolRailButton, type ToolRailItem } from './items';
@@ -74,10 +74,11 @@ export function ToolRail(props: ToolRailProps) {
       aria-label={ariaLabel}
       aria-orientation={columns ? undefined : orientation}
     >
+      <RunScope orientation={orientation}>
       {runs.map((run, i) => (
         <Fragment key={run.key}>
           {i > 0 && <hr className={s.rule} aria-orientation={horizontal ? 'vertical' : 'horizontal'} />}
-          <ToolGroup orientation={orientation} columns={columns} groupKey={run.group} aria-label={run.group}>
+          <ToolGroup columns={columns} groupKey={run.group} aria-label={run.group}>
             {run.items.map((item) =>
               isStack(item) ? <RailStack key={item.id} stack={item} cycle={stackCycle} iconSize={iconSize} />
                 : isSlot(item) ? <Fragment key={item.id}>{item.render()}</Fragment>
@@ -85,6 +86,7 @@ export function ToolRail(props: ToolRailProps) {
           </ToolGroup>
         </Fragment>
       ))}
+      </RunScope>
     </div>
   );
 }

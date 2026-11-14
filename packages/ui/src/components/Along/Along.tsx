@@ -1,5 +1,6 @@
-import { useMemo, useRef, type ReactElement, type ReactNode } from 'react';
-import { AlongContext, type AlongArc, type RunAlign } from './alongContext';
+import { useRef, type ReactElement, type ReactNode } from 'react';
+import type { AlongArc, RunAlign } from './alongContext';
+import { RunScope } from '../Run/run';
 import { useBoxShape, type BoxShape } from './useBoxShape';
 import s from './Along.module.css';
 
@@ -18,7 +19,7 @@ export interface AlongProps {
 const TOP_HALF: AlongArc = { start: 270, end: 90 };
 
 /**
- * Fills its containing block and hands controls inside it a track shape sized from that box.
+ * Fills its containing block and sets the run of the controls inside it to a track shape sized from that box.
  *
  * An arc's angles are degrees clockwise from 12 o'clock on a y-down plane; the default arc is the inscribed
  * circle's top half. An arc is given by its ends, or by the direction its middle faces and its span in degrees or
@@ -37,10 +38,9 @@ const TOP_HALF: AlongArc = { start: 270, end: 90 };
 export function Along({ arc = TOP_HALF, shape, align = 'center', className, children }: AlongProps): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const made = useBoxShape(ref, arc, shape);
-  const ctx = useMemo(() => ({ shape: made, align }), [made, align]);
   return (
     <div ref={ref} className={className ? `${s.along} ${className}` : s.along}>
-      <AlongContext.Provider value={ctx}>{children}</AlongContext.Provider>
+      <RunScope shape={made} align={align}>{children}</RunScope>
     </div>
   );
 }

@@ -1,5 +1,4 @@
-import { createContext, useContext } from 'react';
-import type { Point, RunAlign, TrackShape } from '@weasel-js/geom';
+import type { Point, RunAlign } from '@weasel-js/geom';
 
 /** How far an arc reaches: `'<n>deg'` of turn, or `'<n>px'` along it whatever its radius, so it keeps its length as
  *  its box grows. */
@@ -38,17 +37,4 @@ export interface AlongArcPlace {
   inset?: number;
 }
 
-/** What `Along` hands the controls inside it. */
-export interface AlongCtx {
-  shape: TrackShape;
-  align: RunAlign;
-}
-
 export type { RunAlign };
-
-export const AlongContext = createContext<AlongCtx | null>(null);
-
-/** The shape of the nearest `Along`, or null outside one. */
-export function useTrackShape(): AlongCtx | null {
-  return useContext(AlongContext);
-}

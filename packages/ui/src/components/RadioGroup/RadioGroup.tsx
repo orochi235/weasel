@@ -6,7 +6,7 @@ import {
   type RadioGroupProps as RACRadioGroupProps,
   type RadioProps as RACRadioProps,
 } from 'react-aria-components';
-import { useTrackShape } from '../Along/alongContext';
+import { useRun } from '../Run';
 import { slotClass, useRunSlot } from '../Along/runSlots';
 import { fieldClasses } from '../Field/Field';
 import { FieldFoot, type FieldSlotProps } from '../Field/fieldSlots';
@@ -26,8 +26,8 @@ export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className'>
  * description and error one row further in, and `orientation` has nothing to choose.
  */
 export function RadioGroup(props: RadioGroupProps) {
-  const along = useTrackShape();
-  if (along !== null && along.shape.kind !== 'line') return <RadioGroupAlong {...props} shape={along.shape} align={along.align} />;
+  const enclosing = useRun();
+  if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return <RadioGroupAlong {...props} shape={enclosing.shape} align={enclosing.align ?? 'center'} />;
   const { label, description, errorMessage, children, className, ...rest } = props;
   return (
     <RACRadioGroup

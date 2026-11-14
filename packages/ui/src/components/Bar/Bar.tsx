@@ -41,7 +41,7 @@ export interface BarProps {
    *  the leaf of that schema there shows it: its entry in `values`, else its default. */
   over?: PrefGroup | PrefSection;
   /** Which way the bar runs. A vertical bar has no room beside a field, so
-   *  every leaf but an action opens from a button. Default `'horizontal'`. */
+   *  every leaf but an action opens from a button. Default: the way the run it sits in goes, else `'horizontal'`. */
   orientation?: BarOrientation;
   /** Names the bar and makes it a `toolbar`. Leave unset inside one. */
   label?: string;

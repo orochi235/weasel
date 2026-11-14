@@ -629,7 +629,7 @@ function ToolChrome() {
   return (
     <Section title="Tool chrome">
       <Cell label="ToolGroup, ToolButton">
-        <ToolGroup orientation="horizontal" aria-label="Tools">
+        <ToolGroup aria-label="Tools">
           {['select', 'rect', 'ellipse'].map((id) => (
             <ToolButton
               key={id}

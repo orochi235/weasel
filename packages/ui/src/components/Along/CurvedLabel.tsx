@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { placeAlongRun, trackRun } from '@weasel-js/geom';
 import { graphemeEnds, joiningRuns, visualGraphemes } from '@weasel-js/text';
-import { useTrackShape } from './alongContext';
+import { useRun } from '../Run';
 import { placeStyle } from './placeOnRun';
 import { useInlineDirection } from './useRowRun';
 import on from './onRun.module.css';
@@ -36,8 +36,7 @@ export function CurvedLabel({ text, offset = 0, shift = 0, className }: CurvedLa
   const direction = useInlineDirection(root);
   const chars = useMemo(() => visualGraphemes(joiningRuns(graphemes(text)), direction), [text, direction]);
   const [lengths, setLengths] = useState<readonly number[]>([]);
-  const along = useTrackShape();
-  const shape = along?.shape;
+  const { shape, align } = useRun();
   const run = useMemo(() => (shape ? trackRun(shape, 0, 1, { direction }) : null), [shape, direction]);
   const laid = run !== null;
 
@@ -56,10 +55,10 @@ export function CurvedLabel({ text, offset = 0, shift = 0, className }: CurvedLa
   }, [chars, laid]);
 
   const cls = className ? `${s.label} ${className}` : s.label;
-  if (along === null || run === null) {
+  if (run === null) {
     return <div ref={root} className={cls} role="img" aria-label={text}>{text}</div>;
   }
-  const places = placeAlongRun(run, chars.map((_, i) => lengths[i] ?? 0), { align: along.align, offset, shift });
+  const places = placeAlongRun(run, chars.map((_, i) => lengths[i] ?? 0), { align: align ?? 'center', offset, shift });
   return (
     <div ref={root} className={cls} role="img" aria-label={text}>
       {chars.map((ch, i) => (

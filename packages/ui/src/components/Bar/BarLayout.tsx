@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
 import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarLead, type PrefBarOverflow, type PrefGroup, type PrefLeaf, type PrefOrder } from '@weasel-js/prefs';
-import { useTrackShape } from '../Along/alongContext';
 import type { BarMenuSources } from './BarMenu';
 import { BarAlong } from './BarAlong';
 import { barItems, barLead, drawBarItem, inBarMenu, splitBarItems } from './barItems';
@@ -12,7 +11,7 @@ import { useBarReorderKeys } from './useBarReorderKeys';
 import { BAR_MORE, useBarOverflow } from './useBarOverflow';
 import { useBarLead } from './barLeadHandle';
 import { DockBarContext, useReportDockLeast } from '../ToolbarDock/dockContext';
-import { OrientationContext, type Orientation } from '../orientation';
+import { RunScope, useRun, type Orientation } from '../Run';
 import s from './Bar.module.css';
 
 /** Which way a bar runs. */
@@ -66,6 +65,7 @@ export interface BarCell {
 /** Props for {@link BarLayout}. */
 export interface BarLayoutProps {
   nodes: readonly BarNode[];
+  /** Which way the bar runs. Default: the way the run it sits in goes, else `'horizontal'`. */
   orientation?: BarOrientation;
   /** Leaves that sit side by side, as the cells they make. Fewer cells than
    *  leaves come back where a surface fuses neighbors, as a run of flags. */
@@ -122,8 +122,10 @@ export interface BarLayoutProps {
  * leave the arrow keys to them, so it does not rove.
  */
 export function BarLayout(props: BarLayoutProps) {
-  const along = useTrackShape();
-  const bar = along !== null && along.shape.kind !== 'line' ? <BarAlong {...props} shape={along.shape} align={along.align} /> : <BarLine {...props} />;
+  const run = useRun();
+  const bar = run.shape !== undefined && run.shape.kind !== 'line'
+    ? <BarAlong {...props} shape={run.shape} align={run.align ?? 'center'} />
+    : <BarLine {...props} orientation={props.orientation ?? run.orientation} />;
   return <BarMarkContext.Provider value={props.onReorder !== undefined}>{bar}</BarMarkContext.Provider>;
 }
 
@@ -157,7 +159,7 @@ function BarLine(props: BarLayoutProps) {
       aria-orientation={label === undefined ? undefined : orientation}
     >
       <DockBarContext.Provider value={null}>
-        <OrientationContext.Provider value={orientation}>
+        <RunScope orientation={orientation}>
         {props.onReorder && <span aria-live="polite" aria-atomic="true" data-bar-announce="" className={s.status}>{keys.announcement}</span>}
         {leading && <span className={s.lead} {...leading.attrs}>{leading.content}</span>}
         {line.map((item) => drawBarItem(item, vertical, attrs))}
@@ -166,7 +168,7 @@ function BarLine(props: BarLayoutProps) {
             <BarOverflow label={overflowLabel}>{rest.map((item) => drawBarItem(inBarMenu(item), true, attrs))}</BarOverflow>
           </span>
         )}
-        </OrientationContext.Provider>
+        </RunScope>
       </DockBarContext.Provider>
     </div>
   );

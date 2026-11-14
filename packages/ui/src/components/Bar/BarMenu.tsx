@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import {
   buildDepsFromRequires,
   resolveSchemaMenu,
@@ -13,7 +13,7 @@ import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
 import f from '../field.module.css';
 import { DockBarContext } from '../ToolbarDock/dockContext';
 import { useBarLead } from './barLeadHandle';
-import { BarSideContext } from './barSide';
+import { useRun } from '../Run';
 import { PopFace, popIconAttr } from './popFace';
 import s from './Bar.module.css';
 
@@ -49,7 +49,7 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
   const registry = useActionsRegistry();
   const resolveMenu = useBarMenuResolver();
   const trigger = useMenuTrigger();
-  const side = useContext(BarSideContext);
+  const { side } = useRun();
   const handle = useBarLead(null);
 
   // `defaultOpen` holds until the menu has opened once or the reader has touched it.

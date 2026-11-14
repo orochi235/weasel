@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { trackRun, type RunAlign, type TrackShape } from '@weasel-js/geom';
-import { AlongContext } from '../Along/alongContext';
+import { RunScope } from '../Run';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { useInlineDirection } from '../Along/useRowRun';
 import { RunBand, RunEnds, useRunRow, type RunItemPlace } from '../Along/useRunRow';
@@ -87,11 +87,11 @@ export function SwatchRings({ shape, align, groups, onChange, onAltChange, class
   const firsts = plan.map((_, i) => plan.slice(0, i).reduce((a, b) => a + b, 0));
   return (
     <div ref={root} className={className ? `${s.rings} ${className}` : s.rings}>
-      <AlongContext.Provider value={null}>
+      <RunScope fresh>
         {groups.map((g, i) => (
           <RingGroup key={g.key} group={g} rings={rings.slice(firsts[i], firsts[i]! + plan[i]!)} align={align} apply={apply} />
         ))}
-      </AlongContext.Provider>
+      </RunScope>
     </div>
   );
 }

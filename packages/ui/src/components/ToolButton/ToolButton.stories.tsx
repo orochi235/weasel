@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ToolButton, type ToolButtonProps } from '@weasel-js/ui/components/ToolButton';
 import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
+import { RunScope } from '@weasel-js/ui/components/Run';
 import { useRovingTabIndex } from '@weasel-js/ui';
 
 // Inline placeholder icons keep the story free of cross-package imports
@@ -31,11 +32,13 @@ function CircleGlyph() {
 // Each story's button sits beside two plain neighbors for comparison.
 function WithNeighbors(args: ToolButtonProps) {
   return (
-    <ToolGroup>
-      <ToolButton {...args} />
-      <ToolButton icon={<SquareGlyph />} label="Rectangle" shortcut="R" onClick={() => {}} />
-      <ToolButton icon={<CircleGlyph />} label="Ellipse" shortcut="O" onClick={() => {}} />
-    </ToolGroup>
+    <RunScope orientation="vertical">
+      <ToolGroup>
+        <ToolButton {...args} />
+        <ToolButton icon={<SquareGlyph />} label="Rectangle" shortcut="R" onClick={() => {}} />
+        <ToolButton icon={<CircleGlyph />} label="Ellipse" shortcut="O" onClick={() => {}} />
+      </ToolGroup>
+    </RunScope>
   );
 }
 
@@ -73,6 +76,7 @@ function InGroupExample({ args }: { args: Story['args'] }) {
   ];
   return (
     <div role="toolbar" aria-orientation="vertical" ref={roving.rootRef} onKeyDown={roving.onKeyDown}>
+      <RunScope orientation="vertical">
       <ToolGroup>
         {tools.map((t) => (
           <ToolButton
@@ -86,6 +90,7 @@ function InGroupExample({ args }: { args: Story['args'] }) {
           />
         ))}
       </ToolGroup>
+      </RunScope>
     </div>
   );
 }

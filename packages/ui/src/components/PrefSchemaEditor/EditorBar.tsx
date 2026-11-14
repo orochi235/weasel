@@ -31,7 +31,7 @@ export function EditorBar({ lead, toolSlot, canUndo, canRedo, onStep, draftSaved
       <div className={s.barTools} ref={toolSlot} />
       <div className={s.barEnd}>
         <div className={s.palette}>
-          <ToolGroup orientation="horizontal" aria-label="History and settings">
+          <ToolGroup aria-label="History and settings">
             <ToolButton icon={<Icon name={icon('core:undo')} />} label="Undo" disabled={!canUndo} onClick={() => onStep('undo')} />
             <ToolButton icon={<Icon name={icon('core:redo')} />} label="Redo" disabled={!canRedo} onClick={() => onStep('redo')} />
             {draftSavedAt !== null && <ToolButton icon={<Icon name={icon('reset')} />} label="Discard draft" title="Go back to the schema in source" onClick={onDiscard} />}

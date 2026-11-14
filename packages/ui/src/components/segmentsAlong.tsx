@@ -2,7 +2,7 @@ import { Fragment, useId, useLayoutEffect, useState, type CSSProperties, type Re
 import { clamp, runStationAt, trackShapeD, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
 import { screenDirection } from './Along/rowRun';
 import { useRowRun } from './Along/useRowRun';
-import { AlongContext } from './Along/alongContext';
+import { RunScope } from './Run';
 import { useItemLengths, useRunGap } from './Along/useItemLengths';
 import { RunBand, RunEnds, useRunRow } from './Along/useRunRow';
 import type { SegmentedRowProps, SegmentPlace, SegmentState } from './segmentedRow';
@@ -59,7 +59,7 @@ export function SegmentsAlong(props: SegmentsAlongProps): ReactElement {
     <div ref={root as RefObject<HTMLDivElement>} onKeyDown={(e) => roving.onKeyDown(e, screenDirection(run))} {...row.rootProps} className={rootCls} role={role} aria-label={ariaLabel} style={style} data-shape={shape.kind} data-variant={variant} data-size={size}>
       <RunBand row={row} shape={shape} />
       {well && segments.length > 0 && <Well run={run} pad={pad} cap={cap} states={segments.map((segment) => segment.state)} stretches={stretches} />}
-      <AlongContext.Provider value={null}>{wrap ? wrap(drawn) : drawn}</AlongContext.Provider>
+      <RunScope fresh>{wrap ? wrap(drawn) : drawn}</RunScope>
       <RunEnds row={row} run={run} />
     </div>
   );

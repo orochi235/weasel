@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
-import { useTrackShape } from '../Along/alongContext';
+import { useRun } from '../Run';
 import { TabList, Tabs } from '../Tabs';
 import { PageTabsAlong } from './PageTabsAlong';
 import { NONE, usePageTabs } from './usePageTabs';
@@ -43,8 +43,8 @@ export interface PageTabsProps<P extends PageTabItem> {
  * shape the tabs lie along it, the + button last, and a drag measures along the run.
  */
 export function PageTabs<P extends PageTabItem>(props: PageTabsProps<P>): ReactNode {
-  const along = useTrackShape();
-  if (along !== null && along.shape.kind !== 'line') return <PageTabsAlong {...props} shape={along.shape} align={along.align} />;
+  const enclosing = useRun();
+  if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return <PageTabsAlong {...props} shape={enclosing.shape} align={enclosing.align ?? 'center'} />;
   return <PageTabsLine {...props} />;
 }
 

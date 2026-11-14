@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactElement, type ReactNode } from 'react';
-import { useTrackShape } from '../Along/alongContext';
+import { useRun } from '../Run';
 import { Slider, type SliderStop, type Thumb } from '../Slider/Slider';
 import s from './DetentSlider.module.css';
 
@@ -87,8 +87,8 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
   const index = resolveIndex(items, value);
   const lastIndex = Math.max(0, items.length - 1);
   // Inside an `Along` the slider lies over the whole box, so this root must fill it too.
-  const along = useTrackShape();
-  const rootClass = [s.root, along !== null && s.along, className].filter(Boolean).join(' ');
+  const inAlong = useRun().shape !== undefined;
+  const rootClass = [s.root, inAlong && s.along, className].filter(Boolean).join(' ');
 
   const labelOf = (item: DetentItem<V>, i: number): ReactNode =>
     item.label ?? formatLabel?.(item.value, i) ?? String(item.value);

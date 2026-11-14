@@ -1,7 +1,6 @@
 import { Fragment, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import type { RovingTabIndex } from '../useRovingTabIndex';
-import { useTrackShape } from './Along/alongContext';
-import { useOrientation, type Orientation } from './orientation';
+import { useRun, type Orientation } from './Run';
 import { SegmentsAlong } from './segmentsAlong';
 import type { SegmentedSize, SegmentedVariant } from './segmentedVariant';
 import s from './segmentedControl.module.css';
@@ -61,8 +60,8 @@ export interface SegmentedGridProps {
 /** The tiling `props` ask for, or `undefined` for a bar on one line, a curved `Along` bending it into one whatever
  *  `columns` says. Hand it to `SegmentedRow` and, through `tilingRoving`, to the bar's `useRovingTabIndex`. */
 export function useSegmentedTiling(props: SegmentedGridProps): Tiling | undefined {
-  const along = useTrackShape();
-  if (along !== null && along.shape.kind !== 'line') return undefined;
+  const { shape } = useRun();
+  if (shape !== undefined && shape.kind !== 'line') return undefined;
   return props.columns ? { columns: props.columns, lastRow: props.lastRow } : undefined;
 }
 
@@ -84,9 +83,8 @@ export function segmentPlaceProps(place: SegmentPlace | undefined): Partial<Omit
  * inside a curved `Along`, segments laid along its run with the well and the lit segments stroked along it.
  */
 export function SegmentedRow(props: SegmentedRowProps): ReactElement {
-  const along = useTrackShape();
-  const sitting = useOrientation();
-  if (along !== null && along.shape.kind !== 'line') return <SegmentsAlong {...props} shape={along.shape} align={along.align} />;
+  const enclosing = useRun();
+  if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return <SegmentsAlong {...props} shape={enclosing.shape} align={enclosing.align ?? 'center'} />;
   const { roving, role, ariaLabel, className, height, size, variant, segments, wrap } = props;
   const tiles = props.tiling ? tiling(segments.length, props.tiling) : null;
   const style = {
@@ -95,7 +93,7 @@ export function SegmentedRow(props: SegmentedRowProps): ReactElement {
   } as CSSProperties;
   const rootCls = [s.root, tiles && `${tiles.className} ${s.tiled}`, size && s[`size_${size}`], variant && s[`variant_${variant}`], className]
     .filter(Boolean).join(' ');
-  const orientation = props.orientation ?? sitting;
+  const orientation = props.orientation ?? enclosing.orientation;
   const placeOf = (segment: Segment, i: number): SegmentPlace | undefined => tiles
     ? { className: '', style: {}, 'data-segment': segment.key, 'data-state': segment.state, drawsState: false, ...tiles.item(i) }
     : undefined;

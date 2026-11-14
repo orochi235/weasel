@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TrackShape } from '@weasel-js/geom';
-import { AlongContext, useTrackShape } from '../Along/alongContext';
+import { RunScope, useRun } from '../Run';
 import { Button } from '../Button';
 import { Slider } from '../Slider/Slider';
 import { JogAlong } from './JogAlong';
@@ -52,9 +52,10 @@ export interface JogParts {
  * Named for the jog of jog/shuttle — moving one frame at a time, as against running at speed.
  */
 export function Jog(props: JogProps) {
-  const along = useTrackShape();
+  const { shape, align } = useRun();
   const parts = jogParts(props);
-  if (along !== null && along.shape.kind !== 'line') return <JogAlong parts={parts} shape={along.shape} align={along.align} className={props.className} />;
+  if (shape !== undefined && shape.kind !== 'line')
+    return <JogAlong parts={parts} shape={shape} align={align ?? 'center'} className={props.className} />;
 
   return (
     <div className={[s.jog, props.className].filter(Boolean).join(' ')} dir="ltr">
@@ -117,7 +118,7 @@ function jogParts(props: JogProps): JogParts {
       onScrub && count > 0
         ? (shape) => (
             // Only the shape it is handed: on a straight row an enclosing `Along` must not bend it.
-            <AlongContext.Provider value={shape ? { shape, align: 'center' } : null}>
+            <RunScope fresh shape={shape} align={shape ? 'center' : undefined}>
               <Slider
                 className={s.scrub}
                 min={0}
@@ -129,7 +130,7 @@ function jogParts(props: JogProps): JogParts {
                 thumbs={[{ value: at, valueText: spoken }]}
                 onInput={(next) => onScrub(Math.round(next[0]?.value ?? 0))}
               />
-            </AlongContext.Provider>
+            </RunScope>
           )
         : null,
     readout: (

@@ -9,7 +9,7 @@ import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
-import type { Orientation } from '../orientation';
+import type { Orientation } from '../Run';
 
 /** One segment of a {@link ToggleBar}, identified by its `value`. */
 export type ToggleBarItem<V extends string | number = string> = {

@@ -4,7 +4,8 @@ import { offTitle } from '../Prefs/offTitle';
 import { BarMenu } from './BarMenu';
 import { barMenuRoot } from './barMenuRoot';
 import { BarPopover } from './BarPopover';
-import { BarSideContext, type BarSide } from './barSide';
+import type { BarSide } from './barSide';
+import { RunScope } from '../Run';
 import type { RunSpot } from '@weasel-js/geom';
 import { BAR_IN, BAR_UNIT, barUnitKey } from './barOrder';
 import { BAR_ITEM } from './useBarOverflow';
@@ -118,7 +119,7 @@ export function drawBarItem(item: BarItem, across: boolean, attrs: BarLayoutProp
       {item.rule ? (
         <span className={s.rule} role="separator" aria-orientation={across ? 'horizontal' : 'vertical'} />
       ) : place?.side ? (
-        <BarSideContext.Provider value={place.side}>{item.content}</BarSideContext.Provider>
+        <RunScope side={place.side}>{item.content}</RunScope>
       ) : (
         item.content
       )}
