@@ -1515,6 +1515,7 @@
     "actionBindings": "function",
     "actionCursor": "function",
     "actionIs": "const",
+    "actionItemShortcuts": "function",
     "actionItemTitle": "function",
     "actionItems": "function",
     "actionSettingsParams": "function",

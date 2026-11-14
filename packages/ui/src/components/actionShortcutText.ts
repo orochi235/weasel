@@ -1,8 +1,8 @@
-import { actionShortcuts, type ActionItem } from '@weasel-js/core';
+import { actionItemShortcuts, type ActionItem } from '@weasel-js/core';
 import { formatShortcut } from '@weasel-js/gestures';
 
-/** The shortcut hint an entry shows: its own `shortcut` text (the variant's, else the action's), else its first
- *  binding written out. */
+/** An entry's shortcut as one line of text: its declared text, else its first binding written out. */
 export function actionShortcutText(item: ActionItem): string | undefined {
-  return item.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0]);
+  const shown = actionItemShortcuts(item);
+  return typeof shown === 'string' ? shown : formatShortcut(shown[0]);
 }
