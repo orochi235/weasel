@@ -99,6 +99,7 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
         if (!world) return 'pass';
         const at = insertionAt(input.current.mode, world);
         input.current.insert(at.s, at.r);
+        return undefined;
       },
     },
   };
@@ -118,6 +119,7 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
         const idx = anchorAt(input.current, (params as ImmediateParams | undefined)?.world);
         if (idx < 0) return 'pass';
         input.current.remove(idx);
+        return undefined;
       },
     },
   };
@@ -136,6 +138,7 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
         if (idx < 0) return 'pass';
         const anchor = now.anchors[idx]!;
         now.commit(idx, { ...anchor, w: wheelWeight(anchor.w, deltaY) });
+        return undefined;
       },
     },
   };

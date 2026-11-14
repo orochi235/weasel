@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Badge, BADGE_VARIANT_ICONS } from '@weasel-js/ui/components/Badge';
+import { Badge, BADGE_VARIANT_ICONS, type BadgeProps } from '@weasel-js/ui/components/Badge';
 import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import st from './Badge.stories.module.css';
@@ -70,7 +70,7 @@ export const AllShapes: Story = {
   },
   render: (args) => (
     <div className={`${st.row} ${st.wrappingRow}`}>
-      {BADGE_SHAPES.map((shape) => <Badge key={shape} {...args} shape={shape}>{args.children}</Badge>)}
+      {BADGE_SHAPES.map((shape) => <Badge key={shape} {...({ ...args, shape } as BadgeProps)}>{args.children}</Badge>)}
     </div>
   ),
 };

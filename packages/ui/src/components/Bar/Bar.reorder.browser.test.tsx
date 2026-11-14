@@ -6,6 +6,7 @@ import { commands, page, userEvent } from 'vitest/browser';
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import { arcShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
+import { Along } from '@weasel-js/ui/components/Along';
 import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
 import s from './Bar.reorder.browser.test.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
@@ -75,7 +76,7 @@ test('a Cmd-drag along a straight bar reorders it once, and a plain click on the
 
 test('a Cmd-drag along a curved bar reorders it', async () => {
   const shape = arcShape({ center: { x: 120, y: 120 }, radius: 100, start: 290, end: 70 });
-  render(host(<div className={s.box}>{bar({ shape })}</div>));
+  render(host(<div className={s.box}><Along shape={shape}>{bar()}</Along></div>));
   const box = document.querySelector(`.${s.box}`)!.getBoundingClientRect();
   const c = { x: box.left + 120, y: box.top + 120 };
   const bearing = (p: Pt) => Math.atan2(p.x - c.x, c.y - p.y);
