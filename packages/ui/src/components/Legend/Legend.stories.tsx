@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { Legend } from '@weasel-js/labkit/primitives';
+import { Legend } from '@weasel-js/ui/components/Legend';
 
 const meta: Meta<typeof Legend> = {
-  title: 'labkit/Primitives/Legend',
+  title: 'ui/Legend',
   component: Legend,
 };
 export default meta;

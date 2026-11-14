@@ -1,0 +1,20 @@
+.panel {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  background: var(--wzl-surface);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  padding: var(--wzl-space-sm);
+  box-shadow: var(--wzl-bevel-raised, 0 6px 18px var(--wzl-shadow));
+}
+
+/* An item with no measured size is withheld from layout, so the first paint
+   would otherwise land at the top-left before jumping to its anchor. */
+.panel:not([data-placed='true']) {
+  visibility: hidden;
+}
+
+.panel[data-dragging='true'] {
+  cursor: grabbing;
+}

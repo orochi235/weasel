@@ -1,55 +1,56 @@
-import { useFloatingPlacement } from '@weasel-js/ui/floating';
-import { type ReactNode, useRef } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { type Corner, DEFAULT_ANCHOR, DEFAULT_INSET, type FloatingPlacement } from 'windease';
-import { usePersistedState } from '../state/usePersistedState';
+import { useFloatingPlacement } from '../../floating';
+import s from './FloatingPanel.module.css';
 
 /** Props for `<FloatingPanel>`. */
 export interface FloatingPanelProps {
   children: ReactNode;
-  /** Corner it rests in before it has ever been dragged. Default `'bottom-left'`. */
+  /** Where it rests. Pass with `onChange` to own it; omit to let the panel hold it. */
+  value?: FloatingPlacement;
+  /** Called once per drag, on release, with where the drag left it. */
+  onChange?: (next: FloatingPlacement) => void;
+  /** Corner it rests in before it has ever been dragged, when `value` is omitted. Default `'bottom-left'`. */
   anchor?: Corner;
   /** Corners that may capture it. Default: all four. */
   snapCorners?: readonly Corner[];
   /** Pixels in from a corner when snapped. Default 12. */
   inset?: number;
-  /** Name to remember its position under, through `usePersistedState` — so it
-   *  is remembered only inside a lab or a `<Persistence>`. Omit to forget on
-   *  reload. */
-  persist?: string;
   className?: string;
 }
 
 /**
  * A draggable box that floats over its offset parent and snaps to its corners.
  *
- * Placement and dragging are `useFloatingPlacement`'s, from `@weasel-js/ui`; this component adds the element and
- * remembers where it was left through `usePersistedState`.
+ * Placement and dragging are {@link useFloatingPlacement}'s; this adds the element and, when `value` is omitted,
+ * holds the placement itself.
  */
 export function FloatingPanel({
   children,
+  value,
+  onChange,
   anchor = DEFAULT_ANCHOR,
   snapCorners,
   inset = DEFAULT_INSET,
-  persist,
   className,
 }: FloatingPanelProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [place, setPlace] = usePersistedState<FloatingPlacement>(persist, () => ({
-    x: 0,
-    y: 0,
-    anchor,
-  }));
+  const [own, setOwn] = useState<FloatingPlacement>(() => ({ x: 0, y: 0, anchor }));
+  const placement = value ?? own;
   const { style, startDrag, dragging, placed } = useFloatingPlacement({
     panelRef: ref,
-    placement: place,
-    onPlacementChange: setPlace,
+    placement,
+    onPlacementChange: (next) => {
+      if (value === undefined) setOwn(next);
+      onChange?.(next);
+    },
     snapCorners,
     inset,
   });
 
   return (
     <div
-      className={className ? `lk-floating-panel ${className}` : 'lk-floating-panel'}
+      className={className ? `${s.panel} ${className}` : s.panel}
       data-dragging={dragging ? 'true' : undefined}
       data-placed={placed ? 'true' : undefined}
       onPointerDown={startDrag}

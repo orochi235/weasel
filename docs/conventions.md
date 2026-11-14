@@ -450,8 +450,8 @@ in labkit) skip it by that attribute.
 
 `DetailList`, the read-only label/value list, reads all five too: its label
 column is `--wzl-params-label-width` wide, so one declaration lines its labels
-up with a property panel's inline rows. labkit's `Readout` is a `DetailList`,
-so a lab's measurements line up with its `ControlPanel` the same way.
+up with a property panel's inline rows. A lab's measurements, set as a
+`DetailList` with `values="figures"`, line up with its `ControlPanel` the same way.
 
 Custom properties are the mechanism because they inherit across the CSS-module
 boundary: labkit's Less cannot name `PropertyPanel`'s label class.

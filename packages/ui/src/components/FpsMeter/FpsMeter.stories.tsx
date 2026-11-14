@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { FpsMeter } from '@weasel-js/labkit/primitives';
+import { FpsMeter } from '@weasel-js/ui/components/FpsMeter';
 
 const meta: Meta<typeof FpsMeter> = {
-  title: 'labkit/Primitives/FpsMeter',
+  title: 'ui/FpsMeter',
   component: FpsMeter,
 };
 export default meta;

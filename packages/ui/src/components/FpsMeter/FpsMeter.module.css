@@ -1,5 +1,5 @@
-.lk-fps-meter {
-  .numeric();
+.meter {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
@@ -8,7 +8,7 @@
   color: var(--wzl-fg-muted);
 }
 
-.lk-fps-meter-value {
+.value {
   color: var(--wzl-fg);
   /* Sized for the widest rate it can hold rather than the one it holds now:
      a 240Hz display reads three digits, and a readout that grows into them

@@ -3,7 +3,7 @@ import '../../styles.less';
 import './ViewportRegion.browser.test.less';
 import { cleanup, render } from '@testing-library/react';
 import { ViewportRegion } from '@weasel-js/labkit/chrome';
-import { ZoomControl } from '@weasel-js/labkit/primitives';
+import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
 import { afterEach, expect, test } from 'vitest';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
@@ -18,7 +18,9 @@ const contributions: TrialContribution[] = [
   {
     id: 'zoom-control',
     region: 'viewport',
-    render: (c) => <ZoomControl zoom={c.zoom ?? 1} onZoomChange={c.setZoom} />,
+    render: (c) => (
+      <ZoomControl className="lk-test-zoom" zoom={c.zoom ?? 1} onZoomChange={c.setZoom} />
+    ),
   },
 ];
 
@@ -31,7 +33,7 @@ test('a zoom control on its own row shrinks its slider to fit a narrow well', ()
     </div>,
   );
   const cluster = container.querySelector('.lk-viewport-controls')?.getBoundingClientRect();
-  const zoom = container.querySelector('.lk-zoom')?.getBoundingClientRect();
+  const zoom = container.querySelector('.lk-test-zoom')?.getBoundingClientRect();
   if (!cluster || !zoom) throw new Error('nothing rendered');
   expect(zoom.left).toBeGreaterThanOrEqual(cluster.left);
   expect(zoom.right).toBeLessThanOrEqual(cluster.right);

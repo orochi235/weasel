@@ -1,7 +1,7 @@
-import { normalizeZoom } from '@weasel-js/core';
-import { clamp } from '@weasel-js/geom';
-import { NumberField } from '@weasel-js/ui/components/NumberField';
-import { Slider } from '@weasel-js/ui/components/Slider';
+import { clamp, normalizeZoom } from '@weasel-js/geom';
+import { NumberField } from '../NumberField';
+import { Slider } from '../Slider';
+import s from './ZoomControl.module.css';
 
 /** Props for `<ZoomControl>`. */
 export interface ZoomControlProps {
@@ -44,9 +44,9 @@ export function ZoomControl({
   };
 
   return (
-    <div className={`lk-zoom${className ? ` ${className}` : ''}`}>
+    <div className={className ? `${s.zoom} ${className}` : s.zoom}>
       <Slider
-        className="lk-zoom__slider"
+        className={s.slider}
         aria-label="Zoom"
         thumbShape="dot"
         trackHeight="var(--wzl-slider-track-h)"
@@ -64,7 +64,7 @@ export function ZoomControl({
       {/* `style: 'percent'` formats a fraction, so the field carries the scale
           factor itself and renders 0.5 as "50%". */}
       <NumberField
-        className="lk-zoom__field"
+        className={s.field}
         width="fit"
         aria-label="Zoom"
         value={zoom}

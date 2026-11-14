@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import s from './Legend.module.css';
 
 /** How a legend entry's swatch is drawn, matching how the thing looks on canvas. */
 export type LegendMark = 'line' | 'dash' | 'dot' | 'band';
@@ -21,20 +22,18 @@ export interface LegendProps {
 /** A color key. Presentational only — no handlers, no state, no hover behavior. */
 export function Legend({ entries, className }: LegendProps) {
   return (
-    <ul className={className ? `lk-legend ${className}` : 'lk-legend'}>
-      {entries.map((entry) => {
-        const mark = entry.mark ?? 'line';
-        return (
-          <li className="lk-legend__row" key={entry.key}>
-            <span
-              aria-hidden="true"
-              className={`lk-legend__swatch lk-legend__swatch--${mark}`}
-              style={{ '--lk-legend-ink': entry.color } as CSSProperties}
-            />
-            <span className="lk-legend__label">{entry.label}</span>
-          </li>
-        );
-      })}
+    <ul className={className ? `${s.legend} ${className}` : s.legend}>
+      {entries.map((entry) => (
+        <li className={s.row} key={entry.key}>
+          <span
+            aria-hidden="true"
+            className={s.swatch}
+            data-mark={entry.mark ?? 'line'}
+            style={{ '--legend-ink': entry.color } as CSSProperties}
+          />
+          <span>{entry.label}</span>
+        </li>
+      ))}
     </ul>
   );
 }

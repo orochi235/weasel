@@ -51,7 +51,10 @@ import { CanvasStackContext } from '../canvas/CanvasStackContext';
 import { fromCameraView } from '../canvas/cameraView';
 import { type ThemeColorSpec, useThemeColors } from '../canvas/useThemeColors';
 import type { ViewportSize, WorldFrame } from '../canvas/worldSpec';
-import { FloatingPanel, type FloatingPanelProps } from '../primitives/FloatingPanel';
+import {
+  PersistedFloatingPanel,
+  type PersistedFloatingPanelProps,
+} from '../primitives/PersistedFloatingPanel';
 import { OverviewMarks } from './OverviewMarks';
 
 /** The view id the overview publishes its pointer under. */
@@ -89,7 +92,7 @@ export interface TrialOverviewProps {
   bounds?: OverviewBounds;
   /** Panel title. */
   title?: string;
-  anchor?: FloatingPanelProps['anchor'];
+  anchor?: PersistedFloatingPanelProps['anchor'];
   persist?: string;
   className?: string;
 }
@@ -181,7 +184,7 @@ function Overview({
   const boxRef = useRef<HTMLDivElement | null>(null);
 
   return (
-    <FloatingPanel
+    <PersistedFloatingPanel
       anchor={anchor}
       className={className ? `lk-overview ${className}` : 'lk-overview'}
       {...(persist ? { persist } : {})}
@@ -198,7 +201,7 @@ function Overview({
         <ChromeCanvas fit={fit} size={size} camera={camera} />
         <OverviewInput boxRef={boxRef} fit={fit} camera={camera} />
       </div>
-    </FloatingPanel>
+    </PersistedFloatingPanel>
   );
 }
 

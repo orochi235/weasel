@@ -95,8 +95,8 @@ import { Bar } from "@weasel-js/ui/components/Bar";
 ### A status bar with several readouts
 
 ```tsx
-import { FpsMeter } from "@weasel-js/labkit";
 import { Bar } from "@weasel-js/ui/components/Bar";
+import { FpsMeter } from "@weasel-js/ui/components/FpsMeter";
 
 <Bar framed="status" divided>
   <Bar.Readout>Items: {items.length}</Bar.Readout>
@@ -110,12 +110,12 @@ import { Bar } from "@weasel-js/ui/components/Bar";
 
 ### A legend in a panel the user can move
 
-`<Legend>` is a color key: one row per entry, each swatch drawn the way its ink
+`<Legend>` (from `@weasel-js/ui/components/Legend`) is a color key: one row per entry, each swatch drawn the way its ink
 is drawn on the canvas — `line` (the default), `dash`, `dot` or `band`. It is
 presentational, with no handlers and no state.
 
-`<FloatingPanel>` floats over its offset parent, snaps to the corners it is
-allowed, and can remember where it was left. Drag it from anywhere that is not a
+`<PersistedFloatingPanel>` is ui's `<FloatingPanel>` remembering where it was
+left: it floats over its offset parent and snaps to the corners it is allowed. Drag it from anywhere that is not a
 control; `input`, `button`, `a`, `select`, `textarea` and any `[data-no-drag]`
 element pass their pointer through instead. It remembers its place only inside a
 `<Lab>` or a `<Persistence>`, as every `usePersistedState` value does.
@@ -125,10 +125,11 @@ parent, so nested inside another absolutely-positioned overlay child it would
 measure that child's box rather than the canvas.
 
 ```tsx
-import { FloatingPanel, Legend } from "@weasel-js/labkit";
+import { PersistedFloatingPanel } from "@weasel-js/labkit";
+import { Legend } from "@weasel-js/ui/components/Legend";
 
 <div className="lk-canvas-stack__overlay">
-  <FloatingPanel anchor="bottom-right" persist="legend">
+  <PersistedFloatingPanel anchor="bottom-right" persist="legend">
     <Legend
       entries={[
         { key: "contour", label: "contour", color: "#7d7f86" },
@@ -136,11 +137,11 @@ import { FloatingPanel, Legend } from "@weasel-js/labkit";
         { key: "authored", label: "authored", color: "#2aa87a", mark: "dot" },
       ]}
     />
-  </FloatingPanel>
+  </PersistedFloatingPanel>
 </div>;
 ```
 
-| `FloatingPanel` prop | Default         |                                                  |
+| `PersistedFloatingPanel` prop | Default |                                          |
 | -------------------- | --------------- | ------------------------------------------------ |
 | `anchor`             | `'bottom-left'` | corner it rests in until dragged                 |
 | `snapCorners`        | all four        | corners allowed to capture it                    |

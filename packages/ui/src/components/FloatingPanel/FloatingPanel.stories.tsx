@@ -1,16 +1,17 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { FloatingPanel, Legend } from '@weasel-js/labkit/primitives';
-import { Persistence } from '@weasel-js/labkit/state';
-import { localStorageAdapter } from '@weasel-js/storage';
+import { useState } from 'react';
+import { FloatingPanel, type FloatingPlacement } from '@weasel-js/ui/components/FloatingPanel';
+import { Legend } from '@weasel-js/ui/components/Legend';
+import s from './FloatingPanel.stories.module.css';
 
 // The panel positions against its offset parent, so a story needs a sized,
 // positioned host or there is nothing for it to float in.
 const meta: Meta<typeof FloatingPanel> = {
-  title: 'labkit/Primitives/FloatingPanel',
+  title: 'ui/FloatingPanel',
   component: FloatingPanel,
   decorators: [
     (Story) => (
-      <div className="lk-floating-panel-story-host">
+      <div className={s.host}>
         <Story />
       </div>
     ),
@@ -44,14 +45,14 @@ export const HoldingALegend: Story = {
   },
 };
 
-// Remembered only under a provider; this one keeps it across story reloads.
-export const Remembered: Story = {
-  args: { persist: 'story-panel' },
-  decorators: [
-    (Story) => (
-      <Persistence storageKey="labkit-story" storage={localStorageAdapter}>
-        <Story />
-      </Persistence>
-    ),
-  ],
+/** The owner holds the placement: here it shows where the last drag left the panel. */
+export const Controlled: Story = {
+  render: (args) => {
+    const [place, setPlace] = useState<FloatingPlacement>({ x: 0, y: 0, anchor: 'top-left' });
+    return (
+      <FloatingPanel {...args} value={place} onChange={setPlace}>
+        {place.anchor ?? `${Math.round(place.x)}, ${Math.round(place.y)}`}
+      </FloatingPanel>
+    );
+  },
 };

@@ -1,9 +1,21 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
-import '../styles.less';
 import { cleanup, render } from '@testing-library/react';
-import { Readout, type ReadoutRow } from '@weasel-js/labkit/primitives';
+import type { ReactNode } from 'react';
 import { afterEach, expect, test } from 'vitest';
+import type { Grade } from '@weasel-js/theme';
+import { DetailList, DetailRow, type DetailListValues } from '@weasel-js/ui/components/DetailList';
+
+interface Row { label: string; value?: ReactNode; grade?: Grade; values?: DetailListValues }
+
+/** A figures list, as a lab's readout of measurements sets one. */
+function Figures({ rows }: { rows: readonly Row[] }) {
+  return (
+    <DetailList values="figures">
+      {rows.map((r) => <DetailRow key={r.label} label={r.label} grade={r.grade} values={r.values}>{r.value}</DetailRow>)}
+    </DetailList>
+  );
+}
 
 function must<T>(el: T | null): T {
   if (el == null) throw new Error('expected an element');
@@ -17,7 +29,7 @@ afterEach(cleanup);
 
 const FIGURE_SPACE = ' ';
 
-const rows = (withValues: boolean): ReadoutRow[] => [
+const rows = (withValues: boolean): Row[] => [
   {
     label: 'Lock margin',
     value: withValues ? <span data-v>locked +47.9°</span> : undefined,
@@ -32,7 +44,7 @@ const box = (el: Element) => el.getBoundingClientRect();
 test('values sit right-aligned at the edge of the list', () => {
   const { container } = render(
     <div style={{ width: 320 }}>
-      <Readout rows={rows(true)} />
+      <Figures rows={rows(true)} />
     </div>,
   );
   const dl = must(container.querySelector('dl'));
@@ -47,7 +59,7 @@ test('figures are equal width, so padding lines a column up on the decimal point
   // the theme's display face, which has no tabular figures to switch on.
   const { container } = render(
     <div style={{ width: 320, fontFamily: 'var(--wzl-font-display)' }}>
-      <Readout
+      <Figures
         rows={[
           { label: 'a', value: <span data-v>{`${FIGURE_SPACE}1.111`}</span> },
           { label: 'b', value: <span data-v>88.888</span> },
@@ -60,10 +72,10 @@ test('figures are equal width, so padding lines a column up on the decimal point
   expect(Math.abs(box(narrow).width - box(wide).width)).toBeLessThan(0.5);
 });
 
-test('the value column holds a minimum width in a shrink-wrapped readout', () => {
+test('the value column holds a minimum width in a shrink-wrapped list', () => {
   const { container } = render(
     <div style={{ width: 'max-content' }}>
-      <Readout rows={[{ label: 'n', value: <span data-v>1</span> }]} />
+      <Figures rows={[{ label: 'n', value: <span data-v>1</span> }]} />
     </div>,
   );
   const digit = box(must(container.querySelector('[data-v]'))).width;
@@ -74,7 +86,7 @@ test('the value column holds a minimum width in a shrink-wrapped readout', () =>
 test('rows keep their place and the list its height while values are absent', () => {
   const { container, rerender } = render(
     <div style={{ width: 320 }}>
-      <Readout rows={rows(true)} />
+      <Figures rows={rows(true)} />
     </div>,
   );
   const dl = () => must(container.querySelector('dl'));
@@ -82,7 +94,7 @@ test('rows keep their place and the list its height while values are absent', ()
   const withValues = { list: box(dl()).height, rows: rowHeights() };
   rerender(
     <div style={{ width: 320 }}>
-      <Readout rows={rows(false)} />
+      <Figures rows={rows(false)} />
     </div>,
   );
   expect(dl().querySelectorAll('[data-empty]')).toHaveLength(3);
@@ -93,7 +105,7 @@ test('rows keep their place and the list its height while values are absent', ()
 test('a grade dot is drawn before its value, on the same line', () => {
   const { container } = render(
     <div style={{ width: 320 }}>
-      <Readout rows={rows(true)} />
+      <Figures rows={rows(true)} />
     </div>,
   );
   const dd = must(container.querySelector('dd'));
@@ -105,10 +117,10 @@ test('a grade dot is drawn before its value, on the same line', () => {
   expect(dot.bottom).toBeLessThanOrEqual(value.bottom + 1);
 });
 
-test('a text row wraps inside a figures readout instead of overflowing it', () => {
+test('a text row wraps inside a figures list instead of overflowing it', () => {
   const { container } = render(
     <div style={{ width: 300, fontFamily: 'var(--wzl-font-display)' }}>
-      <Readout
+      <Figures
         rows={[
           { label: 'Score', value: <span data-v>0.145</span> },
           {

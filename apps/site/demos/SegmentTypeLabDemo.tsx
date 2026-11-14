@@ -12,13 +12,13 @@ import {
   type ConfigOf,
   defineInstrument,
   f,
-  FloatingPanel,
   Lab,
   type RenderContext,
   type SceneTrialState,
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
+import { FloatingPanel } from '@weasel-js/ui/components/FloatingPanel';
 import { segmentTypePreset } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useMemo } from 'react';

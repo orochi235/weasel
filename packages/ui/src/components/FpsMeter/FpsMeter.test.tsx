@@ -1,6 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { FpsMeter } from './FpsMeter';
+import s from './FpsMeter.module.css';
 
 describe('FpsMeter', () => {
   afterEach(() => {
@@ -15,14 +16,14 @@ describe('FpsMeter', () => {
   /* The label and the rate are separate elements so the rate can hold a fixed
      width; a text query spanning both would go back to matching one box. */
   const rate = (): HTMLElement => {
-    const el = document.querySelector('.lk-fps-meter-value');
+    const el = document.querySelector(`.${s.value}`);
     if (!el) throw new Error('no rate readout');
     return el as HTMLElement;
   };
 
-  test('uses lk-fps-meter class', () => {
-    const { container } = render(<FpsMeter />);
-    expect((container.firstChild as HTMLElement).className).toBe('lk-fps-meter');
+  test('accepts an extra class name', () => {
+    const { container } = render(<FpsMeter className="is-mine" />);
+    expect((container.firstChild as HTMLElement).className).toBe(`${s.meter} is-mine`);
   });
 
   test('updates after a tick', () => {
