@@ -4,7 +4,7 @@
 
 labkit's chrome takes a shortcut as keys and writes it for the platform, so the snapshot button reads `⌘S` on a Mac rather than `Mod+S`.
 
-`shortcut` on a toolbar, rail, viewport or title bar item and on a `TrialTool` is a `MenuShortcut`, not a string. `undoShortcuts()` is replaced by `UNDO_SHORTCUT` and `REDO_SHORTCUT`.
+`shortcut` on a toolbar, rail, viewport or title bar item and on a `TrialTool` is a `MenuShortcut`, not a string.
 
 ```ts
 // before

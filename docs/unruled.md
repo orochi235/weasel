@@ -2299,3 +2299,21 @@ Calls the lanes made without a ruling:
   arrow keys and a double-click reset) and the command palette's `/` key. Neither is a demo, and the shell mounts no
   dispatcher; running each through one would mean an actions registry, a dep registry and a dispatcher for one
   affordance.
+
+## Audit round twenty-four (2026-11-14): the pending changelog
+
+- 2026-11-14 (the lane's call): a pending changeset describes the release against 1.19.1, so a name added and
+  renamed or removed inside the span appears in no entry at all: `Bar.Button`, `undoShortcuts()`,
+  `PrefRenderContext.draftValue`, `lengthen.drag`, the `*_BRUSH_TOOL_OPTIONS` constants, `onReset` on a settings row,
+  and `AnimatedTransport` in the `Timeline` subpath.
+- 2026-11-14 (the lane's call): a fix or prop added during the span to a component the same release removes is
+  deleted, not rewritten (the `Toolbar` size fix, `DetentSlider`'s Along fill and its `onInput`/`onChange` rename,
+  which fold into the `useDetents` entry). An addition that survives in the replacement is rewritten in the
+  replacement's terms instead: `orientation` and `disabledReason` on `OptionsBar`/`ButtonBar` became `SegmentedBar`'s,
+  and lists of components that took a prop name `SegmentedBar`, `CycleButton`, `Bar` and `PrefsBar`.
+- 2026-11-14 (the lane's call): labkit's `weasel-ui` subpath is described only by the entry that removes it; the ui
+  moves that also said it stopped re-exporting their names no longer bump labkit for that.
+- 2026-11-14 (the lane's call): `f.boolean(…).toggle()` was 1.19.1's switch and is now a toggle button, so its entry
+  is `breaking behavior` saying to call `.switch()`, not that `.toggle()` is gone.
+- 2026-11-14 (the lane's call): `PaintSlot` is described as moving to `@weasel-js/paint` only; the entry exporting it
+  from ui's root contradicted what ships and was deleted.

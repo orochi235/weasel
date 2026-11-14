@@ -8,7 +8,7 @@ The Smudge brush is now Knead, and every name it carried changes with it; this i
 
 | Before | After |
 |---|---|
-| `useSmudgeBrushTool`, `UseSmudgeBrushToolOptions`, `SMUDGE_BRUSH_TOOL_OPTIONS` | `useKneadTool`, `UseKneadToolOptions`, `KNEAD_TOOL_OPTIONS` |
+| `useSmudgeBrushTool`, `UseSmudgeBrushToolOptions`, `SMUDGE_BRUSH_OPTIONS` | `useKneadTool`, `UseKneadToolOptions`, `KNEAD_TOOL_OPTIONS` |
 | `smudgePreset`, preset id `'smudge'` | `kneadPreset`, `'knead'` |
 | tool id, action id, and `PathToolId` `'smudgeBrush'` | `'knead'` |
 | `smudgeBrushAction`, `SMUDGE_BRUSH_PARAMS`, `SmudgeBrushParams` | `kneadAction`, `KNEAD_PARAMS`, `KneadParams` |

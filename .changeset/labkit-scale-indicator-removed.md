@@ -2,7 +2,7 @@
 '@weasel-js/labkit': major
 ---
 
-`ScaleIndicator` is gone; labkit re-exports ui's `ScaleBar`, which the trial status strip now shows.
+`ScaleIndicator` is gone; draw ui's `ScaleBar`, from `@weasel-js/ui/components/ScaleBar`, which the trial status strip now shows.
 
 `ScaleBar` takes the zoom as screen pixels per world unit and measures in the frame's unit scopes, pixels by default. It does not read the zoom from a surrounding `CanvasStack`, so pass it. The status strip's bar has the class `lk-scale-bar` in place of `lk-scale-indicator`.
 

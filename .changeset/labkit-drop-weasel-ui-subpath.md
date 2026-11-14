@@ -4,7 +4,7 @@
 
 The `@weasel-js/labkit/weasel-ui` subpath is gone; import those names from `@weasel-js/ui` instead.
 
-Each name it carried is published by `@weasel-js/ui`, mostly under a component subpath. `formatNumber` and `MINUS_SIGN` come from `@weasel-js/quantity`.
+Each name it carried is published by `@weasel-js/ui`, mostly under a component subpath, unless another entry in this release renames, moves or removes it there: the color ramp helpers now come from `@weasel-js/paint`, and `sampleByInterpolation` from `@weasel-js/geom`. `formatNumber` and `MINUS_SIGN` come from `@weasel-js/quantity`.
 
 ```ts
 // before

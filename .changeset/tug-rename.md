@@ -10,12 +10,12 @@ The Lengthen tool is now Tug, and every name it carried changes with it; this is
 |---|---|
 | `useLengthenTool` | `useTugTool` |
 | `lengthenPreset`, preset id `'lengthen'` | `tugPreset`, `'tug'` |
-| tool id and `PathEditToolId` `'lengthen'`, binding `lengthen.drag` | `'tug'`, `tug.drag` |
+| tool id and `PathEditToolId` `'lengthen'`, binding `lengthenPath.drag` | `'tug'`, `tug.drag` |
 | action `lengthenPath`, `lengthenPathAction`, `LENGTHEN_PATH_PARAMS`, `LengthenPathParams` | `tugPath`, `tugPathAction`, `TUG_PATH_PARAMS`, `TugPathParams` |
 | `lengthenPathEnd`, `lengthenOpenEnd`, `LengthenMode` (`@weasel-js/geom`; core re-exports `lengthenOpenEnd`) | `tugPathEnd`, `tugOpenEnd`, `TugMode` |
 | icon `path-tools:lengthen` | `path-tools:tug` |
 
-The tool still has no key of its own, and the undo label of a drag that shortens the path is still Shorten path.
+A saved binding override keyed `lengthenPath.drag` moves to `tug.drag`. The tool still has no key of its own, and the undo label of a drag that shortens the path is still Shorten path.
 
 ```ts
 // before

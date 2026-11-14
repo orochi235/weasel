@@ -1,11 +1,10 @@
 ---
 '@weasel-js/ui': major
-'@weasel-js/labkit': major
 ---
 
 `GestureRoute`, `gestureRouteSegments`, and `FallthroughDiagram` move out of `@weasel-js/ui` into the devtools panel.
 
-They are no longer exported from `@weasel-js/ui` or `@weasel-js/labkit/weasel-ui`.
+They are no longer exported from `@weasel-js/ui`.
 
 The `@weasel-js/ui/components/GestureRoute` and `@weasel-js/ui/components/FallthroughDiagram` subpaths are gone too. The devtools panel's bindings list and dispatch trace still draw both; code that drew a route or a dispatch record itself can build the same strip from `Powerline`, which stays in `@weasel-js/ui`.
 
