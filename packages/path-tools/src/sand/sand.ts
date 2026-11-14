@@ -12,21 +12,21 @@ import {
 } from '@weasel-js/core';
 
 /** The brush's radius on screen when no param names one. */
-export const SIMPLIFY_BRUSH_RADIUS_PX = 12;
+export const SAND_RADIUS_PX = 12;
 
-const LABEL = 'Simplify brush';
+const LABEL = 'Sand';
 
 /** The brush's size and tolerance as a form: the last-operation panel's after a stroke, and the tool's options
- *  (`SIMPLIFY_BRUSH_TOOL_OPTIONS`), which are one setting. */
-export const SIMPLIFY_BRUSH_PARAMS = pref.group(LABEL, {
-  radiusPx: pref.number('Size', SIMPLIFY_BRUSH_RADIUS_PX, {
+ *  (`SAND_TOOL_OPTIONS`), which are one setting. */
+export const SAND_PARAMS = pref.group(LABEL, {
+  radiusPx: pref.number('Size', SAND_RADIUS_PX, {
     description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider', unit: PX_UNIT,
   }),
   tolerance: { ...SIMPLIFY_PATH_PARAMS.children.tolerance, description: 'How far the refit outline may stray from the anchors it replaces.' },
-}, { description: 'The size of the Simplify brush and how far its refit may stray.' });
+}, { description: 'The size of the Sand brush and how far its refit may stray.' });
 
 /** Params the brush reads on every move, so a thunk can change them mid-stroke. */
-export interface SimplifyBrushParams {
+export interface SandParams {
   /** Brush radius in screen pixels. */
   radiusPx?: number;
   /** How far the refit may stray from the original, in world units, as for
@@ -47,12 +47,12 @@ function gatherSpan(set: AnchorSet, gathered: Set<number>, from: Point, to: Samp
   for (const i of anchorsUnderBrush(set, from, to.at, { radiusPx, scale: to.scale })) gathered.add(i);
 }
 
-function radiusOf(params: SimplifyBrushParams | undefined): number {
+function radiusOf(params: SandParams | undefined): number {
   const r = params?.radiusPx;
-  return typeof r === 'number' && r > 0 ? r : SIMPLIFY_BRUSH_RADIUS_PX;
+  return typeof r === 'number' && r > 0 ? r : SAND_RADIUS_PX;
 }
 
-function toleranceOf(params: SimplifyBrushParams | undefined): number {
+function toleranceOf(params: SandParams | undefined): number {
   const t = params?.tolerance;
   return typeof t === 'number' && t >= 0 ? t : DEFAULT_SIMPLIFY_TOLERANCE;
 }
@@ -65,17 +65,17 @@ function toleranceOf(params: SimplifyBrushParams | undefined): number {
  * Only anchors the shape does not need go, so brushing again goes further.
  * The path previews the result while the brush is down and commits as one
  * undo step on release, which the last-operation panel replays from the
- * brush's samples with another Size or Tolerance. It has no binding of its own: `useSimplifyBrushTool`
+ * brush's samples with another Size or Tolerance. It has no binding of its own: `useSandTool`
  * binds it.
  */
-export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
-  id: 'simplifyBrush',
+export const sandAction: Action & { requires: string[] } = inPlane({
+  id: 'sand',
   label: LABEL,
   tags: pathOperationTags('brush'),
-  cursor: (params) => brushRing(radiusOf(params as SimplifyBrushParams | undefined)),
+  cursor: (params) => brushRing(radiusOf(params as SandParams | undefined)),
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view'],
-  params: SIMPLIFY_BRUSH_PARAMS,
+  params: SAND_PARAMS,
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts): OngoingHandle {
@@ -86,7 +86,7 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
       if (!origin || origin.kind !== 'polygon') return {};
       const originSet = pathToAnchors(origin) as AnchorSet;
 
-      const params = () => resolveParams(opts?.params) as SimplifyBrushParams | undefined;
+      const params = () => resolveParams(opts?.params) as SandParams | undefined;
       const radiusPx = (): number => radiusOf(params());
       // Every sample, with the view's scale as it was taken, for a replay at another size.
       const trail: Sample[] = [];
@@ -115,7 +115,7 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
       sweepTo(ctx.world);
 
       return {
-        kind: 'simplify-brush',
+        kind: 'sand',
         cursor: () => brushRing(radiusPx()),
         onMove(moveCtx: InvocationCtx): void {
           sweepTo(moveCtx.world);
@@ -126,7 +126,7 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
           if (reason === 'commit') commit(gathered, toleranceOf(params()));
         },
         replay(replayed: Record<string, unknown>): void {
-          const p = replayed as SimplifyBrushParams;
+          const p = replayed as SandParams;
           const again = new Set<number>();
           trail.forEach((sample, i) => gatherSpan(originSet, again, (trail[i - 1] ?? sample).at, sample, radiusOf(p)));
           commit(again, toleranceOf(p));

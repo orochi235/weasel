@@ -28,7 +28,7 @@ and an app that imports only some never loads the others:
 
 | Preset | What it adds |
 |---|---|
-| `simplifyBrushPreset` | `simplifyBrush`, which `useSimplifyBrushTool` binds: the Simplify brush, a path-edit tool that refits the curve it passes over |
+| `sandPreset` | `sand`, which `useSandTool` binds: Sand, a path-edit tool that refits the curve it passes over |
 | `handleLocksPreset` | The `handleLock.angle` and `handleLock.length` toggles |
 | `createSoftSelectionPreset` | Soft selection: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathTools` |
 | `handleSnapPreset`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle, through a snap session whose angles `handleSnapSource` offers. Not in `pathTools` |
@@ -49,7 +49,7 @@ and an app that imports only some never loads the others:
 | `pathEffectsPreset` | Blend, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
 | `warpPreset` | Expand and configure a held warp; `useDistortTool`, `useClothWarpTool`, and `usePuppetTool` bring their own drags |
 
-`PATH_EDIT_TOOLS` names the path-edit tools, the Simplify brush and Lengthen, and `usePathEditTools` builds them,
+`PATH_EDIT_TOOLS` names the path-edit tools, Sand and Lengthen, and `usePathEditTools` builds them,
 beside `RESHAPE_TOOLS` and `usePathToolsTools`. Each carries `edits-anchors`, so only path edit allows it, and its
 binding outranks anchor editing's; path edit starts on core's `anchors` tool.
 

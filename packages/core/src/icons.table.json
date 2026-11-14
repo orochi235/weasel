@@ -312,7 +312,7 @@
       "group": "Anchors",
       "tags": []
     },
-    "simplifyBrush": {
+    "sand": {
       "body": "<path d=\"M0.625 13.125 L1.875 11.875 L4.375 14.375 L6.875 11.875 L8.125 13.125 H19.375\" stroke-width=\"1.25\"/><circle cx=\"13.125\" cy=\"13.125\" r=\"3.75\" stroke-width=\"1.25\"/>",
       "group": "Anchors",
       "tags": []

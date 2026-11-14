@@ -6,8 +6,8 @@ import {
 import { actionCursor, tuneAction, type InvocationCtx, type OngoingHandle, type OngoingInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import {
-  simplifyBrushAction, SIMPLIFY_BRUSH_RADIUS_PX,
-} from './simplifyBrush';
+  sandAction, SAND_RADIUS_PX,
+} from './sand';
 
 /** A gentle wave sampled every 5 units along x from 0 to 400: dense, so most anchors are redundant. */
 function wave(): AnchorSet {
@@ -59,7 +59,7 @@ function setup(original: AnchorSet = wave(), editingId = 'p1') {
 }
 
 const start = (ctx: InvocationCtx, params?: Record<string, unknown>): OngoingHandle =>
-  (simplifyBrushAction.invoker as OngoingInvoker).start(ctx, params ? { params } : undefined);
+  (sandAction.invoker as OngoingInvoker).start(ctx, params ? { params } : undefined);
 
 /** Brush along the wave from x0 to x1, a point every 5 units. */
 function brushAlong(h: OngoingHandle, at: (x: number, y: number) => InvocationCtx, x0: number, x1: number) {
@@ -83,13 +83,13 @@ function worstOff(after: readonly PenAnchor[], before: readonly PenAnchor[]): nu
   return worst;
 }
 
-describe('simplifyBrush', () => {
+describe('sand', () => {
   it('thins the brushed stretch, staying within the tolerance, as one undo step', () => {
     const { commits, at, original } = setup();
     const h = start(at(100, 20 * Math.sin(2.5)), { radiusPx: 6, tolerance: 0.5 });
     brushAlong(h, at, 100, 300);
     expect(commits).toHaveLength(1);
-    expect(commits[0].label).toBe('Simplify brush');
+    expect(commits[0].label).toBe('Sand');
     const after = anchorsOf(commits[0].path);
     expect(after.length).toBeLessThan(81 - 25);
     expect(worstOff(after, anchorsOf(original))).toBeLessThan(0.5 + 0.05);
@@ -141,16 +141,16 @@ describe('simplifyBrush', () => {
     expect(h.overlay?.()).toEqual({
       kind: 'brush',
       points: [{ x: 0, y: 60 }, { x: 10, y: 60 }],
-      radiusPx: SIMPLIFY_BRUSH_RADIUS_PX,
+      radiusPx: SAND_RADIUS_PX,
     });
     expect(h.cursor?.()).toMatchObject({ glyph: 'brush' });
   });
 
   it('hovers with a ring as wide as the brush it would start', () => {
-    expect(actionCursor(simplifyBrushAction)).toEqual(brushRing(SIMPLIFY_BRUSH_RADIUS_PX));
-    const tuned = tuneAction(simplifyBrushAction, [{ params: () => ({ radiusPx: 30 }) }]);
+    expect(actionCursor(sandAction)).toEqual(brushRing(SAND_RADIUS_PX));
+    const tuned = tuneAction(sandAction, [{ params: () => ({ radiusPx: 30 }) }]);
     expect(actionCursor(tuned)).toEqual(brushRing(30));
-    expect(brushRing(30)).not.toEqual(brushRing(SIMPLIFY_BRUSH_RADIUS_PX));
+    expect(brushRing(30)).not.toEqual(brushRing(SAND_RADIUS_PX));
   });
 
   it('clears the anchor selection it renumbered', () => {
@@ -170,15 +170,15 @@ describe('simplifyBrush', () => {
     expect(anchorsOf(commits[1].path).length).toBeLessThan(anchorsOf(narrow).length);
     h.replay!({ radiusPx: 8, tolerance: 0.5 });
     expect(commits[2].path).toEqual(narrow);
-    expect(commits.map((c) => c.label)).toEqual(['Simplify brush', 'Simplify brush', 'Simplify brush']);
-    expect(simplifyBrushAction.params).toBeDefined();
+    expect(commits.map((c) => c.label)).toEqual(['Sand', 'Sand', 'Sand']);
+    expect(sandAction.params).toBeDefined();
   });
 
   it('binds nothing itself, and is enabled only with a path open', () => {
-    expect(simplifyBrushAction.defaultBinding).toBeUndefined();
+    expect(sandAction.defaultBinding).toBeUndefined();
     const closed = setup(wave(), '');
     expect(start(closed.at(100, 0))).toEqual({});
-    expect(simplifyBrushAction.enabled?.(closed.at(0, 0).deps)).not.toBe(true);
-    expect(simplifyBrushAction.enabled?.(setup().at(0, 0).deps)).toBe(true);
+    expect(sandAction.enabled?.(closed.at(0, 0).deps)).not.toBe(true);
+    expect(sandAction.enabled?.(setup().at(0, 0).deps)).toBe(true);
   });
 });

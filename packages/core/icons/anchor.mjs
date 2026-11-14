@@ -41,7 +41,7 @@ export const ANCHOR = {
     <rect x="8.5" y="8.5" width="3" height="3" fill="currentColor" stroke="none"/>`,
   // A path that zigzags on the pixel diagonals until the brush's ring, and runs straight from inside it on. The
   // ring's edges, radius 3.75 about a pixel center at a one-pixel stroke, fall on pixel edges.
-  simplifyBrush: `
+  sand: `
     <path d="M${px(0)} ${px(10)} L${px(1)} ${px(9)} L${px(3)} ${px(11)} L${px(5)} ${px(9)} L${px(6)} ${px(10)} H${px(15)}" stroke-width="1.25"/>
     <circle cx="${px(10)}" cy="${px(10)}" r="3.75" stroke-width="1.25"/>`,
   // A circular arc, so its curvature is the same everywhere, its anchor at the top, under two equal teeth of a

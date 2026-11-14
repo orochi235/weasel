@@ -5,7 +5,7 @@ import { useExtendTool } from './extend/useExtendTool';
 import { useGirthTool } from './girth/useGirthTool';
 import { useLengthenTool } from './lengthen/useLengthenTool';
 import { useShapeBuilderTool } from './shapeBuilder/useShapeBuilderTool';
-import { useSimplifyBrushTool } from './simplifyBrush/useSimplifyBrushTool';
+import { useSandTool } from './sand/useSandTool';
 import { useSmudgeBrushTool } from './smudge/useSmudgeBrushTool';
 import { useSpiroTool } from './spiro/useSpiroTool';
 import { useTrimTool } from './trim/useTrimTool';
@@ -17,7 +17,7 @@ export type PathToolId =
   | PathEditToolId;
 
 /** The ids {@link usePathEditTools} keys its tools by. */
-export type PathEditToolId = 'simplifyBrush' | 'lengthen';
+export type PathEditToolId = 'sand' | 'lengthen';
 
 /** The tools that pull a selected path's shape around as a whole: distort, cloth warp, and puppet warp.
  *  A palette stacks them on one button. */
@@ -28,7 +28,7 @@ export const RESHAPE_TOOLS: ToolSet<PathToolId> = toolSet('reshape', ['girth', '
 
 /** The path-edit tools: each changes what a drag in path edit does, and carries `edits-anchors`.
  *  Core's `anchors` tool sits in the same palette group. */
-export const PATH_EDIT_TOOLS: ToolSet<PathToolId> = toolSet('path-edit', ['simplifyBrush', 'lengthen'], { label: 'Path edit' });
+export const PATH_EDIT_TOOLS: ToolSet<PathToolId> = toolSet('path-edit', ['sand', 'lengthen'], { label: 'Path edit' });
 
 /** Every tool `@weasel-js/path-tools` ships: the reshaping tools, the spiro pen, the shape builder, and the
  *  path-edit tools. */
@@ -36,9 +36,9 @@ export const PATH_TOOLS_TOOLS: ToolSet<PathToolId> = toolSet('path-tools', [RESH
 
 /** Every tool in {@link PATH_EDIT_TOOLS}, keyed by id, each its own hook with its default options. */
 export function usePathEditTools(): Record<PathEditToolId, Tool> {
-  const simplifyBrush = useSimplifyBrushTool();
+  const sand = useSandTool();
   const lengthen = useLengthenTool();
-  return useMemo(() => ({ simplifyBrush, lengthen }), [simplifyBrush, lengthen]);
+  return useMemo(() => ({ sand, lengthen }), [sand, lengthen]);
 }
 
 /**

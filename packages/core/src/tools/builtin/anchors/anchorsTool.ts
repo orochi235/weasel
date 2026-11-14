@@ -10,7 +10,7 @@ export const ANCHORS_TOOL_ID = 'anchors';
  * other path-edit tool on. It binds nothing. Anchor editing's bindings —
  * `editAnchors`, the marquee, the segment bend and the rest the `pathEdit`
  * preset registers — are ambient, so they take a gesture under any tool that
- * leaves it unclaimed; a path-edit tool such as the Simplify brush claims the
+ * leaves it unclaimed; a path-edit tool such as Sand claims the
  * drag at the active tier, which outranks them. Holding the active slot is
  * what this tool is for: it is the tool path edit starts on and Escape
  * returns to.

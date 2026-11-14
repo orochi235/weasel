@@ -5,7 +5,7 @@ import {
   ELLIPSE_TOOL_OPTIONS, LINE_TOOL_OPTIONS, PEN_TOOL_OPTIONS, PENCIL_TOOL_OPTIONS, POLYGON_TOOL_OPTIONS, RECT_TOOL_OPTIONS,
   STAR_TOOL_OPTIONS, STICKY_TOOL_OPTIONS, TEXT_TOOL_OPTIONS, toolOptionsPrefs, type OptionedTool,
 } from '@weasel-js/core';
-import { SIMPLIFY_BRUSH_TOOL_OPTIONS, SMUDGE_BRUSH_TOOL_OPTIONS } from '@weasel-js/path-tools';
+import { SAND_TOOL_OPTIONS, SMUDGE_BRUSH_TOOL_OPTIONS } from '@weasel-js/path-tools';
 import { INITIAL_FILL, INITIAL_STROKE } from './newShapePaint';
 import {
   flattenPrefValues,
@@ -59,7 +59,7 @@ export const DRAW_OPTIONED_TOOLS: readonly OptionedTool[] = [
   { id: 'text', options: TEXT_TOOL_OPTIONS },
   { id: 'sticky', options: STICKY_TOOL_OPTIONS },
   { id: 'smudgeBrush', options: SMUDGE_BRUSH_TOOL_OPTIONS },
-  { id: 'simplifyBrush', options: SIMPLIFY_BRUSH_TOOL_OPTIONS },
+  { id: 'sand', options: SAND_TOOL_OPTIONS },
 ];
 
 const TOOL_OPTION_PREFS = toolOptionsPrefs(DRAW_OPTIONED_TOOLS, { shared: { fill: INITIAL_FILL, stroke: INITIAL_STROKE } });

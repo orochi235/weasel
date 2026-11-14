@@ -94,7 +94,7 @@ function modalList(): Tool[] {
   return [
     withCaps('select', 'Select', icon('core:select'), 'select', ['creates-selection']),
     withCaps('anchors', 'Anchors', icon('core:anchors'), 'path-edit', ['edits-anchors']),
-    withCaps('simplifyBrush', 'Simplify brush', icon('core:simplifyBrush'), 'path-edit', ['edits-anchors']),
+    withCaps('sand', 'Sand', icon('core:sand'), 'path-edit', ['edits-anchors']),
     withCaps('hand', 'Hand', icon('core:hand'), 'view', ['navigation']),
     withCaps('rect', 'Rect', icon('core:rect'), 'shape', ['creates-shapes']),
   ];

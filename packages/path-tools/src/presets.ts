@@ -37,17 +37,17 @@ import {
 } from './pathEffects/actions';
 import { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
 import { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
-import { simplifyBrushAction } from './simplifyBrush/simplifyBrush';
+import { sandAction } from './sand/sand';
 import { smudgeBrushAction } from './smudge/smudgeBrush';
 import { spiroPreset } from './spiro/spiroPreset';
 import { trimPathAction } from './trim/trimSegment';
 import { showBalanceAction, showCombAction, showFilletsAction, showDirectionAction } from './overlays/showOverlay';
 import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 
-/** `simplifyBrush`, which `useSimplifyBrushTool`, a path-edit tool, binds. */
-export const simplifyBrushPreset: FeaturePreset = {
-  id: 'simplifyBrush',
-  actions: [simplifyBrushAction],
+/** `sand`, which `useSandTool`, a path-edit tool, binds. */
+export const sandPreset: FeaturePreset = {
+  id: 'sand',
+  actions: [sandAction],
 };
 
 /** The `handleLock.angle` and `handleLock.length` toggles. */
@@ -241,7 +241,7 @@ export const warpPreset: FeaturePreset = {
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
-    simplifyBrushPreset, handleLocksPreset, bridgePreset, spiroPreset, trimPreset, extendPreset, lengthenPreset,
+    sandPreset, handleLocksPreset, bridgePreset, spiroPreset, trimPreset, extendPreset, lengthenPreset,
     smudgePreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     filletPreset, pathEffectsPreset, warpPreset,

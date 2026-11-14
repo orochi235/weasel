@@ -1,5 +1,5 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid, useLatest } from '@weasel-js/core';
-import { simplifyBrushPreset, useSimplifyBrushTool } from '@weasel-js/path-tools';
+import { sandPreset, useSandTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
@@ -10,7 +10,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', simplifyBrushPreset] as const;
+const FEATURES = ['draw', sandPreset] as const;
 
 const config = f.schema({
   radiusPx: f.number(16).range(4, 60).step(1).suffix('px').label('Brush radius'),
@@ -102,12 +102,12 @@ function usePathEdit(seeded: string) {
 function BrushTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { modes, pathEdit } = usePathEdit(SEEDED_PATH_ID);
-  const simplifyBrush = useSimplifyBrushTool();
-  const tools = useMemo(() => ({ simplifyBrush }), [simplifyBrush]);
+  const sand = useSandTool();
+  const tools = useMemo(() => ({ sand }), [sand]);
   const brush = useLatest(ctx.config);
   // Thunked, so a change reaches a stroke already under way.
   const tune = useMemo<ActionTunings>(() => ({
-    simplifyBrush: {
+    sand: {
       params: () => ({ radiusPx: brush.current.radiusPx, tolerance: brush.current.tolerance }),
     },
   }), [brush]);
@@ -128,24 +128,24 @@ function BrushTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 }
 
 const brushInstrument = defineInstrument<State, Config>({
-  name: 'Simplify brush',
+  name: 'Sand',
   config,
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select') },
       { id: 'anchors', label: 'Anchors', icon: icon('core:anchors') },
-      { id: 'simplifyBrush', label: 'Simplify brush', icon: icon('core:simplifyBrush') },
+      { id: 'sand', label: 'Sand', icon: icon('core:sand') },
     ],
-    initial: 'simplifyBrush',
+    initial: 'sand',
   },
   render: (ctx) => <BrushTrial ctx={ctx} />,
 });
 
-export function SimplifyBrushLabDemo() {
+export function SandLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Simplify brush" instruments={[brushInstrument]} />
+      <Lab title="Sand" instruments={[brushInstrument]} />
     </div>
   );
 }

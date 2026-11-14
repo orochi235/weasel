@@ -34,7 +34,7 @@ export {
   pathTools,
   segmentTypePreset,
   resamplePreset,
-  simplifyBrushPreset,
+  sandPreset,
   smudgePreset,
   trimPreset,
   warpPreset,
@@ -43,9 +43,9 @@ export type { ActionParamSchema } from './actionParamSchema';
 
 // ─── Actions ───────────────────────────────────────────────────────────────
 export {
-  SIMPLIFY_BRUSH_PARAMS, SIMPLIFY_BRUSH_RADIUS_PX, simplifyBrushAction, type SimplifyBrushParams,
-} from './simplifyBrush/simplifyBrush';
-export { SIMPLIFY_BRUSH_TOOL_OPTIONS, useSimplifyBrushTool, type UseSimplifyBrushToolOptions } from './simplifyBrush/useSimplifyBrushTool';
+  SAND_PARAMS, SAND_RADIUS_PX, sandAction, type SandParams,
+} from './sand/sand';
+export { SAND_TOOL_OPTIONS, useSandTool, type UseSandToolOptions } from './sand/useSandTool';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 export {
   BRIDGE_PARAMS, bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,

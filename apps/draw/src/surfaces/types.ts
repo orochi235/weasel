@@ -44,7 +44,7 @@ export interface SidebarHost {
   setDocSelected: (v: boolean) => void;
   /** The path open in path edit and its selected anchors, for Fillet. */
   filletSelection: FilletControlsSelection;
-  /** What Simplify refits at, and the Simplify brush with it. */
+  /** What Simplify refits at, and Sand with it. */
   simplifyTolerance: number;
   setSimplifyTolerance: (v: number) => void;
 }

@@ -1039,21 +1039,21 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/SpiroLabDemo.tsx',
   },
   {
-    id: 'lab-simplify-brush',
-    title: 'Simplify brush',
+    id: 'lab-sand',
+    title: 'Sand',
     package: 'path-tools',
     description:
-      "The Simplify command, brushed on. With the `simplifyBrush` path-edit tool (`useSimplifyBrushTool`) on, a drag gathers every anchor a round brush passes over, and on each subpath it touched the brushed stretch is refitted as one span by `simplifyPath`'s own fitter (`simplifyAnchorsAt`). Only the anchors the shape does not need within the tolerance go: the scribble, drawn as a dense run of straight segments, thins to a few curves, while the cog's square teeth keep their corners. Path edit traces the open path in a thin accent line and draws anchors crowded closer than a marker as dots, so the scribble stays visible under them, and the cursor is a ring the size of the brush. Anchors outside the brush are left exactly as they were, the stroke previews while the brush is down, and release commits one undo step. The palette's Simplify brush is an ordinary tool whose binding outranks anchor editing's; path edit starts on the Anchors tool, Escape returns to it, and leaving path edit puts back the tool it replaced. Brush radius and Tolerance reach the action as thunked params through `<SceneCanvas tune>`, so moving them changes a stroke already under way.",
-    hint: 'Drag along the scribble to thin it, then undo with the button or <kbd>Mod+Z</kbd>. Raise Tolerance and brush again to go further. Press Escape to go back to Anchors and edit anchors, Escape again to leave path edit; then double-click the cog and pick Simplify brush to brush across its teeth.',
-    load: () => import('./demos/SimplifyBrushLabDemo').then((m) => m.SimplifyBrushLabDemo),
-    path: 'apps/site/demos/SimplifyBrushLabDemo.tsx',
+      "The Simplify command, brushed on. With the `sand` path-edit tool (`useSandTool`) on, a drag gathers every anchor a round brush passes over, and on each subpath it touched the brushed stretch is refitted as one span by `simplifyPath`'s own fitter (`simplifyAnchorsAt`). Only the anchors the shape does not need within the tolerance go: the scribble, drawn as a dense run of straight segments, thins to a few curves, while the cog's square teeth keep their corners. Path edit traces the open path in a thin accent line and draws anchors crowded closer than a marker as dots, so the scribble stays visible under them, and the cursor is a ring the size of the brush. Anchors outside the brush are left exactly as they were, the stroke previews while the brush is down, and release commits one undo step. The palette's Sand is an ordinary tool whose binding outranks anchor editing's; path edit starts on the Anchors tool, Escape returns to it, and leaving path edit puts back the tool it replaced. Brush radius and Tolerance reach the action as thunked params through `<SceneCanvas tune>`, so moving them changes a stroke already under way.",
+    hint: 'Drag along the scribble to thin it, then undo with the button or <kbd>Mod+Z</kbd>. Raise Tolerance and brush again to go further. Press Escape to go back to Anchors and edit anchors, Escape again to leave path edit; then double-click the cog and pick Sand to brush across its teeth.',
+    load: () => import('./demos/SandLabDemo').then((m) => m.SandLabDemo),
+    path: 'apps/site/demos/SandLabDemo.tsx',
   },
   {
     id: 'lab-smudge-brush',
     title: 'Smudge brush',
     package: 'path-tools',
     description:
-      "A round brush that pushes the outline of the selected paths along with the pointer, through `smudgePath` in `@weasel-js/geom`. Points under the brush move with it, most at its center and not at all at its rim, and a segment the brush meets that is longer than a third of its radius gets anchors added at its middle until it can bend there, so a straight edge dents instead of swinging about its corners. `useSmudgeBrushTool` only binds a drag to the `smudgeBrush` action, which owns the stroke and commits it as one undo step. The brush's radius is in screen pixels, so it covers the same part of the canvas at any zoom; it and the strength are the action's params, set here with `<SceneCanvas tune>` from the control panel. The cursor is a ring the size of the brush, the same one the Simplify brush draws, shown wherever a drag would smudge.",
+      "A round brush that pushes the outline of the selected paths along with the pointer, through `smudgePath` in `@weasel-js/geom`. Points under the brush move with it, most at its center and not at all at its rim, and a segment the brush meets that is longer than a third of its radius gets anchors added at its middle until it can bend there, so a straight edge dents instead of swinging about its corners. `useSmudgeBrushTool` only binds a drag to the `smudgeBrush` action, which owns the stroke and commits it as one undo step. The brush's radius is in screen pixels, so it covers the same part of the canvas at any zoom; it and the strength are the action's params, set here with `<SceneCanvas tune>` from the control panel. The cursor is a ring the size of the brush, the same one Sand draws, shown wherever a drag would smudge.",
     hint: 'The Smudge brush is active and both shapes are selected: the ring under the pointer is the brush. Drag across an edge to push it. Change Brush radius and Strength in the control panel. Each stroke is one undo step, with the button or <kbd>Mod+Z</kbd>. Press <kbd>V</kbd> to select a single shape, then <kbd>S</kbd> to smudge again.',
     load: () => import('./demos/SmudgeBrushLabDemo').then((m) => m.SmudgeBrushLabDemo),
     path: 'apps/site/demos/SmudgeBrushLabDemo.tsx',

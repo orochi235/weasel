@@ -11,7 +11,7 @@ import type { LengthenPathParams } from './lengthen/lengthenPath';
 import type { ResamplePathParams } from './resample/resample';
 import type { AddExtremesParams } from './extremes/addExtremes';
 import type { ExtendToMeetParams } from './extend/extendToMeet';
-import type { SimplifyBrushParams } from './simplifyBrush/simplifyBrush';
+import type { SandParams } from './sand/sand';
 import type { SmudgeBrushParams } from './smudge/smudgeBrush';
 import type { WarpKind, WarpSettings } from './warp/warpTargets';
 
@@ -34,7 +34,7 @@ declare module '@weasel-js/routing' {
     zigzag: SettingsOf<ZigzagEffect>;
     puckerBloat: SettingsOf<PuckerBloatEffect>;
     editPathEffect: EditPathEffectParams;
-    simplifyBrush: SimplifyBrushParams;
+    sand: SandParams;
     smudgeBrush: SmudgeBrushParams;
     lengthenPath: LengthenPathParams;
     bridgePaths: { tension?: number };

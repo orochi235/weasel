@@ -77,7 +77,7 @@ export type DepName = keyof DepSchema;
  *
  * ```ts
  * declare module '@weasel-js/core' {
- *   interface ActionParamSchema { simplifyBrush: { radiusPx: number } }
+ *   interface ActionParamSchema { sand: { radiusPx: number } }
  * }
  * ```
  *

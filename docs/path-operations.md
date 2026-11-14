@@ -55,7 +55,7 @@ Tag: `path-brush`
 
 | Operation | Action id | What the brush does | Default binding | Status | Package |
 |---|---|---|---|---|---|
-| Simplify brush | `simplifyBrush` | Removes anchors it passes over, refitting the curve | Drag with the brush | main | path-tools |
+| Sand | `sand` | Removes anchors it passes over, refitting the curve | Drag with the brush | main | path-tools |
 | Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (U) | main | path-tools |
 | Puppet warp | `puppet.drag`, `puppet.addPin`, `puppet.removePin` | Pins the path and bends it when a pin is dragged | Puppet warp tool (B): click pins, Alt+click a pin takes it out, drag a pin bends | main | path-tools |
 

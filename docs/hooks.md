@@ -109,7 +109,7 @@ curly quote, so both codepoints are listed.
 | `balanceHandles` | drag whose press hit a curved segment's `balance:N` grip, shown while chrome-caps shows `path-edit.balance`; `move` turns those down too, and a length lock in force (`handleLock.length`, or Mod) holds it still |
 | `equalizeHandles` | double-click on a `balance:N` grip |
 | `marqueeAnchors` | drag on `empty` |
-| `simplifyBrush` | none of its own: the `simplifyBrush` path-edit tool binds a drag anywhere, at the active tier, so it outranks every ambient anchor-editing drag |
+| `sand` | none of its own: the `sand` path-edit tool binds a drag anywhere, at the active tier, so it outranks every ambient anchor-editing drag |
 | `lengthenPath` | none of its own: the `lengthen` path-edit tool binds a drag on an anchor, Shift optional, and the action takes it only on an open end, so a drag on any other anchor falls through to `editAnchors`; its `mode` param (`'tangent'`, the default, or `'curvature'`) picks how the end grows, Shift picks the other, and both are read on every move |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |
