@@ -3,12 +3,11 @@ import {
   Button as RACButton,
   DialogTrigger,
 } from 'react-aria-components';
-import { Popover, PopoverDialog } from '../Popover';
 import { INHERIT, usePaintKind, type Inherit, type Paint, type PaintKind } from '@weasel-js/core';
 import type { PaintInherit } from '../PaintInput';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { paintPreviewCss } from '@weasel-js/paint';
-import { PaintInput } from '../PaintInput';
+import { PaintEditorPopover } from './PaintEditorPopover';
 import { ownPaint } from '../PaintInput/PaintInput';
 import { MIXED_HINT } from '../Field/mixedHint';
 import s from './PaintField.module.css';
@@ -34,7 +33,9 @@ export interface PaintFieldProps extends OverlayPortalProps, HoldProps {
   /** Offer "None" in the editor. Default `true`. */
   allowNone?: boolean;
   onInput?: (next: Paint | null) => void;
-  onChange: (next: Paint | null) => void;
+  /** Once per gesture. Return the paint actually applied when it differs, and a
+   *  solid's recent color records that paint's color instead. */
+  onChange: (next: Paint | null) => Paint | null | void;
   /** Names the paint this field edits — `Fill`, `Color`. */
   'aria-label'?: string;
   className?: string;
@@ -92,24 +93,18 @@ export function PaintField(props: PaintFieldProps): ReactElement {
         />
         <span className={s.label}>{kindLabel(value, mixed, label)}</span>
       </RACButton>
-      {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
-          outside the subtree the trigger sits in. */}
       {ready && provide(
-        <Popover className={s.popover} data-weasel-overlay="">
-          <PopoverDialog className={s.body} aria-label={ariaLabel ? `${ariaLabel} editor` : 'Paint editor'}>
-            <PaintInput
-              value={value}
-              mixed={mixed}
-              unset={unset}
-              kinds={kinds}
-              allowNone={allowNone}
-              inherit={props.inherit}
-              onInput={onInput}
-              onChange={onChange}
-              aria-label={ariaLabel}
-            />
-          </PopoverDialog>
-        </Popover>
+        <PaintEditorPopover
+          value={value}
+          mixed={mixed}
+          unset={unset}
+          kinds={kinds}
+          allowNone={allowNone}
+          inherit={props.inherit}
+          onInput={onInput}
+          onChange={onChange}
+          aria-label={ariaLabel}
+        />,
       )}
     </DialogTrigger>,
   );
