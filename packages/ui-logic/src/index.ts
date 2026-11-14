@@ -1,6 +1,6 @@
 /**
- * @weasel-js/ui-logic — headless components: the measure/draw contract and the focus scope a DOM component
- * and a canvas-drawn widget share. What a key or a pointer does to a control is `@weasel-js/ui-input`.
+ * @weasel-js/ui-logic — headless components: the measure/draw contract, the disabled and read-only hold rule, and
+ * the focus scope a DOM component and a canvas-drawn widget share. What a key or a pointer does to a control is `@weasel-js/ui-input`.
  *
  * @packageDocumentation
  */
@@ -17,3 +17,5 @@ export {
   MENU_MIN_WIDTH, MENU_BORDER_WIDTH, MENU_ICON_SIZE, MENU_CARET_SIZE, menuPanelMetrics, menuRowSpans, menuRowAtY, measureMenuPanel,
 } from './menuPanel';
 export type { MenuPanelMetrics, MenuRowFace, MenuPanelFace, MenuRowBox, MenuPanelLayout } from './menuPanel';
+export { NO_HOLD, nestHold, controlAccess } from './hold';
+export type { Hold, ControlAccess } from './hold';
