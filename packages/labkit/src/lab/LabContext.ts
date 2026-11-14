@@ -1,5 +1,5 @@
 import { createContext, use, useContext } from 'react';
-import type { ConfigRule, ControlRenderer } from '../config/types';
+import type { ConfigRule, LeafRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import type { LabMode, SavedSnapshot, TrialRecord } from '../state/types';
 import type { AddTrialOptions } from '../trial/trialOps';
@@ -45,7 +45,7 @@ export interface LabContextValue {
    *  labkit's own inference. */
   configRules?: readonly ConfigRule[];
   /** Lab-wide control overrides, keyed by config path or by leaf kind. */
-  renderers?: Record<string, ControlRenderer>;
+  renderers?: Record<string, LeafRenderer>;
 }
 
 /** Context carrying the surrounding lab. Prefer `useLabContext`. */

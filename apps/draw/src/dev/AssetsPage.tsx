@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AssetEditor, PREF_SCHEMA_EDITOR_PREFS, workspaceCodec, type CustomKinds } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { usePrefsStore } from '@weasel-js/prefs/react';
-import type { PrefRenderer } from '@weasel-js/ui/components/Prefs';
+import type { LeafRenderer } from '@weasel-js/ui/components/Prefs';
 import { localStorageAdapter } from '@weasel-js/storage';
 import { DataControl, RegistryEnumControl } from '../drawPrefsDialog';
 import { DevShell } from './DevShell';
@@ -11,7 +11,7 @@ import s from './AssetsPage.module.css';
 
 /** Stands in for a leaf the app draws with its own code: that code reads the running editor, which this page has not
  *  got. */
-const appDrawn: PrefRenderer = ({ pref }) => <span className={s.appDrawn}>{pref.name}: drawn by WeaselDraw</span>;
+const appDrawn: LeafRenderer = ({ pref }) => <span className={s.appDrawn}>{pref.name}: drawn by WeaselDraw</span>;
 
 const KINDS: CustomKinds = {
   ...Object.fromEntries(DRAW_LEAF_KINDS.map((kind) => [kind, {}])),
@@ -24,7 +24,7 @@ const KINDS: CustomKinds = {
   data: {},
 };
 
-const RENDERERS: Record<string, PrefRenderer> = {
+const RENDERERS: Record<string, LeafRenderer> = {
   ...Object.fromEntries(DRAW_LEAF_KINDS.map((kind) => [kind, appDrawn])),
   'registry-enum': RegistryEnumControl,
   data: DataControl,

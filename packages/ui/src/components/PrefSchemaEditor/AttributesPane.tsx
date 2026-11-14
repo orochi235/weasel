@@ -5,7 +5,7 @@ import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
 import { Input } from '../Input';
 import { PrefConditionEditor } from '../PrefConditionEditor';
-import type { PrefRenderer } from '../Prefs';
+import type { LeafRenderer } from '../Prefs';
 import { renderPrefControl } from '../Prefs/PrefsRow';
 import { Select } from '../Select';
 import { aggregateAttributes, catalogAttributes, isObjectField, setAutoRow, setObjectField } from './attrAggregate';
@@ -70,7 +70,7 @@ export interface AttributesPaneProps {
   /** The actions an action pref may fire, offered as its `action` attribute's choices. */
   actions?: readonly EditorAction[];
   /** Renderers the consumer passes for its own kinds — a custom kind's `default` may need one. */
-  renderers?: Record<string, PrefRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /** The dialog a layout's pointers name settings in. Given, an alias is a pointer: its form offers only where it points, among that
    *  dialog's settings. No leaf of a layout is offered another kind, which could make a setting of it. */
   over?: SchemaRoot;
@@ -87,10 +87,10 @@ export interface AttributesPaneProps {
  * entry may read the entry's own fields, where the node's own reads the schema's. A node at one of `targets` that is
  * a field of an entry may read that entry's other fields, where every target is a field of the same one.
  */
-function conditionRenderer(schema: SchemaRoot, exclude: readonly string[], holder: PrefList | PrefMap | undefined, targets: ReadonlyArray<string | null>, over: SchemaRoot | undefined): PrefRenderer {
+function conditionRenderer(schema: SchemaRoot, exclude: readonly string[], holder: PrefList | PrefMap | undefined, targets: ReadonlyArray<string | null>, over: SchemaRoot | undefined): LeafRenderer {
   const holders = targets.map((p) => entryHolderAt(schema, p));
   const within = holders.every((h) => h === holders[0]) ? holders[0] : undefined;
-  return Object.assign<PrefRenderer, { group: boolean; wide: boolean }>(({ path, pref, value, setValue }) => {
+  return Object.assign<LeafRenderer, { group: boolean; wide: boolean }>(({ path, pref, value, setValue }) => {
     const ofEntry = path.startsWith(`${ENTRY}.`);
     const entryOf = ofEntry ? holder : within;
     return (
@@ -169,7 +169,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   };
 
   const drawn = { ...renderers, ...ATTR_RENDERERS };
-  const identity: Record<string, PrefRenderer> = {
+  const identity: Record<string, LeafRenderer> = {
     [AUTO_VALUE_KIND]: autoValueRenderer(noAutoValue, (on) => writeAuto('value', on ? held.default : undefined),
       (ctx) => renderPrefControl({ ...ctx, pref: auto.value! }, drawn)),
     [CONDITION_KIND]: conditionRenderer(schema, ownPaths, item ? (node as PrefList | PrefMap) : undefined, targets, over),

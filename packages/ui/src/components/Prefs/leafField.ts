@@ -1,16 +1,16 @@
 import { INHERIT, type Paint } from '@weasel-js/core';
-import { withDrafts } from '../Prefs/commitPolicy';
-import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
+import { withDrafts, type ParamsSurface } from './commitPolicy';
+import { prefFieldProps, type PrefFieldState } from './prefField';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import type { PropertyPaintFieldProps } from '../Properties/fieldTypes';
-import type { PropertyRenderContext } from './renderContext';
+import type { LeafContext } from './renderContext';
 
 /**
- * A leaf as one control's props, writing the way a selection surface commits:
- * what is the same whether the control then sits in a row or in a bar. Null
+ * A leaf as one control's props, on any params surface: what is the same whether the control then sits in a row
+ * or in a bar. `nested` is a field of an object leaf over a selection, whose paint "None" removes the field. Null
  * for a leaf that is not one control.
  */
-export function leafField(ctx: PropertyRenderContext, nested: boolean): PropertyControlProps | null {
+export function leafField(ctx: LeafContext, surface: ParamsSurface, nested = false): PropertyControlProps | null {
   const state: PrefFieldState = {
     value: ctx.value,
     mixed: ctx.mixed,
@@ -26,21 +26,21 @@ export function leafField(ctx: PropertyRenderContext, nested: boolean): Property
     // that will paint, and a weight lists what its family has. A mixed
     // selection has no single one; the probe falls back to 400/normal there.
     fontVariant: {
-      weight: ctx.valueAt(siblingPath(ctx.path, 'fontWeight')).value,
-      style: ctx.valueAt(siblingPath(ctx.path, 'fontStyle')).value,
+      weight: ctx.source.valueAt(siblingPath(ctx.path, 'fontWeight')).value,
+      style: ctx.source.valueAt(siblingPath(ctx.path, 'fontStyle')).value,
     },
-    fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
+    fontFamily: ctx.source.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
   };
   const { settles, textWaitMs } = ctx;
-  const settled = prefFieldProps(ctx.pref, state, 'panel', settles, textWaitMs);
+  const settled = prefFieldProps(ctx.pref, state, surface, settles, textWaitMs);
   const field = settled && ctx.drafts
-    ? withDrafts(settled, prefFieldProps(ctx.pref, drafting(state, ctx.drafts), 'panel', settles), 'panel', settles)
+    ? withDrafts(settled, prefFieldProps(ctx.pref, drafting(state, ctx.drafts), surface, settles), surface, settles)
     : settled;
   return field?.kind === 'paint' && nested ? nestedPaint(ctx, field) : field;
 }
 
 /** `state` writing through a context's drafts. */
-function drafting(state: PrefFieldState, drafts: NonNullable<PropertyRenderContext['drafts']>): PrefFieldState {
+function drafting(state: PrefFieldState, drafts: NonNullable<LeafContext['drafts']>): PrefFieldState {
   return { ...state, setValue: drafts.setValue, ...(state.update ? { update: drafts.update } : {}) };
 }
 
@@ -49,13 +49,13 @@ function drafting(state: PrefFieldState, drafts: NonNullable<PropertyRenderConte
  * holds one: the paint, `null` for None, or `undefined` when mixed. Absent,
  * from the object or with no object at all, it is None, never unset.
  */
-export function nestedPaintValue(ctx: Pick<PropertyRenderContext, 'value' | 'mixed'>): Paint | null | undefined {
+export function nestedPaintValue(ctx: Pick<LeafContext, 'value' | 'mixed'>): Paint | null | undefined {
   if (ctx.mixed) return undefined;
   return ctx.value === undefined || ctx.value === null ? null : ctx.value as Paint;
 }
 
 /** {@link nestedPaintValue} as a control: None removes the field. */
-function nestedPaint(ctx: PropertyRenderContext, field: PropertyPaintFieldProps): PropertyPaintFieldProps {
+function nestedPaint(ctx: LeafContext, field: PropertyPaintFieldProps): PropertyPaintFieldProps {
   const { inherit } = ctx;
   const each = inherit?.each ?? [];
   const inheriting = each.filter(Boolean).length;
@@ -79,7 +79,7 @@ function siblingPath(path: string, key: string): string {
 
 /** What an `encoding` needs to read and write each node against its own
  *  object — nothing for a leaf that is not a field of one. */
-export function perNodeState(ctx: PropertyRenderContext): Pick<PrefFieldState, 'perNode' | 'update'> {
+export function perNodeState(ctx: LeafContext): Pick<PrefFieldState, 'perNode' | 'update'> {
   if (ctx.eachSiblings === undefined) return {};
   const siblings = ctx.eachSiblings;
   return {

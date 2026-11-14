@@ -13,10 +13,13 @@ import {
   prefShownValue,
 } from '@weasel-js/prefs';
 import {
+  type LeafContext,
   type LeafState,
   type PrefsSource,
+  sourceLeafContext,
   sourceResetPlan,
 } from '@weasel-js/ui/components/PrefsSource';
+import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { isRecord, valueAtPath, withValueAtPath } from '../config/path';
 import { isEncodedLeaf } from '../config/storedDefault';
@@ -130,4 +133,39 @@ export function useLabConfigSource(input: LabConfigInput): PrefsSource {
       labConfigSource({ resolved, config, shown, setConfig, draftConfig, auto, setRowAuto, over }),
     [resolved, config, shown, setConfig, draftConfig, auto, setRowAuto, over],
   );
+}
+
+/** What a lab's row renderer is handed: the leaf as the config source reads it, with the row's own value, which
+ *  is the auto value in effect while the leaf is unpinned. `setAuto` is absent where the row offers no toggle. */
+export function labRowContext(
+  input: LabConfigInput,
+  path: string,
+  pref: PrefLeaf,
+  row: {
+    value: unknown;
+    changed: boolean;
+    draft: ((value: unknown) => void) | undefined;
+    error: ReactNode;
+    disabled: boolean;
+    fields: LeafContext['fields'];
+  },
+  setAuto: ((next: boolean) => void) | undefined,
+): LeafContext {
+  const { value, draft } = row;
+  const write = (next: unknown): void => input.setConfig(path, next);
+  return {
+    ...sourceLeafContext(labConfigSource(input), path, pref),
+    value,
+    each: [value],
+    values: input.config,
+    changed: row.changed,
+    setValue: write,
+    update: (fn) => write(fn(value)),
+    ...(draft ? { drafts: { setValue: draft, update: (fn) => draft(fn(value)) } } : {}),
+    auto: input.auto?.has(path) ?? false,
+    setAuto: setAuto ?? (() => {}),
+    fields: row.fields,
+    disabled: row.disabled,
+    error: row.error,
+  };
 }

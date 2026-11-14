@@ -1,7 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import type { PrefRenderer } from '../Prefs';
-import type { PropertyRenderer } from '../SelectionPanel';
+import type { LeafRenderer } from '../Prefs';
 import { NO_CATALOG } from './actionCatalog';
 import { AssetEditor } from './AssetEditor';
 import type { DraftStorage } from './draft';
@@ -30,10 +29,9 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
    *  reader imports where the literal is pasted. An `object` leaf with no type keeps its editable children; a
    *  `union` comes only from a type. */
   types?: PrefTypes;
-  /** Renderers for custom kinds, used by a preferences schema's preview and by a custom kind's attributes. */
-  renderers?: Record<string, PrefRenderer>;
-  /** Renderers for a node property schema's preview, as `SelectionPanel` takes them. */
-  propertyRenderers?: Record<string, PropertyRenderer>;
+  /** Renderers for custom kinds: what a schema's preview draws them with, a preferences form's or a node
+   *  property panel's, and a custom kind's attributes. */
+  renderers?: Record<string, LeafRenderer>;
   /** Nodes that have no place in the schema yet, each whole already: its key, name, description and default. They
    *  are listed under the structure tree, to be dragged into it or onto the live preview, and one leaves the list
    *  once the schema holds a leaf of its key. Nested groups are drawn as branches and drag in whole. */

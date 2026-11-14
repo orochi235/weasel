@@ -4,7 +4,7 @@ import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
 import { auto } from '../config/auto';
 import { f } from '../config/builder';
-import type { ConfigRule, ControlRenderer } from '../config/types';
+import type { ConfigRule, LeafRenderer } from '../config/types';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
 
@@ -73,7 +73,7 @@ describe('lab-wide config seams', () => {
       initialState: () => ({}),
       render: () => null,
     });
-    const vector2: ControlRenderer = (ctx) => (
+    const vector2: LeafRenderer = (ctx) => (
       <span>vec:{String((ctx.value as { x: number }).x)}</span>
     );
     await renderSettled(<Lab instruments={[inst]} renderers={{ vector2 }} />, {

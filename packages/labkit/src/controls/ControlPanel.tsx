@@ -15,7 +15,7 @@ import { auto as autoValue, isAuto } from '../config/auto';
 import { applyConfigWrite, autoPathsOf, resolveAutoConfig } from '../config/autoConfig';
 import { type AutoReports, withAutoReports } from '../config/autoReports';
 import { valueAtPath } from '../config/path';
-import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { type ControlPack, gridOf } from './controlPack';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
 import { useLabConfigSource } from './labSource';
@@ -48,7 +48,7 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends A
    * paths (checked first) or leaf kinds. A renderer returning `null` collapses
    * the row; entries override the built-in rows on collision.
    */
-  renderers?: Record<string, ControlRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /**
    * The schema this one's aliases point into. Default: this schema itself. A
    * panel drawn from a schema of aliases into another passes that other: each

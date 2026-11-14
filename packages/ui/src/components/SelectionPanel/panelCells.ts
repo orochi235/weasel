@@ -3,23 +3,23 @@
  * and the control it draws in a row or in a bar.
  */
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import type { PrefAliasTargets, PrefLeaf } from '@weasel-js/prefs';
-import { sourceResetPlan } from '../PrefsSource/policy';
+import type { PrefAliasTargets } from '@weasel-js/prefs';
+import { sourceLeafContext, sourceResetPlan } from '../PrefsSource/policy';
 import type { SelectionSource } from './selectionSource';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { renderCells, type LeafCell, type RenderedCell } from './cells';
-import { MIXED, aggregateLeaf, aggregateValue, nodeLeafValue, nodeValueAt, panelLeafKey, sharedValue, type AnyNode, type PanelLeaf, type PanelRow } from './model';
+import { MIXED, nodeValueAt, panelLeafKey, sharedValue, type AnyNode, type PanelLeaf, type PanelRow } from './model';
 import { leafAcross } from './nodeBounds';
-import type { PanelInherit, PropertyRenderContext, PropertyRenderer } from './renderContext';
+import type { PanelInherit, LeafContext, LeafRenderer } from './renderContext';
 import { INHERIT, type InheritedPaint } from '@weasel-js/core';
 import { renderBuiltin } from './renderLeaf';
 
 /** What every leaf of one panel reads, whichever row it sits in. */
 export interface PanelCellScope {
   nodes: readonly AnyNode[];
-  renderers: Record<string, PropertyRenderer> | undefined;
+  renderers: Record<string, LeafRenderer> | undefined;
   commit: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void;
   /** A value on the way to the one `commit` takes: written, and kept out of undo. */
   draft: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void;
@@ -27,8 +27,6 @@ export interface PanelCellScope {
   source: SelectionSource;
   selectionKey: string;
   fields: readonly PrefFieldChoice[];
-  /** The leaf the panel draws at `path`, which says what a node holding nothing there reads as. */
-  leafAt: (path: string) => PrefLeaf | undefined;
   disabled: ReadonlySet<string>;
   hidden: ReadonlySet<string>;
   /** The keys of the actions whose `activeIf` holds. */
@@ -59,27 +57,19 @@ function inheritOf(panelLeaf: PanelLeaf, scope: PanelCellScope): PanelInherit | 
   };
 }
 
-function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRenderContext {
-  const { nodes, commit, draft, selectionKey, fields, leafAt, disabled, hidden } = scope;
+function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): LeafContext {
+  const { nodes, source, selectionKey, fields, disabled, hidden } = scope;
   const { path, leaf } = panelLeaf;
   const inside = panelLeaf.own === undefined ? undefined : scope.targets;
   const entryAt = inside?.entryAt ?? scope.entryAt;
-  const aggregated = aggregateLeaf(nodes, path, leaf);
-  const mixed = aggregated === MIXED;
+  const own = sourceLeafContext(source, path, leaf);
   return {
-    path,
+    ...own,
     pref: leafAcross(leaf, nodes),
-    value: mixed ? undefined : aggregated,
-    mixed,
-    unset: !mixed && aggregated === undefined,
-    each: nodes.map((n) => nodeLeafValue(leaf, nodeValueAt(n, path))),
-    setValue: (v) => commit(panelLeaf, () => v),
-    update: (fn) => commit(panelLeaf, fn),
-    drafts: { setValue: (v) => draft(panelLeaf, () => v), update: (fn) => draft(panelLeaf, fn) },
-    valueAt: (p) => {
-      const held = leafAt(p);
-      const at = held ? aggregateLeaf(nodes, p, held) : aggregateValue(nodes, p);
-      return at === MIXED ? { value: undefined, mixed: true } : { value: at, mixed: false };
+    unset: !own.mixed && own.value === undefined,
+    drafts: {
+      setValue: (v) => source.write(path, v, { draft: true }),
+      update: (fn) => source.update(path, fn, { draft: true }),
     },
     selectionKey,
     fields,
@@ -95,7 +85,7 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRende
   };
 }
 
-const withInherit = (inherit: PanelInherit | undefined): Pick<PropertyRenderContext, 'inherit'> =>
+const withInherit = (inherit: PanelInherit | undefined): Pick<LeafContext, 'inherit'> =>
   (inherit ? { inherit } : {});
 
 function leafCell(panelLeaf: PanelLeaf, ariaLabel: string, scope: PanelCellScope, surface: LeafSurface): LeafCell {

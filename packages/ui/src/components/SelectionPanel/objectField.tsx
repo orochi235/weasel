@@ -8,26 +8,26 @@ import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { MIXED, nodeLeafValue, sharedValue } from './model';
 import type { LeafCell } from './cells';
-import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
+import type { LeafContext, LeafRenderer } from './renderContext';
 import { renderBuiltin } from './renderLeaf';
 import s from './SelectionPanel.module.css';
 
 /** The object leaf a field belongs to, as its fields read it. */
 export interface ObjectFieldOwner {
   /** The object leaf's own context. */
-  ctx: PropertyRenderContext;
+  ctx: LeafContext;
   /** The object the selection shares, when it shares one. */
   held: Record<string, unknown> | undefined;
   /** Each node's object, in selection order. */
   eachObject: readonly (Record<string, unknown> | undefined)[];
   /** The paired row of each field that shares one, by the field's full path. */
   pairs: ReadonlyMap<string, { key: string; label: string }>;
-  renderers?: Record<string, PropertyRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   selectionKey: string;
 }
 
 /** The context of the field `key` of `owner`: its value across the nodes, and an edit that commits the parent object. */
-function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 'held' | 'eachObject'>, key: string, child: PrefLeaf): PropertyRenderContext {
+function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 'held' | 'eachObject'>, key: string, child: PrefLeaf): LeafContext {
   const pref = ctx.pref as PrefObject;
   const childPath = `${ctx.path}.${key}`;
   // Nodes whose objects differ still agree or disagree field by field: two
@@ -42,7 +42,7 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
   // Each node's own object, with this one field changed. Deriving it per
   // node is what keeps a multi-selection edit from writing one node's
   // object over all the others.
-  type Update = PropertyRenderContext['update'];
+  type Update = LeafContext['update'];
   const through = (parent: Update): Update => (fn) =>
     parent((prev) => {
       const base = prefObjectBase(pref, prev);
@@ -60,7 +60,8 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
     siblings: held,
     each,
     eachSiblings: eachObject,
-    valueAt: ctx.valueAt,
+    source: ctx.source,
+    setAuto: ctx.setAuto,
     selectionKey: ctx.selectionKey,
     update,
     setValue: (v) => update(() => v),
@@ -84,7 +85,7 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
 function renderField(
   { renderers, selectionKey, pairs }: Pick<ObjectFieldOwner, 'renderers' | 'selectionKey' | 'pairs'>,
   child: PrefLeaf,
-  childCtx: PropertyRenderContext,
+  childCtx: LeafContext,
   surface: LeafSurface,
 ): ReactNode {
   const custom = renderers?.[childCtx.path] ?? renderers?.[child.kind];

@@ -17,9 +17,9 @@ import type {
   ConfigRule,
   ConfigSchema,
   ConfigShape,
-  ControlRenderer,
   DialogSpec,
   LeafPatch,
+  LeafRenderer,
   ResolvedConfig,
   SectionSpec,
 } from './types';
@@ -46,7 +46,7 @@ interface Sink {
   sections: SectionSpec[];
   showIf: Map<string, ConfigPredicate>;
   enableIf: Map<string, ConfigPredicate>;
-  renderers: Record<string, ControlRenderer>;
+  renderers: Record<string, LeafRenderer>;
   dialogs: Record<string, DialogSpec>;
   motifs: Map<string, Motif>;
   chain: readonly ConfigRule[];

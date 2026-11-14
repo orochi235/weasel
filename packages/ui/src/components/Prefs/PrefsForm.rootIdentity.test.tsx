@@ -1,7 +1,7 @@
 import { cleanup, render } from '@testing-library/react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
-import { PrefsForm, type PrefRenderContext } from './PrefsForm';
+import { PrefsForm, type LeafContext } from './PrefsForm';
 
 afterEach(cleanup);
 
@@ -10,7 +10,7 @@ afterEach(cleanup);
 it('hands a renderer the same leaf across renders that pass a new values object', () => {
   const seen: PrefLeaf[] = [];
   // An object leaf is copied when the form drops its hidden fields, so its identity follows the tree's.
-  const renderers = { object: (ctx: PrefRenderContext) => (seen.push(ctx.pref), null) };
+  const renderers = { object: (ctx: LeafContext) => (seen.push(ctx.pref), null) };
   const schema: PrefGroup = {
     name: '',
     children: { stroke: { kind: 'object', name: 'Stroke', description: '', default: {}, children: { width: { kind: 'number', name: 'Width', description: '', default: 1 } } } as PrefLeaf },

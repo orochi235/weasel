@@ -2,7 +2,7 @@ import { isPrefLeaf, type PrefLeaf, prefFitsHeading } from '@weasel-js/prefs';
 import { drawsOwn } from './drawsOwn';
 import { schemaNodeAtPath } from './path';
 import { stutters, warnOfStutter, warnOnce } from './stutter';
-import type { ControlRenderer, ResolvedConfig } from './types';
+import type { LeafRenderer, ResolvedConfig } from './types';
 
 /** The leaf heading a run of rows: the one marked `.heading()`, or a first row
  *  that repeats `heading`, which is warned about as the authoring mistake it
@@ -12,7 +12,7 @@ export function headingLeaf(
   resolved: ResolvedConfig,
   heading: unknown,
   paths: readonly string[],
-  renderers?: Record<string, ControlRenderer>,
+  renderers?: Record<string, LeafRenderer>,
 ): { path: string; leaf: PrefLeaf } | undefined {
   const leafAt = (path: string): PrefLeaf | undefined => {
     const found = schemaNodeAtPath(resolved.group, path);

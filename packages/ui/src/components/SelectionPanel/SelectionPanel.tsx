@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/core';
 import { leafWrites } from './commitLeaf';
 import { selectionSource } from './selectionSource';
-import type { PropertyRenderer } from './renderContext';
+import type { LeafRenderer } from './renderContext';
 import { classifyKind, kindBreakdown, panelRowsOf, type AnyNode } from './model';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { conditionedSections } from './conditions';
@@ -25,7 +25,7 @@ import { sectionsInScopes } from './scopes';
 import { PanelMarksContext, panelMarkedPaths, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
-export type { PropertyRenderContext, PropertyRenderer } from './renderContext';
+export type { LeafContext, LeafRenderer } from './renderContext';
 
 /** Props for {@link SelectionPanel}. */
 export interface SelectionPanelProps<TData, TLayer extends string, TPose> extends MarkHiddenProps {
@@ -44,7 +44,7 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
    *  leaf paths (`data.fill`, checked first) or leaf kinds (`color`).
    *  A renderer returning `null` collapses its leaf (and the row, when
    *  every leaf in it collapses). */
-  renderers?: Record<string, PropertyRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /**
    * The schema the properties schemas' `alias` leaves point into. Default:
    * each kind's own. A panel drawn from layouts of aliases into another
@@ -154,7 +154,6 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     }),
     selectionKey,
     fields,
-    leafAt: (path) => leaves.get(path),
     disabled: scope.disabled,
     active: scope.active,
     hidden: scope.hidden,

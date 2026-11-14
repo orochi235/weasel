@@ -1,7 +1,8 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import type { PrefRenderContext } from '../Prefs';
+import type { LeafContext } from '../Prefs';
+import { loneLeafContext } from '../PrefsSource';
 import { ATTR_RENDERERS } from '@weasel-js/ui/testing/prefSchemaEditor';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -9,9 +10,8 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
 
-const ctx = (value: unknown): PrefRenderContext => ({
-  path: 'x', pref: { kind: 'enum-options', name: 'X', description: '', default: undefined }, value, setValue: () => {}, auto: false, setAuto: () => {},
-});
+const ctx = (value: unknown): LeafContext =>
+  loneLeafContext('x', { kind: 'enum-options', name: 'X', description: '', default: undefined }, value, () => {});
 
 test('a flagged option draws its chip in another color than a sound one', () => {
   renderWithIcons(<div style={{ width: 400 }}>{ATTR_RENDERERS['enum-options'](ctx([{ value: 'a', label: 'A' }, { value: 'a', label: 'B' }]))}</div>);

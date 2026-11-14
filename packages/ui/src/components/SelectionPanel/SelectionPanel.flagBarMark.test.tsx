@@ -3,7 +3,7 @@ import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEn
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MARKED } from '../Prefs/selection';
-import type { PropertyRenderer } from './renderContext';
+import type { LeafRenderer } from './renderContext';
 import { SelectionPanel } from './SelectionPanel';
 
 afterEach(cleanup);
@@ -25,7 +25,7 @@ const SCHEMA: PrefSection = {
 const routing: NodeRoutingEntry[] = [{ name: 'thing', matches: () => true }];
 const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: SCHEMA }];
 
-function marked(selected: readonly string[], renderers?: Record<string, PropertyRenderer>): Array<string | null> {
+function marked(selected: readonly string[], renderers?: Record<string, LeafRenderer>): Array<string | null> {
   const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
   const { container } = render(
@@ -45,7 +45,7 @@ describe('a cell a bar fuses from a run of flags', () => {
   });
 
   it('leaves out a flag a renderer draws, which is a cell of its own and ends the run', () => {
-    const own: PropertyRenderer = () => <span>own</span>;
+    const own: LeafRenderer = () => <span>own</span>;
     expect(marked(['data.italic'], { 'data.italic': own })).toEqual(['data.italic']);
     cleanup();
     expect(marked(['data.under'], { 'data.italic': own })).toEqual(['data.under']);

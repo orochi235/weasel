@@ -9,12 +9,13 @@ import { useParamsPolicy } from '../Prefs/useParamsPolicy';
 import { paneChildren } from '../Prefs/PrefsPane';
 import type { WalkCtx } from '../Prefs/PrefsRow';
 import { valuesSource } from '../PrefsSource/useValuesSource';
+import { recordSource } from '../PrefsSource/recordSource';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { PropertyList } from '../Properties/PropertyList';
 import { PropertyRow } from '../Properties/PropertyRow';
 import { pairRows } from '../SelectionPanel/model';
 import { renderCells, type LeafCell } from '../SelectionPanel/cells';
-import type { PropertyRenderContext, PropertyRenderer } from '../SelectionPanel/renderContext';
+import type { LeafContext, LeafRenderer } from '../SelectionPanel/renderContext';
 import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { barLeafName, BarLayout, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode, type BarOrientation, type BarOverflowMode } from './BarLayout';
 import { childKeysAt } from './barOrder';
@@ -36,7 +37,7 @@ export interface BarProps {
   /** Paths whose sources disagree, drawn as the control's mixed state. */
   mixed?: ReadonlySet<string>;
   /** Control overrides, by dotted path or by leaf kind. */
-  renderers?: Record<string, PropertyRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /** The schema this one's `alias` leaves point into. Default: this schema itself. A bar drawn from a schema of
    *  aliases into another passes that other: each alias is drawn as the leaf of it at the alias's path, reads and
    *  writes `values` at that path, and is hidden and disabled by that leaf's conditions as well as its own. A
@@ -121,7 +122,7 @@ export function Bar(props: BarProps) {
 interface Draw {
   values: Readonly<Record<string, unknown>> | undefined;
   mixed: ReadonlySet<string> | undefined;
-  renderers: Record<string, PropertyRenderer> | undefined;
+  renderers: Record<string, LeafRenderer> | undefined;
   onChange: ((path: string, value: unknown) => void) | undefined;
   fields: readonly PrefFieldChoice[];
   /** Paths of the leaves and fields a failed `enableIf` disables. */
@@ -183,7 +184,7 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, dr
   const path = at ?? own;
   const isMixed = mixed?.has(path) === true;
   const shown = isMixed ? undefined : prefLeafValue(leaf, values?.[path]);
-  const ctx: PropertyRenderContext = {
+  const ctx: LeafContext = {
     path,
     pref: leaf,
     value: shown,
@@ -193,7 +194,8 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, dr
     setValue: (v) => onChange?.(path, v),
     // One set of values, so there is one prior value to derive from.
     update: (fn) => onChange?.(path, fn(shown)),
-    valueAt: (p) => ({ value: values?.[p], mixed: mixed?.has(p) === true }),
+    source: recordSource({ [path]: leaf }, values, onChange, { mixed }),
+    setAuto: () => {},
     fields,
     disabled: draw.disabled.has(own),
     // The cell answers by the bar's own schema, at its own path; what is inside an alias's by its target's.

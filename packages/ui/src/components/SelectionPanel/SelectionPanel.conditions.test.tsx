@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
 import type { PrefCondition, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { SelectionPanel, type PropertyRenderContext } from './SelectionPanel';
+import { SelectionPanel, type LeafContext } from './SelectionPanel';
 
 afterEach(cleanup);
 
@@ -124,7 +124,7 @@ describe('SelectionPanel enableIf', () => {
 
   it('tells a custom renderer', () => {
     const seen: Array<boolean | undefined> = [];
-    setup(members, [{ locked: true }], { 'data.radius': (ctx: PropertyRenderContext) => (seen.push(ctx.disabled), <span>own</span>) });
+    setup(members, [{ locked: true }], { 'data.radius': (ctx: LeafContext) => (seen.push(ctx.disabled), <span>own</span>) });
     expect(seen.at(-1)).toBe(true);
   });
 

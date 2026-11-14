@@ -22,7 +22,7 @@ import {
 import { Fragment, type ReactNode } from 'react';
 import { drawsOwn } from '../config/drawsOwn';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
-import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { isLeafActive, isLeafEnabled, isLeafVisible } from '../config/visible';
 import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
@@ -53,7 +53,7 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   setConfig: (path: string, value: unknown) => void;
   draftConfig: ((path: string, value: unknown) => void) | undefined;
   errors: Readonly<Record<string, ReactNode>> | undefined;
-  renderers: Record<string, ControlRenderer> | undefined;
+  renderers: Record<string, LeafRenderer> | undefined;
   /** The schema the panel's aliases point into, where that is not `resolved`'s. */
   over: PrefGroup | PrefSection | undefined;
   showHidden: boolean;

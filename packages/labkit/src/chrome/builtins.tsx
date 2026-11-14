@@ -3,7 +3,7 @@ import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
 import { withOverValues } from '../config/over';
-import type { ControlRenderer } from '../config/types';
+import type { LeafRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
@@ -213,7 +213,7 @@ export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
 export function builtinContributions(
   instrument: Instrument,
   ctx: TrialChromeContext,
-  renderers?: Record<string, ControlRenderer>,
+  renderers?: Record<string, LeafRenderer>,
 ): TrialContribution[] {
   const out: TrialContribution[] = [];
   const zoom = ctx.zoom;

@@ -1,7 +1,7 @@
 import { cleanup, screen, within } from '@testing-library/react';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it } from 'vitest';
-import { PrefsForm, type PrefRenderContext } from './PrefsForm';
+import { PrefsForm, type LeafContext } from './PrefsForm';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
@@ -144,7 +144,7 @@ describe('PrefsForm enableIf', () => {
       name: 'Root',
       children: { on: flag('Snap on'), dial: { kind: 'dial', name: 'Dial', description: '', default: 0, enableIf: { path: 'on' } } as PrefLeaf },
     };
-    const dial = (ctx: PrefRenderContext) => {
+    const dial = (ctx: LeafContext) => {
       seen.push(ctx.disabled);
       return <button type="button" disabled={ctx.disabled}>dial</button>;
     };

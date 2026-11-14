@@ -541,8 +541,8 @@ name a package. Breaking changes are in scope.
 
 - **(P1.5) [agent] A `<PrefsSource>` behind every params surface.** `SelectionPanel` imports 19 modules from
   `../Prefs/` yet keeps its own `ListLeaf`, `ObjectLeaf`, and `renderContext`; the leaf-kind switch exists twice
-  (`Prefs/PrefsRow.tsx:280`, `SelectionPanel/renderLeaf.tsx:83`); `PropertyRenderContext` repeats about 15 fields
-  of `PrefRenderContext`, so `PrefSchemaEditor` needs both `renderers` and `propertyRenderers`. The reset policy is
+  (`Prefs/PrefsRow.tsx:280`, `SelectionPanel/renderLeaf.tsx:83`); `LeafContext` repeats about 15 fields
+  of `LeafContext`, so `PrefSchemaEditor` needs both `renderers` and `propertyRenderers`. The reset policy is
   written three times: `Prefs/reset.tsx`, `labkit/src/controls/leafReset.ts`, and `SelectionPanel/panelCells.ts:139`.
   A source context exposes `valueAt(path) → { value, mixed, each }`, `write`, `autoAt`, and `reset(paths)`, with a
   provider for a values map, a node selection, and a lab config. Closes when `PrefsForm`, `SelectionPanel`, and

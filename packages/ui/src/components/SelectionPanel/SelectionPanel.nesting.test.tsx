@@ -2,14 +2,14 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it } from 'vitest';
-import { SelectionPanel, type PropertyRenderer } from './SelectionPanel';
+import { SelectionPanel, type LeafRenderer } from './SelectionPanel';
 
 afterEach(cleanup);
 
 const text = (name: string): PrefLeaf => ({ kind: 'string', name, description: '', default: '' }) as PrefLeaf;
 const routing: NodeRoutingEntry[] = [{ name: 'thing', matches: () => true }];
 
-function mount(schema: PrefSection, renderers?: Record<string, PropertyRenderer>) {
+function mount(schema: PrefSection, renderers?: Record<string, LeafRenderer>) {
   const scene = createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   scene.add({ id: asNodeId('n'), kind: 'mark', layer: 'default', pose: {}, data: {} });
   const properties: NodePropertiesEntry[] = [{ name: 'thing', schema }];
@@ -60,7 +60,7 @@ describe('a section nested in another, in SelectionPanel', () => {
 });
 
 describe('a tab with no row to draw, in SelectionPanel', () => {
-  const blank: PropertyRenderer = () => null;
+  const blank: LeafRenderer = () => null;
 
   it('is left out of its strip, at the top level and nested', () => {
     mount({

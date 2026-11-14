@@ -6,9 +6,9 @@ import { BarMenu, useBarMenuResolver } from '../Bar/BarMenu';
 import { DragGhost } from '../DragGhost';
 import { InlineRange } from '../InlineRange';
 import { useRegisteredActions } from '../Prefs/registeredActions';
-import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
+import { PrefsDialog, PrefsForm, type PrefDrop, type LeafRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
-import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPanel';
+import { SelectionPanel, setAtPath } from '../SelectionPanel';
 import { SidebarPanel } from '../SidebarPanel';
 import { Switch } from '../Switch';
 import type { DefaultEdit } from './defaults';
@@ -25,8 +25,7 @@ import s from './PrefSchemaEditor.module.css';
 
 export interface PreviewPaneProps {
   schema: SchemaRoot;
-  renderers?: Record<string, PrefRenderer>;
-  propertyRenderers?: Record<string, PropertyRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /** Tree path of the node to mark and bring into view. */
   selected?: readonly string[];
   /** The reader picked a node in the preview; its tree path, or `null` for the root. */
@@ -53,7 +52,7 @@ export interface PreviewPaneProps {
  * The schema drawn the way its reader draws it: a preferences form for a group, a properties panel for a section,
  * and a toolbar for a group drawn as a bar.
  */
-export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless, over, hosted }: PreviewPaneProps) {
+export function PreviewPane({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless, over, hosted }: PreviewPaneProps) {
   if (hosted !== undefined && hosted !== null && hosted !== false) {
     return (
       <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
@@ -62,7 +61,7 @@ export function PreviewPane({ schema, renderers, propertyRenderers, selected, on
       </section>
     );
   }
-  if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} over={over} />;
+  if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} over={over} />;
   if (schema.as === 'menu') return <MenuPreview schema={schema} over={over} />;
   if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} over={over} />;
   return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} pageless={pageless} over={over} />;
@@ -126,7 +125,7 @@ function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRe
 
 interface GroupPreviewProps {
   schema: PrefGroup;
-  renderers?: Record<string, PrefRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   selected: readonly string[];
   onSelect?: (path: string | null, how: PrefSelectHow) => void;
   onDefaults(edits: readonly DefaultEdit[]): void;
@@ -207,7 +206,7 @@ function sceneOf(schema: PrefSection, over: SchemaRoot | undefined): PreviewScen
 
 function SectionPreview({ schema, renderers, selected, onSelect, onDefaults, over }: {
   schema: PrefSection;
-  renderers?: Record<string, PropertyRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   selected: readonly string[];
   onSelect?: (path: string | null, how: PrefSelectHow) => void;
   onDefaults(edits: readonly DefaultEdit[]): void;

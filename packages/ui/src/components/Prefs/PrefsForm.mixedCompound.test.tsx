@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { PrefBoolean, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { PrefsForm, type PrefRenderContext } from './index';
+import { PrefsForm, type LeafContext } from './index';
 import { renderWithIcons } from '../../testing/withIcons';
 
 afterEach(cleanup);
@@ -71,7 +71,7 @@ describe('PrefsForm object leaf with mixed fields', () => {
   });
 
   it('tells a custom renderer for a field that the field is mixed', () => {
-    const seen: PrefRenderContext[] = [];
+    const seen: LeafContext[] = [];
     form(STROKE, HELD, ['stroke.cap'], { renderers: { string: (ctx) => { seen.push(ctx); return <span>cap</span>; } } });
     expect(seen.at(-1)).toMatchObject({ path: 'stroke.cap', mixed: true, value: undefined });
   });

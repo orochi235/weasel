@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
-import type { ControlRenderer } from '../config/types';
+import type { LeafRenderer } from '../config/types';
 import { ControlPanel } from './ControlPanel';
 
 afterEach(cleanup);
@@ -11,7 +11,7 @@ describe('<ControlPanel> renderer context', () => {
   it("carries the panel's whole config, to a node's .render, a lab renderer, and a dialog body", () => {
     const seen: string[] = [];
     const note =
-      (tag: string): ControlRenderer =>
+      (tag: string): LeafRenderer =>
       (ctx) => {
         seen.push(`${tag}:${(ctx.values as { unit: string }).unit}`);
         return <span>{tag}</span>;

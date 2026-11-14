@@ -3,7 +3,7 @@ import { withMarks } from '../annotations/labMarks';
 import { builtinContributions, TRANSIENT_BUILTINS } from '../chrome/builtins';
 import { mergeContributions, suppressContributions } from '../chrome/merge';
 import type { TrialChromeContext, TrialContribution, TrialSidebar } from '../chrome/types';
-import type { ControlRenderer } from '../config/types';
+import type { LeafRenderer } from '../config/types';
 import type { Instrument } from '../instrument/types';
 import { FLOAT_TOGGLE_ID, floatToggle } from './FloatSidebar';
 
@@ -12,7 +12,7 @@ export interface TrialContributionSources {
   instrument: Instrument;
   ctx: TrialChromeContext;
   marks: boolean;
-  renderers?: Record<string, ControlRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   trialChrome?: readonly TrialContribution[];
   chrome?: readonly TrialContribution[];
   suppress?: readonly string[];

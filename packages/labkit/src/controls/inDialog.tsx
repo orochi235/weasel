@@ -14,7 +14,7 @@ import {
 import { qty, withUnit } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { stepDisplay } from '@weasel-js/ui/components/Properties';
-import type { ControlRenderer, InDialogOptions } from '../config/types';
+import type { InDialogOptions, LeafRenderer } from '../config/types';
 import { DraftDialogRow } from './DraftDialogRow';
 import { extra } from './fields';
 
@@ -106,7 +106,7 @@ export function summarizeLeaf(leaf: PrefLeaf, value: unknown): string {
  * edit into the draft as it is made: a write after the dialog closes, such as
  * one from an unmount cleanup, is dropped.
  */
-export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): ControlRenderer {
+export function inDialog(body: LeafRenderer, opts: InDialogOptions = {}): LeafRenderer {
   return (ctx) => {
     const { pref, value, auto, setAuto } = ctx;
     const summary = opts.summary ?? ((v: unknown) => summarizeLeaf(pref, v));

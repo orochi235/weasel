@@ -11,7 +11,7 @@ import { formAttrs, useDropFrame } from './dropTarget';
 import { HiddenBadge, marksHidden, type MarkHiddenProps } from './hidden';
 import { NoMatches } from './NoMatches';
 import { filterPrefRoot, prefFieldChoices, type PrefFieldChoice } from './schema';
-import type { PrefRenderer, WalkCtx } from './PrefsRow';
+import type { LeafRenderer, WalkCtx } from './PrefsRow';
 import { useValuesSource } from '../PrefsSource/useValuesSource';
 import { paneChildren } from './PrefsPane';
 import { BarRootLayout } from './BarRootLayout';
@@ -22,7 +22,7 @@ import { useSplitRows, type PrefSplitProps } from './splitRows';
 import { useParamsPolicy } from './useParamsPolicy';
 import s from './Prefs.module.css';
 
-export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
+export type { LeafRenderer, LeafContext } from './PrefsRow';
 
 /** How a {@link PrefsForm} lays its groups out. */
 export type PrefsLayout = 'columns' | 'rail' | 'list';
@@ -46,7 +46,7 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
    * kinds with no renderer show a labeled placeholder instead of
    * crashing.
    */
-  renderers?: Record<string, PrefRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /** Reveal `hidden` leaves (dev tooling). Default false. */
   showHidden?: boolean;
   /**

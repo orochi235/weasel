@@ -1,8 +1,8 @@
 export {
   SelectionPanel,
   type SelectionPanelProps,
-  type PropertyRenderer,
-  type PropertyRenderContext,
+  type LeafRenderer,
+  type LeafContext,
 } from './SelectionPanel';
 export {
   MIXED,
@@ -23,4 +23,4 @@ export {
   type PanelShown,
 } from './model';
 export { conditionedSections, selectionJudge } from './conditions';
-export { nestedPaintValue } from './leafField';
+export { nestedPaintValue } from '../Prefs/leafField';

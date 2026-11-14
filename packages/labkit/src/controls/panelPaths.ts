@@ -2,7 +2,7 @@ import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import type { PrefFieldChoice } from '@weasel-js/ui/components/Prefs';
 import { drawsOwn } from '../config/drawsOwn';
 import { schemaNodeAtPath } from '../config/path';
-import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { isSliderLeaf, labField } from './fields';
 
 const NO_CHOICES: readonly PrefFieldChoice[] = [];
@@ -35,7 +35,7 @@ export function loosePathsIn(resolved: ResolvedConfig, group: PrefGroup, at: str
  */
 export function pairableAt(
   resolved: ResolvedConfig,
-  renderers: Record<string, ControlRenderer> | undefined,
+  renderers: Record<string, LeafRenderer> | undefined,
   visible: (path: string) => boolean,
   path: string,
 ): readonly [path: string, leaf: PrefLeaf] | undefined {

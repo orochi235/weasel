@@ -4,19 +4,19 @@ import { useEffect, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { f } from '../config/builder';
 import { resolveConfigSchema } from '../config/resolve';
-import type { ControlRenderer, InDialogOptions } from '../config/types';
+import type { InDialogOptions, LeafRenderer } from '../config/types';
 import { ControlPanel } from './ControlPanel';
 
-type PrefRenderContext = Parameters<ControlRenderer>[0];
+type LeafContext = Parameters<LeafRenderer>[0];
 
-const shout = ({ value, setValue }: PrefRenderContext) => (
+const shout = ({ value, setValue }: LeafContext) => (
   <button type="button" onClick={() => setValue(`${String(value)}!`)}>
     shout
   </button>
 );
 
 /** A body that keeps its own state and writes it only as it unmounts. */
-function WritesOnClose({ value, setValue }: PrefRenderContext) {
+function WritesOnClose({ value, setValue }: LeafContext) {
   const [text, setText] = useState(String(value));
   const latest = useRef(text);
   latest.current = text;
@@ -30,7 +30,7 @@ function WritesOnClose({ value, setValue }: PrefRenderContext) {
   );
 }
 
-function mount(body: ControlRenderer, opts?: InDialogOptions) {
+function mount(body: LeafRenderer, opts?: InDialogOptions) {
   const setConfig = vi.fn();
   const schema = resolveConfigSchema(f.schema({ note: f.string('hi').dialog(body, opts) }));
   renderWithIcons(<ControlPanel schema={schema} config={{ note: 'hi' }} setConfig={setConfig} />);

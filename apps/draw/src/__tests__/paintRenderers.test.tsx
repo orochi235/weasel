@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { ActionsProvider, createDispatcher, useActionsRegistry, type Action } from '@weasel-js/core';
-import type { PropertyRenderContext } from '@weasel-js/ui/components/SelectionPanel';
+import type { LeafContext } from '@weasel-js/ui/components/SelectionPanel';
+import { loneLeafContext } from '@weasel-js/ui/components/PrefsSource';
 import { WD_RENDERERS } from '../paintRenderers';
 import { renderWithIcons } from '../testIcons';
 
@@ -13,19 +14,14 @@ const STROKE_PAINT_LEAF = {
   name: 'Color',
   default: { kind: 'solid', color: '#000000ff' },
   alpha: true,
-} as unknown as PropertyRenderContext['pref'];
+} as unknown as LeafContext['pref'];
 
-function ctxWith(value: unknown, selectionKey = ''): PropertyRenderContext {
+function ctxWith(value: unknown, selectionKey = ''): LeafContext {
   return {
+    ...loneLeafContext('data.stroke.paint', STROKE_PAINT_LEAF, value, () => {}),
     selectionKey,
-    path: 'data.stroke.paint',
-    pref: STROKE_PAINT_LEAF,
-    value,
-    mixed: false,
     unset: value === undefined,
-    setValue: () => {},
-    valueAt: () => ({ value: undefined, mixed: false, unset: true }),
-  } as unknown as PropertyRenderContext;
+  };
 }
 
 const GRADIENT = {

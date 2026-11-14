@@ -5,8 +5,8 @@ import type {
   Annotations,
   ConfigNode,
   ConfigPredicate,
-  ControlRenderer,
   InDialogOptions,
+  LeafRenderer,
   NodeOptions,
   SectionOption,
 } from './types';
@@ -145,13 +145,13 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
   }
 
   /** Draw this one row yourself, keeping the kind, default and validation. */
-  render(renderer: ControlRenderer): this {
+  render(renderer: LeafRenderer): this {
     return this.opt({ render: renderer, dialog: undefined });
   }
 
   /** Draw this row as a button that opens a dialog, with `body` as the
    *  dialog's content — for an editor too big for the row. */
-  dialog(body: ControlRenderer, opts?: InDialogOptions): this {
+  dialog(body: LeafRenderer, opts?: InDialogOptions): this {
     return this.opt({ dialog: { ...opts, body }, render: undefined });
   }
 

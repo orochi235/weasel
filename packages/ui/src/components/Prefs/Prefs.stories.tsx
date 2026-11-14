@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefsForm, type PrefRenderContext, PrefsDialog } from '@weasel-js/ui/components/Prefs';
+import { PrefsForm, type LeafContext, PrefsDialog } from '@weasel-js/ui/components/Prefs';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Select } from '@weasel-js/ui/components/Select';
 
@@ -177,7 +177,7 @@ function useStoryValues() {
 }
 
 const STORY_RENDERERS = {
-  'registry-enum': (ctx: PrefRenderContext) => (
+  'registry-enum': (ctx: LeafContext) => (
     <Select<string>
       options={TOOL_REGISTRY.map((t) => ({ value: t, label: t }))}
       selectedKey={String(ctx.value)}

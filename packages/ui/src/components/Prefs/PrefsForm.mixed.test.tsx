@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { PrefsForm, type PrefRenderContext } from './index';
+import { PrefsForm, type LeafContext } from './index';
 
 afterEach(cleanup);
 
@@ -15,14 +15,14 @@ const SCHEMA: PrefGroup = {
 
 describe('PrefsForm with mixed values', () => {
   it('hands a custom renderer mixed and no value at a mixed path', () => {
-    const seen: PrefRenderContext[] = [];
+    const seen: LeafContext[] = [];
     render(<PrefsForm schema={SCHEMA} values={{ title: 'a', odd: 3 }} onChange={vi.fn()} layout="list"
       mixed={new Set(['odd'])} renderers={{ odd: (ctx) => { seen.push(ctx); return <span>odd</span>; } }} />);
     expect(seen.at(-1)).toMatchObject({ mixed: true, value: undefined });
   });
 
   it('says a path outside the set is not mixed', () => {
-    const seen: PrefRenderContext[] = [];
+    const seen: LeafContext[] = [];
     render(<PrefsForm schema={SCHEMA} values={{ odd: 3 }} onChange={vi.fn()} layout="list"
       renderers={{ odd: (ctx) => { seen.push(ctx); return <span>odd</span>; } }} />);
     expect(seen.at(-1)).toMatchObject({ mixed: false, value: 3 });

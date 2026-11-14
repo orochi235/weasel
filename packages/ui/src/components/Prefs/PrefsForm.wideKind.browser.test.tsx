@@ -4,7 +4,7 @@ import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import { PrefConditionEditor } from '@weasel-js/ui/components/PrefConditionEditor';
-import { PrefsForm, type PrefRenderer } from '@weasel-js/ui/components/Prefs';
+import { PrefsForm, type LeafRenderer } from '@weasel-js/ui/components/Prefs';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 // Where a row's label sits and how wide its control runs is layout, which jsdom does not do.
@@ -18,8 +18,8 @@ const TARGETS: PrefGroup = {
 };
 const SHOWN: PrefCondition = { path: 'units', is: 'mm' };
 
-const condition = (wide: boolean): PrefRenderer =>
-  Object.assign<PrefRenderer, { group: boolean; wide: boolean }>(
+const condition = (wide: boolean): LeafRenderer =>
+  Object.assign<LeafRenderer, { group: boolean; wide: boolean }>(
     ({ pref, value, setValue }) => <PrefConditionEditor aria-label={pref.name} schema={TARGETS} value={value as PrefCondition | undefined} onChange={setValue} />,
     { group: true, wide },
   );

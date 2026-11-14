@@ -26,18 +26,32 @@ const resolved = {
   showIf: new Map(),
 } as unknown as ResolvedConfig;
 
-const at = (config: Record<string, unknown>, setConfig = vi.fn(), auto = new Set<string>(['type.gap'])) =>
-  labConfigSource({ resolved, config, shown: config, setConfig, auto, setRowAuto: () => {} });
+const at = (
+  config: Record<string, unknown>,
+  setConfig = vi.fn(),
+  auto = new Set<string>(['type.gap']),
+) => labConfigSource({ resolved, config, shown: config, setConfig, auto, setRowAuto: () => {} });
 
 describe('ResetGroup', () => {
   it('reads an encoded leaf through its encoding, and resets it to holding nothing', () => {
     const setConfig = vi.fn();
     const { rerender } = renderWithIcons(
-      <ResetGroup group={group} path="type" source={at({ type: { italic: 'normal', gap: 4, size: 10 } }, setConfig)} />,
+      <ResetGroup
+        group={group}
+        path="type"
+        source={at({ type: { italic: 'normal', gap: 4, size: 10 } }, setConfig)}
+      />,
     );
-    expect(screen.getByRole('button', { name: 'Reset Type' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Reset Type' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
     rerender(
-      <ResetGroup group={group} path="type" source={at({ type: { italic: 'italic', gap: 4, size: 10 } }, setConfig)} />,
+      <ResetGroup
+        group={group}
+        path="type"
+        source={at({ type: { italic: 'italic', gap: 4, size: 10 } }, setConfig)}
+      />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Reset Type' }));
     // The group's value is written whole: a leaf the reset leaves unpinned keeps its sentinel.
@@ -47,7 +61,11 @@ describe('ResetGroup', () => {
   it('unpins a leaf that starts auto and pins the rest at their defaults, in one write', () => {
     const setConfig = vi.fn();
     renderWithIcons(
-      <ResetGroup group={group} path="type" source={at({ type: { gap: 9, size: 3 } }, setConfig, new Set())} />,
+      <ResetGroup
+        group={group}
+        path="type"
+        source={at({ type: { gap: 9, size: 3 } }, setConfig, new Set())}
+      />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Reset Type' }));
     expect(setConfig.mock.calls).toEqual([['type', { gap: AUTO, size: 10 }]]);

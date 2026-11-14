@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { PrefLeaf } from '@weasel-js/prefs';
-import { renderPrefControl, type PrefRenderContext } from '../Prefs/PrefsRow';
-import type { PropertyRenderContext } from '../SelectionPanel/renderContext';
+import { renderPrefControl, type LeafContext } from '../Prefs/PrefsRow';
+import { loneLeafContext } from '../PrefsSource/recordSource';
 import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { renderBarLeaf, withBarLabel } from './renderBarLeaf';
 
@@ -20,22 +20,12 @@ const margins: PrefLeaf = {
 const barLabel = (root: HTMLElement): string | undefined =>
   root.querySelector('[data-bar-label]')?.textContent ?? undefined;
 
-function panelCtx(pref: PrefLeaf): PropertyRenderContext {
-  return {
-    path: 'p',
-    pref,
-    value: pref.default,
-    mixed: false,
-    unset: false,
-    each: [pref.default],
-    setValue: () => {},
-    update: () => {},
-    valueAt: () => ({ value: undefined, mixed: false }),
-  };
+function panelCtx(pref: PrefLeaf): LeafContext {
+  return { ...loneLeafContext('p', pref, pref.default, () => {}), unset: false };
 }
 
-function prefCtx(pref: PrefLeaf): PrefRenderContext {
-  return { path: 'p', pref, value: pref.default, setValue: () => {}, auto: false, setAuto: () => {} };
+function prefCtx(pref: PrefLeaf): LeafContext {
+  return loneLeafContext('p', pref, pref.default, () => {});
 }
 
 describe('renderBarLeaf', () => {
