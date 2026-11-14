@@ -1,13 +1,15 @@
 import { Along } from '@weasel-js/ui/components/Along';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { useMemo, useRef } from 'react';
+import { multiplier, qty } from '@weasel-js/quantity';
 import type { LoupeShape } from '../types';
 import { FACTOR_MAX, FACTOR_MIN, FACTOR_STOPS } from './lensActionDefs';
 import { applyLensOps, setLensOps, settingsOf } from './lensScene';
 import type { LensScene } from './lensTypes';
 import { zoomTrackOf } from './lensZoomTrack';
 
-const STOPS = FACTOR_STOPS.map((value) => ({ value, label: `${value}×` }));
+const times = (factor: number): string => qty(factor, multiplier()).text;
+const STOPS = FACTOR_STOPS.map((value) => ({ value, label: times(value) }));
 
 /** Props for `<LensZoom>`. */
 export interface LensZoomProps<C> {
@@ -41,7 +43,7 @@ export function LensZoom<C>({
 }: LensZoomProps<C>) {
   const gesture = useRef(0);
   const pressed = useRef(false);
-  const thumbs = useMemo<Thumb[]>(() => [{ value: factor, valueText: `${factor}×` }], [factor]);
+  const thumbs = useMemo<Thumb[]>(() => [{ value: factor, valueText: times(factor) }], [factor]);
   const write = (next: Thumb[], done: boolean) => {
     const value = next[0]?.value;
     if (value !== undefined && value !== settingsOf(scene, lensId)?.factor) {
