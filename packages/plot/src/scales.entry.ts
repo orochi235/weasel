@@ -7,7 +7,7 @@
  */
 export type { Scale, ContinuousScale, ContinuousScaleFactory } from './scales/types';
 export {
-  linearScale, niceDomain, niceStep, tickStep, stepTicks, decimalsOf, formatNumber,
+  linearScale, niceDomain, tickStep, stepTicks, decimalsOf, formatNumber,
   type LinearScale, type LinearScaleOptions, type SpacedTickOptions, type TickSet,
 } from './scales/linear';
 export { formatTick, tickDecimals, type TickFormatCtx, type TickFormatter } from './scales/tickFormat';

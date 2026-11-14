@@ -1,3 +1,4 @@
+import { niceStep } from '@weasel-js/geom';
 import { replacedFormat } from './replacedFormat';
 import { FINEST_STEP, formatTick } from './tickFormat';
 import type { ContinuousScale } from './types';
@@ -49,11 +50,7 @@ export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number 
   if (!Number.isFinite(raw)) return 1;
   // A span among the subnormals halves to nothing, and is cut at multiples of itself.
   if (raw === 0) return Math.abs(hi - lo) || 1;
-  const power = 10 ** Math.floor(Math.log10(raw));
-  const error = raw / power;
-  const factor = error >= Math.sqrt(50) ? 10 : error >= Math.sqrt(10) ? 5 : error >= Math.sqrt(2) ? 2 : 1;
-  // Rounded up past the largest double, the step falls back to its power of ten.
-  return Number.isFinite(factor * power) ? factor * power : power;
+  return niceStep(raw, 'nearest');
 }
 
 /** The most `toFixed` accepts. */
@@ -63,16 +60,6 @@ const MAX_DECIMALS = 100;
 export function decimalsOf(step: number): number {
   if (!(step > 0) || !Number.isFinite(step)) return 0;
   return Math.min(MAX_DECIMALS, Math.max(0, -Math.floor(Math.log10(step) + 1e-9)));
-}
-
-/** The smallest of 1, 2 or 5 times a power of ten that is at least `rough`. Unlike {@link tickStep}, which
- *  rounds to the nearest, this never goes under: a minimum spacing stays a minimum. */
-export function niceStep(rough: number): number {
-  const mag = 10 ** Math.floor(Math.log10(rough));
-  const norm = rough / mag;
-  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
-  // Rounded up past the largest double, the step stays the rough one, still never under it.
-  return Number.isFinite(step) ? step : rough;
 }
 
 /** Whether `i++` from `i` moves, so a loop over step indices ends. */
