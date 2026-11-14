@@ -14,7 +14,7 @@
 /* Fitting its labels, a bar keeps the width of their full forms within its room as they shorten, which is how its
    fit scope sees the room grow back (useFitScope). */
 .bar:where([data-fit-room]:not([data-orientation='vertical'])) {
-  min-inline-size: min(var(--wzl-fit-natural, 0px), 100%);
+  min-inline-size: min(var(--fit-natural, 0px), 100%);
   max-inline-size: 100%;
 }
 

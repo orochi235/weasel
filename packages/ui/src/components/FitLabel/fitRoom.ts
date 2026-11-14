@@ -4,11 +4,11 @@ export interface FitRoom {
   steppedAt: number | null;
   /** The width once marked spent, the room that marking gave it included. */
   spentAt: number | null;
-  /** Whether `--wzl-fit-natural` holds the width at the current labels' full forms. */
+  /** Whether `--fit-natural` holds the width at the current labels' full forms. */
   measured: boolean;
 }
 
-const NATURAL = '--wzl-fit-natural';
+const NATURAL = '--fit-natural';
 const ROOM = 'data-fit-room';
 const SPENT = 'data-fit-spent';
 

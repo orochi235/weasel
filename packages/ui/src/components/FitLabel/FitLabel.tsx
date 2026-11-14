@@ -99,9 +99,9 @@ function useRoomObserver(
  * Only the element is measured, never its parent, so its box has to take the
  * shape of its room whatever forms it shows: it fills the room, or it is
  * clamped to it. While it holds labels the element carries `data-fit-room`, and
- * `--wzl-fit-natural` holds its width at the full forms, for the component's
+ * `--fit-natural` holds its width at the full forms, for the component's
  * CSS to keep a box sized to its content at that width within its room as the
- * labels shorten: `min-inline-size: min(var(--wzl-fit-natural, 0px), 100%)`
+ * labels shorten: `min-inline-size: min(var(--fit-natural, 0px), 100%)`
  * beside `max-inline-size: 100%`.
  *
  * A scope nested in another steps at least as far as the outer one, so a
