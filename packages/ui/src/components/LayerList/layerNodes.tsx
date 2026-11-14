@@ -1,4 +1,6 @@
 import { CloseButton } from '../CloseButton';
+import { useControlAccess } from '../Disabled';
+import { useNativeHold } from '../Disabled/nativeHold';
 import type { TreeNode } from '../Tree';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
@@ -52,24 +54,39 @@ function Marks({ item }: { item: LayerListItem }) {
 /** A row's toggles. A column the list has but this row lacks holds its width, so the columns line up. */
 function Controls({ item, props }: { item: LayerListItem; props: LayerListProps }) {
   const { onVisibilityChange, onRemove } = props;
+  // A read-only scope holds no action button of its own accord, and removing a layer changes the list.
+  const access = useControlAccess();
   return (
     <>
       {onVisibilityChange &&
         (item.fixed || item.hideable === false ? (
           <span className={s.check} />
         ) : (
-          <input
-            className={s.check}
-            type="checkbox"
-            checked={item.visible !== false}
-            onChange={(e) => onVisibilityChange(item.id, e.target.checked)}
-            aria-label={`Show ${item.label}`}
-          />
+          <VisibilityCheck item={item} onChange={onVisibilityChange} />
         ))}
       <LockToggle item={item} props={props} />
       {onRemove && !item.fixed && !item.locked && item.removable !== false && (
-        <CloseButton aria-label={`Remove ${item.label}`} onClick={() => onRemove(item.id)} />
+        <CloseButton
+          aria-label={`Remove ${item.label}`}
+          disabled={access.state !== 'enabled'}
+          disabledReason={access.reason}
+          onClick={() => onRemove(item.id)}
+        />
       )}
     </>
+  );
+}
+
+function VisibilityCheck({ item, onChange }: { item: LayerListItem; onChange: (id: string, visible: boolean) => void }) {
+  const hold = useNativeHold({});
+  return hold.wrap(
+    <input
+      className={s.check}
+      type="checkbox"
+      checked={item.visible !== false}
+      {...hold.attrs}
+      onChange={(e) => { if (!hold.refuses) onChange(item.id, e.target.checked); }}
+      aria-label={`Show ${item.label}`}
+    />,
   );
 }

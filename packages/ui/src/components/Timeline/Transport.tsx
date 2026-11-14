@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react';
 import { CLOCK_RATES } from '@weasel-js/clock';
 import { multiplier, qty } from '@weasel-js/quantity';
+import type { HoldProps } from '../Disabled';
+import { useControlHold } from '../Disabled/controlHold';
 import { QuantityText } from '../QuantityText';
 import { Slider, useDetents } from '../Slider';
 import s from './Timeline.module.css';
@@ -13,8 +15,9 @@ const RATE = multiplier({ symbol: 'x' });
 /** Playback rates the transport offers by default, slowest first. */
 export const TRANSPORT_RATES = CLOCK_RATES;
 
-/** Props for {@link Transport}. Times are in ms. */
-export interface TransportProps {
+/** Props for {@link Transport}. Times are in ms. Disabled, by `disabled` or a scope, nothing in it responds; read-only,
+ *  play and pause still work, and the switches and sliders, which hold values, change nothing. */
+export interface TransportProps extends HoldProps {
   paused: boolean;
   /** A `TimelineHandle`'s loop policy. The switch shows any value but
    *  `false` or `0` as on, and toggles between `true` and `false`. */
@@ -80,6 +83,8 @@ export function PlayheadReadout({
  *  locale too, as playback controls do. */
 export function Transport(props: TransportProps): ReactElement {
   const { paused, loop, rate, playhead, duration, onPlay, onPause, onLoopChange, onRateChange, onSeek, onReverseChange } = props;
+  const hold = useControlHold(props, { readonlyRole: false });
+  const why = hold.focus['aria-describedby'];
   const reverse = props.reverse ?? false;
   const start = props.start ?? 0;
   const shown = Math.min(Math.max(playhead, start), start + duration);
@@ -99,13 +104,15 @@ export function Transport(props: TransportProps): ReactElement {
     formatLabel: rateText,
   });
 
-  return (
-    <div className={s.transport} dir="ltr">
+  return hold.wrap(hold.scope(
+    <div className={s.transport} dir="ltr" data-held={hold.held}>
       <button
         type="button"
         className={s.transportButton}
         aria-label={paused ? 'Play' : 'Pause'}
-        onClick={paused ? onPlay : onPause}
+        aria-describedby={why}
+        {...hold.button(false)}
+        onClick={() => { if (!hold.disabled) (paused ? onPlay : onPause)(); }}
       >
         {paused ? <Icon name={icon('play')} size={16} /> : <Icon name={icon('pause')} size={16} />}
       </button>
@@ -116,8 +123,10 @@ export function Transport(props: TransportProps): ReactElement {
           role="switch"
           aria-checked={reverse}
           aria-label="Reverse"
+          aria-describedby={why}
           className={s.transportButton}
-          onClick={() => onReverseChange(!reverse)}
+          {...hold.button(true)}
+          onClick={() => { if (!hold.refuses) onReverseChange(!reverse); }}
         >
           <Icon name={icon('play')} size={16} className={t.backward} />
         </button>
@@ -128,8 +137,10 @@ export function Transport(props: TransportProps): ReactElement {
         role="switch"
         aria-checked={looping}
         aria-label="Loop"
+        aria-describedby={why}
         className={s.transportButton}
-        onClick={() => onLoopChange(!looping)}
+        {...hold.button(true)}
+        onClick={() => { if (!hold.refuses) onLoopChange(!looping); }}
       >
         ⟲
       </button>
@@ -158,6 +169,6 @@ export function Transport(props: TransportProps): ReactElement {
       ) : null}
 
       <PlayheadReadout playhead={playhead} duration={duration} start={start} />
-    </div>
-  );
+    </div>,
+  ));
 }

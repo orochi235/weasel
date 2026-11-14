@@ -178,7 +178,7 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
                 aria-label={kind}
                 aria-pressed={selected}
                 tabIndex={hold.tabIndex(0)}
-                {...hold.attrs}
+                {...hold.focus}
                 onClick={() => pick(kind)}
               />
             );
@@ -191,7 +191,7 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
             aria-label="image"
             aria-pressed={image !== null}
             tabIndex={hold.tabIndex(0)}
-            {...hold.attrs}
+            {...hold.focus}
             onClick={hold.gate(() => fileInput.current?.click())}
           >
             {image ? null : <Icon name={icon('add')} size={14} />}

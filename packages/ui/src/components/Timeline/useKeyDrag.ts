@@ -19,6 +19,8 @@ export interface KeyDragArgs {
   onSelect: (keyIndex: number) => void;
   onKeyInput: (keyIndex: number, toMs: number) => void;
   onKeyCommit: (keyIndex: number, toMs: number) => void;
+  /** False: a press selects the key and moves nothing. Default true. */
+  drags?: boolean;
 }
 
 /**
@@ -27,7 +29,7 @@ export interface KeyDragArgs {
  * key would land, held here so a drag previews whether or not the consumer wires `onKeyInput`.
  */
 export function useKeyDrag(a: KeyDragArgs) {
-  const { trackRef, window: win, offset, snapTimes, times, onSelect, onKeyInput, onKeyCommit } = a;
+  const { trackRef, window: win, offset, snapTimes, times, onSelect, onKeyInput, onKeyCommit, drags = true } = a;
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
   const [drag, setDrag] = useState<{ keyIndex: number; t: number } | null>(null);
@@ -48,6 +50,7 @@ export function useKeyDrag(a: KeyDragArgs) {
     // A key drag belongs to the finger that started it: a second finger's press selects nothing and drags nothing.
     if (sessionRef.current?.active) return;
     onSelect(i);
+    if (!drags) return;
 
     const at = (ev: { clientX: number; altKey: boolean }): number => {
       const { f, width } = place(ev.clientX);

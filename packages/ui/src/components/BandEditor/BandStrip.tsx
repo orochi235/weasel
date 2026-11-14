@@ -6,8 +6,7 @@ import s from './BandEditor.module.css';
 import { bandBounds, type Band } from './bands';
 import { bandName } from './retag';
 import { pct } from './track';
-import { ReasonTold } from '../Disabled/Disabled';
-import { holdPropsOf, type ControlHold } from '../Disabled/controlHold';
+import type { ControlHold } from '../Disabled/controlHold';
 
 /** One arrow-key step, as a fraction of the track; `shift` takes ten. */
 const KEY_STEP = 0.01;
@@ -77,7 +76,7 @@ export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): R
         aria-pressed={isSelected}
         data-band-index={i}
         tabIndex={hold.tabIndex(0)}
-        {...hold.attrs}
+        {...hold.focus}
         onPointerDown={selects ? props.onBandPointerDown(i) : undefined}
         onFocus={selects ? props.onBandFocus(i) : undefined}
         onContextMenu={hold.gate(props.onBandContextMenu(i))}
@@ -92,9 +91,8 @@ export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): R
   return (
     <div className={s.stripBox} style={box} data-band-strip="">
       {/* The editor tells the reason, for every part of it, so the seams only take its hold. */}
-      <ReasonTold reason={hold.access.reason}>
+      {hold.scope(
         <Slider
-          {...holdPropsOf(hold.access)}
           className={s.strip}
           thumbs={thumbs}
           min={lo}
@@ -112,8 +110,8 @@ export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): R
           onInput={(next) => props.onInput(values(next))}
           onChange={(next) => props.onChange(values(next))}
           onCancel={props.onCancel}
-        />
-      </ReasonTold>
+        />,
+      )}
     </div>
   );
 }

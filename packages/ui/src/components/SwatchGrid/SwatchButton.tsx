@@ -2,7 +2,7 @@ import { useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type
 import { tileKey, type LastRow } from '@weasel-js/ui-input';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
-import type { ControlHold, HeldAttrs } from '../Disabled/controlHold';
+import type { ControlHold, FocusHoldAttrs } from '../Disabled/controlHold';
 import type { SwatchGridOption } from './SwatchGrid';
 import s from './SwatchGrid.module.css';
 
@@ -97,7 +97,7 @@ export interface SwatchButtonProps {
   /** Data attributes a layout reads off the swatch. */
   data?: Record<`data-${string}`, string | undefined>;
   /** How its palette is held: `aria-disabled` or `aria-readonly`, and the reason's description. */
-  held?: HeldAttrs;
+  held?: FocusHoldAttrs;
 }
 
 /** One swatch: its color over the checker, its glyph centered over that in its ink, named by its label, applying on

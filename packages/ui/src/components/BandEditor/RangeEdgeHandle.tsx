@@ -110,7 +110,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
     <div
       role="slider"
       tabIndex={props.hold.tabIndex(0)}
-      {...props.hold.attrs}
+      {...props.hold.focus}
       className={[s.seam, s.edge].join(' ')}
       style={{ '--be-at': pct(props.toUnit(at)) } as CSSProperties}
       aria-label={edge === 'min' ? 'Range start' : 'Range end'}

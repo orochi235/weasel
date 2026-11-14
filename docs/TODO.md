@@ -531,14 +531,6 @@ name a package. Breaking changes are in scope.
   `disabled`/`disabledReason`. `Properties/rowContext.ts` carries only `{ label }`, read only by `EasingPicker`.
   `mixed` stays a prop. Closes when those row props are read from the scope rather than declared on each row.
 
-- **(P2) [agent] `disabled` and `readOnly` on the controls that take neither.** The `<Disabled>`/`<ReadOnly>`
-  scopes (2026-11-13) reach every kit control that already took `disabled`, and `Slider` (2026-11-14), but these
-  never took one, so a scope passes over them: `LayerList`, `ItemList`, `DataGrid`, `Timeline`, `PageTabs`, and
-  `TokenPanel`. Each needs its own refusal (a drag, a keyboard step, a press) and the reason's tooltip, which is new
-  behavior per component rather than a rename, hence a pass of its own; a control the kit draws itself reads
-  `useControlHold` (`Disabled/controlHold.ts`), as the palettes and editors do (2026-11-14). Closes when each reads
-  `useControlAccess`.
-
 - **(P2) [agent] Children in place of config arrays.** `CurveEditor` takes `layers: LayerBinding[]`; `Powerline`
   takes a `segments` array of badges. Make them `<CurveEditor><FunctionLayer/></CurveEditor>` and a `Powerline`
   whose context gives each child `<Badge>` its neighbor's edge cap (`<Field label output>` already wraps any control,

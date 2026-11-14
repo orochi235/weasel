@@ -121,7 +121,7 @@ function RingGroup({ group, rings, align, apply, hold }: { group: SwatchRingGrou
         tabStop={!hold.unreachable && i === tab.stop}
         current={i === current}
         apply={apply}
-        held={hold.attrs}
+        held={hold.focus}
         onKeyDown={ringKeyDown(i, columns, swatches, swatchKeyDown(i, options, columns, apply, swatches))}
         onFocus={() => tab.focused(i)}
         className={place.className}

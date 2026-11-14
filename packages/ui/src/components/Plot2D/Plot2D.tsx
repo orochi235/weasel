@@ -129,6 +129,9 @@ export interface Plot2DHandle {
 
 type Axis = 'x' | 'y';
 
+// React's SVG attributes leave out `inert`, which every element takes.
+const INERT = { inert: true };
+
 const TICK_SPACING_PX: Record<Axis, number> = { x: 64, y: 24 };
 const TICK_INSET_PX: Record<Axis, number> = { x: 16, y: 4 };
 const LABEL_GAP_PX = 4;
@@ -325,7 +328,7 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
       aria-disabled={props['aria-disabled']}
       aria-describedby={props['aria-describedby']}
       data-held={props['data-held']}
-      inert={props.inert}
+      {...(props.inert ? INERT : undefined)}
       tabIndex={tabIndex}
       onPointerDown={onPointerDown ? (e) => onPointerDown(e, coordsOf(e)) : undefined}
       onContextMenu={onContextMenu ? (e) => onContextMenu(e, coordsOf(e)) : undefined}

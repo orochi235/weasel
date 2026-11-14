@@ -381,8 +381,8 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       tabIndex={historyEnabled ? hold.tabIndex(0) : undefined}
       role="group"
       aria-label={props['aria-label']}
-      aria-disabled={hold.attrs['aria-disabled']}
-      aria-describedby={hold.attrs['aria-describedby']}
+      aria-disabled={hold.focus['aria-disabled']}
+      aria-describedby={hold.focus['aria-describedby']}
       data-held={hold.held}
       inert={hold.unreachable || undefined}
       onPointerDown={hold.gate(onSvgPointerDown)}

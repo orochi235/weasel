@@ -1,4 +1,6 @@
 import { type KeyboardEvent, useState } from 'react';
+import { holdScope, useControlAccess } from '../Disabled';
+import { useControlHold } from '../Disabled/controlHold';
 import { dlog } from '../../dlog';
 import type { TreeDropTarget } from '../../dropTarget';
 import { Tree } from '../Tree';
@@ -18,6 +20,10 @@ export { moveLayers } from './layerTree';
  * toggles reached from a row with Right (see `Tree`).
  */
 export function LayerList(props: LayerListProps) {
+  return holdScope(props, <HeldLayerList {...props} />);
+}
+
+function HeldLayerList(props: LayerListProps) {
   const { items, collapsedIds, onCollapsedChange, title, addKinds, onAdd, empty, className } = props;
   // Only the user's own toggles are state; everything else reads the layer's
   // `defaultCollapsed`, so a layer added later starts the way it asks to.
@@ -51,9 +57,11 @@ export function LayerList(props: LayerListProps) {
     dlog('layer-list', 'onReorder', move);
     props.onReorder?.(move);
   };
+  const access = useControlAccess();
+  const held = access.state !== 'enabled';
   const onRowKeyDown = (id: string, e: KeyboardEvent<HTMLElement>) => {
     const item = findLayer(items, id);
-    if (e.key !== 'F2' || !item || !canRename(props, item)) return;
+    if (e.key !== 'F2' || held || !item || !canRename(props, item)) return;
     e.preventDefault();
     setRenaming(id);
   };
@@ -61,25 +69,12 @@ export function LayerList(props: LayerListProps) {
   const palette = onAdd ? (addKinds ?? []) : [];
   const { onSelectionChange, onRowContextMenu } = props;
   return (
-    <div className={className ? `${s.root} ${className}` : s.root}>
+    <div className={className ? `${s.root} ${className}` : s.root} data-held={held ? access.state : undefined}>
       {(title !== undefined || palette.length > 0) && (
         <div className={s.head}>
           {title !== undefined && <h2 className={s.title}>{title}</h2>}
           <div className={s.palette}>
-            {palette.map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                className={s.add}
-                aria-label={`Add ${kind}`}
-                onClick={() => {
-                  dlog('layer-list', 'onAdd', { kind });
-                  onAdd?.(kind);
-                }}
-              >
-                {kind}
-              </button>
-            ))}
+            {palette.map((kind) => <AddButton key={kind} kind={kind} onAdd={onAdd} />)}
           </div>
         </div>
       )}
@@ -98,5 +93,26 @@ export function LayerList(props: LayerListProps) {
         {...(props.onReorder ? { onMove, canDrop } : {})}
       />
     </div>
+  );
+}
+
+/** One of the add palette's buttons, held as the list is. */
+function AddButton({ kind, onAdd }: { kind: string; onAdd: LayerListProps['onAdd'] }) {
+  const hold = useControlHold({});
+  return hold.wrap(
+    <button
+      type="button"
+      className={s.add}
+      aria-label={`Add ${kind}`}
+      aria-describedby={hold.focus['aria-describedby']}
+      {...hold.button(true)}
+      onClick={() => {
+        if (hold.refuses) return;
+        dlog('layer-list', 'onAdd', { kind });
+        onAdd?.(kind);
+      }}
+    >
+      {kind}
+    </button>,
   );
 }

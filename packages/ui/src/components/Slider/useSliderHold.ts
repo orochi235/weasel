@@ -1,11 +1,14 @@
 import type { KeyboardEvent, MouseEvent, PointerEvent, ReactElement, ReactNode } from 'react';
 import type { ControlAccess } from '@weasel-js/ui-logic';
 import type { HoldProps } from '../Disabled';
-import { useControlHold, type HeldAttrs } from '../Disabled/controlHold';
+import { useControlHold } from '../Disabled/controlHold';
 
 /** What a held thumb takes beyond its usual attributes. */
-export interface ThumbHoldAttrs extends HeldAttrs {
+export interface ThumbHoldAttrs {
   tabIndex: 0 | -1;
+  'aria-disabled'?: true;
+  'aria-readonly'?: true;
+  'aria-describedby'?: string;
 }
 
 /** What {@link useSliderHold} gives a slider. */
@@ -38,13 +41,15 @@ const REFUSED: SliderPresses = { onThumbPointerDown: () => ignore, onThumbContex
 /** A slider's hold, from its own props and the scopes around it. */
 export function useSliderHold(own: HoldProps): SliderHold {
   const hold = useControlHold(own);
+  const { access, refuses } = hold;
+  const thumb: ThumbHoldAttrs = { tabIndex: access.reachable ? 0 : -1, ...hold.focus };
   return {
-    access: hold.access,
-    refuses: hold.refuses,
-    thumb: { tabIndex: hold.tabIndex(0), ...hold.attrs },
+    access,
+    refuses,
+    thumb,
     held: hold.held,
     wrap: hold.wrap,
-    pointer: (live) => (hold.refuses ? REFUSED : live),
-    keys: (live) => (hold.refuses ? () => ignore : live),
+    pointer: (live) => (refuses ? REFUSED : live),
+    keys: (live) => (refuses ? () => ignore : live),
   };
 }
