@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Button } from '@weasel-js/ui/components/Button';
 import { PropertyField, PropertyGroup, PropertyList, PropertyPanel, Subpanel } from '@weasel-js/ui/components/Properties';
-import { DefaultMotif, MotifFrame, notch, plaque, rule, stereo, tab, titlebar } from '@weasel-js/ui/components/MotifFrame';
+import type { ReactNode } from 'react';
+import { DefaultMotif, type Motif, MotifFrame, type MotifFrameProps, notch, plaque, rule, stereo, tab, titlebar } from '@weasel-js/ui/components/MotifFrame';
+import { Sequence, values } from '@weasel-js/ui/components/Sequence';
 import s from './MotifFrame.stories.module.css';
 
 const meta: Meta<typeof MotifFrame> = {
@@ -51,56 +53,52 @@ export const Motifs: Story = {
   ),
 };
 
+interface Frame {
+  title: string;
+  motif: Motif;
+  tint: number;
+  jacks: readonly (readonly string[])[];
+}
+
+function Wall({ label, frames, args, actions }: { label: string; frames: Frame[]; args: Partial<MotifFrameProps>; actions?: ReactNode }) {
+  return (
+    <Sequence label={label} sweep={values(frames, (f) => f.title)} caption={false} className={s.frames}>
+      {(f) => (
+        <MotifFrame {...args} title={f.title} motif={f.motif} tint={f.tint} actions={actions}>
+          {f.jacks.map((names, i) => <Jacks key={i} names={names} />)}
+        </MotifFrame>
+      )}
+    </Sequence>
+  );
+}
+
+const STEREO_SIDES: Frame[] = [
+  ...(['left', 'right', 'top', 'bottom'] as const).map((side, i) => ({
+    title: `Audio ${side}`, motif: stereo({ side }), tint: i, jacks: [['L', 'R']],
+  })),
+  ...(['start', 'center', 'end'] as const).map((labelAlign) => ({
+    title: labelAlign, motif: stereo({ labelAlign }), tint: 5, jacks: [['L', 'R', 'SUB'], ['L', 'R', 'SUB']],
+  })),
+];
+
 export const StereoSides: Story = {
-  render: (args) => (
-    <div className={s.wall}>
-      {(['left', 'right', 'top', 'bottom'] as const).map((side, i) => (
-        <MotifFrame {...args} key={side} title={`Audio ${side}`} motif={stereo({ side })} tint={i}>
-          <Jacks names={['L', 'R']} />
-        </MotifFrame>
-      ))}
-      {(['start', 'center', 'end'] as const).map((labelAlign) => (
-        <MotifFrame {...args} key={labelAlign} title={labelAlign} motif={stereo({ labelAlign })} tint={5}>
-          <Jacks names={['L', 'R', 'SUB']} />
-          <Jacks names={['L', 'R', 'SUB']} />
-        </MotifFrame>
-      ))}
-    </div>
-  ),
+  render: (args) => <Wall label="Stereo sides" frames={STEREO_SIDES} args={args} />,
 };
+
+const HEADING_PARTS: Frame[] = [rule(), stereo({ side: 'top' }), notch(), tab(), plaque(), titlebar()].map((motif, i) => ({
+  title: motif.id, motif, tint: i, jacks: [VIDEO],
+}));
 
 export const HeadingParts: Story = {
   render: (args) => (
-    <div className={s.wall}>
-      {[rule(), stereo({ side: 'top' }), notch(), tab(), plaque(), titlebar()].map((motif, i) => (
-        <MotifFrame {...args}
-          key={motif.id}
-          title={motif.id}
-          motif={motif}
-          tint={i}
-          actions={
-            <Button variant="ghost" size="sm">
-              clear
-            </Button>
-          }
-        >
-          <Jacks names={VIDEO} />
-        </MotifFrame>
-      ))}
-    </div>
+    <Wall label="Heading parts" frames={HEADING_PARTS} args={args} actions={<Button variant="ghost" size="sm">clear</Button>} />
   ),
 };
 
+const PLAQUE_MIX: Frame[] = [100, 60, 30].map((mix) => ({ title: `${mix}%`, motif: plaque({ mix }), tint: 1, jacks: [VIDEO] }));
+
 export const PlaqueMix: Story = {
-  render: (args) => (
-    <div className={s.wall}>
-      {[100, 60, 30].map((mix) => (
-        <MotifFrame {...args} key={mix} title={`${mix}%`} motif={plaque({ mix })} tint={1}>
-          <Jacks names={VIDEO} />
-        </MotifFrame>
-      ))}
-    </div>
-  ),
+  render: (args) => <Wall label="Plaque mix" frames={PLAQUE_MIX} args={args} />,
 };
 
 /** `PropertyGroup` takes a motif the same way: folding, packing and rows are its own. */

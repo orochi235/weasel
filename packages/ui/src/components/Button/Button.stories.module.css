@@ -1,0 +1,4 @@
+.pair {
+  display: flex;
+  gap: var(--wzl-space-4);
+}

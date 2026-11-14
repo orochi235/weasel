@@ -6,6 +6,8 @@ import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import { BADGE_LOOKS, lookProps } from '../Badge/looks';
 import { DEG_TO_RAD } from '@weasel-js/geom';
+import { Sequence, values } from '@weasel-js/ui/components/Sequence';
+import s from './Button.stories.module.css';
 
 const meta: Meta<typeof Button> = {
   title: 'ui/Foundations/Button',
@@ -212,23 +214,14 @@ const SIZES: ButtonSize[] = ['sm', 'md'];
 export const Matrix: Story = {
   tags: ['gallery'],
   render: (args) => (
-    <div style={{ display: 'grid', gridTemplateColumns: `auto repeat(${VARIANTS.length}, 1fr)`, gap: 12, alignItems: 'center' }}>
-      <div />
-      {VARIANTS.map((v) => (
-        <div key={v} style={{ fontSize: 11, color: 'var(--wzl-fg-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          {v}
+    <Sequence label="Size by variant" sweep={values(SIZES)} across={values(VARIANTS)}>
+      {(sz, v) => (
+        <div className={s.pair}>
+          <Button {...args} variant={v} size={sz}>Button</Button>
+          <Button {...args} variant={v} size={sz} disabled>Off</Button>
         </div>
-      ))}
-      {SIZES.flatMap((sz) => [
-        <div key={`lbl-${sz}`} style={{ fontSize: 11, color: 'var(--wzl-fg-muted)' }}>{sz}</div>,
-        ...VARIANTS.map((v) => (
-          <div key={`${sz}-${v}`} style={{ display: 'flex', gap: 8 }}>
-            <Button {...args} variant={v} size={sz}>Button</Button>
-            <Button {...args} variant={v} size={sz} disabled>Off</Button>
-          </div>
-        )),
-      ])}
-    </div>
+      )}
+    </Sequence>
   ),
 };
 
