@@ -29,9 +29,10 @@ const CSS_WIDE = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer
 type Supports = ((value: string) => boolean) | null;
 
 function browserSupports(): Supports {
-  return typeof CSS !== 'undefined' && typeof CSS.supports === 'function'
-    ? (value) => CSS.supports('color', value)
-    : null;
+  // Read off globalThis: naming `CSS` would make paint need lib.dom.
+  const css = (globalThis as { CSS?: { supports?: (property: string, value: string) => boolean } }).CSS;
+  const supports = css?.supports;
+  return typeof supports === 'function' ? (value) => supports.call(css, 'color', value) : null;
 }
 
 /** Whether `value` is a CSS color — the browser's answer where it has `CSS.supports`, a small parser's otherwise. */

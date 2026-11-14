@@ -2,6 +2,8 @@
 '@weasel-js/labkit': minor
 ---
 
-A `ControlPanel` given `draftConfig` hands each custom row a `draftValue` that writes there at the row's path, so a trial records a custom row's drag as one undo step.
+A `ControlPanel` given `draftConfig` hands each custom row a `draftValue`, so a custom row's drag is one undo step.
+
+`draftValue` writes into `draftConfig` at the row's path.
 
 <!-- entry: api -->
