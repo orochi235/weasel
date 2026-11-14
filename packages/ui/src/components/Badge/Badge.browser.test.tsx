@@ -60,13 +60,11 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
   test('a modifier chord in a powerline is legible on its fill', async () => {
     const { container } = render(
       <Surface mode={mode}>
-        <Powerline
-          segments={[
-            { text: 'drag', grade: 'info', variant: 'outline', endCap: 'chevron' },
-            { text: '+⇧', emphasis: 'low', variant: 'solid', endCap: 'chevron' },
-            { text: 'anchor', emphasis: 'low', variant: 'outline' },
-          ]}
-        />
+        <Powerline>
+          <Badge grade="info" variant="outline" endCap="chevron">drag</Badge>
+          <Badge emphasis="low" variant="solid" endCap="chevron">+⇧</Badge>
+          <Badge emphasis="low" variant="outline">anchor</Badge>
+        </Powerline>
       </Surface>,
     );
     const chord = [...container.querySelectorAll<HTMLElement>('[data-variant="solid"]')].find((el) => el.textContent?.includes('⇧'))!;

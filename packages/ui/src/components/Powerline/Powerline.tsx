@@ -1,33 +1,20 @@
-import type { CSSProperties, ReactNode } from 'react';
-import { Badge } from '../Badge/Badge';
+import {
+  Children, Fragment, cloneElement, isValidElement, useCallback, useState, type CSSProperties, type ReactElement, type ReactNode,
+} from 'react';
 import type { BadgeSize, BadgeVariant } from '../Badge/types';
-import type { AppearanceProps } from '../appearance';
 import type { EdgeCap } from '../Badge/bases/edgeProfiles';
+import { PowerlineSlotContext, type PowerlineRow } from './slot';
 import s from './Powerline.module.css';
-
-/**
- * One segment of a {@link Powerline}. Giving it `onClick` or `href` makes it
- * interactive, the same way it does on a `Badge`.
- */
-export interface PowerlineSegment extends AppearanceProps {
-  text: ReactNode;
-  /** Cap on this segment's right edge. Next segment's left edge adopts the same profile. */
-  endCap?: EdgeCap;
-  variant?: BadgeVariant;
-  size?: BadgeSize;
-  onClick?: () => void;
-  href?: string;
-  'aria-label'?: string;
-}
 
 /** Props for {@link Powerline}. */
 export interface PowerlineProps {
-  segments: PowerlineSegment[];
+  /** The segments, in order: `Badge`s, or anything that calls `usePowerlineSegment`. */
+  children?: ReactNode;
   /** Left edge of the first segment. Defaults to 'flat'. */
   startCap?: EdgeCap;
-  /** Default size for every segment (per-segment `size` wins). */
+  /** Default size for every segment (a segment's own `size` wins). */
   size?: BadgeSize;
-  /** Default variant for every segment (per-segment `variant` wins). */
+  /** Default variant for every segment (a segment's own `variant` wins). */
   variant?: BadgeVariant;
   /** Protrusion depth in CSS px, passed through to every segment's base. */
   depth?: number;
@@ -40,14 +27,15 @@ export interface PowerlineProps {
 
 /**
  * A row of chevron-linked badge segments, in the style of a shell powerline
- * prompt. Each segment's `endCap` shapes both its own right edge and the next
- * segment's left edge, so the run reads as one continuous chain.
+ * prompt. Each child `Badge` draws on the powerline base: its `endCap` shapes
+ * its own right edge and the next segment's left edge, so the run reads as one
+ * continuous chain.
  *
  * Built for showing a path through a sequence of steps — the inspector uses
  * it to display how input routes from tool to gesture to action to target.
  */
 export function Powerline({
-  segments,
+  children,
   startCap = 'flat',
   size,
   variant,
@@ -56,6 +44,16 @@ export function Powerline({
   className,
   ...rest
 }: PowerlineProps) {
+  const [caps, setCaps] = useState<readonly EdgeCap[]>([]);
+  const report = useCallback((index: number, cap: EdgeCap) => {
+    setCaps((prev) => {
+      if (prev[index] === cap) return prev;
+      const next = prev.slice();
+      next[index] = cap;
+      return next;
+    });
+  }, []);
+  const row: PowerlineRow = { caps, startCap, depth, variant, size, segmentClassName: s.segment, report };
   const cls = [s.row, className].filter(Boolean).join(' ');
   const style: CSSProperties | undefined = gap !== undefined
     ? { ['--powerline-gap' as never]: typeof gap === 'number' ? `${gap}px` : gap }
@@ -67,29 +65,24 @@ export function Powerline({
       role={rest['aria-label'] === undefined ? undefined : 'group'}
       aria-label={rest['aria-label']}
     >
-      {segments.map((seg, i) => {
-        const leftEdge: EdgeCap = i === 0 ? startCap : (segments[i - 1].endCap ?? 'flat');
-        const rightEdge: EdgeCap = seg.endCap ?? 'flat';
-        return (
-          <Badge
-            key={i}
-            base="powerline"
-            baseParams={{ leftEdge, rightEdge, ...(depth !== undefined && { depth }) }}
-            stance={seg.stance}
-            grade={seg.grade}
-            emphasis={seg.emphasis}
-            tint={seg.tint}
-            variant={seg.variant ?? variant}
-            size={seg.size ?? size}
-            onClick={seg.onClick}
-            href={seg.href}
-            aria-label={seg['aria-label']}
-            className={s.segment}
-          >
-            {seg.text}
-          </Badge>
-        );
-      })}
+      {segmentsOf(children).map((child, index) => (
+        <PowerlineSlotContext.Provider key={keyOf(child, index)} value={{ index, row }}>
+          {child}
+        </PowerlineSlotContext.Provider>
+      ))}
     </span>
   );
+}
+
+/** The row's segments: its children, with fragments opened so each badge in one is a segment of its own. */
+function segmentsOf(children: ReactNode): ReactNode[] {
+  return Children.toArray(children).flatMap((child) =>
+    isValidElement(child) && child.type === Fragment
+      ? segmentsOf((child as ReactElement<{ children?: ReactNode }>).props.children)
+        .map((inner) => (isValidElement(inner) ? cloneElement(inner, { key: `${child.key}/${inner.key}` }) : inner))
+      : [child]);
+}
+
+function keyOf(child: ReactNode, index: number): string | number {
+  return typeof child === 'object' && child !== null && 'key' in child && child.key != null ? child.key : index;
 }

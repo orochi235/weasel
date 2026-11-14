@@ -184,7 +184,7 @@
     "longestFunction": 172
   },
   "packages/ui/src/components/Badge/Badge.tsx": {
-    "longestFunction": 142
+    "longestFunction": 132
   },
   "packages/ui/src/components/Badge/bases/RoundedRect.tsx": {
     "longestFunction": 150
@@ -202,10 +202,10 @@
     "longestFunction": 136
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
-    "longestFunction": 289
+    "longestFunction": 286
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
-    "lines": 405,
+    "lines": 404,
     "longestFunction": 309
   },
   "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {

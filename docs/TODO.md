@@ -526,11 +526,6 @@ name a package. Breaking changes are in scope.
   stays a solid picker.
 
 
-- **(P2) [agent] Children in place of config arrays.** `CurveEditor` takes `layers: LayerBinding[]`; `Powerline`
-  takes a `segments` array of badges. Make them `<CurveEditor><FunctionLayer/></CurveEditor>` and a `Powerline`
-  whose context gives each child `<Badge>` its neighbor's edge cap (`<Field label output>` already wraps any control,
-  2026-11-14). Closes when each takes children.
-
 - **(P3) [maintainer] Presets and option builders in place of wrapper components.** `PointPlotter` is `CurveEditor`
   with three props fixed; `FontWeightSelect` and `FontFamilySelect` only build options for `Select`; `CloseButton`
   repeats `Button`'s `iconOnly`, tooltip, and reason handling; `ActionSettingsDialog` repeats `PrefsDialog`;

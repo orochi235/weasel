@@ -28,7 +28,7 @@ export type KeyframeDrag =
 
 /**
  * The state a keyframe layer owns, held by the consumer and round-tripped
- * through `LayeredCurveEditor`'s `onLayerChange`.
+ * through the layer's `onChange`.
  */
 export interface KeyframeLayerState {
   /** Sorted ascending by `t`. */

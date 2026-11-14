@@ -3,9 +3,8 @@ import { useElementSize, useLatest } from '@weasel-js/core';
 import { type Keyframe } from '@weasel-js/animator';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { LayeredCurveEditor } from '../CurveEditor/LayeredCurveEditor';
-import {
-  applyKeyframeDrag, createKeyframeLayer, type KeyframeLayerState,
-} from '../CurveEditor/createKeyframeLayer';
+import { applyKeyframeDrag, type KeyframeLayerState } from '../CurveEditor/createKeyframeLayer';
+import { KeyframeLayer } from '../CurveEditor/KeyframeLayer';
 import s from './Timeline.module.css';
 import { TICK_SPACING_PX, windowScale, type TimeWindow } from './timeScale';
 
@@ -15,7 +14,9 @@ import { TICK_SPACING_PX, windowScale, type TimeWindow } from './timeScale';
 const V_INSET_PCT = 8;
 
 /** One arrow-key step, in ms; shift multiplies by ten. */
-const KEY_STEP_MS = 10;
+const KEY_STEP = { x: 10 };
+const TRACK_TIME = [0, Infinity] as const;
+const formatMs = (t: number): string => `${Math.round(t)} ms`;
 
 export interface LaneGraphProps {
   keys: readonly Keyframe<number>[];
@@ -59,15 +60,8 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const size = useElementSize(hostRef);
 
-  const layer = useMemo(() => createKeyframeLayer({
-    id: 'keys',
-    label,
-    formatX: (t) => `${Math.round(t)} ms`,
-    // The layer works in track time; the snap candidates are ruler times.
-    snapX: snapTimes.map((t) => t - offset),
-    xClamp: [0, Infinity],
-    step: { x: KEY_STEP_MS },
-  }), [label, snapTimes, offset]);
+  // The layer works in track time; the snap candidates are ruler times.
+  const snapX = useMemo(() => snapTimes.map((t) => t - offset), [snapTimes, offset]);
 
   const committed = useMemo<KeyframeLayerState>(
     () => ({ keys, selectedKey: selection, selectedSegment, drag: null }),
@@ -79,10 +73,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   const state = live ?? committed;
   const stateRef = useLatest(state);
 
-  const layers = useMemo(() => [{ layer, state: state as unknown }], [layer, state]);
-
-  const onLayerChange = (_id: string, raw: unknown): void => {
-    const next = raw as KeyframeLayerState;
+  const onLayerChange = (next: KeyframeLayerState): void => {
     const prev = stateRef.current;
     if (next.selectedKey !== null && next.selectedKey !== prev.selectedKey) onSelect(next.selectedKey);
     if (next.selectedSegment !== null && next.selectedSegment !== prev.selectedSegment) onSelectSegment?.(next.selectedSegment);
@@ -95,10 +86,9 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
     if (applied !== next.keys) onKeysInput?.(applied);
   };
 
-  const onLayerCommit = (_id: string, raw: unknown, rawPrev: unknown): void => {
+  const onLayerCommit = (next: KeyframeLayerState, prev: KeyframeLayerState): void => {
     setLive(null);
-    const next = raw as KeyframeLayerState;
-    if (edits && next.keys !== (rawPrev as KeyframeLayerState).keys) onKeysCommit(next.keys);
+    if (edits && next.keys !== prev.keys) onKeysCommit(next.keys);
   };
 
   const [yLo, yHi] = valueRange(state.keys);
@@ -110,9 +100,6 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
         <LayeredCurveEditor
           className={s.graph}
           aria-label={`${label} graph`}
-          layers={layers}
-          onLayerChange={onLayerChange}
-          onLayerCommit={onLayerCommit}
           width={size.width}
           height={size.height}
           xRange={[win.from - offset, win.to - offset]}
@@ -124,7 +111,19 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
           // Clears a key at the track's start edge, which hangs into the gutter.
           yTicks={{ labels: 'outside', gap: 10 }}
           history={false}
-        />
+        >
+          <KeyframeLayer
+            id="keys"
+            label={label}
+            formatX={formatMs}
+            snapX={snapX}
+            xClamp={TRACK_TIME}
+            step={KEY_STEP}
+            state={state}
+            onChange={onLayerChange}
+            onCommit={onLayerCommit}
+          />
+        </LayeredCurveEditor>
       ) : null}
     </div>
   );

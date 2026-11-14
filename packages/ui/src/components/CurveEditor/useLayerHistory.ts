@@ -1,14 +1,13 @@
 import { useCallback, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { createHistory, type Op } from '@weasel-js/history';
+import type { LayerEntry } from './layerHost';
 
 /** Undo steps the built-in history keeps. */
 export const HISTORY_DEPTH = 100;
 
-/** Every layer's state, by layer id. */
-export type LayerSnapshot = Map<string, unknown>;
-
-interface Bound { layer: { id: string }; state: unknown }
+/** Every layer's state, by layer. */
+export type LayerSnapshot = Map<LayerEntry, unknown>;
 
 /**
  * One edit, as a return to the layer states it started from. The state it
@@ -32,25 +31,22 @@ function editOp(before: LayerSnapshot, read: () => LayerSnapshot, restore: (snap
  * The layered editor's built-in undo, on a `@weasel-js/history` stack. A step
  * restores each layer whose state differs, reported the way a finished edit is.
  */
-export function useLayerHistory(
-  layersRef: { readonly current: ReadonlyArray<Bound> },
-  onLayerChange: (id: string, next: unknown) => void,
-  onLayerCommit: ((id: string, next: unknown, prev: unknown) => void) | undefined,
-) {
+export function useLayerHistory(layers: () => readonly LayerEntry[]) {
   const [history] = useState(() => createHistory(null, { historyLimit: HISTORY_DEPTH }));
 
   const snapshot = useCallback((): LayerSnapshot => {
     const m: LayerSnapshot = new Map();
-    for (const b of layersRef.current) m.set(b.layer.id, b.state);
+    for (const entry of layers()) m.set(entry, entry.state);
     return m;
-  }, [layersRef]);
+  }, [layers]);
 
   const restore = useLatest((snap: LayerSnapshot) => {
-    for (const b of layersRef.current) {
-      const prev = snap.get(b.layer.id);
-      if (prev !== undefined && prev !== b.state) {
-        onLayerChange(b.layer.id, prev);
-        onLayerCommit?.(b.layer.id, prev, b.state);
+    for (const entry of layers()) {
+      const prev = snap.get(entry);
+      const current = entry.state;
+      if (prev !== undefined && prev !== current) {
+        entry.onChange(prev);
+        entry.onCommit?.(prev, current);
       }
     }
   });

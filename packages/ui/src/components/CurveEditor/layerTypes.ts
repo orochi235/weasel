@@ -2,7 +2,7 @@
  * Layered curve editor contract.
  *
  * A `CurveLayer` is a pure-value description of one composable layer
- * inside `LayeredCurveEditor`. State lives outside the layer (held by
+ * inside `LayeredCurveEditor`, drawn there by a `CustomLayer` child. State lives outside the layer (held by
  * the consumer); the layer only provides render + hit-test + gesture
  * starters. This lets the editor coordinate cross-layer reactivity —
  * when one layer's gesture updates its state, the consumer can update
@@ -69,11 +69,11 @@ export interface LayerHit {
  *  `onMove` is pure: it takes the layer's *current* state (which may
  *  have been updated by upstream re-renders since the gesture started)
  *  and returns the next state. The editor publishes that next state via
- *  `onLayerChange`. */
+ *  the layer's `onChange`. */
 export interface LayerGesture<S> {
   onMove(state: S, model: ModelPoint, e: PointerEvent, ctx: LayerCtx): S;
   /** Pointerup. Return the final state. The editor uses this as the
-   *  `next` value passed to `onLayerCommit`. Default: return state
+   *  `next` value passed to the layer's `onCommit`. Default: return state
    *  unchanged. */
   onCommit?(state: S, ctx: LayerCtx): S;
   /** The gesture ended without a release. Return the state to restore.
@@ -81,11 +81,10 @@ export interface LayerGesture<S> {
   onCancel?(state: S, ctx: LayerCtx): S;
 }
 
-/** Pure-value layer description. Multiple instances of the same factory
- *  output (e.g. two `createFunctionLayer` results) coexist by `id`. */
+/** Pure-value layer description. Several instances of one factory's output
+ *  (e.g. two `createFunctionLayer` results) coexist on one editor. */
 export interface CurveLayer<S> {
-  /** Stable identifier — used as the key when the editor calls back
-   *  with state updates. Must be unique within an editor instance. */
+  /** Names the layer's group in the plot, as `data-layer-id`, for a stylesheet to select. */
   readonly id: string;
 
   /** Render the layer's visuals as SVG children inside the editor's

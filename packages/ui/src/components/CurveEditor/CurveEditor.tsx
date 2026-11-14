@@ -1,6 +1,6 @@
 /**
  * The single-curve editor: a `LayeredCurveEditor` holding one function layer.
- * Several curves on one plot take `LayeredCurveEditor` and `createFunctionLayer`.
+ * Several curves on one plot take `LayeredCurveEditor` and `FunctionLayer`.
  */
 import {
   useCallback, useMemo, useState,
@@ -14,7 +14,6 @@ import {
 } from '../Plot2D';
 import type { InterpolationMode } from '@weasel-js/geom';
 import {
-  createFunctionLayer,
   type ControlPoint,
   type CurveDomain,
   type EndpointMode,
@@ -25,6 +24,7 @@ import {
   type FunctionLayerState,
 } from './createFunctionLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
+import { FunctionLayer } from './FunctionLayer';
 import { useLatest } from '@weasel-js/core';
 import type { HoldProps } from '../Disabled';
 import { ownHold } from '../Disabled/controlHold';
@@ -66,8 +66,8 @@ export interface CurveEditorProps extends HoldProps {
   maxPoints?: number;
   addPointMode?: AddPointMode;
   renderAnchor?: (info: AnchorRenderProps) => ReactNode;
-  /** Extra SVG content rendered behind the curve and anchors. */
-  decorations?: ReactNode;
+  /** Drawn under the curve, in order: plain SVG, or more layers, which a press reaches after the curve. */
+  children?: ReactNode;
   /** Accessible name for the plot. */
   'aria-label'?: string;
   className?: string;
@@ -78,7 +78,7 @@ export interface CurveEditorProps extends HoldProps {
  * Editable curve through a list of control points: drag anchors, click to
  * insert, right-click to delete, with optional built-in undo.
  *
- * This is the single-curve API, implemented as one `createFunctionLayer` on
+ * This is the single-curve API, implemented as one `FunctionLayer` on top of
  * a `LayeredCurveEditor`. Reach for those directly to stack several curves
  * on one plot.
  */
@@ -88,18 +88,8 @@ export function CurveEditor(props: CurveEditorProps) {
     domain, endpoints, interpolation, constrain, addPointMode,
     minPoints, maxPoints, curve, fill, hideNonInteractive, renderAnchor,
     width, height, xRange, yRange, grid, axes, xTicks, yTicks, history,
-    className, style, decorations,
+    className, style, children,
   } = props;
-
-  // Layer is config-only; rebuild only when *config* changes.
-  const layer = useMemo(() => createFunctionLayer({
-    id: 'function',
-    domain, endpoints, interpolation, constrain, addPointMode,
-    minPoints, maxPoints, curve, fill, hideNonInteractive, renderAnchor,
-  }), [
-    domain, endpoints, interpolation, constrain, addPointMode,
-    minPoints, maxPoints, curve, fill, hideNonInteractive, renderAnchor,
-  ]);
 
   // The points are local only while an anchor is held, so a drag advances
   // without the consumer writing `value` back on every move. Outside one,
@@ -110,8 +100,7 @@ export function CurveEditor(props: CurveEditorProps) {
   const layerState = held ?? idle;
   const layerStateRef = useLatest(layerState);
 
-  const handleLayerChange = useCallback((_id: string, nextUnknown: unknown) => {
-    const next = nextUnknown as FunctionLayerState;
+  const handleLayerChange = useCallback((next: FunctionLayerState) => {
     const prevPoints = layerStateRef.current.points;
     setHeld(next.activeIndex === null ? null : next);
     if (next.points !== prevPoints) {
@@ -119,23 +108,16 @@ export function CurveEditor(props: CurveEditorProps) {
     }
   }, [onInput, layerStateRef]);
 
-  const handleLayerCommit = useCallback((_id: string, nextUnknown: unknown, prevUnknown: unknown) => {
+  const handleLayerCommit = useCallback((next: FunctionLayerState, prev: FunctionLayerState) => {
     if (!onChange) return;
-    const next = nextUnknown as FunctionLayerState;
-    const prev = prevUnknown as FunctionLayerState;
     if (next.points !== prev.points) {
       onChange?.(next.points as ControlPoint[], prev.points);
     }
   }, [onChange]);
 
-  const layers = useMemo(() => [{ layer, state: layerState }], [layer, layerState]);
-
   return (
     <LayeredCurveEditor
       {...ownHold(props)}
-      layers={layers}
-      onLayerChange={handleLayerChange}
-      onLayerCommit={handleLayerCommit}
       width={width}
       height={height}
       xRange={xRange}
@@ -149,7 +131,16 @@ export function CurveEditor(props: CurveEditorProps) {
       className={className}
       style={style}
     >
-      {decorations}
+      {children}
+      <FunctionLayer
+        id="function"
+        state={layerState}
+        onChange={handleLayerChange}
+        onCommit={handleLayerCommit}
+        domain={domain} endpoints={endpoints} interpolation={interpolation} constrain={constrain}
+        addPointMode={addPointMode} minPoints={minPoints} maxPoints={maxPoints} curve={curve} fill={fill}
+        hideNonInteractive={hideNonInteractive} renderAnchor={renderAnchor}
+      />
     </LayeredCurveEditor>
   );
 }

@@ -515,15 +515,15 @@ function OverlaysAndFeedback() {
         </div>
       </Cell>
       <Cell label="Powerline">
-        <Powerline
-          variant="solid"
-          size="sm"
-          segments={[
-            { text: 'main', emphasis: 'high', endCap: 'chevron' },
-            { text: '✓ 12', grade: 'info', endCap: 'slant' },
-            { text: '~/proj', emphasis: 'low' },
-          ]}
-        />
+        <Powerline variant="solid" size="sm">
+          <Badge emphasis="high" endCap="chevron">
+            main
+          </Badge>
+          <Badge grade="info" endCap="slant">
+            ✓ 12
+          </Badge>
+          <Badge emphasis="low">~/proj</Badge>
+        </Powerline>
       </Cell>
       <Cell label="Status bar">
         <Bar framed="status" label="Editor status">

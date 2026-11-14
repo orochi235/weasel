@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { createKitSettingsStore, KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import { createFunctionLayer, functionLayerState } from './createFunctionLayer';
 import { createKeyframeLayer, keyframeLayerState, type KeyframeLayerConfig, type KeyframeLayerState } from './createKeyframeLayer';
+import { CustomLayer } from './CustomLayer';
+import { KeyframeLayer } from './KeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
 import type { CurveLayer, LayerCtx, LayerHit, PlotPoint } from './layerTypes';
 
@@ -85,8 +87,9 @@ describe('LayeredCurveEditor kit settings', () => {
       },
     } as unknown as CurveLayer<null>;
     const editor = (
-      <LayeredCurveEditor layers={[{ layer: probe, state: null }]} onLayerChange={() => {}} width={200} height={100}
-        xRange={[0, 1000]} yRange={[0, 10]} history={false} />
+      <LayeredCurveEditor width={200} height={100} xRange={[0, 1000]} yRange={[0, 10]} history={false}>
+        <CustomLayer layer={probe} state={null} onChange={() => {}} />
+      </LayeredCurveEditor>
     );
     render(wrap ? <KitSettingsProvider value={{ targets: { curveKeyHitPx: 30 } }}>{editor}</KitSettingsProvider> : editor);
     fireEvent.pointerDown(document.querySelector('svg')!, { clientX: 50, clientY: 50, button: 0, pointerId: 1 });
@@ -102,12 +105,11 @@ describe('LayeredCurveEditor kit settings', () => {
 
 describe('createKeyframeLayer snap reach', () => {
   function Keys({ config, onCommit }: { config: KeyframeLayerConfig; onCommit: (next: KeyframeLayerState) => void }) {
-    const layer = useMemo(() => createKeyframeLayer(config), [config]);
     const [state, setState] = useState(() => keyframeLayerState([{ t: 0, value: 0 }, { t: 500, value: 10 }, { t: 1000, value: 5 }]));
     return (
-      <LayeredCurveEditor layers={[{ layer, state }]} onLayerChange={(_id, next) => setState(next as KeyframeLayerState)}
-        onLayerCommit={(_id, next) => onCommit(next as KeyframeLayerState)} width={200} height={100}
-        xRange={[0, 1000]} yRange={[0, 10]} history={false} />
+      <LayeredCurveEditor width={200} height={100} xRange={[0, 1000]} yRange={[0, 10]} history={false}>
+        <KeyframeLayer {...config} state={state} onChange={setState} onCommit={(next) => onCommit(next)} />
+      </LayeredCurveEditor>
     );
   }
 

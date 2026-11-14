@@ -40,8 +40,8 @@ export interface PointPlotterProps {
   history?: boolean;
   /** Custom per-anchor renderer. See `CurveEditor.renderAnchor`. */
   renderAnchor?: (info: AnchorRenderProps) => ReactNode;
-  /** Extra SVG content beneath the anchors. See `CurveEditor.decorations`. */
-  decorations?: ReactNode;
+  /** Drawn beneath the anchors: plain SVG, or more layers. See `CurveEditor.children`. */
+  children?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
