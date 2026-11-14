@@ -68,7 +68,7 @@ export function ActionButton(props: ActionButtonProps) {
   const palette = form === 'palette';
   const words = palette || form === 'menu' || icon == null || (props.labeled ?? (form === 'row' || form === 'popover'));
   const cls = palette ? [s.tool, className]
-    : [s.action, words && s.labeled, words && (form === 'row' || form === 'popover') && s.row, form === 'menu' && s.menu, className];
+    : [s.action, form === 'bar' && s.cell, words && s.labeled, words && (form === 'row' || form === 'popover') && s.row, form === 'menu' && s.menu, className];
   const shown = children ?? label;
   return (
     // A dead or explained button keeps its tooltip, which is the only thing that says why.
