@@ -2,7 +2,7 @@
 '@weasel-js/ui': major
 ---
 
-`CurveEditor` and `PointPlotter` take what they draw under the curve as children, and their `decorations` prop is gone.
+`CurveEditor` takes what it draws under the curve as children, and its `decorations` prop is gone.
 
 The children may be plain SVG or more curve layers, which a press reaches after the editor's own curve.
 
