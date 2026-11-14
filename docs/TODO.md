@@ -653,11 +653,6 @@ name a package. Breaking changes are in scope.
   icon, description, and `disabledReason`; `ComboBoxOption` has only `isDisabled`; `MenuButtonItem` says
   `disabled`; `optionLabels.tsx` types its input loosely to cope. Closes when all three take one type.
 
-- **(P3) [agent] `CommandPalette` steps its list and finds shortcuts its own way.** `moveHighlight`
-  (`CommandPalette/CommandPalette.tsx:180`) reimplements ui-input's `stepStop` with `canStop`, and
-  `item.shortcut ?? actionShortcuts(...)` is written again in `actionShortcutText.ts`. Closes when it uses
-  `stepStop` and one `actionItemShortcuts` sits beside `actionShortcuts` in core.
-
 - **(P2) [maintainer] Move `PrefSchemaEditor` out of ui.** 8,341 source lines plus 10,308 of tests; 43 files
   (3,624 lines) are pure model with no React or CSS (`schemaEdit`, `schemaExport`, `workspaceCodec`, `bundle*`,
   `kindSchemas`, `draft`). Only `apps/draw/src/dev` uses it, and `PrefConditionEditor` is used only by its
