@@ -3,13 +3,15 @@ import {
   Switch as RACSwitch,
   type SwitchProps as RACSwitchProps,
 } from 'react-aria-components';
+import type { HoldProps } from '../Disabled';
+import { useRacHold } from '../Disabled/racHold';
 import s from './Switch.module.css';
 
 /**
  * Props for {@link Switch}, on top of React Aria's `Switch` props. The label
  * is passed as children.
  */
-export type SwitchProps = Omit<RACSwitchProps, 'children' | 'className'> & {
+export type SwitchProps = Omit<RACSwitchProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & HoldProps & {
   children?: ReactNode;
   className?: string;
 };
@@ -25,10 +27,11 @@ export const Switch = forwardRef(function Switch(
   props: SwitchProps,
   ref: Ref<HTMLLabelElement>,
 ) {
-  const { children, className, ...rest } = props;
-  return (
+  const { rest: { children, className, ...rest }, rac, wrap } = useRacHold(props);
+  return wrap(
     <RACSwitch
       {...rest}
+      {...rac}
       ref={ref}
       className={[s.switch, className].filter(Boolean).join(' ')}
     >
@@ -36,6 +39,6 @@ export const Switch = forwardRef(function Switch(
         <span className={s.thumb} />
       </span>
       {children !== undefined && <span className={s.label}>{children}</span>}
-    </RACSwitch>
+    </RACSwitch>,
   );
 });

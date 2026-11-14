@@ -17,6 +17,7 @@ import shared from '../range.module.css';
 import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyRow';
 import s from './Properties.module.css';
+import { useNativeHold } from '../Disabled/nativeHold';
 import { trackPlace } from './sliderScale';
 import { catchStop, useTrackStops } from './sliderStops';
 import { attachesUnit, UnitSuffix } from './unitSuffix';
@@ -119,6 +120,7 @@ export function NumberInput(p: PropertyNumberFieldProps) {
       display={p.display}
       steppers={p.steppers}
       disabled={p.disabled}
+      disabledReason={p.disabledReason}
       settleWhenIdle={p.settleWhenIdle}
       aria-label={p.name}
       onInput={p.onInput}
@@ -197,11 +199,13 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
   // The thumb clamps to the track; the readout beside it does not, so a value
   // past `max` is still reported as what it is.
   const value = known ? onTrack(p.value as number) : min;
+  const hold = useNativeHold({ disabled: p.mixed || p.disabled, disabledReason: p.disabledReason });
   const keyed = (next: number) => {
+    if (hold.refuses) return;
     live(settle(next));
     commit?.(settle(next));
   };
-  return (
+  return hold.wrap(
     // The shared skin with no fill: `InlineRange`'s filled-to-value track is its
     // own, and the property rows' 18% track is the one the kit converges on.
     <input
@@ -219,8 +223,8 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
       max={place.max}
       step={place.step}
       value={place.toInput(value)}
-      disabled={p.mixed || p.disabled}
-      onPointerDown={stops.onPointerDown}
+      {...hold.attrs}
+      onPointerDown={hold.refuses ? undefined : stops.onPointerDown}
       onKeyDown={(e) => {
         const next = place.keyStep(e.key, value, inlineDirection(e.currentTarget));
         if (next === null) return;
@@ -228,11 +232,12 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
         keyed(next);
       }}
       onChange={(e) => {
+        if (hold.refuses) return;
         const v = settle(stops.settle(e.currentTarget, value, place.fromInput(Number(e.target.value))));
         dlog('property-panel', 'slider', { name: p.name, value: v });
         live(v);
       }}
-    />
+    />,
   );
 }
 
@@ -312,6 +317,7 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
+  const hold = useNativeHold({ disabled });
   const locale = { locale: useFieldLocale() };
   const text = (n: number) => (format ? String(format(n)) : qty(n, display, locale).text);
   const read = (typed: string) => parseAs(typed, display, locale);
@@ -326,7 +332,7 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
   const canceled = useRef(false);
   const commit = () => {
     // A draft still reading as the value shown writes nothing: the readout rounds, and that text is not an edit.
-    if (draft !== null && !canceled.current && draft !== text(value)) {
+    if (draft !== null && !canceled.current && !hold.refuses && draft !== text(value)) {
       const n = read(draft);
       if (!Number.isNaN(n)) onCommit(settle(n));
     }
@@ -347,7 +353,8 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
         className={s.readoutInput}
         style={fit as CSSProperties}
         value={displayValue}
-        disabled={disabled}
+        {...hold.attrs}
+        readOnly={hold.refuses}
         onFocus={(e) => {
           canceled.current = false;
           setDraft(text(value));
@@ -369,6 +376,7 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
             canceled.current = true;
             e.currentTarget.blur();
           } else {
+            if (hold.refuses) return;
             const typed = draft === null ? value : read(draft);
             const from = onTrack(Number.isNaN(typed) ? value : typed);
             const spun = spinKey(e.key, from, { step, ...reach });

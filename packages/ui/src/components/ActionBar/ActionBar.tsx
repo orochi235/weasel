@@ -7,6 +7,7 @@ import { BarActions } from '../Bar/BarActions';
 import type { Orientation } from '../Run';
 import type { DensityProps } from '../Density';
 import type { LeafRenderer } from '../SelectionPanel/renderContext';
+import type { DisableableProps } from '../Disabled';
 
 /** Which actions an {@link ActionBar} draws: one group's, or every one carrying a tag. */
 export type ActionBarSource =
@@ -26,7 +27,7 @@ export type ActionBarSource =
 export type ActionBarProps = ActionBarSource & ActionBarOptions;
 
 /** What an {@link ActionBar} takes besides its {@link ActionBarSource}. */
-export interface ActionBarOptions extends DensityProps {
+export interface ActionBarOptions extends DensityProps, DisableableProps {
   /** Layout direction. Defaults to the way the run the bar sits in goes, else `'horizontal'`. */
   orientation?: Orientation;
   /**
@@ -84,6 +85,8 @@ export function ActionBar(props: ActionBarProps) {
       framed="segmented"
       size={size}
       className={className}
+      disabled={props.disabled}
+      disabledReason={props.disabledReason}
     />
   );
 }

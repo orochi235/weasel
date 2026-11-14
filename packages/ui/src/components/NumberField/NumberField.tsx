@@ -10,11 +10,13 @@ import {
 import { MIXED_HINT } from '../mixedHint';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import type { StepperSide } from './UnitField';
+import type { HoldProps } from '../Disabled';
+import { useRacHold } from '../Disabled/racHold';
 import f from '../field.module.css';
 import s from './NumberField.module.css';
 
 /** Props for {@link NumberField}, on top of React Aria's `NumberField` props. */
-export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className'> & FieldSlotProps & {
+export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & {
   /** Hide the up/down stepper buttons. Defaults to false. */
   hideSteppers?: boolean;
   /** Which end of the field the steppers sit at. Defaults to `'start'`. */
@@ -48,6 +50,7 @@ export const NumberField = forwardRef(function NumberField(
   props: NumberFieldProps,
   ref: Ref<HTMLInputElement>,
 ) {
+  const hold = useRacHold(props);
   const {
     label,
     orientation,
@@ -61,10 +64,11 @@ export const NumberField = forwardRef(function NumberField(
     width = 'fill',
     className,
     ...rest
-  } = props;
-  return (
+  } = hold.rest;
+  return hold.wrap(
     <RACNumberField
       {...rest}
+      {...hold.rac}
       value={mixed ? NaN : rest.value}
       className={fieldRootClass({ orientation, width, fit: s.fit, className })}
     >
@@ -82,6 +86,6 @@ export const NumberField = forwardRef(function NumberField(
         )}
       </Group>
       <FieldFoot description={description} errorMessage={errorMessage} />
-    </RACNumberField>
+    </RACNumberField>,
   );
 });

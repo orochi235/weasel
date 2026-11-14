@@ -7,9 +7,10 @@ import { useTokenDrag } from './tokenDrag';
 import { TokenEditor, TokenText } from './TokenEditor';
 import { chipKey, useTokenFocus } from './tokenFocus';
 import s from './TokenField.module.css';
+import { useControlAccess, type HoldProps } from '../Disabled';
 
-/** Props for {@link TokenField}. */
-export interface TokenFieldProps<T = string> {
+/** Props for {@link TokenField}. Disabled or read-only, nothing is typed, edited, moved, or removed. */
+export interface TokenFieldProps<T = string> extends HoldProps {
   value: readonly T[];
   /** Every add, edit, removal and move, with the whole list. */
   onChange: (next: T[]) => void;
@@ -32,8 +33,6 @@ export interface TokenFieldProps<T = string> {
   maxItems?: number;
   /** Shown in the text field while there are no tokens. */
   placeholder?: string;
-  /** Takes no input: nothing is typed, edited, moved or removed. */
-  disabled?: boolean;
   /** Whether the token at `index` opens no editor. It can still be moved and removed. */
   locked?: (index: number) => boolean;
   /** Names the field for assistive tech; each token is named by its label. */
@@ -70,11 +69,11 @@ export function TokenField<T>({
   minItems = 0,
   maxItems = Infinity,
   placeholder,
-  disabled = false,
   locked,
   'aria-label': ariaLabel,
-  className,
+  className, ...hold
 }: TokenFieldProps<T>) {
+  const disabled = useControlAccess(hold).state !== 'enabled';
   const [draft, setDraft] = useState('');
   const [editing, setEditing] = useState<number | null>(null);
   const focus = useTokenFocus();

@@ -61,7 +61,7 @@ export function MapEditor({ pref, value, onChange, renderValue, disabled }: MapE
       newEntry={() => ['', item.default]}
       renderEntry={([key, held], set, name) => (
         <div className={s.entry}>
-          <Input aria-label={`${name} key`} className={s.key} placeholder="Key" value={key} isDisabled={disabled} onChange={(next) => set([next, held])} />
+          <Input aria-label={`${name} key`} className={s.key} placeholder="Key" value={key} disabled={disabled} onChange={(next) => set([next, held])} />
           <div className={s.value}>
             {renderValue(prefLeafValue(item, held), (next) => set([key, next]), key === '' ? name : `${label} ${key}`, key)}
           </div>

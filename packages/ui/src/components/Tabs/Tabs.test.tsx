@@ -8,7 +8,7 @@ function Sample() {
       <TabList aria-label="Sections">
         <Tab id="a">A</Tab>
         <Tab id="b">B</Tab>
-        <Tab id="c" isDisabled>C</Tab>
+        <Tab id="c" disabled>C</Tab>
       </TabList>
       <TabPanel id="a">panel-a</TabPanel>
       <TabPanel id="b">panel-b</TabPanel>

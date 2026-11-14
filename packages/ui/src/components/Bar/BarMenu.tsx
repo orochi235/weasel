@@ -9,7 +9,7 @@ import {
 import type { PrefGroup } from '@weasel-js/prefs';
 import type { MenuEntry } from '@weasel-js/menu';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
-import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
+import { SegmentTooltip } from '../segmentTooltip';
 import f from '../field.module.css';
 import { DockBarContext } from '../ToolbarDock/dockContext';
 import { useBarLead } from './barLeadHandle';
@@ -72,7 +72,7 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
     <DockBarContext.Provider value={null}>
       {trigger.anchor}
       {handle && <span className={s.lead} {...handle.attrs}>{handle.content}</span>}
-      <SegmentTooltip content={segmentTooltipContent({ description })}>
+      <SegmentTooltip tip={{ description }}>
         <button
           ref={trigger.button}
           id={trigger.id}

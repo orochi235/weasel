@@ -1,5 +1,5 @@
 import { Select, useLabContext, usePersistedState } from '@weasel-js/labkit';
-import type { SelectOption } from '@weasel-js/ui/components/Select';
+import type { ListOption } from '@weasel-js/ui/components/Select';
 import type { IconSpec } from '@weasel-js/icons';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Callout } from '@weasel-js/ui/components/Callout';
@@ -23,11 +23,11 @@ export function useLabGlobals(declarations: GlobalDeclarations): [Globals, (key:
 }
 
 /** A global's option as the select draws it. */
-function selectOption({ value, label, icon, disabled, disabledReason, description }: GlobalOption): SelectOption {
+function selectOption({ value, label, icon, disabled, disabledReason, description }: GlobalOption): ListOption {
   return {
     value, label,
     ...(icon ? { icon: <Icon name={icon} size={16} /> } : {}),
-    ...(disabled ? { isDisabled: true } : {}),
+    ...(disabled ? { disabled: true } : {}),
     ...(disabledReason ? { disabledReason } : {}),
     ...(description ? { description } : {}),
   };

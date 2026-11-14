@@ -18,7 +18,7 @@
   opacity: 0.6;
 }
 
-.trigger[data-disabled] {
+.trigger:is([data-disabled], [data-held='disabled']) {
   opacity: 0.5;
   filter: var(--wzl-disabled-filter);
   cursor: not-allowed;

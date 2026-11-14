@@ -237,9 +237,6 @@
   "packages/ui/src/components/Prefs/prefField.tsx": {
     "longestFunction": 126
   },
-  "packages/ui/src/components/Select/Select.tsx": {
-    "longestFunction": 125
-  },
   "packages/ui/src/components/Slider/useThumbDrags.ts": {
     "longestFunction": 132
   },

@@ -33,13 +33,13 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     ['ComboBox', 'Controlled', () => import('./ComboBox/ComboBox.stories'), disabled('combobox')],
   ] as const)('%s %s', async (_, name, load, check) => {
     const mod = (await load()) as unknown as Record<string, Story>;
-    draw(mod[name], { isDisabled: true });
+    draw(mod[name], { disabled: true });
     check();
   });
 
   it('Select Controlled', async () => {
     const { Controlled } = await import('./Select/Select.stories');
-    draw(Controlled as Story, { isDisabled: true });
+    draw(Controlled as Story, { disabled: true });
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
@@ -146,7 +146,7 @@ describe('a story drawing several instances applies its args to each', { timeout
     ['NumberField', 'FitWidth', () => import('./NumberField/NumberField.stories'), 'textbox', 3],
     ['Select', 'LabelBeside', () => import('./Select/Select.stories'), 'button', 3],
   ])('%s %s', async (_, name, load, role, count) => {
-    draw((await load() as Record<string, Story>)[name], { isDisabled: true });
+    draw((await load() as Record<string, Story>)[name], { disabled: true });
     const fields = screen.getAllByRole(role);
     expect(fields).toHaveLength(count);
     for (const el of fields) expect(el).toBeDisabled();

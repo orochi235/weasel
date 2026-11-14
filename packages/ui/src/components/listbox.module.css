@@ -41,6 +41,16 @@
   cursor: not-allowed;
 }
 
+.optionBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.note {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+}
+
 .optionIcon {
   display: inline-flex;
   vertical-align: middle;
