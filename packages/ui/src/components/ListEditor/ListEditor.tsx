@@ -170,15 +170,15 @@ export function ListEditor<T>({
                   onKeyDown={(e) => onKeyDown(e, i)}
                 />
               )}
-              <Button {...CLOSE_BUTTON_PROPS}
-                ref={(el) => {
-                  focus.removes.current[i] = el;
-                }}
-                aria-label={`Remove ${name(i)}`}
-                disabled={disabled || value.length <= minItems}
-                disabledReason={access.reason}
-                onClick={() => remove(i)}
-              />
+              <span className={s.remove}>
+                <Button {...CLOSE_BUTTON_PROPS}
+                  ref={(el) => { focus.removes.current[i] = el; }}
+                  aria-label={`Remove ${name(i)}`}
+                  disabled={disabled || value.length <= minItems}
+                  disabledReason={access.reason}
+                  onClick={() => remove(i)}
+                />
+              </span>
             </li>
           ))}
         </ul>

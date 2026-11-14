@@ -53,6 +53,15 @@
   min-width: 0;
 }
 
+/* As tall as a field's frame, the entry's first row, so the remove button centers on that row
+   whatever its own size and however tall the entry grows. */
+.remove {
+  flex: none;
+  display: flex;
+  align-items: center;
+  block-size: var(--wzl-field-h, var(--wzl-control-h));
+}
+
 .empty {
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);
