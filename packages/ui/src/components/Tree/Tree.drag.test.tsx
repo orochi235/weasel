@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { Tree, type TreeNode } from './Tree';
+import { isApplePlatform } from '@weasel-js/gestures';
 
 afterEach(() => {
   cleanup();
@@ -45,8 +46,9 @@ function setup(props: Partial<Parameters<typeof Tree>[0]> = {}) {
 
 const press = (el: HTMLElement, y: number, x = 100) =>
   fireEvent.pointerDown(el, { pointerId: 1, button: 0, clientX: x, clientY: y });
-const move = (y: number, x = 100, altKey = false, metaKey = false) => fireEvent.pointerMove(document, { pointerId: 1, clientX: x, clientY: y, altKey, metaKey });
-const release = (y: number, x = 100, altKey = false, metaKey = false) => fireEvent.pointerUp(document, { pointerId: 1, clientX: x, clientY: y, altKey, metaKey });
+const mod = (held: boolean) => (isApplePlatform() ? { metaKey: held } : { ctrlKey: held });
+const move = (y: number, x = 100, altKey = false, modKey = false) => fireEvent.pointerMove(document, { pointerId: 1, clientX: x, clientY: y, altKey, ...mod(modKey) });
+const release = (y: number, x = 100, altKey = false, modKey = false) => fireEvent.pointerUp(document, { pointerId: 1, clientX: x, clientY: y, altKey, ...mod(modKey) });
 
 describe('Tree — drag threshold', () => {
   it('picks a row up only past the gestures.dragPx kit setting', () => {
@@ -164,7 +166,7 @@ describe('Tree — drag to copy', () => {
     expect(onMove).toHaveBeenCalledWith(['z'], { parentId: 'g', index: 0 });
   });
 
-  it('links on a drag released with Alt and Cmd held, in a tree that takes links', () => {
+  it('links on a drag released with Alt and Mod held, in a tree that takes links', () => {
     const onCopy = vi.fn();
     const onLink = vi.fn();
     const { onMove, row } = setup({ onCopy, onLink });
@@ -178,7 +180,7 @@ describe('Tree — drag to copy', () => {
     expect(onMove).not.toHaveBeenCalled();
   });
 
-  it('copies under Alt and Cmd in a tree that takes copies and no links', () => {
+  it('copies under Alt and Mod in a tree that takes copies and no links', () => {
     const onCopy = vi.fn();
     const { row } = setup({ onCopy });
     press(row('Zed'), 80);

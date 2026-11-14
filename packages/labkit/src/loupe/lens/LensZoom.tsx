@@ -1,7 +1,7 @@
+import { multiplier, qty } from '@weasel-js/quantity';
 import { Along } from '@weasel-js/ui/components/Along';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { useMemo, useRef } from 'react';
-import { multiplier, qty } from '@weasel-js/quantity';
 import type { LoupeShape } from '../types';
 import { FACTOR_MAX, FACTOR_MIN, FACTOR_STOPS } from './lensActionDefs';
 import { applyLensOps, setLensOps, settingsOf } from './lensScene';
