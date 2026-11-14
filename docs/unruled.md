@@ -2299,3 +2299,13 @@ Calls the lanes made without a ruling:
   arrow keys and a double-click reset) and the command palette's `/` key. Neither is a demo, and the shell mounts no
   dispatcher; running each through one would mean an actions registry, a dep registry and a dispatcher for one
   affordance.
+
+## Audit round twenty-four (2026-11-14): correctness of the newest code
+
+- 2026-11-14 (the lane's call): a path effect or held warp of a kind this build does not know, as one saved before
+  the Tween, Pin, Plane, and Cloth renames holds, is read as none (paints nothing; ignored as a stale warp) rather than
+  upgraded to its new name. The renames' changesets already tell consumers to rewrite saved kinds; this only stops
+  the old ones throwing. Draw, as one such consumer, rewrites them as it loads a saved drawing or undo stack.
+- 2026-11-14 (the lane's call): draw's version 4 to 5 prefs migration, unreleased, grew to cover every pref the path
+  tool renames orphaned (Knead's and Sand's options, `tools.lastTool`, the Fillet asset's surface and toolbar place)
+  instead of adding a version 6.

@@ -5,6 +5,7 @@ import type {
   AddNodeSpec, PagesDoc, SceneRegistry, SavedScene, SpecsFromSerializedOptions, SystemLayerSpec,
 } from '@weasel-js/core';
 import { solid } from '@weasel-js/core';
+import { migrateRenamedKinds } from './renamedKinds';
 
 
 /** The `Paint` discriminant values as they were written before 2026-10-12,
@@ -94,12 +95,12 @@ function liftLegacyPattern(obj: Record<string, unknown>): void {
 
 /**
  * The one way to read anything that came out of localStorage: revive the
- * typed arrays, then migrate the legacy string paints. Both the scene and the
- * two history snapshots go through it, so neither pass can be forgotten at a
- * load site.
+ * typed arrays, then migrate the legacy string paints and renamed kinds. Both
+ * the scene and the two history snapshots go through it, so no pass can be
+ * forgotten at a load site.
  */
 export function reviveSnapshot<T>(node: T): T {
-  return migrateLegacyPaint(reviveTypedArrays(node));
+  return migrateRenamedKinds(migrateLegacyPaint(reviveTypedArrays(node)));
 }
 
 /** `JSON.parse`-style reviver for clipboard payloads (the shape
