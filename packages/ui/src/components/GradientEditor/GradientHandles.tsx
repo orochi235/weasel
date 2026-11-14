@@ -1,7 +1,7 @@
 import { type ReactElement, type ReactNode } from 'react';
 import { gradientGeometry, type GradientPaint } from '@weasel-js/core';
-import { DragPoint, Guide, HandleOverlay, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
-import s from './handleOverlay.module.css';
+import { DragPoint, Guide, HandleOverlay, type EditPhase, type OverlayPoint as Point } from '../handleOverlay';
+import s from '../handleOverlay.module.css';
 import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
 
