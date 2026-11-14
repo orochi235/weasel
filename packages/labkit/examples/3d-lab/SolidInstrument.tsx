@@ -3,7 +3,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
@@ -24,6 +23,7 @@ import {
   boxSnapSource,
   collectOverlayBoxes,
   createAreaSelect,
+  createAxisMove,
   createCamera,
   createNodeAtPoint,
   createPoseDescriptor,
@@ -34,6 +34,7 @@ import {
   useOrbitTool,
   orbitAction,
   panAction,
+  type AxisMove,
   type Camera3d,
   type ChromeBox,
   type Viewport3d,
@@ -46,6 +47,7 @@ import {
 import { useBoxTool } from './tools3d';
 import { useGroupEntry3d, type GroupEntry3d } from './groupEntry3d';
 import { useBoxInsert } from './insert3d';
+import { useSolidSelection } from './selection3d';
 
 interface SolidState {
   /** Kept only so labkit has something to persist; the scene itself is a ref. */
@@ -92,10 +94,9 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const orbitView = useOrbitView();
   const camera = orbitView.camera ?? HOME;
   const setCameraRef = useLatest(orbitView.setCamera);
-  const [selection, setSelection] = useState<readonly NodeId[]>([]);
+  const { selection, setSelection, selectionRef, selectionApi } = useSolidSelection();
 
   const cameraRef = useLatest(camera);
-  const selectionRef = useLatest(selection);
   const sizeRef = useRef({ width: 1, height: 1 });
   const originRef = useRef({ x: 0, y: 0 });
   const showChromeRef = useLatest(config.showChrome);
@@ -103,6 +104,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const drawsRef = useRef(new Map<NodeId, SolidRecord>());
   /** Read by the painter for the boxes it outlines; set once the deps exist below. */
   const groupEntryRef = useRef<GroupEntry3d | null>(null);
+  /** Read by the painter for the axis handles it draws; set once the deps exist below. */
+  const axisMoveRef = useRef<AxisMove | null>(null);
 
   const viewportSource = useCallback(
     (): Viewport3d => ({
@@ -211,10 +214,12 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       // Projected without the pane's origin, so they land in the tile as drawn.
       const snap = projectSnapMarks(snapMarks.get(), { camera: cameraRef.current, width: rect.w, height: rect.h });
 
+      const handles = axisMoveRef.current?.handles({ camera: cameraRef.current, width: rect.w, height: rect.h }) ?? [];
+
       renderer.draw(solids, cameraRef.current, device, chrome, {
         width: rect.w,
         height: rect.h,
-      }, snap);
+      }, snap, handles);
     });
 
     return () => {
@@ -226,34 +231,6 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   }, [glCanvas, surface, tileId, scene, dispatcher, feed, world, selectionRef, cameraRef, showChromeRef, snapMarks]);
 
   // ── Deps ───────────────────────────────────────────────────────────────
-  const selectionApi = useMemo(
-    () => ({
-      get current() {
-        return selectionRef.current;
-      },
-      get: () => [...selectionRef.current],
-      set: (ids: NodeId[]) => setSelection(ids),
-      add: (id: NodeId) => setSelection((prev) => (prev.includes(id) ? prev : [...prev, id])),
-      remove: (id: NodeId) => setSelection((prev) => prev.filter((x) => x !== id)),
-      clear: () => setSelection([]),
-      toggle: (id: NodeId) =>
-        setSelection((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),
-      contains: (id: NodeId) => selectionRef.current.includes(id),
-      applyClick: (id: NodeId, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }) =>
-        setSelection((prev) => {
-          if (!modifiers.shift) return [id];
-          return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-        }),
-      intentOf: (modifiers: { shift: boolean; meta: boolean; ctrl: boolean }) =>
-        (modifiers.shift ? 'toggle' as const : 'replace' as const),
-      adapterMethods: {
-        getSelection: () => [...selectionRef.current],
-        setSelection: (ids: NodeId[]) => setSelection(ids),
-      },
-    }),
-    [selectionRef],
-  );
-
   // Every pick below goes through the entered group's scope: outside it,
   // nothing takes a hit and a press lands on empty canvas.
   const worldPick = useMemo(() => createNodeAtPoint(world), [world]);
@@ -267,6 +244,11 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [world, selectionApi, groupEntry.entered],
   );
   const insert = useBoxInsert(scene, viewportSource);
+  // The handles on the selection that drag it along one world axis, up included.
+  const axisMove = useMemo(() => createAxisMove(world, { selection: selectionApi }), [world, selectionApi]);
+  useEffect(() => {
+    axisMoveRef.current = axisMove;
+  }, [axisMove]);
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const kitSettings = useKitSettings();
   const snap = useMemo(
@@ -327,7 +309,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
       getSelection: () => [...selectionRef.current] as string[],
       setSelection: (ids: string[]) => setSelection(ids as NodeId[]),
     }),
-    [scene, areaSelect, selectionRef],
+    [scene, areaSelect, selectionRef, setSelection],
   );
 
   const select = useSelectToolWith(selectAdapter, { pickEvery, pickBest, poseDescriptor });
@@ -343,9 +325,10 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
         ['orbit', orbit as Tool],
         ['box', box as Tool],
         [selectionMove.id, selectionMove],
+        [axisMove.contribution.id, axisMove.contribution as Tool],
         [groupEntry.contribution.id, groupEntry.contribution],
       ]),
-    [select, orbit, box, selectionMove, groupEntry.contribution],
+    [select, orbit, box, selectionMove, axisMove.contribution, groupEntry.contribution],
   );
 
   const palette = useMemo(() => ({ select: select as Tool, orbit, box }), [select, orbit, box]);
@@ -425,6 +408,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     clientToWorld,
     classifyTarget,
     getRuleCtx,
+    affordanceAt: axisMove.handleAt,
     requestRedraw: repaint,
   });
 

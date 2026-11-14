@@ -65,6 +65,18 @@ function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: Axis): Pose3 {
   return { ...pose, position };
 }
 
+/** `pose` dragged `d` on screen from the middle of `box`, its screen box, across the plane through it normal to `up`. */
+function draggedOnLevel(
+  vp: Viewport3d, box: { x: number; y: number; width: number; height: number }, pose: Pose3,
+  d: { x: number; y: number }, up: Vec3, upAxis: Axis,
+): Pose3 {
+  const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  const level = { normal: up, offset: dot(up, pose.position) };
+  const before = onPlane(vp, level, from);
+  const after = onPlane(vp, level, { x: from.x + d.x, y: from.y + d.y });
+  return before && after ? movedOnLevel(pose, sub(after, before), upAxis) : pose;
+}
+
 export { screenBoxOf } from './pickIndex';
 
 /** Where a solid wholly behind the camera is: on no part of the screen, a box that is not finite, which core's
@@ -362,12 +374,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         if (lead) return { ...pose, position: shiftedBy(pose.position, lead.from.position, lead.to.position) };
         const vp = castableViewport();
         const box = vp && boundsIn(vp, pose);
-        if (!vp || !box) return pose;
-        const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-        const level = { normal: up, offset: dot(up, pose.position) };
-        const before = onPlane(vp, level, from);
-        const after = onPlane(vp, level, { x: from.x + dx, y: from.y + dy });
-        return before && after ? movedOnLevel(pose, sub(after, before), upAxis) : pose;
+        return vp && box ? draggedOnLevel(vp, box, pose, { x: dx, y: dy }, up, upAxis) : pose;
       },
 
       supportsRotation() {

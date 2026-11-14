@@ -8,7 +8,7 @@
  */
 
 import {
-  cameraViewProjection, type Camera3d, type ChromeBox, type ScreenLine, type ScreenPoint,
+  cameraViewProjection, type AxisHandle, type Camera3d, type ChromeBox, type ScreenLine, type ScreenPoint,
 } from '@weasel-js/kernel3d';
 import { compose, identity, multiply, type Mat4 } from '@weasel-js/geom/3d';
 import { cubeData, gridData, sphereData } from './meshes3d';
@@ -73,6 +73,8 @@ export interface Renderer3d {
     chrome: readonly ChromeBox[],
     cssSize: { width: number; height: number },
     snap?: SnapDraw,
+    /** The selection's axis-move handles, in the pane's own CSS px. */
+    handles?: readonly AxisHandle[],
   ): void;
   dispose(): void;
 }
@@ -235,7 +237,7 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     },
 
-    draw(solids, camera, rect, chrome, cssSize, snap) {
+    draw(solids, camera, rect, chrome, cssSize, snap, handles = []) {
       if (rect.w <= 0 || rect.h <= 0) return;
 
       gl.enable(gl.SCISSOR_TEST);
@@ -315,22 +317,23 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
         gl.disable(gl.BLEND);
       }
 
-      // Chrome and snap marks are screen space, over everything.
+      // Chrome and snap marks are screen space, over everything, and a handle's head faces either way.
       gl.disable(gl.DEPTH_TEST);
+      gl.disable(gl.CULL_FACE);
       gl.useProgram(lineProgram);
       gl.uniformMatrix4fv(lineUniforms.mvp, false, new Float32Array(identity()));
       gl.bindVertexArray(dynamicLines.vao);
       gl.bindBuffer(gl.ARRAY_BUFFER, dynamicLines.buffer);
-      const drawSegments = (segments: readonly Segment[], rgb: readonly [number, number, number]) => {
-        if (segments.length === 0) return;
-        const verts: number[] = [];
-        const x = (v: number) => (v / cssSize.width) * 2 - 1;
-        const y = (v: number) => 1 - (v / cssSize.height) * 2;
-        for (const [ax, ay, bx, by] of segments) verts.push(x(ax), y(ay), 0, x(bx), y(by), 0);
+      const x = (v: number) => (v / cssSize.width) * 2 - 1;
+      const y = (v: number) => 1 - (v / cssSize.height) * 2;
+      const drawScreen = (mode: number, points: readonly { x: number; y: number }[], rgb: readonly [number, number, number]) => {
+        if (points.length === 0) return;
         gl.uniform3f(lineUniforms.color, rgb[0], rgb[1], rgb[2]);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
-        gl.drawArrays(gl.LINES, 0, verts.length / 3);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points.flatMap((p) => [x(p.x), y(p.y), 0])), gl.DYNAMIC_DRAW);
+        gl.drawArrays(mode, 0, points.length);
       };
+      const drawSegments = (segments: readonly Segment[], rgb: readonly [number, number, number]) =>
+        drawScreen(gl.LINES, segments.flatMap(([ax, ay, bx, by]) => [{ x: ax, y: ay }, { x: bx, y: by }]), rgb);
       for (const [tint, rgb] of CHROME_COLORS) {
         drawSegments(chrome
           .filter((box) => (box.tint ?? 'selection') === tint)
@@ -342,6 +345,11 @@ export function createRenderer3d(gl: WebGL2RenderingContext): Renderer3d {
           ...snap.lines.map((l): Segment => [l.from.x, l.from.y, l.to.x, l.to.y]),
           ...snap.points.flatMap((p) => boxSegments(p.at.x - h, p.at.y - h, p.at.x + h, p.at.y + h)),
         ], SNAP_COLOR);
+      }
+      for (const h of handles) {
+        const rgb = parseColor(h.color);
+        drawScreen(gl.LINES, [h.from, h.to], rgb);
+        drawScreen(gl.TRIANGLES, h.head, rgb);
       }
 
       gl.bindVertexArray(null);

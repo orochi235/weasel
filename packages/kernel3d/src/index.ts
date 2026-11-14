@@ -36,6 +36,14 @@ export {
 } from './snap/sources';
 export { projectSnapMarks, type ScreenLine, type ScreenPoint } from './snap/marks';
 export type { Landing3d } from './snap/landing';
+export {
+  AXIS_COLORS, AXIS_DIRECTIONS, WORLD_AXES, axisHandleAt, axisHandles,
+  type AxisHandle, type AxisHandleOptions, type WorldAxis,
+} from './axisMove/handles';
+export {
+  AXIS_HANDLE_KIND, AXIS_MOVE_ACTION_ID, AXIS_MOVE_CONTRIBUTION_ID, axisOfHit, createAxisMove,
+  type AxisMove, type AxisMoveOptions,
+} from './axisMove/action';
 export { collectOverlayBoxes } from './overlays';
 export { HEAD, HEAD_OVERDRAW, headFor, layoutLine, type HeadShape, type HeadSize, type LineLayout } from './lines/head';
 export {

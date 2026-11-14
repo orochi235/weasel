@@ -39,15 +39,6 @@ Owner tags, after the priority (2026-10-26):
   too big for audit round 20's pass (2026-11-12). Closes when the demo's factory reads `extras.samples` with no
   cast.
 
-- **(P2) [recheck] A kernel3d host has no way to drag a node up or down, or along one axis.** kernel3d's
-  `translate` keeps a node at its height (`movedOnLevel` in `packages/kernel3d/src/deps.ts`), and the kernel
-  ships no translate gizmo: an editor building one writes its own action, chrome, hit test and snap plane
-  (found building a z-up scene editor, audit round 20, 2026-11-12). New API of real size: an axis-constrained
-  move action whose plane faces the camera along the dragged axis, handles a `PoseDescriptor` or pick can
-  report, and chrome drawn in screen space. Whether the handles' look is the maintainer's call is the open
-  question. Closes when a kernel3d host can drag a selected node along each world axis, up included, with
-  the kernel's own action and handles.
-
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
