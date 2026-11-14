@@ -1,4 +1,5 @@
-import { registeredBidi, warnRtlWithoutEngine, type BidiEngine } from '@weasel-js/text';
+import { registeredBidi, warnRtlWithoutEngine } from './layout/bidiRegistry';
+import type { BidiEngine } from './layout/bidiSeam';
 
 const BIDI_CONTROLS = /^[؜‎‏‪-‮⁦-⁩]+$/;
 
@@ -23,7 +24,7 @@ export function visualGraphemes(
   });
   if (codePoints.length === 0) return [];
   if (bidi === null) {
-    warnRtlWithoutEngine(codePoints, 'weasel CurvedLabel');
+    warnRtlWithoutEngine(codePoints, 'weasel visualGraphemes');
     return graphemes.filter((g) => !BIDI_CONTROLS.test(g));
   }
   const { order, levels } = bidi.reorder(bidi.analyze(codePoints, direction), 0, codePoints.length);

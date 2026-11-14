@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { chromaAt, oklchToHex, type ChromaCurve } from '@weasel-js/ui/color';
+import { chromaAt, oklchDegToHex, type ChromaCurve } from '@weasel-js/paint';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
 import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
@@ -59,7 +59,7 @@ function curveOf(p: RampParams): ChromaCurve {
 
 function colorAtIndex(idx: number, p: RampParams): string {
   const L = lAtIndex(idx, p.lRange);
-  return oklchToHex(L, chromaAt(L, curveOf(p)), p.hue);
+  return oklchDegToHex(L, chromaAt(L, curveOf(p)), p.hue);
 }
 
 /** Output swatch: row of color tiles, one per index. */
@@ -109,9 +109,9 @@ function plotIn(size: Dims) {
 function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: ChromaBounds }) {
   const [lo, hi] = params.lRange;
   const points = useMemo(() => [
-    { L: lo,         C: params.chroma.cBot,  label: 'B', color: oklchToHex(lo,         params.chroma.cBot,  params.hue), bounds: bounds.cBot },
-    { L: params.midL, C: params.chroma.cPeak, label: 'P', color: oklchToHex(params.midL, params.chroma.cPeak, params.hue), bounds: bounds.cPeak },
-    { L: hi,         C: params.chroma.cTop,  label: 'T', color: oklchToHex(hi,         params.chroma.cTop,  params.hue), bounds: bounds.cTop },
+    { L: lo,         C: params.chroma.cBot,  label: 'B', color: oklchDegToHex(lo,         params.chroma.cBot,  params.hue), bounds: bounds.cBot },
+    { L: params.midL, C: params.chroma.cPeak, label: 'P', color: oklchDegToHex(params.midL, params.chroma.cPeak, params.hue), bounds: bounds.cPeak },
+    { L: hi,         C: params.chroma.cTop,  label: 'T', color: oklchDegToHex(hi,         params.chroma.cTop,  params.hue), bounds: bounds.cTop },
   ], [lo, hi, params.midL, params.hue, params.chroma.cBot, params.chroma.cPeak, params.chroma.cTop, bounds.cBot, bounds.cPeak, bounds.cTop]);
 
   // Custom render layer: a single 3-vertex polygon with per-vertex colors,
@@ -254,7 +254,7 @@ export function PerceptualColorSlidersDemo() {
             aria-label="Hue"
             readoutPlacement="inline-after"
             renderReadout={t => `${t.value}°`}
-            renderTrack={paintGradientTrack({ gradient: t => oklchToHex(midL, peakC, t * 360) })}
+            renderTrack={paintGradientTrack({ gradient: t => oklchDegToHex(midL, peakC, t * 360) })}
           />
         </section>
 
@@ -270,7 +270,7 @@ export function PerceptualColorSlidersDemo() {
             onInput={ts => setLRange([ts[0].value, ts[1].value])}
             readoutPlacement="below-thumb"
             renderTrack={paintGradientTrack({
-              gradient: t => oklchToHex(t, 0, 0),
+              gradient: t => oklchDegToHex(t, 0, 0),
               activeRange: lRange,
               hatch: { angleDeg: 135, stripe: 2, gap: 4, dim: 75 },
             })}
@@ -294,7 +294,7 @@ export function PerceptualColorSlidersDemo() {
             }}
             readoutPlacement="below-thumb"
             renderTrack={paintGradientTrack({
-              gradient: t => oklchToHex(midL, t * 0.22, hue),
+              gradient: t => oklchDegToHex(midL, t * 0.22, hue),
             })}
           />
         </section>

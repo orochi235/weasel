@@ -1,6 +1,6 @@
 import type { ColorSource } from '@weasel-js/paint';
 import type { ReactNode } from 'react';
-import type { InterpolationMode } from './interpolation';
+import type { InterpolationMode } from '@weasel-js/geom';
 
 /** One anchor of a curve, in model space. */
 export interface ControlPoint {

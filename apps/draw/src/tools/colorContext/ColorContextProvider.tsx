@@ -7,7 +7,7 @@
  */
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { DEFAULT_FILL, DEFAULT_STROKE, type ActivePaint } from '../../newShapePaint';
-import { solidColorOf } from '@weasel-js/ui/paint-value';
+import { solidColorOf } from '@weasel-js/paint';
 import {
   createToolOptionValues, DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, getAlpha01, mergeAlphaFromPrev, SHARED_TOOL_OPTIONS,
   toHex8, useLatest, withAlpha01, type ToolOptionValues,

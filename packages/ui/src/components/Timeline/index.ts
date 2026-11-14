@@ -10,4 +10,3 @@ export { Transport, TRANSPORT_RATES } from './Transport';
 export type { TransportProps } from './Transport';
 export { EasingPicker } from './EasingPicker';
 export type { EasingPickerProps } from './EasingPicker';
-export { EASING_NAMES, easingBezier, easingLabel, sampleEasing } from './easingSpec';

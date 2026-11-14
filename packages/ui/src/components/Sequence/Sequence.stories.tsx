@@ -1,7 +1,7 @@
 import { f, meta, story } from '@weasel-js/forge';
 import type { CSSProperties } from 'react';
 import { frames, range, Sequence } from '@weasel-js/ui/components/Sequence';
-import { oklchToHex } from '@weasel-js/ui';
+import { oklchDegToHex } from '@weasel-js/paint';
 import s from './Sequence.stories.module.css';
 
 /** One component repeated over the steps of a parameter, the rest held: a scrubber's values, all at once. */
@@ -37,7 +37,7 @@ export const Grid = story({
         sweep={range({ from: 0.3, to: 0.9, step: 0.15, label: (l) => l.toFixed(2) })}
         across={range({ from: 0, to: 360 - 360 / c.hues, count: c.hues, label: (h) => `${Math.round(h)}°` })}
       >
-        {(l, h) => <span className={s.swatch} style={{ '--swatch': oklchToHex(l, c.chroma, h) } as CSSProperties} />}
+        {(l, h) => <span className={s.swatch} style={{ '--swatch': oklchDegToHex(l, c.chroma, h) } as CSSProperties} />}
       </Sequence>
     );
   },

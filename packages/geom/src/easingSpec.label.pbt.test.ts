@@ -4,9 +4,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { EASINGS, resolveEasing, type EasingSpec } from '@weasel-js/core';
-import { runs, tally, timeoutFor } from '../../pbt.fixture';
-import { EASING_NAMES, easingBezier, easingLabel, sampleEasing } from './easingSpec';
+import { EASINGS } from './easings';
+import { runs, tally, timeoutFor } from './pbt.fixture';
+import { EASING_NAMES, easingBezier, easingLabel, resolveEasing, sampleEasing, type EasingSpec } from './easingSpec';
 
 const RUNS = 300;
 const name = fc.constantFrom(...EASING_NAMES);

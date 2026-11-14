@@ -8,7 +8,7 @@ import { Popover } from '../Popover';
 import { INHERIT, usePaintKind, type Inherit, type Paint, type PaintKind } from '@weasel-js/core';
 import type { PaintInherit } from '../PaintInput';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
-import { paintPreviewCss } from '../../paintPreview';
+import { paintPreviewCss } from '@weasel-js/paint';
 import { PaintInput } from '../PaintInput';
 import { ownPaint } from '../PaintInput/PaintInput';
 import listbox from '../listbox.module.css';

@@ -14,7 +14,7 @@ import {
   type AxesSettings,
   type TickSettings,
 } from '../Plot2D';
-import type { InterpolationMode } from './interpolation';
+import type { InterpolationMode } from '@weasel-js/geom';
 import {
   createFunctionLayer,
   type ControlPoint,

@@ -1,12 +1,7 @@
-import {
-  hexToOklchDeg,
-  hexToRgba,
-  interpolateSrgb,
-  rgbaToHex,
-  type ColorInterpolationSpace,
-  type HueInterpolation,
-} from '@weasel-js/core';
-import { chromaAt, oklchToHex, type ChromaCurve } from './oklch';
+import { chromaAt, type ChromaCurve } from './chromaCurve';
+import { hexToRgba, rgbaToHex } from './color';
+import { hexToOklchDeg, interpolateSrgb, oklchDegToHex, type ColorInterpolationSpace } from './colorSpaces';
+import type { HueInterpolation } from './hue';
 
 /**
  * How {@link rampColor} and {@link colorRamp} travel between two endpoints.
@@ -54,7 +49,7 @@ export function rampColor(from: string, to: string, t: number, options: ColorRam
   if (!chroma) return hex;
   const s = hexToOklchDeg(hex);
   const H = s.C > 1e-4 ? s.H : hexToOklchDeg(rgbaToHex(interpolateSrgb(a, b, t, 'oklch', hue))).H;
-  return oklchToHex(s.L, chromaAt(s.L, chroma), H);
+  return oklchDegToHex(s.L, chromaAt(s.L, chroma), H);
 }
 
 /** `steps` evenly spaced samples from `from` to `to`, both ends included. A fractional count takes its whole steps. */

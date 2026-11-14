@@ -13,7 +13,8 @@
  * monotonicity-preserving by construction.
  */
 
-import { sampleSteps, type Point } from './catmullRom';
+import type { Point } from '../paths/cubicMath';
+import { sampleSteps } from './catmullRom';
 
 /** Per-axis tangent computation for a 1D series of y-values sampled at
  *  unit intervals (index-parameterized). Returns one tangent per

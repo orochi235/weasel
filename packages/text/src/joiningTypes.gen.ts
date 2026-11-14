@@ -1,7 +1,7 @@
 /**
  * GENERATED FILE -- DO NOT EDIT BY HAND.
  *
- * Emitted by `packages/ui/scripts/gen-joining-types.mjs` from ArabicShaping.txt, Unicode 16.0.0.
+ * Emitted by `packages/text/scripts/gen-joining-types.mjs` from ArabicShaping.txt, Unicode 16.0.0.
  * Regenerate with `npm run gen:joining-types`.
  */
 

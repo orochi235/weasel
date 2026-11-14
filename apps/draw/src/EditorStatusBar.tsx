@@ -2,7 +2,7 @@ import { isPageStructure, type SelectionApi, useActiveToolContext, type View } f
 import { qty, zoom } from '@weasel-js/quantity';
 import { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
 import { ThemeSwitcher } from '@weasel-js/ui/components/ThemeSwitcher';
-import { solidColorOf } from '@weasel-js/ui/paint-value';
+import { solidColorOf } from '@weasel-js/paint';
 import type { ReactElement } from 'react';
 import { buildLabel, buildTitle } from '../../shared/buildInfo';
 import type { ActivePaint } from './newShapePaint';

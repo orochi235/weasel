@@ -100,3 +100,38 @@ export function resolveEasing(spec?: EasingSpec): EasingFn {
   }
   throw new Error('resolveEasing: unrecognized easing spec');
 }
+
+/** A spec's control points, for an editor's draggable handles; `null` for a spec that has none. */
+export function easingBezier(spec?: EasingSpec): readonly [number, number, number, number] | null {
+  return spec !== undefined && isBezier(spec) ? spec.bezier : null;
+}
+
+/** What an editor shows for a spec.
+ *
+ *  A function is matched against the built-ins by reference so a consumer that
+ *  passed `easeOutBack` directly still reads back as `'easeOutBack'`. A wrapped
+ *  or hand-written function cannot be named and reads as `'custom'` — which is
+ *  why an editor writes names and control points rather than functions. */
+export function easingLabel(spec?: EasingSpec): string {
+  if (spec === undefined) return 'linear';
+  if (typeof spec === 'string') return spec;
+  if (isBezier(spec)) return `cubic-bezier(${spec.bezier.join(', ')})`;
+  for (const [name, fn] of Object.entries(EASINGS)) {
+    if (fn === spec) return name;
+  }
+  return 'custom';
+}
+
+/** `count` evenly spaced samples of the curve over 0..1, for drawing it: the whole count below a fraction, and none
+ *  for a negative or non-finite one. */
+export function sampleEasing(spec: EasingSpec | undefined, count: number): number[] {
+  const fn = resolveEasing(spec);
+  count = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+  const out = new Array<number>(count);
+  const last = count - 1;
+  for (let i = 0; i < count; i++) out[i] = fn(last === 0 ? 0 : i / last);
+  return out;
+}
+
+/** Every built-in name, for a picker's list. */
+export const EASING_NAMES = Object.keys(EASINGS) as EasingName[];

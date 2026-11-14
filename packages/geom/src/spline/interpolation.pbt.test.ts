@@ -5,9 +5,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { finite, runs, tally, timeoutFor } from '../../pbt.fixture';
+import { finite, runs, tally, timeoutFor } from '../pbt.fixture';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
-import type { Point } from './catmullRom';
+import type { Point } from '../paths/cubicMath';
 
 const RUNS = 300;
 const MODES: InterpolationMode[] = ['linear', 'catmull-rom', 'catmull-rom-uniform', 'catmull-rom-chordal', 'monotone'];

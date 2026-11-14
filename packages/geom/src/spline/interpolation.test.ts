@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
-import type { Point } from './catmullRom';
+import type { Point } from '../paths/cubicMath';
 
 const TWO: Point[] = [{ x: 0, y: 0 }, { x: 1, y: 1 }];
 const FOUR: Point[] = [

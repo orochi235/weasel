@@ -24,8 +24,7 @@ import { OpacityRange } from '../ColorField/OpacityRange';
 import { GradientEditor } from '../GradientEditor';
 import { paintKindEditor } from '../paintKindEditor';
 import { PatternPicker } from '../PatternPicker';
-import { paintPreviewCss } from '../../paintPreview';
-import { solidColorOf } from '../paintValue';
+import { paintPreviewCss, solidColorOf } from '@weasel-js/paint';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import s from './PaintInput.module.css';
 

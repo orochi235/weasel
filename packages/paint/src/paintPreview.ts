@@ -7,9 +7,12 @@
 // `sampleGradientStops` in the paint's own space puts the curve into the
 // stops themselves, and the browser only interpolates the short hops between.
 
-import { paintAlpha, sampleGradientStops, type Paint } from '@weasel-js/core';
-import { RAD_TO_DEG } from '@weasel-js/geom';
-import { solidColorOf } from './components/paintValue';
+import { sampleGradientStops } from './gradient';
+import type { Paint } from './paint';
+import { solidColorOf } from './paintValue';
+
+const RAD_TO_DEG = 180 / Math.PI;
+const paintAlpha = (paint: Paint): number => paint.opacity ?? 1;
 
 /** `color` at `alpha`, as the renderer multiplies a paint's `opacity` into it: a `color-mix` with `transparent`,
  *  so a named or packed-alpha color works without being parsed here. */

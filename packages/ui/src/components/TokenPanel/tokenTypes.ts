@@ -1,4 +1,4 @@
-import { parsesAsColor } from './color';
+import { parsesAsColor } from '@weasel-js/paint';
 
 /** A design token as `TokenPanel` edits it. */
 export interface TokenEntry {

@@ -30,10 +30,6 @@
       "types": "./dist/kitIcons.d.ts",
       "import": "./dist/kitIcons.js"
     },
-    "./paint-value": {
-      "types": "./dist/components/paintValue.d.ts",
-      "import": "./dist/components/paintValue.js"
-    },
     "./appearance": {
       "types": "./dist/components/appearance.d.ts",
       "import": "./dist/components/appearance.js"
@@ -41,10 +37,6 @@
     "./portal-host": {
       "types": "./dist/overlays/portalHost.d.ts",
       "import": "./dist/overlays/portalHost.js"
-    },
-    "./color": {
-      "types": "./dist/color/index.d.ts",
-      "import": "./dist/color/index.js"
     },
     "./paint-gradient-track": {
       "types": "./dist/paintGradientTrack.d.ts",

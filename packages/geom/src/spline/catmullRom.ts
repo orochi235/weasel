@@ -10,11 +10,7 @@
  * `sampleCurve(...)` is the convenience alias for centripetal (α=0.5).
  */
 
-/** A point on a sampled curve, in the curve's own units. */
-export interface Point {
-  x: number;
-  y: number;
-}
+import type { Point } from '../paths/cubicMath';
 
 /** A requested samples-per-segment as the whole count the samplers lay: rounded down, and at least 1. */
 export function sampleSteps(n: number): number {

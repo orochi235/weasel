@@ -6,7 +6,7 @@ import { Along } from '@weasel-js/ui/components/Along';
 import { logScale } from '@weasel-js/plot/scales';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
-import { oklchToHex } from '@weasel-js/ui/color';
+import { oklchDegToHex } from '@weasel-js/paint';
 import st from './Slider.stories.module.css';
 
 const meta: Meta<typeof Slider> = {
@@ -202,7 +202,7 @@ export const HueGradientTrack: Story = {
       {...args}
       initial={[{ value: 0.5, shape: 'notched' }]}
       renderTrack={paintGradientTrack({
-        gradient: (t) => oklchToHex(0.7, 0.18, t * 360),
+        gradient: (t) => oklchDegToHex(0.7, 0.18, t * 360),
         samples: 24,
       })}
     />
@@ -216,7 +216,7 @@ export const HueGradientTrack: Story = {
 export const ThumbFit: Story = {
   args: { step: 0.001, trackHeight: 20, readoutPlacement: 'none' },
   render: (args) => {
-    const hue = paintGradientTrack({ gradient: (t) => oklchToHex(0.7, 0.18, t * 360), samples: 24 });
+    const hue = paintGradientTrack({ gradient: (t) => oklchDegToHex(0.7, 0.18, t * 360), samples: 24 });
     const ends: Thumb[] = [{ value: 0 }, { value: 0.5 }, { value: 1 }];
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -239,7 +239,7 @@ function ActiveRangeHatchStory({ args }: { args: Omit<Parameters<typeof Slider>[
       thumbs={thumbs}
       onInput={setThumbs}
       renderTrack={paintGradientTrack({
-        gradient: (t) => oklchToHex(0.7, 0.18, t * 360),
+        gradient: (t) => oklchDegToHex(0.7, 0.18, t * 360),
         samples: 24,
         activeRange,
       })}
@@ -301,7 +301,7 @@ export const ZoomAlongALensRim: Story = {
 
 function HueAlongADialStory({ args }: { args: CurvedStoryArgs }) {
   const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 0.2 }, { value: 0.65 }]);
-  const hue = paintGradientTrack({ gradient: (t) => oklchToHex(0.7, 0.18, t * 360), samples: 24, activeRange: [thumbs[0]!.value, thumbs[1]!.value] });
+  const hue = paintGradientTrack({ gradient: (t) => oklchDegToHex(0.7, 0.18, t * 360), samples: 24, activeRange: [thumbs[0]!.value, thumbs[1]!.value] });
   return (
     <div className={st.lens}>
       <Along arc={{ start: 225, end: 135, inset: 16 }}>

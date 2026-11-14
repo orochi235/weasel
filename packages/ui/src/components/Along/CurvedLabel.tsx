@@ -1,13 +1,11 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { placeAlongRun, trackRun } from '@weasel-js/geom';
-import { graphemeEnds } from '@weasel-js/text';
+import { graphemeEnds, joiningRuns, visualGraphemes } from '@weasel-js/text';
 import { TOP_HALF } from './Along';
 import type { AlongArc, RunAlign } from './alongContext';
 import { placeStyle } from './placeOnRun';
-import { joiningRuns } from './joiningRuns';
 import { useBoxShape, type BoxShape } from './useBoxShape';
 import { useInlineDirection } from './useRowRun';
-import { visualGraphemes } from './visualGraphemes';
 import on from './onRun.module.css';
 import s from './CurvedLabel.module.css';
 

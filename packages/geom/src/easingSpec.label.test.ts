@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { easeOutBack } from '@weasel-js/core';
+import { easeOutBack } from './easings';
 import { easingBezier, easingLabel, sampleEasing } from './easingSpec';
 
 describe('easingLabel', () => {

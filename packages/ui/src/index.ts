@@ -3,7 +3,6 @@
 // policy panels (document props) live in their consuming app.
 export { dlog, isDebugEnabled } from './dlog';
 export * from './icons';
-export { solidColorOf, strokeColorOf, type PaintSlot } from './components/paintValue';
 export * from './components/ActionBar';
 export * from './components/ActionSettings';
 export * from './components/Badge';
@@ -130,11 +129,6 @@ export * from './components/Timeline';
 export * from './components/Sequence';
 export { paintGradientTrack } from './paintGradientTrack';
 export type { GradientTrackOptions } from './paintGradientTrack';
-export { paintPreviewCss } from './paintPreview';
-export { oklchToHex, chromaAt } from './color/oklch';
-export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';
-export { rampColor, colorRamp } from './color/ramp';
-export type { ColorRampOptions } from './color/ramp';
 export { useAsyncOptions } from './useAsyncOptions';
 export { IDLE_SETTLE_MS, useIdleSettle } from './useIdleSettle';
 export { I18nProvider, useFieldLocale } from './useFieldLocale';

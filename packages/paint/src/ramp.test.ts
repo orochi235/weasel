@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { hexToOklchDeg } from '@weasel-js/core';
+import { chromaAt, type ChromaCurve } from './chromaCurve';
+import { hexToOklchDeg, oklchDegToHex } from './colorSpaces';
 import { colorRamp, rampColor } from './ramp';
-import { chromaAt, oklchToHex, type ChromaCurve } from './oklch';
 
 describe('colorRamp', () => {
-  it('defaults to OKLCH, matching oklchToHex at the lerped L/C/H', () => {
-    const from = oklchToHex(0.3, 0.1, 250);
-    const to = oklchToHex(0.9, 0.1, 250);
+  it('defaults to OKLCH, matching oklchDegToHex at the lerped L/C/H', () => {
+    const from = oklchDegToHex(0.3, 0.1, 250);
+    const to = oklchDegToHex(0.9, 0.1, 250);
     const a = hexToOklchDeg(from);
     const b = hexToOklchDeg(to);
-    const mid = oklchToHex((a.L + b.L) / 2, (a.C + b.C) / 2, (a.H + b.H) / 2);
+    const mid = oklchDegToHex((a.L + b.L) / 2, (a.C + b.C) / 2, (a.H + b.H) / 2);
     expect(rampColor(from, to, 0.5)).toBe(mid);
     expect(rampColor(from, to, 0.5, { space: 'oklch' })).toBe(mid);
   });

@@ -5,7 +5,9 @@
 // writes a bare string back over it. These helpers are what keep a control
 // honest about the shape it is holding.
 
-import { isPaint, isSolidPaint, type Paint } from '@weasel-js/paint';
+import { isSolidPaint } from './commandPaint';
+import { isPaint } from './isPaint';
+import type { Paint } from './paint';
 
 /** The paint slots a node carries, `fill` and `stroke`. Either may hold any
  *  paint, and each has its own action. */

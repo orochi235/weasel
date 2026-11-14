@@ -1,4 +1,4 @@
-// Emits src/components/Along/joiningTypes.gen.ts from the Unicode Character Database.
+// Emits src/joiningTypes.gen.ts from the Unicode Character Database.
 //
 //   npm run gen:joining-types
 //
@@ -37,7 +37,7 @@ const packed = runs.map((r) => `${r.start.toString(36)}.${r.length.toString(36)}
 const out = `/**
  * GENERATED FILE -- DO NOT EDIT BY HAND.
  *
- * Emitted by \`packages/ui/scripts/gen-joining-types.mjs\` from ArabicShaping.txt, Unicode ${UNICODE_VERSION}.
+ * Emitted by \`packages/text/scripts/gen-joining-types.mjs\` from ArabicShaping.txt, Unicode ${UNICODE_VERSION}.
  * Regenerate with \`npm run gen:joining-types\`.
  */
 
@@ -45,6 +45,6 @@ const out = `/**
 export const JOINING_RUNS = '${packed}';
 `;
 
-const target = fileURLToPath(new URL('../src/components/Along/joiningTypes.gen.ts', import.meta.url));
+const target = fileURLToPath(new URL('../src/joiningTypes.gen.ts', import.meta.url));
 writeFileSync(target, out);
 console.log(`${rows.length} code points, ${runs.length} runs -> ${target}`);
