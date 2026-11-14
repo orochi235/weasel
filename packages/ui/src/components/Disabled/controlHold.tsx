@@ -35,9 +35,28 @@ export interface ControlHold {
   /** Holds the kit controls inside the control as it is held, by its own props as well as its scopes, without their
    *  repeating the reason the root tells. */
   scope(node: ReactNode): ReactElement;
+  /** Held with no reason: out of reach. A focus target takes {@link ControlHold.tabIndex}; a root whose marks
+   *  something else draws, such as a curve layer, is marked `inert`. */
+  unreachable: boolean;
+  /** A focus target's tab index: `live`, or -1 when held with no reason. */
+  tabIndex(live: 0 | -1): 0 | -1;
+  /** `live`, or, while every change is refused, a handler that does nothing: for each path that changes the value. */
+  gate<F extends (...args: never[]) => void>(live: F): F;
+  gate<F extends (...args: never[]) => void>(live: F | undefined): F | undefined;
 }
 
 const NO_BUTTON: ButtonHoldAttrs = {};
+const ignore = (): void => {};
+
+/** What a held control's root says for the stylesheet: `data-held`. */
+export function heldState(access: ControlAccess): 'disabled' | 'readOnly' | undefined {
+  return access.state === 'enabled' ? undefined : access.state;
+}
+
+/** Just the hold props of `props`, to hand a control drawn in its place. */
+export function ownHold({ disabled, disabledReason, readOnly, readOnlyReason }: HoldProps): HoldProps {
+  return { disabled, disabledReason, readOnly, readOnlyReason };
+}
 
 /**
  * A control's hold, from its own props and the scopes around it, for a control whose focus targets the kit draws
@@ -59,10 +78,13 @@ export function useControlHold(own: HoldProps, { readonlyRole = true }: { readon
     access,
     refuses,
     disabled,
-    held: refuses ? (access.state as 'disabled' | 'readOnly') : undefined,
+    held: heldState(access),
     focus,
     button: (changes) => ((changes ? refuses : disabled) ? marked : NO_BUTTON),
     wrap: reason.wrap,
     scope: (node) => holdScope(own, <ReasonTold reason={access.reason}>{node}</ReasonTold>),
+    unreachable: !access.reachable,
+    tabIndex: (live) => (access.reachable ? live : -1),
+    gate: (<F,>(live: F) => (refuses && live ? (ignore as F) : live)) as ControlHold['gate'],
   };
 }

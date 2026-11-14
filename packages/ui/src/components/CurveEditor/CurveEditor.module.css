@@ -15,6 +15,22 @@
   --curve-pinned-fill: var(--wzl-fg-subtle);
 }
 
+/* A held plot moves nothing, so no mark in it invites a grab. */
+.root[data-held],
+.root[data-held] * {
+  cursor: default;
+}
+
+.root[data-held='disabled'] {
+  opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
+}
+
+.root[data-held='disabled'],
+.root[data-held='disabled'] * {
+  cursor: not-allowed;
+}
+
 .fill {
   fill: var(--curve-fill);
   stroke: none;

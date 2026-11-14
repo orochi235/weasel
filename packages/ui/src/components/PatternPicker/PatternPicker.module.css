@@ -54,3 +54,18 @@
   border-color: var(--wzl-accent);
   box-shadow: 0 0 0 1px var(--wzl-accent);
 }
+
+/* A held picker's swatches pick nothing, so they neither invite a click nor answer the pointer. */
+.swatch[aria-readonly] {
+  cursor: default;
+}
+
+.swatch[aria-disabled] {
+  opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
+  cursor: not-allowed;
+}
+
+.swatch:is([aria-disabled], [aria-readonly]):hover:not(.swatchActive) {
+  border-color: var(--wzl-border);
+}

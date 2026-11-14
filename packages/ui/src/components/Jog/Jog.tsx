@@ -1,15 +1,18 @@
 import type { ReactNode } from 'react';
 import type { TrackShape } from '@weasel-js/geom';
+import type { ControlAccess } from '@weasel-js/ui-logic';
 import { RunScope, useRun } from '../Run';
 import { Button } from '../Button';
+import { useControlAccess, type HoldProps } from '../Disabled';
+import { heldState, ownHold } from '../Disabled/controlHold';
 import { Slider } from '../Slider/Slider';
 import { JogAlong } from './JogAlong';
 import s from './Jog.module.css';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 
-/** Props for {@link Jog}. */
-export interface JogProps {
+/** Props for {@link Jog}. Disabled or read-only, it neither plays, steps, nor scrubs: the step showing is its value. */
+export interface JogProps extends HoldProps {
   /** Which step is showing, 0-based. */
   index: number;
   /** How many steps there are. */
@@ -53,12 +56,13 @@ export interface JogParts {
  */
 export function Jog(props: JogProps) {
   const { shape, align } = useRun();
-  const parts = jogParts(props);
+  const access = useControlAccess(props);
+  const parts = jogParts(props, access);
   if (shape !== undefined && shape.kind !== 'line')
-    return <JogAlong parts={parts} shape={shape} align={align ?? 'center'} className={props.className} />;
+    return <JogAlong parts={parts} shape={shape} align={align ?? 'center'} className={props.className} held={heldState(access)} />;
 
   return (
-    <div className={[s.jog, props.className].filter(Boolean).join(' ')} dir="ltr">
+    <div className={[s.jog, props.className].filter(Boolean).join(' ')} dir="ltr" data-held={heldState(access)}>
       {parts.prev}
       {parts.play}
       {parts.next}
@@ -69,8 +73,11 @@ export function Jog(props: JogProps) {
   );
 }
 
-function jogParts(props: JogProps): JogParts {
+function jogParts(props: JogProps, access: ControlAccess): JogParts {
   const { index, count, playing, onPlay, onStep, onScrub, unit = 'Step', caption } = props;
+  // Its buttons are actions, which a read-only scope passes over, so the Jog holds them itself, for its reason.
+  const held = access.state !== 'enabled';
+  const reason = access.reason;
 
   const last = Math.max(0, count - 1);
   const at = Math.min(Math.max(index, 0), last);
@@ -84,7 +91,8 @@ function jogParts(props: JogProps): JogParts {
         size="sm"
         variant="ghost"
         aria-label={`Previous ${unit.toLowerCase()}`}
-        disabled={at <= 0}
+        disabled={held || at <= 0}
+        disabledReason={held ? reason : undefined}
         onClick={() => onStep(-1)}
       >
         <Icon name={icon('stepBack')} size={16} />
@@ -96,7 +104,8 @@ function jogParts(props: JogProps): JogParts {
         size="sm"
         variant="ghost"
         aria-label={playing ? 'Pause' : 'Play'}
-        disabled={count < 2}
+        disabled={held || count < 2}
+        disabledReason={held ? reason : undefined}
         onClick={() => onPlay(!playing)}
       >
         {playing ? <Icon name={icon('pause')} size={16} /> : <Icon name={icon('play')} size={16} />}
@@ -108,7 +117,8 @@ function jogParts(props: JogProps): JogParts {
         size="sm"
         variant="ghost"
         aria-label={`Next ${unit.toLowerCase()}`}
-        disabled={at >= last}
+        disabled={held || at >= last}
+        disabledReason={held ? reason : undefined}
         onClick={() => onStep(1)}
       >
         <Icon name={icon('stepForward')} size={16} />
@@ -127,6 +137,7 @@ function jogParts(props: JogProps): JogParts {
                 snap="strict"
                 thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)"
                 aria-label={unit}
+                {...ownHold(props)}
                 thumbs={[{ value: at, valueText: spoken }]}
                 onInput={(next) => onScrub(Math.round(next[0]?.value ?? 0))}
               />

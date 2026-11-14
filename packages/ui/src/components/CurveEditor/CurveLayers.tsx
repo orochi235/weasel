@@ -1,9 +1,8 @@
 import { useColorCss, useTints } from '@weasel-js/theme/react';
 import { useCallback } from 'react';
 import { handleHalf as themeHandleHalf, type HandleSizeToken } from '../../handles';
-import type { CurveLayer, LayerCtx, LayerModifiers } from './layerTypes';
-
-const NO_MODIFIERS: LayerModifiers = { shift: false, alt: false, meta: false, ctrl: false };
+import type { CurveLayer, LayerCtx } from './layerTypes';
+import { NO_MODIFIERS } from './layerCtx';
 
 /** Each layer's visuals in its own group, bottom to top, with the render context each is handed. */
 export function CurveLayers({ layers, base, activeLayerId }: {

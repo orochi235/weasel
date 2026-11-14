@@ -519,13 +519,6 @@ name a package. Breaking changes are in scope.
   stays a solid picker.
 
 
-- **(P2) [agent] `disabled` and `readOnly` on the controls that take neither.** The `<Disabled>`/`<ReadOnly>`
-  scopes (2026-11-13) reach every kit control that already took `disabled`, `Slider`, `Tree`, `LayerList`, `ItemList`,
-  `DataGrid`, `Timeline`, `PageTabs`, and `TokenPanel` (2026-11-14), but these never took one, so a scope passes over them: `SwatchGrid`,
-  `SwatchStrip`, `RecentColors`, `PatternPicker`, `CurveEditor`, `BandEditor`, `MeshEditor`, and `Jog`. Each needs its own refusal (a drag, a keyboard step, a swatch press) and the reason's tooltip through
-  `useHoldReason`, which is new behavior per component rather than a rename, hence a pass of its own. Closes when each
-  reads `useControlAccess`.
-
 - **(P2) [agent] Children in place of config arrays.** `CurveEditor` takes `layers: LayerBinding[]`; `Powerline`
   takes a `segments` array of badges. Make them `<CurveEditor><FunctionLayer/></CurveEditor>` and a `Powerline`
   whose context gives each child `<Badge>` its neighbor's edge cap (`<Field label output>` already wraps any control,

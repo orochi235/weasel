@@ -4,7 +4,9 @@ import { RunScope } from '../Run';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { useInlineDirection } from '../Along/useRowRun';
 import { RunBand, RunEnds, useRunRow, type RunItemPlace } from '../Along/useRunRow';
-import { SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, useSwatchStop, type SwatchApply, type SwatchChange } from './SwatchButton';
+import type { HoldProps } from '../Disabled';
+import { useControlHold, type ControlHold } from '../Disabled/controlHold';
+import { heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, useSwatchStop, type SwatchApply, type SwatchChange } from './SwatchButton';
 import type { SwatchGridOption } from './SwatchGrid';
 import { inwardSign, ringDepths, ringPlan, ringsOf, ringThicknesses, viableRings, type SwatchRing } from './ringPlan';
 import s from './SwatchGrid.module.css';
@@ -26,7 +28,7 @@ export interface SwatchRingGroup {
 }
 
 /** Props of {@link SwatchRings}. */
-export interface SwatchRingsProps {
+export interface SwatchRingsProps extends HoldProps {
   shape: TrackShape;
   align: RunAlign;
   groups: readonly SwatchRingGroup[];
@@ -70,7 +72,7 @@ function useSwatchMetrics(root: RefObject<HTMLElement | null>): SwatchMetrics {
  * keep two swatches apart; a palette's rows past there share its last ring, which scrolls along itself as any ring
  * too long for its run does.
  */
-export function SwatchRings({ shape, align, groups, onChange, onAltChange, className }: SwatchRingsProps): ReactElement {
+export function SwatchRings({ shape, align, groups, onChange, onAltChange, className, ...own }: SwatchRingsProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const { size, gap, leads } = useSwatchMetrics(root);
   const direction = useInlineDirection(root);
@@ -83,13 +85,14 @@ export function SwatchRings({ shape, align, groups, onChange, onAltChange, class
     const kept = ringPlan(rows, room);
     return { plan: kept, rings: ringsOf(shape, ringDepths(ringThicknesses(kept, leads, size), gap), direction) };
   }, [shape, rows, leads, size, gap, direction]);
-  const apply = useSwatchApply(onChange, onAltChange);
+  const hold = useControlHold(own);
+  const apply = heldApply(useSwatchApply(onChange, onAltChange), hold);
   const firsts = plan.map((_, i) => plan.slice(0, i).reduce((a, b) => a + b, 0));
-  return (
-    <div ref={root} className={className ? `${s.rings} ${className}` : s.rings}>
+  return hold.wrap(
+    <div ref={root} className={className ? `${s.rings} ${className}` : s.rings} data-held={hold.held}>
       <RunScope fresh>
         {groups.map((g, i) => (
-          <RingGroup key={g.key} group={g} rings={rings.slice(firsts[i], firsts[i]! + plan[i]!)} align={align} apply={apply} />
+          <RingGroup key={g.key} group={g} rings={rings.slice(firsts[i], firsts[i]! + plan[i]!)} align={align} apply={apply} hold={hold} />
         ))}
       </RunScope>
     </div>
@@ -102,7 +105,7 @@ interface RingEntry {
   render: (place: RunItemPlace) => ReactElement;
 }
 
-function RingGroup({ group, rings, align, apply }: { group: SwatchRingGroup; rings: readonly SwatchRing[]; align: RunAlign; apply: SwatchApply }): ReactElement {
+function RingGroup({ group, rings, align, apply, hold }: { group: SwatchRingGroup; rings: readonly SwatchRing[]; align: RunAlign; apply: SwatchApply; hold: ControlHold }): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const { options, value, columns, lead, empty } = group;
   const current = value === undefined ? -1 : options.findIndex((o) => swatchId(o) === value);
@@ -115,9 +118,10 @@ function RingGroup({ group, rings, align, apply }: { group: SwatchRingGroup; rin
       <SwatchButton
         key={swatchId(options[i]!) ?? `none-${i}`}
         option={options[i]!}
-        tabStop={i === tab.stop}
+        tabStop={!hold.unreachable && i === tab.stop}
         current={i === current}
         apply={apply}
+        held={hold.focus}
         onKeyDown={ringKeyDown(i, columns, swatches, swatchKeyDown(i, options, columns, apply, swatches))}
         onFocus={() => tab.focused(i)}
         className={place.className}

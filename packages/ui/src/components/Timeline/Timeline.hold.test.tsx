@@ -108,3 +108,30 @@ describe('Timeline held', () => {
     expect(key()).toHaveAccessibleDescription('Busy');
   });
 });
+
+describe('Timeline held, in graph mode', () => {
+  const graph = () => document.querySelector<SVGSVGElement>('svg[role="group"]')!;
+  const graphKey = () => document.querySelectorAll<SVGElement>('[data-keyframe-index]')[1]!;
+
+  it('unheld, a graphed key steps', () => {
+    const calls = renderTimeline((n) => n, { mode: 'graph' });
+    fireEvent.keyDown(graphKey(), { key: 'ArrowUp' });
+    expect(calls.onChange).toHaveBeenCalled();
+  });
+
+  it('disabled with no reason, the graph is out of reach and steps nothing', () => {
+    const calls = renderTimeline((n) => <Disabled>{n}</Disabled>, { mode: 'graph' });
+    expect(graph()).toHaveAttribute('inert');
+    fireEvent.keyDown(graphKey(), { key: 'ArrowUp' });
+    expect(calls.onChange).not.toHaveBeenCalled();
+  });
+
+  it('held for a reason, the graph stays reachable, is marked, and leaves the reason to the timeline', () => {
+    const calls = renderTimeline((n) => <ReadOnly reason="Shared">{n}</ReadOnly>, { mode: 'graph' });
+    expect(graph()).not.toHaveAttribute('inert');
+    expect(graph()).toHaveAttribute('data-held', 'readOnly');
+    expect(graph()).not.toHaveAttribute('aria-describedby');
+    fireEvent.keyDown(graphKey(), { key: 'ArrowUp' });
+    expect(calls.onChange).not.toHaveBeenCalled();
+  });
+});

@@ -2,6 +2,8 @@ import { type ReactElement } from 'react';
 import { asPaint, type ColorSpace, type Paint } from '@weasel-js/core';
 import type { MeshGradientPaint } from '@weasel-js/core/mesh';
 import { ColorField } from '../ColorField';
+import { holdScope, useControlAccess, type HoldProps } from '../Disabled';
+import { heldState } from '../Disabled/controlHold';
 import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import { paintPreviewCss } from '@weasel-js/paint';
 import s from './MeshEditor.module.css';
@@ -13,8 +15,8 @@ const SPACES: readonly SegmentedBarItem<ColorSpace>[] = [
 ];
 
 /** Props for {@link MeshEditor}. `onInput` fires throughout a gesture and
- *  `onChange` once at its end. */
-export interface MeshEditorProps {
+ *  `onChange` once at its end. Disabled or read-only, every corner field and the space switch are held. */
+export interface MeshEditorProps extends HoldProps {
   value: MeshGradientPaint;
   /** Emitted as a `Paint`, which is what every paint control passes
    *  around — `Paint`'s discriminant stays closed over the built-in
@@ -40,6 +42,7 @@ export interface MeshEditorProps {
 export function MeshEditor(props: MeshEditorProps): ReactElement {
   const { value, onInput, onChange, spaceSwitch = true, className } = props;
   const space = value.interpolate ?? 'rgb';
+  const access = useControlAccess(props);
 
   const withCorner = (patchIndex: number, corner: number, color: string): Paint => asPaint({
     ...value,
@@ -53,40 +56,45 @@ export function MeshEditor(props: MeshEditorProps): ReactElement {
   });
 
   return (
-    <div className={[s.root, className].filter(Boolean).join(' ')}>
-      {value.patches.map((patch, patchIndex) => (
-        // A patch has no id; its position in the list is its identity, the way
-        // a gradient stop's is.
-        <div key={patchIndex} className={s.patch}>
-          <span
-            className={s.preview}
-            aria-hidden="true"
-            style={{ background: previewOf(value, patchIndex) }}
-          />
-          <div className={s.corners}>
-            {patch.colors.map((color, corner) => (
-              <ColorField
-                key={corner}
-                value={color}
-                alpha
-                aria-label={`Patch ${patchIndex + 1} corner ${corner + 1}`}
-                className={s.corner}
-                onInput={(next) => onInput?.(withCorner(patchIndex, corner, next))}
-                onChange={(next) => onChange(withCorner(patchIndex, corner, next))}
+    <div className={[s.root, className].filter(Boolean).join(' ')} data-held={heldState(access)}>
+      {holdScope(
+        props,
+        <>
+          {value.patches.map((patch, patchIndex) => (
+            // A patch has no id; its position in the list is its identity, the way
+            // a gradient stop's is.
+            <div key={patchIndex} className={s.patch}>
+              <span
+                className={s.preview}
+                aria-hidden="true"
+                style={{ background: previewOf(value, patchIndex) }}
               />
-            ))}
-          </div>
-        </div>
-      ))}
+              <div className={s.corners}>
+                {patch.colors.map((color, corner) => (
+                  <ColorField
+                    key={corner}
+                    value={color}
+                    alpha
+                    aria-label={`Patch ${patchIndex + 1} corner ${corner + 1}`}
+                    className={s.corner}
+                    onInput={(next) => onInput?.(withCorner(patchIndex, corner, next))}
+                    onChange={(next) => onChange(withCorner(patchIndex, corner, next))}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
 
-      {spaceSwitch && (
-        <SegmentedBar<ColorSpace>
-          items={SPACES}
-          value={space}
-          size="sm"
-          aria-label="Blend space"
-          onChange={(next) => next && onChange(asPaint({ ...value, interpolate: next }))}
-        />
+          {spaceSwitch && (
+            <SegmentedBar<ColorSpace>
+              items={SPACES}
+              value={space}
+              size="sm"
+              aria-label="Blend space"
+              onChange={(next) => next && onChange(asPaint({ ...value, interpolate: next }))}
+            />
+          )}
+        </>,
       )}
     </div>
   );

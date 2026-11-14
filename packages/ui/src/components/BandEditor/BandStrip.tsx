@@ -6,6 +6,7 @@ import s from './BandEditor.module.css';
 import { bandBounds, type Band } from './bands';
 import { bandName } from './retag';
 import { pct } from './track';
+import type { ControlHold } from '../Disabled/controlHold';
 
 /** One arrow-key step, as a fraction of the track; `shift` takes ten. */
 const KEY_STEP = 0.01;
@@ -40,6 +41,8 @@ export interface BandStripProps<T, F extends Quantity> {
   /** The seams' values at the end of a drag or on a keystroke. */
   onChange: (seams: number[]) => void;
   onCancel: () => void;
+  /** The editor's hold: a held strip moves no seam and locks nothing, and a disabled one selects nothing. */
+  hold: ControlHold;
 }
 
 const values = (thumbs: readonly Thumb[]): number[] => thumbs.map((t) => t.value);
@@ -49,7 +52,8 @@ const values = (thumbs: readonly Thumb[]): number[] => thumbs.map((t) => t.value
  * and each band is the region between two seams, which a drag moves whole.
  */
 export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): ReactElement {
-  const { bands, shown, lo, hi, scale, display, selectedIndex } = props;
+  const { bands, shown, lo, hi, scale, display, selectedIndex, hold } = props;
+  const selects = hold.access.state !== 'disabled';
   const neighbors = ({ thumbs, index }: BoundsCtx): [number, number] =>
     [thumbs[index - 1]?.value ?? lo, thumbs[index + 1]?.value ?? hi];
   const thumbs: Thumb[] = bands.slice(1).map((band, k) => ({
@@ -71,9 +75,11 @@ export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): R
         aria-label={bandName(shown, i, from, to, display)}
         aria-pressed={isSelected}
         data-band-index={i}
-        onPointerDown={props.onBandPointerDown(i)}
-        onFocus={props.onBandFocus(i)}
-        onContextMenu={props.onBandContextMenu(i)}
+        tabIndex={hold.tabIndex(0)}
+        {...hold.focus}
+        onPointerDown={selects ? props.onBandPointerDown(i) : undefined}
+        onFocus={selects ? props.onBandFocus(i) : undefined}
+        onContextMenu={hold.gate(props.onBandContextMenu(i))}
       >
         <span className={s.bandContent}>{props.renderBand?.(shown[i]!, i)}</span>
       </button>
@@ -84,25 +90,28 @@ export function BandStrip<T, F extends Quantity>(props: BandStripProps<T, F>): R
   const box = { '--be-from': pct(toUnit(lo)), '--be-to': pct(toUnit(hi)) } as CSSProperties;
   return (
     <div className={s.stripBox} style={box} data-band-strip="">
-      <Slider
-        className={s.strip}
-        thumbs={thumbs}
-        min={lo}
-        max={hi}
-        scale={scale}
-        stops={props.snapTo}
-        showStops={false}
-        stopSnapPx={props.snapPx}
-        keyStep={(thumb, steps) => fromUnit(toUnit(thumb.value) + steps * KEY_STEP)}
-        trackClick="none"
-        thumbFit="overhang"
-        thumbShape={SEAM_SHAPE}
-        renderRegion={renderRegion}
-        regionDrag
-        onInput={(next) => props.onInput(values(next))}
-        onChange={(next) => props.onChange(values(next))}
-        onCancel={props.onCancel}
-      />
+      {/* The editor tells the reason, for every part of it, so the seams only take its hold. */}
+      {hold.scope(
+        <Slider
+          className={s.strip}
+          thumbs={thumbs}
+          min={lo}
+          max={hi}
+          scale={scale}
+          stops={props.snapTo}
+          showStops={false}
+          stopSnapPx={props.snapPx}
+          keyStep={(thumb, steps) => fromUnit(toUnit(thumb.value) + steps * KEY_STEP)}
+          trackClick="none"
+          thumbFit="overhang"
+          thumbShape={SEAM_SHAPE}
+          renderRegion={renderRegion}
+          regionDrag
+          onInput={(next) => props.onInput(values(next))}
+          onChange={(next) => props.onChange(values(next))}
+          onCancel={props.onCancel}
+        />,
+      )}
     </div>
   );
 }

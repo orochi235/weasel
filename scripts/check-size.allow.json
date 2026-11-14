@@ -202,8 +202,7 @@
     "longestFunction": 136
   },
   "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
-    "lines": 406,
-    "longestFunction": 290
+    "longestFunction": 289
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
     "lines": 405,
@@ -223,7 +222,7 @@
     "longestFunction": 145
   },
   "packages/ui/src/components/Plot2D/Plot2D.tsx": {
-    "longestFunction": 216
+    "longestFunction": 214
   },
   "packages/ui/src/components/PrefSchemaEditor/AssetEditor.tsx": {
     "longestFunction": 183

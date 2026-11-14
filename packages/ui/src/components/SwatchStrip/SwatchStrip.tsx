@@ -5,6 +5,8 @@ import { useRun } from '../Run';
 import { SwatchGrid, swatchId, type SwatchChange, type SwatchGridOption } from '../SwatchGrid';
 import { SwatchRings, type SwatchRingGroup } from '../SwatchGrid/SwatchRings';
 import { Select } from '../Select';
+import { holdScope, useControlAccess, type HoldProps } from '../Disabled';
+import { heldState } from '../Disabled/controlHold';
 import {
   RecentColorsProvider,
   normalizeRecentColor,
@@ -18,8 +20,9 @@ import s from './SwatchStrip.module.css';
 /** What {@link SwatchStrip} is told when a swatch applies: its color, whatever its id, and the swatch. */
 export type SwatchColorChange = (color: string | null, option: SwatchGridOption) => void;
 
-/** Props for {@link SwatchStrip}. */
-export interface SwatchStripProps {
+/** Props for {@link SwatchStrip}. Disabled or read-only, its swatches and palette picker are held as a
+ *  {@link SwatchGrid}'s are. */
+export interface SwatchStripProps extends HoldProps {
   /** The color to mark current, in either row. `null` marks "no paint". */
   value?: string | null;
   /** A swatch applied: click, Enter or Space, with its color and the swatch. */
@@ -76,6 +79,7 @@ function same(a: string | null, b: string | null): boolean {
  */
 export function SwatchStrip(props: SwatchStripProps): ReactElement {
   const { value, className } = props;
+  const access = useControlAccess(props);
   const onChange: SwatchChange = (_, o) => props.onChange(o.value, o);
   const alt = props.onAltChange;
   const onAltChange: SwatchChange | undefined = alt && ((_, o) => alt(o.value, o));
@@ -171,11 +175,12 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
       className={[curved ? s.rings : s.root, className].filter(Boolean).join(' ')}
       role="group"
       aria-label={props['aria-label'] ?? 'Swatches'}
+      data-held={heldState(access)}
     >
       {/* A store given by prop is where applies here record too. */}
-      {props.store && props.store !== ctxStore
+      {holdScope(props, props.store && props.store !== ctxStore
         ? <RecentColorsProvider store={props.store}>{grids}</RecentColorsProvider>
-        : grids}
+        : grids)}
     </div>
   );
 }

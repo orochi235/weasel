@@ -92,6 +92,13 @@ export interface Plot2DProps {
    *  whose children are presentational to assistive technology. */
   role?: string;
   'aria-label'?: string;
+  /** Forwarded to the svg, for a plot whose marks are held: `aria-disabled` covers every mark inside it. */
+  'aria-disabled'?: boolean;
+  'aria-describedby'?: string;
+  /** Forwarded to the svg, for the stylesheet. */
+  'data-held'?: string;
+  /** Forwarded to the svg: out of reach, its marks included. */
+  inert?: boolean;
   className?: string;
   style?: CSSProperties;
   /** Pointer down on the SVG. Receives both plot- and model-space coords
@@ -121,6 +128,9 @@ export interface Plot2DHandle {
 }
 
 type Axis = 'x' | 'y';
+
+// React's SVG attributes leave out `inert`, which every element takes.
+const INERT = { inert: true };
 
 const TICK_SPACING_PX: Record<Axis, number> = { x: 64, y: 24 };
 const TICK_INSET_PX: Record<Axis, number> = { x: 16, y: 4 };
@@ -173,17 +183,11 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
     width, height,
     xRange = [0, 1],
     yRange = [0, 1],
-    grid,
-    axes,
-    xTicks,
-    yTicks,
+    grid, axes, xTicks, yTicks,
     tabIndex,
     role = 'img',
-    className,
-    style,
-    onPointerDown,
-    onContextMenu,
-    onKeyDown,
+    className, style,
+    onPointerDown, onContextMenu, onKeyDown,
     children,
   } = props;
 
@@ -321,6 +325,10 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
       viewBox={`0 0 ${width} ${height}`}
       role={role}
       aria-label={props['aria-label']}
+      aria-disabled={props['aria-disabled']}
+      aria-describedby={props['aria-describedby']}
+      data-held={props['data-held']}
+      {...(props.inert ? INERT : undefined)}
       tabIndex={tabIndex}
       onPointerDown={onPointerDown ? (e) => onPointerDown(e, coordsOf(e)) : undefined}
       onContextMenu={onContextMenu ? (e) => onContextMenu(e, coordsOf(e)) : undefined}
