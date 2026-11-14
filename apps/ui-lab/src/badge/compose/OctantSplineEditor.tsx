@@ -1,59 +1,64 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
-import { useLatest } from '@weasel-js/core';
-import { transformPoint, invert } from '@weasel-js/geom';
-import { OCTANT_SPLINE_MAX_ANCHORS } from '@weasel-js/ui/components/Badge/geometry';
-import type { SplineAnchor, SplineMode } from './splineAnchors';
 import {
-  dragEnd, dragInterior, insertionAt, maxAngle, normalAxisAt, polarPoint, projectOntoAxis, sampleCurve, wheelWeight,
-  type Axis, type Point,
-} from './splineGeometry';
+  ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, type Tool, useAction, useActionsRegistry,
+  useGestureDispatcher, type WorldPoint,
+} from '@weasel-js/core';
+import { invert, transformPoint } from '@weasel-js/geom';
+import { useLatest } from '@weasel-js/react';
+import { type RefObject, useMemo, useRef, useState } from 'react';
+import { type SplineEditorInput, splineEditorActions } from './splineActions';
+import type { SplineAnchor, SplineMode } from './splineAnchors';
+import { maxAngle, polarPoint, sampleCurve } from './splineGeometry';
 import s from './OctantSplineEditor.module.css';
 
 const RINGS = [10, 20, 30, 40, 50, 60, 70];
 const RAY_LENGTH = 75;
 
-type SvgRef = RefObject<SVGSVGElement | null>;
-type OnAnchorChange = (idx: number, next: SplineAnchor) => void;
+const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
+const CHANNELS = { pointer: true, wheel: true, contextMenu: true, hover: false, pinch: false, ingest: false, carry: false } as const;
 
-function toViewBox(svg: SVGSVGElement | null, clientX: number, clientY: number): Point | null {
+/** A client point in the editor's view box, which is the world its actions read. */
+function toViewBox(svg: SVGSVGElement | null, clientX: number, clientY: number): WorldPoint {
   const ctm = svg?.getScreenCTM();
   const inverse = ctm && invert([ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f]);
-  if (!inverse) return null;
+  if (!inverse) return { x: Number.NaN, y: Number.NaN };
   const [x, y] = transformPoint(inverse, clientX, clientY);
   return { x, y };
 }
 
-/**
- * A pressed anchor follows the mouse until release. An end anchor slides along
- * its ray; an interior one moves freely, or along `axis` when the press gave one.
- */
-function useAnchorDrag(svgRef: SvgRef, mode: SplineMode, anchors: SplineAnchor[], onAnchorChange: OnAnchorChange) {
-  const [drag, setDrag] = useState<{ idx: number; axis: Axis | null } | null>(null);
-  const latest = useLatest({ mode, anchors, onAnchorChange });
-  useEffect(() => {
-    if (!drag) return;
-    const onMouseMove = (e: MouseEvent) => {
-      const local = toViewBox(svgRef.current, e.clientX, e.clientY);
-      if (!local) return;
-      const now = latest.current;
-      const last = now.anchors.length - 1;
-      if (drag.idx === 0 || drag.idx === last) {
-        const end = drag.idx === 0 ? 'first' : 'last';
-        now.onAnchorChange(drag.idx, dragEnd(now.mode, end, local, now.anchors[drag.idx].w));
-        return;
-      }
-      const point = drag.axis ? projectOntoAxis(drag.axis, local) : local;
-      now.onAnchorChange(drag.idx, dragInterior(now.mode, now.anchors, drag.idx, point));
-    };
-    const onMouseUp = () => setDrag(null);
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-  }, [drag, latest, svgRef]);
-  return { dragIdx: drag?.idx ?? null, startDrag: (idx: number, axis: Axis | null) => setDrag({ idx, axis }) };
+function Dispatch({ hostRef, svgRef, input }: {
+  hostRef: RefObject<HTMLDivElement | null>;
+  svgRef: RefObject<SVGSVGElement | null>;
+  input: { readonly current: SplineEditorInput };
+}) {
+  const registry = useActionsRegistry();
+  const [move, insert, remove, weigh] = useMemo(() => splineEditorActions(input), [input]);
+  useAction(move!);
+  useAction(insert!);
+  useAction(remove!);
+  useAction(weigh!);
+  useGestureDispatcher({
+    canvasRef: hostRef,
+    actions: registry!,
+    entriesById: NO_TOOLS,
+    keyboard: false,
+    hears: 'own',
+    channels: CHANNELS,
+    clientToWorld: (x, y) => toViewBox(svgRef.current, x, y),
+  });
+  return null;
+}
+
+/** Mounts the editor's own dispatcher, its actions in a registry of their own. Renders nothing. */
+function SplineEditorInputs(props: Parameters<typeof Dispatch>[0]) {
+  return (
+    <DepRegistryProvider>
+      <ActiveToolContextProvider>
+        <ActionsProvider>
+          <Dispatch {...props} />
+        </ActionsProvider>
+      </ActiveToolContextProvider>
+    </DepRegistryProvider>
+  );
 }
 
 function Grid({ mode }: { mode: SplineMode }) {
@@ -81,15 +86,7 @@ function Grid({ mode }: { mode: SplineMode }) {
   );
 }
 
-function AnchorDot({ anchor, at, pinned, active, onPress, onDelete, onWeight }: {
-  anchor: SplineAnchor;
-  at: Point;
-  pinned: boolean;
-  active: boolean;
-  onPress: (shift: boolean) => void;
-  onDelete: () => void;
-  onWeight: (w: number) => void;
-}) {
+function AnchorDot({ anchor, at, pinned, active }: { anchor: SplineAnchor; at: { x: number; y: number }; pinned: boolean; active: boolean }) {
   return (
     <g>
       <line x1="0" y1="0" x2={at.x.toFixed(2)} y2={at.y.toFixed(2)} className={s.spoke} strokeWidth="0.25" />
@@ -101,18 +98,6 @@ function AnchorDot({ anchor, at, pinned, active, onPress, onDelete, onWeight }: 
         cy={at.y}
         r={active ? 2.6 : 1.5 + anchor.w * 0.7}
         strokeWidth="0.7"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          onPress(e.shiftKey);
-        }}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          onDelete();
-        }}
-        onWheel={(e) => {
-          e.preventDefault();
-          onWeight(wheelWeight(anchor.w, e.deltaY));
-        }}
       />
       <text x={at.x + 2.5} y={at.y - 1.5} fontSize="2.8" className={s.anchorLabel}>
         {`(${anchor.s.toFixed(2)}, ${anchor.r.toFixed(1)}) w${anchor.w.toFixed(1)}`}
@@ -121,62 +106,60 @@ function AnchorDot({ anchor, at, pinned, active, onPress, onDelete, onWeight }: 
   );
 }
 
-/** One octant (or quadrant) of a spline base, drawn in polar form with its anchors as draggable dots. */
-export function OctantSplineEditor({ anchors, mode, evalAtS, onAnchorChange, onAnchorDelete, onAnchorAdd }: {
+/** One octant (or quadrant) of a spline base, drawn in polar form with its anchors as dots its actions edit. */
+export function OctantSplineEditor({ anchors, mode, evalAtS, onAnchorDraft, onAnchorChange, onAnchorDelete, onAnchorAdd }: {
   anchors: SplineAnchor[];
   mode: SplineMode;
   evalAtS: (s: number) => number;
-  onAnchorChange: OnAnchorChange;
+  /** An anchor as a drag passes through it. */
+  onAnchorDraft: (idx: number, next: SplineAnchor) => void;
+  /** An anchor settled: a drag's end, or a weight change. */
+  onAnchorChange: (idx: number, next: SplineAnchor) => void;
   onAnchorDelete: (idx: number) => void;
   onAnchorAdd: (s: number, r: number) => void;
 }) {
+  const hostRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const { dragIdx, startDrag } = useAnchorDrag(svgRef, mode, anchors, onAnchorChange);
+  const [active, setActive] = useState<number | null>(null);
   const samples = sampleCurve(mode, evalAtS);
+  const input = useLatest<SplineEditorInput>({
+    mode, anchors, samples, setActive,
+    draft: onAnchorDraft, commit: onAnchorChange, remove: onAnchorDelete, insert: onAnchorAdd,
+  });
   const last = anchors.length - 1;
   return (
     <div className={s.editor}>
-      <svg
-        ref={svgRef}
-        viewBox={mode === 'octant' ? '-8 -80 90 90' : '-8 -82 90 92'}
-        className={s.canvas}
-        data-dragging={dragIdx !== null || undefined}
-        onClick={(e) => {
-          if (!e.altKey || anchors.length >= OCTANT_SPLINE_MAX_ANCHORS) return;
-          const local = toViewBox(svgRef.current, e.clientX, e.clientY);
-          if (!local) return;
-          const at = insertionAt(mode, local);
-          onAnchorAdd(at.s, at.r);
-        }}
-      >
-        <Grid mode={mode} />
-        <polyline
-          points={samples.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}
-          className={s.curve}
-          strokeWidth="0.7"
-          vectorEffect="non-scaling-stroke"
-        />
-        {anchors.map((anchor, idx) => {
-          const at = polarPoint(mode, anchor.s, anchor.r);
-          const pinned = idx === 0 || idx === last;
-          return (
+      <SplineEditorInputs hostRef={hostRef} svgRef={svgRef} input={input} />
+      <div ref={hostRef} className={s.host}>
+        <svg
+          ref={svgRef}
+          viewBox={mode === 'octant' ? '-8 -80 90 90' : '-8 -82 90 92'}
+          className={s.canvas}
+          data-dragging={active !== null || undefined}
+        >
+          <Grid mode={mode} />
+          <polyline
+            points={samples.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}
+            className={s.curve}
+            strokeWidth="0.7"
+            vectorEffect="non-scaling-stroke"
+          />
+          {anchors.map((anchor, idx) => (
             <AnchorDot
               key={idx}
               anchor={anchor}
-              at={at}
-              pinned={pinned}
-              active={dragIdx === idx}
-              onPress={(shift) => startDrag(idx, shift && !pinned ? normalAxisAt(samples, at) : null)}
-              onDelete={() => {
-                if (!pinned && anchors.length > 3) onAnchorDelete(idx);
-              }}
-              onWeight={(w) => onAnchorChange(idx, { s: anchor.s, r: anchor.r, w })}
+              at={polarPoint(mode, anchor.s, anchor.r)}
+              pinned={idx === 0 || idx === last}
+              active={active === idx}
             />
-          );
-        })}
-      </svg>
+          ))}
+        </svg>
+      </div>
       <p className={s.help}>
-        <strong>Drag</strong> a dot to move it freely. <strong>Shift-drag</strong> locks motion to the curve's local normal axis (slides the anchor toward/away from the curve without changing its tangential position). <strong>Scroll</strong> over a dot to change its weight (visual size scales with weight). <strong>Right-click</strong> an interior dot to delete it. <strong>Alt-click</strong> anywhere on the canvas to insert a new anchor. Endpoint anchors (cream) are pinned to the cardinal / diagonal axes.
+        <strong>Drag</strong> a dot to move it. <strong>Shift-drag</strong> locks it to the curve's normal, so it slides
+        toward or away from the curve without moving along it. <strong>Scroll</strong> over a dot to change its weight,
+        which its size follows. <strong>Right-click</strong> an interior dot to delete it. <strong>Alt-click</strong> to
+        insert an anchor. The end anchors (cream) stay on the cardinal and diagonal axes.
       </p>
     </div>
   );

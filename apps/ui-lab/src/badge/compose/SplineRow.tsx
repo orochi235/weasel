@@ -12,17 +12,17 @@ import {
 type RowContext = Parameters<ControlRenderer>[0];
 
 /** The curve leaf of a spline base's group: the base is the group's key, the mode its sibling. */
-function SplineRow({ path, value, values, setValue, disabled }: RowContext) {
+function SplineRow({ path, value, values, setValue, draftValue, disabled }: RowContext) {
   const group = path.slice(0, path.lastIndexOf('.'));
   const base = group.slice(group.lastIndexOf('.') + 1) as BadgeBase;
   const curve = value as SplineCurve;
   const mode = splineMode((valueAtPath(values, group) ?? {}) as Params);
   // The anchor helpers read the mode beside the slots, as the base does.
   const bag: Params = { ...curve, mode };
-  const write = (next: Params) => {
-    const { mode: _mode, ...slots } = next;
-    setValue(slots);
-  };
+  const slotsOf = ({ mode: _mode, ...slots }: Params): Params => slots;
+  const write = (next: Params) => setValue(slotsOf(next));
+  // A drag drafts each move where the panel keeps drafts, so its release settles them as one step.
+  const draft = (next: Params) => (draftValue ?? setValue)(slotsOf(next));
   const anchors = readAnchors(bag);
   return (
     <>
@@ -41,6 +41,7 @@ function SplineRow({ path, value, values, setValue, disabled }: RowContext) {
         anchors={anchors}
         mode={mode}
         evalAtS={splineEvaluator(base, anchors)}
+        onAnchorDraft={(idx, next) => draft(withAnchor(bag, idx, next))}
         onAnchorChange={(idx, next) => write(withAnchor(bag, idx, next))}
         onAnchorDelete={(idx) => write(withoutAnchor(bag, idx))}
         onAnchorAdd={(s, r) => write(withInsertedAnchor(bag, s, r))}

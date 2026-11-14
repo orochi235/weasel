@@ -4,6 +4,10 @@
   gap: 6px;
 }
 
+.host {
+  touch-action: none;
+}
+
 .canvas {
   width: 100%;
   aspect-ratio: 1;
