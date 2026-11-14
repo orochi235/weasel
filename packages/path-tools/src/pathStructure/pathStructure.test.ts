@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pathToAnchors, polygonFromPoints, type PointOrigin, type PolygonPath } from '@weasel-js/geom';
 import { ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
-import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { reversePathAction, setPathStartAction } from './pathStructure';
 
 const SQUARE = polygonFromPoints([{ x: 100, y: 100 }, { x: 140, y: 100 }, { x: 140, y: 140 }, { x: 100, y: 140 }]);

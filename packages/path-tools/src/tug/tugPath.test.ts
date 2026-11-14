@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PathBuilder, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { tugPathAction } from './tugPath';
 
 /** Open path (0, 0) → (100, 0) → (100, 50): anchors 0, 1, 2. */

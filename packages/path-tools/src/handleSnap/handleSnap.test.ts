@@ -5,7 +5,7 @@ import { anchorsToPath, DEG_TO_RAD, PATH_C, PATH_M, PATH_Z, pathToAnchors, type 
 import { IDENTITY_POSE_COMPOSITION, createScene, createSnapOutcomeStore, editAnchorsAction, type SnapDep } from '@weasel-js/core';
 import {
   createSnapSession2dForTests as createSnapSession2d,
-  makeEditAnchorsDepForTests as makeEditAnchorsDep,
+  createEditAnchorsDepForTests as makeEditAnchorsDep,
 } from '@weasel-js/core/test-seams';
 import { createHandleSnapExtension, handleSnapSource, type HandleSnapOptions } from './handleSnap';
 

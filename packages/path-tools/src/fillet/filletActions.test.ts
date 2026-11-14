@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ActionDeps, AffordanceHit, ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import { cornerAt, cornerSpecAt, polygonFromPoints, resolveCorners, withCorner, type PolygonPath } from '@weasel-js/geom';
 import type { EditAnchorsDep } from '@weasel-js/core';
-import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { editFilletAction } from './editFillet';
 import { cycleFilletAction, DEFAULT_FILLET_TRIM_SHARE, setFilletsAction } from './filletCommands';
 

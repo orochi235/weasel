@@ -24,7 +24,7 @@ export function _resetPaintKindsForTests(): void {
 }
 
 export { _resetMarkersForTests } from '@weasel-js/stroke/test-seams';
-export { makeEditAnchorsDep as makeEditAnchorsDepForTests } from 'interactions/actions/testUtils';
+export { makeEditAnchorsDep as createEditAnchorsDepForTests } from 'interactions/actions/testUtils';
 export {
   useEditAnchorsDepSource as useEditAnchorsDepSourceForTests, type EditAnchorsStateRef,
 } from 'canvas/deps/editAnchors';

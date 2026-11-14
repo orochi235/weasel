@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pathToAnchors, type PolygonPath, type SpiroPoint } from '@weasel-js/geom';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { spiroNodeData } from './spiroShape';
 import { spiroSegmentPress } from './spiroInsertPoint';
 

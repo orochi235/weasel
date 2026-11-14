@@ -3,7 +3,7 @@ import type { AffordanceHit, InvocationCtx, OngoingHandle, OngoingInvoker } from
 import { overlaysOf } from '@weasel-js/routing';
 import { PATH_L, PATH_M, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { editAnchorsAction } from '@weasel-js/core';
-import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { createDrapeExtension, type DrapeOptions } from './drape';
 
 const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };

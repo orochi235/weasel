@@ -3644,8 +3644,8 @@
     "SnapSession2dOptions": "type",
     "_resetMarkersForTests": "function",
     "_resetPaintKindsForTests": "function",
+    "createEditAnchorsDepForTests": "function",
     "createSnapSession2dForTests": "function",
-    "makeEditAnchorsDepForTests": "function",
     "rootsTreeForTests": "function",
     "useEditAnchorsDepSourceForTests": "function"
   }

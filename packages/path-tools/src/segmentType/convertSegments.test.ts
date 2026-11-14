@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pathToAnchors, polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
 import { ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
-import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { convertSegmentAtAction, convertSegmentsAction } from './convertSegments';
 
 const VIEW = { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }), set: () => {} };

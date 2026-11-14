@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pathFromD, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { ActionDisabledReason, type ActionDeps, type ImmediateInvoker } from '@weasel-js/routing';
-import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { addExtremeAnchorsAction } from './addExtremes';
 
 /** Two arches, each with one extreme at its top, then a straight tail:

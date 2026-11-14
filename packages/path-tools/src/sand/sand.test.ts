@@ -4,7 +4,7 @@ import {
   anchorsToPath, cubicPointAt, pathToAnchors, type AnchorSet, type PenAnchor, type PolygonPath,
 } from '@weasel-js/geom';
 import { actionCursor, tuneAction, type InvocationCtx, type OngoingHandle, type OngoingInvoker } from '@weasel-js/routing';
-import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
+import { createEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import {
   sandAction, SAND_RADIUS_PX,
 } from './sand';
