@@ -10,11 +10,8 @@ import { Callout } from '@weasel-js/ui/components/Callout';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { ComboBox } from '@weasel-js/ui/components/ComboBox';
-import {
-  type ControlPoint,
-  CurveEditor,
-  POINT_PLOTTER_PROPS,
-} from '@weasel-js/ui/components/CurveEditor';
+import type { ControlPoint } from '@weasel-js/ui/components/CurveEditor';
+import { CurveEditor, POINT_PLOTTER_PROPS } from '@weasel-js/ui/components/CurveEditor';
 import { DataGrid } from '@weasel-js/ui/components/DataGrid';
 import { Dialog } from '@weasel-js/ui/components/Dialog';
 import { Disclosure } from '@weasel-js/ui/components/Disclosure';
@@ -695,8 +692,6 @@ function EditorsAndPlots() {
           {...POINT_PLOTTER_PROPS}
           value={points}
           onInput={setPoints}
-          xRange={[0, 1]}
-          yRange={[0, 1]}
           grid={{ divisions: 3 }}
           axes={{}}
           width={260}
