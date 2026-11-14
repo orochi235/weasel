@@ -33,8 +33,7 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE",
-    "CHANGELOG.md"
+    "LICENSE"
   ],
   "weaselIcons": {
     "table": "./dist/icons.table.json"
