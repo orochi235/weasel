@@ -88,6 +88,9 @@ jobs:
       # (docs/conventions.md). The report alone exits 0 whatever it finds.
       - run: npm run audit:jsdoc -- --quiet --check
       - run: npm run typecheck
+      # Each package's own program, the one an editor shows: a type the root program loads only through a
+      # package's index can be missing from a file imported by subpath (2026-11-14, 128 errors in three packages).
+      - run: npm run typecheck:packages
       # Two things (eslint.config.js). The scoped no-restricted-imports blocks
       # guard one-way dependency arrows — core/ ← domains/, and the leaf purity
       # of @weasel-js/font and @weasel-js/audio — whose violation is a

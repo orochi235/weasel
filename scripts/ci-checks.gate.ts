@@ -18,8 +18,8 @@ declare module 'vitest' {
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const run = promisify(execFile);
 const CHECK_ENV = stepEnv(process.env);
-/** By their times in a full run on `main` (2026-10-29): typecheck 97 s, check:needs 59. */
-const LONGEST_FIRST = ['typecheck', 'check:needs', 'check:first-publish', 'audit:jsdoc', 'check:test-projects'];
+/** By their times in a full run on `main` (2026-10-29): typecheck 97 s, check:needs 59; typecheck:packages 92 s (2026-11-14). */
+const LONGEST_FIRST = ['typecheck:packages', 'typecheck', 'check:needs', 'check:first-publish', 'audit:jsdoc', 'check:test-projects'];
 
 const output = (error: unknown) => {
   const { stdout, stderr } = error as { stdout?: string; stderr?: string };
