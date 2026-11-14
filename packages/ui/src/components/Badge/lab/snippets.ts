@@ -1,4 +1,4 @@
-import { ALL_SHAPES } from '../shapes';
+import { BADGE_SHAPES } from '../catalog';
 import { SHAPE_CONTROLS, defaultParamsFor } from '../shapeControls';
 import { lookAttrs } from '../looks';
 import type { BadgeShape } from '../types';
@@ -41,13 +41,13 @@ export function composeSnippet(lab: Composed): string {
 export type ShapeParamSets = Record<BadgeShape, LabParams>;
 
 export function defaultShapeParams(): ShapeParamSets {
-  return Object.fromEntries(ALL_SHAPES.map((shape) => [shape, defaultParamsFor(shape)])) as ShapeParamSets;
+  return Object.fromEntries(BADGE_SHAPES.map((shape) => [shape, defaultParamsFor(shape)])) as ShapeParamSets;
 }
 
 /** Each shape's params that differ from its controls' defaults; a shape with none is left out. */
 export function changedShapeParams(all: ShapeParamSets): Record<string, LabParams> {
   const diff: Record<string, LabParams> = {};
-  for (const shape of ALL_SHAPES) {
+  for (const shape of BADGE_SHAPES) {
     const current = all[shape];
     const controls = SHAPE_CONTROLS[shape] ?? [];
     if (!current || controls.length === 0) continue;

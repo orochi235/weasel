@@ -34,8 +34,11 @@ export interface BadgeOctantSplineBaseParams {
   samples?: number;
 }
 
+/** The fewest and the most anchors a spline base's curve runs through, its two ends included. */
+export const OCTANT_SPLINE_MIN_ANCHORS = 3;
 export const OCTANT_SPLINE_MAX_ANCHORS = 12;
 
+/** The params a spline base draws with where its `baseParams` leave one out; `octant-bspline` shares them. */
 export const OCTANT_SPLINE_DEFAULTS: Required<BadgeOctantSplineBaseParams> = {
   mode: 'octant',
   count: 5,
@@ -51,12 +54,14 @@ export const OCTANT_SPLINE_DEFAULTS: Required<BadgeOctantSplineBaseParams> = {
 
 const DEFAULTS = OCTANT_SPLINE_DEFAULTS;
 
-/** One control point of the octant curve: position `s` along it, radius `r`, weight `w`. */
-export interface Anchor { s: number; r: number; w: number }
+/** One control point of a spline base's curve: position `s` along it (0 to 1), radius `r`, weight `w`. */
+export interface BadgeSplineAnchor { s: number; r: number; w: number }
+type Anchor = BadgeSplineAnchor;
 
-export function extractAnchorPairs(params: BadgeOctantSplineBaseParams = {}): Anchor[] {
+/** The anchors `params` name, in order along the curve with its ends pinned to s = 0 and s = 1; no weight under `minWeight`. */
+export function extractAnchorPairs(params: BadgeOctantSplineBaseParams = {}, minWeight = 0): Anchor[] {
   const cfg = { ...DEFAULTS, ...params };
-  const count = Math.max(3, Math.min(Math.floor(cfg.count), OCTANT_SPLINE_MAX_ANCHORS));
+  const count = Math.max(OCTANT_SPLINE_MIN_ANCHORS, Math.min(Math.floor(cfg.count), OCTANT_SPLINE_MAX_ANCHORS));
   const sKeys: (keyof Required<BadgeOctantSplineBaseParams>)[] = ['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11'];
   const rKeys: (keyof Required<BadgeOctantSplineBaseParams>)[] = ['r0','r1','r2','r3','r4','r5','r6','r7','r8','r9','r10','r11'];
   const wKeys: (keyof Required<BadgeOctantSplineBaseParams>)[] = ['w0','w1','w2','w3','w4','w5','w6','w7','w8','w9','w10','w11'];
@@ -65,7 +70,7 @@ export function extractAnchorPairs(params: BadgeOctantSplineBaseParams = {}): An
     pairs.push({
       s: Math.max(0, Math.min(1, Number(cfg[sKeys[i]]))),
       r: Math.max(0, Number(cfg[rKeys[i]])),
-      w: Math.max(0, Number(cfg[wKeys[i]] ?? 1)),
+      w: Math.max(minWeight, Number(cfg[wKeys[i]] ?? 1)),
     });
   }
   pairs.sort((a, b) => a.s - b.s);
@@ -83,7 +88,7 @@ export function extractAnchorPairs(params: BadgeOctantSplineBaseParams = {}): An
  * vector M[0..n] which feeds the standard cubic-spline evaluation formula. Solves a
  * tridiagonal system in O(n).
  */
-function solveCubicSpline(anchors: Anchor[]): number[] {
+function solveCubicSpline(anchors: readonly Anchor[]): number[] {
   const n = anchors.length - 1;
   const h: number[] = new Array(n);
   for (let i = 0; i < n; i++) h[i] = Math.max(1e-9, anchors[i + 1].s - anchors[i].s);
@@ -123,15 +128,15 @@ function solveCubicSpline(anchors: Anchor[]): number[] {
 }
 
 interface CompiledSpline {
-  anchors: Anchor[];
+  anchors: readonly Anchor[];
   M: number[];
 }
 
-export function compileSpline(anchors: Anchor[]): CompiledSpline {
+function compileSpline(anchors: readonly Anchor[]): CompiledSpline {
   return { anchors, M: solveCubicSpline(anchors) };
 }
 
-export function evalCompiled(s: number, spline: CompiledSpline): number {
+function evalCompiled(s: number, spline: CompiledSpline): number {
   const { anchors, M } = spline;
   const N = anchors.length;
   if (N === 0) return 0;
@@ -155,30 +160,46 @@ export function evalCompiled(s: number, spline: CompiledSpline): number {
   return baseLine + curvatureTerm;
 }
 
+/**
+ * The radius r(s) of the interpolating `octant-spline` curve through `anchors`, which are in order along it from
+ * s = 0 to s = 1: a cubic through every anchor, flat at both ends, an anchor's weight sharpening (over 1) or easing
+ * (under 1) the bend there.
+ */
+export function octantSplineRadius(anchors: readonly BadgeSplineAnchor[]): (s: number) => number {
+  const spline = compileSpline(anchors);
+  return (s) => evalCompiled(s, spline);
+}
+
+/** The outline of a spline base: `radiusAt` swept round the circle, mirrored per octant or repeated per quadrant. */
+export function splineVertices(
+  cfg: Pick<Required<BadgeOctantSplineBaseParams>, 'mode' | 'rotation' | 'samples'>,
+  radiusAt: (s: number) => number,
+): [number, number][] {
+  const rot = cfg.rotation * DEG_TO_RAD;
+  const N = Math.max(48, Math.floor(cfg.samples));
+  const cx = 50, cy = 50;
+  const verts: [number, number][] = [];
+  const HALF_PI = Math.PI / 2;
+  for (let i = 0; i < N; i++) {
+    const θ = (i / N) * 2 * Math.PI;
+    const θRel = θ - rot;
+    let s: number;
+    if (cfg.mode === 'quadrant') {
+      const θQ = ((θRel % HALF_PI) + HALF_PI) % HALF_PI;
+      s = θQ / HALF_PI;
+    } else {
+      s = Math.abs(Math.sin(2 * θRel));
+    }
+    const r = radiusAt(s);
+    verts.push([cx + r * Math.cos(θ), cy + r * Math.sin(θ)]);
+  }
+  return verts;
+}
+
 const OctantSpline: BaseModule<BadgeOctantSplineBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
-    const anchors = extractAnchorPairs(cfg);
-    const spline = compileSpline(anchors);
-    const rot = cfg.rotation * DEG_TO_RAD;
-    const N = Math.max(48, Math.floor(cfg.samples));
-    const cx = 50, cy = 50;
-    const verts: [number, number][] = [];
-    const HALF_PI = Math.PI / 2;
-    for (let i = 0; i < N; i++) {
-      const θ = (i / N) * 2 * Math.PI;
-      const θRel = θ - rot;
-      let s: number;
-      if (cfg.mode === 'quadrant') {
-        const θQ = ((θRel % HALF_PI) + HALF_PI) % HALF_PI;
-        s = θQ / HALF_PI;
-      } else {
-        s = Math.abs(Math.sin(2 * θRel));
-      }
-      const r = evalCompiled(s, spline);
-      verts.push([cx + r * Math.cos(θ), cy + r * Math.sin(θ)]);
-    }
-    return polygonSampler(verts, boxW, boxH);
+    return polygonSampler(splineVertices(cfg, octantSplineRadius(extractAnchorPairs(cfg))), boxW, boxH);
   },
   defaults: DEFAULTS,
   insets: { top: 10, right: 14, bottom: 10, left: 14 },

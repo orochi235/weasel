@@ -1,8 +1,9 @@
 import { clamp } from '@weasel-js/geom';
 import type { BadgeBase } from '@weasel-js/ui/components/Badge';
 import { type BadgeOctantSplineBaseParams } from '@weasel-js/ui/components/Badge';
-import { OCTANT_BSPLINE_MIN_WEIGHT, compileNurbs, evalNurbsAtS } from '../bases/OctantBSpline';
-import { OCTANT_SPLINE_DEFAULTS, OCTANT_SPLINE_MAX_ANCHORS, compileSpline, evalCompiled, type Anchor } from '../bases/OctantSpline';
+import {
+  type BadgeSplineAnchor as Anchor, OCTANT_SPLINE_DEFAULTS, OCTANT_SPLINE_MAX_ANCHORS, octantBSplineRadius, octantSplineRadius,
+} from '@weasel-js/ui/components/Badge/geometry';
 import type { LabParams } from './snapshot';
 
 export type SplineAnchor = Anchor;
@@ -102,10 +103,5 @@ export function withInsertedAnchor(params: SplineParams, s: number, r: number): 
 
 /** r(s) as the named base draws it through `anchors`. */
 export function splineEvaluator(base: BadgeBase, anchors: SplineAnchor[]): (s: number) => number {
-  if (base === 'octant-bspline') {
-    const nurbs = compileNurbs(anchors.map((a) => ({ ...a, w: Math.max(OCTANT_BSPLINE_MIN_WEIGHT, a.w) })));
-    return (s) => evalNurbsAtS(s, nurbs);
-  }
-  const spline = compileSpline(anchors);
-  return (s) => evalCompiled(s, spline);
+  return base === 'octant-bspline' ? octantBSplineRadius(anchors) : octantSplineRadius(anchors);
 }

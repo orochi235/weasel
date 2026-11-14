@@ -18,6 +18,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./components/Badge/geometry": {
+      "types": "./dist/components/Badge/geometry.d.ts",
+      "import": "./dist/components/Badge/geometry.js"
+    },
     "./components/*": {
       "types": "./dist/components/*/index.d.ts",
       "import": "./dist/components/*/index.js"

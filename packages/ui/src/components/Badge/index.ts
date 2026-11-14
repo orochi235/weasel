@@ -2,6 +2,11 @@ export { Badge } from './Badge';
 export type { BadgeDomProps, BadgeOwnProps, BadgeProps } from './Badge';
 export type { BadgeCorner, BadgeShape, BadgeVariant, BadgeSize } from './types';
 export { BADGE_VARIANT_ICONS } from './variantIcons';
+export {
+  BADGE_BASES, BADGE_EFFECTS, BADGE_SHAPES, badgeEffectZone, badgeShapeRendering,
+  type BadgeEffectZone, type BadgeShapeRendering,
+} from './catalog';
+export { BADGE_LOOKS, type BadgeLook, lookAttrs, lookOf, lookProps } from './looks';
 
 export type { BadgeShapeParams } from './shapes';
 export type { BadgeBeavisShapeParams } from './shapes/Beavis';

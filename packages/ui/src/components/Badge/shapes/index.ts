@@ -73,11 +73,3 @@ export const SHAPES: Record<BadgeShape, ShapeModule<any>> = {
   wood: Wood,
   quatrefoil: Quatrefoil,
 };
-
-export const ALL_SHAPES: BadgeShape[] = [
-  'pill', 'plain', 'square', 'notched', 'perforated',
-  'hexagon',
-  'starburst', 'scalloped', 'shield', 'ribbon', 'beavis',
-  'sparkler', 'postage', 'cloud', 'house', 'plaque',
-  'crest', 'urn', 'coffin', 'receipt', 'wood', 'quatrefoil',
-];

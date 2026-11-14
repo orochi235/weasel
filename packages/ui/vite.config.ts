@@ -37,6 +37,7 @@ const entries: Record<string, string> = {
   kitIcons: resolve(import.meta.dirname, 'src/kitIcons.ts'),
   'components/paintValue': resolve(import.meta.dirname, 'src/components/paintValue.ts'),
   'components/appearance': resolve(import.meta.dirname, 'src/components/appearance.ts'),
+  'components/Badge/geometry': resolve(import.meta.dirname, 'src/components/Badge/geometry.ts'),
   'overlays/portalHost': resolve(import.meta.dirname, 'src/overlays/portalHost.tsx'),
   'color/index': resolve(import.meta.dirname, 'src/color/index.ts'),
   paintGradientTrack: resolve(import.meta.dirname, 'src/paintGradientTrack.tsx'),

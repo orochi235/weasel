@@ -1,6 +1,8 @@
 import type { BaseModule } from './types';
 import { polygonSampler } from './polygonSampler';
-import { DEG_TO_RAD } from '@weasel-js/geom';
+import {
+  type BadgeSplineAnchor as Anchor, extractAnchorPairs, OCTANT_SPLINE_DEFAULTS, splineVertices,
+} from './OctantSpline';
 
 /**
  * Symmetric polar NURBS base. Same anchor concept as `octant-spline` but the curve is an
@@ -25,56 +27,17 @@ export interface BadgeOctantBSplineBaseParams {
   samples?: number;
 }
 
-export const OCTANT_BSPLINE_MAX_ANCHORS = 12;
-
-const DEFAULTS: Required<BadgeOctantBSplineBaseParams> = {
-  mode: 'octant',
-  count: 5,
-  s0: 0,    s1: 0.25, s2: 0.5,  s3: 0.75, s4: 1,    s5: 1,
-  s6: 1,    s7: 1,    s8: 1,    s9: 1,    s10: 1,   s11: 1,
-  r0: 48,   r1: 30,   r2: 32,   r3: 38,   r4: 46,   r5: 42,
-  r6: 36,   r7: 32,   r8: 30,   r9: 30,   r10: 30,  r11: 30,
-  w0: 1,    w1: 1,    w2: 1,    w3: 1,    w4: 1,    w5: 1,
-  w6: 1,    w7: 1,    w8: 1,    w9: 1,    w10: 1,   w11: 1,
-  rotation: 0,
-  samples: 192,
-};
-
-interface Anchor { s: number; r: number; w: number }
+const DEFAULTS: Required<BadgeOctantBSplineBaseParams> = OCTANT_SPLINE_DEFAULTS;
 
 /** The least weight an anchor draws with: at zero a rational curve divides by zero at its ends. */
 export const OCTANT_BSPLINE_MIN_WEIGHT = 0.01;
-
-export function extractAnchorPairs(params: BadgeOctantBSplineBaseParams = {}): Anchor[] {
-  const cfg = { ...DEFAULTS, ...params };
-  const count = Math.max(3, Math.min(Math.floor(cfg.count), OCTANT_BSPLINE_MAX_ANCHORS));
-  const sKeys: (keyof Required<BadgeOctantBSplineBaseParams>)[] = ['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11'];
-  const rKeys: (keyof Required<BadgeOctantBSplineBaseParams>)[] = ['r0','r1','r2','r3','r4','r5','r6','r7','r8','r9','r10','r11'];
-  const wKeys: (keyof Required<BadgeOctantBSplineBaseParams>)[] = ['w0','w1','w2','w3','w4','w5','w6','w7','w8','w9','w10','w11'];
-  const pairs: Anchor[] = [];
-  for (let i = 0; i < count; i++) {
-    pairs.push({
-      s: Math.max(0, Math.min(1, Number(cfg[sKeys[i]]))),
-      r: Math.max(0, Number(cfg[rKeys[i]])),
-      w: Math.max(OCTANT_BSPLINE_MIN_WEIGHT, Number(cfg[wKeys[i]] ?? 1)),
-    });
-  }
-  pairs.sort((a, b) => a.s - b.s);
-  pairs[0].s = 0;
-  pairs[count - 1].s = 1;
-  if (cfg.mode === 'quadrant') {
-    pairs[count - 1].r = pairs[0].r;
-    pairs[count - 1].w = pairs[0].w;
-  }
-  return pairs;
-}
 
 /**
  * Two phantom control points are inserted at each end (mirror reflections of the second-
  * from-end anchors across the cardinal/diagonal axes), forcing zero slope at the endpoints
  * for clean symmetric closure.
  */
-function buildExtendedControls(anchors: Anchor[]): Anchor[] {
+function buildExtendedControls(anchors: readonly Anchor[]): Anchor[] {
   const N = anchors.length;
   const phantomLeft1: Anchor = { s: -anchors[1].s, r: anchors[1].r, w: anchors[1].w };
   const phantomLeft2: Anchor = { s: -anchors[Math.min(2, N - 1)].s, r: anchors[Math.min(2, N - 1)].r, w: anchors[Math.min(2, N - 1)].w };
@@ -134,7 +97,7 @@ interface CompiledNurbs {
   degree: number;
 }
 
-export function compileNurbs(anchors: Anchor[]): CompiledNurbs {
+function compileNurbs(anchors: readonly Anchor[]): CompiledNurbs {
   const extended = buildExtendedControls(anchors);
   const degree = 3;
   const knots = buildKnots(extended.length, degree);
@@ -162,7 +125,7 @@ function evalNurbsAtU(u: number, nurbs: CompiledNurbs): { s: number; r: number }
 
 /** Invert S(u) = s by bisection. The NURBS is monotonic in s because the underlying knot
  *  vector and control sequence are monotonic, so bisection converges quickly. */
-export function evalNurbsAtS(s: number, nurbs: CompiledNurbs): number {
+function evalNurbsAtS(s: number, nurbs: CompiledNurbs): number {
   if (s <= 0) return evalNurbsAtU(0, nurbs).r;
   if (s >= 1) return evalNurbsAtU(1, nurbs).r;
   let lo = 0, hi = 1;
@@ -175,30 +138,21 @@ export function evalNurbsAtS(s: number, nurbs: CompiledNurbs): number {
   return evalNurbsAtU((lo + hi) * 0.5, nurbs).r;
 }
 
+/**
+ * The radius r(s) of the approximating `octant-bspline` curve over `anchors`, which are in order along it from
+ * s = 0 to s = 1: a cubic NURBS their weights pull toward each one, through the two ends only. A weight under
+ * {@link OCTANT_BSPLINE_MIN_WEIGHT} draws as that.
+ */
+export function octantBSplineRadius(anchors: readonly Anchor[]): (s: number) => number {
+  const nurbs = compileNurbs(anchors.map((a) => ({ ...a, w: Math.max(OCTANT_BSPLINE_MIN_WEIGHT, a.w) })));
+  return (s) => evalNurbsAtS(s, nurbs);
+}
+
 const OctantBSpline: BaseModule<BadgeOctantBSplineBaseParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
-    const anchors = extractAnchorPairs(cfg);
-    const nurbs = compileNurbs(anchors);
-    const rot = cfg.rotation * DEG_TO_RAD;
-    const N = Math.max(48, Math.floor(cfg.samples));
-    const cx = 50, cy = 50;
-    const verts: [number, number][] = [];
-    const HALF_PI = Math.PI / 2;
-    for (let i = 0; i < N; i++) {
-      const θ = (i / N) * 2 * Math.PI;
-      const θRel = θ - rot;
-      let s: number;
-      if (cfg.mode === 'quadrant') {
-        const θQ = ((θRel % HALF_PI) + HALF_PI) % HALF_PI;
-        s = θQ / HALF_PI;
-      } else {
-        s = Math.abs(Math.sin(2 * θRel));
-      }
-      const r = evalNurbsAtS(s, nurbs);
-      verts.push([cx + r * Math.cos(θ), cy + r * Math.sin(θ)]);
-    }
-    return polygonSampler(verts, boxW, boxH);
+    const radiusAt = octantBSplineRadius(extractAnchorPairs(cfg, OCTANT_BSPLINE_MIN_WEIGHT));
+    return polygonSampler(splineVertices(cfg, radiusAt), boxW, boxH);
   },
   defaults: DEFAULTS,
   insets: { top: 10, right: 14, bottom: 10, left: 14 },
