@@ -526,13 +526,6 @@ name a package. Breaking changes are in scope.
   stays a solid picker.
 
 
-- **(P3) [maintainer] Presets and option builders in place of wrapper components.** `PointPlotter` is `CurveEditor`
-  with three props fixed; `FontWeightSelect` and `FontFamilySelect` only build options for `Select`; `CloseButton`
-  repeats `Button`'s `iconOnly`, tooltip, and reason handling; `ActionSettingsDialog` repeats `PrefsDialog`;
-  `ThemeSwitcher` is a generic cycle button. The renames (`ThemeSwitcher`'s especially) are the maintainer's; the
-  folding is agent work. Closes when each is a preset, a builder (`fontWeightOptions()`,
-  `useFontFamilyOptions()`), or gone.
-
 - **(P3) [agent] A rail list has no public part, so prefs-editor copies its CSS.** The prefs dialog's page list draws
   through `railList` and `railItem` in `Prefs/Prefs.module.css`; `prefs-editor`'s
   `PrefSchemaEditor/AssetList.module.css` repeats those rules and the tree guide's, because a package outside ui
