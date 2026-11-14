@@ -53,6 +53,61 @@ function useFontLoads(ref: RefObject<HTMLElement | null>, onLoad: (el: HTMLEleme
 
 const overflows = (el: Element | null): boolean => el !== null && el.scrollWidth > el.clientWidth;
 
+/** The room a fit scope's labels last stepped and ran out of forms in. */
+interface FitRoom {
+  steppedAtRef: RefObject<{ self: number; parent: number } | null>;
+  spentAtRef: RefObject<number | null>;
+}
+
+/** Steps a scope's labels again whenever its element or its parent is resized. */
+function useRoomObserver(
+  ref: RefObject<HTMLElement | null>,
+  depth: number,
+  { steppedAtRef, spentAtRef }: FitRoom,
+  shouldStep: () => boolean,
+  markSpent: () => void,
+  setOwn: (next: number | ((s: number) => number)) => void,
+): void {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // A scope with no labels has nothing to fit, and its parent can be resized by any observer deeper in the page:
+    // watching it anyway turns that into a ResizeObserver loop.
+    if (depth < 1) {
+      spentAtRef.current = null;
+      el.removeAttribute('data-fit-spent');
+      return;
+    }
+    if (typeof ResizeObserver === 'undefined') return;
+    const parent = el.parentElement;
+    const observer = new ResizeObserver(() => {
+      if (spentAtRef.current !== null && parent !== null && parent.clientWidth > spentAtRef.current + 0.5) {
+        spentAtRef.current = null;
+        el.removeAttribute('data-fit-spent');
+      }
+      if (depth < 2) {
+        markSpent();
+        return;
+      }
+      const at = steppedAtRef.current;
+      const grew =
+        at !== null &&
+        (el.clientWidth > at.self + 0.5 || (parent !== null && parent.clientWidth > at.parent + 0.5));
+      if (grew) {
+        steppedAtRef.current = null;
+        flushSync(() => setOwn(0));
+      } else if (shouldStep()) {
+        flushSync(() => setOwn((s) => s + 1));
+      } else {
+        markSpent();
+      }
+    });
+    observer.observe(el);
+    if (parent) observer.observe(parent);
+    return () => observer.disconnect();
+  }, [ref, depth, steppedAtRef, spentAtRef, shouldStep, markSpent, setOwn]);
+}
+
 /**
  * Fits the {@link FitLabel}s under `ref` to the room they are given.
  *
@@ -160,36 +215,7 @@ export function useFitScope(
   }, []);
   useFontLoads(ref, refit);
 
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const parent = el.parentElement;
-    const observer = new ResizeObserver(() => {
-      if (spentAt.current !== null && parent !== null && parent.clientWidth > spentAt.current + 0.5) {
-        spentAt.current = null;
-        el.removeAttribute('data-fit-spent');
-      }
-      if (depth < 2) {
-        markSpent();
-        return;
-      }
-      const at = steppedAt.current;
-      const grew =
-        at !== null &&
-        (el.clientWidth > at.self + 0.5 || (parent !== null && parent.clientWidth > at.parent + 0.5));
-      if (grew) {
-        steppedAt.current = null;
-        flushSync(() => setOwn(0));
-      } else if (shouldStep()) {
-        flushSync(() => setOwn((s) => s + 1));
-      } else {
-        markSpent();
-      }
-    });
-    observer.observe(el);
-    if (parent) observer.observe(parent);
-    return () => observer.disconnect();
-  }, [ref, depth, shouldStep, markSpent]);
+  useRoomObserver(ref, depth, { steppedAtRef: steppedAt, spentAtRef: spentAt }, shouldStep, markSpent, setOwn);
 
   const step = Math.max(own, outer?.step ?? 0);
   return useMemo(() => ({ step, register, scale }), [step, register, scale]);
