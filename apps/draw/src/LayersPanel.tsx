@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/core';
 import { decimal, qty } from '@weasel-js/quantity';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
-import { useContextMenu } from '@weasel-js/ui/components/ContextMenu';
+import { useContextMenu } from '@weasel-js/ui/components/Menu';
 import { LayerList, type LayerListItem, useSceneLayerList } from '@weasel-js/ui/components/LayerList';
 import { type CSSProperties, type MouseEvent, type ReactElement, useSyncExternalStore } from 'react';
 import type { DrawScene, WeaselDrawData } from './drawDocument';

@@ -4,7 +4,7 @@ import {
   ActionDisabledReason, ActionsProvider, useMenuHost, useMenus, type Action, type MenuDef,
 } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
-import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/ContextMenu';
+import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/Menu';
 import s from './ContextMenuHost.stories.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 

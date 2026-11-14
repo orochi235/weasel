@@ -5,7 +5,7 @@ import { MENU_BORDER_WIDTH, MENU_CARET_SIZE, MENU_ICON_SIZE, MENU_MIN_WIDTH } fr
 
 // The DOM menu's stylesheet sets out the lengths `menuPanelMetrics` reads, which size the HUD menu too. jsdom
 // resolves no var(), so this reads them as text; `measure.browser.test.tsx` holds the laid-out box to the measure.
-const menuCss = readFileSync(resolve(__dirname, 'ContextMenu.module.css'), 'utf8');
+const menuCss = readFileSync(resolve(__dirname, 'Menu.module.css'), 'utf8');
 const surfaceCss = readFileSync(resolve(__dirname, '../listbox.module.css'), 'utf8');
 
 /** The declarations of `selector`'s first rule in `css`. */
@@ -19,7 +19,7 @@ function rule(selector: string, css = menuCss): Record<string, string> {
   }));
 }
 
-describe('ContextMenu.module.css lays a panel out as measureMenuPanel measures it', () => {
+describe('Menu.module.css lays a panel out as measureMenuPanel measures it', () => {
   it('sets a panel in --wzl-font-size inside a MENU_BORDER_WIDTH border, padded by --wzl-space-2, no narrower than MENU_MIN_WIDTH', () => {
     expect(rule('.surface', surfaceCss)).toMatchObject({
       border: `${MENU_BORDER_WIDTH}px solid var(--wzl-border)`, 'font-family': 'var(--wzl-font-ui)', 'font-size': 'var(--wzl-font-size)',

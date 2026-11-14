@@ -1,5 +1,5 @@
 import { accessLetter } from '@weasel-js/menu';
-import s from './ContextMenu.module.css';
+import s from './Menu.module.css';
 
 /** A menu label with the first occurrence of its access letter underlined, as one flex item so its accessible name stays whole. */
 export function AccessLabel({ label, access }: { label: string; access?: string }) {

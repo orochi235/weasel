@@ -8,7 +8,7 @@ import {
 } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import type { MenuEntry } from '@weasel-js/menu';
-import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
+import { useMenuTrigger } from '../Menu/useMenuTrigger';
 import { ButtonTooltip } from '../Tooltip/buttonTooltip';
 import f from '../field.module.css';
 import { DockBarContext } from '../ToolbarDock/dockContext';

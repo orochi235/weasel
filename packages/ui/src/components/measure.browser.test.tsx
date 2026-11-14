@@ -4,12 +4,12 @@ import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { pref } from '@weasel-js/prefs';
 import { ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost } from '@weasel-js/core';
 import { fixedWidth, measureMenuPanel, MENU_CARET_SIZE, UNBOUNDED, type MenuRowFace } from '@weasel-js/ui-logic';
-import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
+import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { domMeasureEnv } from '@weasel-js/ui';
 import { Button, domButton, type ButtonProps } from '@weasel-js/ui/components/Button';
 import { domItemList } from '@weasel-js/ui/components/ItemList';
 import s from './ItemList/ItemList.module.css';
-import menu from './ContextMenu/ContextMenu.module.css';
+import menu from './Menu/Menu.module.css';
 
 // The DOM half of the measure/draw contract: CSS lays a button, a list, and a menu panel out from the tokens
 // `measure` reads, so what `measure` says must be what the browser draws. Only a real layout engine can say so.

@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { AccessLabel } from '../ContextMenu/AccessLabel';
+import { AccessLabel } from '../Menu/AccessLabel';
 import s from './MenuBar.module.css';
 import { isPrimaryPress } from '@weasel-js/gestures';
 

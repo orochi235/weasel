@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ActionsProvider, createMeasurements, createScene, useSelection, type Action } from '@weasel-js/core';
 import { CORNER_CONTROLS_PROMPT, type CornerControlsSelection } from '@weasel-js/path-tools';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
-import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
+import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { CommandBar } from '../CommandBar';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from '../drawDocument';
 import { drawPrefs } from '../prefs';

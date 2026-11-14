@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { orderPrefGroup, type PrefGroup, type PrefOrder } from '@weasel-js/prefs';
 import { BarMenu } from '@weasel-js/ui/components/Bar';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
-import { useContextMenu } from '@weasel-js/ui/components/ContextMenu';
+import { useContextMenu } from '@weasel-js/ui/components/Menu';
 import { resolveIcon } from '@weasel-js/ui/components/Icon';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';

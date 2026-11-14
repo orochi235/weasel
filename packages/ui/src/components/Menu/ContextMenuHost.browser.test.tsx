@@ -7,7 +7,7 @@ import { afterEach, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import { ActionDisabledReason, ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost } from '@weasel-js/core';
 import { OverlayPortalProvider } from '@weasel-js/ui/portal-host';
-import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
+import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { lineContrast } from '@weasel-js/ui/testing/paintedContrast';
 
 afterEach(cleanup);

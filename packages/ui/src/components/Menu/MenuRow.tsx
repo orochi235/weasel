@@ -8,7 +8,7 @@ import { useAppearance } from '../appearance';
 import { AccessLabel } from './AccessLabel';
 import { MenuNumberValue, MenuTextValue } from './MenuValue';
 import { MenuColorValue, editsColor } from './MenuColorValue';
-import s from './ContextMenu.module.css';
+import s from './Menu.module.css';
 
 const leftToBrowser = (e: MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey;
 

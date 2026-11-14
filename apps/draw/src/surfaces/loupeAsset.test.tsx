@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { ActionsProvider } from '@weasel-js/core';
-import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
+import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import type { LoupeEvents, LoupeSettings } from '@weasel-js/hud/react';
 import { CommandBar } from '../CommandBar';
 import { LoupeProvider } from '../LoupeProvider';

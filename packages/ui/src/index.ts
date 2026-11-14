@@ -107,7 +107,7 @@ export * from './components/NumberField';
 export * from './components/Select';
 export * from './components/MenuButton';
 export * from './components/MenuBar';
-export * from './components/ContextMenu';
+export * from './components/Menu';
 export * from './components/ComboBox';
 export * from './components/InlineRange';
 export * from './overlays/portalHost';

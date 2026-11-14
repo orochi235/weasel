@@ -8,7 +8,7 @@ import { MenuRow, rowTipText } from './MenuRow';
 import { MenuRowTip } from './MenuRowTip';
 import { menuFieldId } from './MenuValue';
 import { editsColor } from './MenuColorValue';
-import s from './ContextMenu.module.css';
+import s from './Menu.module.css';
 
 /** One level of the open menu, positioned in the viewport. */
 export function MenuPanel(props: {

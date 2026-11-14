@@ -9,7 +9,7 @@ import {
   useMenuHost,
   useMenus,
 } from '@weasel-js/core';
-import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
+import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { createContext, type ReactNode, useContext } from 'react';
 import { LabAmbientContext, LabEntriesContext, useLabAmbientHost } from './labAmbient';
 import { LabContextMenusContext } from './labContextMenus';

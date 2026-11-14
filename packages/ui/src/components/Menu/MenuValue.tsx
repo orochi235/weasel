@@ -7,7 +7,7 @@ import { editEnd, imeKey, type EditEnd } from '@weasel-js/ui-input';
 import { Input } from '../Input';
 import { QuantityText } from '../QuantityText';
 import { UnitField } from '../NumberField/UnitField';
-import s from './ContextMenu.module.css';
+import s from './Menu.module.css';
 
 /** The id of the field inside number or text row `rowId`, which the panel focuses on Enter. */
 export const menuFieldId = (rowId: string) => `${rowId}-field`;

@@ -3,7 +3,7 @@ import { assignRef } from '@weasel-js/react';
 import type { MenuEntry } from '@weasel-js/menu';
 import { type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
-import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
+import { useMenuTrigger } from '../Menu/useMenuTrigger';
 import f from '../field.module.css';
 import s from './MenuButton.module.css';
 import { ButtonTooltip, type TooltipFields } from '../Tooltip/buttonTooltip';

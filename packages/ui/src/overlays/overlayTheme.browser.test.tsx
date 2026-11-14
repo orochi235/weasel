@@ -5,7 +5,7 @@ import { Button as RACButton, Dialog as RACDialog, DialogTrigger } from 'react-a
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { pref } from '@weasel-js/prefs';
 import { ActionsProvider, useAction, useMenuHost, useMenus, type MenuDef, type MenuHost } from '@weasel-js/core';
-import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
+import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { Dialog } from '@weasel-js/ui/components/Dialog';
 import { Popover } from '@weasel-js/ui/components/Popover';
 import { createToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';

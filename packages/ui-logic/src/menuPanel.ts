@@ -4,7 +4,7 @@ import {
   type Constraints, type FontSpec, type MeasureEnv, type Measured,
 } from './measure';
 
-/** A menu panel's narrowest width, its border included: ui's `ContextMenu.module.css` `.panel { min-width: 180px }`. */
+/** A menu panel's narrowest width, its border included: ui's `Menu.module.css` `.panel { min-width: 180px }`. */
 export const MENU_MIN_WIDTH = 180;
 /** A menu panel's border: ui's `listbox.module.css` `.surface { border: 1px solid … }`. */
 export const MENU_BORDER_WIDTH = 1;
@@ -34,7 +34,7 @@ export interface MenuPanelMetrics {
   readonly lineHeight: number;
 }
 
-/** The tokens a menu panel is sized by: the ones `ContextMenu.module.css` lays the DOM menu out with. */
+/** The tokens a menu panel is sized by: the ones `Menu.module.css` lays the DOM menu out with. */
 export function menuPanelMetrics(env: MeasureEnv): MenuPanelMetrics {
   const inset = MENU_BORDER_WIDTH + envPx(env, '--wzl-space-2');
   const size = envPx(env, '--wzl-font-size');

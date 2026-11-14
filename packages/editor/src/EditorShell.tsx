@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { AmbientContributionsProvider, WeaselProvider } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { ContextMenuHost } from '@weasel-js/ui/components/ContextMenu';
+import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { EDITOR_CONTEXT_MENUS_CONTRIBUTION } from './contextMenus';
 import { type EditorCommandOptions, PreferencesCommand, useEditorKeys } from './editorCommands';

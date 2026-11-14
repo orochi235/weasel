@@ -7,7 +7,7 @@ import { Swatch } from '../Properties/PropertyReadout';
 import listbox from '../listbox.module.css';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import { useMenuPart } from './menuParts';
-import s from './ContextMenu.module.css';
+import s from './Menu.module.css';
 
 /** True for a color row the menu can edit: one with a `set`, not disabled. */
 export const editsColor = (e: MenuColorEntry): boolean => e.set !== undefined && !e.disabled;

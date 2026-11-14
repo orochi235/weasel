@@ -1,6 +1,6 @@
 import { BarGroup } from '@weasel-js/ui/components/Bar';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
-import { useContextMenu } from '@weasel-js/ui/components/ContextMenu';
+import { useContextMenu } from '@weasel-js/ui/components/Menu';
 import { SchemaMenu, useAssetBinding } from './SchemaSurfaces';
 import { switchMenuId } from './surfaceSwitch';
 import { useSurfaces } from './surfaceState';
