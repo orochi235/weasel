@@ -74,7 +74,7 @@ export const TOOLS = {
     <rect x="14.5" y="8.5" width="3" height="3" fill="currentColor" stroke="none"/>
     <rect x="8.5" y="14.5" width="3" height="3" fill="currentColor" stroke="none"/>
     <rect x="2.5" y="8.5" width="3" height="3" fill="currentColor" stroke="none"/>`,
-  balanceHandles: `
+  poise: `
     <path d="M3.5 16 C5 6 15 6 16.5 16"/>
     <path d="M3.5 16 L5 6 M16.5 16 L15 6 M5 6 H8.25 M11.75 6 H15" stroke-width="1"/>
     <circle cx="5" cy="6" r="1.4" fill="currentColor" stroke="none"/>

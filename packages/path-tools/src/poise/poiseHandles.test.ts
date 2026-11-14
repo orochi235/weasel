@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { PathBuilder, pathFromD, pathToAnchors, type Affine, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
-import { balanceHandlesAction, equalizeHandlesAction } from './handleBalance';
+import { poiseHandlesAction, equalizeHandlesAction } from './poiseHandles';
 
 /** One segment from (0, 0) to (100, 0) whose handles lean toward a corner at
- *  (50, 50), the first 40% of the way there and the second 80%. Its balance
+ *  (50, 50), the first 40% of the way there and the second 80%. Its poise
  *  grip sits at (40, 30), and slides from the chord's middle through it. */
 function lopsided(): PolygonPath {
   const b = new PathBuilder();
@@ -43,16 +43,16 @@ const handles = (path: PolygonPath) => {
   return { out: a.outHandle!, in: b.inHandle! };
 };
 
-describe('balanceHandlesAction', () => {
+describe('poiseHandlesAction', () => {
   it('scales both handles together as the grip is dragged, in one commit', () => {
     const { deps, commits } = setup();
-    const ongoing = balanceHandlesAction.invoker as OngoingInvoker;
-    const handle = ongoing.start(at(deps, 40, 30, 'balance:0'), {});
+    const ongoing = poiseHandlesAction.invoker as OngoingInvoker;
+    const handle = ongoing.start(at(deps, 40, 30, 'poise:0'), {});
     handle.onMove!(at(deps, 30, 60));
     expect(commits).toHaveLength(0);
     handle.onEnd!(at(deps, 30, 60), 'commit');
     expect(commits).toHaveLength(1);
-    expect(commits[0].label).toBe('Balance handles');
+    expect(commits[0].label).toBe('Poise');
     const h = handles(commits[0].path);
     expect(h.out.x).toBeCloseTo(40, 4);
     expect(h.out.y).toBeCloseTo(40, 4);
@@ -62,7 +62,7 @@ describe('balanceHandlesAction', () => {
 
   it('commits nothing when the grip is dragged away and back to where it was pressed', () => {
     const { deps, commits } = setup();
-    const handle = (balanceHandlesAction.invoker as OngoingInvoker).start(at(deps, 40, 30, 'balance:0'), {});
+    const handle = (poiseHandlesAction.invoker as OngoingInvoker).start(at(deps, 40, 30, 'poise:0'), {});
     handle.onMove!(at(deps, 30, 60));
     handle.onMove!(at(deps, 40, 30));
     handle.onEnd!(at(deps, 40, 30), 'commit');
@@ -73,7 +73,7 @@ describe('balanceHandlesAction', () => {
     const drag = (lock: { angle: boolean; length: boolean } | null, mods: Partial<InvocationCtx['modifiers']> = {}) => {
       const { deps, commits } = setup();
       if (lock) deps.editAnchors!.setHandleLocks!(lock);
-      const handle = (balanceHandlesAction.invoker as OngoingInvoker).start(at(deps, 40, 30, 'balance:0'), {});
+      const handle = (poiseHandlesAction.invoker as OngoingInvoker).start(at(deps, 40, 30, 'poise:0'), {});
       handle.onMove!(at(deps, 30, 60, undefined, mods));
       handle.onEnd!(at(deps, 30, 60, undefined, mods), 'commit');
       return commits;
@@ -99,7 +99,7 @@ describe('balanceHandlesAction', () => {
     });
     const across50: Affine = [-1, 0, 0, 1, 100, 0];
     const deps = { editAnchors: dep, pathSymmetry: { transforms: () => [across50] } } as unknown as InvocationCtx['deps'];
-    const handle = (balanceHandlesAction.invoker as OngoingInvoker).start(at(deps, 25, 25, 'balance:0'), {});
+    const handle = (poiseHandlesAction.invoker as OngoingInvoker).start(at(deps, 25, 25, 'poise:0'), {});
     // Pump events carry an empty dep bag, as the dispatcher sends them.
     handle.onMove!(at({} as InvocationCtx['deps'], 25, 35));
     handle.onEnd!(at({} as InvocationCtx['deps'], 25, 35), 'commit');
@@ -114,9 +114,9 @@ describe('balanceHandlesAction', () => {
     expect(b.inHandle!.y).toBeCloseTo(40, 4);
   });
 
-  it('declines a press that is not on a balance grip', () => {
+  it('declines a press that is not on a poise grip', () => {
     const { deps } = setup();
-    const ongoing = balanceHandlesAction.invoker as OngoingInvoker;
+    const ongoing = poiseHandlesAction.invoker as OngoingInvoker;
     expect(ongoing.start(at(deps, 40, 30, 'anchor:0'), {})).toEqual({});
     expect(ongoing.start(at(deps, 40, 30), {})).toEqual({});
   });
@@ -125,7 +125,7 @@ describe('balanceHandlesAction', () => {
 describe('equalizeHandlesAction', () => {
   it('gives the double-clicked grip\'s handles one proportion', () => {
     const { deps, commits } = setup();
-    (equalizeHandlesAction.invoker as ImmediateInvoker).run(deps, { affordance: { kind: 'balance:0' } });
+    (equalizeHandlesAction.invoker as ImmediateInvoker).run(deps, { affordance: { kind: 'poise:0' } });
     expect(commits).toHaveLength(1);
     const h = handles(commits[0].path);
     expect(h.out.x).toBeCloseTo(30, 4);
@@ -144,7 +144,7 @@ describe('equalizeHandlesAction', () => {
     });
     const across50: Affine = [-1, 0, 0, 1, 100, 0];
     const deps = { editAnchors: dep, pathSymmetry: { transforms: () => [across50] } } as unknown as InvocationCtx['deps'];
-    (equalizeHandlesAction.invoker as ImmediateInvoker).run(deps, { affordance: { kind: 'balance:0' } });
+    (equalizeHandlesAction.invoker as ImmediateInvoker).run(deps, { affordance: { kind: 'poise:0' } });
     const [a, mid, b] = pathToAnchors(current).anchors[0];
     const k = 10 / 21;
     expect(a.outHandle!.x).toBeCloseTo(15 * k, 4);
@@ -156,9 +156,9 @@ describe('equalizeHandlesAction', () => {
   });
 });
 
-describe('balanceHandles binding', () => {
+describe('poiseHandles binding', () => {
   it('lets the handle locks\' keys be held as its drag starts', () => {
-    const [binding] = balanceHandlesAction.defaultBinding as { spec: { mods?: unknown } }[];
+    const [binding] = poiseHandlesAction.defaultBinding as { spec: { mods?: unknown } }[];
     expect(binding!.spec.mods).toEqual({ shift: 'optional', meta: 'optional', ctrl: 'optional' });
   });
 });

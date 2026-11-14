@@ -109,15 +109,15 @@ Owner tags, after the priority (2026-10-26):
   rest from a field of candidates (ruled 2026-11-07). They live in `@weasel-js/path-tools`
   (`packages/path-tools/README.md`).
   Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`.
-- **(P2) [maintainer] Tune Balance handles hands-on, with the maintainer driving.** First-draft behavior: a
+- **(P2) [maintainer] Tune Poise hands-on, with the maintainer driving.** First-draft behavior: a
   grip drag scales both handles by one factor, read off the pointer's projection onto the line the
   grip slides along, and a length lock (`handleLock.length`, or Mod) holds it still
-  (`packages/geom/src/paths/balanceHandles.ts`, `packages/path-tools/src/balance/handleBalance.ts`). Its look: a purple
+  (`packages/geom/src/paths/poiseHandles.ts`, `packages/path-tools/src/poise/poiseHandles.ts`). Its look: a purple
   line between the handle tips and a 4px hollow grip, drawn under the anchor markers and beaten by
-  them on a press (`packages/path-tools/src/balance/balanceMarks.ts`). Off by
-  default under `path-edit.balance`, with no key to show it, and Equalize handles has only the
-  grip's double-click (`apps/site/demos/BalanceHandlesLabDemo.tsx`).
-  Closes when the maintainer has driven Balance handles hands-on and the defaults and keys he picks are
+  them on a press (`packages/path-tools/src/poise/poiseMarks.ts`). Off by
+  default under `path-edit.poise`, with no key to show it, and Equalize handles has only the
+  grip's double-click (`apps/site/demos/PoiseLabDemo.tsx`).
+  Closes when the maintainer has driven Poise hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
   whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).

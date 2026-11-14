@@ -4,8 +4,8 @@
  * preset, which opens a path for editing.
  */
 import { never, type FeaturePreset } from '@weasel-js/core';
-import { balanceHandlesAction, equalizeHandlesAction } from './balance/handleBalance';
-import { createBalanceExtension, PATH_BALANCE_CHROME_ID, type PathEditBalanceStyle } from './balance/balanceMarks';
+import { poiseHandlesAction, equalizeHandlesAction } from './poise/poiseHandles';
+import { createPoiseExtension, PATH_POISE_CHROME_ID, type PathEditPoiseStyle } from './poise/poiseMarks';
 import { bridgeAnchorsAction, bridgePathsAction } from './bridge/bridge';
 import { createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
 import { cycleFilletAction, setFilletsAction } from './fillet/filletCommands';
@@ -41,7 +41,7 @@ import { sandAction } from './sand/sand';
 import { kneadAction } from './knead/knead';
 import { spiroPreset } from './spiro/spiroPreset';
 import { snipPathAction } from './snip/snip';
-import { showBalanceAction, showCombAction, showFilletsAction, showDirectionAction } from './overlays/showOverlay';
+import { showPoiseAction, showCombAction, showFilletsAction, showDirectionAction } from './overlays/showOverlay';
 import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 
 /** `sand`, which `useSandTool`, a path-edit tool, binds. */
@@ -134,24 +134,24 @@ export function createCurvatureCombPreset(options: () => PathEditCombOptions | u
 export const curvatureCombPreset: FeaturePreset = createCurvatureCombPreset();
 
 /**
- * Balance handles: a line between each curved segment's handle tips with a
- * grip to drag (`balanceHandles`) or double-click (`equalizeHandles`), drawn
- * in `style`. Off until chrome-caps shows `path-edit.balance`, which its toggle,
- * `pathEdit.show.balance`, does. It refines `paths`, so a grip's double-click
+ * Poise: a line between each curved segment's handle tips with a
+ * grip to drag (`poiseHandles`) or double-click (`equalizeHandles`), drawn
+ * in `style`. Off until chrome-caps shows `path-edit.poise`, which its toggle,
+ * `pathEdit.show.poise`, does. It refines `paths`, so a grip's double-click
  * goes ahead of entering path edit.
  */
-export function createBalancePreset(style: PathEditBalanceStyle = {}): FeaturePreset {
+export function createPoisePreset(style: PathEditPoiseStyle = {}): FeaturePreset {
   return {
-    id: 'balance',
+    id: 'poise',
     refines: ['paths'],
-    actions: [equalizeHandlesAction, balanceHandlesAction, showBalanceAction],
-    chromeRules: { [PATH_BALANCE_CHROME_ID]: never },
-    pathEdit: [createBalanceExtension(style)],
+    actions: [equalizeHandlesAction, poiseHandlesAction, showPoiseAction],
+    chromeRules: { [PATH_POISE_CHROME_ID]: never },
+    pathEdit: [createPoiseExtension(style)],
   };
 }
 
-/** Balance handles with their default look. */
-export const balancePreset: FeaturePreset = createBalancePreset();
+/** Poise with their default look. */
+export const poisePreset: FeaturePreset = createPoisePreset();
 
 /** Path constraints: their actions, Alt-dragging an anchor onto another
  *  node to link it there, their marks in `style`'s colors, broken links
@@ -235,15 +235,15 @@ export const warpPreset: FeaturePreset = {
   actions: [expandWarpAction, configureWarpAction],
 };
 
-/** Every preset above, spiro curves, the comb, balance, constraints, path
- *  direction, and fillet with their defaults — except soft selection and
+/** Every preset above, spiro curves, the comb, poise, constraints, path
+ *  direction, and fillets with their defaults — except soft selection and
  *  handle snapping, which change what every anchor or handle drag does. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
     sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, reachPreset, tugPreset,
     kneadPreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
-    curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
+    curvatureCombPreset, poisePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     filletPreset, pathEffectsPreset, warpPreset,
   ],
 };

@@ -25,7 +25,7 @@ Tag: `path-drag`
 | Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, with `spiroPreset` on, adds a smooth point there and drags it | Drag on a segment | main | core |
 | Marquee-select anchors | `marqueeAnchors` | Selects anchors in a box | Drag on empty canvas | main | core |
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main | path-tools |
-| Balance handles | `balanceHandles` | Scales a segment's two handles together from a grip on its balance line; a length lock holds it still | Drag a balance grip, shown under `path-edit.balance` | main | path-tools |
+| Poise | `poiseHandles` | Scales a segment's two handles together from a grip on its poise line; a length lock holds it still | Drag a poise grip, shown under `path-edit.poise` | main | path-tools |
 | Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab; Alt+Shift and a letter, and a Constraints menu, in WeaselDraw | main | path-tools |
 | Link anchor | `linkAnchor` | Moves an anchor, and released on another shape's anchor or segment ties it there with a constraint link, which every later edit or whole-shape transform of either keeps | Alt-drag an anchor, under `constraintsPreset` | main | path-tools |
 | Fillet | `editFillet` | Sets a corner anchor's radius, or every selected corner's, from the widget inside it | Drag a fillet widget, shown under `path-edit.fillets` | main | path-tools |
@@ -43,7 +43,7 @@ Tag: `path-click`
 | Select anchor | `selectAnchor` | Selects an anchor | Click | main | core |
 | Insert anchor | `insertPathAnchor` | Adds an anchor on the segment | Alt+click | main | core |
 | Cut path at anchor | `cutPathAtAnchor` | Opens the path there | Alt+Shift+click | main | core |
-| Equalize handles | `equalizeHandles` | Gives a segment's two handles one proportion of the way to their corner | Double-click a balance grip | main | path-tools |
+| Equalize handles | `equalizeHandles` | Gives a segment's two handles one proportion of the way to their corner | Double-click a poise grip | main | path-tools |
 | Snip | `snipPath` | Removes the piece between the nearest crossings | Click with the Snip tool (Y) | main | path-tools |
 | Reach | `reachToMeet` | Carries an open end to the next stroke | Click with the Reach tool (Shift+U) | main | path-tools |
 | Convert segment | `convertSegmentAt` | Flips the segment between straight and curved | Shift+double-click in path edit | main | path-tools |

@@ -67,7 +67,7 @@ mutations: translate, handle-drag with smooth mirroring, insert-on-segment,
 delete-with-refit, scissors, rect select), `paths/handleEdits.ts` (handle
 locks and angle snapping), `paths/softSelection.ts` (falloff weights by
 distance along the path), the curvature comb
-(`paths/curvature.ts`), the balance-handle edits (`paths/balanceHandles.ts`), and the anchor model itself
+(`paths/curvature.ts`), the poise edits (`paths/poiseHandles.ts`), and the anchor model itself
 (`pathToAnchors` / `anchorsToPath`, `PenAnchor`, `nearestSegmentT`). Its
 invariant test, `anchorEdits.test.ts`, stays here because it reads an action's
 anchor walker.
@@ -75,10 +75,9 @@ anchor walker.
 **Rendering** — `pathLayer.ts`, `markerCommands.ts` (marker heads as draw
 commands; the ribbon, the marker registry and `strokeToPath` are in
 `@weasel-js/stroke`), plus `penPreviewLayer.ts` (the pen's
-in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome, with
-the curvature comb from `pathEditComb.ts` and the balance lines from
-`pathEditBalance.ts` drawn under chrome-caps' `path-edit.comb` and
-`path-edit.balance`, both off by default)
+in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome, which
+`@weasel-js/path-tools` extends with its curvature comb, poise lines, and other
+marks)
 
 **Snapping** — `pathSnapSource` (`pathSnap/pathSnapSource.ts`) offers the
 scene's path targets to the snap pipeline ([`docs/snapping.md`](../../../../../docs/snapping.md)).

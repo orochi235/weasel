@@ -1,5 +1,5 @@
 import { editingAnchors, never, type RectPose, useSelection } from '@weasel-js/core';
-import { balancePreset, createCurvatureCombPreset } from '@weasel-js/path-tools';
+import { poisePreset, createCurvatureCombPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -17,7 +17,7 @@ import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
 const config = f.schema({
-  balance: f.boolean(true).label('Show balance lines'),
+  poise: f.boolean(true).label('Show poise lines'),
   comb: f.boolean(false).label('Show comb'),
   scale: f.number(3000).range(200, 12000).step(100).label('Comb scale'),
 });
@@ -28,17 +28,17 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 const createLabScene = () =>
   createPathLabScene('M100 320 C140 200 260 140 340 140 C420 140 520 180 560 320');
 
-function BalanceTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function PoiseTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ scene, initial: [EDITED_ID] });
-  const { balance, comb, scale } = ctx.config;
+  const { poise, comb, scale } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({
-    'path-edit.balance': balance ? editingAnchors : never,
+    'path-edit.poise': poise ? editingAnchors : never,
     'path-edit.comb': comb ? editingAnchors : never,
-  }), [balance, comb]);
+  }), [poise, comb]);
   const features = useMemo(() => [
-    'pick', 'move', 'paths', balancePreset, createCurvatureCombPreset(() => ({ scale })),
+    'pick', 'move', 'paths', poisePreset, createCurvatureCombPreset(() => ({ scale })),
   ] as const, [scale]);
 
   return (
@@ -53,18 +53,18 @@ function BalanceTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
 }
 
-const balanceInstrument = defineInstrument<State, Config>({
-  name: 'Balance',
+const poiseInstrument = defineInstrument<State, Config>({
+  name: 'Poise',
   config,
   initialState: () => ({ scene: null }),
   tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
-  render: (ctx) => <BalanceTrial ctx={ctx} />,
+  render: (ctx) => <PoiseTrial ctx={ctx} />,
 });
 
-export function BalanceHandlesLabDemo() {
+export function PoiseLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Balance handles" instruments={[balanceInstrument]} />
+      <Lab title="Poise" instruments={[poiseInstrument]} />
     </div>
   );
 }

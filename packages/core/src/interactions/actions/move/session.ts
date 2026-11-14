@@ -123,7 +123,7 @@ export function beginMove(
 
   if (!selection || !scene) return null;
   const pc = scene.composition;
-  // Anchors, segments, and balance grips sit on the selected body, and this binding ties the
+  // Anchors, segments, and poise grips sit on the selected body, and this binding ties the
   // path-edit drags' on specificity; with no mode registry to filter move out, declining is what
   // lets them through.
   if (isPathEditPart(ctx.drag?.affordance)) return null;

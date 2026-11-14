@@ -62,7 +62,7 @@
       "group": "Tools",
       "tags": []
     },
-    "balanceHandles": {
+    "poise": {
       "body": "<path d=\"M3.5 16 C5 6 15 6 16.5 16\"/><path d=\"M3.5 16 L5 6 M16.5 16 L15 6 M5 6 H8.25 M11.75 6 H15\" stroke-width=\"1\"/><circle cx=\"5\" cy=\"6\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"15\" cy=\"6\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"10\" cy=\"6\" r=\"1.75\" stroke-width=\"1.25\"/><path d=\"M8.8 12 L10 13.2 L11.2 12 M10 9.6 V13\" stroke-width=\"1\"/>",
       "group": "Tools",
       "tags": []

@@ -4,9 +4,9 @@ import { moveHandleSymmetric, type AnchorSymmetry } from './anchorSymmetry';
 import type { Point } from './cubicMath';
 import { distance } from '../points2';
 
-/** A curved segment's balance line: from its first handle's tip to its
+/** A curved segment's poise line: from its first handle's tip to its
  *  second's, with a grip at the middle. */
-export interface HandleBalance {
+export interface PoiseLine {
   sub: number;
   segIdx: number;
   /** Flat index of the anchor the segment starts at, which names the segment
@@ -21,13 +21,13 @@ export interface HandleBalance {
 }
 
 /**
- * The balance line of every curved segment in `set` that has both handles
+ * The poise line of every curved segment in `set` that has both handles
  * pulled off their anchors. Dragging a line's grip scales both handles
  * together ({@link scaleSegmentHandles}), which fills the curve out toward
  * its corner or flattens it toward its chord without turning either end.
  */
-export function handleBalances(set: AnchorSet): HandleBalance[] {
-  const out: HandleBalance[] = [];
+export function poiseLines(set: AnchorSet): PoiseLine[] {
+  const out: PoiseLine[] = [];
   for (let sub = 0; sub < set.anchors.length; sub++) {
     const count = set.anchors[sub].length - (set.closed[sub] ? 0 : 1);
     for (let segIdx = 0; segIdx < count; segIdx++) {
@@ -72,7 +72,7 @@ function segmentHandles(
  * moves to the image of where that handle goes, the way `moveHandleSymmetric`
  * moves a dragged handle's.
  *
- * Returns false when the segment has no balance line or nothing moved.
+ * Returns false when the segment has no poise line or nothing moved.
  */
 export function scaleSegmentHandles(
   set: AnchorSet,
@@ -99,9 +99,9 @@ export function scaleSegmentHandles(
  * The factor {@link scaleSegmentHandles} takes to bring segment
  * `(sub, segIdx)`'s grip as near `to` as scaling can: `to` projected onto the
  * line the grip slides along as both handles grow. 1 when the segment has no
- * balance line.
+ * poise line.
  */
-export function balanceFactorToward(set: AnchorSet, sub: number, segIdx: number, to: Point): number {
+export function poiseFactorToward(set: AnchorSet, sub: number, segIdx: number, to: Point): number {
   const handles = segmentHandles(set, sub, segIdx);
   if (!handles) return 1;
   const { a, b, from, to: tip } = handles;
@@ -122,7 +122,7 @@ export function balanceFactorToward(set: AnchorSet, sub: number, segIdx: number,
  * length instead. Directions are kept either way, and under `syms` every
  * image of either handle follows it, as in {@link scaleSegmentHandles}.
  *
- * Returns false when the segment has no balance line or the handles already
+ * Returns false when the segment has no poise line or the handles already
  * match.
  */
 export function equalizeSegmentHandles(

@@ -52,7 +52,7 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
     250: 'threshold: how short a press of the quick-lens key is a tap, which closes the lens',
   },
   'packages/loupe/src/actions.ts': { 0.002: 'view: magnification per wheel delta' },
-  'packages/path-tools/src/balance/handleBalance.ts': { 10: RADIX },
+  'packages/path-tools/src/poise/poiseHandles.ts': { 10: RADIX },
   'packages/path-tools/src/constraints/anchorConstraints.ts': {
     3: 'count: the anchors a two-segment constraint takes', 4: 'count: the anchors a two-segment constraint takes, unshared',
   },

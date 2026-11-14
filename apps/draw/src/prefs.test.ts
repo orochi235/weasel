@@ -87,7 +87,7 @@ describe('openDrawPrefs', () => {
     expect(store.get('view.pathEditing.pathFillets')).toBe(false);
     expect(store.get('view.pathEditing.pathComb')).toBe(false);
     await store.flush();
-    expect([...backing.keys()].filter((k) => /^weaseldraw\.prefs\/(view\.path(Direction|Comb|Balance|Fillets)|ui\.leftSidebarWidth)$/.test(k))).toEqual([]);
+    expect([...backing.keys()].filter((k) => /^weaseldraw\.prefs\/(view\.path(Direction|Comb|Poise|Fillets)|ui\.leftSidebarWidth)$/.test(k))).toEqual([]);
   });
 
   it('carries the path fill rule into the shape tools’ shared option', () => {

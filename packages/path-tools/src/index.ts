@@ -12,11 +12,11 @@ import type {} from './actionParamSchema';
 export {
   addExtremesPreset,
   anchorSelectionPreset,
-  balancePreset,
+  poisePreset,
   bridgePreset,
   constraintsPreset,
   filletPreset,
-  createBalancePreset,
+  createPoisePreset,
   createConstraintsPreset,
   createFilletPreset,
   createCurvatureCombPreset,
@@ -55,7 +55,7 @@ export { REACH_TO_MEET_PARAMS, reachToMeetAction, type ReachToMeetParams } from 
 export { TUG_PATH_PARAMS, tugPathAction, type TugPathParams } from './tug/tugPath';
 export { useTugTool } from './tug/useTugTool';
 export {
-  overlayShown, PATH_OVERLAYS_GROUP, showBalanceAction, showCombAction, showFilletsAction, showDirectionAction,
+  overlayShown, PATH_OVERLAYS_GROUP, showPoiseAction, showCombAction, showFilletsAction, showDirectionAction,
   showOverlayAction,
 } from './overlays/showOverlay';
 export {
@@ -70,7 +70,7 @@ export {
 } from './anchorSelect/anchorSelect';
 export { RESAMPLE_PARAMS, resamplePathAction, type ResamplePathParams } from './resample/resample';
 export { ADD_EXTREMES_PARAMS, addExtremeAnchorsAction, type AddExtremesParams } from './extremes/addExtremes';
-export { balanceHandlesAction, equalizeHandlesAction } from './balance/handleBalance';
+export { poiseHandlesAction, equalizeHandlesAction } from './poise/poiseHandles';
 export {
   CONSTRAINT_KIND_LABELS, constrainAnchorsAction, constraintsForAnchors, deleteConstraintAction, unconstrainAnchorsAction,
   type ConstrainAnchorsParams,
@@ -121,8 +121,8 @@ export * from './spiro';
 // ─── Path-edit chrome ──────────────────────────────────────────────────────
 export { combCommands, createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
 export {
-  balanceCommands, createBalanceExtension, PATH_BALANCE_CHROME_ID, type PathEditBalanceStyle,
-} from './balance/balanceMarks';
+  poiseCommands, createPoiseExtension, PATH_POISE_CHROME_ID, type PathEditPoiseStyle,
+} from './poise/poiseMarks';
 export {
   CONSTRAINTS_EXTENSION_ID, createConstraintsExtension, DEFAULT_CONSTRAINT_STYLE, selectedConstraintOf, setConstraints,
 } from './constraints/constraintsExtension';

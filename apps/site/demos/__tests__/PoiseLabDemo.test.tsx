@@ -2,7 +2,7 @@ import { cleanup } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { BalanceHandlesLabDemo } from '../BalanceHandlesLabDemo';
+import { PoiseLabDemo } from '../PoiseLabDemo';
 import { doubleClick, drag, editedAnchors, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
 import { withIcons } from '../../testIcons';
 
@@ -20,9 +20,9 @@ afterEach(() => {
 // out from the chord's middle (220, 230) along (-20, -60) per unit of scale.
 const GRIP = [200, 170];
 
-describe('BalanceHandlesLabDemo', () => {
+describe('PoiseLabDemo', () => {
   it('scales both of a segment\'s handles together when its grip is dragged', async () => {
-    const { container } = await renderSettled(<StrictMode><BalanceHandlesLabDemo /></StrictMode>, { wrapper: withIcons });
+    const { container } = await renderSettled(<StrictMode><PoiseLabDemo /></StrictMode>, { wrapper: withIcons });
     drag(sceneCanvas(container), GRIP, [190, 140]);
 
     const [a, b] = editedAnchors();
@@ -36,7 +36,7 @@ describe('BalanceHandlesLabDemo', () => {
   });
 
   it('gives a segment\'s handles one proportion when its grip is double-clicked', async () => {
-    const { container } = await renderSettled(<StrictMode><BalanceHandlesLabDemo /></StrictMode>, { wrapper: withIcons });
+    const { container } = await renderSettled(<StrictMode><PoiseLabDemo /></StrictMode>, { wrapper: withIcons });
     doubleClick(sceneCanvas(container), GRIP[0], GRIP[1]);
 
     // Both handle lines run to (160, 140); the handles reach 2/3 and 4/9 of

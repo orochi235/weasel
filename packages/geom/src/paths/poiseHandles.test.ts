@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  balanceFactorToward,
+  poiseFactorToward,
   equalizeSegmentHandles,
-  handleBalances,
+  poiseLines,
   scaleSegmentHandles,
-} from './balanceHandles';
+} from './poiseHandles';
 import type { AnchorSet } from './anchorEdits';
 
 /** One curved segment from (0, 0) to (100, 0) whose handles both lean up
@@ -21,9 +21,9 @@ function lopsided(): AnchorSet {
   };
 }
 
-describe('handleBalances', () => {
+describe('poiseLines', () => {
   it('lists each curved segment with both handles out, gripped midway between the tips', () => {
-    const lines = handleBalances(lopsided());
+    const lines = poiseLines(lopsided());
     expect(lines).toHaveLength(1);
     expect(lines[0]).toMatchObject({ sub: 0, segIdx: 0, flat: 0, from: { x: 20, y: 20 }, to: { x: 60, y: 40 }, grip: { x: 40, y: 30 } });
   });
@@ -46,13 +46,13 @@ describe('scaleSegmentHandles', () => {
   });
 });
 
-describe('balanceFactorToward', () => {
+describe('poiseFactorToward', () => {
   it('is the factor that carries the grip to a point along its slide', () => {
     const set = lopsided();
     // The grip slides from the chord's middle (50, 0) through (40, 30).
-    expect(balanceFactorToward(set, 0, 0, { x: 40, y: 30 })).toBeCloseTo(1, 12);
-    expect(balanceFactorToward(set, 0, 0, { x: 30, y: 60 })).toBeCloseTo(2, 12);
-    expect(balanceFactorToward(set, 0, 0, { x: 60, y: -30 })).toBe(0);
+    expect(poiseFactorToward(set, 0, 0, { x: 40, y: 30 })).toBeCloseTo(1, 12);
+    expect(poiseFactorToward(set, 0, 0, { x: 30, y: 60 })).toBeCloseTo(2, 12);
+    expect(poiseFactorToward(set, 0, 0, { x: 60, y: -30 })).toBe(0);
   });
 });
 

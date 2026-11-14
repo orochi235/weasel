@@ -17,7 +17,7 @@ export const dropPathToolsChrome: PrefsMigration = (records) => {
   records.set('ui.surfaces', rest);
 };
 
-const PATH_AIDS = ['pathDirection', 'pathComb', 'pathBalance', 'pathFillets'];
+const PATH_AIDS = ['pathDirection', 'pathComb', 'pathPoise', 'pathFillets'];
 
 /** Version 2 to 3: the path editing aids moved into the view's Path editing group, and the left sidebar width, which
  *  nothing read, was dropped. */

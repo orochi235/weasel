@@ -755,7 +755,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   reports the link. Core's hook is `PathEditExtension.finishTransform`, run as one of the
   `transformFollowers` dep's followers, which the `editAnchors` dep source adds.
 - 2026-10-19: A path-edit drag that only previews until release (bend segment, corner, Tug,
-  Balance, Sand, spiro insert) shows nothing for a frame its constraints cannot hold,
+  Poise, Sand, spiro insert) shows nothing for a frame its constraints cannot hold,
   since that frame commits nothing; the anchor drag still holds its last good frame.
 - 2026-10-19: A constraint link is made by Alt-dragging an anchor in path edit (`linkAnchor`): it
   reads where the anchor was released, nearest anchor within 6 screen px first, then a segment,

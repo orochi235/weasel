@@ -207,9 +207,9 @@ export const PREFS = {
               description: 'While editing a path, draw its curvature comb: a tooth on each curve as long as the curve is tight there.',
               default: false,
             },
-            pathBalance: {
+            pathPoise: {
               kind: 'boolean',
-              name: 'Show handle balance',
+              name: 'Show poise lines',
               description: "While editing a path, draw a line between each curve's handle tips, with a grip that drags both handles at once.",
               default: false,
             },

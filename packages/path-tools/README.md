@@ -41,7 +41,7 @@ and an app that imports only some never loads the others:
 | `resamplePreset` | Resample: anchors spread evenly by arc length, adjusted afterward in the last-operation panel |
 | `addExtremesPreset` | Add extremes: an anchor at each curve's leftmost, rightmost, top, and bottom |
 | `curvatureCombPreset` | The curvature comb over the open path, under chrome id `path-edit.comb` |
-| `balancePreset` | Balance handles and Equalize, from grips under chrome id `path-edit.balance` |
+| `poisePreset` | Poise and Equalize, from grips under chrome id `path-edit.poise` |
 | `constraintsPreset` | Path constraints: the actions, their marks, and every edit finished so they hold |
 | `pathStructurePreset` | Make start point and Reverse path direction, and arrows showing which way the open path runs, under chrome id `path-edit.direction` |
 | `segmentTypePreset` | Turn segments straight or curved, from the selection (Shift+C) or under a Shift+double-click |
@@ -73,11 +73,11 @@ The sources are hidden while the effect shows them (every effect's create action
 `hideSources` in its params; Text Along Path sets it unless told not to). Release shows them again, as one undo step, and Delete, Cut and Expand take them with the effect.
 Double-clicking the curved text edits the hidden text in place; Enter path edit on the effect edits its path.
 
-The comb, balance lines, constraint marks, and direction arrows are off until
+The comb, poise lines, constraint marks, and direction arrows are off until
 chrome-caps shows them; the fillet widgets show until it hides
 `path-edit.fillets`. The toggles `pathEdit.show.direction`, `.comb`,
-`.balance`, and `.fillets` (group `pathOverlays`) come with their presets and
-flip that rule through core's `chromeRules` dep. `createCurvatureCombPreset`, `createBalancePreset`,
+`.poise`, and `.fillets` (group `pathOverlays`) come with their presets and
+flip that rule through core's `chromeRules` dep. `createCurvatureCombPreset`, `createPoisePreset`,
 `createConstraintsPreset`, `createPathStructurePreset`, and
 `createFilletPreset` take their look. They reach path edit through core's
 `PathEditExtension`: marks drawn on the open path, parts of it to press, marks

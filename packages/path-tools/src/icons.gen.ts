@@ -16,7 +16,7 @@ export type PathToolsIconName =
   | 'zigzag'
   | 'puckerBloat'
   | 'expand'
-  | 'balanceHandles'
+  | 'poise'
   | 'equalizeHandles'
   | 'tug'
   | 'snip'
@@ -70,7 +70,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
       "zigzag",
       "puckerBloat",
       "expand",
-      "balanceHandles",
+      "poise",
       "equalizeHandles",
       "tug",
       "snip",
@@ -146,7 +146,7 @@ declare module '@weasel-js/icons' {
     'path-tools:zigzag': true;
     'path-tools:puckerBloat': true;
     'path-tools:expand': true;
-    'path-tools:balanceHandles': true;
+    'path-tools:poise': true;
     'path-tools:equalizeHandles': true;
     'path-tools:tug': true;
     'path-tools:snip': true;

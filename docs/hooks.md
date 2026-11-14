@@ -106,8 +106,8 @@ curly quote, so both codepoints are listed.
 | `editAnchors` | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down |
 | `editFillet` | drag whose press hit a fillet widget (`fillet:N`) inside a corner anchor of the edited path, shown while chrome-caps shows `path-edit.fillets`; sets that corner's radius, or every selected corner's when the anchor is selected |
 | `bendSegment` | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
-| `balanceHandles` | drag whose press hit a curved segment's `balance:N` grip, shown while chrome-caps shows `path-edit.balance`; `move` turns those down too, and a length lock in force (`handleLock.length`, or Mod) holds it still |
-| `equalizeHandles` | double-click on a `balance:N` grip |
+| `poiseHandles` | drag whose press hit a curved segment's `poise:N` grip, shown while chrome-caps shows `path-edit.poise`; `move` turns those down too, and a length lock in force (`handleLock.length`, or Mod) holds it still |
+| `equalizeHandles` | double-click on a `poise:N` grip |
 | `marqueeAnchors` | drag on `empty` |
 | `sand` | none of its own: the `sand` path-edit tool binds a drag anywhere, at the active tier, so it outranks every ambient anchor-editing drag |
 | `tugPath` | none of its own: the `tug` path-edit tool binds a drag on an anchor, Shift optional, and the action takes it only on an open end, so a drag on any other anchor falls through to `editAnchors`; its `mode` param (`'tangent'`, the default, or `'curvature'`) picks how the end grows, Shift picks the other, and both are read on every move |

@@ -62,7 +62,7 @@ export const isControlHandle = hitPredicate((target) => {
   return k !== undefined && /^(controlIn|controlOut):\d+$/.test(k);
 });
 
-/** A corner-shape widget, set inside a corner anchor of the edited path. */
+/** A fillet widget, set inside a corner anchor of the edited path. */
 export const isFilletWidget = hitPredicate((target) => {
   const k = kindOf(target);
   return k !== undefined && /^fillet:\d+$/.test(k);
@@ -75,14 +75,14 @@ export const isAnchorOrControl = hitPredicate((target) =>
 /** The outline of the path being edited, between its anchors. */
 export const isSegment = hitPredicate((target) => kindOf(target) === 'segment');
 
-/** The grip midway along a curved segment's balance line, `balance:N`, where
+/** The grip midway along a curved segment's poise line, `poise:N`, where
  *  N is the flat index of the anchor the segment starts at. */
-export const isBalanceGrip = hitPredicate((target) => {
+export const isPoiseGrip = hitPredicate((target) => {
   const k = kindOf(target);
-  return k !== undefined && /^balance:\d+$/.test(k);
+  return k !== undefined && /^poise:\d+$/.test(k);
 });
 
 /** Anything path edit puts on the path: an anchor, a control, a segment, a
- *  segment's balance grip, or a corner widget. */
+ *  segment's poise grip, or a fillet widget. */
 export const isPathEditPart = hitPredicate((target) =>
-  isAnchorOrControl(target) || isSegment(target) || isBalanceGrip(target) || isFilletWidget(target));
+  isAnchorOrControl(target) || isSegment(target) || isPoiseGrip(target) || isFilletWidget(target));

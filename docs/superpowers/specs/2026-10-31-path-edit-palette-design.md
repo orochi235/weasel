@@ -30,9 +30,9 @@ returns to `anchors`; with `anchors` on, Escape leaves path edit.
 **`ToolPalette` takes `ineligible: 'dim' | 'hide'`**, default `dim`. Hand and Measure carry only implicit
 capabilities, so they show in both modes.
 
-**Overlay toggles are actions.** `pathEdit.show.direction`, `.comb`, `.balance`, and `.corners`, group
+**Overlay toggles are actions.** `pathEdit.show.direction`, `.comb`, `.poise`, and `.fillets`, group
 `pathOverlays`, in `@weasel-js/path-tools`. Each flips its chrome rule (`path-edit.<x>`) between `always`
-and `never`; the presets' defaults stand (comb, balance, direction hidden; corners shown).
+and `never`; the presets' defaults stand (comb, poise, direction hidden; fillets shown).
 
 ## WeaselDraw
 

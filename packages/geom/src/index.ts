@@ -214,8 +214,8 @@ export {
   type CombTooth, type CurvatureCombOptions, type CurvatureSource, type SegmentComb,
 } from './paths/curvature';
 export {
-  balanceFactorToward, equalizeSegmentHandles, handleBalances, scaleSegmentHandles, type HandleBalance,
-} from './paths/balanceHandles';
+  poiseFactorToward, equalizeSegmentHandles, poiseLines, scaleSegmentHandles, type PoiseLine,
+} from './paths/poiseHandles';
 export { harmonizeAnchors } from './paths/harmonize';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { anchorOriginsOf, remapAnchorValues } from './paths/anchorValues';

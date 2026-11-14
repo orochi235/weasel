@@ -24,7 +24,7 @@ packages/geom/src/paths/resamplePath.ts
 packages/geom/src/paths/blendPaths.ts
 packages/geom/src/bvh/bvhQuery.ts
 packages/geom/src/paths/anchorSymmetry.ts
-packages/geom/src/paths/balanceHandles.ts
+packages/geom/src/paths/poiseHandles.ts
 packages/geom/src/warp/refine.ts
 packages/geom/src/nearest.ts
 packages/geom/src/paths/fitHandles.ts
