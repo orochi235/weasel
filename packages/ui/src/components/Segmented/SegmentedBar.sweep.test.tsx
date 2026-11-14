@@ -1,8 +1,8 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
-import { ToggleBar } from './ToggleBar';
-import type { SegmentSweep } from '../segmentSweep';
+import { SegmentedBar } from './SegmentedBar';
+import type { SegmentSweep } from './segmentSweep';
 
 const ITEMS = [
   { value: 'a', label: 'A' },
@@ -17,7 +17,7 @@ afterEach(() => { delete (document as { elementFromPoint?: unknown }).elementFro
 function Bar({ initial = [], sweep = true, seen }: { initial?: string[]; sweep?: SegmentSweep<string>; seen: string[][] }) {
   const [value, setValue] = useState<string[]>(initial);
   return (
-    <ToggleBar
+    <SegmentedBar
       mode="multiple"
       items={ITEMS}
       value={value}
@@ -44,7 +44,7 @@ function setup(props: Omit<Parameters<typeof Bar>[0], 'seen'>) {
   return { seen, buttons, fire, pressed };
 }
 
-describe('ToggleBar sweep', () => {
+describe('SegmentedBar sweep', () => {
   it('turns on every segment a drag reaches from an off one, skipping a disabled one', () => {
     const { fire, pressed } = setup({});
     fire('pointerdown', 5);
@@ -95,7 +95,7 @@ describe('ToggleBar sweep', () => {
     function Grid() {
       const [value, setValue] = useState<string[]>([]);
       return (
-        <ToggleBar mode="multiple" columns={3} sweep items={cells} value={value}
+        <SegmentedBar mode="multiple" columns={3} sweep items={cells} value={value}
           onChange={(next) => { seen.push(next); setValue(next); }} aria-label="grid" />
       );
     }

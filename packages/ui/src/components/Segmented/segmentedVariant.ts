@@ -1,5 +1,5 @@
 import type { IconRef } from '@weasel-js/icons';
-import { icon } from '../icons.gen';
+import { icon } from '../../icons.gen';
 
 /** Visual treatment of a segmented bar. */
 export type SegmentedVariant = 'default' | 'minimal' | 'flat';

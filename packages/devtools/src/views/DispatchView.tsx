@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import type { DispatchRecord, TraceLogEntry } from '@weasel-js/core/routing';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Switch } from '@weasel-js/ui/components/Switch';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { usePoll } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { followTrace } from '../trace';
@@ -69,7 +69,7 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
   return (
     <div className={s.dispatch}>
       <div className={s.toolbar}>
-        <ToggleBar<Outcome>
+        <SegmentedBar<Outcome>
           mode="multiple"
           variant="minimal"
           size="sm"

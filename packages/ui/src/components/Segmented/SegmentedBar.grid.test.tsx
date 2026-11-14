@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
-import { ToggleBar } from './ToggleBar';
+import { SegmentedBar } from './SegmentedBar';
 import type { LastRow } from '@weasel-js/ui-input';
 
 const cells = (n: number) => Array.from({ length: n }, (_, i) => ({ value: String(i), label: String(i) }));
 
 function Grid({ count, lastRow }: { count: number; lastRow?: LastRow }) {
   const [value, setValue] = useState<string[]>([]);
-  return <ToggleBar mode="multiple" columns={3} lastRow={lastRow} items={cells(count)} value={value} onChange={setValue} aria-label="grid" />;
+  return <SegmentedBar mode="multiple" columns={3} lastRow={lastRow} items={cells(count)} value={value} onChange={setValue} aria-label="grid" />;
 }
 
-describe('ToggleBar columns', () => {
+describe('SegmentedBar columns', () => {
   it('lays the segments out as a grid in one well, naming the corners it rounds', () => {
     const { getByRole, getAllByRole } = render(<Grid count={5} lastRow="fill" />);
     expect(getByRole('group').style.getPropertyValue('--tracks')).toBe('6');
@@ -31,7 +31,7 @@ describe('ToggleBar columns', () => {
   });
 
   it('stays one line without columns', () => {
-    const { getByRole } = render(<ToggleBar mode="multiple" items={cells(4)} value={[]} onChange={() => {}} aria-label="row" />);
+    const { getByRole } = render(<SegmentedBar mode="multiple" items={cells(4)} value={[]} onChange={() => {}} aria-label="row" />);
     expect(getByRole('group').style.getPropertyValue('--tracks')).toBe('');
   });
 });

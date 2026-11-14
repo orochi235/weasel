@@ -2,12 +2,10 @@ import '@weasel-js/theme/tokens.css';
 import type { ReactNode } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
-import { ButtonBar } from '@weasel-js/ui/components/ButtonBar';
-import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 
-// All three bars draw from segmentedControl.module.css; ToggleBar's own states
-// and its flat cells are measured in ToggleBar.browser.test.tsx.
+// Every mode draws from segmentedControl.module.css; single mode's own states
+// and its flat cells are measured in SegmentedBar.browser.test.tsx.
 
 afterEach(cleanup);
 
@@ -21,14 +19,15 @@ function Glyph() {
   );
 }
 
-type Bar = 'ButtonBar' | 'OptionsBar';
+type Mode = 'momentary' | 'each';
 type Seg = { label: ReactNode; ariaLabel?: string; tooltip?: string };
 type Opts = { variant?: 'default' | 'minimal' | 'flat'; height?: number };
 
-function Bar({ bar, segs, variant, height }: { bar: Bar; segs: readonly Seg[] } & Opts) {
-  if (bar === 'ButtonBar') {
+function Bar({ mode, segs, variant, height }: { mode: Mode; segs: readonly Seg[] } & Opts) {
+  if (mode === 'momentary') {
     return (
-      <ButtonBar
+      <SegmentedBar
+        mode="momentary"
         aria-label="Bar"
         variant={variant}
         height={height}
@@ -37,7 +36,8 @@ function Bar({ bar, segs, variant, height }: { bar: Bar; segs: readonly Seg[] } 
     );
   }
   return (
-    <OptionsBar
+    <SegmentedBar
+      mode="each"
       aria-label="Bar"
       variant={variant}
       height={height}
@@ -54,14 +54,14 @@ function Bar({ bar, segs, variant, height }: { bar: Bar; segs: readonly Seg[] } 
 
 const TEXT = LABELS.map((l) => ({ label: l }));
 
-describe.each(['ButtonBar', 'OptionsBar'] as const)('%s', (bar) => {
+describe.each(['momentary', 'each'] as const)('%s mode', (mode) => {
   // A bar beside a greedy sibling in a narrow flex row must keep its labels
   // whole: the row takes width from the sibling, never from the segments.
   test.each(['default', 'minimal', 'flat'] as const)('a squeezed %s bar keeps its text segments whole', (variant) => {
     render(
       <div style={{ display: 'flex', width: 120 }}>
         <input style={{ flex: 1 }} />
-        <Bar bar={bar} segs={TEXT} variant={variant} />
+        <Bar mode={mode} segs={TEXT} variant={variant} />
       </div>,
     );
     for (const seg of screen.getAllByRole('button')) {
@@ -70,41 +70,40 @@ describe.each(['ButtonBar', 'OptionsBar'] as const)('%s', (bar) => {
     }
   });
 
-  test('an icon segment pads its glyph by 5px a side, as ToggleBar does', () => {
-    render(<Bar bar={bar} segs={[{ label: <Glyph />, ariaLabel: 'A' }, { label: <Glyph />, ariaLabel: 'B' }]} />);
+  test('an icon segment pads its glyph by 5px a side, as single mode does', () => {
+    render(<Bar mode={mode} segs={[{ label: <Glyph />, ariaLabel: 'A' }, { label: <Glyph />, ariaLabel: 'B' }]} />);
     for (const seg of screen.getAllByRole('button')) {
       const glyph = seg.querySelector('svg')!.getBoundingClientRect();
       expect(seg.getBoundingClientRect().width - glyph.width).toBeCloseTo(10, 0);
     }
   });
 
-  test('`height` sizes the bar the way it sizes a ToggleBar', () => {
+  test('`height` sizes the bar the way it sizes a single-mode bar', () => {
     render(
       <>
-        <Bar bar={bar} segs={TEXT} height={40} />
-        <ToggleBar aria-label="Toggle" items={TEXT.map((t) => ({ value: t.label, label: t.label }))} value={null} onChange={() => {}} height={40} />
+        <Bar mode={mode} segs={TEXT} height={40} />
+        <SegmentedBar aria-label="Toggle" items={TEXT.map((t) => ({ value: t.label, label: t.label }))} value={null} onChange={() => {}} height={40} />
       </>,
     );
-    const root = screen.getByRole(bar === 'ButtonBar' ? 'toolbar' : 'group', { name: 'Bar' });
+    const root = screen.getByRole(mode === 'momentary' ? 'toolbar' : 'group', { name: 'Bar' });
     const toggle = screen.getByRole('radiogroup', { name: 'Toggle' });
     expect(toggle.getBoundingClientRect().height).toBeGreaterThan(40 - 1);
     expect(root.getBoundingClientRect().height).toBe(toggle.getBoundingClientRect().height);
   });
 });
 
-// Only ButtonBar takes tooltips.
-test('ButtonBar rounds its end caps when tooltips wrap the end segments', () => {
-  render(<Bar bar="ButtonBar" segs={LABELS.map((l) => ({ label: l, tooltip: `${l} tip` }))} />);
+test('a momentary bar rounds its end caps when tooltips wrap the end segments', () => {
+  render(<Bar mode="momentary" segs={LABELS.map((l) => ({ label: l, tooltip: `${l} tip` }))} />);
   const segs = screen.getAllByRole('button');
   expect(parseFloat(getComputedStyle(segs[0]).borderTopLeftRadius)).toBeGreaterThan(0);
   expect(parseFloat(getComputedStyle(segs[segs.length - 1]).borderTopRightRadius)).toBeGreaterThan(0);
 });
 
-test('a minimal ToggleBar draws its segments as a minimal OptionsBar does', () => {
+test('a minimal single-mode bar draws its segments as a minimal each-mode bar does', () => {
   render(
     <>
-      <Bar bar="OptionsBar" segs={TEXT} variant="minimal" />
-      <ToggleBar aria-label="Toggle" variant="minimal" items={TEXT.map((t) => ({ value: t.label, label: t.label }))} value="Tree" onChange={() => {}} />
+      <Bar mode="each" segs={TEXT} variant="minimal" />
+      <SegmentedBar aria-label="Toggle" variant="minimal" items={TEXT.map((t) => ({ value: t.label, label: t.label }))} value="Tree" onChange={() => {}} />
     </>,
   );
   const look = (el: Element) => {

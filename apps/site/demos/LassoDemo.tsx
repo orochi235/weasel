@@ -8,7 +8,7 @@ import {
   solid,
   type LassoHitMode,
 } from '@weasel-js/core';
-import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
 const W = 480, H = 320;
@@ -37,7 +37,7 @@ const INITIAL = (() => {
   return out;
 })();
 
-const MODE_ITEMS: ToggleBarItem<LassoHitMode>[] = [
+const MODE_ITEMS: SegmentedBarItem<LassoHitMode>[] = [
   { value: 'centers', label: 'centers (snappy)' },
   { value: 'intersect', label: 'intersect (any overlap)' },
   { value: 'enclosed', label: 'enclosed (strict)' },
@@ -56,7 +56,7 @@ export function LassoDemo() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12 }}>
         <span>Hit mode:</span>
-        <ToggleBar items={MODE_ITEMS} value={mode} onChange={(m) => m && setMode(m)} aria-label="Hit mode" size="sm" />
+        <SegmentedBar items={MODE_ITEMS} value={mode} onChange={(m) => m && setMode(m)} aria-label="Hit mode" size="sm" />
         <span style={{ marginLeft: 'auto', opacity: 0.7 }}><kbd>V</kbd> select · <kbd>L</kbd> lasso</span>
       </div>
       <DemoStage width={W} height={H}>

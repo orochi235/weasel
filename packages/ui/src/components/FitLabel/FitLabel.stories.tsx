@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { FitLabel } from '@weasel-js/ui/components/FitLabel';
 import s from './FitLabel.stories.module.css';
 
@@ -20,12 +20,12 @@ const CASES = [
 ];
 
 /** Drag the box's corner: the segments step down together as it narrows. */
-export const InAToggleBar: Story = {
+export const InASegmentedBar: Story = {
   render: (args) => {
     const [v, setV] = useState<string | null>('none');
     return (
       <div className={s.room}>
-        <ToggleBar
+        <SegmentedBar
           aria-label="Case"
           items={CASES.map((c) => ({ value: c.value, label: <FitLabel {...args} forms={c.forms} />, ariaLabel: c.forms[0] }))}
           value={v}

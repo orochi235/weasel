@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect, within } from '@weasel-js/forge/play';
 import { LabShell } from '@weasel-js/labkit';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Select } from '@weasel-js/ui/components/Select';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 
 const meta: Meta<typeof LabShell> = {
@@ -49,7 +49,7 @@ export const HeaderControlsLineUp: Story = {
     header: (
       <>
         <button type="button">Add</button>
-        <ToggleBar
+        <SegmentedBar
           aria-label="Mode"
           items={[
             { value: 'a', label: 'A' },

@@ -25,7 +25,7 @@ import { GradientEditor } from '../GradientEditor';
 import { paintKindEditor } from '../paintKindEditor';
 import { PatternPicker } from '../PatternPicker';
 import { paintPreviewCss, solidColorOf } from '@weasel-js/paint';
-import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import s from './PaintInput.module.css';
 
 /** What a kind with no color of its own seeds from. */
@@ -65,7 +65,7 @@ function kindOf(paint: Paint | Inherit | null | undefined): PaintKind | null {
 export const ownPaint = (value: Paint | Inherit | null | undefined): Paint | null | undefined =>
   (value === INHERIT ? undefined : value);
 
-function segment(id: string, label: string, ref: IconSpec | undefined): ToggleBarItem<PaintKind> {
+function segment(id: string, label: string, ref: IconSpec | undefined): SegmentedBarItem<PaintKind> {
   return ref
     // Icon-only: the full label stays the accessible name. 14, not 15: a
     // `sm` bar is 17px tall over 1px of padding, so 15 fills the segment box.
@@ -86,7 +86,7 @@ function firstOfSegment(entries: readonly PaintKindEntry[]): Map<string, PaintKi
 
 function segmentItems(
   firstOf: ReadonlyMap<string, PaintKindEntry>, allowNone: boolean, allowInherit: boolean,
-): readonly ToggleBarItem<PaintKind>[] {
+): readonly SegmentedBarItem<PaintKind>[] {
   return [
     ...(allowNone ? [segment(NONE, 'None', icon('core:paintNone'))] : []),
     ...(allowInherit ? [segment(INHERIT, 'Inherit', icon('core:paintInherit'))] : []),
@@ -210,7 +210,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
       className={[s.root, unset && s.unset, className].filter(Boolean).join(' ')}
       title={unset ? 'Not set' : undefined}
     >
-      <ToggleBar<PaintKind>
+      <SegmentedBar<PaintKind>
         items={items}
         value={active}
         size="sm"

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
 import { Button, type ButtonBase, type ButtonVariant, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
 import type { ControlSize } from '@weasel-js/ui/components/Density';
-import { ToggleBar as KitToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import { BADGE_LOOKS, lookProps } from '../Badge/looks';
@@ -61,7 +61,7 @@ export const Glass: Story = {
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', ['--wzl-gloss' as string]: 1 }}>
       <Button {...args} stance="confirm">Save</Button>
       <Button {...args}>Cancel</Button>
-      <KitToggleBar
+      <SegmentedBar
         aria-label="View"
         items={[
           { value: 'tree', label: 'Tree' },
@@ -266,7 +266,7 @@ interface LabParams {
   zoom: number;
   backdrop: 'glass' | 'panel' | 'photo' | 'gradient' | 'grid';
   variant: LabVariant;
-  target: 'button' | 'togglebar';
+  target: 'button' | 'segmented';
 }
 
 const LAB_DEFAULTS: LabParams = {
@@ -300,7 +300,7 @@ const LAB_DEFAULTS: LabParams = {
   zoom: 2,
   backdrop: 'photo',
   variant: 'confirm',
-  target: 'togglebar',
+  target: 'segmented',
 };
 
 function buttonStyleFromLab(p: LabParams): CSSProperties {
@@ -406,7 +406,7 @@ function Slider({
   );
 }
 
-function ToggleBar<T extends string>({
+function Choice<T extends string>({
   value, options, onChange, labels,
 }: {
   value: T;
@@ -415,7 +415,7 @@ function ToggleBar<T extends string>({
   labels?: readonly string[];
 }): ReactElement {
   return (
-    <KitToggleBar<T>
+    <SegmentedBar<T>
       items={options.map((opt, i) => ({ value: opt, label: labels?.[i] ?? opt }))}
       value={value}
       onChange={(v) => { if (v != null) onChange(v); }}
@@ -494,14 +494,14 @@ function ButtonLabView(): ReactElement {
 
   const renderTarget = (extraStyle?: CSSProperties): ReactElement => {
     const combined = { ...(style as CSSProperties), ...extraStyle };
-    if (p.target === 'togglebar') {
+    if (p.target === 'segmented') {
       return (
-        <KitToggleBar
+        <SegmentedBar
           items={TOGGLE_ITEMS}
           value={toggleValue}
           onChange={(v) => v != null && setToggleValue(v)}
           height={p.height}
-          // ToggleBar doesn't accept `style` — the lab vars are applied to a
+          // SegmentedBar doesn't accept `style` — the lab vars are applied to a
           // wrapper instead. Pass through via the wrapper around the call site.
           className={undefined}
         />
@@ -514,10 +514,10 @@ function ButtonLabView(): ReactElement {
     );
   };
 
-  // For toggle bar, we need to apply --btn-* vars on a wrapper since
-  // ToggleBar doesn't accept a style prop directly.
+  // For the segmented bar, we need to apply --btn-* vars on a wrapper since
+  // SegmentedBar doesn't accept a style prop directly.
   const wrapTarget = (extraStyle?: CSSProperties): ReactElement => {
-    if (p.target === 'togglebar') {
+    if (p.target === 'segmented') {
       return (
         <div style={{ display: 'inline-block', ...(style as CSSProperties), ...extraStyle }}>
           {renderTarget()}
@@ -567,7 +567,7 @@ function ButtonLabView(): ReactElement {
           </label>
           <label style={{ display: 'grid', gridTemplateColumns: '60px 1fr', alignItems: 'center', gap: 8 }}>
             <span style={ctrlLabelStyle}>behind</span>
-            <ToggleBar<LabParams['backdrop']>
+            <Choice<LabParams['backdrop']>
               value={p.backdrop}
               options={['panel', 'glass', 'gradient', 'photo', 'grid'] as const}
               onChange={(v) => set('backdrop', v)}
@@ -597,15 +597,15 @@ function ButtonLabView(): ReactElement {
         <h3 style={subheadStyle}>Shape & type</h3>
           <label style={{ display: 'grid', gridTemplateColumns: '100px 1fr', alignItems: 'center', gap: 8 }}>
             <span style={ctrlLabelStyle}>component</span>
-            <ToggleBar<LabParams['target']>
+            <Choice<LabParams['target']>
               value={p.target}
-              options={['togglebar', 'button'] as const}
+              options={['segmented', 'button'] as const}
               onChange={(v) => set('target', v)}
             />
           </label>
           <label style={{ display: 'grid', gridTemplateColumns: '100px 1fr', alignItems: 'center', gap: 8 }}>
             <span style={ctrlLabelStyle}>variant</span>
-            <ToggleBar<LabVariant>
+            <Choice<LabVariant>
               value={p.variant}
               options={['confirm', 'solid', 'ghost'] as const}
               onChange={(v) => set('variant', v)}
@@ -613,7 +613,7 @@ function ButtonLabView(): ReactElement {
           </label>
           <label style={{ display: 'grid', gridTemplateColumns: '100px 1fr', alignItems: 'center', gap: 8 }}>
             <span style={ctrlLabelStyle}>weight</span>
-            <ToggleBar<'200' | '300' | '400'>
+            <Choice<'200' | '300' | '400'>
               value={String(p.fontweight) as '200' | '300' | '400'}
               options={['200', '300', '400'] as const}
               onChange={(v) => set('fontweight', Number(v) as 200 | 300 | 400)}

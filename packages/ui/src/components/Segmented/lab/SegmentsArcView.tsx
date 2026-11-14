@@ -1,8 +1,6 @@
 import { useState, type CSSProperties, type ReactElement } from 'react';
 import { Along } from '@weasel-js/ui/components/Along';
-import { ButtonBar } from '@weasel-js/ui/components/ButtonBar';
-import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import type { ControlSize } from '@weasel-js/ui/components/Density';
 import s from './SegmentsArc.stories.module.css';
 
@@ -21,8 +19,8 @@ export const SEGMENTS_ARC_DEFAULTS: SegmentsArcConfig = { variant: 'default', si
 const WORDS = ['Move', 'Scale', 'Rotate', 'Skew', 'Warp', 'Bend', 'Twist', 'Shear'];
 
 /**
- * The three segmented controls laid on one circle: a `ToggleBar` on its top arc, a multiple-mode one with a mixed
- * segment on its bottom arc, a `ButtonBar` down its right side and an `OptionsBar` down its left.
+ * `SegmentedBar`s laid on one circle: a single-mode one on its top arc, a multiple-mode one with a mixed segment on its
+ * bottom arc, a momentary one down its right side, and an each-mode one down its left.
  */
 export function SegmentsArcView({ config }: { config: SegmentsArcConfig }): ReactElement {
   const { variant, size, sweep, direction, count, box } = config;
@@ -37,10 +35,10 @@ export function SegmentsArcView({ config }: { config: SegmentsArcConfig }): Reac
     <div className={s.page}>
       <div className={s.box} style={{ '--box': `${box}px` } as CSSProperties}>
         <Along arc={{ at: 0, span, direction, inset: 24 }}>
-          <ToggleBar aria-label="Tool" items={words.map((w) => ({ value: w, label: w }))} value={tool} onChange={setTool} {...common} />
+          <SegmentedBar aria-label="Tool" items={words.map((w) => ({ value: w, label: w }))} value={tool} onChange={setTool} {...common} />
         </Along>
         <Along arc={{ at: 180, span, direction, inset: 24 }}>
-          <ToggleBar
+          <SegmentedBar
             mode="multiple"
             aria-label="Style"
             items={['Bold', 'Italic', 'Under'].map((w) => ({ value: w, label: w }))}
@@ -51,10 +49,10 @@ export function SegmentsArcView({ config }: { config: SegmentsArcConfig }): Reac
           />
         </Along>
         <Along arc={{ at: 90, span: `${Math.min(sweep, 100)}deg`, direction, inset: 24 }}>
-          <ButtonBar aria-label="Edit" items={['Cut', 'Copy', 'Paste'].map((w) => ({ value: w, label: w, onAction: () => setPressed(w) }))} {...common} />
+          <SegmentedBar mode="momentary" aria-label="Edit" items={['Cut', 'Copy', 'Paste'].map((w) => ({ value: w, label: w, onAction: () => setPressed(w) }))} {...common} />
         </Along>
         <Along arc={{ at: 270, span: `${Math.min(sweep, 100)}deg`, direction, inset: 24 }}>
-          <OptionsBar aria-label="Snap" items={[{ value: 'grid', label: 'Grid', selected: true, onChange: () => {} }, { value: 'guides', label: 'Guides', selected: false, onChange: () => {} }]} {...common} />
+          <SegmentedBar mode="each" aria-label="Snap" items={[{ value: 'grid', label: 'Grid', selected: true, onChange: () => {} }, { value: 'guides', label: 'Guides', selected: false, onChange: () => {} }]} {...common} />
         </Along>
       </div>
       <p data-readout="pressed">Pressed: {pressed}</p>

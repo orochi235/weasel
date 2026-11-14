@@ -1,9 +1,9 @@
 import { f, meta, story } from '@weasel-js/forge';
 import { SEGMENTS_ARC_DEFAULTS as D, SegmentsArcView, type SegmentsArcConfig } from './SegmentsArcView';
 
-export default meta({ title: 'ui/Foundations/ToggleBar', layout: 'fullscreen', tags: ['lab'] });
+export default meta({ title: 'ui/Foundations/SegmentedBar', layout: 'fullscreen', tags: ['lab'] });
 
-/** ToggleBar, OptionsBar and ButtonBar along the arcs of one circle, in each variant and size. */
+/** SegmentedBar's modes along the arcs of one circle, in each variant and size. */
 export const OnAnArc = story({
   config: f.schema({
     variant: f.enum(D.variant, ['default', 'flat', 'minimal']).radio().label('Variant'),

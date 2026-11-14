@@ -93,7 +93,7 @@ function Spinner(): ReactNode {
  * button, so pass `disabled` too if the click should be blocked.
  *
  * `shortcut` adds a kit tooltip reading `Name (⌘S)`, named by `aria-label` or
- * string children, the way `ToolButton` and `ButtonBar` items show theirs;
+ * string children, the way `ToolButton` and `SegmentedBar` items show theirs;
  * `tooltip` replaces that text with any content. A disabled button with a
  * `disabledReason` keeps its tooltip, which reads `Name: reason`.
  *

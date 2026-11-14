@@ -1,14 +1,14 @@
 import { Fragment, useId, useLayoutEffect, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
 import { clamp, runStationAt, trackShapeD, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
-import { screenDirection } from './Along/rowRun';
-import { useRowRun } from './Along/useRowRun';
-import { RunScope } from './Run';
-import { useItemLengths, useRunGap } from './Along/useItemLengths';
-import { RunBand, RunEnds, useRunRow } from './Along/useRunRow';
+import { screenDirection } from '../Along/rowRun';
+import { useRowRun } from '../Along/useRowRun';
+import { RunScope } from '../Run';
+import { useItemLengths, useRunGap } from '../Along/useItemLengths';
+import { RunBand, RunEnds, useRunRow } from '../Along/useRunRow';
 import type { SegmentedRowProps, SegmentPlace, SegmentState } from './segmentedRow';
 import seg from './segmentedControl.module.css';
 import s from './segmentsAlong.module.css';
-import { cssPx } from '../cssPx';
+import { cssPx } from '../../cssPx';
 
 const SEGMENT = 'data-segment';
 const segmentKeyOf = (child: Element): string | null => child.getAttribute(SEGMENT);

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, render, fireEvent, screen } from '@testing-library/react';
-import { ButtonBar } from '../ButtonBar/ButtonBar';
-import { ToggleBar } from './ToggleBar';
+import { range, values } from '@weasel-js/ui-input';
+import { SegmentedBar } from './SegmentedBar';
 
 const items = [
   { value: 'left', label: 'Left' },
@@ -9,10 +9,10 @@ const items = [
   { value: 'right', label: 'Right' },
 ];
 
-describe('ToggleBar single mode', () => {
+describe('SegmentedBar single mode', () => {
   it('renders one segment per item with radiogroup role', () => {
     const { container } = render(
-      <ToggleBar items={items} value="center" onChange={() => {}} />,
+      <SegmentedBar items={items} value="center" onChange={() => {}} />,
     );
     expect(container.querySelector('[role="radiogroup"]')).not.toBeNull();
     const segs = container.querySelectorAll('[role="radio"]');
@@ -21,7 +21,7 @@ describe('ToggleBar single mode', () => {
 
   it('marks the selected segment with aria-checked=true', () => {
     const { container } = render(
-      <ToggleBar items={items} value="center" onChange={() => {}} />,
+      <SegmentedBar items={items} value="center" onChange={() => {}} />,
     );
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     expect(segs[0].getAttribute('aria-checked')).toBe('false');
@@ -32,7 +32,7 @@ describe('ToggleBar single mode', () => {
   it('calls onChange with clicked value', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar items={items} value="center" onChange={onChange} />,
+      <SegmentedBar items={items} value="center" onChange={onChange} />,
     );
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     fireEvent.click(segs[2]);
@@ -42,7 +42,7 @@ describe('ToggleBar single mode', () => {
   it('does not call onChange when clicking the already-selected segment (default)', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar items={items} value="center" onChange={onChange} />,
+      <SegmentedBar items={items} value="center" onChange={onChange} />,
     );
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     fireEvent.click(segs[1]);
@@ -52,7 +52,7 @@ describe('ToggleBar single mode', () => {
   it('calls onChange(null) when clicking selected segment with allowDeselect', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar items={items} value="center" onChange={onChange} allowDeselect />,
+      <SegmentedBar items={items} value="center" onChange={onChange} allowDeselect />,
     );
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     fireEvent.click(segs[1]);
@@ -60,7 +60,7 @@ describe('ToggleBar single mode', () => {
   });
 });
 
-describe('ToggleBar multiple mode', () => {
+describe('SegmentedBar multiple mode', () => {
   const triItems = [
     { value: 'b', label: 'B' },
     { value: 'i', label: 'I' },
@@ -69,7 +69,7 @@ describe('ToggleBar multiple mode', () => {
 
   it('uses role=group and aria-pressed', () => {
     const { container } = render(
-      <ToggleBar mode="multiple" items={triItems} value={['b']} onChange={() => {}} />,
+      <SegmentedBar mode="multiple" items={triItems} value={['b']} onChange={() => {}} />,
     );
     expect(container.querySelector('[role="group"]')).not.toBeNull();
     const btns = container.querySelectorAll<HTMLElement>('button');
@@ -81,7 +81,7 @@ describe('ToggleBar multiple mode', () => {
   it('adds value to array when clicking an unselected segment', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar mode="multiple" items={triItems} value={['b']} onChange={onChange} />,
+      <SegmentedBar mode="multiple" items={triItems} value={['b']} onChange={onChange} />,
     );
     fireEvent.click(container.querySelectorAll('button')[2]);
     expect(onChange).toHaveBeenCalledWith(['b', 'u']);
@@ -90,14 +90,14 @@ describe('ToggleBar multiple mode', () => {
   it('removes value from array when clicking a selected segment', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar mode="multiple" items={triItems} value={['b', 'u']} onChange={onChange} />,
+      <SegmentedBar mode="multiple" items={triItems} value={['b', 'u']} onChange={onChange} />,
     );
     fireEvent.click(container.querySelectorAll('button')[0]);
     expect(onChange).toHaveBeenCalledWith(['u']);
   });
 });
 
-describe('ToggleBar multiple mode — mixed segments', () => {
+describe('SegmentedBar multiple mode — mixed segments', () => {
   const triItems = [
     { value: 'b', label: 'B' },
     { value: 'i', label: 'I' },
@@ -106,7 +106,7 @@ describe('ToggleBar multiple mode — mixed segments', () => {
 
   it('renders a mixed segment as aria-pressed="mixed"', () => {
     const { container } = render(
-      <ToggleBar
+      <SegmentedBar
         mode="multiple"
         items={triItems}
         value={['b']}
@@ -123,7 +123,7 @@ describe('ToggleBar multiple mode — mixed segments', () => {
   it('turns a mixed segment fully on when clicked', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar
+      <SegmentedBar
         mode="multiple"
         items={triItems}
         value={['b']}
@@ -138,7 +138,7 @@ describe('ToggleBar multiple mode — mixed segments', () => {
   it('treats `value` as authoritative when a value is in both lists', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar
+      <SegmentedBar
         mode="multiple"
         items={triItems}
         value={['b']}
@@ -159,7 +159,7 @@ describe('ToggleBar multiple mode — mixed segments', () => {
   // one value or none.
   it('ignores mixedValues in single mode', () => {
     const { container } = render(
-      <ToggleBar
+      <SegmentedBar
         items={items}
         value="center"
         mixedValues={['left']}
@@ -172,11 +172,11 @@ describe('ToggleBar multiple mode — mixed segments', () => {
   });
 });
 
-describe('ToggleBar keyboard — single mode', () => {
+describe('SegmentedBar keyboard — single mode', () => {
   it('ArrowRight moves selection forward', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar items={items} value="left" onChange={onChange} />,
+      <SegmentedBar items={items} value="left" onChange={onChange} />,
     );
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     fireEvent.keyDown(segs[0], { key: 'ArrowRight' });
@@ -186,7 +186,7 @@ describe('ToggleBar keyboard — single mode', () => {
   it('ArrowLeft wraps from first to last', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar items={items} value="left" onChange={onChange} />,
+      <SegmentedBar items={items} value="left" onChange={onChange} />,
     );
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     fireEvent.keyDown(segs[0], { key: 'ArrowLeft' });
@@ -196,7 +196,7 @@ describe('ToggleBar keyboard — single mode', () => {
   it('Home jumps to first, End to last', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar items={items} value="center" onChange={onChange} />,
+      <SegmentedBar items={items} value="center" onChange={onChange} />,
     );
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     fireEvent.keyDown(segs[1], { key: 'Home' });
@@ -207,7 +207,7 @@ describe('ToggleBar keyboard — single mode', () => {
 
   it('roving tabindex: selected segment is tab stop', () => {
     const { container } = render(
-      <ToggleBar items={items} value="center" onChange={() => {}} />,
+      <SegmentedBar items={items} value="center" onChange={() => {}} />,
     );
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     expect(segs[0].tabIndex).toBe(-1);
@@ -216,7 +216,7 @@ describe('ToggleBar keyboard — single mode', () => {
   });
 });
 
-describe('ToggleBar keyboard — multiple mode', () => {
+describe('SegmentedBar keyboard — multiple mode', () => {
   const triItems = [
     { value: 'b', label: 'B' },
     { value: 'i', label: 'I' },
@@ -226,7 +226,7 @@ describe('ToggleBar keyboard — multiple mode', () => {
   it('Space toggles focused segment', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar mode="multiple" items={triItems} value={[]} onChange={onChange} />,
+      <SegmentedBar mode="multiple" items={triItems} value={[]} onChange={onChange} />,
     );
     const btns = container.querySelectorAll<HTMLElement>('button');
     fireEvent.keyDown(btns[1], { key: ' ' });
@@ -236,7 +236,7 @@ describe('ToggleBar keyboard — multiple mode', () => {
   it('ArrowRight does not mutate selection in multiple mode', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar mode="multiple" items={triItems} value={['b']} onChange={onChange} />,
+      <SegmentedBar mode="multiple" items={triItems} value={['b']} onChange={onChange} />,
     );
     const btns = container.querySelectorAll<HTMLElement>('button');
     fireEvent.keyDown(btns[0], { key: 'ArrowRight' });
@@ -244,7 +244,7 @@ describe('ToggleBar keyboard — multiple mode', () => {
   });
 });
 
-describe('ToggleBar disabled segments', () => {
+describe('SegmentedBar disabled segments', () => {
   const mixed = [
     { value: 'a', label: 'A' },
     { value: 'b', label: 'B', disabled: true },
@@ -254,7 +254,7 @@ describe('ToggleBar disabled segments', () => {
   it('does not call onChange when clicking a disabled segment', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar items={mixed} value="a" onChange={onChange} />,
+      <SegmentedBar items={mixed} value="a" onChange={onChange} />,
     );
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     fireEvent.click(segs[1]);
@@ -264,7 +264,7 @@ describe('ToggleBar disabled segments', () => {
   it('arrow nav skips disabled segments', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <ToggleBar items={mixed} value="a" onChange={onChange} />,
+      <SegmentedBar items={mixed} value="a" onChange={onChange} />,
     );
     const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
     fireEvent.keyDown(segs[0], { key: 'ArrowRight' });
@@ -272,14 +272,14 @@ describe('ToggleBar disabled segments', () => {
   });
 });
 
-describe('ToggleBar tooltips', () => {
+describe('SegmentedBar tooltips', () => {
   const tipped = [
     { value: 'left', label: 'L', ariaLabel: 'Align left', tooltip: 'Align left (⌘L)' },
     { value: 'center', label: 'C', ariaLabel: 'Center' },
   ];
 
   it('shows an item tooltip on keyboard focus and describes the segment with it', () => {
-    const { container } = render(<ToggleBar items={tipped} value="center" onChange={() => {}} />);
+    const { container } = render(<SegmentedBar items={tipped} value="center" onChange={() => {}} />);
     const left = container.querySelectorAll<HTMLButtonElement>('[role="radio"]')[0];
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => left.focus());
@@ -290,7 +290,7 @@ describe('ToggleBar tooltips', () => {
   });
 
   it('keeps the roving tab stop on the selected segment when items carry tooltips', () => {
-    const { container } = render(<ToggleBar items={tipped} value="center" onChange={() => {}} />);
+    const { container } = render(<SegmentedBar items={tipped} value="center" onChange={() => {}} />);
     const segs = container.querySelectorAll<HTMLButtonElement>('[role="radio"]');
     expect(segs[0].tabIndex).toBe(-1);
     expect(segs[1].tabIndex).toBe(0);
@@ -298,17 +298,37 @@ describe('ToggleBar tooltips', () => {
 });
 
 // The module proxy hashes a class per stylesheet, so equal names mean one sheet.
-describe('ToggleBar skin', () => {
-  it('draws its segments from the stylesheet ButtonBar and OptionsBar share', () => {
+describe('SegmentedBar skin', () => {
+  it('draws a single-mode segment as it draws a momentary one', () => {
     render(
       <>
-        <ToggleBar aria-label="View" items={[{ value: 'a', label: 'A' }]} value={null} onChange={() => {}} />
-        <ButtonBar aria-label="Do" items={[{ value: 'b', label: 'B', onAction: () => {} }]} />
+        <SegmentedBar aria-label="View" items={[{ value: 'a', label: 'A' }]} value={null} onChange={() => {}} />
+        <SegmentedBar mode="momentary" aria-label="Do" items={[{ value: 'b', label: 'B', onAction: () => {} }]} />
       </>,
     );
     const toggle = screen.getByRole('radio', { name: 'A' });
     const button = screen.getByRole('button', { name: 'B' });
     expect(toggle.className).toBe(button.className);
     expect(toggle.parentElement!.className).toBe(button.parentElement!.className);
+  });
+});
+
+describe('SegmentedBar segments from a Sweep', () => {
+  it('draws one segment per step, labeled by the sweep, and chooses its value', () => {
+    const onChange = vi.fn();
+    render(<SegmentedBar aria-label="Gap" steps={range({ from: 0, to: 8, step: 4, label: (n) => `${n}px` })} value={4} onChange={onChange} />);
+    const radios = screen.getAllByRole('radio');
+    expect(radios.map((r) => r.textContent)).toEqual(['0px', '4px', '8px']);
+    expect(radios[1]!.getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(radios[2]!);
+    expect(onChange).toHaveBeenCalledWith(8);
+  });
+
+  it('fires the bar’s onAction with the step pressed, in momentary mode', () => {
+    const onAction = vi.fn();
+    render(<SegmentedBar mode="momentary" aria-label="Zoom" steps={values([50, 100, 200])} onAction={onAction} />);
+    expect(screen.getByRole('toolbar', { name: 'Zoom' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '200' }));
+    expect(onAction).toHaveBeenCalledWith(200);
   });
 });

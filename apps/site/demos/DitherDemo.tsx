@@ -10,7 +10,7 @@ import {
 import num from '@weasel-js/theme/numeric.module.css';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 import { exportPage, marksMask, type Crisp } from './ditherDemoExport';
 import {
@@ -194,20 +194,20 @@ export function DitherDemo() {
       <div className="ckd-controls">
         <div className="ckd-control">
           Grid
-          <ToggleBar items={GRIDS} value={grid} onChange={(v) => { if (v !== null) pickGrid(v); }} aria-label="Grid" size="sm" />
+          <SegmentedBar items={GRIDS} value={grid} onChange={(v) => { if (v !== null) pickGrid(v); }} aria-label="Grid" size="sm" />
           <Button size="sm" onClick={() => setView(fitPage(STAGE))}>Fit page</Button>
         </div>
         <div className="ckd-control">
           Method
-          <ToggleBar items={METHODS} value={method} onChange={(v) => { if (v) setMethod(v); }} aria-label="Method" size="sm" />
+          <SegmentedBar items={METHODS} value={method} onChange={(v) => { if (v) setMethod(v); }} aria-label="Method" size="sm" />
         </div>
         <div className="ckd-control">
           Keep marks crisp
-          <ToggleBar items={CRISP} value={crisp} onChange={(v) => { if (v) setCrisp(v); }} aria-label="Keep marks crisp" size="sm" />
+          <SegmentedBar items={CRISP} value={crisp} onChange={(v) => { if (v) setCrisp(v); }} aria-label="Keep marks crisp" size="sm" />
         </div>
         <div className="ckd-control">
           Marks
-          <ToggleBar items={SNAP} value={snap} onChange={(v) => { if (v) setSnap(v); }} aria-label="Marks" size="sm" />
+          <SegmentedBar items={SNAP} value={snap} onChange={(v) => { if (v) setSnap(v); }} aria-label="Marks" size="sm" />
         </div>
         <label className="ckd-control">
           Threshold

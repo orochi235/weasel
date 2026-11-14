@@ -1,14 +1,15 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { useState } from 'react';
-import { OptionsBar } from './OptionsBar';
+import { SegmentedBar } from './SegmentedBar';
 
 afterEach(() => { delete (document as { elementFromPoint?: unknown }).elementFromPoint; });
 
 function Bar({ calls }: { calls: string[] }) {
   const [on, setOn] = useState<Record<string, boolean>>({ a: false, b: true, c: false });
   return (
-    <OptionsBar
+    <SegmentedBar
+      mode="each"
       sweep
       aria-label="opts"
       items={(['a', 'b', 'c'] as const).map((v) => ({
@@ -21,7 +22,7 @@ function Bar({ calls }: { calls: string[] }) {
   );
 }
 
-describe('OptionsBar sweep', () => {
+describe('SegmentedBar each-mode sweep', () => {
   it('sets each option a drag reaches, calling only those that change, and puts them back on cancel', () => {
     const calls: string[] = [];
     const utils = render(<Bar calls={calls} />);

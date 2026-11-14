@@ -3,7 +3,7 @@ import '@weasel-js/theme/fonts.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { Along, type RunAlign } from '@weasel-js/ui/components/Along';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 
 afterEach(cleanup);
 
@@ -37,7 +37,7 @@ function Bar({ c }: { c: Case }) {
   return (
     <div style={{ position: 'relative', width: 280, height: 280 }}>
       <Along arc={{ at: 0, span: `${c.span}deg`, direction: c.direction }} align={c.align}>
-        <ToggleBar aria-label="Alignment" items={WORDS.map((w) => ({ value: w, label: w }))} value={value} onChange={() => {}} />
+        <SegmentedBar aria-label="Alignment" items={WORDS.map((w) => ({ value: w, label: w }))} value={value} onChange={() => {}} />
       </Along>
     </div>
   );

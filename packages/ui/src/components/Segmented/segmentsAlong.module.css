@@ -1,7 +1,7 @@
 /* A segmented row laid along a track shape, as `useRunRow` lays any row. The well and the lit segments are SVG
    strokes along the run; `--_h` is the well's thickness and the padding its rim, read back for the stroke ends. */
 .root {
-  composes: root from './Along/runRow.module.css';
+  composes: root from '../Along/runRow.module.css';
   --_h: var(--tb-h, var(--wzl-control-h));
   padding: var(--wzl-space-1);
   column-gap: 0;

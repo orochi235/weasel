@@ -5,7 +5,7 @@ import { Radio, RadioGroup } from '../RadioGroup';
 import { Select } from '../Select';
 import { MIXED_HINT } from '../mixedHint';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
-import { ToggleBar } from '../ToggleBar';
+import { SegmentedBar } from '../Segmented';
 import type { PropertyEnumFieldProps, PropertyOption } from './fieldTypes';
 import { nameOf } from './nameOf';
 import s from './Properties.module.css';
@@ -68,10 +68,10 @@ export function EnumControl(p: PropertyEnumFieldProps) {
   }
   if (p.control === 'toggle') {
     return (
-      <ToggleBar<string>
+      <SegmentedBar<string>
         size="sm"
         variant="flat"
-        className={p.className ? `${s.toggleBar} ${p.className}` : s.toggleBar}
+        className={p.className ? `${s.segmentedBar} ${p.className}` : s.segmentedBar}
         aria-label={p.name}
         items={p.options.map((o) => ({
           value: o.value,

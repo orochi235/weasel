@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { intentOf, select, type SelectPolicy, type Selection } from '@weasel-js/select';
 import { ItemList } from '@weasel-js/ui/components/ItemList';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './SelectDemo.module.css';
 
 const ROWS = ['Sky', 'Hills', 'Tree', 'Background', 'House', 'Path', 'Fence', 'Sun'];
@@ -33,7 +33,7 @@ export function SelectDemo() {
 
   return (
     <div className={s.demo}>
-      <ToggleBar
+      <SegmentedBar
         items={CONVENTIONS}
         value={convention}
         onChange={(v) => v && setConvention(v)}

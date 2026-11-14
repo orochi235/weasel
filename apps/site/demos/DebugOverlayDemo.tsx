@@ -17,7 +17,7 @@ import type {
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Button } from '@weasel-js/ui/components/Button';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
 interface Box { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -100,7 +100,7 @@ export function DebugOverlayDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <ToggleBar
+        <SegmentedBar
           mode="multiple"
           items={FEATURES.map((f) => ({ value: f.key, label: f.label, tooltip: f.help }))}
           value={FEATURES.filter((f) => enabled[f.key]).map((f) => f.key)}

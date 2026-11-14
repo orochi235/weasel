@@ -11,7 +11,7 @@
     > input[type='number'],
     > .select,
     > select,
-    > .toggleBar,
+    > .segmentedBar,
     > .dialogTrigger
   ) {
   flex-wrap: wrap;
@@ -79,11 +79,11 @@
 
 /* A segmented toggle shortens its labels beside the row's label first (FitLabel), and takes a line of its own
    only once its shortest labels still overflow, which its fit scope marks `data-fit-spent`. */
-.rowInline > .toggleBar {
+.rowInline > .segmentedBar {
   flex: 1 1 0;
   min-inline-size: 0;
 }
 
-.rowInline > .toggleBar[data-fit-spent] {
+.rowInline > .segmentedBar[data-fit-spent] {
   flex-basis: 100%;
 }

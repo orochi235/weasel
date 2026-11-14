@@ -6,7 +6,7 @@ import { Input } from '@weasel-js/ui/components/Input';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { Switch } from '@weasel-js/ui/components/Switch';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { useState, type MouseEvent, type SyntheticEvent } from 'react';
 import styles from './ThemeEditor.module.css';
 import { Icon } from '@weasel-js/ui/components/Icon';
@@ -47,7 +47,7 @@ function Specimen({ caption }: { caption: string }) {
         <Checkbox isSelected={checked} onChange={setChecked}>Checkbox</Checkbox>
         <Switch isSelected={on} onChange={setOn}>Switch</Switch>
         <Slider thumbs={thumbs} onInput={setThumbs} min={0} max={100} thumbShape="dot" trackHeight="var(--wzl-slider-track-h)" thumbSize="var(--wzl-slider-thumb-size)" aria-label="Slider" />
-        <ToggleBar size="sm" aria-label="Alignment" items={ALIGN} value={align} onChange={setAlign} />
+        <SegmentedBar size="sm" aria-label="Alignment" items={ALIGN} value={align} onChange={setAlign} />
         <div className={styles.sunken}>
           <Input label="Sunken field" defaultValue="Text" />
         </div>

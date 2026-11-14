@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 
 // Adjacent flat segments overlap by a pixel to share one border, so which cell
 // paints on top of the shared column is a question only real layout answers.
@@ -17,7 +17,7 @@ const ITEMS = [
 test.each(['tree', 'components', 'gallery'] as const)(
   'a selected flat segment keeps both side borders on top (%s)',
   (value) => {
-    render(<ToggleBar aria-label="View" variant="flat" items={[...ITEMS]} value={value} onChange={() => {}} />);
+    render(<SegmentedBar aria-label="View" variant="flat" items={[...ITEMS]} value={value} onChange={() => {}} />);
     const selected = screen.getByRole('radio', { checked: true });
     const r = selected.getBoundingClientRect();
     const y = r.top + r.height / 2;
@@ -34,7 +34,7 @@ test.each(['glass', 'flat', 'minimal'] as const)('a squeezed %s bar keeps its te
   render(
     <div style={{ display: 'flex', width: 120 }}>
       <input style={{ flex: 1 }} />
-      <ToggleBar
+      <SegmentedBar
         aria-label="View"
         variant={variant === 'glass' ? undefined : variant}
         items={[...ITEMS]}
@@ -52,7 +52,7 @@ test.each(['glass', 'flat', 'minimal'] as const)('a squeezed %s bar keeps its te
 // `size` is the bar's type scale under every variant: a variant that sets a font size of its own makes it a no-op.
 test.each(['glass', 'flat', 'minimal'] as const)('a %s bar is smaller at `sm` than at `md`', (variant) => {
   const bar = (size: 'sm' | 'md') => (
-    <ToggleBar
+    <SegmentedBar
       aria-label={size}
       size={size}
       variant={variant === 'glass' ? undefined : variant}

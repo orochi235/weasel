@@ -4,7 +4,6 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { type Band, BandEditor } from '@weasel-js/ui/components/BandEditor';
 import { Button } from '@weasel-js/ui/components/Button';
-import { ButtonBar } from '@weasel-js/ui/components/ButtonBar';
 import { Callout } from '@weasel-js/ui/components/Callout';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
@@ -22,7 +21,6 @@ import { KeyCap, KeySequence } from '@weasel-js/ui/components/Keycaps';
 import { LayerList, type LayerListItem, moveLayers } from '@weasel-js/ui/components/LayerList';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 import { NumberField } from '@weasel-js/ui/components/NumberField';
-import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
 import { PaintInput } from '@weasel-js/ui/components/PaintInput';
 import { Plot2D } from '@weasel-js/ui/components/Plot2D';
 import { PointPlotter } from '@weasel-js/ui/components/PointPlotter';
@@ -38,6 +36,7 @@ import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
 import { RangeSlider } from '@weasel-js/ui/components/RangeSlider';
 import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
 import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
@@ -51,7 +50,6 @@ import { Switch } from '@weasel-js/ui/components/Switch';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { Timeline } from '@weasel-js/ui/components/Timeline';
 import { createToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 import { ToolButton } from '@weasel-js/ui/components/ToolButton';
 import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
@@ -228,9 +226,9 @@ function ButtonsAndToggles() {
           <Radio value="pixel">Pixel</Radio>
         </RadioGroup>
       </Cell>
-      <Cell label="ToggleBar">
-        <ToggleBar aria-label="Align" value={align} onChange={setAlign} items={ALIGN_ITEMS} />
-        <ToggleBar
+      <Cell label="SegmentedBar">
+        <SegmentedBar aria-label="Align" value={align} onChange={setAlign} items={ALIGN_ITEMS} />
+        <SegmentedBar
           aria-label="Align, flat"
           variant="flat"
           value={align}
@@ -238,16 +236,18 @@ function ButtonsAndToggles() {
           items={ALIGN_ITEMS}
         />
       </Cell>
-      <Cell label="OptionsBar, ButtonBar">
+      <Cell label="SegmentedBar, each and momentary">
         <div className="lk-specimen__row">
-          <OptionsBar
+          <SegmentedBar
+            mode="each"
             aria-label="Text style"
             items={[
               { value: 'b', label: 'B', selected: bold, onChange: setBold },
               { value: 'i', label: 'I', selected: italic, onChange: setItalic },
             ]}
           />
-          <ButtonBar
+          <SegmentedBar
+            mode="momentary"
             items={[
               { value: 'undo', label: 'Undo', onAction: () => {} },
               { value: 'redo', label: 'Redo', onAction: () => {} },

@@ -1,12 +1,12 @@
 import { Fragment, type CSSProperties, type ReactElement, type ReactNode } from 'react';
-import type { RovingTabIndex } from '../useRovingTabIndex';
-import { useRun, type Orientation } from './Run';
+import type { RovingTabIndex } from '../../useRovingTabIndex';
+import { useRun, type Orientation } from '../Run';
 import { SegmentsAlong } from './segmentsAlong';
 import type { SegmentedVariant } from './segmentedVariant';
-import { useDensity, type ControlSize } from './Density';
+import { useDensity, type ControlSize } from '../Density';
 import s from './segmentedControl.module.css';
 import type { LastRow, SelectState, Tiling } from '@weasel-js/ui-input';
-import { tiling } from '../tiling';
+import { tiling } from '../../tiling';
 
 /** Whether a segment is on, off, or mixed: its sources disagree. */
 export type SegmentState = SelectState;
@@ -81,7 +81,7 @@ export function segmentPlaceProps(place: SegmentPlace | undefined): Partial<Omit
 }
 
 /**
- * The row `ToggleBar`, `ButtonBar` and `OptionsBar` draw their segments in: a pill-shaped well on a straight line, or
+ * The row `SegmentedBar` draws its segments in: a pill-shaped well on a straight line, or
  * inside a curved `Along`, segments laid along its run with the well and the lit segments stroked along it.
  */
 export function SegmentedRow(props: SegmentedRowProps): ReactElement {

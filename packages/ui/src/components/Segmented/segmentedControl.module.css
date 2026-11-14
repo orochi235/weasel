@@ -1,6 +1,4 @@
-/* Shared by ToggleBar, ButtonBar and OptionsBar, which look alike and differ
-   in what a segment does. Lives here rather than in any of them so none owns
-   the others' styling.
+/* SegmentedBar's look, the same in every mode.
 
    The track is a pill-shaped well. The selected segment is a flat accent
    fill or, as the theme's --wzl-gloss runs 0 to 1, a tinted glass cylinder
