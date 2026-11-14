@@ -1,11 +1,11 @@
 /**
- * Property tests of how a keycap picks and sizes its legend: the spelling it picks is one it was offered and the
- * best by the stated order, scales stay in `minScale..1`, and a bank's single-line legends share one scale.
+ * Property tests of how a keycap picks its legend: the spelling it picks is one it was offered and the
+ * best by the stated order.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { key, runs, tally, timeoutFor, uniform } from '../../pbt.fixture';
-import { clampScale, KEY_SPELLINGS, pickSpelling, resolveBankScales, spellingsOf } from './legendFit';
+import { KEY_SPELLINGS, pickSpelling, spellingsOf } from './legendFit';
 
 const RUNS = 400;
 const scale = fc.oneof(uniform(0, 1.5), fc.constantFrom(0, 0.6, 1, 2));
@@ -39,22 +39,6 @@ describe('pickSpelling', () => {
     }), runs(RUNS));
     for (const k of ['whole', 'largest']) t.atLeast(k, 50);
     t.atLeast('wrapped', 10);
-  }, timeoutFor(RUNS, 1));
-});
-
-describe('clampScale and resolveBankScales', () => {
-  it('keep every scale in minScale..1, and give every single-line member one scale, the smallest it needs', () => {
-    const t = tally();
-    fc.assert(fc.property(fc.array(fc.record({ scale, wrapped: fc.boolean() }), { maxLength: 6 }), uniform(0.3, 1), (members, minScale) => {
-      const out = resolveBankScales(members, minScale);
-      expect(out).toHaveLength(members.length);
-      for (const s of out) { expect(s).toBeGreaterThanOrEqual(minScale); expect(s).toBeLessThanOrEqual(1); }
-      const single = members.flatMap((m, i) => (m.wrapped ? [] : [i]));
-      if (single.length > 1) t.count('shared');
-      for (const i of single) expect(out[i]).toBe(clampScale(Math.min(...single.map((j) => members[j]!.scale)), minScale));
-      members.forEach((m, i) => { if (m.wrapped) expect(out[i]).toBe(clampScale(m.scale, minScale)); });
-    }), runs(RUNS));
-    t.atLeast('shared', 100);
   }, timeoutFor(RUNS, 1));
 });
 

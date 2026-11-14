@@ -571,11 +571,6 @@ name a package. Breaking changes are in scope.
   gives each child `<Badge>` its neighbor's edge cap, a `Bar` with `children`, and a `<Field label output>` wrapper
   any control can sit in. Closes when each of the four takes children.
 
-- **(P3) [agent] One fit scope.** `FitLabel/`'s `FitScope` steps labels down their forms together by DOM overflow;
-  `Keycaps/KeyBank.tsx`'s `bankFitter` picks among spellings longest first by canvas measurement, then scales the
-  bank to its smallest member. Give `FitScope` an optional scale stage and have `KeyCap` read `FitContext`. Closes
-  when `KeyBankContext` no longer carries a fitter.
-
 - **(P2) [agent] One segmented bar for `ToggleBar`, `OptionsBar`, and `ButtonBar`.** All three build the same
   `SegmentedRow` with identical tiling, roving, and segment-class code, and alias the same size and variant types;
   they differ only in selection model and aria role. One bar with a selection mode (single, multiple, each,

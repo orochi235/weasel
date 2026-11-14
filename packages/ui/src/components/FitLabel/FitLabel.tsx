@@ -10,6 +10,7 @@ import {
   type RefObject,
 } from 'react';
 import { flushSync } from 'react-dom';
+import { useScaleStage, type FitScale, type FitScaleOptions } from './fitScale';
 
 /**
  * A label's forms, longest first: the canonical name, then each shorter form a
@@ -27,6 +28,8 @@ export interface FitScopeValue {
   readonly step: number;
   /** Counts a label holding `depth` forms toward the scope; returns its release. */
   readonly register: (depth: number) => () => void;
+  /** The scale stage of the nearest scope that runs one, or null. */
+  readonly scale?: FitScale | null;
 }
 
 const FitContext = createContext<FitScopeValue | null>(null);
@@ -34,6 +37,18 @@ const FitContext = createContext<FitScopeValue | null>(null);
 /** Hands a {@link useFitScope} result to the {@link FitLabel}s beneath it. */
 export function FitScope({ value, children }: { value: FitScopeValue; children?: ReactNode }) {
   return <FitContext.Provider value={value}>{children}</FitContext.Provider>;
+}
+
+/** Calls `onLoad` with `ref`'s element each time a web font finishes loading in its document. */
+function useFontLoads(ref: RefObject<HTMLElement | null>, onLoad: (el: HTMLElement) => void): void {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const fonts: FontFaceSet | undefined = el?.ownerDocument.fonts;
+    if (!el || typeof fonts?.addEventListener !== 'function') return;
+    const loaded = (): void => onLoad(el);
+    fonts.addEventListener('loadingdone', loaded);
+    return () => fonts.removeEventListener('loadingdone', loaded);
+  }, [ref, onLoad]);
 }
 
 const overflows = (el: Element | null): boolean => el !== null && el.scrollWidth > el.clientWidth;
@@ -55,9 +70,19 @@ const overflows = (el: Element | null): boolean => el !== null && el.scrollWidth
  * Once every label is at its last form and the room still overflows, the
  * element carries `data-fit-spent`, for a layout to give it more room, until its
  * parent grows wider than it was then.
+ *
+ * Given `scale` when it mounts, the scope also runs a scale stage: members that
+ * join it through {@link useFitScale} each fit a form to their own room by
+ * measurement, and every one sharing the scope's scale prints at the smallest
+ * any of them needs, floored at `scale.min`, published on the element as
+ * `scale.property`. A nested scope without one passes its outer scope's on.
  */
-export function useFitScope(ref: RefObject<HTMLElement | null>): FitScopeValue {
+export function useFitScope(
+  ref: RefObject<HTMLElement | null>,
+  { scale: scaleOptions }: { scale?: FitScaleOptions } = {},
+): FitScopeValue {
   const outer = useContext(FitContext);
+  const scale = useScaleStage(ref, scaleOptions) ?? outer?.scale ?? null;
   const [own, setOwn] = useState(0);
   const [labels, setLabels] = useState<readonly number[]>([]);
   const counted = useRef(new Map<symbol, number>());
@@ -127,19 +152,13 @@ export function useFitScope(ref: RefObject<HTMLElement | null>): FitScopeValue {
 
   // Labels set in a fallback font may have stepped further than the face that loads needs, with no change in
   // the room to say so.
-  useLayoutEffect(() => {
-    const el = ref.current;
-    const fonts: FontFaceSet | undefined = el?.ownerDocument.fonts;
-    if (!el || typeof fonts?.addEventListener !== 'function') return;
-    const refit = (): void => {
-      steppedAt.current = null;
-      spentAt.current = null;
-      el.removeAttribute('data-fit-spent');
-      setOwn(0);
-    };
-    fonts.addEventListener('loadingdone', refit);
-    return () => fonts.removeEventListener('loadingdone', refit);
-  }, [ref]);
+  const refit = useCallback((el: HTMLElement): void => {
+    steppedAt.current = null;
+    spentAt.current = null;
+    el.removeAttribute('data-fit-spent');
+    setOwn(0);
+  }, []);
+  useFontLoads(ref, refit);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -173,7 +192,12 @@ export function useFitScope(ref: RefObject<HTMLElement | null>): FitScopeValue {
   }, [ref, depth, shouldStep, markSpent]);
 
   const step = Math.max(own, outer?.step ?? 0);
-  return useMemo(() => ({ step, register }), [step, register]);
+  return useMemo(() => ({ step, register, scale }), [step, register, scale]);
+}
+
+/** The scale stage of the nearest {@link FitScope} that runs one, or null. */
+export function useFitScale(): FitScale | null {
+  return useContext(FitContext)?.scale ?? null;
 }
 
 /**

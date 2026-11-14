@@ -1,4 +1,3 @@
-import { minOf } from '@weasel-js/geom';
 /** Other spellings a legend may take when it overflows its key, keyed by the
  *  legend, in order of preference. A spelling with a `\n` prints on two lines. */
 export type KeySpellings = Readonly<Record<string, readonly string[]>>;
@@ -19,13 +18,6 @@ export interface LegendFit {
   label: string;
   lines: number;
   scale: number;
-}
-
-/** What a bank member reports: the largest scale its chosen spelling fits at,
- *  and whether that spelling is a two-line one. */
-export interface BankMember {
-  scale: number;
-  wrapped: boolean;
 }
 
 /** The legend itself, then its alternates from `spellings`. */
@@ -54,15 +46,4 @@ export function pickSpelling<T extends LegendFit>(
   if (whole) return whole;
   const broken = wrap ? allowed.filter((f) => f.lines > 1 && f.scale >= minScale) : [];
   return broken.length ? largest(broken) : largest(allowed);
-}
-
-/**
- * The scale each bank member prints at. Every single-line legend shares one:
- * the smallest any of them needs, floored at `minScale`. A two-line legend
- * sizes itself.
- */
-export function resolveBankScales(members: readonly BankMember[], minScale: number): number[] {
-  const single = members.filter((m) => !m.wrapped).map((m) => m.scale);
-  const shared = clampScale(Math.min(1, minOf(single)), minScale);
-  return members.map((m) => (m.wrapped ? clampScale(m.scale, minScale) : shared));
 }

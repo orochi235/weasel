@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { KEY_SPELLINGS, pickSpelling, resolveBankScales, spellingsOf } from './legendFit';
+import { KEY_SPELLINGS, pickSpelling, spellingsOf } from './legendFit';
 
 const fit = (label: string, scale: number) => ({ label, lines: label.split('\n').length, scale });
 
@@ -32,41 +32,9 @@ describe('pickSpelling', () => {
   });
 });
 
-describe('resolveBankScales', () => {
-  it('prints every single-line legend at the smallest scale any of them needs', () => {
-    const scales = resolveBankScales(
-      [{ scale: 1, wrapped: false }, { scale: 0.85, wrapped: false }, { scale: 0.92, wrapped: false }],
-      0.6,
-    );
-    expect(scales).toEqual([0.85, 0.85, 0.85]);
-  });
-
-  it('floors the shared scale at the minimum', () => {
-    expect(resolveBankScales([{ scale: 1, wrapped: false }, { scale: 0.4, wrapped: false }], 0.6))
-      .toEqual([0.6, 0.6]);
-  });
-
-  it('never grows a legend past full size', () => {
-    expect(resolveBankScales([{ scale: 1.6, wrapped: false }], 0.6)).toEqual([1]);
-  });
-
-  it('lets a two-line legend size itself, outside the shared scale', () => {
-    const scales = resolveBankScales(
-      [{ scale: 0.9, wrapped: false }, { scale: 0.7, wrapped: true }, { scale: 1, wrapped: false }],
-      0.6,
-    );
-    expect(scales).toEqual([0.9, 0.7, 0.9]);
-  });
-});
-
 describe('spellingsOf', () => {
   it('lists the legend first, then its alternates from the table', () => {
     expect(spellingsOf('Insert', KEY_SPELLINGS)).toEqual(['Insert', 'Ins']);
     expect(spellingsOf('Q', KEY_SPELLINGS)).toEqual(['Q']);
-  });
-
-  it('resolves a bank of a million members without overflowing the call stack', () => {
-    const members = Array.from({ length: 1_000_000 }, (_, i) => ({ scale: i === 9 ? 0.5 : 0.9, wrapped: false }));
-    expect(resolveBankScales(members, 0.1)[0]).toBe(0.5);
   });
 });
