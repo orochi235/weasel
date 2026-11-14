@@ -2,7 +2,8 @@ import { type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
 import { SegmentedRow, segmentClassName, segmentPlaceProps, useSegmentedTiling, type SegmentedGridProps } from '../segmentedRow';
 import { tilingRoving } from '../../tiling';
-import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
+import type { SegmentedVariant } from '../segmentedVariant';
+import type { ControlSize } from '../Density';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 import type { Orientation } from '../Run';
@@ -22,8 +23,6 @@ export type ButtonBarItem<V extends string | number = string> = {
   onAction: () => void;
 } & SegmentTooltipFields;
 
-/** Segment height and type scale for an {@link ButtonBar}. */
-export type ButtonBarSize = SegmentedSize;
 /** Visual treatment of an {@link ButtonBar}. */
 export type ButtonBarVariant = SegmentedVariant;
 
@@ -33,7 +32,8 @@ export type ButtonBarProps<V extends string | number = string> = SegmentedGridPr
   'aria-label'?: string;
   className?: string;
   height?: number;
-  size?: ButtonBarSize;
+  /** Default: the nearest `Density` scope's, else `md`. */
+  size?: ControlSize;
   /** Which way the segments run. Defaults to the way the row the bar sits in runs; a vertical bar keeps its labels upright. */
   orientation?: Orientation;
   variant?: ButtonBarVariant;

@@ -1,10 +1,11 @@
 import { Children, type ReactNode } from 'react';
 import { useRun } from '../Run';
 import { tiling } from '../../tiling';
+import { withDensity, type DensityProps } from '../Density';
 import s from './ToolGroup.module.css';
 
 /** Props for {@link ToolGroup}. */
-export interface ToolGroupProps {
+export interface ToolGroupProps extends DensityProps {
   children: ReactNode;
   /** Lays children in a grid this many across, in place of the run's single line. */
   columns?: number;
@@ -25,7 +26,7 @@ export interface ToolGroupProps {
  * lives on the buttons.
  */
 export function ToolGroup(props: ToolGroupProps) {
-  const { children, columns, groupKey, 'aria-label': ariaLabel, className } = props;
+  const { children, columns, groupKey, 'aria-label': ariaLabel, size, className } = props;
   const { orientation } = useRun();
   const tiles = columns ? tiling(Children.count(children), { columns }) : null;
   const cls = [s.group, tiles ? tiles.className : orientation === 'horizontal' && s.horizontal, className]
@@ -33,7 +34,7 @@ export function ToolGroup(props: ToolGroupProps) {
   const style = tiles?.style;
   return (
     <div className={cls} style={style} role="group" data-group={groupKey} aria-label={ariaLabel}>
-      {children}
+      {withDensity(size, children)}
     </div>
   );
 }

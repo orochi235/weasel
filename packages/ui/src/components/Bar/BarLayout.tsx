@@ -12,6 +12,7 @@ import { BAR_MORE, useBarOverflow } from './useBarOverflow';
 import { useBarLead } from './barLeadHandle';
 import { DockBarContext, useReportDockLeast } from '../ToolbarDock/dockContext';
 import { RunScope, useRun, type Orientation } from '../Run';
+import { withDensity, type DensityProps } from '../Density';
 import s from './Bar.module.css';
 
 /** Which way a bar runs. */
@@ -63,7 +64,7 @@ export interface BarCell {
 }
 
 /** Props for {@link BarLayout}. */
-export interface BarLayoutProps {
+export interface BarLayoutProps extends DensityProps {
   nodes: readonly BarNode[];
   /** Which way the bar runs. Default: the way the run it sits in goes, else `'horizontal'`. */
   orientation?: BarOrientation;
@@ -126,7 +127,7 @@ export function BarLayout(props: BarLayoutProps) {
   const bar = run.shape !== undefined && run.shape.kind !== 'line'
     ? <BarAlong {...props} shape={run.shape} align={run.align ?? 'center'} />
     : <BarLine {...props} orientation={props.orientation ?? run.orientation} />;
-  return <BarMarkContext.Provider value={props.onReorder !== undefined}>{bar}</BarMarkContext.Provider>;
+  return <BarMarkContext.Provider value={props.onReorder !== undefined}>{withDensity(props.size, bar)}</BarMarkContext.Provider>;
 }
 
 function BarLine(props: BarLayoutProps) {

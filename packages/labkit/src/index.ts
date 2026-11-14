@@ -18,8 +18,14 @@ export {
 // package emits no binding in the bundle.
 // The playback glyphs ride along for the same reason: chrome that labels a control with
 // one should not need `@weasel-js/ui` in its manifest to draw a play button.
-export type { ButtonProps, ButtonSize, ButtonVariant } from '@weasel-js/ui/components/Button';
+export type { ButtonProps, ButtonVariant } from '@weasel-js/ui/components/Button';
 export { Button } from '@weasel-js/ui/components/Button';
+export type {
+  ControlSize,
+  DensityProps,
+  DensityScopeProps,
+} from '@weasel-js/ui/components/Density';
+export { Density, useDensity } from '@weasel-js/ui/components/Density';
 export type {
   DetailListLayout,
   DetailListProps,
@@ -65,7 +71,6 @@ export { Select } from '@weasel-js/ui/components/Select';
 export type {
   ToggleBarItem,
   ToggleBarProps,
-  ToggleBarSize,
   ToggleBarVariant,
 } from '@weasel-js/ui/components/ToggleBar';
 export { ToggleBar } from '@weasel-js/ui/components/ToggleBar';

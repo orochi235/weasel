@@ -5,7 +5,8 @@ import s from '../segmentedControl.module.css';
 import { SegmentedRow, segmentClassName, segmentPlaceProps, useSegmentedTiling, type SegmentedGridProps } from '../segmentedRow';
 import { tilingRoving } from '../../tiling';
 import { selectionRoving } from '../../selectionRoving';
-import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
+import type { SegmentedVariant } from '../segmentedVariant';
+import type { ControlSize } from '../Density';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
@@ -22,8 +23,6 @@ export type ToggleBarItem<V extends string | number = string> = {
   disabledReason?: string;
 } & SegmentTooltipFields;
 
-/** Segment height and type scale for a {@link ToggleBar}. */
-export type ToggleBarSize = SegmentedSize;
 /** Visual treatment of a {@link ToggleBar}. */
 export type ToggleBarVariant = SegmentedVariant;
 
@@ -33,8 +32,9 @@ export type ToggleBarCommonProps = SegmentedGridProps & {
   className?: string;
   height?: number;
   /** Size variant. `sm` is ~60% of the default height with reduced padding
-   *  and font size — sized for dense surfaces like lab control panels. */
-  size?: ToggleBarSize;
+   *  and font size — sized for dense surfaces like lab control panels.
+   *  Default: the nearest `Density` scope's, else `md`. */
+  size?: ControlSize;
   /** Which way the segments run. Defaults to the way the row the bar sits in runs; a vertical bar keeps its labels upright. */
   orientation?: Orientation;
   /** Visual variant. `minimal` strips the pill track and glass treatment;

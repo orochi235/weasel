@@ -4,7 +4,8 @@ import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard, type SegmentSweep } fr
 import s from '../segmentedControl.module.css';
 import { SegmentedRow, segmentClassName, segmentPlaceProps, useSegmentedTiling, type SegmentedGridProps } from '../segmentedRow';
 import { tilingRoving } from '../../tiling';
-import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
+import type { SegmentedVariant } from '../segmentedVariant';
+import type { ControlSize } from '../Density';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { selectionRoving } from '../../selectionRoving';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
@@ -25,8 +26,6 @@ export type OptionsBarItem<V extends string | number = string> = OwnSelection & 
   disabledReason?: string;
 } & SegmentTooltipFields;
 
-/** Segment height and type scale for an {@link OptionsBar}. */
-export type OptionsBarSize = SegmentedSize;
 /** Visual treatment of an {@link OptionsBar}. */
 export type OptionsBarVariant = SegmentedVariant;
 
@@ -37,8 +36,9 @@ export type OptionsBarProps<V extends string | number = string> = SegmentedGridP
   className?: string;
   height?: number;
   /** Size variant. `sm` is ~60% of the default height with reduced padding
-   *  and font size — sized for dense surfaces like lab control panels. */
-  size?: OptionsBarSize;
+   *  and font size — sized for dense surfaces like lab control panels.
+   *  Default: the nearest `Density` scope's, else `md`. */
+  size?: ControlSize;
   /** Which way the segments run. Defaults to the way the row the bar sits in runs; a vertical bar keeps its labels upright. */
   orientation?: Orientation;
   /** Visual variant. `minimal` strips the pill track and glass treatment;

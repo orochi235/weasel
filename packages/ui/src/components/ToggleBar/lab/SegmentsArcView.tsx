@@ -3,12 +3,13 @@ import { Along } from '@weasel-js/ui/components/Along';
 import { ButtonBar } from '@weasel-js/ui/components/ButtonBar';
 import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import type { ControlSize } from '@weasel-js/ui/components/Density';
 import s from './SegmentsArc.stories.module.css';
 
 /** The knobs the segmented-controls-on-an-arc lab reads. */
 export interface SegmentsArcConfig {
   variant: 'default' | 'flat' | 'minimal';
-  size: 'md' | 'sm';
+  size: ControlSize;
   sweep: number;
   direction: 'cw' | 'ccw';
   count: number;

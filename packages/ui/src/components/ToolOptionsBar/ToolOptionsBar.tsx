@@ -3,10 +3,11 @@ import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { LeafRenderer } from '../SelectionPanel/renderContext';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { Bar } from '../Bar/Bar';
+import { withDensity, type DensityProps } from '../Density';
 import s from './ToolOptionsBar.module.css';
 
 /** Props for {@link ToolOptionsBar}. */
-export interface ToolOptionsBarProps {
+export interface ToolOptionsBarProps extends DensityProps {
   /**
    * Context label for the row — e.g. the active tool's name. Rendered
    * before the children and doubles as the toolbar's `aria-label`. A label
@@ -54,7 +55,7 @@ export interface ToolOptionsBarProps {
  * plain DOM tab order.
  */
 export function ToolOptionsBar(props: ToolOptionsBarProps) {
-  const { label, schema, values, onChange, mixed, renderers, over, children, className } = props;
+  const { label, schema, values, onChange, mixed, renderers, over, children, size, className } = props;
   const cls = [s.root, className].filter(Boolean).join(' ');
   // Every label on the line shortens together before the strip scrolls.
   const controls = useRef<HTMLDivElement>(null);
@@ -64,12 +65,14 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
     <div className={cls} role="toolbar" aria-label={label}>
       {label !== undefined && <span className={s.label}>{label}</span>}
       <div className={s.controls} ref={controls}>
-        <FitScope value={fit}>
-          {schema !== undefined && (
-            <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} over={over} onChange={onChange} />
-          )}
-          {children}
-        </FitScope>
+        {withDensity(size, (
+          <FitScope value={fit}>
+            {schema !== undefined && (
+              <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} over={over} onChange={onChange} />
+            )}
+            {children}
+          </FitScope>
+        ))}
       </div>
     </div>
   );

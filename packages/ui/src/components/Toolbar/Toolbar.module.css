@@ -38,8 +38,10 @@
 
 .spacer { flex: 1; }
 
+/* The buttons inside draw at `sm`; every other control takes the same height. */
 .sm {
-  --wzl-control-h: 22px;
+  --wzl-control-h-sm: 22px;
+  --wzl-control-h: var(--wzl-control-h-sm);
   --wzl-button-icon-size: 16px;
   --wzl-button-pad-x: var(--wzl-space-sm);
   --wzl-button-font-weight: var(--wzl-font-weight-normal);

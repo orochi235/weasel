@@ -643,11 +643,11 @@ function ToolChrome() {
         </ToolGroup>
       </Cell>
       <Cell label="ToolOptionsBar">
-        <ToolOptionsBar label="Text">
-          <Button size="sm" variant="ghost" iconOnly aria-label="Bold">
+        <ToolOptionsBar label="Text" size="sm">
+          <Button variant="ghost" iconOnly aria-label="Bold">
             B
           </Button>
-          <Button size="sm" variant="ghost" iconOnly aria-label="Italic">
+          <Button variant="ghost" iconOnly aria-label="Italic">
             I
           </Button>
         </ToolOptionsBar>

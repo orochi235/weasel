@@ -3,9 +3,7 @@ import {
   centeredBaseline, envNumber, envPx,
   type Constraints, type FontSpec, type MeasureEnv, type Measured, type TextExtent,
 } from './measure';
-
-/** A button's height and type scale. */
-export type ButtonSize = 'sm' | 'md';
+import type { ControlSize } from './density';
 
 /**
  * What a button shows, as every target reads it. `I` is how a target names an icon (a React node, a glyph name);
@@ -16,7 +14,7 @@ export interface ButtonFace<I = unknown> {
    *  button has no label part. */
   readonly label?: string;
   /** Default `'md'`. */
-  readonly size?: ButtonSize;
+  readonly size?: ControlSize;
   /** The button is its icon alone, `icon`, in a square box. */
   readonly iconOnly?: boolean;
   readonly icon?: I;
@@ -57,7 +55,7 @@ export const BUTTON_SPINNER_SIZE = 14;
 
 /** The tokens a button of `size` is sized by: the same ones ui's `Button.module.css` lays it out with, so the DOM
  *  button and the HUD one agree in any theme. */
-export function buttonMetrics(env: MeasureEnv, size: ButtonSize = 'md', iconOnly = false): ButtonMetrics {
+export function buttonMetrics(env: MeasureEnv, size: ControlSize = 'md', iconOnly = false): ButtonMetrics {
   const sm = size === 'sm';
   const height = envPx(env, sm ? '--wzl-control-h-sm' : '--wzl-control-h');
   return {

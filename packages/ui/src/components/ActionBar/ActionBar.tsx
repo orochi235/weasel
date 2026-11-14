@@ -5,6 +5,7 @@ import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
 import { BarActions } from '../Bar/BarActions';
 import type { Orientation } from '../Run';
+import type { DensityProps } from '../Density';
 import type { LeafRenderer } from '../SelectionPanel/renderContext';
 
 /** Which actions an {@link ActionBar} draws: one group's, or every one carrying a tag. */
@@ -25,7 +26,7 @@ export type ActionBarSource =
 export type ActionBarProps = ActionBarSource & ActionBarOptions;
 
 /** What an {@link ActionBar} takes besides its {@link ActionBarSource}. */
-export interface ActionBarOptions {
+export interface ActionBarOptions extends DensityProps {
   /** Layout direction. Defaults to the way the run the bar sits in goes, else `'horizontal'`. */
   orientation?: Orientation;
   /**
@@ -59,7 +60,7 @@ export interface ActionBarOptions {
  * No keyboard navigation (roving tabindex).
  */
 export function ActionBar(props: ActionBarProps) {
-  const { group, tag, orientation, icons, labels, only, className } = props;
+  const { group, tag, orientation, icons, labels, only, size, className } = props;
   const schema = useMemo((): PrefGroup => {
     const leaf: PrefActions = { kind: 'actions', name: '', description: '', default: undefined, group: group ?? '' };
     return { name: '', children: { actions: leaf } };
@@ -81,6 +82,7 @@ export function ActionBar(props: ActionBarProps) {
       orientation={orientation}
       label={`${tag ?? group} actions`}
       framed="segmented"
+      size={size}
       className={className}
     />
   );

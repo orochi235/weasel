@@ -7,10 +7,11 @@ import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Icon } from '../../icons/Icon';
 import { isActive, isSlot, isStack, railRuns, type ToolRailButton, type ToolRailItem } from './items';
 import { RailStack, type StackCycleModifier } from './RailStack';
+import type { DensityProps } from '../Density';
 import s from './ToolRail.module.css';
 
 /** Props for {@link ToolRail}. */
-export interface ToolRailProps {
+export interface ToolRailProps extends DensityProps {
   items: readonly ToolRailItem[];
   orientation?: Orientation;
   /** Lays each run out as a grid this many buttons across, the runs stacked; `orientation` then says nothing. */
@@ -33,7 +34,7 @@ export interface ToolRailProps {
 export function ToolRail(props: ToolRailProps) {
   const {
     items, orientation = 'vertical', columns, iconSize, stackCycle = 'alt', 'aria-label': ariaLabel = 'Tools',
-    className,
+    size, className,
   } = props;
   const runs = railRuns(items);
   const buttons = runs.flatMap((run) => run.items.filter((item) => !isSlot(item)));
@@ -78,7 +79,7 @@ export function ToolRail(props: ToolRailProps) {
       {runs.map((run, i) => (
         <Fragment key={run.key}>
           {i > 0 && <hr className={s.rule} aria-orientation={horizontal ? 'vertical' : 'horizontal'} />}
-          <ToolGroup columns={columns} groupKey={run.group} aria-label={run.group}>
+          <ToolGroup columns={columns} groupKey={run.group} aria-label={run.group} size={size}>
             {run.items.map((item) =>
               isStack(item) ? <RailStack key={item.id} stack={item} cycle={stackCycle} iconSize={iconSize} />
                 : isSlot(item) ? <Fragment key={item.id}>{item.render()}</Fragment>

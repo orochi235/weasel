@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
-import { Button, type ButtonSize, type ButtonVariant } from '../Button/Button';
+import { Button, type ButtonVariant } from '../Button/Button';
+import { useDensity, type ControlSize } from '../Density';
 import { COLOR_MODES } from '../colorModes';
 import { Icon } from '../../icons/Icon';
 
@@ -29,8 +30,8 @@ export interface ThemeSwitcherProps<T extends string = ColorModePreference> {
   /** What is being switched, leading the accessible name and tooltip
    *  (`Theme: Auto — click for Light`). Defaults to `'Theme'`. */
   'aria-label'?: string;
-  /** Defaults to `sm`, the size of a header's icon buttons. */
-  size?: ButtonSize;
+  /** Default: the nearest `Density` scope's, else `sm`, the size of a header's icon buttons. */
+  size?: ControlSize;
   /** Defaults to `ghost`. */
   variant?: ButtonVariant;
   className?: string;
@@ -49,10 +50,11 @@ export function ThemeSwitcher<T extends string = ColorModePreference>({
   onChange,
   options = COLOR_MODE_OPTIONS as unknown as readonly ThemeSwitcherOption<T>[],
   'aria-label': ariaLabel = 'Theme',
-  size = 'sm',
+  size,
   variant = 'ghost',
   className,
 }: ThemeSwitcherProps<T>): ReactElement {
+  const resolved = useDensity(size, 'sm');
   const count = options.length;
   const index = Math.max(0, options.findIndex((o) => o.value === value));
   const current = options[index];
@@ -63,7 +65,7 @@ export function ThemeSwitcher<T extends string = ColorModePreference>({
   return (
     <Button
       variant={variant}
-      size={size}
+      size={resolved}
       iconOnly
       aria-label={name}
       tooltip={name}

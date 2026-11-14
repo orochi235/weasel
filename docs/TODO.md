@@ -545,11 +545,6 @@ name a package. Breaking changes are in scope.
   overridable per control; per-option disabling stays a field. The name is the maintainer's call; the scope is agent
   work after it. Closes when one name is used library-wide and the scope ships.
 
-- **(P3) [agent] A `<Density>` scope for the `sm`/`md` controls.** `ButtonBar`, `ToggleBar`, `OptionsBar`, and
-  `ColorModeControl` alias `SegmentedSize`, ui-logic's `ButtonSize` is the same, and `Toolbar` declares `'md'|'sm'`
-  inline, but `Toolbar`'s `size` does not reach the buttons inside it. Leave out `Code` and `Badge` (`xs|sm|md`) and
-  the pixel-sized handles. Closes when a size set on a container reaches the controls inside it.
-
 - **(P2) [agent] Children in place of config arrays.** `CurveEditor` takes `layers: LayerBinding[]`; `Powerline`
   takes a `segments` array of badges; `ToolOptionsBar` is `Bar` plus a label and a slot; `RangeSlider` exists for
   its label-and-value header. Make them `<CurveEditor><FunctionLayer/></CurveEditor>`, a `Powerline` whose context
