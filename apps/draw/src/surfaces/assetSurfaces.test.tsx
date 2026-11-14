@@ -2,7 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { ActionsProvider, createMeasurements, createScene, useSelection, type Action } from '@weasel-js/core';
-import { CORNER_CONTROLS_PROMPT, type CornerControlsSelection } from '@weasel-js/path-tools';
+import { FILLET_CONTROLS_PROMPT, type FilletControlsSelection } from '@weasel-js/path-tools';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { CommandBar } from '../CommandBar';
@@ -37,7 +37,7 @@ const ACTIONS: Action[] = [
 const setFilename = vi.fn();
 const setPaperSize = vi.fn();
 
-const NO_CORNERS: CornerControlsSelection = { editingId: () => null, selectedAnchors: () => new Set(), subscribe: () => () => {} };
+const NO_FILLETS: FilletControlsSelection = { editingId: () => null, selectedAnchors: () => new Set(), subscribe: () => () => {} };
 
 function App({ docSelected = false, paperSize = 'a4' }: { docSelected?: boolean; paperSize?: SidebarHost['paperSize'] }) {
   const [scene] = useState(() => createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS }));
@@ -47,7 +47,7 @@ function App({ docSelected = false, paperSize = 'a4' }: { docSelected?: boolean;
   const host: SidebarHost = {
     scene, selection, measurements, filename: 'drawing', setFilename, backgroundColor: '#ffffff',
     setBackgroundColor: () => {}, paperSize, setPaperSize, docSelected, setDocSelected: () => {},
-    cornerSelection: NO_CORNERS, simplifyTolerance, setSimplifyTolerance,
+    filletSelection: NO_FILLETS, simplifyTolerance, setSimplifyTolerance,
   };
   return (
     <ActionsProvider>
@@ -143,7 +143,7 @@ describe('the Colors, Layers, and History assets', () => {
   });
 });
 
-describe('the Simplify and Offset and Corner shape assets', () => {
+describe('the Simplify and Offset and Fillet assets', () => {
   const popover = async (name: string) => {
     click(strip().getByRole('button', { name }));
     return within(await screen.findByRole('dialog', { name }));
@@ -157,7 +157,7 @@ describe('the Simplify and Offset and Corner shape assets', () => {
     expect((await popover('Offset')).getByRole('slider', { name: 'Offset distance' })).toBeDefined();
     cleanup();
     renderWithIcons(<App />);
-    expect((await popover('Corner shape')).getByText(CORNER_CONTROLS_PROMPT)).toBeDefined();
+    expect((await popover('Fillet')).getByText(FILLET_CONTROLS_PROMPT)).toBeDefined();
   });
 
   it('keep the Simplify tolerance when Simplify moves to a panel', async () => {
@@ -174,11 +174,11 @@ describe('the Simplify and Offset and Corner shape assets', () => {
     expect(sidebar().getByRole('slider', { name: 'Offset distance' })).toBeDefined();
   });
 
-  it('draw Corner shape in a panel', () => {
-    surfaces({ corners: { surface: 'panel' } });
+  it('draw Fillet in a panel', () => {
+    surfaces({ fillets: { surface: 'panel' } });
     renderWithIcons(<App />);
-    expect(strip().queryByRole('button', { name: 'Corner shape' })).toBeNull();
-    expect(sidebar().getByRole('button', { name: 'Corner shape', expanded: true })).toBeDefined();
-    expect(sidebar().getByText(CORNER_CONTROLS_PROMPT)).toBeDefined();
+    expect(strip().queryByRole('button', { name: 'Fillet' })).toBeNull();
+    expect(sidebar().getByRole('button', { name: 'Fillet', expanded: true })).toBeDefined();
+    expect(sidebar().getByText(FILLET_CONTROLS_PROMPT)).toBeDefined();
   });
 });

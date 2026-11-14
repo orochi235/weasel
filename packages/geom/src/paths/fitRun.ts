@@ -42,7 +42,7 @@ type Seg = { c1?: Point; c2?: Point; end: Point };
  * Each piece is the longest prefix of what is left that one cubic holds,
  * found by bisecting on its end sample. Splitting at the worst sample instead
  * cuts where a poor first fit strays most, which is rarely where a piece has
- * to end: it refit a puppet-warped bar with twice the anchors it needed.
+ * to end: it refit a pin-warped bar with twice the anchors it needed.
  */
 function fitGreedy(pts: Point[], tStart: Point, tEnd: Point, tol: number, out: Seg[]): void {
   let from = 0;

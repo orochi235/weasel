@@ -28,11 +28,11 @@ describe('shareBrushSize', () => {
     const big = shareToolOptions(brush(400), shareBrushSize(brush(400)));
     const small = shareToolOptions(brush(30), shareBrushSize(brush(30)));
     const values = createToolOptionValues();
-    setToolOption('smudge', big, values, 'radiusPx', 120);
+    setToolOption('knead', big, values, 'radiusPx', 120);
     setToolOption('small', small, values, 'strength', 0.9);
     expect(values.get(SHARED_TOOL_OPTIONS)).toEqual({ [BRUSH_SIZE_PX]: 120 });
     expect(toolOptionParams('small', small, values)).toEqual({ radiusPx: 30, strength: 0.9 });
-    expect(toolOptionParams('smudge', big, values)).toEqual({ radiusPx: 120, strength: 0.5 });
+    expect(toolOptionParams('knead', big, values)).toEqual({ radiusPx: 120, strength: 0.5 });
   });
 
   it('moves every sharing brush’s size when one’s step action runs', () => {
@@ -41,6 +41,6 @@ describe('shareBrushSize', () => {
     const values = createToolOptionValues();
     const grow = toolOptionSteps('small', 'Small', small).actions.find((a) => a.id === 'small.grow')!;
     (grow.invoker as ImmediateInvoker).run({ activeTool: { active: 'small' }, toolOptionValues: values } as never, undefined);
-    expect(toolOptionParams('smudge', big, values).radiusPx).toBe(30);
+    expect(toolOptionParams('knead', big, values).radiusPx).toBe(30);
   });
 });

@@ -1,5 +1,5 @@
 /**
- * A WeaselDraw document holding a live blend, through the session save and a
+ * A WeaselDraw document holding a live tween, through the session save and a
  * reload: the scene `App` builds, `toJSON` as `useSessionPersistence` writes
  * it, and `nodeSpecsFromSnapshot` as `loadInitial` reads it back.
  */
@@ -39,23 +39,23 @@ const drawScene = (initial: Spec[]) =>
   });
 
 function steps(scene: ReturnType<typeof drawScene>) {
-  const blend = scene.get(asNodeId('blend'))!;
-  const deps = (blend.dependsOn as NodeId[]).map((id) => derivedDepOf(scene, id));
-  return pathEffectParts(blend, deps) ?? [];
+  const tween = scene.get(asNodeId('tween'))!;
+  const deps = (tween.dependsOn as NodeId[]).map((id) => derivedDepOf(scene, id));
+  return pathEffectParts(tween, deps) ?? [];
 }
 
-const withBlend = () => drawScene([
+const withTween = () => drawScene([
   box('a', 0, '#ff0000'),
   {
-    ...pathEffectNode({ kind: 'blend', steps: 3 }, [asNodeId('a'), asNodeId('b')], 'default', PATH_EFFECT_DERIVATIONS),
-    id: asNodeId('blend'),
+    ...pathEffectNode({ kind: 'tween', steps: 3 }, [asNodeId('a'), asNodeId('b')], 'default', PATH_EFFECT_DERIVATIONS),
+    id: asNodeId('tween'),
   } as Spec,
   box('b', 300, '#0000ff'),
 ]);
 
-describe('a draw document with a blend', () => {
-  it('saves and reopens with the blend still live', () => {
-    const scene = withBlend();
+describe('a draw document with a tween', () => {
+  it('saves and reopens with the tween still live', () => {
+    const scene = withTween();
     expect(steps(scene)).toHaveLength(3);
 
     const saved = JSON.stringify(scene.toJSON(), serializeReplacer);
@@ -68,9 +68,9 @@ describe('a draw document with a blend', () => {
     expect(steps(reopened)[2]!.path).not.toEqual(steps(scene)[2]!.path);
   });
 
-  it('exports what the blend shows, its steps as ordinary paths in their own paint', async () => {
+  it('exports what the tween shows, its steps as ordinary paths in their own paint', async () => {
     const warnings: string[] = [];
-    const svg = await sceneToSvgString(withBlend(), {
+    const svg = await sceneToSvgString(withTween(), {
       filename: 'x.svg', pages: layoutPages([{ id: 'page-1', width: 400, height: 300 }]),
       backgroundColor: '#ffffff', onWarn: (m) => warnings.push(m),
     });
@@ -99,10 +99,10 @@ function liveSteps(scene: ReturnType<typeof drawScene>) {
 describe('a path effect through draw\'s SVG', () => {
   it('reopens live, over the sources it was made from, in its slot on their page', async () => {
     const reopened = drawScene([]);
-    openSvgText(reopened, await exportOf(withBlend()), 'x.svg');
+    openSvgText(reopened, await exportOf(withTween()), 'x.svg');
 
     const [node] = effectsIn(reopened);
-    expect(node!.data.pathEffect).toEqual({ kind: 'blend', steps: 3 });
+    expect(node!.data.pathEffect).toEqual({ kind: 'tween', steps: 3 });
     expect(contentRoots(reopened)).toHaveLength(3);
     expect(contentRoots(reopened)[1]).toBe(node!.id);
     expect(reopened.get(node!.id)!.parent).toBe('page-1');
@@ -117,8 +117,8 @@ describe('a path effect through draw\'s SVG', () => {
   });
 
   it('imports over its own sources, not the ones of the document it lands in', async () => {
-    const target = withBlend();
-    importSvgText(target, await exportOf(withBlend()));
+    const target = withTween();
+    importSvgText(target, await exportOf(withTween()));
     const [mine, imported] = effectsIn(target);
     expect(imported).toBeDefined();
     expect(imported!.dependsOn).not.toEqual(mine!.dependsOn);
@@ -127,7 +127,7 @@ describe('a path effect through draw\'s SVG', () => {
 
   it('arrives as plain paths when its sources were not exported with it', async () => {
     const target = drawScene([]);
-    importSvgText(target, await selectionToSvgString(withBlend(), ['blend']));
+    importSvgText(target, await selectionToSvgString(withTween(), ['tween']));
     expect(effectsIn(target)).toEqual([]);
     expect(target.childrenOf(contentRoots(target)[0]!)).toHaveLength(3);
   });
@@ -177,7 +177,7 @@ describe('a path effect through draw\'s SVG', () => {
   it('reopens an effect between shapes on two pages in the page run', async () => {
     const svg = await sceneToSvgString(drawScene([
       box('a', 0, '#ff0000'),
-      { ...pathEffectNode({ kind: 'blend', steps: 3 }, [asNodeId('a'), asNodeId('b')], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('blend') } as Spec,
+      { ...pathEffectNode({ kind: 'tween', steps: 3 }, [asNodeId('a'), asNodeId('b')], 'default', PATH_EFFECT_DERIVATIONS), id: asNodeId('tween') } as Spec,
       box('b', 500, '#0000ff'),
     ]), {
       filename: 'x.svg', backgroundColor: '#ffffff',
@@ -192,7 +192,7 @@ describe('a path effect through draw\'s SVG', () => {
 
   it('reopens an effect that paints nothing, though its group is empty', async () => {
     for (const effect of [
-      { kind: 'blend', steps: 0 },
+      { kind: 'tween', steps: 0 },
       { kind: 'repeatAlong', count: 0, orient: false },
     ] as const) {
       const scene = drawScene([

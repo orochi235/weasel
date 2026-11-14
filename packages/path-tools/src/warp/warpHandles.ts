@@ -1,7 +1,7 @@
 /**
- * The controls of the selection's warp, as a hit-tested layer: a distort's
- * corners and the quad they make, an envelope's mesh points and the grid
- * lines through them, a puppet's pins. Over a selection holding no warp of
+ * The controls of the selection's warp, as a hit-tested layer: a plane warp's
+ * corners and the quad they make, a cloth warp's mesh points and the grid
+ * lines through them, a pin warp's pins. Over a selection holding no warp of
  * the kind, the controls of a fresh one are shown where it would start.
  */
 import {
@@ -92,15 +92,15 @@ function pinPaint(view: View, at: { x: number; y: number }): DrawCommand[] {
   }];
 }
 
-/** The lines a group's controls hang on, in world space: a distort's quad,
- *  an envelope's grid lines carried through the mesh. */
+/** The lines a group's controls hang on, in world space: a plane warp's quad,
+ *  a cloth warp's grid lines carried through the mesh. */
 function guideLines(group: ControlGroup): Point[][] {
   const { warp, toWorld: m } = group;
-  if (warp.kind === 'distort') {
+  if (warp.kind === 'plane') {
     const c = warp.corners.map((p) => toWorld(m, p));
     return [[...c, c[0]]];
   }
-  if (warp.kind !== 'envelope') return [];
+  if (warp.kind !== 'cloth') return [];
   const map = pathWarpMap(warp, group.source);
   const { box, mesh } = warp;
   const at = (u: number, v: number) => toWorld(m, map({ x: box.x + u * box.width, y: box.y + v * box.height }));
@@ -129,7 +129,7 @@ function warpAffordance(src: WarpHandleLayerSource): Affordance {
             id: `${group.warpId ?? 'fresh'}:${index}`,
             targetId: null,
             shape: { kind: 'point', x: p.x, y: p.y, hitRadiusPx: HIT_PX },
-            paint: group.warp.kind === 'puppet'
+            paint: group.warp.kind === 'pin'
               ? { kind: 'custom', draw: ({ world, view }) => pinPaint(view, world) }
               : {
                 kind: 'square',

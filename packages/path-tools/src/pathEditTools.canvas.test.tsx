@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/core';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathToAnchors } from '@weasel-js/geom';
-import { anchorSelectionPreset, lengthenPreset, simplifyBrushPreset } from './presets';
+import { anchorSelectionPreset, tugPreset, sandPreset } from './presets';
 import { usePathEditTools } from './toolSets';
 
 beforeAll(() => {
@@ -20,7 +20,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = ['draw', lengthenPreset, simplifyBrushPreset, anchorSelectionPreset] as const;
+const FEATURES = ['draw', tugPreset, sandPreset, anchorSelectionPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup(d: string, width: number, height: number) {
@@ -81,38 +81,38 @@ describe('path-edit tools on a canvas', () => {
     expect(t.coords()).toEqual([0, 0, 20, 0, 24, 50]);
   });
 
-  it('lengthens from an end anchor with Lengthen on', () => {
+  it('lengthens from an end anchor with Tug on', () => {
     const t = setup(ELBOW, 20, 20);
-    t.use('lengthen');
+    t.use('tug');
     drag(t.canvas, [[20, 20], [22, 35], [24, 50]]);
     expect(t.coords()).toEqual([0, 0, 20, 0, 20, 50]);
   });
 
-  it('brushes anchors away with the Simplify brush on', () => {
+  it('brushes anchors away with Sand on', () => {
     const points = Array.from({ length: 21 }, (_, i) => `${i * 5} ${i % 2 === 0 ? 0 : 0.2}`);
     const t = setup(`M ${points.join(' L ')}`, 100, 0.2);
     const before = t.anchorCount();
-    t.use('simplifyBrush');
+    t.use('sand');
     drag(t.canvas, Array.from({ length: 21 }, (_, i): [number, number] => [i * 5, 0]));
     expect(t.anchorCount()).toBeLessThan(before);
   });
 
-  it('grows and strengthens the Simplify brush on [ ] and Shift+[ ] while it is the active tool', () => {
+  it('grows and strengthens Sand on [ ] and Shift+[ ] while it is the active tool', () => {
     const t = setup(ELBOW, 20, 20);
-    t.use('simplifyBrush');
+    t.use('sand');
     const key = (key: string, code: string, shiftKey = false) =>
       act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key, code, shiftKey, bubbles: true })); });
     key(']', 'BracketRight');
     key('}', 'BracketRight', true);
-    expect(t.options.get('simplifyBrush')).toEqual({ radiusPx: 15, tolerance: 1.3 });
+    expect(t.options.get('sand')).toEqual({ radiusPx: 15, tolerance: 1.3 });
     key('[', 'BracketLeft');
-    expect(t.options.get('simplifyBrush').radiusPx).toBe(12);
-    expect(t.actions.current!.paramsOf('simplifyBrush')).toEqual({ radiusPx: 12, tolerance: 1.3 });
+    expect(t.options.get('sand').radiusPx).toBe(12);
+    expect(t.actions.current!.paramsOf('sand')).toEqual({ radiusPx: 12, tolerance: 1.3 });
   });
 
   it('leaves [ and ] to anchor selection under another tool', () => {
     const t = setup(ELBOW, 20, 20);
     act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: ']', code: 'BracketRight', bubbles: true })); });
-    expect(t.options.get('simplifyBrush')).toEqual({});
+    expect(t.options.get('sand')).toEqual({});
   });
 });

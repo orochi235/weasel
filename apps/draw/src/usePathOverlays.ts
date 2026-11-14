@@ -2,7 +2,7 @@ import {
   always, never, type ChromeRulesDep, type Contribution, type VisibilityRules,
 } from '@weasel-js/core';
 import {
-  PATH_BALANCE_CHROME_ID, PATH_COMB_CHROME_ID, PATH_CORNERS_CHROME_ID, PATH_DIRECTION_CHROME_ID,
+  PATH_POISE_CHROME_ID, PATH_COMB_CHROME_ID, PATH_FILLETS_CHROME_ID, PATH_DIRECTION_CHROME_ID,
 } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
 import { drawPrefs, usePref } from './prefs';
@@ -11,8 +11,8 @@ import { drawPrefs, usePref } from './prefs';
 const OVERLAY_PREFS = {
   [PATH_DIRECTION_CHROME_ID]: 'view.pathEditing.pathDirection',
   [PATH_COMB_CHROME_ID]: 'view.pathEditing.pathComb',
-  [PATH_BALANCE_CHROME_ID]: 'view.pathEditing.pathBalance',
-  [PATH_CORNERS_CHROME_ID]: 'view.pathEditing.pathCorners',
+  [PATH_POISE_CHROME_ID]: 'view.pathEditing.pathPoise',
+  [PATH_FILLETS_CHROME_ID]: 'view.pathEditing.pathFillets',
 } as const;
 
 type OverlayId = keyof typeof OVERLAY_PREFS;
@@ -31,21 +31,21 @@ function prefsChromeRules(below: () => ChromeRulesDep | undefined): ChromeRulesD
 }
 
 /**
- * Path edit's overlays — direction, curvature comb, handle balance, and corner widgets — driven by one View
+ * Path edit's overlays — direction, curvature comb, poise lines, and fillet widgets — driven by one View
  * preference each: the chrome rules that show or hide them on the canvas, and an entry sourcing the `chromeRules`
  * dep the `pathEdit.show.*` toggles write, so a toggle sets the preference.
  */
 export function usePathOverlays(): { chromeVisibility: VisibilityRules; contribution: Contribution } {
   const [direction] = usePref('view.pathEditing.pathDirection');
   const [comb] = usePref('view.pathEditing.pathComb');
-  const [balance] = usePref('view.pathEditing.pathBalance');
-  const [corners] = usePref('view.pathEditing.pathCorners');
+  const [poise] = usePref('view.pathEditing.pathPoise');
+  const [fillets] = usePref('view.pathEditing.pathFillets');
   const chromeVisibility = useMemo<VisibilityRules>(() => ({
     [PATH_DIRECTION_CHROME_ID]: direction ? always : never,
     [PATH_COMB_CHROME_ID]: comb ? always : never,
-    [PATH_BALANCE_CHROME_ID]: balance ? always : never,
-    [PATH_CORNERS_CHROME_ID]: corners ? always : never,
-  }), [direction, comb, balance, corners]);
+    [PATH_POISE_CHROME_ID]: poise ? always : never,
+    [PATH_FILLETS_CHROME_ID]: fillets ? always : never,
+  }), [direction, comb, poise, fillets]);
   const contribution = useMemo<Contribution>(() => ({
     id: 'draw.pathOverlays',
     eligibility: { always: true },

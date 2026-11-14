@@ -2,7 +2,7 @@
  *
  *  Every editing command (history, clipboard, group, create outlines) is a kit action, and each run of them is a
  *  command-row surface asset (`COMMAND_ASSETS`) drawn in its slot here, from the registry `<SceneCanvas>` fills,
- *  glyphs included; each can be moved to a menu or a panel instead. Simplify, Offset and Corner shape are command-row
+ *  glyphs included; each can be moved to a menu or a panel instead. Simplify, Offset and Fillet are command-row
  *  assets too, of draw's own controls (`PATH_COMMAND_ASSETS`), and move to a panel only. Arrange, Pathfinder, and Path are surface assets, drawn in the
  *  toolbar dock below this row (`StripDock`) when they are shown as toolbars or menus. The app's own view toggles and Release compound
  *  path are actions too (`appCommands`), as are Preferences (the editor shell's), Record and Play
@@ -36,7 +36,7 @@ export function CommandBar(p: CommandBarProps) {
       <Run id="structure" group="structure" />
       <Run id="view" group="view" />
       <CommandSlot id="pathCommands" group />
-      <CommandSlot id="corners" group />
+      <CommandSlot id="fillets" group />
       <Run id="text" group="text" />
       <Run id="compound" group="compound" />
       <Bar.Spacer />

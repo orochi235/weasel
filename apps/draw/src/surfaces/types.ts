@@ -1,5 +1,5 @@
 import type { Measurements, SelectionApi } from '@weasel-js/core';
-import type { CornerControlsSelection } from '@weasel-js/path-tools';
+import type { FilletControlsSelection } from '@weasel-js/path-tools';
 import type { PrefGroup, PrefOrder } from '@weasel-js/prefs';
 import type { ReactNode } from 'react';
 import type { DrawScene } from '../drawDocument';
@@ -42,9 +42,9 @@ export interface SidebarHost {
   setPaperSize: (v: PaperSizeKey) => void;
   docSelected: boolean;
   setDocSelected: (v: boolean) => void;
-  /** The path open in path edit and its selected anchors, for Corner shape. */
-  cornerSelection: CornerControlsSelection;
-  /** What Simplify refits at, and the Simplify brush with it. */
+  /** The path open in path edit and its selected anchors, for Fillet. */
+  filletSelection: FilletControlsSelection;
+  /** What Simplify refits at, and Sand with it. */
   simplifyTolerance: number;
   setSimplifyTolerance: (v: number) => void;
 }

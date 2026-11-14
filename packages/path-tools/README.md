@@ -22,34 +22,34 @@ import { pathTools } from '@weasel-js/path-tools';
 <SceneCanvas scene={scene} features={['draw', pathTools]} />;
 ```
 
-`pathTools` turns every family on but soft selection and handle snapping, which
+`pathTools` turns every family on but Drape and handle snapping, which
 change what every anchor or handle drag does. Each is also a preset of its own,
 and an app that imports only some never loads the others:
 
 | Preset | What it adds |
 |---|---|
-| `simplifyBrushPreset` | `simplifyBrush`, which `useSimplifyBrushTool` binds: the Simplify brush, a path-edit tool that refits the curve it passes over |
+| `sandPreset` | `sand`, which `useSandTool` binds: Sand, a path-edit tool that refits the curve it passes over |
 | `handleLocksPreset` | The `handleLock.angle` and `handleLock.length` toggles |
-| `createSoftSelectionPreset` | Soft selection: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathTools` |
+| `createDrapePreset` | Drape: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathTools` |
 | `handleSnapPreset`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle, through a snap session whose angles `handleSnapSource` offers. Not in `pathTools` |
 | `bridgePreset` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
 | `spiroPreset` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
-| `lengthenPreset` | `lengthenPath`, which `useLengthenTool` binds: Lengthen, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
-| `trimPreset`, `extendPreset`, `smudgePreset` | The actions `useTrimTool`, `useExtendTool`, and `useSmudgeBrushTool` bind |
-| `harmonizePreset` | Harmonize curvature |
+| `tugPreset` | `tugPath`, which `useTugTool` binds: Tug, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
+| `snipPreset`, `reachPreset`, `kneadPreset` | The actions `useSnipTool`, `useReachTool`, and `useKneadTool` bind |
+| `fairingPreset` | Fairing (`fairAnchors`), which makes smooth anchors curvature-continuous by their handle lengths |
 | `anchorSelectionPreset` | Grow and shrink the anchor selection along the path, or select every Nth anchor, the corners, the smooth anchors, or the rest |
 | `resamplePreset` | Resample: anchors spread evenly by arc length, adjusted afterward in the last-operation panel |
 | `addExtremesPreset` | Add extremes: an anchor at each curve's leftmost, rightmost, top, and bottom |
 | `curvatureCombPreset` | The curvature comb over the open path, under chrome id `path-edit.comb` |
-| `balancePreset` | Balance handles and Equalize, from grips under chrome id `path-edit.balance` |
+| `poisePreset` | Poise and Equalize, from grips under chrome id `path-edit.poise` |
 | `constraintsPreset` | Path constraints: the actions, their marks, and every edit finished so they hold |
 | `pathStructurePreset` | Make start point and Reverse path direction, and arrows showing which way the open path runs, under chrome id `path-edit.direction` |
 | `segmentTypePreset` | Turn segments straight or curved, from the selection (Shift+C) or under a Shift+double-click |
-| `cornerShapePreset` | Corner shape: a widget in each corner anchor whose drag sets its radius (`editCorner`), and `setCorners` and `cycleCornerShape` on the selected corners; `CORNER_CONTROLS` and `useCornerControls` are a panel over them |
-| `pathEffectsPreset` | Blend, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
-| `warpPreset` | Expand and configure a held warp; `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` bring their own drags |
+| `filletPreset` | Fillet: a widget in each corner anchor whose drag sets its radius (`editFillet`), and `setFillets` and `cycleFillet` on the selected corners; `FILLET_CONTROLS` and `useFilletControls` are a panel over them |
+| `pathEffectsPreset` | Tween, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
+| `warpPreset` | Expand and configure a held warp; `usePlaneWarpTool`, `useClothWarpTool`, and `usePinWarpTool` bring their own drags |
 
-`PATH_EDIT_TOOLS` names the path-edit tools, the Simplify brush and Lengthen, and `usePathEditTools` builds them,
+`PATH_EDIT_TOOLS` names the path-edit tools, Sand and Tug, and `usePathEditTools` builds them,
 beside `RESHAPE_TOOLS` and `usePathToolsTools`. Each carries `edits-anchors`, so only path edit allows it, and its
 binding outranks anchor editing's; path edit starts on core's `anchors` tool.
 
@@ -73,17 +73,17 @@ The sources are hidden while the effect shows them (every effect's create action
 `hideSources` in its params; Text Along Path sets it unless told not to). Release shows them again, as one undo step, and Delete, Cut and Expand take them with the effect.
 Double-clicking the curved text edits the hidden text in place; Enter path edit on the effect edits its path.
 
-The comb, balance lines, constraint marks, and direction arrows are off until
-chrome-caps shows them; the corner widgets show until it hides
-`path-edit.corners`. The toggles `pathEdit.show.direction`, `.comb`,
-`.balance`, and `.corners` (group `pathOverlays`) come with their presets and
-flip that rule through core's `chromeRules` dep. `createCurvatureCombPreset`, `createBalancePreset`,
+The comb, poise lines, constraint marks, and direction arrows are off until
+chrome-caps shows them; the fillet widgets show until it hides
+`path-edit.fillets`. The toggles `pathEdit.show.direction`, `.comb`,
+`.poise`, and `.fillets` (group `pathOverlays`) come with their presets and
+flip that rule through core's `chromeRules` dep. `createCurvatureCombPreset`, `createPoisePreset`,
 `createConstraintsPreset`, `createPathStructurePreset`, and
-`createCornerShapePreset` take their look. They reach path edit through core's
+`createFilletPreset` take their look. They reach path edit through core's
 `PathEditExtension`: marks drawn on the open path, parts of it to press, marks
 a click selects and Delete removes, a share of an anchor or handle drag, what
 an edit keeps true, and, for spiro curves, how a path drawn from another form
-is edited. `createSoftSelectionPreset` takes a function returning its options,
+is edited. `createDrapePreset` takes a function returning its options,
 read as each drag starts, and `createHandleSnapPreset` options or a function
 read on every move; null from either function turns the feature off.
 

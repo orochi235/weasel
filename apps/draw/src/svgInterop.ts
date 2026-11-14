@@ -315,7 +315,7 @@ export function svgNodesToSceneDrafts(
   };
   const drafts = svgNodesToKitDrafts('nodes' in input ? { ...input, nodes } : nodes, idOf, {
     leaf: kitLeafToObj,
-    // A blend of no steps or a repeat of no copies exports an empty group.
+    // A tween of no steps or a repeat of no copies exports an empty group.
     keepEmpty: (g) => decodeEffectAttrs(g.meta?.wd?.attrs) !== null,
     mark: (g) => g.meta?.wd?.attrs?.role === MARK_ROLE,
   });

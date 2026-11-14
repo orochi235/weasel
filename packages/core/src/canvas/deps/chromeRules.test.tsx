@@ -9,7 +9,7 @@ describe('useChromeRulesDep', () => {
     const { result } = renderHook(({ rules }) => useChromeRulesDep(rules), { initialProps: { rules: given } });
     const dep = result.current.dep;
     expect(dep.get('path-edit.comb')).toBe(never);
-    expect(dep.get('path-edit.corners')).toBeUndefined();
+    expect(dep.get('path-edit.fillets')).toBeUndefined();
     act(() => dep.set('path-edit.comb', always));
     expect(result.current.rules['path-edit.comb']).toBe(always);
     expect(result.current.dep.get('path-edit.comb')).toBe(always);

@@ -4,7 +4,7 @@
  * stray value is ignored rather than written into a document.
  */
 import type {
-  BendAlongEffect, BlendEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, TextAlongEffect, ZigzagEffect,
+  BendAlongEffect, TweenEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, TextAlongEffect, ZigzagEffect,
 } from '@weasel-js/core';
 import { effectSettingDefaults } from './effectForms';
 
@@ -24,8 +24,8 @@ function defined<T extends object>(fields: T): Partial<T> {
 export function effectSettings(kind: PathEffect['kind'], params: Params): Partial<PathEffect> {
   const p = params ?? {};
   switch (kind) {
-    case 'blend':
-      return defined<Partial<BlendEffect>>({
+    case 'tween':
+      return defined<Partial<TweenEffect>>({
         steps: num(p.steps) === undefined ? undefined : Math.max(Math.round(num(p.steps)!), 0),
         autoAlign: bool(p.autoAlign),
         startOffset: num(p.startOffset) === undefined ? undefined : Math.round(num(p.startOffset)!),
@@ -77,12 +77,12 @@ export function effectSettings(kind: PathEffect['kind'], params: Params): Partia
 }
 
 /**
- * `effect` with the settings `params` names laid over it. A blend's
+ * `effect` with the settings `params` names laid over it. A tween's
  * `reverse: 'auto'` clears its direction, handing it back to `autoAlign`.
  */
 export function withEffectSettings(effect: PathEffect, params: Params): PathEffect {
   const next = { ...effect, ...effectSettings(effect.kind, params) } as PathEffect;
-  if (next.kind === 'blend' && params?.reverse === 'auto') delete next.reverse;
+  if (next.kind === 'tween' && params?.reverse === 'auto') delete next.reverse;
   return next;
 }
 
@@ -92,7 +92,7 @@ const required = (kind: PathEffect['kind'], field: string): number => effectSett
 /** What a new effect of `kind` starts from, before its params: the settings it cannot leave unset, at their
  *  forms' defaults. */
 export const EFFECT_DEFAULTS: { [K in PathEffect['kind']]: Extract<PathEffect, { kind: K }> } = {
-  blend: { kind: 'blend', steps: required('blend', 'steps') },
+  tween: { kind: 'tween', steps: required('tween', 'steps') },
   bendAlong: { kind: 'bendAlong' },
   repeatAlong: { kind: 'repeatAlong' },
   textAlong: { kind: 'textAlong', hideSources: true },

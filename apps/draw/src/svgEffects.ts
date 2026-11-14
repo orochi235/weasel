@@ -25,7 +25,7 @@ export interface EffectAttrs {
 }
 
 const EFFECT_KINDS: ReadonlySet<string> = new Set<PathEffect['kind']>([
-  'blend', 'bendAlong', 'repeatAlong', 'textAlong', 'roughen', 'zigzag', 'puckerBloat',
+  'tween', 'bendAlong', 'repeatAlong', 'textAlong', 'roughen', 'zigzag', 'puckerBloat',
 ]);
 
 /** The `wd:` attributes of an effect's group. */

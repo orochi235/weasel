@@ -4,24 +4,24 @@
  * preset, which opens a path for editing.
  */
 import { never, type FeaturePreset } from '@weasel-js/core';
-import { balanceHandlesAction, equalizeHandlesAction } from './balance/handleBalance';
-import { createBalanceExtension, PATH_BALANCE_CHROME_ID, type PathEditBalanceStyle } from './balance/balanceMarks';
+import { poiseHandlesAction, equalizeHandlesAction } from './poise/poiseHandles';
+import { createPoiseExtension, PATH_POISE_CHROME_ID, type PathEditPoiseStyle } from './poise/poiseMarks';
 import { bridgeAnchorsAction, bridgePathsAction } from './bridge/bridge';
 import { createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
-import { cycleCornerShapeAction, setCornersAction } from './cornerShape/cornerCommands';
-import { createCornerWidgetsExtension, type CornerWidgetStyle } from './cornerShape/cornerWidgets';
-import { editCornerAction } from './cornerShape/editCorner';
+import { cycleFilletAction, setFilletsAction } from './fillet/filletCommands';
+import { createFilletWidgetsExtension, type FilletWidgetStyle } from './fillet/filletWidgets';
+import { editFilletAction } from './fillet/editFillet';
 import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from './constraints/anchorConstraints';
 import type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 import { createConstraintsExtension, DEFAULT_CONSTRAINT_STYLE } from './constraints/constraintsExtension';
 import { createConstraintLinkMarks } from './constraints/constraintLinkMarks';
 import { linkAnchorAction } from './constraints/linkAnchor';
-import { extendToMeetAction } from './extend/extendToMeet';
+import { reachToMeetAction } from './reach/reachToMeet';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 import { createHandleSnapExtension, handleSnapSource, type HandleSnapOptionsInput } from './handleSnap/handleSnap';
-import { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
-import { harmonizeAnchorsAction } from './harmonize/harmonize';
-import { lengthenPathAction } from './lengthen/lengthenPath';
+import { createDrapeExtension, type DrapeOptions } from './drape/drape';
+import { fairAnchorsAction } from './fairing/fairing';
+import { tugPathAction } from './tug/tugPath';
 import { createDirectionExtension, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle } from './pathStructure/directionMarks';
 import { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 import { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
@@ -32,22 +32,22 @@ import {
 import { addExtremeAnchorsAction } from './extremes/addExtremes';
 import { resamplePathAction } from './resample/resample';
 import {
-  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
+  bendAlongAction, tweenAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
   roughenAction, textAlongAction, zigzagAction,
 } from './pathEffects/actions';
 import { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
-import { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
-import { simplifyBrushAction } from './simplifyBrush/simplifyBrush';
-import { smudgeBrushAction } from './smudge/smudgeBrush';
+import { releaseTweenSpineAction, setTweenSpineAction } from './pathEffects/spine';
+import { sandAction } from './sand/sand';
+import { kneadAction } from './knead/knead';
 import { spiroPreset } from './spiro/spiroPreset';
-import { trimPathAction } from './trim/trimSegment';
-import { showBalanceAction, showCombAction, showCornersAction, showDirectionAction } from './overlays/showOverlay';
+import { snipPathAction } from './snip/snip';
+import { showPoiseAction, showCombAction, showFilletsAction, showDirectionAction } from './overlays/showOverlay';
 import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 
-/** `simplifyBrush`, which `useSimplifyBrushTool`, a path-edit tool, binds. */
-export const simplifyBrushPreset: FeaturePreset = {
-  id: 'simplifyBrush',
-  actions: [simplifyBrushAction],
+/** `sand`, which `useSandTool`, a path-edit tool, binds. */
+export const sandPreset: FeaturePreset = {
+  id: 'sand',
+  actions: [sandAction],
 };
 
 /** The `handleLock.angle` and `handleLock.length` toggles. */
@@ -57,13 +57,13 @@ export const handleLocksPreset: FeaturePreset = {
 };
 
 /**
- * Soft selection: dragging anchors in path edit also moves the anchors near
+ * Drape: dragging anchors in path edit also moves the anchors near
  * them along the path, by a falloff over `options`' radius, read as each drag
  * starts. The wheel scrubs the radius mid-drag. Null or undefined from
  * `options` leaves a drag hard.
  */
-export function createSoftSelectionPreset(options: () => SoftSelectionOptions | null | undefined): FeaturePreset {
-  return { id: 'softSelection', pathEdit: [createSoftSelectionExtension(options)] };
+export function createDrapePreset(options: () => DrapeOptions | null | undefined): FeaturePreset {
+  return { id: 'drape', pathEdit: [createDrapeExtension(options)] };
 }
 
 /**
@@ -84,23 +84,23 @@ export const bridgePreset: FeaturePreset = {
   actions: [bridgeAnchorsAction, bridgePathsAction],
 };
 
-/** `trimPath`, which `useTrimTool` binds. */
-export const trimPreset: FeaturePreset = { id: 'trim', actions: [trimPathAction] };
+/** `snipPath`, which `useSnipTool` binds. */
+export const snipPreset: FeaturePreset = { id: 'snip', actions: [snipPathAction] };
 
-/** `extendToMeet`, which `useExtendTool` binds. */
-export const extendPreset: FeaturePreset = { id: 'extend', actions: [extendToMeetAction] };
+/** `reachToMeet`, which `useReachTool` binds. */
+export const reachPreset: FeaturePreset = { id: 'reach', actions: [reachToMeetAction] };
 
-/** `lengthenPath`, which `useLengthenTool`, a path-edit tool, binds. */
-export const lengthenPreset: FeaturePreset = {
-  id: 'lengthen',
-  actions: [lengthenPathAction],
+/** `tugPath`, which `useTugTool`, a path-edit tool, binds. */
+export const tugPreset: FeaturePreset = {
+  id: 'tug',
+  actions: [tugPathAction],
 };
 
-/** `smudgeBrush`, which `useSmudgeBrushTool` binds. */
-export const smudgePreset: FeaturePreset = { id: 'smudge', actions: [smudgeBrushAction] };
+/** `knead`, which `useKneadTool` binds. */
+export const kneadPreset: FeaturePreset = { id: 'knead', actions: [kneadAction] };
 
-/** Harmonize curvature. */
-export const harmonizePreset: FeaturePreset = { id: 'harmonize', actions: [harmonizeAnchorsAction] };
+/** Fairing, which makes smooth anchors curvature-continuous by their handle lengths. */
+export const fairingPreset: FeaturePreset = { id: 'fairing', actions: [fairAnchorsAction] };
 
 /** Anchor selection along the path: grow, shrink, every Nth, corners, smooth
  *  anchors, and the complement. */
@@ -134,24 +134,24 @@ export function createCurvatureCombPreset(options: () => PathEditCombOptions | u
 export const curvatureCombPreset: FeaturePreset = createCurvatureCombPreset();
 
 /**
- * Balance handles: a line between each curved segment's handle tips with a
- * grip to drag (`balanceHandles`) or double-click (`equalizeHandles`), drawn
- * in `style`. Off until chrome-caps shows `path-edit.balance`, which its toggle,
- * `pathEdit.show.balance`, does. It refines `paths`, so a grip's double-click
+ * Poise: a line between each curved segment's handle tips with a
+ * grip to drag (`poiseHandles`) or double-click (`equalizeHandles`), drawn
+ * in `style`. Off until chrome-caps shows `path-edit.poise`, which its toggle,
+ * `pathEdit.show.poise`, does. It refines `paths`, so a grip's double-click
  * goes ahead of entering path edit.
  */
-export function createBalancePreset(style: PathEditBalanceStyle = {}): FeaturePreset {
+export function createPoisePreset(style: PathEditPoiseStyle = {}): FeaturePreset {
   return {
-    id: 'balance',
+    id: 'poise',
     refines: ['paths'],
-    actions: [equalizeHandlesAction, balanceHandlesAction, showBalanceAction],
-    chromeRules: { [PATH_BALANCE_CHROME_ID]: never },
-    pathEdit: [createBalanceExtension(style)],
+    actions: [equalizeHandlesAction, poiseHandlesAction, showPoiseAction],
+    chromeRules: { [PATH_POISE_CHROME_ID]: never },
+    pathEdit: [createPoiseExtension(style)],
   };
 }
 
-/** Balance handles with their default look. */
-export const balancePreset: FeaturePreset = createBalancePreset();
+/** Poise with their default look. */
+export const poisePreset: FeaturePreset = createPoisePreset();
 
 /** Path constraints: their actions, Alt-dragging an anchor onto another
  *  node to link it there, their marks in `style`'s colors, broken links
@@ -170,24 +170,24 @@ export function createConstraintsPreset(style: Partial<ConstraintGlyphStyle> = {
 export const constraintsPreset: FeaturePreset = createConstraintsPreset();
 
 /**
- * Corner shape: a widget inside each corner anchor of the open path, drawn in
- * `style`, whose drag sets the corner's radius (`editCorner`), and the
- * commands on the selected corners (`setCorners`, `cycleCornerShape`). The
- * widgets show while chrome-caps shows `path-edit.corners`, which is on by
- * default; `pathEdit.show.corners` toggles it. It refines `paths`, so a
+ * Fillet: a widget inside each corner anchor of the open path, drawn in
+ * `style`, whose drag sets the corner's radius (`editFillet`), and the
+ * commands on the selected corners (`setFillets`, `cycleFillet`). The
+ * widgets show while chrome-caps shows `path-edit.fillets`, which is on by
+ * default; `pathEdit.show.fillets` toggles it. It refines `paths`, so a
  * widget's drag goes ahead of the marquee.
  */
-export function createCornerShapePreset(style: CornerWidgetStyle = {}): FeaturePreset {
+export function createFilletPreset(style: FilletWidgetStyle = {}): FeaturePreset {
   return {
-    id: 'cornerShape',
+    id: 'fillet',
     refines: ['paths'],
-    actions: [editCornerAction, setCornersAction, cycleCornerShapeAction, showCornersAction],
-    pathEdit: [createCornerWidgetsExtension(style)],
+    actions: [editFilletAction, setFilletsAction, cycleFilletAction, showFilletsAction],
+    pathEdit: [createFilletWidgetsExtension(style)],
   };
 }
 
-/** Corner shape with path edit's anchor colors. */
-export const cornerShapePreset: FeaturePreset = createCornerShapePreset();
+/** Fillet with path edit's anchor colors. */
+export const filletPreset: FeaturePreset = createFilletPreset();
 
 /**
  * Where a path starts and which way it runs: `setPathStart` and
@@ -216,15 +216,15 @@ export const segmentTypePreset: FeaturePreset = {
   actions: [convertSegmentsAction, convertSegmentAtAction],
 };
 
-/** Blend, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker
+/** Tween, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker
  *  & Bloat, live, and the actions that edit, expand, and release them, set an
- *  along effect's path, and set or release a blend's spine. The scene must
+ *  along effect's path, and set or release a tween's spine. The scene must
  *  hold `withPathEffectsRegistry`'s derivations. */
 export const pathEffectsPreset: FeaturePreset = {
   id: 'pathEffects',
   actions: [
-    blendAction, bendAlongAction, repeatAlongAction, roughenAction, zigzagAction, puckerBloatAction,
-    editPathEffectAction, expandPathEffectAction, setBlendSpineAction, releaseBlendSpineAction, textAlongAction,
+    tweenAction, bendAlongAction, repeatAlongAction, roughenAction, zigzagAction, puckerBloatAction,
+    editPathEffectAction, expandPathEffectAction, setTweenSpineAction, releaseTweenSpineAction, textAlongAction,
     releasePathEffectAction, setEffectPathAction,
   ],
 };
@@ -235,15 +235,15 @@ export const warpPreset: FeaturePreset = {
   actions: [expandWarpAction, configureWarpAction],
 };
 
-/** Every preset above, spiro curves, the comb, balance, constraints, path
- *  direction, and corner shape with their defaults — except soft selection and
+/** Every preset above, spiro curves, the comb, poise, constraints, path
+ *  direction, and fillets with their defaults — except Drape and
  *  handle snapping, which change what every anchor or handle drag does. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
-    simplifyBrushPreset, handleLocksPreset, bridgePreset, spiroPreset, trimPreset, extendPreset, lengthenPreset,
-    smudgePreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
-    curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
-    cornerShapePreset, pathEffectsPreset, warpPreset,
+    sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, reachPreset, tugPreset,
+    kneadPreset, fairingPreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
+    curvatureCombPreset, poisePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
+    filletPreset, pathEffectsPreset, warpPreset,
   ],
 };

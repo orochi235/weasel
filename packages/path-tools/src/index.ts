@@ -12,56 +12,56 @@ import type {} from './actionParamSchema';
 export {
   addExtremesPreset,
   anchorSelectionPreset,
-  balancePreset,
+  poisePreset,
   bridgePreset,
   constraintsPreset,
-  cornerShapePreset,
-  createBalancePreset,
+  filletPreset,
+  createPoisePreset,
   createConstraintsPreset,
-  createCornerShapePreset,
+  createFilletPreset,
   createCurvatureCombPreset,
   createHandleSnapPreset,
   createPathStructurePreset,
-  createSoftSelectionPreset,
+  createDrapePreset,
   curvatureCombPreset,
-  extendPreset,
+  reachPreset,
   handleLocksPreset,
   handleSnapPreset,
-  lengthenPreset,
-  harmonizePreset,
+  tugPreset,
+  fairingPreset,
   pathEffectsPreset,
   pathStructurePreset,
   pathTools,
   segmentTypePreset,
   resamplePreset,
-  simplifyBrushPreset,
-  smudgePreset,
-  trimPreset,
+  sandPreset,
+  kneadPreset,
+  snipPreset,
   warpPreset,
 } from './presets';
 export type { ActionParamSchema } from './actionParamSchema';
 
 // ─── Actions ───────────────────────────────────────────────────────────────
 export {
-  SIMPLIFY_BRUSH_PARAMS, SIMPLIFY_BRUSH_RADIUS_PX, simplifyBrushAction, type SimplifyBrushParams,
-} from './simplifyBrush/simplifyBrush';
-export { SIMPLIFY_BRUSH_TOOL_OPTIONS, useSimplifyBrushTool, type UseSimplifyBrushToolOptions } from './simplifyBrush/useSimplifyBrushTool';
+  SAND_PARAMS, SAND_RADIUS_PX, sandAction, type SandParams,
+} from './sand/sand';
+export { SAND_TOOL_OPTIONS, useSandTool, type UseSandToolOptions } from './sand/useSandTool';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 export {
   BRIDGE_PARAMS, bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,
 } from './bridge/bridge';
-export { planTrim, TRIM_PATH_PARAMS, trimPathAction } from './trim/trimSegment';
-export { EXTEND_TO_MEET_PARAMS, extendToMeetAction, type ExtendToMeetParams } from './extend/extendToMeet';
-export { LENGTHEN_PATH_PARAMS, lengthenPathAction, type LengthenPathParams } from './lengthen/lengthenPath';
-export { useLengthenTool } from './lengthen/useLengthenTool';
+export { planSnip, SNIP_PATH_PARAMS, snipPathAction } from './snip/snip';
+export { REACH_TO_MEET_PARAMS, reachToMeetAction, type ReachToMeetParams } from './reach/reachToMeet';
+export { TUG_PATH_PARAMS, tugPathAction, type TugPathParams } from './tug/tugPath';
+export { useTugTool } from './tug/useTugTool';
 export {
-  overlayShown, PATH_OVERLAYS_GROUP, showBalanceAction, showCombAction, showCornersAction, showDirectionAction,
+  overlayShown, PATH_OVERLAYS_GROUP, showPoiseAction, showCombAction, showFilletsAction, showDirectionAction,
   showOverlayAction,
 } from './overlays/showOverlay';
 export {
-  DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, SMUDGE_BRUSH_PARAMS, smudgeBrushAction, type SmudgeBrushParams,
-} from './smudge/smudgeBrush';
-export { harmonizeAnchorsAction } from './harmonize/harmonize';
+  DEFAULT_KNEAD_RADIUS_PX, DEFAULT_KNEAD_STRENGTH, KNEAD_PARAMS, kneadAction, type KneadParams,
+} from './knead/knead';
+export { fairAnchorsAction } from './fairing/fairing';
 export { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 export { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
 export {
@@ -70,18 +70,18 @@ export {
 } from './anchorSelect/anchorSelect';
 export { RESAMPLE_PARAMS, resamplePathAction, type ResamplePathParams } from './resample/resample';
 export { ADD_EXTREMES_PARAMS, addExtremeAnchorsAction, type AddExtremesParams } from './extremes/addExtremes';
-export { balanceHandlesAction, equalizeHandlesAction } from './balance/handleBalance';
+export { poiseHandlesAction, equalizeHandlesAction } from './poise/poiseHandles';
 export {
   CONSTRAINT_KIND_LABELS, constrainAnchorsAction, constraintsForAnchors, deleteConstraintAction, unconstrainAnchorsAction,
   type ConstrainAnchorsParams,
 } from './constraints/anchorConstraints';
 export {
-  bendAlongAction, blendAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
+  bendAlongAction, tweenAction, editPathEffectAction, expandPathEffectAction, puckerBloatAction, repeatAlongAction,
   roughenAction, textAlongAction, zigzagAction,
   PATH_EFFECTS_GROUP,
 } from './pathEffects/actions';
 export { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
-export { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
+export { releaseTweenSpineAction, setTweenSpineAction } from './pathEffects/spine';
 export {
   configureWarpAction, expandWarpAction, warpHandleScratchOf, type WarpHandleScratch,
 } from './warp/warpActions';
@@ -90,20 +90,20 @@ export { configureWarpParams, settingsOfWarp, WARP_SETTING_FIELDS, warpDragParam
 export { PATH_EFFECT_SETTINGS_SCHEMA, pathEffectSettingsForm } from './pathEffects/settingsForm';
 export { PATH_EFFECT_PARAMS } from './pathEffects/effectForms';
 export {
-  CORNER_SHAPE_OPTIONS, DEFAULT_CORNER_SHAPE, EDIT_CORNER_PARAMS, editCornerAction, type EditCornerParams,
-} from './cornerShape/editCorner';
+  FILLET_SHAPE_OPTIONS, DEFAULT_FILLET_SHAPE, EDIT_FILLET_PARAMS, editFilletAction, type EditFilletParams,
+} from './fillet/editFillet';
 export {
-  CYCLE_CORNER_SHAPE_PARAMS, cycleCornerShapeAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction, type CycleCornerShapeParams,
-} from './cornerShape/cornerCommands';
+  CYCLE_FILLET_PARAMS, cycleFilletAction, DEFAULT_FILLET_TRIM_SHARE, setFilletsAction, type CycleFilletParams,
+} from './fillet/filletCommands';
 
 // ─── Tools ─────────────────────────────────────────────────────────────────
-export { useTrimTool, type UseTrimToolOptions } from './trim/useTrimTool';
-export { useExtendTool, type UseExtendToolOptions } from './extend/useExtendTool';
-export { SMUDGE_BRUSH_TOOL_OPTIONS, useSmudgeBrushTool, type UseSmudgeBrushToolOptions } from './smudge/useSmudgeBrushTool';
+export { useSnipTool, type UseSnipToolOptions } from './snip/useSnipTool';
+export { useReachTool, type UseReachToolOptions } from './reach/useReachTool';
+export { KNEAD_TOOL_OPTIONS, useKneadTool, type UseKneadToolOptions } from './knead/useKneadTool';
 export type { StrokeClickToolOptions } from './shared/strokeClickTool';
 export {
-  useDistortTool, useEnvelopeTool, usePuppetTool,
-  type UseDistortToolOptions, type UseEnvelopeToolOptions, type UsePuppetToolOptions, type WarpTool, type WarpToolOptions,
+  usePlaneWarpTool, useClothWarpTool, usePinWarpTool,
+  type UsePlaneWarpToolOptions, type UseClothWarpToolOptions, type UsePinWarpToolOptions, type WarpTool, type WarpToolOptions,
 } from './warp/useWarpTool';
 export { warpLayerId } from './warp/warpHandles';
 export {
@@ -121,8 +121,8 @@ export * from './spiro';
 // ─── Path-edit chrome ──────────────────────────────────────────────────────
 export { combCommands, createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
 export {
-  balanceCommands, createBalanceExtension, PATH_BALANCE_CHROME_ID, type PathEditBalanceStyle,
-} from './balance/balanceMarks';
+  poiseCommands, createPoiseExtension, PATH_POISE_CHROME_ID, type PathEditPoiseStyle,
+} from './poise/poiseMarks';
 export {
   CONSTRAINTS_EXTENSION_ID, createConstraintsExtension, DEFAULT_CONSTRAINT_STYLE, selectedConstraintOf, setConstraints,
 } from './constraints/constraintsExtension';
@@ -138,9 +138,9 @@ export {
 } from './constraints/constraintLinkMarks';
 export type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 export {
-  CORNER_WIDGET_STANDOFF_PX, cornerWidgetCommands, cornerWidgetFrames, createCornerWidgetsExtension,
-  PATH_CORNERS_CHROME_ID, type CornerWidgetStyle,
-} from './cornerShape/cornerWidgets';
+  FILLET_WIDGET_STANDOFF_PX, filletWidgetCommands, filletWidgetFrames, createFilletWidgetsExtension,
+  PATH_FILLETS_CHROME_ID, type FilletWidgetStyle,
+} from './fillet/filletWidgets';
 export {
   createDirectionExtension, directionCommands, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle,
 } from './pathStructure/directionMarks';
@@ -149,15 +149,15 @@ export {
 export {
   createHandleSnapExtension, handleSnapSource, type HandleSnapOptions, type HandleSnapOptionsInput,
 } from './handleSnap/handleSnap';
-export { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
+export { createDrapeExtension, type DrapeOptions } from './drape/drape';
 
 // ─── Panels ────────────────────────────────────────────────────────────────
 export {
-  CORNER_CONTROLS, CORNER_CONTROLS_PROMPT, CORNER_K_SLIDER_RANGE, cornerControlsParams, cornerControlsState, type CornerControlsState,
-} from './cornerShape/cornerControls';
+  FILLET_CONTROLS, FILLET_CONTROLS_PROMPT, FILLET_K_SLIDER_RANGE, filletControlsParams, filletControlsState, type FilletControlsState,
+} from './fillet/filletControls';
 export {
-  useCornerControls, type CornerControlsScene, type CornerControlsSelection, type UseCornerControlsReturn,
-} from './cornerShape/useCornerControls';
+  useFilletControls, type FilletControlsScene, type FilletControlsSelection, type UseFilletControlsReturn,
+} from './fillet/useFilletControls';
 
 // ─── Data the tools keep on a node ─────────────────────────────────────────
 export { constraintAxisOf, constraintConflictsOf, constraintsOf } from './constraints/pathConstraints';
@@ -165,7 +165,7 @@ export {
   heldPathWarpOf, resolvePathWarp, withoutPathWarp, type HeldPathWarp, type ResolvedPathWarp,
 } from './warp/pathWarp';
 export {
-  DEFAULT_ENVELOPE_SIZE, DEFAULT_WARP_TOLERANCE, withPathWarp, type WarpKind, type WarpSettings,
+  DEFAULT_CLOTH_SIZE, DEFAULT_WARP_TOLERANCE, withPathWarp, type WarpKind, type WarpSettings,
 } from './warp/warpTargets';
 
 // Carries path-tools' IconName augmentation into the published declarations.

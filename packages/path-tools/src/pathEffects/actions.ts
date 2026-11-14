@@ -1,5 +1,5 @@
 /**
- * The path-effect actions: make a live blend, bend, repeat, or text along a
+ * The path-effect actions: make a live tween, bend, repeat, or text along a
  * path from the selection, or a live roughen, zigzag, or pucker and bloat of
  * each selected shape; change one's settings; and expand one into ordinary paths.
  */
@@ -138,11 +138,11 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
  * Steps between the first two selected shapes, in the order they were
  * selected: `params.steps` of them, each shape, fill, stroke and turn
  * interpolated, laid along a third selected path where there is one. The
- * blend is live — editing a source moves its steps — and goes just under the
- * upper of the first two. Its other params are `BlendEffect`'s.
+ * tween is live — editing a source moves its steps — and goes just under the
+ * upper of the first two. Its other params are `TweenEffect`'s.
  */
-export const blendAction = createEffectAction({
-  id: 'blend', label: 'Blend', icon: icon('blend'), kind: 'blend', key: 'b', code: 'KeyB', between: true, third: true,
+export const tweenAction = createEffectAction({
+  id: 'tween', label: 'Tween', icon: icon('tween'), kind: 'tween', key: 'b', code: 'KeyB', between: true, third: true,
 });
 
 /**

@@ -90,9 +90,9 @@ describe('path-tools tools on a canvas', () => {
     }
   });
 
-  it('trim a stroke between two crossings with a click, as one undo entry', () => {
+  it('snip a stroke between two crossings with a click, as one undo entry', () => {
     const t = mount({ a: 'M 0 100 L 300 100', b: 'M 100 0 L 100 200', c: 'M 200 0 L 200 200' });
-    t.use('trim');
+    t.use('snip');
     const before = t.scene.historyIndex();
     t.click([150, 100]);
     expect(t.scene.historyIndex()).toBe(before + 1);
@@ -101,16 +101,16 @@ describe('path-tools tools on a canvas', () => {
 
   it('extend an open end to the next stroke with a click, as one undo entry', () => {
     const t = mount({ a: 'M 0 100 L 100 100', wall: 'M 200 0 L 200 200' });
-    t.use('extend');
+    t.use('reach');
     const before = t.scene.historyIndex();
     t.click([100, 100]);
     expect(t.scene.historyIndex()).toBe(before + 1);
     expect(t.d('a')).not.toEqual(pathFromD('M 0 100 L 100 100'));
   });
 
-  it('smudge a selected outline with a drag, as one undo entry', () => {
+  it('knead a selected outline with a drag, as one undo entry', () => {
     const t = mount({ a: 'M 0 100 L 100 100 L 200 100 L 300 100' }, ['a']);
-    t.use('smudgeBrush');
+    t.use('knead');
     const before = t.scene.historyIndex();
     t.drag([[150, 100], [150, 120], [150, 140]]);
     expect(t.scene.historyIndex()).toBe(before + 1);

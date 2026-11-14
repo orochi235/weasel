@@ -1,6 +1,6 @@
 /**
  * The kit's path effects, wired to its painters: the derivations a scene
- * holding blends, bends and repeats registers, and the registry helper that
+ * holding tweens, bends and repeats registers, and the registry helper that
  * registers them.
  */
 import {

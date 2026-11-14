@@ -52,9 +52,9 @@ describe('effectSourceFor', () => {
     }
   });
 
-  it("answers a blend's spine as its path, and none without one", () => {
-    expect(effectSourceFor(sceneWith({ kind: 'blend', steps: 3, hideSources: true } as PathEffect, ['q', 's', 'p']), FX, 'path')).toBe(P);
-    expect(effectSourceFor(sceneWith({ kind: 'blend', steps: 3, hideSources: true } as PathEffect, ['q', 's']), FX, 'path')).toBeNull();
+  it("answers a tween's spine as its path, and none without one", () => {
+    expect(effectSourceFor(sceneWith({ kind: 'tween', steps: 3, hideSources: true } as PathEffect, ['q', 's', 'p']), FX, 'path')).toBe(P);
+    expect(effectSourceFor(sceneWith({ kind: 'tween', steps: 3, hideSources: true } as PathEffect, ['q', 's']), FX, 'path')).toBeNull();
   });
 
   it('answers nothing for an effect showing its sources, or a node that is no effect', () => {

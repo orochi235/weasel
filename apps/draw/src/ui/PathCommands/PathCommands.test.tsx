@@ -29,7 +29,7 @@ function TunedSimplify() {
 afterEach(() => {
   cleanup();
   edits.clear();
-  drawPrefs().reset('tools.simplifyBrush');
+  drawPrefs().reset('tools.sand');
 });
 
 describe('the path command sliders', () => {
@@ -53,11 +53,11 @@ describe('the path command sliders', () => {
     expect(edits.get('offsetPath')!.commit).toHaveBeenCalledWith({ distance: -0.5 });
   });
 
-  it("keeps the tolerance as the Simplify brush's tolerance option", () => {
+  it("keeps the tolerance as Sand's tolerance option", () => {
     render(<TunedSimplify />);
     act(() => {
       fireEvent.keyDown(screen.getByRole('slider', { name: 'Simplify tolerance' }), { key: 'ArrowRight' });
     });
-    expect(drawToolOptionValues().get('simplifyBrush').tolerance).toBeCloseTo(1.1, 5);
+    expect(drawToolOptionValues().get('sand').tolerance).toBeCloseTo(1.1, 5);
   });
 });

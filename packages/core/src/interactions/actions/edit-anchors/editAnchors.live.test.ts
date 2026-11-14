@@ -30,7 +30,7 @@ const T = asNodeId('t');
 const P = asNodeId('p');
 const B = asNodeId('b');
 const ALONG = asNodeId('along');
-const BLEND = asNodeId('blend');
+const TWEEN = asNodeId('tween');
 
 beforeEach(() => {
   _resetFontRegistryForTests();
@@ -49,7 +49,7 @@ async function setup() {
       { id: P, kind: 'mark', layer: 'main', pose: { x: 0, y: 200, width: 400, height: 0 }, data: { path: pathFromD('M0 0 L400 0') } },
       { id: B, kind: 'mark', layer: 'main', pose: { x: 600, y: 200, width: 10, height: 10 }, data: { path: rectPath(0, 0, 10, 10) } },
       { ...pathEffectNode({ kind: 'textAlong' }, [T, P], 'main', PATH_EFFECT_DERIVATIONS), id: ALONG },
-      { ...pathEffectNode({ kind: 'blend', steps: 2, rotate: false }, [P, B], 'main', PATH_EFFECT_DERIVATIONS), id: BLEND },
+      { ...pathEffectNode({ kind: 'tween', steps: 2, rotate: false }, [P, B], 'main', PATH_EFFECT_DERIVATIONS), id: TWEEN },
     ],
   });
   const handles = new Set<OngoingHandle>();
@@ -106,21 +106,21 @@ async function setup() {
 }
 
 describe('an anchor drag on a path something derives from', () => {
-  it('re-derives the text along it and the blend from it on every frame', async () => {
+  it('re-derives the text along it and the tween from it on every frame', async () => {
     const { scene, press, move, heightOf } = await setup();
     const stored = scene.get(P)!.data;
     const along = [heightOf(ALONG)];
-    const blend = [heightOf(BLEND)];
+    const tween = [heightOf(TWEEN)];
     const handle = press();
     for (const y of [300, 400]) {
       move(handle, 400, y);
       along.push(heightOf(ALONG));
-      blend.push(heightOf(BLEND));
+      tween.push(heightOf(TWEEN));
     }
     expect(along[1]).toBeGreaterThan(along[0]);
     expect(along[2]).toBeGreaterThan(along[1]);
-    expect(blend[1]).toBeGreaterThan(blend[0]);
-    expect(blend[2]).toBeGreaterThan(blend[1]);
+    expect(tween[1]).toBeGreaterThan(tween[0]);
+    expect(tween[2]).toBeGreaterThan(tween[1]);
     expect(scene.get(P)!.data).toBe(stored);
   });
 

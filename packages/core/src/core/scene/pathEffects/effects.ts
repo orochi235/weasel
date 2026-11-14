@@ -1,5 +1,5 @@
 /**
- * The path effects, each as the parts it paints from its sources: a blend's
+ * The path effects, each as the parts it paints from its sources: a tween's
  * steps between two shapes, a shape bent along a spine, copies of a shape
  * along a path, text laid along a path, and one shape roughened, zigzagged,
  * or puckered and bloated.
@@ -9,11 +9,11 @@ import {
   type PuckerBloatPathOptions, type RepeatAlongPathOptions, type RoughenPathOptions, type ZigzagPathOptions,
 } from '@weasel-js/geom';
 import type { DerivedPart } from '../derivedParts';
-import { blendParts, type BlendEffect } from './blend';
+import { tweenParts, type TweenEffect } from './tween';
 import type { EffectSource, PathEffectOptions } from './source';
 import { textAlongParts, wholeItem, type TextAlongEffect } from './textAlong';
 
-export type { BlendEffect, PathEffectOptions, TextAlongEffect };
+export type { TweenEffect, PathEffectOptions, TextAlongEffect };
 
 /** A shape bent along a spine. Its sources are `[shape, spine]`. */
 export interface BendAlongEffect extends BendAlongPathOptions, PathEffectOptions {
@@ -43,10 +43,10 @@ export interface PuckerBloatEffect extends PuckerBloatPathOptions, PathEffectOpt
 
 /** A path effect, as a node's `data.pathEffect` holds it. */
 export type PathEffect =
-  | BlendEffect | BendAlongEffect | RepeatAlongEffect | TextAlongEffect | RoughenEffect | ZigzagEffect | PuckerBloatEffect;
+  | TweenEffect | BendAlongEffect | RepeatAlongEffect | TextAlongEffect | RoughenEffect | ZigzagEffect | PuckerBloatEffect;
 
 /** The parts `effect` paints from `sources`, in its sources' order, or
- *  `null` when a source it needs is missing — a blend's spine among them,
+ *  `null` when a source it needs is missing — a tween's spine among them,
  *  where it names one. */
 export function effectParts(effect: PathEffect, sources: readonly (EffectSource | null)[]): DerivedPart[] | null {
   const [a, b] = sources;
@@ -61,10 +61,10 @@ export function effectParts(effect: PathEffect, sources: readonly (EffectSource 
   }
   if (!b) return null;
   switch (effect.kind) {
-    case 'blend': {
-      if (sources.length < 3) return blendParts(effect, a, b);
+    case 'tween': {
+      if (sources.length < 3) return tweenParts(effect, a, b);
       const spine = sources[2];
-      return spine ? blendParts(effect, a, b, spine.world) : null;
+      return spine ? tweenParts(effect, a, b, spine.world) : null;
     }
     case 'bendAlong': {
       const path = bendAlongPath(a.world, b.world, effect);

@@ -1,5 +1,5 @@
 /**
- * Path effects in a scene whose containers compose frames: a blend over two
+ * Path effects in a scene whose containers compose frames: a tween over two
  * shapes held in a turned, offset container. Expected positions are worked
  * by hand from the container's frame.
  */
@@ -31,14 +31,14 @@ const leaf = (id: string, pose: RectPose, color: string, parent?: string): Spec 
   ...(parent ? { parent: asNodeId(parent) } : {}),
 });
 
-const blend = (parent?: string): Spec => ({
-  ...pathEffectNode({ kind: 'blend', steps: 3 }, [A, B], 'main', PATH_EFFECT_DERIVATIONS),
+const tween = (parent?: string): Spec => ({
+  ...pathEffectNode({ kind: 'tween', steps: 3 }, [A, B], 'main', PATH_EFFECT_DERIVATIONS),
   id: FX,
   ...(parent ? { parent: asNodeId(parent) } : {}),
 });
 
 /** `a` and `b` inside a container at (200, 100) turned a quarter turn, the
- *  blend beside them in it. */
+ *  tween beside them in it. */
 function framed(composition: PoseComposition<RectPose> = RIGID_POSE_COMPOSITION) {
   return createScene<unknown, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
@@ -47,7 +47,7 @@ function framed(composition: PoseComposition<RectPose> = RIGID_POSE_COMPOSITION)
     initial: [
       { id: G, kind: 'group', layer: 'main', pose: { x: 200, y: 100, width: 100, height: 100, rotation: Math.PI / 2 }, data: {} },
       leaf('a', { x: 0, y: 0, width: 20, height: 10 }, '#ff0000', 'g'),
-      blend('g'),
+      tween('g'),
       leaf('b', { x: 80, y: 40, width: 20, height: 10 }, '#0000ff', 'g'),
     ],
   });
@@ -72,7 +72,7 @@ const middle = (path: Path) => {
   return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2), w: Math.round(b.width), h: Math.round(b.height) };
 };
 
-describe('a blend inside a container that composes frames', () => {
+describe('a tween inside a container that composes frames', () => {
   it('paints its steps between where its sources are painted', () => {
     const scene = framed();
     const drawn = paths(buildSceneViewCommands(scene, VIEW, defaultDrawOne)).map(middle);
@@ -128,7 +128,7 @@ describe('an effect whose source is an effect in another frame', () => {
   const H = asNodeId('h');
   const FX2 = asNodeId('fx2');
 
-  /** Copies of `c` along the blend's steps. */
+  /** Copies of `c` along the tween's steps. */
   const along = (parent?: string): Spec => ({
     ...pathEffectNode({ kind: 'repeatAlong', count: 4, orient: false }, [C, FX], 'main', PATH_EFFECT_DERIVATIONS),
     id: FX2,
@@ -146,7 +146,7 @@ describe('an effect whose source is an effect in another frame', () => {
         // a's and b's middles, (295,110) and (255,190) on the page.
         leaf('a', turned(285, 105), '#ff0000'),
         leaf('b', turned(245, 185), '#0000ff'),
-        blend(),
+        tween(),
         leaf('c', { x: 0, y: 0, width: 4, height: 4 }, '#00ff00'),
         along(),
       ],

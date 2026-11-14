@@ -25,14 +25,14 @@ Tag: `path-drag`
 | Bend segment | `bendSegment` | Reshapes a segment by its middle; on a spiro curve, with `spiroPreset` on, adds a smooth point there and drags it | Drag on a segment | main | core |
 | Marquee-select anchors | `marqueeAnchors` | Selects anchors in a box | Drag on empty canvas | main | core |
 | Handle locks | `handleLock.angle`, `handleLock.length` | Hold a handle's angle or length during a drag | Toggles; Mod while dragging holds length | main | path-tools |
-| Balance handles | `balanceHandles` | Scales a segment's two handles together from a grip on its balance line; a length lock holds it still | Drag a balance grip, shown under `path-edit.balance` | main | path-tools |
+| Poise | `poiseHandles` | Scales a segment's two handles together from a grip on its poise line; a length lock holds it still | Drag a poise grip, shown under `path-edit.poise` | main | path-tools |
 | Path constraints | `constrainAnchors`, `unconstrainAnchors` | Keep geometric relations (parallel, level, fixed) during any anchor drag | C / Shift+C in its lab; Alt+Shift and a letter, and a Constraints menu, in WeaselDraw | main | path-tools |
 | Link anchor | `linkAnchor` | Moves an anchor, and released on another shape's anchor or segment ties it there with a constraint link, which every later edit or whole-shape transform of either keeps | Alt-drag an anchor, under `constraintsPreset` | main | path-tools |
-| Corner shape | `editCorner` | Sets a corner anchor's radius, or every selected corner's, from the widget inside it | Drag a corner widget, shown under `path-edit.corners` | main | path-tools |
+| Fillet | `editFillet` | Sets a corner anchor's radius, or every selected corner's, from the widget inside it | Drag a fillet widget, shown under `path-edit.fillets` | main | path-tools |
 | Path snapping | — | Locks a dragged anchor to other shapes' anchors, crossings, tangent and perpendicular points, midpoints, extremes, and strokes, and to the parts of its own path the drag leaves still; the pen, the insert tools, and a move snap the same way | Any anchor drag: other shapes' anchors by default, every kind with a `pathSnapSource` in `<SceneCanvas snap>` | main | core |
-| Soft selection | — | Moves nearby anchors with falling weight; the wheel scrubs the radius mid-drag | Any anchor drag, under `createSoftSelectionPreset` | landing | path-tools |
+| Drape | — | Moves nearby anchors with falling weight; the wheel scrubs the radius mid-drag | Any anchor drag, under `createDrapePreset` | landing | path-tools |
 | Handle snap | — | Snaps a handle's angle to steps and to its partner | Any handle drag, under `createHandleSnapPreset` | landing | path-tools |
-| Lengthen | `lengthenPath` | Grows an open end along its tangent or curvature, or trims it back along itself | Drag an end anchor with the Lengthen path-edit tool (`useLengthenTool`) on | main | path-tools |
+| Tug | `tugPath` | Grows an open end along its tangent or curvature, or trims it back along itself | Drag an end anchor with the Tug path-edit tool (`useTugTool`) on | main | path-tools |
 
 ## Click on a path
 
@@ -43,9 +43,9 @@ Tag: `path-click`
 | Select anchor | `selectAnchor` | Selects an anchor | Click | main | core |
 | Insert anchor | `insertPathAnchor` | Adds an anchor on the segment | Alt+click | main | core |
 | Cut path at anchor | `cutPathAtAnchor` | Opens the path there | Alt+Shift+click | main | core |
-| Equalize handles | `equalizeHandles` | Gives a segment's two handles one proportion of the way to their corner | Double-click a balance grip | main | path-tools |
-| Trim segment | `trimPath` | Removes the piece between the nearest crossings | Click with the Trim tool (Y) | main | path-tools |
-| Extend to next path | `extendToMeet` | Carries an open end to the next stroke | Click with the Extend tool (Shift+U) | main | path-tools |
+| Equalize handles | `equalizeHandles` | Gives a segment's two handles one proportion of the way to their corner | Double-click a poise grip | main | path-tools |
+| Snip | `snipPath` | Removes the piece between the nearest crossings | Click with the Snip tool (Y) | main | path-tools |
+| Reach | `reachToMeet` | Carries an open end to the next stroke | Click with the Reach tool (Shift+U) | main | path-tools |
 | Convert segment | `convertSegmentAt` | Flips the segment between straight and curved | Shift+double-click in path edit | main | path-tools |
 | Slice | `slice` | Cuts shapes along a drawn line | Slice tool (K) | main | core |
 
@@ -55,9 +55,9 @@ Tag: `path-brush`
 
 | Operation | Action id | What the brush does | Default binding | Status | Package |
 |---|---|---|---|---|---|
-| Simplify brush | `simplifyBrush` | Removes anchors it passes over, refitting the curve | Drag with the brush | main | path-tools |
-| Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (U) | main | path-tools |
-| Puppet warp | `puppet.drag`, `puppet.addPin`, `puppet.removePin` | Pins the path and bends it when a pin is dragged | Puppet warp tool (B): click pins, Alt+click a pin takes it out, drag a pin bends | main | path-tools |
+| Sand | `sand` | Removes anchors it passes over, refitting the curve | Drag with the brush | main | path-tools |
+| Knead | `knead` | Pushes the outline along with the pointer | Drag with the Knead tool (U) | main | path-tools |
+| Pin warp | `pin.drag`, `pin.addPin`, `pin.removePin` | Pins the path and bends it when a pin is dragged | Pin warp tool (B): click pins, Alt+click a pin takes it out, drag a pin bends | main | path-tools |
 
 ## Handles on the box around a selection
 
@@ -65,8 +65,8 @@ Tag: `path-box`
 
 | Operation | Action id | What the handles do | Default binding | Status | Package |
 |---|---|---|---|---|---|
-| Perspective and free distort | `distort.drag` | Corner pins warp the selected paths | Drag a corner with the Distort tool (F) | main | path-tools |
-| Envelope mesh (to be renamed Cloth warp) | `envelope.drag` | A grid of control points warps the selection | Drag a mesh point with the Envelope tool (C) | main | path-tools |
+| Plane warp | `plane.drag` | Corner pins warp the selected paths | Drag a corner with the Plane Warp tool (F) | main | path-tools |
+| Cloth warp | `cloth.drag` | A grid of control points warps the selection | Drag a mesh point with the Cloth warp tool (Shift+F) | main | path-tools |
 
 ## Commands on the selection
 
@@ -89,20 +89,20 @@ Tag: `path-command`
 | Retract handles | `retractHandles` | Collapses selected anchors' handles | — | main | core |
 | Make handles symmetric | `makeHandlesSymmetric` | Equal length, opposite direction | — | main | core |
 | Delete anchors | `deleteAnchors` | Removes selected anchors | Delete | main | core |
-| Set corners | `setCorners` | Gives the selected corners a `corner-shape` keyword or `superellipse()` parameter, a radius, or both | — (the corner controls panel) | main | path-tools |
-| Next corner shape | `cycleCornerShape` | Steps the selected corners to the next `corner-shape` keyword | K in its lab only | main | path-tools |
-| Harmonize curvature | `harmonizeAnchors` | Rescales a smooth anchor's handles so curvature is continuous | H in its lab only | main | path-tools |
+| Set fillets | `setFillets` | Gives the selected corners a `corner-shape` keyword or `superellipse()` parameter, a radius, or both | — (the fillet controls panel) | main | path-tools |
+| Next fillet shape | `cycleFillet` | Steps the selected corners to the next `corner-shape` keyword | K in its lab only | main | path-tools |
+| Fairing | `fairAnchors` | Rescales a smooth anchor's handles so curvature is continuous | H in its lab only | main | path-tools |
 | Resample | `resamplePath` | Spreads anchors evenly by arc length, to a count or a spacing, holding corners | — | main | path-tools |
 | Add extremes | `addExtremeAnchors` | Adds anchors at each curve's leftmost, rightmost, top, and bottom, on segments with both ends selected, or the whole path while none is | Alt+X in path edit | main | path-tools |
 | Grow, shrink, and every-Nth selection | `growAnchorSelection`, `shrinkAnchorSelection`, `selectEveryNthAnchor`, `selectCornerAnchors`, `selectSmoothAnchors`, `invertAnchorSelection` | Selects anchors along the path: one further each way, one fewer, every Nth, the corners, the smooth ones, or the rest | ] / [, Alt+N, Alt+C, Alt+M, Alt+I in path edit | main | path-tools |
-| Blend | `blend` | Live steps between two shapes | — | main | path-tools |
+| Tween | `tween` | Live steps between two shapes | — | main | path-tools |
 | Bend along a path | `bendAlong` | Lays a shape along a spine | — | main | path-tools |
 | Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main | path-tools |
 | Text along a path | `textAlong` | Lays a text's glyphs along another shape's outline, hiding both sources | Alt+Shift+X | main | path-tools |
 | Roughen | `roughen` | Live random offsets of each selected shape's outline, hiding the shape | Alt+Shift+G | main | path-tools |
 | Zigzag | `zigzag` | Live ridges pushed alternately to either side of each selected shape's outline, hiding the shape | Alt+Shift+Z | main | path-tools |
 | Pucker & Bloat | `puckerBloat` | Live anchors pulled in and handles pushed out of each selected shape, or the reverse, hiding the shape | Alt+Shift+K | main | path-tools |
-| Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | main | path-tools |
+| Expand warp | `expandWarp` | Drops a held plane warp, cloth warp, or pin warp, keeping its geometry | — | main | path-tools |
 | Warp settings | `configureWarp` | Remakes a held warp with new settings | — | main | path-tools |
 | Spiro point kind | `setSpiroKind` | Makes the selected spiro points smooth, corner, or tangent to a line on either side, and solves the curve again | — | main | path-tools |
 | Convert spiro to path | `releaseSpiro` | Drops a spiro curve's points, keeping the curve as an ordinary path | — | main | path-tools |
@@ -113,10 +113,10 @@ Places where one gesture already reaches several operations, which a variant set
 explicit:
 
 - **A drag on an anchor or handle** runs `editAnchors`, with handle locks, constraints, path snapping,
-  soft selection and handle snap all shaping the same drag; with Alt held at the press, `linkAnchor`
+  Drape and handle snap all shaping the same drag; with Alt held at the press, `linkAnchor`
   runs that same drag and links the anchor where it lands.
-- **A click on a stroke** trims or extends depending on the tool held; Insert and Cut add a
+- **A click on a stroke** snips or reaches depending on the tool held; Insert and Cut add a
   modifier to the same click.
-- **A brush drag** simplifies or smudges depending on the tool.
+- **A brush drag** simplifies or kneads depending on the tool.
 - **Mod+J** joins, Alt+J bridges, and Mod+Alt+Shift+J averages, in both the path and anchor
   forms.

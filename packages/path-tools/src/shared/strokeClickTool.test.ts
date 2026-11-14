@@ -4,7 +4,7 @@ import { icon } from '../icons.gen';
 import { useStrokeClickTool, type StrokeClickToolSpec } from './strokeClickTool';
 
 const spec: StrokeClickToolSpec = {
-  id: 'snip', label: 'Snip', icon: icon('trim'), hookName: 'useSnipTool', actionId: 'snip', keybinding: { key: 'k' },
+  id: 'snip', label: 'Snip', icon: icon('snip'), hookName: 'useSnipTool', actionId: 'snip', keybinding: { key: 'k' },
 };
 
 describe('useStrokeClickTool', () => {

@@ -5,7 +5,7 @@ import {
   ELLIPSE_TOOL_OPTIONS, LINE_TOOL_OPTIONS, PEN_TOOL_OPTIONS, PENCIL_TOOL_OPTIONS, POLYGON_TOOL_OPTIONS, RECT_TOOL_OPTIONS,
   STAR_TOOL_OPTIONS, STICKY_TOOL_OPTIONS, TEXT_TOOL_OPTIONS, toolOptionsPrefs, type OptionedTool,
 } from '@weasel-js/core';
-import { SIMPLIFY_BRUSH_TOOL_OPTIONS, SMUDGE_BRUSH_TOOL_OPTIONS } from '@weasel-js/path-tools';
+import { SAND_TOOL_OPTIONS, KNEAD_TOOL_OPTIONS } from '@weasel-js/path-tools';
 import { INITIAL_FILL, INITIAL_STROKE } from './newShapePaint';
 import {
   flattenPrefValues,
@@ -27,7 +27,7 @@ import type { ColorModePreference } from '@weasel-js/theme';
 import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RecordingProfile } from './recorder';
 import type { RegistryEnumFilter } from './registry/types';
-import { dropPathToolsChrome, fillRuleToToolOptions, panelsToSurfaces, pathAidsToGroup } from './surfaces/prefsMigration';
+import { dropPathToolsChrome, fillRuleToToolOptions, panelsToSurfaces, pathAidsToGroup, renamePathAids } from './surfaces/prefsMigration';
 import type { SurfacesValue } from './surfaces/types';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -58,8 +58,8 @@ export const DRAW_OPTIONED_TOOLS: readonly OptionedTool[] = [
   { id: 'pen', options: PEN_TOOL_OPTIONS },
   { id: 'text', options: TEXT_TOOL_OPTIONS },
   { id: 'sticky', options: STICKY_TOOL_OPTIONS },
-  { id: 'smudgeBrush', options: SMUDGE_BRUSH_TOOL_OPTIONS },
-  { id: 'simplifyBrush', options: SIMPLIFY_BRUSH_TOOL_OPTIONS },
+  { id: 'knead', options: KNEAD_TOOL_OPTIONS },
+  { id: 'sand', options: SAND_TOOL_OPTIONS },
 ];
 
 const TOOL_OPTION_PREFS = toolOptionsPrefs(DRAW_OPTIONED_TOOLS, { shared: { fill: INITIAL_FILL, stroke: INITIAL_STROKE } });
@@ -207,15 +207,15 @@ export const PREFS = {
               description: 'While editing a path, draw its curvature comb: a tooth on each curve as long as the curve is tight there.',
               default: false,
             },
-            pathBalance: {
+            pathPoise: {
               kind: 'boolean',
-              name: 'Show handle balance',
+              name: 'Show poise lines',
               description: "While editing a path, draw a line between each curve's handle tips, with a grip that drags both handles at once.",
               default: false,
             },
-            pathCorners: {
+            pathFillets: {
               kind: 'boolean',
-              name: 'Show corner widgets',
+              name: 'Show fillet widgets',
               description: 'While editing a path, draw a widget inside each corner that rounds it as you drag.',
               default: true,
             },
@@ -301,7 +301,7 @@ const VALIDATORS: Record<string, PrefValidator> = {
 };
 
 /** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
-const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions];
+const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions, renamePathAids];
 
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {

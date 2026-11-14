@@ -104,21 +104,15 @@ Owner tags, after the priority (2026-10-26):
 
 ### Path editing tricks
 
-- **(P1) [maintainer] Rename the path tools the maintainer deferred to the end of the adoption pass.**
-  Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. Ruled (2026-11-07): the
-  adoption pass is over; Cloth warp goes in now, and the maintainer picks the rest from a field of candidates. They live in
-  `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
-  Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`,
-  Envelope mesh as Cloth warp among them.
-- **(P2) [maintainer] Tune Balance handles hands-on, with the maintainer driving.** First-draft behavior: a
+- **(P2) [maintainer] Tune Poise hands-on, with the maintainer driving.** First-draft behavior: a
   grip drag scales both handles by one factor, read off the pointer's projection onto the line the
   grip slides along, and a length lock (`handleLock.length`, or Mod) holds it still
-  (`packages/geom/src/paths/balanceHandles.ts`, `packages/path-tools/src/balance/handleBalance.ts`). Its look: a purple
+  (`packages/geom/src/paths/poiseHandles.ts`, `packages/path-tools/src/poise/poiseHandles.ts`). Its look: a purple
   line between the handle tips and a 4px hollow grip, drawn under the anchor markers and beaten by
-  them on a press (`packages/path-tools/src/balance/balanceMarks.ts`). Off by
-  default under `path-edit.balance`, with no key to show it, and Equalize handles has only the
-  grip's double-click (`apps/site/demos/BalanceHandlesLabDemo.tsx`).
-  Closes when the maintainer has driven Balance handles hands-on and the defaults and keys he picks are
+  them on a press (`packages/path-tools/src/poise/poiseMarks.ts`). Off by
+  default under `path-edit.poise`, with no key to show it, and Equalize handles has only the
+  grip's double-click (`apps/site/demos/PoiseLabDemo.tsx`).
+  Closes when the maintainer has driven Poise hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune handle locks hands-on, with the maintainer driving.** Which locks deserve keys, and
   whether a lock holds through a modifier drag (`handleLock.*`, `packages/path-tools/src/handleLocks/handleLocks.tsx`).
@@ -139,45 +133,45 @@ Owner tags, after the priority (2026-10-26):
   `packages/geom/src/paths/resamplePath.ts`).
   Closes when the maintainer has driven Resample hands-on and the defaults and keys he picks are
   committed.
-- **(P2) [maintainer] Tune corner shape hands-on, with the maintainer driving.** First-draft behavior and keys:
+- **(P2) [maintainer] Tune Fillet hands-on, with the maintainer driving.** First-draft behavior and keys:
   a widget sits 14 screen px inside each corner anchor, past the middle of its cut, and is hit
   within 6px; anchors within 0.05 rad of straight get none. A widget drag sets the radius from the
   pointer's travel along the bisector, every selected corner's when its anchor is selected, and a
   corner with no spec takes `round` (Shape for sharp corners in the last-operation panel after a drag). Giving a
-  sharp corner a shape cuts a quarter of its room (`DEFAULT_CORNER_TRIM_SHARE`, Size for sharp corners in the panel
-  after Next corner shape). `cycleCornerShape` has no key of its own (its lab tunes K onto it, the
-  Slice tool's key elsewhere), `setCorners` is reached only through the panel, the
+  sharp corner a shape cuts a quarter of its room (`DEFAULT_FILLET_TRIM_SHARE`, Size for sharp corners in the panel
+  after Next fillet shape). `cycleFillet` has no key of its own (its lab tunes K onto it, the
+  Slice tool's key elsewhere), `setFillets` is reached only through the panel, the
   panel's curvature slider spans -4 to 4, and the widgets show by default under
-  `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
-  `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
-  Closes when the maintainer has driven corner shape hands-on and the defaults and keys he picks are
+  `path-edit.fillets` with no key to hide them (`packages/path-tools/src/fillet/`,
+  `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/FilletLabDemo.tsx`).
+  Closes when the maintainer has driven Fillet hands-on and the defaults and keys he picks are
   committed.
-- **(P2) [maintainer] Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
+- **(P2) [maintainer] Tune Tween, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `domains/pathEffects/`).
-  Closes when the maintainer has driven Blend, Bend along a path, and Repeat along a path hands-on and
+  Closes when the maintainer has driven Tween, Bend along a path, and Repeat along a path hands-on and
   the defaults and keys he picks are committed.
-- **(P2) [maintainer] Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
-  path-edit tool (`useLengthenTool`) has no key; a plain drag grows along the end tangent and Shift along the end
+- **(P2) [maintainer] Tune Tug hands-on, with the maintainer driving.** First-draft behavior and keys: the
+  path-edit tool (`useTugTool`) has no key; a plain drag grows along the end tangent and Shift along the end
   curvature (the `mode` param, Shape in the last-operation panel after a drag, flips which, and `'eased'` makes the
-  plain drag ease out of the bend as Extend to next path does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
-  leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
+  plain drag ease out of the bend as Reach does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
+  leaves a thousandth of the subpath (`packages/geom/src/paths/tugPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is the pen with an `add` mark, nothing previews where a drag will land
   before it starts, and the end anchor is left selected after a drag
-  (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `path-tools:lengthen`, has
+  (`packages/path-tools/src/tug/tugPath.ts`). Its toolbar glyph, `path-tools:tug`, has
   not been proofed large.
-  Closes when the maintainer has driven Lengthen hands-on, the defaults and keys he picks are
-  committed, and `path-tools:lengthen` has been proofed large.
-- **(P2) [maintainer] Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
-  (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
-  `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
-  third of the radius (`packages/geom/src/paths/smudgePath.ts`), the size and strength steps (`[` `]` and
-  Shift+wheel ×1.25, `Shift+[` `Shift+]` ±0.1) and their bounds (`SMUDGE_BRUSH_PARAMS` in `smudgeBrush.ts`; draw's options row draws
+  Closes when the maintainer has driven Tug hands-on, the defaults and keys he picks are
+  committed, and `path-tools:tug` has been proofed large.
+- **(P2) [maintainer] Tune Knead hands-on, with the maintainer driving.** First-draft brush radius
+  (40 screen px) and strength (0.6) (`DEFAULT_KNEAD_RADIUS_PX`, `DEFAULT_KNEAD_STRENGTH` in
+  `packages/path-tools/src/knead/knead.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
+  third of the radius (`packages/geom/src/paths/kneadPath.ts`), the size and strength steps (`[` `]` and
+  Shift+wheel ×1.25, `Shift+[` `Shift+]` ±0.1) and their bounds (`KNEAD_PARAMS` in `knead.ts`; draw's options row draws
   them, and the last-operation panel after a stroke, which replays it and writes back to the row), that it pushes
   every unlocked, shown path and text node while nothing is selected (only the selection otherwise, a ruling of 2026-10-31), that text converts to outlines the moment the brush's disc meets
-  its drawn box, the conversion and the smudge landing as one undo entry (ruled 2026-10-31;
-  `packages/path-tools/src/shared/outlineSession.ts`). Its key is U, and Extend moved to Shift+U (ruled 2026-11-12).
-  Closes when the maintainer has driven the Smudge brush hands-on and the defaults he picks are committed.
+  its drawn box, the conversion and the knead landing as one undo entry (ruled 2026-10-31;
+  `packages/path-tools/src/shared/outlineSession.ts`). Its key is U, and Reach moved to Shift+U (ruled 2026-11-12).
+  Closes when the maintainer has driven Knead hands-on and the defaults he picks are committed.
 - **(P2) [maintainer] Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
   keys: `constrainAnchors` and `unconstrainAnchors` have no default keys (the lab binds C and
   Shift+C through `tune`); WeaselDraw binds Alt+Shift+H, V, L, P, C and F to horizontal, vertical,
@@ -192,34 +186,33 @@ Owner tags, after the priority (2026-10-26):
   (`pathCommands/pathNodes.ts`).
   Closes when the maintainer has driven path constraints hands-on and the defaults and keys he picks
   are committed.
-- **(P2) [maintainer] Tune Perspective and free distort hands-on, with the maintainer driving.** First-draft
+- **(P2) [maintainer] Tune Plane warp hands-on, with the maintainer driving.** First-draft
   corner handles (8 screen px squares, 8 px hit reach, `packages/path-tools/src/warp/warpHandles.ts`), that a
-  new distort starts Free rather than Perspective, the refit tolerance (0.5,
+  new plane warp starts Free rather than Perspective, the refit tolerance (0.5,
   `DEFAULT_WARP_TOLERANCE` in `packages/path-tools/src/warp/warpTargets.ts`; Mode and Tolerance are in the
   last-operation panel after a drag, which replays it, `warpParams.ts`), that a selected group warps as
   one under a single quad around its paths, and that selected text converts to outlines when the drag begins,
   conversion and warp one undo step (both ruled 2026-10-31; `warpSelection.ts`,
   `packages/path-tools/src/shared/outlineSession.ts`), that the selection's resize and rotation handles hide
   while a warp tool is active (`hides` in `useWarpTool.ts`), and its tool key, F
-  (`KEYS` in `packages/path-tools/src/warp/useWarpTool.ts`). Its label lives in `WARP_LABELS` beside it; the
-  name may change.
-  Closes when the maintainer has driven Perspective and free distort hands-on and the defaults and keys
+  (`KEYS` in `packages/path-tools/src/warp/useWarpTool.ts`).
+  Closes when the maintainer has driven Plane warp hands-on and the defaults and keys
   he picks are committed.
-- **(P2) [maintainer] Tune Envelope mesh hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
-  mesh (`DEFAULT_ENVELOPE_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
+- **(P2) [maintainer] Tune Cloth warp hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
+  mesh (`DEFAULT_CLOTH_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
   between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change through
   `configureWarp` or the last-operation panel after a drag, which resamples the mesh the drag bent, and its tool
-  key, Shift+F beside Distort's F, since draw's crop mode holds C (`packages/path-tools/src/warp/useWarpTool.ts`).
-  Closes when the maintainer has driven Envelope mesh hands-on and the defaults and keys he picks are
+  key, Shift+F beside Plane Warp's F, since draw's crop mode holds C (`packages/path-tools/src/warp/useWarpTool.ts`).
+  Closes when the maintainer has driven Cloth warp hands-on and the defaults and keys he picks are
   committed.
-- **(P2) [maintainer] Tune Puppet warp hands-on, with the maintainer driving.** First-draft mesh density (about
-  400 vertices, `puppetMesh` in `packages/geom/src/warp/puppetMesh.ts`), the solve's round caps
+- **(P2) [maintainer] Tune Pin warp hands-on, with the maintainer driving.** First-draft mesh density (about
+  400 vertices, `pinWarpMesh` in `packages/geom/src/warp/pinWarpMesh.ts`), the solve's round caps
   (`ARAP_ROUNDS` and `ARAP_INJECTIVE_ROUNDS` in `packages/geom/src/warp/arap.ts`), that a click on the
   selection adds a pin and Alt-click on a pin takes it out, the pin dots (5 screen px radius,
   `packages/path-tools/src/warp/warpHandles.ts`), the refit tolerance (in the last-operation panel after a pin
   drag), and its tool key, B
   (`packages/path-tools/src/warp/useWarpTool.ts`).
-  Closes when the maintainer has driven Puppet warp hands-on and the defaults and keys he picks are
+  Closes when the maintainer has driven Pin warp hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune draw's Symmetry toggle hands-on, with the maintainer driving.** Its key, the default
   kind and copy count, and where a new group's center lands (`toggleSymmetry`,
@@ -235,7 +228,7 @@ Owner tags, after the priority (2026-10-26):
   Symmetry's on/off is a pref or document state that undo moves.
   Closes when the ruling is made and an Undo of the group leaves the toggle and the drawing agreeing.
 - **(P2) [maintainer] Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
-  keys: its tool key, M, which moved Envelope mesh off it when the two met in draw; the Shift angle
+  keys: its tool key, M, which moved Cloth warp off it when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
   readout's look (`packages/core/src/tools/builtin/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
   Closes when the maintainer has driven the Measure tool hands-on and the defaults and keys he picks

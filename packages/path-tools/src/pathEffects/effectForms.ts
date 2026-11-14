@@ -12,7 +12,7 @@ const ALIGN = [{ value: 'start', label: 'Start' }, { value: 'center', label: 'Ce
 
 /** Each kind of path effect's settings, as a form. */
 export const PATH_EFFECT_PARAMS: { readonly [K in Kind]: PrefGroup } = {
-  blend: pref.group('Blend', {
+  tween: pref.group('Tween', {
     spaceBy: pref.enum('Space by', 'count', [{ value: 'count', label: 'Count' }, { value: 'distance', label: 'Distance' }], {
       description: 'Steps evenly by count, or one every distance.', control: 'toggle',
     }),

@@ -5,9 +5,9 @@
  */
 import { type Action, ActionDisabledReason, type ActionDeps, type ImmediateInvoker } from '@weasel-js/routing';
 import { always, never, type ChromeRulesDep, type IconRef } from '@weasel-js/core';
-import { PATH_BALANCE_CHROME_ID } from '../balance/balanceMarks';
+import { PATH_POISE_CHROME_ID } from '../poise/poiseMarks';
 import { PATH_COMB_CHROME_ID } from '../comb/comb';
-import { PATH_CORNERS_CHROME_ID } from '../cornerShape/cornerWidgets';
+import { PATH_FILLETS_CHROME_ID } from '../fillet/filletWidgets';
 import { PATH_DIRECTION_CHROME_ID } from '../pathStructure/directionMarks';
 import { icon } from '../icons.gen';
 
@@ -43,8 +43,8 @@ export function showOverlayAction(name: string, chromeId: string, label: string,
 /** `pathEdit.show.direction`: the direction arrows and start rings. */
 export const showDirectionAction = showOverlayAction('direction', PATH_DIRECTION_CHROME_ID, 'Path direction', icon('pathDirection'));
 /** `pathEdit.show.comb`: the curvature comb. */
-export const showCombAction = showOverlayAction('comb', PATH_COMB_CHROME_ID, 'Curvature comb', icon('core:harmonize'));
-/** `pathEdit.show.balance`: the handle balance lines and grips. */
-export const showBalanceAction = showOverlayAction('balance', PATH_BALANCE_CHROME_ID, 'Handle balance', icon('balanceHandles'));
-/** `pathEdit.show.corners`: the corner widgets. */
-export const showCornersAction = showOverlayAction('corners', PATH_CORNERS_CHROME_ID, 'Corner widgets', icon('cornerRadius'));
+export const showCombAction = showOverlayAction('comb', PATH_COMB_CHROME_ID, 'Curvature comb', icon('core:fairing'));
+/** `pathEdit.show.poise`: the handle poise lines and grips. */
+export const showPoiseAction = showOverlayAction('poise', PATH_POISE_CHROME_ID, 'Poise lines', icon('poise'));
+/** `pathEdit.show.fillets`: the fillet widgets. */
+export const showFilletsAction = showOverlayAction('fillets', PATH_FILLETS_CHROME_ID, 'Fillet widgets', icon('cornerRadius'));

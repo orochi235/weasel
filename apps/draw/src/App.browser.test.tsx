@@ -190,7 +190,7 @@ describe('WeaselDraw', () => {
     doubleClick(canvas, starterCenter(host));
     await expect.poll(() => host.dataset.mode).toBe('path-edit');
     await expect.poll(() => has('Anchors')).toBe(true);
-    for (const label of ['Simplify brush', 'Lengthen', 'Hand', 'Measure']) expect(has(label), label).toBe(true);
+    for (const label of ['Sand', 'Tug', 'Hand', 'Measure']) expect(has(label), label).toBe(true);
     for (const label of ['Select', 'Girth', 'Pen']) expect(has(label), label).toBe(false);
     expect(overlays()).toBe(4);
     key('Escape');

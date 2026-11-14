@@ -7,7 +7,7 @@ import { anchorsToPath, polygonFromPoints, type PolygonPath } from '@weasel-js/g
 import { ActionDisabledReason, type Action, type ImmediateInvoker } from '@weasel-js/routing';
 import { deleteAnchorsAction, nudgeAnchorsLeftAction } from '@weasel-js/core';
 import {
-  constrainAnchorsAction, resamplePathAction, reversePathAction, selectSmoothAnchorsAction, setCornersAction,
+  constrainAnchorsAction, resamplePathAction, reversePathAction, selectSmoothAnchorsAction, setFilletsAction,
   unconstrainAnchorsAction,
 } from './index';
 import { editHarness } from './shared/testing/editHarness';
@@ -41,13 +41,13 @@ describe('edit actions that would change nothing are disabled', () => {
     expect(check(TRIANGLE, [0, 1], unconstrainAnchorsAction)).toEqual({ enabled: ActionDisabledReason.NotApplicable, changed: false });
   });
 
-  it('setCorners with nothing to set, or with what the corner already has', () => {
-    expect(check(TRIANGLE, [0], setCornersAction)).toEqual({ enabled: ActionDisabledReason.NotApplicable, changed: false });
+  it('setFillets with nothing to set, or with what the corner already has', () => {
+    expect(check(TRIANGLE, [0], setFilletsAction)).toEqual({ enabled: ActionDisabledReason.NotApplicable, changed: false });
     const h = editHarness(TRIANGLE);
     h.setSelected([0]);
-    expect(setCornersAction.enabled!(h.deps(), undefined, undefined, { radius: 5 })).toBe(true);
-    (setCornersAction.invoker as ImmediateInvoker).run(h.deps(), { radius: 5 });
-    expect(setCornersAction.enabled!(h.deps(), undefined, undefined, { radius: 5 })).toBe(ActionDisabledReason.NotApplicable);
+    expect(setFilletsAction.enabled!(h.deps(), undefined, undefined, { radius: 5 })).toBe(true);
+    (setFilletsAction.invoker as ImmediateInvoker).run(h.deps(), { radius: 5 });
+    expect(setFilletsAction.enabled!(h.deps(), undefined, undefined, { radius: 5 })).toBe(ActionDisabledReason.NotApplicable);
     h.unmount();
   });
 

@@ -93,7 +93,7 @@ export { segmentLength, segmentTAtLength } from './paths/segmentLength';
 export {
   pathToCubicContours, cubicContoursToPath, type CubicContour, type CubicSegment,
 } from './paths/cubicContours';
-export { blendPaths, prepareBlend, type BlendPathsOptions, type PathBlend } from './paths/blendPaths';
+export { tweenPaths, prepareTween, type TweenPathsOptions, type PathTween } from './paths/tweenPaths';
 export { bendAlongPath, type BendAlongPathOptions } from './paths/bendAlongPath';
 export {
   repeatAlongPath, stationsAlongPath, type RepeatAlongPathOptions, type RepeatStation,
@@ -110,15 +110,15 @@ export {
   type PathSnapHit, type PathSnapIndex, type PathSnapKind, type PathSnapQuery, type PathSnapTarget,
   type StaticPathSnapKind,
 } from './snap/pathSnap';
-export { trimPathAt, type TrimPathOptions, type TrimResult } from './paths/trimPath';
+export { snipPathAt, type SnipPathOptions, type SnipResult } from './paths/snipPath';
 export { pathAwayFromAnchors, type PathAwayFromAnchors } from './paths/pathAwayFromAnchors';
 export {
-  extendToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ExtendToMeetOptions, type OpenPathEnd,
-} from './paths/extendPath';
+  reachToMeet, tugOpenEnd, openEndRay, openPathEnds, type ReachToMeetOptions, type OpenPathEnd,
+} from './paths/reachPath';
 export {
-  lengthenPathEnd, lengthToward, openEndAt, pathEndAnchorIndex, pathEndFrame,
-  type EaseOptions, type LengthenMode, type PathEndFrame,
-} from './paths/lengthenPathEnd';
+  tugPathEnd, lengthToward, openEndAt, pathEndAnchorIndex, pathEndFrame,
+  type EaseOptions, type TugMode, type PathEndFrame,
+} from './paths/tugPathEnd';
 export { easeLength, extensionPieces, type ExtensionPiece } from './paths/pathEndExtension';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';
@@ -202,21 +202,21 @@ export {
   anchorSymmetries, anchorSymmetry, moveHandleSymmetric, translateAnchorsSymmetric, type AnchorSymmetry,
 } from './paths/anchorSymmetry';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
-export { smudgePath, type SmudgePathOptions } from './paths/smudgePath';
+export { kneadPath, type KneadPathOptions } from './paths/kneadPath';
 export { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
 export {
-  measureAnchorPath, softFalloff, softSelectionBand, softSelectionWeights,
+  measureAnchorPath, drapeFalloff, drapeBand, drapeWeights,
   type AnchorPathMeasure, type AnchorSubpathMeasure, type MeasureAnchorPathOptions, type SegmentMeasure,
-  type SoftFalloff,
-} from './paths/softSelection';
+  type DrapeFalloff,
+} from './paths/drape';
 export {
   combTeeth, cubicCurvatureAt, cubicCurvatureSource, cubicDerivativeAt, curvatureComb,
   type CombTooth, type CurvatureCombOptions, type CurvatureSource, type SegmentComb,
 } from './paths/curvature';
 export {
-  balanceFactorToward, equalizeSegmentHandles, handleBalances, scaleSegmentHandles, type HandleBalance,
-} from './paths/balanceHandles';
-export { harmonizeAnchors } from './paths/harmonize';
+  poiseFactorToward, equalizeSegmentHandles, poiseLines, scaleSegmentHandles, type PoiseLine,
+} from './paths/poiseHandles';
+export { fairAnchors } from './paths/fairing';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { anchorOriginsOf, remapAnchorValues } from './paths/anchorValues';
 export {

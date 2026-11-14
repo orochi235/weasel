@@ -65,9 +65,9 @@ tessellation, polylines, trim), `booleans/splitBySegment.ts` (`./booleans`).
 **Editing** — in `@weasel-js/geom`: `paths/anchorEdits.ts` (the anchor-set
 mutations: translate, handle-drag with smooth mirroring, insert-on-segment,
 delete-with-refit, scissors, rect select), `paths/handleEdits.ts` (handle
-locks and angle snapping), `paths/softSelection.ts` (falloff weights by
+locks and angle snapping), `paths/drape.ts` (falloff weights by
 distance along the path), the curvature comb
-(`paths/curvature.ts`), the balance-handle edits (`paths/balanceHandles.ts`), and the anchor model itself
+(`paths/curvature.ts`), the poise edits (`paths/poiseHandles.ts`), and the anchor model itself
 (`pathToAnchors` / `anchorsToPath`, `PenAnchor`, `nearestSegmentT`). Its
 invariant test, `anchorEdits.test.ts`, stays here because it reads an action's
 anchor walker.
@@ -75,10 +75,9 @@ anchor walker.
 **Rendering** — `pathLayer.ts`, `markerCommands.ts` (marker heads as draw
 commands; the ribbon, the marker registry and `strokeToPath` are in
 `@weasel-js/stroke`), plus `penPreviewLayer.ts` (the pen's
-in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome, with
-the curvature comb from `pathEditComb.ts` and the balance lines from
-`pathEditBalance.ts` drawn under chrome-caps' `path-edit.comb` and
-`path-edit.balance`, both off by default)
+in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome, which
+`@weasel-js/path-tools` extends with its curvature comb, poise lines, and other
+marks)
 
 **Snapping** — `pathSnapSource` (`pathSnap/pathSnapSource.ts`) offers the
 scene's path targets to the snap pipeline ([`docs/snapping.md`](../../../../../docs/snapping.md)).
@@ -126,7 +125,7 @@ contour parser, the renderer's `drawPath`, and `pathToD` — call it
 first. A spec rides on its anchor through the anchor model (`PenAnchor.corner`),
 so an insert or delete keeps each corner on its anchor. The widgets and
 commands that edit corners in path edit are `@weasel-js/path-tools`'
-`cornerShapePreset`.
+`filletPreset`.
 
 ## Constraints
 
@@ -157,7 +156,7 @@ horizontal and vertical read. What a transform breaks is reported by
 `constraintConflictsOf`, the same report a conflicting add gets, and later edits
 leave it out of the solve.
 
-The whole-path commands — Simplify, Offset, Trim segment, Extend to next path,
+The whole-path commands — Simplify, Offset, Snip, Reach,
 and the rest built on `pathCommands/pathNodes.ts` — rebuild the anchor list
 without origins to renumber it through, so they drop the constraints, as they
 drop a skin.
@@ -174,7 +173,7 @@ it is dropped on the next parameter change rather than overwriting the edit.
 
 ## Warps
 
-A distorted, enveloped or puppet-warped path keeps the warp beside its geometry
+A plane-warped, cloth-warped, or pin-warped path keeps the warp beside its geometry
 in `data.warp` (`pathWarp.ts`): the unwarped source, the warp as data
 (`PathWarp`, from `@weasel-js/geom`), the refit tolerance, and `frame`, the map
 from the warp's own frame to where the node stores its path. The geometry is

@@ -6,7 +6,7 @@ import type { ActionTunings } from '@weasel-js/routing';
 import {
   asNodeId, type CanvasExtensionApi, type ChromeState, createScene, type RenderLayer, SceneCanvas,
 } from '@weasel-js/core';
-import { useEnvelopeTool, type UseEnvelopeToolOptions } from './useWarpTool';
+import { useClothWarpTool, type UseClothWarpToolOptions } from './useWarpTool';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -17,13 +17,13 @@ beforeAll(() => {
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-/** How many draw commands the envelope tool's controls paint over a selected
+/** How many draw commands the Cloth warp tool's controls paint over a selected
  *  path holding no warp, made with `options` under `tune`. */
-function controlsDrawn(options: UseEnvelopeToolOptions, tune: ActionTunings = {}): number {
+function controlsDrawn(options: UseClothWarpToolOptions, tune: ActionTunings = {}): number {
   const scene = createScene<unknown, 'main', P>({ systemLayers: [{ id: 'main' }] });
   const square = polygonFromPoints([{ x: 0, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 60 }, { x: 0, y: 60 }]);
   scene.add({ id: asNodeId('a'), kind: 'mark', data: { path: square }, layer: 'main', pose: { x: 0, y: 0, width: 60, height: 60 } });
-  const tool = renderHook(() => useEnvelopeTool(options)).result.current;
+  const tool = renderHook(() => useClothWarpTool(options)).result.current;
   let layer: RenderLayer<unknown> | null = null;
   const attach = tool.attach!;
   const watched = Object.assign(tool, {
@@ -38,7 +38,7 @@ function controlsDrawn(options: UseEnvelopeToolOptions, tune: ActionTunings = {}
     <SceneCanvas
       features={['paths']} scene={scene} layers={{}} width={64} height={64}
       selectionOptions={{ mode: 'multi', initial: [asNodeId('a')] }}
-      tools={{ envelope: watched }}
+      tools={{ cloth: watched }}
       tune={tune}
     />,
   );
@@ -51,6 +51,6 @@ describe('a warp tool tuned through <SceneCanvas tune>', () => {
   it('draws a fresh mesh at the size its drag would make', () => {
     const fromOptions = controlsDrawn({ rows: 4, cols: 4 });
     expect(fromOptions).toBeGreaterThan(controlsDrawn({}));
-    expect(controlsDrawn({}, { 'envelope.drag': { params: { rows: 4, cols: 4 } } })).toBe(fromOptions);
+    expect(controlsDrawn({}, { 'cloth.drag': { params: { rows: 4, cols: 4 } } })).toBe(fromOptions);
   });
 });

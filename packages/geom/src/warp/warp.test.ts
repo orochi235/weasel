@@ -5,8 +5,8 @@ import { nearestOnPath } from '../nearest';
 import { PATH_C, PATH_L, PATH_M } from '../commands';
 import type { Point } from '../paths/cubicMath';
 import {
-  applyPathWarp, bicubicMesh, bilinearQuad, coonsMesh, distortOver, envelopeOver, meshGridOver,
-  moveWarpControl, pathWarpMap, projectiveQuad, resizeEnvelope, warpPath,
+  applyPathWarp, bicubicMesh, bilinearQuad, coonsMesh, planeOver, clothOver, meshGridOver,
+  moveWarpControl, pathWarpMap, projectiveQuad, resizeCloth, warpPath,
   type Quad,
 } from './index';
 
@@ -104,7 +104,7 @@ describe('warpPath', () => {
 
   it('keeps a straight edge straight when the map does', () => {
     const corners: Quad = [{ x: 0, y: 0 }, { x: 100, y: 20 }, { x: 90, y: 100 }, { x: 10, y: 80 }];
-    const warp = { ...distortOver({ x: 0, y: 0, width: 100, height: 100 }, 'perspective'), corners };
+    const warp = { ...planeOver({ x: 0, y: 0, width: 100, height: 100 }, 'perspective'), corners };
     const diagonal = new PathBuilder().moveTo(0, 0).lineTo(100, 100).build();
     expect(Array.from(applyPathWarp(diagonal, warp).commands)).toEqual([PATH_M, PATH_L]);
   });
@@ -116,23 +116,23 @@ describe('path warps', () => {
 
   it('start out as the identity', () => {
     const p = { x: 31, y: 17 };
-    for (const w of [distortOver(box), distortOver(box, 'perspective'), envelopeOver(box, 2, 3), { kind: 'puppet' as const, pins: [] }]) {
+    for (const w of [planeOver(box), planeOver(box, 'perspective'), clothOver(box, 2, 3), { kind: 'pin' as const, pins: [] }]) {
       close(pathWarpMap(w, area)(p), p, 1e-9);
     }
   });
 
   it('move a corner, a mesh point and a pin by index', () => {
-    const d = moveWarpControl(distortOver(box), 2, { x: 130, y: 70 });
+    const d = moveWarpControl(planeOver(box), 2, { x: 130, y: 70 });
     close(pathWarpMap(d, area)({ x: 100, y: 50 }), { x: 130, y: 70 });
-    const e = moveWarpControl(envelopeOver(box, 1, 1), 0, { x: -10, y: -10 });
+    const e = moveWarpControl(clothOver(box, 1, 1), 0, { x: -10, y: -10 });
     close(pathWarpMap(e, area)({ x: 0, y: 0 }), { x: -10, y: -10 });
-    const p = moveWarpControl({ kind: 'puppet', pins: [{ from: { x: 0, y: 0 }, to: { x: 0, y: 0 } }] }, 0, { x: 4, y: 4 });
+    const p = moveWarpControl({ kind: 'pin', pins: [{ from: { x: 0, y: 0 }, to: { x: 0, y: 0 } }] }, 0, { x: 4, y: 4 });
     close(pathWarpMap(p, area)({ x: 10, y: 10 }), { x: 14, y: 14 });
   });
 
-  it('resample an envelope at a new resolution without moving its grid points', () => {
-    const e = moveWarpControl(envelopeOver(box, 2, 2), 4, { x: 60, y: 35 });
-    const finer = resizeEnvelope(e as never, 4, 4);
+  it('resample a cloth warp at a new resolution without moving its grid points', () => {
+    const e = moveWarpControl(clothOver(box, 2, 2), 4, { x: 60, y: 35 });
+    const finer = resizeCloth(e as never, 4, 4);
     expect(finer.mesh.points).toHaveLength(25);
     close(finer.mesh.points[12], { x: 60, y: 35 }, 1e-9);
   });

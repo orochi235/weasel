@@ -622,7 +622,7 @@ tool marquees, the shape tools insert and the hand tool pans through their own
 bindings, and a canvas that wants a marquee or a pan under every tool adds
 `areaSelectContribution()` or `dragPanContribution()`. Path edit's anchor
 editing binds ambient drags on its own affordances, and a path-edit tool such
-as the Simplify brush binds its drag at the active tier, which outranks them;
+as Sand binds its drag at the active tier, which outranks them;
 the `anchors` tool path edit starts on binds nothing, so they take the drag.
 Two actions tied through
 step 4 fall to registration order, and the kit's route-conflict check reports

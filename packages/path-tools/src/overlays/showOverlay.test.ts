@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { always, never, type ChromeRulesDep, type VisibilityRules } from '@weasel-js/core';
-import { curvatureCombPreset, cornerShapePreset } from '../presets';
-import { showCombAction, showCornersAction } from './showOverlay';
+import { curvatureCombPreset, filletPreset } from '../presets';
+import { showCombAction, showFilletsAction } from './showOverlay';
 
 function rules(initial: VisibilityRules): ChromeRulesDep & { all: VisibilityRules } {
   const all: VisibilityRules = { ...initial };
@@ -25,14 +25,14 @@ describe('the overlay toggles', () => {
 
   it('read an overlay with no rule as shown, and hide it', () => {
     const dep = rules({});
-    expect(showCornersAction.active?.({ chromeRules: dep } as never)).toBe(true);
-    run(showCornersAction, { chromeRules: dep });
-    expect(dep.all['path-edit.corners']).toBe(never);
+    expect(showFilletsAction.active?.({ chromeRules: dep } as never)).toBe(true);
+    run(showFilletsAction, { chromeRules: dep });
+    expect(dep.all['path-edit.fillets']).toBe(never);
   });
 
   it('come with the overlay they toggle, in the pathOverlays group', () => {
     expect(curvatureCombPreset.actions).toContain(showCombAction);
-    expect(cornerShapePreset.actions).toContain(showCornersAction);
+    expect(filletPreset.actions).toContain(showFilletsAction);
     expect(showCombAction.id).toBe('pathEdit.show.comb');
     expect(showCombAction.group).toBe('pathOverlays');
   });

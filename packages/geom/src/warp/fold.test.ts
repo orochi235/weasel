@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createArapSolver, type ArapStep } from './arap';
 import { barS, backwardStretches, discSquash, invertedTriangles, type FoldCase } from './foldCases';
-import { puppetMap } from './puppet';
-import { puppetMesh } from './puppetMesh';
+import { pinWarpMap } from './pinWarp';
+import { pinWarpMesh } from './pinWarpMesh';
 import { warpPath } from './warpPath';
 import { pathToAnchors } from '../paths/anchors';
 
 function solved(c: FoldCase) {
-  const mesh = puppetMesh(c.shape, c.pins.map((p) => p.from));
+  const mesh = pinWarpMesh(c.shape, c.pins.map((p) => p.from));
   const pinned: number[] = [], targets: number[] = [];
   c.pins.forEach((pin, k) => {
     const v = mesh.pinVertex[k];
@@ -18,7 +18,7 @@ function solved(c: FoldCase) {
   return { mesh, pinned, targets, solver: createArapSolver(mesh, pinned) };
 }
 
-describe.each([discSquash, barS])('a hard puppet warp: $name', (c) => {
+describe.each([discSquash, barS])('a hard pin warp: $name', (c) => {
   it('turns no triangle over, and lands every pin', () => {
     const { mesh, pinned, targets, solver } = solved(c);
     const at = solver.solve(targets);
@@ -30,7 +30,7 @@ describe.each([discSquash, barS])('a hard puppet warp: $name', (c) => {
   });
 
   it('runs no stretch of the outline backwards', () => {
-    expect(backwardStretches(c, puppetMap(c.shape, c.pins))).toBe(0);
+    expect(backwardStretches(c, pinWarpMap(c.shape, c.pins))).toBe(0);
   });
 
   // The preconditioned gradient alone took 28 and 51 rounds (2026-10-19); L-BFGS under one softening floor 17 and 45 (2026-10-26),
@@ -78,6 +78,6 @@ it('leaves a mesh at rest where it is', () => {
 // Before the L-BFGS solve, the refit that split at the worst sample took 6 and 22 here; under the stop
 // relative to the whole energy, 5 and 11 (2026-10-27).
 it.each([{ c: discSquash, anchors: 4 }, { c: barS, anchors: 10 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
-  const out = warpPath(c.shape, puppetMap(c.shape, c.pins), { tolerance: 0.5 });
+  const out = warpPath(c.shape, pinWarpMap(c.shape, c.pins), { tolerance: 0.5 });
   expect(pathToAnchors(out).anchors[0]).toHaveLength(anchors);
 });

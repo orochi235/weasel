@@ -1,18 +1,18 @@
 /**
- * Hard puppet warps, and the measures of whether one folds: test fixtures for
+ * Hard pin warps, and the measures of whether one folds: test fixtures for
  * the solver, not part of the package's surface.
  */
 import type { PolygonPath } from '../path';
 import { PathBuilder } from '../paths/builder';
 import type { Point } from '../paths/cubicMath';
 import type { ArapMesh } from './arap';
-import type { PuppetPin } from './puppet';
+import type { WarpPin } from './pinWarp';
 
 /** A warp case: the shape, its pins, and its outline sampled with each sample's inward normal. */
 export interface FoldCase {
   name: string;
   shape: PolygonPath;
-  pins: PuppetPin[];
+  pins: WarpPin[];
   outline: (count: number) => { p: Point; n: Point }[];
 }
 
@@ -30,8 +30,8 @@ function disc(): PolygonPath {
     .close().build();
 }
 
-const hold = (x: number, y: number): PuppetPin => ({ from: { x, y }, to: { x, y } });
-const drag = (x: number, y: number, tx: number, ty: number): PuppetPin => ({ from: { x, y }, to: { x: tx, y: ty } });
+const hold = (x: number, y: number): WarpPin => ({ from: { x, y }, to: { x, y } });
+const drag = (x: number, y: number, tx: number, ty: number): WarpPin => ({ from: { x, y }, to: { x: tx, y: ty } });
 
 export const discSquash: FoldCase = {
   name: 'disc squash',

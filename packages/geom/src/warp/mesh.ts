@@ -1,6 +1,6 @@
 /**
- * Maps from the unit square through a grid of control points: an envelope
- * mesh. The grid's points are interpolated, so a grid laid evenly over a box
+ * Maps from the unit square through a grid of control points: the mesh
+ * a cloth warp bends. The grid's points are interpolated, so a grid laid evenly over a box
  * maps the box onto itself.
  */
 import type { Point } from '../paths/cubicMath';

@@ -14,18 +14,18 @@ import { WARP_SETTING_FIELDS } from './warpParams';
 export const WARP_SETTINGS_SCHEMA: PrefGroup = {
   name: 'Warp Settings',
   children: {
-    distorts: { kind: 'number', name: 'Selected distorts', description: '', default: 0, hidden: true },
-    envelopes: { kind: 'number', name: 'Selected envelopes', description: '', default: 0, hidden: true },
-    distort: {
-      name: 'Distort',
+    planes: { kind: 'number', name: 'Selected plane warps', description: '', default: 0, hidden: true },
+    cloths: { kind: 'number', name: 'Selected cloth warps', description: '', default: 0, hidden: true },
+    plane: {
+      name: 'Plane Warp',
       as: 'section',
-      showIf: { path: 'distorts', above: 0 },
+      showIf: { path: 'planes', above: 0 },
       children: { mode: WARP_SETTING_FIELDS.mode },
     },
-    envelope: {
-      name: 'Envelope',
+    cloth: {
+      name: 'Cloth Warp',
       as: 'section',
-      showIf: { path: 'envelopes', above: 0 },
+      showIf: { path: 'cloths', above: 0 },
       children: { rows: WARP_SETTING_FIELDS.rows, cols: WARP_SETTING_FIELDS.cols, mapping: WARP_SETTING_FIELDS.mapping },
     },
     tolerance: WARP_SETTING_FIELDS.tolerance,
@@ -35,24 +35,24 @@ export const WARP_SETTINGS_SCHEMA: PrefGroup = {
 /** What the form shows for the selected paths' warps. */
 export function readWarpSettings(deps: ActionDeps): ActionSettingsState {
   const fields = new SettingsFields();
-  let distorts = 0;
-  let envelopes = 0;
+  let planes = 0;
+  let cloths = 0;
   for (const { shown } of selectedWarpPaths(deps)) {
     const resolved = resolvePathWarp(shown);
     if (!resolved) continue;
     const { warp, tolerance } = resolved.held;
-    if (warp.kind === 'distort') {
-      distorts++;
-      fields.add('distort.mode', warp.mode);
-    } else if (warp.kind === 'envelope') {
-      envelopes++;
-      fields.add('envelope.rows', warp.mesh.rows);
-      fields.add('envelope.cols', warp.mesh.cols);
-      fields.add('envelope.mapping', warp.mapping);
+    if (warp.kind === 'plane') {
+      planes++;
+      fields.add('plane.mode', warp.mode);
+    } else if (warp.kind === 'cloth') {
+      cloths++;
+      fields.add('cloth.rows', warp.mesh.rows);
+      fields.add('cloth.cols', warp.mesh.cols);
+      fields.add('cloth.mapping', warp.mapping);
     }
     fields.add('tolerance', tolerance);
   }
-  return fields.state({ distorts, envelopes });
+  return fields.state({ planes, cloths });
 }
 
 /** A field's change as `configureWarp` params: a kind's own field reaches
@@ -60,7 +60,7 @@ export function readWarpSettings(deps: ActionDeps): ActionSettingsState {
 export function warpSettingsParams(path: string, value: unknown): Record<string, unknown> | null {
   const [section, field] = path.split('.');
   if (field === undefined) return section === 'tolerance' ? { tolerance: value } : null;
-  return section === 'distort' || section === 'envelope' ? { kind: section, [field]: value } : null;
+  return section === 'plane' || section === 'cloth' ? { kind: section, [field]: value } : null;
 }
 
 /** `configureWarp`'s form. */

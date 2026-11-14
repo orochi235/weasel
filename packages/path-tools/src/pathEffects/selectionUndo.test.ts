@@ -1,5 +1,5 @@
 /**
- * Each path-effect command and Trim puts its selection change in its own undo
+ * Each path-effect command and Snip puts its selection change in its own undo
  * entry, so a consumer's `applyOps` history that knows nothing of the
  * selection still restores it on undo.
  */
@@ -9,10 +9,10 @@ import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import {
   createScene, defaultCommitAdapter, type NodeId, type Op, type RectPose, type Scene, withPathEffectsRegistry,
 } from '@weasel-js/core';
-import { blendAction, expandPathEffectAction, textAlongAction } from './actions';
-import { releaseBlendSpineAction, setBlendSpineAction } from './spine';
+import { tweenAction, expandPathEffectAction, textAlongAction } from './actions';
+import { releaseTweenSpineAction, setTweenSpineAction } from './spine';
 import { releasePathEffectAction, setEffectPathAction } from './retarget';
-import { trimPathAction } from '../trim/trimSegment';
+import { snipPathAction } from '../snip/snip';
 
 type TestScene = Scene<unknown, 'default', unknown>;
 
@@ -57,7 +57,7 @@ const run = (action: { invoker?: unknown }, deps: ActionDeps, params?: Record<st
 describe('undo restores the selection a path command started from', () => {
   it('applying an effect', () => {
     const r = rig([box('a', 0), box('b', 180)], ['a', 'b']);
-    run(blendAction, r.deps);
+    run(tweenAction, r.deps);
     expect(r.selected()).toHaveLength(1);
     r.undo();
     expect(r.selected()).toEqual(['a', 'b']);
@@ -65,28 +65,28 @@ describe('undo restores the selection a path command started from', () => {
 
   it('expanding an effect', () => {
     const r = rig([box('a', 0), box('b', 180)], ['a', 'b']);
-    run(blendAction, r.deps);
-    const blend = r.selected();
+    run(tweenAction, r.deps);
+    const tween = r.selected();
     run(expandPathEffectAction, r.deps);
-    expect(r.selected()).not.toEqual(blend);
+    expect(r.selected()).not.toEqual(tween);
     r.undo();
-    expect(r.selected()).toEqual(blend);
+    expect(r.selected()).toEqual(tween);
   });
 
-  it('setting and releasing a blend spine', () => {
+  it('setting and releasing a tween spine', () => {
     const r = rig([box('a', 0), box('b', 180), line('s1', 100)], ['a', 'b']);
-    run(blendAction, r.deps);
-    const blend = r.selected()[0]!;
-    r.select([blend, 's1']);
-    run(setBlendSpineAction, r.deps);
-    expect(r.selected()).toEqual([blend]);
+    run(tweenAction, r.deps);
+    const tween = r.selected()[0]!;
+    r.select([tween, 's1']);
+    run(setTweenSpineAction, r.deps);
+    expect(r.selected()).toEqual([tween]);
     r.undo();
-    expect(r.selected()).toEqual([blend, 's1']);
-    run(setBlendSpineAction, r.deps);
-    run(releaseBlendSpineAction, r.deps);
+    expect(r.selected()).toEqual([tween, 's1']);
+    run(setTweenSpineAction, r.deps);
+    run(releaseTweenSpineAction, r.deps);
     expect(r.selected()).toEqual(['s1']);
     r.undo();
-    expect(r.selected()).toEqual([blend]);
+    expect(r.selected()).toEqual([tween]);
   });
 
   it('setting and releasing an effect path', () => {
@@ -108,7 +108,7 @@ describe('undo restores the selection a path command started from', () => {
   it('trimming a stroke away entirely', () => {
     const pathNode = (id: string, d: string) => ({ id: id as NodeId, kind: 'mark' as const, layer: 'default' as const, pose: pathFromD(d), data: {} });
     const r = rig([pathNode('stub', 'M10 0 H20'), pathNode('w1', 'M10 -10 V10'), pathNode('w2', 'M20 -10 V10')], ['stub', 'w1']);
-    run(trimPathAction, r.deps, { press: { x: 15, y: 0 }, radiusPx: 3 });
+    run(snipPathAction, r.deps, { press: { x: 15, y: 0 }, radiusPx: 3 });
     expect(r.scene.get('stub' as NodeId)).toBeUndefined();
     expect(r.selected()).toEqual(['w1']);
     r.undo();

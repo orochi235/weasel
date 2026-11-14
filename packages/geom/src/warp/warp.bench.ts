@@ -1,5 +1,5 @@
 /**
- * What a puppet warp costs a frame, split into the solve and the refit, on the
+ * What a pin warp costs a frame, split into the solve and the refit, on the
  * hard cases in `foldCases` and an easy star. Run on the fleet:
  * `onto do --kind bench -- npx tsx packages/geom/src/warp/warp.bench.ts --label <what changed>`.
  * Prints each case as it finishes and appends every run's raw timings, with
@@ -21,8 +21,8 @@ import { PathBuilder } from '../paths/builder';
 import { pathToAnchors } from '../paths/anchors';
 import { createArapSolver, type ArapStage } from './arap';
 import { barS, discSquash, type FoldCase } from './foldCases';
-import { puppetMap } from './puppet';
-import { puppetMesh } from './puppetMesh';
+import { pinWarpMap } from './pinWarp';
+import { pinWarpMesh } from './pinWarpMesh';
 import { warpPath } from './warpPath';
 
 const SOLVES = 60;
@@ -61,7 +61,7 @@ function timed(count: number, run: () => void): number[] {
 }
 
 function solveCase(c: FoldCase) {
-  const mesh = puppetMesh(c.shape, c.pins.map((p) => p.from));
+  const mesh = pinWarpMesh(c.shape, c.pins.map((p) => p.from));
   const pinned: number[] = [], targets: number[] = [];
   c.pins.forEach((pin, k) => {
     const v = mesh.pinVertex[k];
@@ -76,7 +76,7 @@ function solveCase(c: FoldCase) {
 }
 
 function refitCase(c: FoldCase) {
-  const map = puppetMap(c.shape, c.pins);
+  const map = pinWarpMap(c.shape, c.pins);
   const anchors = pathToAnchors(warpPath(c.shape, map)).anchors.reduce((n, a) => n + a.length, 0);
   return { anchors, refitMs: timed(REFITS, () => warpPath(c.shape, map)) };
 }

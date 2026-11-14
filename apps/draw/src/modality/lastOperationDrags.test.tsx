@@ -1,5 +1,5 @@
 /**
- * In draw, a drag that declares params leaves the last-operation panel up once it commits: Lengthen in path
+ * In draw, a drag that declares params leaves the last-operation panel up once it commits: Tug in path
  * edit, whose edits land in the mode's journal, and drawing a polygon. Changing a param there replays the drag
  * in place.
  */
@@ -10,7 +10,7 @@ import {
   ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, pathInWorld,
   useActionsRegistry, usePolygonTool, type PolygonPath, type ToolsApi,
 } from '@weasel-js/core';
-import { lengthenPreset, usePathEditTools } from '@weasel-js/path-tools';
+import { tugPreset, usePathEditTools } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { LastOperation } from '../ui/LastOperation';
@@ -23,7 +23,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = ['draw', lengthenPreset] as const;
+const FEATURES = ['draw', tugPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup() {
@@ -80,20 +80,20 @@ const endOf = (scene: ReturnType<typeof setup>['scene']) => {
 };
 
 describe('drags in the last-operation panel', () => {
-  it('shows Lengthen after a drag in path edit, and replays it with another shape in the journal', () => {
+  it('shows Tug after a drag in path edit, and replays it with another shape in the journal', () => {
     const { scene, canvas, machine, trigger, use } = setup();
     trigger('enterPathEdit');
-    use('lengthen');
+    use('tug');
     // The end anchor is at world (40, 30), heading +x, its handle far enough back that the press is the anchor's.
     drag(canvas, [40, 30], [70, 30]);
     const straight = endOf(scene);
     expect(straight.y).toBeCloseTo(30, 3);
-    expect(screen.getByRole('region', { name: 'Lengthen path' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Tug' })).toBeInTheDocument();
     act(() => { fireEvent.click(screen.getByRole('radio', { name: 'Arc' })); });
     expect(endOf(scene).y).not.toBeCloseTo(30, 1);
     expect(machine.getActiveJournal()!.entries().undo).toHaveLength(1);
     act(() => { machine.exitMode(); });
-    expect(screen.queryByRole('region', { name: 'Lengthen path' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Tug' })).toBeNull();
   });
 
   it('shows Polygon after drawing one, and redraws it with more sides', () => {

@@ -1,6 +1,6 @@
 /**
- * Property test of the path-edit drags on a real scene, through the real `editAnchors` dep: Simplify brush,
- * Lengthen, a corner widget, a balance grip, and the grip's double-click. Each gesture, committed or canceled,
+ * Property test of the path-edit drags on a real scene, through the real `editAnchors` dep: Sand,
+ * Tug, a fillet widget, a poise grip, and the grip's double-click. Each gesture, committed or canceled,
  * leaves a well-formed finite path; it records one undo step exactly when it changed the path; undo and redo land on
  * the paths before and after; and the last-operation panel's replay with the same params lands where the drag did.
  */
@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { openPathEnds, pathEndAnchorIndex, pathToAnchors, type AnchorSet } from '@weasel-js/geom';
 import type { Action, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { balanceHandlesAction, editCornerAction, equalizeHandlesAction, lengthenPathAction, simplifyBrushAction } from './index';
+import { poiseHandlesAction, editFilletAction, equalizeHandlesAction, tugPathAction, sandAction } from './index';
 import { editHarness, type EditHarness } from './shared/testing/editHarness';
 import { checkPath, densePath, penPath, point, runs, snap, tally, timeoutFor } from './pbt.fixture';
 
@@ -17,16 +17,16 @@ const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
 interface Drag {
   action: Action;
-  /** Affordance kind prefix, for drags that start on one: `anchor`, `corner`, `balance`. */
+  /** Affordance kind prefix, for drags that start on one: `anchor`, `fillet`, `poise`. */
   on?: string;
   params?: fc.Arbitrary<Record<string, unknown>>;
 }
 
 const DRAGS: Drag[] = [
-  { action: simplifyBrushAction, params: fc.record({ radiusPx: fc.integer({ min: 1, max: 80 }), tolerance: fc.constantFrom(0, 0.5, 2, 10) }, { requiredKeys: [] }) },
-  { action: lengthenPathAction, on: 'anchor', params: fc.record({ mode: fc.constantFrom('tangent', 'curvature', 'eased') }, { requiredKeys: [] }) },
-  { action: editCornerAction, on: 'corner', params: fc.record({ shape: fc.constantFrom('round', 'bevel', 'scoop', 'notch', 'square', 'squircle') }, { requiredKeys: [] }) },
-  { action: balanceHandlesAction, on: 'balance' },
+  { action: sandAction, params: fc.record({ radiusPx: fc.integer({ min: 1, max: 80 }), tolerance: fc.constantFrom(0, 0.5, 2, 10) }, { requiredKeys: [] }) },
+  { action: tugPathAction, on: 'anchor', params: fc.record({ mode: fc.constantFrom('tangent', 'curvature', 'eased') }, { requiredKeys: [] }) },
+  { action: editFilletAction, on: 'fillet', params: fc.record({ shape: fc.constantFrom('round', 'bevel', 'scoop', 'notch', 'square', 'squircle') }, { requiredKeys: [] }) },
+  { action: poiseHandlesAction, on: 'poise' },
 ];
 
 const gesture = fc.record({
@@ -76,7 +76,7 @@ function checkGesture(h: EditHarness, given: G): void {
       return { x: a.x + (off.x % 7), y: a.y + (off.y % 7) };
     };
     if (g.drag.on === 'anchor') {
-      // Lengthen presses an open end, and drags anywhere.
+      // Tug presses an open end, and drags anywhere.
       const ends = openPathEnds(h.path()).map((e) => pathEndAnchorIndex(pathToAnchors(h.path()) as AnchorSet, e)).filter((k) => k >= 0);
       const end = ends.length > 0 ? ends[g.index % ends.length]! : g.index;
       const p = near(end, { x: 0, y: 0 });
@@ -130,14 +130,14 @@ describe('path-edit drags on a real scene, property', () => {
     for (const d of DRAGS) {
       expect(t.get(`${d.action.id}:changed`), `${d.action.id} ${t}`).toBeGreaterThan(5);
     }
-    for (const k of ['simplifyBrush:replay', 'lengthenPath:replay', 'editCorner:replay']) expect(t.get(k), `${k} ${t}`).toBeGreaterThan(4);
+    for (const k of ['sand:replay', 'tugPath:replay', 'editFillet:replay']) expect(t.get(k), `${k} ${t}`).toBeGreaterThan(4);
   }, timeoutFor(250, 120));
 
   it('equalizing a grip changes the path exactly when it records a step, and undoes exactly', () => {
     fc.assert(fc.property(penPath, fc.nat({ max: 12 }), (p, k) => {
       const h = editHarness(p);
       try {
-        const kind = `balance:${k % Math.max(1, anchorCount(h))}`;
+        const kind = `poise:${k % Math.max(1, anchorCount(h))}`;
         const before = snap(h.path());
         const at0 = h.scene.historyIndex();
         (equalizeHandlesAction.invoker as ImmediateInvoker).run(deps(h), { affordance: { kind } });

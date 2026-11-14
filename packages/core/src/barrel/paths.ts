@@ -104,8 +104,8 @@ export {
   pathDistanceToPoint,
   pointAlongPath,
   measurePath,
-  blendPaths,
-  prepareBlend,
+  tweenPaths,
+  prepareTween,
   bendAlongPath,
   repeatAlongPath,
   stationsAlongPath,
@@ -125,10 +125,10 @@ export {
   intersectSegments,
   pathCrossings,
   pathSegments,
-  trimPathAt,
-  extendToMeet,
-  smudgePath,
-  lengthenOpenEnd,
+  snipPathAt,
+  reachToMeet,
+  kneadPath,
+  tugOpenEnd,
   openEndRay,
   openPathEnds,
   createPathSnapIndex,
@@ -171,8 +171,8 @@ export type {
   PointAlongPathOptions,
   MeasurePathOptions,
   PathMeasure,
-  BlendPathsOptions,
-  PathBlend,
+  TweenPathsOptions,
+  PathTween,
   BendAlongPathOptions,
   RepeatAlongPathOptions,
   RepeatStation,
@@ -191,10 +191,10 @@ export type {
   PathSegment,
   PathStop,
   SegmentCrossing,
-  TrimPathOptions,
-  TrimResult,
-  ExtendToMeetOptions,
-  SmudgePathOptions,
+  SnipPathOptions,
+  SnipResult,
+  ReachToMeetOptions,
+  KneadPathOptions,
   OpenPathEnd,
   PathSnapHit,
   PathSnapIndex,
@@ -257,7 +257,7 @@ export {
 export { nodeOutline } from '../domains/paths/strokeOutline';
 export { DEFAULT_OVERLAY_STYLE } from '../domains/paths/anchorMarkers';
 
-// ─── Path effects: live blend, bend along, repeat along, and text along ────
+// ─── Path effects: live tween, bend along, repeat along, and text along ────
 export {
   createPathEffectDerivations,
   PATH_EFFECT,
@@ -273,7 +273,7 @@ export {
 } from '../core/scene/pathEffects';
 export type {
   BendAlongEffect,
-  BlendEffect,
+  TweenEffect,
   DerivedPart,
   EffectBand,
   EffectItem,

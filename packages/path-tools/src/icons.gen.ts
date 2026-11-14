@@ -4,11 +4,11 @@ import { scopedIcon } from '@weasel-js/icons';
 
 /** A glyph this package draws, by its bare name. */
 export type PathToolsIconName =
-  | 'smudgeBrush'
-  | 'distort'
-  | 'envelope'
-  | 'puppetWarp'
-  | 'blend'
+  | 'knead'
+  | 'planeWarp'
+  | 'clothWarp'
+  | 'pinWarp'
+  | 'tween'
   | 'bendAlong'
   | 'repeatAlong'
   | 'textAlong'
@@ -16,21 +16,21 @@ export type PathToolsIconName =
   | 'zigzag'
   | 'puckerBloat'
   | 'expand'
-  | 'balanceHandles'
+  | 'poise'
   | 'equalizeHandles'
-  | 'lengthen'
-  | 'trim'
-  | 'extend'
+  | 'tug'
+  | 'snip'
+  | 'reach'
   | 'girth'
   | 'spiro'
   | 'resamplePath'
   | 'releaseSpiro'
-  | 'setBlendSpine'
-  | 'releaseBlendSpine'
+  | 'setTweenSpine'
+  | 'releaseTweenSpine'
   | 'reversePath'
   | 'setPathStart'
   | 'cornerRadius'
-  | 'cornerShape'
+  | 'fillet'
   | 'convertSegment'
   | 'straightenSegment'
   | 'curveSegment'
@@ -58,11 +58,11 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
   {
     "label": "Tools",
     "names": [
-      "smudgeBrush",
-      "distort",
-      "envelope",
-      "puppetWarp",
-      "blend",
+      "knead",
+      "planeWarp",
+      "clothWarp",
+      "pinWarp",
+      "tween",
       "bendAlong",
       "repeatAlong",
       "textAlong",
@@ -70,11 +70,11 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
       "zigzag",
       "puckerBloat",
       "expand",
-      "balanceHandles",
+      "poise",
       "equalizeHandles",
-      "lengthen",
-      "trim",
-      "extend",
+      "tug",
+      "snip",
+      "reach",
       "girth",
       "spiro"
     ]
@@ -84,12 +84,12 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
     "names": [
       "resamplePath",
       "releaseSpiro",
-      "setBlendSpine",
-      "releaseBlendSpine",
+      "setTweenSpine",
+      "releaseTweenSpine",
       "reversePath",
       "setPathStart",
       "cornerRadius",
-      "cornerShape",
+      "fillet",
       "convertSegment",
       "straightenSegment",
       "curveSegment",
@@ -134,11 +134,11 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
 
 declare module '@weasel-js/icons' {
   interface IconName {
-    'path-tools:smudgeBrush': true;
-    'path-tools:distort': true;
-    'path-tools:envelope': true;
-    'path-tools:puppetWarp': true;
-    'path-tools:blend': true;
+    'path-tools:knead': true;
+    'path-tools:planeWarp': true;
+    'path-tools:clothWarp': true;
+    'path-tools:pinWarp': true;
+    'path-tools:tween': true;
     'path-tools:bendAlong': true;
     'path-tools:repeatAlong': true;
     'path-tools:textAlong': true;
@@ -146,21 +146,21 @@ declare module '@weasel-js/icons' {
     'path-tools:zigzag': true;
     'path-tools:puckerBloat': true;
     'path-tools:expand': true;
-    'path-tools:balanceHandles': true;
+    'path-tools:poise': true;
     'path-tools:equalizeHandles': true;
-    'path-tools:lengthen': true;
-    'path-tools:trim': true;
-    'path-tools:extend': true;
+    'path-tools:tug': true;
+    'path-tools:snip': true;
+    'path-tools:reach': true;
     'path-tools:girth': true;
     'path-tools:spiro': true;
     'path-tools:resamplePath': true;
     'path-tools:releaseSpiro': true;
-    'path-tools:setBlendSpine': true;
-    'path-tools:releaseBlendSpine': true;
+    'path-tools:setTweenSpine': true;
+    'path-tools:releaseTweenSpine': true;
     'path-tools:reversePath': true;
     'path-tools:setPathStart': true;
     'path-tools:cornerRadius': true;
-    'path-tools:cornerShape': true;
+    'path-tools:fillet': true;
     'path-tools:convertSegment': true;
     'path-tools:straightenSegment': true;
     'path-tools:curveSegment': true;

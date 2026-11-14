@@ -374,7 +374,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   disabled with `ActionDisabledReason.NotApplicable`, and its `enabled` asks the same question its `run`
   answers. So `deleteAnchors` is off where the path refuses the delete (a two-anchor line keeps its two),
   `constrainAnchors` where the selection makes no constraint of its kind, `unconstrainAnchors` where there
-  is none to remove, `setCorners` without a shape or radius or with the corners' own, and `nudgeAnchors`
+  is none to remove, `setFillets` without a shape or radius or with the corners' own, and `nudgeAnchors`
   and `reversePath` where the selection names no anchor of the path (as an undo that shortened the path
   can leave it). A selection command stays enabled when its result is the selection already held.
 - 2026-11-10 (property tests): Align, Distribute, Flip, and the reorder commands follow the ruling above:
@@ -395,12 +395,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): `addPage` (and `addTemplatePage`, which hands its index on) holds an
   `index` past either end of the page order to that end, as `movePage` already did, rather than reading a negative
   one from the end as `splice` does: one rule for an index into the page order.
-- Ruled 2026-11-10 (my call, overnight sweep): Trim segment and the Girth tool's `girth.clear`, click commands, are
-  enabled outright by a click's point, as Extend to next path is, so the tool keeps the click and the run decides; with
+- Ruled 2026-11-10 (my call, overnight sweep): Snip and the Girth tool's `girth.clear`, click commands, are
+  enabled outright by a click's point, as Reach is, so the tool keeps the click and the run decides; with
   no click, `enabled` asks whether the press in their params reaches a piece to cut or a set width point to clear, and
   answers `NotApplicable` otherwise. Before, both were always enabled.
-- Ruled 2026-11-10 (my call, overnight sweep): `extendToMeet` takes an end within float32 rounding of a stroke (1e-6 of
-  its coordinates' magnitude) as already meeting it, so a second Extend to next path is disabled rather than recording
+- Ruled 2026-11-10 (my call, overnight sweep): `reachToMeet` takes an end within float32 rounding of a stroke (1e-6 of
+  its coordinates' magnitude) as already meeting it, so a second Reach is disabled rather than recording
   an invisible step, after the Align ruling above.
 - Ruled 2026-11-10 (my call, overnight sweep): `toolStacksOf` reports no stack for a stacked set that names no tool, as
   `withoutTools` leaves one cut to nothing: a palette has no button to draw for it.
@@ -731,22 +731,22 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   The path commands drop a node's `skin`. The cut command is `snipAtCrossings`, "Cut at Crossings".
 - 2026-10-18: `svgNodesToKitDrafts` takes `keepEmpty`, which keeps an empty group it is true for
   (drafted at its clip's box or a zero box) and the groups holding it. Draw keeps an effect's empty
-  group, so a blend of no steps reopens live; one whose sources were not exported opens as nothing.
+  group, so a tween of no steps reopens live; one whose sources were not exported opens as nothing.
 - 2026-10-18: `serializeSvg` takes `textLayout` (pass `layoutTextPose`), and `svgNeeds` / `warmSvg`
   take it too. A laid-out `<text>` drops `dominant-baseline`, carries `data-weasel-layout="lines"`,
   puts each line on its baseline with a `y`, marks a wrapped line `data-weasel-lines="0"`, and
   states `data-weasel-line-height`, since its pitch no longer does. A line the layout justified
   writes every word with its own `x`; `LaidOutLineBox.justified` (new text API) says which lines
   those are. Draw's exports and clipboard SVG pass it.
-- 2026-10-18: A puppet warp's solve runs five local/global rounds after its two linear steps, then,
+- 2026-10-18: A pin warp's solve runs five local/global rounds after its two linear steps, then,
   only when a triangle is left turned over, an injective pass (untangling energy of Garanzha et al.,
-  2021) with the pins held. Every puppet-warped shape redraws differently, and a drag that starts to
+  2021) with the pins held. Every pin-warped shape redraws differently, and a drag that starts to
   fold jumps to the injective shape rather than easing into it. The solve is deterministic from the
   pins: it does not warm-start from the previous frame, so a reopened document draws what the drag
   last drew. A pass that runs out of rounds still tangled returns the folded result. Uniform edge
   weights, not cotangent ones, so each system stays the one already factored.
-- 2026-10-18: A puppet warp's map is smooth across its mesh (Clough–Tocher) where it was affine
-  per triangle, so every puppet-warped shape, saved ones included, redraws slightly differently:
+- 2026-10-18: A pin warp's map is smooth across its mesh (Clough–Tocher) where it was affine
+  per triangle, so every pin-warped shape, saved ones included, redraws slightly differently:
   its bends lose their small corners.
 - 2026-10-19: Constraint links on whole-node transforms. The transformed nodes are held as
   transformed and every node a link reaches gives way, its own constraints kept; their own
@@ -754,8 +754,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   cannot hold does not stop the transform: it commits alone and `constraintLinkConflictsOf`
   reports the link. Core's hook is `PathEditExtension.finishTransform`, run as one of the
   `transformFollowers` dep's followers, which the `editAnchors` dep source adds.
-- 2026-10-19: A path-edit drag that only previews until release (bend segment, corner, Lengthen,
-  Balance, Simplify brush, spiro insert) shows nothing for a frame its constraints cannot hold,
+- 2026-10-19: A path-edit drag that only previews until release (bend segment, corner, Tug,
+  Poise, Sand, spiro insert) shows nothing for a frame its constraints cannot hold,
   since that frame commits nothing; the anchor drag still holds its last good frame.
 - 2026-10-19: A constraint link is made by Alt-dragging an anchor in path edit (`linkAnchor`): it
   reads where the anchor was released, nearest anchor within 6 screen px first, then a segment,
@@ -1580,7 +1580,7 @@ Calls the round made:
 - Undo in a lab steps whichever of the marks and the trial's history changed last. A `TrialHistorySource`
   without `undoStamp` keeps marks first.
 - A trial's writes to the lab's `over` (`f.alias` rows) are undo steps, so Undo rewrites the app's own values.
-- Trim and Extend pass over locked and hidden strokes; a locked stroke still cuts and stops, a hidden one does
+- Snip and Reach pass over locked and hidden strokes; a locked stroke still cuts and stops, a hidden one does
   neither. Link anchor ties to no hidden or locked path.
 - Arrows in ui's widgets (`PageTabs`, `TokenField`, `ItemList`, the icon picker, `PrefsRail`, `Tree`) follow the
   direction read from computed CSS at the key press, through ui-input's `arrowDir`. `ResizeHandle` stays physical.
@@ -1653,7 +1653,7 @@ Key rulings and the per-view camera TODO landed in the same batch.
 - Next from a view never shown a page goes to the first page; `add` there puts the page after the last.
 - Cut at Crossings, Join and Release Compound Path carry per-anchor widths and colors to the pieces (blended at a
   cut, reversed with a reversed path); any command leaving them out of step with the anchors drops them.
-- Warp and smudge on a group skip its locked and hidden members, as trim and extend do.
+- Warp and knead on a group skip its locked and hidden members, as Snip and Reach do.
 - Far from the origin, where a step index passes 2^53, the ruler, grid lines and tiled layers draw nothing;
   `snapPoint` still offers points. A repeated Mermaid architecture name is an error; a repeated mind-map id is
   renamed.
@@ -1948,14 +1948,14 @@ Calls the lanes made without a ruling:
   no `navigator` where `isApplePlatform` answers false (documented as the docs convention), and lookups such as
   `pickMenu` returning `undefined` where others return `null` (routing has no rule, and the `find`-shaped ones
   follow `Array.find`).
-- Sticky keeps S, the smudge brush moves to U, and Extend moves from U to Shift+U, on the maintainer's call
+- Sticky keeps S, Knead moves to U, and Reach moves from U to Shift+U, on the maintainer's call
   (2026-11-12). The star tool has no default key at all.
 - Open: two tool sets are not named for their tools' palette group, which `BUILTIN_TOOL_GROUPS` says each set is:
   `RESHAPE_TOOLS` (`reshape`) holds tools in the `path` group, and `RIG_TOOLS` (`rig`) tools in `shape`. Renaming
   the groups moves where the tools sit on a palette; renaming the sets does not.
 - Open: most tool hooks outside the drag-to-insert tools take a `keybinding` option (`null` to drop the key):
-  lasso, slice, measure, the stroke, warp and rig tools. The drag-to-insert tools, spiro, the simplify brush and
-  lengthen do not, and a binding override of `tool.activate.<id>` rebinds any tool's key.
+  lasso, slice, measure, the stroke, warp and rig tools. The drag-to-insert tools, spiro, Sand and
+  Tug do not, and a binding override of `tool.activate.<id>` rebinds any tool's key.
   Whether every tool hook takes the option, or none does and overrides are the one way.
 - Open: `Action.enabled(deps, at, carried, params, viewId)` takes `params` fourth where `active`, `preview` and an
   invoker's `run` take it second. Moving it to `enabled(deps, params, where)` touches every action that declares
@@ -2081,8 +2081,8 @@ Calls the lanes made without a ruling:
   undoing them. `image`, `eyedropper` and `measure` need arguments, so they are in no built-in tool set and no
   `BUILTIN_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
 - No two tool keys collide, in core or across path-tools and rig, and no action binds a bare letter. The star and
-  image tools have no key; the bare letters no tool takes are C, D, O, Q, X and Z (B is puppet, F distort, J bone,
-  U smudge, W weight and Y trim).
+  image tools have no key; the bare letters no tool takes are C, D, O, Q, X and Z (B is pin warp, F plane warp, J bone,
+  U knead, W weight and Y snip).
 - Open: the sticky tool's cursor is the rectangle's (`cursorFor('crosshair', { mark: 'rect' })`), so the two are
   not told apart from the pointer, which the shape cursors were drawn to fix. A `sticky` mark is a new glyph.
 
@@ -2090,13 +2090,13 @@ Calls the lanes made without a ruling:
 
 - 2026-11-13 (the lane's call): what each sequence tool adds (a lifeline's figure, a message's arrow, a fragment's
   type, a lifeline mark) is kept per tool, not under a shared key: no two tools add the same thing.
-- 2026-11-13 (the lane's call): the path-edit tools (the simplify brush, lengthen) declare no cursor of their own,
+- 2026-11-13 (the lane's call): the path-edit tools (Sand, Tug) declare no cursor of their own,
   as core's `anchors` tool does not: the cursor over an anchor or a stroke is the action's. The path-tools canvas
   test exempts them from `toolGaps`'s cursor line and nothing else.
 - 2026-11-13 (the lane's call): the camera glyphs moved from `ui` to a `kernel3d` namespace, so the orbit tool and
   the camera actions name their glyphs without kernel3d depending on ui.
 - Open: these bundled tools have no default key: kernel3d's orbit, diagram's connector, its stencil tools and its
-  sequence tools, and path-tools' simplify brush and lengthen. No two bundled tools share a key now. Of plain
+  sequence tools, and path-tools' Sand and Tug. No two bundled tools share a key now. Of plain
   letters, C, Q and Z are free across the kit; D, X and `/` are WeaselDraw's color keys and O its opacity scrub's
   held key. With Shift, every letter is free but U, W, M, P, F and X.
 - Open: core's `anchors` tool has no bindings and no cursor (`toolGaps` names both), since path edit's drags are
@@ -2122,11 +2122,11 @@ Calls the lanes made without a ruling:
 - A binding that takes any modifier uses `ANY_MODS` (`@weasel-js/gestures`, re-exported by routing and core). The
   pen's handle drag and path-tools' anchor link leave Meta out on purpose and keep their own `mods` (2026-11-13).
 - Unbound actions are reached from a panel, a menu or the palette on purpose: the setters a panel drives (`setFill`,
-  `setStroke*`, `setAnchorField`, `setCorners`, …), align and distribute, the path commands and path-effect
+  `setStroke*`, `setAnchorField`, `setFillets`, …), align and distribute, the path commands and path-effect
   release/expand, the diagram router choices, the path-edit `show.*` toggles, `present.go`, and `measure.moveBy` /
   `rotateBy`. The Pathfinder operations are reached by key through the Alt+P keymap's holds, and `clipboard.paste`
   by the DOM paste event (2026-11-13).
-- Open: no tool key collides in the kit or in draw. Settled 2026-11-12: Sticky S, Smudge U, Extend Shift+U. draw
+- Open: no tool key collides in the kit or in draw. Settled 2026-11-12: Sticky S, Knead U, Reach Shift+U. draw
   binds X to swap fill and stroke and Shift+X to swap focus, D to reset the colors, and / to toggle the focused
   paint to none; crop mode holds C. Free in draw, unmodified: J, Q, W, Z (rig's Bone J and Weight W are not in draw,
   so kit-wide only Q and Z are free). Free in draw with Shift: A, B, D, E, G, I, J, K, L, N, O, Q, R, S, T, Y, Z.
@@ -2237,7 +2237,7 @@ Calls the lanes made without a ruling:
   `lookupShortcut` and `ToolPresentation.shortcut`, the two ways to restate a key by hand, are gone (2026-11-13).
 - A labkit chrome item's `shortcut` is a `MenuShortcut`, formatted by `formatShortcut` in every region; a header item
   that binds `keys` shows its command's live key, and a `TrialTool` the trial's scene holds shows the scene's key.
-  The site's lab demos no longer restate their tools' keys: several had drifted (the extend lab said U, the smudge
+  The site's lab demos no longer restate their tools' keys: several had drifted (the Reach lab said U, the knead
   lab S) (2026-11-13).
 - Every tool option's color default is in `toolOptionPaint`'s spelling, draw's host-given shared fill and stroke
   included; core's `shapeToolOptions.test.tsx` holds the built-ins and draw's `prefs.test.ts` holds draw's whole tools

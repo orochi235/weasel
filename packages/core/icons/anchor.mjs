@@ -41,12 +41,12 @@ export const ANCHOR = {
     <rect x="8.5" y="8.5" width="3" height="3" fill="currentColor" stroke="none"/>`,
   // A path that zigzags on the pixel diagonals until the brush's ring, and runs straight from inside it on. The
   // ring's edges, radius 3.75 about a pixel center at a one-pixel stroke, fall on pixel edges.
-  simplifyBrush: `
+  sand: `
     <path d="M${px(0)} ${px(10)} L${px(1)} ${px(9)} L${px(3)} ${px(11)} L${px(5)} ${px(9)} L${px(6)} ${px(10)} H${px(15)}" stroke-width="1.25"/>
     <circle cx="${px(10)}" cy="${px(10)}" r="3.75" stroke-width="1.25"/>`,
   // A circular arc, so its curvature is the same everywhere, its anchor at the top, under two equal teeth of a
   // curvature comb on its normals along the pixel diagonals.
-  harmonize: `
+  fairing: `
     <path d="M${px(1)} ${px(13)} V${px(11)} A7.5 7.5 0 0 1 ${px(13)} ${px(11)} V${px(13)}" stroke-width="1.25"/>
     <path d="M${px(1.5)} ${px(5.5)} L${px(0)} ${px(4)} M${px(12.5)} ${px(5.5)} L${px(14)} ${px(4)}" stroke-width="1.25"/>
     <rect x="${px(6) - 0.625}" y="${px(4) - 0.625}" width="3.75" height="3.75" fill="currentColor" stroke="none"/>`,
