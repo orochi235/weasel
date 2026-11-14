@@ -5,7 +5,10 @@ import {
   type ModifierKey,
   type ParsedModifiers,
 } from '@weasel-js/core/routing';
-import { Powerline, type PowerlineProps, type PowerlineSegment } from '@weasel-js/ui/components/Powerline';
+import type { ReactNode } from 'react';
+import { Badge, type BadgeVariant } from '@weasel-js/ui/components/Badge';
+import { Powerline, type EdgeCap, type PowerlineProps } from '@weasel-js/ui/components/Powerline';
+import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import { KeyCap, keySpecFromKey, keySpecsFromMods, type KeySpec, type LogicalModSpec } from '@weasel-js/ui/components/Keycaps';
 import s from './GestureRoute.module.css';
 
@@ -21,13 +24,20 @@ function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefine
   return keySpecsFromMods(specs);
 }
 
+/** One badge of a {@link GestureRoute}. */
+export interface RouteSegment extends Pick<AppearanceProps, 'emphasis' | 'grade'> {
+  text: ReactNode;
+  variant: BadgeVariant;
+  endCap?: EdgeCap;
+}
+
 /**
  * The segments {@link GestureRoute} draws for a route string: phase atoms, then
  * `gesture(arg)`, then the held modifiers as one chord, then the target.
  * A descriptor's default arg and a wildcard target stay visible, muted, so
  * the strip shows the whole binding.
  */
-export function gestureRouteSegments(route: string): PowerlineSegment[] {
+export function gestureRouteSegments(route: string): RouteSegment[] {
   const parsed = parseRoute(route);
   const desc = getGestureDescriptor(parsed.gesture as GestureName);
   const hasArg = !!desc.arg && parsed.arg !== undefined;
@@ -37,7 +47,7 @@ export function gestureRouteSegments(route: string): PowerlineSegment[] {
   const targetIsWildcard = hasTarget && parsed.target === '*';
   const modKeys = modifierKeys(parsed.modifiers);
 
-  const segments: PowerlineSegment[] = [];
+  const segments: RouteSegment[] = [];
   for (const p of parsed.phases) {
     if (p.channel !== '&') segments.push({ text: p.channel, variant: 'subtle' });
     segments.push({ text: p.phase, emphasis: 'high', variant: 'subtle' });
@@ -76,7 +86,7 @@ export function gestureRouteSegments(route: string): PowerlineSegment[] {
 }
 
 /** Props for {@link GestureRoute}. */
-export interface GestureRouteProps extends Omit<PowerlineProps, 'segments'> {
+export interface GestureRouteProps extends Omit<PowerlineProps, 'children'> {
   /** A route in the dispatcher's grammar, e.g. `[initial] drag => node +shift`. */
   route: string;
 }
@@ -86,5 +96,9 @@ export interface GestureRouteProps extends Omit<PowerlineProps, 'segments'> {
  * and target as one chevron-linked chain.
  */
 export function GestureRoute({ route, 'aria-label': ariaLabel, ...rest }: GestureRouteProps) {
-  return <Powerline {...rest} segments={gestureRouteSegments(route)} aria-label={ariaLabel ?? route} />;
+  return (
+    <Powerline {...rest} aria-label={ariaLabel ?? route}>
+      {gestureRouteSegments(route).map(({ text, ...look }, i) => <Badge key={i} {...look}>{text}</Badge>)}
+    </Powerline>
+  );
 }

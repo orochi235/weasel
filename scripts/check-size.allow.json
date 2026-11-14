@@ -136,7 +136,7 @@
     "longestFunction": 181
   },
   "packages/labkit/src/specimen/Specimen.tsx": {
-    "lines": 797,
+    "lines": 793,
     "longestFunction": 126
   },
   "packages/labkit/src/state/bindLabStore.ts": {
@@ -184,7 +184,7 @@
     "longestFunction": 172
   },
   "packages/ui/src/components/Badge/Badge.tsx": {
-    "longestFunction": 142
+    "longestFunction": 132
   },
   "packages/ui/src/components/Badge/bases/RoundedRect.tsx": {
     "longestFunction": 150

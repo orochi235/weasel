@@ -16,6 +16,9 @@ import { useSvgBox } from './useSvgBox';
 import { BadgeRemove, BadgeTarget } from './BadgeLabel';
 import { Focusable, Tooltip, TooltipTrigger } from '../Tooltip';
 import { type AppearanceProps, useAppearance } from '../appearance';
+import type { EdgeCap } from './bases/edgeProfiles';
+import { PowerlineSlotContext } from '../Powerline/slot';
+import { usePowerlineProps } from './powerlineProps';
 
 /** What {@link Badge} takes whatever its shape: every prop of {@link BadgeProps}
  *  but `shape`, `shapeParams`, and the DOM attributes it passes through. */
@@ -40,6 +43,8 @@ export interface BadgeOwnProps extends AppearanceProps {
   baseParams?: BadgeBaseParams[BadgeBase];
   /** Compose-mode: layered effects applied around / over the base. */
   effects?: BadgeEffectSpec[];
+  /** Inside a `Powerline`: the cap on this badge's right edge, which the next segment's left edge adopts. */
+  endCap?: EdgeCap;
   onClick?: () => void;
   onRemove?: () => void;
   removeLabel?: string;
@@ -78,6 +83,22 @@ export type BadgeDomProps = Omit<
 export type BadgeProps = {
   [S in BadgeShape]: BadgeOwnProps & BadgeDomProps & { shape?: S; shapeParams?: BadgeShapeParams[S] };
 }[BadgeShape];
+
+function badgeStyle(
+  appearance: CSSProperties | undefined, insets: { top: number; right: number; bottom: number; left: number },
+  padding: number | string | undefined, breakStyle: 'slice' | 'clone' | undefined, override: CSSProperties | undefined,
+): CSSProperties {
+  return {
+    ...appearance,
+    ['--badge-inset-top' as never]: `${insets.top}px`,
+    ['--badge-inset-right' as never]: `${insets.right}px`,
+    ['--badge-inset-bottom' as never]: `${insets.bottom}px`,
+    ['--badge-inset-left' as never]: `${insets.left}px`,
+    ...paddingStyle(padding),
+    ...(breakStyle !== undefined && { boxDecorationBreak: breakStyle, WebkitBoxDecorationBreak: breakStyle }),
+    ...liftPadding(override),
+  };
+}
 
 function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
   if (props.as) return props.as;
@@ -133,7 +154,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     onFocus,
     onBlur,
     ...domProps
-  } = props;
+  } = usePowerlineProps(props);
   const element = chooseElement(props);
   const tooltipOnPlainBadge = tooltip != null && element === 'span';
   const split = onRemove != null && (element !== 'span' || tooltip != null);
@@ -162,19 +183,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
     contentRef,
     composeBase ? { effects: resolvedEffects, bloat: bloat ?? 0 } : undefined,
   );
-  const style: CSSProperties = {
-    ...appearance.style,
-    ['--badge-inset-top' as never]: `${insets.top}px`,
-    ['--badge-inset-right' as never]: `${insets.right}px`,
-    ['--badge-inset-bottom' as never]: `${insets.bottom}px`,
-    ['--badge-inset-left' as never]: `${insets.left}px`,
-    ...paddingStyle(padding),
-    ...(breakStyle !== undefined && {
-      boxDecorationBreak: breakStyle,
-      WebkitBoxDecorationBreak: breakStyle,
-    }),
-    ...liftPadding(styleOverride),
-  };
+  const style = badgeStyle(appearance.style, insets, padding, breakStyle, styleOverride);
 
   const commonProps = {
     ...domProps,
@@ -209,14 +218,16 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
   const inner = (
     <>
       {decoSvg}
-      <span ref={contentRef} className={s.content}>
-        {split ? (
-          <BadgeTarget element={element} href={href} onClick={onClick} aria-label={ariaLabel} tooltip={tooltip} onFocusChange={setFocused} extra={labelProps}>
-            {children}
-          </BadgeTarget>
-        ) : <span>{children}</span>}
-        {onRemove && <BadgeRemove label={removeLabel} onRemove={onRemove} />}
-      </span>
+      <PowerlineSlotContext.Provider value={null}>
+        <span ref={contentRef} className={s.content}>
+          {split ? (
+            <BadgeTarget element={element} href={href} onClick={onClick} aria-label={ariaLabel} tooltip={tooltip} onFocusChange={setFocused} extra={labelProps}>
+              {children}
+            </BadgeTarget>
+          ) : <span>{children}</span>}
+          {onRemove && <BadgeRemove label={removeLabel} onRemove={onRemove} />}
+        </span>
+      </PowerlineSlotContext.Provider>
     </>
   );
 
