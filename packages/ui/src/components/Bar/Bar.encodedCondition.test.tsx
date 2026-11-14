@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { Bar } from './Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 
 afterEach(cleanup);
 
@@ -17,10 +17,10 @@ const schema: PrefGroup = {
 
 describe('Bar conditions over an encoded boolean', () => {
   it('compare what the toggle shows, and not the string it stores', () => {
-    const { rerender } = render(<Bar schema={schema} values={{ slant: 'italic' }} />);
+    const { rerender } = render(<PrefsBar schema={schema} values={{ slant: 'italic' }} />);
     expect(screen.getByRole('spinbutton', { name: 'Angle' })).toBeInTheDocument();
     expect(screen.getByRole('spinbutton', { name: 'Weight' })).toBeDisabled();
-    rerender(<Bar schema={schema} values={{ slant: 'normal' }} />);
+    rerender(<PrefsBar schema={schema} values={{ slant: 'normal' }} />);
     expect(screen.queryByRole('spinbutton', { name: 'Angle' })).toBeNull();
     expect(screen.getByRole('spinbutton', { name: 'Weight' })).toBeEnabled();
   });

@@ -4,7 +4,8 @@
  */
 import { Fragment, type ReactNode } from 'react';
 import { prefAsBox, prefTabRuns } from '@weasel-js/prefs';
-import { BarLayout } from '../Bar/BarLayout';
+import { Bar } from '../Bar/Bar';
+import { BarItem } from '../Bar/barParts';
 import { MotifFrame } from '../MotifFrame';
 import { ResetControl } from '../Properties/ResetControl';
 import { FORM_FRAMES } from '../Prefs/frames';
@@ -43,17 +44,13 @@ function barSection(section: PanelSection, scope: PanelCellScope, marks: PanelMa
   if (cells.length === 0) return undefined;
   const off = sectionOff(section, scope);
   const bar = (
-    <BarLayout
-      framed
-      overflow={section.overflow}
-      lead={section.lead}
-      icon={section.icon}
-      disabled={off}
-      label={section.name === '' ? undefined : section.name}
-      nodes={cells.map((cell) => ({ kind: 'cell', path: cell.key, content: cell.hidden ? <>{cell.content}<HiddenBadge /></> : cell.content }))}
-      cells={() => []}
-      attrs={(at, leaf) => selectionAttrs(at, marks, leaf)}
-    />
+    <Bar framed overflow={section.overflow} lead={section.lead} icon={section.icon} disabled={off} label={section.name === '' ? undefined : section.name}>
+      {cells.map((cell) => (
+        <BarItem key={cell.key} id={cell.key} attrs={selectionAttrs(cell.key, marks, true)}>
+          {cell.hidden ? <>{cell.content}<HiddenBadge /></> : cell.content}
+        </BarItem>
+      ))}
+    </Bar>
   );
   return { section, content: bar, off, allHidden: cells.every((cell) => cell.hidden) };
 }

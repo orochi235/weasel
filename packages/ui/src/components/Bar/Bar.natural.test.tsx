@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { BarLayout, type BarNode } from './BarLayout';
+import { Bar } from './Bar';
 
 // jsdom lays nothing out: each item is 30 px long, the lead 20 px, and the bar 0 px, so its line holds nothing.
 const realRect = Element.prototype.getBoundingClientRect;
@@ -15,16 +15,16 @@ afterAll(() => {
 });
 afterEach(cleanup);
 
-const nodes: BarNode[] = ['a', 'b', 'c'].map((key) => ({ kind: 'cell', path: key, content: <button type="button">{key}</button> }));
+const cells = ['a', 'b', 'c'].map((key) => <button key={key} type="button">{key}</button>);
 
 it('asks for the length that holds its lead and every item, though its line holds fewer', () => {
-  render(<BarLayout label="Tools" lead="label" overflow="menu" nodes={nodes} cells={() => []} />);
+  render(<Bar label="Tools" lead="label" overflow="menu">{cells}</Bar>);
   const bar = screen.getByRole('toolbar', { name: 'Tools' });
   expect(screen.getByRole('button', { name: 'More' })).toBeInTheDocument();
   expect(bar.style.getPropertyValue('--bar-natural')).toBe('110px');
 });
 
 it('asks for nothing when it scrolls instead', () => {
-  render(<BarLayout label="Tools" lead="label" nodes={nodes} cells={() => []} />);
+  render(<Bar label="Tools" lead="label">{cells}</Bar>);
   expect(screen.getByRole('toolbar', { name: 'Tools' }).style.getPropertyValue('--bar-natural')).toBe('');
 });

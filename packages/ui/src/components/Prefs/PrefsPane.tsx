@@ -4,7 +4,8 @@ import { MotifFrame } from '../MotifFrame';
 import { FORM_FRAMES, headingInline } from './frames';
 import { groupHeading, groupOff } from './groupHeading';
 import { GroupTabs } from './GroupTabs';
-import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
+import { Bar, type BarOrientation } from '../Bar/Bar';
+import { barNodeChildren, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode } from '../PrefsBar/barNodes';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { aliasOfNothing } from './PrefWords';
@@ -186,20 +187,10 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
     const drawn = shownLeaf(ctx, node.leaf);
     return drawn?.at === undefined ? node : { path: node.path, at: drawn.at, leaf: drawn.pref };
   };
-  return (
-    <BarLayout
-      framed
-      orientation={orientation}
-      overflow={ctx.droppable ? undefined : group.overflow}
-      lead={group.lead}
-      icon={group.icon}
-      disabled={groupOff(ctx, path)}
-      rootAttrs={{ ...selectionAttrs(path, ctx), 'data-pref-bar': '' }}
-      label={group.name === '' ? undefined : group.name}
-      nodes={shownBarNodes(groupBarNodes(group, path, (inner, at) => (
+  const nodes = shownBarNodes(groupBarNodes(group, path, (inner, at) => (
         <div className={s.rows}>{paneChildren(ctx, Object.entries(inner.children), at, depth + 1)}</div>
-      ), { values: (at: string) => prefValueAtPath(ctx.values, at), onChange: ctx.onChange }), shown)}
-      cells={(leaves) => ctx.leaves ? ctx.leaves.cells(leaves) :
+      ), { values: (at: string) => prefValueAtPath(ctx.values, at), onChange: ctx.onChange }), shown);
+  const cells = (leaves: readonly BarLeafNode[]): BarCell[] => ctx.leaves ? ctx.leaves.cells(leaves) :
         leaves.flatMap(({ path: own, leaf, at }): Array<{ path: string; content: ReactNode }> => {
           // An alias still here shows nothing, or is a renderer's to draw.
           const drawn = at === undefined ? shownLeaf(ctx, leaf) : { pref: leaf, at };
@@ -210,10 +201,20 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
           if (content == null) return [];
           const marks = splitMarks(ctx.split, ctx.values, renderCtx, drawn.at !== undefined);
           return [{ path: own, content: marks || marksHidden(ctx.hidden, own) ? <>{content}{marks}{marksHidden(ctx.hidden, own) && <HiddenBadge />}</> : content }];
-        })
-      }
-      attrs={(at, leaf) => selectionAttrs(at, ctx, leaf)}
-    />
+        });
+  return (
+    <Bar
+      framed
+      orientation={orientation}
+      overflow={ctx.droppable ? undefined : group.overflow}
+      lead={group.lead}
+      icon={group.icon}
+      disabled={groupOff(ctx, path)}
+      rootAttrs={{ ...selectionAttrs(path, ctx), 'data-pref-bar': '' }}
+      label={group.name === '' ? undefined : group.name}
+    >
+      {barNodeChildren(nodes, { cells, attrs: (at, leaf) => selectionAttrs(at, ctx, leaf) })}
+    </Bar>
   );
 }
 

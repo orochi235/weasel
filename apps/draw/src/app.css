@@ -150,7 +150,7 @@
 }
 
 /* The status bar's chrome — mono type, panel surface, gap, trailing spacer,
-   muted items — is weasel-ui's <StatusBar>. `.wd-statusbar` survives only as
+   muted items — is weasel-ui's <Bar framed="status">. `.wd-statusbar` survives only as
    a stable hook for app-level selectors; adding rules to it means asking
    whether they belong in the kit component instead. */
 

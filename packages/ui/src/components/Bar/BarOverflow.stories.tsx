@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
+import { PrefsBar, type PrefsBarProps } from '@weasel-js/ui/components/PrefsBar';
 import s from './BarOverflow.stories.module.css';
 import { icon } from '../../icons.gen';
 
-const meta: Meta<typeof Bar> = {
+const meta: Meta<typeof PrefsBar> = {
   title: 'ui/Bar/Overflow',
-  component: Bar,
+  component: PrefsBar,
 };
 export default meta;
-type Story = StoryObj<typeof Bar>;
+type Story = StoryObj<typeof PrefsBar>;
 
 const number = (name: string, value: number): PrefGroup['children'][string] => ({ kind: 'number', name, description: '', default: value });
 const flag = (name: string): PrefGroup['children'][string] => ({ kind: 'boolean', name, description: '', control: 'switch', default: false });
@@ -40,11 +40,11 @@ const TYPE: PrefGroup = {
   },
 };
 
-function Sized(args: BarProps) {
+function Sized(args: PrefsBarProps) {
   const [values, setValues] = useState<Record<string, unknown>>({ size: 12, leading: 14, tracking: 0, align: 'left', color: '#7ec8e3', indent: 0 });
   return (
     <div className={s.room}>
-      <Bar {...args} schema={TYPE} values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
+      <PrefsBar {...args} schema={TYPE} values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
     </div>
   );
 }

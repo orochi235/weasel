@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { barMenuRoot } from './barMenuRoot';
-import { Bar } from './Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 afterEach(cleanup);
@@ -29,7 +29,7 @@ function bar(values: Record<string, unknown>, onChange = vi.fn()) {
   render(
     <ActionsProvider>
       <RegisterActions actions={ACTIONS} />
-      <Bar schema={schema} values={values} onChange={onChange} label="Tools" />
+      <PrefsBar schema={schema} values={values} onChange={onChange} label="Tools" />
     </ActionsProvider>,
   );
   return onChange;
@@ -64,7 +64,7 @@ describe('Bar menu group', () => {
   });
 
   it('opens nothing where no row resolves: no registry, and no writer for its flag and choice', () => {
-    render(<Bar schema={schema} label="Tools" />);
+    render(<PrefsBar schema={schema} label="Tools" />);
     fireEvent.click(screen.getByRole('button', { name: 'Arrange' }));
     expect(screen.queryByRole('menu')).toBeNull();
   });
@@ -75,7 +75,7 @@ describe('Bar menu tooltip', () => {
     const described: PrefGroup = pref.group('Tools', {
       file: pref.group('New', { order: pref.actions('arrange') }, { as: 'menu', description: 'New document' }),
     });
-    render(<ActionsProvider><Bar schema={described} label="Tools" /></ActionsProvider>);
+    render(<ActionsProvider><PrefsBar schema={described} label="Tools" /></ActionsProvider>);
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => screen.getByRole('button', { name: 'New' }).focus());
     expect(screen.getByRole('tooltip').textContent).toBe('New document');

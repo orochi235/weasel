@@ -9,8 +9,8 @@ import {
   useLatest,
   type ViewApi,
 } from '@weasel-js/core';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { Icon } from '@weasel-js/ui/components/Icon';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import { useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
@@ -133,9 +133,9 @@ function LabZoomControls() {
   const shown = live && zoom !== null ? percent.format(zoom) : null;
 
   return (
-    <Toolbar aria-label="Zoom">
-      <Toolbar.Group aria-label="Zoom">
-        <Toolbar.Button
+    <Bar label="Zoom" roving>
+      <Bar.Group aria-label="Zoom">
+        <Bar.Button
           iconOnly
           aria-label="Zoom out"
           title={hint('Zoom out', 'out')}
@@ -143,16 +143,16 @@ function LabZoomControls() {
           onClick={run('out')}
         >
           <Icon name={icon('ui:zoomOut')} size={16} />
-        </Toolbar.Button>
-        <Toolbar.Button
+        </Bar.Button>
+        <Bar.Button
           aria-label={shown ? `Zoom ${shown} — reset to actual size` : 'Zoom unavailable'}
           title={live ? hint('Actual size', 'reset') : 'This trial has no camera'}
           disabled={!live}
           onClick={run('reset')}
         >
           <span className="lk-lab-zoom__readout">{shown ?? '–'}</span>
-        </Toolbar.Button>
-        <Toolbar.Button
+        </Bar.Button>
+        <Bar.Button
           iconOnly
           aria-label="Zoom in"
           title={hint('Zoom in', 'in')}
@@ -160,9 +160,9 @@ function LabZoomControls() {
           onClick={run('in')}
         >
           <Icon name={icon('ui:zoomIn')} size={16} />
-        </Toolbar.Button>
-      </Toolbar.Group>
-    </Toolbar>
+        </Bar.Button>
+      </Bar.Group>
+    </Bar>
   );
 }
 

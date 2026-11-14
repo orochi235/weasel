@@ -1,4 +1,4 @@
-import { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/components/StatusBar';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { Fragment, type ReactNode } from 'react';
 import type { RegionContribution, StatusReadout, TrialChromeContext } from '../types';
 
@@ -24,7 +24,7 @@ export function StatusRegion<TCtx = TrialChromeContext>({
     !!c.render || (c.region === region && !!c.item);
   const firstEnd = contributions.find((c) => c.end && shows(c));
   return (
-    <StatusBar divided className={className}>
+    <Bar framed="status" divided className={className}>
       {contributions.map((c) => {
         let body: ReactNode;
         let title: string | undefined;
@@ -37,11 +37,11 @@ export function StatusRegion<TCtx = TrialChromeContext>({
         const spacer = c === firstEnd;
         return (
           <Fragment key={c.id}>
-            {spacer && <StatusBarSpacer />}
-            <StatusBarItem title={title}>{body}</StatusBarItem>
+            {spacer && <Bar.Spacer />}
+            <Bar.Readout title={title}>{body}</Bar.Readout>
           </Fragment>
         );
       })}
-    </StatusBar>
+    </Bar>
   );
 }

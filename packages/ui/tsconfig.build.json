@@ -49,6 +49,8 @@
     "**/*.test.tsx",
     "**/*.stories.ts",
     "**/*.stories.tsx",
+    "**/*.fixtures.ts",
+    "**/*.fixtures.tsx",
     "**/__tests__/**"
   ]
 }

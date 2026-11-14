@@ -16,7 +16,7 @@ import { useValuesSource } from '../PrefsSource/hooks';
 import { PrefsSource } from '../PrefsSource/PrefsSource';
 import { paneChildren } from './PrefsPane';
 import { BarRootLayout } from './BarRootLayout';
-import type { BarOrientation } from '../Bar/BarLayout';
+import type { BarOrientation } from '../Bar/Bar';
 import { RailLayout } from './RailLayout';
 import { selectionAttrs, shownPath, useSelectedRow, type PrefSelectHow, type SelectionRoot } from './selection';
 import { useSplitRows, type PrefSplitProps } from './splitRows';

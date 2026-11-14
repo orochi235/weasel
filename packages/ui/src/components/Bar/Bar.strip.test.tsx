@@ -1,22 +1,22 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, test } from 'vitest';
-import { Toolbar } from './Toolbar';
+import { Bar } from './Bar';
 
 function threeButtons(roving?: boolean) {
   return render(
-    <Toolbar aria-label="Trial actions" roving={roving}>
-      <Toolbar.Group aria-label="History">
+    <Bar label="Trial actions" roving={roving}>
+      <Bar.Group aria-label="History">
         <button type="button">Undo</button>
         <button type="button">Redo</button>
-      </Toolbar.Group>
-      <Toolbar.Spacer />
+      </Bar.Group>
+      <Bar.Spacer />
       <button type="button">Close</button>
-    </Toolbar>,
+    </Bar>,
   );
 }
 
-describe('Toolbar', () => {
+describe('Bar', () => {
   test('claims the toolbar role and names its groups', () => {
     threeButtons();
     expect(screen.getByRole('toolbar', { name: 'Trial actions' })).toBeInTheDocument();
@@ -24,21 +24,21 @@ describe('Toolbar', () => {
   });
 
   test('keeps exactly one button in the tab order', () => {
-    threeButtons();
+    threeButtons(true);
     expect(screen.getAllByRole('button').filter((b) => b.tabIndex === 0)).toHaveLength(1);
   });
 
   test('keeps one tab stop when a button becomes enabled', async () => {
-    function Bar({ busy }: { busy: boolean }) {
+    function Busy({ busy }: { busy: boolean }) {
       return (
-        <Toolbar aria-label="Trial actions">
+        <Bar label="Trial actions" roving>
           <button type="button" disabled={busy}>Undo</button>
           <button type="button">Close</button>
-        </Toolbar>
+        </Bar>
       );
     }
-    const { rerender } = render(<Bar busy />);
-    rerender(<Bar busy={false} />);
+    const { rerender } = render(<Busy busy />);
+    rerender(<Busy busy={false} />);
     await waitFor(() => {
       const inOrder = screen
         .getAllByRole<HTMLButtonElement>('button')
@@ -49,7 +49,7 @@ describe('Toolbar', () => {
 
   test('moves focus with the arrow keys, wrapping at the end', async () => {
     const user = userEvent.setup();
-    threeButtons();
+    threeButtons(true);
     await user.tab();
     expect(screen.getByRole('button', { name: 'Undo' })).toHaveFocus();
     await user.keyboard('{ArrowRight}');
@@ -60,7 +60,7 @@ describe('Toolbar', () => {
 
   test('leaves every button in the tab order and the arrow keys alone without roving', async () => {
     const user = userEvent.setup();
-    threeButtons(false);
+    threeButtons();
     expect(screen.getAllByRole('button').every((b) => b.tabIndex === 0)).toBe(true);
     await user.tab();
     await user.keyboard('{ArrowRight}');
@@ -71,14 +71,14 @@ describe('Toolbar', () => {
     const view = threeButtons(true);
     expect(screen.getAllByRole('button').filter((b) => b.tabIndex === -1)).toHaveLength(2);
     view.rerender(
-      <Toolbar aria-label="Trial actions" roving={false}>
-        <Toolbar.Group aria-label="History">
+      <Bar label="Trial actions" roving={false}>
+        <Bar.Group aria-label="History">
           <button type="button">Undo</button>
           <button type="button">Redo</button>
-        </Toolbar.Group>
-        <Toolbar.Spacer />
+        </Bar.Group>
+        <Bar.Spacer />
         <button type="button">Close</button>
-      </Toolbar>,
+      </Bar>,
     );
     expect(screen.getAllByRole('button').every((b) => b.tabIndex === 0)).toBe(true);
   });
@@ -86,19 +86,81 @@ describe('Toolbar', () => {
   test('follows focus with the tab stop when roving is turned on after mount', () => {
     const view = threeButtons(false);
     view.rerender(
-      <Toolbar aria-label="Trial actions" roving>
-        <Toolbar.Group aria-label="History">
+      <Bar label="Trial actions" roving>
+        <Bar.Group aria-label="History">
           <button type="button">Undo</button>
           <button type="button">Redo</button>
-        </Toolbar.Group>
-        <Toolbar.Spacer />
+        </Bar.Group>
+        <Bar.Spacer />
         <button type="button">Close</button>
-      </Toolbar>,
+      </Bar>,
     );
     const close = screen.getByRole('button', { name: 'Close' });
     close.focus();
     close.blur();
     expect(close.tabIndex).toBe(0);
     expect(screen.getByRole('button', { name: 'Undo' }).tabIndex).toBe(-1);
+  });
+
+  test('sets a group apart from its neighbors with a divider, and none beside a spacer', () => {
+    const { container } = render(
+      <Bar label="T">
+        <button type="button">A</button>
+        <Bar.Group aria-label="G"><button type="button">B</button></Bar.Group>
+        <Bar.Spacer />
+        <Bar.Group end aria-label="H"><button type="button">C</button></Bar.Group>
+      </Bar>,
+    );
+    expect(container.querySelectorAll('[role="separator"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[aria-hidden="true"]').length).toBeGreaterThan(0);
+  });
+
+  test('divides every neighbor from the next when divided', () => {
+    const { container } = render(
+      <Bar divided>
+        <Bar.Readout>a</Bar.Readout>
+        <Bar.Readout>b</Bar.Readout>
+        <Bar.Spacer />
+        <Bar.Readout>c</Bar.Readout>
+      </Bar>,
+    );
+    expect(container.querySelectorAll('[role="separator"]')).toHaveLength(1);
+  });
+
+  test('opens a fragment child into its cells', () => {
+    const { container } = render(
+      <Bar divided>
+        <>
+          <Bar.Readout>a</Bar.Readout>
+          <Bar.Readout>b</Bar.Readout>
+        </>
+      </Bar>,
+    );
+    expect(container.querySelectorAll('[role="separator"]')).toHaveLength(1);
+  });
+});
+
+describe('a status strip', () => {
+  test('is a labeled footer, not a toolbar or a live region', () => {
+    const { container } = render(
+      <Bar framed="status" label="Editor status"><Bar.Readout>tool: select</Bar.Readout></Bar>,
+    );
+    const bar = container.querySelector('footer')!;
+    expect(bar.getAttribute('aria-label')).toBe('Editor status');
+    // Readouts change on every pointer move; announcing them would be noise.
+    expect(bar.getAttribute('role')).toBeNull();
+    expect(bar.getAttribute('aria-live')).toBeNull();
+  });
+
+  test('gives a titled readout a help cursor', () => {
+    render(
+      <Bar framed="status">
+        <Bar.Readout>plain</Bar.Readout>
+        <Bar.Readout title="full detail">short</Bar.Readout>
+      </Bar>,
+    );
+    const titled = screen.getByText('short');
+    expect(titled.getAttribute('title')).toBe('full detail');
+    expect(titled.className).not.toBe(screen.getByText('plain').className);
   });
 });

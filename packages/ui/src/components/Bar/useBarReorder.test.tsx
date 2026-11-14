@@ -4,7 +4,7 @@ import { useRef, type ReactNode } from 'react';
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
-import { Bar } from './Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { BAR_IN, BAR_UNIT } from './barOrder';
 import { useBarReorder } from './useBarReorder';
 import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
@@ -73,14 +73,14 @@ describe('useBarReorder on a straight bar', () => {
 
   it('a Cmd-drag from the first cell past the third moves it last', () => {
     const onReorder = vi.fn<(order: PrefOrder) => void>();
-    render(host(<Bar schema={flat} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={flat} onReorder={onReorder} />));
     drag(button('a'), 20, [40, 110]);
     expect(onReorder).toHaveBeenCalledTimes(1);
     expect(onReorder).toHaveBeenCalledWith({ '': ['b', 'c', 'a'] });
   });
 
   it('swallows the click that follows a drag', () => {
-    render(host(<Bar schema={flat} onReorder={() => {}} />));
+    render(host(<PrefsBar schema={flat} onReorder={() => {}} />));
     drag(button('a'), 20, [40, 110]);
     fireEvent.click(button('a'));
     expect(ran).not.toHaveBeenCalled();
@@ -88,7 +88,7 @@ describe('useBarReorder on a straight bar', () => {
 
   it('a plain press, and a Cmd-press released without moving, reorder nothing, and the click reaches the button', () => {
     const onReorder = vi.fn();
-    render(host(<Bar schema={flat} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={flat} onReorder={onReorder} />));
     drag(button('a'), 20, [110], {});
     fireEvent.click(button('a'));
     drag(button('b'), 60, []);
@@ -99,7 +99,7 @@ describe('useBarReorder on a straight bar', () => {
 
   it('Escape mid-drag reorders nothing and clears the marks', () => {
     const onReorder = vi.fn();
-    const { container } = render(host(<Bar schema={flat} onReorder={onReorder} />));
+    const { container } = render(host(<PrefsBar schema={flat} onReorder={onReorder} />));
     fireEvent.pointerDown(button('a'), { ...at(20), ...MOD });
     fireEvent.pointerMove(document, { ...at(110), ...MOD });
     expect(container.querySelector('[data-bar-unit="a"]')).toHaveAttribute('data-bar-dragging');
@@ -111,7 +111,7 @@ describe('useBarReorder on a straight bar', () => {
   });
 
   it('marks the target before it when the drag runs back', () => {
-    const { container } = render(host(<Bar schema={flat} onReorder={() => {}} />));
+    const { container } = render(host(<PrefsBar schema={flat} onReorder={() => {}} />));
     fireEvent.pointerDown(button('c'), { ...at(100), ...MOD });
     fireEvent.pointerMove(document, { ...at(10), ...MOD });
     expect(container.querySelector('[data-bar-unit="a"]')).toHaveAttribute('data-bar-drop', 'before');
@@ -120,7 +120,7 @@ describe('useBarReorder on a straight bar', () => {
 
   it('Cmd+Shift on an item in a group moves the group among the top-level units', () => {
     const onReorder = vi.fn();
-    render(host(<Bar schema={nested} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={nested} onReorder={onReorder} />));
     // a 0..40, b 40..80, g's p and q 80..160, arrange 160..200 with its buttons after it: past arrange's middle.
     drag(button('p'), 100, [150, 190], { ...MOD, shiftKey: true });
     expect(onReorder).toHaveBeenCalledWith({ '': ['a', 'b', 'arrange', 'g'] });
@@ -128,14 +128,14 @@ describe('useBarReorder on a straight bar', () => {
 
   it('a Cmd-drag on an item in a group moves it inside the group only', () => {
     const onReorder = vi.fn();
-    render(host(<Bar schema={nested} order={{ g: ['p', 'q'] }} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={nested} order={{ g: ['p', 'q'] }} onReorder={onReorder} />));
     drag(button('q'), 140, [100, 30]);
     expect(onReorder).toHaveBeenCalledWith({ g: ['q', 'p'] });
   });
 
   it('a Cmd-drag inside an actions run reorders only that run', () => {
     const onReorder = vi.fn();
-    render(host(<Bar schema={nested} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={nested} onReorder={onReorder} />));
     // front at 200..240, back at 240..280.
     drag(button('front'), 220, [250, 270]);
     expect(onReorder).toHaveBeenCalledWith({ arrange: ['back', 'front'] });
@@ -151,7 +151,7 @@ describe('useBarReorder on a straight bar', () => {
     onTestFinished(() => {
       proto.setPointerCapture = real;
     });
-    render(host(<Bar schema={flat} onReorder={() => {}} />));
+    render(host(<PrefsBar schema={flat} onReorder={() => {}} />));
     fireEvent.pointerDown(button('a'), { ...at(20), ...MOD });
     expect(capture).not.toHaveBeenCalled();
     fireEvent.pointerMove(document, { ...at(110), ...MOD });
@@ -173,7 +173,7 @@ describe('useBarReorder keeps the places of children it does not draw', () => {
       },
     };
     const onReorder = vi.fn();
-    render(host(<Bar schema={schema} values={{ on: false }} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={schema} values={{ on: false }} onReorder={onReorder} />));
     expect(screen.queryByRole('button', { name: 'c' })).toBeNull();
     // Drawn: a 0..40, b 40..80, d 80..120.
     drag(button('a'), 20, [60, 110]);

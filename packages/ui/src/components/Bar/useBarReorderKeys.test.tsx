@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState, type ReactNode } from 'react';
 import { ActionsProvider } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
-import { Bar } from './Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { RegisterAction } from '@weasel-js/routing/testing/registerAction';
 
 afterEach(cleanup);
@@ -34,7 +34,7 @@ const alt = (el: Element, key: string, more: Record<string, boolean> = {}) => fi
 function Held({ schema, onReorder }: { schema: PrefGroup; onReorder: (o: PrefOrder) => void }) {
   const [order, setOrder] = useState<PrefOrder>();
   return (
-    <Bar
+    <PrefsBar
       schema={schema}
       order={order}
       onReorder={(o) => {
@@ -70,7 +70,7 @@ describe('Alt+arrow reordering', () => {
 
   it('does nothing and says nothing at either end', () => {
     const onReorder = vi.fn();
-    render(host(<Bar schema={flat} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={flat} onReorder={onReorder} />));
     alt(button('a'), 'ArrowLeft');
     alt(button('c'), 'ArrowRight');
     expect(onReorder).not.toHaveBeenCalled();
@@ -79,14 +79,14 @@ describe('Alt+arrow reordering', () => {
 
   it('leaves Alt+Arrow alone inside a number input', () => {
     const onReorder = vi.fn();
-    render(host(<Bar schema={withNumber} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={withNumber} onReorder={onReorder} />));
     alt(screen.getByRole('spinbutton'), 'ArrowRight');
     expect(onReorder).not.toHaveBeenCalled();
   });
 
   it('leaves Alt+Arrow alone in editable text inside a unit', () => {
     const onReorder = vi.fn();
-    render(host(<Bar schema={flat} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={flat} onReorder={onReorder} />));
     const editable = document.createElement('span');
     editable.setAttribute('contenteditable', 'true');
     button('a').closest('[data-bar-unit]')!.append(editable);
@@ -96,21 +96,21 @@ describe('Alt+arrow reordering', () => {
 
   it('Alt+Shift+Right moves the group among its siblings', () => {
     const onReorder = vi.fn();
-    render(host(<Bar schema={nested} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={nested} onReorder={onReorder} />));
     alt(button('p'), 'ArrowRight', { shiftKey: true });
     expect(onReorder).toHaveBeenCalledWith({ '': ['a', 'c', 'g'] });
   });
 
   it('Alt+Right on an item in a group moves it inside the group only', () => {
     const onReorder = vi.fn();
-    render(host(<Bar schema={nested} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={nested} onReorder={onReorder} />));
     alt(button('p'), 'ArrowRight');
     expect(onReorder).toHaveBeenCalledWith({ g: ['q', 'p'] });
   });
 
   it('a vertical bar answers to Alt+Up and Down, not Left and Right', () => {
     const onReorder = vi.fn();
-    render(host(<Bar schema={flat} orientation="vertical" onReorder={onReorder} />));
+    render(host(<PrefsBar schema={flat} orientation="vertical" onReorder={onReorder} />));
     alt(button('b'), 'ArrowRight');
     expect(onReorder).not.toHaveBeenCalled();
     alt(button('b'), 'ArrowUp');
@@ -119,7 +119,7 @@ describe('Alt+arrow reordering', () => {
 
   it('on a right-to-left bar, Alt+Right moves an item toward the visual right, back along the list', () => {
     const onReorder = vi.fn();
-    render(host(<div dir="rtl"><Bar schema={flat} onReorder={onReorder} /></div>));
+    render(host(<div dir="rtl"><PrefsBar schema={flat} onReorder={onReorder} /></div>));
     alt(button('b'), 'ArrowRight');
     expect(onReorder).toHaveBeenLastCalledWith({ '': ['b', 'a', 'c'] });
     alt(button('b'), 'ArrowLeft');
@@ -128,26 +128,26 @@ describe('Alt+arrow reordering', () => {
 
   it('a vertical bar keeps Up as back under right-to-left', () => {
     const onReorder = vi.fn();
-    render(host(<div dir="rtl"><Bar schema={flat} orientation="vertical" onReorder={onReorder} /></div>));
+    render(host(<div dir="rtl"><PrefsBar schema={flat} orientation="vertical" onReorder={onReorder} /></div>));
     alt(button('b'), 'ArrowUp');
     expect(onReorder).toHaveBeenCalledWith({ '': ['b', 'a', 'c'] });
   });
 
   it('names its shortcuts on each unit, by orientation', () => {
-    const { rerender } = render(host(<Bar schema={flat} onReorder={() => {}} />));
+    const { rerender } = render(host(<PrefsBar schema={flat} onReorder={() => {}} />));
     expect(button('a')).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight');
-    rerender(host(<Bar schema={flat} orientation="vertical" onReorder={() => {}} />));
+    rerender(host(<PrefsBar schema={flat} orientation="vertical" onReorder={() => {}} />));
     expect(button('a')).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowUp Alt+ArrowDown');
   });
 
   it('names no shortcuts on a text-entry control, where Alt+arrows move by word', () => {
-    render(host(<Bar schema={withNumber} onReorder={() => {}} />));
+    render(host(<PrefsBar schema={withNumber} onReorder={() => {}} />));
     expect(screen.getByRole('spinbutton')).not.toHaveAttribute('aria-keyshortcuts');
     expect(button('a')).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight');
   });
 
   it('draws no announcer and no shortcuts without onReorder', () => {
-    render(host(<Bar schema={flat} />));
+    render(host(<PrefsBar schema={flat} />));
     expect(document.querySelector('[data-bar-announce]')).toBeNull();
     expect(button('a')).not.toHaveAttribute('aria-keyshortcuts');
   });
@@ -155,7 +155,7 @@ describe('Alt+arrow reordering', () => {
   it('keeps the place of a child nothing draws', () => {
     const schema: PrefGroup = { name: 'Tools', children: { a: act('a'), b: { ...act('b'), hidden: true } as PrefLeaf, c: act('c') } };
     const onReorder = vi.fn();
-    render(host(<Bar schema={schema} onReorder={onReorder} />));
+    render(host(<PrefsBar schema={schema} onReorder={onReorder} />));
     alt(button('a'), 'ArrowRight');
     expect(onReorder).toHaveBeenCalledWith({ '': ['b', 'c', 'a'] });
   });

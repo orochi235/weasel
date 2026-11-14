@@ -3,7 +3,7 @@ import { cleanup, screen } from '@testing-library/react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { afterEach, expect, it } from 'vitest';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 afterEach(cleanup);
@@ -42,7 +42,7 @@ it("draws ActionBar's strip, and a schema bar's, as ActionBar's own rule did", (
     <>
       <div data-testid="old" style={OLD_STRIP} />
       <ActionBar group="demo" />
-      <Bar schema={schema} label="Schema" framed="segmented" />
+      <PrefsBar schema={schema} label="Schema" framed="segmented" />
     </>,
   );
   const want = read(screen.getByTestId('old'));
@@ -58,8 +58,8 @@ it("draws ActionBar's strip, and a schema bar's, as ActionBar's own rule did", (
 it('sizes a segmented strip to its buttons, across a block host and down a column one', () => {
   renderWithIcons(
     <div style={{ inlineSize: 600 }}>
-      <Bar schema={schema} label="Row" framed="segmented" />
-      <Bar schema={schema} label="Column" framed="segmented" orientation="vertical" />
+      <PrefsBar schema={schema} label="Row" framed="segmented" />
+      <PrefsBar schema={schema} label="Column" framed="segmented" orientation="vertical" />
     </div>,
   );
   for (const name of ['Row', 'Column']) {

@@ -1,7 +1,7 @@
 import { copyText } from '@weasel-js/react';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { Callout } from '@weasel-js/ui/components/Callout';
 import { Icon } from '@weasel-js/ui/components/Icon';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { useId, useState } from 'react';
 import { icon } from '../icons.gen';
 import { useAnnotationsOptional } from './AnnotationsContext';
@@ -86,7 +86,7 @@ export function ExportMenu() {
 
   return (
     <span className="lk-export" ref={setAnchor}>
-      <Toolbar.Button
+      <Bar.Button
         iconOnly
         pressed={open}
         aria-label="Export"
@@ -94,7 +94,7 @@ export function ExportMenu() {
         onClick={() => setOpen((was) => !was)}
       >
         <Icon name={icon('ui:export')} size={16} />
-      </Toolbar.Button>
+      </Bar.Button>
       <Callout
         triggerRef={{ current: anchor }}
         isOpen={open}

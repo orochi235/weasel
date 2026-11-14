@@ -78,35 +78,34 @@ surface to the expanded trial so no other tile paints over it.
 ### A toolbar with undo/redo and a save button
 
 ```tsx
-import { Toolbar } from "@weasel-js/ui/components/Toolbar";
+import { Bar } from "@weasel-js/ui/components/Bar";
 
-<Toolbar aria-label="Trial actions" size="sm" framed>
-  <Toolbar.Title>My Trial</Toolbar.Title>
-  <Toolbar.Button onClick={onUndo} disabled={!canUndo}>
+<Bar label="My Trial" lead="label" roving size="sm" framed="band">
+  <Bar.Button onClick={onUndo} disabled={!canUndo}>
     Undo
-  </Toolbar.Button>
-  <Toolbar.Button onClick={onRedo} disabled={!canRedo}>
+  </Bar.Button>
+  <Bar.Button onClick={onRedo} disabled={!canRedo}>
     Redo
-  </Toolbar.Button>
-  <Toolbar.Spacer />
-  <Toolbar.Button onClick={onSave}>Save</Toolbar.Button>
-</Toolbar>;
+  </Bar.Button>
+  <Bar.Spacer />
+  <Bar.Button onClick={onSave}>Save</Bar.Button>
+</Bar>;
 ```
 
 ### A status bar with several readouts
 
 ```tsx
 import { FpsMeter } from "@weasel-js/labkit";
-import { StatusBar, StatusBarItem, StatusBarSpacer } from "@weasel-js/ui/components/StatusBar";
+import { Bar } from "@weasel-js/ui/components/Bar";
 
-<StatusBar divided>
-  <StatusBarItem>Items: {items.length}</StatusBarItem>
-  <StatusBarItem>Zoom: {Math.round(zoom * 100)}%</StatusBarItem>
-  <StatusBarSpacer />
-  <StatusBarItem>
+<Bar framed="status" divided>
+  <Bar.Readout>Items: {items.length}</Bar.Readout>
+  <Bar.Readout>Zoom: {Math.round(zoom * 100)}%</Bar.Readout>
+  <Bar.Spacer />
+  <Bar.Readout>
     <FpsMeter />
-  </StatusBarItem>
-</StatusBar>;
+  </Bar.Readout>
+</Bar>;
 ```
 
 ### A legend in a panel the user can move

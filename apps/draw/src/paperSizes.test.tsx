@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ActionsProvider, createScene } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { parseSvg } from '@weasel-js/svg';
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { loadDoc, DOC_KEY } from './docPersistence';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { FILE_NEW_MENU, useFileCommands } from './fileCommands';
@@ -24,7 +24,7 @@ const NEW_BAR = pref.group('', { new: FILE_NEW_MENU }, { as: 'bar' });
 
 describe('paper sizes', () => {
   it('labels the New menu from the table the document properties read', () => {
-    render(<ActionsProvider><FileCommands /><Bar schema={NEW_BAR} /></ActionsProvider>);
+    render(<ActionsProvider><FileCommands /><PrefsBar schema={NEW_BAR} /></ActionsProvider>);
     act(() => { fireEvent.click(screen.getByRole('button', { name: /New/ })); });
     const menu = screen.getAllByRole('menuitem').map((el) => el.textContent);
     expect(menu).toEqual(PAPER_SIZES.map((s) => s.label));

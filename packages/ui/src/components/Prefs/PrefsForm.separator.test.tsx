@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { Bar } from '../Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { PrefsForm } from './PrefsForm';
 
 afterEach(cleanup);
@@ -22,6 +22,6 @@ it('draws a separator leaf as a rule between the rows around it, selectable wher
 
 it('draws a separator leaf in a bar as an upright rule in a cell of its own, even at the bar\'s end', () => {
   const bar: PrefGroup = { name: 'View', as: 'bar', children: { snap: flag('Snap'), rule: separator } };
-  render(<Bar schema={bar} values={{}} onChange={() => {}} />);
+  render(<PrefsBar schema={bar} values={{}} onChange={() => {}} />);
   expect(screen.getByRole('separator')).toHaveAttribute('aria-orientation', 'vertical');
 });

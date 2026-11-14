@@ -8,7 +8,7 @@ import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, type AlongArc } from '@weasel-js/ui/components/Along';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
-import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
+import { PrefsBar, type PrefsBarProps } from '@weasel-js/ui/components/PrefsBar';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { icon } from '@weasel-js/ui/testing/icon';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
@@ -44,7 +44,7 @@ interface LensProps {
   top?: number;
   arc?: AlongArc;
   schema?: PrefGroup;
-  overflow?: BarProps['overflow'];
+  overflow?: PrefsBarProps['overflow'];
   slider?: boolean;
   underlay?: boolean;
   density?: 'compact';
@@ -60,7 +60,7 @@ function Lens({ size = 240, top = 40, arc = TOP, schema = SIX, overflow, slider 
       <div data-box data-wzl-density={density} style={{ position: 'relative', width: size, height: size, margin: `${top}px 40px 40px`, transform }}>
         {underlay && <button type="button" style={{ position: 'absolute', inset: 0 }}>Image</button>}
         <Along arc={arc}>
-          <Bar label="Lens" schema={schema} values={VALUES} overflow={overflow} />
+          <PrefsBar label="Lens" schema={schema} values={VALUES} overflow={overflow} />
         </Along>
         {slider && (
           <Along arc={BOTTOM}>

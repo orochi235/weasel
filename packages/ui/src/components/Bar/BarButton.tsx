@@ -1,7 +1,7 @@
 import type { MouseEventHandler, ReactNode } from 'react';
 import { Button } from '../Button';
 
-interface ToolbarButtonBase {
+interface BarButtonBase {
   children: ReactNode;
   onClick: MouseEventHandler<HTMLButtonElement>;
   disabled?: boolean;
@@ -21,16 +21,16 @@ interface ToolbarButtonBase {
   pressed?: boolean;
 }
 
-/** Props for {@link ToolbarButton}. `iconOnly` makes it square, for a button whose whole content is one glyph; having
+/** Props for {@link BarButton}. `iconOnly` makes it square, for a button whose whole content is one glyph; having
  *  no words of its own, it then needs a `title` or an `aria-label` to be named by. */
-export type ToolbarButtonProps = ToolbarButtonBase & (
+export type BarButtonProps = BarButtonBase & (
   | { iconOnly?: false }
   | { iconOnly: true; title: string }
   | { iconOnly: true; 'aria-label': string }
 );
 
-/** A ghost button at the toolbar's height, named by its `title` when it has no `aria-label`. */
-export function ToolbarButton(props: ToolbarButtonProps) {
+/** A ghost button at the bar's height, named by its `title` when it has no `aria-label`. */
+export function BarButton(props: BarButtonProps) {
   const { children, onClick, disabled, disabledReason, title, shortcut, 'aria-label': ariaLabel, grade, iconOnly, icon, pressed } = props;
   const name = ariaLabel ?? title;
   const common = { variant: 'ghost', onClick, disabled, disabledReason, grade, pressed, shortcut, tooltip: shortcut ? undefined : title } as const;

@@ -1,6 +1,6 @@
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { BarGroup } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { useContextMenu } from '@weasel-js/ui/components/ContextMenu';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { SchemaMenu, useAssetBinding } from './SchemaSurfaces';
 import { switchMenuId } from './surfaceSwitch';
 import { useSurfaces } from './surfaceState';
@@ -34,7 +34,7 @@ function CommandBarSurface({ asset, look }: { asset: SurfaceAsset; look: Command
   const openSwitch = useContextMenu(switchMenuId(asset.id));
   const { values, onChange } = useAssetBinding(asset);
   const bar = (
-    <Bar
+    <PrefsBar
       schema={asset.schema} values={values} onChange={onChange} renderers={asset.renderers?.bar}
       {...(look.label !== undefined ? { label: look.label } : {})}
       {...(look.segmented ? { framed: 'segmented' as const } : {})}
@@ -42,7 +42,7 @@ function CommandBarSurface({ asset, look }: { asset: SurfaceAsset; look: Command
   );
   return (
     <div className={s.contents} onContextMenu={openSwitch}>
-      {look.group ? <Toolbar.Group className="wd-commandbar-group">{bar}</Toolbar.Group> : bar}
+      {look.group ? <BarGroup className="wd-commandbar-group">{bar}</BarGroup> : bar}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactElement } from 'react';
 import type { Action } from '@weasel-js/core';
 import { f, meta, story } from '@weasel-js/forge';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { resolveLayout, ToolbarDock, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import { actionLeaf, LAB_ACTIONS, LabActions } from '../../Along/lab/labActions';
 import lab from '../../Along/lab/lab.stories.module.css';
@@ -41,15 +41,15 @@ function DockLab({ config }: { config: DockLabConfig }): ReactElement {
   const bars = useMemo<DockBar[]>(() => {
     const onChange = (path: string, value: unknown) => setValues((prev) => ({ ...prev, [path]: value }));
     return [
-      { id: 'text', label: 'Text', docks: ['top', 'bottom', 'left'], render: (o) => <Bar label="Text" lead="label" schema={TEXT} values={values} onChange={onChange} orientation={o} /> },
-      { id: 'tools', label: 'Tools', docks: ['left', 'top', 'right', 'bottom'], vertical: true, render: (o) => <Bar label="Tools" lead="label" schema={TOOLS} orientation={o} /> },
-      { id: 'view', label: 'View', docks: ['right', 'top', 'left', 'bottom'], vertical: true, float: true, render: (o) => <Bar label="View" lead="label" schema={VIEW} orientation={o} /> },
+      { id: 'text', label: 'Text', docks: ['top', 'bottom', 'left'], render: (o) => <PrefsBar label="Text" lead="label" schema={TEXT} values={values} onChange={onChange} orientation={o} /> },
+      { id: 'tools', label: 'Tools', docks: ['left', 'top', 'right', 'bottom'], vertical: true, render: (o) => <PrefsBar label="Tools" lead="label" schema={TOOLS} orientation={o} /> },
+      { id: 'view', label: 'View', docks: ['right', 'top', 'left', 'bottom'], vertical: true, float: true, render: (o) => <PrefsBar label="View" lead="label" schema={VIEW} orientation={o} /> },
       {
         id: 'arrange',
         label: 'Arrange',
         docks: ['top', 'bottom', 'left', 'right'],
         vertical: true,
-        render: (o) => <Bar label="Arrange" lead="label" schema={ARRANGE_BAR} order={order} onReorder={setOrder} orientation={o} />,
+        render: (o) => <PrefsBar label="Arrange" lead="label" schema={ARRANGE_BAR} order={order} onReorder={setOrder} orientation={o} />,
       },
     ];
   }, [values, order]);

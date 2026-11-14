@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect, within } from '@weasel-js/forge/play';
 import { LabShell } from '@weasel-js/labkit';
+import { Bar } from '@weasel-js/ui/components/Bar';
 import { Select } from '@weasel-js/ui/components/Select';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 
 const meta: Meta<typeof LabShell> = {
   title: 'labkit/Lab/LabShell',
@@ -64,11 +64,11 @@ export const HeaderControlsLineUp: Story = {
           selectedKey="oswald"
           options={[{ value: 'oswald', label: 'Oswald' }]}
         />
-        <Toolbar aria-label="Actions">
-          <Toolbar.Group>
-            <Toolbar.Button onClick={() => {}}>Undo</Toolbar.Button>
-          </Toolbar.Group>
-        </Toolbar>
+        <Bar label="Actions" roving>
+          <Bar.Group>
+            <Bar.Button onClick={() => {}}>Undo</Bar.Button>
+          </Bar.Group>
+        </Bar>
       </>
     ),
     children: <p>Body content.</p>,

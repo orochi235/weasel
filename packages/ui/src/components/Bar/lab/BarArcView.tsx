@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState, type CSSProperties, type ReactE
 import { arcShape, type Point } from '@weasel-js/geom';
 import { rowRun } from '../../Along/rowRun';
 import { Along, arcInBox } from '@weasel-js/ui/components/Along';
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { LabActions } from '../../Along/lab/labActions';
 import { Presets } from '../../Along/lab/Presets';
 import { num, Readouts, type Readout } from '../../Along/lab/Readouts';
@@ -67,7 +67,7 @@ export function BarArcView({ config, onPreset }: { config: BarArcConfig; onPrese
             <h3 className={lab.sectionTitle}>Along the arc</h3>
             <div ref={root} className={config.debug.boxes ? `${s.box} ${lab.boxes}` : s.box} data-lab-box>
               <Along arc={arc} align={config.layout.align}>
-                <Bar
+                <PrefsBar
                   label="Lens"
                   schema={schema}
                   values={values}

@@ -1,7 +1,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { BarLayout, type BarOrientation } from '../Bar';
+import { Bar, type BarOrientation } from '../Bar';
+import { barNodeChildren } from '../PrefsBar';
 import { ToolbarDock } from './ToolbarDock';
 import { useDockHandle } from './dockContext';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
@@ -65,13 +66,13 @@ function bar(id: string, extra: Partial<DockBar> = {}): DockBar {
     docks: ['top', 'bottom'],
     float: true,
     render: (orientation: BarOrientation) => (
-      <BarLayout
+      <Bar
         label={label}
         lead="label"
         orientation={orientation}
-        nodes={[{ kind: 'cell', path: `${id}.go`, content: <button type="button" onClick={() => ran(id)}>{`${label} go`}</button> }]}
-        cells={() => []}
-      />
+      >
+        {barNodeChildren([{ kind: 'cell', path: `${id}.go`, content: <button type="button" onClick={() => ran(id)}>{`${label} go`}</button> }], { cells: () => [] })}
+      </Bar>
     ),
     ...extra,
   };
@@ -341,7 +342,7 @@ describe('a bar that moves', () => {
   function Draft({ orientation }: { orientation: BarOrientation }) {
     const [text, setText] = useState('');
     const field = <input aria-label="File draft" value={text} onChange={(e) => setText(e.target.value)} />;
-    return <BarLayout label="File" lead="label" orientation={orientation} nodes={[{ kind: 'cell', path: 'file.draft', content: field }]} cells={() => []} />;
+    return <Bar label="File" lead="label" orientation={orientation}>{barNodeChildren([{ kind: 'cell', path: 'file.draft', content: field }], { cells: () => [] })}</Bar>;
   }
   const drafted: DockBar = { ...bar('file'), render: (o) => <Draft orientation={o} /> };
   function Drafting({ initial }: { initial: ToolbarLayout }) {

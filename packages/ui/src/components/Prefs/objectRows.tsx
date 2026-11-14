@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import { isPrefLeaf, prefSectionPath, prefTabRuns, type PrefLeaf, type PrefObject, type PrefSection } from '@weasel-js/prefs';
-import { BarLayout, type BarNode } from '../Bar/BarLayout';
+import { Bar } from '../Bar/Bar';
+import { barNodeChildren, type BarNode } from '../PrefsBar/barNodes';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { GroupTabs, type GroupTab } from './GroupTabs';
 
@@ -111,8 +112,9 @@ export function objectRows<Cell>(children: PrefObject['children'], parts: Object
     flush();
     if (drawn.kind === 'bar') {
       out.push(
-        <BarLayout key={`bar:${drawn.key}`} framed label={drawn.section.name === '' ? undefined : drawn.section.name} overflow={drawn.section.overflow} lead={drawn.section.lead} icon={drawn.section.icon} disabled={drawn.off}
-          nodes={drawn.nodes} cells={() => []} attrs={parts.barAttrs} />,
+        <Bar key={`bar:${drawn.key}`} framed label={drawn.section.name === '' ? undefined : drawn.section.name} overflow={drawn.section.overflow} lead={drawn.section.lead} icon={drawn.section.icon} disabled={drawn.off}>
+          {barNodeChildren(drawn.nodes, { cells: () => [], attrs: parts.barAttrs })}
+        </Bar>,
       );
     } else if (drawn.kind === 'frame') {
       out.push(...parts.frame(drawn.key, drawn.section, drawn.inner, { labeled: drawn.labeled, indent, path: drawn.path }));

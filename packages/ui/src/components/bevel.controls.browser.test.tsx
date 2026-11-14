@@ -8,7 +8,7 @@ import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { ToolButton } from '@weasel-js/ui/components/ToolButton';
 import bar from './Bar/Bar.module.css';
 import slider from './Slider/Slider.module.css';
-import options from './ToolOptionsBar/ToolOptionsBar.module.css';
+import frames from './Bar/barFrames.module.css';
 import rail from './ToolRail/ToolRail.module.css';
 
 // The marks, fields, buttons, and overlays are pinned in bevel.browser.test.tsx. These are the
@@ -162,14 +162,14 @@ describe('a toolbar', () => {
       <div className={bar.segmented} data-testid="actions" />
       <div className={`${bar.bar} ${bar.framed}`} data-testid="framed" />
       <div className={bar.bar} data-testid="bare" />
-      <div className={options.root} data-testid="options" />
+      <div className={`${bar.bar} ${frames.band}`} data-testid="band" />
       <ToolButton icon={null} label="Held" active onClick={() => {}} />
       <ToolButton icon={null} label="Up" onClick={() => {}} />
       <button type="button" className={bar.action} aria-pressed="true">Down</button>
       <button type="button" className={bar.action}>Rest</button>
     </>
   );
-  const STRIPS = ['palette', 'actions', 'framed', 'options'];
+  const STRIPS = ['palette', 'actions', 'framed', 'band'];
 
   test('with no hook set draws no shadow', () => {
     render(<Scope>{strips}</Scope>);

@@ -1,267 +1,112 @@
 import type { ReactNode } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
-import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefLeafValue, prefReader, prefValueAtPath, createRecordSource, createValuesSource, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefOrder, type PrefSection } from '@weasel-js/prefs';
-import type { LiveControl } from '../Prefs/commitPolicy';
-import { entryApplier, type EntryAt } from '../Prefs/entry';
-import { useParamsPolicy } from '../Prefs/useParamsPolicy';
-import { paneChildren } from '../Prefs/PrefsPane';
-import type { WalkCtx } from '../Prefs/PrefsRow';
-import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
-import { PropertyList } from '../Properties/PropertyList';
-import { PropertyRow } from '../Properties/PropertyRow';
-import { pairRows } from '../SelectionPanel/model';
-import { renderCells, type LeafCell } from '../SelectionPanel/cells';
-import type { LeafContext, LeafRenderer } from '../SelectionPanel/renderContext';
-import { renderBuiltin } from '../SelectionPanel/renderLeaf';
-import { barLeafName, BarLayout, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode, type BarOrientation, type BarOverflowMode } from './BarLayout';
-import { childKeysAt } from './barOrder';
-import { withBarLabel, type LeafSurface } from './renderBarLeaf';
-import type { DensityProps } from '../Density';
+import type { PrefBarLead, PrefBarOverflow, PrefOrder } from '@weasel-js/prefs';
+import { BarAlong } from './BarAlong';
+import { dividedItems, lineItems } from './barItems';
+import { BarMarkContext } from './barOrder';
+import { BarLine } from './BarLine';
+import { BarButton } from './BarButton';
+import { BarDivider, BarGroup, BarItem, BarReadout, BarSpacer } from './barParts';
+import { useRun, type Orientation } from '../Run';
+import { useDensity, withDensity, type DensityProps } from '../Density';
+
+/** Which way a bar runs. */
+export type BarOrientation = Orientation;
+
+/** What a bar does with cells its line has no room for. */
+export type BarOverflowMode = PrefBarOverflow;
 
 /** Props for {@link Bar}. */
 export interface BarProps extends DensityProps {
-  /**
-   * What the bar holds, as a `PrefGroup`: a group's key is a segment of its
-   * leaves' paths. A leaf is a cell. A nested `section` or `bar` is a run
-   * between dividers, and a nested `page`, `tab`, or `panel` opens from a
-   * button.
-   */
-  schema: PrefGroup;
-  /** Each leaf's value, keyed by dotted path. A path with no entry shows its leaf's default, as a params surface does. */
-  values?: Readonly<Record<string, unknown>>;
-  /** A leaf edit, as the dotted path it was declared at and its new value. */
-  onChange?: (path: string, value: unknown) => void;
-  /** Paths whose sources disagree, drawn as the control's mixed state. */
-  mixed?: ReadonlySet<string>;
-  /** Control overrides, by dotted path or by leaf kind. */
-  renderers?: Record<string, LeafRenderer>;
-  /** The schema this one's `alias` leaves point into. Default: this schema itself. A bar drawn from a schema of
-   *  aliases into another passes that other: each alias is drawn as the leaf of it at the alias's path, reads and
-   *  writes `values` at that path, and is hidden and disabled by that leaf's conditions as well as its own. A
-   *  condition of this schema's own may read a setting of that one too: a path no leaf here holds is compared as
-   *  the leaf of that schema there shows it: its entry in `values`, else its default. */
-  over?: PrefGroup | PrefSection;
-  /** Which way the bar runs. A vertical bar has no room beside a field, so
-   *  every leaf but an action opens from a button. Default: the way the run it sits in goes, else `'horizontal'`. */
+  /** What the bar holds, in order: any controls, and `Bar.Group`s, `Bar.Spacer`s, `Bar.Divider`s, `Bar.Item`s, and
+   *  `Bar.Readout`s. Each child is one cell on the line. */
+  children?: ReactNode;
+  /** Which way the bar runs. Default: the way the run it sits in goes, else `'horizontal'`. */
   orientation?: BarOrientation;
-  /** Names the bar and makes it a `toolbar`. Leave unset inside one. */
+  /** Names the bar, and makes it a `toolbar`. Leave unset inside one. */
   label?: string;
-  /** What the line starts with: `'label'` shows `label` ahead of the cells. Default: what `schema` says in its
-   *  own `lead`, else nothing. `'icon'` shows `icon`. */
+  /** What the line starts with: `'label'` shows `label` ahead of the cells, and `'icon'` shows `icon`. Unset: the
+   *  first cell. Inside a movable `ToolbarDock` the lead is the bar's handle. */
   lead?: PrefBarLead;
-  /** The glyph `lead: 'icon'` starts the line with. Default: `schema`'s own `icon`. */
+  /** The glyph naming the bar, which `lead: 'icon'` starts its line with. */
   icon?: IconSpec;
-  /** Draw the strip the bar sits on. Unset, the host's strip is under it. `'segmented'` is a compact strip
-   *  whose buttons sit almost touching, so a run of actions reads as one control. */
-  framed?: boolean | 'segmented';
-  /** What happens to cells the line has no room for: `'scroll'` keeps them all on it, and `'menu'` opens the
-   *  ones past its end from a button there. A `'menu'` bar asks for its natural length, its lead and every cell,
-   *  sits at that length in a row sized to its content, folds cells into the menu only once squeezed shorter,
-   *  and takes them back as room returns; it does not stretch to fill its host. Default: what `schema` says in
-   *  its own `overflow`, else `'scroll'`. */
+  /** The bar's group is disabled, and its lead dims as a heading's name does. The cells say so for themselves. */
+  disabled?: boolean;
+  /**
+   * Draw the strip the bar sits on, for a bar with no strip of the host's under it. `true` is a bordered strip set
+   * among other things; `'segmented'` a compact one with the cells almost touching; `'band'` a strip the width of
+   * its host, ruled off below, as a toolbar along a window's top; and `'status'` the readout strip along an editor's
+   * foot, in a numeric face and ruled off above. A status strip is a `<footer>`, not a toolbar: its readouts change on
+   * every pointer move, so it is no live region either.
+   */
+  framed?: boolean | 'segmented' | 'band' | 'status';
+  /** A divider between every two neighboring cells, none beside a spacer. */
+  divided?: boolean;
+  /** Arrow keys move focus between the buttons on the bar, leaving one in the tab order. Off by default: a bar of
+   *  number boxes and selects has to leave the arrow keys to them. */
+  roving?: boolean;
+  /** Lets the cells run onto a second line rather than overflow. */
+  wrap?: boolean;
+  /** Every `FitLabel` on the line shortens together, a step at a time, before the strip scrolls. */
+  fit?: boolean;
+  /**
+   * What happens to cells the line has no room for. `'scroll'` keeps every cell on the line, which a framed bar
+   * scrolls. `'menu'` keeps the cells that fit, in order from the first, and opens the rest from a button at the end
+   * of the line, one under another in the forms they have on it. A bar set to `'menu'` asks for its natural length,
+   * its lead and every cell, and sits at that length in a row sized to its content; it folds cells into the menu only
+   * once squeezed shorter, and takes them back as room returns. It does not stretch to fill its host. Default
+   * `'scroll'`.
+   */
   overflow?: BarOverflowMode;
   /** What the button that opens the rest is called. Default `'More'`. */
   overflowLabel?: string;
-  /** The order to draw in: each group's child keys, and each `actions` leaf's action keys, by container path (`''` is
-   *  the top level). A key it leaves out takes its schema position, an action it leaves out goes at its run's end,
-   *  and an unknown key is dropped. */
+  /** The order the cells are drawn in, by container (`''` is the top level), which a reorder starts from. */
   order?: PrefOrder;
-  /** Given, the bar marks its items and the buttons of its `actions` runs with `data-bar-unit` and `data-bar-in`, for
-   *  a reorder gesture to move; it is called with the order that gesture settles on. */
+  /** Given, each keyed child and each `Bar.Item` with an `in` is marked with `data-bar-unit` and `data-bar-in`, and a
+   *  Cmd-drag (Ctrl-drag off Apple platforms) moves one among its container's, calling this with the order it
+   *  settles on. */
   onReorder?: (order: PrefOrder) => void;
+  /** Every child key of a container, cells the bar does not draw included, so a reorder keeps their places. Unset,
+   *  or undefined for a path, the drawn units are the whole list. */
+  keysOf?: (container: string) => readonly string[] | undefined;
+  /** Attributes for the bar's own element. */
+  rootAttrs?: Record<string, string | undefined>;
   className?: string;
 }
 
 /**
- * A toolbar drawn from a schema: fields in their bar forms, actions as
- * buttons, in the order the group lists them. It has no frame of its own;
- * the host gives it the strip it sits on.
+ * A run of controls on one line, across or down. Each child is a cell; a `Bar.Group` holds related ones tight and
+ * divided from their neighbors, and a `Bar.Spacer` pushes what follows to the far end. Named by `label`, it is a
+ * `toolbar`; its focus keeps plain tab order unless it `roving`. It draws no strip of its own unless `framed`.
  *
- * Inside a curved `Along` each item is centered on its spot and tipped to it, every leaf but an action opens from a
- * button, and `'menu'` puts the More button at the run's far end; `'scroll'` keeps an offset along the run, moved by
- * wheel, drag or focus, and clips the run at the shape's ends.
+ * Inside a curved `Along` each cell is centered on its spot and tipped to it, and `'menu'` puts the More button at
+ * the run's far end; `'scroll'` keeps an offset along the run, moved by wheel, drag, or focus, and clips the run at
+ * the shape's ends. Inside a movable `ToolbarDock` its lead is the handle that moves it.
+ *
+ * `size="sm"` is the compact strip, for chrome around a working surface rather than a page's own strip: the buttons
+ * inside draw at `sm`, and the control height drops with them, so a slider or a number box keeps step.
  */
 export function Bar(props: BarProps) {
-  const { schema, values, onChange, mixed, renderers, orientation, label, framed, className } = props;
-  const fields = prefFieldChoices(schema);
-  const read = barReader(schema, values, props.over);
-  const over = props.over ?? schema;
-  const targets = prefAliasTargets(over, (entry) => prefJudge(over, read, entry));
-  const judge = (entry?: PrefEntry) => prefJudge(schema, read, entry, props.over);
-  const { shown, disabled, active } = applyPrefConditions(schema, judge(), { aliasOver: over, aliasHolds: targets.holds });
-  const entryAt = entryApplier(judge);
-  const { settles, textWaitMs } = useParamsPolicy('panel');
-  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, active, entryAt, targets, settles, textWaitMs };
-  return (
-    <BarLayout
-      nodes={shown === null ? [] : shownBarNodes(groupBarNodes(orderPrefGroup(shown, props.order), '', (group, path) => <GroupBody draw={draw} group={group} path={path} />, { values: read, onChange, over: props.over && 'children' in props.over ? props.over : schema }), (node) => shownNode(node, draw))}
-      orientation={orientation}
-      label={label}
-      lead={props.lead ?? schema.lead}
-      icon={props.icon ?? schema.icon}
-      framed={framed}
-      size={props.size}
-      overflow={props.overflow ?? schema.overflow}
-      overflowLabel={props.overflowLabel}
-      order={props.order}
-      onReorder={props.onReorder}
-      keysOf={(container) => childKeysAt(orderPrefGroup(schema, props.order), container)}
-      className={className}
-      cells={(leaves) => barCells(leaves, draw)}
-    />
-  );
+  const run = useRun();
+  const sm = useDensity(props.size) === 'sm';
+  const read = lineItems(props.children, props.onReorder !== undefined);
+  const items = props.divided ? dividedItems(read) : read;
+  const bar = run.shape !== undefined && run.shape.kind !== 'line'
+    ? <BarAlong {...props} items={items} sm={sm} shape={run.shape} align={run.align ?? 'center'} />
+    : <BarLine {...props} items={items} sm={sm} orientation={props.orientation ?? run.orientation} />;
+  return <BarMarkContext.Provider value={props.onReorder !== undefined}>{withDensity(props.size, bar)}</BarMarkContext.Provider>;
 }
 
-interface Draw {
-  values: Readonly<Record<string, unknown>> | undefined;
-  mixed: ReadonlySet<string> | undefined;
-  renderers: Record<string, LeafRenderer> | undefined;
-  onChange: ((path: string, value: unknown) => void) | undefined;
-  fields: readonly PrefFieldChoice[];
-  /** Paths of the leaves and fields a failed `enableIf` disables. */
-  disabled: ReadonlySet<string>;
-  /** Paths of the actions whose `activeIf` holds. */
-  active: ReadonlySet<string>;
-  /** Answers the conditions that read an entry of a list or a map, for that entry. */
-  entryAt: EntryAt;
-  /** The schema the bar's aliases point into, as its conditions leave it: what an alias is drawn from. */
-  targets: PrefAliasTargets;
-  settles: Readonly<Record<LiveControl, boolean>>;
-  textWaitMs: number;
-}
+/** Related controls, kept tight and divided from their neighbors. */
+Bar.Group = BarGroup;
+/** Flexible space that pushes what follows to the far end. */
+Bar.Spacer = BarSpacer;
+/** A rule between what is either side of it. */
+Bar.Divider = BarDivider;
+/** A cell under a key of its own. */
+Bar.Item = BarItem;
+/** A status strip's words. */
+Bar.Readout = BarReadout;
+/** A ghost button at the bar's height. */
+Bar.Button = BarButton;
 
-/** `node` as the bar draws it: an alias as the leaf it shows, unless a renderer of the kind draws aliases itself. */
-function shownNode(node: BarLeafNode, draw: Draw): BarLeafNode {
-  if (node.leaf.kind !== 'alias' || draw.renderers?.alias) return node;
-  const shown = draw.targets.shown(node.leaf as PrefAlias);
-  return shown ? { path: node.path, at: shown.path, leaf: shown.leaf } : node;
-}
-
-/** The value a condition reads at `path`: the entry there, else the part of an entry above it that the rest of the path names. */
-export function valueAt(values: Readonly<Record<string, unknown>> | undefined, path: string): unknown {
-  if (values === undefined || Object.hasOwn(values, path)) return values?.[path];
-  for (let dot = path.lastIndexOf('.'); dot > 0; dot = path.lastIndexOf('.', dot - 1)) {
-    const head = path.slice(0, dot);
-    if (Object.hasOwn(values, head)) return prefValueAtPath(values[head], path.slice(dot + 1));
-  }
-  return undefined;
-}
-
-/** What a bar over `schema` shows at `path`, as its conditions read it: the entry there ({@link valueAt}), else
- *  the default of the leaf of `schema` there, or of `over` where `schema` has none. */
-export function barReader(
-  schema: PrefGroup, values: Readonly<Record<string, unknown>> | undefined, over?: PrefGroup | PrefSection,
-): (path: string) => unknown {
-  const defaults = prefReader(schema, undefined, over);
-  return (path) => {
-    const held = valueAt(values, path);
-    return held === undefined ? defaults(path) : held;
-  };
-}
-
-/** Neighboring leaves as cells, a run of paired flags fused into one. */
-function barCells(leaves: readonly BarLeafNode[], draw: Draw): BarCell[] {
-  return pairRows(leaves).flatMap((row) => {
-    // The bar draws no row label, so a control carries its own name rather than
-    // the panel's qualified "<pair> <leaf>" — the run's bar carries the pair.
-    const cells = row.leaves.map((node) => ({
-      ...leafCell(node, 'bar', draw),
-      ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
-    }));
-    return renderCells(cells, draw.renderers).map((cell) => ({ path: cell.key, content: cell.content }));
-  });
-}
-
-function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, draw: Draw): LeafCell {
-  const { values, mixed, renderers, onChange, fields } = draw;
-  const path = at ?? own;
-  const isMixed = mixed?.has(path) === true;
-  const shown = isMixed ? undefined : prefLeafValue(leaf, values?.[path]);
-  const ctx: LeafContext = {
-    path,
-    pref: leaf,
-    value: shown,
-    mixed: isMixed,
-    unset: !isMixed && shown === undefined,
-    each: isMixed ? [] : [shown],
-    setValue: (v) => onChange?.(path, v),
-    // One set of values, so there is one prior value to derive from.
-    update: (fn) => onChange?.(path, fn(shown)),
-    source: createRecordSource({ [path]: leaf }, values, onChange, { mixed }),
-    setAuto: () => {},
-    fields,
-    disabled: draw.disabled.has(own),
-    // The cell answers by the bar's own schema, at its own path; what is inside an alias's by its target's.
-    disabledAt: at === undefined ? (under) => draw.disabled.has(under) : draw.targets.disabledAt,
-    ...(draw.active.has(own) ? { active: true } : {}),
-    entryAt: at === undefined ? draw.entryAt : draw.targets.entryAt,
-    settles: draw.settles,
-    textWaitMs: draw.textWaitMs,
-  };
-  return {
-    key: own,
-    leaf,
-    ctx,
-    ariaLabel: leaf.name,
-    render: () => {
-      const custom = renderers?.[own] ?? renderers?.[leaf.kind];
-      if (!custom) return renderBuiltin(ctx, leaf.name, renderers, { selectionKey: own, surface });
-      return surface === 'bar' ? withBarLabel(leaf, custom(ctx)) : custom(ctx);
-    },
-  };
-}
-
-/** A leaf as a labeled row, as a popover holds it. */
-function leafRow(node: BarLeafNode, draw: Draw): ReactNode {
-  const control = leafCell(node, 'row', draw).render();
-  if (control == null) return null;
-  const { leaf, path } = node;
-  if (leaf.block) return <div key={path}>{control}</div>;
-  return (
-    <PropertyRow key={path} label={barLeafName(leaf)} description={leaf.description} group disabled={draw.disabled.has(path)} disabledReason={leaf.disabledReason}>
-      {control}
-    </PropertyRow>
-  );
-}
-
-/** `values`, each entry nested at its dotted path: a form's value tree. A deeper entry is written over a shallower one. */
-function nested(values: Readonly<Record<string, unknown>> | undefined): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const path of Object.keys(values ?? {}).sort((a, b) => a.split('.').length - b.split('.').length)) {
-    const segments = path.split('.');
-    let at = out;
-    for (const segment of segments.slice(0, -1)) {
-      const next = at[segment];
-      at = (at[segment] = next !== null && typeof next === 'object' ? { ...(next as Record<string, unknown>) } : {}) as Record<string, unknown>;
-    }
-    at[segments.at(-1)!] = values![path];
-  }
-  return out;
-}
-
-const ignore = (): void => {};
-
-/** A group a bar opens from a button: its nested groups as a form's pane draws them, and its leaves as the bar's rows. */
-function GroupBody({ draw, group, path }: { draw: Draw; group: PrefGroup; path: string }): ReactNode {
-  const values = nested(draw.values);
-  const onChange = draw.onChange ?? ignore;
-  const ctx: WalkCtx = {
-    // The bar draws its own leaves: the source answers only what the pane's groups ask of it.
-    source: createValuesSource(group, () => values, onChange, { mixed: draw.mixed }),
-    values,
-    onChange,
-    mixed: draw.mixed,
-    fields: draw.fields,
-    targets: draw.targets,
-    disabled: draw.disabled,
-    active: draw.active,
-    entryAt: draw.entryAt,
-    settles: draw.settles,
-    textWaitMs: draw.textWaitMs,
-    leaves: {
-      row: (node) => (node.leaf.hidden === true ? null : leafRow(shownNode(node, draw), draw)),
-      cells: (leaves) => barCells(leaves, draw),
-    },
-  };
-  return <PropertyList>{paneChildren(ctx, Object.entries(group.children), path, 1)}</PropertyList>;
-}

@@ -11,7 +11,7 @@
 import type { ReactNode } from 'react';
 import { pref } from '@weasel-js/prefs';
 import { Bar } from '@weasel-js/ui/components/Bar';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { DEBUG_MENU } from './dev/devRoutes';
 import { CommandSlot } from './surfaces/CommandSurfaces';
 
@@ -27,7 +27,7 @@ const DEBUG_BAR = pref.group('', { debug: DEBUG_MENU }, { as: 'bar' });
 
 export function CommandBar(p: CommandBarProps) {
   return (
-    <Toolbar className="wd-commandbar" aria-label="Actions" roving={false} wrap>
+    <Bar className="wd-commandbar" label="Actions" wrap>
       {p.menus}
       <CommandSlot id="file" group />
       <Run id="undo" group="history" />
@@ -39,12 +39,12 @@ export function CommandBar(p: CommandBarProps) {
       <CommandSlot id="corners" group />
       <Run id="text" group="text" />
       <Run id="compound" group="compound" />
-      <Toolbar.Spacer />
+      <Bar.Spacer />
       <Run id="record" group="record" />
-      <Toolbar.Group className="wd-commandbar-group">
-        <Bar schema={DEBUG_BAR} />
-      </Toolbar.Group>
+      <Bar.Group className="wd-commandbar-group">
+        <PrefsBar schema={DEBUG_BAR} />
+      </Bar.Group>
       <Run id="app" group="app" />
-    </Toolbar>
+    </Bar>
   );
 }

@@ -8,7 +8,7 @@
 }
 
 /* The palette sits in the row as one of its groups, not as a framed panel of its own. */
-.wc-toolbar > [role="group"] > [role="toolbar"] {
+.wc-toolbar [role="group"] > [role="toolbar"] {
   padding: 0;
   background: none;
   border: none;
