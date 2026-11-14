@@ -2299,3 +2299,15 @@ Calls the lanes made without a ruling:
   arrow keys and a double-click reset) and the command palette's `/` key. Neither is a demo, and the shell mounts no
   dispatcher; running each through one would mean an actions registry, a dep registry and a dispatcher for one
   affordance.
+
+## Audit round twenty-four (2026-11-14): renames and removals
+
+- 2026-11-14 (the lane's call): saved data under a renamed kind is read where it is read, not rewritten on load:
+  `pathEffectOf` reads a `blend` effect as `tween`, and `heldPathWarpOf` reads `distort`, `envelope` and `puppet`
+  warps as `plane`, `cloth` and `pin`, each through one cached copy per record, so every consumer's load path, a
+  history snapshot and a clipboard payload are covered without a scene-format version. The next edit writes the new
+  kind. Scene data stays unmigrated until then.
+- 2026-11-14 (the lane's call): draw's prefs version 6 carries the renamed path tools' options and the last-used tool
+  to their new ids, and Corner shape's `ui.surfaces` entry to `fillets`, rather than letting them start from
+  defaults as the Knead changeset allows. The site's renamed lab routes (`lab-envelope` to `lab-cloth-warp` and the
+  rest) get no redirects: the site has no redirect mechanism and its labs keep no stored trials.
