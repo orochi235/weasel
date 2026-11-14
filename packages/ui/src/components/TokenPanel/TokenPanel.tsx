@@ -1,19 +1,14 @@
 import { type CSSProperties, memo, useCallback, useMemo, useState } from 'react';
 import { Focusable } from '../Tooltip/Focusable';
 import { DisclosureRow } from '../Disclosure';
-import { Input } from '../Input';
-import { NumberField } from '../NumberField';
-import { Select } from '../Select';
+import { holdScope, useControlAccess, type HoldProps } from '../Disabled';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
-import { toHex } from './color';
 import { Reset, shortName, stepLabels, tipOf } from './parts';
 import { Scale } from './Scale';
+import { TokenControl } from './TokenControl';
 import s from './TokenPanel.module.css';
 import {
-  bezierPoints,
-  NUMBER_FORMAT,
   type OnTokenChange as OnChange,
-  shownAlike,
   splitUnit,
   TOKEN_CATEGORIES,
   type TokenCategory,
@@ -22,9 +17,9 @@ import {
   tokenCategory,
 } from './tokenTypes';
 
-
-/** Props for `<TokenPanel>`. */
-export interface TokenPanelProps {
+/** Props for `<TokenPanel>`. Disabled or read-only, by its own props or a scope, every control in it is held, and
+ *  nothing reaches `onChange` or `onScaleChange`; sections still fold, and a swatch still picks the step it shows. */
+export interface TokenPanelProps extends HoldProps {
   tokens: readonly TokenEntry[];
   /** A token's new value, or null to drop its override. Keep it stable: rows re-render only when it or their token changes. */
   onChange: OnChange;
@@ -43,8 +38,6 @@ export interface TokenPanelProps {
   namePrefix?: string;
   className?: string;
 }
-
-const WEIGHTS = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
 
 type FamilyKind = 'family' | 'scale';
 type Item = { kind: 'row'; token: TokenEntry } | { kind: FamilyKind; group: string; tokens: TokenEntry[] };
@@ -109,80 +102,6 @@ function rowRuns(items: readonly Item[], prefix: string): Map<string, RunLabel> 
   }
   flush();
   return out;
-}
-
-function Curve({ points, label }: { points: readonly [number, number, number, number]; label: string }) {
-  const [x1, y1, x2, y2] = points;
-  // y is flipped so the curve rises, and the box grows to hold an overshoot.
-  const top = Math.min(0, 1 - y1, 1 - y2);
-  const bottom = Math.max(1, 1 - y1, 1 - y2);
-  return (
-    <svg className={s.curve} viewBox={`-0.1 ${top - 0.1} 1.2 ${bottom - top + 0.2}`} role="img" aria-label={label}>
-      <path d={`M0 1 C${x1} ${1 - y1} ${x2} ${1 - y2} 1 0`} fill="none" stroke="currentColor" strokeWidth={0.08} />
-    </svg>
-  );
-}
-
-function TokenControl({ token, set }: { token: TokenEntry; set: (value: string) => void }) {
-  const { name, type, value } = token;
-  const label = `${name} value`;
-  const hex = useMemo(() => (type === 'color' ? toHex(value) : null), [type, value]);
-
-  if (type === 'dimension' || type === 'duration' || type === 'number') {
-    const split = splitUnit(value);
-    if (split) {
-      return (
-        <>
-          <NumberField
-            className={s.number}
-            aria-label={label}
-            value={split.amount}
-            hideSteppers
-            formatOptions={NUMBER_FORMAT}
-            onChange={(amount) => {
-              if (Number.isFinite(amount) && !shownAlike(amount, split.amount)) set(`${amount}${split.unit}`);
-            }}
-          />
-          {split.unit ? <span className={s.unit}>{split.unit}</span> : null}
-        </>
-      );
-    }
-  }
-
-  if (type === 'fontWeight') {
-    const options = (WEIGHTS.includes(value) ? WEIGHTS : [...WEIGHTS, value]).map((weight) => ({
-      value: weight,
-      label: weight,
-    }));
-    return <Select aria-label={name} width="fit" selectedKey={value} options={options} onSelectionChange={set} />;
-  }
-
-  const points = type === 'cubicBezier' ? bezierPoints(value) : null;
-  return (
-    <>
-      {points ? <Curve points={points} label={`${name} curve`} /> : null}
-      <Input
-        className={s.field}
-        aria-label={label}
-        value={value}
-        placeholder="unset"
-        onChange={set}
-        leadingAdornment={
-          type !== 'color' ? undefined : hex ? (
-            <input
-              type="color"
-              className={s.swatchInput}
-              aria-label={`${name} color`}
-              value={hex}
-              onChange={(event) => set(event.target.value)}
-            />
-          ) : (
-            <span className={s.chip} style={{ '--token-color': value } as CSSProperties} aria-hidden="true" />
-          )
-        }
-      />
-    </>
-  );
 }
 
 const TokenRow = memo(
@@ -372,7 +291,11 @@ function Section({
  * for a font weight, a curve beside a `cubic-bezier()`, a swatch beside a color,
  * and text for everything else.
  */
-export function TokenPanel({
+export function TokenPanel(props: TokenPanelProps) {
+  return holdScope(props, <HeldTokenPanel {...props} />);
+}
+
+function HeldTokenPanel({
   tokens,
   onChange,
   collapsed,
@@ -394,9 +317,16 @@ export function TokenPanel({
     }
     return sections;
   }, [tokens, categorize]);
+  const access = useControlAccess();
+  const held = access.state !== 'enabled';
+  const change = useCallback<OnChange>((name, value) => { if (!held) onChange(name, value); }, [held, onChange]);
+  const scaleChange = useMemo(
+    () => onScaleChange && ((group: string, scale: TokenScale) => { if (!held) onScaleChange(group, scale); }),
+    [held, onScaleChange],
+  );
 
   return (
-    <div className={[s.panel, className].filter(Boolean).join(' ')}>
+    <div className={[s.panel, className].filter(Boolean).join(' ')} data-held={held ? access.state : undefined}>
       {TOKEN_CATEGORIES.map(({ id, title }) => {
         const inSection = byCategory.get(id);
         if (!inSection) return null;
@@ -415,8 +345,8 @@ export function TokenPanel({
             familySize={familySize}
             scales={scales}
             prefix={namePrefix}
-            onChange={onChange}
-            onScaleChange={onScaleChange}
+            onChange={change}
+            onScaleChange={scaleChange}
           />
         );
       })}
