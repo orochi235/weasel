@@ -58,7 +58,7 @@ export function SliderBody<T extends Thumb = Thumb>(
   const boxes = useBoxes(() => [trackRef.current, railRef.current, paintRef.current, ...thumbs.map((_, i) => thumbEls.current[i] ?? null)], thumbs.length, { untransformed: true });
   const thumbLength = useBoxes(() => [thumbEls.current[0] ?? null], thumbs.length, { untransformed: true })[0]?.width || 14;
   const along = useTrackShape();
-  const shape = props.shape ?? along?.shape;
+  const shape = along?.shape;
   const direction = useInlineDirection(trackRef);
   const { geometry, run } = useSliderGeometry({
     shape, thumbFit: props.thumbFit ?? 'inside', thumbLength, direction,

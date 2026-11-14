@@ -1,10 +1,8 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { placeAlongRun, trackRun } from '@weasel-js/geom';
 import { graphemeEnds, joiningRuns, visualGraphemes } from '@weasel-js/text';
-import { TOP_HALF } from './Along';
-import type { AlongArc, RunAlign } from './alongContext';
+import { useTrackShape } from './alongContext';
 import { placeStyle } from './placeOnRun';
-import { useBoxShape, type BoxShape } from './useBoxShape';
 import { useInlineDirection } from './useRowRun';
 import on from './onRun.module.css';
 import s from './CurvedLabel.module.css';
@@ -12,13 +10,7 @@ import s from './CurvedLabel.module.css';
 /** Props of `CurvedLabel`. */
 export interface CurvedLabelProps {
   text: string;
-  /** The arc to lay the text on, as `Along` reads it. `shape` wins over it. Default: the top half. */
-  arc?: AlongArc;
-  /** A track shape, or one built from the box. */
-  shape?: BoxShape;
-  /** Where text shorter than the track sits. Default `'center'`. */
-  align?: RunAlign;
-  /** Px the text is laid back along the track from where `align` puts it. Default 0. */
+  /** Px the text is laid back along the track from where the `Along`'s `align` puts it. Default 0. */
   offset?: number;
   /** Px the text stands off the track, toward its own top. Default 0. */
   shift?: number;
@@ -31,21 +23,23 @@ const graphemes = (text: string): string[] => {
 };
 
 /**
- * A line of text laid along an arc or a track shape of the box it fills, one span per grapheme, each centered on its
- * place and tipped to the track; letters of a joining script that join share one span, so Arabic is shaped joined.
+ * A line of text laid along the shape of the `Along` it sits in, one span per grapheme, each centered on its place and
+ * tipped to the track; letters of a joining script that join share one span, so Arabic is shaped joined.
  * The text reads upright whichever way the shape runs, its spans in the order the bidi algorithm shows them under its
- * computed `direction`, which also says which end `align` starts from. Reordering takes the engine given to
+ * computed `direction`, which also says which end the `Along`'s `align` starts from. Reordering takes the engine given to
  * `registerBidi` (`@weasel-js/text`); with none, mixed-direction text keeps its logical order. The center of each glyph box sits
  * on the track, so `shift` lifts the text clear of a line drawn along it. It takes its font and color from its
- * parent, takes no pointer input, and is named by `text` as one image.
+ * parent, takes no pointer input, and is named by `text` as one image. Outside an `Along` it is a plain line of text.
  */
-export function CurvedLabel({ text, arc = TOP_HALF, shape, align = 'center', offset = 0, shift = 0, className }: CurvedLabelProps): ReactElement {
+export function CurvedLabel({ text, offset = 0, shift = 0, className }: CurvedLabelProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const direction = useInlineDirection(root);
   const chars = useMemo(() => visualGraphemes(joiningRuns(graphemes(text)), direction), [text, direction]);
   const [lengths, setLengths] = useState<readonly number[]>([]);
-  const made = useBoxShape(root, arc, shape);
-  const run = useMemo(() => trackRun(made, 0, 1, { direction }), [made, direction]);
+  const along = useTrackShape();
+  const shape = along?.shape;
+  const run = useMemo(() => (shape ? trackRun(shape, 0, 1, { direction }) : null), [shape, direction]);
+  const laid = run !== null;
 
   useLayoutEffect(() => {
     const spans = [...(root.current?.children ?? [])] as HTMLElement[];
@@ -59,11 +53,15 @@ export function CurvedLabel({ text, arc = TOP_HALF, shape, align = 'center', off
     const watch = new ResizeObserver(measure);
     for (const el of spans) watch.observe(el);
     return () => watch.disconnect();
-  }, [chars]);
+  }, [chars, laid]);
 
-  const places = placeAlongRun(run, chars.map((_, i) => lengths[i] ?? 0), { align, offset, shift });
+  const cls = className ? `${s.label} ${className}` : s.label;
+  if (along === null || run === null) {
+    return <div ref={root} className={cls} role="img" aria-label={text}>{text}</div>;
+  }
+  const places = placeAlongRun(run, chars.map((_, i) => lengths[i] ?? 0), { align: along.align, offset, shift });
   return (
-    <div ref={root} className={className ? `${s.label} ${className}` : s.label} role="img" aria-label={text}>
+    <div ref={root} className={cls} role="img" aria-label={text}>
       {chars.map((ch, i) => (
         <span key={i} className={`${on.onRun} ${s.char}`} aria-hidden="true" style={placeStyle(places[i]!)}>
           {ch}

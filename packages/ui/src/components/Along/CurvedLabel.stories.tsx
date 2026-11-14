@@ -1,9 +1,9 @@
 import { f, meta, story } from '@weasel-js/forge';
 import type { CSSProperties } from 'react';
-import { CurvedLabel, type AlongArc, type RunAlign } from '@weasel-js/ui/components/Along';
+import { Along, CurvedLabel, type AlongArc, type RunAlign } from '@weasel-js/ui/components/Along';
 import s from './CurvedLabel.stories.module.css';
 
-/** A line of text laid along an arc of the box it fills. */
+/** A line of text laid along the arc of the `Along` it sits in. */
 export default meta({ title: 'ui/CurvedLabel' });
 
 interface CurvedLabelConfig {
@@ -35,7 +35,9 @@ export const Default = story({
     const arc: AlongArc = { at: c.at, span: `${c.span}deg`, direction: c.direction, inset: c.inset };
     return (
       <div className={s.box} style={{ '--box': `${c.size}px` } as CSSProperties}>
-        <CurvedLabel text={c.text} arc={arc} align={c.align} offset={c.offset} shift={c.shift} />
+        <Along arc={arc} align={c.align}>
+          <CurvedLabel text={c.text} offset={c.offset} shift={c.shift} />
+        </Along>
       </div>
     );
   },

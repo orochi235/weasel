@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { arcShape, trackRun } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import { Along } from '../Along';
 import { Bar } from '../Bar';
 import { ToolbarDock } from './ToolbarDock';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
@@ -28,7 +29,7 @@ const fields: PrefGroup = { name: 'Tools', children: Object.fromEntries(['n1', '
 const values = Object.fromEntries(Object.keys(fields.children).map((n) => [n, 4]));
 
 const docks: DockSpec[] = [{ id: 'top', edge: 'top' }];
-const bars: DockBar[] = [{ id: 'tools', label: 'Tools', docks: ['top'], render: () => <Bar schema={fields} values={values} shape={shape} label="Tools" /> }];
+const bars: DockBar[] = [{ id: 'tools', label: 'Tools', docks: ['top'], render: () => <Along shape={shape}><Bar schema={fields} values={values} label="Tools" /></Along> }];
 const layout: ToolbarLayout = { docks: { top: [['tools']] }, floating: {} };
 
 const at = (g: number) => {

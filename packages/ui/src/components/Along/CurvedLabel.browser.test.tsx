@@ -4,7 +4,7 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import { arcShape, lineShape, placeAlongRun, trackRun, type PlaceAlongRunOptions, type TrackShape } from '@weasel-js/geom';
-import { arcInBox, CurvedLabel, type CurvedLabelProps } from '@weasel-js/ui/components/Along';
+import { Along, arcInBox, CurvedLabel, type AlongProps, type CurvedLabelProps } from '@weasel-js/ui/components/Along';
 import type { AlongArc } from './alongContext';
 
 afterEach(cleanup);
@@ -21,11 +21,14 @@ const ARCS: Record<'top' | 'bottom', AlongArc> = {
   bottom: { start: 270, end: 90, direction: 'ccw', inset: 20 },
 };
 
-async function mount(props: CurvedLabelProps): Promise<HTMLElement> {
+/** A label in an `Along` filling a SIZE box, laid on the `Along`'s `arc`, `shape` and `align`. */
+async function mount({ arc, shape, align, ...props }: CurvedLabelProps & Omit<AlongProps, 'children'>): Promise<HTMLElement> {
   await page.viewport(1200, 900);
   const { container } = render(
     <div style={{ position: 'relative', width: SIZE, height: SIZE, fontSize: 20, lineHeight: 1 }}>
-      <CurvedLabel {...props} />
+      <Along arc={arc} shape={shape} align={align}>
+        <CurvedLabel {...props} />
+      </Along>
     </div>,
   );
   await document.fonts.ready;

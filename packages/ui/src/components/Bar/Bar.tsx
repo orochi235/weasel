@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
-import type { TrackShape } from '@weasel-js/geom';
 import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefLeafValue, prefReader, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefOrder, type PrefSection } from '@weasel-js/prefs';
-import type { RunAlign } from '../Along/alongContext';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { useParamsPolicy } from '../Prefs/useParamsPolicy';
@@ -63,13 +61,6 @@ export interface BarProps {
   overflow?: BarOverflowMode;
   /** What the button that opens the rest is called. Default `'More'`. */
   overflowLabel?: string;
-  /** A track shape to lay the items along, each centered on its spot and tipped to it. On a curve every leaf but
-   *  an action opens from a button, and `'menu'` puts the More button at the run's far end. `'scroll'` keeps an
-   *  offset along the run, moved by wheel, drag or focus, and clips the run at the shape's ends. A line keeps the
-   *  bar's flex line. Default: the nearest `Along`'s shape, else none. */
-  shape?: TrackShape;
-  /** Where a run shorter than its shape sits. Default: the nearest `Along`'s, else `'center'`. */
-  align?: RunAlign;
   /** The order to draw in: each group's child keys, and each `actions` leaf's action keys, by container path (`''` is
    *  the top level). A key it leaves out takes its schema position, an action it leaves out goes at its run's end,
    *  and an unknown key is dropped. */
@@ -84,6 +75,10 @@ export interface BarProps {
  * A toolbar drawn from a schema: fields in their bar forms, actions as
  * buttons, in the order the group lists them. It has no frame of its own;
  * the host gives it the strip it sits on.
+ *
+ * Inside a curved `Along` each item is centered on its spot and tipped to it, every leaf but an action opens from a
+ * button, and `'menu'` puts the More button at the run's far end; `'scroll'` keeps an offset along the run, moved by
+ * wheel, drag or focus, and clips the run at the shape's ends.
  */
 export function Bar(props: BarProps) {
   const { schema, values, onChange, mixed, renderers, orientation, label, framed, className } = props;
@@ -106,8 +101,6 @@ export function Bar(props: BarProps) {
       framed={framed}
       overflow={props.overflow ?? schema.overflow}
       overflowLabel={props.overflowLabel}
-      shape={props.shape}
-      align={props.align}
       order={props.order}
       onReorder={props.onReorder}
       keysOf={(container) => childKeysAt(orderPrefGroup(schema, props.order), container)}

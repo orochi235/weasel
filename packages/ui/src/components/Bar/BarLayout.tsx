@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
 import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarLead, type PrefBarOverflow, type PrefGroup, type PrefLeaf, type PrefOrder } from '@weasel-js/prefs';
-import type { TrackShape } from '@weasel-js/geom';
-import { useTrackShape, type RunAlign } from '../Along/alongContext';
+import { useTrackShape } from '../Along/alongContext';
 import type { BarMenuSources } from './BarMenu';
 import { BarAlong } from './BarAlong';
 import { barItems, barLead, drawBarItem, inBarMenu, splitBarItems } from './barItems';
@@ -101,11 +100,6 @@ export interface BarLayoutProps {
   overflow?: BarOverflowMode;
   /** What the button that opens the rest is called. Default `'More'`. */
   overflowLabel?: string;
-  /** A track shape to lay the items along. A curved one places each item on it, tipped, and opens every leaf
-   *  but an action from a button; a line keeps the flex line. Default: the nearest `Along`'s shape, else none. */
-  shape?: TrackShape;
-  /** Where a run shorter than its shape sits. Default: the nearest `Along`'s, else `'center'`. */
-  align?: RunAlign;
   /** The order the nodes are drawn in, which a reorder starts from. */
   order?: PrefOrder;
   /** Given, each item and each `actions` button is marked with `data-bar-unit` and `data-bar-in`, and a Cmd-drag
@@ -121,16 +115,15 @@ export interface BarLayoutProps {
  * The line a bar's contents sit on, whatever surface drew them: cells in
  * order, a divider on each side of a run, and a button for each group that
  * opens. `Bar` draws a schema through it; a form and a panel draw a group
- * `as: 'bar'` through it with cells of their own. Given a curved shape, or
- * inside an `Along`, its items lie along that shape instead.
+ * `as: 'bar'` through it with cells of their own. Inside a curved `Along`, its
+ * items lie along its shape instead.
  *
  * Focus keeps plain tab order. A bar of number boxes and selects has to
  * leave the arrow keys to them, so it does not rove.
  */
 export function BarLayout(props: BarLayoutProps) {
   const along = useTrackShape();
-  const shape = props.shape ?? along?.shape;
-  const bar = shape !== undefined && shape.kind !== 'line' ? <BarAlong {...props} shape={shape} align={props.align ?? along?.align ?? 'center'} /> : <BarLine {...props} />;
+  const bar = along !== null && along.shape.kind !== 'line' ? <BarAlong {...props} shape={along.shape} align={along.align} /> : <BarLine {...props} />;
   return <BarMarkContext.Provider value={props.onReorder !== undefined}>{bar}</BarMarkContext.Provider>;
 }
 

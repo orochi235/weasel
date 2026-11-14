@@ -15,7 +15,7 @@ export interface AlongProps {
   children: ReactNode;
 }
 
-export const TOP_HALF: AlongArc = { start: 270, end: 90 };
+const TOP_HALF: AlongArc = { start: 270, end: 90 };
 
 /**
  * Fills its containing block and hands controls inside it a track shape sized from that box.
@@ -30,8 +30,9 @@ export const TOP_HALF: AlongArc = { start: 270, end: 90 };
  * the top and a `Slider` along the bottom of one circle.
  *
  * `Slider`, `DetentSlider`, `Bar`, `Jog`, `ToggleBar`, `ButtonBar`, `OptionsBar`, `SwatchGrid`, `SwatchStrip`,
- * `Tabs`, `PageTabs` and `RadioGroup` follow the shape; any other control renders as it does outside an `Along`.
- * For text alone along a shape, use `CurvedLabel`.
+ * `Tabs`, `PageTabs` and `RadioGroup` follow the shape, and `CurvedLabel` lays text alone along it; any other control
+ * renders as it does outside an `Along`. A control's root fills the box, so a `shape` given here is in the px of the
+ * `Along`'s containing block.
  */
 export function Along({ arc = TOP_HALF, shape, align = 'center', className, children }: AlongProps): ReactElement {
   const ref = useRef<HTMLDivElement>(null);

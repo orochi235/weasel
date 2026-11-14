@@ -3,7 +3,7 @@ import '@weasel-js/theme/fonts.css';
 import { useState } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
-import { lineShape } from '@weasel-js/geom';
+import { lineShape, type TrackShape } from '@weasel-js/geom';
 import { Along } from '@weasel-js/ui/components/Along';
 import { Slider, type SliderProps, type Thumb } from '@weasel-js/ui/components/Slider';
 
@@ -12,12 +12,12 @@ afterEach(cleanup);
 const STOPS = [2, 4, 8, 16].map((v) => ({ value: v, label: `${v}×` }));
 const RADIUS = 104;
 
-function Lens({ size = 240, underlay = false, transform, ...props }: { size?: number; underlay?: boolean; transform?: string } & Partial<SliderProps>) {
+function Lens({ size = 240, underlay = false, transform, shape, ...props }: { size?: number; underlay?: boolean; transform?: string; shape?: TrackShape } & Partial<SliderProps>) {
   const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 4 }]);
   return (
     <div data-box style={{ position: 'relative', width: size, height: size, margin: 40, transform }}>
       {underlay && <button type="button" style={{ position: 'absolute', inset: 0 }}>under</button>}
-      <Along arc={{ start: 240, end: 120, direction: 'ccw', inset: 16 }}>
+      <Along arc={{ start: 240, end: 120, direction: 'ccw', inset: 16 }} shape={shape}>
         <Slider min={2} max={16} stops={STOPS} spacing="even" snap="strict" thumbs={thumbs} onInput={setThumbs} {...props} />
       </Along>
     </div>

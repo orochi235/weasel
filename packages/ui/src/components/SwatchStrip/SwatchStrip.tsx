@@ -1,6 +1,6 @@
 import { useId, useState, type ReactElement } from 'react';
 import { getAlpha01 } from '@weasel-js/core';
-import type { RunAlign, TrackShape } from '@weasel-js/geom';
+import type { RunAlign } from '@weasel-js/geom';
 import { useTrackShape } from '../Along/alongContext';
 import { SwatchGrid, swatchId, type SwatchChange, type SwatchGridOption } from '../SwatchGrid';
 import { SwatchRings, type SwatchRingGroup } from '../SwatchGrid/SwatchRings';
@@ -42,12 +42,7 @@ export interface SwatchStripProps {
   /** Swatches per row, for the recent row and any palette that sets none.
    *  Default 10. */
   columns?: number;
-  /** A track shape to lay the rows along, as on {@link SwatchGrid}: the recent rows on the outermost rings, the
-   *  palette's rows further in, each section's heading or palette picker first on its first ring. Default: the
-   *  nearest `Along`'s shape, else none. */
-  shape?: TrackShape;
-  /** Where a row shorter than its run sits, as on {@link SwatchGrid}. Default: the nearest `Along`'s, else
-   *  `'center'` on a ring and `'start'` in a grid. */
+  /** Where each grid's last row sits, as on {@link SwatchGrid}. */
   align?: RunAlign;
   'aria-label'?: string;
   className?: string;
@@ -75,6 +70,9 @@ function same(a: string | null, b: string | null): boolean {
  *
  * Like {@link SwatchGrid} it applies nothing itself; `onChange` and
  * `onAltChange` hand the color to the app.
+ *
+ * Inside a curved `Along` its rows lie on rings as a {@link SwatchGrid}'s do: the recent rows on the outermost, the
+ * palette's further in, each section's heading or palette picker first on its first ring.
  */
 export function SwatchStrip(props: SwatchStripProps): ReactElement {
   const { value, className } = props;
@@ -104,8 +102,7 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
   };
 
   const along = useTrackShape();
-  const shape = props.shape ?? along?.shape;
-  const curved = shape !== undefined && shape.kind !== 'line' ? shape : undefined;
+  const curved = along !== null && along.shape.kind !== 'line' ? along : null;
 
   // On a ring the picker's own name says the palette, so its label is only heard: a visible one would stand out of the ring.
   const paletteLead = shown && (palettes.length > 1 ? (
@@ -130,7 +127,7 @@ export function SwatchStrip(props: SwatchStripProps): ReactElement {
   if (shown) rings.push({ key: `palette:${shown.id}`, label: shown.name, options: shown.colors, value: currentIn(shown.colors), columns: shown.columns ?? columns, lead: paletteLead });
 
   const grids = curved ? (
-    <SwatchRings shape={curved} align={props.align ?? along?.align ?? 'center'} groups={rings} onChange={onChange} onAltChange={onAltChange} />
+    <SwatchRings shape={curved.shape} align={curved.align} groups={rings} onChange={onChange} onAltChange={onAltChange} />
   ) : (
     <>
       {store && (

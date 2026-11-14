@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
-import { arcShape, trackRun, type Point } from '@weasel-js/geom';
+import { arcShape, trackRun, type Point, type TrackShape } from '@weasel-js/geom';
 import { Along } from '../Along';
 import { Slider, type SliderProps, type TrackCtx } from './index';
 
@@ -37,12 +37,12 @@ const onCircle = (deg: number): Point => {
   return { x: 100 + 80 * Math.sin(r), y: 100 - 80 * Math.cos(r) };
 };
 
-function mount(props: Partial<SliderProps> = {}) {
+/** A slider in an `Along` laid on `shape`, or straight with `shape: null`. */
+function mount({ shape = top, ...props }: Partial<SliderProps> & { shape?: TrackShape | null } = {}) {
   const onInput = vi.fn();
   const onChange = vi.fn();
-  const view = render(
-    <Slider shape={top} thumbFit="overhang" min={0} max={100} thumbs={[{ value: 25 }]} onInput={onInput} onChange={onChange} {...props} />,
-  );
+  const slider = <Slider thumbFit="overhang" min={0} max={100} thumbs={[{ value: 25 }]} onInput={onInput} onChange={onChange} {...props} />;
+  const view = render(shape === null ? slider : <Along shape={shape}>{slider}</Along>);
   const band = view.container.querySelector('[data-slider-band]') as Element;
   const thumbs = Array.from(view.container.querySelectorAll<HTMLElement>('[role="slider"]'));
   return { ...view, onInput, onChange, band, thumbs };
@@ -123,7 +123,7 @@ describe('Slider on a curve', () => {
     const curved = mount();
     expect(curved.thumbs[0]!.hasAttribute('aria-orientation')).toBe(false);
     curved.unmount();
-    const straight = mount({ shape: undefined });
+    const straight = mount({ shape: null });
     expect(straight.thumbs[0]!.getAttribute('aria-orientation')).toBe('horizontal');
   });
 
@@ -155,16 +155,6 @@ describe('Slider on a curve', () => {
     mount({ renderTrack: (ctx) => { seen = ctx; return null; } });
     expect(seen!.shape.at(seen!.valueToFraction(25)).point).toEqual(run.at(0.25).point);
     expect(seen!.trackWidth).toBeCloseTo(run.length, 9);
-  });
-
-  test("a Slider's shape prop wins over Along's", () => {
-    const { container } = render(
-      <Along arc={{ start: 120, end: 240 }}>
-        <Slider shape={top} thumbFit="overhang" min={0} max={100} thumbs={[{ value: 25 }]} onInput={() => {}} />
-      </Along>,
-    );
-    const p = at(0.25);
-    expect(placed(container.querySelector<HTMLElement>('[role="slider"]')!)).toEqual({ x: `${p.x}px`, y: `${p.y}px` });
   });
 
   test('a Slider inside Along follows its arc', () => {
@@ -202,7 +192,9 @@ describe('Slider on a curve, right to left', () => {
     const onInput = vi.fn();
     const view = render(
       <div dir="rtl">
-        <Slider shape={top} thumbFit="overhang" min={0} max={100} step={1} thumbs={[{ value: 25 }]} onInput={onInput} />
+        <Along shape={top}>
+          <Slider thumbFit="overhang" min={0} max={100} step={1} thumbs={[{ value: 25 }]} onInput={onInput} />
+        </Along>
       </div>,
     );
     const band = view.container.querySelector('[data-slider-band]') as Element;
