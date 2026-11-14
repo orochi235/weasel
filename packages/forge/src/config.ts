@@ -1,6 +1,6 @@
 import type { LabContribution, LabPage } from '@weasel-js/labkit';
 import type { Theme } from '@weasel-js/theme';
-import type { ControlRenderer } from '@weasel-js/labkit/config';
+import type { LeafRenderer } from '@weasel-js/labkit/config';
 import type { FrameSetup } from './frame/FrameController';
 import type { Globals } from './protocol/messages';
 import type { GlobalDeclarations } from './shell/globals';
@@ -17,7 +17,7 @@ export interface ShellConfig {
   /** Contributions to the lab's own chrome, after the workshop's: `<Lab labChrome>`. */
   labChrome?: readonly LabContribution[];
   /** Rows the lab's settings panels draw for config paths or leaf kinds: `<Lab renderers>`. */
-  renderers?: Record<string, ControlRenderer>;
+  renderers?: Record<string, LeafRenderer>;
   /** Globals the lab's header sets for every story, each pinnable per trial. Frames apply them with `applyGlobals`. */
   globals?: GlobalDeclarations;
   /** The theme the workshop's own chrome takes at the lab's current globals, so a global can restyle the workshop
