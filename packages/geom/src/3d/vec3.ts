@@ -143,3 +143,45 @@ export function quatRotate(q: Quat, v: Vec3): Vec3 {
     z: v.z + w * tz + (x * ty - y * tx),
   };
 }
+
+/** The rotation taking the local x, y and z axes to `x`, `y` and `z`, which must be orthonormal and
+ *  right-handed. */
+export function quatFromBasis(x: Vec3, y: Vec3, z: Vec3): Quat {
+  const trace = x.x + y.y + z.z;
+  if (trace > 0) {
+    const s = 0.5 / Math.sqrt(trace + 1);
+    return [(y.z - z.y) * s, (z.x - x.z) * s, (x.y - y.x) * s, 0.25 / s];
+  }
+  if (x.x > y.y && x.x > z.z) {
+    const s = 2 * Math.sqrt(1 + x.x - y.y - z.z);
+    return [0.25 * s, (y.x + x.y) / s, (z.x + x.z) / s, (y.z - z.y) / s];
+  }
+  if (y.y > z.z) {
+    const s = 2 * Math.sqrt(1 + y.y - x.x - z.z);
+    return [(y.x + x.y) / s, 0.25 * s, (z.y + y.z) / s, (z.x - x.z) / s];
+  }
+  const s = 2 * Math.sqrt(1 + z.z - x.x - y.y);
+  return [(z.x + x.z) / s, (z.y + y.z) / s, 0.25 * s, (x.y - y.x) / s];
+}
+
+/** The unit quaternion `t` of the way from `a` to `b` along the shorter arc. */
+export function quatSlerp(a: Quat, b: Quat, t: number): Quat {
+  let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+  const sign = d < 0 ? -1 : 1;
+  d *= sign;
+  let wa: number;
+  let wb: number;
+  if (d > 0.9995) {
+    wa = 1 - t;
+    wb = t;
+  } else {
+    const angle = Math.acos(d);
+    const sin = Math.sin(angle);
+    wa = Math.sin((1 - t) * angle) / sin;
+    wb = Math.sin(t * angle) / sin;
+  }
+  wb *= sign;
+  const q = [0, 1, 2, 3].map((i) => wa * a[i]! + wb * b[i]!);
+  const n = Math.hypot(q[0]!, q[1]!, q[2]!, q[3]!);
+  return [q[0]! / n, q[1]! / n, q[2]! / n, q[3]! / n];
+}

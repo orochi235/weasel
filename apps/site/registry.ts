@@ -331,6 +331,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PoseBlendDemo.tsx',
   },
   {
+    id: 'path-motion',
+    title: 'Path motion',
+    category: 'Animation',
+    description: "A node rides a path. `pathMotion(path, { orient })` is a pose descriptor whose `lerp` places the pose by length along the path, built on `pathLengthTable` and `pointAtLength`, and `at(pose, 1)` is the pose at the path's end. Ride passes both to `tweenPose`, as `geometry` and `to`: the scene takes the destination at once, and the block on screen follows the curve rather than the straight line between its ends, at an even speed along it that the easing shapes. With turn with the path ticked the block's rotation follows the tangent. `@weasel-js/kernel3d`'s `pathMotion3` is the same for a `Pose3` on a 3D path.",
+    hint: 'Press ride. Untick turn with the path and press it again.',
+    load: () => import('./demos/PathMotionDemo').then((m) => m.PathMotionDemo),
+    path: 'apps/site/demos/PathMotionDemo.tsx',
+  },
+  {
     id: 'vertex-color-animation',
     title: 'Vertex-color animation',
     category: 'Animation',
