@@ -45,9 +45,6 @@ A map of the library so agents can find what they need quickly.
 | Rule chain + labkit's own inference | `src/config/rules.ts` |
 | Schema -> `@weasel-js/prefs` `PrefGroup` | `src/config/resolve.ts` |
 | Config paths (read, write, fill defaults) | `src/config/path.ts` |
-| Legacy `ConfigField[]` adapter | `src/config/fromConfigField.ts` |
-| Config schema validator | `src/instrument/validateConfigSchema.ts` |
-| Config field types (`ConfigField`, deprecated) | `src/controls/types.ts` |
 | `<ControlPanel>` (renders a resolved schema) | `src/controls/ControlPanel.tsx` |
 
 ### Lab / trial runtime

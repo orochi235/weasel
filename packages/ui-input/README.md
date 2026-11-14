@@ -5,8 +5,8 @@ and windowed tracks, a list's roving highlight and typeahead, a tree's keys, sel
 drop gaps, edge scroll, focus order and directional focus, how a text field's edit ends. A DOM component and a
 canvas-drawn widget run the same rule and each draws the result its own way. No React, no DOM.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/ui-input).
 
 ## Install
@@ -51,7 +51,7 @@ items are branches, which are open, and which is whose child.
 `rowKey` is every key a list of rows answers, in one place: Cmd/Ctrl+A, the arrows with Home and
 End (Shift extends), a tree's Right and Left, Enter and Space, and typeahead. It returns what the
 key asks for (`selectAll`, `move`, `toggle`, `activate`, `type`) and the caller carries it out.
-`@weasel-js/ui`'s `useRowNavigation` runs on it.
+`@weasel-js/ui`'s `ItemList` and `Tree` run on it.
 
 ## Focus
 

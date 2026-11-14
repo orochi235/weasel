@@ -4,8 +4,8 @@ Headless components: what a DOM component and a canvas-drawn widget share past t
 the measure/draw contract a button, a row list, and a menu panel implement on both targets, and keyboard focus as one
 contract. No React, no DOM. What a key or a pointer does to a control is `@weasel-js/ui-input`.
 
-Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
-scene-graph canvas kit for React. See the
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic
+scene-graph engine for React. See the
 [API reference](https://orochi235.github.io/weasel/#pkg/ui-logic).
 
 ## Install
@@ -35,7 +35,7 @@ coordinates measures with `exactly(w, h)` itself, and the DOM lays out by CSS fr
 `listMode` saying which parts and roles a state shows. `@weasel-js/ui`'s
 `domButton` and `domItemList` and `@weasel-js/hud`'s `hudButton` and `hudList` implement the first two. A menu
 panel's rows, separators, icon, label, and trailing columns are sized by `menuPanelMetrics`: `@weasel-js/ui`'s
-`ContextMenu` stylesheet lays its panel out from the same tokens, and `@weasel-js/hud`'s menu widget places and
+menu stylesheet lays its panel out from the same tokens, and `@weasel-js/hud`'s menu widget places and
 draws its panels from `measureMenuPanel`.
 
 ## License
