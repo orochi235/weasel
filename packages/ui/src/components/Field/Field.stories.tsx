@@ -1,6 +1,7 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Field, fieldClasses, type FieldProps } from '@weasel-js/ui/components/Field';
+import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 
 const meta: Meta<typeof Field> = {
   title: 'ui/Foundations/Field',
@@ -55,3 +56,19 @@ export const Row: Story = {
 export const WithError: Story = {
   render: (args) => <ErrorField {...args} />,
 };
+
+function SliderField(args: FieldProps) {
+  const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 20 }, { value: 80 }]);
+  return (
+    <Field {...args} output={thumbs.map((t) => Math.round(t.value)).join(' – ')}>
+      <Slider aria-label="Range" min={0} max={100} step={1} constraint="ordered" thumbs={thumbs} onInput={setThumbs} />
+    </Field>
+  );
+}
+
+/** `label` and `output` give any control a label-and-value header; here, a two-thumb `Slider`. */
+export const WithOutput: Story = {
+  args: { label: 'Range' },
+  render: (args) => <SliderField {...args} />,
+};
+
