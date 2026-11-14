@@ -2,8 +2,7 @@
 // writes is the form's source's to say (`PrefsSource`), through the one policy every params surface runs.
 
 import type { ReactNode } from 'react';
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { leafAtReset, sourceIsAtReset } from '../PrefsSource/policy';
+import { leafAtReset, sourceIsAtReset, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { ResetControl } from '../Properties/ResetControl';
 import type { WalkCtx } from './PrefsRow';
 

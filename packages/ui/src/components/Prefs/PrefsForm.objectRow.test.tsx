@@ -21,6 +21,13 @@ const SCHEMA: PrefGroup = {
   },
 };
 
+it('shows a field the stored object omits at its default, as a leaf of its own holding nothing shows', () => {
+  const onChange = vi.fn();
+  render(<PrefsForm layout="list" schema={SCHEMA} values={{ stroke: { on: true } }} onChange={onChange} />);
+  expect(screen.getByRole('spinbutton', { name: 'Width' })).toHaveValue('1');
+  expect(onChange).not.toHaveBeenCalled();
+});
+
 it('does not hand a click on an object leaf\'s name to its first field', () => {
   const onChange = vi.fn();
   render(<PrefsForm layout="list" schema={SCHEMA} values={{}} onChange={onChange} />);

@@ -1,9 +1,11 @@
 import {
   AUTO,
   type LeafReading,
+  type LeafState,
   type PrefGroup,
   type PrefLeaf,
   type PrefSection,
+  type PrefsSource,
   prefAutoValue,
   prefCanAuto,
   prefLeafAt,
@@ -11,14 +13,9 @@ import {
   prefNodeAt,
   prefResets,
   prefShownValue,
-} from '@weasel-js/prefs';
-import {
-  type LeafContext,
-  type LeafState,
-  type PrefsSource,
-  sourceLeafContext,
   sourceResetPlan,
-} from '@weasel-js/ui/components/PrefsSource';
+} from '@weasel-js/prefs';
+import { type LeafContext, sourceLeafContext } from '@weasel-js/ui/components/PrefsSource';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { isRecord, valueAtPath, withValueAtPath } from '../config/path';
@@ -57,7 +54,7 @@ export interface LabConfigInput {
 
 /** A source over a lab's config. A reset of several leaves under one path is one write of that path's value, so
  *  it is one undo step. */
-export function labConfigSource(input: LabConfigInput): PrefsSource {
+export function createLabConfigSource(input: LabConfigInput): PrefsSource {
   const { resolved, config, shown, setConfig, draftConfig, auto, setRowAuto, over } = input;
   const leafOf = (path: string): PrefLeaf | undefined => prefLeafAt(resolved.group, path);
   const autoAt = (path: string): boolean | undefined => {
@@ -125,12 +122,21 @@ export function labConfigSource(input: LabConfigInput): PrefsSource {
   return source;
 }
 
-/** {@link labConfigSource}, rebuilt only when what it reads changes. */
+/** {@link createLabConfigSource}, rebuilt only when what it reads changes. */
 export function useLabConfigSource(input: LabConfigInput): PrefsSource {
   const { resolved, config, shown, setConfig, draftConfig, auto, setRowAuto, over } = input;
   return useMemo(
     () =>
-      labConfigSource({ resolved, config, shown, setConfig, draftConfig, auto, setRowAuto, over }),
+      createLabConfigSource({
+        resolved,
+        config,
+        shown,
+        setConfig,
+        draftConfig,
+        auto,
+        setRowAuto,
+        over,
+      }),
     [resolved, config, shown, setConfig, draftConfig, auto, setRowAuto, over],
   );
 }
@@ -154,7 +160,7 @@ export function labRowContext(
   const { value, draft } = row;
   const write = (next: unknown): void => input.setConfig(path, next);
   return {
-    ...sourceLeafContext(labConfigSource(input), path, pref),
+    ...sourceLeafContext(createLabConfigSource(input), path, pref),
     value,
     each: [value],
     values: input.config,

@@ -3,10 +3,11 @@
  * reads and writes through, and the control drawn for a row or for a bar.
  */
 import type { ReactNode } from 'react';
-import { prefObjectBase, prefObjectField, prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import type { PrefLeaf } from '@weasel-js/prefs';
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { resolveIcon } from '../../icons/resolveIcon';
-import { MIXED, nodeLeafValue, sharedValue } from './model';
+import { objectFieldContext } from '../Prefs/objectFieldContext';
+import { nodeLeafValue } from './model';
 import type { LeafCell } from './cells';
 import type { LeafContext, LeafRenderer } from './renderContext';
 import { renderBuiltin } from './renderLeaf';
@@ -16,69 +17,10 @@ import s from './SelectionPanel.module.css';
 export interface ObjectFieldOwner {
   /** The object leaf's own context. */
   ctx: LeafContext;
-  /** The object the selection shares, when it shares one. */
-  held: Record<string, unknown> | undefined;
-  /** Each node's object, in selection order. */
-  eachObject: readonly (Record<string, unknown> | undefined)[];
   /** The paired row of each field that shares one, by the field's full path. */
   pairs: ReadonlyMap<string, { key: string; label: string }>;
   renderers?: Record<string, LeafRenderer>;
   selectionKey: string;
-}
-
-/** The context of the field `key` of `owner`: its value across the nodes, and an edit that commits the parent object. */
-function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 'held' | 'eachObject'>, key: string, child: PrefLeaf): LeafContext {
-  const pref = ctx.pref as PrefObject;
-  const childPath = `${ctx.path}.${key}`;
-  // Nodes whose objects differ still agree or disagree field by field: two
-  // styles at different sizes are both upright, and saying "mixed" for
-  // every field of them hides that.
-  // A field the object omits reads as the child says absence does. One of an object the node does not hold
-  // has nothing behind it, whatever the child says.
-  const fieldOf = (o: Record<string, unknown> | undefined): unknown => (o === undefined ? undefined : nodeLeafValue(child, prefObjectField(o, key)));
-  const each = eachObject.map(fieldOf);
-  const shared = ctx.mixed ? sharedValue(each) : fieldOf(held);
-  const field = shared === MIXED ? { value: undefined, mixed: true } : { value: shared, mixed: false };
-  // Each node's own object, with this one field changed. Deriving it per
-  // node is what keeps a multi-selection edit from writing one node's
-  // object over all the others.
-  type Update = LeafContext['update'];
-  const through = (parent: Update): Update => (fn) =>
-    parent((prev) => {
-      const base = prefObjectBase(pref, prev);
-      return prefObjectWithField(pref, base, key, fn(fieldOf(base), base));
-    });
-  const update = through(ctx.update);
-  const draft = ctx.drafts && through(ctx.drafts.update);
-  return {
-    path: childPath,
-    ...(ctx.fields ? { fields: ctx.fields } : {}),
-    pref: child,
-    value: field.mixed ? undefined : field.value,
-    mixed: field.mixed,
-    unset: !field.mixed && field.value === undefined,
-    siblings: held,
-    each,
-    eachSiblings: eachObject,
-    source: ctx.source,
-    setAuto: ctx.setAuto,
-    selectionKey: ctx.selectionKey,
-    update,
-    setValue: (v) => update(() => v),
-    ...(draft ? { drafts: { update: draft, setValue: (v: unknown) => draft(() => v) } } : {}),
-    // The walk names every field of a disabled leaf but the one its own `enableIf` reads, which stays live.
-    disabled: ctx.disabledAt ? ctx.disabledAt(childPath) : ctx.disabled === true,
-    disabledAt: ctx.disabledAt,
-    active: ctx.activeAt?.(childPath) === true,
-    activeAt: ctx.activeAt,
-    hidden: ctx.hidden === true || ctx.hiddenAt?.(childPath) === true,
-    hiddenAt: ctx.hiddenAt,
-    entryAt: ctx.entryAt,
-    settles: ctx.settles,
-    textWaitMs: ctx.textWaitMs,
-    // Inherit replaces the whole fill or stroke, and the paint is where it is offered.
-    ...(key === 'paint' && ctx.inherit ? { inherit: ctx.inherit } : {}),
-  };
 }
 
 /** The control of one field: its bar form, or its row form with the glyph that names it where no label does. */
@@ -115,7 +57,7 @@ function renderField(
 
 /** One field as an unrendered cell: its row form, or its bar form in a section drawn as a bar. */
 export function objectFieldCell(owner: ObjectFieldOwner, key: string, child: PrefLeaf, surface: LeafSurface): LeafCell {
-  const childCtx = fieldContext(owner, key, child);
+  const childCtx = objectFieldContext(owner.ctx, key, child, nodeLeafValue);
   const pair = owner.pairs.get(childCtx.path);
   return {
     key: childCtx.path,

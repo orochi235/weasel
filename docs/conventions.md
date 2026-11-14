@@ -164,13 +164,15 @@ draws what a field holding nothing draws. `auto.on` starts the leaf auto. Turnin
 it off pins the value it shows; an edit pins. A stored auto mark for a leaf that does not opt in reads as nothing
 stored.
 
-**Default** is what a pinned leaf with nothing set reads. **Reset** puts a leaf back as its schema starts it
+**Default** is what a pinned leaf with nothing set reads. A field an object leaf's value omits reads as a leaf
+holding nothing reads on that surface: its default in a form, unset over scene nodes unless it is
+`absentIsDefault`. **Reset** puts a leaf back as its schema starts it
 (`prefResetOf`): auto where it says `auto.on`, otherwise pinned at `default`. A surface that keeps no auto state,
 such as `SelectionPanel` over scene nodes, resets to `default` (`prefStoredReset`). Every row that edits a leaf offers `ResetControl` (`@weasel-js/ui/components/Properties`) while
 `prefIsReset` says the leaf differs, and the heading of a group or section that says `resettable` offers one for
 everything under it (`prefResets`). A prefs store, `PrefsForm`, `PrefsDialog`, `SelectionPanel`, labkit's
 `ControlPanel` and the theme editor all go through these: each surface reads its leaves through a `PrefsSource`
-(`@weasel-js/ui/components/PrefsSource`), and a reset is the `resetPlan` over it, which leaves out readouts and
+(`@weasel-js/prefs`, handed to React leaves by ui's `<PrefsSource>`), and a reset is the `resetPlan` over it, which leaves out readouts and
 leaves an `enableIf` disables. A surface never writes its own reading of either word, and never draws a second reset
 control.
 

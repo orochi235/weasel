@@ -1,11 +1,11 @@
 import {
+  leafAtReset,
   type PrefLeaf,
   type PrefNumber,
   prefAutoValue,
   prefCanAuto,
   prefLeafValue,
 } from '@weasel-js/prefs';
-import { leafAtReset } from '@weasel-js/ui/components/PrefsSource';
 import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
 import { createElement, type ReactNode, useMemo } from 'react';
 import { autoQuotes, autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
@@ -13,7 +13,7 @@ import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { leafValueAt } from './fields';
 import { numberText, summarizeLeaf, summarizeValue } from './inDialog';
-import { labConfigSource } from './labSource';
+import { createLabConfigSource } from './labSource';
 
 /** An auto value as tooltip text. A number with a unit or a display reads as its field shows it. Any other computed
  *  number is cut to 6 significant digits, so `0.1 + 0.2` reads `0.3`. */
@@ -114,6 +114,6 @@ function rowReset({
   setRowAuto,
   setConfig,
 }: RowAutoSource): (() => void) | undefined {
-  const source = labConfigSource({ resolved, config, shown, setConfig, auto, setRowAuto });
+  const source = createLabConfigSource({ resolved, config, shown, setConfig, auto, setRowAuto });
   return leafAtReset(source, path, leaf) ? undefined : () => source.reset([path]);
 }

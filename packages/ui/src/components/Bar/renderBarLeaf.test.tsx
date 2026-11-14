@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { renderPrefControl, type LeafContext } from '../Prefs/PrefsRow';
-import { loneLeafContext } from '../PrefsSource/recordSource';
+import { loneLeafContext } from '../PrefsSource/leafContext';
 import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { renderBarLeaf, withBarLabel } from './renderBarLeaf';
 

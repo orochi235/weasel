@@ -1,5 +1,4 @@
-import type { PrefGroup } from '@weasel-js/prefs';
-import { type PrefsSource, sourceIsAtReset } from '@weasel-js/ui/components/PrefsSource';
+import { type PrefGroup, type PrefsSource, sourceIsAtReset } from '@weasel-js/prefs';
 import { ResetControl } from '@weasel-js/ui/components/Properties';
 
 /** The reset in the heading of a group that says `resettable`: puts every leaf beneath it back as its schema

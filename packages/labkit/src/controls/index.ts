@@ -6,4 +6,4 @@ export {
 } from './ControlMatrix';
 export { type ControlPack, ControlPanel, type ControlPanelProps } from './ControlPanel';
 export { type InDialogOptions, inDialog, summarizeLeaf, summarizeValue } from './inDialog';
-export { type LabConfigInput, labConfigSource, useLabConfigSource } from './labSource';
+export { createLabConfigSource, type LabConfigInput, useLabConfigSource } from './labSource';

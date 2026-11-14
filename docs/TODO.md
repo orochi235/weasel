@@ -526,13 +526,6 @@ name a package. Breaking changes are in scope.
   form context (bar cell, menu row, popover row, palette) and draw one `ActionButton` from it. Closes when the four
   buttons are one component.
 
-- **(P2) [agent] One object-field context for `PrefsForm` and `SelectionPanel`.** Both draw an object leaf through
-  `objectRows` and the one leaf renderer (`Prefs/renderLeaf.tsx`), but `Prefs/ObjectLeaf.tsx`'s `fieldCtx` and
-  `SelectionPanel/objectField.tsx`'s `fieldContext` each build a field's `LeafContext`. The form writes a field of a
-  mixed object at its own path (`setValueAt`) and reads an absent field raw; the panel derives each node's object
-  (`update`) and reads an absent field as unset unless `absentIsDefault`. Merging them changes what an absent field
-  shows in a form, which needs a look in a browser. Closes when one function builds a field's context for both.
-
 - **(P2) [agent] Grow `PropertyRowContext` into a row scope.** `auto`, `onAutoChange`, `onReset`, `changed`, and
   `error` are declared on `PropertyRow`, `DialogRow`, and `PropertyFieldRow`; `SelectionPanel/LabeledRow.tsx` adds
   `disabled`/`disabledReason`. `Properties/rowContext.ts` carries only `{ label }`, read only by `EasingPicker`.

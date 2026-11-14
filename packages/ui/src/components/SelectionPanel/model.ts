@@ -24,6 +24,7 @@ import {
   prefHeadingKey,
   prefLeafValue,
   prefSectionPath,
+  sharedReading,
   type PrefAlias,
   type PrefAliasTargets,
   type PrefBarLead,
@@ -32,7 +33,7 @@ import {
   type PrefSection,
   type PrefSectionAs,
 } from '@weasel-js/prefs';
-import { deepEqual, setOwn } from '@weasel-js/registry';
+import { setOwn } from '@weasel-js/registry';
 import { declaredField, nodeRoot } from './declaredFields';
 
 // Re-exported under its existing public name here: the kit-wide "these
@@ -292,11 +293,6 @@ const put = (copy: Record<string, unknown>, key: string, value: unknown): void =
 export const nodeLeafValue = (leaf: PrefLeaf, held: unknown): unknown =>
   prefLeafValue(leaf, held, { unset: leaf.absentIsDefault !== true });
 
-/** {@link aggregateValue} for the leaf at `path`: each node's value as {@link nodeLeafValue} shows it. */
-export function aggregateLeaf(nodes: readonly AnyNode[], path: string, leaf: PrefLeaf): unknown | Mixed {
-  return sharedValue(nodes.map((node) => nodeLeafValue(leaf, nodeValueAt(node, path))));
-}
-
 /** Aggregate a path across nodes: the shared value, or `MIXED`. A node
  *  holding nothing there reads as `absent`. */
 export function aggregateValue(
@@ -314,8 +310,8 @@ export function aggregateValue(
 
 /** The one value `values` all are, or `MIXED`. */
 export function sharedValue(values: readonly unknown[]): unknown | Mixed {
-  const [first, ...rest] = values;
-  return rest.every((v) => deepEqual(v, first, { undefinedAsAbsent: true })) ? first : MIXED;
+  const reading = sharedReading(values);
+  return reading.mixed ? MIXED : reading.value;
 }
 
 /** `'rect ×2 · text'` — kinds in first-seen order with counts. */

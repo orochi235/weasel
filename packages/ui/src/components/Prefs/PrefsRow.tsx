@@ -6,6 +6,7 @@ import {
   type PrefAlias,
   type PrefAliasTargets,
   type PrefLeaf,
+  type PrefsSource,
   prefDrawsSeveral,
 } from '@weasel-js/prefs';
 import type { BarCell, BarLeafNode } from '../Bar/BarLayout';
@@ -26,7 +27,6 @@ import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
 import { withRowControl } from './surfaceControls';
 import { autoTracked, rowReset } from './reset';
-import type { PrefsSource } from '../PrefsSource/PrefsSource';
 import { selectionAttrs } from './selection';
 import { SplitBody, SplitHead, SplitMarks, SplitToggle, splitRowState } from './SplitRow';
 import type { SplitCtx } from './splitRows';
