@@ -76,8 +76,8 @@ pressed one was on. `selectionKeys` says what the keyboard does with it.
 centered, at its end, or stretched across (`'fill'`): its tracks, each item's span, and which of the grid's outer
 corners each item sits on. `rovingGridTarget` walks such a grid with the arrows, Up and Down landing on the item
 drawn under this one, by `gridLayout`'s per-row offsets and widths; `tileKey` does the same for `count` items
-tiled by a spec. `@weasel-js/ui`'s `ToggleBar`, `OptionsBar`,
-`ButtonBar`, `SwatchGrid` and `ToolGroup` run on these.
+tiled by a spec. `@weasel-js/ui`'s `SegmentedBar`, `SwatchGrid`, and `ToolGroup`
+run on these.
 
 ## Steps and sliders
 

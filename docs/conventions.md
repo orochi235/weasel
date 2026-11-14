@@ -264,7 +264,7 @@ A kit component's props use the DOM's and React Aria's names where one exists
 
 - **Accessible name**: a component takes `'aria-label'`, as the element it
   renders does. A field of a data object describing one row or segment
-  (`ToggleBarItem`, `DetentItem`) is `ariaLabel`, since a quoted key in every
+  (`SegmentedBarItem`, `DetentItem`) is `ariaLabel`, since a quoted key in every
   item literal buys nothing.
 - **Off and current**: a component the kit draws itself takes `disabled`,
   `readOnly` and `current`, and so does a row shape it defines
@@ -362,7 +362,7 @@ blurry rather than bigger.
 ### Gloss
 
 `--wzl-gloss` is how much Aqua glass a boxed `Button` and a selected segment of
-`ToggleBar`, `ButtonBar`, or `OptionsBar` wear, from 0 to 1. The default theme
+a `SegmentedBar` wear, from 0 to 1. The default theme
 sets 0: a flat accent fill, and for a secondary button the raised surface inside
 a 1px `--wzl-border-strong` line. At 1 they draw the ramp, the specular gloss,
 the rim, and the drop shadow. A theme turns the glass on by setting the token,
