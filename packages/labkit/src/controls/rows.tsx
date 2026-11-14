@@ -3,6 +3,7 @@ import {
   PropertyCaption,
   PropertyRow,
   type PropertyRowLayout,
+  RowScope,
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
 import { valueAtPath } from '../config/path';
@@ -79,33 +80,33 @@ export function PairedRow<TC extends Record<string, unknown>>({
   changed?: boolean;
 }) {
   return (
-    <PropertyRow
-      group
-      span={span}
-      changed={changed}
-      label={label}
-      layout={layout}
-      disabled={cells.every((cell) => cell.disabled)}
-      error={pairError(cells, errors)}
-    >
-      {cells.map(({ path, leaf, disabled }) => (
-        // The row is named by the pair, so a cell that shares it says which
-        // knob it is — without a caption a paired switch reads only to a
-        // screen reader. A cell whose leaf is deliberately unnamed keeps none.
-        <span key={path} className="lk-pair-cell" title={leaf.description || undefined}>
-          {leaf.name ? (
-            <PropertyCaption className="lk-pair-label">{leaf.name}</PropertyCaption>
-          ) : null}
-          <BareControl
-            leaf={leaf}
-            value={leafValueAt(shown, path, leaf)}
-            write={(value) => setConfig(path, value)}
-            draft={draftConfig && ((value) => draftConfig(path, value))}
-            disabled={disabled}
-            read={(p) => valueAtPath(shown, p)}
-          />
-        </span>
-      ))}
-    </PropertyRow>
+    <RowScope changed={changed} error={pairError(cells, errors)}>
+      <PropertyRow
+        group
+        span={span}
+        label={label}
+        layout={layout}
+        disabled={cells.every((cell) => cell.disabled)}
+      >
+        {cells.map(({ path, leaf, disabled }) => (
+          // The row is named by the pair, so a cell that shares it says which
+          // knob it is — without a caption a paired switch reads only to a
+          // screen reader. A cell whose leaf is deliberately unnamed keeps none.
+          <span key={path} className="lk-pair-cell" title={leaf.description || undefined}>
+            {leaf.name ? (
+              <PropertyCaption className="lk-pair-label">{leaf.name}</PropertyCaption>
+            ) : null}
+            <BareControl
+              leaf={leaf}
+              value={leafValueAt(shown, path, leaf)}
+              write={(value) => setConfig(path, value)}
+              draft={draftConfig && ((value) => draftConfig(path, value))}
+              disabled={disabled}
+              read={(p) => valueAtPath(shown, p)}
+            />
+          </span>
+        ))}
+      </PropertyRow>
+    </RowScope>
   );
 }

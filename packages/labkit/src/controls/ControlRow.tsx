@@ -29,6 +29,7 @@ import {
   PropertyRow,
   type PropertyRowLayout,
   PropertySpan,
+  RowScope,
 } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
 import { drawsOwn, entryAt } from '../config/drawsOwn';
@@ -257,22 +258,23 @@ function ActionRow({
   'path' | 'leaf' | 'resolved' | 'config' | 'setConfig' | 'layout' | 'error' | 'over'
 > & { disabled: boolean; label: string; description: string | undefined }) {
   return (
-    <PropertyRow
-      group
-      label={label}
-      description={description}
-      layout={layout}
-      disabled={disabled}
-      disabledReason={leaf.disabledReason}
-      error={error}
-    >
-      <PrefActionButton
-        pref={boundAction(leaf, config, setConfig) as PrefAction}
-        path={path}
+    <RowScope error={error}>
+      <PropertyRow
+        group
+        label={label}
+        description={description}
+        layout={layout}
         disabled={disabled}
-        active={isLeafActive(resolved, path, config, over)}
-      />
-    </PropertyRow>
+        disabledReason={leaf.disabledReason}
+      >
+        <PrefActionButton
+          pref={boundAction(leaf, config, setConfig) as PrefAction}
+          path={path}
+          disabled={disabled}
+          active={isLeafActive(resolved, path, config, over)}
+        />
+      </PropertyRow>
+    </RowScope>
   );
 }
 
@@ -325,7 +327,8 @@ function LeafRow<TC extends Record<string, unknown>>({
 
   const label = leaf.name;
   const description = leaf.description;
-  const row = { label, description, layout, readout: autoReadout, changed, error, ...autoProps };
+  const row = { label, description, layout, readout: autoReadout };
+  const state = { changed, error, ...autoProps };
 
   if (leaf.kind === 'action')
     return (
@@ -339,36 +342,31 @@ function LeafRow<TC extends Record<string, unknown>>({
   // Too much for a row, so the row opens it in a dialog.
   if (prefIsCompound(leaf)) {
     const summary = summarizeLeaf(leaf, value);
-    const dialog = {
-      label,
-      summary,
-      readout: autoReadout,
-      layout,
-      description,
-      disabled,
-      changed,
-      error,
-    };
+    const dialog = { label, summary, readout: autoReadout, layout, description, disabled };
     return (
-      <CompoundRow
-        dialog={{ ...dialog, ...autoProps }}
-        control={{ path, leaf, resolved, config, label, renderers, over, given: inside }}
-        value={value}
-        setValue={write}
-      />
+      <RowScope {...state}>
+        <CompoundRow
+          dialog={dialog}
+          control={{ path, leaf, resolved, config, label, renderers, over, given: inside }}
+          value={value}
+          setValue={write}
+        />
+      </RowScope>
     );
   }
 
   if (leaf.kind === 'curve')
     return (
-      <CurveRow
-        leaf={leaf}
-        value={value}
-        write={write}
-        draft={draft}
-        disabled={disabled}
-        row={row}
-      />
+      <RowScope {...state}>
+        <CurveRow
+          leaf={leaf}
+          value={value}
+          write={write}
+          draft={draft}
+          disabled={disabled}
+          row={row}
+        />
+      </RowScope>
     );
 
   const read = (p: string): unknown => valueAtPath(shown, p);
@@ -379,8 +377,16 @@ function LeafRow<TC extends Record<string, unknown>>({
     case 'string':
     case 'number':
     case 'enum':
-      return <PropertyField {...field} {...row} span={spansGrid(field, pack)} />;
+      return (
+        <RowScope {...state}>
+          <PropertyField {...field} {...row} span={spansGrid(field, pack)} />
+        </RowScope>
+      );
     default:
-      return <PropertyField {...withRowControl(field, 'lab')} {...row} />;
+      return (
+        <RowScope {...state}>
+          <PropertyField {...withRowControl(field, 'lab')} {...row} />
+        </RowScope>
+      );
   }
 }

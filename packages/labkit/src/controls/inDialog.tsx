@@ -13,7 +13,7 @@ import {
 } from '@weasel-js/prefs';
 import { qty, withUnit } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
-import { stepDisplay } from '@weasel-js/ui/components/Properties';
+import { RowScope, stepDisplay } from '@weasel-js/ui/components/Properties';
 import type { InDialogOptions, LeafRenderer } from '../config/types';
 import { DraftDialogRow } from './DraftDialogRow';
 import { extra } from './fields';
@@ -112,22 +112,25 @@ export function inDialog(body: LeafRenderer, opts: InDialogOptions = {}): LeafRe
     const summary = opts.summary ?? ((v: unknown) => summarizeLeaf(pref, v));
     const pinned = !prefCanAuto(pref);
     return (
-      <DraftDialogRow
-        label={pref.name}
-        description={pref.description}
-        summary={summary(value)}
-        title={opts.title}
-        readout={auto ? 'auto' : undefined}
+      <RowScope
         auto={auto}
         onAutoChange={pinned ? undefined : setAuto}
         changed={ctx.changed}
-        value={value}
-        setValue={ctx.setValue}
-        commit={opts.commit}
         error={ctx.error}
       >
-        {(draft, setDraft) => body({ ...ctx, value: draft, setValue: setDraft })}
-      </DraftDialogRow>
+        <DraftDialogRow
+          label={pref.name}
+          description={pref.description}
+          summary={summary(value)}
+          title={opts.title}
+          readout={auto ? 'auto' : undefined}
+          value={value}
+          setValue={ctx.setValue}
+          commit={opts.commit}
+        >
+          {(draft, setDraft) => body({ ...ctx, value: draft, setValue: setDraft })}
+        </DraftDialogRow>
+      </RowScope>
     );
   };
 }

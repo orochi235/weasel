@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { usePropertyRow } from '../Properties/rowContext';
+import { usePropertyRow } from '../Properties/rowScope';
 import { EASING_NAMES, easingBezier, easingLabel, sampleEasing, type EasingSpec } from '@weasel-js/geom';
 import s from './Timeline.module.css';
 

@@ -526,11 +526,6 @@ name a package. Breaking changes are in scope.
   form context (bar cell, menu row, popover row, palette) and draw one `ActionButton` from it. Closes when the four
   buttons are one component.
 
-- **(P2) [agent] Grow `PropertyRowContext` into a row scope.** `auto`, `onAutoChange`, `onReset`, `changed`, and
-  `error` are declared on `PropertyRow`, `DialogRow`, and `PropertyFieldRow`; `SelectionPanel/LabeledRow.tsx` adds
-  `disabled`/`disabledReason`. `Properties/rowContext.ts` carries only `{ label }`, read only by `EasingPicker`.
-  `mixed` stays a prop. Closes when those row props are read from the scope rather than declared on each row.
-
 - **(P2) [agent] `disabled` and `readOnly` on the controls that take neither.** The `<Disabled>`/`<ReadOnly>`
   scopes (2026-11-13) reach every kit control that already took `disabled`, and `Slider` (2026-11-14), but these
   never took one, so a scope passes over them: `SwatchGrid`, `SwatchStrip`, `RecentColors`, `PatternPicker`,

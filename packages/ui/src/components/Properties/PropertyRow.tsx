@@ -2,7 +2,7 @@ import { type ReactNode, type RefObject, useLayoutEffect, useMemo, useRef, useSt
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import { PropertyHelp } from './PropertyHelp';
 import { ResetControl } from './ResetControl';
-import { PropertyRowContext } from './rowContext';
+import { InsideRow, useRowState } from './rowScope';
 import s from './Properties.module.css';
 import { holdScope, useDisabled, type DisableableProps } from '../Disabled';
 import { ReasonTold } from '../Disabled/Disabled';
@@ -15,7 +15,7 @@ const ROW_ATTR = 'data-property-row';
 /** Whether a row's label sits above its control or beside it. */
 export type PropertyRowLayout = 'block' | 'inline';
 
-/** Props for `<PropertyRow>`. */
+/** Props for `<PropertyRow>`. Its auto, changed, reset, and error state come from the `<RowScope>` around it. */
 export interface PropertyRowProps extends PropertyMetricProps, DisableableProps {
   label: ReactNode;
   /** Right-aligned readout shown next to the label (e.g. current value). */
@@ -52,32 +52,10 @@ export interface PropertyRowProps extends PropertyMetricProps, DisableableProps 
    *  member has to carry its own name. */
   group?: boolean;
   className?: string;
-  /** The row is auto: its value is not pinned and the owner computes it. The
-   *  control keeps drawing, ghosted in the secondary accent, at the value the
-   *  owner passes; an edit to it reaches the owner like any other, which pins. */
-  auto?: boolean;
-  /** Given, the row's label toggles `auto` when it is clicked. Omitted, the row
-   *  can show an auto state but not change it.
-   *
-   *  The label then names that toggle, so a control passed as `children` has to
-   *  carry its own accessible name — every `<PropertyField>` does. */
-  onAutoChange?: (next: boolean) => void;
-  /** Given, a `ResetControl` after the label calls it: the owner passes it while the row's value is not
-   *  what a reset makes it (`prefIsReset`), and puts the setting back as its schema says. */
-  onReset?: () => void;
   /** Small muted text after the label — where an inherited value comes from. */
   hint?: ReactNode;
-  /** The row's value differs from a baseline of the caller's: its label is drawn in the accent color. */
-  changed?: boolean;
   /** The row stands for several values that differ: its label is drawn in the warning color. Outranks `changed`. */
   mixed?: boolean;
-  /** What the row reads when it is auto, whether or not it is now. Shown as the
-   *  last line of the help tooltip, after the word `auto`; with no `description`
-   *  the tooltip is that line alone. */
-  autoValue?: ReactNode;
-  /** What is wrong with the row's value — a validation message, shown under the control as an alert. The
-   *  row carries `data-invalid` while it has one. */
-  error?: ReactNode;
 }
 
 /** The label-plus-control frame `<PropertyField>` draws its rows in. Use it
@@ -97,15 +75,11 @@ export function PropertyRow(props: PropertyRowProps) {
     className,
     density,
     align,
-    auto,
-    onAutoChange,
-    onReset,
     hint,
-    changed = false,
     mixed = false,
-    autoValue,
-    error,
   } = props;
+  const state = useRowState();
+  const { auto, onAutoChange, onReset, changed = false, autoValue, error } = state;
   // A disabled row disables its control, and its help reads the reason.
   const { disabled, reason: why } = useDisabled(props);
   const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
@@ -166,7 +140,7 @@ export function PropertyRow(props: PropertyRowProps) {
       {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
     </span>
   );
-  const scope = useMemo(() => ({ label }), [label]);
+  const scope = useMemo(() => ({ ...state, label }), [state, label]);
   const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
   const invalid = error != null && error !== false && error !== '';
   const message = invalid ? (
@@ -178,7 +152,7 @@ export function PropertyRow(props: PropertyRowProps) {
   return group ? (
     <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
       {head}
-      <PropertyRowContext.Provider value={scope}><ReasonTold reason={why}>{holdScope(props, children)}</ReasonTold></PropertyRowContext.Provider>
+      <InsideRow scope={scope}><ReasonTold reason={why}>{holdScope(props, children)}</ReasonTold></InsideRow>
       {tail}
       {message}
     </div>
@@ -190,7 +164,7 @@ export function PropertyRow(props: PropertyRowProps) {
       {...multi}
     >
       {head}
-      <PropertyRowContext.Provider value={scope}><ReasonTold reason={why}>{holdScope(props, children)}</ReasonTold></PropertyRowContext.Provider>
+      <InsideRow scope={scope}><ReasonTold reason={why}>{holdScope(props, children)}</ReasonTold></InsideRow>
       {tail}
       {message}
     </label>

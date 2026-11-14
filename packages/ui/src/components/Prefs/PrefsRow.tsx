@@ -19,6 +19,7 @@ import { leafAtValues } from './leafAtValues';
 import { ObjectLeaf } from './ObjectLeaf';
 import { controlIsGroup, PropertyControl } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyRow';
+import { RowScope } from '../Properties/rowScope';
 import type { LiveControl } from './commitPolicy';
 import { leafField } from './leafField';
 import { renderLeaf, renderLeafControl, type LeafParts } from './renderLeaf';
@@ -219,20 +220,16 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
 
   return (
     <div className={s.rowSlot} data-wide={pref.kind === 'object' || stacked || Array.isArray(pref.default) ? '' : undefined} {...selectionAttrs(own, ctx, true)}>
+    {/* An inherited leaf's value comes already resolved, so the control keeps drawing it; an edit pins. */}
+    <RowScope changed={ctx.changed?.has(path)} error={ctx.errors?.get(path)} auto={inherited}
+      onAutoChange={toggles ? setAuto : undefined} onReset={renderCtx.reset}>
     <PropertyRow
       label={pref.name}
-      changed={ctx.changed?.has(path)}
-      error={ctx.errors?.get(path)}
       mixed={renderCtx.mixedAt?.(path, true)}
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
       className={stacked ? `${s.row} ${s.rowStacked}` : s.row}
       group={rowIsGroup(renderCtx, ctx.renderers)}
-      // The owner passes an inherited leaf's value already resolved, so the
-      // control keeps drawing it; editing it pins, through `onChange`.
-      auto={inherited}
-      onAutoChange={toggles ? setAuto : undefined}
-      onReset={renderCtx.reset}
       hint={marked || split ? <>{marked && <HiddenBadge />}{inheritHint}{split && <SplitMarks levels={split.shape.levels} />}</> : inheritHint}
       disabled={renderCtx.disabled}
       disabledReason={pref.disabledReason}
@@ -242,6 +239,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
         {split && <SplitToggle state={split} onToggle={toggleSplit} />}
       </span>
     </PropertyRow>
+    </RowScope>
     {members}
     </div>
   );

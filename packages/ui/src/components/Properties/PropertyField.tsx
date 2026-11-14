@@ -20,7 +20,8 @@ export type {
   PropertyStringFieldProps,
 } from './fieldTypes';
 
-/** Row props {@link PropertyField} adds to the field it draws. */
+/** Row props {@link PropertyField} adds to the field it draws. The row's auto, changed, reset, and error state
+ *  come from the `<RowScope>` around it. */
 export interface PropertyFieldRowProps extends PropertyMetricProps {
   label: ReactNode;
   /**
@@ -35,18 +36,6 @@ export interface PropertyFieldRowProps extends PropertyMetricProps {
   span?: boolean;
   /** Take only the width the label and the control need — see `<PropertyRow hug>`. */
   hug?: boolean;
-  /** The row is auto — see `<PropertyRow auto>`. */
-  auto?: boolean;
-  /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
-  onAutoChange?: (next: boolean) => void;
-  /** Resets the row's setting — see `<PropertyRow onReset>`. */
-  onReset?: () => void;
-  /** What the row reads when it is auto — see `<PropertyRow autoValue>`. */
-  autoValue?: ReactNode;
-  /** The value differs from a baseline of the caller's — see `<PropertyRow changed>`. */
-  changed?: boolean;
-  /** What is wrong with the value — see `<PropertyRow error>`. */
-  error?: ReactNode;
   /** Class on the row. `controlClassName` reaches the control. */
   rowClassName?: string;
   controlClassName?: string;
@@ -82,12 +71,6 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     hug,
     density,
     align,
-    auto,
-    onAutoChange,
-    onReset,
-    autoValue,
-    changed,
-    error,
     rowClassName,
     controlClassName,
     ...field
@@ -111,12 +94,6 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     hug,
     density,
     align,
-    auto,
-    onAutoChange,
-    onReset,
-    autoValue,
-    changed,
-    error,
     className: rowClassName,
     variant: shape.variant,
     group: shape.group,
