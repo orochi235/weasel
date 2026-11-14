@@ -127,7 +127,9 @@ export interface PaintInputProps {
    *  paints. Leave it off for a control that only ever edits one thing. */
   subject?: string | number;
   onInput?: (next: Paint | null) => void;
-  onChange: (next: Paint | null) => void;
+  /** Once per gesture. Return the paint actually applied when it differs, and a
+   *  solid's recent color records that paint's color instead. */
+  onChange: (next: Paint | null) => Paint | null | void;
   /** Names the paint this control edits — `Fill`, `Color`. Carried by the
    *  solid body's swatch, which is the part with a value to announce. */
   'aria-label'?: string;
@@ -240,8 +242,13 @@ interface PaintBodyProps {
   /** The color a pattern seeds from. */
   currentColor: () => string;
   onInput?: (next: Paint | null) => void;
-  onChange: (next: Paint | null) => void;
+  onChange: (next: Paint | null) => Paint | null | void;
   ariaLabel?: string;
+}
+
+/** The color a solid commit records: the applied paint's, when the consumer named one. */
+function appliedColor(applied: Paint | null | void): string | undefined {
+  return applied ? solidColorOf(applied) : undefined;
 }
 
 /** The editor for whichever kind the bar has lit. */
@@ -274,7 +281,7 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
           mixed
           aria-label={ariaLabel}
           onInput={(color) => onInput?.(solidFromField(color))}
-          onChange={(color) => onChange(solidFromField(color))}
+          onChange={(color) => appliedColor(onChange(solidFromField(color)))}
         />
       );
     }
@@ -314,7 +321,7 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
         alpha
         aria-label={ariaLabel}
         onInput={(color) => onInput?.(solidFromField(color))}
-        onChange={(color) => onChange(solidFromField(color))}
+        onChange={(color) => appliedColor(onChange(solidFromField(color)))}
       />
     );
   }
