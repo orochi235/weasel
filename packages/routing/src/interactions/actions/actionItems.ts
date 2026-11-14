@@ -19,8 +19,8 @@ export interface ActionItem {
   description?: string;
   /** The variant's, else the action's. */
   grade?: MenuGrade;
-  /** Display text for the shortcut: the variant's, else the action's. Absent, a surface writes out the
-   *  first binding `actionShortcuts` finds for `params`. */
+  /** Display text for the shortcut: the variant's, else the action's. Absent, a surface shows the bindings
+   *  `actionShortcuts` finds for `params` (`actionItemShortcuts`). */
   shortcut?: string;
   /** The action's tags, then the variant's own. */
   tags: readonly string[];

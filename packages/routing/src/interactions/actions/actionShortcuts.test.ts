@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { GestureSpec } from '@weasel-js/gestures';
 import type { Action } from './action';
-import { actionShortcuts, keySpecShortcut } from './actionShortcuts';
+import { actionItems } from './actionItems';
+import { actionItemShortcuts, actionShortcuts, keySpecShortcut } from './actionShortcuts';
 import { tuneAction } from './tuning';
 
 const base = { id: 'a', label: 'A' } as const;
@@ -125,5 +126,26 @@ describe('actionShortcuts under a tuning', () => {
 
   it('gives an untuned variant no key from a binding that passes no params', () => {
     expect(actionShortcuts(flip, { axis: 'x' })).toEqual([]);
+  });
+});
+
+describe('actionItemShortcuts', () => {
+  const flip = {
+    id: 'flip', label: 'Flip', shortcut: 'Shift+F',
+    variants: [{ key: 'x', label: 'Horizontal', params: { axis: 'x' } }, { key: 'y', label: 'Vertical', params: { axis: 'y' }, shortcut: 'Shift+V' }],
+    defaultBinding: [{ spec: { kind: 'key', key: 'h' }, opts: { params: { axis: 'x' } } }],
+    invoker: { timing: 'immediate', run: () => {} },
+  } as unknown as Action;
+
+  it('gives the variant\'s text, else the action\'s', () => {
+    const [x, y] = actionItems(flip);
+    expect(actionItemShortcuts(y!)).toBe('Shift+V');
+    expect(actionItemShortcuts(x!)).toBe('Shift+F');
+  });
+
+  it('gives the bindings for the entry\'s params when no text is declared', () => {
+    const [x, y] = actionItems({ ...flip, shortcut: undefined, variants: flip.variants!.map((v) => ({ ...v, shortcut: undefined })) });
+    expect(actionItemShortcuts(x!)).toEqual([{ key: 'h', mod: false, alt: false, shift: false }]);
+    expect(actionItemShortcuts(y!)).toEqual([]);
   });
 });

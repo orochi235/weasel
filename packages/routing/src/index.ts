@@ -123,7 +123,7 @@ export { actionSettingsParams, readActionSettings } from './interactions/actions
 export type { ActionSettings, ActionSettingsState } from './interactions/actions/actionSettings';
 export type { LastOperation, LastOperationStore, SelectionSnapshotDep } from './interactions/actions/lastOperation';
 export type { ActionItem } from './interactions/actions/actionItems';
-export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
+export { actionItemShortcuts, actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';
 export { actionsTagged, taggedActionItems, matchActionItem } from './interactions/actions/actionTags';
 // Both a const table and the union of its values, under one name.

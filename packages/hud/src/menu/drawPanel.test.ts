@@ -57,6 +57,12 @@ describe('drawPanel', () => {
     expect(JSON.stringify(texts(drawPanel(ctx, b, [del], null, m))[0]!.runs)).toContain('#eee');
   });
 
+  it('draws a string shortcut as written', () => {
+    const e: MenuEntry = { kind: 'item', key: 'lock', label: 'Lock', shortcut: 'Hold L', run };
+    const [, chip] = texts(drawPanel(ctx, b, [e], null, m));
+    expect(chip!.runs.map((r) => r.text).join('')).toBe('Hold L');
+  });
+
   it('widens the panel to fit a label and its shortcut', () => {
     const label = 'L'.repeat(30);
     const plain: MenuEntry = { kind: 'item', key: 'a', label, run };
