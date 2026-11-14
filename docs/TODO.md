@@ -560,11 +560,6 @@ name a package. Breaking changes are in scope.
   `sliderSlop.module.css` into their owners. Closes when `RangeSlider` and `DetentSlider` are gone and
   NumberControls renders `InlineRange`.
 
-- **(P2) [agent] Export `Bar`'s cell step and drop `ControlBar`'s copy.** Both share `groupBarNodes`, but `labkit/src/controls/ControlBar.tsx` maps leaves through its own `Cell`/`labField` and
-  filters with its own `visible`, and never calls `pairRows`, so paired leaves don't fuse in a lab bar. Export
-  `barCells(leaves, cellFor)` with a pluggable cell factory. Closes when
-  `ControlBar` calls it.
-
 - **(P3) [maintainer] Presets and option builders in place of wrapper components.** `PointPlotter` is `CurveEditor`
   with three props fixed; `FontWeightSelect` and `FontFamilySelect` only build options for `Select`; `CloseButton`
   repeats `Button`'s `iconOnly`, tooltip, and reason handling; `ActionSettingsDialog` repeats `PrefsDialog`;
