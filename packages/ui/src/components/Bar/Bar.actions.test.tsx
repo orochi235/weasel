@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { useState, type ReactNode } from 'react';
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { Bar } from './Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 afterEach(cleanup);
@@ -49,7 +49,7 @@ describe('Bar actions leaf', () => {
   it('draws one button per action in its group, in registry order, a variant each', () => {
     render(
       <Host actions={REGISTERED}>
-        <Bar schema={schema()} label="Tools" />
+        <PrefsBar schema={schema()} label="Tools" />
       </Host>,
     );
     const names = within(screen.getByRole('toolbar')).getAllByRole('button').map((b) => b.getAttribute('aria-label'));
@@ -62,7 +62,7 @@ describe('Bar actions leaf', () => {
     flip.invoker = { timing: 'immediate', run: (_deps, params) => run(params) };
     render(
       <Host actions={[flip]}>
-        <Bar schema={schema()} />
+        <PrefsBar schema={schema()} />
       </Host>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Flip H' }));
@@ -75,7 +75,7 @@ describe('Bar actions leaf', () => {
       return (
         <Host actions={more ? [action('front'), action('back')] : [action('front')]}>
           <button type="button" onClick={() => setMore(true)}>register</button>
-          <Bar schema={schema()} label="Tools" />
+          <PrefsBar schema={schema()} label="Tools" />
         </Host>
       );
     }
@@ -88,7 +88,7 @@ describe('Bar actions leaf', () => {
   it('disables every button while the leaf’s enableIf fails', () => {
     render(
       <Host actions={REGISTERED}>
-        <Bar schema={schema({ enableIf: { path: 'on' } })} values={{ on: false }} />
+        <PrefsBar schema={schema({ enableIf: { path: 'on' } })} values={{ on: false }} />
       </Host>,
     );
     expect(screen.getByRole('button', { name: 'Bring to front' })).toHaveAttribute('aria-disabled', 'true');
@@ -98,7 +98,7 @@ describe('Bar actions leaf', () => {
   it('keeps its buttons on the line of a vertical bar', () => {
     render(
       <Host actions={REGISTERED}>
-        <Bar schema={schema()} orientation="vertical" label="Tools" />
+        <PrefsBar schema={schema()} orientation="vertical" label="Tools" />
       </Host>,
     );
     expect(within(screen.getByRole('toolbar')).getByRole('button', { name: 'Bring to front' })).toBeDefined();
@@ -106,7 +106,7 @@ describe('Bar actions leaf', () => {
   });
 
   it('draws no cell with no registry above', () => {
-    const { container } = render(<Bar schema={{ name: '', children: { arrange: actions() } }} />);
+    const { container } = render(<PrefsBar schema={{ name: '', children: { arrange: actions() } }} />);
     expect(container.querySelectorAll('button')).toHaveLength(0);
   });
 });

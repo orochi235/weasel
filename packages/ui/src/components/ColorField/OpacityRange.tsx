@@ -1,6 +1,5 @@
 import { useState, type ReactElement } from 'react';
 import { InlineRange } from '../InlineRange';
-import shared from '../range.module.css';
 import s from './OpacityRange.module.css';
 import type { HoldProps } from '../Disabled';
 
@@ -36,7 +35,7 @@ export function OpacityRange(props: OpacityRangeProps): ReactElement {
   return (
     <>
       <InlineRange
-        className={`${s.range} ${shared.alpha}`}
+        className={s.range}
         min={0}
         max={100}
         step={1}

@@ -70,7 +70,7 @@ describe('CommandBar', () => {
   it('draws the menus slot first in its row, ahead of the File buttons', () => {
     render(<CommandBar menus={<div role="menubar" aria-label="Menu bar" />} />);
     const row = screen.getByRole('toolbar', { name: 'Actions' });
-    expect(row.firstElementChild).toBe(screen.getByRole('menubar', { name: 'Menu bar' }));
+    expect(row.firstElementChild?.firstElementChild).toBe(screen.getByRole('menubar', { name: 'Menu bar' }));
   });
 
   it("draws the shell's Preferences in the App run ahead of Commands, and opens the dialog from it", () => {

@@ -4,7 +4,7 @@ import { arcShape, lineShape, runPlaces, runStationAt, trackRun, type TrackShape
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { Along, arcInBox } from '../Along';
 import { isApplePlatform } from '@weasel-js/gestures';
-import { Bar } from './Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import alongStyles from '../Along/Along.module.css';
 
 // jsdom lays nothing out: an Along is 200 by 200 untransformed and every other element 40 wide; every box is 200 by
@@ -47,7 +47,7 @@ function expectAt(el: Element, shape: TrackShape, g: number) {
 describe('Bar along a curve', () => {
   test('on a shape a field sits on the run, as on a straight bar', () => {
     const schema: PrefGroup = { name: 'Tools', children: { width: { kind: 'number', name: 'Width', description: '', default: 4 }, undo: action('Undo') } };
-    render(<Along shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })}><Bar schema={schema} values={{ width: 4 }} label="Tools" /></Along>);
+    render(<Along shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })}><PrefsBar schema={schema} values={{ width: 4 }} label="Tools" /></Along>);
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-shape', 'arc');
     expect(screen.getByRole('spinbutton', { name: 'Width' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Width' })).toBeNull();
@@ -57,19 +57,19 @@ describe('Bar along a curve', () => {
   test('a separator on the line stands across the run', () => {
     const rule: PrefLeaf = { kind: 'separator', name: '', description: '', default: undefined } as PrefLeaf;
     const schema: PrefGroup = { name: 'Tools', children: { a: action('a'), rule, b: action('b') } };
-    render(<Along shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })}><Bar schema={schema} label="Tools" /></Along>);
+    render(<Along shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })}><PrefsBar schema={schema} label="Tools" /></Along>);
     expect(screen.getByRole('separator')).toHaveAttribute('aria-orientation', 'vertical');
   });
 
   test("a lone item sits at the run's middle, tipped", () => {
     const shape = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 0, end: 90 });
-    render(<Along shape={shape}><Bar schema={actions('Undo')} label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={actions('Undo')} label="Tools" /></Along>);
     expect(trackRun(shape).at(0.5).angle).toBeCloseTo(45);
     expectAt(items()[0]!, shape, 0.5);
   });
 
   test('a straight bar on a line shape keeps its flex line', () => {
-    render(<Along shape={lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })}><Bar schema={actions('Undo', 'Redo')} label="Tools" /></Along>);
+    render(<Along shape={lineShape({ x: 0, y: 0 }, { x: 200, y: 0 })}><PrefsBar schema={actions('Undo', 'Redo')} label="Tools" /></Along>);
     const bar = screen.getByRole('toolbar');
     expect(bar).not.toHaveAttribute('data-shape');
     expect(bar.getAttribute('aria-orientation')).toBe('horizontal');
@@ -79,7 +79,7 @@ describe('Bar along a curve', () => {
   test('menu mode keeps what fits along the arc, give or take RUN_SLACK, and puts More last along the run', () => {
     const shape = arcShape({ center: { x: 100, y: 100 }, radius: 100, start: 315, end: 45 });
     expect(shape.length).toBeCloseTo(157.08, 2);
-    render(<Along shape={shape}><Bar schema={six} overflow="menu" label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={six} overflow="menu" label="Tools" /></Along>);
     const kept = items();
     // Three items and More take 160, under 3 over the arc.
     expect(kept.map((el) => el.getAttribute('data-bar-item'))).toEqual(['a', 'b', 'c']);
@@ -93,7 +93,7 @@ describe('Bar along a curve', () => {
 
   test('right to left, menu mode starts the run at its right end and puts More at its left', () => {
     const shape = arcShape({ center: { x: 100, y: 100 }, radius: 100, start: 315, end: 45 });
-    render(<div dir="rtl"><Along shape={shape}><Bar schema={six} overflow="menu" label="Tools" /></Along></div>);
+    render(<div dir="rtl"><Along shape={shape}><PrefsBar schema={six} overflow="menu" label="Tools" /></Along></div>);
     const xs = items().map((el) => placed(el).x);
     expect(xs[0]!).toBeGreaterThan(xs[1]!);
     expect(placed(more()).x).toBeLessThan(Math.min(...xs));
@@ -102,7 +102,7 @@ describe('Bar along a curve', () => {
 
   test("an arc too short for any item keeps the More button alone at the run's center, holding every item", () => {
     const shape = arcShape({ center: { x: 100, y: 100 }, radius: 10, start: 315, end: 45 });
-    render(<Along shape={shape}><Bar schema={six} overflow="menu" label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={six} overflow="menu" label="Tools" /></Along>);
     expect(items()).toEqual([]);
     expectAt(more(), shape, 0.5);
     fireEvent.click(within(more() as HTMLElement).getByRole('button', { name: 'More' }));
@@ -112,7 +112,7 @@ describe('Bar along a curve', () => {
   test('a Bar inside Along follows its arc and its align', () => {
     render(
       <Along arc={{ start: 270, end: 90 }} align="start">
-        <Bar schema={actions('Undo', 'Redo')} label="Tools" />
+        <PrefsBar schema={actions('Undo', 'Redo')} label="Tools" />
       </Along>,
     );
     const shape = arcShape(arcInBox({ start: 270, end: 90 }, { width: 200, height: 200 }));
@@ -128,7 +128,7 @@ describe('Bar along a curve', () => {
       render(
         <div dir={dir}>
           <Along arc={arc} align="start">
-            <Bar schema={actions('a', 'b')} label="Tools" />
+            <PrefsBar schema={actions('a', 'b')} label="Tools" />
           </Along>
         </div>,
       );
@@ -161,7 +161,7 @@ describe('Bar along a curve', () => {
       const onReorder = vi.fn();
       render(
         <Along arc={{ start: 90, end: 270 }} align="start">
-          <Bar schema={actions('a', 'b', 'c')} label="Tools" onReorder={onReorder} />
+          <PrefsBar schema={actions('a', 'b', 'c')} label="Tools" onReorder={onReorder} />
         </Along>,
       );
       const b = items()[1]!;
@@ -180,14 +180,14 @@ describe('Bar along a curve: popovers open away from the center', () => {
   const width: PrefGroup = { name: 'Tools', children: { width: { name: 'Width', as: 'panel', children: { w: { kind: 'number', name: 'W', description: '', default: 4 } as PrefLeaf } } } };
 
   test('an item on the top of a ring opens its popover upward', () => {
-    render(<Along shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })}><Bar schema={width} values={{ width: 4 }} label="Tools" /></Along>);
+    render(<Along shape={arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 })}><PrefsBar schema={width} values={{ width: 4 }} label="Tools" /></Along>);
     expect(sideOfItem()).toBe('top');
   });
 
   test('an item on the bottom of a ring, whose run is flipped, opens its popover downward', () => {
     const shape = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 120, end: 240 });
     expect(trackRun(shape).flipped).toBe(true);
-    render(<Along shape={shape}><Bar schema={width} values={{ width: 4 }} label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={width} values={{ width: 4 }} label="Tools" /></Along>);
     expect(sideOfItem()).toBe('bottom');
   });
 });
@@ -213,7 +213,7 @@ describe('Bar along a curve: scroll mode', () => {
   const pastEnd = (out: number) => runStationAt(trackRun(shape), out < 0 ? out : trackRun(shape).length + out, 0, 'follow');
 
   test('items past the end are marked past, dividers included, and a chevron points out of that end', () => {
-    render(<Along shape={shape}><Bar schema={schema} label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={schema} label="Tools" /></Along>);
     const divider = screen.getByRole('toolbar').querySelector(':scope > [role="separator"]')!;
     expect(divider).toHaveAttribute('data-clipped', 'past');
     expect(items().at(-1)).toHaveAttribute('data-clipped', 'past');
@@ -222,7 +222,7 @@ describe('Bar along a curve: scroll mode', () => {
   });
 
   test('right to left, the chevron past the end sits at the left and points out of it', () => {
-    render(<div dir="rtl"><Along shape={shape}><Bar schema={schema} label="Tools" /></Along></div>);
+    render(<div dir="rtl"><Along shape={shape}><PrefsBar schema={schema} label="Tools" /></Along></div>);
     expect(marks()).toEqual(['end']);
     const end = runStationAt(trackRun(shape, 0, 1, { direction: 'rtl' }), trackRun(shape).length + 10, 0, 'follow');
     expect(end.point.x).toBeLessThan(shape.at(0.5).point.x);
@@ -230,7 +230,7 @@ describe('Bar along a curve: scroll mode', () => {
   });
 
   test('the wheel scrolls the run, moving the chevron to the start', () => {
-    render(<Along shape={shape}><Bar schema={schema} label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={schema} label="Tools" /></Along>);
     wheel(1000);
     expect(items()[0]).toHaveAttribute('data-clipped', 'past');
     expect(items().at(-1)).toHaveAttribute('data-clipped', 'none');
@@ -239,7 +239,7 @@ describe('Bar along a curve: scroll mode', () => {
   });
 
   test('an item part past an end slides on round the arc, fading by how much of it is off the run', () => {
-    render(<Along shape={shape}><Bar schema={schema} label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={schema} label="Tools" /></Along>);
     // 30 px back, `a` (0..40, no gap in jsdom) spans -30..10: its middle is 10 px before the run's start.
     wheel(30);
     const a = items()[0]!;
@@ -257,7 +257,7 @@ describe('Bar along a curve: scroll mode', () => {
   });
 
   test('Tab reaching an item past the end brings it into view', () => {
-    render(<Along shape={shape}><Bar schema={schema} label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={schema} label="Tools" /></Along>);
     const f = screen.getByRole('button', { name: 'f' });
     vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
     onTestFinished(() => {
@@ -271,7 +271,7 @@ describe('Bar along a curve: scroll mode', () => {
   });
 
   test('menu mode draws no band and no chevrons', () => {
-    render(<Along shape={shape}><Bar schema={schema} overflow="menu" label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={schema} overflow="menu" label="Tools" /></Along>);
     expect(marks()).toEqual([]);
     expect(screen.getByRole('toolbar').querySelector(':scope > svg')).toBeNull();
   });
@@ -290,10 +290,10 @@ describe('Bar along a curve: dragging the run', () => {
   });
 
   test('marks an overflowing run so touch drags it rather than panning the page', () => {
-    render(<Along shape={shape}><Bar schema={fields} values={values} label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={fields} values={values} label="Tools" /></Along>);
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-scrolls');
     cleanup();
-    render(<Along shape={shape}><Bar schema={fields} values={values} overflow="menu" label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={fields} values={values} overflow="menu" label="Tools" /></Along>);
     expect(screen.getByRole('toolbar')).not.toHaveAttribute('data-scrolls');
   });
 
@@ -311,7 +311,7 @@ describe('Bar along a curve: dragging the run', () => {
     onTestFinished(() => {
       proto.setPointerCapture = real;
     });
-    render(<Along shape={shape}><Bar schema={fields} values={values} label="Tools" /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={fields} values={values} label="Tools" /></Along>);
     const trigger = screen.getByRole('button', { name: 'n2' });
     const at = (g: number) => {
       const { point } = run.at(g);
@@ -331,7 +331,7 @@ describe('Bar along a curve: dragging the run', () => {
 
   test('a Cmd-press does not scroll the run, and a plain drag still does', () => {
     const mod = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
-    render(<Along shape={shape}><Bar schema={fields} values={values} label="Tools" onReorder={() => {}} /></Along>);
+    render(<Along shape={shape}><PrefsBar schema={fields} values={values} label="Tools" onReorder={() => {}} /></Along>);
     const trigger = screen.getByRole('button', { name: 'n2' });
     const at = (g: number) => {
       const { point } = run.at(g);

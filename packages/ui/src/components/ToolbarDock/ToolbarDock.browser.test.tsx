@@ -3,7 +3,8 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
-import { BarLayout, type BarOrientation } from '@weasel-js/ui/components/Bar';
+import { Bar, type BarOrientation } from '@weasel-js/ui/components/Bar';
+import { barNodeChildren } from '@weasel-js/ui/components/PrefsBar';
 import { ToolbarDock } from '@weasel-js/ui/components/ToolbarDock';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
 import s from './ToolbarDock.browser.test.module.css';
@@ -21,14 +22,14 @@ const bar = (id: string, label: string, float = false, extra: Partial<DockBar> =
   float,
   ...extra,
   render: (orientation: BarOrientation) => (
-    <BarLayout
+    <Bar
       label={label}
       lead="label"
       orientation={orientation}
       framed
-      nodes={[{ kind: 'cell', path: `${id}.go`, content: <button type="button" onClick={() => presses.push(id)}>{`${label} go`}</button> }]}
-      cells={() => []}
-    />
+    >
+      {barNodeChildren([{ kind: 'cell', path: `${id}.go`, content: <button type="button" onClick={() => presses.push(id)}>{`${label} go`}</button> }], { cells: () => [] })}
+    </Bar>
   ),
 });
 const bars = [bar('file', 'File'), bar('view', 'View'), bar('shape', 'Shape')];
@@ -187,15 +188,15 @@ const menuBar = (id: string, label: string, count: number): DockBar => ({
   label,
   docks: ['top'],
   render: (orientation: BarOrientation) => (
-    <BarLayout
+    <Bar
       label={label}
       lead="label"
       orientation={orientation}
       framed
       overflow="menu"
-      nodes={Array.from({ length: count }, (_, i) => ({ kind: 'cell' as const, path: `${id}.${i}`, content: <button type="button">{`${label} ${i}`}</button> }))}
-      cells={() => []}
-    />
+    >
+      {barNodeChildren(Array.from({ length: count }, (_, i) => ({ kind: 'cell' as const, path: `${id}.${i}`, content: <button type="button">{`${label} ${i}`}</button> })), { cells: () => [] })}
+    </Bar>
   ),
 });
 

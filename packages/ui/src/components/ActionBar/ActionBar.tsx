@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { taggedActionItems } from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
-import { Bar } from '../Bar/Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { BarActions } from '../Bar/BarActions';
 import type { Orientation } from '../Run';
 import type { DensityProps } from '../Density';
@@ -77,7 +77,7 @@ export function ActionBar(props: ActionBarProps) {
   }, [tag, only, icons, labels]);
 
   return (
-    <Bar
+    <PrefsBar
       schema={schema}
       renderers={renderers}
       orientation={orientation}

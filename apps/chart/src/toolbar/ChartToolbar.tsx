@@ -1,6 +1,6 @@
 import { zoomAt, type Tool, type ToolsApi, type View } from '@weasel-js/core';
 import { Bar } from '@weasel-js/ui/components/Bar';
-import { Toolbar } from '@weasel-js/ui/components/Toolbar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { useCallback, useMemo, type ReactElement } from 'react';
 import { useChartPref } from '../prefs';
@@ -38,9 +38,9 @@ function AssetBar({ asset, values, onChange }: {
   onChange: (path: string, value: unknown) => void;
 }): ReactElement {
   return (
-    <Toolbar.Group aria-label={asset.label}>
-      <Bar schema={asset.schema} values={values} onChange={onChange} />
-    </Toolbar.Group>
+    <Bar.Group aria-label={asset.label}>
+      <PrefsBar schema={asset.schema} values={values} onChange={onChange} />
+    </Bar.Group>
   );
 }
 
@@ -48,11 +48,11 @@ function AssetBar({ asset, values, onChange }: {
 export function ChartToolbar({ tools, include, ...binding }: ChartToolbarProps): ReactElement {
   const { values, onChange } = useToolbarBinding(binding);
   return (
-    <Toolbar className="wc-toolbar" aria-label="Chart" roving={false} wrap>
-      <Toolbar.Group aria-label="Tools">
+    <Bar className="wc-toolbar" label="Chart" wrap>
+      <Bar.Group aria-label="Tools">
         {tools && <ToolPalette tools={tools} include={include} orientation="horizontal" />}
-      </Toolbar.Group>
+      </Bar.Group>
       {TOOLBAR_ASSETS.map((asset) => <AssetBar key={asset.id} asset={asset} values={values} onChange={onChange} />)}
-    </Toolbar>
+    </Bar>
   );
 }

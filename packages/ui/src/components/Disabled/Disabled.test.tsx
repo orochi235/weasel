@@ -6,7 +6,7 @@ import { Input } from '../Input';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
 import { SegmentedBar } from '../Segmented';
-import { Toolbar } from '../Toolbar';
+import { Bar } from '../Bar';
 import { Disabled, ReadOnly, useDisabled } from './Disabled';
 
 function Probe(props: { disabled?: boolean; disabledReason?: string }) {
@@ -50,7 +50,7 @@ describe('Disabled', () => {
   });
 
   it('is what a container disabled prop does', () => {
-    render(<Toolbar disabled disabledReason="Locked"><Button>Save</Button></Toolbar>);
+    render(<Bar disabled disabledReason="Locked"><Button>Save</Button></Bar>);
     expect(screen.getByRole('button').getAttribute('aria-disabled')).toBe('true');
   });
 

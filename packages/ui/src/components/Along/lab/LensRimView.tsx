@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { DEG_TO_RAD, wrapPositive, type Point } from '@weasel-js/geom';
 import { Along, type AlongArc } from '@weasel-js/ui/components/Along';
-import { Bar } from '@weasel-js/ui/components/Bar';
+import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { actionsSchema, LabActions } from './labActions';
@@ -81,7 +81,7 @@ export function LensRimView({ config }: { config: LensRimConfig }): ReactElement
               <div className={s.rim} />
             </div>
             <Along arc={top} className={config.boxes ? lab.boxes : undefined}>
-              <Bar label="Lens" schema={actionsSchema(config.actions, 'Lens')} overflow={config.overflow} />
+              <PrefsBar label="Lens" schema={actionsSchema(config.actions, 'Lens')} overflow={config.overflow} />
             </Along>
             <Along arc={bottom}>
               <Slider aria-label="Zoom" min={1} max={8} stops={ZOOM_STOPS} spacing="even" snap="strict" thumbs={zoom} onInput={setZoom} />

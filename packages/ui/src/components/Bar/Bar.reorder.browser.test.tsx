@@ -7,7 +7,7 @@ import { ActionsProvider, type Action } from '@weasel-js/core';
 import { arcShape } from '@weasel-js/geom';
 import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
 import { Along } from '@weasel-js/ui/components/Along';
-import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
+import { PrefsBar, type PrefsBarProps } from '@weasel-js/ui/components/PrefsBar';
 import s from './Bar.reorder.browser.test.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
@@ -32,7 +32,7 @@ const host = (node: ReactNode) => (
   </ActionsProvider>
 );
 
-const bar = (props: Partial<BarProps> = {}) => <Bar schema={FOUR} label="Tools" onReorder={(order) => orders.push(order)} {...props} />;
+const bar = (props: Partial<PrefsBarProps> = {}) => <PrefsBar schema={FOUR} label="Tools" onReorder={(order) => orders.push(order)} {...props} />;
 
 type Pt = { x: number; y: number };
 const mid = (el: Element): Pt => {
@@ -90,10 +90,10 @@ test('a Cmd-drag along a curved bar reorders it', async () => {
 
 test('a marked actions button lays out where an unmarked one does', async () => {
   const boxOf = () => button('front').getBoundingClientRect().toJSON() as DOMRect;
-  render(host(<div className={s.line}><Bar schema={ARRANGE} label="Tools" /></div>));
+  render(host(<div className={s.line}><PrefsBar schema={ARRANGE} label="Tools" /></div>));
   const bare = boxOf();
   cleanup();
-  render(host(<div className={s.line}><Bar schema={ARRANGE} label="Tools" onReorder={() => {}} /></div>));
+  render(host(<div className={s.line}><PrefsBar schema={ARRANGE} label="Tools" onReorder={() => {}} /></div>));
   expect(document.querySelector('[data-bar-unit="front"]')).not.toBeNull();
   expect(boxOf()).toEqual(bare);
 });

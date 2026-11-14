@@ -462,7 +462,7 @@ Owner tags, after the priority (2026-10-26):
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
   raised face, a well, or a button that stays down reads the `--wzl-bevel-*` hooks;
   `packages/theme/src/hooks.ts` says which takes which. Each was chosen from computed values
-  and one headless screenshot per theme, not by eye. Drawn with no bevel: `StatusBar`, a
+  and one headless screenshot per theme, not by eye. Drawn with no bevel: a status `Bar`, a
   `minimal` segmented control, a mixed segment, and a notched slider thumb, whose clip path a
   box shadow ignores. The checkbox, radio, switch, overlays, flat segment cells, and toolbar
   strips keep their own 1px border inside the bevel, where the field frame drops its border
@@ -519,7 +519,7 @@ name a package. Breaking changes are in scope.
   should open a paint editor is the maintainer's call. Closes when a slot edits a gradient, or the maintainer rules it
   stays a solid picker.
 
-- **(P2) [agent] One form context and one `ActionButton`.** `ToolButton`, `Toolbar.Button`, `BarActionButton`, and
+- **(P2) [agent] One form context and one `ActionButton`.** `ToolButton`, `Bar.Button`, `BarActionButton`, and
   the segment button all carry label, shortcut, description, `disabledReason`, pressed state, and a menu option, and
   all build tooltips through `segmentTooltipContent`. `BarActionButton` already reads `Bar/barInMenu.ts`'s
   `BarInMenuContext` to draw as a menu row, which overlaps `renderBarLeaf`'s `LeafSurface`. Merge those two into a
@@ -532,40 +532,17 @@ name a package. Breaking changes are in scope.
   `mixed` stays a prop. Closes when those row props are read from the scope rather than declared on each row.
 
 - **(P2) [agent] `disabled` and `readOnly` on the controls that take neither.** The `<Disabled>`/`<ReadOnly>`
-  scopes (2026-11-13) reach every kit control that already took `disabled`, but these never took one, so a scope
-  passes over them: `Slider`, `SwatchGrid`, `SwatchStrip`, `RecentColors`, `PatternPicker`, `CurveEditor`,
-  `BandEditor`, `MeshEditor`, `Jog`, `LayerList`, `ItemList`, `DataGrid`, `Timeline`, `PageTabs`, and `TokenPanel`.
-  Each needs its own refusal (a drag, a keyboard step, a swatch press) and the reason's tooltip through
+  scopes (2026-11-13) reach every kit control that already took `disabled`, and `Slider` (2026-11-14), but these
+  never took one, so a scope passes over them: `SwatchGrid`, `SwatchStrip`, `RecentColors`, `PatternPicker`,
+  `CurveEditor`, `BandEditor`, `MeshEditor`, `Jog`, `LayerList`, `ItemList`, `DataGrid`, `Timeline`, `PageTabs`, and
+  `TokenPanel`. Each needs its own refusal (a drag, a keyboard step, a swatch press) and the reason's tooltip through
   `useHoldReason`, which is new behavior per component rather than a rename, hence a pass of its own. Closes when each
   reads `useControlAccess`.
 
 - **(P2) [agent] Children in place of config arrays.** `CurveEditor` takes `layers: LayerBinding[]`; `Powerline`
-  takes a `segments` array of badges; `ToolOptionsBar` is `Bar` plus a label and a slot; `RangeSlider` exists for
-  its label-and-value header. Make them `<CurveEditor><FunctionLayer/></CurveEditor>`, a `Powerline` whose context
-  gives each child `<Badge>` its neighbor's edge cap, a `Bar` with `children`, and a `<Field label output>` wrapper
-  any control can sit in. Closes when each of the four takes children.
-
-- **(P2) [agent] One children-based `Bar` for `Bar`'s layout and `Toolbar`; the schema half becomes `PrefsBar`.**
-  Both render `role="toolbar"`; `Toolbar` roves and `Bar` doesn't; `ToolbarTitle` and `Bar`'s label share
-  `barLabel.module.css`; `StatusBarSpacer` duplicates `ToolbarSpacer`; `Bar/Bar.tsx` imports Prefs, SelectionPanel,
-  and Properties. `BarLayout` plus `Toolbar`'s Group/Spacer/Title, roving, orientation, and the dock handle become
-  `Bar`; the schema walker becomes `PrefsBar` beside Prefs; `StatusBar` and `ToolOptionsBar` fold in; move
-  `Bar/barStoryFields.tsx` out of source. Only `BarLayout` reads `DockBarContext`, so a `Toolbar` placed in a
-  `ToolbarDock` would draw no move handle; nothing docks one today. Closes when there is one strip component.
-
-- **(P2) [agent] One slider: retire `RangeSlider`, turn `DetentSlider` into `useDetents()`.** `RangeSlider` is a
-  React Aria slider with its own `localeWritten` workaround, though `Slider` is already multi-thumb and follows
-  text direction; `DetentSlider`'s 150 lines map items to indexes and set `snap="strict"`;
-  `Properties/NumberControls.tsx:205` renders its own range input rather than `InlineRange`. Give the header to
-  `<Field label output>`, give `InlineRange` a `fill={false}`, and move `range.module.css` and
-  `sliderSlop.module.css` into their owners. Closes when `RangeSlider` and `DetentSlider` are gone and
-  NumberControls renders `InlineRange`.
-
-- **(P2) [agent] Export `Bar`'s cell step and drop `ControlBar`'s copy.** Both share `BarLayout` and
-  `groupBarNodes`, but `labkit/src/controls/ControlBar.tsx` maps leaves through its own `Cell`/`labField` and
-  filters with its own `visible`, and never calls `pairRows`, so paired leaves don't fuse in a lab bar. Export
-  `barCells(leaves, cellFor)` with a pluggable cell factory. Closes when
-  `ControlBar` calls it.
+  takes a `segments` array of badges. Make them `<CurveEditor><FunctionLayer/></CurveEditor>` and a `Powerline`
+  whose context gives each child `<Badge>` its neighbor's edge cap (`<Field label output>` already wraps any control,
+  2026-11-14). Closes when each takes children.
 
 - **(P3) [maintainer] Presets and option builders in place of wrapper components.** `PointPlotter` is `CurveEditor`
   with three props fixed; `FontWeightSelect` and `FontFamilySelect` only build options for `Select`; `CloseButton`
@@ -608,7 +585,7 @@ name a package. Breaking changes are in scope.
   Closes when they sit with `SelectionPanel` and `Properties`.
 
 - **(P3) [recheck] One rule for story titles.** 75 of 144 stories sit under `ui/Foundations` with no visible rule
-  (`Toolbar` in, `ToolButton` out; `Tabs` in, `PageTabs` out), and some titles don't match their files
+  (`Tabs` in, `PageTabs` out), and some titles don't match their files
   (`Keycaps.stories` is `KeySequence`). Proposed: `ui/<folder>[/<export>]`,
   Foundations kept only for its overview page, categories as tags, and a check that enforces it; also sort
   `packages/ui/src/index.ts`. Closes when the check passes on every story.

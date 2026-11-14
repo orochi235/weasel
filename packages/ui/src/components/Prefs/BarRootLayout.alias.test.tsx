@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { Bar } from '../Bar/Bar';
+import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { PrefsForm } from './PrefsForm';
 
 afterEach(cleanup);
@@ -24,7 +24,7 @@ describe('an alias on a vertical bar', () => {
     const inForm = fields();
     expect(inForm).toEqual(['Size', 'Size', 'Size here']);
     cleanup();
-    render(<Bar schema={SCHEMA} orientation="vertical" label="Tools" values={{}} />);
+    render(<PrefsBar schema={SCHEMA} orientation="vertical" label="Tools" values={{}} />);
     expect(fields()).toEqual(inForm);
   });
 
@@ -33,7 +33,7 @@ describe('an alias on a vertical bar', () => {
     const said = screen.getByText('(alias: no pref at nowhere)');
     expect(within(screen.getByRole('toolbar')).getByText(said.textContent!)).toBe(said);
     cleanup();
-    render(<Bar schema={SCHEMA} label="Tools" values={{}} />);
+    render(<PrefsBar schema={SCHEMA} label="Tools" values={{}} />);
     expect(within(screen.getByRole('toolbar')).getByText('(alias: no pref at nowhere)')).toBeInTheDocument();
   });
 

@@ -1,5 +1,12 @@
 import type { PrefBoundReader, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { BarLayout, groupBarNodes, renderBarLeaf } from '@weasel-js/ui/components/Bar';
+import { Bar, renderBarLeaf } from '@weasel-js/ui/components/Bar';
+import {
+  type BarLeafNode,
+  barCells,
+  barNodeChildren,
+  groupBarNodes,
+} from '@weasel-js/ui/components/PrefsBar';
+import { loneLeafContext } from '@weasel-js/ui/components/PrefsSource';
 import { PropertySpan } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
 import { useFieldChoices } from './fieldChoices';
@@ -53,10 +60,40 @@ export function ControlBar(props: ControlBarProps) {
     row,
     open,
   } = props;
+  const cell = ({ path: at, leaf }: BarLeafNode) => {
+    const drawn = bind(leaf);
+    return {
+      ctx: {
+        ...loneLeafContext(at, drawn, value(at, leaf), (v) => write(at, v)),
+        disabled: !enabled(at),
+      },
+      render: () =>
+        custom(at, leaf) ? (
+          row(at)
+        ) : (
+          <Cell
+            path={at}
+            leaf={drawn}
+            value={value(at, leaf)}
+            write={(v) => write(at, v)}
+            draft={draft && ((v) => draft(at, v))}
+            read={read}
+            disabled={!enabled(at)}
+            active={active?.(at) === true}
+            row={() => row(at)}
+          />
+        ),
+    };
+  };
+  // A leaf the lab draws itself keeps its own control, so it never fuses into a run of paired flags.
+  const own = (leaves: readonly BarLeafNode[]) =>
+    Object.fromEntries(
+      leaves.filter((n) => custom(n.path, n.leaf)).map((n) => [n.path, () => row(n.path)]),
+    );
   // A bar takes the panel's whole width, a pairs group's included.
   return (
     <PropertySpan>
-      <BarLayout
+      <Bar
         className="lk-control-bar"
         framed
         overflow={group.overflow}
@@ -64,30 +101,14 @@ export function ControlBar(props: ControlBarProps) {
         icon={group.icon}
         off={!enabled(path)}
         label={group.name === '' ? undefined : group.name}
-        nodes={groupBarNodes(group, path, open)}
-        cells={(leaves) =>
-          leaves
-            .filter((node) => visible(node.path))
-            .map(({ path: at, leaf }) => ({
-              path: at,
-              content: custom(at, leaf) ? (
-                row(at)
-              ) : (
-                <Cell
-                  path={at}
-                  leaf={bind(leaf)}
-                  value={value(at, leaf)}
-                  write={(v) => write(at, v)}
-                  draft={draft && ((v) => draft(at, v))}
-                  read={read}
-                  disabled={!enabled(at)}
-                  active={active?.(at) === true}
-                  row={() => row(at)}
-                />
-              ),
-            }))
-        }
-      />
+      >
+        {barNodeChildren(groupBarNodes(group, path, open), {
+          cells: (leaves) => {
+            const shown = leaves.filter((node) => visible(node.path));
+            return barCells(shown, cell, own(shown));
+          },
+        })}
+      </Bar>
     </PropertySpan>
   );
 }

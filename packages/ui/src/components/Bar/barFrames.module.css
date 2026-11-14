@@ -1,0 +1,60 @@
+/* The strips a bar draws under itself beyond its own `framed` box, and its compact size. */
+
+/* A strip the width of its host, ruled off below: a toolbar along a window's top. Too long for its room, it scrolls. */
+.band {
+  min-block-size: var(--wzl-tb-height);
+  padding: 0 var(--wzl-space-4);
+  background: var(--wzl-surface);
+  border-bottom: 1px solid var(--wzl-border);
+  box-shadow: var(--wzl-bevel-raised, none);
+  color: var(--wzl-fg);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+/* A classic scrollbar is ~16px tall and renders inside the box, off-centering the row; pin it thin. */
+.band::-webkit-scrollbar {
+  height: 4px;
+}
+
+.band::-webkit-scrollbar-thumb {
+  background: var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+}
+
+/* The readout strip along an editor's foot. One line, always: a strip that grows a second takes it from the canvas
+   above, and a readout that changes width would do that on and off as it ticks. Too narrow, it clips. */
+.footer {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  --bar-gap: var(--wzl-space-8);
+  overflow: hidden;
+  padding: var(--wzl-space-2) var(--wzl-space-6);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  background: var(--wzl-surface);
+  border-top: 1px solid var(--wzl-border);
+}
+
+/* A divider sits halfway between two readouts, so each side keeps half the gap. */
+.footer:has(> [role='separator']) {
+  --bar-gap: calc(var(--wzl-space-8) / 2);
+}
+
+.footer > [role='separator'] {
+  margin-block: 0;
+  background: var(--wzl-line-subtle);
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+/* The buttons inside draw at `sm`; every other control takes the same height. */
+.sm {
+  --wzl-control-h-sm: 22px;
+  --wzl-control-h: var(--wzl-control-h-sm);
+  --wzl-button-icon-size: 16px;
+  --wzl-button-pad-x: var(--wzl-space-sm);
+  --wzl-button-font-weight: var(--wzl-font-weight-normal);
+}

@@ -1,0 +1,14 @@
+.frame {
+  width: 260px;
+}
+
+.wide {
+  width: 320px;
+}
+
+.value {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  margin: var(--wzl-space-4) 0 0;
+  font-size: var(--wzl-font-size-xs);
+  color: var(--wzl-fg-muted);
+}

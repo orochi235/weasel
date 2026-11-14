@@ -3,9 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, test } from 'vitest';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
-import { RangeSlider } from '@weasel-js/ui/components/RangeSlider';
 import { Slider } from '@weasel-js/ui/components/Slider';
-import rs from './RangeSlider/RangeSlider.module.css';
 
 // A slop is invisible hit area, so the only way to see one is to ask real
 // layout what a point lands on.
@@ -54,29 +52,6 @@ describe('Slider', () => {
     expect(lands(thumb, r.left - slop + 1, y)).toBe(true);
     expect(lands(thumb, r.left + r.width / 2, r.top - slop + 1)).toBe(true);
     expect(lands(thumb, r.right + slop + 1, y)).toBe(false);
-  });
-});
-
-describe('RangeSlider', () => {
-  test('a press within either slop lands on its element', () => {
-    const { container } = render(
-      <Frame>
-        <RangeSlider aria-label="Level" defaultValue={50} />
-      </Frame>,
-    );
-    const trackSlop = px('--wzl-slider-track-slop');
-    const thumbSlop = px('--wzl-slider-thumb-slop');
-    // `composes` makes rs.thumb a list of class names; select by its own one.
-    const thumb = container.querySelector(`.${rs.thumb.split(' ')[0]}`)!;
-    const track = thumb.parentElement!;
-    const r = track.getBoundingClientRect();
-    const x = r.left + r.width * 0.1;
-    expect(lands(track, x, r.top - trackSlop + 1)).toBe(true);
-    expect(lands(track, x, r.top - trackSlop - 1)).toBe(false);
-    const t = thumb.getBoundingClientRect();
-    const y = t.top + t.height / 2;
-    expect(lands(thumb, t.right + thumbSlop - 1, y)).toBe(true);
-    expect(lands(thumb, t.right + thumbSlop + 1, y)).toBe(false);
   });
 });
 

@@ -34,6 +34,30 @@ describe('<ControlPanel> group drawn as a bar', () => {
     expect(bar.querySelector('[data-bar-label]')).not.toBeNull();
   });
 
+  it('fuses paired toggle flags into one control', () => {
+    const paired = resolveConfigSchema(
+      f.schema({
+        text: f
+          .group({
+            bold: f.boolean(false).toggle().pair({ with: 'text.italic', label: 'Style' }),
+            italic: f.boolean(false).toggle(),
+          })
+          .as('bar'),
+      }),
+      [],
+    );
+    render(
+      <ControlPanel
+        schema={paired}
+        config={{ text: { bold: false, italic: false } }}
+        setConfig={vi.fn()}
+      />,
+    );
+    const style = screen.getByRole('group', { name: 'Style' });
+    expect(within(style).getByRole('button', { name: /bold/i })).toBeInTheDocument();
+    expect(within(style).getByRole('button', { name: /italic/i })).toBeInTheDocument();
+  });
+
   it('opens what does not fit from a button where the group says so', () => {
     const menu = resolveConfigSchema(
       f.schema({

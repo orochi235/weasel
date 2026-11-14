@@ -1,0 +1,14 @@
+/* The label-and-value line above a stacked control. */
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wzl-space-4);
+}
+
+.output {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  margin-inline-start: auto;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+}

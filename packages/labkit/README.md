@@ -603,8 +603,8 @@ bar, and its shared-surface pixels — annotation marks, a 3D view — come alon
 
 `<FpsMeter>`, `<Legend>`, `<FloatingPanel>`, `<ZoomControl>` and the
 `@weasel-js/ui` property rows re-exported from the root are all usable this
-way, as is anything imported from `@weasel-js/ui` itself (`<Toolbar>`,
-`<StatusBar>`, `<ScaleBar>`). `<Trial>` is not: it
+way, as is anything imported from `@weasel-js/ui` itself (`<Bar>`,
+`<ScaleBar>`). `<Trial>` is not: it
 reads the lab store and only mounts inside a `<Lab>`.
 
 ## Driving your own renderer

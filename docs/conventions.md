@@ -291,7 +291,7 @@ A kit component's props use the DOM's and React Aria's names where one exists
   `isOpen`/`onOpenChange`, as `Dialog` is.
 - **Live and committed**: a value that moves through a gesture reports each
   step through `onInput` and the finished gesture through `onChange`
-  (`Slider`, `Timeline`, `DetentSlider`).
+  (`Slider`, `Timeline`, `useDetents`).
 
 ## Design tokens
 

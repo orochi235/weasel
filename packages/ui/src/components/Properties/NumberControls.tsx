@@ -13,10 +13,11 @@ import { dlog } from '../../dlog';
 import { useFieldLocale } from '../../useFieldLocale';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { UnitField } from '../NumberField';
-import shared from '../range.module.css';
+import { InlineRange } from '../InlineRange';
 import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyRow';
 import s from './Properties.module.css';
+import { useControlAccess } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
 import { trackPlace } from './sliderScale';
 import { catchStop, useTrackStops } from './sliderStops';
@@ -191,29 +192,28 @@ function sliderBounds(p: PropertyNumberFieldProps): {
 function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps & { keyed?: boolean }) {
   const { min, max, step, settle, onTrack } = sliderBounds(p);
   const live = p.onInput ?? p.onChange;
-  const commit = p.onInput ? p.onChange : undefined;
+  const held = useControlAccess({ disabled: p.mixed || p.disabled, disabledReason: p.disabledReason }).state !== 'enabled';
+  const commit = p.onInput && !held ? p.onChange : undefined;
   const place = trackPlace(p.scale, min, max, step, p.stops);
+  // The native `change` comes off a listener of its own, past InlineRange's hold, so a held track drops it here.
   const range = useCommitListener(commit && ((raw) => commit(settle(place.fromInput(Number(raw))))));
   const stops = useTrackStops(p.stops, min, max, place.fraction);
   const known = isKnown(p);
   // The thumb clamps to the track; the readout beside it does not, so a value
   // past `max` is still reported as what it is.
   const value = known ? onTrack(p.value as number) : min;
-  const hold = useNativeHold({ disabled: p.mixed || p.disabled, disabledReason: p.disabledReason });
   const keyed = (next: number) => {
-    if (hold.refuses) return;
     live(settle(next));
     commit?.(settle(next));
   };
-  return hold.wrap(
-    // The shared skin with no fill: `InlineRange`'s filled-to-value track is its
-    // own, and the property rows' 18% track is the one the kit converges on.
-    <input
+  return (
+    // No fill: the property rows' plain track is the one the kit converges on.
+    <InlineRange
       ref={range}
-      type="range"
+      fill={false}
+      marks={stops.marks}
       id={p.id}
-      className={[shared.range, stops.className, p.className].filter(Boolean).join(' ')}
-      style={stops.style}
+      className={p.className}
       aria-label={p.name}
       // The readout is the keyboard's way in, and steps as the track would; a
       // tab stop here too would be two stops for one value. With no value it
@@ -223,8 +223,10 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
       max={place.max}
       step={place.step}
       value={place.toInput(value)}
-      {...hold.attrs}
-      onPointerDown={hold.refuses ? undefined : stops.onPointerDown}
+      // A mixed value is no one value to move, so the track is held.
+      disabled={p.mixed || p.disabled}
+      disabledReason={p.disabledReason}
+      onPointerDown={stops.onPointerDown}
       onKeyDown={(e) => {
         const next = place.keyStep(e.key, value, inlineDirection(e.currentTarget));
         if (next === null) return;
@@ -232,12 +234,11 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
         keyed(next);
       }}
       onChange={(e) => {
-        if (hold.refuses) return;
         const v = settle(stops.settle(e.currentTarget, value, place.fromInput(Number(e.target.value))));
         dlog('property-panel', 'slider', { name: p.name, value: v });
         live(v);
       }}
-    />,
+    />
   );
 }
 

@@ -1,0 +1,27 @@
+/* What a bar holds besides the cells its walkers draw: a group of controls, and a status strip's readouts. */
+
+:where(.group) {
+  gap: var(--wzl-space-1);
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+[data-orientation='vertical'] > * > .group {
+  flex-direction: column;
+}
+
+.readout {
+  white-space: nowrap;
+}
+
+.muted {
+  opacity: 0.6;
+}
+
+.hasTitle {
+  cursor: help;
+}
