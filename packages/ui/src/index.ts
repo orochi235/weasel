@@ -86,6 +86,7 @@ export * from './components/StatusBar';
 export * from './components/ToolButton';
 export * from './components/ToolGroup';
 export * from './components/ToolPalette';
+export * from './components/ToolRail';
 export * from './components/FontFamilySelect';
 export * from './components/FontWeightSelect';
 export * from './components/Field';

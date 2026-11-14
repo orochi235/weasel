@@ -162,9 +162,8 @@ describe('ToolPalette — grouping', () => {
       fakeTool('select', 'select'),
       fakeTool('rect', 'shape'),
     ]);
-    const { container } = renderWithIcons(<ToolPalette tools={tools} />);
-    const separators = container.querySelectorAll('[role="separator"]');
-    expect(separators.length).toBeGreaterThanOrEqual(1);
+    renderWithIcons(<ToolPalette tools={tools} />);
+    expect(screen.getAllByRole('separator').length).toBeGreaterThanOrEqual(1);
   });
 });
 

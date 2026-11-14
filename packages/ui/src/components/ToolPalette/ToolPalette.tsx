@@ -1,24 +1,15 @@
-import { Fragment, type DragEvent, type ReactNode } from 'react';
+import type { DragEvent, ReactNode } from 'react';
 import {
   BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolIdsOf, toolSetHas, toolStacksOf, type CarryPayload, type Tool, type ToolSet, type ToolsApi,
 } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
-import { ToolButton } from '../ToolButton';
-import { ToolGroup } from '../ToolGroup';
 import type { Orientation } from '../orientation';
-import { useRovingTabIndex } from '../../useRovingTabIndex';
+import { ToolRail, type StackCycleModifier, type ToolRailButton, type ToolRailItem } from '../ToolRail';
 import s from './ToolPalette.module.css';
-import { formatShortcut } from '@weasel-js/gestures';
 import { icon } from '../../icons.gen';
-import { Icon } from '../../icons/Icon';
 import { groupTools } from './order';
-import { slotsOf, stackIndex, type PaletteSlot } from './stacks';
-import { ToolStack, type StackCycleModifier, type StackMember } from './ToolStack';
+import { slotsOf, stackIndex } from './stacks';
 import { useToolCarry } from './useToolCarry';
-
-function toolGlyph(tool: Tool): ReactNode {
-  return <Icon name={tool.presentation?.icon ?? icon('core:unknown')} />;
-}
 
 /** Props for {@link ToolPalette}. */
 export interface ToolPaletteProps {
@@ -85,10 +76,8 @@ function paletteStacks(stacks: ToolPaletteProps['stacks'], include: ToolPaletteP
   return include !== undefined && typeof include !== 'function' ? toolStacksOf([include]) : [];
 }
 
-const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.tool] : slot.members);
-
 /**
- * Toolbar of the registered tools, split into separator-divided groups by
+ * A {@link ToolRail} of the registered tools, split into rule-divided groups by
  * each tool's presentation group and navigable by arrow keys. Clicking a
  * button makes that tool active. Each button's chip and tooltip show the key
  * that activates its tool now (`tools.shortcuts`), so a rebound key shows rebound. A tool whose presentation sets `hide`, or
@@ -110,92 +99,44 @@ export function ToolPalette(props: ToolPaletteProps) {
   const allowed = (t: Tool): boolean => !modeRegistry || eligibleContribution(modeRegistry, t);
   const list = Object.values(tools.registry)
     .filter((t) => !t.presentation?.hide && shows(t) && (ineligible === 'dim' || allowed(t)));
-  const horizontal = !columns && orientation === 'horizontal';
-  const cls = [s.palette, horizontal && s.horizontal, className].filter(Boolean).join(' ');
-
   const shown = new Map(list.map((t) => [t.id, t]));
   const stackOf = stackIndex(paletteStacks(stacks, include));
   const placed = new Set<readonly string[]>();
-  const slotGroups = groupTools(list, groupOrder, toolOrder)
-    .map(({ key, tools: group }) => ({ key, slots: slotsOf(group, shown, stackOf, placed) }));
-  const modeName = modeRegistry ? modeRegistry.current().id : undefined;
-  const describe = (tool: Tool): StackMember => {
-    const label = tool.presentation?.label ?? tool.id;
-    const keys = tools.shortcuts[tool.id]?.[0];
+  const disabledReason = modeRegistry ? `disabled in ${modeRegistry.current().id} mode` : undefined;
+
+  const button = (tool: Tool, group: string): ToolRailButton => {
+    const enabled = allowed(tool);
     return {
-      tool, label, keys,
+      id: tool.id,
+      group,
+      icon: tool.presentation?.icon ?? icon('core:unknown'),
+      label: tool.presentation?.label ?? tool.id,
       description: tool.presentation?.description,
-      shortcut: formatShortcut(keys),
-      enabled: allowed(tool),
+      shortcut: tools.shortcuts[tool.id]?.[0],
+      active: tools.active === tool.id,
+      ...(enabled ? {} : { disabled: true, disabledReason }),
+      onPress: () => { if (!carry.carried()) tools.setActive(tool.id); },
+      onPointerDown: carryTool && enabled ? (e) => carry.press(tool, e) : undefined,
+      onDragStart: onToolDragStart && enabled ? (e) => onToolDragStart(tool, e) : undefined,
+      className: carryTool?.(tool) != null ? s.carrySource : undefined,
     };
   };
-
-  // Flat, in DOM order — the roving-tabindex hook indexes by this order.
-  const ordered = slotGroups.flatMap((g) => g.slots);
-  const activeIndex = ordered.findIndex((slot) => slotTools(slot).some((t) => t.id === tools.active));
-  const roving = useRovingTabIndex({
-    itemSelector: `.${s.paletteBtn}`,
-    tabStopIndex: activeIndex >= 0 ? activeIndex : undefined,
-    columns,
-    groupSelector: '[role="group"]',
-  });
+  const items = groupTools(list, groupOrder, toolOrder).flatMap(({ key, tools: group }) =>
+    slotsOf(group, shown, stackOf, placed).map((slot): ToolRailItem => (slot.kind === 'tool'
+      ? button(slot.tool, key)
+      : { id: slot.members[0].id, group: key, members: slot.members.map((t) => button(t, key)) })));
 
   return (
-    <div
-      ref={roving.rootRef}
-      onKeyDown={roving.onKeyDown}
-      className={cls}
-      role="toolbar"
-      aria-label={ariaLabel}
-      aria-orientation={columns ? undefined : orientation}
-    >
-      {slotGroups.map(({ key, slots }, i) => (
-        <Fragment key={key}>
-          {i > 0 && (
-            <div
-              className={s.separator}
-              role="separator"
-              aria-orientation={horizontal ? 'vertical' : 'horizontal'}
-            />
-          )}
-          <ToolGroup orientation={orientation} columns={columns} groupKey={key}>
-            {slots.map((slot) => {
-              if (slot.kind === 'stack') {
-                return (
-                  <ToolStack
-                    key={slot.members[0].id}
-                    members={slot.members.map(describe)}
-                    active={tools.active}
-                    setActive={(id) => tools.setActive(id)}
-                    cycle={stackCycle}
-                  />
-                );
-              }
-              const { tool, label, description, shortcut, enabled } = describe(slot.tool);
-              const resolvedTitle = !enabled && modeName
-                ? `${label}${shortcut ? ` (${shortcut})` : ''} — disabled in ${modeName} mode`
-                : undefined;
-              return (
-                <ToolButton
-                  key={tool.id}
-                  icon={toolGlyph(tool)}
-                  label={label}
-                  description={description}
-                  shortcut={shortcut}
-                  active={tools.active === tool.id}
-                  ariaDisabled={!enabled}
-                  className={[s.paletteBtn, !enabled && s.disabledBtn, carryTool?.(tool) != null && s.carrySource].filter(Boolean).join(' ')}
-                  title={resolvedTitle}
-                  onClick={enabled ? () => { if (!carry.carried()) tools.setActive(tool.id); } : () => {}}
-                  onPointerDown={carryTool && enabled ? (e) => carry.press(tool, e) : undefined}
-                  onDragStart={onToolDragStart && enabled ? (e) => onToolDragStart(tool, e) : undefined}
-                />
-              );
-            })}
-          </ToolGroup>
-        </Fragment>
-      ))}
+    <>
+      <ToolRail
+        items={items}
+        orientation={orientation}
+        columns={columns}
+        stackCycle={stackCycle}
+        aria-label={ariaLabel}
+        className={className}
+      />
       {carry.ghost}
-    </div>
+    </>
   );
 }
