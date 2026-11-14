@@ -10,7 +10,8 @@ const properties: NodePropertiesEntry[] = [
     schema: {
       name: 'Properties',
       members: {
-        'pose.x': { kind: 'number', name: 'X', description: 'x', default: 0, control: 'slider', min: 0, max: 100 },
+        // y, which both nodes share: a mixed slider is disabled and drops every change.
+        'pose.y': { kind: 'number', name: 'Y', description: 'y', default: 0, control: 'slider', min: 0, max: 100 },
       },
     },
   },
@@ -19,8 +20,8 @@ const properties: NodePropertiesEntry[] = [
 function mount() {
   const scene = makeScene();
   render(<SelectionPanel scene={scene} selection={selectionOf(['a', 'b'])} properties={properties} routing={routing} />);
-  const xOf = (id: string) => (scene.get(asNodeId(id)) as { pose: Pose }).pose.x;
-  return { scene, xOf, slider: screen.getByRole('slider') };
+  const yOf = (id: string) => (scene.get(asNodeId(id)) as { pose: Pose }).pose.y;
+  return { scene, yOf, slider: screen.getByRole('slider') };
 }
 
 /** A drag as the browser reports it: `input` on every move, one `change` when the thumb is let go. */
@@ -31,33 +32,33 @@ const letGo = (slider: HTMLElement) => fireEvent(slider, new Event('change', { b
 
 describe('a slider dragged in a SelectionPanel', () => {
   it('moves the nodes with the thumb', () => {
-    const { slider, xOf } = mount();
+    const { slider, yOf } = mount();
     drag(slider, [30, 40]);
-    expect([xOf('a'), xOf('b')]).toEqual([40, 40]);
+    expect([yOf('a'), yOf('b')]).toEqual([40, 40]);
   });
 
-  it('leaves one undo step, back to where each node was before the drag', () => {
-    const { scene, slider, xOf } = mount();
+  it('leaves one undo step, back to where the nodes were before the drag', () => {
+    const { scene, slider, yOf } = mount();
     const before = scene.historyEntries().length;
     drag(slider, [30, 40, 60]);
     expect(scene.historyEntries()).toHaveLength(before);
     letGo(slider);
     expect(scene.historyEntries()).toHaveLength(before + 1);
-    expect([xOf('a'), xOf('b')]).toEqual([60, 60]);
+    expect([yOf('a'), yOf('b')]).toEqual([60, 60]);
 
     act(() => scene.undo());
-    expect([xOf('a'), xOf('b')]).toEqual([10, 50]);
+    expect([yOf('a'), yOf('b')]).toEqual([20, 20]);
     act(() => scene.redo());
-    expect([xOf('a'), xOf('b')]).toEqual([60, 60]);
+    expect([yOf('a'), yOf('b')]).toEqual([60, 60]);
   });
 
   it('starts the next drag from what the last one left', () => {
-    const { scene, slider, xOf } = mount();
+    const { scene, slider, yOf } = mount();
     drag(slider, [30]);
     letGo(slider);
     drag(slider, [70, 80]);
     letGo(slider);
     act(() => scene.undo());
-    expect([xOf('a'), xOf('b')]).toEqual([30, 30]);
+    expect([yOf('a'), yOf('b')]).toEqual([30, 30]);
   });
 });

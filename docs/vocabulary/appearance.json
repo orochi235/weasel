@@ -988,7 +988,7 @@
       "gloss": {
         "lead": "The step on the kit's scale a component is set at: its height and its type size together.",
         "items": [
-          "<code>xs</code>, <code>sm</code>, <code>md</code> on Button, Badge, ToggleBar, Code and most controls."
+          "<code>xs</code>, <code>sm</code>, <code>md</code> on Button, Badge, SegmentedBar, Code and most controls."
         ]
       },
       "groups": [

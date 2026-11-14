@@ -13,7 +13,7 @@ type Story = StoryObj<typeof NumberField>;
 export const Basic: Story = { args: { label: 'Width', defaultValue: 120 } };
 export const MinMaxStep: Story = { args: { label: 'Opacity', minValue: 0, maxValue: 100, step: 5, defaultValue: 80 } };
 export const HideSteppers: Story = { args: { label: 'Count', hideSteppers: true, defaultValue: 1 } };
-export const Disabled: Story = { args: { label: 'Locked', isDisabled: true, defaultValue: 50 } };
+export const Disabled: Story = { args: { label: 'Locked', disabled: true, defaultValue: 50 } };
 
 /** `fit` sizes to a character count instead of the input's 20-character
  *  default; the second field narrows that count through

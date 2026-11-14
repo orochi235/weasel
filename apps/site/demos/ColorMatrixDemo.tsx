@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
 const W = 720;
@@ -130,7 +130,7 @@ function PresetRow({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <strong style={{ color: '#ddd', textTransform: 'capitalize' }}>{label}</strong>
-      <ToggleBar
+      <SegmentedBar
         items={PRESET_NAMES.map((p) => ({ value: p, label: p }))}
         value={value}
         onChange={(p) => p && onChange(p)}

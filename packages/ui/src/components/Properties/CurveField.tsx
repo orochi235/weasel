@@ -4,11 +4,12 @@ import { dlog } from '../../dlog';
 import { type ControlPoint, CurveEditor } from '../CurveEditor';
 import { CurveMarks, type CurveMark } from './CurveMarks';
 import s from './CurveField.module.css';
+import { useControlAccess, type HoldProps } from '../Disabled';
 
 export type { CurveMark } from './CurveMarks';
 
 /** Props for `<CurveField>`. */
-export interface CurveFieldProps {
+export interface CurveFieldProps extends HoldProps {
   /** Flat [x0, y0, x1, y1, …] — matches how curve-as-array configs
    *  serialize in JSON snapshots. */
   values: number[];
@@ -27,8 +28,6 @@ export interface CurveFieldProps {
   onInput?: (next: number[]) => void;
   /** Optional vertical marks overlaid on the plot (e.g. landmarks). */
   marks?: readonly CurveMark[];
-  /** Takes no input: the plot ignores the pointer and the buttons are disabled. */
-  disabled?: boolean;
 }
 
 /**
@@ -48,8 +47,11 @@ export function CurveField({
   onChange,
   onInput,
   marks,
-  disabled = false,
+  ...own
 }: CurveFieldProps) {
+  // Disabled or read-only, the plot ignores the pointer and the buttons are disabled.
+  const access = useControlAccess(own);
+  const disabled = access.state !== 'enabled';
   const host = useRef<HTMLDivElement>(null);
   const measured = useElementSize(host);
   const plotWidth = width ?? measured.width;

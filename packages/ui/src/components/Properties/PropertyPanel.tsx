@@ -4,9 +4,10 @@ import { type Motif, MotifFrame } from '../MotifFrame';
 import { type CollapseProps, foldTitle, foldTwisty, useCollapse } from './collapse';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import s from './Properties.module.css';
+import { holdScope, type HoldProps } from '../Disabled';
 
 /** Props for `<PropertyPanel>`. */
-export interface PropertyPanelProps extends PropertyMetricProps, AppearanceProps, CollapseProps {
+export interface PropertyPanelProps extends PropertyMetricProps, AppearanceProps, CollapseProps, HoldProps {
   title?: ReactNode;
   /** How the panel draws its title and edge. Defaults to the `panel` `<DefaultMotif>`, `sheet()` unless one is set. */
   motif?: Motif;
@@ -36,30 +37,31 @@ const PanelNesting = createContext(false);
  * and `tint` which of its peers it is; the theme's `--wzl-panel-*` and `--wzl-stance-*` slots decide how each looks,
  * in whatever motif the panel draws. A stanced panel's title takes the row-label recipe rather than the display title.
  */
-export function PropertyPanel({
-  title,
-  motif,
-  actions,
-  selectable,
-  children,
-  className,
-  density,
-  align,
-  stance,
-  grade,
-  emphasis,
-  tint,
-  collapsible,
-  defaultCollapsed,
-  collapsed,
-  onCollapsedChange,
-  twisty: twistyShown,
-}: PropertyPanelProps) {
+export function PropertyPanel(props: PropertyPanelProps) {
+  const {
+    title,
+    motif,
+    actions,
+    selectable,
+    children,
+    className,
+    density,
+    align,
+    stance,
+    grade,
+    emphasis,
+    tint,
+    collapsible,
+    defaultCollapsed,
+    collapsed,
+    onCollapsedChange,
+    twisty: twistyShown,
+  } = props;
   const nested = useContext(PanelNesting);
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty: twistyShown });
   // Hidden while open, the twisty trails the header: the title sits where it does with no twisty.
   const trailing = twistyShown === 'folded';
-  const body = <PanelNesting.Provider value>{children}</PanelNesting.Provider>;
+  const body = <PanelNesting.Provider value>{holdScope(props, children)}</PanelNesting.Provider>;
   return (
     <MotifFrame
       kind="panel"

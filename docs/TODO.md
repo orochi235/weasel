@@ -394,7 +394,7 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [maintainer] Should the arrow keys land on an `aria-disabled` item?** `useRovingTabIndex` skips it,
   and `useRovingTabIndex.test.tsx` pins that. But `ToolButton`'s `ariaDisabled` promises such a button stays
   "reachable by keyboard (roving-tabindex still applies)", and a segment with a `disabledReason` swaps `disabled`
-  for `aria-disabled` (`segmentTooltip.tsx`) so its reason can be read: in a `ToggleBar` or `ToolPalette` the
+  for `aria-disabled` (`segmentTooltip.tsx`) so its reason can be read: in a `SegmentedBar` or `ToolPalette` the
   keyboard never gets there, so the reason is mouse-only. APG allows either for a toolbar (2026-11-07). Closes when
   the maintainer has picked one and the hook, `ToolButton`'s doc and the test agree.
 - **(P3) [maintainer] A timeline with a nonzero `start` can read "2.50s / 2.00s".** `PlayheadReadout`
@@ -450,7 +450,7 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has pinched a canvas in real Safari and seen it zoom once per sample with no
   page zoom.
 
-- **(P3) [maintainer] `<ToggleBar>` polish.** Visual still needs polish — literally, polish this, by eye in a
+- **(P3) [maintainer] `<SegmentedBar>` polish.** Visual still needs polish — literally, polish this, by eye in a
   browser. Measured in Chromium 2026-10-13, three text segments, each variant at `md` and `sm`:
   every segment sits inside its track at one height, none clips its label, and a focused segment
   draws a 2px outline, so nothing measured is known to be off. Since then `minimal` takes its font
@@ -531,26 +531,18 @@ name a package. Breaking changes are in scope.
   `disabled`/`disabledReason`. `Properties/rowContext.ts` carries only `{ label }`, read only by `EasingPicker`.
   `mixed` stays a prop. Closes when those row props are read from the scope rather than declared on each row.
 
-- **(P2) [maintainer] Pick one name for disabled, then add a `<Disabled reason>` scope.** About 30 components take
-  `disabled` or `isDisabled` and 15 take `disabledReason`: the React Aria-shaped ones say `isDisabled`, and
-  `Button`, `CloseButton`, `MenuButton`, `Disclosure`, and the font selects say `disabled`. Every reason ends up in
-  `segmentTooltipContent`, so a scope that it and `stillReachable` read can replace the per-component pair,
-  overridable per control; per-option disabling stays a field. The name is the maintainer's call; the scope is agent
-  work after it. Closes when one name is used library-wide and the scope ships.
+- **(P2) [agent] `disabled` and `readOnly` on the controls that take neither.** The `<Disabled>`/`<ReadOnly>`
+  scopes (2026-11-13) reach every kit control that already took `disabled`, but these never took one, so a scope
+  passes over them: `Slider`, `SwatchGrid`, `SwatchStrip`, `RecentColors`, `PatternPicker`, `CurveEditor`,
+  `BandEditor`, `MeshEditor`, `Jog`, `LayerList`, `ItemList`, `DataGrid`, `Timeline`, `PageTabs`, and `TokenPanel`.
+  Each needs its own refusal (a drag, a keyboard step, a swatch press) and the reason's tooltip through
+  `useHoldReason`, which is new behavior per component rather than a rename, hence a pass of its own. Closes when each
+  reads `useControlAccess`.
 
 - **(P2) [agent] Children in place of config arrays.** `CurveEditor` takes `layers: LayerBinding[]`; `Powerline`
   takes a `segments` array of badges; `RangeSlider` exists for its label-and-value header. Make them
   `<CurveEditor><FunctionLayer/></CurveEditor>`, a `Powerline` whose context gives each child `<Badge>` its
   neighbor's edge cap, and a `<Field label output>` wrapper any control can sit in. Closes when each takes children.
-
-- **(P2) [agent] One segmented bar for `ToggleBar`, `OptionsBar`, and `ButtonBar`.** All three build the same
-  `SegmentedRow` with identical tiling, roving, and segment-class code, and alias the same size and variant types;
-  they differ only in selection model and aria role. One bar with a selection mode (single, multiple, each,
-  momentary) lives in a `Segmented/` folder with `segmentedRow.tsx`, `segmentsAlong.tsx`, `segmentSweep.tsx`,
-  `segmentedVariant.ts`, and `segmentedControl.module.css`. Its segments come from a list or from a `Sweep`, stepped
-  by the same `stepsOf` that `Sequence` uses, and keep the bar's own roles rather than Sequence's list markup; its
-  stories show every mode, size, and variant through `<Sequence sweep across>` (2026-11-13). Closes when one
-  component remains.
 
 - **(P2) [agent] One slider: retire `RangeSlider`, turn `DetentSlider` into `useDetents()`.** `RangeSlider` is a
   React Aria slider with its own `localeWritten` workaround, though `Slider` is already multi-thumb and follows
@@ -566,10 +558,6 @@ name a package. Breaking changes are in scope.
   `ThemeSwitcher` is a generic cycle button. The renames (`ThemeSwitcher`'s especially) are the maintainer's; the
   folding is agent work. Closes when each is a preset, a builder (`fontWeightOptions()`,
   `useFontFamilyOptions()`), or gone.
-
-- **(P3) [agent] One `Option` type for `Select`, `ComboBox`, and `MenuButton`.** `SelectOption` has `isDisabled`,
-  icon, description, and `disabledReason`; `ComboBoxOption` has only `isDisabled`; `MenuButtonItem` says
-  `disabled`; `optionLabels.tsx` types its input loosely to cope. Closes when all three take one type.
 
 - **(P2) [maintainer] Move `PrefSchemaEditor` out of ui.** 8,341 source lines plus 10,308 of tests; 43 files
   (3,624 lines) are pure model with no React or CSS (`schemaEdit`, `schemaExport`, `workspaceCodec`, `bundle*`,
@@ -641,8 +629,8 @@ only story runner in the repo.
 
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
   arc, edge to edge, and the well runs one rim past the first and last"
-  (`packages/ui/src/components/ToggleBar/lab/SegmentsArcView.browser.test.tsx`) read 54.49 against 51
-  ± 0.5 in a full run on teitou on 2026-10-24 (at the features-to-domains rename, which touches no ToggleBar code),
+  (`packages/ui/src/components/Segmented/lab/SegmentsArcView.browser.test.tsx`) read 54.49 against 51
+  ± 0.5 in a full run on teitou on 2026-10-24 (at the features-to-domains rename, which touches no segmented-bar code),
   then passed 3 of 3 alone on the same node and tree (job e82589ab). Seen once; a measurement taken
   before a face or a layout settles is the first thing to look for.
   Closes when it fails again, which makes it a fix, or on 2026-11-30 with no second sighting, delete it.

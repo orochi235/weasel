@@ -1,21 +1,18 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
 import { Icon } from '../../icons/Icon';
-import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
+import { SegmentTooltip } from '../segmentTooltip';
+import type { DisableableProps } from '../Disabled';
 import s from './CloseButton.module.css';
 import { icon } from '../../icons.gen';
 
 /** Props for {@link CloseButton}. */
-export interface CloseButtonProps {
+export interface CloseButtonProps extends DisableableProps {
   /** Accessible name — what the press closes or removes: `Close dialog`,
    *  `Remove Glow`. Required, since the button shows only a glyph. */
   'aria-label': string;
   onClick?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
   /** Kit tooltip content. None by default. */
   tooltip?: ReactNode;
-  disabled?: boolean;
-  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
-   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
-  disabledReason?: string;
   className?: string;
 }
 
@@ -32,7 +29,7 @@ export const CloseButton = forwardRef(function CloseButton(
 ) {
   return (
     <SegmentTooltip
-      content={segmentTooltipContent({ tooltip, ariaLabel, disabled, disabledReason })}
+      tip={{ tooltip, ariaLabel }}
       disabled={disabled}
       disabledReason={disabledReason}
     >

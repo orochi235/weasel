@@ -3,7 +3,7 @@ import { decimalPlaces } from '@weasel-js/quantity';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { NumberField } from '../NumberField';
 import { Slider, type Thumb } from '../Slider';
-import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import { Reset, shortName, stepLabels, tipOf } from './parts';
 import own from './Scale.module.css';
 import s from './TokenPanel.module.css';
@@ -18,7 +18,7 @@ import {
   type TokenScaleRule,
 } from './tokenTypes';
 
-const RULES: readonly ToggleBarItem<TokenScaleRule['kind']>[] = [
+const RULES: readonly SegmentedBarItem<TokenScaleRule['kind']>[] = [
   { value: 'factors', label: 'each', ariaLabel: 'factors' },
   { value: 'ratio', label: 'ratio' },
   { value: 'step', label: 'step' },
@@ -57,7 +57,7 @@ function ScaleRuleControls({
           }}
         />
       </span>
-      <ToggleBar
+      <SegmentedBar
         aria-label={`${group} rule`}
         size="sm"
         items={RULES}

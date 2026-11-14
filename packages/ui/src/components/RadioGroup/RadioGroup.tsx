@@ -11,10 +11,12 @@ import { slotClass, useRunSlot } from '../Along/runSlots';
 import { fieldClasses } from '../Field/Field';
 import { FieldFoot, type FieldSlotProps } from '../Field/fieldSlots';
 import { RadioGroupAlong, RadioSlotsContext } from './RadioGroupAlong';
+import type { HoldProps } from '../Disabled';
+import { useRacHold } from '../Disabled/racHold';
 import s from './RadioGroup.module.css';
 
 /** Props for {@link RadioGroup}, on top of React Aria's `RadioGroup` props. */
-export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className'> & Omit<FieldSlotProps, 'orientation'> & {
+export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & Omit<FieldSlotProps, 'orientation'> & HoldProps & {
   children?: ReactNode;
   className?: string;
 };
@@ -27,39 +29,45 @@ export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className'>
  */
 export function RadioGroup(props: RadioGroupProps) {
   const enclosing = useRun();
-  if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return <RadioGroupAlong {...props} shape={enclosing.shape} align={enclosing.align ?? 'center'} />;
-  const { label, description, errorMessage, children, className, ...rest } = props;
-  return (
+  const { rest: own, rac, wrap } = useRacHold(props);
+  if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return wrap(<RadioGroupAlong {...own} {...rac} shape={enclosing.shape} align={enclosing.align ?? 'center'} />);
+  const { label, description, errorMessage, children, className, ...rest } = own;
+  return wrap(
     <RACRadioGroup
       {...rest}
+      {...rac}
       className={[s.group, fieldClasses.root, className].filter(Boolean).join(' ')}
     >
       {label !== undefined && <Label className={s.legend}>{label}</Label>}
       {children}
       <FieldFoot description={description} errorMessage={errorMessage} />
-    </RACRadioGroup>
+    </RACRadioGroup>,
   );
 }
 
 /** Props for {@link Radio}, on top of React Aria's `Radio` props. */
-export type RadioProps = Omit<RACRadioProps, 'className' | 'children'> & {
+export type RadioProps = Omit<RACRadioProps, 'className' | 'children' | 'isDisabled'> & {
   children?: ReactNode;
   className?: string;
   /** A note after the label, and the choice's accessible description. */
   description?: string;
-  /** Why the choice is disabled, in place of `description` while `isDisabled`. */
+  /** This choice cannot be taken. A choice of its group, like a `Select` option: disable the whole group with the
+   *  group's own `disabled` or a `Disabled` scope. */
+  disabled?: boolean;
+  /** Why the choice is disabled, in place of `description` while `disabled`. */
   disabledReason?: string;
 };
 
 /** One choice in a {@link RadioGroup}. The label is passed as children. */
-export function Radio({ children, className, description, disabledReason, ...rest }: RadioProps) {
+export function Radio({ children, className, description, disabled, disabledReason, ...rest }: RadioProps) {
   const slot = useRunSlot(RadioSlotsContext, rest.value);
   const noteId = useId();
-  const note = (rest.isDisabled && disabledReason) || description;
+  const note = (disabled && disabledReason) || description;
   const { className: _, style, ...at } = slot ?? {};
   return (
     <RACRadio
       {...rest}
+      isDisabled={disabled}
       {...(note ? { 'aria-describedby': noteId } : {})}
       {...at}
       className={slotClass(slot, [s.radio, className].filter(Boolean).join(' '))}

@@ -11,7 +11,7 @@ import { Badge } from '@weasel-js/ui/components/Badge';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import { Select } from '@weasel-js/ui/components/Select';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { type ReactElement, useMemo, useState } from 'react';
 import {
   AFFORDANCE_PREFIX,
@@ -153,13 +153,13 @@ export function ResolutionWidget({
             label="target"
             orientation="row"
             width="fit"
-            isDisabled={!targetApplies}
+            disabled={!targetApplies}
             options={targetOptions}
             selectedKey={target}
             onSelectionChange={setTarget}
           />
         </span>
-        <ToggleBar<ModKey>
+        <SegmentedBar<ModKey>
           mode="multiple"
           size="sm"
           aria-label="modifiers"

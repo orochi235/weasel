@@ -328,7 +328,7 @@ Before making API changes (renames, new fields, new exports) touching anything n
 Don't name a field `gesture` if its values are action-shaped (`'move'`/`'marquee'`/etc.), or vice versa.
 
 **The dispatcher is not canvas-only.** `useGestureDispatcher` mounts on any element — labkit's
-overlays, `ToggleBar`'s sweep row — and it already settles who owns a press: which surface hears
+overlays, `SegmentedBar`'s sweep row — and it already settles who owns a press: which surface hears
 it, which binding wins (view, tier, specificity, context, then registration order), and that one
 gesture runs one action unless that action hands it on. Before writing a pointer handler or a
 component for a new way of dragging, ask whether it is an action bound to an existing gesture on a

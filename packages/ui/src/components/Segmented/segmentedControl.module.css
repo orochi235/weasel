@@ -1,0 +1,391 @@
+/* SegmentedBar's look, the same in every mode.
+
+   The track is a pill-shaped well. The selected segment is a flat accent
+   fill or, as the theme's --wzl-gloss runs 0 to 1, a tinted glass cylinder
+   of the same "lozenge" family as the standalone Button, faded in the way
+   Button.module.css fades its own. Glass params come from the
+   `--btn-*` custom properties (see Button.module.css) so the Button Lab
+   can tune both surfaces with one set of sliders. */
+.root {
+  display: inline-flex;
+  height: var(--tb-h, var(--wzl-control-h));
+  padding: var(--wzl-space-1);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  border-radius: var(--wzl-radius-pill);
+  /* Clip segments to the track outline so interior corners read crisp and
+     the selected segment's glass treatment doesn't paint over the rounded
+     outer pixels. */
+  overflow: hidden;
+  box-shadow: var(
+    --wzl-bevel-sunken,
+    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.06)
+  );
+  /* The track clips, so without this a squeezing row shrinks it to nothing. */
+  min-width: max-content;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.segment {
+  position: relative;
+  flex: 1 1 0;
+  /* Equal widths when there is room, never narrower than the label. The
+     segment clips its gloss, which otherwise drops its flex minimum to 0. */
+  min-width: max-content;
+  padding: 0 var(--wzl-space-6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  margin: 0;
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-normal);
+  font-size: var(--wzl-field-font-size, var(--btn-fontsize, var(--wzl-font-size)));
+  line-height: 1;
+  color: var(--wzl-fg-muted);
+  cursor: pointer;
+  /* Only round the outer corners of the bar — middle segments stay square
+     so the seams between them don't render as facing parentheses. */
+  border-radius: 0;
+  isolation: isolate;
+  overflow: hidden;
+  transition: color var(--wzl-motion-fast);
+}
+
+/* 8px around a 14px glyph is most of a segment. */
+.segment:has(> svg) {
+  padding: 0 5px;
+}
+
+.segment:first-of-type {
+  border-radius: 0;
+  border-start-start-radius: var(--wzl-radius-pill);
+  border-end-start-radius: var(--wzl-radius-pill);
+}
+
+.segment:last-of-type {
+  border-radius: 0;
+  border-start-end-radius: var(--wzl-radius-pill);
+  border-end-end-radius: var(--wzl-radius-pill);
+}
+
+.segment:only-of-type {
+  border-radius: var(--wzl-radius-pill);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+}
+
+/* The track clips, so the ring stays inset, where a selected segment's
+   accent fill would swallow it. */
+.segmentSelected:focus-visible {
+  outline-color: var(--wzl-fg-on-accent);
+}
+
+.variant_minimal .segmentSelected:focus-visible {
+  outline-color: var(--wzl-focus-ring);
+}
+
+.segment:is(:disabled, [data-disabled]) {
+  opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
+  cursor: not-allowed;
+}
+
+.segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected) {
+  color: var(--wzl-fg);
+}
+
+/* Selected segment. Mirrors a confirm Button. */
+.segmentSelected {
+  --_flat-fill: color-mix(in srgb, var(--wzl-accent) calc((1 - var(--wzl-gloss)) * 100%), transparent);
+  background: linear-gradient(var(--_flat-fill), var(--_flat-fill)), linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wzl-accent) var(--btn-top-alpha, 45%), transparent) 0%,
+    color-mix(in srgb, var(--wzl-accent) var(--btn-upper-alpha, 70%), transparent) calc(var(--btn-equator, 52%) - var(--btn-equator-spread, 12%)),
+    color-mix(in srgb, var(--wzl-accent) var(--btn-equator-tint, 95%), white) var(--btn-equator, 52%),
+    var(--wzl-accent) calc(var(--btn-equator, 52%) + var(--btn-equator-spread, 12%) * 1.6),
+    color-mix(in srgb, var(--wzl-accent) var(--btn-base-tint, 70%), black) 100%
+  );
+  backdrop-filter: blur(calc(var(--btn-blur, 6px) * var(--wzl-gloss))) saturate(calc(1 + (var(--btn-saturate, 1.3) - 1) * var(--wzl-gloss)));
+  -webkit-backdrop-filter: blur(calc(var(--btn-blur, 6px) * var(--wzl-gloss))) saturate(calc(1 + (var(--btn-saturate, 1.3) - 1) * var(--wzl-gloss)));
+  color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, calc(var(--btn-text-shadow, 0.35) * var(--wzl-gloss))),
+    var(--btn-text-inset-x, 0px) var(--btn-text-inset-y, 1px) 0 rgba(0, 0, 0, calc(var(--btn-text-inset, 0.55) * var(--wzl-gloss))),
+    0 0 6px rgba(0, 0, 0, calc(var(--btn-text-shadow, 0.35) * 0.5 * var(--wzl-gloss)));
+  box-shadow: var(
+    --wzl-bevel-raised,
+    inset 0 1px 0 rgba(255, 255, 255, calc(var(--btn-inset-hi, 0.42) * var(--wzl-gloss))),
+    inset 0 -1px 2px rgba(0, 0, 0, calc(var(--btn-inset-lo, 0.3) * var(--wzl-gloss))),
+    0 0 0 1px rgba(0, 0, 0, calc(var(--btn-rim, 0.22) * var(--wzl-gloss))),
+    0 1px 2px rgba(0, 0, 0, calc(var(--btn-drop-near, 0.3) * var(--wzl-gloss))),
+    0 2px 4px rgba(0, 0, 0, calc(var(--btn-drop-far, 0.18) * 0.8 * var(--wzl-gloss)))
+  );
+}
+
+/* Specular gloss on the selected segment. Top corners inherit the
+   segment's radius so they hug the upper edge cleanly; bottom corners
+   are flattened so the gloss ends in a straight line at the equator
+   instead of two little curves that read as `)(` brackets. */
+.segmentSelected::before {
+  content: '';
+  position: absolute;
+  inset: 1px 1px var(--btn-gloss-bottom, 50%) 1px;
+  border-radius: inherit;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, var(--btn-gloss-top, 0.42)) 0%,
+    rgba(255, 255, 255, var(--btn-gloss-mid, 0.12)) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: var(--wzl-gloss);
+}
+
+.segmentSelected > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Mixed segment (`aria-pressed="mixed"`) — the sources disagree. Reads as a
+   deliberate third state rather than a dimmed "on": a flat accent wash with
+   none of the selected segment's gloss/cylinder treatment, so it can't be
+   mistaken for the glass lozenge at a glance. */
+.segmentMixed {
+  background: color-mix(in srgb, var(--wzl-accent) 22%, transparent);
+  color: var(--wzl-fg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wzl-accent) 45%, transparent);
+}
+
+.segmentMixed:hover:not(:disabled, [data-disabled]) {
+  background: color-mix(in srgb, var(--wzl-accent) 32%, transparent);
+}
+
+.variant_minimal .segmentMixed {
+  background: color-mix(in srgb, var(--wzl-accent) 18%, transparent);
+  box-shadow: none;
+  color: var(--wzl-fg);
+}
+
+/* Small variant — ~60% of the default height, with proportionally reduced
+   padding and font. Sized for dense surfaces (lab control panels, inline
+   filters, etc.). */
+.size_sm {
+  height: var(--tb-h, calc(var(--wzl-font-size-sm) * 1.4 + 2px));
+  padding: 1px;
+}
+
+.size_sm .segment {
+  padding: 0 var(--wzl-space-4);
+  font-size: var(--wzl-field-font-size, var(--wzl-font-size-sm));
+}
+
+/* `.size_sm .segment` outranks the glyph rule above on specificity. */
+.size_sm .segment:has(> svg) {
+  padding: 0 3px;
+}
+
+/* Minimal variant — strips the pill track, glass selected state, inset
+   shadows, and outer padding. Used in dense diagnostic surfaces (dispatch
+   trace, lab inspectors) where the bar must read as plain text controls. */
+.variant_minimal {
+  height: auto;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  gap: var(--wzl-space-1);
+}
+
+/* No font size here: the bar's `size` sets it, as under every variant. */
+.variant_minimal .segment {
+  padding: 0 var(--wzl-space-2);
+  font-weight: var(--wzl-font-weight-medium);
+  line-height: 1.4;
+  border-radius: var(--wzl-radius-sm);
+  color: var(--wzl-fg-muted);
+  transition: none;
+}
+
+.variant_minimal .segment:first-of-type,
+.variant_minimal .segment:last-of-type,
+.variant_minimal .segment:only-of-type {
+  border-radius: var(--wzl-radius-sm);
+}
+
+.variant_minimal .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected) {
+  color: var(--wzl-fg);
+  background: var(--wzl-surface-hover);
+}
+
+.variant_minimal .segmentSelected {
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--wzl-accent-fg);
+  text-shadow: none;
+  box-shadow: none;
+  font-weight: var(--wzl-font-weight-medium);
+}
+
+.variant_minimal .segmentSelected::before {
+  content: none;
+}
+
+/* Flat variant — no track, no glass, no pill: each segment is its own
+   outlined cell. For property panels, where a bar sits in a row beside
+   inputs and the glass cylinder makes it the loudest thing on the surface. */
+.variant_flat {
+  padding: 0;
+  background: none;
+  border-radius: var(--wzl-radius-sm);
+  box-shadow: none;
+  overflow: visible;
+}
+
+.variant_flat .segment {
+  /* The same faint rule a text box draws, so a field's segments and its boxes read as one family. */
+  border: var(--wzl-field-border, 1px solid color-mix(in srgb, var(--wzl-border), var(--wzl-border-strong) 30%));
+  border-radius: 0;
+  /* Sunken, so an unselected cell sits below the panel and the selected one
+     reads as raised without needing the glass treatment back. */
+  background: var(--wzl-surface-sunken);
+  box-shadow: var(--wzl-bevel-sunken, none);
+  color: var(--wzl-fg-muted);
+}
+
+/* Adjacent cells share one rule rather than stacking two. */
+.variant_flat .segment ~ .segment {
+  margin-inline-start: -1px;
+}
+
+.variant_flat .segment:first-of-type {
+  border-start-start-radius: var(--wzl-radius-sm);
+  border-end-start-radius: var(--wzl-radius-sm);
+}
+
+.variant_flat .segment:last-of-type {
+  border-start-end-radius: var(--wzl-radius-sm);
+  border-end-end-radius: var(--wzl-radius-sm);
+}
+
+.variant_flat .segment:hover:not(:disabled, [data-disabled]):not(.segmentSelected) {
+  background: var(--wzl-surface-hover);
+  color: var(--wzl-fg);
+}
+
+.variant_flat .segmentSelected {
+  /* Above its neighbors, or the next cell's left border covers its right one. */
+  z-index: 1;
+  background: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  text-shadow: none;
+  box-shadow: var(--wzl-bevel-raised, none);
+}
+
+.variant_flat .segmentSelected::before {
+  content: none;
+}
+
+/* A tiled row (tiling.module.css): one well around the whole grid, its cells butted, rounding only the grid's outer
+   corners. A pill's radius would round a tall grid into a stadium, so the well takes the large radius instead. */
+.root.tiled {
+  --_tile-r: max(0px, calc(var(--wzl-radius-lg) - var(--wzl-space-1)));
+  display: grid;
+  height: auto;
+  border-radius: var(--wzl-radius-lg);
+  grid-auto-rows: calc(var(--tb-h, var(--wzl-control-h)) - 2 * var(--wzl-space-1));
+}
+
+.root.tiled.size_sm {
+  --_tile-r: max(0px, calc(var(--wzl-radius-lg) - 1px));
+  grid-auto-rows: calc(var(--tb-h, calc(var(--wzl-font-size-sm) * 1.4 + 2px)) - 2px);
+}
+
+.root.tiled .segment {
+  min-width: 0;
+  border-radius: 0;
+}
+
+.root.tiled .segment[data-tile-corners~='ss'] { border-start-start-radius: var(--_tile-r); }
+.root.tiled .segment[data-tile-corners~='se'] { border-start-end-radius: var(--_tile-r); }
+.root.tiled .segment[data-tile-corners~='es'] { border-end-start-radius: var(--_tile-r); }
+.root.tiled .segment[data-tile-corners~='ee'] { border-end-end-radius: var(--_tile-r); }
+
+/* A vertical row: the well and its segments turned a quarter turn, each label still upright. */
+.root[data-orientation='vertical'] {
+  flex-direction: column;
+  height: auto;
+  min-width: 0;
+}
+
+.root[data-orientation='vertical'] .segment {
+  min-height: calc(var(--tb-h, var(--wzl-control-h)) - 2 * var(--wzl-space-1));
+}
+
+.size_sm[data-orientation='vertical'] .segment {
+  min-height: calc(var(--tb-h, calc(var(--wzl-font-size-sm) * 1.4 + 2px)) - 2px);
+}
+
+.root[data-orientation='vertical']:not(.variant_minimal, .variant_flat) .segment:first-of-type {
+  border-radius: var(--wzl-radius-pill) var(--wzl-radius-pill) 0 0;
+}
+
+.root[data-orientation='vertical']:not(.variant_minimal, .variant_flat) .segment:last-of-type {
+  border-radius: 0 0 var(--wzl-radius-pill) var(--wzl-radius-pill);
+}
+
+.root[data-orientation='vertical']:not(.variant_minimal, .variant_flat) .segment:only-of-type {
+  border-radius: var(--wzl-radius-pill);
+}
+
+.variant_flat[data-orientation='vertical'] .segment ~ .segment {
+  margin-inline-start: 0;
+  margin-block-start: -1px;
+}
+
+.variant_flat[data-orientation='vertical'] .segment:first-of-type {
+  border-radius: var(--wzl-radius-sm) var(--wzl-radius-sm) 0 0;
+}
+
+.variant_flat[data-orientation='vertical'] .segment:last-of-type {
+  border-radius: 0 0 var(--wzl-radius-sm) var(--wzl-radius-sm);
+}
+
+/* Forced colors drop the selected segment's gradient and shadow, so no segment would read as on. */
+@media (forced-colors: active) {
+  .segmentSelected {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    text-shadow: none;
+  }
+
+  .segmentSelected::before {
+    display: none;
+  }
+
+  .segmentMixed {
+    outline: 1px dashed CanvasText;
+    outline-offset: -1px;
+  }
+}

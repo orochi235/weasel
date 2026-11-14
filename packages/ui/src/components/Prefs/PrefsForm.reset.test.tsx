@@ -91,7 +91,7 @@ describe('PrefsForm resets over plain values', () => {
     const writes: Array<[string, unknown]> = [];
     renderWithIcons(
       <PrefsForm schema={SCHEMA} layout="list" values={{ view: { size: 30, gap: 4, grid: false } }}
-        disabled={new Set(['view.size'])} onChange={(path, value) => writes.push([path, value])} />,
+        disabledPaths={new Set(['view.size'])} onChange={(path, value) => writes.push([path, value])} />,
     );
     fireEvent.click(reset('View')!);
     expect(writes).toEqual([['view.grid', true]]);

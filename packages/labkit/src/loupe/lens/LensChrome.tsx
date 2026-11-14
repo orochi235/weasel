@@ -1,5 +1,5 @@
 import { useActionsRegistry } from '@weasel-js/core';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { useLensResolution, useShownSource } from './LensSlot';
 import { LENS_ACTION_IDS } from './lensActionDefs';
 import { type LensSlotProps, requestsOf } from './lensSource';
@@ -69,7 +69,7 @@ export function LensChrome<C>({
         <span className="lk-lens-chrome__compare">{describe(settings.compare, at)}</span>
       ) : null}
       <span className="lk-lens-chrome__toggles">
-        <ToggleBar
+        <SegmentedBar
           aria-label="Source"
           size="sm"
           variant="minimal"
@@ -81,7 +81,7 @@ export function LensChrome<C>({
             fire(SOURCE_TOGGLES.find((t) => t.kind === (next ?? source?.kind))?.id)
           }
         />
-        <ToggleBar
+        <SegmentedBar
           aria-label="Readouts"
           mode="multiple"
           size="sm"
@@ -103,7 +103,7 @@ export function LensChrome<C>({
           }
         />
         {settings.compare !== null ? (
-          <ToggleBar
+          <SegmentedBar
             aria-label="View"
             size="sm"
             variant="minimal"

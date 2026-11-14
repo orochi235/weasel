@@ -326,7 +326,7 @@
 
 .action[disabled],
 .action[aria-disabled='true'],
-.popTrigger[data-disabled] {
+.popTrigger:is([data-disabled], [data-held='disabled']) {
   opacity: 0.5;
   filter: var(--wzl-disabled-filter);
   cursor: not-allowed;

@@ -5,9 +5,10 @@ import { Bar } from '../Bar/Bar';
 import { PrefsBar } from '../PrefsBar/PrefsBar';
 import type { DensityProps } from '../Density';
 import s from './ToolOptionsBar.module.css';
+import type { HoldProps } from '../Disabled';
 
 /** Props for {@link ToolOptionsBar}. */
-export interface ToolOptionsBarProps extends DensityProps {
+export interface ToolOptionsBarProps extends DensityProps, HoldProps {
   /**
    * Context label for the row — e.g. the active tool's name. Shown as the
    * bar's lead, and names the toolbar, which is `'Tool options'` without
@@ -45,9 +46,9 @@ export interface ToolOptionsBarProps extends DensityProps {
  * show.
  */
 export function ToolOptionsBar(props: ToolOptionsBarProps) {
-  const { label, schema, values, onChange, mixed, renderers, over, children, size, className } = props;
+  const { label, schema, values, onChange, mixed, renderers, over, children, size, className, disabled, disabledReason, readOnly, readOnlyReason } = props;
   if (schema === undefined && Children.toArray(children).length === 0) return null;
-  const strip = { label: label ?? 'Tool options', lead: label === undefined ? undefined : 'label', framed: 'band', fit: true, size, className: [s.root, className].filter(Boolean).join(' ') } as const;
+  const strip = { label: label ?? 'Tool options', lead: label === undefined ? undefined : 'label', framed: 'band', fit: true, size, disabled, disabledReason, readOnly, readOnlyReason, className: [s.root, className].filter(Boolean).join(' ') } as const;
   return schema === undefined ? (
     <Bar {...strip}>{children}</Bar>
   ) : (

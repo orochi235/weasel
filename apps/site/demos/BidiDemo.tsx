@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { analyze, mirror, reorder, type BidiDirection } from '@weasel-js/bidi';
 import { Input } from '@weasel-js/ui/components/Input';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Button } from '@weasel-js/ui/components/Button';
 import s from './BidiDemo.module.css';
 
@@ -36,7 +36,7 @@ export function BidiDemo() {
     <div className={s.demo}>
       <div className={s.controls}>
         <Input value={text} onChange={setText} aria-label="Text" className={s.entry} />
-        <ToggleBar
+        <SegmentedBar
           items={DIRECTIONS}
           value={direction}
           onChange={(v) => v && setDirection(v)}

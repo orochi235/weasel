@@ -1,7 +1,7 @@
 import { useState, useSyncExternalStore } from 'react';
 import { createReflectable, type Registrant } from '@weasel-js/registry';
 import { Button } from '@weasel-js/ui/components/Button';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './RegistryDemo.module.css';
 
 type Tool = 'pen' | 'hand' | 'zoom';
@@ -41,7 +41,7 @@ export function RegistryDemo() {
   return (
     <div className={s.demo}>
       <div className={s.controls}>
-        <ToggleBar items={TOOLS} value={tool} onChange={(v) => v && setTool(v)} aria-label="Key" size="sm" />
+        <SegmentedBar items={TOOLS} value={tool} onChange={(v) => v && setTool(v)} aria-label="Key" size="sm" />
         <Button size="sm" onClick={() => push('kit')}>push as kit</Button>
         <Button size="sm" onClick={() => push('plugin')}>push as plugin</Button>
         <Button size="sm" onClick={() => cursors.set(tool, 'wait', { source: 'app' })}>set as app</Button>

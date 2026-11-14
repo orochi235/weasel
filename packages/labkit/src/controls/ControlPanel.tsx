@@ -1,5 +1,6 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
+import { type HoldProps, holdScope } from '@weasel-js/ui/components/Disabled';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import {
@@ -25,7 +26,9 @@ import { panelRows } from './panelRows';
 export type { ControlPack } from './controlPack';
 
 /** Props for {@link ControlPanel}. */
-export interface ControlPanelProps<TC extends Record<string, unknown>> extends AppearanceProps {
+export interface ControlPanelProps<TC extends Record<string, unknown>>
+  extends AppearanceProps,
+    HoldProps {
   /** The config schema to draw, resolved: `useResolvedConfig(f.schema({ … }))`, or a trial's `configSchema`. */
   schema: ResolvedConfig;
   config: TC;
@@ -236,6 +239,19 @@ function sectionFold(
  *  back through `setConfig`. Built on the property rows, so a lab's controls
  *  are the same aligned, themed rows the rest of the kit uses. */
 export function ControlPanel<TC extends Record<string, unknown>>({
+  disabled,
+  disabledReason,
+  readOnly,
+  readOnlyReason,
+  ...props
+}: ControlPanelProps<TC>) {
+  return holdScope(
+    { disabled, disabledReason, readOnly, readOnlyReason },
+    <PanelBody {...props} />,
+  );
+}
+
+function PanelBody<TC extends Record<string, unknown>>({
   schema: resolved,
   config,
   setConfig,
@@ -261,7 +277,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   title,
   className,
   ...appearance
-}: ControlPanelProps<TC>) {
+}: Omit<ControlPanelProps<TC>, keyof HoldProps>) {
   const choices = useFieldChoicesOf(resolved.group);
   const over = overGiven ?? resolved.over;
 

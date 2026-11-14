@@ -99,7 +99,7 @@ export function ControlBar(props: ControlBarProps) {
         overflow={group.overflow}
         lead={group.lead}
         icon={group.icon}
-        disabled={!enabled(path)}
+        off={!enabled(path)}
         label={group.name === '' ? undefined : group.name}
       >
         {barNodeChildren(groupBarNodes(group, path, open), {

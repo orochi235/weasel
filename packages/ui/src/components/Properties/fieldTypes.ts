@@ -3,6 +3,7 @@ import type { Inherit, Paint, PaintKind } from '@weasel-js/core';
 import type { PaintInherit } from '../PaintInput';
 import type { Display, Endless, UnitTable } from '@weasel-js/quantity';
 import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
+import type { DisableableProps } from '../Disabled';
 
 /** One choice of an enum field. */
 export interface PropertyOption<T extends string> {
@@ -25,7 +26,7 @@ export interface PropertyOption<T extends string> {
 }
 
 /** Props every kind of field shares. */
-interface FieldBase {
+interface FieldBase extends DisableableProps {
   /** The control's accessible name. A `<PropertyField>` takes it from a string
    *  `label` when this is omitted. */
   name?: string;
@@ -38,11 +39,6 @@ interface FieldBase {
    * inventing one, since the next edit would write the invention back.
    */
   unset?: boolean;
-  /** The control takes no input: every element of it is disabled, and keeps
-   *  showing its value. */
-  disabled?: boolean;
-  /** Why it is disabled: the row's help reads it, and a segment or a menu button keeps a tooltip saying it. */
-  disabledReason?: string;
   /** The field shows its value and offers nothing to change it with: it draws
    *  as that value in words (`PropertyReadout`), not as a control. */
   readOnly?: boolean;

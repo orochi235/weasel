@@ -24,10 +24,10 @@ export interface SectionTree {
   pathAt: (railPath: string) => string;
   /** The paths within `group` an `enableIf` disables, judged against the
    *  config: of leaves, of groups, and of fields inside a leaf, named as
-   *  `applyPrefConditions` names them. Pass it as `PrefsForm`'s `disabled`.
+   *  `applyPrefConditions` names them. Pass it as `PrefsForm`'s `disabledPaths`.
    *  `group` carries no condition the form could judge in its place, since
    *  one naming a config path would read `values`, where nothing is there. */
-  disabled: ReadonlySet<string>;
+  disabledPaths: ReadonlySet<string>;
 }
 
 /**
@@ -220,7 +220,7 @@ export function sectionTree(
     }
     return out.join('.');
   };
-  return { group, values, pathAt, disabled: railPaths(verdict.disabled, group, pathAt) };
+  return { group, values, pathAt, disabledPaths: railPaths(verdict.disabled, group, pathAt) };
 }
 
 /** `paths`, config paths, as paths within `group`: each under the node drawn

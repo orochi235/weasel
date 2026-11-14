@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Button } from '../Button';
 import { Bar } from '../Bar';
-import { ToggleBar } from '../ToggleBar';
+import { SegmentedBar } from '../Segmented';
 import { ThemeSwitcher } from '../ThemeSwitcher';
 import { ToolOptionsBar } from '../ToolOptionsBar';
 import { Density } from './Density';
@@ -26,7 +26,7 @@ describe('Density', () => {
   });
 
   it('reaches a segmented bar', () => {
-    render(<Density size="sm"><ToggleBar aria-label="Pick" items={ITEMS} value="a" onChange={() => {}} /></Density>);
+    render(<Density size="sm"><SegmentedBar aria-label="Pick" items={ITEMS} value="a" onChange={() => {}} /></Density>);
     expect(screen.getByRole('radiogroup', { name: 'Pick' }).className).toMatch(/size_sm/);
   });
 

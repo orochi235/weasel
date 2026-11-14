@@ -45,7 +45,7 @@ export const WithDisabled: Story = {
     <Tabs {...args}>
       <TabList aria-label="Sections">
         <Tab id="a">Available</Tab>
-        <Tab id="b" isDisabled>Disabled</Tab>
+        <Tab id="b" disabled>Disabled</Tab>
         <Tab id="c">Available</Tab>
       </TabList>
       <TabPanel id="a">A.</TabPanel>

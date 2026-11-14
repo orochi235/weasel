@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { painted } from '@weasel-js/ui/testing/paintedContrast';
 import { Button } from '@weasel-js/ui/components/Button';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 
 // --wzl-gloss fades the glass on a boxed button and a selected segment through
 // calc() and color-mix(), neither of which jsdom resolves.
@@ -16,7 +16,7 @@ function Controls({ gloss }: { gloss?: number }) {
     <div style={gloss === undefined ? undefined : { ['--wzl-gloss' as string]: gloss }}>
       <Button stance="confirm">Save</Button>
       <Button>Cancel</Button>
-      <ToggleBar
+      <SegmentedBar
         aria-label="View"
         items={[
           { value: 'tree', label: 'Tree' },

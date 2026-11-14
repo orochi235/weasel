@@ -91,10 +91,10 @@ export function splitBarItems(items: readonly LineItem[], kept: number): { line:
   return { line, rest };
 }
 
-/** What a bar's line starts with: `label` for `lead: 'label'`, `icon` for `'icon'`, else nothing. Dimmed while the bar is disabled. */
-export function barLead({ lead, label, icon, disabled }: Pick<BarProps, 'lead' | 'label' | 'icon' | 'disabled'>): ReactNode {
+/** What a bar's line starts with: `label` for `lead: 'label'`, `icon` for `'icon'`, else nothing. Dimmed while the bar is off. */
+export function barLead({ lead, label, icon, off }: Pick<BarProps, 'lead' | 'label' | 'icon' | 'off'>): ReactNode {
   const shown = lead === 'label' ? label : lead === 'icon' ? resolveIcon(icon) : undefined;
-  return shown == null || shown === '' ? shown : offTitle(shown, disabled === true);
+  return shown == null || shown === '' ? shown : offTitle(shown, off === true);
 }
 
 /** Where a drawn item sits along a curve: its class, the custom properties that place it, and how far it is clipped. */

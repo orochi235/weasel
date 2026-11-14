@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
+import { holdScope, type HoldProps } from '../Disabled';
 import s from './barParts.module.css';
 
-/** Props for {@link BarGroup}. */
-export interface BarGroupProps {
+/** Props for {@link BarGroup}. `disabled` and `readOnly` hold every control in it. */
+export interface BarGroupProps extends HoldProps {
   children: ReactNode;
   /** Pushes this group, and everything after it, to the far end. */
   end?: boolean;
@@ -12,11 +13,12 @@ export interface BarGroupProps {
 
 /** Related controls, kept tight and set off from what is beside them by a divider. One unit on the line: it overflows
  *  into the menu whole. */
-export function BarGroup({ children, 'aria-label': ariaLabel, className }: BarGroupProps) {
+export function BarGroup(props: BarGroupProps) {
+  const { children, 'aria-label': ariaLabel, className } = props;
   return (
     // biome-ignore lint/a11y/useSemanticElements: a group inside role="toolbar" is the APG pattern. <fieldset> means form controls, needs a <legend> to be named, and its UA min-width breaks flex children.
     <div className={[s.group, className].filter(Boolean).join(' ')} role="group" aria-label={ariaLabel}>
-      {children}
+      {holdScope(props, children)}
     </div>
   );
 }

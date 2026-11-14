@@ -1,7 +1,7 @@
 import { f, meta, story } from '@weasel-js/forge';
 import { useState, type CSSProperties } from 'react';
 import { Along, type AlongArc, type RunAlign } from '@weasel-js/ui/components/Along';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './Along.stories.module.css';
 
 /** A control laid along an arc of its box: move the arc, change its reach, or run it the other way. */
@@ -25,7 +25,7 @@ function AlongDemo({ config: c }: { config: AlongConfig }) {
   return (
     <div className={s.box} style={{ '--box': `${c.size}px` } as CSSProperties}>
       <Along arc={arc} align={c.align}>
-        <ToggleBar items={ITEMS} value={value} onChange={setValue} aria-label="Alignment" />
+        <SegmentedBar items={ITEMS} value={value} onChange={setValue} aria-label="Alignment" />
       </Along>
     </div>
   );

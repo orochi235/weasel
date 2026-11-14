@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { CSSProperties, ReactNode } from 'react';
 import { afterEach, describe, expect, test } from 'vitest';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
-import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { ToolButton } from '@weasel-js/ui/components/ToolButton';
 import bar from './Bar/Bar.module.css';
@@ -35,7 +35,8 @@ const parts = (value: string) => value.split('rgb').length - 1;
 
 type Variant = 'default' | 'minimal' | 'flat';
 const Segments = ({ variant }: { variant: Variant }) => (
-  <OptionsBar
+  <SegmentedBar
+    mode="each"
     aria-label={variant}
     variant={variant}
     items={['On', 'Off'].map((label, i) => ({ value: label, label, selected: i === 0, onChange: () => {} }))}

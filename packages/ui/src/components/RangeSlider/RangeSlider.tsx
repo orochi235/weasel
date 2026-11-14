@@ -10,6 +10,8 @@ import {
   type SliderProps as RACSliderProps,
 } from 'react-aria-components';
 import { useInlineDirection } from '../Along/useRowRun';
+import type { HoldProps } from '../Disabled';
+import { useRacHold } from '../Disabled/racHold';
 import s from './RangeSlider.module.css';
 
 /** `locale` with its script swapped for one written `direction`, its numbering system pinned so digits don't change.
@@ -20,7 +22,7 @@ function localeWritten(locale: string, direction: 'ltr' | 'rtl'): string {
 }
 
 /** Props for {@link RangeSlider}, on top of React Aria's `Slider` props. */
-export type RangeSliderProps = Omit<RACSliderProps, 'children' | 'className'> & {
+export type RangeSliderProps = Omit<RACSliderProps, 'children' | 'className' | 'isDisabled'> & HoldProps & {
   label?: ReactNode;
   /** Show the current value next to the label. Defaults to true when a
    *  label is supplied. */
@@ -46,7 +48,13 @@ export type RangeSliderProps = Omit<RACSliderProps, 'children' | 'className'> & 
  * Straight only; for a control along a curve, use `Slider` inside `Along`.
  */
 export function RangeSlider(props: RangeSliderProps) {
-  const { label, showOutput, formatOutput, className, ...rest } = props;
+  const hold = useRacHold(props);
+  const { label, showOutput, formatOutput, className, ...own } = hold.rest;
+  // React Aria's Slider has no read-only: a held one pins its value and drops every change.
+  const { isReadOnly: held, ...racHeld } = hold.rac;
+  const rest = held
+    ? { ...own, ...racHeld, value: own.value ?? own.defaultValue, onChange: undefined, onChangeEnd: undefined }
+    : { ...own, ...racHeld };
   const wantOutput = showOutput ?? label !== undefined;
   const root = useRef<HTMLDivElement | null>(null);
   const direction = useInlineDirection(root);
@@ -55,7 +63,7 @@ export function RangeSlider(props: RangeSliderProps) {
     () => (direction === localeDirection ? locale : localeWritten(locale, direction)),
     [locale, localeDirection, direction],
   );
-  return (
+  return hold.wrap(
     <I18nProvider locale={written}>
       <RACSlider {...rest} ref={root} className={[s.slider, className].filter(Boolean).join(' ')}>
         {(label !== undefined || wantOutput) && (
@@ -96,6 +104,6 @@ export function RangeSlider(props: RangeSliderProps) {
           }}
         </SliderTrack>
       </RACSlider>
-    </I18nProvider>
+    </I18nProvider>,
   );
 }

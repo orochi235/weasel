@@ -9,6 +9,7 @@ import { BarButton } from './BarButton';
 import { BarDivider, BarGroup, BarItem, BarReadout, BarSpacer } from './barParts';
 import { useRun, type Orientation } from '../Run';
 import { useDensity, withDensity, type DensityProps } from '../Density';
+import { holdScope, useDisabled, type HoldProps } from '../Disabled';
 
 /** Which way a bar runs. */
 export type BarOrientation = Orientation;
@@ -16,8 +17,8 @@ export type BarOrientation = Orientation;
 /** What a bar does with cells its line has no room for. */
 export type BarOverflowMode = PrefBarOverflow;
 
-/** Props for {@link Bar}. */
-export interface BarProps extends DensityProps {
+/** Props for {@link Bar}. `disabled` and `readOnly` hold every cell. */
+export interface BarProps extends DensityProps, HoldProps {
   /** What the bar holds, in order: any controls, and `Bar.Group`s, `Bar.Spacer`s, `Bar.Divider`s, `Bar.Item`s, and
    *  `Bar.Readout`s. Each child is one cell on the line. */
   children?: ReactNode;
@@ -30,8 +31,10 @@ export interface BarProps extends DensityProps {
   lead?: PrefBarLead;
   /** The glyph naming the bar, which `lead: 'icon'` starts its line with. */
   icon?: IconSpec;
-  /** The bar's group is disabled, and its lead dims as a heading's name does. The cells say so for themselves. */
-  disabled?: boolean;
+  /** The bar's group is turned off, as an `enableIf` turns it off: its lead dims as a heading's name does, and the
+   *  cells say so for themselves, so a switch among them that turns it back on stays live. `disabled` holds every
+   *  cell. */
+  off?: boolean;
   /**
    * Draw the strip the bar sits on, for a bar with no strip of the host's under it. `true` is a bordered strip set
    * among other things; `'segmented'` a compact one with the cells almost touching; `'band'` a strip the width of
@@ -86,15 +89,17 @@ export interface BarProps extends DensityProps {
  * `size="sm"` is the compact strip, for chrome around a working surface rather than a page's own strip: the buttons
  * inside draw at `sm`, and the control height drops with them, so a slider or a number box keeps step.
  */
-export function Bar(props: BarProps) {
+export function Bar(own: BarProps) {
   const run = useRun();
+  // Off or disabled, the bar's lead dims as a heading's name does; disabled, every cell is disabled too.
+  const props = { ...own, off: useDisabled(own).disabled || own.off === true };
   const sm = useDensity(props.size) === 'sm';
   const read = lineItems(props.children, props.onReorder !== undefined);
   const items = props.divided ? dividedItems(read) : read;
   const bar = run.shape !== undefined && run.shape.kind !== 'line'
     ? <BarAlong {...props} items={items} sm={sm} shape={run.shape} align={run.align ?? 'center'} />
     : <BarLine {...props} items={items} sm={sm} orientation={props.orientation ?? run.orientation} />;
-  return <BarMarkContext.Provider value={props.onReorder !== undefined}>{withDensity(props.size, bar)}</BarMarkContext.Provider>;
+  return holdScope(own, <BarMarkContext.Provider value={props.onReorder !== undefined}>{withDensity(own.size, bar)}</BarMarkContext.Provider>);
 }
 
 /** Related controls, kept tight and divided from their neighbors. */

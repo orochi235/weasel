@@ -6,13 +6,14 @@ import { Caret } from '../Caret';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
 import f from '../field.module.css';
 import s from './MenuButton.module.css';
-import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import { SegmentTooltip, type SegmentTooltipFields } from '../segmentTooltip';
+import { useDisabled, type DisableableProps } from '../Disabled';
+import type { ListOption } from '../listOption';
 
-/** One row in a {@link MenuButton}'s list. */
-export type MenuButtonItem<T extends string = string> = {
-  value: T;
+/** One row in a {@link MenuButton}'s list: a {@link ListOption} whose label is text, since a row is named and typed
+ *  against its label, and which draws no glyph. */
+export type MenuButtonItem<T extends string = string> = Omit<ListOption<T>, 'label' | 'icon' | 'textValue'> & {
   label: string;
-  disabled?: boolean;
   /** Makes the row a link: an `<a>` that goes here when chosen, and that a
    *  middle or modified click opens as it opens any link. */
   href?: string;
@@ -20,10 +21,6 @@ export type MenuButtonItem<T extends string = string> = {
   current?: boolean;
   /** Makes the row a check row, ticked while true. */
   checked?: boolean;
-  /** What the row does, read as its hint and accessible description. */
-  description?: string;
-  /** Why the row is disabled, while `disabled`. */
-  disabledReason?: string;
 };
 
 /** Props for {@link MenuButton}. */
@@ -38,15 +35,11 @@ export type MenuButtonProps<T extends string = string> = {
   /** Draws the trigger as its label and a caret in the type around it, with
    *  no field frame: for a heading that opens a list. */
   bare?: boolean;
-  disabled?: boolean;
-  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
-   *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
-  disabledReason?: string;
   className?: string;
   'aria-label'?: string;
   /** Receives the trigger `<button>`, to move focus to it. */
   buttonRef?: Ref<HTMLButtonElement>;
-} & MenuButtonRows<T> & SegmentTooltipFields & OverlayPortalProps;
+} & MenuButtonRows<T> & SegmentTooltipFields & OverlayPortalProps & DisableableProps;
 
 /** A {@link MenuButton}'s list: flat `items` it acts on through `onAction`, or `entries` in `@weasel-js/menu`'s
  *  model, which run themselves and can hold separators, submenus and value rows. Given both, `entries` is drawn. A
@@ -81,6 +74,7 @@ export function MenuButton<T extends string = string>({
   disabledReason,
   buttonRef,
 }: MenuButtonProps<T>) {
+  const off = useDisabled({ disabled, disabledReason }).disabled;
   const trigger = useMenuTrigger(portalContainer);
   const triggerButtonRef = trigger.button;
   const setButton = useCallback(
@@ -111,7 +105,7 @@ export function MenuButton<T extends string = string>({
     <>
       {trigger.anchor}
       <SegmentTooltip
-        content={segmentTooltipContent({ tooltip, shortcut, ariaLabel, label, disabled, disabledReason })}
+        tip={{ tooltip, shortcut, ariaLabel, label }}
         disabled={disabled}
         disabledReason={disabledReason}
       >
@@ -120,8 +114,8 @@ export function MenuButton<T extends string = string>({
           id={trigger.id}
           type="button"
           className={[bare ? s.bare : f.frame, s.trigger, className].filter(Boolean).join(' ')}
-          disabled={disabled}
-          {...(disabled ? { 'data-disabled': '' } : {})}
+          disabled={off}
+          {...(off ? { 'data-disabled': '' } : {})}
           aria-label={ariaLabel}
           aria-haspopup="menu"
           aria-expanded={trigger.open}

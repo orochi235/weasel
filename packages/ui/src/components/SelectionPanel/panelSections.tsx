@@ -44,7 +44,7 @@ function barSection(section: PanelSection, scope: PanelCellScope, marks: PanelMa
   if (cells.length === 0) return undefined;
   const off = sectionOff(section, scope);
   const bar = (
-    <Bar framed overflow={section.overflow} lead={section.lead} icon={section.icon} disabled={off} label={section.name === '' ? undefined : section.name}>
+    <Bar framed overflow={section.overflow} lead={section.lead} icon={section.icon} off={off} label={section.name === '' ? undefined : section.name}>
       {cells.map((cell) => (
         <BarItem key={cell.key} id={cell.key} attrs={selectionAttrs(cell.key, marks, true)}>
           {cell.hidden ? <>{cell.content}<HiddenBadge /></> : cell.content}

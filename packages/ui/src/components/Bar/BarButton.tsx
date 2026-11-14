@@ -1,12 +1,10 @@
 import type { MouseEventHandler, ReactNode } from 'react';
 import { Button } from '../Button';
+import type { DisableableProps } from '../Disabled';
 
-interface BarButtonBase {
+interface BarButtonBase extends DisableableProps {
   children: ReactNode;
   onClick: MouseEventHandler<HTMLButtonElement>;
-  disabled?: boolean;
-  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name. */
-  disabledReason?: string;
   /** Tooltip text, and the accessible name when `aria-label` is unset. */
   title?: string;
   /** A key chord, shown after the name in the tooltip. */

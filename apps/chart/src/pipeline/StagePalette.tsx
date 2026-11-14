@@ -2,7 +2,7 @@ import { IMAGE_STAGE_TYPES, type EffectStageType } from '@weasel-js/diagram/effe
 import { AUDIO_STAGE_TYPES } from '@weasel-js/diagram/effect-audio';
 import { ItemList } from '@weasel-js/ui/components/ItemList';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { useState, type ReactElement } from 'react';
 
 export interface StagePaletteProps {
@@ -25,7 +25,7 @@ export function StagePalette({ onAdd }: StagePaletteProps): ReactElement {
   const types = TYPES[domain];
   return (
     <SidebarPanel title="Stages">
-      <ToggleBar
+      <SegmentedBar
         items={DOMAINS}
         value={domain}
         onChange={(v) => { if (v) setDomain(v); }}

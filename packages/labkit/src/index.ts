@@ -12,7 +12,7 @@ export {
   sessionStorageAdapter,
   urlHashAdapter,
 } from '@weasel-js/storage';
-// The property-panel family, DetailList, LayerList, Input, Select, TokenPanel, ToggleBar and Button live in
+// The property-panel family, DetailList, LayerList, Input, Select, TokenPanel, SegmentedBar and Button live in
 // `@weasel-js/ui`; labkit re-exports them so chrome built on labkit needs no
 // direct ui dependency. Named, not `export *` — a star re-export of an external
 // package emits no binding in the bundle.
@@ -66,14 +66,14 @@ export {
   PropertySpan,
   Subpanel,
 } from '@weasel-js/ui/components/Properties';
+export type {
+  SegmentedBarItem,
+  SegmentedBarProps,
+  SegmentedVariant,
+} from '@weasel-js/ui/components/Segmented';
+export { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 export type { SelectProps } from '@weasel-js/ui/components/Select';
 export { Select } from '@weasel-js/ui/components/Select';
-export type {
-  ToggleBarItem,
-  ToggleBarProps,
-  ToggleBarVariant,
-} from '@weasel-js/ui/components/ToggleBar';
-export { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
 export type {
   TokenCategory,
   TokenEntry,

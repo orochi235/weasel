@@ -10,11 +10,13 @@ import {
 } from '@weasel-js/core';
 import { nativeSvgKind, nativeSvgSpace } from '@weasel-js/svg';
 import { paintKindEditor } from '../paintKindEditor';
-import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '../Segmented';
 import { GradientStops } from './GradientStops';
 import s from './GradientEditor.module.css';
+import { useDisabled, type DisableableProps } from '../Disabled';
+import { useHoldReason } from '../Disabled/HoldReason';
 
-const SPACES: readonly ToggleBarItem<ColorSpace>[] = [
+const SPACES: readonly SegmentedBarItem<ColorSpace>[] = [
   { value: 'rgb', label: 'sRGB' },
   { value: 'oklab', label: 'OKLab' },
   { value: 'oklch', label: 'OKLCh' },
@@ -24,7 +26,7 @@ const SPACES: readonly ToggleBarItem<ColorSpace>[] = [
  * Props for {@link GradientEditor}. `onInput` fires throughout a gesture and
  * `onChange` once at its end.
  */
-export interface GradientEditorProps {
+export interface GradientEditorProps extends DisableableProps {
   /** The gradient being edited: a paint of any gradient kind — one that
    *  `listGradientKinds` returns. */
   value: Paint;
@@ -63,8 +65,6 @@ export interface GradientEditorProps {
   /** The reader picked a stop, or an edit moved the selection: a stop was
    *  added, or the selected one removed. */
   onSelectedStopChange?: (index: number) => void;
-  /** Draw the editor dimmed, out of the tab order, and taking no input. */
-  disabled?: boolean;
   className?: string;
 }
 
@@ -92,12 +92,15 @@ const inertWhen = (off: boolean) => (el: HTMLElement | null): void => {
  * the pointer.
  */
 export function GradientEditor(props: GradientEditorProps): ReactElement {
-  const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, svg = false, disabled = false, className } = props;
+  const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, svg = false, className } = props;
+  // Inert whatever the reason: the reason is read off the group, as its description and tooltip.
+  const { disabled, reason } = useDisabled(props);
+  const why = useHoldReason(reason);
   const kind: PaintKind = value.kind ?? 'solid';
   const space: ColorSpace = (value as { interpolate?: ColorSpace }).interpolate ?? 'rgb';
 
   const entry = usePaintKind(kind);
-  const kinds: readonly ToggleBarItem<PaintKind>[] = useGradientKinds()
+  const kinds: readonly SegmentedBarItem<PaintKind>[] = useGradientKinds()
     .filter((entry) => !svg || nativeSvgKind(entry.id) || entry.id === kind)
     .map((entry) => ({ value: entry.id, label: entry.label }));
   const spaces = SPACES.filter((item) => !svg || nativeSvgSpace(item.value) || item.value === space);
@@ -107,16 +110,17 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
     if (converted && converted !== value) onChange(converted);
   };
 
-  return (
+  return why.wrap(
     <div
       className={[s.root, className].filter(Boolean).join(' ')}
       role={disabled ? 'group' : undefined}
       aria-disabled={disabled || undefined}
+      aria-describedby={why.describedBy}
       data-disabled={disabled ? '' : undefined}
     >
       <div className={s.body} ref={inertWhen(disabled)}>
         {kindSwitch && (
-          <ToggleBar<PaintKind>
+          <SegmentedBar<PaintKind>
             items={kinds}
             value={kind}
             size="sm"
@@ -127,12 +131,12 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
 
         {renderBody()}
       </div>
-    </div>
+    </div>,
   );
 
   function renderBody(): ReactElement {
     const spaceBar = spaceSwitch && spaces.length > 1 && (
-      <ToggleBar<ColorSpace>
+      <SegmentedBar<ColorSpace>
         items={spaces}
         value={space}
         size="sm"

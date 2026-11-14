@@ -264,14 +264,25 @@ A kit component's props use the DOM's and React Aria's names where one exists
 
 - **Accessible name**: a component takes `'aria-label'`, as the element it
   renders does. A field of a data object describing one row or segment
-  (`ToggleBarItem`, `DetentItem`) is `ariaLabel`, since a quoted key in every
+  (`SegmentedBarItem`, `DetentItem`) is `ariaLabel`, since a quoted key in every
   item literal buys nothing.
-- **Off and current**: a component the kit draws itself takes `disabled`,
-  `readOnly` and `current`, and so does a row shape it defines
-  (`MenuButtonItem`, `PropertyOption`, `@weasel-js/menu`'s entries). A
-  component whose props extend React Aria's (`Select`, `Switch`, `NumberField`)
-  keeps React Aria's `isDisabled`, `isReadOnly` and `isSelected`, and
-  `Checkbox` mirrors them as Switch's sibling.
+- **Off and current**: every kit component, and every row shape it defines
+  (`ListOption`, `PropertyOption`, `@weasel-js/menu`'s entries), says
+  `disabled`, `readOnly` and `current`, with `disabledReason` and
+  `readOnlyReason` beside them (2026-11-13). A wrapper translates React Aria's
+  `isDisabled` and `isReadOnly` once, at its boundary (`Disabled/racHold.ts`),
+  and never exposes them. React Aria's `isSelected` stays.
+- **Disabled and read-only scopes**: a component that is or holds a control
+  takes `DisableableProps` (and `ReadOnlyProps` where it holds a value). On a
+  container they are sugar for wrapping its content in `<Disabled>` or
+  `<ReadOnly>`, through `holdScope`; a control reads them through
+  `useDisabled`, `useReadOnly` or `useControlAccess`. The merge rule is
+  `@weasel-js/ui-logic`'s `nestHold`: any enclosing scope that is on holds
+  everything inside it, an inner `false` adds nothing, the nearest reason
+  wins, and disabled beats read-only. A control held with no reason is
+  natively disabled; one held for a reason stays focusable, refuses changes,
+  and says why in its tooltip and description. Tabs and disclosures move
+  between views, so they read no scope.
 - **Controlled pairs**: a held value `x` reports through `onXChange`
   (`collapsedIds`/`onCollapsedChange`, `window`/`onWindowChange`). A selection
   reports through `onSelectionChange`, as React Aria's does, whatever its prop
@@ -362,7 +373,7 @@ blurry rather than bigger.
 ### Gloss
 
 `--wzl-gloss` is how much Aqua glass a boxed `Button` and a selected segment of
-`ToggleBar`, `ButtonBar`, or `OptionsBar` wear, from 0 to 1. The default theme
+a `SegmentedBar` wear, from 0 to 1. The default theme
 sets 0: a flat accent fill, and for a secondary button the raised surface inside
 a 1px `--wzl-border-strong` line. At 1 they draw the ramp, the specular gloss,
 the rim, and the drop shadow. A theme turns the glass on by setting the token,

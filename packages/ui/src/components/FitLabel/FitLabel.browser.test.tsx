@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { FitLabel } from '@weasel-js/ui/components/FitLabel';
 
@@ -30,7 +30,7 @@ const frames = () =>
 
 function FitBar() {
   return (
-    <ToggleBar
+    <SegmentedBar
       aria-label="Case"
       items={CASES.map((c) => ({ value: c.value, label: <FitLabel forms={c.forms} />, ariaLabel: c.forms[0] }))}
       value="none"
@@ -43,7 +43,7 @@ function FitBar() {
 function widthAt(step: number): number {
   const labels = tier(step);
   const { unmount } = render(
-    <ToggleBar
+    <SegmentedBar
       aria-label="Probe"
       items={CASES.map((c, i) => ({ value: c.value, label: labels[i] }))}
       value="none"

@@ -322,7 +322,7 @@ export function AudioDemo() {
           <div className="ckd-bus">
             {EFFECTS.map((name) => (
               <Checkbox
-                key={name} isSelected={effectsOn[name]} isDisabled={!kit}
+                key={name} isSelected={effectsOn[name]} disabled={!kit}
                 onChange={(on) => toggleEffect(name, on)}
               >
                 {name}

@@ -8,7 +8,7 @@ import {
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 400;
@@ -113,7 +113,7 @@ function D3SortableDemoInner() {
     <div className="ckd-demo">
       <div className="ckd-toolbar">
         <span className="ckd-toolbar-note">order:</span>
-        <ToggleBar
+        <SegmentedBar
           items={SORT_KEYS.map((k) => ({ value: k, label: k, disabled: animating && sortKey === k }))}
           value={sortKey}
           onChange={(k) => setSortKey(k ?? 'index')}

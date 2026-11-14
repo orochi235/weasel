@@ -3,11 +3,12 @@ import { type Motif, MotifFrame } from '../MotifFrame';
 import type { AppearanceProps } from '../appearance';
 import { type CollapseProps, foldTitle, foldTwisty, useCollapse } from './collapse';
 import s from './Properties.module.css';
+import { holdScope, useDisabled, type HoldProps } from '../Disabled';
 import { type PropertyListPack, PropertyNote } from './PropertyList';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 
 /** Props for `<PropertyGroup>`. */
-export interface PropertyGroupProps extends PropertyMetricProps, AppearanceProps, CollapseProps {
+export interface PropertyGroupProps extends PropertyMetricProps, AppearanceProps, CollapseProps, HoldProps {
   /** The group's title, which `motif` places. */
   title: ReactNode;
   /** How the group draws its title and edge (`motifs.stereo()`, `motifs.notch()`, …). Defaults to `rule()`, a title between two rules. */
@@ -21,8 +22,6 @@ export interface PropertyGroupProps extends PropertyMetricProps, AppearanceProps
   description?: ReactNode;
   /** When true the group renders nothing — useful for conditional sections. */
   hidden?: boolean;
-  /** What the group holds takes no input: its title dims, and what sits beside it does not. */
-  disabled?: boolean;
   children: ReactNode;
   className?: string;
   /** Take the whole width of a packed grid, like `<PropertyRow span>`: a group
@@ -45,31 +44,33 @@ export interface PropertyGroupProps extends PropertyMetricProps, AppearanceProps
  * `leading` and `actions` put a handle and controls in the title row, and the
  * groups of a `<PropertyList>` reorder with `useReorderDragList`.
  */
-export function PropertyGroup({
-  title,
-  motif,
-  leading,
-  actions,
-  description,
-  hidden,
-  disabled,
-  collapsible,
-  defaultCollapsed,
-  collapsed,
-  onCollapsedChange,
-  twisty,
-  children,
-  className,
-  span,
-  pack = 'auto-color',
-  density,
-  align,
-  stance,
-  grade,
-  emphasis,
-  tint,
-  onContextMenu,
-}: PropertyGroupProps) {
+export function PropertyGroup(props: PropertyGroupProps) {
+  const {
+    title,
+    motif,
+    leading,
+    actions,
+    description,
+    hidden,
+    collapsible,
+    defaultCollapsed,
+    collapsed,
+    onCollapsedChange,
+    twisty,
+    children,
+    className,
+    span,
+    pack = 'auto-color',
+    density,
+    align,
+    stance,
+    grade,
+    emphasis,
+    tint,
+    onContextMenu,
+  } = props;
+  // Its title dims while what it holds is disabled; what sits beside the title does not.
+  const { disabled } = useDisabled(props);
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
   if (hidden) return null;
 
@@ -92,7 +93,7 @@ export function PropertyGroup({
     >
       {description !== undefined && description !== '' && <PropertyNote>{description}</PropertyNote>}
       <div className={s.groupBody} {...fold.body}>
-        {children}
+        {holdScope(props, children)}
       </div>
     </MotifFrame>
   );

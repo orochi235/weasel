@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/core';
 import type { ModifierState } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
-import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
+import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { RAD_TO_DEG } from '@weasel-js/geom';
 
 /**
@@ -33,7 +33,7 @@ const CLICK_TH = 8;   // useDragGesture click-vs-drag dead-zone
 
 type ModeId = 'drag' | 'rect' | 'radial' | 'threshold' | 'handle' | 'drop' | 'click';
 
-const MODE_ITEMS: ToggleBarItem<ModeId>[] = [
+const MODE_ITEMS: SegmentedBarItem<ModeId>[] = [
   { value: 'drag', label: 'drag' },
   { value: 'rect', label: 'drag-rect' },
   { value: 'radial', label: 'radial' },
@@ -348,7 +348,7 @@ export function GesturesDemo() {
 
   return (
     <div className="ckd-gestures">
-      <ToggleBar
+      <SegmentedBar
         items={MODE_ITEMS}
         value={mode}
         onChange={(id) => id && selectMode(id)}

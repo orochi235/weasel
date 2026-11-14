@@ -12,7 +12,7 @@ type Story = StoryObj<typeof Switch>;
 
 export const Basic: Story = { args: { children: 'Wifi' } };
 export const DefaultOn: Story = { args: { children: 'Bluetooth', defaultSelected: true } };
-export const Disabled: Story = { args: { children: 'Locked', isDisabled: true, defaultSelected: true } };
+export const Disabled: Story = { args: { children: 'Locked', disabled: true, defaultSelected: true } };
 
 export const Controlled: Story = {
   render: (args) => {
