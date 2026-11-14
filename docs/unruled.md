@@ -2299,3 +2299,15 @@ Calls the lanes made without a ruling:
   arrow keys and a double-click reset) and the command palette's `/` key. Neither is a demo, and the shell mounts no
   dispatcher; running each through one would mean an actions registry, a dep registry and a dispatcher for one
   affordance.
+
+## Audit round twenty-four (2026-11-14): published surface
+
+- 2026-11-14 (the lane's call): every `exports` condition object lists `types` first, and `check:manifests` fails on
+  one that does not. Every `types` sat beside its `import`, so what TypeScript resolves did not change.
+- 2026-11-14 (the lane's call): no package ships its `CHANGELOG.md`; core's was the only one in `files`, at 1.3 MB.
+- 2026-11-14 (the lane's call): geom's optional `earcut` peer is `^3.2.4`, a caret like its `polygon-clipping` peer,
+  where an exact pin would flag every later earcut 3 release as a peer conflict. Dependencies stay exact.
+- 2026-11-14 (the lane's call): ui, hud and devtools build their declarations from one exclude list that drops
+  fixtures, `testing/` and `lab/` directories, since no export reaches them.
+- 2026-11-14 (the lane's call): `check:unnameable` gates new public types a package does not export, with today's
+  167 allowlisted, rather than exporting or inlining each one in this pass. `typeof` references are not counted.
