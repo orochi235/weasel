@@ -11,11 +11,9 @@ import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { ComboBox } from '@weasel-js/ui/components/ComboBox';
 import { type ControlPoint, CurveEditor } from '@weasel-js/ui/components/CurveEditor';
 import { DataGrid } from '@weasel-js/ui/components/DataGrid';
-import { DetentSlider } from '@weasel-js/ui/components/DetentSlider';
 import { Dialog } from '@weasel-js/ui/components/Dialog';
 import { Disclosure } from '@weasel-js/ui/components/Disclosure';
 import { GradientEditor } from '@weasel-js/ui/components/GradientEditor';
-import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Input } from '@weasel-js/ui/components/Input';
 import { ItemList } from '@weasel-js/ui/components/ItemList';
 import { KeyCap, KeySequence } from '@weasel-js/ui/components/Keycaps';
@@ -35,13 +33,11 @@ import {
   PropertyPanel,
 } from '@weasel-js/ui/components/Properties';
 import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
-import { RangeSlider } from '@weasel-js/ui/components/RangeSlider';
 import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
 import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
-import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import {
   StatusBarItem,
   StatusBarSpacer,
@@ -65,6 +61,8 @@ import { Legend, type LegendEntry } from '../primitives/Legend';
 import { Split } from '../primitives/Split';
 import { ZoomControl } from '../primitives/ZoomControl';
 import { ALIGN_ITEMS } from './alignItems';
+import { Cell } from './Cell';
+import { SliderCells } from './SliderCells';
 
 /** The specimen's sections, in page order. */
 export const SPECIMEN_SECTIONS = [
@@ -89,15 +87,6 @@ function Section({ title, children }: { title: SectionTitle; children: ReactNode
       </h2>
       <div className="lk-specimen__grid">{children}</div>
     </section>
-  );
-}
-
-function Cell({ label, wide, children }: { label: string; wide?: boolean; children: ReactNode }) {
-  return (
-    <div className={wide ? 'lk-specimen__cell lk-specimen__cell--wide' : 'lk-specimen__cell'}>
-      <span className="lk-specimen__label">{label}</span>
-      {children}
-    </div>
   );
 }
 
@@ -292,9 +281,6 @@ function ButtonsAndToggles() {
 }
 
 function FieldsAndPickers() {
-  const [thumbs, setThumbs] = useState<Thumb[]>([{ value: 0.25 }, { value: 0.75 }]);
-  const [rate, setRate] = useState(1);
-  const [width, setWidth] = useState(6);
   const [color, setColor] = useState('#b08adbff');
   const [gradient, setGradient] = useState<Paint>({
     kind: 'linear-gradient',
@@ -338,43 +324,7 @@ function FieldsAndPickers() {
           ]}
         />
       </Cell>
-      <Cell label="RangeSlider, Slider">
-        <RangeSlider label="Range" defaultValue={[20, 80]} minValue={0} maxValue={100} />
-        <RangeSlider
-          label="Opacity"
-          defaultValue={75}
-          minValue={0}
-          maxValue={100}
-          formatOutput={(v) => `${v}%`}
-        />
-        <Slider
-          aria-label="Pair"
-          min={0}
-          max={1}
-          step={0.01}
-          constraint="ordered"
-          thumbs={thumbs}
-          onInput={setThumbs}
-          readoutPlacement="inline-after"
-        />
-      </Cell>
-      <Cell label="DetentSlider, InlineRange">
-        <DetentSlider
-          items={[0.25, 0.5, 1, 2, 4]}
-          value={rate}
-          onInput={setRate}
-          formatLabel={(r) => `${r}×`}
-          labels="all"
-          aria-label="Playback rate"
-        />
-        <InlineRange
-          aria-label="Width"
-          min={0}
-          max={20}
-          value={width}
-          onChange={(event) => setWidth(Number((event.target as HTMLInputElement).value))}
-        />
-      </Cell>
+      <SliderCells />
       <Cell label="ColorField, GradientEditor">
         <ColorField value={color} alpha onInput={setColor} onChange={setColor} aria-label="Color" />
         <GradientEditor value={gradient} onInput={setGradient} onChange={setGradient} kindSwitch />

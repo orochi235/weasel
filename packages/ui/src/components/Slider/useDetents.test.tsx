@@ -2,24 +2,22 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { arcShape } from '@weasel-js/geom';
 import { Along } from '../Along';
-import { DetentSlider } from './DetentSlider';
-import s from './DetentSlider.module.css';
+import { Slider } from './Slider';
+import { useDetents, type DetentsOptions } from './useDetents';
 
 const RATES = [0.25, 0.5, 1, 2, 4];
 
-function renderRate(props: Partial<Parameters<typeof DetentSlider<number>>[0]> = {}) {
+type Options<V extends string | number> = DetentsOptions<V> & { labels?: 'all' | 'ends' | 'none' };
+
+function Detents<V extends string | number>({ labels, ...options }: Options<V>) {
+  return <Slider aria-label="Playback rate" stopLabels={labels} {...useDetents(options)} />;
+}
+
+function renderRate(props: Partial<Options<number>> = {}) {
   const onInput = vi.fn();
   const onChange = vi.fn();
   const view = render(
-    <DetentSlider
-      aria-label="Playback rate"
-      items={RATES}
-      value={1}
-      formatLabel={(r) => `${r}×`}
-      onInput={onInput}
-      onChange={onChange}
-      {...props}
-    />,
+    <Detents items={RATES} value={1} formatLabel={(r) => `${r}×`} onInput={onInput} onChange={onChange} {...props} />,
   );
   const thumb = view.container.querySelector('[role="slider"]') as HTMLElement;
   const track = thumb.parentElement as HTMLElement;
@@ -31,7 +29,7 @@ function renderRate(props: Partial<Parameters<typeof DetentSlider<number>>[0]> =
 const ticks = (c: HTMLElement) => Array.from(c.querySelectorAll<HTMLElement>('[data-slider-tick]'));
 const labels = (c: HTMLElement) => Array.from(c.querySelectorAll<HTMLElement>('[data-slider-stop-label]'));
 
-describe('DetentSlider spacing', () => {
+describe('useDetents spacing', () => {
   // The whole point: 0.25/0.5/1/2/4 is geometric, so a linear value track would
   // bunch four of the five detents into the first fifth of it.
   it('spaces detents evenly however the values are distributed', () => {
@@ -56,7 +54,7 @@ describe('DetentSlider spacing', () => {
   });
 });
 
-describe('DetentSlider labels', () => {
+describe('useDetents labels', () => {
   it('labels every detent through formatLabel', () => {
     const { container } = renderRate();
     expect(labels(container).map((l) => l.textContent)).toEqual(['0.25×', '0.5×', '1×', '2×', '4×']);
@@ -95,7 +93,7 @@ describe('DetentSlider labels', () => {
   });
 });
 
-describe('DetentSlider accessibility', () => {
+describe('useDetents accessibility', () => {
   it('announces the chosen value, not the index it rides on', () => {
     const { thumb } = renderRate({ value: 2 });
     expect(thumb.getAttribute('role')).toBe('slider');
@@ -125,7 +123,7 @@ describe('DetentSlider accessibility', () => {
   });
 });
 
-describe('DetentSlider keyboard', () => {
+describe('useDetents keyboard', () => {
   it('steps one detent per arrow press', () => {
     const { thumb, onInput } = renderRate({ value: 1 });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
@@ -166,7 +164,7 @@ describe('DetentSlider keyboard', () => {
   });
 });
 
-describe('DetentSlider pointer', () => {
+describe('useDetents pointer', () => {
   it('picks the detent nearest a track click', () => {
     const { track, onInput } = renderRate({ value: 1 });
     // 155/200 = 0.775, nearest detent 0.75 -> index 3 -> 2x.
@@ -204,7 +202,7 @@ describe('DetentSlider pointer', () => {
   });
 });
 
-describe('DetentSlider value resolution', () => {
+describe('useDetents value resolution', () => {
   it('shows the nearest detent for a number that is not one of them', () => {
     const { thumb } = renderRate({ value: 1.6 });
     expect(thumb.getAttribute('aria-valuenow')).toBe('3');
@@ -219,7 +217,7 @@ describe('DetentSlider value resolution', () => {
   it('falls back to the first detent when the values are not numeric', () => {
     const onInput = vi.fn();
     const { container } = render(
-      <DetentSlider items={['low', 'mid', 'high']} value={'gone' as 'low'} onInput={onInput} />,
+      <Detents items={['low', 'mid', 'high']} value={'gone' as 'low'} onInput={onInput} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     expect(thumb.getAttribute('aria-valuenow')).toBe('0');
@@ -227,28 +225,22 @@ describe('DetentSlider value resolution', () => {
   });
 });
 
-describe('DetentSlider degenerate input', () => {
+describe('useDetents degenerate input', () => {
   it('renders nothing rather than crashing on an empty list', () => {
-    const { container } = render(<DetentSlider items={[]} value={1} onInput={() => {}} />);
+    const { container } = render(<Detents items={[]} value={1} onInput={() => {}} />);
     expect(container.querySelector('[role="slider"]')).toBeNull();
     expect(ticks(container)).toHaveLength(0);
   });
 });
 
-describe('DetentSlider on a curve', () => {
-  it("an Along's shape reaches its slider, and the root fills the Along's box the shape is measured in", () => {
+describe('useDetents on a curve', () => {
+  it("an Along's shape reaches the slider it drives", () => {
     const top = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 300, end: 60 });
     const { container } = render(
       <Along shape={top}>
-        <DetentSlider aria-label="Playback rate" items={RATES} value={1} onInput={() => {}} />
+        <Detents items={RATES} value={1} onInput={() => {}} />
       </Along>,
     );
     expect(container.querySelector('[role="slider"]')!.hasAttribute('aria-orientation')).toBe(false);
-    expect(container.firstElementChild!.firstElementChild).toHaveClass(s.along!);
-  });
-
-  it('outside an Along its root stays in flow', () => {
-    const { container } = renderRate();
-    expect(container.firstElementChild).not.toHaveClass(s.along!);
   });
 });

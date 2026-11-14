@@ -539,10 +539,10 @@ name a package. Breaking changes are in scope.
   work after it. Closes when one name is used library-wide and the scope ships.
 
 - **(P2) [agent] Children in place of config arrays.** `CurveEditor` takes `layers: LayerBinding[]`; `Powerline`
-  takes a `segments` array of badges; `ToolOptionsBar` is `Bar` plus a label and a slot; `RangeSlider` exists for
-  its label-and-value header. Make them `<CurveEditor><FunctionLayer/></CurveEditor>`, a `Powerline` whose context
-  gives each child `<Badge>` its neighbor's edge cap, a `Bar` with `children`, and a `<Field label output>` wrapper
-  any control can sit in. Closes when each of the four takes children.
+  takes a `segments` array of badges; `ToolOptionsBar` is `Bar` plus a label and a slot. Make them
+  `<CurveEditor><FunctionLayer/></CurveEditor>`, a `Powerline` whose context gives each child `<Badge>` its
+  neighbor's edge cap, and a `Bar` with `children` (`<Field label output>` already wraps any control, 2026-11-14).
+  Closes when each of the three takes children.
 
 - **(P2) [agent] One segmented bar for `ToggleBar`, `OptionsBar`, and `ButtonBar`.** All three build the same
   `SegmentedRow` with identical tiling, roving, and segment-class code, and alias the same size and variant types;
@@ -560,14 +560,6 @@ name a package. Breaking changes are in scope.
   `Bar`; the schema walker becomes `PrefsBar` beside Prefs; `StatusBar` and `ToolOptionsBar` fold in; move
   `Bar/barStoryFields.tsx` out of source. Only `BarLayout` reads `DockBarContext`, so a `Toolbar` placed in a
   `ToolbarDock` would draw no move handle; nothing docks one today. Closes when there is one strip component.
-
-- **(P2) [agent] One slider: retire `RangeSlider`, turn `DetentSlider` into `useDetents()`.** `RangeSlider` is a
-  React Aria slider with its own `localeWritten` workaround, though `Slider` is already multi-thumb and follows
-  text direction; `DetentSlider`'s 150 lines map items to indexes and set `snap="strict"`;
-  `Properties/NumberControls.tsx:205` renders its own range input rather than `InlineRange`. Give the header to
-  `<Field label output>`, give `InlineRange` a `fill={false}`, and move `range.module.css` and
-  `sliderSlop.module.css` into their owners. Closes when `RangeSlider` and `DetentSlider` are gone and
-  NumberControls renders `InlineRange`.
 
 - **(P2) [agent] Export `Bar`'s cell step and drop `ControlBar`'s copy.** Both share `BarLayout` and
   `groupBarNodes`, but `labkit/src/controls/ControlBar.tsx` maps leaves through its own `Cell`/`labField` and

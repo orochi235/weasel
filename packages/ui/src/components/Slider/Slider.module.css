@@ -9,6 +9,14 @@
   touch-action: none;
 }
 
+/* Under `snap: 'strict'` every stop is a detent the thumb rests on: the marks run
+ * the full height of the track, so they read as notches rather than as tally
+ * marks beside it, and a press anywhere on the track picks one. */
+.strict {
+  --rp-tick-inset: 0;
+  --rp-track-cursor: pointer;
+}
+
 .row {
   display: flex;
   align-items: center;
@@ -16,7 +24,7 @@
 }
 
 .track {
-  composes: trackSlop from '../sliderSlop.module.css';
+  composes: trackSlop from './sliderSlop.module.css';
   position: relative;
   flex: 1;
   min-width: 0;
@@ -65,7 +73,7 @@
 
 .thumb {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
-  composes: thumbSlop from '../sliderSlop.module.css';
+  composes: thumbSlop from './sliderSlop.module.css';
   position: absolute;
   /* Thumb extends 2px above + below the track for grabbability + visual
    * weight. Track itself stays its natural height; the thumb just spills. */

@@ -8,7 +8,7 @@ export const drawTheme = defineTheme({
   name: 'weasel-draw',
   pins: {
     // Accent for active toggle states (grid, snap, etc.). Reads in the same
-    // family as Switch, RangeSlider, and Checkbox active states.
+    // family as Switch, Slider, and Checkbox active states.
     'app-accent': '{accent-strong}',
     'app-accent-bg': { type: 'color', value: '{accent-strong}', alpha: 0.22 },
   },

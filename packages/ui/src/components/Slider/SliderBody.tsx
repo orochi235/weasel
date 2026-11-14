@@ -78,7 +78,7 @@ export function SliderBody<T extends Thumb = Thumb>(
 
   const labeled = labeledStopsOf(stopList, props.stopLabels ?? 'all');
   const curved = geometry.curved && shape !== undefined;
-  const rootClass = [s.root, props.thumbFit === 'overhang' && s.overhang, labeled.length > 0 && s.withStopLabels, curved && s.curved, className].filter(Boolean).join(' ');
+  const rootClass = [s.root, props.thumbFit === 'overhang' && s.overhang, labeled.length > 0 && s.withStopLabels, strict && s.strict, curved && s.curved, className].filter(Boolean).join(' ');
   const painted = props.renderTrack?.(trackCtxOf(run, boxes[0], boxes[2], boxes[1], valueToFraction, direction));
 
   const marks = (

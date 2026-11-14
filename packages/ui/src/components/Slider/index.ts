@@ -1,4 +1,5 @@
 export { Slider } from './Slider';
+export { useDetents } from './useDetents';
 export type {
   SliderProps,
   SliderRegionCtx,
@@ -9,4 +10,5 @@ export type {
   BoundsCtx,
   TrackCtx,
 } from './types';
+export type { DetentItem, DetentSliderProps, DetentValue, DetentsOptions } from './useDetents';
 export type { Endless } from '@weasel-js/quantity';

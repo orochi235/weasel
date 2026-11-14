@@ -29,7 +29,6 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     ['Switch', 'Controlled', () => import('./Switch/Switch.stories'), disabled('switch')],
     ['NumberField', 'Controlled', () => import('./NumberField/NumberField.stories'), disabled('textbox')],
     ['Input', 'Controlled', () => import('./Input/Input.stories'), disabled('textbox')],
-    ['RangeSlider', 'Controlled', () => import('./RangeSlider/RangeSlider.stories'), disabled('slider')],
     ['ComboBox', 'Controlled', () => import('./ComboBox/ComboBox.stories'), disabled('combobox')],
   ] as const)('%s %s', async (_, name, load, check) => {
     const mod = (await load()) as unknown as Record<string, Story>;

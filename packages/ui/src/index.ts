@@ -108,8 +108,6 @@ export * from './components/MenuButton';
 export * from './components/MenuBar';
 export * from './components/ContextMenu';
 export * from './components/ComboBox';
-export * from './components/RangeSlider';
-export * from './components/DetentSlider';
 export * from './components/InlineRange';
 export * from './overlays/portalHost';
 export * from './components/Dialog';

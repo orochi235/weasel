@@ -1,9 +1,8 @@
 import type { ReactElement } from 'react';
 import { CLOCK_RATES } from '@weasel-js/clock';
 import { multiplier, qty } from '@weasel-js/quantity';
-import { DetentSlider } from '../DetentSlider';
 import { QuantityText } from '../QuantityText';
-import { Slider } from '../Slider';
+import { Slider, useDetents } from '../Slider';
 import s from './Timeline.module.css';
 import t from './Transport.module.css';
 import { icon } from '../../icons.gen';
@@ -86,13 +85,19 @@ export function Transport(props: TransportProps): ReactElement {
   const shown = Math.min(Math.max(playhead, start), start + duration);
   const looping = loop !== false && loop !== 0;
   // The handle's scale is whatever anything holding it set, so an off-list rate
-  // gets its own detent — `DetentSlider` would otherwise round it to the
+  // gets its own detent — `useDetents` would otherwise round it to the
   // nearest and label the thumb with a rate the timeline is not running at.
   const offered: readonly number[] = props.rates ?? TRANSPORT_RATES;
   const rateText = props.formatRate ?? multiplierText;
   const rateSpoken = props.formatRate ?? multiplierSpoken;
   const rateDrawn = (r: number) => (props.formatRate ? props.formatRate(r) : <QuantityText value={r} display={RATE} mute />);
   const rates = offered.includes(rate) ? offered : [...offered, rate].sort((a, b) => a - b);
+  const detents = useDetents({
+    items: rates.map((r) => ({ value: r, ariaLabel: rateSpoken(r) })),
+    value: rate,
+    onInput: onRateChange,
+    formatLabel: rateText,
+  });
 
   return (
     <div className={s.transport} dir="ltr">
@@ -131,15 +136,7 @@ export function Transport(props: TransportProps): ReactElement {
 
       <div className={s.rate}>
         Rate
-        <DetentSlider
-          aria-label="Rate"
-          items={rates.map((r) => ({ value: r, ariaLabel: rateSpoken(r) }))}
-          value={rate}
-          onInput={onRateChange}
-          formatLabel={rateText}
-          labels="none"
-          className={s.rateSlider}
-        />
+        <Slider {...detents} aria-label="Rate" stopLabels="none" trackHeight={8} className={s.rateSlider} />
         <span className={s.rateReadout}>
           <span>{rateDrawn(rate)}</span>
           <span className={s.sizer} aria-hidden="true">
