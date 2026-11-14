@@ -2,7 +2,7 @@
 '@weasel-js/ui': major
 ---
 
-`Transport`, `AnimatedTransport`, and `EasingPicker` leave the `@weasel-js/ui/components/Timeline` subpath for `components/Transport` and `components/EasingPicker`.
+`Transport`, `AnimatedTransport`, and `EasingPicker` move out of the `components/Timeline` subpath into subpaths of their own.
 
 The `Timeline` subpath now holds the timeline alone: `Timeline`, `AnimatedTimeline`, `TimeRuler`, and the time-scale helpers. The root barrel still exports all of them.
 
