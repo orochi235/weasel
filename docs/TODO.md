@@ -338,12 +338,6 @@ Owner tags, after the priority (2026-10-26):
   taking a `RecordCache` opened before the scene is made (its reads are synchronous once open), with
   `localStorage` the default; whether entries stay JSON text or become structured-clone values is the call
   to make. Closes when an app can keep its session in IndexedDB through the editor's hooks (filed 2026-11-12).
-- **(P2) [agent] A sync layer can hear a scene's ops but cannot apply them to another scene.**
-  `scene.history.observe` reports each entry's ops as `{ name, args }` (`kit:add`, `kit:setPose`, and an
-  inverse as `revert:<kind>`), but those are the scene's registered ops, which `rebuildOp`
-  (`@weasel-js/core/engine`) does not know, and no public call applies one to a peer scene; only
-  `restoreHistory` rebuilds them (`OpTable.rebuild`), into a history. Closes when a scene can apply a
-  serialized op another scene emitted, an undo included, without recording it (filed 2026-11-12).
 - **(P3) [maintainer] A container with an output-grid `drawn` pose clips its children at its stored
   pose.** `buildSceneTree` paints and culls a node at the quantize rule's drawn pose (2026-11-11), but
   takes its `clip: 'outline'` (`ownClipOf`) from the pose it is stored at, so the clip can sit up to

@@ -1,4 +1,4 @@
-import type { SerializedHistory } from '@weasel-js/history';
+import type { SerializedHistory, SerializedOp } from '@weasel-js/history';
 
 /** The form a scene's undo entries are recorded in. A serialized history
  *  carries it, and one carrying another is not restored. Form 4 records a
@@ -44,4 +44,24 @@ export interface SceneHistoryPersistence {
    *  adapter). If unset when a restored op applies, the op is a debug-warned
    *  no-op. */
   setHistoryAdapter(fn: (() => unknown) | null): void;
+}
+
+/** The scene's member that applies another scene's edits. */
+export interface SceneReplay {
+  /** Apply ops another scene recorded, given as their `name` and `args`: the
+   *  `applied` ops of each entry its `history.observe` reports, an undo's
+   *  `revert:` inverses included. They rebuild as `restoreHistory` rebuilds a
+   *  snapshot's, so a kind taught with `registerOp` must be registered here too.
+   *
+   *  Nothing is recorded: the history is left as it was, apart from a `seal`
+   *  so no later edit coalesces across the change, and its `observe` reports
+   *  nothing. So every step `history.observe` reports is an edit made on this
+   *  scene, and a sync layer can forward all of them without echoing back what
+   *  it received. Subscribers are notified once, as for any edit.
+   *
+   *  All or nothing: when an op throws, as one addressing a node this scene
+   *  does not hold does, the ops before it are taken back and the throw
+   *  propagates, which tells the caller the two scenes have diverged. Throws
+   *  on an unknown name before applying anything, and inside any other edit. */
+  replay(ops: readonly SerializedOp[]): void;
 }

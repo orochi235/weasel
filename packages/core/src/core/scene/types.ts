@@ -1,5 +1,5 @@
 import type { History } from '@weasel-js/history';
-import type { SceneHistoryPersistence } from './historyForm';
+import type { SceneHistoryPersistence, SceneReplay } from './historyForm';
 import type { UnitScope } from '@weasel-js/quantity';
 import type { LayoutStrategy } from '../../layout/types';
 import type { AddLayerSpec, LayerRecord, SceneLayerMembers, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from './layerTypes';
@@ -222,7 +222,7 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> ext
  */
 export interface Scene<TData, TLayer extends string, TPose = RectPose>
   extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses, SceneDeclaredFieldSetters, SceneScroll, SceneQuantize<TData, TPose>, SceneSelectionMembers,
-  SceneLayerMembers<TLayer>, SceneHistoryPersistence {
+  SceneLayerMembers<TLayer>, SceneHistoryPersistence, SceneReplay {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];

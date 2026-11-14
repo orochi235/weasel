@@ -15,6 +15,7 @@ import type { PoseWriteLog } from './poseWrites';
 import { createOpTable, type OpTable } from './opTable';
 import { createOuterOps } from './outerOps';
 import { createRecorder, type Recorder, type RecorderEnv } from './recorder';
+import { replayOps } from './sceneReplay';
 import type { SceneSelection } from './sceneSelection';
 import type { StaleReplay } from './staleReplay';
 import type { NodeId, RegisteredOp, Scene } from './types';
@@ -45,7 +46,7 @@ export interface SceneRecording {
   methods: SceneHistoryMethods & Pick<
     Scene<unknown, string, unknown>,
     | 'registerOp' | 'recordOp' | 'applyBatch' | 'history' | 'batch' | 'untracked'
-    | 'setActiveJournalAccessor' | 'setHistoryAdapter' | 'addEditPass'
+    | 'setActiveJournalAccessor' | 'setHistoryAdapter' | 'addEditPass' | 'replay'
   >;
 }
 
@@ -119,9 +120,10 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
 
   /** Run an engine step that replays recorded ops — undo, redo, goto, a
    *  journal stepping. The engine inverts whole ops when one throws; this
-   *  also reverts the scene writes of the op that threw partway. */
-  function replay(step: () => void): void {
-    poseWrites.replaying(() => atomically(() => lifted(() => stale.during(() => engineDriven(step))), () => true));
+   *  also reverts the scene writes of the op that threw partway. Another
+   *  scene's ops replay `fresh`: one that does not fit throws, not skips. */
+  function replay(step: () => void, fresh = false): void {
+    poseWrites.replaying(() => atomically(() => lifted(() => (fresh ? engineDriven(step) : stale.during(() => engineDriven(step)))), () => true));
   }
 
   function refuseUntracked(verb: string): void {
@@ -146,9 +148,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
     clearHistory: () => engine.clear(),
     methods: {
       registerOp(kind, handler) {
-        if (kind.startsWith('kit:')) {
-          throw new Error(`Scene: op kind "${kind}" is reserved (kit:* prefix)`);
-        }
+        if (kind.startsWith('kit:')) throw new Error(`Scene: op kind "${kind}" is reserved (kit:* prefix)`);
         ops.register(kind, handler as RegisteredOp<unknown>);
       },
       recordOp(op) {
@@ -166,6 +166,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
       setActiveJournalAccessor: outer.setActiveJournalAccessor,
       setHistoryAdapter: outer.setHistoryAdapter,
       addEditPass: passes.add,
+      replay: (ops) => replayOps({ open: mode.open, rebuild: outer.rebuild, seal: history.seal, notify, replaying: (step) => replay(step, true) }, ops),
     },
   };
 }
