@@ -1,5 +1,5 @@
-import { screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { PropertyControl, PropertyField } from './PropertyField';
 import { renderWithIcons } from '../../testing/withIcons';
 
@@ -127,5 +127,20 @@ describe('PropertyControl disabled', () => {
     expect(screen.getByRole('checkbox', { name: 'Box' })).toBeEnabled();
     expect(screen.getByRole('spinbutton', { name: 'Radius' })).toBeEnabled();
     expect(screen.getByRole('button', { name: /Select/ })).toBeEnabled();
+  });
+
+  // Held for a reason the track stays enabled, so its events are real ones; the native `change` comes off a listener
+  // of its own, which the hold has to reach as well as React's handlers.
+  it.each([false, true])('a slider track held for a reason (%s) commits nothing', (held) => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    renderWithIcons(
+      <PropertyControl kind="number" control="slider" name="Blur" value={4} min={0} max={10} disabled={held} disabledReason="Locked" onInput={onInput} onChange={onChange} />,
+    );
+    const track = screen.getByRole('slider', { name: 'Blur' });
+    fireEvent.change(track, { target: { value: '7' } });
+    fireEvent.keyDown(track, { key: 'ArrowRight' });
+    expect(onInput.mock.calls.length > 0).toBe(!held);
+    expect(onChange.mock.calls.length > 0).toBe(!held);
   });
 });
