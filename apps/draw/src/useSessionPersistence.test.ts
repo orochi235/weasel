@@ -32,7 +32,8 @@ const pictureMark = (id: string, src: string): AddNodeSpec<WeaselDrawData, Wease
 
 const pictureOf = (id: string): unknown => {
   const spec = loadInitial().find((s) => s.id === id);
-  const paint = spec?.data.fill?.paint;
+  const fill = spec?.data.fill;
+  const paint = fill && fill !== 'inherit' ? fill.paint : undefined;
   return paint?.kind === 'image' ? paint.src : undefined;
 };
 
