@@ -172,10 +172,49 @@ does not transfer.
 sequence in each package's `icons/` definitions is load-bearing wherever a glyph gets
 depth from overlap. Reordering paths for tidiness breaks it silently.
 
-Fuller notes from the session that produced these — what stroke weight can and
-cannot fix, why rounded corners move numeric constraints, how `currentColor`
-behaves across inline / `<img>` / `mask-image`, and the size cost of sampled
-curves — are in `clone-icons/STYLE-LESSONS.md` in Mike's iCloud Drive.
+**Solve extents from the ink box you want, and measure the fill.** Stroke spread is part of the
+box: paths spanning 2–18 at stroke 1.5 ink from 1.25 to 18.75, so work backward from the ink
+rather than scaling and measuring after. A glyph that looked right was filling 83% of its live
+area; the same drawing at 98% held together visibly better at 16px.
+
+**Encode physical limits as guards that throw.** Two strokes closer than about 2.07× the stroke
+width fuse under their round joins into one blob. A guard for it catches real breakage and defines
+the tightest legal gap at every weight; give it a little slack at the boundary, where floating point
+tips an exact solve over.
+
+**A tight pinch reads as a smear at small sizes, and stroke weight will not fix it.** Open the
+waist. Thinning strokes is the wrong knob for a problem the geometry owns.
+
+**Rounded corners move constraints.** Rounding trims the drawn outline back along both edges, so
+a curve landing on the mathematical vertex starts inside the visible corner, and re-landing it on
+the rounded corner narrows whatever gap depends on it. Round caps likewise project half a stroke
+past the endpoint: an endpoint on a frame's corner leaves its cap outside the frame, so inset the
+endpoint along its curve. When trimming a curve where it overlaps a shape, cut that overlap only;
+insetting every end by half a stroke removes far more than the overlap warrants.
+
+**`currentColor` works inline and is dead through `<img>` and `<object>`.** An external SVG is its
+own document with nothing to inherit, which no edit to the file can fix; the inlined glyphs
+`gen:icons` produces inherit correctly. To tint an external SVG, use it as a `mask-image` stencil
+with opaque paint and let `background-color` supply the color. Presentation attributes don't take
+`var()` (`stroke="var(--x)"` is invalid); `style="stroke: var(--x, …)"` does, and every such hook
+needs a fallback derived from `currentColor`.
+
+**Give a secondary tone an opaque color, not partial alpha.** Wherever two translucent strokes
+overlap they composite darker, turning ordinary crossings into artifacts that then need clipping.
+Carry depth in weight as well as color (the near element the only heavy stroke), so it still reads
+where the theme hook is never set.
+
+**Sampled curves are cheap to draw and expensive to ship.** A catenary sampled at 40 cubics per
+strand made a 6.2 KB glyph beside a 234-byte neighbor. Fit anything sampled to a handful of Béziers,
+with an error bound against the samples, before it lands. While iterating, save each variant's
+parameters, not only its picture: a generator rewritten in place loses every shape it drew before.
+
+**When the shape itself is in question, ask for a sketch.** Rounds of prose descriptions converge
+slowly on geometry that one sketch settles.
+
+**A glyph is never finished alone.** Optical mass is judged against its neighbors in a row, so a
+drawing that looks right by itself can still be the heaviest thing beside them. Check it in its
+batch.
 
 ## Drawing a glyph
 
