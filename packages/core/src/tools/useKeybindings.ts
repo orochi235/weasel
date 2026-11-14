@@ -13,8 +13,8 @@ import type { ToolsApi } from './overlayBinding';
 
 /** Options for `useKeybindings`. */
 export interface UseKeybindingsOptions {
-  /** Skip all wiring. Useful for touch apps or test isolation. */
-  disable?: boolean;
+  /** Wire the shortcuts. Default true; false skips all wiring, for touch apps or test isolation. */
+  enabled?: boolean;
   /** Tool id Escape switches to. When omitted, defaults to whatever
    *  `tools.active` was when the hook first ran (i.e. the initial active
    *  tool). Pass `null` to disable Escape-returns-to-default behavior. */
@@ -57,9 +57,9 @@ export function useKeybindings(
   // `registry.trigger('tool.activate', { toolId })`.
   //
   // Every key comes from a `ToolDef.keybinding` in the tools registry.
-  const { disable = false } = options;
+  const { enabled = true } = options;
   useEffect(() => {
-    if (disable) return;
+    if (!enabled) return;
     if (!registry) return;
     // No tools, no tool keys: nothing to activate and nothing to return to.
     if (Object.keys(toolsRef.current.registry).length === 0) return;
@@ -112,6 +112,6 @@ export function useKeybindings(
 
     return () => { for (const u of unregisters) u(); };
     // `tools.registry`, not `tools`: the api changes as the keys this registers do, and keying on it re-registers forever.
-  }, [registry, tools.registry, toolsRef, optionsRef, disable]);
+  }, [registry, tools.registry, toolsRef, optionsRef, enabled]);
 }
 
