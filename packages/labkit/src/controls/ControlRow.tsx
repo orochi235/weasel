@@ -317,6 +317,7 @@ function LeafRow<TC extends Record<string, unknown>>({
         values: config,
         changed,
         setValue: write,
+        ...(draft ? { draftValue: draft } : {}),
         auto: isAutoRow,
         setAuto: offered ? setAuto : () => {},
         fields: choices,

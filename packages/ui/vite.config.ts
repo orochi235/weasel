@@ -36,6 +36,7 @@ const entries: Record<string, string> = {
   'icons.table': resolve(import.meta.dirname, 'src/icons.table.ts'),
   kitIcons: resolve(import.meta.dirname, 'src/kitIcons.ts'),
   'components/appearance': resolve(import.meta.dirname, 'src/components/appearance.ts'),
+  'components/Badge/geometry': resolve(import.meta.dirname, 'src/components/Badge/geometry.ts'),
   'overlays/portalHost': resolve(import.meta.dirname, 'src/overlays/portalHost.tsx'),
   paintGradientTrack: resolve(import.meta.dirname, 'src/paintGradientTrack.tsx'),
   kitSettings: resolve(import.meta.dirname, 'src/kitSettings.ts'),

@@ -22,6 +22,7 @@ const APPS = {
   site: { config: 'vite.config.ts', port: ports.site, path: '/' },
   chart: { config: 'apps/chart/vite.config.ts', port: ports.chart, path: '/' },
   'theme-editor': { config: 'apps/theme-editor/vite.config.ts', port: ports.themeEditor, path: '/' },
+  'ui-lab': { config: 'apps/ui-lab/vite.config.ts', port: ports.uiLab, path: '/weasel/ui-lab/' },
 };
 
 const args = process.argv.slice(2);

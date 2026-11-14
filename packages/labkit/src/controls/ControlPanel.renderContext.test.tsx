@@ -37,4 +37,32 @@ describe('<ControlPanel> renderer context', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit Items' }));
     expect(seen).toContain('c:em');
   });
+
+  it("hands a custom row the panel's draftConfig at its own path, and nothing where the panel has none", () => {
+    const drafts: ((value: unknown) => void)[] = [];
+    const schema = resolveConfigSchema(
+      f.schema({
+        curve: f.custom('curve', 0).render((ctx) => {
+          if (ctx.draftValue) drafts.push(ctx.draftValue);
+          return <span>curve</span>;
+        }),
+      }),
+      [],
+    );
+    const draftConfig = vi.fn();
+    const { unmount } = render(
+      <ControlPanel
+        schema={schema}
+        config={{ curve: 0 }}
+        setConfig={vi.fn()}
+        draftConfig={draftConfig}
+      />,
+    );
+    drafts.at(-1)?.(3);
+    expect(draftConfig).toHaveBeenCalledWith('curve', 3);
+    unmount();
+    drafts.length = 0;
+    render(<ControlPanel schema={schema} config={{ curve: 0 }} setConfig={vi.fn()} />);
+    expect(drafts).toEqual([]);
+  });
 });

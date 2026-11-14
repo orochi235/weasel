@@ -632,11 +632,6 @@ name a package. Breaking changes are in scope.
   on `ItemList`; draw's `ToolIcon` repeats each tool's declared `icon`. `JobProgress`, `Split`, and `HeldClock` stay
   in labkit. Closes when the five live in ui, `Readout` folds into `DetailList`, and `ToolIcon` reads `ToolDef.icon`.
 
-- **(P3) [agent] Move Badge's lab out of the component.** Badge is about 10.5k lines, of which `Badge.tsx` is 247
-  and `lab/` is 2,382, exported only through `testing/labViews.ts`; the lab hand-rolls a params panel
-  (`lab/ParamControl.tsx`, `controls.ts`). Rebuild it in labkit or an app on `ControlPanel` and `Sequence`. Closes
-  when `Badge/lab/` is gone from ui.
-
 - **(P3) [agent] Rename and split folders to match what they hold.** `ContextMenu/` holds the whole menu layer
   (`MenuPanel`, `MenuRow`, `useMenuTrigger`, `useDismiss`) that `MenuButton`, `MenuBar`, `BarMenu`, and `RailStack`
   import; `src/floating/` is a drag-and-snap panel hook, not overlay positioning; `Timeline/` also holds `Ruler`,

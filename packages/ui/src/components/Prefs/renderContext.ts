@@ -20,6 +20,12 @@ export interface PrefRenderContext {
   /** The leaf stands for several values that disagree; `value` is undefined. */
   mixed?: boolean;
   setValue: (value: unknown) => void;
+  /**
+   * Writes a value an edit is passing through, a drag's every move, where the surface keeps drafts apart: the
+   * surface records the drafts and the `setValue` that settles them as one step, however long the edit pauses.
+   * Absent, the surface keeps none, and a renderer sends each value through `setValue`.
+   */
+  draftValue?: (value: unknown) => void;
   /** Whether a path at or under this leaf's is in the form's `mixed`; with `below`, whether it or any path under it is. */
   mixedAt?: (path: string, below?: boolean) => boolean;
   /** Writes at a path under this leaf's, where `setValue` writes the leaf whole. */

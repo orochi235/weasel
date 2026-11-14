@@ -7,8 +7,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { painted } from '@weasel-js/ui/testing/paintedContrast';
 import { Powerline } from '@weasel-js/ui/components/Powerline';
-import { Badge, type BadgeBase } from '@weasel-js/ui/components/Badge';
-import { BADGE_LOOKS, BASES, lookProps } from '@weasel-js/ui/testing/badge';
+import { Badge, BADGE_BASES, BADGE_LOOKS, lookProps } from '@weasel-js/ui/components/Badge';
+import { BASES } from '@weasel-js/ui/testing/badge';
 import type { BadgeShape, BadgeSize } from './types';
 
 // Badge colors come from tokens that follow currentColor and from color-mix,
@@ -221,7 +221,7 @@ describe('a base holds its content inside its outline', () => {
     return points;
   };
 
-  for (const base of Object.keys(BASES) as BadgeBase[]) {
+  for (const base of BADGE_BASES) {
     for (const label of ['ab', 'a considerably longer label']) {
       for (const removable of [false, true]) {
         test(`${base}, "${label}"${removable ? ', removable' : ''}`, async () => {
@@ -250,7 +250,7 @@ describe('a base holds its content inside its outline', () => {
     scallops: [{ type: 'scallops', params: { scallopRadius: 5, scallopSpacing: 12 } }],
     spikes: [{ type: 'spikes' }],
   } as const;
-  for (const base of (Object.keys(BASES) as BadgeBase[]).filter((key) => BASES[key].fitsContent)) {
+  for (const base of BADGE_BASES.filter((key) => BASES[key].fitsContent)) {
     for (const [name, effects] of Object.entries(OUTWARD)) {
       test(`${base} under ${name}`, async () => {
         const { container } = render(

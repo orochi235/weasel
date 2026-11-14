@@ -24,5 +24,22 @@ export const THEME_PREFS_LAB: LabPage = {
   href: `${PALETTE_LAB.href}#/prefs`,
 };
 
+export const BADGE_LAB: LabPage = {
+  label: 'Badge lab',
+  href: dev ? `http://localhost:${ports.uiLab}/weasel/ui-lab/` : '/weasel/ui-lab/',
+};
+
+export const BADGE_SHAPES_LAB: LabPage = {
+  label: 'Badge shapes',
+  href: `${BADGE_LAB.href}#/badge-shapes`,
+};
+
+export const BADGE_OCTANTS_LAB: LabPage = {
+  label: 'Quatrefoil octants',
+  href: `${BADGE_LAB.href}#/badge-octants`,
+};
+
 /** The project's labs, in the order each one's title menu lists them. */
-export const LABS: readonly LabPage[] = [FORGE_LAB, PALETTE_LAB, THEME_EDITOR_LAB, THEME_PREFS_LAB];
+export const LABS: readonly LabPage[] = [
+  FORGE_LAB, PALETTE_LAB, THEME_EDITOR_LAB, THEME_PREFS_LAB, BADGE_LAB, BADGE_SHAPES_LAB, BADGE_OCTANTS_LAB,
+];

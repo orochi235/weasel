@@ -3,12 +3,9 @@ import { Badge, BADGE_VARIANT_ICONS } from '@weasel-js/ui/components/Badge';
 import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import st from './Badge.stories.module.css';
-import { ALL_SHAPES } from './shapes';
-import { BADGE_LOOKS, lookOf, lookProps } from './looks';
+import { BADGE_SHAPES } from './catalog';
+import { BADGE_LOOKS, lookProps } from './looks';
 import type { BadgeVariant } from './types';
-import { ComposeLabView } from './lab/ComposeLabView';
-import { QuatrefoilOctantSweeps } from './lab/QuatrefoilOctants';
-import { ShapeGallery } from './lab/ShapeGallery';
 
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];
 
@@ -24,7 +21,7 @@ const meta: Meta<typeof Badge> = {
   },
   argTypes: {
     children: { control: 'text', description: 'Badge label content' },
-    shape: { control: 'select', options: ALL_SHAPES },
+    shape: { control: 'select', options: BADGE_SHAPES },
     grade: { control: { type: 'inline-radio', icons: GRADE_ICONS }, options: [undefined, ...GRADES] },
     emphasis: { control: { type: 'inline-radio', icons: EMPHASIS_ICONS }, options: [undefined, ...EMPHASES] },
     variant: { control: { type: 'inline-radio', icons: BADGE_VARIANT_ICONS }, options: VARIANTS },
@@ -72,11 +69,9 @@ export const AllShapes: Story = {
     shapeParams: { table: { disable: true } },
   },
   render: (args) => (
-    <ShapeGallery
-      look={lookOf(args)}
-      variant={args.variant ?? 'outline'}
-      label={typeof args.children === 'string' ? args.children : 'LABEL'}
-    />
+    <div className={`${st.row} ${st.wrappingRow}`}>
+      {BADGE_SHAPES.map((shape) => <Badge key={shape} {...args} shape={shape}>{args.children}</Badge>)}
+    </div>
   ),
 };
 
@@ -381,38 +376,5 @@ export const SlotPillReplica: Story = {
       <Badge shape="pill" grade="info" variant="outline" >hotkey</Badge>
       <Badge shape="pill" grade="danger" variant="solid" >inactive</Badge>
     </div>
-  ),
-};
-
-export const QuatrefoilOctants: Story = {
-  name: 'Quatrefoil octants',
-  args: { children: 'OCTANT' },
-  argTypes: {
-    shape: { table: { disable: true } }, shapeParams: { table: { disable: true } },
-    base: { table: { disable: true } }, baseParams: { table: { disable: true } },
-    effects: { table: { disable: true } }, grade: { table: { disable: true } }, emphasis: { table: { disable: true } },
-    variant: { table: { disable: true } }, size: { table: { disable: true } },
-    crawl: { table: { disable: true } }, bloat: { table: { disable: true } },
-    padding: { table: { disable: true } },
-  },
-  render: () => <QuatrefoilOctantSweeps />,
-};
-
-export const ComposeLab: Story = {
-  name: 'Compose lab',
-  args: { children: 'COMPOSE', emphasis: 'high', variant: 'solid' },
-  argTypes: {
-    shape: { table: { disable: true } },
-    shapeParams: { table: { disable: true } },
-    base: { table: { disable: true } },
-    baseParams: { table: { disable: true } },
-    effects: { table: { disable: true } },
-  },
-  render: (args) => (
-    <ComposeLabView
-      look={lookOf(args)}
-      variant={args.variant ?? 'solid'}
-      label={typeof args.children === 'string' ? args.children : 'COMPOSE'}
-    />
   ),
 };

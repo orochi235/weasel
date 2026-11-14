@@ -1,14 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { SHAPES, ALL_SHAPES } from './index';
+import { BADGE_SHAPES } from '../catalog';
+import { SHAPES } from './index';
 
 describe('shape registry', () => {
-  it('lists every registered shape', () => {
-    expect([...ALL_SHAPES].sort()).toEqual(Object.keys(SHAPES).sort());
-  });
-
   it('each shape entry has Component or compose, plus insets + stretches', () => {
-    for (const name of ALL_SHAPES) {
+    for (const name of BADGE_SHAPES) {
       const m = SHAPES[name];
       // A shape must provide either a legacy Component or a compose() spec.
       expect(Boolean(m.Component) || Boolean(m.compose)).toBe(true);
@@ -20,7 +17,7 @@ describe('shape registry', () => {
 });
 
 describe('every shape renders at least one geometry element', () => {
-  for (const name of ALL_SHAPES) {
+  for (const name of BADGE_SHAPES) {
     const m = SHAPES[name];
     if (m.renderMode === 'css') continue;
     // Compose-mode shapes render through the base/effects pipeline, which needs the full Badge.

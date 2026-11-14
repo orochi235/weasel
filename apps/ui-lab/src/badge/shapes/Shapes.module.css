@@ -1,0 +1,52 @@
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.snippet {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-2xs);
+  resize: vertical;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.name {
+  font-size: var(--wzl-font-size-2xs);
+}
+
+.note {
+  font-size: var(--wzl-font-size-2xs);
+  opacity: 0.6;
+}

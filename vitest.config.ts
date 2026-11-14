@@ -262,6 +262,7 @@ export default defineConfig({
             'apps/draw/**/*.test.{ts,tsx}',
             'apps/chart/**/*.test.{ts,tsx}',
             'apps/theme-editor/**/*.test.{ts,tsx}',
+            'apps/ui-lab/**/*.test.{ts,tsx}',
             'apps/devtools-extension/**/*.test.{ts,tsx}',
             'apps/shared/**/*.test.{ts,tsx}',
             'scripts/**/*.test.ts',

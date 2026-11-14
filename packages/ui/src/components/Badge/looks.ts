@@ -2,8 +2,9 @@ import { cssColorLiteral } from '@weasel-js/paint';
 import type { AppearanceProps } from '../appearance';
 
 /**
- * One choice from the grades and emphases a badge can wear, for the stories,
- * lab, and tests that sweep them. `tint` stands for an exact color.
+ * One choice from the grades and emphases a badge, or any control taking appearance props, can wear: a grade
+ * (`info` … `danger`), an emphasis (`high`, `low`), neither (`none`), or `tint`, an exact color. A picker or a sweep
+ * over looks names them this way and spreads {@link lookProps} onto the component.
  */
 export type BadgeLook = 'high' | 'info' | 'success' | 'warn' | 'danger' | 'low' | 'none' | 'tint';
 
