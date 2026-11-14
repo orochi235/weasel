@@ -583,6 +583,13 @@ only story runner in the repo.
   the renderer's retained tiles but no chart code), then passed 3 of 3 alone on teitou at the same tree. Seen once.
   Closes when it fails again, which makes it a fix, or on 2026-12-03 with no second sighting, delete it.
 
+- **(P3) [waiting] labkit's annotation clip test missed by 1.2 px in one full fleet run.** "a mark is cut where its
+  target is, and takes no press past it" (`packages/labkit/src/annotations/AnnotationOverlay.clip.browser.test.tsx`)
+  read 534.31 against 533.08 with a 0.5 px tolerance, taking 8.2 s, in the full run at 6c3705210 on teitou
+  (2026-11-14, a batch moving ui folders but not touching labkit's annotations). It passed in the run before at
+  7849bdc4d, and 4 of 4 alone on msb-uai at 6c3705210 in 1.1 s. Seen once.
+  Closes when it fails again, which makes it a fix, or on 2026-12-05 with no second sighting, delete it.
+
 - **(P3) [waiting] `segmentsAlong`'s first "a lit end segment fills the well round its cap" case failed
   intermittently** (full fleet run of `main` at `437648aa4`, 2026-10-26). Since ac92a714c the test waits
   for `document.fonts.ready` after a first frame; that the face was the cause is inferred, not
