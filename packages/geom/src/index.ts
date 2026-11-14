@@ -216,7 +216,7 @@ export {
 export {
   poiseFactorToward, equalizeSegmentHandles, poiseLines, scaleSegmentHandles, type PoiseLine,
 } from './paths/poiseHandles';
-export { harmonizeAnchors } from './paths/harmonize';
+export { fairAnchors } from './paths/fairing';
 export { editAnchorSetTracked, remapPointValues, type PointOrigin } from './paths/anchorOrigins';
 export { anchorOriginsOf, remapAnchorValues } from './paths/anchorValues';
 export {

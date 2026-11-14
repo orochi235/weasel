@@ -28,7 +28,7 @@ export {
   handleLocksPreset,
   handleSnapPreset,
   tugPreset,
-  harmonizePreset,
+  fairingPreset,
   pathEffectsPreset,
   pathStructurePreset,
   pathTools,
@@ -61,7 +61,7 @@ export {
 export {
   DEFAULT_KNEAD_RADIUS_PX, DEFAULT_KNEAD_STRENGTH, KNEAD_PARAMS, kneadAction, type KneadParams,
 } from './knead/knead';
-export { harmonizeAnchorsAction } from './harmonize/harmonize';
+export { fairAnchorsAction } from './fairing/fairing';
 export { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 export { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
 export {

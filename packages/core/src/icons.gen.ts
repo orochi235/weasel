@@ -67,7 +67,7 @@ export type CoreIconName =
   | 'holdHandleAngle'
   | 'holdHandleLength'
   | 'sand'
-  | 'harmonize'
+  | 'fairing'
   | 'averageAnchors'
   | 'bendSegment'
   | 'nudgeAnchors'
@@ -240,7 +240,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "holdHandleAngle",
       "holdHandleLength",
       "sand",
-      "harmonize",
+      "fairing",
       "averageAnchors",
       "bendSegment",
       "nudgeAnchors",
@@ -400,7 +400,7 @@ declare module '@weasel-js/icons' {
     'core:holdHandleAngle': true;
     'core:holdHandleLength': true;
     'core:sand': true;
-    'core:harmonize': true;
+    'core:fairing': true;
     'core:averageAnchors': true;
     'core:bendSegment': true;
     'core:nudgeAnchors': true;

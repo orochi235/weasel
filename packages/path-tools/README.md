@@ -36,7 +36,7 @@ and an app that imports only some never loads the others:
 | `spiroPreset` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
 | `tugPreset` | `tugPath`, which `useTugTool` binds: Tug, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
 | `snipPreset`, `reachPreset`, `kneadPreset` | The actions `useSnipTool`, `useReachTool`, and `useKneadTool` bind |
-| `harmonizePreset` | Harmonize curvature |
+| `fairingPreset` | Fairing (`fairAnchors`), which makes smooth anchors curvature-continuous by their handle lengths |
 | `anchorSelectionPreset` | Grow and shrink the anchor selection along the path, or select every Nth anchor, the corners, the smooth anchors, or the rest |
 | `resamplePreset` | Resample: anchors spread evenly by arc length, adjusted afterward in the last-operation panel |
 | `addExtremesPreset` | Add extremes: an anchor at each curve's leftmost, rightmost, top, and bottom |

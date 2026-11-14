@@ -47,7 +47,7 @@ packages/geom/src/glMat3.ts
 packages/geom/src/warp/arapPiece.ts
 packages/geom/src/paths/anchorFields.ts
 packages/geom/src/warp/warpPath.ts
-packages/geom/src/paths/harmonize.ts
+packages/geom/src/paths/fairing.ts
 packages/geom/src/place.ts
 packages/geom/src/paths/pathStructure.ts
 packages/geom/src/tessellate/trim.ts

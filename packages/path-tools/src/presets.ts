@@ -20,7 +20,7 @@ import { reachToMeetAction } from './reach/reachToMeet';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 import { createHandleSnapExtension, handleSnapSource, type HandleSnapOptionsInput } from './handleSnap/handleSnap';
 import { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
-import { harmonizeAnchorsAction } from './harmonize/harmonize';
+import { fairAnchorsAction } from './fairing/fairing';
 import { tugPathAction } from './tug/tugPath';
 import { createDirectionExtension, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle } from './pathStructure/directionMarks';
 import { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
@@ -99,8 +99,8 @@ export const tugPreset: FeaturePreset = {
 /** `knead`, which `useKneadTool` binds. */
 export const kneadPreset: FeaturePreset = { id: 'knead', actions: [kneadAction] };
 
-/** Harmonize curvature. */
-export const harmonizePreset: FeaturePreset = { id: 'harmonize', actions: [harmonizeAnchorsAction] };
+/** Fairing, which makes smooth anchors curvature-continuous by their handle lengths. */
+export const fairingPreset: FeaturePreset = { id: 'fairing', actions: [fairAnchorsAction] };
 
 /** Anchor selection along the path: grow, shrink, every Nth, corners, smooth
  *  anchors, and the complement. */
@@ -242,7 +242,7 @@ export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
     sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, reachPreset, tugPreset,
-    kneadPreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
+    kneadPreset, fairingPreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, poisePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     filletPreset, pathEffectsPreset, warpPreset,
   ],

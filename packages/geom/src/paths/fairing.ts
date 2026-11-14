@@ -35,7 +35,7 @@ const UNCHANGED_STEPS = 64;
  *
  * Returns false when nothing changed.
  */
-export function harmonizeAnchors(set: AnchorSet, flatIndexes?: Iterable<number>): boolean {
+export function fairAnchors(set: AnchorSet, flatIndexes?: Iterable<number>): boolean {
   const targets = flatIndexes
     ? [...new Set(flatIndexes)]
     : Array.from({ length: anchorCount(set) }, (_, i) => i);
@@ -46,7 +46,7 @@ export function harmonizeAnchors(set: AnchorSet, flatIndexes?: Iterable<number>)
   const before = anchors.map((a) => ({ inHandle: a.inHandle, outHandle: a.outHandle }));
   for (let pass = 0; pass < MAX_PASSES; pass++) {
     let moved = 0;
-    for (const { sub, idx } of located) moved = Math.max(moved, harmonizeOne(set, sub, idx));
+    for (const { sub, idx } of located) moved = Math.max(moved, fairOne(set, sub, idx));
     if (moved <= SETTLED) break;
   }
   const changed = anchors.some((a, i) =>
@@ -65,9 +65,9 @@ function movedFar(a: Point, from: Point | undefined, to: Point | undefined): boo
   return Math.hypot(to.x - from.x, to.y - from.y) > tolerance;
 }
 
-/** Harmonize one anchor; returns how far its handles moved, relative to
+/** Fair one anchor; returns how far its handles moved, relative to
  *  their lengths. */
-function harmonizeOne(set: AnchorSet, sub: number, idx: number): number {
+function fairOne(set: AnchorSet, sub: number, idx: number): number {
   const anchors = set.anchors[sub];
   const closed = set.closed[sub];
   const n = anchors.length;

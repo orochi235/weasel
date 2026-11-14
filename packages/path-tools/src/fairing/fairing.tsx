@@ -1,4 +1,4 @@
-import { harmonizeAnchors } from '@weasel-js/geom';
+import { fairAnchors } from '@weasel-js/geom';
 import { createHandleCommand } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 
@@ -6,10 +6,10 @@ import { icon } from '../icons.gen';
  * Make the selected smooth anchors curvature-continuous by adjusting their
  * handle lengths, or every smooth anchor of the path while none is selected.
  */
-export const harmonizeAnchorsAction = createHandleCommand(
-  'harmonizeAnchors',
-  'Harmonize curvature',
-  icon('core:harmonize'),
-  harmonizeAnchors,
+export const fairAnchorsAction = createHandleCommand(
+  'fairAnchors',
+  'Fairing',
+  icon('core:fairing'),
+  fairAnchors,
   'selectedOrAll',
 );

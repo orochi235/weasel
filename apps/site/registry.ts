@@ -950,14 +950,14 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/PoiseLabDemo.tsx',
   },
   {
-    id: 'lab-harmonize',
-    title: 'Harmonize curvature',
+    id: 'lab-fairing',
+    title: 'Fairing',
     package: 'path-tools',
     description:
-      "The `harmonizeAnchors` command makes a smooth anchor curvature-continuous: it changes only the lengths of the anchor's two handles, along the directions they already have, until the curve bends as tightly just after the anchor as just before it, keeping the product of the two lengths. Fixing one anchor shifts the curvature at its neighbors, so it repeats over the anchors until they settle. With anchors selected it harmonizes those; with none, every smooth anchor of the path. Corners, open ends, and anchors the curve inflects through are left alone, since lengths alone cannot join them. The blob opens with lopsided handles at all four anchors and the comb on, so the steps in the comb show what it fixes.",
-    hint: 'Press Harmonize curvature in the bar, or <kbd>H</kbd>, and watch the comb join up at each anchor; undo with the button or <kbd>Mod+Z</kbd> to compare. Click an anchor first, or <kbd>Shift</kbd>-click several, to harmonize only those.',
-    load: () => import('./demos/HarmonizeLabDemo').then((m) => m.HarmonizeLabDemo),
-    path: 'apps/site/demos/HarmonizeLabDemo.tsx',
+      "The `fairAnchors` command makes a smooth anchor curvature-continuous: it changes only the lengths of the anchor's two handles, along the directions they already have, until the curve bends as tightly just after the anchor as just before it, keeping the product of the two lengths. Fixing one anchor shifts the curvature at its neighbors, so it repeats over the anchors until they settle. With anchors selected it fairs those; with none, every smooth anchor of the path. Corners, open ends, and anchors the curve inflects through are left alone, since lengths alone cannot join them. The blob opens with lopsided handles at all four anchors and the comb on, so the steps in the comb show what it fixes.",
+    hint: 'Press Fairing in the bar, or <kbd>H</kbd>, and watch the comb join up at each anchor; undo with the button or <kbd>Mod+Z</kbd> to compare. Click an anchor first, or <kbd>Shift</kbd>-click several, to fair only those.',
+    load: () => import('./demos/FairingLabDemo').then((m) => m.FairingLabDemo),
+    path: 'apps/site/demos/FairingLabDemo.tsx',
   },
   {
     id: 'lab-curvature-comb',

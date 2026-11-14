@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { harmonizeAnchors } from './harmonize';
+import { fairAnchors } from './fairing';
 import { cubicCurvatureAt } from './curvature';
 import { isAnchorSmooth } from './anchors';
 import type { AnchorSet } from './anchorEdits';
@@ -30,13 +30,13 @@ function curvatureEitherSide(set: AnchorSet, idx: number): [number, number] {
   ];
 }
 
-describe('harmonizeAnchors', () => {
+describe('fairAnchors', () => {
   it('matches the curvature either side of a smooth anchor', () => {
     const set = lopsided();
     const [before0, before1] = curvatureEitherSide(set, 1);
     expect(Math.abs(before0 - before1)).toBeGreaterThan(0.005);
 
-    expect(harmonizeAnchors(set, [1])).toBe(true);
+    expect(fairAnchors(set, [1])).toBe(true);
     const [k0, k1] = curvatureEitherSide(set, 1);
     expect(k0).toBeCloseTo(k1, 9);
   });
@@ -45,7 +45,7 @@ describe('harmonizeAnchors', () => {
     const set = lopsided();
     const a = set.anchors[0][1];
     const product = (a.x - a.inHandle!.x) * (a.outHandle!.x - a.x);
-    harmonizeAnchors(set, [1]);
+    fairAnchors(set, [1]);
     expect(a.inHandle!.y).toBeCloseTo(0, 12);
     expect(a.outHandle!.y).toBeCloseTo(0, 12);
     expect(isAnchorSmooth(a)).toBe(true);
@@ -62,15 +62,15 @@ describe('harmonizeAnchors', () => {
       ]],
       closed: [true],
     };
-    expect(harmonizeAnchors(set)).toBe(true);
+    expect(fairAnchors(set)).toBe(true);
     for (let i = 0; i < 4; i++) {
       const [k0, k1] = curvatureEitherSide(set, i);
       expect(k0).toBeCloseTo(k1, 6);
     }
-    expect(harmonizeAnchors(set)).toBe(false);
+    expect(fairAnchors(set)).toBe(false);
   });
 
-  it('finds nothing to do on a harmonized path stored in single precision', () => {
+  it('finds nothing to do on a faired path stored in single precision', () => {
     const at = 1000;
     const set: AnchorSet = {
       anchors: [[
@@ -81,7 +81,7 @@ describe('harmonizeAnchors', () => {
       ]],
       closed: [true],
     };
-    expect(harmonizeAnchors(set)).toBe(true);
+    expect(fairAnchors(set)).toBe(true);
     const f = (p: { x: number; y: number }) => ({ x: Math.fround(p.x), y: Math.fround(p.y) });
     const stored: AnchorSet = {
       anchors: set.anchors.map((sub) => sub.map((a) => ({
@@ -89,7 +89,7 @@ describe('harmonizeAnchors', () => {
       }))),
       closed: set.closed,
     };
-    expect(harmonizeAnchors(stored)).toBe(false);
+    expect(fairAnchors(stored)).toBe(false);
   });
 
   it('leaves corners, open ends, and inflecting anchors alone', () => {
@@ -104,7 +104,7 @@ describe('harmonizeAnchors', () => {
       closed: [false],
     };
     const before = JSON.stringify(set);
-    expect(harmonizeAnchors(set)).toBe(false);
+    expect(fairAnchors(set)).toBe(false);
     expect(JSON.stringify(set)).toBe(before);
   });
 });

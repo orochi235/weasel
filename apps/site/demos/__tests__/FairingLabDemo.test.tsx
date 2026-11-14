@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { HarmonizeLabDemo } from '../HarmonizeLabDemo';
+import { FairingLabDemo } from '../FairingLabDemo';
 import { click, editedAnchors, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
 import { withIcons } from '../../testIcons';
 
@@ -22,13 +22,13 @@ function firstHandleLengths(): [number, number] {
   return [Math.hypot(a.inHandle!.x - a.x, a.inHandle!.y - a.y), Math.hypot(a.outHandle!.x - a.x, a.outHandle!.y - a.y)];
 }
 
-describe('HarmonizeLabDemo', () => {
-  it('harmonizes the whole path from the bar, keeping each anchor\'s handles in line, and undoes', async () => {
-    await renderSettled(<StrictMode><HarmonizeLabDemo /></StrictMode>, { wrapper: withIcons });
+describe('FairingLabDemo', () => {
+  it('fairs the whole path from the bar, keeping each anchor\'s handles in line, and undoes', async () => {
+    await renderSettled(<StrictMode><FairingLabDemo /></StrictMode>, { wrapper: withIcons });
     const [inBefore, outBefore] = firstHandleLengths();
     expect([inBefore, outBefore]).toEqual([40, 60]);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Harmonize curvature' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Fairing' }));
 
     const [inAfter, outAfter] = firstHandleLengths();
     expect(Math.abs(inAfter - inBefore)).toBeGreaterThan(1);
@@ -42,7 +42,7 @@ describe('HarmonizeLabDemo', () => {
   });
 
   it('answers H, the key the lab tunes onto the command, for the selected anchor', async () => {
-    const { container } = await renderSettled(<StrictMode><HarmonizeLabDemo /></StrictMode>, { wrapper: withIcons });
+    const { container } = await renderSettled(<StrictMode><FairingLabDemo /></StrictMode>, { wrapper: withIcons });
     // A press in the trial is what hands its canvas the keys; this one
     // selects anchor 0.
     click(sceneCanvas(container), 200, 100);

@@ -43,7 +43,7 @@ export function showOverlayAction(name: string, chromeId: string, label: string,
 /** `pathEdit.show.direction`: the direction arrows and start rings. */
 export const showDirectionAction = showOverlayAction('direction', PATH_DIRECTION_CHROME_ID, 'Path direction', icon('pathDirection'));
 /** `pathEdit.show.comb`: the curvature comb. */
-export const showCombAction = showOverlayAction('comb', PATH_COMB_CHROME_ID, 'Curvature comb', icon('core:harmonize'));
+export const showCombAction = showOverlayAction('comb', PATH_COMB_CHROME_ID, 'Curvature comb', icon('core:fairing'));
 /** `pathEdit.show.poise`: the handle poise lines and grips. */
 export const showPoiseAction = showOverlayAction('poise', PATH_POISE_CHROME_ID, 'Poise lines', icon('poise'));
 /** `pathEdit.show.fillets`: the fillet widgets. */

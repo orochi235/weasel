@@ -1,5 +1,5 @@
 import { type ActionTunings, editingAnchors, never, type RectPose, useSelection } from '@weasel-js/core';
-import { createCurvatureCombPreset, harmonizePreset } from '@weasel-js/path-tools';
+import { createCurvatureCombPreset, fairingPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -13,7 +13,7 @@ import {
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useMemo } from 'react';
 import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
-import s from './HarmonizeLabDemo.module.css';
+import s from './FairingLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -33,16 +33,16 @@ const createLabScene = () =>
   );
 
 // The command has no key of its own; this canvas gives it one.
-const tune: ActionTunings = { harmonizeAnchors: { bindings: [{ kind: 'key', key: 'h' }] } };
+const tune: ActionTunings = { fairAnchors: { bindings: [{ kind: 'key', key: 'h' }] } };
 
-function HarmonizeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function FairingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ scene, initial: [EDITED_ID] });
   const { comb, scale } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);
   const features = useMemo(() => [
-    'pick', 'move', 'paths', harmonizePreset, createCurvatureCombPreset(() => ({ scale })),
+    'pick', 'move', 'paths', fairingPreset, createCurvatureCombPreset(() => ({ scale })),
   ] as const, [scale]);
 
   return (
@@ -63,18 +63,18 @@ function HarmonizeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
 }
 
-const harmonizeInstrument = defineInstrument<State, Config>({
-  name: 'Harmonize',
+const fairingInstrument = defineInstrument<State, Config>({
+  name: 'Fairing',
   config,
   initialState: () => ({ scene: null }),
   tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
-  render: (ctx) => <HarmonizeTrial ctx={ctx} />,
+  render: (ctx) => <FairingTrial ctx={ctx} />,
 });
 
-export function HarmonizeLabDemo() {
+export function FairingLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Harmonize curvature" instruments={[harmonizeInstrument]} />
+      <Lab title="Fairing" instruments={[fairingInstrument]} />
     </div>
   );
 }

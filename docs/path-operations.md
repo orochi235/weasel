@@ -91,7 +91,7 @@ Tag: `path-command`
 | Delete anchors | `deleteAnchors` | Removes selected anchors | Delete | main | core |
 | Set fillets | `setFillets` | Gives the selected corners a `corner-shape` keyword or `superellipse()` parameter, a radius, or both | — (the fillet controls panel) | main | path-tools |
 | Next fillet shape | `cycleFillet` | Steps the selected corners to the next `corner-shape` keyword | K in its lab only | main | path-tools |
-| Harmonize curvature | `harmonizeAnchors` | Rescales a smooth anchor's handles so curvature is continuous | H in its lab only | main | path-tools |
+| Fairing | `fairAnchors` | Rescales a smooth anchor's handles so curvature is continuous | H in its lab only | main | path-tools |
 | Resample | `resamplePath` | Spreads anchors evenly by arc length, to a count or a spacing, holding corners | — | main | path-tools |
 | Add extremes | `addExtremeAnchors` | Adds anchors at each curve's leftmost, rightmost, top, and bottom, on segments with both ends selected, or the whole path while none is | Alt+X in path edit | main | path-tools |
 | Grow, shrink, and every-Nth selection | `growAnchorSelection`, `shrinkAnchorSelection`, `selectEveryNthAnchor`, `selectCornerAnchors`, `selectSmoothAnchors`, `invertAnchorSelection` | Selects anchors along the path: one further each way, one fewer, every Nth, the corners, the smooth ones, or the rest | ] / [, Alt+N, Alt+C, Alt+M, Alt+I in path edit | main | path-tools |

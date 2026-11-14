@@ -11,7 +11,7 @@ import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { deleteAnchorsAction, nudgeAnchorsLeftAction, nudgeAnchorsUpAction } from '@weasel-js/core';
 import {
   ANCHOR_SELECTION_GROUP, addExtremeAnchorsAction, bridgeAnchorsAction, FILLET_SHAPE_OPTIONS, constrainAnchorsAction, convertSegmentsAction, cycleFilletAction,
-  growAnchorSelectionAction, handleLockAngleAction, handleLockLengthAction, harmonizeAnchorsAction,
+  growAnchorSelectionAction, handleLockAngleAction, handleLockLengthAction, fairAnchorsAction,
   invertAnchorSelectionAction, resamplePathAction, reversePathAction, selectCornerAnchorsAction,
   selectEveryNthAnchorAction, selectSmoothAnchorsAction, setFilletsAction, setPathStartAction,
   shrinkAnchorSelectionAction, unconstrainAnchorsAction,
@@ -27,7 +27,7 @@ const RESTRUCTURES = new Set(['deleteAnchors', 'bridgeAnchors']);
 
 const ACTIONS: Action[] = [
   reversePathAction, setPathStartAction, convertSegmentsAction, addExtremeAnchorsAction, resamplePathAction,
-  harmonizeAnchorsAction, cycleFilletAction, setFilletsAction, bridgeAnchorsAction, constrainAnchorsAction,
+  fairAnchorsAction, cycleFilletAction, setFilletsAction, bridgeAnchorsAction, constrainAnchorsAction,
   unconstrainAnchorsAction, growAnchorSelectionAction, shrinkAnchorSelectionAction, invertAnchorSelectionAction,
   selectCornerAnchorsAction, selectSmoothAnchorsAction, selectEveryNthAnchorAction, handleLockAngleAction,
   handleLockLengthAction, deleteAnchorsAction, nudgeAnchorsUpAction, nudgeAnchorsLeftAction,
