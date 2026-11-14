@@ -1,5 +1,5 @@
 import { useCallback, useRef, type CSSProperties, type RefObject } from 'react';
-import { useFloatingPlacement } from '../../floating/useFloatingPlacement';
+import { useFloatingPlacement } from '../FloatingPanel/useFloatingPlacement';
 import type { BarOrientation } from '../Bar';
 import { DOCK_BAR } from './dockDrop';
 import { DOCK_EMPTY } from './dockTear';

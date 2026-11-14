@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { type Corner, DEFAULT_INSET, type FloatingPlacement } from 'windease';
 import { dragPlacement, floatingItem, ITEM_ID, STRATEGY } from './dragPlacement';
-import { cssPx } from '../cssPx';
+import { cssPx } from '../../cssPx';
 import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** What {@link useFloatingPlacement} reads. */

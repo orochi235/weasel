@@ -41,7 +41,6 @@ const entries: Record<string, string> = {
   paintGradientTrack: resolve(import.meta.dirname, 'src/paintGradientTrack.tsx'),
   kitSettings: resolve(import.meta.dirname, 'src/kitSettings.ts'),
   useRovingTabIndex: resolve(import.meta.dirname, 'src/useRovingTabIndex.ts'),
-  'floating/index': resolve(import.meta.dirname, 'src/floating/index.ts'),
 };
 for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
   if (!dirent.isDirectory()) continue;

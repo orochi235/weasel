@@ -54,10 +54,6 @@
       "types": "./dist/useRovingTabIndex.d.ts",
       "import": "./dist/useRovingTabIndex.js"
     },
-    "./floating": {
-      "types": "./dist/floating/index.d.ts",
-      "import": "./dist/floating/index.js"
-    },
     "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
   },

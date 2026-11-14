@@ -316,7 +316,7 @@ await writeFile(
     `import * as portalHost from '@weasel-js/ui/portal-host';\n` +
     `import * as paintGradientTrack from '@weasel-js/ui/paint-gradient-track';\n` +
     `import * as kitSettings from '@weasel-js/ui/kit-settings';\n` +
-    `import * as floating from '@weasel-js/ui/floating';\n` +
+    `import * as floating from '@weasel-js/ui/components/FloatingPanel';\n` +
     `import * as roving from '@weasel-js/ui/roving-tab-index';\n` +
     `import * as labkit from '@weasel-js/labkit';\n` +
     `import * as labkitPrimitives from '@weasel-js/labkit/primitives';\n` +

@@ -138,7 +138,6 @@ export { I18nProvider, useFieldLocale } from './useFieldLocale';
 export type { OptionKey } from './optionKey';
 export type { ListOption } from './components/listOption';
 export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './useAsyncOptions';
-export * from './floating';
 export { useReorderDragList } from './useReorderDragList';
 export { pickActiveSection, useScrollSpy } from './useScrollSpy';
 export type { ScrollSpy, SectionOffset, UseScrollSpyOptions } from './useScrollSpy';

@@ -1,5 +1,5 @@
 import { DEFAULT_INSET } from 'windease';
-import { dragPlacement, floatingItem } from '../../floating/dragPlacement';
+import { dragPlacement, floatingItem } from '../FloatingPanel/dragPlacement';
 import { DOCK_BAR, drawnBars, dropAt, locateBar, measureDocks, type DockBox, type DockDropMark, type DockPoint } from './dockDrop';
 import { canEnter, dockRows, floatOf, homeDock, isVerticalEdge, type BarTarget, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
 

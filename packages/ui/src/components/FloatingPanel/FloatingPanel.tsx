@@ -1,6 +1,6 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { type Corner, DEFAULT_ANCHOR, DEFAULT_INSET, type FloatingPlacement } from 'windease';
-import { useFloatingPlacement } from '../../floating';
+import { useFloatingPlacement } from './useFloatingPlacement';
 import s from './FloatingPanel.module.css';
 
 /** Props for `<FloatingPanel>`. */

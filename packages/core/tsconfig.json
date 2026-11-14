@@ -186,7 +186,6 @@
       "@weasel-js/ui/paint-gradient-track": ["../ui/src/paintGradientTrack.tsx"],
       "@weasel-js/ui/kit-settings": ["../ui/src/kitSettings.ts"],
       "@weasel-js/ui/roving-tab-index": ["../ui/src/useRovingTabIndex.ts"],
-      "@weasel-js/ui/floating": ["../ui/src/floating/index.ts"],
       "@weasel-js/ui/testing/*": ["../ui/src/testing/*"],
       "@weasel-js/ui-input": ["../ui-input/src/index.ts"],
       "@weasel-js/ui-logic": ["../ui-logic/src/index.ts"],
