@@ -56,19 +56,13 @@ export function ObjectLeaf({
 }): ReactNode {
   const pref = ctx.pref as PrefObject;
   const marks = useContext(PanelMarksContext);
-  const held = typeof ctx.value === 'object' && ctx.value !== null
-    ? (ctx.value as Record<string, unknown>)
-    : undefined;
-  const eachObject = ctx.each.map((v) =>
-    typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : undefined,
-  );
 
   // A value whose fields all sit under sections is titled by them — its
   // own heading would stack onto the first one and name nothing new.
   const allGrouped = Object.values(pref.children).every((child) => !isPrefLeaf(child));
 
   const pairs = fieldPairs(pref.children, ctx.path);
-  const owner: ObjectFieldOwner = { ctx, held, eachObject, pairs, renderers, selectionKey };
+  const owner: ObjectFieldOwner = { ctx, pairs, renderers, selectionKey };
 
   const sectionOff = (path: string): boolean => (ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true);
   const parts: ObjectLeafParts<LeafCell> = {

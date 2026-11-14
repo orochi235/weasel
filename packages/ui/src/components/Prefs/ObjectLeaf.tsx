@@ -1,21 +1,20 @@
 import type { ReactNode } from 'react';
-import { prefAsBox, prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { prefAsBox, prefLeafValue, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { MotifFrame } from '../MotifFrame';
 import { PropertyRow } from '../Properties/PropertyRow';
 import { rowWidthOf, type RowWidth } from './compound';
 import { FORM_FRAMES } from './frames';
 import { HiddenBadge, hiddenAttrs } from './hidden';
-import { leafAtValues } from './leafAtValues';
+import { objectFieldContext } from './objectFieldContext';
 import { objectRows, type ObjectLeafParts } from './objectRows';
 import { offTitle } from './offTitle';
 import type { LeafContext } from './PrefsRow';
 import s from './Prefs.module.css';
 
 /**
- * One value with its fields hanging off it: each field renders its own control and commits the parent object
- * whole. Where the form's `mixed` names the object or anything under it, no one object stands for every value
- * behind it, and a field is written at its own path.
+ * One value with its fields hanging off it: each field renders its own control through
+ * {@link objectFieldContext}, a field holding nothing showing its default as any form leaf does.
  */
 export function ObjectLeaf({
   ctx,
@@ -32,52 +31,14 @@ export function ObjectLeaf({
   rowWidth?: (leaf: PrefLeaf) => RowWidth;
 }) {
   const pref = ctx.pref as PrefObject;
-  const { value, setValue } = ctx;
-  const held = typeof value === 'object' && value !== null
-    ? (value as Record<string, unknown>)
+  const held = typeof ctx.value === 'object' && ctx.value !== null
+    ? (ctx.value as Record<string, unknown>)
     : undefined;
-  const { mixedAt, setValueAt } = ctx;
-  const split = setValueAt !== undefined && (ctx.mixed === true || mixedAt?.(ctx.path, true) === true);
-  const fieldCtx = (key: string, child: PrefLeaf): LeafContext => {
-    const path = `${ctx.path}.${key}`;
-    const mixed = ctx.mixed === true || mixedAt?.(path) === true;
-    const shown = mixed ? undefined : held?.[key];
-    const set = split ? (v: unknown) => setValueAt(path, v) : (v: unknown) => setValue(prefObjectWithField(pref, value, key, v));
-    return {
-      path,
-      pref: leafAtValues(child, ctx.values),
-      source: ctx.source,
-      value: shown,
-      mixed,
-      each: mixed ? [] : [shown],
-      siblings: held,
-      setValue: set,
-      update: (fn) => set(fn(shown, held)),
-      mixedAt,
-      setValueAt,
-      // A field is not pinned on its own — it shares the state of
-      // the object leaf it hangs off.
-      auto: ctx.auto,
-      setAuto: ctx.setAuto,
-      values: ctx.values,
-      ...(ctx.fields ? { fields: ctx.fields } : {}),
-      // The walk names every field of a disabled leaf but the one its own `enableIf` reads, which stays live.
-      disabled: ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true,
-      disabledAt: ctx.disabledAt,
-      active: ctx.activeAt?.(path) === true,
-      activeAt: ctx.activeAt,
-      hidden: ctx.hidden === true || ctx.hiddenAt?.(path) === true,
-      hiddenAt: ctx.hiddenAt,
-      entryAt: ctx.entryAt,
-      settles: ctx.settles,
-      textWaitMs: ctx.textWaitMs,
-    };
-  };
   const off = (path: string): boolean => (ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true);
   const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: LeafContext }> = {
     path: ctx.path,
     off,
-    cell: (key, child) => ({ key, child, field: fieldCtx(key, child) }),
+    cell: (key, child) => ({ key, child, field: objectFieldContext(ctx, key, child, prefLeafValue) }),
     rows: (cells) => cells.map(({ key, child, field }) => {
       const width = rowWidth(child);
       const stacked = width !== 'column';
