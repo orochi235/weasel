@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useSyncExternalStore } from 'react';
 import { prefValueAtPath, type PrefGroup, type PrefPath, type PrefsStore } from '@weasel-js/prefs';
 import { Icon } from '../../icons';
-import { ToolButton } from '../ToolButton';
+import { ActionButton } from '../ActionButton/ActionButton';
 import { PrefsDialog } from '../Prefs';
 import { setAtPath } from '../SelectionPanel';
 import { icon } from '../../icons.gen';
@@ -99,7 +99,7 @@ export function EditorPrefsButton({ prefs }: { prefs: EditorPrefs }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <ToolButton icon={<Icon name={icon('core:tune')} />} label="Preferences" onClick={() => setOpen(true)} />
+      <ActionButton icon={<Icon name={icon('core:tune')} />} label="Preferences" onPress={() => setOpen(true)} />
       <PrefsDialog isOpen={open} onOpenChange={setOpen} layout="list" schema={PREF_SCHEMA_EDITOR_PREFS} values={prefs.values} onChange={prefs.set} />
     </>
   );

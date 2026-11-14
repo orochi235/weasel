@@ -2,7 +2,8 @@
  * A panel row's leaves as cells: each leaf's context over the selected nodes,
  * and the control it draws in a row or in a bar.
  */
-import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
+import { withBarLabel } from '../Bar/renderBarLeaf';
+import { drawsBarForm, type ControlForm } from '../ActionButton/controlForm';
 import { sourceResetPlan, type PrefAliasTargets, type SelectionSource } from '@weasel-js/prefs';
 import { sourceLeafContext } from '../PrefsSource/leafContext';
 import type { LiveControl } from '../Prefs/commitPolicy';
@@ -87,7 +88,7 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): LeafContext {
 const withInherit = (inherit: PanelInherit | undefined): Pick<LeafContext, 'inherit'> =>
   (inherit ? { inherit } : {});
 
-function leafCell(panelLeaf: PanelLeaf, ariaLabel: string, scope: PanelCellScope, surface: LeafSurface): LeafCell {
+function leafCell(panelLeaf: PanelLeaf, ariaLabel: string, scope: PanelCellScope, surface: ControlForm): LeafCell {
   const { renderers, selectionKey } = scope;
   const { path, leaf } = panelLeaf;
   const ctx = leafContext(panelLeaf, scope);
@@ -98,7 +99,7 @@ function leafCell(panelLeaf: PanelLeaf, ariaLabel: string, scope: PanelCellScope
     ariaLabel,
     render: () => {
       const custom = renderers?.[path] ?? renderers?.[leaf.kind];
-      if (custom) return surface === 'bar' ? withBarLabel(leaf, custom(ctx)) : custom(ctx);
+      if (custom) return drawsBarForm(surface) ? withBarLabel(leaf, custom(ctx)) : custom(ctx);
       return renderBuiltin(ctx, ariaLabel, renderers, { selectionKey, surface });
     },
   };
@@ -109,8 +110,8 @@ function leafCell(panelLeaf: PanelLeaf, ariaLabel: string, scope: PanelCellScope
  * a row a leaf sharing it is named with the row's label ahead of its own; a
  * bar draws no row label, and names each by itself.
  */
-export function rowCells(row: PanelRow, scope: PanelCellScope, surface: LeafSurface = 'row'): RenderedCell[] {
-  const qualified = surface === 'row' && row.leaves.length > 1;
+export function rowCells(row: PanelRow, scope: PanelCellScope, surface: ControlForm = 'row'): RenderedCell[] {
+  const qualified = !drawsBarForm(surface) && row.leaves.length > 1;
   return renderCells(
     row.leaves.map((panelLeaf) => ({
       ...leafCell(panelLeaf, qualified ? `${row.label} ${panelLeaf.leaf.name}` : panelLeaf.leaf.name, scope, surface),

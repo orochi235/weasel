@@ -19,7 +19,7 @@ import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portal
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './Select.module.css';
-import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import { TriggerTooltip, tooltipContent, type TooltipFields } from '../Tooltip/buttonTooltip';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import type { ListOption } from '../listOption';
@@ -93,7 +93,7 @@ export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<obje
    */
   triggerId?: string;
   className?: string;
-} & SegmentTooltipFields & OverlayPortalProps;
+} & TooltipFields & OverlayPortalProps;
 
 /**
  * Form select wrapping React Aria's Select. Pass either `options` for a
@@ -170,7 +170,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       {anchor}
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <TriggerTooltip
-        content={segmentTooltipContent({ tooltip, shortcut, ariaLabel: rest['aria-label'], label })}
+        content={tooltipContent({ tooltip, shortcut, ariaLabel: rest['aria-label'], label })}
         disabled={!hold.access.reachable || hold.access.reason !== undefined}
       >
         <RACButton

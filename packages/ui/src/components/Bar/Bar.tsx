@@ -5,7 +5,7 @@ import { BarAlong } from './BarAlong';
 import { dividedItems, lineItems } from './barItems';
 import { BarMarkContext } from './barOrder';
 import { BarLine } from './BarLine';
-import { BarButton } from './BarButton';
+import { FormScope } from '../ActionButton/controlForm';
 import { BarDivider, BarGroup, BarItem, BarReadout, BarSpacer } from './barParts';
 import { useRun, type Orientation } from '../Run';
 import { useDensity, withDensity, type DensityProps } from '../Density';
@@ -99,7 +99,11 @@ export function Bar(own: BarProps) {
   const bar = run.shape !== undefined && run.shape.kind !== 'line'
     ? <BarAlong {...props} items={items} sm={sm} shape={run.shape} align={run.align ?? 'center'} />
     : <BarLine {...props} items={items} sm={sm} orientation={props.orientation ?? run.orientation} />;
-  return holdScope(own, <BarMarkContext.Provider value={props.onReorder !== undefined}>{withDensity(own.size, bar)}</BarMarkContext.Provider>);
+  return holdScope(own, (
+    <BarMarkContext.Provider value={props.onReorder !== undefined}>
+      <FormScope form="bar">{withDensity(own.size, bar)}</FormScope>
+    </BarMarkContext.Provider>
+  ));
 }
 
 /** Related controls, kept tight and divided from their neighbors. */
@@ -112,6 +116,4 @@ Bar.Divider = BarDivider;
 Bar.Item = BarItem;
 /** A status strip's words. */
 Bar.Readout = BarReadout;
-/** A ghost button at the bar's height. */
-Bar.Button = BarButton;
 

@@ -1,22 +1,21 @@
 import { cloneElement, type DOMAttributes, type ReactElement, type ReactNode, type SyntheticEvent } from 'react';
 import { controlAccess, NO_HOLD, type ControlAccess } from '@weasel-js/ui-logic';
-import { Focusable } from './Tooltip/Focusable';
+import { Focusable } from './Focusable';
 import { Tooltip, TooltipTrigger } from './Tooltip';
-import { useDisabled, useReadOnly, type HoldProps } from './Disabled';
-import { useUntoldReason } from './Disabled/Disabled';
+import { useDisabled, useReadOnly, type HoldProps } from '../Disabled';
+import { useUntoldReason } from '../Disabled/Disabled';
 
-/** The tooltip fields a segmented bar's item carries. */
-export interface SegmentTooltipFields {
+/** The tooltip fields a button, a segment, or a select carries. */
+export interface TooltipFields {
   /** Tooltip content. Overrides the name-plus-`shortcut` default. */
   tooltip?: ReactNode;
-  /** Shortcut hint shown in the tooltip as `Name (⌘Z)`, the way `ToolButton`
-   *  and `ActionBar` show theirs. The name is `ariaLabel`, else a string
-   *  `label`. */
+  /** Shortcut hint shown in the tooltip as `Name (⌘Z)`, the way `ActionButton`
+   *  shows its own. The name is `ariaLabel`, else a string `label`. */
   shortcut?: string;
 }
 
-/** What a segment's tooltip is built from. */
-export interface SegmentTip extends SegmentTooltipFields {
+/** What a button's tooltip is built from. */
+export interface TooltipParts extends TooltipFields {
   label?: ReactNode;
   ariaLabel?: string;
   /** What the tooltip reads in place of the name, before the shortcut. */
@@ -25,7 +24,7 @@ export interface SegmentTip extends SegmentTooltipFields {
 
 /** Tooltip content for an item, or `undefined` for none. An item held for a `reason` (disabled or read-only) reads
  *  its name and the reason. */
-export function segmentTooltipContent(item: SegmentTip & { reason?: string }): ReactNode | undefined {
+export function tooltipContent(item: TooltipParts & { reason?: string }): ReactNode | undefined {
   const name = item.description || (item.ariaLabel ?? (typeof item.label === 'string' ? item.label : undefined));
   if (item.reason) return name ? `${name}: ${item.reason}` : item.reason;
   if (item.tooltip !== undefined) return item.tooltip;
@@ -38,8 +37,7 @@ type ButtonElement = ReactElement<DOMAttributes<HTMLButtonElement> & { disabled?
 const refuse = (e: SyntheticEvent) => e.preventDefault();
 
 /** `button` held by `aria-disabled` or `data-readonly`, since native `disabled` takes it out of hover and focus and
- *  so out of its tooltip's reach. Stylesheets dim `data-disabled`: `ToolButton`'s `ariaDisabled` sets
- *  `aria-disabled` undimmed. */
+ *  so out of its tooltip's reach. Stylesheets dim `data-disabled`. */
 function stillReachable(button: ButtonElement, access: ControlAccess): ButtonElement {
   return cloneElement(button as ReactElement<Record<string, unknown>>, {
     disabled: false,
@@ -51,17 +49,17 @@ function stillReachable(button: ButtonElement, access: ControlAccess): ButtonEle
   }) as ButtonElement;
 }
 
-/** Props for {@link SegmentTooltip}. */
-export interface SegmentTooltipProps extends HoldProps {
-  /** What the tooltip says, while the segment is not held for a reason. */
-  tip: SegmentTip;
+/** Props for {@link ButtonTooltip}. */
+export interface ButtonTooltipProps extends HoldProps {
+  /** What the tooltip says, while the button is not held for a reason. */
+  tip: TooltipParts;
   /** It shows a value, so a read-only scope holds it: a toggle, not an action button. */
   holdsValue?: boolean;
   children: ButtonElement;
 }
 
-/** How a segment responds, from its own props and the scopes around it. */
-export function useSegmentAccess({ holdsValue = false, ...own }: HoldProps & { holdsValue?: boolean }): ControlAccess {
+/** How a button responds, from its own props and the scopes around it. */
+export function useButtonAccess({ holdsValue = false, ...own }: HoldProps & { holdsValue?: boolean }): ControlAccess {
   const disabled = useDisabled(own);
   const readOnly = useReadOnly(own);
   return controlAccess(
@@ -70,14 +68,14 @@ export function useSegmentAccess({ holdsValue = false, ...own }: HoldProps & { h
   );
 }
 
-/** Wraps a segment's `<button>` in a kit tooltip when there is content for one, and applies its disabled and
+/** Wraps a `<button>` in a kit tooltip when there is content for one, and applies its disabled and
  *  read-only state, its own or a scope's. Disabled with no reason, the button is natively disabled and has no
  *  tooltip. Held for a reason, it stays hoverable and focusable, marked `aria-disabled` (or `data-readonly`),
  *  ignores presses, and its tooltip and description say why. */
-export function SegmentTooltip({ tip, children, ...own }: SegmentTooltipProps): ReactElement {
-  const held = useSegmentAccess(own);
+export function ButtonTooltip({ tip, children, ...own }: ButtonTooltipProps): ReactElement {
+  const held = useButtonAccess(own);
   const access = { ...held, reason: useUntoldReason(held.reason) };
-  const content = segmentTooltipContent({ ...tip, reason: access.reason });
+  const content = tooltipContent({ ...tip, reason: access.reason });
   const off = !access.reachable;
   const button = off ? (cloneElement(children, { disabled: true }) as ButtonElement)
     : access.state === 'enabled' ? children : stillReachable(children, access);
@@ -91,7 +89,7 @@ export function SegmentTooltip({ tip, children, ...own }: SegmentTooltipProps): 
   );
 }
 
-/** {@link SegmentTooltip} for a React Aria trigger (`Button` inside a
+/** {@link ButtonTooltip} for a React Aria trigger (`Button` inside a
  *  `MenuTrigger` or `Select`), which takes the tooltip's hover and focus props
  *  itself and so needs no `Focusable` around it. */
 export function TriggerTooltip({ content, disabled, children }: {

@@ -4,6 +4,7 @@ import { tiling } from '../../tiling';
 import { withDensity, type DensityProps } from '../Density';
 import s from './ToolGroup.module.css';
 import { holdScope, type HoldProps } from '../Disabled';
+import { FormScope } from '../ActionButton/controlForm';
 
 /** Props for {@link ToolGroup}. */
 export interface ToolGroupProps extends DensityProps, HoldProps {
@@ -22,9 +23,9 @@ export interface ToolGroupProps extends DensityProps, HoldProps {
 
 /**
  * Generic toolbar group — a `role="group"` flex container that arranges
- * `<ToolButton>`s (or any children) along the run it sits in: a column in a
- * vertical one, a row otherwise. No visual chrome beyond layout; theming
- * lives on the buttons.
+ * `<ActionButton>`s (or any children) along the run it sits in: a column in a
+ * vertical one, a row otherwise. The buttons inside draw as a palette's tools. No visual chrome beyond layout;
+ * theming lives on the buttons.
  */
 export function ToolGroup(props: ToolGroupProps) {
   const { children, columns, groupKey, 'aria-label': ariaLabel, size, className } = props;
@@ -35,7 +36,7 @@ export function ToolGroup(props: ToolGroupProps) {
   const style = tiles?.style;
   return (
     <div className={cls} style={style} role="group" data-group={groupKey} aria-label={ariaLabel}>
-      {holdScope(props, withDensity(size, children))}
+      <FormScope form="palette">{holdScope(props, withDensity(size, children))}</FormScope>
     </div>
   );
 }

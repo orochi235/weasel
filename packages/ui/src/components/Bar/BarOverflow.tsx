@@ -5,7 +5,8 @@ import { Icon } from '../../icons/Icon';
 import { useOverlayPortal } from '../../overlays/portalHost';
 import listbox from '../listbox.module.css';
 import { BarMarkContext } from './barOrder';
-import { BarInMenuContext } from './barInMenu';
+import { FormScope } from '../ActionButton/controlForm';
+import a from '../ActionButton/ActionButton.module.css';
 import type { BarSide } from './barSide';
 import { RunScope } from '../Run';
 import s from './Bar.module.css';
@@ -17,13 +18,13 @@ export function BarOverflow({ label, children, side }: { label: string; children
   return (
     <DialogTrigger>
       {anchor}
-      <RACButton aria-label={label} className={s.action}>
+      <RACButton aria-label={label} className={a.action}>
         <Icon name={icon('more')} size={16} />
       </RACButton>
       {ready && provide(
         <Popover className={s.popover} {...(side ? { placement: side } : {})} data-weasel-overlay="">
           <RACDialog className={`${listbox.surface} ${s.menu}`} aria-label={label}>
-            <RunScope fresh><BarMarkContext.Provider value={false}><BarInMenuContext.Provider value>{children}</BarInMenuContext.Provider></BarMarkContext.Provider></RunScope>
+            <RunScope fresh><BarMarkContext.Provider value={false}><FormScope form="menu">{children}</FormScope></BarMarkContext.Provider></RunScope>
           </RACDialog>
         </Popover>
       )}

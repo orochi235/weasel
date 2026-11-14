@@ -5,9 +5,11 @@ import {
   type Action, type DepName, type DepRegistry,
 } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
-import { PrefActionButton } from '../Prefs/PrefActionButton';
-import { BarAction, BarActionButton } from './BarAction';
-import { BarInMenuContext } from './barInMenu';
+import { ActionButton } from '../ActionButton/ActionButton';
+import { FormScope } from '../ActionButton/controlForm';
+import { ActionLeaf } from './ActionLeaf';
+import { icon } from '../../icons.gen';
+import { renderWithIcons } from '../../testing/withIcons';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
 function Host({ actions, children }: { actions: Action[]; children: React.ReactNode }) {
@@ -34,31 +36,24 @@ const leaf = (rest: Partial<PrefAction> = {}): PrefAction => ({
   ...rest,
 });
 
-describe('BarAction', () => {
+describe('ActionLeaf', () => {
   it("draws as a menu row in a bar's overflow: icon, label, and shortcut", () => {
     render(
       <Host actions={[action('text.bold', { label: 'Bold' })]}>
-        <BarInMenuContext.Provider value>
-          <BarAction leaf={leaf({ action: 'text.bold' })} path="bold" />
-        </BarInMenuContext.Provider>
+        <FormScope form="menu">
+          <ActionLeaf leaf={leaf({ action: 'text.bold' })} path="bold" />
+        </FormScope>
       </Host>,
     );
     const row = screen.getByRole('button', { name: 'Bold' });
     expect(row.textContent).toContain('Bold');
   });
 
-  it('shows the shortcut beside the label only in a menu row', () => {
-    const { rerender } = render(<BarActionButton label="Join" shortcut="⌘J" icon={<i />} menu onPress={() => {}} />);
-    expect(screen.getByRole('button', { name: 'Join' }).textContent).toBe('Join⌘J');
-    rerender(<BarActionButton label="Join" shortcut="⌘J" icon={<i />} onPress={() => {}} />);
-    expect(screen.getByRole('button', { name: 'Join' }).textContent).toBe('');
-  });
-
   it('fires the registered action its leaf names', () => {
     const run = vi.fn();
     render(
       <Host actions={[action('text.bold', {}, run)]}>
-        <BarAction leaf={leaf({ action: 'text.bold' })} path="bold" />
+        <ActionLeaf leaf={leaf({ action: 'text.bold' })} path="bold" />
       </Host>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Bold' }));
@@ -71,7 +66,7 @@ describe('BarAction', () => {
     align.invoker = { timing: 'immediate', run: (_deps, params) => run(params) };
     render(
       <Host actions={[align]}>
-        <BarAction leaf={leaf({ name: 'Left', action: 'align:left' })} path="left" />
+        <ActionLeaf leaf={leaf({ name: 'Left', action: 'align:left' })} path="left" />
       </Host>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Left' }));
@@ -87,8 +82,8 @@ describe('BarAction', () => {
     align.invoker = { timing: 'immediate', run: (_deps, params) => run(params) };
     render(
       <Host actions={[align]}>
-        <BarAction leaf={leaf({ name: 'Align', action: 'align' })} path="align" />
-        <PrefActionButton pref={leaf({ name: 'Align', action: 'align' })} path="align2" />
+        <ActionLeaf leaf={leaf({ name: 'Align', action: 'align' })} path="align" />
+        <ActionLeaf leaf={leaf({ name: 'Align', action: 'align' })} path="align2" form="row" />
       </Host>,
     );
     expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label')))
@@ -101,7 +96,7 @@ describe('BarAction', () => {
   it('is disabled while the action says it cannot run, and stays focusable to say why', () => {
     render(
       <Host actions={[action('text.bold', { enabled: () => 'selection-required' })]}>
-        <BarAction leaf={leaf({ action: 'text.bold' })} path="bold" />
+        <ActionLeaf leaf={leaf({ action: 'text.bold' })} path="bold" />
       </Host>,
     );
     const button = screen.getByRole('button', { name: 'Bold' });
@@ -126,7 +121,7 @@ describe('BarAction', () => {
       <DepRegistryProvider>
         <Host actions={[bold]}>
           <Gate />
-          <BarAction leaf={leaf({ action: 'text.bold' })} path="bold" />
+          <ActionLeaf leaf={leaf({ action: 'text.bold' })} path="bold" />
         </Host>
       </DepRegistryProvider>,
     );
@@ -138,8 +133,8 @@ describe('BarAction', () => {
   it('reads as held down while the action says it is active', () => {
     render(
       <Host actions={[action('text.bold', { active: () => true }), action('text.italic', { active: () => false })]}>
-        <BarAction leaf={leaf({ action: 'text.bold' })} path="bold" />
-        <BarAction leaf={leaf({ name: 'Italic', action: 'text.italic' })} path="italic" />
+        <ActionLeaf leaf={leaf({ action: 'text.bold' })} path="bold" />
+        <ActionLeaf leaf={leaf({ name: 'Italic', action: 'text.italic' })} path="italic" />
       </Host>,
     );
     expect(screen.getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'true');
@@ -149,7 +144,7 @@ describe('BarAction', () => {
   it('gives an action with no pressed state no pressed state', () => {
     render(
       <Host actions={[action('file.save')]}>
-        <BarAction leaf={leaf({ name: 'Save', action: 'file.save' })} path="save" />
+        <ActionLeaf leaf={leaf({ name: 'Save', action: 'file.save' })} path="save" />
       </Host>,
     );
     expect(screen.getByRole('button', { name: 'Save' })).not.toHaveAttribute('aria-pressed');
@@ -158,7 +153,7 @@ describe('BarAction', () => {
   it('draws a key nothing answers to as a dead button that names the key', () => {
     render(
       <Host actions={[]}>
-        <BarAction leaf={leaf({ action: 'gone.missing' })} path="bold" />
+        <ActionLeaf leaf={leaf({ action: 'gone.missing' })} path="bold" />
       </Host>,
     );
     const button = screen.getByRole('button', { name: 'Bold' });
@@ -167,7 +162,7 @@ describe('BarAction', () => {
   });
 
   it('keeps a disabled button focusable and says why, given a reason', () => {
-    render(<BarActionButton label="Move by" labeled disabled disabledReason="Selection required" onPress={() => {}} />);
+    render(<ActionButton label="Move by" labeled disabled disabledReason="Selection required" onPress={() => {}} />);
     const button = screen.getByRole('button', { name: 'Move by' });
     expect(button).not.toBeDisabled();
     expect(button).toHaveAttribute('aria-disabled', 'true');
@@ -175,14 +170,14 @@ describe('BarAction', () => {
   });
 
   it('is a dead button with no registry above it', () => {
-    render(<BarAction leaf={leaf({ action: 'text.bold' })} path="bold" />);
+    render(<ActionLeaf leaf={leaf({ action: 'text.bold' })} path="bold" />);
     expect(screen.getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('reads its label beside its icon as a `button`', () => {
     render(
       <Host actions={[action('text.bold')]}>
-        <BarAction leaf={leaf({ action: 'text.bold', control: 'button' })} path="bold" />
+        <ActionLeaf leaf={leaf({ action: 'text.bold', control: 'button' })} path="bold" />
       </Host>,
     );
     expect(screen.getByRole('button', { name: 'Bold' })).toHaveTextContent('Bold');
@@ -191,7 +186,7 @@ describe('BarAction', () => {
   it('calls `run` where the leaf names no action, and waits out its promise', async () => {
     let settle = (): void => {};
     const run = vi.fn(() => new Promise<void>((r) => { settle = r; }));
-    render(<BarAction leaf={leaf({ name: 'Export', run })} path="file.export" />);
+    render(<ActionLeaf leaf={leaf({ name: 'Export', run })} path="file.export" />);
     const button = screen.getByRole('button', { name: 'Export' });
     fireEvent.click(button);
     expect(run).toHaveBeenCalledWith({ path: 'file.export' });
@@ -207,15 +202,15 @@ function keyboardFocus(el: HTMLElement) {
   act(() => el.focus());
 }
 
-describe('BarAction tooltip', () => {
+describe('ActionLeaf tooltip', () => {
   it('reads the leaf’s description, with the shortcut after it', () => {
-    render(<BarActionButton label="Save" description="Save as SVG" shortcut="Ctrl+S" onPress={() => {}} />);
+    render(<ActionButton label="Save" description="Save as SVG" shortcut="Ctrl+S" onPress={() => {}} />);
     keyboardFocus(screen.getByRole('button', { name: 'Save' }));
     expect(screen.getByRole('tooltip').textContent).toBe('Save as SVG (Ctrl+S)');
   });
 
   it('reads the label and shortcut where there is no description', () => {
-    render(<BarActionButton label="Save" shortcut="Ctrl+S" onPress={() => {}} />);
+    render(<ActionButton label="Save" shortcut="Ctrl+S" onPress={() => {}} />);
     keyboardFocus(screen.getByRole('button', { name: 'Save' }));
     expect(screen.getByRole('tooltip').textContent).toBe('Save (Ctrl+S)');
   });
@@ -223,7 +218,7 @@ describe('BarAction tooltip', () => {
   it('takes the description from an action leaf', () => {
     render(
       <Host actions={[action('file.save')]}>
-        <BarAction leaf={leaf({ name: 'Save', action: 'file.save', description: 'Save as SVG' })} path="save" />
+        <ActionLeaf leaf={leaf({ name: 'Save', action: 'file.save', description: 'Save as SVG' })} path="save" />
       </Host>,
     );
     keyboardFocus(screen.getByRole('button', { name: 'Save' }));
@@ -231,15 +226,27 @@ describe('BarAction tooltip', () => {
   });
 });
 
-describe('PrefActionButton', () => {
-  it('fires a registered action by key from a row, under the leaf’s name', () => {
+describe('ActionLeaf in a row', () => {
+  it('fires a registered action by key, under the leaf’s name, its label beside its icon', () => {
     const run = vi.fn();
     render(
       <Host actions={[action('text.bold', { label: 'Toggle bold' }, run)]}>
-        <PrefActionButton pref={leaf({ action: 'text.bold' })} path="bold" />
+        <ActionLeaf leaf={leaf({ action: 'text.bold' })} path="bold" form="row" />
       </Host>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Bold' }));
+    const button = screen.getByRole('button', { name: 'Bold' });
+    expect(button).toHaveAttribute('data-form', 'row');
+    expect(button).toHaveTextContent('Bold');
+    fireEvent.click(button);
     expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws its icon alone for `control: \'icon\'`', () => {
+    renderWithIcons(
+      <Host actions={[action('text.bold', { icon: icon('core:undo') })]}>
+        <ActionLeaf leaf={leaf({ action: 'text.bold', control: 'icon' })} path="bold" form="row" />
+      </Host>,
+    );
+    expect(screen.getByRole('button', { name: 'Bold' }).textContent).toBe('');
   });
 });

@@ -9,6 +9,7 @@ import {
   useLatest,
   type ViewApi,
 } from '@weasel-js/core';
+import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
@@ -135,32 +136,28 @@ function LabZoomControls() {
   return (
     <Bar label="Zoom" roving>
       <Bar.Group aria-label="Zoom">
-        <Bar.Button
-          iconOnly
-          aria-label="Zoom out"
-          title={hint('Zoom out', 'out')}
+        <ActionButton
+          icon={<Icon name={icon('ui:zoomOut')} size={16} />}
+          label="Zoom out"
+          tooltip={hint('Zoom out', 'out')}
           disabled={!canOut}
-          onClick={run('out')}
-        >
-          <Icon name={icon('ui:zoomOut')} size={16} />
-        </Bar.Button>
-        <Bar.Button
-          aria-label={shown ? `Zoom ${shown} — reset to actual size` : 'Zoom unavailable'}
-          title={live ? hint('Actual size', 'reset') : 'This trial has no camera'}
+          onPress={run('out')}
+        />
+        <ActionButton
+          label={shown ? `Zoom ${shown} — reset to actual size` : 'Zoom unavailable'}
+          tooltip={live ? hint('Actual size', 'reset') : 'This trial has no camera'}
           disabled={!live}
-          onClick={run('reset')}
+          onPress={run('reset')}
         >
           <span className="lk-lab-zoom__readout">{shown ?? '–'}</span>
-        </Bar.Button>
-        <Bar.Button
-          iconOnly
-          aria-label="Zoom in"
-          title={hint('Zoom in', 'in')}
+        </ActionButton>
+        <ActionButton
+          icon={<Icon name={icon('ui:zoomIn')} size={16} />}
+          label="Zoom in"
+          tooltip={hint('Zoom in', 'in')}
           disabled={!canIn}
-          onClick={run('in')}
-        >
-          <Icon name={icon('ui:zoomIn')} size={16} />
-        </Bar.Button>
+          onPress={run('in')}
+        />
       </Bar.Group>
     </Bar>
   );

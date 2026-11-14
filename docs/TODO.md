@@ -392,11 +392,10 @@ Owner tags, after the priority (2026-10-26):
   over time in each cell. Raised as a direction, not to build yet (2026-11-08). Closes when the maintainer
   has said how a third sweep shows and `<Sequence>` takes any number of sweeps.
 - **(P3) [maintainer] Should the arrow keys land on an `aria-disabled` item?** `useRovingTabIndex` skips it,
-  and `useRovingTabIndex.test.tsx` pins that. But `ToolButton`'s `ariaDisabled` promises such a button stays
-  "reachable by keyboard (roving-tabindex still applies)", and a segment with a `disabledReason` swaps `disabled`
-  for `aria-disabled` (`segmentTooltip.tsx`) so its reason can be read: in a `SegmentedBar` or `ToolPalette` the
-  keyboard never gets there, so the reason is mouse-only. APG allows either for a toolbar (2026-11-07). Closes when
-  the maintainer has picked one and the hook, `ToolButton`'s doc and the test agree.
+  and `useRovingTabIndex.test.tsx` pins that. But a segment or an `ActionButton` with a `disabledReason` swaps
+  `disabled` for `aria-disabled` (`Tooltip/buttonTooltip.tsx`) so its reason can be read: in a `SegmentedBar` or
+  `ToolPalette` the keyboard never gets there, so the reason is mouse-only. APG allows either for a toolbar
+  (2026-11-07). Closes when the maintainer has picked one and the hook, `buttonTooltip.tsx`'s doc and the test agree.
 - **(P3) [maintainer] A timeline with a nonzero `start` can read "2.50s / 2.00s".** `PlayheadReadout`
   (ui `Timeline/Transport.tsx`) shows the absolute playhead over the duration, while the scrub bar runs from
   `start` to `start + duration`; `Transport.test.tsx` pins `-0.50s / 3.00s` for a timeline from −0.5 s to
@@ -519,13 +518,6 @@ name a package. Breaking changes are in scope.
   should open a paint editor is the maintainer's call. Closes when a slot edits a gradient, or the maintainer rules it
   stays a solid picker.
 
-- **(P2) [agent] One form context and one `ActionButton`.** `ToolButton`, `Bar.Button`, `BarActionButton`, and
-  the segment button all carry label, shortcut, description, `disabledReason`, pressed state, and a menu option, and
-  all build tooltips through `segmentTooltipContent`. `BarActionButton` already reads `Bar/barInMenu.ts`'s
-  `BarInMenuContext` to draw as a menu row, which overlaps `renderBarLeaf`'s `LeafSurface`. Merge those two into a
-  form context (bar cell, menu row, popover row, palette) and draw one `ActionButton` from it. Closes when the four
-  buttons are one component.
-
 - **(P2) [agent] Grow `PropertyRowContext` into a row scope.** `auto`, `onAutoChange`, `onReset`, `changed`, and
   `error` are declared on `PropertyRow`, `DialogRow`, and `PropertyFieldRow`; `SelectionPanel/LabeledRow.tsx` adds
   `disabled`/`disabledReason`. `Properties/rowContext.ts` carries only `{ label }`, read only by `EasingPicker`.
@@ -573,8 +565,8 @@ name a package. Breaking changes are in scope.
 
 - **(P3) [agent] Move loose stylesheets and helpers into the component that owns them.** `field.module.css` (15
   importers beside `Field/`'s own helpers), `checkbox.module.css` (also used by `Properties/fieldControls.tsx:127`),
-  `listbox.module.css` (whose `surface` styles 8 popovers while `Popover` draws nothing), `segmentTooltip.tsx` (the
-  shared tooltip builder), `colorModes.ts`, `stanceCss.ts`/`stanceSurfaces.ts` (build-time only), `mixedHint.ts`,
+  `listbox.module.css` (whose `surface` styles 8 popovers while `Popover` draws nothing), `colorModes.ts`,
+  `stanceCss.ts`/`stanceSurfaces.ts` (build-time only), `mixedHint.ts`,
   `sizer.module.css`, `optionLabels.tsx`, `src/paintGradientTrack.tsx`/`paintGradientCurve.tsx` (a Slider
   `renderTrack`), and `ColorField/OpacityRange` (used by `PaintInput`). Closes when `components/` holds only
   component folders and genuinely shared files (`orientation.ts`, `appearance.ts`, `checker.module.css`,

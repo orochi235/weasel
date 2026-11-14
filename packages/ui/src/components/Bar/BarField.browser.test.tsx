@@ -1,7 +1,8 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
-import { BarActionButton, BarField } from '@weasel-js/ui/components/Bar';
+import { ActionButton } from '@weasel-js/ui/components/ActionButton';
+import { BarField } from '@weasel-js/ui/components/Bar';
 import { useStoryFields } from './BarField.fixtures';
 
 // Whether a cell fits the bar and sits on its line is layout, which jsdom does not do.
@@ -74,7 +75,7 @@ test('no bar cell carries a class its stylesheet does not define', () => {
 test('every disabled bar cell dims by the same amount', () => {
   const { getByRole } = render(
     <>
-      <BarActionButton label="Bold" disabled onPress={() => {}} />
+      <ActionButton label="Bold" disabled onPress={() => {}} />
       <BarField kind="string" control="textarea" name="Notes" value="" disabled onChange={() => {}} />
       <BarField kind="number" name="Size" value={12} disabled onChange={() => {}} />
     </>,

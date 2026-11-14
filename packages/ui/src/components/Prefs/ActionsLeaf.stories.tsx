@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
-import { BarActions } from '@weasel-js/ui/components/Bar';
+import { ActionsLeaf } from '@weasel-js/ui/components/Prefs';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 import { icon } from '../../icons.gen';
-import s from './Bar.stories.module.css';
+import s from '../Bar/Bar.stories.module.css';
 
 const ARRANGE: Action[] = [
   { id: 'arrange.front', label: 'Bring to front', group: 'arrange', icon: icon('core:bringToFront'), invoker: { timing: 'immediate', run: () => {} } },
@@ -23,20 +23,20 @@ const ARRANGE: Action[] = [
 
 const LEAF = pref.actions('arrange');
 
-const meta: Meta<typeof BarActions> = {
-  title: 'ui/Bar/BarActions',
-  component: BarActions,
+const meta: Meta<typeof ActionsLeaf> = {
+  title: 'ui/Foundations/Prefs/ActionsLeaf',
+  component: ActionsLeaf,
   args: { disabled: false },
 };
 export default meta;
-type Story = StoryObj<typeof BarActions>;
+type Story = StoryObj<typeof ActionsLeaf>;
 
 function Host({ disabled }: { disabled?: boolean }) {
   return (
     <ActionsProvider>
       <RegisterActions actions={ARRANGE} />
       <div className={s.strip}>
-        <BarActions leaf={LEAF} path="arrange" disabled={disabled} />
+        <ActionsLeaf leaf={LEAF} path="arrange" disabled={disabled} />
       </div>
     </ActionsProvider>
   );

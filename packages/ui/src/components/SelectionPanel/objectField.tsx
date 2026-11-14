@@ -4,7 +4,8 @@
  */
 import type { ReactNode } from 'react';
 import type { PrefLeaf } from '@weasel-js/prefs';
-import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
+import { withBarLabel } from '../Bar/renderBarLeaf';
+import { drawsBarForm, type ControlForm } from '../ActionButton/controlForm';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { objectFieldContext } from '../Prefs/objectFieldContext';
 import { nodeLeafValue } from './model';
@@ -28,10 +29,10 @@ function renderField(
   { renderers, selectionKey, pairs }: Pick<ObjectFieldOwner, 'renderers' | 'selectionKey' | 'pairs'>,
   child: PrefLeaf,
   childCtx: LeafContext,
-  surface: LeafSurface,
+  surface: ControlForm,
 ): ReactNode {
   const custom = renderers?.[childCtx.path] ?? renderers?.[child.kind];
-  if (surface === 'bar') {
+  if (drawsBarForm(surface)) {
     return custom
       ? withBarLabel(child, custom(childCtx))
       : renderBuiltin(childCtx, child.name, renderers, { selectionKey, nested: true, surface });
@@ -56,7 +57,7 @@ function renderField(
 }
 
 /** One field as an unrendered cell: its row form, or its bar form in a section drawn as a bar. */
-export function objectFieldCell(owner: ObjectFieldOwner, key: string, child: PrefLeaf, surface: LeafSurface): LeafCell {
+export function objectFieldCell(owner: ObjectFieldOwner, key: string, child: PrefLeaf, surface: ControlForm): LeafCell {
   const childCtx = objectFieldContext(owner.ctx, key, child, nodeLeafValue);
   const pair = owner.pairs.get(childCtx.path);
   return {

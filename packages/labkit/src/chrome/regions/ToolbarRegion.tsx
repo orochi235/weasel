@@ -1,3 +1,4 @@
+import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
@@ -63,21 +64,18 @@ function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: strin
     onActivate,
   } = item;
   return (
-    <Bar.Button
+    <ActionButton
       key={c.id}
-      iconOnly={!showLabel}
+      icon={<Icon name={icon} size={16} />}
+      label={label}
+      labeled={showLabel}
       grade={danger ? 'danger' : undefined}
       disabled={disabled}
       disabledReason={disabledReason}
-      pressed={pressed}
-      aria-label={label}
-      title={label}
+      active={pressed}
       shortcut={formatShortcut(shortcut)}
-      icon={showLabel ? <Icon name={icon} size={16} /> : undefined}
-      onClick={() => onActivate(ctx)}
-    >
-      {showLabel ? label : <Icon name={icon} size={16} />}
-    </Bar.Button>
+      onPress={() => onActivate(ctx)}
+    />
   );
 }
 

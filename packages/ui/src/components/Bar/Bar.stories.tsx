@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Bar, BarField } from '@weasel-js/ui/components/Bar';
 import { useStoryFields } from './BarField.fixtures';
@@ -49,13 +50,11 @@ export const CompactBand: Story = {
   render: (args) => (
     <Bar {...args} label="My Trial" lead="label" size="sm" framed="band">
       <Bar.Group aria-label="History">
-        <Bar.Button onClick={() => {}}>Undo</Bar.Button>
-        <Bar.Button onClick={() => {}} disabled>
-          Redo
-        </Bar.Button>
+        <ActionButton label="Undo" onPress={() => {}} />
+        <ActionButton label="Redo" onPress={() => {}} disabled />
       </Bar.Group>
       <Bar.Group end aria-label="File">
-        <Bar.Button onClick={() => {}}>Save</Bar.Button>
+        <ActionButton label="Save" onPress={() => {}} />
       </Bar.Group>
     </Bar>
   ),

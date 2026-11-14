@@ -1,7 +1,7 @@
 import { useState, type MouseEvent } from 'react';
 import { formatShortcut, isApplePlatform } from '@weasel-js/gestures';
 import type { MenuEntry } from '@weasel-js/menu';
-import { ToolButton } from '../ToolButton';
+import { ActionButton } from '../ActionButton/ActionButton';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
 import { Icon } from '../../icons/Icon';
 import type { ToolRailButton, ToolRailStack } from './items';
@@ -57,7 +57,7 @@ export function RailStack(props: {
   return (
     <>
       {trigger.anchor}
-      <ToolButton
+      <ActionButton
         icon={<Icon name={face.icon} size={iconSize} />}
         label={face.label}
         description={face.description}
@@ -65,9 +65,9 @@ export function RailStack(props: {
         active={current !== undefined}
         disabled={!anyEnabled}
         disabledReason={anyEnabled ? undefined : face.disabledReason}
-        className={[s.item, !anyEnabled && s.disabledBtn].filter(Boolean).join(' ')}
-        menu={{ ref: trigger.button, id: trigger.id, expanded: trigger.open, onPointerDown: trigger.press }}
-        onClick={onClick}
+        className={s.item}
+        popup={{ type: 'menu', ref: trigger.button, id: trigger.id, expanded: trigger.open, onPointerDown: trigger.press }}
+        onPress={onClick}
       />
       {trigger.portal}
     </>

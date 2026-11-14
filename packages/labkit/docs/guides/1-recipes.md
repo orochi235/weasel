@@ -78,17 +78,14 @@ surface to the expanded trial so no other tile paints over it.
 ### A toolbar with undo/redo and a save button
 
 ```tsx
+import { ActionButton } from "@weasel-js/ui/components/ActionButton";
 import { Bar } from "@weasel-js/ui/components/Bar";
 
 <Bar label="My Trial" lead="label" roving size="sm" framed="band">
-  <Bar.Button onClick={onUndo} disabled={!canUndo}>
-    Undo
-  </Bar.Button>
-  <Bar.Button onClick={onRedo} disabled={!canRedo}>
-    Redo
-  </Bar.Button>
+  <ActionButton label="Undo" onPress={onUndo} disabled={!canUndo} />
+  <ActionButton label="Redo" onPress={onRedo} disabled={!canRedo} />
   <Bar.Spacer />
-  <Bar.Button onClick={onSave}>Save</Bar.Button>
+  <ActionButton label="Save" onPress={onSave} />
 </Bar>;
 ```
 

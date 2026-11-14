@@ -6,7 +6,7 @@ import type { IconRef } from '@weasel-js/icons';
 import { Icon } from '../../icons';
 import { icon } from '../../icons.gen';
 import { DragGhost } from '../DragGhost';
-import { ToolButton } from '../ToolButton';
+import { ActionButton } from '../ActionButton/ActionButton';
 import { ToolGroup } from '../ToolGroup';
 import { blankLeaf } from './kindSchemas';
 import { GHOST_WIDTH, NodeGhost, ghostIsPage } from './NodeGhost';
@@ -131,9 +131,9 @@ export function Palette({ items, sections = false, ghost = true, disabled = fals
     <div className={s.palette} ref={root}>
       <ToolGroup aria-label="Drag to add">
         {(items ?? (sections ? SECTION_PALETTE : PALETTE)).map((item) => (
-          // The drag rides on a wrapper: a ToolButton takes a press and nothing else.
+          // The drag rides on a wrapper: an ActionButton takes a press and nothing else.
           <span key={item.id} className={s.paletteTool} onPointerDown={(e) => press(item, e)}>
-            <ToolButton icon={<Icon name={item.icon} />} label={item.label} title={`Drag to add a ${item.label.toLowerCase()}`} disabled={off(item)} onClick={() => {}} />
+            <ActionButton icon={<Icon name={item.icon} />} label={item.label} tooltip={`Drag to add a ${item.label.toLowerCase()}`} disabled={off(item)} onPress={() => {}} />
           </span>
         ))}
       </ToolGroup>

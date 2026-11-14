@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { prefAsBox, prefLeafValue, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
-import type { LeafSurface } from '../Bar/renderBarLeaf';
+import type { ControlForm } from '../ActionButton/controlForm';
 import { MotifFrame } from '../MotifFrame';
 import { PropertyRow } from '../Properties/PropertyRow';
 import { rowWidthOf, type RowWidth } from './compound';
@@ -24,7 +24,7 @@ export function ObjectLeaf({
 }: {
   ctx: LeafContext;
   /** Draws one field, for a row or for a bar. `siblings` is the object it is a field of. */
-  renderField: (ctx: LeafContext, siblings: Record<string, unknown> | undefined, surface?: LeafSurface) => ReactNode;
+  renderField: (ctx: LeafContext, siblings: Record<string, unknown> | undefined, surface?: ControlForm) => ReactNode;
   /** Whether a field's row is a group and not a `<label>`. */
   isGroup: (ctx: LeafContext, siblings: Record<string, unknown> | undefined) => boolean;
   /** The room a field's control needs. Default: by its kind alone. */

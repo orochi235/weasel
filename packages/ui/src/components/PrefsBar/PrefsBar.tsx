@@ -13,7 +13,8 @@ import type { LeafContext, LeafRenderer } from '../SelectionPanel/renderContext'
 import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { Bar, type BarProps } from '../Bar/Bar';
 import { childKeysAt } from '../Bar/barOrder';
-import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
+import { withBarLabel } from '../Bar/renderBarLeaf';
+import { drawsBarForm, type ControlForm } from '../ActionButton/controlForm';
 import { barCells as cellsOf } from './barCells';
 import { barLeafName, barNodeChildren, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode } from './barNodes';
 
@@ -133,7 +134,7 @@ function barCells(leaves: readonly BarLeafNode[], draw: Draw): BarCell[] {
   return cellsOf(leaves, (node) => leafCell(node, 'bar', draw), draw.renderers);
 }
 
-function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, draw: Draw): LeafCell {
+function leafCell({ path: own, leaf, at }: BarLeafNode, surface: ControlForm, draw: Draw): LeafCell {
   const { values, mixed, renderers, onChange, fields } = draw;
   const path = at ?? own;
   const isMixed = mixed?.has(path) === true;
@@ -167,7 +168,7 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, dr
     render: () => {
       const custom = renderers?.[own] ?? renderers?.[leaf.kind];
       if (!custom) return renderBuiltin(ctx, leaf.name, renderers, { selectionKey: own, surface });
-      return surface === 'bar' ? withBarLabel(leaf, custom(ctx)) : custom(ctx);
+      return drawsBarForm(surface) ? withBarLabel(leaf, custom(ctx)) : custom(ctx);
     },
   };
 }

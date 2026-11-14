@@ -276,64 +276,11 @@
   white-space: nowrap;
 }
 
-/* One action's button. Square around an icon; as wide as its words with a label. */
-.action {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  gap: var(--wzl-space-2);
-  width: var(--wzl-field-h, var(--wzl-tb-height));
-  height: var(--wzl-field-h, var(--wzl-tb-height));
-  padding: 0;
-  background: transparent;
-  border: 0;
-  border-radius: var(--wzl-radius-sm);
-  color: var(--wzl-fg);
-  font-family: var(--wzl-font-ui);
-  font-size: var(--wzl-font-size-sm);
-  font-weight: var(--wzl-font-weight-bold);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.actionLabeled {
-  width: auto;
-  padding: 0 var(--wzl-space-3);
-}
-
-.action:hover:not([disabled], [aria-disabled='true']),
-.action[aria-expanded='true'] {
-  background: var(--wzl-border);
-}
-
-.action:active:not([disabled], [aria-disabled='true']) {
-  background: color-mix(in srgb, var(--wzl-border) 70%, transparent);
-}
-
-.action[aria-pressed='true'] {
-  background: var(--wzl-accent);
-  box-shadow: var(--wzl-bevel-pressed, none);
-  color: var(--wzl-fg-on-accent);
-  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
-  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
-}
-
-/* A graded action stays quiet until pointed at, then shows its grade, as a graded ghost Button does. */
-.action[data-grade]:hover:not([disabled], [aria-disabled='true'], [aria-pressed='true']) {
-  color: var(--wzl-grade);
-}
-
-.action[disabled],
-.action[aria-disabled='true'],
+/* A popover's trigger, held. */
 .popTrigger:is([data-disabled], [data-held='disabled']) {
   opacity: 0.5;
   filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
-}
-
-.action > svg {
-  display: block;
 }
 
 /* An `actions` leaf's buttons: one cell, spaced as the bar spaces its cells. */
@@ -348,33 +295,11 @@
   flex-direction: column;
 }
 
-/* An action as a panel's row: its icon and label once, across the row. */
-.actionRow {
-  inline-size: 100%;
-  justify-content: flex-start;
-  border: 1px solid var(--wzl-border);
-  background: var(--wzl-surface);
-}
-
-/* An action in a bar's overflow, as a menu row: the shortcut sits at the row's far end. */
-.actionMenu {
-  inline-size: 100%;
-  justify-content: flex-start;
-  gap: var(--wzl-space-3);
-}
-
-.actionShortcut {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  margin-inline-start: auto;
-  padding-inline-start: var(--wzl-space-4);
-  color: var(--wzl-fg-muted);
-}
-
-.menu > .cell:has(.actionMenu) {
+.menu > .cell:has([data-form='menu']) {
   align-self: stretch;
 }
 
-.menu .actions:has(.actionMenu) {
+.menu .actions:has([data-form='menu']) {
   flex-direction: column;
   align-items: stretch;
 }

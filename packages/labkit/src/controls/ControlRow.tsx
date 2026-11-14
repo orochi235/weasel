@@ -11,10 +11,10 @@ import {
   prefIsCompound,
 } from '@weasel-js/prefs';
 import {
+  ActionLeaf,
+  ActionsLeaf,
   entriesDisabled,
   entryDisabledAt,
-  PrefActionButton,
-  PrefActionRows,
   PrefControl,
   PrefTextList,
   PrefWords,
@@ -97,11 +97,17 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
     return (
       <PropertySpan className="lk-control-actions">
         {leaf.kind === 'actions' ? (
-          <PrefActionRows pref={leaf as PrefActions} path={props.path} disabled={props.disabled} />
-        ) : (
-          <PrefActionButton
-            pref={action as PrefAction}
+          <ActionsLeaf
+            leaf={leaf as PrefActions}
             path={props.path}
+            disabled={props.disabled}
+            form="row"
+          />
+        ) : (
+          <ActionLeaf
+            leaf={action as PrefAction}
+            path={props.path}
+            form="row"
             disabled={props.disabled}
             active={isLeafActive(resolved, props.path, props.config, props.over)}
           />
@@ -266,9 +272,10 @@ function ActionRow({
       disabledReason={leaf.disabledReason}
       error={error}
     >
-      <PrefActionButton
-        pref={boundAction(leaf, config, setConfig) as PrefAction}
+      <ActionLeaf
+        leaf={boundAction(leaf, config, setConfig) as PrefAction}
         path={path}
+        form="row"
         disabled={disabled}
         active={isLeafActive(resolved, path, config, over)}
       />

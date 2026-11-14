@@ -1,6 +1,7 @@
 import type { Track } from '@weasel-js/animator';
 import type { Paint } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
+import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { type Band, BandEditor } from '@weasel-js/ui/components/BandEditor';
 import { Bar } from '@weasel-js/ui/components/Bar';
@@ -42,7 +43,6 @@ import { Switch } from '@weasel-js/ui/components/Switch';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { Timeline } from '@weasel-js/ui/components/Timeline';
 import { createToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
-import { ToolButton } from '@weasel-js/ui/components/ToolButton';
 import { ToolGroup } from '@weasel-js/ui/components/ToolGroup';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
@@ -573,16 +573,16 @@ function ToolChrome() {
   const [paneWidth, setPaneWidth] = useState(160);
   return (
     <Section title="Tool chrome">
-      <Cell label="ToolGroup, ToolButton">
+      <Cell label="ToolGroup, ActionButton">
         <ToolGroup aria-label="Tools">
           {['select', 'rect', 'ellipse'].map((id) => (
-            <ToolButton
+            <ActionButton
               key={id}
               icon={<Dot />}
               label={id}
               shortcut={id.slice(0, 1).toUpperCase()}
               active={tool === id}
-              onClick={() => setTool(id)}
+              onPress={() => setTool(id)}
             />
           ))}
         </ToolGroup>
@@ -736,13 +736,11 @@ function LabChrome() {
       <Cell label="Bar" wide>
         <Bar label="My Trial" lead="label" roving size="sm" framed="band">
           <Bar.Group>
-            <Bar.Button onClick={() => {}}>Undo</Bar.Button>
-            <Bar.Button onClick={() => {}} disabled>
-              Redo
-            </Bar.Button>
+            <ActionButton label="Undo" onPress={() => {}} />
+            <ActionButton label="Redo" onPress={() => {}} disabled />
           </Bar.Group>
           <Bar.Group end>
-            <Bar.Button onClick={() => {}}>Save</Bar.Button>
+            <ActionButton label="Save" onPress={() => {}} />
           </Bar.Group>
         </Bar>
       </Cell>

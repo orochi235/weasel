@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { formatShortcut } from '@weasel-js/gestures';
-import { ToolButton } from '../ToolButton';
+import { ActionButton } from '../ActionButton/ActionButton';
 import { ToolGroup } from '../ToolGroup';
 import { RunScope, type Orientation } from '../Run';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
@@ -51,7 +51,7 @@ export function ToolRail(props: ToolRailProps) {
   const cls = [s.rail, horizontal && s.horizontal, className].filter(Boolean).join(' ');
 
   const button = (item: ToolRailButton) => (
-    <ToolButton
+    <ActionButton
       key={item.id}
       icon={<Icon name={item.icon} size={iconSize} />}
       label={item.label}
@@ -60,8 +60,8 @@ export function ToolRail(props: ToolRailProps) {
       active={item.active}
       disabled={item.disabled}
       disabledReason={item.disabledReason}
-      className={[s.item, item.disabled && s.disabledBtn, item.className].filter(Boolean).join(' ')}
-      onClick={() => item.onPress()}
+      className={[s.item, item.className].filter(Boolean).join(' ')}
+      onPress={() => item.onPress()}
       onPointerDown={item.onPointerDown}
       onDragStart={item.onDragStart}
     />
