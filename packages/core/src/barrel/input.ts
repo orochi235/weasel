@@ -71,6 +71,10 @@ export type {
 export { renderDebugSnapshot, debugSnapshotArgs } from '../canvas/renderDebugSnapshot';
 export type { RenderDebugSnapshotArgs } from '../canvas/renderDebugSnapshot';
 export { rasterToPng } from '../canvas/rasterToPng';
+export {
+  renderTimelineFrames, timelineFrameTimes,
+  type SteppedTimeline, type TimelineFrame, type TimelineFrameProgress, type TimelineFramesOptions,
+} from '../canvas/timelineFrames';
 export { exportFormatRegistry, exportFormats, exportRegions, registerExportFormat } from '../canvas/export/exportFormats';
 export { exportPages, pageRegion } from '../canvas/export/exportPages';
 export { exportRegionPng, type ExportRegionPngOptions, type PngExportOptions } from '../canvas/export/regionPng';

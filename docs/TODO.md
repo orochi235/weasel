@@ -276,13 +276,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] Exporting a timeline as frames or video is hand-written.** A consumer pauses the
-  timeline, `seek`s it per frame and renders each through `createRasterSession().render`, then
-  encodes the rasters itself; nothing in the kit steps a `TimelineHandle` at a frame rate or
-  hands frames to `VideoEncoder` or `MediaRecorder` (2026-11-12, audit round 20). Closes when a
-  helper renders a timeline span at a given rate to a sequence of rasters, with a site demo that
-  saves the frames.
-
 - **(P3) [agent] `<SceneCanvas scene={json}>` cannot load a scene that needs its own composition.**
   `useBakedScene` bakes through `sceneFromJSON(json, {})`, and `<SceneCanvas>` has no prop naming a
   composition, so a serialized scene with nested non-rect poses (a kernel3d `Pose3` scene with groups) is

@@ -358,6 +358,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/TimelineDemo.tsx',
   },
   {
+    id: 'timeline-frames',
+    title: 'Timeline to frames',
+    category: 'Animation',
+    description: "A timeline saved as a sequence of PNGs. `renderTimelineFrames` pauses the timeline, seeks it to each frame's time at 12 frames a second, renders the scene through one raster session, and yields the frames in order; the demo encodes each with `rasterToPng` and downloads it. An `AbortSignal` cancels the run between frames, `onProgress` reports each frame, and the timeline goes back to where it was, playing, when the run ends.",
+    hint: 'Press save frames: the browser may ask once to allow several downloads. Press cancel partway.',
+    load: () => import('./demos/TimelineFramesDemo').then((m) => m.TimelineFramesDemo),
+    path: 'apps/site/demos/TimelineFramesDemo.tsx',
+  },
+  {
     id: 'clip',
     title: 'Clips',
     category: 'Animation',
