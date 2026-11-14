@@ -2,7 +2,7 @@ import { inferredNodeProperties, toHex8, useOngoingAction } from '@weasel-js/cor
 import { AnchorFields } from '@weasel-js/ui/components/AnchorFields';
 import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 import { SwatchStrip } from '@weasel-js/ui/components/SwatchStrip';
-import { solidColorOf } from '@weasel-js/ui/paint-value';
+import { solidColorOf } from '@weasel-js/paint';
 import { type ReactElement, useCallback, useSyncExternalStore } from 'react';
 import type { ActivePaint } from './newShapePaint';
 import { DOCUMENT_UNITS } from './documentUnits';

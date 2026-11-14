@@ -1,12 +1,13 @@
 /**
- * Interpolation mode dispatcher for CurveEditor. The vocabulary of
- * supported algorithms and the unified `sample(...)` entry point that
+ * Interpolating splines through a run of anchors: the vocabulary of
+ * supported algorithms and the one `sampleByInterpolation` entry point that
  * picks the right one. All algorithms produce
  * `(n-1) * samplesPerSegment + 1` points and pass through every
- * anchor — CurveEditor is strictly interpolating, never approximating.
+ * anchor — strictly interpolating, never approximating.
  */
 
-import { sampleCatmullRom, sampleSteps, type Point } from './catmullRom';
+import type { Point } from '../paths/cubicMath';
+import { sampleCatmullRom, sampleSteps } from './catmullRom';
 import { sampleMonotone } from './monotone';
 
 /** Supported interpolation modes. All are interpolating (pass through

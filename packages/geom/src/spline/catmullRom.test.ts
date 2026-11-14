@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { sampleCurve, segmentSampleAt, type Point } from './catmullRom';
+import type { Point } from '../paths/cubicMath';
+import { sampleCurve, segmentSampleAt } from './catmullRom';
 
 describe('segmentSampleAt', () => {
   it('returns p1 at t=0', () => {

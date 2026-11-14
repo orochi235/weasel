@@ -39,6 +39,6 @@ test('with no engine registered, graphemes keep their logical order and controls
   expect(withEngine(chars('ab אבג'), 'ltr', null)).toEqual(chars('ab אבג'));
   expect(withEngine(['a', '\u202b', 'b', '\u202c'], 'ltr', null)).toEqual(['a', 'b']);
   expect(warn).toHaveBeenCalledOnce();
-  expect(String(warn.mock.calls[0]![0])).toMatch(/^weasel CurvedLabel: /);
+  expect(String(warn.mock.calls[0]![0])).toMatch(/^weasel visualGraphemes: /);
   warn.mockRestore();
 });

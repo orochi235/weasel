@@ -105,6 +105,11 @@ export {
   rgbaToHex,
 } from './color';
 export type { HexForm } from './color';
+export { parsesAsColor } from './cssColor';
+export { chromaAt, type ChromaCurve, type ChromaCurvePoint } from './chromaCurve';
+export { colorRamp, rampColor, type ColorRampOptions } from './ramp';
+export { solidColorOf, strokeColorOf, type PaintSlot } from './paintValue';
+export { paintPreviewCss, sampledCssStops } from './paintPreview';
 export {
   isGradientPaint,
   resolveGradientStops,

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { EasingPicker } from './EasingPicker';
-import { EASING_NAMES } from './easingSpec';
+import { EASING_NAMES } from '@weasel-js/geom';
 
 describe('EasingPicker', () => {
   it('shows linear when there is no easing', () => {

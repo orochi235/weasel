@@ -1,17 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import { oklchToHex, chromaAt, type ChromaCurve } from './oklch';
+import { chromaAt, type ChromaCurve } from './chromaCurve';
+import { oklchDegToHex } from './colorSpaces';
 
-describe('oklchToHex', () => {
+describe('oklchDegToHex', () => {
   it('L=1, C=0 is white', () => {
-    expect(oklchToHex(1, 0, 0)).toBe('#ffffff');
+    expect(oklchDegToHex(1, 0, 0)).toBe('#ffffff');
   });
 
   it('L=0, C=0 is black', () => {
-    expect(oklchToHex(0, 0, 0)).toBe('#000000');
+    expect(oklchDegToHex(0, 0, 0)).toBe('#000000');
   });
 
   it('L=0.5, C=0 is a neutral gray', () => {
-    const hex = oklchToHex(0.5, 0, 0);
+    const hex = oklchDegToHex(0.5, 0, 0);
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
@@ -22,16 +23,16 @@ describe('oklchToHex', () => {
   });
 
   it('clamps out-of-gamut values to byte range', () => {
-    const hex = oklchToHex(0.7, 0.5, 30);
+    const hex = oklchDegToHex(0.7, 0.5, 30);
     expect(hex).toMatch(/^#[0-9a-f]{6}$/);
   });
 
   it('matches known in-gamut L/C/H → hex values', () => {
     // Pinned outputs from the pre-dedup implementation; the kit pipeline
     // must stay numerically equivalent for in-gamut inputs.
-    expect(oklchToHex(0.7, 0.15, 30)).toBe('#ed7665');
-    expect(oklchToHex(0.6, 0.1, 150)).toBe('#519160');
-    expect(oklchToHex(0.5, 0.08, 260)).toBe('#486491');
+    expect(oklchDegToHex(0.7, 0.15, 30)).toBe('#ed7665');
+    expect(oklchDegToHex(0.6, 0.1, 150)).toBe('#519160');
+    expect(oklchDegToHex(0.5, 0.08, 260)).toBe('#486491');
   });
 });
 

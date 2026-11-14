@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sampleMonotone } from './monotone';
-import type { Point } from './catmullRom';
+import type { Point } from '../paths/cubicMath';
 
 describe('sampleMonotone', () => {
   it('returns empty for fewer than 2 anchors', () => {

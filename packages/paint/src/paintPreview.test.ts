@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { paintPreviewCss } from './paintPreview';
-import type { Paint } from '@weasel-js/core';
+import type { Paint } from './paint';
 
 const STOPS = [
   { offset: 0, color: '#ff0000ff' },

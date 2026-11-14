@@ -73,6 +73,24 @@ export function timeoutFor(n: number, msPerRun: number): number {
   return Math.max(5_000, runs(n).numRuns * msPerRun);
 }
 
+/** How often each path ran, so a property that exercised nothing fails rather than passes. */
+export function tally(): { count(what: string): void; atLeast(what: string, n: number): void } {
+  const seen = new Map<string, number>();
+  return {
+    count(what) { seen.set(what, (seen.get(what) ?? 0) + 1); },
+    atLeast(what, n) {
+      if ((seen.get(what) ?? 0) < n) throw new Error(`${what} ran ${seen.get(what) ?? 0} times, wanted ${n}: ${JSON.stringify([...seen])}`);
+    },
+  };
+}
+
+/** A finite double, with the ends and small integers drawn often. */
+export const finite = fc.oneof(
+  fc.double({ noNaN: true, noDefaultInfinity: true }),
+  fc.double({ min: -1000, max: 1000, noNaN: true }),
+  fc.integer({ min: -20, max: 20 }),
+);
+
 /** A star-shaped polygon about `(cx, cy)`: simple, convex or not. */
 export function starAt(cx: number, cy: number, radii: readonly number[], turn: number): Path {
   const b = new PathBuilder();

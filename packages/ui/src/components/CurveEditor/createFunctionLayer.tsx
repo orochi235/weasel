@@ -8,7 +8,7 @@
 import type { ReactNode } from 'react';
 import { CurveFill } from './CurveFill';
 import { Diamond } from './Diamond';
-import { sampleByInterpolation, type InterpolationMode } from './interpolation';
+import { sampleByInterpolation, type InterpolationMode } from '@weasel-js/geom';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
 import { arrowMove } from '@weasel-js/ui-input';

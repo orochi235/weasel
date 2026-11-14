@@ -635,13 +635,6 @@ name a package. Breaking changes are in scope.
   `AttributesPane`. The model goes to `@weasel-js/prefs` as `./edit`; the editor and `PrefConditionEditor` go to a
   new `prefs-editor` package, which needs the maintainer to seed on npm. Closes when neither lives in ui.
 
-- **(P3) [agent] Move React-free helpers to paint, geom, and text.** `paintValue.ts` (its own `./paint-value`
-  subpath), `src/paintPreview.ts`, `TokenPanel/color.ts`'s `parsesAsColor`, `src/color/oklch.ts`, and
-  `src/color/ramp.ts` go to `@weasel-js/paint`; `CurveEditor`'s `interpolation`, `catmullRom`, and `monotone` and
-  `Timeline/easingSpec.ts` go to `@weasel-js/geom`; `Along/joiningTypes.gen.ts` and `visualGraphemes.ts` go to
-  `@weasel-js/text`. Whether theme's `lightnessRamp` and ui's `ChromaCurve` should merge is open *(inferred)*.
-  Closes when ui holds none of them.
-
 - **(P3) [agent] Move labkit's and draw's general pieces into ui.** `labkit/src/primitives/Legend.tsx` and
   `FpsMeter.tsx` have no labkit dependencies; `FloatingPanel` needs value/onChange in place of `usePersistedState`;
   `ZoomControl` is built on ui; `Readout` wraps `DetailList`; `apps/draw/src/ui/HistoryList` is a general undo list

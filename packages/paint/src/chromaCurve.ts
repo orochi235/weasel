@@ -1,6 +1,3 @@
-// OKLCH math from Björn Ottosson: https://bottosson.github.io/posts/oklab/
-import { oklchDegToHex } from '@weasel-js/core';
-
 /**
  * A chroma envelope over lightness, as three linear segments: flat at `cBot`
  * below `lRange[0]`, rising to `cPeak` at `midL`, falling to `cTop` at
@@ -17,12 +14,6 @@ export type ChromaCurve = {
 
 /** A single lightness/chroma sample. */
 export type ChromaCurvePoint = { L: number; C: number };
-
-/**
- * Converts an OKLCH color to a gamut-clipped `#rrggbb` string. Hue is in
- * degrees, unlike the kit's OKLab helpers which take radians.
- */
-export const oklchToHex = oklchDegToHex;
 
 /** Evaluates a {@link ChromaCurve} at a lightness, clamping outside its range. */
 export function chromaAt(L: number, curve: ChromaCurve): number {

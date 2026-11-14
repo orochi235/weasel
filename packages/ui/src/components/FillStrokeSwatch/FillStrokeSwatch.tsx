@@ -1,11 +1,10 @@
 import { useState, type ReactElement } from 'react';
 import type { Paint } from '@weasel-js/core';
-import { paintPreviewCss } from '../../paintPreview';
-import { solidColorOf } from '../paintValue';
+import { paintPreviewCss, solidColorOf } from '@weasel-js/paint';
 import { Button } from '../Button';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import { usePickerClose } from '../ColorField/usePickerClose';
-import type { PaintSlot } from '../paintValue';
+import type { PaintSlot } from '@weasel-js/paint';
 import s from './FillStrokeSwatch.module.css';
 
 /** Props for {@link FillStrokeSwatch}. */

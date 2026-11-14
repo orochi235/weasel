@@ -39,6 +39,10 @@ export const hexColor: fc.Arbitrary<{ text: string; bytes: [number, number, numb
     return { text: upper ? text.toUpperCase() : text, bytes: [r, g, b, a ?? 255] };
   });
 
+/** A lowercase `#rrggbb`. */
+export const hex6 = fc.tuple(byte, byte, byte).map(([r, g, b]) =>
+  `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`);
+
 /** A hue in degrees, wide of one turn. */
 export const hueDeg = fc.double({ min: -1440, max: 1440, noNaN: true });
 

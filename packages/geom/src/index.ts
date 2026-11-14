@@ -180,7 +180,12 @@ export {
   EASINGS, SPRING_PRESETS,
   type EasingFn, type EasingName, type SpringPreset, type SpringPresetName,
 } from './easings';
-export { cubicBezierEasing, resolveEasing, type BezierEasing, type EasingSpec } from './easingSpec';
+export {
+  cubicBezierEasing, resolveEasing, easingBezier, easingLabel, sampleEasing, EASING_NAMES, type BezierEasing, type EasingSpec,
+} from './easingSpec';
+export { sampleCatmullRom } from './spline/catmullRom';
+export { sampleMonotone } from './spline/monotone';
+export { sampleByInterpolation, type InterpolationMode } from './spline/interpolation';
 export { meanScale } from './meanScale';
 export { pxExtent, pxExtentInFrame, pxReach, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius, type Scale2 } from './pxExtent';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from './poseRotation';

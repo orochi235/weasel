@@ -54,8 +54,3 @@ export {
   type CreateSetCurveOpArgs,
 } from './setCurveOp';
 
-export {
-  sampleByInterpolation,
-  type InterpolationMode,
-} from './interpolation';
-export type { Point as CurveSamplePoint } from './catmullRom';

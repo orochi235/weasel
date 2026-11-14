@@ -7,7 +7,8 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { finite, hex6, byte, runs, tally, timeoutFor } from '../../pbt.fixture';
 import { bezierPoints, inferTokenType, shownAlike, splitUnit } from './tokenTypes';
-import { parsesAsColor, toHex } from './color';
+import { parsesAsColor } from '@weasel-js/paint';
+import { toHex } from './color';
 
 const RUNS = 400;
 const DIMENSIONS = ['px', 'rem', 'em', '%', 'ch', 'vh', 'pt', 'mm'];

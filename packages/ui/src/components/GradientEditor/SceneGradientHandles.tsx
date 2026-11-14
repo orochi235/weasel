@@ -19,7 +19,7 @@ import {
 import { isMeshGradientPaint, type MeshGradientPaint } from '@weasel-js/core/mesh';
 import { MeshHandles } from '../MeshEditor/MeshHandles';
 import { GradientHandles } from './GradientHandles';
-import type { PaintSlot } from '../paintValue';
+import type { PaintSlot } from '@weasel-js/paint';
 
 /** What `SceneGradientHandles` reads off a node. Every field is optional, so
  *  any richer app data shape satisfies it. */

@@ -128,6 +128,18 @@ ease(0.5); // 0.875
 const custom = resolveEasing({ bezier: [0.4, 0, 0.2, 1] });
 ```
 
+For an editor that shows a spec, `easingLabel` names it, `easingBezier` gives
+its control points or `null`, `sampleEasing` samples it for drawing, and
+`EASING_NAMES` lists the built-ins.
+
+## Interpolating splines
+
+`sampleByInterpolation(anchors, samplesPerSegment, mode)` samples a curve that
+passes through every anchor, by an `InterpolationMode`: `'linear'`, the three
+Catmull-Rom parameterizations, or `'monotone'`, which never overshoots between
+anchors. `sampleCatmullRom` and `sampleMonotone` are the samplers it picks
+from.
+
 ## Subpath entries
 
 | Entry | What it adds | Optional peer |

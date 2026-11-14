@@ -4,10 +4,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { hexToOklchDeg } from '@weasel-js/core';
+import { hexToOklchDeg } from './colorSpaces';
 import { colorRamp, rampColor, type ColorRampOptions } from './ramp';
-import { chromaAt, type ChromaCurve } from './oklch';
-import { hex6, runs, tally, timeoutFor } from '../pbt.fixture';
+import { chromaAt, type ChromaCurve } from './chromaCurve';
+import { hex6, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 200;
 const HEX = /^#[0-9a-f]{6}$/;
