@@ -22,8 +22,8 @@
 
 /* A bar's cell stands at the control height, as a `Button` beside the bar does. */
 .cell {
-  width: var(--wzl-control-h, var(--wzl-tb-height));
-  height: var(--wzl-control-h, var(--wzl-tb-height));
+  width: var(--wzl-control-h);
+  height: var(--wzl-control-h);
 }
 
 .labeled {
