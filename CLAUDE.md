@@ -195,8 +195,11 @@ stays clean. A one-commit side request can still go straight to `main`, committe
 only its own test files; nothing checked the combination, and a fleet run of `main` failed on
 another session's uncommitted stylesheet.
 
-**A batch's run is the only suite-sized run (2026-11-03).** Nothing else gets one: not a pull, not a
-branch, not `main` after it fast-forwards. Here this replaces the global rule of a full run after every
+**A batch's run is the only suite-sized run (2026-11-03).** Nothing else gets one: not a pull, not
+`main` after it fast-forwards, and not a branch unless the fleet has been idle for the last three
+minutes (2026-11-13): `onto jobs --since 3m` lists no running job and none started in that window.
+An idle fleet would otherwise sit unused, so a ready branch takes its own `test:fleet` then, and still
+goes through the batch run to merge. Here this replaces the global rule of a full run after every
 merge to `main`. A pull, merging `origin/main` into `main`, goes straight in with no batch: what origin
 adds is the release bot's version bump or work CI already tested. Resolve its conflicts on `main`
 itself; the next batch's run covers the result.
@@ -214,7 +217,7 @@ one `batch/<date>` branch in a worktree, and runs `test:fleet` (which includes t
 from the diff against the merge-base. Green, `main` fast-forwards to that tip, and that run is
 `main`'s post-merge run, since `main` is then the commit it tested. Red, the failing file says whose it
 is: fix that branch or drop it, and rerun the batch. Hold a ready branch for the next batch rather
-than running one for it alone; a batch touching a `triggers` path, dependencies or build tooling gets a
+than running one for it alone, unless the fleet is idle as above; a batch touching a `triggers` path, dependencies or build tooling gets a
 full run, which is one more reason to fold such a change in rather than run it separately. The
 `gate` project runs typecheck, lint and every check at once, so it has no npm script and runs only
 inside a fleet run. Perf measurements
