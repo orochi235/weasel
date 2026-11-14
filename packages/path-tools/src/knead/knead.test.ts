@@ -3,7 +3,7 @@ import { pathFromD, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { asNodeId, type NodeId, type Op } from '@weasel-js/core';
 import { brushRing } from '@weasel-js/cursor';
-import { DEFAULT_SMUDGE_RADIUS_PX, smudgeBrushAction } from './smudgeBrush';
+import { DEFAULT_KNEAD_RADIUS_PX, kneadAction } from './knead';
 
 /** One node storing its polygon as the pose, selected, at a view scale of `zoom`. */
 function setup(d: string, zoom = 1) {
@@ -18,9 +18,9 @@ function setup(d: string, zoom = 1) {
 
 const at = (deps: never, x: number, y: number, params?: Record<string, unknown>) =>
   ({ deps, world: { x, y }, ...(params ? { params } : {}) }) as unknown as InvocationCtx;
-const invoker = smudgeBrushAction.invoker as OngoingInvoker;
+const invoker = kneadAction.invoker as OngoingInvoker;
 
-describe('smudgeBrushAction', () => {
+describe('kneadAction', () => {
   it('pushes the edge under the brush along the stroke, as one undo step', () => {
     const { deps, batches } = setup('M0 0 H100 V100 H0 Z');
     const handle = invoker.start(at(deps, 50, 0), { params: { radiusPx: 20, strength: 1 } });
@@ -29,7 +29,7 @@ describe('smudgeBrushAction', () => {
     expect(handle.previewIds!()).toEqual(['a']);
     handle.onEnd!(at(deps, 50, -10), 'commit');
     expect(batches).toHaveLength(1);
-    expect(batches[0].label).toBe('Smudge brush');
+    expect(batches[0].label).toBe('Knead');
     const pushed = pathToAnchors((batches[0].ops[0].args as { to: PolygonPath }).to).anchors[0];
     expect(pushed.length).toBeGreaterThan(4);
     expect(Math.min(...pushed.map((p) => p.y))).toBeLessThan(-5);
@@ -53,9 +53,9 @@ describe('smudgeBrushAction', () => {
   });
 
   it('shows a ring the size of the brush, before the press and through the stroke', () => {
-    const cursor = smudgeBrushAction.cursor as (p?: Record<string, unknown>) => unknown;
+    const cursor = kneadAction.cursor as (p?: Record<string, unknown>) => unknown;
     expect(cursor({ radiusPx: 25 })).toEqual(brushRing(25));
-    expect(cursor(undefined)).toEqual(brushRing(DEFAULT_SMUDGE_RADIUS_PX));
+    expect(cursor(undefined)).toEqual(brushRing(DEFAULT_KNEAD_RADIUS_PX));
     const { deps } = setup('M0 0 H100 V100 H0 Z');
     let radiusPx = 10;
     const handle = invoker.start(at(deps, 50, 0), { params: () => ({ radiusPx }) });
@@ -76,7 +76,7 @@ describe('smudgeBrushAction', () => {
       isHidden: (id: string) => id === 'hidden',
     };
     const deps = { scene, selection: { get: () => [], set: vi.fn() }, view: { get: () => ({ scale: { x: 1, y: 1 } }) }, applyOps: vi.fn() } as never;
-    expect(smudgeBrushAction.enabled!(deps)).toBe(true);
+    expect(kneadAction.enabled!(deps)).toBe(true);
     const handle = invoker.start(at(deps, 50, 0), { params: { radiusPx: 20, strength: 1 } });
     handle.onMove!(at(deps, 50, -10));
     expect(handle.previewIds!()).toEqual(['free']);

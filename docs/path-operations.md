@@ -56,7 +56,7 @@ Tag: `path-brush`
 | Operation | Action id | What the brush does | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Sand | `sand` | Removes anchors it passes over, refitting the curve | Drag with the brush | main | path-tools |
-| Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (U) | main | path-tools |
+| Knead | `knead` | Pushes the outline along with the pointer | Drag with the Knead tool (U) | main | path-tools |
 | Puppet warp | `puppet.drag`, `puppet.addPin`, `puppet.removePin` | Pins the path and bends it when a pin is dragged | Puppet warp tool (B): click pins, Alt+click a pin takes it out, drag a pin bends | main | path-tools |
 
 ## Handles on the box around a selection
@@ -117,6 +117,6 @@ explicit:
   runs that same drag and links the anchor where it lands.
 - **A click on a stroke** trims or extends depending on the tool held; Insert and Cut add a
   modifier to the same click.
-- **A brush drag** simplifies or smudges depending on the tool.
+- **A brush drag** simplifies or kneads depending on the tool.
 - **Mod+J** joins, Alt+J bridges, and Mod+Alt+Shift+J averages, in both the path and anchor
   forms.

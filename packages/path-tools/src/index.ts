@@ -35,7 +35,7 @@ export {
   segmentTypePreset,
   resamplePreset,
   sandPreset,
-  smudgePreset,
+  kneadPreset,
   trimPreset,
   warpPreset,
 } from './presets';
@@ -59,8 +59,8 @@ export {
   showOverlayAction,
 } from './overlays/showOverlay';
 export {
-  DEFAULT_SMUDGE_RADIUS_PX, DEFAULT_SMUDGE_STRENGTH, SMUDGE_BRUSH_PARAMS, smudgeBrushAction, type SmudgeBrushParams,
-} from './smudge/smudgeBrush';
+  DEFAULT_KNEAD_RADIUS_PX, DEFAULT_KNEAD_STRENGTH, KNEAD_PARAMS, kneadAction, type KneadParams,
+} from './knead/knead';
 export { harmonizeAnchorsAction } from './harmonize/harmonize';
 export { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 export { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
@@ -99,7 +99,7 @@ export {
 // ─── Tools ─────────────────────────────────────────────────────────────────
 export { useTrimTool, type UseTrimToolOptions } from './trim/useTrimTool';
 export { useExtendTool, type UseExtendToolOptions } from './extend/useExtendTool';
-export { SMUDGE_BRUSH_TOOL_OPTIONS, useSmudgeBrushTool, type UseSmudgeBrushToolOptions } from './smudge/useSmudgeBrushTool';
+export { KNEAD_TOOL_OPTIONS, useKneadTool, type UseKneadToolOptions } from './knead/useKneadTool';
 export type { StrokeClickToolOptions } from './shared/strokeClickTool';
 export {
   useDistortTool, useClothWarpTool, usePuppetTool,

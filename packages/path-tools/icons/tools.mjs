@@ -17,7 +17,7 @@ const dot = (c, r, rad = 1.875) => `<circle cx="${px(c)}" cy="${px(r)}" r="${rad
 // A handle three pixels square on pixel (c, r).
 const handle = (c, r) => `<rect x="${px(c) - 1.875}" y="${px(r) - 1.875}" width="3.75" height="3.75" fill="currentColor" stroke="none"/>`;
 export const TOOLS = {
-  smudgeBrush: `
+  knead: `
     <path d="M2 15.5 H5 C9 15.5 9.5 7 14 7"/>
     <circle cx="14" cy="7" r="3.75" stroke-width="1"/>
     <path d="M14 7 C15.5 9.5 16.5 15.5 18 15.5"/>`,

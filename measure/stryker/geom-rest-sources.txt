@@ -59,7 +59,7 @@ packages/geom/src/paths/anchorSelection.ts
 packages/geom/src/paths/bendAlongPath.ts
 packages/geom/src/3d/vec3.ts
 packages/geom/src/paths/arcRun.ts
-packages/geom/src/paths/smudgePath.ts
+packages/geom/src/paths/kneadPath.ts
 packages/geom/src/paths/repeatAlongPath.ts
 packages/geom/src/constraints/check.ts
 packages/geom/src/paths/pathInWorld.ts

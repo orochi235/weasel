@@ -202,7 +202,7 @@ export {
   anchorSymmetries, anchorSymmetry, moveHandleSymmetric, translateAnchorsSymmetric, type AnchorSymmetry,
 } from './paths/anchorSymmetry';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
-export { smudgePath, type SmudgePathOptions } from './paths/smudgePath';
+export { kneadPath, type KneadPathOptions } from './paths/kneadPath';
 export { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
 export {
   measureAnchorPath, softFalloff, softSelectionBand, softSelectionWeights,

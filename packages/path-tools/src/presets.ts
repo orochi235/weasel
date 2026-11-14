@@ -38,7 +38,7 @@ import {
 import { releasePathEffectAction, setEffectPathAction } from './pathEffects/retarget';
 import { releaseBlendSpineAction, setBlendSpineAction } from './pathEffects/spine';
 import { sandAction } from './sand/sand';
-import { smudgeBrushAction } from './smudge/smudgeBrush';
+import { kneadAction } from './knead/knead';
 import { spiroPreset } from './spiro/spiroPreset';
 import { trimPathAction } from './trim/trimSegment';
 import { showBalanceAction, showCombAction, showFilletsAction, showDirectionAction } from './overlays/showOverlay';
@@ -96,8 +96,8 @@ export const lengthenPreset: FeaturePreset = {
   actions: [lengthenPathAction],
 };
 
-/** `smudgeBrush`, which `useSmudgeBrushTool` binds. */
-export const smudgePreset: FeaturePreset = { id: 'smudge', actions: [smudgeBrushAction] };
+/** `knead`, which `useKneadTool` binds. */
+export const kneadPreset: FeaturePreset = { id: 'knead', actions: [kneadAction] };
 
 /** Harmonize curvature. */
 export const harmonizePreset: FeaturePreset = { id: 'harmonize', actions: [harmonizeAnchorsAction] };
@@ -242,7 +242,7 @@ export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
     sandPreset, handleLocksPreset, bridgePreset, spiroPreset, trimPreset, extendPreset, lengthenPreset,
-    smudgePreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
+    kneadPreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     filletPreset, pathEffectsPreset, warpPreset,
   ],

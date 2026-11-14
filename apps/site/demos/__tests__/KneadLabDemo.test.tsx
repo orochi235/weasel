@@ -4,7 +4,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/core';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { SmudgeBrushLabDemo } from '../SmudgeBrushLabDemo';
+import { KneadLabDemo } from '../KneadLabDemo';
 import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
@@ -43,9 +43,9 @@ function drag(canvas: Element, points: number[][]) {
   });
 }
 
-describe('SmudgeBrushLabDemo', () => {
-  it('smudges the top edge of the selected square up in one undo step', async () => {
-    const { container } = await renderSettled(<StrictMode><SmudgeBrushLabDemo /></StrictMode>, { wrapper: withIcons });
+describe('KneadLabDemo', () => {
+  it('kneads the top edge of the selected square up in one undo step', async () => {
+    const { container } = await renderSettled(<StrictMode><KneadLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     expect(square().pose).toMatchObject({ y: 80 });
@@ -61,8 +61,8 @@ describe('SmudgeBrushLabDemo', () => {
     expect(pathToAnchors((square().data as { path: PolygonPath }).path).anchors[0]).toHaveLength(4);
   });
 
-  it("smudges with the control panel's radius", async () => {
-    const { container } = await renderSettled(<StrictMode><SmudgeBrushLabDemo /></StrictMode>, { wrapper: withIcons });
+  it("kneads with the control panel's radius", async () => {
+    const { container } = await renderSettled(<StrictMode><KneadLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = container.querySelector('.lk-trial-scene canvas');
     if (!canvas) throw new Error('no scene canvas in the trial');
     act(() => {

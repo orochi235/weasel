@@ -1,5 +1,5 @@
 /**
- * The Smudge brush over text, against a real scene and a real font: the
+ * Knead over text, against a real scene and a real font: the
  * conversion, its slot, and the one undo entry are scene surgery a stub would
  * let slide.
  */
@@ -7,10 +7,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { applyCreateOutlines, asNodeId } from '@weasel-js/core';
 import { loadTestFont, outlineScene as setup, TEXT, type Data } from '../shared/testing/outlineScene';
-import { smudgeBrushAction } from './smudgeBrush';
+import { kneadAction } from './knead';
 
 const at = (deps: never, x: number, y: number) => ({ deps, world: { x, y } }) as unknown as InvocationCtx;
-const invoker = smudgeBrushAction.invoker as OngoingInvoker;
+const invoker = kneadAction.invoker as OngoingInvoker;
 const PARAMS = { params: { radiusPx: 30, strength: 1 } };
 
 /** A stroke from (x, y0) to (x, y1) in a few dabs, ended with `reason`. */
@@ -23,14 +23,14 @@ function stroke(deps: never, x: number, y0: number, y1: number, reason: 'commit'
 
 beforeEach(loadTestFont);
 
-describe('smudgeBrushAction over text', () => {
-  it('converts text the brush reaches to outlines and smudges them, as one undo entry', () => {
+describe('kneadAction over text', () => {
+  it('converts text the brush reaches to outlines and kneads them, as one undo entry', () => {
     const { scene, add, deps } = setup();
     add('t', TEXT());
     scene.history.clear();
     stroke(deps, 30, 60, 20);
     expect(scene.get(asNodeId('t'))).toBeUndefined();
-    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['Smudge brush']);
+    expect(scene.history.entries().undo.map((e) => e.label)).toEqual(['Knead']);
     const plain = setup();
     plain.add('t', TEXT());
     applyCreateOutlines(plain.adapter, [asNodeId('t')]);
@@ -60,7 +60,7 @@ describe('smudgeBrushAction over text', () => {
     expect(scene.get(asNodeId('b'))).toBeUndefined();
   });
 
-  it('keeps the outlines selected, and a selected group is smudged as its leaves', () => {
+  it('keeps the outlines selected, and a selected group is kneaded as its leaves', () => {
     const { scene, add, deps } = setup();
     // Two paints: two paths, in a group.
     add('t', { ...TEXT(), runs: [{ text: 'H' }, { text: 'i', fill: { paint: { kind: 'solid', color: '#00c' } } }] } as Data);
@@ -77,7 +77,7 @@ describe('smudgeBrushAction over text', () => {
     const { scene, add, deps } = setup();
     add('locked', TEXT(), { locked: true });
     add('hidden', TEXT(), { hidden: true });
-    expect(smudgeBrushAction.enabled!(deps)).not.toBe(true);
+    expect(kneadAction.enabled!(deps)).not.toBe(true);
     stroke(deps, 30, 60, 20);
     expect(scene.get(asNodeId('locked'))?.data.text).toBe('Hi');
     expect(scene.get(asNodeId('hidden'))?.data.text).toBe('Hi');
@@ -109,13 +109,13 @@ describe('smudgeBrushAction over text', () => {
   it('skips text in a host with no outlines adapter', () => {
     const { scene, add, deps } = setup({ outlines: false });
     add('t', TEXT());
-    expect(smudgeBrushAction.enabled!(deps)).not.toBe(true);
+    expect(kneadAction.enabled!(deps)).not.toBe(true);
     stroke(deps, 30, 60, 20);
     expect(scene.get(asNodeId('t'))?.data.text).toBe('Hi');
   });
 });
 
-describe('smudgeBrushAction over text in a group', () => {
+describe('kneadAction over text in a group', () => {
   it('reaches the text where the group draws it', () => {
     const { scene, add, deps } = setup();
     scene.add({ id: asNodeId('g'), kind: 'group', layer: 'default', pose: { x: 500, y: 500, width: 200, height: 120 }, data: {} });

@@ -1,5 +1,5 @@
 /**
- * In draw, a Smudge brush stroke and a Distort drag leave the last-operation panel up, and a change there replays
+ * In draw, a Knead stroke and a Distort drag leave the last-operation panel up, and a change there replays
  * the gesture in place. The brush's Size in the panel and in the options row are one setting: a change in the panel
  * is the value the row shows and the next stroke uses.
  */
@@ -69,18 +69,18 @@ function drag(canvas: HTMLCanvasElement, from: [number, number], to: [number, nu
 const pathOf = (scene: ReturnType<typeof setup>['scene']) => JSON.stringify(scene.get(A)!.data.path);
 
 describe('the last-operation panel in draw', () => {
-  it("replays a Smudge stroke at a new Size, and makes that Size the options row's", () => {
+  it("replays a Knead stroke at a new Size, and makes that Size the options row's", () => {
     const { scene, canvas, registry, use } = setup();
-    use('smudgeBrush');
+    use('knead');
     const depth = scene.history.undoDepth();
     drag(canvas, [120, 50], [120, 30]);
     const first = pathOf(scene);
-    expect(screen.getByRole('region', { name: 'Smudge brush' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Knead' })).toBeInTheDocument();
     act(() => { fireEvent.change(screen.getByRole('slider', { name: /Size/ }), { target: { value: '90' } }); });
     expect(pathOf(scene)).not.toBe(first);
     expect(scene.history.undoDepth()).toBe(depth + 1);
-    expect(drawToolOptionValues().get('smudgeBrush').radiusPx).toBe(90);
-    expect(registry().paramsOf('smudgeBrush')).toMatchObject({ radiusPx: 90 });
+    expect(drawToolOptionValues().get('knead').radiusPx).toBe(90);
+    expect(registry().paramsOf('knead')).toMatchObject({ radiusPx: 90 });
   });
 
   it('replays a Distort drag as Perspective, as one undo entry', () => {

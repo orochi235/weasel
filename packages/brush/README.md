@@ -7,8 +7,8 @@ across its brushes.
 ```ts
 import { shareBrushSize } from '@weasel-js/brush';
 
-const share = shareBrushSize(SMUDGE_BRUSH_TOOL_OPTIONS); // { radiusPx: 'brushSizePx' }
-const smudge = useSmudgeBrushTool({ share });
+const share = shareBrushSize(KNEAD_TOOL_OPTIONS); // { radiusPx: 'brushSizePx' }
+const knead = useKneadTool({ share });
 const sand = useSandTool({ share: shareBrushSize(SAND_TOOL_OPTIONS) });
 ```
 

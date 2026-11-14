@@ -2,7 +2,7 @@
   "namespace": "path-tools",
   "owner": "@weasel-js/path-tools",
   "icons": {
-    "smudgeBrush": {
+    "knead": {
       "body": "<path d=\"M2 15.5 H5 C9 15.5 9.5 7 14 7\"/><circle cx=\"14\" cy=\"7\" r=\"3.75\" stroke-width=\"1\"/><path d=\"M14 7 C15.5 9.5 16.5 15.5 18 15.5\"/>",
       "group": "Tools",
       "tags": []

@@ -167,16 +167,16 @@ Owner tags, after the priority (2026-10-26):
   not been proofed large.
   Closes when the maintainer has driven Lengthen hands-on, the defaults and keys he picks are
   committed, and `path-tools:lengthen` has been proofed large.
-- **(P2) [maintainer] Tune the Smudge brush hands-on, with the maintainer driving.** First-draft brush radius
-  (40 screen px) and strength (0.6) (`DEFAULT_SMUDGE_RADIUS_PX`, `DEFAULT_SMUDGE_STRENGTH` in
-  `packages/path-tools/src/smudge/smudgeBrush.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
-  third of the radius (`packages/geom/src/paths/smudgePath.ts`), the size and strength steps (`[` `]` and
-  Shift+wheel ×1.25, `Shift+[` `Shift+]` ±0.1) and their bounds (`SMUDGE_BRUSH_PARAMS` in `smudgeBrush.ts`; draw's options row draws
+- **(P2) [maintainer] Tune Knead hands-on, with the maintainer driving.** First-draft brush radius
+  (40 screen px) and strength (0.6) (`DEFAULT_KNEAD_RADIUS_PX`, `DEFAULT_KNEAD_STRENGTH` in
+  `packages/path-tools/src/knead/knead.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a
+  third of the radius (`packages/geom/src/paths/kneadPath.ts`), the size and strength steps (`[` `]` and
+  Shift+wheel ×1.25, `Shift+[` `Shift+]` ±0.1) and their bounds (`KNEAD_PARAMS` in `knead.ts`; draw's options row draws
   them, and the last-operation panel after a stroke, which replays it and writes back to the row), that it pushes
   every unlocked, shown path and text node while nothing is selected (only the selection otherwise, a ruling of 2026-10-31), that text converts to outlines the moment the brush's disc meets
-  its drawn box, the conversion and the smudge landing as one undo entry (ruled 2026-10-31;
+  its drawn box, the conversion and the knead landing as one undo entry (ruled 2026-10-31;
   `packages/path-tools/src/shared/outlineSession.ts`). Its key is U, and Extend moved to Shift+U (ruled 2026-11-12).
-  Closes when the maintainer has driven the Smudge brush hands-on and the defaults he picks are committed.
+  Closes when the maintainer has driven Knead hands-on and the defaults he picks are committed.
 - **(P2) [maintainer] Tune path constraints hands-on, with the maintainer driving.** First-draft behavior and
   keys: `constrainAnchors` and `unconstrainAnchors` have no default keys (the lab binds C and
   Shift+C through `tune`); WeaselDraw binds Alt+Shift+H, V, L, P, C and F to horizontal, vertical,

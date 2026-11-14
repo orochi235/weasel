@@ -1653,7 +1653,7 @@ Key rulings and the per-view camera TODO landed in the same batch.
 - Next from a view never shown a page goes to the first page; `add` there puts the page after the last.
 - Cut at Crossings, Join and Release Compound Path carry per-anchor widths and colors to the pieces (blended at a
   cut, reversed with a reversed path); any command leaving them out of step with the anchors drops them.
-- Warp and smudge on a group skip its locked and hidden members, as trim and extend do.
+- Warp and knead on a group skip its locked and hidden members, as trim and extend do.
 - Far from the origin, where a step index passes 2^53, the ruler, grid lines and tiled layers draw nothing;
   `snapPoint` still offers points. A repeated Mermaid architecture name is an error; a repeated mind-map id is
   renamed.
@@ -1948,7 +1948,7 @@ Calls the lanes made without a ruling:
   no `navigator` where `isApplePlatform` answers false (documented as the docs convention), and lookups such as
   `pickMenu` returning `undefined` where others return `null` (routing has no rule, and the `find`-shaped ones
   follow `Array.find`).
-- Sticky keeps S, the smudge brush moves to U, and Extend moves from U to Shift+U, on the maintainer's call
+- Sticky keeps S, Knead moves to U, and Extend moves from U to Shift+U, on the maintainer's call
   (2026-11-12). The star tool has no default key at all.
 - Open: two tool sets are not named for their tools' palette group, which `BUILTIN_TOOL_GROUPS` says each set is:
   `RESHAPE_TOOLS` (`reshape`) holds tools in the `path` group, and `RIG_TOOLS` (`rig`) tools in `shape`. Renaming
@@ -2082,7 +2082,7 @@ Calls the lanes made without a ruling:
   `BUILTIN_TOOL_GROUPS` entry; they sit in the `shape` and `view` palette groups when a host mounts them.
 - No two tool keys collide, in core or across path-tools and rig, and no action binds a bare letter. The star and
   image tools have no key; the bare letters no tool takes are C, D, O, Q, X and Z (B is puppet, F distort, J bone,
-  U smudge, W weight and Y trim).
+  U knead, W weight and Y trim).
 - Open: the sticky tool's cursor is the rectangle's (`cursorFor('crosshair', { mark: 'rect' })`), so the two are
   not told apart from the pointer, which the shape cursors were drawn to fix. A `sticky` mark is a new glyph.
 
@@ -2126,7 +2126,7 @@ Calls the lanes made without a ruling:
   release/expand, the diagram router choices, the path-edit `show.*` toggles, `present.go`, and `measure.moveBy` /
   `rotateBy`. The Pathfinder operations are reached by key through the Alt+P keymap's holds, and `clipboard.paste`
   by the DOM paste event (2026-11-13).
-- Open: no tool key collides in the kit or in draw. Settled 2026-11-12: Sticky S, Smudge U, Extend Shift+U. draw
+- Open: no tool key collides in the kit or in draw. Settled 2026-11-12: Sticky S, Knead U, Extend Shift+U. draw
   binds X to swap fill and stroke and Shift+X to swap focus, D to reset the colors, and / to toggle the focused
   paint to none; crop mode holds C. Free in draw, unmodified: J, Q, W, Z (rig's Bone J and Weight W are not in draw,
   so kit-wide only Q and Z are free). Free in draw with Shift: A, B, D, E, G, I, J, K, L, N, O, Q, R, S, T, Y, Z.
@@ -2237,7 +2237,7 @@ Calls the lanes made without a ruling:
   `lookupShortcut` and `ToolPresentation.shortcut`, the two ways to restate a key by hand, are gone (2026-11-13).
 - A labkit chrome item's `shortcut` is a `MenuShortcut`, formatted by `formatShortcut` in every region; a header item
   that binds `keys` shows its command's live key, and a `TrialTool` the trial's scene holds shows the scene's key.
-  The site's lab demos no longer restate their tools' keys: several had drifted (the extend lab said U, the smudge
+  The site's lab demos no longer restate their tools' keys: several had drifted (the extend lab said U, the knead
   lab S) (2026-11-13).
 - Every tool option's color default is in `toolOptionPaint`'s spelling, draw's host-given shared fill and stroke
   included; core's `shapeToolOptions.test.tsx` holds the built-ins and draw's `prefs.test.ts` holds draw's whole tools

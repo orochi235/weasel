@@ -14,7 +14,7 @@ import {
 } from './warpActions';
 import { buildDepsFromRequires, type Action } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
-import { smudgeBrushAction } from '../smudge/smudgeBrush';
+import { kneadAction } from '../knead/knead';
 import { freshWarpBox } from './warpTargets';
 import { selectedWarpLeaves } from './warpSelection';
 import { useDistortTool } from './useWarpTool';
@@ -162,7 +162,7 @@ describe('the actions that read the selection through groups and text', () => {
   it('declare every dep they read', () => {
     const { deps } = outlineScene();
     const registry = { get: (name: string) => (deps as Record<string, unknown>)[name] } as unknown as DepRegistry;
-    const actions: Action[] = [createAddPinAction(), createRemovePinAction(), expandWarpAction, configureWarpAction, smudgeBrushAction];
+    const actions: Action[] = [createAddPinAction(), createRemovePinAction(), expandWarpAction, configureWarpAction, kneadAction];
     for (const action of actions) {
       const declared = buildDepsFromRequires(action, registry);
       expect(() => action.enabled?.(declared)).not.toThrow();

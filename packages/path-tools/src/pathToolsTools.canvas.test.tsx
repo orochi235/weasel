@@ -108,9 +108,9 @@ describe('path-tools tools on a canvas', () => {
     expect(t.d('a')).not.toEqual(pathFromD('M 0 100 L 100 100'));
   });
 
-  it('smudge a selected outline with a drag, as one undo entry', () => {
+  it('knead a selected outline with a drag, as one undo entry', () => {
     const t = mount({ a: 'M 0 100 L 100 100 L 200 100 L 300 100' }, ['a']);
-    t.use('smudgeBrush');
+    t.use('knead');
     const before = t.scene.historyIndex();
     t.drag([[150, 100], [150, 120], [150, 140]]);
     expect(t.scene.historyIndex()).toBe(before + 1);

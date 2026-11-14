@@ -1,5 +1,5 @@
 /**
- * `smudgePath` — one dab of a smudge brush: the outline under a round brush
+ * `kneadPath` — one dab of the Knead brush: the outline under a round brush
  * moved along the brush's motion, most at its center and not at all at its rim.
  */
 import type { PolygonPath } from '../path';
@@ -7,8 +7,8 @@ import { editAnchorSet, insertAnchorOnSegment, translateAnchorBy, type AnchorSet
 import { segmentEnds, type PenAnchor } from './anchors';
 import { cubicPointAt, type Point } from './cubicMath';
 
-/** Options for {@link smudgePath}. */
-export interface SmudgePathOptions {
+/** Options for {@link kneadPath}. */
+export interface KneadPathOptions {
   /** The brush's center before this dab's motion. */
   center: Point;
   /** How far the brush moved. */
@@ -38,7 +38,7 @@ const MAX_ADDED = 512;
  * is not, so a long straight edge bends where the brush meets it. Returns `path`
  * itself when nothing is under the brush.
  */
-export function smudgePath(path: PolygonPath, opts: SmudgePathOptions): PolygonPath {
+export function kneadPath(path: PolygonPath, opts: KneadPathOptions): PolygonPath {
   const { center, delta, radius } = opts;
   const strength = opts.strength ?? 1;
   if (!(radius > 0) || strength === 0 || (delta.x === 0 && delta.y === 0)) return path;

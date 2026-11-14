@@ -1,5 +1,5 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, ellipsePath, polygonFromPoints, type PolygonPath, type RectPose, solid, useLatest } from '@weasel-js/core';
-import { smudgePreset, useSmudgeBrushTool } from '@weasel-js/path-tools';
+import { kneadPreset, useKneadTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -15,7 +15,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', smudgePreset] as const;
+const FEATURES = ['draw', kneadPreset] as const;
 
 const config = f.schema({
   radiusPx: f.number(40).range(5, 150).step(1).suffix('px').label('Brush radius'),
@@ -44,36 +44,36 @@ const createLabScene = () => {
   return scene;
 };
 
-function SmudgeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function KneadTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const smudgeBrush = useSmudgeBrushTool();
-  const tools = useMemo(() => ({ smudgeBrush }), [smudgeBrush]);
+  const knead = useKneadTool();
+  const tools = useMemo(() => ({ knead }), [knead]);
   // Thunked, so a change reaches a stroke already under way.
   const brush = useLatest(ctx.config);
   const tune = useMemo<ActionTunings>(() => ({
-    smudgeBrush: { params: () => ({ radiusPx: brush.current.radiusPx, strength: brush.current.strength }) },
+    knead: { params: () => ({ radiusPx: brush.current.radiusPx, strength: brush.current.strength }) },
   }), [brush]);
   return <TrialSceneCanvas features={FEATURES} scene={scene} trial={ctx.trial} tools={tools} tune={tune} />;
 }
 
-const smudgeInstrument = defineInstrument<State, Config>({
-  name: 'Smudge brush',
+const kneadInstrument = defineInstrument<State, Config>({
+  name: 'Knead',
   config,
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select') },
-      { id: 'smudgeBrush', label: 'Smudge brush', icon: icon('ui:crosshair') },
+      { id: 'knead', label: 'Knead', icon: icon('ui:crosshair') },
     ],
-    initial: 'smudgeBrush',
+    initial: 'knead',
   },
-  render: (ctx) => <SmudgeTrial ctx={ctx} />,
+  render: (ctx) => <KneadTrial ctx={ctx} />,
 });
 
-export function SmudgeBrushLabDemo() {
+export function KneadLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Smudge brush" instruments={[smudgeInstrument]} />
+      <Lab title="Knead" instruments={[kneadInstrument]} />
     </div>
   );
 }

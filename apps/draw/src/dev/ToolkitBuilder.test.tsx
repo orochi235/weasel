@@ -42,7 +42,7 @@ describe('ToolkitBuilder', () => {
   it("mounts path-tools' tools and actions while its switch is on", async () => {
     mount();
     expect(await screen.findByText('useGirthTool')).toBeTruthy();
-    expect(await screen.findByText('useSmudgeBrushTool')).toBeTruthy();
+    expect(await screen.findByText('useKneadTool')).toBeTruthy();
     const withPaths = await countIn('Actions');
     fireEvent.click(screen.getByRole('switch', { name: 'path-tools' }));
     await waitFor(() => expect(screen.queryByText('useGirthTool')).toBeNull());

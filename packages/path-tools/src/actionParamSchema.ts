@@ -12,7 +12,7 @@ import type { ResamplePathParams } from './resample/resample';
 import type { AddExtremesParams } from './extremes/addExtremes';
 import type { ExtendToMeetParams } from './extend/extendToMeet';
 import type { SandParams } from './sand/sand';
-import type { SmudgeBrushParams } from './smudge/smudgeBrush';
+import type { KneadParams } from './knead/knead';
 import type { WarpKind, WarpSettings } from './warp/warpTargets';
 
 /** A path effect's settings as params; a blend's `reverse` also takes
@@ -35,7 +35,7 @@ declare module '@weasel-js/routing' {
     puckerBloat: SettingsOf<PuckerBloatEffect>;
     editPathEffect: EditPathEffectParams;
     sand: SandParams;
-    smudgeBrush: SmudgeBrushParams;
+    knead: KneadParams;
     lengthenPath: LengthenPathParams;
     bridgePaths: { tension?: number };
     bridgeAnchors: { tension?: number };

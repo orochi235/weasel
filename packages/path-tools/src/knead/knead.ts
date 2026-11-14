@@ -1,41 +1,41 @@
 /**
- * The Smudge brush's drag: the outlines under a round brush follow the pointer,
+ * Knead's drag: the outlines under a round brush follow the pointer,
  * text included once the brush reaches it, as one undo entry per stroke.
  */
 import {
   type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
-import { pxReach, smudgePath, type PolygonPath } from '@weasel-js/geom';
+import { pxReach, kneadPath, type PolygonPath } from '@weasel-js/geom';
 import { brushRing } from '@weasel-js/cursor';
 import { commitOps, drawnAABBOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { icon } from '../icons.gen';
-import { smudgeTargets } from './smudgeTargets';
+import { kneadTargets } from './kneadTargets';
 import { outlineSession } from '../shared/outlineSession';
 
 type Point = { x: number; y: number };
 
 /** The brush's radius in screen px when no param gives one. */
-export const DEFAULT_SMUDGE_RADIUS_PX = 40;
+export const DEFAULT_KNEAD_RADIUS_PX = 40;
 /** How much of the pointer's motion the outline under the brush's center follows,
  *  when no param gives it. */
-export const DEFAULT_SMUDGE_STRENGTH = 0.6;
+export const DEFAULT_KNEAD_STRENGTH = 0.6;
 
-const LABEL = 'Smudge brush';
+const LABEL = 'Knead';
 
 /** The brush's size and strength as a form: the last-operation panel's after a stroke, and the tool's options
- *  (`SMUDGE_BRUSH_TOOL_OPTIONS`), which are one setting. */
-export const SMUDGE_BRUSH_PARAMS = pref.group(LABEL, {
-  radiusPx: pref.number('Size', DEFAULT_SMUDGE_RADIUS_PX, {
+ *  (`KNEAD_TOOL_OPTIONS`), which are one setting. */
+export const KNEAD_PARAMS = pref.group(LABEL, {
+  radiusPx: pref.number('Size', DEFAULT_KNEAD_RADIUS_PX, {
     description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider', unit: PX_UNIT,
   }),
-  strength: pref.number('Strength', DEFAULT_SMUDGE_STRENGTH, {
+  strength: pref.number('Strength', DEFAULT_KNEAD_STRENGTH, {
     description: 'How closely the outline under the brush follows the pointer.', min: 0.05, max: 1, step: 0.05, control: 'slider',
   }),
-}, { description: 'The size and strength of the Smudge brush.' });
+}, { description: 'The size and strength of Knead.' });
 
-/** The params `smudgeBrush` reads, each on every pointer move. */
-export interface SmudgeBrushParams {
+/** The params `knead` reads, each on every pointer move. */
+export interface KneadParams {
   /** The brush's radius, in screen px. */
   radiusPx?: number;
   /** `1` moves the outline under the brush's center as far as the pointer; less, less. */
@@ -44,12 +44,12 @@ export interface SmudgeBrushParams {
 
 const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 
-function radiusOf(params: SmudgeBrushParams | undefined): number {
-  return Math.max(1, num(params?.radiusPx, DEFAULT_SMUDGE_RADIUS_PX));
+function radiusOf(params: KneadParams | undefined): number {
+  return Math.max(1, num(params?.radiusPx, DEFAULT_KNEAD_RADIUS_PX));
 }
 
-function strengthOf(params: SmudgeBrushParams | undefined): number {
-  return Math.min(1, Math.max(0, num(params?.strength, DEFAULT_SMUDGE_STRENGTH)));
+function strengthOf(params: KneadParams | undefined): number {
+  return Math.min(1, Math.max(0, num(params?.strength, DEFAULT_KNEAD_STRENGTH)));
 }
 
 /** Whether the disc at `c` of radius `r` meets box `b`. */
@@ -73,7 +73,7 @@ interface Dab {
 /** A stroke over what `deps` targets now, from `start`, dab by dab: text converts as the brush meets it, and
  *  `shapes` holds every path it has moved. */
 function strokeFrom(deps: ActionDeps, start: Point) {
-  const targets = smudgeTargets(deps);
+  const targets = kneadTargets(deps);
   const nodes = [...targets.paths];
   const text = outlineSession(deps, targets.texts, LABEL);
   const shapes = new Map<string, { node: PathNode; path: PolygonPath }>();
@@ -82,13 +82,13 @@ function strokeFrom(deps: ActionDeps, start: Point) {
     empty: targets.paths.length === 0 && targets.texts.length === 0,
     text,
     shapes,
-    dab({ to, scale }: Dab, params: SmudgeBrushParams | undefined): void {
+    dab({ to, scale }: Dab, params: KneadParams | undefined): void {
       const radius = worldRadius(scale, radiusOf(params));
       nodes.push(...text.convert((id, scene) =>
         discMeetsBox(at, radius, drawnAABBOf(scene, id, shownNodeOf(scene, id)!.pose, scale ? { scale } : {}))));
       for (const node of nodes) {
         const from = shapes.get(node.id)?.path ?? node.path;
-        const next = smudgePath(from, {
+        const next = kneadPath(from, {
           center: at, delta: { x: to.x - at.x, y: to.y - at.y }, radius, strength: strengthOf(params),
         });
         if (next !== from) shapes.set(node.id, { node, path: next });
@@ -106,7 +106,7 @@ function strokeFrom(deps: ActionDeps, start: Point) {
 
 /**
  * A drag that pushes the outline of the selected paths and text, or of every
- * unlocked, shown path and text node while none is selected, along with the pointer (`smudgePath` in `@weasel-js/geom`). Each pointer move is one dab from
+ * unlocked, shown path and text node while none is selected, along with the pointer (`kneadPath` in `@weasel-js/geom`). Each pointer move is one dab from
  * where the last one ended: points under the brush move with it, most at its center
  * and not at all at its rim, and a long segment the brush meets gets anchors added
  * so it can bend there. `params.radiusPx` is the brush's radius on screen, so it
@@ -119,16 +119,16 @@ function strokeFrom(deps: ActionDeps, start: Point) {
  * it was. The last-operation panel changes Size and Strength by replaying every dab
  * from the stroke's start, text put back and met again by the brush at its new size.
  */
-export const smudgeBrushAction: Action & { requires: string[] } = {
-  id: 'smudgeBrush',
+export const kneadAction: Action & { requires: string[] } = {
+  id: 'knead',
   label: LABEL,
-  icon: icon('smudgeBrush'),
+  icon: icon('knead'),
   tags: pathOperationTags('brush'),
   group: 'path',
   eligible: { capability: 'creates-shapes' },
-  cursor: (params) => brushRing(radiusOf(params as SmudgeBrushParams | undefined)),
+  cursor: (params) => brushRing(radiusOf(params as KneadParams | undefined)),
   requires: ['selection', 'scene', 'view', 'applyOps', 'history', 'createOutlinesAdapter', 'notices'],
-  params: SMUDGE_BRUSH_PARAMS,
+  params: KNEAD_PARAMS,
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
@@ -136,8 +136,8 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
       const start = { x: ctx.drag?.start.x ?? ctx.world.x, y: ctx.drag?.start.y ?? ctx.world.y };
       const live = strokeFrom(deps, start);
       if (live.empty) return {};
-      const params = (move: InvocationCtx): SmudgeBrushParams =>
-        ({ ...resolveParams(opts?.params), ...move.params }) as SmudgeBrushParams;
+      const params = (move: InvocationCtx): KneadParams =>
+        ({ ...resolveParams(opts?.params), ...move.params }) as KneadParams;
       let radiusPx = radiusOf(params(ctx));
       // Every dab, since each pushes on from where the one before left the outline.
       const dabs: Dab[] = [];
@@ -146,7 +146,7 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
         return entry ? withPath(entry.node, entry.path) : null;
       };
       return {
-        kind: 'smudge-brush',
+        kind: 'knead',
         cursor: () => brushRing(radiusPx),
         onMove(move: InvocationCtx): void {
           const p = params(move);
@@ -161,7 +161,7 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
         },
         replay(replayed: Record<string, unknown>): void {
           const again = strokeFrom(deps, start);
-          for (const dab of dabs) again.dab(dab, replayed as SmudgeBrushParams);
+          for (const dab of dabs) again.dab(dab, replayed as KneadParams);
           again.commit();
         },
         previewIds: () => (live.shapes.size > 0 ? [...live.shapes.keys()] : null),
@@ -171,7 +171,7 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
     },
   },
   enabled: (deps) => {
-    const { paths, texts } = smudgeTargets(deps);
+    const { paths, texts } = kneadTargets(deps);
     return paths.length > 0 || texts.length > 0 ? true : ActionDisabledReason.NotApplicable;
   },
 };

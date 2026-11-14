@@ -1,5 +1,5 @@
 /**
- * What the Smudge brush works on: the paths and text it may push, by one rule
+ * What Knead works on: the paths and text it may push, by one rule
  * for both — what is selected, or with nothing of either selected, everything
  * neither locked nor hidden.
  */
@@ -10,7 +10,7 @@ import { leavesOf, scenePathNodes } from '../shared/scenePaths';
 type AnyScene = Scene<unknown, string, unknown>;
 
 /** The paths a stroke pushes and the text it may convert to push. */
-export interface SmudgeTargets {
+export interface KneadTargets {
   paths: PathNode[];
   /** Text node ids; empty in a host that publishes no `createOutlinesAdapter`. */
   texts: NodeId[];
@@ -25,7 +25,7 @@ function shown(scene: AnyScene | undefined, id: string): boolean {
  * when the selection holds neither, every path and text node that is neither
  * locked nor hidden.
  */
-export function smudgeTargets(deps: ActionDeps | undefined): SmudgeTargets {
+export function kneadTargets(deps: ActionDeps | undefined): KneadTargets {
   const scene = deps?.scene as AnyScene | undefined;
   const isText = (id: string) => deps?.createOutlinesAdapter?.getTextSource(id as NodeId) !== undefined;
   const selected = scene ? leavesOf(scene, deps?.selection?.get() ?? []) : [];
