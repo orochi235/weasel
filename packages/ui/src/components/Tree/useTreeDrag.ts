@@ -9,6 +9,7 @@ import type { TreeNode } from './Tree';
 import { modsOf } from '../../useReorderDragList';
 import { useOutsideDrop, type TreeDropHandle } from './useOutsideDrop';
 import { isPrimaryPress } from '@weasel-js/gestures';
+import type {} from '../../kitSettings';
 
 export const HOVER_EXPAND_MS = 600;
 /** How far the ghost's corner sits from the pointer, so what is under the pointer stays visible. */

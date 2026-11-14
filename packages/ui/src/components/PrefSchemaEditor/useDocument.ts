@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createHistory, useLatest } from '@weasel-js/core';
 import { useKitSetting } from '@weasel-js/react';
 import { SWAP, swapOp, type DocumentCodec, type DraftStorage, type OpenedDocument } from './document';
+import type {} from '../../kitSettings';
 
 /** Edits this close together under one coalesce key undo as one, so typing a name is one step. */
 export const COALESCE_MS = 800;

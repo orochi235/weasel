@@ -13,6 +13,7 @@ import { CloseButton } from '../CloseButton';
 import { defaultToastQueue, racQueueOf, readDefaultTtl, type ToastContent, type ToastQueue } from './queue';
 import s from './Toast.module.css';
 import './toastViewTransitions.css';
+import type {} from '../../kitSettings';
 
 /** Corner a toast stack anchors to. */
 export type ToastPlacement = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';

@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { useKitSettings, type KitSettingsStore } from '@weasel-js/react';
+import type {} from './kitSettings';
 
 /** How close, in screen pixels, a drag has to come to a candidate to snap to it. */
 export const SNAP_RADIUS_PX = 6;

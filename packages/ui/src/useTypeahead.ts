@@ -3,6 +3,7 @@ import {
   EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS, typeaheadSearching, typeaheadStep, type TypeaheadShape,
 } from '@weasel-js/ui-input';
 import { useKitSetting } from '@weasel-js/react';
+import type {} from './kitSettings';
 
 /** How long a typed prefix lasts before the next key starts a new one. */
 export const TYPEAHEAD_MS = TYPEAHEAD_RESET_MS;

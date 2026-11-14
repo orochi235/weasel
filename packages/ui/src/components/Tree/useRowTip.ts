@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useKitSetting } from '@weasel-js/react';
+import type {} from '../../kitSettings';
 
 /** How long the pointer or keyboard focus rests on a row before its tooltip opens. */
 export const REST_MS = 300;
