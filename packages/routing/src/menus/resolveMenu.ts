@@ -10,7 +10,7 @@ import {
 import type { Action } from '../interactions/actions/action';
 import type { ActionDeps } from '../interactions/actions/invoker';
 import { actionItems, type ActionItem } from '../interactions/actions/actionItems';
-import { actionShortcuts } from '../interactions/actions/actionShortcuts';
+import { actionItemShortcuts, type ActionShortcut } from '../interactions/actions/actionShortcuts';
 import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionEnabled';
 import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
 import { isDev } from '@weasel-js/react';
@@ -77,13 +77,18 @@ function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boole
     ...withAccess(access),
     icon: it.icon,
     ...hintOf(it),
-    shortcut: actionShortcuts(it.action, it.params)[0],
+    shortcut: shortcutOf(it),
     disabled: off || !enabled,
     ...why,
     checked: evaluateActive(it.action, deps, params),
     run: () => { ctx.src.trigger(it.action.id, params); },
   };
 }
+
+const shortcutOf = (it: ActionItem): string | ActionShortcut | undefined => {
+  const shown = actionItemShortcuts(it);
+  return typeof shown === 'string' ? shown : shown[0];
+};
 
 const hintOf = ({ description, grade }: ActionItem): Pick<ActionItem, 'description' | 'grade'> => ({
   ...(description ? { description } : {}),
