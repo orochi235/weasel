@@ -2,7 +2,7 @@ import type { Action } from '@weasel-js/routing';
 import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOptions } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
-import type { InertiaConfig } from 'core/viewport/useDecayLoop';
+import type { InertiaOptions } from 'core/viewport/useDecayLoop';
 import { createVelocityTracker, type VelocityTracker } from 'core/viewport/createVelocityTracker';
 
 interface DragPanScratch {
@@ -15,7 +15,7 @@ interface DragPanScratch {
   seen: View;
   view: ViewApi;
   axis: 'both' | 'x' | 'y';
-  inertia: InertiaConfig | undefined;
+  inertia: InertiaOptions | undefined;
   tracker: VelocityTracker | undefined;
   lastScreen: { x: number; y: number };
 }
@@ -53,7 +53,7 @@ function sameCamera(a: View, b: View): boolean {
  *  simply lands. `true` coasts with the kit defaults. */
 export interface DragPanParams {
   axis?: 'both' | 'x' | 'y';
-  inertia?: boolean | InertiaConfig;
+  inertia?: boolean | InertiaOptions;
 }
 
 /**

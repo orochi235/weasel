@@ -1,4 +1,4 @@
-import type { InertiaConfig } from 'core/viewport/useDecayLoop';
+import type { InertiaOptions } from 'core/viewport/useDecayLoop';
 import { anchorsTool } from 'tools/builtin/anchors';
 import { useHandTool } from 'tools/builtin/hand';
 import { useSliceTool } from 'tools/builtin/slice';
@@ -17,7 +17,7 @@ export interface UseBuiltinToolsArgs {
   patch: ToolsPatch | null;
   toolOptions?: BuiltinToolOptions;
   /** `viewport.inertia`, which is the hand tool's. */
-  inertia?: boolean | InertiaConfig;
+  inertia?: boolean | InertiaOptions;
 }
 
 /** The registry of tools `<SceneCanvas>` mounts for itself. Every built-in's

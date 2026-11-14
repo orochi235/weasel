@@ -12,7 +12,7 @@ export interface PanBounds {
 /** Momentum settings for a pan: how quickly a flung view slows, when it stops,
  *  and what happens at the pan limits. The `DecayLoopConfig` fields a caller
  *  chooses up front, without the per-gesture `velocity` / `onTick`. */
-export interface InertiaConfig {
+export interface InertiaOptions {
   friction?: number;
   minSpeed?: number;
   /** What to do when inertial pan reaches `bounds`. Default: no clamping. */
