@@ -7,7 +7,7 @@ The Simplify brush is now Sand, and every name it carried changes with it; this 
 
 | Before | After |
 |---|---|
-| `useSimplifyBrushTool`, `UseSimplifyBrushToolOptions`, `SIMPLIFY_BRUSH_TOOL_OPTIONS` | `useSandTool`, `UseSandToolOptions`, `SAND_TOOL_OPTIONS` |
+| `useSimplifyBrushTool`, `UseSimplifyBrushToolOptions`, `SIMPLIFY_BRUSH_OPTIONS` | `useSandTool`, `UseSandToolOptions`, `SAND_TOOL_OPTIONS` |
 | `simplifyBrushPreset`, preset id `'simplifyBrush'` | `sandPreset`, `'sand'` |
 | tool id, action id, and `PathEditToolId` `'simplifyBrush'`, binding `simplifyBrush.drag` | `'sand'`, `sand.drag` |
 | `simplifyBrushAction`, `SIMPLIFY_BRUSH_PARAMS`, `SIMPLIFY_BRUSH_RADIUS_PX`, `SimplifyBrushParams` | `sandAction`, `SAND_PARAMS`, `SAND_RADIUS_PX`, `SandParams` |
