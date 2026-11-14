@@ -30,6 +30,11 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-14 audit round twenty-four: the site's HandleSnapLab demo (its degree controls now convert to the
+  radians handle snapping takes; a slip shows as snapping at the wrong steps); on a Mac, Ctrl-click on a `Tree` or
+  `LayerList` row opening the menu and leaving the selection alone; the pref schema editor's zoom readout at 2.25
+  and 4; draw opening an SVG saved with a Blend effect and a session holding a warped path from before the renames;
+  `KeyBank` labels still shortening in a narrow parent now that the fit scope measures only its own box.
 - 2026-11-14 second batch: kernel3d's axis-move handles in the 3D lab (`npm run dev:3d` in `packages/labkit`) —
   their look, hover, and a drag along each axis, up included; the site's `path-motion` demo (the rider turning
   with the curve) and `timeline-frames` demo (whether a browser allows its ~25 PNG downloads); the prefs rail and
