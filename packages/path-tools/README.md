@@ -22,7 +22,7 @@ import { pathTools } from '@weasel-js/path-tools';
 <SceneCanvas scene={scene} features={['draw', pathTools]} />;
 ```
 
-`pathTools` turns every family on but soft selection and handle snapping, which
+`pathTools` turns every family on but Drape and handle snapping, which
 change what every anchor or handle drag does. Each is also a preset of its own,
 and an app that imports only some never loads the others:
 
@@ -30,7 +30,7 @@ and an app that imports only some never loads the others:
 |---|---|
 | `sandPreset` | `sand`, which `useSandTool` binds: Sand, a path-edit tool that refits the curve it passes over |
 | `handleLocksPreset` | The `handleLock.angle` and `handleLock.length` toggles |
-| `createSoftSelectionPreset` | Soft selection: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathTools` |
+| `createDrapePreset` | Drape: dragging anchors also moves the anchors near them along the path, by a falloff over a radius in screen pixels that the wheel scrubs mid-drag; the reach is drawn as a band. Not in `pathTools` |
 | `handleSnapPreset`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle, through a snap session whose angles `handleSnapSource` offers. Not in `pathTools` |
 | `bridgePreset` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
 | `spiroPreset` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
@@ -83,7 +83,7 @@ flip that rule through core's `chromeRules` dep. `createCurvatureCombPreset`, `c
 `PathEditExtension`: marks drawn on the open path, parts of it to press, marks
 a click selects and Delete removes, a share of an anchor or handle drag, what
 an edit keeps true, and, for spiro curves, how a path drawn from another form
-is edited. `createSoftSelectionPreset` takes a function returning its options,
+is edited. `createDrapePreset` takes a function returning its options,
 read as each drag starts, and `createHandleSnapPreset` options or a function
 read on every move; null from either function turns the feature off.
 

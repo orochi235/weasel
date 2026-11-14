@@ -1,6 +1,6 @@
 import { useLatest } from '@weasel-js/core';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
-import { createSoftSelectionPreset } from '@weasel-js/path-tools';
+import { createDrapePreset } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
 import { icon } from '../icons.gen';
 import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
@@ -8,7 +8,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 
 const config = f.schema({
-  soft: f.boolean(true).label('Soft selection'),
+  drape: f.boolean(true).label('Drape'),
   radius: f.number(160).range(10, 600).step(5).suffix('px').label('Radius'),
   falloff: f.enum('smooth', ['smooth', 'linear', 'sharp']).label('Falloff'),
 });
@@ -23,12 +23,12 @@ const WAVE = (() => {
   );
 })();
 
-function SoftSelectionTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
+function DrapeTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, WAVE, '#3478f6');
   const live = useLatest(ctx);
-  const features = useMemo(() => ['pick', 'move', 'paths', createSoftSelectionPreset(() => {
-    const { soft, radius, falloff } = live.current.config;
-    return soft
+  const features = useMemo(() => ['pick', 'move', 'paths', createDrapePreset(() => {
+    const { drape, radius, falloff } = live.current.config;
+    return drape
       ? { radiusPx: radius, falloff, onRadius: (px: number) => live.current.setConfig('radius', Math.round(px)) }
       : null;
   })] as const, [live]);
@@ -44,18 +44,18 @@ function SoftSelectionTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> 
   );
 }
 
-const softInstrument = defineInstrument<PathLabState, Config>({
-  name: 'Soft selection',
+const drapeInstrument = defineInstrument<PathLabState, Config>({
+  name: 'Drape',
   config,
   initialState: () => ({ scene: null }),
   tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
-  render: (ctx) => <SoftSelectionTrial ctx={ctx} />,
+  render: (ctx) => <DrapeTrial ctx={ctx} />,
 });
 
-export function SoftSelectionLabDemo() {
+export function DrapeLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Soft selection" instruments={[softInstrument]} />
+      <Lab title="Drape" instruments={[drapeInstrument]} />
     </div>
   );
 }

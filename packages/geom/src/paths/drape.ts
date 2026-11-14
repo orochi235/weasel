@@ -1,5 +1,5 @@
 /**
- * Soft selection over an anchor set: how strongly an edit to some anchors
+ * Drape over an anchor set: how strongly an edit to some anchors
  * carries to the anchors near them, by distance measured along the path.
  *
  * Distance is arc length along the drawn curve, not a straight line, so two
@@ -15,13 +15,13 @@ import { lerpPoint } from '../points2';
 /** How influence fades from 1 at a selected anchor to 0 at the radius:
  *  `smooth` eases out and in, `linear` falls evenly, `sharp` drops fast and
  *  tails off. */
-export type SoftFalloff = 'smooth' | 'linear' | 'sharp';
+export type DrapeFalloff = 'smooth' | 'linear' | 'sharp';
 
 /**
  * The weight `falloff` gives a point `distance` from the selection, for a
  * radius of `radius`: 1 at distance 0, 0 at the radius and beyond.
  */
-export function softFalloff(falloff: SoftFalloff, distance: number, radius: number): number {
+export function drapeFalloff(falloff: DrapeFalloff, distance: number, radius: number): number {
   if (!(radius > 0) || distance >= radius) return 0;
   if (distance <= 0) return 1;
   const u = distance / radius;
@@ -54,7 +54,7 @@ export interface AnchorSubpathMeasure {
 
 /** Arc lengths along every subpath of an anchor set, as
  *  {@link measureAnchorPath} takes them. Read it with
- *  {@link softSelectionWeights} and {@link softSelectionBand}. */
+ *  {@link drapeWeights} and {@link drapeBand}. */
 export interface AnchorPathMeasure {
   readonly subpaths: readonly AnchorSubpathMeasure[];
 }
@@ -142,11 +142,11 @@ function distanceTo(sub: AnchorSubpathMeasure, sources: readonly number[], s: nu
  * that receive nothing are absent, as are anchors on a subpath with no
  * selected anchor.
  */
-export function softSelectionWeights(
+export function drapeWeights(
   measure: AnchorPathMeasure,
   selected: Iterable<number>,
   radius: number,
-  falloff: SoftFalloff,
+  falloff: DrapeFalloff,
 ): Map<number, number> {
   const sel = new Set(selected);
   const out = new Map<number, number>();
@@ -155,7 +155,7 @@ export function softSelectionWeights(
     if (sources.length === 0) continue;
     for (let i = 0; i < sub.at.length; i++) {
       const flat = sub.first + i;
-      const w = sel.has(flat) ? 1 : softFalloff(falloff, distanceTo(sub, sources, sub.at[i]!), radius);
+      const w = sel.has(flat) ? 1 : drapeFalloff(falloff, distanceTo(sub, sources, sub.at[i]!), radius);
       if (w > 0) out.set(flat, w);
     }
   }
@@ -169,7 +169,7 @@ export function softSelectionWeights(
  * draw on, which must have the same anchors. A stretch crossing the seam of a
  * closed subpath comes back as one run.
  */
-export function softSelectionBand(
+export function drapeBand(
   measure: AnchorPathMeasure,
   set: AnchorSet,
   selected: Iterable<number>,

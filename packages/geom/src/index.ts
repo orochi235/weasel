@@ -205,10 +205,10 @@ export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { kneadPath, type KneadPathOptions } from './paths/kneadPath';
 export { handleAlongItsAngle, handleAtItsLength, makeHandlesSymmetric, retractHandles } from './paths/handleEdits';
 export {
-  measureAnchorPath, softFalloff, softSelectionBand, softSelectionWeights,
+  measureAnchorPath, drapeFalloff, drapeBand, drapeWeights,
   type AnchorPathMeasure, type AnchorSubpathMeasure, type MeasureAnchorPathOptions, type SegmentMeasure,
-  type SoftFalloff,
-} from './paths/softSelection';
+  type DrapeFalloff,
+} from './paths/drape';
 export {
   combTeeth, cubicCurvatureAt, cubicCurvatureSource, cubicDerivativeAt, curvatureComb,
   type CombTooth, type CurvatureCombOptions, type CurvatureSource, type SegmentComb,

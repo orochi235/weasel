@@ -19,7 +19,7 @@ import { linkAnchorAction } from './constraints/linkAnchor';
 import { reachToMeetAction } from './reach/reachToMeet';
 import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 import { createHandleSnapExtension, handleSnapSource, type HandleSnapOptionsInput } from './handleSnap/handleSnap';
-import { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
+import { createDrapeExtension, type DrapeOptions } from './drape/drape';
 import { fairAnchorsAction } from './fairing/fairing';
 import { tugPathAction } from './tug/tugPath';
 import { createDirectionExtension, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle } from './pathStructure/directionMarks';
@@ -57,13 +57,13 @@ export const handleLocksPreset: FeaturePreset = {
 };
 
 /**
- * Soft selection: dragging anchors in path edit also moves the anchors near
+ * Drape: dragging anchors in path edit also moves the anchors near
  * them along the path, by a falloff over `options`' radius, read as each drag
  * starts. The wheel scrubs the radius mid-drag. Null or undefined from
  * `options` leaves a drag hard.
  */
-export function createSoftSelectionPreset(options: () => SoftSelectionOptions | null | undefined): FeaturePreset {
-  return { id: 'softSelection', pathEdit: [createSoftSelectionExtension(options)] };
+export function createDrapePreset(options: () => DrapeOptions | null | undefined): FeaturePreset {
+  return { id: 'drape', pathEdit: [createDrapeExtension(options)] };
 }
 
 /**
@@ -236,7 +236,7 @@ export const warpPreset: FeaturePreset = {
 };
 
 /** Every preset above, spiro curves, the comb, poise, constraints, path
- *  direction, and fillets with their defaults — except soft selection and
+ *  direction, and fillets with their defaults — except Drape and
  *  handle snapping, which change what every anchor or handle drag does. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',

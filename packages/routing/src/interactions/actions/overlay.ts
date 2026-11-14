@@ -16,7 +16,7 @@ export type OverlayRole =
   | 'cut'
   /** An edge the gesture would author between two points. */
   | 'connector'
-  /** The stretch of a path a soft-selection drag reaches. */
+  /** The stretch of a path a Drape drag reaches. */
   | 'falloff'
   /** What a lock holds a dragged point to — a line, a circle. */
   | 'lock'

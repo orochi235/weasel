@@ -65,7 +65,7 @@ tessellation, polylines, trim), `booleans/splitBySegment.ts` (`./booleans`).
 **Editing** — in `@weasel-js/geom`: `paths/anchorEdits.ts` (the anchor-set
 mutations: translate, handle-drag with smooth mirroring, insert-on-segment,
 delete-with-refit, scissors, rect select), `paths/handleEdits.ts` (handle
-locks and angle snapping), `paths/softSelection.ts` (falloff weights by
+locks and angle snapping), `paths/drape.ts` (falloff weights by
 distance along the path), the curvature comb
 (`paths/curvature.ts`), the poise edits (`paths/poiseHandles.ts`), and the anchor model itself
 (`pathToAnchors` / `anchorsToPath`, `PenAnchor`, `nearestSegmentT`). Its

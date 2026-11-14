@@ -109,7 +109,7 @@ and `segmentPress` takes a press on the outline in place of Bend segment. A
 form no representation on the canvas reads is edited as its drawn path, and
 the edit drops it, as does any writer that replaces the path some other way.
 `@weasel-js/path-tools` builds its curvature comb, poise grips, path
-constraints, soft selection, handle snapping, and spiro curves this way.
+constraints, Drape, handle snapping, and spiro curves this way.
 
 ### Frame hooks
 

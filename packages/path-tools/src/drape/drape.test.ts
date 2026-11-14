@@ -4,7 +4,7 @@ import { overlaysOf } from '@weasel-js/routing';
 import { PATH_L, PATH_M, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { editAnchorsAction } from '@weasel-js/core';
 import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
-import { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection';
+import { createDrapeExtension, type DrapeOptions } from './drape';
 
 const NO_MODS = { alt: false, ctrl: false, meta: false, shift: false };
 
@@ -16,12 +16,12 @@ const line = (): PolygonPath => ({
   fillRule: 'nonzero',
 });
 
-function start(options: SoftSelectionOptions | null) {
+function start(options: DrapeOptions | null) {
   const committed: { path: PolygonPath | null } = { path: null };
   const dep = makeEditAnchorsDep({
     getEditablePath: () => line(),
     applyEdit: (_id, p) => { committed.path = p as PolygonPath; },
-    extensions: [createSoftSelectionExtension(() => options)],
+    extensions: [createDrapeExtension(() => options)],
   });
   const at = { x: 0, y: 0 };
   const affordance: AffordanceHit = { kind: 'anchor:0', targetIds: ['node-a'] };
@@ -42,7 +42,7 @@ function start(options: SoftSelectionOptions | null) {
   return { handle, move, wheel, end };
 }
 
-describe('soft selection', () => {
+describe('Drape', () => {
   it('moves neighbors along the path by the falloff of their distance', () => {
     const drag = start({ radiusPx: 20, falloff: 'linear' });
     drag.move({ x: 0, y: 20 });

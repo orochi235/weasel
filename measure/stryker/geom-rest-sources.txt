@@ -13,7 +13,7 @@ packages/geom/src/warp/arap.ts
 packages/geom/src/warp/puppetMesh.ts
 packages/geom/src/paths/pathMeasure.ts
 packages/geom/src/paths/builder.ts
-packages/geom/src/paths/softSelection.ts
+packages/geom/src/paths/drape.ts
 packages/geom/src/paths/simplifyPath.ts
 packages/geom/src/paths/anchorOrigins.ts
 packages/geom/src/easings.ts

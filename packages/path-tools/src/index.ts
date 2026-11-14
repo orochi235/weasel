@@ -22,7 +22,7 @@ export {
   createCurvatureCombPreset,
   createHandleSnapPreset,
   createPathStructurePreset,
-  createSoftSelectionPreset,
+  createDrapePreset,
   curvatureCombPreset,
   reachPreset,
   handleLocksPreset,
@@ -149,7 +149,7 @@ export {
 export {
   createHandleSnapExtension, handleSnapSource, type HandleSnapOptions, type HandleSnapOptionsInput,
 } from './handleSnap/handleSnap';
-export { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
+export { createDrapeExtension, type DrapeOptions } from './drape/drape';
 
 // ─── Panels ────────────────────────────────────────────────────────────────
 export {

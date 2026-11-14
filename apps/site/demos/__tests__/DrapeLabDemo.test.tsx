@@ -2,7 +2,7 @@ import { cleanup } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { SoftSelectionLabDemo } from '../SoftSelectionLabDemo';
+import { DrapeLabDemo } from '../DrapeLabDemo';
 import { drag, installLabEnvironment, labAnchors, sceneCanvas } from './pathLabHarness';
 import { withIcons } from '../../testIcons';
 
@@ -12,9 +12,9 @@ afterEach(() => {
   delete window.__weaselTest;
 });
 
-describe('SoftSelectionLabDemo', () => {
+describe('DrapeLabDemo', () => {
   it('drags the neighbors of a dragged anchor part of the way, and leaves the far ones', async () => {
-    const { container } = await renderSettled(<StrictMode><SoftSelectionLabDemo /></StrictMode>, { wrapper: withIcons });
+    const { container } = await renderSettled(<StrictMode><DrapeLabDemo /></StrictMode>, { wrapper: withIcons });
     const before = labAnchors();
     // Anchor 2 sits at (180, 160); its neighbors at (120, 260) and (240, 260).
     drag(sceneCanvas(container), [180, 160], [180, 200]);

@@ -910,14 +910,14 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/AnchorSelectLabDemo.tsx',
   },
   {
-    id: 'lab-soft-selection',
-    title: 'Soft selection',
+    id: 'lab-drape',
+    title: 'Drape',
     package: 'path-tools',
     description:
-      "Dragging an anchor in path edit also moves the anchors near it, each by a weight that falls from 1 at the dragged anchor to 0 at the radius. The radius is measured along the path in screen pixels, not straight across, so two anchors close together across a bend are as far apart as the curve between them. The falloff is smooth, linear or sharp. It is `@weasel-js/path-tools`'s `createSoftSelectionPreset`, which reads its options as each drag starts; the stretch of path it reaches is drawn as a band while the drag is in flight, and the wheel scrubs the radius mid-drag, reporting it back through `onRadius` so the control panel follows. Turning Soft selection off here answers null from those options, which leaves the drag hard.",
-    hint: 'Drag any anchor of the wave. While dragging, turn the wheel to grow or shrink the radius. Change the falloff, or turn Soft selection off to move one anchor alone.',
-    load: () => import('./demos/SoftSelectionLabDemo').then((m) => m.SoftSelectionLabDemo),
-    path: 'apps/site/demos/SoftSelectionLabDemo.tsx',
+      "Dragging an anchor in path edit also moves the anchors near it, each by a weight that falls from 1 at the dragged anchor to 0 at the radius. The radius is measured along the path in screen pixels, not straight across, so two anchors close together across a bend are as far apart as the curve between them. The falloff is smooth, linear or sharp. It is `@weasel-js/path-tools`'s `createDrapePreset`, which reads its options as each drag starts; the stretch of path it reaches is drawn as a band while the drag is in flight, and the wheel scrubs the radius mid-drag, reporting it back through `onRadius` so the control panel follows. Turning Drape off here answers null from those options, which leaves the drag hard.",
+    hint: 'Drag any anchor of the wave. While dragging, turn the wheel to grow or shrink the radius. Change the falloff, or turn Drape off to move one anchor alone.',
+    load: () => import('./demos/DrapeLabDemo').then((m) => m.DrapeLabDemo),
+    path: 'apps/site/demos/DrapeLabDemo.tsx',
   },
   {
     id: 'lab-handle-snap',
