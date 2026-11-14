@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { GestureRoute, gestureRouteSegments } from './GestureRoute';
-import * as PkgRoot from '../../index';
 
 const texts = (route: string) =>
   gestureRouteSegments(route).map((seg) => (typeof seg.text === 'string' ? seg.text : '<node>'));
@@ -32,9 +31,5 @@ describe('GestureRoute', () => {
     const { container } = render(<GestureRoute route={route} />);
     expect(container.querySelectorAll('[data-shape="compose"]').length).toBe(4);
     expect(container.firstElementChild?.getAttribute('aria-label')).toBe(route);
-  });
-
-  it('is exported from the package root', () => {
-    expect(PkgRoot.GestureRoute).toBe(GestureRoute);
   });
 });

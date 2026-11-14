@@ -5,8 +5,8 @@ import {
   type ModifierKey,
   type ParsedModifiers,
 } from '@weasel-js/core/routing';
-import { Powerline, type PowerlineProps, type PowerlineSegment } from '../Powerline';
-import { KeyCap, keySpecFromKey, keySpecsFromMods, type KeySpec, type LogicalModSpec } from '../Keycaps';
+import { Powerline, type PowerlineProps, type PowerlineSegment } from '@weasel-js/ui/components/Powerline';
+import { KeyCap, keySpecFromKey, keySpecsFromMods, type KeySpec, type LogicalModSpec } from '@weasel-js/ui/components/Keycaps';
 import s from './GestureRoute.module.css';
 
 const MOD_DISPLAY_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];

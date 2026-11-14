@@ -2,7 +2,7 @@
 import type { ReactElement } from 'react';
 import type { DevtoolsBinding } from '@weasel-js/core/devtools-protocol';
 import { Code } from '@weasel-js/ui/components/Code';
-import { GestureRoute } from '@weasel-js/ui/components/GestureRoute';
+import { GestureRoute } from './GestureRoute';
 import { ValueView } from './ValueView';
 import s from './RegistryView.module.css';
 

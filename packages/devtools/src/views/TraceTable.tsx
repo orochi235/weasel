@@ -3,7 +3,7 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
 import type { DispatchRecord, TraceLogEntry } from '@weasel-js/core/routing';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
-import { FallthroughDiagram } from '@weasel-js/ui/components/FallthroughDiagram';
+import { FallthroughDiagram } from './FallthroughDiagram';
 import { DecisionPath } from './DecisionPath';
 import { formatAge } from './formatAge';
 import { keyName } from './keyName';
