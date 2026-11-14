@@ -10,10 +10,10 @@ import { pathToAnchors, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { deleteAnchorsAction, nudgeAnchorsLeftAction, nudgeAnchorsUpAction } from '@weasel-js/core';
 import {
-  ANCHOR_SELECTION_GROUP, addExtremeAnchorsAction, bridgeAnchorsAction, CORNER_SHAPE_OPTIONS, constrainAnchorsAction, convertSegmentsAction, cycleCornerShapeAction,
+  ANCHOR_SELECTION_GROUP, addExtremeAnchorsAction, bridgeAnchorsAction, FILLET_SHAPE_OPTIONS, constrainAnchorsAction, convertSegmentsAction, cycleFilletAction,
   growAnchorSelectionAction, handleLockAngleAction, handleLockLengthAction, harmonizeAnchorsAction,
   invertAnchorSelectionAction, resamplePathAction, reversePathAction, selectCornerAnchorsAction,
-  selectEveryNthAnchorAction, selectSmoothAnchorsAction, setCornersAction, setPathStartAction,
+  selectEveryNthAnchorAction, selectSmoothAnchorsAction, setFilletsAction, setPathStartAction,
   shrinkAnchorSelectionAction, unconstrainAnchorsAction,
 } from './index';
 import { editHarness as harness, type EditHarness } from './shared/testing/editHarness';
@@ -27,7 +27,7 @@ const RESTRUCTURES = new Set(['deleteAnchors', 'bridgeAnchors']);
 
 const ACTIONS: Action[] = [
   reversePathAction, setPathStartAction, convertSegmentsAction, addExtremeAnchorsAction, resamplePathAction,
-  harmonizeAnchorsAction, cycleCornerShapeAction, setCornersAction, bridgeAnchorsAction, constrainAnchorsAction,
+  harmonizeAnchorsAction, cycleFilletAction, setFilletsAction, bridgeAnchorsAction, constrainAnchorsAction,
   unconstrainAnchorsAction, growAnchorSelectionAction, shrinkAnchorSelectionAction, invertAnchorSelectionAction,
   selectCornerAnchorsAction, selectSmoothAnchorsAction, selectEveryNthAnchorAction, handleLockAngleAction,
   handleLockLengthAction, deleteAnchorsAction, nudgeAnchorsUpAction, nudgeAnchorsLeftAction,
@@ -105,15 +105,15 @@ class Redo implements fc.Command<Model, H> {
   toString(): string { return 'Redo'; }
 }
 
-/** `setCorners` is a control's action, and does nothing without the shape or radius the control gives it. */
+/** `setFillets` is a control's action, and does nothing without the shape or radius the control gives it. */
 const cornerParams = fc.record({
-  shape: fc.constantFrom(...CORNER_SHAPE_OPTIONS.map((o) => o.value)),
+  shape: fc.constantFrom(...FILLET_SHAPE_OPTIONS.map((o) => o.value)),
   radius: fc.integer({ min: 0, max: 40 }),
 }, { requiredKeys: [] });
 
 const commands = fc.commands([
   fc.constantFrom(...ACTIONS).map((a) => new Run(a)),
-  cornerParams.map((p) => new Run(setCornersAction, p)),
+  cornerParams.map((p) => new Run(setFilletsAction, p)),
   fc.constantFrom(...ACTIONS).map((a) => new Run(a)),
   fc.array(fc.nat({ max: 20 }), { maxLength: 3 }).map((ks) => new Select(ks)),
   fc.array(fc.nat({ max: 20 }), { maxLength: 3 }).map((ks) => new Select(ks)),
@@ -133,7 +133,7 @@ describe('reshape actions on a real scene, stateful property', () => {
         h.unmount();
       }
     }), { numRuns: RUNS });
-    for (const k of ['undo', 'reversePath:ran', 'resamplePath:ran', 'setCorners:ran']) {
+    for (const k of ['undo', 'reversePath:ran', 'resamplePath:ran', 'setFillets:ran']) {
       expect(tally.get(k) ?? 0, `${k} ${JSON.stringify([...tally])}`).toBeGreaterThan(0);
     }
   }, TIMEOUT);

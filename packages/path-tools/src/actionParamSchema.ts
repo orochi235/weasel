@@ -20,7 +20,7 @@ import type { WarpKind, WarpSettings } from './warp/warpTargets';
 type SettingsOf<E> = { [K in Exclude<keyof E, 'kind'>]?: E[K] };
 type BlendParams = Omit<SettingsOf<BlendEffect>, 'reverse'> & { reverse?: boolean | 'auto' };
 /** Either field left out keeps that part of each selected corner. */
-type SetCornersParams = { shape: CornerShape; radius: number };
+type SetFilletsParams = { shape: CornerShape; radius: number };
 type EditPathEffectParams = BlendParams & SettingsOf<BendAlongEffect> & SettingsOf<RepeatAlongEffect>
   & SettingsOf<RoughenEffect> & SettingsOf<ZigzagEffect> & SettingsOf<PuckerBloatEffect>
   & { ids?: readonly string[]; kind?: PathEffect['kind'] };
@@ -54,7 +54,7 @@ declare module '@weasel-js/routing' {
     resamplePath: ResamplePathParams;
     addExtremeAnchors: AddExtremesParams;
     extendToMeet: ExtendToMeetParams;
-    setCorners: SetCornersParams;
+    setFillets: SetFilletsParams;
   }
 }
 

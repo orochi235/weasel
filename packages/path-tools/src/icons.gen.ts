@@ -30,7 +30,7 @@ export type PathToolsIconName =
   | 'reversePath'
   | 'setPathStart'
   | 'cornerRadius'
-  | 'cornerShape'
+  | 'fillet'
   | 'convertSegment'
   | 'straightenSegment'
   | 'curveSegment'
@@ -89,7 +89,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
       "reversePath",
       "setPathStart",
       "cornerRadius",
-      "cornerShape",
+      "fillet",
       "convertSegment",
       "straightenSegment",
       "curveSegment",
@@ -160,7 +160,7 @@ declare module '@weasel-js/icons' {
     'path-tools:reversePath': true;
     'path-tools:setPathStart': true;
     'path-tools:cornerRadius': true;
-    'path-tools:cornerShape': true;
+    'path-tools:fillet': true;
     'path-tools:convertSegment': true;
     'path-tools:straightenSegment': true;
     'path-tools:curveSegment': true;

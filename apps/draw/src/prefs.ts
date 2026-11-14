@@ -213,9 +213,9 @@ export const PREFS = {
               description: "While editing a path, draw a line between each curve's handle tips, with a grip that drags both handles at once.",
               default: false,
             },
-            pathCorners: {
+            pathFillets: {
               kind: 'boolean',
-              name: 'Show corner widgets',
+              name: 'Show fillet widgets',
               description: 'While editing a path, draw a widget inside each corner that rounds it as you drag.',
               default: true,
             },

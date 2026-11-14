@@ -41,7 +41,7 @@ export const COMMANDS = {
   cornerRadius: `
     <path d="M4.375 17 V11.375 A7 7 0 0 1 11.375 4.375 H17"/>
     <path d="M4.375 8 V4.375 H8" stroke-width="1" stroke-dasharray="1.3 1.3"/>`,
-  cornerShape: `
+  fillet: `
     <path d="M4 17 V10.5 L10.5 4 H17"/>
     <path d="M4 10.5 A6.5 6.5 0 0 0 10.5 4" stroke-width="1" stroke-dasharray="1.3 1.3"/>`,
   convertSegment: `

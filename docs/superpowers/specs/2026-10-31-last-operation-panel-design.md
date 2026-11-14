@@ -45,9 +45,9 @@ become that command's values for its next run in the session.
 - Mounts `<LastOperationPanel>` inside the workspace (`.wd-canvas-host`), bottom-left.
 - Drops the Bridge popover and `useBridgeTension` added earlier the same day: Bridge's tension comes from the panel.
 - Every path-tools and core action that reads numeric or enum params gets a `params` group: `bridgePaths`,
-  `bridgeAnchors`, `resamplePath`, `addExtremeAnchors`, `extendToMeet`, `trimPath`, `cycleCornerShape`, and the
-  drags `lengthenPath`, `girth.drag`, `editCorner`, `linkAnchor`, and `insert` (polygon and star). Simplify and
+  `bridgeAnchors`, `resamplePath`, `addExtremeAnchors`, `extendToMeet`, `trimPath`, `cycleFillet`, and the
+  drags `lengthenPath`, `girth.drag`, `editFillet`, `linkAnchor`, and `insert` (polygon and star). Simplify and
   Offset keep their live sliders; variant-driven actions, live path effects (edited on the selection through
-  `editPathEffect`), `setCorners` (the corner controls' action), selection-only commands, and plain manipulation
+  `editPathEffect`), `setFillets` (the fillet controls' action), selection-only commands, and plain manipulation
   drags (move, resize, rotate, anchor edits) get none. Not built yet: the Smudge brush, the Simplify brush, and the
   warps (Distort, Cloth warp, Puppet warp).

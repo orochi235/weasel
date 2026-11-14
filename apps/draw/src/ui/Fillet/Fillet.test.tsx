@@ -8,8 +8,8 @@ import {
   withCorner,
   type PolygonPath,
 } from '@weasel-js/core';
-import { CORNER_CONTROLS_PROMPT, type CornerControlsSelection } from '@weasel-js/path-tools';
-import { CornerShape } from './CornerShape';
+import { FILLET_CONTROLS_PROMPT, type FilletControlsSelection } from '@weasel-js/path-tools';
+import { Fillet } from './Fillet';
 
 afterEach(cleanup);
 
@@ -21,20 +21,20 @@ function setup(selected: number[]) {
   const scene = { get: (id: unknown) => (id === asNodeId('p') ? { pose: { x: 0, y: 0, width: 100, height: 100 }, data: { path } } : undefined), subscribe: () => () => {} };
   let anchors: ReadonlySet<number> = new Set(selected);
   const listeners = new Set<() => void>();
-  const selection: CornerControlsSelection = {
+  const selection: FilletControlsSelection = {
     editingId: () => 'p',
     selectedAnchors: () => anchors,
     subscribe: (l) => { listeners.add(l); return () => { listeners.delete(l); }; },
   };
   const run = vi.fn();
-  function SetCorners() {
-    useAction({ id: 'setCorners', label: 'Set corners', invoker: { timing: 'immediate', run: (_d, params) => run(params) } });
+  function SetFillets() {
+    useAction({ id: 'setFillets', label: 'Set fillets', invoker: { timing: 'immediate', run: (_d, params) => run(params) } });
     return null;
   }
   render(
     <ActionsProvider>
-      <SetCorners />
-      <CornerShape scene={scene} selection={selection} />
+      <SetFillets />
+      <Fillet scene={scene} selection={selection} />
     </ActionsProvider>,
   );
   const select = (next: number[]) => act(() => { anchors = new Set(next); listeners.forEach((l) => l()); });
@@ -44,7 +44,7 @@ function setup(selected: number[]) {
 const keyword = (name: string) => screen.getByRole('radio', { name: new RegExp(`^${name}$`, 'i') });
 const curvature = () => screen.getByRole('slider', { name: 'Curvature' }) as HTMLInputElement;
 
-describe('CornerShape', () => {
+describe('Fillet', () => {
   it("shows the selected corner's keyword and parameter", () => {
     setup([0]);
     expect(keyword('scoop')).toHaveAttribute('aria-checked', 'true');
@@ -69,7 +69,7 @@ describe('CornerShape', () => {
 
   it('disables itself and says what to do with no corner selected', () => {
     setup([]);
-    expect(screen.getByText(CORNER_CONTROLS_PROMPT)).toBeInTheDocument();
+    expect(screen.getByText(FILLET_CONTROLS_PROMPT)).toBeInTheDocument();
     expect(keyword('round')).toBeDisabled();
     expect(curvature()).toBeDisabled();
   });

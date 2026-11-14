@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { openPathEnds, pathEndAnchorIndex, pathToAnchors, type AnchorSet } from '@weasel-js/geom';
 import type { Action, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { balanceHandlesAction, editCornerAction, equalizeHandlesAction, lengthenPathAction, simplifyBrushAction } from './index';
+import { balanceHandlesAction, editFilletAction, equalizeHandlesAction, lengthenPathAction, simplifyBrushAction } from './index';
 import { editHarness, type EditHarness } from './shared/testing/editHarness';
 import { checkPath, densePath, penPath, point, runs, snap, tally, timeoutFor } from './pbt.fixture';
 
@@ -25,7 +25,7 @@ interface Drag {
 const DRAGS: Drag[] = [
   { action: simplifyBrushAction, params: fc.record({ radiusPx: fc.integer({ min: 1, max: 80 }), tolerance: fc.constantFrom(0, 0.5, 2, 10) }, { requiredKeys: [] }) },
   { action: lengthenPathAction, on: 'anchor', params: fc.record({ mode: fc.constantFrom('tangent', 'curvature', 'eased') }, { requiredKeys: [] }) },
-  { action: editCornerAction, on: 'corner', params: fc.record({ shape: fc.constantFrom('round', 'bevel', 'scoop', 'notch', 'square', 'squircle') }, { requiredKeys: [] }) },
+  { action: editFilletAction, on: 'corner', params: fc.record({ shape: fc.constantFrom('round', 'bevel', 'scoop', 'notch', 'square', 'squircle') }, { requiredKeys: [] }) },
   { action: balanceHandlesAction, on: 'balance' },
 ];
 
@@ -130,7 +130,7 @@ describe('path-edit drags on a real scene, property', () => {
     for (const d of DRAGS) {
       expect(t.get(`${d.action.id}:changed`), `${d.action.id} ${t}`).toBeGreaterThan(5);
     }
-    for (const k of ['simplifyBrush:replay', 'lengthenPath:replay', 'editCorner:replay']) expect(t.get(k), `${k} ${t}`).toBeGreaterThan(4);
+    for (const k of ['simplifyBrush:replay', 'lengthenPath:replay', 'editFillet:replay']) expect(t.get(k), `${k} ${t}`).toBeGreaterThan(4);
   }, timeoutFor(250, 120));
 
   it('equalizing a grip changes the path exactly when it records a step, and undoes exactly', () => {

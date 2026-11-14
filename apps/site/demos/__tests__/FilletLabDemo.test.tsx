@@ -1,10 +1,10 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { resolveCorners, type PolygonPath } from '@weasel-js/core';
-import { CORNER_CONTROLS_PROMPT } from '@weasel-js/path-tools';
+import { FILLET_CONTROLS_PROMPT } from '@weasel-js/path-tools';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { CornerShapeLabDemo } from '../CornerShapeLabDemo';
+import { FilletLabDemo } from '../FilletLabDemo';
 import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
@@ -61,13 +61,13 @@ const styleButton = (name: string) => screen.getByRole('radio', { name: new RegE
 const curvature = () => screen.getByRole('slider', { name: 'Curvature' }) as HTMLInputElement;
 
 async function mount() {
-  const { container } = await renderSettled(<CornerShapeLabDemo />, { wrapper: withIcons });
+  const { container } = await renderSettled(<FilletLabDemo />, { wrapper: withIcons });
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   return canvas;
 }
 
-describe('CornerShapeLabDemo', () => {
+describe('FilletLabDemo', () => {
   it('rounds the open path\'s corner by dragging its widget, as one undo step', async () => {
     const canvas = await mount();
     expect(tileCorners()[0]).toBeFalsy();
@@ -132,9 +132,9 @@ describe('CornerShapeLabDemo', () => {
 
   it('disables the controls and says what to do with no corner selected', async () => {
     const canvas = await mount();
-    expect(screen.queryByText(CORNER_CONTROLS_PROMPT)).toBeNull();
+    expect(screen.queryByText(FILLET_CONTROLS_PROMPT)).toBeNull();
     click(canvas, 140, 130);
-    expect(screen.getByText(CORNER_CONTROLS_PROMPT)).toBeInTheDocument();
+    expect(screen.getByText(FILLET_CONTROLS_PROMPT)).toBeInTheDocument();
     expect(radiusField()).toBeDisabled();
     expect(styleButton('round')).toBeDisabled();
   });

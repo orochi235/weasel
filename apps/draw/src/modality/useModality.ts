@@ -12,7 +12,7 @@ import {
   type RenderLayer,
   type Scene,
 } from '@weasel-js/core';
-import type { CornerControlsSelection } from '@weasel-js/path-tools';
+import type { FilletControlsSelection } from '@weasel-js/path-tools';
 import type { History } from '@weasel-js/history';
 import {
   createModeDecorations,
@@ -44,7 +44,7 @@ export interface UseModalityReturn {
   /** The path being anchor-edited is the path-edit mode's target, read from the machine. */
   pathEdit: PathEditHost;
   /** The open path and its selected anchors, as the corner controls read them. */
-  cornerSelection: CornerControlsSelection;
+  filletSelection: FilletControlsSelection;
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ export function useModality(
     (id) => hasEditablePath(scene.get(asNodeId(id))),
     anchors,
   ), [machine, scene, anchors]);
-  const cornerSelection = useMemo<CornerControlsSelection>(() => ({
+  const filletSelection = useMemo<FilletControlsSelection>(() => ({
     editingId: pathEdit.editingId,
     selectedAnchors: anchors.get,
     subscribe: (l) => {
@@ -124,5 +124,5 @@ export function useModality(
     },
   }), [pathEdit, anchors, machine]);
 
-  return { machine, decorations, scopingDim, decorationLayer, history, anchors, pathEdit, cornerSelection };
+  return { machine, decorations, scopingDim, decorationLayer, history, anchors, pathEdit, filletSelection };
 }

@@ -78,16 +78,16 @@ describe('openDrawPrefs', () => {
   it('carries the path editing aids into their group and drops the left sidebar width', async () => {
     const backing = new Map<string, unknown>([
       [`${PREFS_PREFIX}view.pathDirection`, true],
-      [`${PREFS_PREFIX}view.pathCorners`, false],
+      [`${PREFS_PREFIX}view.pathFillets`, false],
       [`${PREFS_PREFIX}ui.leftSidebarWidth`, 80],
       [`${PREFS_PREFIX}${VERSION_RECORD}`, 2],
     ]);
     const store = openDrawPrefs(createMemoryAdapter(backing));
     expect(store.get('view.pathEditing.pathDirection')).toBe(true);
-    expect(store.get('view.pathEditing.pathCorners')).toBe(false);
+    expect(store.get('view.pathEditing.pathFillets')).toBe(false);
     expect(store.get('view.pathEditing.pathComb')).toBe(false);
     await store.flush();
-    expect([...backing.keys()].filter((k) => /^weaseldraw\.prefs\/(view\.path(Direction|Comb|Balance|Corners)|ui\.leftSidebarWidth)$/.test(k))).toEqual([]);
+    expect([...backing.keys()].filter((k) => /^weaseldraw\.prefs\/(view\.path(Direction|Comb|Balance|Fillets)|ui\.leftSidebarWidth)$/.test(k))).toEqual([]);
   });
 
   it('carries the path fill rule into the shape tools’ shared option', () => {

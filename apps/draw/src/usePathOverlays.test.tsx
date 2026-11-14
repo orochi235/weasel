@@ -1,8 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { always, never, type ActionDeps, type ChromeRulesDep, type ImmediateInvoker } from '@weasel-js/core';
 import {
-  PATH_BALANCE_CHROME_ID, PATH_COMB_CHROME_ID, PATH_CORNERS_CHROME_ID, PATH_DIRECTION_CHROME_ID,
-  showBalanceAction, showCombAction, showCornersAction, showDirectionAction,
+  PATH_BALANCE_CHROME_ID, PATH_COMB_CHROME_ID, PATH_FILLETS_CHROME_ID, PATH_DIRECTION_CHROME_ID,
+  showBalanceAction, showCombAction, showFilletsAction, showDirectionAction,
 } from '@weasel-js/path-tools';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { drawPrefs } from './prefs';
@@ -14,7 +14,7 @@ const TOGGLES = [
   [showDirectionAction, PATH_DIRECTION_CHROME_ID, 'view.pathEditing.pathDirection', false],
   [showCombAction, PATH_COMB_CHROME_ID, 'view.pathEditing.pathComb', false],
   [showBalanceAction, PATH_BALANCE_CHROME_ID, 'view.pathEditing.pathBalance', false],
-  [showCornersAction, PATH_CORNERS_CHROME_ID, 'view.pathEditing.pathCorners', true],
+  [showFilletsAction, PATH_FILLETS_CHROME_ID, 'view.pathEditing.pathFillets', true],
 ] as const;
 
 function setup() {

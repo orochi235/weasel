@@ -374,7 +374,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   disabled with `ActionDisabledReason.NotApplicable`, and its `enabled` asks the same question its `run`
   answers. So `deleteAnchors` is off where the path refuses the delete (a two-anchor line keeps its two),
   `constrainAnchors` where the selection makes no constraint of its kind, `unconstrainAnchors` where there
-  is none to remove, `setCorners` without a shape or radius or with the corners' own, and `nudgeAnchors`
+  is none to remove, `setFillets` without a shape or radius or with the corners' own, and `nudgeAnchors`
   and `reversePath` where the selection names no anchor of the path (as an undo that shortened the path
   can leave it). A selection command stays enabled when its result is the selection already held.
 - 2026-11-10 (property tests): Align, Distribute, Flip, and the reorder commands follow the ruling above:
@@ -2122,7 +2122,7 @@ Calls the lanes made without a ruling:
 - A binding that takes any modifier uses `ANY_MODS` (`@weasel-js/gestures`, re-exported by routing and core). The
   pen's handle drag and path-tools' anchor link leave Meta out on purpose and keep their own `mods` (2026-11-13).
 - Unbound actions are reached from a panel, a menu or the palette on purpose: the setters a panel drives (`setFill`,
-  `setStroke*`, `setAnchorField`, `setCorners`, …), align and distribute, the path commands and path-effect
+  `setStroke*`, `setAnchorField`, `setFillets`, …), align and distribute, the path commands and path-effect
   release/expand, the diagram router choices, the path-edit `show.*` toggles, `present.go`, and `measure.moveBy` /
   `rotateBy`. The Pathfinder operations are reached by key through the Alt+P keymap's holds, and `clipboard.paste`
   by the DOM paste event (2026-11-13).

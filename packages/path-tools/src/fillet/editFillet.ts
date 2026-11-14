@@ -1,5 +1,5 @@
 /**
- * Corner shape in path edit: drag a corner's widget to set its radius.
+ * Fillet in path edit: drag a corner's widget to set its radius.
  *
  * A drag measures how far the pointer moves along the corner's bisector and
  * turns that into a cut along the edges, clamped to the room the neighboring
@@ -7,7 +7,7 @@
  * selected corner the same radius. The release commits one undo step.
  */
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type InvocationCtx, isCornerWidget,
+  type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type InvocationCtx, isFilletWidget,
   type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
@@ -27,36 +27,36 @@ import {
 import { icon } from '../icons.gen';
 
 /** The shape a corner with no spec yet takes. */
-export const DEFAULT_CORNER_SHAPE: CornerShape = 'round';
+export const DEFAULT_FILLET_SHAPE: CornerShape = 'round';
 
-const LABEL = 'Corner radius';
+const LABEL = 'Fillet radius';
 
 const KEYWORD_LABELS: Record<CornerKeyword, string> = {
   square: 'Square', squircle: 'Squircle', round: 'Round', bevel: 'Bevel', scoop: 'Scoop', notch: 'Notch',
 };
 
 /** The corner-shape keywords as a form's options, for a panel. */
-export const CORNER_SHAPE_OPTIONS = CORNER_KEYWORDS.map((value) => ({ value, label: KEYWORD_LABELS[value] }));
+export const FILLET_SHAPE_OPTIONS = CORNER_KEYWORDS.map((value) => ({ value, label: KEYWORD_LABELS[value] }));
 
-/** What `editCorner` reads from its params. */
-export interface EditCornerParams {
-  /** The shape a corner with no shape yet takes. Default {@link DEFAULT_CORNER_SHAPE}. */
+/** What `editFillet` reads from its params. */
+export interface EditFilletParams {
+  /** The shape a corner with no shape yet takes. Default {@link DEFAULT_FILLET_SHAPE}. */
   shape?: CornerKeyword;
 }
 
 /** A corner drag's params as a form, for the last-operation panel. */
-export const EDIT_CORNER_PARAMS = pref.group(LABEL, {
-  shape: pref.enum<CornerKeyword>('Shape for sharp corners', 'round', CORNER_SHAPE_OPTIONS, {
+export const EDIT_FILLET_PARAMS = pref.group(LABEL, {
+  shape: pref.enum<CornerKeyword>('Shape for sharp corners', 'round', FILLET_SHAPE_OPTIONS, {
     description: 'The shape a corner that had none takes. A corner that already had a shape keeps it.',
   }),
 });
 
 const newShapeOf = (params: Record<string, unknown> | undefined): CornerShape =>
-  (CORNER_KEYWORDS as readonly unknown[]).includes(params?.shape) ? params!.shape as CornerKeyword : DEFAULT_CORNER_SHAPE;
+  (CORNER_KEYWORDS as readonly unknown[]).includes(params?.shape) ? params!.shape as CornerKeyword : DEFAULT_FILLET_SHAPE;
 
-/** Flat anchor index of a `corner:N` affordance kind, or null. */
+/** Flat anchor index of a `fillet:N` affordance kind, or null. */
 function cornerIndexOf(kind: string): number | null {
-  const m = kind.match(/^corner:(\d+)$/);
+  const m = kind.match(/^fillet:(\d+)$/);
   return m ? parseInt(m[1], 10) : null;
 }
 
@@ -86,19 +86,19 @@ function widgetEnabled(deps: ActionDeps | undefined): true | ActionDisabledReaso
   return true;
 }
 
-/** Drag a corner widget to set the corner's radius. A corner with no shape yet takes the `shape` param's
- *  ({@link EditCornerParams}), which the last-operation panel changes by replaying the drag. */
-export const editCornerAction: Action & { requires: string[] } = inPlane({
-  id: 'editCorner',
+/** Drag a fillet widget to set the corner's radius. A corner with no shape yet takes the `shape` param's
+ *  ({@link EditFilletParams}), which the last-operation panel changes by replaying the drag. */
+export const editFilletAction: Action & { requires: string[] } = inPlane({
+  id: 'editFillet',
   icon: icon('cornerRadius'),
   label: LABEL,
   tags: pathOperationTags('drag'),
   // Ties the marquee's `empty` and move's `selected-body` on specificity and
   // registers ahead of the marquee; move turns path-edit presses down itself.
-  defaultBinding: [{ spec: { kind: 'drag', target: { kindOf: isCornerWidget } }, opts: { id: 'editCorner.drag' } }],
+  defaultBinding: [{ spec: { kind: 'drag', target: { kindOf: isFilletWidget } }, opts: { id: 'editFillet.drag' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
-  params: EDIT_CORNER_PARAMS,
+  params: EDIT_FILLET_PARAMS,
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {

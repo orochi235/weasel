@@ -1,8 +1,8 @@
 /**
- * The corner widgets path edit shows on the open path: one inside each corner
+ * The fillet widgets path edit shows on the open path: one inside each corner
  * anchor, at the middle of its cut, pushed a fixed distance further in on
  * screen so that it clears the anchor square at a zero radius. The overlay
- * paints it and the hit-test presses it, as `corner:N`, from this one
+ * paints it and the hit-test presses it, as `fillet:N`, from this one
  * placement.
  */
 import {
@@ -12,19 +12,19 @@ import {
 import type { DrawCommand } from '@weasel-js/renderer';
 import { DEFAULT_OVERLAY_STYLE, type PathEditExtension } from '@weasel-js/core';
 
-/** Chrome-caps id the corner widgets are drawn and hit-tested under. On by
+/** Chrome-caps id the fillet widgets are drawn and hit-tested under. On by
  *  default. */
-export const PATH_CORNERS_CHROME_ID = 'path-edit.corners';
+export const PATH_FILLETS_CHROME_ID = 'path-edit.fillets';
 
 /** Screen distance from the middle of a corner's cut to its widget. */
-export const CORNER_WIDGET_STANDOFF_PX = 14;
+export const FILLET_WIDGET_STANDOFF_PX = 14;
 
 /** Below this half-angle short of straight, an anchor is too flat to offer a
  *  widget; a freehand stroke would otherwise wear one at every vertex. */
 const MIN_WIDGET_TURN = 0.05;
 
 /** The corner anchors of `path` that show a widget. */
-export function cornerWidgetFrames(path: PolygonPath): CornerFrame[] {
+export function filletWidgetFrames(path: PolygonPath): CornerFrame[] {
   return cornerFrames(path).filter((f) => f.halfAngle < Math.PI / 2 - MIN_WIDGET_TURN);
 }
 
@@ -36,8 +36,8 @@ export function cornerCutMiddle(frame: CornerFrame): { x: number; y: number } {
 }
 
 /** The widget's position in world coords under a view of `scale`. */
-export function cornerWidgetAt(frame: CornerFrame, scale: Scale2): { x: number; y: number } {
-  const at = standoff(cornerCutMiddle(frame), frame.bisector, CORNER_WIDGET_STANDOFF_PX, scale);
+export function filletWidgetAt(frame: CornerFrame, scale: Scale2): { x: number; y: number } {
+  const at = standoff(cornerCutMiddle(frame), frame.bisector, FILLET_WIDGET_STANDOFF_PX, scale);
   return { x: at.x, y: at.y };
 }
 
@@ -45,7 +45,7 @@ export function cornerWidgetAt(frame: CornerFrame, scale: Scale2): { x: number; 
 const GLYPH_HALF_PX = 4.5;
 
 /** How the widgets are drawn. */
-export interface CornerWidgetStyle {
+export interface FilletWidgetStyle {
   /** Default: path edit's anchor fill. */
   fill?: string;
   /** Default: path edit's anchor stroke. */
@@ -85,12 +85,12 @@ function cornerGlyph(c: V, toward: V, k: number): PolygonPath {
  * square whose corner toward the anchor is cut in the corner's shape. A
  * corner with no spec draws as round, the shape a drag gives it.
  */
-export function cornerWidgetCommands(path: PolygonPath, view: View, style: CornerWidgetStyle = {}): DrawCommand[] {
+export function filletWidgetCommands(path: PolygonPath, view: View, style: FilletWidgetStyle = {}): DrawCommand[] {
   const out: DrawCommand[] = [];
   const fill = { paint: { kind: 'solid' as const, color: style.fill ?? DEFAULT_OVERLAY_STYLE.anchorFill } };
   const stroke = { paint: { kind: 'solid' as const, color: style.stroke ?? DEFAULT_OVERLAY_STYLE.anchorStroke }, width: 1 };
-  for (const frame of cornerWidgetFrames(path)) {
-    const at = viewWorldToScreen(view, cornerWidgetAt(frame, view.scale));
+  for (const frame of filletWidgetFrames(path)) {
+    const at = viewWorldToScreen(view, filletWidgetAt(frame, view.scale));
     // On screen, the anchor lies back along the bisector.
     const bx = -frame.bisector.x * view.scale.x, by = -frame.bisector.y * view.scale.y;
     const bl = Math.hypot(bx, by) || 1;
@@ -100,18 +100,18 @@ export function cornerWidgetCommands(path: PolygonPath, view: View, style: Corne
   return out;
 }
 
-/** The corner widgets as a path-edit extension: drawn, and pressed as
- *  `corner:N`, while chrome-caps shows {@link PATH_CORNERS_CHROME_ID}. */
-export function createCornerWidgetsExtension(style: CornerWidgetStyle = {}): PathEditExtension {
+/** The fillet widgets as a path-edit extension: drawn, and pressed as
+ *  `fillet:N`, while chrome-caps shows {@link PATH_FILLETS_CHROME_ID}. */
+export function createFilletWidgetsExtension(style: FilletWidgetStyle = {}): PathEditExtension {
   return {
-    id: 'cornerShape',
-    marks: (ctx) => (ctx.isVisible(PATH_CORNERS_CHROME_ID) ? cornerWidgetCommands(ctx.path, ctx.view, style) : []),
-    parts: (target) => cornerWidgetFrames(target.path).map((f) => ({
+    id: 'fillet',
+    marks: (ctx) => (ctx.isVisible(PATH_FILLETS_CHROME_ID) ? filletWidgetCommands(ctx.path, ctx.view, style) : []),
+    parts: (target) => filletWidgetFrames(target.path).map((f) => ({
       ...cornerCutMiddle(f),
-      hitKind: `corner:${f.index}`,
-      chromeId: PATH_CORNERS_CHROME_ID,
+      hitKind: `fillet:${f.index}`,
+      chromeId: PATH_FILLETS_CHROME_ID,
       hitRadiusPx: WIDGET_HIT_RADIUS_PX,
-      standoff: { px: CORNER_WIDGET_STANDOFF_PX, normal: f.bisector },
+      standoff: { px: FILLET_WIDGET_STANDOFF_PX, normal: f.bisector },
     })),
   };
 }

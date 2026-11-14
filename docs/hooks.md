@@ -104,7 +104,7 @@ curly quote, so both codepoints are listed.
 |---|---|
 | `move` | drag on `selected-body` |
 | `editAnchors` | drag whose press hit an anchor or control-handle affordance; it ties `move` on specificity, and `move` turns those presses down |
-| `editCorner` | drag whose press hit a corner widget (`corner:N`) inside a corner anchor of the edited path, shown while chrome-caps shows `path-edit.corners`; sets that corner's radius, or every selected corner's when the anchor is selected |
+| `editFillet` | drag whose press hit a fillet widget (`fillet:N`) inside a corner anchor of the edited path, shown while chrome-caps shows `path-edit.fillets`; sets that corner's radius, or every selected corner's when the anchor is selected |
 | `bendSegment` | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
 | `balanceHandles` | drag whose press hit a curved segment's `balance:N` grip, shown while chrome-caps shows `path-edit.balance`; `move` turns those down too, and a length lock in force (`handleLock.length`, or Mod) holds it still |
 | `equalizeHandles` | double-click on a `balance:N` grip |
@@ -135,7 +135,7 @@ from the `resize`, `rotate` and `move` presets' selection contributions.
 `.top` / `.bottom` / `.centerX` / `.centerY`, `distribute.horizontal` /
 `.vertical`, `pathfinder.union` / `.subtract` / `.intersect` / `.exclude` /
 `.divide` / `.crop`, `setFill`, `setStroke`, `setFillOpacity`,
-`setStrokeOpacity`, `setStrokeWidth` (`width`, and per-anchor `vertexWidths`), `setVertexColor` (one anchor's `rgba` by `index`), `setAnchorField`, `cycleCornerShape` (the selected corners' next `corner-shape` keyword), `setCorners` (the selected corners' `shape` and `radius` params) — all UI-driven.
+`setStrokeOpacity`, `setStrokeWidth` (`width`, and per-anchor `vertexWidths`), `setVertexColor` (one anchor's `rgba` by `index`), `setAnchorField`, `cycleFillet` (the selected corners' next `corner-shape` keyword), `setFillets` (the selected corners' `shape` and `radius` params) — all UI-driven.
 
 The `align.*` actions take a `to` param and `flip` a `pivot` param naming what
 the selection lines up against: `'union'` (the selection itself — align's

@@ -15,10 +15,10 @@ export {
   balancePreset,
   bridgePreset,
   constraintsPreset,
-  cornerShapePreset,
+  filletPreset,
   createBalancePreset,
   createConstraintsPreset,
-  createCornerShapePreset,
+  createFilletPreset,
   createCurvatureCombPreset,
   createHandleSnapPreset,
   createPathStructurePreset,
@@ -55,7 +55,7 @@ export { EXTEND_TO_MEET_PARAMS, extendToMeetAction, type ExtendToMeetParams } fr
 export { LENGTHEN_PATH_PARAMS, lengthenPathAction, type LengthenPathParams } from './lengthen/lengthenPath';
 export { useLengthenTool } from './lengthen/useLengthenTool';
 export {
-  overlayShown, PATH_OVERLAYS_GROUP, showBalanceAction, showCombAction, showCornersAction, showDirectionAction,
+  overlayShown, PATH_OVERLAYS_GROUP, showBalanceAction, showCombAction, showFilletsAction, showDirectionAction,
   showOverlayAction,
 } from './overlays/showOverlay';
 export {
@@ -90,11 +90,11 @@ export { configureWarpParams, settingsOfWarp, WARP_SETTING_FIELDS, warpDragParam
 export { PATH_EFFECT_SETTINGS_SCHEMA, pathEffectSettingsForm } from './pathEffects/settingsForm';
 export { PATH_EFFECT_PARAMS } from './pathEffects/effectForms';
 export {
-  CORNER_SHAPE_OPTIONS, DEFAULT_CORNER_SHAPE, EDIT_CORNER_PARAMS, editCornerAction, type EditCornerParams,
-} from './cornerShape/editCorner';
+  FILLET_SHAPE_OPTIONS, DEFAULT_FILLET_SHAPE, EDIT_FILLET_PARAMS, editFilletAction, type EditFilletParams,
+} from './fillet/editFillet';
 export {
-  CYCLE_CORNER_SHAPE_PARAMS, cycleCornerShapeAction, DEFAULT_CORNER_TRIM_SHARE, setCornersAction, type CycleCornerShapeParams,
-} from './cornerShape/cornerCommands';
+  CYCLE_FILLET_PARAMS, cycleFilletAction, DEFAULT_FILLET_TRIM_SHARE, setFilletsAction, type CycleFilletParams,
+} from './fillet/filletCommands';
 
 // ─── Tools ─────────────────────────────────────────────────────────────────
 export { useTrimTool, type UseTrimToolOptions } from './trim/useTrimTool';
@@ -138,9 +138,9 @@ export {
 } from './constraints/constraintLinkMarks';
 export type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 export {
-  CORNER_WIDGET_STANDOFF_PX, cornerWidgetCommands, cornerWidgetFrames, createCornerWidgetsExtension,
-  PATH_CORNERS_CHROME_ID, type CornerWidgetStyle,
-} from './cornerShape/cornerWidgets';
+  FILLET_WIDGET_STANDOFF_PX, filletWidgetCommands, filletWidgetFrames, createFilletWidgetsExtension,
+  PATH_FILLETS_CHROME_ID, type FilletWidgetStyle,
+} from './fillet/filletWidgets';
 export {
   createDirectionExtension, directionCommands, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle,
 } from './pathStructure/directionMarks';
@@ -153,11 +153,11 @@ export { createSoftSelectionExtension, type SoftSelectionOptions } from './softS
 
 // ─── Panels ────────────────────────────────────────────────────────────────
 export {
-  CORNER_CONTROLS, CORNER_CONTROLS_PROMPT, CORNER_K_SLIDER_RANGE, cornerControlsParams, cornerControlsState, type CornerControlsState,
-} from './cornerShape/cornerControls';
+  FILLET_CONTROLS, FILLET_CONTROLS_PROMPT, FILLET_K_SLIDER_RANGE, filletControlsParams, filletControlsState, type FilletControlsState,
+} from './fillet/filletControls';
 export {
-  useCornerControls, type CornerControlsScene, type CornerControlsSelection, type UseCornerControlsReturn,
-} from './cornerShape/useCornerControls';
+  useFilletControls, type FilletControlsScene, type FilletControlsSelection, type UseFilletControlsReturn,
+} from './fillet/useFilletControls';
 
 // ─── Data the tools keep on a node ─────────────────────────────────────────
 export { constraintAxisOf, constraintConflictsOf, constraintsOf } from './constraints/pathConstraints';

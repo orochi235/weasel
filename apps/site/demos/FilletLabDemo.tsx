@@ -20,16 +20,16 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { CORNER_CONTROLS, cornerShapePreset, type CornerControlsSelection } from '@weasel-js/path-tools';
+import { FILLET_CONTROLS, filletPreset, type FilletControlsSelection } from '@weasel-js/path-tools';
 import { createEmitter } from '@weasel-js/registry';
 import { useMemo, useState } from 'react';
-import { CornerPanel } from './CornerShapePanel';
-import s from './CornerShapeLabDemo.module.css';
+import { FilletPanel } from './FilletPanel';
+import s from './FilletLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-// The corner controls read the selection, so they sit over the canvas
+// The fillet controls read the selection, so they sit over the canvas
 // rather than in the trial's config.
 const config = f.schema({});
 type Config = ConfigOf<typeof config>;
@@ -78,7 +78,7 @@ const createLabScene = () =>
 
 /** Which path is open and which of its anchors are selected, held beside the
  *  trial so the lab opens on one corner and its panel can read them. */
-function useEditHost(): { host: PathEditHost; selection: CornerControlsSelection } {
+function useEditHost(): { host: PathEditHost; selection: FilletControlsSelection } {
   return useState(() => {
     let id: string | null = FIRST;
     let anchors = FIRST_ANCHORS;
@@ -97,10 +97,10 @@ function useEditHost(): { host: PathEditHost; selection: CornerControlsSelection
   })[0];
 }
 
-const FEATURES = ['draw', cornerShapePreset] as const;
-const TUNE: ActionTunings = { cycleCornerShape: { bindings: [{ kind: 'key', key: 'k' }] } };
+const FEATURES = ['draw', filletPreset] as const;
+const TUNE: ActionTunings = { cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] } };
 
-function CornersTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function FilletsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { host, selection } = useEditHost();
   const redrawOn = useMemo(() => [selection], [selection]);
@@ -117,13 +117,13 @@ function CornersTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         selectionOptions={selectionOptions}
         tune={TUNE}
       />
-      <CornerPanel scene={scene} selection={selection} />
+      <FilletPanel scene={scene} selection={selection} />
     </div>
   );
 }
 
-const cornersInstrument = defineInstrument<State, Config>({
-  name: 'Corners',
+const filletsInstrument = defineInstrument<State, Config>({
+  name: 'Fillets',
   config,
   initialState: () => ({ scene: null }),
   tools: {
@@ -132,13 +132,13 @@ const cornersInstrument = defineInstrument<State, Config>({
       { id: 'pen', label: 'Pen', icon: icon('core:pen') },
     ],
   },
-  render: (ctx) => <CornersTrial ctx={ctx} />,
+  render: (ctx) => <FilletsTrial ctx={ctx} />,
 });
 
-export function CornerShapeLabDemo() {
+export function FilletLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title={CORNER_CONTROLS.name} instruments={[cornersInstrument]} />
+      <Lab title={FILLET_CONTROLS.name} instruments={[filletsInstrument]} />
     </div>
   );
 }

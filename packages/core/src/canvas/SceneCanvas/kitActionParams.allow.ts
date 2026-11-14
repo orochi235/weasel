@@ -57,7 +57,7 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
     3: 'count: the anchors a two-segment constraint takes', 4: 'count: the anchors a two-segment constraint takes, unshared',
   },
   'packages/path-tools/src/constraints/linkAnchor.ts': { 10: RADIX },
-  'packages/path-tools/src/cornerShape/editCorner.ts': { 10: RADIX },
+  'packages/path-tools/src/fillet/editFillet.ts': { 10: RADIX },
   'packages/path-tools/src/lengthen/lengthenPath.ts': { 8: 'reach: how near an open end a press takes it', 10: RADIX },
   'packages/path-tools/src/pathEffects/spine.ts': { 3: 'count: a blend with a spine has three sources' },
   'packages/path-tools/src/shapeBuilder/shapeBuilderActions.ts': { '1e-9': 'a floor that keeps a zero scale from dividing' },

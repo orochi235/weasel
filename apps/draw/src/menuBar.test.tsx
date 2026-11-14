@@ -98,7 +98,7 @@ const ROWS = {
     'Align Left', 'Align Centers Horizontally', 'Align Right', 'Align Top', 'Align Centers Vertically', 'Align Bottom',
     'Distribute Horizontally', 'Distribute Vertically', 'Flip Horizontal', 'Flip Vertical'],
   View: ['Show grid', 'Snapping', 'Snap to grid', 'Show rulers', 'Bound view to content', 'Symmetry', 'Path direction', 'Curvature comb',
-    'Handle balance', 'Corner widgets', 'Zoom In', 'Zoom Out', 'Reset Zoom', 'Fit Content',
+    'Handle balance', 'Fillet widgets', 'Zoom In', 'Zoom Out', 'Reset Zoom', 'Fit Content',
     'Arrange', 'Pathfinder', 'Path', 'Constraints', 'Loupe', 'Tools', 'Properties', 'Colors', 'Layers', 'History',
     'Status bar'],
 };

@@ -45,7 +45,7 @@ and an app that imports only some never loads the others:
 | `constraintsPreset` | Path constraints: the actions, their marks, and every edit finished so they hold |
 | `pathStructurePreset` | Make start point and Reverse path direction, and arrows showing which way the open path runs, under chrome id `path-edit.direction` |
 | `segmentTypePreset` | Turn segments straight or curved, from the selection (Shift+C) or under a Shift+double-click |
-| `cornerShapePreset` | Corner shape: a widget in each corner anchor whose drag sets its radius (`editCorner`), and `setCorners` and `cycleCornerShape` on the selected corners; `CORNER_CONTROLS` and `useCornerControls` are a panel over them |
+| `filletPreset` | Fillet: a widget in each corner anchor whose drag sets its radius (`editFillet`), and `setFillets` and `cycleFillet` on the selected corners; `FILLET_CONTROLS` and `useFilletControls` are a panel over them |
 | `pathEffectsPreset` | Blend, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
 | `warpPreset` | Expand and configure a held warp; `useDistortTool`, `useClothWarpTool`, and `usePuppetTool` bring their own drags |
 
@@ -74,12 +74,12 @@ The sources are hidden while the effect shows them (every effect's create action
 Double-clicking the curved text edits the hidden text in place; Enter path edit on the effect edits its path.
 
 The comb, balance lines, constraint marks, and direction arrows are off until
-chrome-caps shows them; the corner widgets show until it hides
-`path-edit.corners`. The toggles `pathEdit.show.direction`, `.comb`,
-`.balance`, and `.corners` (group `pathOverlays`) come with their presets and
+chrome-caps shows them; the fillet widgets show until it hides
+`path-edit.fillets`. The toggles `pathEdit.show.direction`, `.comb`,
+`.balance`, and `.fillets` (group `pathOverlays`) come with their presets and
 flip that rule through core's `chromeRules` dep. `createCurvatureCombPreset`, `createBalancePreset`,
 `createConstraintsPreset`, `createPathStructurePreset`, and
-`createCornerShapePreset` take their look. They reach path edit through core's
+`createFilletPreset` take their look. They reach path edit through core's
 `PathEditExtension`: marks drawn on the open path, parts of it to press, marks
 a click selects and Delete removes, a share of an anchor or handle drag, what
 an edit keeps true, and, for spiro curves, how a path drawn from another form

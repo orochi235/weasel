@@ -285,7 +285,7 @@ describe('persistence — legacy string paint migration', () => {
   });
 });
 
-describe('persistence — corner shape', () => {
+describe('persistence — fillet', () => {
   it("keeps a path's corner specs through the JSON hop", () => {
     const path = {
       kind: 'polygon',

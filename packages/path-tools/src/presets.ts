@@ -8,9 +8,9 @@ import { balanceHandlesAction, equalizeHandlesAction } from './balance/handleBal
 import { createBalanceExtension, PATH_BALANCE_CHROME_ID, type PathEditBalanceStyle } from './balance/balanceMarks';
 import { bridgeAnchorsAction, bridgePathsAction } from './bridge/bridge';
 import { createCombExtension, PATH_COMB_CHROME_ID, type PathEditCombOptions } from './comb/comb';
-import { cycleCornerShapeAction, setCornersAction } from './cornerShape/cornerCommands';
-import { createCornerWidgetsExtension, type CornerWidgetStyle } from './cornerShape/cornerWidgets';
-import { editCornerAction } from './cornerShape/editCorner';
+import { cycleFilletAction, setFilletsAction } from './fillet/filletCommands';
+import { createFilletWidgetsExtension, type FilletWidgetStyle } from './fillet/filletWidgets';
+import { editFilletAction } from './fillet/editFillet';
 import { constrainAnchorsAction, deleteConstraintAction, unconstrainAnchorsAction } from './constraints/anchorConstraints';
 import type { ConstraintGlyphStyle } from './constraints/constraintGlyphs';
 import { createConstraintsExtension, DEFAULT_CONSTRAINT_STYLE } from './constraints/constraintsExtension';
@@ -41,7 +41,7 @@ import { simplifyBrushAction } from './simplifyBrush/simplifyBrush';
 import { smudgeBrushAction } from './smudge/smudgeBrush';
 import { spiroPreset } from './spiro/spiroPreset';
 import { trimPathAction } from './trim/trimSegment';
-import { showBalanceAction, showCombAction, showCornersAction, showDirectionAction } from './overlays/showOverlay';
+import { showBalanceAction, showCombAction, showFilletsAction, showDirectionAction } from './overlays/showOverlay';
 import { configureWarpAction, expandWarpAction } from './warp/warpActions';
 
 /** `simplifyBrush`, which `useSimplifyBrushTool`, a path-edit tool, binds. */
@@ -170,24 +170,24 @@ export function createConstraintsPreset(style: Partial<ConstraintGlyphStyle> = {
 export const constraintsPreset: FeaturePreset = createConstraintsPreset();
 
 /**
- * Corner shape: a widget inside each corner anchor of the open path, drawn in
- * `style`, whose drag sets the corner's radius (`editCorner`), and the
- * commands on the selected corners (`setCorners`, `cycleCornerShape`). The
- * widgets show while chrome-caps shows `path-edit.corners`, which is on by
- * default; `pathEdit.show.corners` toggles it. It refines `paths`, so a
+ * Fillet: a widget inside each corner anchor of the open path, drawn in
+ * `style`, whose drag sets the corner's radius (`editFillet`), and the
+ * commands on the selected corners (`setFillets`, `cycleFillet`). The
+ * widgets show while chrome-caps shows `path-edit.fillets`, which is on by
+ * default; `pathEdit.show.fillets` toggles it. It refines `paths`, so a
  * widget's drag goes ahead of the marquee.
  */
-export function createCornerShapePreset(style: CornerWidgetStyle = {}): FeaturePreset {
+export function createFilletPreset(style: FilletWidgetStyle = {}): FeaturePreset {
   return {
-    id: 'cornerShape',
+    id: 'fillet',
     refines: ['paths'],
-    actions: [editCornerAction, setCornersAction, cycleCornerShapeAction, showCornersAction],
-    pathEdit: [createCornerWidgetsExtension(style)],
+    actions: [editFilletAction, setFilletsAction, cycleFilletAction, showFilletsAction],
+    pathEdit: [createFilletWidgetsExtension(style)],
   };
 }
 
-/** Corner shape with path edit's anchor colors. */
-export const cornerShapePreset: FeaturePreset = createCornerShapePreset();
+/** Fillet with path edit's anchor colors. */
+export const filletPreset: FeaturePreset = createFilletPreset();
 
 /**
  * Where a path starts and which way it runs: `setPathStart` and
@@ -236,7 +236,7 @@ export const warpPreset: FeaturePreset = {
 };
 
 /** Every preset above, spiro curves, the comb, balance, constraints, path
- *  direction, and corner shape with their defaults — except soft selection and
+ *  direction, and fillet with their defaults — except soft selection and
  *  handle snapping, which change what every anchor or handle drag does. */
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
@@ -244,6 +244,6 @@ export const pathTools: FeaturePreset = {
     simplifyBrushPreset, handleLocksPreset, bridgePreset, spiroPreset, trimPreset, extendPreset, lengthenPreset,
     smudgePreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
-    cornerShapePreset, pathEffectsPreset, warpPreset,
+    filletPreset, pathEffectsPreset, warpPreset,
   ],
 };

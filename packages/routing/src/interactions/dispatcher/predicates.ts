@@ -63,9 +63,9 @@ export const isControlHandle = hitPredicate((target) => {
 });
 
 /** A corner-shape widget, set inside a corner anchor of the edited path. */
-export const isCornerWidget = hitPredicate((target) => {
+export const isFilletWidget = hitPredicate((target) => {
   const k = kindOf(target);
-  return k !== undefined && /^corner:\d+$/.test(k);
+  return k !== undefined && /^fillet:\d+$/.test(k);
 });
 
 /** Any of the three anchor-editing affordances (anchor + both controls). */
@@ -85,4 +85,4 @@ export const isBalanceGrip = hitPredicate((target) => {
 /** Anything path edit puts on the path: an anchor, a control, a segment, a
  *  segment's balance grip, or a corner widget. */
 export const isPathEditPart = hitPredicate((target) =>
-  isAnchorOrControl(target) || isSegment(target) || isBalanceGrip(target) || isCornerWidget(target));
+  isAnchorOrControl(target) || isSegment(target) || isBalanceGrip(target) || isFilletWidget(target));

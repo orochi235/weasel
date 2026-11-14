@@ -138,18 +138,18 @@ Owner tags, after the priority (2026-10-26):
   `packages/geom/src/paths/resamplePath.ts`).
   Closes when the maintainer has driven Resample hands-on and the defaults and keys he picks are
   committed.
-- **(P2) [maintainer] Tune corner shape hands-on, with the maintainer driving.** First-draft behavior and keys:
+- **(P2) [maintainer] Tune Fillet hands-on, with the maintainer driving.** First-draft behavior and keys:
   a widget sits 14 screen px inside each corner anchor, past the middle of its cut, and is hit
   within 6px; anchors within 0.05 rad of straight get none. A widget drag sets the radius from the
   pointer's travel along the bisector, every selected corner's when its anchor is selected, and a
   corner with no spec takes `round` (Shape for sharp corners in the last-operation panel after a drag). Giving a
-  sharp corner a shape cuts a quarter of its room (`DEFAULT_CORNER_TRIM_SHARE`, Size for sharp corners in the panel
-  after Next corner shape). `cycleCornerShape` has no key of its own (its lab tunes K onto it, the
-  Slice tool's key elsewhere), `setCorners` is reached only through the panel, the
+  sharp corner a shape cuts a quarter of its room (`DEFAULT_FILLET_TRIM_SHARE`, Size for sharp corners in the panel
+  after Next fillet shape). `cycleFillet` has no key of its own (its lab tunes K onto it, the
+  Slice tool's key elsewhere), `setFillets` is reached only through the panel, the
   panel's curvature slider spans -4 to 4, and the widgets show by default under
-  `path-edit.corners` with no key to hide them (`packages/path-tools/src/cornerShape/`,
-  `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/CornerShapeLabDemo.tsx`).
-  Closes when the maintainer has driven corner shape hands-on and the defaults and keys he picks are
+  `path-edit.fillets` with no key to hide them (`packages/path-tools/src/fillet/`,
+  `packages/geom/src/paths/cornerShape.ts`, `apps/site/demos/FilletLabDemo.tsx`).
+  Closes when the maintainer has driven Fillet hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune Blend, Bend along a path, and Repeat along a path hands-on, with the maintainer
   driving.** First-draft step counts, spacing, and turn defaults, their keys, and how an effect is
