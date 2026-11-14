@@ -23,6 +23,14 @@ function pick(label: string, value: string): void {
   fireEvent.blur(input);
 }
 
+/** Opens a FillStrokeSwatch chip's paint editor and picks in its solid body. */
+function pickInSwatch(slot: string, value: string): void {
+  fireEvent.click(screen.getByRole('button', { name: slot }));
+  const input = screen.getByRole('dialog', { name: `${slot} editor` }).querySelector('input[type="color"]')!;
+  fireEvent.input(input, { target: { value } });
+  fireEvent.blur(input);
+}
+
 const LINEAR: GradientPaint = {
   kind: 'linear-gradient',
   from: { x: 0, y: 0 },
@@ -80,21 +88,21 @@ describe('recent-color recording', () => {
     const store = setup(
       <FillStrokeSwatch fill={{ color: '#ffffffff' }} stroke={{ color: '#000000ff' }} focused="fill" onFocusChange={() => {}} onChange={() => {}} />,
     );
-    pick('Stroke', '#123456');
+    pickInSwatch('Stroke', '#123456');
     expect(store.get()).toEqual(['#123456ff']);
   });
 
-  it('records the color a FillStrokeSwatch consumer says it applied', () => {
+  it('records the color of the paint a FillStrokeSwatch consumer says it applied', () => {
     const store = setup(
       <FillStrokeSwatch
         fill={{ color: '#ffffffff' }}
         stroke={{ color: '#00000080' }}
         focused="fill"
         onFocusChange={() => {}}
-        onChange={(_slot, color) => `${color}80`}
+        onChange={(_slot, paint) => (paint && 'color' in paint ? { color: `${paint.color.slice(0, 7)}80` } : paint)}
       />,
     );
-    pick('Stroke', '#123456');
+    pickInSwatch('Stroke', '#123456');
     expect(store.get()).toEqual(['#12345680']);
   });
 });

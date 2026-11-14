@@ -73,6 +73,20 @@ describe('StrokeAndFillDemo', () => {
     expect(after.slice(4)).toEqual(before.slice(4));
   });
 
+  it("recolors a stop of the rect's gradient fill from its swatch chip, keeping the gradient", () => {
+    renderWithIcons(<StrokeAndFillDemo />);
+    fireEvent.click(screen.getByRole('button', { name: 'Fill' }));
+    act(() => {
+      const stop = screen.getByLabelText('Stop 1');
+      fireEvent.input(stop, { target: { value: '#000000' } });
+      fireEvent.blur(stop);
+    });
+    const paint = data('swatch').fill!.paint as { kind: string; stops: { color: string }[] };
+    expect(paint.kind).toBe('linear-gradient');
+    expect(paint.stops[0].color).toBe('#000000ff');
+    expect(paint.stops).toHaveLength(3);
+  });
+
   it('sets the stroke width from the panel slider', () => {
     renderWithIcons(<StrokeAndFillDemo />);
     act(() => {

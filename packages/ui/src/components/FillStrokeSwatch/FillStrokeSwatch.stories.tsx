@@ -28,8 +28,8 @@ function Live({ initial, ...args }: Partial<FillStrokeSwatchProps> & { initial: 
       stroke={paints.stroke}
       focused={focused}
       onFocusChange={setFocused}
-      onInput={(slot, color) => set(slot, solid(color))}
-      onChange={(slot, color) => set(slot, solid(color))}
+      onInput={set}
+      onChange={set}
       onToggleNone={(slot) => set(slot, paints[slot] === null ? DEFAULTS[slot] : null)}
       onSwap={() => setPaints((p) => ({ fill: p.stroke, stroke: p.fill }))}
       onReset={() => setPaints(DEFAULTS)}
@@ -37,7 +37,7 @@ function Live({ initial, ...args }: Partial<FillStrokeSwatchProps> & { initial: 
   );
 }
 
-/** Click a chip for the picker, shift-click it for none. */
+/** Click a chip for its paint editor, shift-click it for none. */
 export const Default: Story = {
   render: (args) => <Live {...args} initial={{ fill: solid('#7ab8d4ff'), stroke: solid('#1a1a1aff') }} />,
 };
@@ -47,7 +47,7 @@ export const NoneAndTranslucent: Story = {
   render: (args) => <Live {...args} initial={{ fill: solid('#e0406080'), stroke: null }} />,
 };
 
-/** A gradient fill previews as its ramp. */
+/** A gradient fill previews as its ramp, and its chip edits it as a gradient. */
 export const Gradient: Story = {
   render: (args) => (
     <Live

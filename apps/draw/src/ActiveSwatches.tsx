@@ -1,7 +1,7 @@
 /**
- * The active fill and stroke, on the kit's `FillStrokeSwatch`. A pick paints
- * the active paint and, through `setFill`/`setStroke`, the selection — live
- * while the picker is open, one undo entry when it closes.
+ * The active fill and stroke, on the kit's `FillStrokeSwatch`. An edit in a
+ * chip's paint editor paints the active paint and, through `setFill`/`setStroke`,
+ * the selection — live while it runs, one undo entry when it ends.
  *
  * Keybindings (`colorContribution` in `tools/colorContext`):
  *   D        reset to default — black stroke, white fill
@@ -10,21 +10,18 @@
  *   /        set the last-focused swatch to none
  */
 import type { ReactElement } from 'react';
-import { useOngoingAction } from '@weasel-js/core';
+import { useOngoingAction, type Paint } from '@weasel-js/core';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
-import { colorKeepingAlpha, useColorContext } from './tools/colorContext';
+import { useColorContext } from './tools/colorContext';
 import { DEFAULT_FILL, DEFAULT_STROKE } from './newShapePaint';
 
 export function ActiveSwatches(): ReactElement {
   const colors = useColorContext();
   const edits = { fill: useOngoingAction('setFill'), stroke: useOngoingAction('setStroke') };
 
-  const withAlpha = (slot: 'fill' | 'stroke', color: string): string => colorKeepingAlpha(slot, colors[slot], color);
-  const pick = (slot: 'fill' | 'stroke', color: string): string => {
-    const merged = withAlpha(slot, color);
-    if (slot === 'fill') colors.setFill({ kind: 'solid', color: merged });
-    else colors.setStroke({ kind: 'solid', color: merged });
-    return merged;
+  const paint = (slot: 'fill' | 'stroke', next: Paint | null): void => {
+    if (slot === 'fill') colors.setFill(next);
+    else colors.setStroke(next);
   };
 
   return (
@@ -34,10 +31,13 @@ export function ActiveSwatches(): ReactElement {
       stroke={colors.stroke}
       focused={colors.focused}
       onFocusChange={colors.setFocus}
-      onInput={(slot, color) => edits[slot].input({ color: pick(slot, color) })}
-      onChange={(slot, color) => {
-        edits[slot].commit();
-        return withAlpha(slot, color);
+      onInput={(slot, next) => {
+        paint(slot, next);
+        edits[slot].input({ paint: next });
+      }}
+      onChange={(slot, next) => {
+        paint(slot, next);
+        edits[slot].commit({ paint: next });
       }}
       onToggleNone={(slot) => {
         colors.setFocus(slot);

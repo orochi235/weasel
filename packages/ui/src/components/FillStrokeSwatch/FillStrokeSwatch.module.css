@@ -41,7 +41,7 @@
   box-shadow: 0 0 0 1px var(--wzl-fg);
 }
 
-.chip:has(.input:focus-visible) {
+.chip:has(.trigger:focus-visible) {
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: 1px;
 }
@@ -95,9 +95,9 @@
     var(--wzl-surface);
 }
 
-/* The native picker covers its chip, invisible: it takes the click and the
+/* The editor's trigger covers its chip, invisible: it takes the click and the
    keyboard focus, and the well draws the paint. */
-.input {
+.trigger {
   position: absolute;
   inset: 0;
   inline-size: 100%;

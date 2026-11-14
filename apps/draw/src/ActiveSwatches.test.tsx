@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { ActiveSwatches } from './ActiveSwatches';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
+import { renderWithIcons } from './testIcons';
 
 function mount() {
-  render(
+  renderWithIcons(
     <ColorContextProvider initialFocus="fill">
       <ActiveSwatches />
     </ColorContextProvider>,
@@ -12,13 +13,20 @@ function mount() {
   return screen.getByRole('button', { name: 'None' });
 }
 
-const chip = (name: string) => screen.getByLabelText(name).parentElement!;
+const trigger = (name: string) => screen.getByRole('button', { name, hidden: true });
+const chip = (name: string) => trigger(name).parentElement!;
+
+/** Opens a chip's paint editor. */
+function open(name: string): HTMLElement {
+  fireEvent.click(trigger(name));
+  return screen.getByRole('dialog', { name: `${name} editor` });
+}
 
 describe('ActiveSwatches', () => {
-  it('renders one color input per paint role', () => {
+  it('renders one paint editor trigger per paint role', () => {
     mount();
-    expect(screen.getByLabelText('Fill')).toBeTruthy();
-    expect(screen.getByLabelText('Stroke')).toBeTruthy();
+    expect(trigger('Fill')).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(trigger('Stroke')).toHaveAttribute('aria-haspopup', 'dialog');
   });
 
   it('None toggles the focused swatch and reports it as pressed', () => {
@@ -31,20 +39,27 @@ describe('ActiveSwatches', () => {
     expect(none.getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('shift-click on a swatch toggles it to none without opening the picker', () => {
+  it('shift-click on a swatch toggles it to none without opening the editor', () => {
     mount();
-    const notPrevented = fireEvent.click(screen.getByLabelText('Stroke'), { shiftKey: true });
-    expect(notPrevented).toBe(false);
+    fireEvent.click(trigger('Stroke'), { shiftKey: true });
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(chip('Stroke').hasAttribute('data-none')).toBe(true);
     expect(chip('Stroke').hasAttribute('data-focused')).toBe(true);
   });
 
-  it('Swap exchanges the paints, and a pick lands on the focused chip', () => {
+  it('Swap exchanges the paints', () => {
     mount();
     fireEvent.click(screen.getByRole('button', { name: 'Swap' }));
-    const fill = screen.getByLabelText('Fill');
-    expect(fill).toHaveValue('#000000');
-    fireEvent.input(fill, { target: { value: '#ff0000' } });
-    expect(fill).toHaveValue('#ff0000');
+    const input = open('Fill').querySelector('input[type="color"]') as HTMLInputElement;
+    expect(input).toHaveValue('#000000');
+  });
+
+  it('turns the active fill into a gradient, and edits it as one', () => {
+    mount();
+    fireEvent.click(within(open('Fill')).getByRole('radio', { name: 'Linear' }));
+    const stop = within(screen.getByRole('dialog', { name: 'Fill editor' })).getByLabelText('Stop 1');
+    fireEvent.input(stop, { target: { value: '#00ff00' } });
+    fireEvent.blur(stop);
+    expect(within(screen.getByRole('dialog', { name: 'Fill editor' })).getByLabelText('Stop 1')).toHaveValue('#00ff00');
   });
 });

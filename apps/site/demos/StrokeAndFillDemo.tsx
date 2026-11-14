@@ -28,6 +28,7 @@ import {
   type Fill,
 } from '@weasel-js/core';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
+import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
 import type { PaintSlot } from '@weasel-js/paint';
 import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
@@ -198,16 +199,17 @@ function StrokeAndFill() {
           />
         </div>
       </div>
-      <PaintPanel scene={scene} nodeId={selectedId} onFocusSlot={setSlot} />
+      <PaintPanel scene={scene} nodeId={selectedId} slot={slot} onFocusSlot={setSlot} />
     </div>
   );
 }
 
 function PaintPanel({
-  scene, nodeId, onFocusSlot,
+  scene, nodeId, slot, onFocusSlot,
 }: {
   scene: Scene<PaintedData, LayerId>;
   nodeId: string | null;
+  slot: PaintSlot;
   onFocusSlot: (slot: PaintSlot) => void;
 }) {
   const actions = useActionsRegistry();
@@ -258,24 +260,28 @@ function PaintPanel({
             </div>
           )
           : (
-            <div className="ckd-field" onFocusCapture={() => onFocusSlot('fill')}>
-              <span>Fill</span>
-              <PaintField
-                value={data.fill?.paint ?? null}
-                aria-label="Fill"
-                onChange={(next) => paint('fill', next)}
+            <div className="ckd-field">
+              <span>Paint</span>
+              <FillStrokeSwatch
+                fill={data.fill?.paint ?? null}
+                stroke={data.stroke?.paint ?? null}
+                focused={slot}
+                onFocusChange={onFocusSlot}
+                onChange={paint}
               />
             </div>
           )}
 
-        <div className="ckd-field" onFocusCapture={() => onFocusSlot('stroke')}>
-          <span>Stroke</span>
-          <PaintField
-            value={data.stroke?.paint ?? null}
-            aria-label="Stroke"
-            onChange={(next) => paint('stroke', next)}
-          />
-        </div>
+        {data.vertexColors && (
+          <div className="ckd-field" onFocusCapture={() => onFocusSlot('stroke')}>
+            <span>Stroke</span>
+            <PaintField
+              value={data.stroke?.paint ?? null}
+              aria-label="Stroke"
+              onChange={(next) => paint('stroke', next)}
+            />
+          </div>
+        )}
 
         {data.stroke && (
           <div className="ckd-field">
@@ -308,8 +314,9 @@ function PaintPanel({
         )}
       </div>
       <p className="ckd-panel-note">
-        Double-click a shape to drag its anchors. A gradient in the slot you
-        last touched gets handles on the artwork.
+        Double-click a shape to drag its anchors. Each chip of the fill and
+        stroke pair opens its paint editor, and a gradient in the slot you last
+        touched gets handles on the artwork.
       </p>
     </div>
   );

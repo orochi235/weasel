@@ -517,15 +517,6 @@ also maps every set of components that overlap in functionality. An entry marked
 from the code, not a reading of it; check that first. Paths are under `packages/ui/src/components/` unless they
 name a package. Breaking changes are in scope.
 
-- **(P3) [maintainer] A `FillStrokeSwatch` chip cannot edit a gradient.** Each chip is a native color picker: on a
-  gradient it opens at the slot's fallback color, and a pick writes a solid, by design and under test (`opens the
-  picker on a non-solid paint at the slot fallback`); opening and closing it leaves the paint alone. Making each slot a
-  `PaintField` trigger that reports `Paint` would let draw's swatch edit any paint, sharing one `ColorChip` with
-  `ColorField`, which repeats the chip's draft, `usePickerClose`, and `useRecordRecentColor` code. Whether the swatch
-  should open a paint editor is the maintainer's call. Closes when a slot edits a gradient, or the maintainer rules it
-  stays a solid picker.
-
-
 - **(P3) [agent] A rail list has no public part, so prefs-editor copies its CSS.** The prefs dialog's page list draws
   through `railList` and `railItem` in `Prefs/Prefs.module.css`; `prefs-editor`'s
   `PrefSchemaEditor/AssetList.module.css` repeats those rules and the tree guide's, because a package outside ui

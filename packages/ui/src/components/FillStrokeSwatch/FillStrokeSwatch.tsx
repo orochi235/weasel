@@ -1,14 +1,13 @@
-import { useState, type ReactElement } from 'react';
+import { useRef, useState, type ReactElement } from 'react';
 import type { Paint } from '@weasel-js/core';
-import { paintPreviewCss, solidColorOf } from '@weasel-js/paint';
+import { paintPreviewCss, type PaintSlot } from '@weasel-js/paint';
 import { Button } from '../Button';
-import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
-import { usePickerClose } from '../ColorField/usePickerClose';
-import type { PaintSlot } from '@weasel-js/paint';
+import { PaintEditorPopover } from '../PaintField/PaintEditorPopover';
+import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import s from './FillStrokeSwatch.module.css';
 
 /** Props for {@link FillStrokeSwatch}. */
-export interface FillStrokeSwatchProps {
+export interface FillStrokeSwatchProps extends OverlayPortalProps {
   /** `null` is an explicit "no paint". */
   fill: Paint | null | undefined;
   stroke: Paint | null | undefined;
@@ -16,13 +15,12 @@ export interface FillStrokeSwatchProps {
    *  button, a palette click, a keyboard shortcut the app binds. */
   focused: PaintSlot;
   onFocusChange: (slot: PaintSlot) => void;
-  /** Every tick of the color picker, as `#rrggbb`. */
-  onInput?: (slot: PaintSlot, color: string) => void;
-  /** Once when the picker closes, with its last color, if it moved. Return
-   *  the color actually applied when it differs from the picker's — the picker
-   *  is opaque, so an app keeping the paint's own alpha returns that — and the
-   *  recent colors record it instead. */
-  onChange: (slot: PaintSlot, color: string) => string | void;
+  /** Every tick of an edit in a chip's paint editor. `null` is no paint. */
+  onInput?: (slot: PaintSlot, paint: Paint | null) => void;
+  /** Once per edit in a chip's paint editor. Return the paint actually
+   *  applied when it differs from the editor's, and the recent colors record
+   *  its color instead. */
+  onChange: (slot: PaintSlot, paint: Paint | null) => Paint | null | void;
   /** Toggle a slot between no paint and a paint. Given, it adds the None
    *  button (acting on `focused`) and shift-click on a chip. */
   onToggleNone?: (slot: PaintSlot) => void;
@@ -37,30 +35,23 @@ export interface FillStrokeSwatchProps {
 }
 
 const SLOT_LABEL: Record<PaintSlot, string> = { fill: 'Fill', stroke: 'Stroke' };
-const PICKER_FALLBACK: Record<PaintSlot, string> = { fill: '#ffffff', stroke: '#000000' };
 
 function Chip(props: {
   slot: PaintSlot;
   paint: Paint | null | undefined;
   focused: boolean;
+  portalContainer?: Element | null;
   onFocusChange: (slot: PaintSlot) => void;
-  onInput?: (slot: PaintSlot, color: string) => void;
-  onChange: (slot: PaintSlot, color: string) => string | void;
+  onInput?: (slot: PaintSlot, paint: Paint | null) => void;
+  onChange: (slot: PaintSlot, paint: Paint | null) => Paint | null | void;
   onToggleNone?: (slot: PaintSlot) => void;
 }): ReactElement {
   const { slot, paint, focused } = props;
-  // Tracks the picker through a pick; the prop only catches up on commit.
-  const [draft, setDraft] = useState<string | null>(null);
-  const record = useRecordRecentColor();
+  const trigger = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const { anchor, provide, ready } = useOverlayPortal(props.portalContainer);
   const none = paint === null;
   const preview = paintPreviewCss(paint);
-  const pickerValue = (solidColorOf(paint) ?? PICKER_FALLBACK[slot]).slice(0, 7);
-  const commit = (): void => {
-    if (draft === null) return;
-    setDraft(null);
-    record(props.onChange(slot, draft) ?? draft);
-  };
-  const picker = usePickerClose(commit);
 
   return (
     <span
@@ -69,32 +60,40 @@ function Chip(props: {
       {...(focused ? { 'data-focused': '' } : {})}
       {...(none ? { 'data-none': '' } : {})}
     >
+      {anchor}
       <span className={s.well} aria-hidden="true">
         {preview && <span className={s.paint} style={{ background: preview }} />}
       </span>
-      <input
-        ref={picker}
-        type="color"
-        className={s.input}
-        value={draft ?? pickerValue}
+      <button
+        ref={trigger}
+        type="button"
+        className={s.trigger}
         aria-label={SLOT_LABEL[slot]}
         aria-current={focused ? 'true' : undefined}
+        aria-haspopup="dialog"
+        aria-expanded={open}
         onFocus={() => props.onFocusChange(slot)}
         onClick={(e) => {
           props.onFocusChange(slot);
-          // Shift-click is the none toggle; preventing it keeps the OS picker shut.
+          // Shift-click is the none toggle, and leaves the editor shut.
           if (e.shiftKey && props.onToggleNone) {
-            e.preventDefault();
             props.onToggleNone(slot);
+            return;
           }
+          setOpen(true);
         }}
-        onInput={(e) => {
-          const color = (e.target as HTMLInputElement).value;
-          setDraft(color);
-          props.onInput?.(slot, color);
-        }}
-        onBlur={commit}
       />
+      {ready && provide(
+        <PaintEditorPopover
+          triggerRef={trigger}
+          isOpen={open}
+          onOpenChange={setOpen}
+          value={paint}
+          aria-label={SLOT_LABEL[slot]}
+          onInput={(next) => props.onInput?.(slot, next)}
+          onChange={(next) => props.onChange(slot, next)}
+        />,
+      )}
     </span>
   );
 }
@@ -102,21 +101,22 @@ function Chip(props: {
 /**
  * The active fill and stroke as one overlapping pair, the way drawing apps
  * show the paint the next shape gets: fill a solid square behind, stroke a
- * frame in front of it. Each chip is a native color picker; the focused one
- * is what the None button — and whatever the app binds — acts on.
+ * frame in front of it. Each chip opens the whole paint editor, so a gradient
+ * or a pattern is edited as itself; the focused chip is what the None button —
+ * and whatever the app binds — acts on.
  *
  * Holds no state of its own: the paints and the focused slot are props, and
- * the chips report picks through `onInput`/`onChange` for the app to route —
+ * the chips report each `Paint` through `onInput`/`onChange` for the app to route —
  * into its own active-paint state, into the selection through
  * `useOngoingAction`, or both.
  */
 export function FillStrokeSwatch(props: FillStrokeSwatchProps): ReactElement {
   const {
     fill, stroke, focused, onFocusChange, onInput, onChange,
-    onToggleNone, onSwap, onReset, shortcuts, className,
+    onToggleNone, onSwap, onReset, shortcuts, className, portalContainer,
   } = props;
   const focusedPaint = focused === 'fill' ? fill : stroke;
-  const chip = { onFocusChange, onInput, onChange, onToggleNone };
+  const chip = { onFocusChange, onInput, onChange, onToggleNone, portalContainer };
   const anyButton = onToggleNone || onSwap || onReset;
 
   return (
