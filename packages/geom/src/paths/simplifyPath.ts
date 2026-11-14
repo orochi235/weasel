@@ -7,8 +7,8 @@ import { DEG_TO_RAD } from '../angle';
 /** Options for {@link simplifyPath}. */
 export interface SimplifyPathOptions {
   /**
-   * An anchor whose path turns by more than this many degrees is a corner:
-   * it is kept, and the curve is refitted on either side of it. Default 40.
+   * An anchor whose path turns by more than this angle, in radians, is a corner:
+   * it is kept, and the curve is refitted on either side of it. Default 40°.
    */
   cornerAngle?: number;
 }
@@ -101,7 +101,7 @@ export function simplifySpan(
 function fitParams(tolerance: number, opts: SimplifyPathOptions): { tol: number; cosCorner: number } {
   return {
     tol: Math.max(tolerance, 1e-6),
-    cosCorner: Math.cos((opts.cornerAngle ?? 40) * DEG_TO_RAD),
+    cosCorner: Math.cos(opts.cornerAngle ?? 40 * DEG_TO_RAD),
   };
 }
 
