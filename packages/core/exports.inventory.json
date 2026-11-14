@@ -13,7 +13,6 @@
     "ActionBehavior": "type",
     "ActionDeps": "type",
     "ActionDisabledReason": "const",
-    "ActionDisabledReasonValue": "type",
     "ActionDispatch": "type",
     "ActionEnabledResult": "type",
     "ActionEntry": "type",
