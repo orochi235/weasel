@@ -13,7 +13,7 @@ export {
   type AnchorRenderProps,
   createFunctionLayer,
   functionLayerState,
-  type FunctionLayerConfig,
+  type FunctionLayerOptions,
   type FunctionLayerState,
 } from './createFunctionLayer';
 
@@ -23,7 +23,7 @@ export {
   applyKeyframeDrag,
   type KeyframeDrag,
   type KeyframeDragResult,
-  type KeyframeLayerConfig,
+  type KeyframeLayerOptions,
   type KeyframeLayerState,
 } from './createKeyframeLayer';
 

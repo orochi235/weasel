@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { createKitSettingsStore, KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
 import { createFunctionLayer, functionLayerState } from './createFunctionLayer';
-import { createKeyframeLayer, keyframeLayerState, type KeyframeLayerConfig, type KeyframeLayerState } from './createKeyframeLayer';
+import { createKeyframeLayer, keyframeLayerState, type KeyframeLayerOptions, type KeyframeLayerState } from './createKeyframeLayer';
 import { CustomLayer } from './CustomLayer';
 import { KeyframeLayer } from './KeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
@@ -104,7 +104,7 @@ describe('LayeredCurveEditor kit settings', () => {
 });
 
 describe('createKeyframeLayer snap reach', () => {
-  function Keys({ config, onCommit }: { config: KeyframeLayerConfig; onCommit: (next: KeyframeLayerState) => void }) {
+  function Keys({ config, onCommit }: { config: KeyframeLayerOptions; onCommit: (next: KeyframeLayerState) => void }) {
     const [state, setState] = useState(() => keyframeLayerState([{ t: 0, value: 0 }, { t: 500, value: 10 }, { t: 1000, value: 5 }]));
     return (
       <LayeredCurveEditor width={200} height={100} xRange={[0, 1000]} yRange={[0, 10]} history={false}>
@@ -114,7 +114,7 @@ describe('createKeyframeLayer snap reach', () => {
   }
 
   // The key at t 500 dragged to plot x 125 is t 625: 5px from the snap time at 600.
-  const droppedAt = (config: KeyframeLayerConfig, settings?: KitSettingsOverrides): number => {
+  const droppedAt = (config: KeyframeLayerOptions, settings?: KitSettingsOverrides): number => {
     const onCommit = vi.fn();
     const keys = <Keys config={config} onCommit={onCommit} />;
     render(settings ? <KitSettingsProvider value={settings}>{keys}</KitSettingsProvider> : keys);

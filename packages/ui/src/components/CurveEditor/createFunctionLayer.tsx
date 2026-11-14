@@ -18,12 +18,12 @@ import type {
   EmptyDownArgs, KeyDownArgs,
 } from './layerTypes';
 import type {
-  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerConfig, FunctionLayerState,
+  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerOptions, FunctionLayerState,
 } from './functionLayerTypes';
 import { isPrimaryPress } from '@weasel-js/gestures';
 
 export type {
-  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerConfig, FunctionLayerState,
+  ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerOptions, FunctionLayerState,
 };
 
 const SAMPLES_PER_SEGMENT = 16;
@@ -71,7 +71,7 @@ function segmentSamples(
   return out;
 }
 
-function resolveInterpolation(cfg: FunctionLayerConfig): InterpolationMode {
+function resolveInterpolation(cfg: FunctionLayerOptions): InterpolationMode {
   return (cfg.constrain ?? 'none') === 'function'
     ? 'monotone'
     : (cfg.interpolation ?? 'catmull-rom');
@@ -88,7 +88,7 @@ function resolveInterpolation(cfg: FunctionLayerConfig): InterpolationMode {
  * derived read-only curve beside an editable one is the case it is shaped
  * for, via `interactive: false`.
  */
-export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<FunctionLayerState> {
+export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<FunctionLayerState> {
   const id = cfg.id ?? 'function';
   const domain = cfg.domain ?? '2d';
   const endpoints = cfg.endpoints ?? 'free';

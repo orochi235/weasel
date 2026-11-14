@@ -39,8 +39,8 @@ export interface KeyframeLayerState {
   drag: KeyframeDrag | null;
 }
 
-/** Configuration for {@link createKeyframeLayer}. */
-export interface KeyframeLayerConfig {
+/** Options for {@link createKeyframeLayer}. */
+export interface KeyframeLayerOptions {
   /** Layer id; default `'keyframes'`. */
   id?: string;
   /** Names the curve in each mark's accessible name. Default `'Curve'`. */
@@ -139,7 +139,7 @@ export function applyKeyframeDrag(state: KeyframeLayerState): KeyframeDragResult
  * into. Every key, segment and handle is focusable and named, and the arrow
  * keys move whichever one has focus.
  */
-export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<KeyframeLayerState> {
+export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<KeyframeLayerState> {
   const id = cfg.id ?? 'keyframes';
   const label = cfg.label ?? 'Curve';
   const formatX = cfg.formatX ?? ((x: number) => String(Math.round(x)));

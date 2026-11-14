@@ -3,7 +3,7 @@ import { useState, type ReactElement } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import {
   keyframeLayerState,
-  type KeyframeLayerConfig,
+  type KeyframeLayerOptions,
   type KeyframeLayerState,
 } from './createKeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
@@ -19,7 +19,7 @@ const KEYS = [
 ];
 
 interface HarnessProps {
-  config?: KeyframeLayerConfig;
+  config?: KeyframeLayerOptions;
   initial?: Partial<KeyframeLayerState>;
   onChange?: (next: KeyframeLayerState) => void;
   onCommit?: (next: KeyframeLayerState, prev: KeyframeLayerState) => void;

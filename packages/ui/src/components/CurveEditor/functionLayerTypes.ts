@@ -56,8 +56,8 @@ export interface FillSettings {
   color?: ColorSource;
 }
 
-/** Configuration for {@link createFunctionLayer}. */
-export interface FunctionLayerConfig {
+/** Options for {@link createFunctionLayer}. */
+export interface FunctionLayerOptions {
   /** Layer id, the group's `data-layer-id`; default `'function'`. */
   id?: string;
   domain?: CurveDomain;
