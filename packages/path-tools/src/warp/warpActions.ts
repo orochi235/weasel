@@ -123,7 +123,7 @@ function shapesWith(
 type QuantizedScene = Parameters<typeof quantizedShape>[0] | undefined;
 
 /**
- * Drag one control of the selection's `kind` warp: a plane warp's corner, an
+ * Drag one control of the selection's `kind` warp: a plane warp's corner, a
  * cloth warp's mesh point, a pin warp's pin. Every selected path sharing that warp
  * follows the control. A press on the controls shown over a selection with no
  * warp of this kind yet makes one, from the binding's params

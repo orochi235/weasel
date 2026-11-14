@@ -6,7 +6,7 @@
  * JSON list. Every exported leaf carries its scene id as `wd:leaf-id` for
  * `depends-on` to name.
  */
-import type { PathEffect } from '@weasel-js/core';
+import { pathEffectOf, type PathEffect } from '@weasel-js/core';
 import type { Obj } from './svgObj';
 
 /** A path effect in transit: the effect, its sources' ids, and the paths it
@@ -38,13 +38,13 @@ export function encodeEffectAttrs(o: EffectObj): Record<string, string> {
 export function decodeEffectAttrs(attrs: Readonly<Record<string, string>> | undefined): EffectAttrs | null {
   if (attrs?.effect === undefined || attrs['depends-on'] === undefined) return null;
   try {
-    const effect: unknown = JSON.parse(attrs.effect);
+    const effect = pathEffectOf({ data: { pathEffect: JSON.parse(attrs.effect) as unknown } });
     const dependsOn: unknown = JSON.parse(attrs['depends-on']);
     if (
-      typeof effect !== 'object' || effect === null || !EFFECT_KINDS.has((effect as { kind?: string }).kind ?? '')
+      !effect || !EFFECT_KINDS.has(effect.kind)
       || !Array.isArray(dependsOn) || !dependsOn.every((d) => typeof d === 'string')
     ) return null;
-    return { effect: effect as PathEffect, dependsOn: dependsOn as string[] };
+    return { effect, dependsOn: dependsOn as string[] };
   } catch {
     return null;
   }

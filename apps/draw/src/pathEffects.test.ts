@@ -68,6 +68,13 @@ describe('a draw document with a tween', () => {
     expect(steps(reopened)[2]!.path).not.toEqual(steps(scene)[2]!.path);
   });
 
+  it('reopens a save that holds it under its earlier name, blend, still live', () => {
+    const saved = JSON.stringify(withTween().toJSON(), serializeReplacer).replace('"kind":"tween"', '"kind":"blend"');
+    expect(saved).toContain('"kind":"blend"');
+    const json = reviveSnapshot(JSON.parse(saved)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    expect(steps(drawScene(nodeSpecsFromSnapshot(json, DRAW_REGISTRY)))).toHaveLength(3);
+  });
+
   it('exports what the tween shows, its steps as ordinary paths in their own paint', async () => {
     const warnings: string[] = [];
     const svg = await sceneToSvgString(withTween(), {
@@ -114,6 +121,15 @@ describe('a path effect through draw\'s SVG', () => {
     const before = liveSteps(reopened)[2]!.path;
     reopened.setPose(b!, { x: 300, y: 200, width: 40, height: 40 });
     expect(liveSteps(reopened)[2]!.path).not.toEqual(before);
+  });
+
+  it('reopens a blend, the name a tween was saved under before, live as the tween', async () => {
+    const svg = (await exportOf(withTween())).replace(/(kind(?:&quot;|"):(?:&quot;|"))tween/, '$1blend');
+    expect(svg).toMatch(/blend/);
+    const reopened = drawScene([]);
+    openSvgText(reopened, svg, 'x.svg');
+    expect(effectsIn(reopened)[0]!.data.pathEffect).toEqual({ kind: 'tween', steps: 3 });
+    expect(liveSteps(reopened)).toHaveLength(3);
   });
 
   it('imports over its own sources, not the ones of the document it lands in', async () => {

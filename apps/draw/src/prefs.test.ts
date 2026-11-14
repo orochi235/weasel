@@ -99,6 +99,24 @@ describe('openDrawPrefs', () => {
     expect(toolOptionParams('pen', PEN_TOOL_OPTIONS, values).fillRule).toBe('evenodd');
   });
 
+  it('carries the renamed path tools’ options, the last tool, and Corner shape’s surface to their new names', async () => {
+    const backing = new Map<string, unknown>([
+      [`${PREFS_PREFIX}tools.smudgeBrush.radiusPx`, 64],
+      [`${PREFS_PREFIX}tools.simplifyBrush.tolerance`, 3],
+      [`${PREFS_PREFIX}tools.lastTool`, 'puppet'],
+      [`${PREFS_PREFIX}ui.surfaces`, { corners: { surface: 'panel' }, layers: { collapsed: true } }],
+      [`${PREFS_PREFIX}${VERSION_RECORD}`, 5],
+    ]);
+    const store = openDrawPrefs(createMemoryAdapter(backing));
+    const values = drawToolOptionValues(store);
+    expect(values.get('knead').radiusPx).toBe(64);
+    expect(values.get('sand').tolerance).toBe(3);
+    expect(store.get('tools.lastTool')).toBe('pin');
+    expect(store.get('ui.surfaces')).toEqual({ fillets: { surface: 'panel' }, layers: { collapsed: true } });
+    await store.flush();
+    expect([...backing.keys()].filter((k) => /tools\.(smudgeBrush|simplifyBrush)\./.test(k))).toEqual([]);
+  });
+
   it('keeps a surface map already stored over an old panel map', () => {
     const backing = new Map<string, unknown>([
       [`${PREFS_PREFIX}ui.panels`, { layers: { hidden: true } }],
@@ -121,8 +139,8 @@ describe('openDrawPrefs', () => {
     setToolOption('pen', PEN_TOOL_OPTIONS, values, 'autoCommitOnClose', false);
     setToolOption('rect', RECT_TOOL_OPTIONS, values, 'fill', { kind: 'solid', color: '#123456ff' });
     await store.flush();
-    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 5, value: false });
-    expect(backing.get(`${PREFS_PREFIX}tools.shared.fill`)).toEqual({ $at: 5, value: { kind: 'solid', color: '#123456ff' } });
+    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 6, value: false });
+    expect(backing.get(`${PREFS_PREFIX}tools.shared.fill`)).toEqual({ $at: 6, value: { kind: 'solid', color: '#123456ff' } });
     expect(toolOptionParams('pen', PEN_TOOL_OPTIONS, values).fill).toEqual({ kind: 'solid', color: '#123456ff' });
   });
 
@@ -183,7 +201,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 5, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 6, value: 40 });
   });
 
   it('leaves the blob in place when the store cannot persist', async () => {
@@ -218,7 +236,7 @@ describe('importLegacyPrefs', () => {
     away = false;
     await store.read();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 5, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 6, value: 40 });
     await store.close();
     warn.mockRestore();
   });

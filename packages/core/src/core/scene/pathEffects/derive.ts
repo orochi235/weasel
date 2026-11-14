@@ -20,10 +20,26 @@ import type { EffectSourceReader } from './source';
 /** The registry key both derivations go by, for `derivePath` and `derivePose`. */
 export const PATH_EFFECT = 'kit:pathEffect';
 
-/** A node's path effect, or `null` when its data holds none. */
+/** Effect kinds a save may hold under an earlier name, by the name each goes by now. */
+const RENAMED_KINDS: Readonly<Record<string, PathEffect['kind']>> = { blend: 'tween' };
+
+/** Each effect saved under an old kind, as read under its new one: one copy per record, so readers keyed on the
+ *  effect's identity see the same object every frame. */
+const renamed = new WeakMap<object, PathEffect>();
+
+/** A node's path effect, or `null` when its data holds none. An effect saved under a kind's earlier name reads as
+ *  that kind, and the next edit writes it under the new one. */
 export function pathEffectOf(node: { data?: unknown } | undefined): PathEffect | null {
   const effect = (node?.data as { pathEffect?: PathEffect } | null | undefined)?.pathEffect;
-  return effect && typeof effect === 'object' && typeof effect.kind === 'string' ? effect : null;
+  if (!effect || typeof effect !== 'object' || typeof effect.kind !== 'string') return null;
+  const now = Object.hasOwn(RENAMED_KINDS, effect.kind) ? RENAMED_KINDS[effect.kind] : undefined;
+  if (now === undefined) return effect;
+  let out = renamed.get(effect);
+  if (!out) {
+    out = { ...effect, kind: now } as PathEffect;
+    renamed.set(effect, out);
+  }
+  return out;
 }
 
 /** A path-effect node's two derivations. */

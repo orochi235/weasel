@@ -74,10 +74,27 @@ function isHeldWarp(v: unknown): v is HeldPathWarp {
     && Array.isArray(h.frame) && h.frame.length === 6;
 }
 
-/** The warp a node's `data` holds, whether or not it still matches. */
+/** Warp kinds a save may hold under an earlier name, by the name each goes by now. */
+const RENAMED_KINDS: Readonly<Record<string, PathWarp['kind']>> = { distort: 'plane', envelope: 'cloth', puppet: 'pin' };
+
+/** Each held warp saved under an old kind, as read under its new one: one copy per record, so the result cache and
+ *  every reader keyed on identity see the same object. */
+const renamed = new WeakMap<HeldPathWarp, HeldPathWarp>();
+
+/** The warp a node's `data` holds, whether or not it still matches. One saved under a kind's earlier name reads as
+ *  that kind, and the next edit writes it under the new one. */
 export function heldPathWarpOf(data: unknown): HeldPathWarp | null {
   const w = (data as { warp?: unknown } | null | undefined)?.warp;
-  return isHeldWarp(w) ? w : null;
+  if (!isHeldWarp(w)) return null;
+  const kind: string = w.warp.kind;
+  const now = Object.hasOwn(RENAMED_KINDS, kind) ? RENAMED_KINDS[kind] : undefined;
+  if (now === undefined) return w;
+  let out = renamed.get(w);
+  if (!out) {
+    out = { ...w, warp: { ...w.warp, kind: now } as PathWarp };
+    renamed.set(w, out);
+  }
+  return out;
 }
 
 /** `data` without its warp: the shape as plain geometry. */

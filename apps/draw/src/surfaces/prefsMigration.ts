@@ -57,3 +57,28 @@ export const renamePathAids: PrefsMigration = (records) => {
     records.delete(from);
   }
 };
+
+/** Path tool ids saved before the renames of 2026-11-14, by the id each goes by now. */
+const RENAMED_TOOLS: Readonly<Record<string, string>> = {
+  smudgeBrush: 'knead', simplifyBrush: 'sand', trim: 'snip', extend: 'reach', lengthen: 'tug',
+  envelope: 'cloth', puppet: 'pin', distort: 'plane',
+};
+
+/** Version 5 to 6: the path tools renamed beside Poise and Fillet keep their options and the last-used tool, and
+ *  Fillet's command-row asset keeps the surface Corner shape's had. */
+export const renamePathTools: PrefsMigration = (records) => {
+  for (const key of [...records.keys()]) {
+    const [group, owner, ...rest] = key.split('.');
+    if (group !== 'tools' || owner === undefined || rest.length === 0 || !Object.hasOwn(RENAMED_TOOLS, owner)) continue;
+    const to = ['tools', RENAMED_TOOLS[owner], ...rest].join('.');
+    if (!records.has(to)) records.set(to, records.get(key));
+    records.delete(key);
+  }
+  const last = records.get('tools.lastTool');
+  if (typeof last === 'string' && Object.hasOwn(RENAMED_TOOLS, last)) records.set('tools.lastTool', RENAMED_TOOLS[last]);
+  const surfaces = records.get('ui.surfaces');
+  if (surfaces && typeof surfaces === 'object' && Object.hasOwn(surfaces, 'corners')) {
+    const { corners, ...rest } = surfaces as Record<string, unknown>;
+    records.set('ui.surfaces', Object.hasOwn(rest, 'fillets') ? rest : { ...rest, fillets: corners });
+  }
+};

@@ -14,9 +14,7 @@ export interface SpringPreset {
 /** One of the tunings in `SPRING_PRESETS`. */
 export type SpringPresetName = 'gentle' | 'wobbly' | 'stiff' | 'slow';
 
-// --- Polynomial family (degree 1-5). The unsuffixed `easeIn`/`easeOut`/
-// `easeInOut` aliases mirror the `easeInQuad` curve (degree 2) for backwards
-// compatibility with existing call sites.
+// --- Polynomial family (degree 1-5).
 
 /** No easing: constant rate from start to finish. */
 export const linear: EasingFn = (t) => t;
