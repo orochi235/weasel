@@ -1,7 +1,7 @@
 import type { ShortcutGroup, ShortcutRow, ShortcutsDescription } from '@weasel-js/core';
 import { detectPlatform, formatShortcutParts, type Platform } from '@weasel-js/gestures';
 import { foldText } from '@weasel-js/registry';
-import { keySpecsFromLegend } from '../Keycaps/keySpecsFromLegend';
+import { keyLegendsFromFormatted } from '../Keycaps/keyLegendsFromFormatted';
 
 /** The platform whose keys a sheet writes: macOS for `apple`, else this one, or Linux when this one is a Mac. */
 export function sheetPlatform(apple: boolean): Platform {
@@ -22,7 +22,7 @@ function keyNames(row: ShortcutRow, platform: Platform): Set<string>[] {
 
 /** A query as the keys it names: split at spaces and `+`, a run of modifier glyphs split one per key (`⇧⌘Z`). */
 function queryKeys(query: string): string[] {
-  return query.trim().split(/\s+/).flatMap((part) => keySpecsFromLegend(part).map((k) => foldText(k.label)));
+  return query.trim().split(/\s+/).flatMap((part) => keyLegendsFromFormatted(part).map((k) => foldText(k.label)));
 }
 
 /** Whether `row` answers `query`: by its label, or by one of its keys naming every key the query names. */

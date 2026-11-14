@@ -12,7 +12,7 @@ import { Badge } from '@weasel-js/ui/components/Badge';
 import { Code } from '@weasel-js/ui/components/Code';
 import { GestureRoute } from './GestureRoute';
 import { KeyCap, KeySequence } from '@weasel-js/ui/components/Keycaps';
-import { keySpecFromKey, keySpecsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
+import { keyLegendFromKey, keyLegendsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
 import s from './FallthroughDiagram.module.css';
 
 function placedByLabel(p: PlacedBy): string {
@@ -49,13 +49,13 @@ function InputLine({ input, predicted }: { input: DispatchRecordInput; predicted
         <div className={s.field}>
           <dt>Key</dt>
           <dd data-key={input.key}>
-            <KeyCap label={keySpecFromKey(input.key, { legend: 'text' }).label} />
+            <KeyCap label={keyLegendFromKey(input.key, { legend: 'text' }).label} />
           </dd>
         </div>
       )}
       <div className={s.field}>
         <dt>Modifiers</dt>
-        <dd>{mods.length > 0 ? <KeySequence keys={keySpecsFromMods(mods)} /> : 'none'}</dd>
+        <dd>{mods.length > 0 ? <KeySequence keys={keyLegendsFromMods(mods)} /> : 'none'}</dd>
       </div>
       {input.viewId !== null && (
         <div className={s.field}>

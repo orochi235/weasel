@@ -38,8 +38,8 @@ export interface LogicalModSpec {
   optional?: boolean;
 }
 
-/** Options for {@link keySpecsFromMods}. */
-export interface KeySpecsFromModsOptions {
+/** Options for {@link keyLegendsFromMods}. */
+export interface KeyLegendOptions {
   /** Override OS detection. Defaults to {@link detectPlatform}. */
   platform?: Platform;
   /** Defaults to `'auto'`. Pass `'symbol'` or `'text'` to force a specific
@@ -52,7 +52,7 @@ export interface KeySpecsFromModsOptions {
   labels?: KeyLabels;
 }
 
-/** Key labels by modifier name or `KeyboardEvent.key`. See {@link KeySpecsFromModsOptions.labels}. */
+/** Key labels by modifier name or `KeyboardEvent.key`. See {@link KeyLegendOptions.labels}. */
 export type KeyLabels = Readonly<Record<string, string>>;
 
 const MOD_BY_PLATFORM: Record<LogicalMod, Record<Platform, Record<LegendStyle, string>>> = {
@@ -86,7 +86,7 @@ const MOD_BY_PLATFORM: Record<LogicalMod, Record<Platform, Record<LegendStyle, s
   },
 };
 
-/** Every label {@link keySpecsFromMods} can produce, on any platform and legend. */
+/** Every label {@link keyLegendsFromMods} can produce, on any platform and legend. */
 export const MODIFIER_LABELS: ReadonlySet<string> = new Set(
   Object.values(MOD_BY_PLATFORM).flatMap((byPlatform) =>
     Object.values(byPlatform).flatMap((byLegend) => Object.values(byLegend)),
@@ -114,13 +114,13 @@ export function detectPlatform(): Platform {
  *
  * ```ts
  * <KeySequence
- *   keys={keySpecsFromMods([{ name: 'mod' }, { name: 'shift', optional: true }])}
+ *   keys={keyLegendsFromMods([{ name: 'mod' }, { name: 'shift', optional: true }])}
  * />
  * ```
  */
-export function keySpecsFromMods(
+export function keyLegendsFromMods(
   mods: readonly LogicalModSpec[],
-  opts: KeySpecsFromModsOptions = {},
+  opts: KeyLegendOptions = {},
 ): readonly KeyLegend[] {
   const platform = opts.platform ?? detectPlatform();
   const legend = opts.legend ?? 'auto';
@@ -173,17 +173,17 @@ const NAMED_KEY: Record<string, Record<Platform, Record<LegendStyle, string>>> =
  * other keys pass through upper-cased.
  *
  * ```ts
- * keySpecFromKey('Escape', { platform: 'macos' })   // { label: '⎋' }
- * keySpecFromKey('Escape', { platform: 'windows' }) // { label: 'Esc' }
- * keySpecFromKey('p')                               // { label: 'P' }
+ * keyLegendFromKey('Escape', { platform: 'macos' })   // { label: '⎋' }
+ * keyLegendFromKey('Escape', { platform: 'windows' }) // { label: 'Esc' }
+ * keyLegendFromKey('p')                               // { label: 'P' }
  * ```
  *
  * Symbol mode off macOS draws ISO/IEC 9995-7's symbols where the key
  * has one, though Windows and Linux keyboards print the text form.
  */
-export function keySpecFromKey(
+export function keyLegendFromKey(
   raw: string,
-  opts: KeySpecsFromModsOptions & { optional?: boolean } = {},
+  opts: KeyLegendOptions & { optional?: boolean } = {},
 ): KeyLegend {
   const platform = opts.platform ?? detectPlatform();
   const legend = opts.legend ?? 'auto';

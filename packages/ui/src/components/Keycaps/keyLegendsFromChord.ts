@@ -1,5 +1,5 @@
-import type { KeySpec } from './Keycaps';
-import { keySpecsFromMods, keySpecsFromShortcut, type KeySpecsFromModsOptions, type LogicalMod } from '@weasel-js/gestures';
+import type { KeyLegend } from './Keycaps';
+import { keyLegendsFromMods, keyLegendsFromShortcut, type KeyLegendOptions, type LogicalMod } from '@weasel-js/gestures';
 
 const MODS: Readonly<Record<string, LogicalMod>> = { mod: 'mod', shift: 'shift', alt: 'alt' };
 
@@ -8,11 +8,11 @@ const MODS: Readonly<Record<string, LogicalMod>> = { mod: 'mod', shift: 'shift',
  * keys in the reader's own legend: `Mod` is `⌘` on macOS and `Ctrl` elsewhere. `Mod`, `Shift`, and `Alt` are the
  * modifiers; any other part is the key, named as `KeyboardEvent.key` names it.
  */
-export function keySpecsFromChord(chord: string, opts: KeySpecsFromModsOptions = {}): readonly KeySpec[] {
+export function keyLegendsFromChord(chord: string, opts: KeyLegendOptions = {}): readonly KeyLegend[] {
   // A trailing `+` is the plus key itself: `Mod++`.
   const parts = chord.trim().split(/\+(?=.)/).map((part) => part.trim());
   const mods = parts.flatMap((part) => MODS[part.toLowerCase()] ?? []);
   const key = parts.find((part) => !(part.toLowerCase() in MODS));
-  if (key === undefined) return keySpecsFromMods(mods.map((name) => ({ name })), opts);
-  return keySpecsFromShortcut({ key, mod: mods.includes('mod'), shift: mods.includes('shift'), alt: mods.includes('alt') }, opts) ?? [];
+  if (key === undefined) return keyLegendsFromMods(mods.map((name) => ({ name })), opts);
+  return keyLegendsFromShortcut({ key, mod: mods.includes('mod'), shift: mods.includes('shift'), alt: mods.includes('alt') }, opts) ?? [];
 }

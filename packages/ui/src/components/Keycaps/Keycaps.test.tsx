@@ -1,7 +1,7 @@
 import { renderWithIcons } from '../../testing/withIcons';
 import { KeyCap } from './Keycap';
 import { KeySequence } from './Keycaps';
-import { keySpecFromKey, keySpecsFromMods, type Platform } from '@weasel-js/gestures';
+import { keyLegendFromKey, keyLegendsFromMods, type Platform } from '@weasel-js/gestures';
 
 describe('KeyCap', () => {
   it('renders the label as a <kbd>', () => {
@@ -35,9 +35,9 @@ describe('KeyCap', () => {
     const labels = new Set<string>();
     for (const platform of ['macos', 'windows', 'linux'] as const) {
       for (const legend of ['auto', 'symbol', 'text'] as const) {
-        for (const name of ['mod', 'shift', 'alt', 'ctrl', 'meta'] as const) labels.add(keySpecsFromMods([{ name }], { platform, legend })[0]!.label);
+        for (const name of ['mod', 'shift', 'alt', 'ctrl', 'meta'] as const) labels.add(keyLegendsFromMods([{ name }], { platform, legend })[0]!.label);
         for (const key of ['Escape', 'Enter', 'Tab', 'Space', 'Backspace', 'Delete', 'ContextMenu', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown', 'PrintScreen', 'Insert', 'ScrollLock', 'Pause']) {
-          labels.add(keySpecFromKey(key, { platform, legend }).label);
+          labels.add(keyLegendFromKey(key, { platform, legend }).label);
         }
       }
     }
@@ -226,8 +226,8 @@ describe('KeySequence', () => {
     'sorts and separates %s modifier labels, in every legend',
     (platform) => {
       for (const legend of ['auto', 'symbol', 'text'] as const) {
-        const [alt, mod, meta] = keySpecsFromMods([{ name: 'alt' }, { name: 'mod' }, { name: 'meta' }], { platform, legend });
-        const b = keySpecFromKey('b', { platform, legend });
+        const [alt, mod, meta] = keyLegendsFromMods([{ name: 'alt' }, { name: 'mod' }, { name: 'meta' }], { platform, legend });
+        const b = keyLegendFromKey('b', { platform, legend });
         const { container, unmount } = renderWithIcons(<KeySequence keys={[{ label: 'A' }, alt, b, mod, meta]} separator="+" />);
         expect(container.textContent).toBe(`${alt.label}${mod.label}${meta.label}+A+B`);
         unmount();

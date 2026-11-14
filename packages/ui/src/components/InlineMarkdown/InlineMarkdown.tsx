@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 import { Code } from '../Code';
-import { KeySequence, keySpecsFromChord } from '../Keycaps';
+import { KeySequence, keyLegendsFromChord } from '../Keycaps';
 import { parseInline, type InlineToken } from './parseInline';
 
 /** Props for {@link InlineMarkdown}. */
@@ -31,7 +31,7 @@ function drawToken(token: InlineToken, links: 'anchor' | 'text'): ReactNode {
     case 'code':
       return <Code>{token.text}</Code>;
     case 'keys':
-      return <KeySequence keys={keySpecsFromChord(token.chord)} variant="inverse" inline />;
+      return <KeySequence keys={keyLegendsFromChord(token.chord)} variant="inverse" inline />;
     case 'strong':
       return <strong>{draw(token.children, links)}</strong>;
     case 'em':

@@ -7,7 +7,7 @@
 import { formatPhaseAtom, parseRoute, type PhaseAtom } from '../grammar/routeGrammar';
 import { routeToSpec } from '../grammar/routeToSpec';
 import { eventKeyName } from '../grammar/keyRouteGrammar';
-import { ownValue } from './keySpecsFromMods';
+import { ownValue } from './keyLegendsFromMods';
 import type { GestureSpec, KeyHeldSpec, KeySpec, ModSpec, PhaseSpec } from './spec';
 
 const MODIFIERS: Record<string, keyof ModSpec> = {

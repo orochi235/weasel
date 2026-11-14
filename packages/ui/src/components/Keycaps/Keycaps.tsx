@@ -3,8 +3,7 @@ import s from './Keycaps.module.css';
 import { SHORTCUT_LEADER_SEPARATOR, type KeyLegend } from '@weasel-js/gestures';
 import { KeyCap, inferKeycapKind, type KeyCapVariant } from './Keycap';
 
-/** One key in a shortcut. An `optional` key renders inverted. */
-export type KeySpec = KeyLegend;
+export type { KeyLegend };
 
 /** Where {@link KeySequence} draws its separator. */
 export type KeySequenceJoins = 'all' | 'key' | 'none';
@@ -14,7 +13,7 @@ export interface KeySequenceProps {
   /** Keys to render. `undefined` or empty renders a muted em-dash.
    *  Modifiers are always rendered first regardless of input order; relative
    *  order within each group is preserved. */
-  keys: readonly KeySpec[] | undefined;
+  keys: readonly KeyLegend[] | undefined;
   /** Glyph drawn wherever {@link joins} places a separator. Defaults to `'+'`. */
   separator?: string;
   /** Where the separator goes. Defaults to `'key'`.

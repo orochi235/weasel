@@ -2,7 +2,7 @@
 export type InlineToken =
   | { type: 'text'; text: string }
   | { type: 'code'; text: string }
-  /** A shortcut, as `keySpecsFromChord` reads one. */
+  /** A shortcut, as `keyLegendsFromChord` reads one. */
   | { type: 'keys'; chord: string }
   | { type: 'strong' | 'em' | 'del'; children: InlineToken[] }
   | { type: 'link'; href: string; children: InlineToken[] };

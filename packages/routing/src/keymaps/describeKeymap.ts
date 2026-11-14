@@ -2,7 +2,7 @@
  * What a hint, a menu or a binding list shows for a keymap: its rows, Escape
  * first, and each key's path through the leaders that reach it.
  */
-import { detectPlatform, formatShortcut, keySpecsFromMods, type GestureSpec, type LogicalMod, type Platform } from '@weasel-js/gestures';
+import { detectPlatform, formatShortcut, keyLegendsFromMods, type GestureSpec, type LogicalMod, type Platform } from '@weasel-js/gestures';
 import type { MenuShortcut } from '@weasel-js/menu';
 import type { Action } from '../interactions/actions/action';
 import { actionBindings, type GestureBinding } from '../interactions/actions/binding';
@@ -46,7 +46,7 @@ function gestureWords(spec: GestureSpec, platform: Platform): string | undefined
   const word = GESTURE_WORDS[spec.kind];
   if (!word) return undefined;
   const held = MOD_ORDER.filter((m) => spec.mods?.[m] === true).map((name) => ({ name }));
-  const mods = keySpecsFromMods(held, { platform, legend: 'text' }).map((k) => k.label);
+  const mods = keyLegendsFromMods(held, { platform, legend: 'text' }).map((k) => k.label);
   const text = [...mods, word].join('-');
   return text[0]!.toUpperCase() + text.slice(1);
 }

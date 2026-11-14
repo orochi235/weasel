@@ -3,7 +3,7 @@ import { Code } from '@weasel-js/ui/components/Code';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
 import { KeySequence } from '@weasel-js/ui/components/Keycaps';
-import { keySpecsFromShortcut } from '@weasel-js/gestures';
+import { keyLegendsFromShortcut } from '@weasel-js/gestures';
 import s from '../RegistryInspector.module.css';
 import type { BundleEntry, ToolEntry } from '../registryEntries';
 import { BundleBadge } from './shared';
@@ -42,7 +42,7 @@ export function bundleMemberColumns(): readonly DataGridColumn<BundleMemberRow>[
       id: 'shortcut',
       header: 'shortcut',
       sortable: false,
-      render: (r) => <KeySequence keys={keySpecsFromShortcut(r.tool?.switchShortcut)} variant="inverse" />,
+      render: (r) => <KeySequence keys={keyLegendsFromShortcut(r.tool?.switchShortcut)} variant="inverse" />,
     },
   ];
 }

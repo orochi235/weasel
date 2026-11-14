@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { CSSProperties, ReactElement } from 'react';
-import { KeySequence, type KeySpec, type KeySequenceProps, type KeyCapVariant, KEYCAP_VARIANT_ICONS } from '@weasel-js/ui/components/Keycaps';
-import { keySpecFromKey, keySpecsFromMods, keySpecsFromShortcut, type LegendStyle, type LogicalMod, type Platform } from '@weasel-js/gestures';
+import { KeySequence, type KeyLegend, type KeySequenceProps, type KeyCapVariant, KEYCAP_VARIANT_ICONS } from '@weasel-js/ui/components/Keycaps';
+import { keyLegendFromKey, keyLegendsFromMods, keyLegendsFromShortcut, type LegendStyle, type LogicalMod, type Platform } from '@weasel-js/gestures';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'inverse'];
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
@@ -16,13 +16,13 @@ const NAMED_BY_GLYPH: Record<string, string | undefined> = {
 
 function relabel(label: string, platform: Platform, legend: LegendStyle): string {
   const mod = MOD_BY_GLYPH[label];
-  if (mod) return keySpecsFromMods([{ name: mod }], { platform, legend })[0].label;
+  if (mod) return keyLegendsFromMods([{ name: mod }], { platform, legend })[0].label;
   const named = NAMED_BY_GLYPH[label];
-  if (named) return keySpecFromKey(named, { platform, legend }).label;
+  if (named) return keyLegendFromKey(named, { platform, legend }).label;
   return label;
 }
 
-function relabelKeys(keys: readonly KeySpec[] | undefined, platform: Platform, legend: LegendStyle): readonly KeySpec[] | undefined {
+function relabelKeys(keys: readonly KeyLegend[] | undefined, platform: Platform, legend: LegendStyle): readonly KeyLegend[] | undefined {
   return keys?.map((k) => ({ ...k, label: relabel(k.label, platform, legend) }));
 }
 
@@ -64,7 +64,7 @@ const meta: Meta<StoryArgs> = {
     keys: {
       control: 'object',
       description:
-        '`KeySpec[]` — `{ label, optional? }`. Modifiers always render first regardless of input order; relative order within each group is preserved.',
+        '`KeyLegend[]` — `{ label, optional? }`. Modifiers always render first regardless of input order; relative order within each group is preserved.',
     },
     separator: {
       control: 'text',
@@ -141,11 +141,11 @@ export const MultiModifier: Story = {
   },
 };
 
-/** A kit shortcut (`{ key, mod, shift, alt }`) through `keySpecsFromShortcut`,
+/** A kit shortcut (`{ key, mod, shift, alt }`) through `keyLegendsFromShortcut`,
  *  which spells it for the platform: this one is pinned to Windows. */
 export const FromShortcut: Story = {
   args: {
-    keys: keySpecsFromShortcut({ key: 'z', mod: true, shift: 'optional' }, { platform: 'windows' }),
+    keys: keyLegendsFromShortcut({ key: 'z', mod: true, shift: 'optional' }, { platform: 'windows' }),
   },
 };
 
@@ -221,7 +221,7 @@ export const Gallery: Story = {
 };
 
 function KeySequenceGallery({ platform, legend, font }: { platform: Platform; legend: LegendStyle; font?: string }): ReactElement {
-  const cases: Array<{ label: string; keys: KeySpec[] }> = [
+  const cases: Array<{ label: string; keys: KeyLegend[] }> = [
     { label: 'Cmd+K', keys: [{ label: '⌘' }, { label: 'K' }] },
     { label: 'Cmd+Shift+P', keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'P' }] },
     { label: 'Cmd+(opt)Shift+P', keys: [{ label: '⌘' }, { label: '⇧', optional: true }, { label: 'P' }] },
@@ -245,7 +245,7 @@ function KeySequenceGallery({ platform, legend, font }: { platform: Platform; le
       </thead>
       <tbody>
         {cases.map((c) => {
-          const keys = relabelKeys(c.keys, platform, legend) as KeySpec[] | undefined;
+          const keys = relabelKeys(c.keys, platform, legend) as KeyLegend[] | undefined;
           return (
             <tr key={c.label}>
               <td style={cell}>{c.label}</td>

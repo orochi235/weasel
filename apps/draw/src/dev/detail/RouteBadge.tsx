@@ -2,8 +2,8 @@ import type { ModifierKey, ParsedModifiers } from '@weasel-js/core/routing';
 import { getGestureDescriptor, type GestureName } from '@weasel-js/core/routing';
 import { Badge, type BadgeProps } from '@weasel-js/ui/components/Badge';
 import { Code } from '@weasel-js/ui/components/Code';
-import { KeyCap, KeySequence, type KeySpec } from '@weasel-js/ui/components/Keycaps';
-import { keySpecFromKey, keySpecsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
+import { KeyCap, KeySequence, type KeyLegend } from '@weasel-js/ui/components/Keycaps';
+import { keyLegendFromKey, keyLegendsFromMods, type LogicalModSpec } from '@weasel-js/gestures';
 import { Fragment } from 'react';
 import s from '../RegistryInspector.module.css';
 import { CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, PHASE_BADGE_PROPS } from '../badgeTokens';
@@ -12,27 +12,27 @@ import { parseRoute } from '../registryData';
 export const MOD_DISPLAY_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
 /** Render a `HotkeyTrigger` value (`'space' | 'alt' | 'ctrl' | 'meta' |
- *  'shift' | ...`) as a single platform-aware `KeySpec`. The four modifier
- *  triggers flow through `keySpecsFromMods` (so `mod`-flavored entries
- *  render correctly on every OS); `space` flows through `keySpecFromKey`;
+ *  'shift' | ...`) as a single platform-aware `KeyLegend`. The four modifier
+ *  triggers flow through `keyLegendsFromMods` (so `mod`-flavored entries
+ *  render correctly on every OS); `space` flows through `keyLegendFromKey`;
  *  anything else falls back to an upper-cased label. */
-export function hotkeyTriggerToKeySpec(trigger: string): KeySpec {
+export function hotkeyTriggerToKeyLegend(trigger: string): KeyLegend {
   if (trigger === 'shift' || trigger === 'alt' || trigger === 'ctrl'
       || trigger === 'meta' || trigger === 'mod') {
-    return keySpecsFromMods([{ name: trigger }])[0]!;
+    return keyLegendsFromMods([{ name: trigger }])[0]!;
   }
-  if (trigger === 'space' || trigger === ' ') return keySpecFromKey(' ');
+  if (trigger === 'space' || trigger === ' ') return keyLegendFromKey(' ');
   return { label: trigger.toUpperCase() };
 }
 
-export function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefined {
+export function modifierKeys(modifiers: ParsedModifiers): readonly KeyLegend[] | undefined {
   const specs: LogicalModSpec[] = [];
   for (const name of MOD_DISPLAY_ORDER) {
     const req = modifiers[name];
     if (req !== undefined) specs.push({ name, optional: req === 'optional' });
   }
   if (specs.length === 0) return undefined;
-  return keySpecsFromMods(specs);
+  return keyLegendsFromMods(specs);
 }
 
 /** Decomposes a v3 route string (`[phaseList] gesture(arg) => target +mod`)
@@ -67,7 +67,7 @@ export function RouteBadge({ route }: { route: string }) {
       <Badge {...(GESTURE_BADGE_PROPS as BadgeProps)}>
         {parsed.gesture}
         {hasArg && (argIsKey ? (
-          <> <KeyCap label={keySpecFromKey(parsed.arg!).label} className={s.routeKeyCap} /></>
+          <> <KeyCap label={keyLegendFromKey(parsed.arg!).label} className={s.routeKeyCap} /></>
         ) : (
           <span className={argIsDefault ? s.routeMuted : undefined}>({parsed.arg})</span>
         ))}
