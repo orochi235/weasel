@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bidi, analyze, reorder, mirror, baseLevel, BIDI_UNICODE_VERSION } from './index';
+import { bidi, analyze, reorder, mirror, baseLevel, UNICODE_VERSION } from './index';
 
 /** Hebrew alef-bet-gimel, a space, and Latin digits. */
 const HE = [0x05d0, 0x05d1, 0x05d2];
@@ -46,6 +46,6 @@ describe('the public seam', () => {
   });
 
   it('reports the Unicode version its tables came from', () => {
-    expect(BIDI_UNICODE_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(UNICODE_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 });

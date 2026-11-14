@@ -12,7 +12,7 @@
 import type { BidiClass } from './types';
 import { resolveLevels, type BidiDirection, type BidiResult } from './resolve';
 import { reorderLine, type ReorderedLine } from './reorder';
-import { bidiClassOf, mirrorOf, UNICODE_VERSION } from './tables';
+import { bidiClassOf, mirrorOf } from './tables';
 
 export type { BidiClass, PairedBracket } from './types';
 export type { BidiDirection, BidiResult } from './resolve';
@@ -78,5 +78,3 @@ export interface BidiEngine {
 
 /** The default engine — pass this where a `BidiEngine` is wanted. */
 export const bidi: BidiEngine = { analyze, reorder, mirror, baseLevel };
-
-export { UNICODE_VERSION as BIDI_UNICODE_VERSION };
