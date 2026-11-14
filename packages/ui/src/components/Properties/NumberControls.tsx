@@ -13,7 +13,7 @@ import { dlog } from '../../dlog';
 import { useFieldLocale } from '../../useFieldLocale';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { UnitField } from '../NumberField';
-import shared from '../range.module.css';
+import { InlineRange } from '../InlineRange';
 import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyRow';
 import s from './Properties.module.css';
@@ -202,14 +202,13 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
     commit?.(settle(next));
   };
   return (
-    // The shared skin with no fill: `InlineRange`'s filled-to-value track is its
-    // own, and the property rows' 18% track is the one the kit converges on.
-    <input
+    // No fill: the property rows' plain track is the one the kit converges on.
+    <InlineRange
       ref={range}
-      type="range"
+      fill={false}
+      marks={stops.marks}
       id={p.id}
-      className={[shared.range, stops.className, p.className].filter(Boolean).join(' ')}
-      style={stops.style}
+      className={p.className}
       aria-label={p.name}
       // The readout is the keyboard's way in, and steps as the track would; a
       // tab stop here too would be two stops for one value. With no value it

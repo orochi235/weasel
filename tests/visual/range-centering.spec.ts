@@ -20,7 +20,7 @@ const read = (p: string) => readFileSync(resolve(root, p), 'utf8');
 // CSS-module sources are mounted raw, so their classes are prefixed to keep
 // `.range`, `.track` and `.thumb` from colliding across files.
 const moduleCss = (p: string, prefix: string) =>
-  read(p).replace(/\.(range|alpha|slider|track|thumb|fill)\b/g, `.${prefix}-$1`);
+  read(p).replace(/\.(range|filled|marks)\b/g, `.${prefix}-$1`);
 
 const PAINT = `
   input[type=range], [data-t] { opacity: 1 !important; }
@@ -44,9 +44,6 @@ const TRACK_OFF = `
   [data-t=track] { background: transparent !important; border-color: transparent !important; }
   [data-t=track] > :not([data-t=thumb]) { opacity: 0 !important; }`;
 
-// RAC's SliderThumb writes this inline and leaves the cross axis to CSS.
-const RAC_THUMB = 'position:absolute;left:40%;transform:translate(-50%,-50%)';
-
 const tokens = (track: number, thumb: number) =>
   `--wzl-slider-track-h:${track}px;--wzl-slider-thumb-size:${thumb}px`;
 
@@ -64,14 +61,6 @@ function cases(): Array<[string, string]> {
     ]);
     out.push([`labkit bare input ${t}/${th}`, `<div class="lk-root" style="${v}"><input type="range" value="41"></div>`]);
   }
-  for (const box of ['border-box', 'content-box']) {
-    out.push([
-      `RangeSlider ${box}`,
-      `<div class="${box}"><div class="r-slider"><div class="r-track" data-t="track">` +
-        `<div class="r-fill" style="left:0;right:60%"></div>` +
-        `<div class="r-thumb" data-t="thumb" style="${RAC_THUMB}"></div></div></div></div>`,
-    ]);
-  }
   return out;
 }
 
@@ -85,8 +74,7 @@ async function mount(page: Page) {
   await page.setContent(
     `<!doctype html><html data-wzl-theme="weasel" data-wzl-mode="light" data-wzl-density="comfortable"><head>
      <style>${read('packages/theme/src/generated/tokens.css')}</style>
-     <style>${moduleCss('packages/ui/src/components/range.module.css', 'u')}</style>
-     <style>${moduleCss('packages/ui/src/components/RangeSlider/RangeSlider.module.css', 'r')}</style>
+     <style>${moduleCss('packages/ui/src/components/InlineRange/InlineRange.module.css', 'u')}</style>
      <style>${labkit}</style>
      <style>body { margin: 0; padding: 8px; width: 260px; background: #fff; } section { padding: 12px 10px; } .border-box * { box-sizing: border-box; }</style>
      <style id="probe"></style></head><body>${body}</body></html>`,

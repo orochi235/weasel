@@ -11,3 +11,23 @@
   font-size: var(--wzl-field-font-size, var(--wzl-font-size-sm));
   opacity: 0.7;
 }
+
+/* A dead alpha track keeps its groove but loses its thumb, so the affordance
+   reads inert rather than merely dimmed. Keyed off `:disabled`, which a color field
+   already sets on the input — not off a class on the row. One rule per engine:
+   Blink and WebKit drop a whole selector list that names a -moz- pseudo-element. */
+.range:disabled::-webkit-slider-runnable-track {
+  background: color-mix(in srgb, var(--wzl-fg) 5%, transparent);
+}
+
+.range:disabled::-moz-range-track {
+  background: color-mix(in srgb, var(--wzl-fg) 5%, transparent);
+}
+
+.range:disabled::-webkit-slider-thumb {
+  background: transparent;
+}
+
+.range:disabled::-moz-range-thumb {
+  background: transparent;
+}

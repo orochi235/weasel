@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { attract, usableStops } from '@weasel-js/ui-input';
 import { useKitSetting } from '@weasel-js/react';
 import { STOP_SNAP_PX } from '../Slider/stops';
-import shared from '../range.module.css';
 import { cssPx } from '../../cssPx';
 
 /** The first stop a move from `from` to `to` crosses, or `to` where it crosses none. */
@@ -21,29 +20,14 @@ function runPx(el: HTMLInputElement): number {
   return el.getBoundingClientRect().width - cssPx(css.paddingLeft) - cssPx(css.paddingRight) - thumb;
 }
 
-/** Each stop as a 1px mark in the range box's background, centered where the
- *  thumb's center sits at it: `t/2 + f·(W − t)` of the content box. */
-function marksStyle(at: readonly number[], fraction: (v: number) => number): CSSProperties {
-  const mark = 'linear-gradient(var(--wzl-border-strong), var(--wzl-border-strong))';
-  const place = (v: number) => {
-    const f = fraction(v);
-    // A background position's percentage runs over (W − 1px), the mark's own width taken off.
-    return `calc(${f * 100}% + ${0.5 - f} * (var(--wzl-slider-thumb-size) - 1px)) 50%`;
-  };
-  return {
-    '--wzl-range-stop-marks': at.map(() => mark).join(', '),
-    '--wzl-range-stop-at': at.map(place).join(', '),
-  } as CSSProperties;
-}
-
 /** What a native range track needs to catch on `stops`. */
 export interface TrackStops {
   /** The track value a move from `from` to `to` lands on: under a pointer, the
    *  stop near `to` unless alt is held; otherwise, a key step, the first stop it crossed. */
   settle: (el: HTMLInputElement, from: number, to: number) => number;
   onPointerDown: (e: ReactPointerEvent<HTMLInputElement>) => void;
-  className: string | undefined;
-  style: CSSProperties | undefined;
+  /** Each stop's fraction of the track, for `InlineRange`'s `marks`. */
+  marks: readonly number[];
 }
 
 /**
@@ -65,8 +49,8 @@ export function useTrackStops(
   const gesture = useRef<{ free: boolean } | null>(null);
   const release = useRef<(() => void) | null>(null);
   useEffect(() => () => release.current?.(), []);
-  const style = useMemo(() => (at.length > 0 ? marksStyle(at, fraction) : undefined), [at, fraction]);
-  if (at.length === 0) return { settle: (_el, _from, to) => to, onPointerDown: () => {}, className: undefined, style };
+  const marks = useMemo(() => at.map(fraction), [at, fraction]);
+  if (at.length === 0) return { settle: (_el, _from, to) => to, onPointerDown: () => {}, marks };
   return {
     settle: (el, from, to) => {
       if (!gesture.current) return catchStop(from, to, at);
@@ -94,7 +78,6 @@ export function useTrackStops(
       window.addEventListener('pointercancel', end, true);
       release.current = end;
     },
-    className: shared.stops,
-    style,
+    marks,
   };
 }

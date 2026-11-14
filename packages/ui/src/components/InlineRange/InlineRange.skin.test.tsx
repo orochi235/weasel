@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { InlineRange } from './InlineRange/InlineRange';
-import { PropertyField } from './Properties/PropertyField';
-import shared from './range.module.css';
+import { InlineRange } from './InlineRange';
+import { PropertyField } from '../Properties/PropertyField';
+import shared from './InlineRange.module.css';
 
 // CSS modules are not processed in the `weasel-ui` vitest project, so these
 // assert the contract — that the shared class is applied — not the pixels.
@@ -24,7 +24,15 @@ describe('shared range skin', () => {
     expect(cls).toContain('mine');
   });
 
-  it('a slider field wears the shared range class', () => {
+  it('fill={false} keeps the skin and drops the filled paint', () => {
+    const { container } = render(<InlineRange value={50} fill={false} onChange={() => {}} />);
+    const input = container.querySelector('input[type="range"]') as HTMLInputElement;
+    expect(input.className.split(' ')).toContain(shared.range);
+    expect(input.className.split(' ')).not.toContain(shared.filled);
+    expect(input.style.getPropertyValue('--slider-fill')).toBe('');
+  });
+
+  it('a slider field wears the shared range class, unfilled', () => {
     const { container } = render(
       <PropertyField
         kind="number"
@@ -37,11 +45,12 @@ describe('shared range skin', () => {
         onChange={() => {}}
       />,
     );
-    const input = container.querySelector('input[type="range"]');
-    expect(input?.className.split(' ')).toContain(shared.range);
+    const cls = container.querySelector('input[type="range"]')?.className.split(' ') ?? [];
+    expect(cls).toContain(shared.range);
+    expect(cls).not.toContain(shared.filled);
   });
 
-  it('a color field\'s alpha wears the shared range and alpha classes', () => {
+  it('a color field\'s alpha wears the shared range, filled', () => {
     const { container } = render(
       <PropertyField
         kind="color"
@@ -54,11 +63,11 @@ describe('shared range skin', () => {
     );
     const cls = container.querySelector('input[type="range"]')?.className.split(' ') ?? [];
     expect(cls).toContain(shared.range);
-    expect(cls).toContain(shared.alpha);
+    expect(cls).toContain(shared.filled);
   });
 
   it('a disabled alpha track stays disabled on the input', () => {
-    // The inert treatment is keyed off :disabled in the shared module, so the
+    // The inert treatment is keyed off :disabled in OpacityRange's module, so the
     // prop has to keep reaching the element and not only the row's class.
     const { container } = render(
       <PropertyField
