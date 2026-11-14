@@ -758,6 +758,13 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) [maintainer] No fleet run builds each package's own program.** The gate runs the root `npm run typecheck`,
+  never `typecheck:packages`, so a type break that shows only in one package's program passes every batch. On
+  2026-11-14 labkit, forge, and devtools each failed with 128 errors on `main`, because ui's `KitSettings` declarations
+  loaded only through ui's root index and those packages import ui by subpath (fixed in `019b253a5`). Adding it as a
+  gate step costs part of a full `typecheck:packages` run per batch; whether that is worth it is the maintainer's
+  call. Closes when the gate runs it, or the maintainer rules it stays a branch-side check.
+
 - **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
   once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second
   sighting under load.
