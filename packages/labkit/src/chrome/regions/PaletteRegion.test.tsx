@@ -48,6 +48,18 @@ describe('PaletteRegion', () => {
     ).toEqual(['brush', 'fill', 'select']);
   });
 
+  it('rules off each group, keeping consecutive ungrouped tools in one run', () => {
+    const grouped = (id: string, group: string) => ({ ...tool(id), group });
+    renderWithIcons(
+      <PaletteRegion
+        contributions={[tool('a'), tool('b'), grouped('brush', 'paint'), tool('c')]}
+        ctx={ctxWith(null)}
+      />,
+    );
+    expect(screen.getAllByRole('separator')).toHaveLength(2);
+    expect(screen.getByRole('group', { name: 'paint' })).toHaveTextContent('brush');
+  });
+
   it('sets the tool on click', () => {
     const setActiveTool = vi.fn();
     renderWithIcons(
