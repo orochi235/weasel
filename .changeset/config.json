@@ -28,6 +28,7 @@
       "@weasel-js/pdf",
       "@weasel-js/storage",
       "@weasel-js/prefs",
+      "@weasel-js/prefs-editor",
       "@weasel-js/select",
       "@weasel-js/registry",
       "@weasel-js/icons",
