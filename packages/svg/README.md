@@ -29,8 +29,10 @@ const svg = serializeSvg(nodes);
 ```
 
 `svgNodesFromKit` writes what core's built-in painters draw: text, paths, shapes and images. A node a
-painter of your own draws (`registerNodeShape`) is left out unless `leaf` writes it; return `undefined`
-for every other node to keep the default:
+painter of your own draws (`registerNodeShape`) is written as the path and group commands that painter
+returns, inside a `<g>` carrying the pose's rotation and `transform`; its text, image and shader commands
+are left out, with a warning to `onWarn` (or the console) once per kind. To write such a node another way,
+return it from `leaf`, and `undefined` for every other node to keep the default:
 
 ```ts
 const nodes = svgNodesFromKit(scene, {

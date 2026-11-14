@@ -71,6 +71,20 @@ describe('exportRegionSvg', () => {
     const doc = new DOMParser().parseFromString(await exportRegionSvg(scene, pages[0]!, { painters: [STAR] }), 'image/svg+xml');
     expect(fills(doc)).toContain(PURPLE);
   });
+
+  it('turns a painter path about the pose center, not the path center', async () => {
+    const { scene, pages } = plainScene();
+    const pose = scene.get('r' as never)!.pose as RectPose;
+    scene.update('r' as never, { data: { star: true } });
+    scene.setPose('r' as never, { ...pose, rotation: Math.PI / 2 });
+    dispose = registerNodeShape(STAR);
+    const doc = new DOMParser().parseFromString(await exportRegionSvg(scene, pages[0]!), 'image/svg+xml');
+    const path = [...doc.querySelectorAll('path, rect')].find((p) => p.getAttribute('fill') === PURPLE)!;
+    const m = path.parentElement!.getAttribute('transform')!.match(/matrix\(([^)]+)\)/)![1]!.split(/[\s,]+/).map(Number);
+    const cx = pose.x + pose.width / 2, cy = pose.y + pose.height / 2;
+    expect(m[0]! * cx + m[2]! * cy + m[4]!).toBeCloseTo(cx);
+    expect(m[1]! * cx + m[3]! * cy + m[5]!).toBeCloseTo(cy);
+  });
 });
 
 describe('exportRegionSvg on a region that is not a page', () => {

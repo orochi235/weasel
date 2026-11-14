@@ -281,13 +281,6 @@ Owner tags, after the priority (2026-10-26):
   helper renders a timeline span at a given rate to a sequence of rasters, with a site demo that
   saves the frames.
 
-- **(P3) [agent] SVG export leaves out a node only a consumer painter draws.** `svgNodesFromKit` writes what
-  core's built-in painters draw, so a kind registered with `registerNodeShape` vanishes from the file unless the
-  app passes `leaf` (the svg README shows it, 2026-11-12). The painter already returns the node's `path` draw
-  commands; lowering those (path, fill, stroke) to `SvgPathNode`s through `findNodeShape` would export any
-  painted kind with no `leaf`. Left because a command's gradient fill is in a different frame from the
-  `svgPaintFromKit` one and needs working out. Closes when a node drawn by a registered painter's solid-filled
-  path commands exports with no `leaf`.
 
 - **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids
   stops painting.** `scenePickIds` numbers each node on its first paint and keeps the number for the

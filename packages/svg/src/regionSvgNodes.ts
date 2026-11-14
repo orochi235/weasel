@@ -15,25 +15,22 @@ import {
   resolvePartPaint,
   isAnnotationLayer,
   scenePoseAdapter,
-  type DrawCommand,
   type ExportRegion,
   type ExportScene,
   type NodeShapeEntry,
-  type Paint,
   type Path,
   type RectPose,
 } from '@weasel-js/core';
 import {
   svgLeafFromKit,
   svgNodesFromKit,
-  svgPaintFromKit,
-  svgStrokeFromKit,
   type SvgKitLeafData,
   type SvgKitPose,
   type SvgKitTree,
   type SvgKitTreeNode,
 } from './fromKit';
-import type { SvgNode, SvgPathNode } from './types';
+import { svgFromPainter, warnOncePerCall } from './painterLeaf';
+import type { SvgNode } from './types';
 
 /** Options for {@link regionSvgNodes}. */
 export interface RegionSvgNodesOptions {
@@ -41,6 +38,9 @@ export interface RegionSvgNodesOptions {
    *  first that claims a node drawing it: for a kind the scene draws with a
    *  painter it may not have registered. */
   painters?: readonly NodeShapeEntry<unknown, RectPose>[];
+  /** Hears what a painter drew that SVG cannot hold, once per kind. Without
+   *  it each kind is said once with `console.warn`. */
+  onWarn?: (message: string) => void;
 }
 
 type Box = { x: number; y: number; width: number; height: number };
@@ -53,17 +53,8 @@ const meets = (a: Box, b: Box): boolean =>
 const poseOf = (pose: RectPose): SvgKitPose => ({
   x: pose.x, y: pose.y, width: pose.width, height: pose.height,
   ...(pose.rotation ? { rotation: pose.rotation } : {}),
+  ...(pose.transform ? { transform: pose.transform } : {}),
 });
-
-/** A painter's path command as an SVG path, its paints resolved in `box`. */
-function commandNode(cmd: DrawCommand, pose: SvgKitPose): SvgPathNode | null {
-  if (cmd.kind !== 'path') return null;
-  const node: SvgPathNode = { kind: 'path', path: cmd.path, fill: svgPaintFromKit((cmd.fill?.paint ?? null) as Paint | null, pose) };
-  const stroke = svgStrokeFromKit(cmd.stroke as Parameters<typeof svgStrokeFromKit>[0], pose);
-  if (stroke) node.stroke = stroke;
-  if (pose.rotation) node.rotation = pose.rotation;
-  return node;
-}
 
 /**
  * The painter that draws `node` in the export: the first of `painters` to
@@ -75,12 +66,6 @@ function painterOf(painters: readonly NodeShapeEntry<unknown, RectPose>[], node:
   if (given) return given;
   const registered = findNodeShape(node);
   return registered && !registered.id.startsWith('kit:') ? registered : undefined;
-}
-
-/** What `painter` draws for `node`, as SVG paths. */
-function painted(painter: NodeShapeEntry<unknown, RectPose>, node: SceneNode, pose: RectPose): SvgPathNode[] {
-  const at = poseOf(pose);
-  return painter.paint(node as never, pose).flatMap((cmd) => commandNode(cmd, at) ?? []);
 }
 
 /** A derived path's parts, each painted as the derived-node painter paints it. */
@@ -110,6 +95,7 @@ export function regionSvgNodes(live: ExportScene, region: ExportRegion, opts: Re
   // An export writes the document, not what an open gesture or edit is showing.
   const scene = documentOf(live);
   const painters = opts.painters ?? [];
+  const warn = warnOncePerCall(opts.onWarn);
   const shown = new Set(scene.layers.filter((l) => l.visible && !isAnnotationLayer(l)).map((l) => l.id));
   const poseCache = new Map<string, RectPose>();
   // A child stores its pose in its parent's frame; the walk below is handed every pose in the world.
@@ -139,18 +125,19 @@ export function regionSvgNodes(live: ExportScene, region: ExportRegion, opts: Re
   };
 
   return svgNodesFromKit(tree, {
+    ...(opts.onWarn ? { onWarn: opts.onWarn } : {}),
     include(id) {
       const node = scene.get(id as never);
       if (!node || !shown.has(node.layer)) return false;
       const path = pathOf(node);
       return meets(path ? boundsOfPath(path) : pose(node), region);
     },
-    leaf(id, kit) {
+    leaf(id, kit, inherited) {
       const node = scene.get(id as never)!;
       const path = pathOf(node);
       if (path) return one(derivedNodes(path, kit.data as SvgKitLeafData));
       const painter = painterOf(painters, node);
-      return painter ? one(painted(painter, node, pose(node))) : svgLeafFromKit(kit.data as SvgKitLeafData, kit.pose);
+      return painter ? svgFromPainter(painter as NodeShapeEntry, node, kit.pose, inherited, warn) : undefined;
     },
   });
 }
