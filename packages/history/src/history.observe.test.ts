@@ -81,6 +81,32 @@ describe('History.observe', () => {
     expect(t.steps.map((s) => s.kind)).toEqual(['push', 'undo', 'push', 'undo', 'branch', 'redo', 'prune', 'restore', 'clear']);
   });
 
+  it('reports what each step applied: the pushed ops, a redo\'s forward ops, an undo\'s inverses', () => {
+    let now = 0;
+    const box = { v: 0 };
+    const history = createHistory(box, { coalesceWindowMs: 100, now: () => now });
+    const steps: HistoryStep[] = [];
+    history.observe((s) => steps.push(s));
+    const applied = () => steps.map((s) => [s.kind, s.entries.map((e) => e.applied.map((op) => (op.args as { to: number }).to))]);
+    history.applyOps([setOp(0, 1)], 'a');
+    now = 10;
+    history.applyOps([setOp(1, 2)], 'a');
+    now = 500;
+    history.applyOps([setOp(2, 3)], 'b');
+    history.undo();
+    history.undo();
+    history.redo();
+    history.goto(2);
+    history.goto(0);
+    history.dropRedo();
+    expect(applied()).toEqual([
+      ['push', [[1]]], ['coalesce', [[2]]], ['push', [[3]]],
+      ['undo', [[2]]], ['undo', [[0]]], ['redo', [[2]]],
+      ['goto', [[3]]], ['goto', [[2], [0]]], ['drop', [[], []]],
+    ]);
+    expect(box.v).toBe(0);
+  });
+
   it('stops reporting once released', () => {
     const t = open();
     t.off();

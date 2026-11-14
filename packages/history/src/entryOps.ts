@@ -32,8 +32,13 @@ export function entryView(e: Entry): HistoryEntry {
   };
 }
 
-export function stepOf(kind: HistoryStep['kind'], entries: readonly Entry[] = []): HistoryStep {
-  return { kind, entries: entries.map((e) => ({ id: e.id, label: e.label, ops: e.forwardOps })) };
+const NONE: readonly Op[] = [];
+
+/** `applied[i]` is what the step applied for `entries[i]`; omitted, it applied nothing. */
+export function stepOf(
+  kind: HistoryStep['kind'], entries: readonly Entry[] = [], applied?: readonly (readonly Op[])[],
+): HistoryStep {
+  return { kind, entries: entries.map((e, i) => ({ id: e.id, label: e.label, ops: e.forwardOps, applied: applied?.[i] ?? NONE })) };
 }
 
 /** Build the all-or-nothing apply a history runs every step through, against `adapter`. */

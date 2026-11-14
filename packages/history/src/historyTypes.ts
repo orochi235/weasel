@@ -60,7 +60,17 @@ export interface HistoryBranch {
 export interface HistoryStep {
   kind: 'push' | 'coalesce' | 'undo' | 'redo' | 'goto' | 'branch' | 'prune' | 'drop' | 'clear' | 'restore';
   /** Ops are live references — read `name`/`args`, don't mutate. */
-  entries: readonly { id: number; label: string; ops: readonly Op[] }[];
+  entries: readonly {
+    id: number;
+    label: string;
+    /** The entry's forward ops: what a redo of it would apply. */
+    ops: readonly Op[];
+    /** What this step applied for the entry, in the order applied: a push's or a
+     *  coalesce's ops, a redo's forward ops, an undo's inverses. Applying them, in
+     *  order, to a copy of the state the step started from makes the step's change.
+     *  Empty for a step that moved the stacks without applying anything. */
+    applied: readonly Op[];
+  }[];
 }
 
 /** Op-batched undo/redo controller returned by `createHistory`. */

@@ -2,6 +2,7 @@ import { createEmitter } from '@weasel-js/registry';
 import { depthAt, timestampAt } from './stackTime';
 import type { Op } from './op';
 import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
+import { createWalk, type Walked } from './walk';
 import { createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive, type Journal, type BeginJournalOptions } from './journal';
 import {
   rebuilt, snapshot, touchedIdsFromOps,
@@ -138,57 +139,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
 
   const applyAllOrNothing = createApplier(adapter, logger);
 
-  function invertEntry(entry: Entry): Op[] {
-    return [...entry.baseOps].reverse().map((op) => op.invert());
-  }
-
-  /** Copy on read: the caller's array is theirs to mutate. */
-  function readSelection(): readonly string[] | undefined {
-    return selection ? [...selection.get()] : undefined;
-  }
-
-  /** Walk one entry backwards. The selection is restored *after* the
-   *  inverted ops apply, so an entry that also carries a `setSelection`-style
-   *  op can't overwrite the snapshot. */
-  function stepBack(entry: Entry): void {
-    const leaving = readSelection();
-    const coalesced = entry.forwardOps !== entry.baseOps;
-    applyAllOrNothing(invertEntry(entry), coalesced ? () => entry.forwardOps : undefined);
-    if (leaving) entry.selectionAfter = leaving;
-    if (selection && entry.selectionBefore) selection.set(entry.selectionBefore);
-  }
-
-  /** Walk one entry forwards. Mirror of `stepBack`. */
-  function stepForward(entry: Entry): void {
-    const leaving = readSelection();
-    const coalesced = entry.forwardOps !== entry.baseOps;
-    applyAllOrNothing(entry.forwardOps, coalesced ? () => invertEntry(entry) : undefined);
-    if (leaving) entry.selectionBefore = leaving;
-    if (selection && entry.selectionAfter) selection.set(entry.selectionAfter);
-  }
-
-  /** Step until `n` entries are on the undo stack. An entry changes stacks
-   *  only once its step has run, so a throw leaves both stacks describing
-   *  the state as it is. Refused under an active journal, whose edits sit over the stack's top. */
-  function walkTo(n: number): Entry[] {
-    if (n !== undoStack.length) refuseWhileActive(activeJournal);
-    const walked: Entry[] = [];
-    while (undoStack.length > n) {
-      const entry = undoStack[undoStack.length - 1]!;
-      stepBack(entry);
-      undoStack.pop();
-      redoStack.push(entry);
-      walked.push(entry);
-    }
-    while (undoStack.length < n && redoStack.length > 0) {
-      const entry = redoStack[redoStack.length - 1]!;
-      stepForward(entry);
-      redoStack.pop();
-      undoStack.push(entry);
-      walked.push(entry);
-    }
-    return walked;
-  }
+  const { walkTo, readSelection } = createWalk({
+    undoStack, redoStack, selection, applyAllOrNothing, refuse: () => refuseWhileActive(activeJournal),
+  });
 
   /** Coalesce eligibility: inside the window, which a clock set back since (a machine waking to a corrected
    *  time) is not, and the same keys. Matched by multiset rather than position so a multi-id selection can
@@ -237,7 +190,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // the anchor only survives until the stack is stepped, and every step
       // clears it, so a live anchor implies an empty redo stack.
       logger.log(`coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
-      bump(stepped.size > 0 ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] } : undefined);
+      bump(stepped.size > 0 ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied: ops }] } : undefined);
       coalesceAnchorVersion = version;
       return;
     }
@@ -250,13 +203,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoStack.push(entry);
     retireRedo(at);
     enforceLimit();
-    bump(stepped.size > 0 ? stepOf('push', [entry]) : undefined);
+    bump(stepped.size > 0 ? stepOf('push', [entry], [ops]) : undefined);
     coalesceAnchorVersion = version;
   }
 
   function fold(top: Entry, ops: Op[]): void {
     foldEntry(top, ops, now());
-    bump(stepped.size > 0 ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops }] } : undefined);
+    bump(stepped.size > 0 ? { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied: ops }] } : undefined);
     coalesceAnchorVersion = version;
   }
 
@@ -277,7 +230,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoStack.push(entry);
     retireRedo(at);
     enforceLimit();
-    bump(stepped.size > 0 ? stepOf('push', [entry]) : undefined);
+    bump(stepped.size > 0 ? stepOf('push', [entry], [forwardOps]) : undefined);
     if (key !== undefined) coalesceAnchorVersion = version;
   }
 
@@ -290,11 +243,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     undo() {
       if (undoStack.length === 0) return;
-      bump(stepOf('undo', walkTo(undoStack.length - 1)));
+      const { walked, applied } = walkTo(undoStack.length - 1);
+      bump(stepOf('undo', walked, applied));
     },
     redo() {
       if (redoStack.length === 0) return;
-      bump(stepOf('redo', walkTo(undoStack.length + 1)));
+      const { walked, applied } = walkTo(undoStack.length + 1);
+      bump(stepOf('redo', walked, applied));
     },
     seal() {
       coalesceAnchorVersion = -1;
@@ -326,7 +281,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       const total = undoStack.length + redoStack.length;
       if (!Number.isInteger(n) || n < 0 || n > total || n === undoStack.length) return;
       const start = undoStack.length;
-      let walked: Entry[];
+      let walked: Walked;
       try {
         walked = walkTo(n);
       } catch (err) {
@@ -341,7 +296,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         if (undoStack.length !== start) bump();
         throw err;
       }
-      bump(stepOf('goto', walked));
+      bump(stepOf('goto', walked.walked, walked.applied));
     },
     timestampAt: (i) => timestampAt(undoStack, redoStack, i),
     depthAt: (t) => depthAt(undoStack, redoStack, t),
