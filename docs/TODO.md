@@ -105,11 +105,10 @@ Owner tags, after the priority (2026-10-26):
 ### Path editing tricks
 
 - **(P1) [maintainer] Rename the path tools the maintainer deferred to the end of the adoption pass.**
-  Envelope mesh becomes Cloth warp, among others; the Width tool is already Girth. Ruled (2026-11-07): the
-  adoption pass is over; Cloth warp goes in now, and the maintainer picks the rest from a field of candidates. They live in
-  `@weasel-js/path-tools` now (`packages/path-tools/README.md`); the move kept every name.
-  Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`,
-  Envelope mesh as Cloth warp among them.
+  Envelope mesh is now Cloth warp (landed 2026-11-14), and the Width tool is already Girth; the maintainer picks the
+  rest from a field of candidates (ruled 2026-11-07). They live in `@weasel-js/path-tools`
+  (`packages/path-tools/README.md`).
+  Closes when every path tool the maintainer renames carries its new name in `@weasel-js/path-tools`.
 - **(P2) [maintainer] Tune Balance handles hands-on, with the maintainer driving.** First-draft behavior: a
   grip drag scales both handles by one factor, read off the pointer's projection onto the line the
   grip slides along, and a length lock (`handleLock.length`, or Mod) holds it still
@@ -205,12 +204,12 @@ Owner tags, after the priority (2026-10-26):
   name may change.
   Closes when the maintainer has driven Perspective and free distort hands-on and the defaults and keys
   he picks are committed.
-- **(P2) [maintainer] Tune Envelope mesh hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
-  mesh (`DEFAULT_ENVELOPE_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
+- **(P2) [maintainer] Tune Cloth warp hands-on, with the maintainer driving.** First-draft 3 by 3 Bicubic
+  mesh (`DEFAULT_CLOTH_SIZE`, `packages/path-tools/src/warp/warpTargets.ts`), the grid lines drawn
   between mesh points (`packages/path-tools/src/warp/warpHandles.ts`), that Rows and Columns change through
   `configureWarp` or the last-operation panel after a drag, which resamples the mesh the drag bent, and its tool
   key, Shift+F beside Distort's F, since draw's crop mode holds C (`packages/path-tools/src/warp/useWarpTool.ts`).
-  Closes when the maintainer has driven Envelope mesh hands-on and the defaults and keys he picks are
+  Closes when the maintainer has driven Cloth warp hands-on and the defaults and keys he picks are
   committed.
 - **(P2) [maintainer] Tune Puppet warp hands-on, with the maintainer driving.** First-draft mesh density (about
   400 vertices, `puppetMesh` in `packages/geom/src/warp/puppetMesh.ts`), the solve's round caps
@@ -235,7 +234,7 @@ Owner tags, after the priority (2026-10-26):
   Symmetry's on/off is a pref or document state that undo moves.
   Closes when the ruling is made and an Undo of the group leaves the toggle and the drawing agreeing.
 - **(P2) [maintainer] Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
-  keys: its tool key, M, which moved Envelope mesh off it when the two met in draw; the Shift angle
+  keys: its tool key, M, which moved Cloth warp off it when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
   readout's look (`packages/core/src/tools/builtin/measure/`, `<MeasureReadout>` in `@weasel-js/ui`).
   Closes when the maintainer has driven the Measure tool hands-on and the defaults and keys he picks

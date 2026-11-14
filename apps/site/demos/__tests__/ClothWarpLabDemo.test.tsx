@@ -4,7 +4,7 @@ import { heldPathWarpOf } from '@weasel-js/path-tools';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { EnvelopeLabDemo } from '../EnvelopeLabDemo';
+import { ClothWarpLabDemo } from '../ClothWarpLabDemo';
 import { drag, sceneCanvas, stubResizeObserver } from './pathEditLabHarness';
 import { withIcons } from '../../testIcons';
 
@@ -19,9 +19,9 @@ afterEach(() => {
 
 const node = (id: string) => window.__weaselTest!.getScene().nodes.find((n) => n.id === id)!;
 
-describe('EnvelopeLabDemo', () => {
+describe('ClothWarpLabDemo', () => {
   it('bends the banner through a dragged mesh point', async () => {
-    const { container } = await renderSettled(<StrictMode><EnvelopeLabDemo /></StrictMode>, { wrapper: withIcons });
+    const { container } = await renderSettled(<StrictMode><ClothWarpLabDemo /></StrictMode>, { wrapper: withIcons });
     const canvas = sceneCanvas(container);
 
     // A 3 × 3 mesh over (100, 100)–(400, 280): an inner point sits at (200, 160).
@@ -29,8 +29,8 @@ describe('EnvelopeLabDemo', () => {
 
     const banner = node('banner');
     const held = heldPathWarpOf(banner.data);
-    expect(held?.warp.kind).toBe('envelope');
-    expect(held?.warp.kind === 'envelope' && held.warp.mesh.points[5]).toEqual({ x: 230, y: 110 });
+    expect(held?.warp.kind).toBe('cloth');
+    expect(held?.warp.kind === 'cloth' && held.warp.mesh.points[5]).toEqual({ x: 230, y: 110 });
     // Every bar edge began on a multiple of 20; the second bar's top is pulled
     // up into the gap above it.
     const world = pathInWorld((banner.data as { path: Path }).path, banner.pose as never);

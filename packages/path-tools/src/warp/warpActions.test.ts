@@ -43,7 +43,7 @@ const ctx = (scene: S, world: { x: number; y: number }, drag?: InvocationCtx['dr
 
 /** Drag control `index` of warp `warpId` from `from` to `to`, and commit. */
 function dragControl(
-  scene: S, kind: 'distort' | 'envelope' | 'puppet', scratch: WarpHandleScratch,
+  scene: S, kind: 'distort' | 'cloth' | 'puppet', scratch: WarpHandleScratch,
   from: { x: number; y: number }, to: { x: number; y: number }, params: Record<string, unknown> = {},
 ) {
   const action = createWarpDragAction(kind);
@@ -167,18 +167,18 @@ describe('distort', () => {
   });
 });
 
-describe('envelope', () => {
+describe('cloth', () => {
   it('bends the shape through a dragged mesh point, and regrids on configureWarp', () => {
     const scene = makeScene();
     // A 2×2 mesh: point 4 is the middle one.
-    dragControl(scene, 'envelope', { warpId: null, index: 1 }, { x: 50, y: 0 }, { x: 50, y: -30 }, { rows: 2, cols: 2 });
+    dragControl(scene, 'cloth', { warpId: null, index: 1 }, { x: 50, y: 0 }, { x: 50, y: -30 }, { rows: 2, cols: 2 });
     const top = anchorsOf(scene);
     expect(top[0]).toEqual({ x: 0, y: 0 });
     const path = resolveEditablePathOf(scene.get(asNodeId('a')) as never) as PolygonPath;
     expect(Array.from(path.coords).some((v, i) => i % 2 === 1 && v < -20)).toBe(true);
     (configureWarpAction.invoker as ImmediateInvoker).run(depsOf(scene), { rows: 4, cols: 4 });
     const held = heldPathWarpOf(scene.get(asNodeId('a'))!.data);
-    expect(held?.warp.kind === 'envelope' && held.warp.mesh.points.length).toBe(25);
+    expect(held?.warp.kind === 'cloth' && held.warp.mesh.points.length).toBe(25);
   });
 });
 
@@ -272,7 +272,7 @@ describe('Warp Settings form', () => {
     const scene = makeScene();
     dragControl(scene, 'distort', { warpId: null, index: 2 }, { x: 100, y: 100 }, { x: 120, y: 110 });
     expect(readWarpSettings(depsOf(scene))).toEqual({
-      values: { distorts: 1, envelopes: 0, distort: { mode: 'free' }, tolerance: 0.5 },
+      values: { distorts: 1, cloths: 0, distort: { mode: 'free' }, tolerance: 0.5 },
       mixed: [],
     });
     const params = warpSettingsParams('distort.mode', 'perspective')!;
@@ -285,11 +285,11 @@ describe('Warp Settings form', () => {
     expect(back?.warp.kind === 'distort' && back.warp.mode).toBe('free');
   });
 
-  it('reads an envelope\'s grid and mapping', () => {
+  it('reads a cloth warp\'s grid and mapping', () => {
     const scene = makeScene();
-    dragControl(scene, 'envelope', { warpId: null, index: 1 }, { x: 50, y: 0 }, { x: 50, y: -30 }, { rows: 2, cols: 2 });
+    dragControl(scene, 'cloth', { warpId: null, index: 1 }, { x: 50, y: 0 }, { x: 50, y: -30 }, { rows: 2, cols: 2 });
     expect(readWarpSettings(depsOf(scene)).values).toMatchObject({
-      distorts: 0, envelopes: 1, envelope: { rows: 2, cols: 2, mapping: 'bicubic' },
+      distorts: 0, cloths: 1, cloth: { rows: 2, cols: 2, mapping: 'bicubic' },
     });
   });
 

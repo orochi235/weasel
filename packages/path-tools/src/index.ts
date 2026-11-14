@@ -102,8 +102,8 @@ export { useExtendTool, type UseExtendToolOptions } from './extend/useExtendTool
 export { SMUDGE_BRUSH_TOOL_OPTIONS, useSmudgeBrushTool, type UseSmudgeBrushToolOptions } from './smudge/useSmudgeBrushTool';
 export type { StrokeClickToolOptions } from './shared/strokeClickTool';
 export {
-  useDistortTool, useEnvelopeTool, usePuppetTool,
-  type UseDistortToolOptions, type UseEnvelopeToolOptions, type UsePuppetToolOptions, type WarpTool, type WarpToolOptions,
+  useDistortTool, useClothWarpTool, usePuppetTool,
+  type UseDistortToolOptions, type UseClothWarpToolOptions, type UsePuppetToolOptions, type WarpTool, type WarpToolOptions,
 } from './warp/useWarpTool';
 export { warpLayerId } from './warp/warpHandles';
 export {
@@ -165,7 +165,7 @@ export {
   heldPathWarpOf, resolvePathWarp, withoutPathWarp, type HeldPathWarp, type ResolvedPathWarp,
 } from './warp/pathWarp';
 export {
-  DEFAULT_ENVELOPE_SIZE, DEFAULT_WARP_TOLERANCE, withPathWarp, type WarpKind, type WarpSettings,
+  DEFAULT_CLOTH_SIZE, DEFAULT_WARP_TOLERANCE, withPathWarp, type WarpKind, type WarpSettings,
 } from './warp/warpTargets';
 
 // Carries path-tools' IconName augmentation into the published declarations.

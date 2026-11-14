@@ -174,7 +174,7 @@ it is dropped on the next parameter change rather than overwriting the edit.
 
 ## Warps
 
-A distorted, enveloped or puppet-warped path keeps the warp beside its geometry
+A distorted, cloth-warped, or puppet-warped path keeps the warp beside its geometry
 in `data.warp` (`pathWarp.ts`): the unwarped source, the warp as data
 (`PathWarp`, from `@weasel-js/geom`), the refit tolerance, and `frame`, the map
 from the warp's own frame to where the node stores its path. The geometry is

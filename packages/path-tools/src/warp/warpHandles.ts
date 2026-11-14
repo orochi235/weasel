@@ -1,6 +1,6 @@
 /**
  * The controls of the selection's warp, as a hit-tested layer: a distort's
- * corners and the quad they make, an envelope's mesh points and the grid
+ * corners and the quad they make, a cloth warp's mesh points and the grid
  * lines through them, a puppet's pins. Over a selection holding no warp of
  * the kind, the controls of a fresh one are shown where it would start.
  */
@@ -93,14 +93,14 @@ function pinPaint(view: View, at: { x: number; y: number }): DrawCommand[] {
 }
 
 /** The lines a group's controls hang on, in world space: a distort's quad,
- *  an envelope's grid lines carried through the mesh. */
+ *  a cloth warp's grid lines carried through the mesh. */
 function guideLines(group: ControlGroup): Point[][] {
   const { warp, toWorld: m } = group;
   if (warp.kind === 'distort') {
     const c = warp.corners.map((p) => toWorld(m, p));
     return [[...c, c[0]]];
   }
-  if (warp.kind !== 'envelope') return [];
+  if (warp.kind !== 'cloth') return [];
   const map = pathWarpMap(warp, group.source);
   const { box, mesh } = warp;
   const at = (u: number, v: number) => toWorld(m, map({ x: box.x + u * box.width, y: box.y + v * box.height }));

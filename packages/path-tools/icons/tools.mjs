@@ -3,7 +3,7 @@ import { px } from '../../icons/scripts/lib/base.mjs';
 import { rounded } from './rounded.mjs';
 
 const SPIRO_TOOL = [[1, 12], [4, 12], [10, 6], [13, 6]];
-// One of envelope's rows, from column 1 to 13 with its ends on `row`, bowed up two pixels. `back` runs it from
+// One of the cloth warp glyph's rows, from column 1 to 13 with its ends on `row`, bowed up two pixels. `back` runs it from
 // 13 to 1 and joins it to the path so far.
 const bow = (row, back = false) => {
   const pts = [[1, row], [3, row - 2], [11, row - 2], [13, row]];
@@ -29,7 +29,7 @@ export const TOOLS = {
     ${handle(1, 1)}${handle(13, 1)}${handle(13, 13)}${handle(5, 9)}`,
   // A two-by-two mesh whose rows bow upward, each bow a level run between two pixel diagonals and its columns on
   // pixels 1, 7 and 13, so every line stays crisp at 1x.
-  envelope: `
+  clothWarp: `
     <path d="M${P(1, 14)}V${px(4)}L${bow(4).slice(1)}V${px(14)}${bow(14, true)}" stroke-width="1.25"/>
     <path d="M${P(7, 2)}V${px(12)}${bow(9)}" stroke-width="1.25"/>
     ${dot(1, 4)}${dot(13, 4)}${dot(13, 14)}${dot(1, 14)}`,

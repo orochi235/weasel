@@ -1,5 +1,5 @@
 /**
- * `@weasel-js/geom/warp` — warping paths: distorts, envelopes and puppets, as
+ * `@weasel-js/geom/warp` — warping paths: distorts, cloth warps, and puppets, as
  * maps and as data a shape can hold. A puppet triangulates the shape's fill,
  * which needs `earcut`, an optional peer of geom.
  *
@@ -23,15 +23,15 @@ export { warpPath, type WarpPathOptions } from './warpPath';
 export {
   applyPathWarp,
   distortOver,
-  envelopeOver,
+  clothOver,
   moveWarpControl,
   pathWarpMap,
-  resizeEnvelope,
+  resizeCloth,
   warpControls,
   type DistortMode,
   type DistortWarp,
-  type EnvelopeMapping,
-  type EnvelopeWarp,
+  type ClothMapping,
+  type ClothWarp,
   type PathWarp,
   type PuppetWarp,
   type WarpBox,

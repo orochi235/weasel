@@ -47,7 +47,7 @@ and an app that imports only some never loads the others:
 | `segmentTypePreset` | Turn segments straight or curved, from the selection (Shift+C) or under a Shift+double-click |
 | `cornerShapePreset` | Corner shape: a widget in each corner anchor whose drag sets its radius (`editCorner`), and `setCorners` and `cycleCornerShape` on the selected corners; `CORNER_CONTROLS` and `useCornerControls` are a panel over them |
 | `pathEffectsPreset` | Blend, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
-| `warpPreset` | Expand and configure a held warp; `useDistortTool`, `useEnvelopeTool`, and `usePuppetTool` bring their own drags |
+| `warpPreset` | Expand and configure a held warp; `useDistortTool`, `useClothWarpTool`, and `usePuppetTool` bring their own drags |
 
 `PATH_EDIT_TOOLS` names the path-edit tools, the Simplify brush and Lengthen, and `usePathEditTools` builds them,
 beside `RESHAPE_TOOLS` and `usePathToolsTools`. Each carries `edits-anchors`, so only path edit allows it, and its

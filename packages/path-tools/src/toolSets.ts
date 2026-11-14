@@ -9,19 +9,19 @@ import { useSimplifyBrushTool } from './simplifyBrush/useSimplifyBrushTool';
 import { useSmudgeBrushTool } from './smudge/useSmudgeBrushTool';
 import { useSpiroTool } from './spiro/useSpiroTool';
 import { useTrimTool } from './trim/useTrimTool';
-import { useDistortTool, useEnvelopeTool, usePuppetTool } from './warp/useWarpTool';
+import { useDistortTool, useClothWarpTool, usePuppetTool } from './warp/useWarpTool';
 
 /** The ids {@link usePathToolsTools} keys its tools by. */
 export type PathToolId =
-  | 'girth' | 'trim' | 'extend' | 'smudgeBrush' | 'distort' | 'envelope' | 'puppet' | 'spiro' | 'shapeBuilder'
+  | 'girth' | 'trim' | 'extend' | 'smudgeBrush' | 'distort' | 'cloth' | 'puppet' | 'spiro' | 'shapeBuilder'
   | PathEditToolId;
 
 /** The ids {@link usePathEditTools} keys its tools by. */
 export type PathEditToolId = 'simplifyBrush' | 'lengthen';
 
-/** The tools that pull a selected path's shape around as a whole: distort, envelope mesh, and puppet warp.
+/** The tools that pull a selected path's shape around as a whole: distort, cloth warp, and puppet warp.
  *  A palette stacks them on one button. */
-export const WARP_TOOLS: ToolSet<PathToolId> = toolSet('warp', ['distort', 'envelope', 'puppet'], { stack: true, label: 'Warp' });
+export const WARP_TOOLS: ToolSet<PathToolId> = toolSet('warp', ['distort', 'cloth', 'puppet'], { stack: true, label: 'Warp' });
 
 /** The tools that reshape paths already drawn: girth, the stroke tools, the smudge brush, and the warps. */
 export const RESHAPE_TOOLS: ToolSet<PathToolId> = toolSet('reshape', ['girth', 'trim', 'extend', 'smudgeBrush', WARP_TOOLS], { label: 'Reshape' });
@@ -52,13 +52,13 @@ export function usePathToolsTools(): Record<PathToolId, Tool> {
   const extend = useExtendTool();
   const smudgeBrush = useSmudgeBrushTool();
   const distort = useDistortTool();
-  const envelope = useEnvelopeTool();
+  const cloth = useClothWarpTool();
   const puppet = usePuppetTool();
   const spiro = useSpiroTool();
   const shapeBuilder = useShapeBuilderTool();
   const pathEdit = usePathEditTools();
   return useMemo(
-    () => ({ girth, trim, extend, smudgeBrush, distort, envelope, puppet, spiro, shapeBuilder, ...pathEdit }),
-    [girth, trim, extend, smudgeBrush, distort, envelope, puppet, spiro, shapeBuilder, pathEdit],
+    () => ({ girth, trim, extend, smudgeBrush, distort, cloth, puppet, spiro, shapeBuilder, ...pathEdit }),
+    [girth, trim, extend, smudgeBrush, distort, cloth, puppet, spiro, shapeBuilder, pathEdit],
   );
 }

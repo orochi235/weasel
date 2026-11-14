@@ -6,7 +6,7 @@ import { scopedIcon } from '@weasel-js/icons';
 export type PathToolsIconName =
   | 'smudgeBrush'
   | 'distort'
-  | 'envelope'
+  | 'clothWarp'
   | 'puppetWarp'
   | 'blend'
   | 'bendAlong'
@@ -60,7 +60,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly PathToolsIco
     "names": [
       "smudgeBrush",
       "distort",
-      "envelope",
+      "clothWarp",
       "puppetWarp",
       "blend",
       "bendAlong",
@@ -136,7 +136,7 @@ declare module '@weasel-js/icons' {
   interface IconName {
     'path-tools:smudgeBrush': true;
     'path-tools:distort': true;
-    'path-tools:envelope': true;
+    'path-tools:clothWarp': true;
     'path-tools:puppetWarp': true;
     'path-tools:blend': true;
     'path-tools:bendAlong': true;

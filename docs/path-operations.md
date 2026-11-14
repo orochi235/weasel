@@ -66,7 +66,7 @@ Tag: `path-box`
 | Operation | Action id | What the handles do | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Perspective and free distort | `distort.drag` | Corner pins warp the selected paths | Drag a corner with the Distort tool (F) | main | path-tools |
-| Envelope mesh (to be renamed Cloth warp) | `envelope.drag` | A grid of control points warps the selection | Drag a mesh point with the Envelope tool (C) | main | path-tools |
+| Cloth warp | `cloth.drag` | A grid of control points warps the selection | Drag a mesh point with the Cloth warp tool (Shift+F) | main | path-tools |
 
 ## Commands on the selection
 
@@ -102,7 +102,7 @@ Tag: `path-command`
 | Roughen | `roughen` | Live random offsets of each selected shape's outline, hiding the shape | Alt+Shift+G | main | path-tools |
 | Zigzag | `zigzag` | Live ridges pushed alternately to either side of each selected shape's outline, hiding the shape | Alt+Shift+Z | main | path-tools |
 | Pucker & Bloat | `puckerBloat` | Live anchors pulled in and handles pushed out of each selected shape, or the reverse, hiding the shape | Alt+Shift+K | main | path-tools |
-| Expand warp | `expandWarp` | Drops a held distort, envelope, or puppet warp, keeping its geometry | — | main | path-tools |
+| Expand warp | `expandWarp` | Drops a held distort, cloth warp, or puppet warp, keeping its geometry | — | main | path-tools |
 | Warp settings | `configureWarp` | Remakes a held warp with new settings | — | main | path-tools |
 | Spiro point kind | `setSpiroKind` | Makes the selected spiro points smooth, corner, or tangent to a line on either side, and solves the curve again | — | main | path-tools |
 | Convert spiro to path | `releaseSpiro` | Drops a spiro curve's points, keeping the curve as an ordinary path | — | main | path-tools |

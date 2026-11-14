@@ -5,10 +5,10 @@
  */
 import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import type { HeldPathWarp } from './pathWarp';
-import { DEFAULT_ENVELOPE_SIZE, DEFAULT_WARP_TOLERANCE, WARP_LABELS, type WarpKind, type WarpSettings } from './warpTargets';
+import { DEFAULT_CLOTH_SIZE, DEFAULT_WARP_TOLERANCE, WARP_LABELS, type WarpKind, type WarpSettings } from './warpTargets';
 
 const count = (name: string, description: string) =>
-  pref.number(name, DEFAULT_ENVELOPE_SIZE, { description, min: 1, max: 16, step: 1, control: 'input' });
+  pref.number(name, DEFAULT_CLOTH_SIZE, { description, min: 1, max: 16, step: 1, control: 'input' });
 
 /** One field per {@link WarpSettings} key. */
 export const WARP_SETTING_FIELDS = {
@@ -31,7 +31,7 @@ type Field = keyof typeof WARP_SETTING_FIELDS;
 /** The settings each kind of warp holds. */
 const KIND_FIELDS: Record<WarpKind, readonly Field[]> = {
   distort: ['mode', 'tolerance'],
-  envelope: ['rows', 'cols', 'mapping', 'tolerance'],
+  cloth: ['rows', 'cols', 'mapping', 'tolerance'],
   puppet: ['tolerance'],
 };
 
@@ -54,6 +54,6 @@ export function configureWarpParams(params: Readonly<Record<string, unknown>>): 
 export function settingsOfWarp(held: HeldPathWarp): WarpSettings {
   const { warp, tolerance } = held;
   if (warp.kind === 'distort') return { mode: warp.mode, tolerance };
-  if (warp.kind === 'envelope') return { rows: warp.mesh.rows, cols: warp.mesh.cols, mapping: warp.mapping, tolerance };
+  if (warp.kind === 'cloth') return { rows: warp.mesh.rows, cols: warp.mesh.cols, mapping: warp.mapping, tolerance };
   return { tolerance };
 }

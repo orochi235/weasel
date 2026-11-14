@@ -12,7 +12,7 @@
       "group": "Tools",
       "tags": []
     },
-    "envelope": {
+    "clothWarp": {
       "body": "<path d=\"M1.875 18.125V5.625L1.875 5.625L3.6428 3.8572A2.5 2.5 0 0 1 5.4105 3.125L13.3395 3.125A2.5 2.5 0 0 1 15.1072 3.8572L16.875 5.625V18.125L16.875 18.125L15.1072 16.3572A2.5 2.5 0 0 0 13.3395 15.625L5.4105 15.625A2.5 2.5 0 0 0 3.6428 16.3572L1.875 18.125\" stroke-width=\"1.25\"/><path d=\"M9.375 3.125V15.625M1.875 11.875L3.6428 10.1072A2.5 2.5 0 0 1 5.4105 9.375L13.3395 9.375A2.5 2.5 0 0 1 15.1072 10.1072L16.875 11.875\" stroke-width=\"1.25\"/><circle cx=\"1.875\" cy=\"5.625\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.875\" cy=\"5.625\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"16.875\" cy=\"18.125\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"1.875\" cy=\"18.125\" r=\"1.875\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Tools",
       "tags": []

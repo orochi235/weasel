@@ -1148,14 +1148,14 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/DistortLabDemo.tsx',
   },
   {
-    id: 'lab-envelope-mesh',
-    title: 'Envelope mesh',
+    id: 'lab-cloth-warp',
+    title: 'Cloth warp',
     package: 'path-tools',
     description:
-      "`useEnvelopeTool` lays a grid of control points over the box around the selected paths, and dragging any of them warps the shapes through the mesh. Bicubic runs a smooth spline surface through every point, so a pull spreads across neighboring patches; Coons fills each patch from the splines along its four edges alone. Changing Rows or Columns resamples the held mesh at the new resolution where the current one carries an even grid, so the shape changes as little as the new grid allows. The mesh is held on the path as `data.warp` until Expand warp drops it.",
+      "`useClothWarpTool` lays a grid of control points over the box around the selected paths, and dragging any of them warps the shapes through the mesh. Bicubic runs a smooth spline surface through every point, so a pull spreads across neighboring patches; Coons fills each patch from the splines along its four edges alone. Changing Rows or Columns resamples the held mesh at the new resolution where the current one carries an even grid, so the shape changes as little as the new grid allows. The mesh is held on the path as `data.warp` until Expand warp drops it.",
     hint: 'Drag a mesh point on the striped banner. Change Rows, Columns or Mapping in the control panel and drag again. Press Expand warp in the palette to keep the result as a plain path.',
-    load: () => import('./demos/EnvelopeLabDemo').then((m) => m.EnvelopeLabDemo),
-    path: 'apps/site/demos/EnvelopeLabDemo.tsx',
+    load: () => import('./demos/ClothWarpLabDemo').then((m) => m.ClothWarpLabDemo),
+    path: 'apps/site/demos/ClothWarpLabDemo.tsx',
   },
   {
     id: 'lab-puppet-warp',

@@ -2,7 +2,7 @@ import { ANY_MODS } from '@weasel-js/routing';
 import { useMemo } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import { useLatest } from '@weasel-js/react';
-import type { DistortMode, EnvelopeMapping } from '@weasel-js/geom/warp';
+import type { DistortMode, ClothMapping } from '@weasel-js/geom/warp';
 import type { Action, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
 import {
   type CanvasExtensionApi, type ContributionDepReader, defineTool, type SurfaceContribution, type Tool,
@@ -14,7 +14,7 @@ import { WARP_LABELS, type WarpKind, type WarpSettings } from './warpTargets';
 import { createWarpHandleLayer, warpLayerId } from './warpHandles';
 import { icon } from '../icons.gen';
 
-const WARP_ICONS = { distort: icon('distort'), envelope: icon('envelope'), puppet: icon('puppetWarp') } satisfies Record<WarpKind, IconRef>;
+const WARP_ICONS = { distort: icon('distort'), cloth: icon('clothWarp'), puppet: icon('puppetWarp') } satisfies Record<WarpKind, IconRef>;
 
 /** A warp tool: a `Tool` that also registers the layer showing its controls. */
 export type WarpTool = Tool & Pick<SurfaceContribution, 'attach'>;
@@ -23,7 +23,7 @@ export type WarpTool = Tool & Pick<SurfaceContribution, 'attach'>;
 export interface WarpToolOptions {
   /** Palette label. */
   label?: string;
-  /** Override the default keybinding (Distort `F`, Envelope `Shift+F`, Puppet Warp
+  /** Override the default keybinding (Distort `F`, Cloth Warp `Shift+F`, Puppet Warp
    *  `B`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
   /** How far, in world units, a warped path's refitted curves may stray from
@@ -38,13 +38,13 @@ export interface UseDistortToolOptions extends WarpToolOptions {
   mode?: DistortMode;
 }
 
-/** Options for {@link useEnvelopeTool}. */
-export interface UseEnvelopeToolOptions extends WarpToolOptions {
-  /** Patch rows and columns of a new envelope's mesh. Default 3 each. */
+/** Options for {@link useClothWarpTool}. */
+export interface UseClothWarpToolOptions extends WarpToolOptions {
+  /** Patch rows and columns of a new cloth warp's mesh. Default 3 each. */
   rows?: number;
   cols?: number;
-  /** How a new envelope interpolates its mesh. Default `'bicubic'`. */
-  mapping?: EnvelopeMapping;
+  /** How a new cloth warp interpolates its mesh. Default `'bicubic'`. */
+  mapping?: ClothMapping;
 }
 
 /** Options for {@link usePuppetTool}. */
@@ -70,7 +70,7 @@ function definedOf(settings: WarpSettings): Record<string, unknown> {
   return Object.fromEntries(Object.entries(settings).filter(([, v]) => v !== undefined));
 }
 
-const KEYS: Record<WarpKind, ToolKeybinding> = { distort: { key: 'F' }, envelope: { key: 'F', shift: true }, puppet: { key: 'B' } };
+const KEYS: Record<WarpKind, ToolKeybinding> = { distort: { key: 'F' }, cloth: { key: 'F', shift: true }, puppet: { key: 'B' } };
 
 /** What a warp tool keeps between renders: whether it is active, the canvas
  *  it is attached to, and the in-flight drag its controls follow. */
@@ -167,9 +167,9 @@ export function useDistortTool(options: UseDistortToolOptions = {}): WarpTool {
  * each path until it is expanded, and `configureWarp` changes its grid or its
  * interpolation.
  */
-export function useEnvelopeTool(options: UseEnvelopeToolOptions = {}): WarpTool {
+export function useClothWarpTool(options: UseClothWarpToolOptions = {}): WarpTool {
   const { rows, cols, mapping, tolerance } = options;
-  return useWarpTool('envelope', options, { rows, cols, mapping, tolerance });
+  return useWarpTool('cloth', options, { rows, cols, mapping, tolerance });
 }
 
 /**

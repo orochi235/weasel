@@ -44,7 +44,7 @@ declare module '@weasel-js/routing' {
     constrainAnchors: ConstrainAnchorsParams;
     unconstrainAnchors: { kind?: PathConstraintKind };
     'distort.drag': WarpSettings;
-    'envelope.drag': WarpSettings;
+    'cloth.drag': WarpSettings;
     'puppet.drag': WarpSettings;
     'puppet.addPin': WarpSettings;
     configureWarp: WarpSettings & { kind?: WarpKind };

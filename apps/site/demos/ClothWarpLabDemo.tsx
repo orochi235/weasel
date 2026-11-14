@@ -1,5 +1,5 @@
 import { asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, starPath, useSelection } from '@weasel-js/core';
-import { useEnvelopeTool, warpPreset } from '@weasel-js/path-tools';
+import { useClothWarpTool, warpPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
   defineInstrument,
@@ -52,43 +52,43 @@ const createLabScene = () =>
 
 const SELECTED = [asNodeId('banner')];
 
-function EnvelopeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function ClothWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { rows, cols, mapping, tolerance } = ctx.config;
   const settings = useMemo(() => ({ rows, cols, mapping, tolerance }), [rows, cols, mapping, tolerance]);
-  useWarpLabActions(ctx.trial.id, 'envelope', settings);
-  const envelope = useEnvelopeTool(settings);
+  useWarpLabActions(ctx.trial.id, 'cloth', settings);
+  const cloth = useClothWarpTool(settings);
   return (
     <TrialSceneCanvas
       features={FEATURES}
       scene={scene}
       selection={selection}
       trial={ctx.trial}
-      tools={{ envelope }}
+      tools={{ cloth }}
     />
   );
 }
 
-const envelopeInstrument = defineInstrument<State, Config>({
-  name: 'Envelope',
+const clothWarpInstrument = defineInstrument<State, Config>({
+  name: 'Cloth Warp',
   config,
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select') },
-      { id: 'envelope', label: 'Envelope', icon: icon('path-tools:envelope') },
+      { id: 'cloth', label: 'Cloth Warp', icon: icon('path-tools:clothWarp') },
     ],
-    initial: 'envelope',
+    initial: 'cloth',
   },
   chrome: [expandWarpCommand],
-  render: (ctx) => <EnvelopeTrial ctx={ctx} />,
+  render: (ctx) => <ClothWarpTrial ctx={ctx} />,
 });
 
-export function EnvelopeLabDemo() {
+export function ClothWarpLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Envelope mesh" instruments={[envelopeInstrument]} />
+      <Lab title="Cloth warp" instruments={[clothWarpInstrument]} />
     </div>
   );
 }

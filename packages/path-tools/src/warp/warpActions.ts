@@ -124,13 +124,13 @@ type QuantizedScene = Parameters<typeof quantizedShape>[0] | undefined;
 
 /**
  * Drag one control of the selection's `kind` warp: a distort's corner, an
- * envelope's mesh point, a puppet's pin. Every selected path sharing that warp
+ * cloth warp's mesh point, a puppet's pin. Every selected path sharing that warp
  * follows the control. A press on the controls shown over a selection with no
  * warp of this kind yet makes one, from the binding's params
  * ({@link WarpSettings}), and the drag is its first edit. One undo step, which
  * the last-operation panel replays with the warp remade under other settings
  * (`warpDragParams`): the control moved as it was, then the warp remade, so an
- * envelope's new grid is resampled from the mesh the drag bent.
+ * cloth warp's new grid is resampled from the mesh the drag bent.
  */
 export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
   const label = WARP_LABELS[kind];
@@ -308,7 +308,7 @@ export const expandWarpAction: Action = {
 /**
  * Remake the selection's warps under new settings (`params`, a
  * {@link WarpSettings}, plus an optional `kind` limiting it to one kind of
- * warp): switch a distort between free and perspective, an envelope between
+ * warp): switch a distort between free and perspective, a cloth warp between
  * its mappings or to a finer grid, or refit at another tolerance. One undo
  * step. Its settings form shows what the selection holds, and the
  * last-operation panel the settings a run changed (`configureWarpParams`).

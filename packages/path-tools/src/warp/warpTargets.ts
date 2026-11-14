@@ -14,11 +14,11 @@ import {
 } from '@weasel-js/geom';
 import {
   distortOver,
-  envelopeOver,
-  resizeEnvelope,
+  clothOver,
+  resizeCloth,
   warpControls,
   type DistortMode,
-  type EnvelopeMapping,
+  type ClothMapping,
   type PathWarp,
   type WarpBox,
 } from '@weasel-js/geom/warp';
@@ -34,16 +34,16 @@ type AnyNode = SceneNode<unknown, string, unknown>;
 export type WarpKind = PathWarp['kind'];
 
 /** Each kind's name, as its tool and its actions are labeled. */
-export const WARP_LABELS: Record<WarpKind, string> = { distort: 'Distort', envelope: 'Envelope', puppet: 'Puppet Warp' };
+export const WARP_LABELS: Record<WarpKind, string> = { distort: 'Distort', cloth: 'Cloth Warp', puppet: 'Puppet Warp' };
 
 /** The settings a warp is made or remade with. Each applies only to the kinds
  *  it names; absent ones leave a held warp as it is. */
 export interface WarpSettings {
   /** A distort's map. Default `'free'`. */
   mode?: DistortMode;
-  /** An envelope's interpolation. Default `'bicubic'`. */
-  mapping?: EnvelopeMapping;
-  /** An envelope's patch rows and columns. Default 3 each. */
+  /** An cloth warp's interpolation. Default `'bicubic'`. */
+  mapping?: ClothMapping;
+  /** An cloth warp's patch rows and columns. Default 3 each. */
   rows?: number;
   cols?: number;
   /** How far, in world units, the refitted result may stray from the exact
@@ -53,8 +53,8 @@ export interface WarpSettings {
 
 /** The refit tolerance of a warp made without one. */
 export const DEFAULT_WARP_TOLERANCE = 0.5;
-/** The patch rows and columns of an envelope made without them. */
-export const DEFAULT_ENVELOPE_SIZE = 3;
+/** The patch rows and columns of a cloth warp made without them. */
+export const DEFAULT_CLOTH_SIZE = 3;
 
 const count = (v: number | undefined, fallback: number) =>
   Math.min(16, Math.max(1, Math.round(v ?? fallback)));
@@ -72,11 +72,11 @@ export interface WarpTarget {
 export function freshWarp(kind: WarpKind, box: WarpBox, settings: WarpSettings): PathWarp {
   switch (kind) {
     case 'distort': return distortOver(box, settings.mode ?? 'free');
-    case 'envelope':
-      return envelopeOver(
+    case 'cloth':
+      return clothOver(
         box,
-        count(settings.rows, DEFAULT_ENVELOPE_SIZE),
-        count(settings.cols, DEFAULT_ENVELOPE_SIZE),
+        count(settings.rows, DEFAULT_CLOTH_SIZE),
+        count(settings.cols, DEFAULT_CLOTH_SIZE),
         settings.mapping ?? 'bicubic',
       );
     case 'puppet': return { kind: 'puppet', pins: [] };
@@ -84,13 +84,13 @@ export function freshWarp(kind: WarpKind, box: WarpBox, settings: WarpSettings):
 }
 
 /** `held` remade under `settings`: a new mode, mapping or tolerance, and an
- *  envelope resampled to a new grid. */
+ *  cloth warp resampled to a new grid. */
 export function withWarpSettings(held: HeldPathWarp, settings: WarpSettings): HeldPathWarp {
   const { warp } = held;
   let next: PathWarp = warp;
   if (warp.kind === 'distort' && settings.mode && settings.mode !== warp.mode) next = { ...warp, mode: settings.mode };
-  if (warp.kind === 'envelope') {
-    const sized = resizeEnvelope(
+  if (warp.kind === 'cloth') {
+    const sized = resizeCloth(
       warp,
       count(settings.rows, warp.mesh.rows),
       count(settings.cols, warp.mesh.cols),

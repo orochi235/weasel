@@ -10,7 +10,7 @@ import { puppetMap, type PuppetPin } from './puppet';
 import { bilinearQuad, projectiveQuad, type Quad, type UvMap } from './quad';
 import { warpPath } from './warpPath';
 
-/** An axis-aligned box: the area a distort or an envelope was laid over. */
+/** An axis-aligned box: the area a distort or a cloth warp was laid over. */
 export interface WarpBox {
   x: number;
   y: number;
@@ -22,8 +22,8 @@ export interface WarpBox {
  *  straight lines; `perspective` is projective, and keeps them straight. */
 export type DistortMode = 'free' | 'perspective';
 
-/** How an envelope interpolates its mesh. See `bicubicMesh` and `coonsMesh`. */
-export type EnvelopeMapping = 'bicubic' | 'coons';
+/** How a cloth warp interpolates its mesh. See `bicubicMesh` and `coonsMesh`. */
+export type ClothMapping = 'bicubic' | 'coons';
 
 /** The box's four corners, each dragged on its own. */
 export interface DistortWarp {
@@ -35,9 +35,9 @@ export interface DistortWarp {
 }
 
 /** A grid of control points laid over the box. */
-export interface EnvelopeWarp {
-  kind: 'envelope';
-  mapping: EnvelopeMapping;
+export interface ClothWarp {
+  kind: 'cloth';
+  mapping: ClothMapping;
   box: WarpBox;
   mesh: MeshGrid;
 }
@@ -49,7 +49,7 @@ export interface PuppetWarp {
 }
 
 /** Any of the warps a path can hold. */
-export type PathWarp = DistortWarp | EnvelopeWarp | PuppetWarp;
+export type PathWarp = DistortWarp | ClothWarp | PuppetWarp;
 
 /** A distort over `box` that leaves it where it is. */
 export function distortOver(box: WarpBox, mode: DistortMode = 'free'): DistortWarp {
@@ -62,25 +62,25 @@ export function distortOver(box: WarpBox, mode: DistortMode = 'free'): DistortWa
   };
 }
 
-/** An envelope of `rows` × `cols` patches over `box` that leaves it where it is. */
-export function envelopeOver(
+/** A cloth warp of `rows` × `cols` patches over `box` that leaves it where it is. */
+export function clothOver(
   box: WarpBox,
   rows: number,
   cols: number,
-  mapping: EnvelopeMapping = 'bicubic',
-): EnvelopeWarp {
-  return { kind: 'envelope', mapping, box: { ...box }, mesh: meshGridOver(box, rows, cols) };
+  mapping: ClothMapping = 'bicubic',
+): ClothWarp {
+  return { kind: 'cloth', mapping, box: { ...box }, mesh: meshGridOver(box, rows, cols) };
 }
 
 /** `warp` with a mesh of `rows` × `cols` patches, placed where the current
  *  mesh carries an even grid, so the shape changes as little as a coarser or
  *  finer grid allows. */
-export function resizeEnvelope(warp: EnvelopeWarp, rows: number, cols: number): EnvelopeWarp {
+export function resizeCloth(warp: ClothWarp, rows: number, cols: number): ClothWarp {
   if (warp.mesh.rows === rows && warp.mesh.cols === cols) return warp;
-  return { ...warp, mesh: meshGridFrom(envelopeUvMap(warp), rows, cols) };
+  return { ...warp, mesh: meshGridFrom(clothUvMap(warp), rows, cols) };
 }
 
-function envelopeUvMap(warp: EnvelopeWarp): UvMap {
+function clothUvMap(warp: ClothWarp): UvMap {
   return warp.mapping === 'coons' ? coonsMesh(warp.mesh) : bicubicMesh(warp.mesh);
 }
 
@@ -102,8 +102,8 @@ export function pathWarpMap(warp: PathWarp, source: PolygonPath): (p: Point) => 
       const uv = (warp.mode === 'perspective' ? projectiveQuad(warp.corners) : null) ?? bilinearQuad(warp.corners);
       return boxUv(warp.box, uv);
     }
-    case 'envelope':
-      return boxUv(warp.box, envelopeUvMap(warp));
+    case 'cloth':
+      return boxUv(warp.box, clothUvMap(warp));
     case 'puppet':
       return puppetMap(source, warp.pins);
   }
@@ -115,11 +115,11 @@ export function applyPathWarp(source: PolygonPath, warp: PathWarp, tolerance = 0
 }
 
 /** The points a user drags to change `warp`: a distort's corners, an
- *  envelope's mesh points, a puppet's pins where they are now. */
+ *  cloth warp's mesh points, a puppet's pins where they are now. */
 export function warpControls(warp: PathWarp): readonly Point[] {
   switch (warp.kind) {
     case 'distort': return warp.corners;
-    case 'envelope': return warp.mesh.points;
+    case 'cloth': return warp.mesh.points;
     case 'puppet': return warp.pins.map((p) => p.to);
   }
 }
@@ -134,7 +134,7 @@ export function moveWarpControl(warp: PathWarp, index: number, to: Point): PathW
       corners[index] = at;
       return { ...warp, corners };
     }
-    case 'envelope': {
+    case 'cloth': {
       if (index < 0 || index >= warp.mesh.points.length) return warp;
       const points = [...warp.mesh.points];
       points[index] = at;

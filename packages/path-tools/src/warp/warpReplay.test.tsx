@@ -20,7 +20,7 @@ const square = (x: number) =>
 
 function setup() {
   const t = outlineScene();
-  const actions = [createWarpDragAction('distort'), createWarpDragAction('envelope'), configureWarpAction];
+  const actions = [createWarpDragAction('distort'), createWarpDragAction('cloth'), configureWarpAction];
   const harness = lastOperationHarness(t.deps as Record<string, unknown>, actions);
   const addSquare = (id: string, x: number, parent?: string) => t.scene.add({
     id: asNodeId(id), kind: 'mark', layer: 'default', ...(parent ? { parent: asNodeId(parent) } : {}),
@@ -79,17 +79,17 @@ describe('a warp drag in the last-operation panel', () => {
     expect(scene.history.undoDepth()).toBe(1);
   });
 
-  it("resamples a held envelope's bent mesh at a new grid", () => {
+  it("resamples a held cloth warp's bent mesh at a new grid", () => {
     const { scene, addSquare, drag, warpOf, adjust } = setup();
     addSquare('a', 0);
     scene.setSelection([asNodeId('a')]);
-    drag('envelope', null, 0, { x: 0, y: 0 }, { x: -30, y: -20 });
+    drag('cloth', null, 0, { x: 0, y: 0 }, { x: -30, y: -20 });
     const bent = warpOf('a')!;
     scene.history.clear();
-    drag('envelope', bent.id, 0, { x: -30, y: -20 }, { x: -40, y: -25 });
+    drag('cloth', bent.id, 0, { x: -30, y: -20 }, { x: -40, y: -25 });
     adjust({ rows: 5, cols: 4 });
     const mesh = warpOf('a')!.warp;
-    expect(mesh.kind === 'envelope' && [mesh.mesh.rows, mesh.mesh.cols]).toEqual([5, 4]);
+    expect(mesh.kind === 'cloth' && [mesh.mesh.rows, mesh.mesh.cols]).toEqual([5, 4]);
     expect(scene.history.undoDepth()).toBe(1);
   });
 
@@ -131,14 +131,14 @@ describe('Warp Settings in the last-operation panel', () => {
     const { scene, addSquare, drag, warpOf, registry, store, adjust } = setup();
     addSquare('a', 0);
     scene.setSelection([asNodeId('a')]);
-    drag('envelope', null, 0, { x: 0, y: 0 }, { x: -30, y: -20 });
+    drag('cloth', null, 0, { x: 0, y: 0 }, { x: -30, y: -20 });
     scene.history.clear();
-    act(() => { registry.trigger('configureWarp', { kind: 'envelope', rows: 4 }); });
+    act(() => { registry.trigger('configureWarp', { kind: 'cloth', rows: 4 }); });
     expect(store.get()).toMatchObject({ id: 'configureWarp', values: { rows: 4 } });
     expect(Object.keys(store.get()!.values)).toEqual(['rows']);
     adjust({ rows: 6 });
     const mesh = warpOf('a')!.warp;
-    expect(mesh.kind === 'envelope' && [mesh.mesh.rows, mesh.mesh.cols]).toEqual([6, 3]);
+    expect(mesh.kind === 'cloth' && [mesh.mesh.rows, mesh.mesh.cols]).toEqual([6, 3]);
     expect(scene.history.undoDepth()).toBe(1);
   });
 });
