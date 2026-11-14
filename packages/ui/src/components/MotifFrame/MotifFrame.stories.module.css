@@ -6,6 +6,10 @@
   padding: var(--wzl-space-6);
 }
 
+.frames {
+  padding: var(--wzl-space-6);
+}
+
 .jacks {
   display: flex;
   gap: var(--wzl-space-5);

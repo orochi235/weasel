@@ -576,10 +576,6 @@ name a package. Breaking changes are in scope.
   bank to its smallest member. Give `FitScope` an optional scale stage and have `KeyCap` read `FitContext`. Closes
   when `KeyBankContext` no longer carries a fitter.
 
-- **(P3) [agent] `<Sequence>` for the hand-built galleries.** `Button`'s `Matrix` story, `Tooltip`'s `Placements`,
-  `MotifFrame/MotifFrame.stories.tsx:57`, and `Badge/lab/QuatrefoilOctants.tsx:62` map over values by hand. Closes
-  when all four render through `Sequence`.
-
 - **(P2) [agent] One segmented bar for `ToggleBar`, `OptionsBar`, and `ButtonBar`.** All three build the same
   `SegmentedRow` with identical tiling, roving, and segment-class code, and alias the same size and variant types;
   they differ only in selection model and aria role. One bar with a selection mode (single, multiple, each,
