@@ -113,12 +113,12 @@ export {
 export { snipPathAt, type SnipPathOptions, type SnipResult } from './paths/snipPath';
 export { pathAwayFromAnchors, type PathAwayFromAnchors } from './paths/pathAwayFromAnchors';
 export {
-  reachToMeet, lengthenOpenEnd, openEndRay, openPathEnds, type ReachToMeetOptions, type OpenPathEnd,
+  reachToMeet, tugOpenEnd, openEndRay, openPathEnds, type ReachToMeetOptions, type OpenPathEnd,
 } from './paths/reachPath';
 export {
-  lengthenPathEnd, lengthToward, openEndAt, pathEndAnchorIndex, pathEndFrame,
-  type EaseOptions, type LengthenMode, type PathEndFrame,
-} from './paths/lengthenPathEnd';
+  tugPathEnd, lengthToward, openEndAt, pathEndAnchorIndex, pathEndFrame,
+  type EaseOptions, type TugMode, type PathEndFrame,
+} from './paths/tugPathEnd';
 export { easeLength, extensionPieces, type ExtensionPiece } from './paths/pathEndExtension';
 export { cubicPointAt, splitCubicAtT, type Point } from './paths/cubicMath';
 export { fitCubicThroughDeletion } from './paths/spanFit';

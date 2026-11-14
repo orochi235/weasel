@@ -1,5 +1,5 @@
 /**
- * In draw's path-edit mode, with the Lengthen tool on, dragging an open path's
+ * In draw's path-edit mode, with the Tug tool on, dragging an open path's
  * end anchor lengthens the path from that end. Escape, picking Anchors, or
  * leaving path edit returns the drag to moving the anchor.
  */
@@ -10,7 +10,7 @@ import {
   ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, pathInWorld,
   useActionsRegistry, type PolygonPath, type ToolsApi,
 } from '@weasel-js/core';
-import { lengthenPreset, usePathEditTools } from '@weasel-js/path-tools';
+import { tugPreset, usePathEditTools } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
@@ -22,7 +22,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = ['draw', lengthenPreset] as const;
+const FEATURES = ['draw', tugPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup() {
@@ -83,22 +83,22 @@ const MOVED = [10, 10, 30, 10, 34, 60];
 const LENGTHENED = [10, 10, 30, 10, 30, 60];
 
 describe('lengthening a path from its end in path edit', () => {
-  it('lengthens the path along its end while the Lengthen tool is on', () => {
+  it('lengthens the path along its end while the Tug tool is on', () => {
     const { scene, canvas, use } = setup();
-    use('lengthen');
+    use('tug');
     // The end anchor is at world (30, 30), heading +y.
     drag(canvas, [30, 30], [34, 60]);
     expect(worldCoords(scene)).toEqual(LENGTHENED);
   });
 
-  it("shows Lengthen's cursor over an open end while the tool is on", () => {
+  it("shows Tug's cursor over an open end while the tool is on", () => {
     const { canvas, use } = setup();
     const hover = (x: number, y: number) => {
       act(() => { canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x, clientY: y, pointerId: 1 })); });
       return canvas.style.cursor;
     };
     const plain = hover(30, 30);
-    use('lengthen');
+    use('tug');
     hover(60, 60);
     const over = hover(30, 30);
     expect(over).not.toBe(plain);
@@ -115,7 +115,7 @@ describe('lengthening a path from its end in path edit', () => {
 
   it('goes back to Anchors on Escape, staying in path edit', () => {
     const { scene, canvas, use, escape, machine, active } = setup();
-    use('lengthen');
+    use('tug');
     escape();
     expect(machine.registry.current().id).toBe('path-edit');
     expect(active()).toBe('anchors');
@@ -125,16 +125,16 @@ describe('lengthening a path from its end in path edit', () => {
 
   it('goes back to moving anchors with Anchors picked, or after leaving path edit', () => {
     const first = setup();
-    first.use('lengthen');
+    first.use('tug');
     first.use('anchors');
     drag(first.canvas, [30, 30], [34, 60]);
     expect(worldCoords(first.scene)).toEqual(MOVED);
     cleanup();
 
     const second = setup();
-    second.use('lengthen');
+    second.use('tug');
     act(() => second.machine.exitMode());
-    expect(second.active()).not.toBe('lengthen');
+    expect(second.active()).not.toBe('tug');
     second.trigger('enterPathEdit');
     expect(second.active()).toBe('anchors');
     drag(second.canvas, [30, 30], [34, 60]);

@@ -11,7 +11,7 @@ import {
 } from '@weasel-js/core';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathToAnchors } from '@weasel-js/geom';
-import { anchorSelectionPreset, lengthenPreset, sandPreset } from './presets';
+import { anchorSelectionPreset, tugPreset, sandPreset } from './presets';
 import { usePathEditTools } from './toolSets';
 
 beforeAll(() => {
@@ -20,7 +20,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = ['draw', lengthenPreset, sandPreset, anchorSelectionPreset] as const;
+const FEATURES = ['draw', tugPreset, sandPreset, anchorSelectionPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup(d: string, width: number, height: number) {
@@ -81,9 +81,9 @@ describe('path-edit tools on a canvas', () => {
     expect(t.coords()).toEqual([0, 0, 20, 0, 24, 50]);
   });
 
-  it('lengthens from an end anchor with Lengthen on', () => {
+  it('lengthens from an end anchor with Tug on', () => {
     const t = setup(ELBOW, 20, 20);
-    t.use('lengthen');
+    t.use('tug');
     drag(t.canvas, [[20, 20], [22, 35], [24, 50]]);
     expect(t.coords()).toEqual([0, 0, 20, 0, 20, 50]);
   });

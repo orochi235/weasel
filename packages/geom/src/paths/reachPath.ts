@@ -1,5 +1,5 @@
 /**
- * Growing an open end of a path along the curve a `LengthenMode` draws: by a
+ * Growing an open end of a path along the curve a `TugMode` draws: by a
  * distance, or until it meets another stroke.
  */
 
@@ -10,8 +10,8 @@ import { pathSegments, type PathSegment } from '../intersect/pathSegments';
 import { editAnchorSetTracked } from './anchorOrigins';
 import { anchorsToPath, pathToAnchors } from './anchors';
 import { resolveCorners } from './corners';
-import { lengthenPathEnd, pathEndFrame } from './lengthenPathEnd';
-import { easeLength, extensionPieces, pieceLengthAt, type EaseOptions, type LengthenMode } from './pathEndExtension';
+import { tugPathEnd, pathEndFrame } from './tugPathEnd';
+import { easeLength, extensionPieces, pieceLengthAt, type EaseOptions, type TugMode } from './pathEndExtension';
 
 /** One end of an open subpath. `sub` counts subpaths as the path's anchor set
  *  (`pathToAnchors`) does, a bare `M` included. */
@@ -46,16 +46,16 @@ function segmentsBesideEnd(path: PolygonPath, end: OpenPathEnd): PathSegment[] {
 }
 
 /**
- * `path` with `end` carried `distance` further, by `lengthenPathEnd` in `mode`
+ * `path` with `end` carried `distance` further, by `tugPathEnd` in `mode`
  * (default `'tangent'`): a straight end grown straight gets longer, and
  * anything else gains segments that keep the tangent continuous. Null when the
  * end is not open or has no direction, or `distance` is not positive.
  */
-export function lengthenOpenEnd(
-  path: Path, end: OpenPathEnd, distance: number, mode: LengthenMode = 'tangent', opts: EaseOptions = {},
+export function tugOpenEnd(
+  path: Path, end: OpenPathEnd, distance: number, mode: TugMode = 'tangent', opts: EaseOptions = {},
 ): PolygonPath | null {
   if (!(distance > 0) || path.kind !== 'polygon') return null;
-  return editAnchorSetTracked(path, (set) => lengthenPathEnd(set, end, distance, mode, opts))?.path ?? null;
+  return editAnchorSetTracked(path, (set) => tugPathEnd(set, end, distance, mode, opts))?.path ?? null;
 }
 
 /** Options for {@link reachToMeet}. */
@@ -63,7 +63,7 @@ export interface ReachToMeetOptions extends EaseOptions {
   /** The furthest the end may travel, by arc length. Default: as far as any stroke reaches. */
   maxDistance?: number;
   /** The curve the end travels along. Default `'eased'`. */
-  mode?: LengthenMode;
+  mode?: TugMode;
 }
 
 /**
@@ -108,7 +108,7 @@ export function reachToMeet(
     walked += piece.length;
   }
   if (best === null) return null;
-  const next = lengthenOpenEnd(path, end, best, mode, opts);
+  const next = tugOpenEnd(path, end, best, mode, opts);
   const at = next && pathEndFrame(pathToAnchors(next), end)?.point;
   return next && at ? { path: next, at, distance: best } : null;
 }

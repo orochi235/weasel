@@ -5,25 +5,25 @@ import {
 import type { CursorSpec } from '@weasel-js/cursor';
 import { pref } from '@weasel-js/prefs';
 import {
-  editAnchorSetTracked, lengthenPathEnd, lengthToward, nearestPathAnchor, openEndAt, pathEndAnchorIndex,
-  pathEndFrame, pathToAnchors, type AnchorSet, type LengthenMode, type PointOrigin, type PolygonPath,
+  editAnchorSetTracked, tugPathEnd, lengthToward, nearestPathAnchor, openEndAt, pathEndAnchorIndex,
+  pathEndFrame, pathToAnchors, type AnchorSet, type TugMode, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import {
   depOf, type EditAnchorsDep, editingLayer, inPlane, pathEditPreview, pathOperationTags,
 } from '@weasel-js/core';
 
-/** Params `lengthenPath` reads on every move. */
-export interface LengthenPathParams {
+/** Params `tugPath` reads on every move. */
+export interface TugPathParams {
   /** How an unmodified drag grows the end. Shift picks `'curvature'` over
    *  `'tangent'` and `'tangent'` over either curve. Default `'tangent'`. */
-  mode?: LengthenMode;
+  mode?: TugMode;
 }
 
-const LABEL = 'Lengthen path';
+const LABEL = 'Tug';
 
-/** Lengthen's params as a form, for the last-operation panel. */
-export const LENGTHEN_PATH_PARAMS = pref.group(LABEL, {
-  mode: pref.enum<LengthenMode>('Shape', 'tangent', [
+/** Tug's params as a form, for the last-operation panel. */
+export const TUG_PATH_PARAMS = pref.group(LABEL, {
+  mode: pref.enum<TugMode>('Shape', 'tangent', [
     { value: 'tangent', label: 'Straight' },
     { value: 'curvature', label: 'Arc' },
     { value: 'eased', label: 'Eased' },
@@ -33,7 +33,7 @@ export const LENGTHEN_PATH_PARAMS = pref.group(LABEL, {
   }),
 });
 
-const LENGTHEN_CURSOR: CursorSpec = { glyph: 'pen', mark: 'add', fallback: 'crosshair' };
+const TUG_CURSOR: CursorSpec = { glyph: 'pen', mark: 'add', fallback: 'crosshair' };
 
 /** Screen-px reach of an end anchor, matching the anchor affordance's hit radius. */
 const END_HIT_PX = 8;
@@ -55,9 +55,9 @@ function endUnder(deps: ActionDeps | undefined, x: number, y: number): boolean {
 }
 
 /** The `mode` in `params`, or the other mode while `flip` is held. */
-function modeOf(params: Record<string, unknown> | undefined, flip: boolean): LengthenMode {
-  const mode = (params as LengthenPathParams | undefined)?.mode;
-  const base: LengthenMode = mode === 'curvature' || mode === 'eased' ? mode : 'tangent';
+function modeOf(params: Record<string, unknown> | undefined, flip: boolean): TugMode {
+  const mode = (params as TugPathParams | undefined)?.mode;
+  const base: TugMode = mode === 'curvature' || mode === 'eased' ? mode : 'tangent';
   if (!flip) return base;
   return base === 'tangent' ? 'curvature' : 'tangent';
 }
@@ -68,25 +68,25 @@ function pressedAnchor(ctx: InvocationCtx): number {
 }
 
 /**
- * Lengthen: the drag `useLengthenTool`, a path-edit tool, binds. Dragging an
+ * Tug: the drag `useTugTool`, a path-edit tool, binds. Dragging an
  * open path's end anchor lengthens the path from that end
- * (`lengthenPathEnd`): straight along its end tangent, along an arc with
+ * (`tugPathEnd`): straight along its end tangent, along an arc with
  * the curvature the end has, or easing out of that curvature into a straight
  * run. Dragging back into the path shortens it along itself. The `mode` param
  * (`'tangent'`, the default, `'curvature'`, or `'eased'`) picks which, and
- * Shift flips it (see {@link LengthenPathParams}); both are read on every move.
+ * Shift flips it (see {@link TugPathParams}); both are read on every move.
  * One undo step per drag, which the last-operation panel replays with another
  * `mode`. One it turns down, on an anchor that is no open end,
  * falls through to `editAnchors`, which moves the anchor.
  */
-export const lengthenPathAction: Action & { requires: string[] } = inPlane({
-  id: 'lengthenPath',
+export const tugPathAction: Action & { requires: string[] } = inPlane({
+  id: 'tugPath',
   label: LABEL,
   tags: pathOperationTags('drag'),
-  cursor: LENGTHEN_CURSOR,
+  cursor: TUG_CURSOR,
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view'],
-  params: LENGTHEN_PATH_PARAMS,
+  params: TUG_PATH_PARAMS,
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
@@ -108,7 +108,7 @@ export const lengthenPathAction: Action & { requires: string[] } = inPlane({
       const step = (params: Record<string, unknown> | undefined, toward: { x: number; y: number }, flip: boolean) => {
         const mode = modeOf(params, flip);
         distance = lengthToward(origin, end, mode, toward, distance);
-        return editAnchorSetTracked(originPath, (set) => lengthenPathEnd(set, end, distance, mode));
+        return editAnchorSetTracked(originPath, (set) => tugPathEnd(set, end, distance, mode));
       };
       const commit = (done: NonNullable<typeof current>) => {
         dep.applyEdit(id, done.path, distance < 0 ? 'Shorten path' : LABEL, done.origins);
@@ -117,7 +117,7 @@ export const lengthenPathAction: Action & { requires: string[] } = inPlane({
       };
 
       return {
-        kind: 'lengthen-path',
+        kind: 'tug',
         onMove(moveCtx: InvocationCtx): void {
           const toward = {
             x: frame.point.x + moveCtx.world.x - press.x,

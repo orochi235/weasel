@@ -754,7 +754,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   cannot hold does not stop the transform: it commits alone and `constraintLinkConflictsOf`
   reports the link. Core's hook is `PathEditExtension.finishTransform`, run as one of the
   `transformFollowers` dep's followers, which the `editAnchors` dep source adds.
-- 2026-10-19: A path-edit drag that only previews until release (bend segment, corner, Lengthen,
+- 2026-10-19: A path-edit drag that only previews until release (bend segment, corner, Tug,
   Balance, Sand, spiro insert) shows nothing for a frame its constraints cannot hold,
   since that frame commits nothing; the anchor drag still holds its last good frame.
 - 2026-10-19: A constraint link is made by Alt-dragging an anchor in path edit (`linkAnchor`): it
@@ -1955,7 +1955,7 @@ Calls the lanes made without a ruling:
   the groups moves where the tools sit on a palette; renaming the sets does not.
 - Open: most tool hooks outside the drag-to-insert tools take a `keybinding` option (`null` to drop the key):
   lasso, slice, measure, the stroke, warp and rig tools. The drag-to-insert tools, spiro, Sand and
-  lengthen do not, and a binding override of `tool.activate.<id>` rebinds any tool's key.
+  Tug do not, and a binding override of `tool.activate.<id>` rebinds any tool's key.
   Whether every tool hook takes the option, or none does and overrides are the one way.
 - Open: `Action.enabled(deps, at, carried, params, viewId)` takes `params` fourth where `active`, `preview` and an
   invoker's `run` take it second. Moving it to `enabled(deps, params, where)` touches every action that declares
@@ -2090,13 +2090,13 @@ Calls the lanes made without a ruling:
 
 - 2026-11-13 (the lane's call): what each sequence tool adds (a lifeline's figure, a message's arrow, a fragment's
   type, a lifeline mark) is kept per tool, not under a shared key: no two tools add the same thing.
-- 2026-11-13 (the lane's call): the path-edit tools (Sand, lengthen) declare no cursor of their own,
+- 2026-11-13 (the lane's call): the path-edit tools (Sand, Tug) declare no cursor of their own,
   as core's `anchors` tool does not: the cursor over an anchor or a stroke is the action's. The path-tools canvas
   test exempts them from `toolGaps`'s cursor line and nothing else.
 - 2026-11-13 (the lane's call): the camera glyphs moved from `ui` to a `kernel3d` namespace, so the orbit tool and
   the camera actions name their glyphs without kernel3d depending on ui.
 - Open: these bundled tools have no default key: kernel3d's orbit, diagram's connector, its stencil tools and its
-  sequence tools, and path-tools' Sand and lengthen. No two bundled tools share a key now. Of plain
+  sequence tools, and path-tools' Sand and Tug. No two bundled tools share a key now. Of plain
   letters, C, Q and Z are free across the kit; D, X and `/` are WeaselDraw's color keys and O its opacity scrub's
   held key. With Shift, every letter is free but U, W, M, P, F and X.
 - Open: core's `anchors` tool has no bindings and no cursor (`toolGaps` names both), since path edit's drags are

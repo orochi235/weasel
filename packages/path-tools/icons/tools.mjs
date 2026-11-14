@@ -88,7 +88,7 @@ export const TOOLS = {
     <circle cx="15" cy="6" r="1.4" fill="currentColor" stroke="none"/>
     <circle cx="10" cy="6" r="1.75" stroke-width="1.25"/>
     <path d="M8.5 10.8 H11.5 M8.5 12.8 H11.5" stroke-width="1"/>`,
-  lengthen: `
+  tug: `
     <path d="M2.5 17 C6.5 17 8.5 15.5 11 13"/>
     <path d="M13 11 L16.5 7.5" stroke-dasharray="1 3"/>
     <rect x="9.5" y="11.5" width="3" height="3" fill="currentColor" stroke="none"/>`,

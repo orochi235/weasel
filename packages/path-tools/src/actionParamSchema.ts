@@ -7,7 +7,7 @@ import type {
   BendAlongEffect, BlendEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, ZigzagEffect,
 } from '@weasel-js/core';
 import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
-import type { LengthenPathParams } from './lengthen/lengthenPath';
+import type { TugPathParams } from './tug/tugPath';
 import type { ResamplePathParams } from './resample/resample';
 import type { AddExtremesParams } from './extremes/addExtremes';
 import type { ReachToMeetParams } from './reach/reachToMeet';
@@ -36,7 +36,7 @@ declare module '@weasel-js/routing' {
     editPathEffect: EditPathEffectParams;
     sand: SandParams;
     knead: KneadParams;
-    lengthenPath: LengthenPathParams;
+    tugPath: TugPathParams;
     bridgePaths: { tension?: number };
     bridgeAnchors: { tension?: number };
     setSpiroKind: { kind?: SpiroKind };

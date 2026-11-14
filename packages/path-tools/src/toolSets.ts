@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import type { Tool } from '@weasel-js/core';
 import { useReachTool } from './reach/useReachTool';
 import { useGirthTool } from './girth/useGirthTool';
-import { useLengthenTool } from './lengthen/useLengthenTool';
+import { useTugTool } from './tug/useTugTool';
 import { useShapeBuilderTool } from './shapeBuilder/useShapeBuilderTool';
 import { useSandTool } from './sand/useSandTool';
 import { useKneadTool } from './knead/useKneadTool';
@@ -17,7 +17,7 @@ export type PathToolId =
   | PathEditToolId;
 
 /** The ids {@link usePathEditTools} keys its tools by. */
-export type PathEditToolId = 'sand' | 'lengthen';
+export type PathEditToolId = 'sand' | 'tug';
 
 /** The tools that pull a selected path's shape around as a whole: distort, cloth warp, and puppet warp.
  *  A palette stacks them on one button. */
@@ -28,7 +28,7 @@ export const RESHAPE_TOOLS: ToolSet<PathToolId> = toolSet('reshape', ['girth', '
 
 /** The path-edit tools: each changes what a drag in path edit does, and carries `edits-anchors`.
  *  Core's `anchors` tool sits in the same palette group. */
-export const PATH_EDIT_TOOLS: ToolSet<PathToolId> = toolSet('path-edit', ['sand', 'lengthen'], { label: 'Path edit' });
+export const PATH_EDIT_TOOLS: ToolSet<PathToolId> = toolSet('path-edit', ['sand', 'tug'], { label: 'Path edit' });
 
 /** Every tool `@weasel-js/path-tools` ships: the reshaping tools, the spiro pen, the shape builder, and the
  *  path-edit tools. */
@@ -37,8 +37,8 @@ export const PATH_TOOLS_TOOLS: ToolSet<PathToolId> = toolSet('path-tools', [RESH
 /** Every tool in {@link PATH_EDIT_TOOLS}, keyed by id, each its own hook with its default options. */
 export function usePathEditTools(): Record<PathEditToolId, Tool> {
   const sand = useSandTool();
-  const lengthen = useLengthenTool();
-  return useMemo(() => ({ sand, lengthen }), [sand, lengthen]);
+  const tug = useTugTool();
+  return useMemo(() => ({ sand, tug }), [sand, tug]);
 }
 
 /**

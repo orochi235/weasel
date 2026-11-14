@@ -34,7 +34,7 @@ and an app that imports only some never loads the others:
 | `handleSnapPreset`, `createHandleSnapPreset` | Handle snapping: a dragged handle's angle snaps to steps and to the line through its anchor's other handle, through a snap session whose angles `handleSnapSource` offers. Not in `pathTools` |
 | `bridgePreset` | Bridge: join open ends with a curve along each end's heading, on paths or on two anchors |
 | `spiroPreset` | Spiro curves: path edit edits a spiro node's points and solves the curve again through them, `setSpiroKind` sets the kind of the selected points, and `releaseSpiro` converts a spiro curve to an ordinary path; `useSpiroTool` (Shift+P) draws them |
-| `lengthenPreset` | `lengthenPath`, which `useLengthenTool` binds: Lengthen, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
+| `tugPreset` | `tugPath`, which `useTugTool` binds: Tug, a path-edit tool whose drag on an open end grows the path along its end tangent or curvature, or trims it back |
 | `snipPreset`, `reachPreset`, `kneadPreset` | The actions `useSnipTool`, `useReachTool`, and `useKneadTool` bind |
 | `harmonizePreset` | Harmonize curvature |
 | `anchorSelectionPreset` | Grow and shrink the anchor selection along the path, or select every Nth anchor, the corners, the smooth anchors, or the rest |
@@ -49,7 +49,7 @@ and an app that imports only some never loads the others:
 | `pathEffectsPreset` | Blend, Bend along, Repeat along, Text along, Roughen, Zigzag, and Pucker & Bloat, and the actions that edit, release and expand them |
 | `warpPreset` | Expand and configure a held warp; `useDistortTool`, `useClothWarpTool`, and `usePuppetTool` bring their own drags |
 
-`PATH_EDIT_TOOLS` names the path-edit tools, Sand and Lengthen, and `usePathEditTools` builds them,
+`PATH_EDIT_TOOLS` names the path-edit tools, Sand and Tug, and `usePathEditTools` builds them,
 beside `RESHAPE_TOOLS` and `usePathToolsTools`. Each carries `edits-anchors`, so only path edit allows it, and its
 binding outranks anchor editing's; path edit starts on core's `anchors` tool.
 

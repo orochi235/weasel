@@ -128,7 +128,7 @@ export {
   snipPathAt,
   reachToMeet,
   kneadPath,
-  lengthenOpenEnd,
+  tugOpenEnd,
   openEndRay,
   openPathEnds,
   createPathSnapIndex,

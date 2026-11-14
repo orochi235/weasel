@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { PolygonPath } from '../path';
 import { PATH_C, PATH_L, PATH_M } from '../commands';
 import { pathFromD } from './pathFromD';
-import { reachToMeet, lengthenOpenEnd, openEndRay, openPathEnds } from './reachPath';
+import { reachToMeet, tugOpenEnd, openEndRay, openPathEnds } from './reachPath';
 import { pathToAnchors } from './anchors';
-import { pathEndFrame } from './lengthenPathEnd';
+import { pathEndFrame } from './tugPathEnd';
 import { easeLength, extensionPieces } from './pathEndExtension';
 
 const coords = (p: PolygonPath) => Array.from(p.coords);
@@ -89,7 +89,7 @@ describe('reachToMeet along the eased curve', () => {
   });
 });
 
-describe('lengthenOpenEnd and openPathEnds', () => {
+describe('tugOpenEnd and openPathEnds', () => {
   it('lists both ends of each open subpath, none of a closed one', () => {
     expect(openPathEnds(pathFromD('M0 0 H5 M0 10 H5 V20 Z'))).toEqual([
       { sub: 0, end: 'first' }, { sub: 0, end: 'last' },
@@ -97,8 +97,8 @@ describe('lengthenOpenEnd and openPathEnds', () => {
   });
 
   it('grows an end by a distance', () => {
-    expect(coords(lengthenOpenEnd(pathFromD('M0 0 V5'), { sub: 0, end: 'last' }, 3)!)).toEqual([0, 0, 0, 8]);
-    expect(lengthenOpenEnd(pathFromD('M0 0 V5'), { sub: 0, end: 'last' }, 0)).toBeNull();
+    expect(coords(tugOpenEnd(pathFromD('M0 0 V5'), { sub: 0, end: 'last' }, 3)!)).toEqual([0, 0, 0, 8]);
+    expect(tugOpenEnd(pathFromD('M0 0 V5'), { sub: 0, end: 'last' }, 0)).toBeNull();
   });
 });
 

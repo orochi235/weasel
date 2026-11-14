@@ -27,7 +27,7 @@ export {
   reachPreset,
   handleLocksPreset,
   handleSnapPreset,
-  lengthenPreset,
+  tugPreset,
   harmonizePreset,
   pathEffectsPreset,
   pathStructurePreset,
@@ -52,8 +52,8 @@ export {
 } from './bridge/bridge';
 export { planSnip, SNIP_PATH_PARAMS, snipPathAction } from './snip/snip';
 export { REACH_TO_MEET_PARAMS, reachToMeetAction, type ReachToMeetParams } from './reach/reachToMeet';
-export { LENGTHEN_PATH_PARAMS, lengthenPathAction, type LengthenPathParams } from './lengthen/lengthenPath';
-export { useLengthenTool } from './lengthen/useLengthenTool';
+export { TUG_PATH_PARAMS, tugPathAction, type TugPathParams } from './tug/tugPath';
+export { useTugTool } from './tug/useTugTool';
 export {
   overlayShown, PATH_OVERLAYS_GROUP, showBalanceAction, showCombAction, showFilletsAction, showDirectionAction,
   showOverlayAction,

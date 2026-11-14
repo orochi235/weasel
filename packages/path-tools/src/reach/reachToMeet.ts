@@ -1,7 +1,7 @@
 /** Reach: carry an open end on until it meets a stroke. */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  anchorAt, anchorsToPath, DEG_TO_RAD, distance, editAnchorSetTracked, reachToMeet, lengthenPathEnd, openEndAt, openEndRay,
+  anchorAt, anchorsToPath, DEG_TO_RAD, distance, editAnchorSetTracked, reachToMeet, tugPathEnd, openEndAt, openEndRay,
   openPathEnds, pathDistanceToPoint, pathEndAnchorIndex, pathToAnchors,
   type AnchorSet, type ReachToMeetOptions, type OpenPathEnd, type PenAnchor, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
@@ -94,7 +94,7 @@ function extendEnds(
     let changed = false;
     for (const end of ends) {
       const met = reachToMeet(anchorsToPath(set.anchors, set.closed, path), boundaries, end, opts);
-      if (met && lengthenPathEnd(set, end, met.distance, opts.mode ?? 'eased', opts)) changed = true;
+      if (met && tugPathEnd(set, end, met.distance, opts.mode ?? 'eased', opts)) changed = true;
     }
     const flatOf = new Map(set.anchors.flat().map((a, k) => [a, k]));
     after = [...kept].flatMap(([anchor, end]) => {

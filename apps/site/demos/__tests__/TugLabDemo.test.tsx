@@ -4,7 +4,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { pathInWorld, pathToAnchors, type PolygonPath } from '@weasel-js/core';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { LengthenLabDemo, SEEDED_PATH_ID } from '../LengthenLabDemo';
+import { TugLabDemo, SEEDED_PATH_ID } from '../TugLabDemo';
 import { withIcons } from '../../testIcons';
 
 // windease lays a lab's tiles out only once something measures them, and
@@ -53,7 +53,7 @@ function drag(canvas: Element, [x0, y0]: number[], [x1, y1]: number[], shiftKey 
 
 async function mount() {
   // Under StrictMode, as the site mounts it: the double mount is what once left Select current.
-  const { container } = await renderSettled(<StrictMode><LengthenLabDemo /></StrictMode>, { wrapper: withIcons });
+  const { container } = await renderSettled(<StrictMode><TugLabDemo /></StrictMode>, { wrapper: withIcons });
   const canvas = container.querySelector('.lk-trial-scene canvas');
   if (!canvas) throw new Error('no scene canvas in the trial');
   return canvas;
@@ -63,21 +63,21 @@ async function mount() {
 const DIR = { x: 80 / Math.hypot(80, 45), y: -45 / Math.hypot(80, 45) };
 const out = (d: number) => [320 + DIR.x * d, 120 + DIR.y * d];
 
-describe('LengthenLabDemo', () => {
-  it('opens with Lengthen current in the palette, and again after Reset', async () => {
+describe('TugLabDemo', () => {
+  it('opens with Tug current in the palette, and again after Reset', async () => {
     const canvas = await mount();
     // The palette marks its current tool the way it marks Select's: compare the two.
     const current = (name: RegExp) => {
       const b = screen.getByRole('button', { name });
       return b.getAttribute('aria-pressed') === 'true' || b.hasAttribute('aria-current');
     };
-    expect([current(/^Lengthen$/), current(/^Select/)]).toEqual([true, false]);
+    expect([current(/^Tug$/), current(/^Select/)]).toEqual([true, false]);
     drag(canvas, [320, 120], out(30));
     expect(gentle()).toHaveLength(3);
 
     await userEvent.click(screen.getByRole('button', { name: /^Reset/ }));
     expect(gentle()).toHaveLength(2);
-    expect([current(/^Lengthen$/), current(/^Select/)]).toEqual([true, false]);
+    expect([current(/^Tug$/), current(/^Select/)]).toEqual([true, false]);
     drag(canvas, [320, 120], out(30));
     expect(gentle()).toHaveLength(3);
   });
@@ -90,7 +90,7 @@ describe('LengthenLabDemo', () => {
     expect(gentle()[1]).toMatchObject({ x: 320, y: 160 });
   });
 
-  it('opens on a path in edit with Lengthen on, and a drag on its end lengthens it straight on, undone in one step', async () => {
+  it('opens on a path in edit with Tug on, and a drag on its end lengthens it straight on, undone in one step', async () => {
     const canvas = await mount();
     expect(gentle()).toHaveLength(2);
 

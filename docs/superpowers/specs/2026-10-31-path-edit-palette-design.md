@@ -16,7 +16,7 @@ Status: designed and approved by the maintainer (2026-10-31); built on branch `p
 
 ## Kit
 
-**Path-edit tools are tools.** Sand and Lengthen each get a `ToolDef` binding a drag to its
+**Path-edit tools are tools.** Sand and Tug each get a `ToolDef` binding a drag to its
 existing action, carrying the `edits-anchors` capability, which only path edit allows. Anchor editing is a
 tool too, `anchors`: what a drag in path edit does with no other tool on. `@weasel-js/path-tools` ships
 `PATH_EDIT_TOOLS` and a hook building them, beside `RESHAPE_TOOLS`; `anchors` belongs to core, since core
@@ -40,11 +40,11 @@ and `never`; the presets' defaults stand (comb, balance, direction hidden; corne
   `FIXED_CHROME.pathTools` is removed; a saved hidden flag for it is dropped by the prefs migration.
 - Under the palette, while path edit is on, a vertical bar of the `pathOverlays` group.
 - `usePathDirection` becomes `usePathOverlays`: one View pref per overlay, `view.pathDirection` kept.
-- The Path strip loses Sand and Lengthen toggles with their actions.
+- The Path strip loses Sand and Tug toggles with their actions.
 
 ## Tests
 
 Kit: a mode's default tool on entry and the prior tool restored on exit; a hidden ineligible tool not
-rendered; each path-edit tool running from its binding. Path-tools: Sand and Lengthen tests moved
+rendered; each path-edit tool running from its binding. Path-tools: Sand and Tug tests moved
 from toggles to bindings. Draw: the palette's contents in each mode, each overlay toggle flipping its chrome
 rule, the pref migration.

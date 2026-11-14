@@ -1089,14 +1089,14 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/ReachLabDemo.tsx',
   },
   {
-    id: 'lab-lengthen',
-    title: 'Lengthen',
+    id: 'lab-tug',
+    title: 'Tug',
     package: 'path-tools',
     description:
-      "Three open paths, one ending straight, one in a gentle curve, one in a tight curl, with the gently curved one open in path edit and the Lengthen path-edit tool (`useLengthenTool`) on. While it is on, dragging an open end runs the `lengthenPath` action over `lengthenPathEnd` in `@weasel-js/geom`: outward grows the path straight along its end tangent, along a circular arc with the curvature the end has, or easing out of that curvature into a straight run, meeting the path smoothly; inward shortens it along itself. A straight end grows in place; a curved one gets a new segment, one per quarter turn of arc, and an arc stops at a full turn. Reach grows an end by the same rule, eased by default. The palette's Lengthen is an ordinary tool whose binding outranks anchor editing's; Escape returns to the Anchors tool path edit starts on. Lengthen along is the action's `mode` param, a thunk through `<SceneCanvas tune>`, so a change reaches a drag under way, and Shift flips a curve to tangent and tangent to curvature. Each drag is one undo step.",
-    hint: 'Drag the right-hand end of the orange path outward, then back in to shorten it. Hold <kbd>Shift</kbd> mid-drag to switch between tangent and a curve, or set the default with Lengthen along. Press Escape to go back to Anchors and move anchors, Escape again to leave path edit; then double-click the purple curl and pick Lengthen. Undo with the button or <kbd>Mod+Z</kbd>.',
-    load: () => import('./demos/LengthenLabDemo').then((m) => m.LengthenLabDemo),
-    path: 'apps/site/demos/LengthenLabDemo.tsx',
+      "Three open paths, one ending straight, one in a gentle curve, one in a tight curl, with the gently curved one open in path edit and the Tug path-edit tool (`useTugTool`) on. While it is on, dragging an open end runs the `tugPath` action over `tugPathEnd` in `@weasel-js/geom`: outward grows the path straight along its end tangent, along a circular arc with the curvature the end has, or easing out of that curvature into a straight run, meeting the path smoothly; inward shortens it along itself. A straight end grows in place; a curved one gets a new segment, one per quarter turn of arc, and an arc stops at a full turn. Reach grows an end by the same rule, eased by default. The palette's Tug is an ordinary tool whose binding outranks anchor editing's; Escape returns to the Anchors tool path edit starts on. Tug along is the action's `mode` param, a thunk through `<SceneCanvas tune>`, so a change reaches a drag under way, and Shift flips a curve to tangent and tangent to curvature. Each drag is one undo step.",
+    hint: 'Drag the right-hand end of the orange path outward, then back in to shorten it. Hold <kbd>Shift</kbd> mid-drag to switch between tangent and a curve, or set the default with Tug along. Press Escape to go back to Anchors and move anchors, Escape again to leave path edit; then double-click the purple curl and pick Tug. Undo with the button or <kbd>Mod+Z</kbd>.',
+    load: () => import('./demos/TugLabDemo').then((m) => m.TugLabDemo),
+    path: 'apps/site/demos/TugLabDemo.tsx',
   },
   {
     id: 'lab-shape-builder',

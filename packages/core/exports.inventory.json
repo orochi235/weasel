@@ -2033,7 +2033,7 @@
     "layoutPages": "function",
     "layoutRuns": "function",
     "layoutTextPose": "function",
-    "lengthenOpenEnd": "function",
+    "tugOpenEnd": "function",
     "lerpColorArray": "function",
     "lerpFill": "function",
     "lerpOklab": "function",

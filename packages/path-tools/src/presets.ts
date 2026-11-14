@@ -21,7 +21,7 @@ import { handleLockAngleAction, handleLockLengthAction } from './handleLocks/han
 import { createHandleSnapExtension, handleSnapSource, type HandleSnapOptionsInput } from './handleSnap/handleSnap';
 import { createSoftSelectionExtension, type SoftSelectionOptions } from './softSelection/softSelection';
 import { harmonizeAnchorsAction } from './harmonize/harmonize';
-import { lengthenPathAction } from './lengthen/lengthenPath';
+import { tugPathAction } from './tug/tugPath';
 import { createDirectionExtension, PATH_DIRECTION_CHROME_ID, type PathDirectionStyle } from './pathStructure/directionMarks';
 import { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 import { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
@@ -90,10 +90,10 @@ export const snipPreset: FeaturePreset = { id: 'snip', actions: [snipPathAction]
 /** `reachToMeet`, which `useReachTool` binds. */
 export const reachPreset: FeaturePreset = { id: 'reach', actions: [reachToMeetAction] };
 
-/** `lengthenPath`, which `useLengthenTool`, a path-edit tool, binds. */
-export const lengthenPreset: FeaturePreset = {
-  id: 'lengthen',
-  actions: [lengthenPathAction],
+/** `tugPath`, which `useTugTool`, a path-edit tool, binds. */
+export const tugPreset: FeaturePreset = {
+  id: 'tug',
+  actions: [tugPathAction],
 };
 
 /** `knead`, which `useKneadTool` binds. */
@@ -241,7 +241,7 @@ export const warpPreset: FeaturePreset = {
 export const pathTools: FeaturePreset = {
   id: 'pathTools',
   includes: [
-    sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, reachPreset, lengthenPreset,
+    sandPreset, handleLocksPreset, bridgePreset, spiroPreset, snipPreset, reachPreset, tugPreset,
     kneadPreset, harmonizePreset, anchorSelectionPreset, resamplePreset, addExtremesPreset,
     curvatureCombPreset, balancePreset, constraintsPreset, pathStructurePreset, segmentTypePreset,
     filletPreset, pathEffectsPreset, warpPreset,

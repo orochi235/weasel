@@ -1,5 +1,5 @@
 /**
- * The curve an open end grows along, as the segments `lengthenPathEnd` appends
+ * The curve an open end grows along, as the segments `tugPathEnd` appends
  * and `reachToMeet` searches. Each mode starts with the end's own point and
  * tangent:
  *
@@ -26,7 +26,7 @@ import { flatPoints, segmentLength } from './segmentLength';
 
 /** How an end grows: straight on, bending as the end bends, or easing out of
  *  the end's bend into a straight run. */
-export type LengthenMode = 'tangent' | 'curvature' | 'eased';
+export type TugMode = 'tangent' | 'curvature' | 'eased';
 
 /** Where an end is, which way it heads out of the path, and how it bends there. */
 export interface PathEndFrame {
@@ -65,7 +65,7 @@ const MAX_SPLITS = 6;
 /** The pieces of `frame`'s extension in `mode`, `distance` long. Empty when
  *  `distance` is not positive. A curvature arc stops at one full turn. */
 export function extensionPieces(
-  frame: PathEndFrame, distance: number, mode: LengthenMode, opts: EaseOptions = {},
+  frame: PathEndFrame, distance: number, mode: TugMode, opts: EaseOptions = {},
 ): ExtensionPiece[] {
   if (!(distance > 0)) return [];
   const bends = Math.abs(frame.curvature) * distance > STRAIGHT_TURN;

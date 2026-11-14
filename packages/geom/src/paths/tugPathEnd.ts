@@ -1,6 +1,6 @@
 /**
- * Grow or trim an open subpath at one of its ends. Lengthen drags this, and
- * Reach gets there through `lengthenOpenEnd`.
+ * Grow or trim an open subpath at one of its ends. Tug drags this, and
+ * Reach gets there through `tugOpenEnd`.
  *
  * A positive distance extends the end outward along the curve its mode draws
  * (`extensionPieces`): straight along the end tangent, along a circular arc
@@ -23,11 +23,11 @@ import { cubicCurvatureAt, cubicDerivativeAt } from './curvature';
 import type { OpenPathEnd } from './reachPath';
 import { nearestOnCubic, nearestOnLine } from '../nearest';
 import {
-  easeLength, extensionPieces, pieceLengthAt, type EaseOptions, type LengthenMode, type PathEndFrame,
+  easeLength, extensionPieces, pieceLengthAt, type EaseOptions, type TugMode, type PathEndFrame,
 } from './pathEndExtension';
 import { flatPoints, segmentLength, segmentTAtLength } from './segmentLength';
 
-export type { EaseOptions, LengthenMode, PathEndFrame } from './pathEndExtension';
+export type { EaseOptions, TugMode, PathEndFrame } from './pathEndExtension';
 
 /** The share of a subpath's length a trim always leaves. */
 const MIN_KEEP = 1e-3;
@@ -59,19 +59,19 @@ export function pathEndFrame(set: AnchorSet, end: OpenPathEnd): PathEndFrame | n
 }
 
 /**
- * Lengthen `end` by `distance` (see the module comment), in place. A curvature arc
+ * Tug `end` by `distance` (see the module comment), in place. A curvature arc
  * stops at one full turn. Returns false when `end` is not the end of an open
  * subpath or nothing changed.
  */
-export function lengthenPathEnd(
-  set: AnchorSet, end: OpenPathEnd, distance: number, mode: LengthenMode, opts: EaseOptions = {},
+export function tugPathEnd(
+  set: AnchorSet, end: OpenPathEnd, distance: number, mode: TugMode, opts: EaseOptions = {},
 ): boolean {
   if (!(distance !== 0 && Number.isFinite(distance))) return false;
   return atTail(set, end, (sub) => (distance < 0 ? trimTail(sub, -distance) : growTail(sub, distance, mode, opts))) ?? false;
 }
 
 /**
- * The distance `lengthenPathEnd` takes for its new end to land nearest `point`: the
+ * The distance `tugPathEnd` takes for its new end to land nearest `point`: the
  * point projected onto the end tangent, for a curvature lengthening measured
  * around the circle of curvature, and for an eased one along the eased curve
  * where the point is ahead of the end. A measurement around the circle can name
@@ -81,7 +81,7 @@ export function lengthenPathEnd(
 export function lengthToward(
   set: AnchorSet,
   end: OpenPathEnd,
-  mode: LengthenMode,
+  mode: TugMode,
   point: Point,
   near = 0,
   opts: EaseOptions = {},
@@ -177,7 +177,7 @@ function lengthAlongEased(frame: PathEndFrame, point: Point, opts: EaseOptions):
   return best.length;
 }
 
-function growTail(sub: PenAnchor[], distance: number, mode: LengthenMode, opts: EaseOptions): boolean {
+function growTail(sub: PenAnchor[], distance: number, mode: TugMode, opts: EaseOptions): boolean {
   const frame = tailFrame(sub);
   if (!frame) return false;
   const pieces = extensionPieces(frame, distance, mode, opts);

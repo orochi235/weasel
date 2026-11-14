@@ -6,11 +6,11 @@ import { cubicPointAt } from './cubicMath';
 import { cubicDerivativeAt } from './curvature';
 import { flatPoints, segmentLength } from './segmentLength';
 import {
-  lengthenPathEnd,
+  tugPathEnd,
   lengthToward,
   openEndAt,
   pathEndFrame,
-} from './lengthenPathEnd';
+} from './tugPathEnd';
 
 function decode(build: (b: PathBuilder) => void): AnchorSet {
   const b = new PathBuilder();
@@ -57,22 +57,22 @@ describe('openEndAt', () => {
   });
 });
 
-describe('lengthenPathEnd along the tangent', () => {
+describe('tugPathEnd along the tangent', () => {
   it('lengthens a straight end segment without adding an anchor', () => {
     const set = line();
-    expect(lengthenPathEnd(set, { sub: 0, end: 'last' }, 25, 'tangent')).toBe(true);
+    expect(tugPathEnd(set, { sub: 0, end: 'last' }, 25, 'tangent')).toBe(true);
     expect(set.anchors[0]).toEqual([{ x: 0, y: 0 }, { x: 125, y: 0 }]);
   });
 
   it('extends the start backward along its own tangent', () => {
     const set = line();
-    lengthenPathEnd(set, { sub: 0, end: 'first' }, 10, 'tangent');
+    tugPathEnd(set, { sub: 0, end: 'first' }, 10, 'tangent');
     expect(set.anchors[0]).toEqual([{ x: -10, y: 0 }, { x: 100, y: 0 }]);
   });
 
   it('continues a curved end with a straight run along its end tangent', () => {
     const set = quarter();
-    lengthenPathEnd(set, { sub: 0, end: 'last' }, 30, 'tangent');
+    tugPathEnd(set, { sub: 0, end: 'last' }, 30, 'tangent');
     const sub = set.anchors[0];
     expect(sub).toHaveLength(3);
     expect(sub[2].x).toBeCloseTo(100, 4);
@@ -83,21 +83,21 @@ describe('lengthenPathEnd along the tangent', () => {
 
   it('reads the direction from the far control when the near one sits on the end', () => {
     const set = decode((b) => { b.moveTo(0, 0); b.curveTo(50, 0, 100, 0, 100, 0); });
-    lengthenPathEnd(set, { sub: 0, end: 'last' }, 10, 'tangent');
+    tugPathEnd(set, { sub: 0, end: 'last' }, 10, 'tangent');
     const end = set.anchors[0].at(-1)!;
     expect(end.x).toBeCloseTo(110, 4);
     expect(end.y).toBeCloseTo(0, 4);
   });
 });
 
-describe('lengthenPathEnd along the curvature', () => {
+describe('tugPathEnd along the curvature', () => {
   it('continues the end as a circular arc of the end curvature, the requested length long', () => {
     const set = quarter();
     const before = subLength(set.anchors[0]);
     const { curvature } = pathEndFrame(set, { sub: 0, end: 'last' })!;
     const r = 1 / Math.abs(curvature);
     // Another quarter turn about the end's center of curvature.
-    lengthenPathEnd(set, { sub: 0, end: 'last' }, (Math.PI / 2) * r, 'curvature');
+    tugPathEnd(set, { sub: 0, end: 'last' }, (Math.PI / 2) * r, 'curvature');
     const sub = set.anchors[0];
     expect(sub).toHaveLength(3);
     expect(subLength(sub) - before).toBeCloseTo((Math.PI / 2) * r, 0);
@@ -116,7 +116,7 @@ describe('lengthenPathEnd along the curvature', () => {
   it('splits a long arc into pieces no wider than a quarter turn', () => {
     const set = quarter();
     const r = 1 / Math.abs(pathEndFrame(set, { sub: 0, end: 'last' })!.curvature);
-    lengthenPathEnd(set, { sub: 0, end: 'last' }, Math.PI * r, 'curvature');
+    tugPathEnd(set, { sub: 0, end: 'last' }, Math.PI * r, 'curvature');
     expect(set.anchors[0]).toHaveLength(4);
   });
 
@@ -124,8 +124,8 @@ describe('lengthenPathEnd along the curvature', () => {
     const a = quarter();
     const b = quarter();
     const r = 1 / Math.abs(pathEndFrame(a, { sub: 0, end: 'last' })!.curvature);
-    lengthenPathEnd(a, { sub: 0, end: 'last' }, 2 * Math.PI * r, 'curvature');
-    lengthenPathEnd(b, { sub: 0, end: 'last' }, 9 * Math.PI * r, 'curvature');
+    tugPathEnd(a, { sub: 0, end: 'last' }, 2 * Math.PI * r, 'curvature');
+    tugPathEnd(b, { sub: 0, end: 'last' }, 9 * Math.PI * r, 'curvature');
     expect(b.anchors[0]).toHaveLength(a.anchors[0].length);
     const [ea, eb] = [a.anchors[0].at(-1)!, b.anchors[0].at(-1)!];
     expect(eb.x).toBeCloseTo(ea.x, 6);
@@ -134,16 +134,16 @@ describe('lengthenPathEnd along the curvature', () => {
 
   it('lengthens a straight end, whose curvature is zero, like the tangent does', () => {
     const set = line();
-    lengthenPathEnd(set, { sub: 0, end: 'last' }, 25, 'curvature');
+    tugPathEnd(set, { sub: 0, end: 'last' }, 25, 'curvature');
     expect(set.anchors[0]).toEqual([{ x: 0, y: 0 }, { x: 125, y: 0 }]);
   });
 });
 
-describe('lengthenPathEnd eased', () => {
+describe('tugPathEnd eased', () => {
   it('eases a curved end out of its curvature into a straight run, the requested length long', () => {
     const set = quarter();
     const before = subLength(set.anchors[0]);
-    lengthenPathEnd(set, { sub: 0, end: 'last' }, 150, 'eased');
+    tugPathEnd(set, { sub: 0, end: 'last' }, 150, 'eased');
     const sub = set.anchors[0];
     expect(subLength(sub) - before).toBeCloseTo(150, 2);
     const tip = sub[sub.length - 1];
@@ -154,15 +154,15 @@ describe('lengthenPathEnd eased', () => {
   it('lengthens a straight end segment in place, as the tangent does', () => {
     const eased = line();
     const tangent = line();
-    lengthenPathEnd(eased, { sub: 0, end: 'last' }, 25, 'eased');
-    lengthenPathEnd(tangent, { sub: 0, end: 'last' }, 25, 'tangent');
+    tugPathEnd(eased, { sub: 0, end: 'last' }, 25, 'eased');
+    tugPathEnd(tangent, { sub: 0, end: 'last' }, 25, 'tangent');
     expect(eased.anchors).toEqual(tangent.anchors);
   });
 
   it('measures a point back to the distance that reached it', () => {
     for (const d of [20, 80, 200]) {
       const set = quarter();
-      lengthenPathEnd(set, { sub: 0, end: 'last' }, d, 'eased');
+      tugPathEnd(set, { sub: 0, end: 'last' }, d, 'eased');
       const tip = set.anchors[0][set.anchors[0].length - 1];
       expect(lengthToward(quarter(), { sub: 0, end: 'last' }, 'eased', tip)).toBeCloseTo(d, 2);
     }
@@ -170,10 +170,10 @@ describe('lengthenPathEnd eased', () => {
   });
 });
 
-describe('lengthenPathEnd with a negative distance', () => {
+describe('tugPathEnd with a negative distance', () => {
   it('trims a straight end along itself', () => {
     const set = line();
-    lengthenPathEnd(set, { sub: 0, end: 'last' }, -40, 'tangent');
+    tugPathEnd(set, { sub: 0, end: 'last' }, -40, 'tangent');
     expect(set.anchors[0]).toEqual([{ x: 0, y: 0 }, { x: 60, y: 0 }]);
   });
 
@@ -181,7 +181,7 @@ describe('lengthenPathEnd with a negative distance', () => {
     const set = quarter();
     const before = subLength(set.anchors[0]);
     const original = quarter().anchors[0];
-    lengthenPathEnd(set, { sub: 0, end: 'last' }, -50, 'curvature');
+    tugPathEnd(set, { sub: 0, end: 'last' }, -50, 'curvature');
     const sub = set.anchors[0];
     expect(sub).toHaveLength(2);
     expect(subLength(sub)).toBeCloseTo(before - 50, 1);
@@ -198,19 +198,19 @@ describe('lengthenPathEnd with a negative distance', () => {
 
   it('trims through whole segments, dropping the anchors it passes', () => {
     const set = decode((b) => { b.moveTo(0, 0); b.lineTo(10, 0); b.lineTo(10, 10); });
-    lengthenPathEnd(set, { sub: 0, end: 'last' }, -15, 'tangent');
+    tugPathEnd(set, { sub: 0, end: 'last' }, -15, 'tangent');
     expect(set.anchors[0]).toEqual([{ x: 0, y: 0 }, { x: 5, y: 0 }]);
   });
 
   it('trims the start', () => {
     const set = decode((b) => { b.moveTo(0, 0); b.lineTo(10, 0); b.lineTo(10, 10); });
-    lengthenPathEnd(set, { sub: 0, end: 'first' }, -15, 'tangent');
+    tugPathEnd(set, { sub: 0, end: 'first' }, -15, 'tangent');
     expect(set.anchors[0]).toEqual([{ x: 10, y: 5 }, { x: 10, y: 10 }]);
   });
 
   it('never trims the whole subpath away', () => {
     const set = line();
-    lengthenPathEnd(set, { sub: 0, end: 'last' }, -500, 'tangent');
+    tugPathEnd(set, { sub: 0, end: 'last' }, -500, 'tangent');
     const sub = set.anchors[0];
     expect(sub).toHaveLength(2);
     expect(sub[1].x).toBeGreaterThan(0);
@@ -218,13 +218,13 @@ describe('lengthenPathEnd with a negative distance', () => {
   });
 });
 
-describe('lengthenPathEnd round trip', () => {
+describe('tugPathEnd round trip', () => {
   it('leaves the other subpaths alone and encodes back to a path', () => {
     const set = decode((b) => {
       b.moveTo(0, 0); b.lineTo(10, 0);
       b.moveTo(0, 20); b.lineTo(10, 20);
     });
-    lengthenPathEnd(set, { sub: 1, end: 'last' }, 5, 'tangent');
+    tugPathEnd(set, { sub: 1, end: 'last' }, 5, 'tangent');
     expect(set.anchors[0]).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }]);
     const path = anchorsToPath(set.anchors, set.closed);
     expect(Array.from(path.coords)).toEqual([0, 0, 10, 0, 0, 20, 15, 20]);
@@ -232,7 +232,7 @@ describe('lengthenPathEnd round trip', () => {
 
   it('refuses a closed subpath', () => {
     const set = decode((b) => { b.moveTo(0, 0); b.lineTo(10, 0); b.lineTo(10, 10); b.close(); });
-    expect(lengthenPathEnd(set, { sub: 0, end: 'last' }, 5, 'tangent')).toBe(false);
+    expect(tugPathEnd(set, { sub: 0, end: 'last' }, 5, 'tangent')).toBe(false);
   });
 });
 

@@ -58,7 +58,7 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
   },
   'packages/path-tools/src/constraints/linkAnchor.ts': { 10: RADIX },
   'packages/path-tools/src/fillet/editFillet.ts': { 10: RADIX },
-  'packages/path-tools/src/lengthen/lengthenPath.ts': { 8: 'reach: how near an open end a press takes it', 10: RADIX },
+  'packages/path-tools/src/tug/tugPath.ts': { 8: 'reach: how near an open end a press takes it', 10: RADIX },
   'packages/path-tools/src/pathEffects/spine.ts': { 3: 'count: a blend with a spine has three sources' },
   'packages/path-tools/src/shapeBuilder/shapeBuilderActions.ts': { '1e-9': 'a floor that keeps a zero scale from dividing' },
   'packages/path-tools/src/spiro/useSpiroTool.ts': { 3: 'count: the fewest points a closed spiro has' },

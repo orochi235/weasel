@@ -16,7 +16,7 @@ function canvasTools(active: string | null): ToolsApi {
 
 describe('useSceneToolSlot', () => {
   it('keeps a slot naming a tool the canvas lacks while the canvas settles on its own first tool', () => {
-    const slot = { activeToolId: 'lengthen', setActiveTool: vi.fn() };
+    const slot = { activeToolId: 'tug', setActiveTool: vi.fn() };
     const { result } = renderHook(() => useSceneToolSlot(slot));
     result.current(canvasTools(null));
     result.current(canvasTools(null));
@@ -25,7 +25,7 @@ describe('useSceneToolSlot', () => {
   });
 
   it('hands the slot a tool the canvas changes to after it has one', () => {
-    const slot = { activeToolId: 'lengthen', setActiveTool: vi.fn() };
+    const slot = { activeToolId: 'tug', setActiveTool: vi.fn() };
     const { result } = renderHook(() => useSceneToolSlot(slot));
     result.current(canvasTools(null));
     result.current(canvasTools('select'));

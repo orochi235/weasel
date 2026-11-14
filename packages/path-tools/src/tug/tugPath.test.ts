@@ -3,7 +3,7 @@ import { PathBuilder, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
-import { lengthenPathAction } from './lengthenPath';
+import { tugPathAction } from './tugPath';
 
 /** Open path (0, 0) → (100, 0) → (100, 50): anchors 0, 1, 2. */
 function elbow(): PolygonPath {
@@ -56,9 +56,9 @@ const at = (
   } as unknown as InvocationCtx['drag'],
 });
 
-const ongoing = lengthenPathAction.invoker as OngoingInvoker;
+const ongoing = tugPathAction.invoker as OngoingInvoker;
 
-describe('lengthenPathAction', () => {
+describe('tugPathAction', () => {
   it('drags the last anchor out along its segment, in one commit', () => {
     const { deps, commits, dep } = setup();
     const handle = ongoing.start(at(deps, 100, 50, 2), {});
@@ -67,7 +67,7 @@ describe('lengthenPathAction', () => {
     expect(commits).toHaveLength(0);
     handle.onEnd!(at(deps, 103, 80, 2), 'commit');
     expect(commits).toHaveLength(1);
-    expect(commits[0].label).toBe('Lengthen path');
+    expect(commits[0].label).toBe('Tug');
     // Straight on: the pointer's sideways drift does not bend the segment.
     expect(pathToAnchors(commits[0].path).anchors[0]).toEqual([
       { x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 80 },
@@ -138,18 +138,18 @@ describe('lengthenPathAction', () => {
   it('turns down a press on an inner anchor, and is only enabled over an open end', () => {
     const { deps } = setup();
     expect(ongoing.start(at(deps, 100, 0, 1), {})).toEqual({});
-    expect(lengthenPathAction.enabled!(deps, { x: 100, y: 52 })).toBe(true);
-    expect(lengthenPathAction.enabled!(deps, { x: 100, y: 0 })).toBe(ActionDisabledReason.NotApplicable);
-    expect(lengthenPathAction.enabled!(deps, { x: 50, y: 30 })).toBe(ActionDisabledReason.NotApplicable);
+    expect(tugPathAction.enabled!(deps, { x: 100, y: 52 })).toBe(true);
+    expect(tugPathAction.enabled!(deps, { x: 100, y: 0 })).toBe(ActionDisabledReason.NotApplicable);
+    expect(tugPathAction.enabled!(deps, { x: 50, y: 30 })).toBe(ActionDisabledReason.NotApplicable);
   });
 
   it('drags only with a path open', () => {
     const { deps } = setup(elbow(), '');
     expect(ongoing.start(at(deps, 100, 50, 2), {})).toEqual({});
-    expect(lengthenPathAction.enabled!(deps, { x: 100, y: 52 })).toBe(ActionDisabledReason.NotApplicable);
+    expect(tugPathAction.enabled!(deps, { x: 100, y: 52 })).toBe(ActionDisabledReason.NotApplicable);
   });
 
-  it('binds nothing itself: the Lengthen tool binds it', () => {
-    expect(lengthenPathAction.defaultBinding).toBeUndefined();
+  it('binds nothing itself: the Tug tool binds it', () => {
+    expect(tugPathAction.defaultBinding).toBeUndefined();
   });
 });

@@ -156,17 +156,17 @@ Owner tags, after the priority (2026-10-26):
   re-edited and expanded (`packages/path-tools/src/pathEffects/`, and core's `domains/pathEffects/`).
   Closes when the maintainer has driven Blend, Bend along a path, and Repeat along a path hands-on and
   the defaults and keys he picks are committed.
-- **(P2) [maintainer] Tune Lengthen hands-on, with the maintainer driving.** First-draft behavior and keys: the
-  path-edit tool (`useLengthenTool`) has no key; a plain drag grows along the end tangent and Shift along the end
+- **(P2) [maintainer] Tune Tug hands-on, with the maintainer driving.** First-draft behavior and keys: the
+  path-edit tool (`useTugTool`) has no key; a plain drag grows along the end tangent and Shift along the end
   curvature (the `mode` param, Shape in the last-operation panel after a drag, flips which, and `'eased'` makes the
   plain drag ease out of the bend as Reach does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
-  leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
+  leaves a thousandth of the subpath (`packages/geom/src/paths/tugPathEnd.ts`); an end is
   pressed within 8 screen px, the cursor is the pen with an `add` mark, nothing previews where a drag will land
   before it starts, and the end anchor is left selected after a drag
-  (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `path-tools:lengthen`, has
+  (`packages/path-tools/src/tug/tugPath.ts`). Its toolbar glyph, `path-tools:tug`, has
   not been proofed large.
-  Closes when the maintainer has driven Lengthen hands-on, the defaults and keys he picks are
-  committed, and `path-tools:lengthen` has been proofed large.
+  Closes when the maintainer has driven Tug hands-on, the defaults and keys he picks are
+  committed, and `path-tools:tug` has been proofed large.
 - **(P2) [maintainer] Tune Knead hands-on, with the maintainer driving.** First-draft brush radius
   (40 screen px) and strength (0.6) (`DEFAULT_KNEAD_RADIUS_PX`, `DEFAULT_KNEAD_STRENGTH` in
   `packages/path-tools/src/knead/knead.ts`), the falloff `(1 − (d/r)²)²` and the subdivision threshold of a

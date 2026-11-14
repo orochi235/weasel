@@ -7,7 +7,7 @@ packages/geom/src/paths/anchorEdits.ts
 packages/geom/src/constraints/solve.ts
 packages/geom/src/paths/spiro.ts
 packages/geom/src/constraints/pathsEdit.ts
-packages/geom/src/paths/lengthenPathEnd.ts
+packages/geom/src/paths/tugPathEnd.ts
 packages/geom/src/tessellate/tessellate.ts
 packages/geom/src/warp/arap.ts
 packages/geom/src/warp/puppetMesh.ts

@@ -1,5 +1,5 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid, useLatest } from '@weasel-js/core';
-import { lengthenPreset, useLengthenTool } from '@weasel-js/path-tools';
+import { tugPreset, useTugTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
@@ -10,7 +10,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', lengthenPreset] as const;
+const FEATURES = ['draw', tugPreset] as const;
 
 const PATHS = {
   straight: { d: 'M60 70 L280 70', color: '#7fb069' },
@@ -27,7 +27,7 @@ const config = f.schema({
     { value: 'tangent', label: 'Tangent' },
     { value: 'curvature', label: 'Curvature' },
     { value: 'eased', label: 'Eased' },
-  ]).radio().label('Lengthen along'),
+  ]).radio().label('Tug along'),
 });
 type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
@@ -67,15 +67,15 @@ function usePathEdit(seeded: string) {
   return { modes, pathEdit };
 }
 
-function LengthenTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function TugTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const { modes, pathEdit } = usePathEdit(SEEDED_PATH_ID);
-  const lengthen = useLengthenTool();
-  const tools = useMemo(() => ({ lengthen }), [lengthen]);
+  const tug = useTugTool();
+  const tools = useMemo(() => ({ tug }), [tug]);
   const live = useLatest(ctx.config);
   // Thunked, so a change reaches a drag already under way.
   const tune = useMemo<ActionTunings>(() => ({
-    lengthenPath: { params: () => ({ mode: live.current.mode }) },
+    tugPath: { params: () => ({ mode: live.current.mode }) },
   }), [live]);
   const selectionOptions = useMemo(() => ({ initial: [asNodeId(SEEDED_PATH_ID)] }), []);
 
@@ -93,25 +93,25 @@ function LengthenTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
 }
 
-const lengthenInstrument = defineInstrument<State, Config>({
-  name: 'Lengthen',
+const tugInstrument = defineInstrument<State, Config>({
+  name: 'Tug',
   config,
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select') },
       { id: 'anchors', label: 'Anchors', icon: icon('core:anchors') },
-      { id: 'lengthen', label: 'Lengthen', icon: icon('path-tools:lengthen') },
+      { id: 'tug', label: 'Tug', icon: icon('path-tools:tug') },
     ],
-    initial: 'lengthen',
+    initial: 'tug',
   },
-  render: (ctx) => <LengthenTrial ctx={ctx} />,
+  render: (ctx) => <TugTrial ctx={ctx} />,
 });
 
-export function LengthenLabDemo() {
+export function TugLabDemo() {
   return (
     <div className="ckd-lab-frame">
-      <Lab title="Lengthen" instruments={[lengthenInstrument]} />
+      <Lab title="Tug" instruments={[tugInstrument]} />
     </div>
   );
 }
