@@ -12,6 +12,7 @@ import { HiddenBadge, marksHidden, type MarkHiddenProps } from './hidden';
 import { NoMatches } from './NoMatches';
 import { filterPrefRoot, prefFieldChoices, type PrefFieldChoice } from './schema';
 import type { PrefRenderer, WalkCtx } from './PrefsRow';
+import { useValuesSource } from '../PrefsSource/useValuesSource';
 import { paneChildren } from './PrefsPane';
 import { BarRootLayout } from './BarRootLayout';
 import type { BarOrientation } from '../Bar/BarLayout';
@@ -223,7 +224,12 @@ export function PrefsForm(props: PrefsFormProps) {
   const selection = useSelectedRow(selected, lead, props.onSelect);
   const split = useSplitRows(props, schema, props.over);
   const { settles, textWaitMs } = useParamsPolicy('form');
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, onReset: props.onReset, canInherit, inheritHint, fields, targets, changed: props.changed, errors: props.errors, selected: shown, lead, disabled, active: applied?.active, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles, textWaitMs };
+  const stateAt = useMemo(
+    () => (path: string) => ({ disabled: disabled?.has(path) ?? false, hidden: applied?.hidden.has(path) ?? false, active: applied?.active.has(path) ?? false }),
+    [disabled, applied],
+  );
+  const source = useValuesSource(schema, values, onChange, { auto, onAutoChange, canAuto: canInherit, mixed: props.mixed, onReset: props.onReset, over, stateAt });
+  const ctx: WalkCtx = { source, values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, onReset: props.onReset, canInherit, inheritHint, fields, targets, changed: props.changed, errors: props.errors, selected: shown, lead, disabled, active: applied?.active, hidden: markHidden ? applied?.hidden : undefined, showHidden, keepEmpty, entryAt, droppable: props.drop !== undefined, split, settles, textWaitMs };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

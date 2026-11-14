@@ -34,6 +34,7 @@ import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
 import { withRowControl } from './surfaceControls';
 import { autoTracked, rowReset } from './reset';
+import type { PrefsSource } from '../PrefsSource/PrefsSource';
 import { selectionAttrs } from './selection';
 import { SplitBody, SplitHead, SplitMarks, SplitToggle, splitRowState } from './SplitRow';
 import type { SplitCtx } from './splitRows';
@@ -45,6 +46,8 @@ export type { PrefRenderContext, PrefRenderer };
 
 /** What a prefs form hands every row it draws: the values, the callbacks, and how the form is set up. */
 export interface WalkCtx {
+  /** Where the form reads, writes, and resets its leaves. */
+  source: PrefsSource;
   values: unknown;
   onChange: (path: string, value: unknown) => void;
   renderers?: Record<string, PrefRenderer>;
@@ -138,7 +141,7 @@ export function prefRenderContext(
   const { onAutoChange } = ctx;
   const inside = at === undefined ? undefined : ctx.targets;
   const entryAt = inside?.entryAt ?? ctx.entryAt;
-  const toggles = autoTracked(ctx, path, pref);
+  const toggles = autoTracked(ctx, path);
   const renderCtx: PrefRenderContext = {
     path,
     pref: leafAtValues(pref, ctx.values),

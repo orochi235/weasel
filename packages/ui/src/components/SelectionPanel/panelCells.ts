@@ -3,7 +3,9 @@
  * and the control it draws in a row or in a bar.
  */
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import { prefHoldsValue, prefIsReset, prefLeafValue, type PrefAliasTargets, type PrefLeaf } from '@weasel-js/prefs';
+import type { PrefAliasTargets, PrefLeaf } from '@weasel-js/prefs';
+import { sourceResetPlan } from '../PrefsSource/policy';
+import type { SelectionSource } from './selectionSource';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
@@ -21,8 +23,8 @@ export interface PanelCellScope {
   commit: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void;
   /** A value on the way to the one `commit` takes: written, and kept out of undo. */
   draft: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void;
-  /** Puts each of `leaves` back as its schema says, in one undo step named for `label`. */
-  reset: (leaves: readonly PanelLeaf[], label: string) => void;
+  /** Where the panel's leaves are read and reset. */
+  source: SelectionSource;
   selectionKey: string;
   fields: readonly PrefFieldChoice[];
   /** The leaf the panel draws at `path`, which says what a node holding nothing there reads as. */
@@ -129,13 +131,7 @@ export function rowCells(row: PanelRow, scope: PanelCellScope, surface: LeafSurf
   );
 }
 
-/** The leaves of `leaves` a reset would change in some selected node: each holding a value, no readout, and
- *  not already as a reset leaves it (`prefIsReset`). */
-export function panelResets(leaves: readonly PanelLeaf[], scope: PanelCellScope): PanelLeaf[] {
-  return leaves.filter(({ path, leaf }) =>
-    prefHoldsValue(leaf) &&
-    (leaf as { readout?: boolean }).readout !== true &&
-    !scope.disabled.has(path) &&
-    scope.nodes.some((n) => !prefIsReset(leaf, { auto: undefined, value: prefLeafValue(leaf, nodeLeafValue(leaf, nodeValueAt(n, path))) })),
-  );
+/** The paths of `leaves` a reset would change in some selected node, by the one reset policy (`resetPlan`). */
+export function panelResets(leaves: readonly PanelLeaf[], scope: PanelCellScope): string[] {
+  return sourceResetPlan(scope.source, leaves.map((l) => l.path)).map((w) => w.path);
 }

@@ -10,6 +10,7 @@ import {
   useLatest,
 } from '@weasel-js/core';
 import { leafWrites } from './commitLeaf';
+import { selectionSource } from './selectionSource';
 import type { PropertyRenderer } from './renderContext';
 import { classifyKind, kindBreakdown, panelRowsOf, type AnyNode } from './model';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
@@ -125,9 +126,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const selectionKey = nodes.map((n) => n.id).join(',');
   const scope = conditionedSections(kinds, properties, nodes, renderers?.alias !== undefined, props.markHidden === true, props.over);
   const sections = sectionsInScopes(scope.sections, scene, nodes, props.units);
-  const leaves = new Map(
-    sections.flatMap(panelRowsOf).flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf] as const)),
-  );
+  const panelLeaves = sections.flatMap(panelRowsOf).flatMap((row) => row.leaves);
+  const leaves = new Map(panelLeaves.map(({ path, leaf }) => [path, leaf] as const));
   const fields = prefFieldChoices({ name: '', members: Object.fromEntries(leaves) });
   const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS, renderers);
   const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null, ...(props.markHidden ? { hidden: scope.hidden } : {}) };
@@ -143,7 +143,15 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     renderers,
     commit: (leaf, next) => writes.commit(selection, leaf, next),
     draft: (leaf, next) => writes.draft(selection, leaf, next),
-    reset: (leaves, label) => writes.reset(selection, leaves, label),
+    source: selectionSource({
+      nodes,
+      leaves: panelLeaves,
+      selection,
+      writes,
+      disabled: scope.disabled,
+      hidden: scope.hidden,
+      active: scope.active,
+    }),
     selectionKey,
     fields,
     leafAt: (path) => leaves.get(path),

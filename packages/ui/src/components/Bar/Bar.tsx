@@ -8,6 +8,7 @@ import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { useParamsPolicy } from '../Prefs/useParamsPolicy';
 import { paneChildren } from '../Prefs/PrefsPane';
 import type { WalkCtx } from '../Prefs/PrefsRow';
+import { valuesSource } from '../PrefsSource/useValuesSource';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { PropertyList } from '../Properties/PropertyList';
 import { PropertyRow } from '../Properties/PropertyRow';
@@ -247,9 +248,13 @@ const ignore = (): void => {};
 
 /** A group a bar opens from a button: its nested groups as a form's pane draws them, and its leaves as the bar's rows. */
 function GroupBody({ draw, group, path }: { draw: Draw; group: PrefGroup; path: string }): ReactNode {
+  const values = nested(draw.values);
+  const onChange = draw.onChange ?? ignore;
   const ctx: WalkCtx = {
-    values: nested(draw.values),
-    onChange: draw.onChange ?? ignore,
+    // The bar draws its own leaves: the source answers only what the pane's groups ask of it.
+    source: valuesSource(group, values, onChange, { mixed: draw.mixed }),
+    values,
+    onChange,
     mixed: draw.mixed,
     fields: draw.fields,
     targets: draw.targets,

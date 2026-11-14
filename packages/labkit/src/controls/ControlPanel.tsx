@@ -18,6 +18,7 @@ import { valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { type ControlPack, gridOf } from './controlPack';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
+import { useLabConfigSource } from './labSource';
 import { panelRows } from './panelRows';
 
 export type { ControlPack } from './controlPack';
@@ -237,6 +238,16 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   });
 
   const shown = useShown(resolved, config, auto, reported);
+  const prefs = useLabConfigSource({
+    resolved,
+    config,
+    shown,
+    setConfig: writes.setConfig,
+    draftConfig: writes.draftConfig,
+    auto,
+    setRowAuto,
+    over,
+  });
 
   const gridPack = gridOf(pack);
   // A section that declares how it opens is foldable whether or not the lab
@@ -270,6 +281,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     auto,
     setRowAuto,
     changed,
+    prefs,
     motif,
     fold,
   });

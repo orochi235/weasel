@@ -8,6 +8,7 @@ import {
 } from '@weasel-js/prefs';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { GroupTabs } from '@weasel-js/ui/components/Prefs';
+import type { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import {
   type CollapseProps,
   type PropertyAlign,
@@ -62,6 +63,8 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   setRowAuto: (path: string, next: boolean, value: unknown) => void;
   /** Paths whose rows are marked as changed. */
   changed?: ReadonlySet<string>;
+  /** Where the panel's leaves are read and reset. */
+  prefs: PrefsSource;
   /** The motif each group and section is drawn in where it names none of its own. */
   motif?: Motif;
   /** The fold of the heading keyed `key`, which starts as `declared` says. */
@@ -174,7 +177,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
       return <Fragment key={path}>{body(found, path, rows)}</Fragment>;
     const lifted = lift(found.name, loosePaths(found, path));
     const reset = found.resettable ? (
-      <ResetGroup {...{ group: found, path, config, auto, setConfig }} />
+      <ResetGroup group={found} path={path} source={source.prefs} />
     ) : undefined;
     // `as: 'section'` is a heading over the rows, unframed: the panel's motif doesn't reach it.
     if (found.as === 'section') {

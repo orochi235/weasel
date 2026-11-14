@@ -78,4 +78,22 @@ describe('PrefsForm resets over plain values', () => {
     expect(screen.getByRole('switch', { name: 'Grid' })).toBeChecked();
     expect(reset('Grid')).toBeNull();
   });
+
+  it('offers a reset for a mixed leaf, whatever value it holds', () => {
+    renderWithIcons(
+      <PrefsForm schema={SCHEMA} layout="list" values={{ view: { size: 10, gap: 4, grid: true } }}
+        mixed={new Set(['view.grid'])} onChange={() => {}} />,
+    );
+    expect(reset('Grid')).not.toBeNull();
+  });
+
+  it('leaves a leaf its `enableIf` disables out of a group\'s reset', () => {
+    const writes: Array<[string, unknown]> = [];
+    renderWithIcons(
+      <PrefsForm schema={SCHEMA} layout="list" values={{ view: { size: 30, gap: 4, grid: false } }}
+        disabled={new Set(['view.size'])} onChange={(path, value) => writes.push([path, value])} />,
+    );
+    fireEvent.click(reset('View')!);
+    expect(writes).toEqual([['view.grid', true]]);
+  });
 });
