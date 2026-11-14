@@ -83,6 +83,10 @@ export interface BarLayoutProps extends DensityProps, HoldProps {
   lead?: PrefBarLead;
   /** The glyph naming the bar, which `lead: 'icon'` starts its line with. */
   icon?: IconSpec;
+  /** The bar's group is turned off, as an `enableIf` turns it off: its lead dims as a heading's name does, and the
+   *  cells say so for themselves, so a switch among them that turns it back on stays live. `disabled` holds every
+   *  cell. */
+  off?: boolean;
   /** Draw the strip the bar sits on, for a bar set among other things with
    *  no strip of the host's under it. `'segmented'` is a compact strip with
    *  the cells almost touching. */
@@ -123,8 +127,8 @@ export interface BarLayoutProps extends DensityProps, HoldProps {
  */
 export function BarLayout(own: BarLayoutProps) {
   const run = useRun();
-  // Disabled, the bar's lead dims as a heading's name does, and every cell is disabled.
-  const props = { ...own, disabled: useDisabled(own).disabled };
+  // Off or disabled, the bar's lead dims as a heading's name does; disabled, every cell is disabled too.
+  const props = { ...own, disabled: useDisabled(own).disabled || own.off === true };
   const bar = run.shape !== undefined && run.shape.kind !== 'line'
     ? <BarAlong {...props} shape={run.shape} align={run.align ?? 'center'} />
     : <BarLine {...props} orientation={props.orientation ?? run.orientation} />;
