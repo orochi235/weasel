@@ -4,7 +4,7 @@ import {
   type PrefSection,
 } from '@weasel-js/prefs';
 import {
-  Button, Checkbox, CloseButton, Code, type ListOption, prefFieldProps, PropertyControl, Select,
+  Button, Checkbox, CLOSE_BUTTON_PROPS, Code, type ListOption, prefFieldProps, PropertyControl, Select,
 } from '@weasel-js/ui';
 import {
   clauseChoices, clausesOf, type Comparison, COMPARISON_LABEL, comparisonsFor, type ConditionLeaf, leafKey,
@@ -84,7 +84,7 @@ export function ConditionRow({ name, row, scope, onChange, onRemove }: Condition
   const bound = found && clauses ? openBound(found.leaf, clauses) : undefined;
   const write = (next: TestRow) => onChange(rowCondition(next));
   const nth = (i: number) => (i === 0 ? '' : ` ${i + 1}`);
-  const remove = <CloseButton className={s.removeRow} aria-label={`Remove ${name.toLowerCase()}`} onClick={onRemove} />;
+  const remove = <Button {...CLOSE_BUTTON_PROPS} className={s.removeRow} aria-label={`Remove ${name.toLowerCase()}`} onClick={onRemove} />;
   return (
     <div className={s.row} role="group" aria-label={name} data-invalid={problems.length > 0 || undefined}>
       <Select className={s.pref} aria-label={`${name} pref`} selectedKey={leafKey(test)}
@@ -111,7 +111,7 @@ export function ConditionRow({ name, row, scope, onChange, onRemove }: Condition
                 )}
               </div>
             )}
-            {i === 0 ? remove : <CloseButton aria-label={`Remove ${name.toLowerCase()} comparison ${i + 1}`} onClick={() => write(withoutClause(row, comparison))} />}
+            {i === 0 ? remove : <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove ${name.toLowerCase()} comparison ${i + 1}`} onClick={() => write(withoutClause(row, comparison))} />}
             {!beside && value}
           </Fragment>
         );

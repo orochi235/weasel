@@ -1,5 +1,5 @@
 import { useLastOperation, useLastOperationStore, type LastOperationStore } from '@weasel-js/core';
-import { CloseButton } from '../CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { PrefsForm } from '../Prefs/PrefsForm';
 import s from './LastOperationPanel.module.css';
 
@@ -29,7 +29,7 @@ export function LastOperationPanel({ store, closeLabel = 'Close', className }: L
     <section className={[s.panel, className].filter(Boolean).join(' ')} aria-label={op.label}>
       <header className={s.header}>
         <h2 className={s.title}>{op.label}</h2>
-        <CloseButton aria-label={closeLabel} onClick={source.dismiss} />
+        <Button {...CLOSE_BUTTON_PROPS} aria-label={closeLabel} onClick={source.dismiss} />
       </header>
       <PrefsForm schema={op.schema} layout="list" values={op.values} onChange={(path, value) => source.adjust({ [path]: value })} />
     </section>

@@ -1,5 +1,5 @@
 import { isShippedTheme } from '@weasel-js/diagram';
-import { CloseButton } from '@weasel-js/ui/components/CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '@weasel-js/ui/components/Button';
 import { PropertyField, PropertyGroup, PropertyList, PropertyNote, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { ReactElement } from 'react';
 import type { ChartScene } from '../chartDocument';
@@ -13,7 +13,7 @@ export function ThemePanel({ scene, onClose }: { scene: ChartScene; onClose: () 
   const edit = useThemeEdit(scene);
   const { theme } = edit;
   return (
-    <PropertyPanel title="Theme" actions={<CloseButton aria-label="Close theme" onClick={onClose} />}>
+    <PropertyPanel title="Theme" actions={<Button {...CLOSE_BUTTON_PROPS} aria-label="Close theme" onClick={onClose} />}>
       <PropertyList pack="one-up">
         <PropertyNote>
           {isShippedTheme(theme) ? `${theme.name}. The first edit makes a copy kept in this chart.` : theme.name}

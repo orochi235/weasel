@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import type { GradStop } from '@weasel-js/core';
-import { CloseButton } from '../CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { ColorField } from '../ColorField';
 import { NumberField } from '../NumberField';
 import s from './GradientStops.module.css';
@@ -51,7 +51,7 @@ export function StopEditor(props: {
         onInput={props.onColorInput}
         onChange={props.onColorChange}
       />
-      <CloseButton
+      <Button {...CLOSE_BUTTON_PROPS}
         aria-label={`Remove stop ${place}`}
         tooltip="Remove stop"
         disabled={!removable}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { PrefLinearUnit } from '@weasel-js/prefs';
 import { deepEqual } from '@weasel-js/registry';
 import { entryScale, type UnitEntry, type UnitScale } from '@weasel-js/quantity';
-import { Button, CloseButton, Input, type LeafContext } from '@weasel-js/ui';
+import { Button, CLOSE_BUTTON_PROPS, Input, type LeafContext } from '@weasel-js/ui';
 import { NumberText } from './NumberText';
 import s from './PrefSchemaEditor.module.css';
 
@@ -81,7 +81,7 @@ export function UnitEditor({ ctx }: { ctx: LeafContext }) {
             <Input aria-label={label} value={name} onChange={(v) => rename(i, v)} />
             <NumberText label={`${label} scale`} value={factor} accept={nonZero} onCommit={(n) => rescale(i, { factor: n ?? 1 })} />
             <NumberText label={`${label} offset`} value={offset === 0 ? undefined : offset} onCommit={(n) => rescale(i, { offset: n ?? 0 })} />
-            <CloseButton aria-label={`Remove accepted suffix ${i + 1}`} onClick={() => setAccepted(rows.filter((_, j) => j !== i))} />
+            <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove accepted suffix ${i + 1}`} onClick={() => setAccepted(rows.filter((_, j) => j !== i))} />
           </div>
         );
       })}

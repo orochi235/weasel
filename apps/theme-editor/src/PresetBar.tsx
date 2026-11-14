@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { imeKey } from '@weasel-js/ui-input';
-import { Button } from '@weasel-js/ui/components/Button';
-import { CloseButton } from '@weasel-js/ui/components/CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '@weasel-js/ui/components/Button';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { Input } from '@weasel-js/ui/components/Input';
 import { icon } from './icons.gen';
@@ -69,7 +68,7 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
               <Icon name={copied === p.name ? icon('ui:check') : icon('core:copy')} size={14} />
             </Button>
             {!p.builtin && (
-              <CloseButton
+              <Button {...CLOSE_BUTTON_PROPS}
                 className={styles.presetCopy}
                 onClick={() => remove(p.name)}
                 tooltip={`Delete ${p.name}`}

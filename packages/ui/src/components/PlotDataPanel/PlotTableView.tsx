@@ -1,7 +1,6 @@
 import type { PlotData, PlotScope, PlotTable, PlotValue } from '@weasel-js/plot';
 import type { ReactElement } from 'react';
-import { Button } from '../Button';
-import { CloseButton } from '../CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { DataGrid, type DataGridColumn } from '../DataGrid';
 import { PropertyControl } from '../Properties';
 import s from './PlotDataPanel.module.css';
@@ -51,7 +50,7 @@ export function PlotTableView({ data, table, scope, edit }: PlotTableViewProps):
             </Button>
           )}
           {remove && (
-            <CloseButton aria-label={`Remove ${rowName(index)}`} onClick={() => edit((d) => remove(d, scope, index), `Remove ${table.item}`)} />
+            <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove ${rowName(index)}`} onClick={() => edit((d) => remove(d, scope, index), `Remove ${table.item}`)} />
           )}
         </span>
       ),

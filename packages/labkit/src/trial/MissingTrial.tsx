@@ -1,4 +1,4 @@
-import { CloseButton } from '@weasel-js/ui/components/CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '@weasel-js/ui/components/Button';
 import { useLabCommands } from '../lab/LabContext';
 
 /**
@@ -10,7 +10,7 @@ export function MissingTrial({ id, children }: { id: string; children: string })
   return (
     <div className="lk-trial lk-trial--unknown">
       <span>{children}</span>
-      <CloseButton aria-label="Close trial" onClick={() => lab.closeTrial(id)} />
+      <Button {...CLOSE_BUTTON_PROPS} aria-label="Close trial" onClick={() => lab.closeTrial(id)} />
     </div>
   );
 }

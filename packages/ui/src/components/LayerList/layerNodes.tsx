@@ -1,4 +1,4 @@
-import { CloseButton } from '../CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { useControlAccess } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
 import type { TreeNode } from '../Tree';
@@ -66,7 +66,7 @@ function Controls({ item, props }: { item: LayerListItem; props: LayerListProps 
         ))}
       <LockToggle item={item} props={props} />
       {onRemove && !item.fixed && !item.locked && item.removable !== false && (
-        <CloseButton
+        <Button {...CLOSE_BUTTON_PROPS}
           aria-label={`Remove ${item.label}`}
           disabled={access.state !== 'enabled'}
           disabledReason={access.reason}

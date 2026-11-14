@@ -1,6 +1,6 @@
 import type { PrefEnumOption, PrefPair } from '@weasel-js/prefs';
 import {
-  Checkbox, CloseButton, Input, type LeafContext, type LeafRenderer, MIXED_HINT, Select, TokenField,
+  Checkbox, Button, CLOSE_BUTTON_PROPS, Input, type LeafContext, type LeafRenderer, MIXED_HINT, Select, TokenField,
 } from '@weasel-js/ui';
 import { NumberText } from './NumberText';
 import { IconAttrField } from './IconAttrField';
@@ -81,7 +81,7 @@ function PairEditor({ ctx }: { ctx: LeafContext }) {
           <Select aria-label={`Paired field ${i + 1}`} selectedKey={path}
             options={options.some((o) => o.value === path) ? options : [{ value: path, label: path }, ...options]}
             onSelectionChange={(k) => write(partners.map((p, j) => (j === i ? String(k) : p)), label)} />
-          <CloseButton aria-label={`Remove paired field ${i + 1}`} onClick={() => write(partners.filter((_, j) => j !== i), label)} />
+          <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove paired field ${i + 1}`} onClick={() => write(partners.filter((_, j) => j !== i), label)} />
         </div>
       ))}
       <Select aria-label="Add a paired field" placeholder="Add field…" selectedKey={null} options={options}

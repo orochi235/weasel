@@ -1,5 +1,5 @@
 import { anchorFromHex, toHexPreview, type Anchor } from '@weasel-js/theme/engine';
-import { CloseButton } from '@weasel-js/ui/components/CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '@weasel-js/ui/components/Button';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { NumberField } from '@weasel-js/ui/components/NumberField';
 import { PropertyGroup } from '@weasel-js/ui/components/Properties';
@@ -71,7 +71,7 @@ export function AnchorList({ anchors, onChange }: AnchorListProps) {
             value={a.lightness}
             onChange={(v) => setNumber(i, 'lightness', v)}
           />
-          <CloseButton aria-label={`Unpin ${a.name}`} tooltip={`Unpin ${a.name}`} onClick={() => remove(i)} />
+          <Button {...CLOSE_BUTTON_PROPS} aria-label={`Unpin ${a.name}`} tooltip={`Unpin ${a.name}`} onClick={() => remove(i)} />
         </div>
       ))}
 

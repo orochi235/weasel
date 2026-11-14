@@ -1,17 +1,29 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { CloseButton } from '@weasel-js/ui/components/CloseButton';
-import s from './CloseButton.stories.module.css';
+import { Button, CLOSE_BUTTON_PROPS } from '@weasel-js/ui/components/Button';
+import s from './CloseButtonProps.stories.module.css';
 
-const meta: Meta<typeof CloseButton> = {
-  title: 'ui/CloseButton',
-  component: CloseButton,
+interface CloseArgs {
+  'aria-label': string;
+  tooltip?: string;
+  disabled?: boolean;
+  disabledReason?: string;
+}
+
+function Close(args: CloseArgs) {
+  return <Button {...CLOSE_BUTTON_PROPS} {...args} />;
+}
+
+const meta: Meta<typeof Close> = {
+  title: 'ui/Button/Close',
+  component: Close,
   args: { 'aria-label': 'Close' },
 };
 export default meta;
 
-type Story = StoryObj<typeof CloseButton>;
+type Story = StoryObj<typeof Close>;
 
+/** `<Button {...CLOSE_BUTTON_PROPS} aria-label="Close" />`. */
 export const Basic: Story = {};
 
 export const WithTooltip: Story = {
@@ -29,7 +41,7 @@ export const DisabledWithReason: Story = {
 
 /** Removing rows from a list, the way `ListEditor` and `LayerList` use it. */
 export const RemoveRows: Story = {
-  render: (args) => {
+  render: () => {
     function Wrap() {
       const [rows, setRows] = useState(['Glow', 'Drop shadow', 'Blur']);
       return (
@@ -37,7 +49,7 @@ export const RemoveRows: Story = {
           {rows.map((r) => (
             <li key={r}>
               <span>{r}</span>
-              <CloseButton {...args} aria-label={`Remove ${r}`} onClick={() => setRows(rows.filter((x) => x !== r))} />
+              <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove ${r}`} onClick={() => setRows(rows.filter((x) => x !== r))} />
             </li>
           ))}
         </ul>

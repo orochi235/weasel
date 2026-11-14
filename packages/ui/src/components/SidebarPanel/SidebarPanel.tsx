@@ -1,6 +1,6 @@
 import type { ReactNode, Ref } from 'react';
 import { type AppearanceProps, useAppearance } from '../appearance';
-import { CloseButton } from '../CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { DisclosureMark } from '../Disclosure';
 import { type CollapseProps, useCollapse } from '../Properties/collapse';
 import s from './SidebarPanel.module.css';
@@ -81,7 +81,7 @@ export function SidebarPanel(props: SidebarPanelProps) {
           {actions !== undefined && <div className={s.actions}>{actions}</div>}
           {trailing !== undefined && <div className={s.trailing}>{trailing}</div>}
           {onHide !== undefined && (
-            <CloseButton
+            <Button {...CLOSE_BUTTON_PROPS}
               className={s.hideButton}
               aria-label="Hide panel"
               tooltip="Hide panel"

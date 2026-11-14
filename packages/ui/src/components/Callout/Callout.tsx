@@ -10,7 +10,7 @@ import {
 } from 'react-aria-components';
 import { Popover, type PopoverProps } from '../Popover';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
-import { CloseButton } from '../CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import { useEscapeDismissal } from './useEscapeDismissal';
 import s from './Callout.module.css';
@@ -192,7 +192,7 @@ export function Callout(props: CalloutProps) {
                         </Heading>
                       )}
                       {showClose && (
-                        <CloseButton
+                        <Button {...CLOSE_BUTTON_PROPS}
                           aria-label="Close callout"
                           onClick={() => {
                             // `close()` resolves OverlayTriggerStateContext, only

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { historyKey, useLatest } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { CloseButton, ResizeHandle } from '@weasel-js/ui';
+import { Button, CLOSE_BUTTON_PROPS, ResizeHandle } from '@weasel-js/ui';
 import { AssetList } from './AssetList';
 import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
@@ -268,7 +268,7 @@ export function AssetEditor(
           {notice && (
             <>
               <span>{notice}</span>
-              <CloseButton aria-label="Dismiss" onClick={() => setNotice(null)} />
+              <Button {...CLOSE_BUTTON_PROPS} aria-label="Dismiss" onClick={() => setNotice(null)} />
             </>
           )}
         </div>

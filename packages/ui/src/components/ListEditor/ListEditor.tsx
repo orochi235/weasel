@@ -1,7 +1,7 @@
 import { useMemo, type KeyboardEvent, type ReactNode } from 'react';
 import { dropSide, imeKey } from '@weasel-js/ui-input';
 import type { ReorderDragState } from '../../useReorderDragList';
-import { CloseButton } from '../CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { ReorderHandle } from '../ReorderHandle/ReorderHandle';
 import f from '../Field/Field.module.css';
 import { AddEntry, type ListEntryKind } from './AddEntry';
@@ -170,7 +170,7 @@ export function ListEditor<T>({
                   onKeyDown={(e) => onKeyDown(e, i)}
                 />
               )}
-              <CloseButton
+              <Button {...CLOSE_BUTTON_PROPS}
                 ref={(el) => {
                   focus.removes.current[i] = el;
                 }}

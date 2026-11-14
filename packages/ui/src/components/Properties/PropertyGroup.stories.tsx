@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { CloseButton } from '@weasel-js/ui/components/CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '@weasel-js/ui/components/Button';
 import { DragGrip } from '@weasel-js/ui/components/DragGrip';
 import { PropertyGroup, PropertyField, PropertyList, PropertyPanel, Subpanel } from '@weasel-js/ui/components/Properties';
 
@@ -104,7 +104,7 @@ export const HeaderSlots: StoryObj<typeof PropertyGroup> = {
             collapsible
             leading={<DragGrip />}
             actions={
-              <CloseButton aria-label={`Remove ${name}`} />
+              <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove ${name}`} />
             }
           >
             <PropertyField kind="number" control="slider" label="Size" value={8} min={0} max={32} unit="px" onChange={() => {}} />

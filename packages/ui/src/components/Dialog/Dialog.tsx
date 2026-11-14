@@ -9,7 +9,7 @@ import {
 } from 'react-aria-components';
 import { useContainedRoot, useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import { ContainedModal } from './ContainedModal';
-import { CloseButton } from '../CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import s from './Dialog.module.css';
 
@@ -89,7 +89,7 @@ export function Dialog(props: DialogProps) {
             <Heading slot="title" className={s.title}>{title}</Heading>
           )}
           {showClose && (
-            <CloseButton aria-label="Close dialog" onClick={close} />
+            <Button {...CLOSE_BUTTON_PROPS} aria-label="Close dialog" onClick={close} />
           )}
         </header>
       )}

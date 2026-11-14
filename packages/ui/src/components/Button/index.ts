@@ -3,3 +3,4 @@ export type {
   ButtonBase, ButtonIconOnly, ButtonProps, ButtonRegular, ButtonVariant,
 } from './Button';
 export { BUTTON_VARIANT_ICONS } from './variantIcons';
+export { CLOSE_BUTTON_PROPS } from './closeButtonProps';

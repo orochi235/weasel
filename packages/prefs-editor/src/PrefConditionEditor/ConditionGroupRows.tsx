@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { PrefCondition } from '@weasel-js/prefs';
-import { Button, CloseButton, Select } from '@weasel-js/ui';
+import { Button, CLOSE_BUTTON_PROPS, Select } from '@weasel-js/ui';
 import { ConditionRow, type ConditionScope } from './ConditionRow';
 import {
   clausesOf, type ConditionGroup, EMPTY_HOLDS, groupCondition, groupOf, leafKey, conditionLeafOf, nestedQuantifier,
@@ -44,7 +44,7 @@ export function ConditionGroupRows({ name, group, scope, onChange, onRemove, too
           {quantified && <Select className={s.quantifier} aria-label={`Which rows${of} must hold`} options={QUANTIFIERS} selectedKey={quantifier}
             onSelectionChange={(next) => { if (next !== quantifier) onChange({ quantifier: next as Quantifier, parts }); }} />}
           {tools}
-          {onRemove && name && <CloseButton aria-label={`Remove ${name.toLowerCase()}`} onClick={onRemove} />}
+          {onRemove && name && <Button {...CLOSE_BUTTON_PROPS} aria-label={`Remove ${name.toLowerCase()}`} onClick={onRemove} />}
         </div>
       )}
       {name !== undefined && parts.length === 0 && (

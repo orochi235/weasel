@@ -9,7 +9,7 @@ import {
 } from 'react-aria-components';
 import { useAssignedPortalContainer, useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { useAppearance } from '../appearance';
-import { CloseButton } from '../CloseButton';
+import { Button, CLOSE_BUTTON_PROPS } from '../Button';
 import { defaultToastQueue, racQueueOf, readDefaultTtl, type ToastContent, type ToastQueue } from './queue';
 import s from './Toast.module.css';
 import './toastViewTransitions.css';
@@ -53,7 +53,7 @@ function ToastItem({ toast: t, queue }: { toast: QueuedToast<ToastContent>; queu
           <Text slot="description" className={s.description}>{t.content.description}</Text>
         )}
       </RACToastContent>
-      <CloseButton aria-label="Dismiss notification" onClick={() => racQueueOf(queue).close(t.key)} />
+      <Button {...CLOSE_BUTTON_PROPS} aria-label="Dismiss notification" onClick={() => racQueueOf(queue).close(t.key)} />
     </RACToast>
   );
 }
