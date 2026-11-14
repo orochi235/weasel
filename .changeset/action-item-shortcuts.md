@@ -3,7 +3,9 @@
 '@weasel-js/core': minor
 ---
 
-`actionItemShortcuts(item)` gives the shortcut an `ActionItem` shows: its declared `shortcut` text, else every binding `actionShortcuts` finds for its params.
+New `actionItemShortcuts(item)`: an `ActionItem`'s declared `shortcut` text, else the bindings `actionShortcuts` finds for it.
+
+It looks bindings up with the item's params.
 
 The command palette, `Prefs` action rows, and the pref schema editor read their hints through it.
 
