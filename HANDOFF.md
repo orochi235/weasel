@@ -30,6 +30,11 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-14 batch: draw opening its session from IndexedDB (no starter drawing flashing first) and moving an
+  old localStorage session across on first open; a document with several photos saving; the renamed path
+  tools' labels, icons and menus in draw (Fillet, Sand, Knead, Snip, Reach, Tug, Poise, Fairing, Drape,
+  Pin warp, Plane warp, Cloth warp, Tween) and the site's renamed labs.
+
 - 2026-11-09, round thirteen: two 3D views on one surface picking through their own cameras; View › Snapping and
   Mod+Shift+;; MenuBar's Alt+letter only with focus on a title; a press on a selected lens taking focus back;
   a job's Cancel staying put as its count climbs.
