@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HistoryStep, SerializedOp } from '@weasel-js/history';
 import { createScene } from './scene';
+import { asNodeId } from './types';
 import type { RectPose } from '../geometry/unionBounds';
 
 type Data = { fill: string };
@@ -114,11 +115,11 @@ describe('Scene.replay', () => {
     const steps: HistoryStep[] = [];
     a.history.observe((s) => steps.push(s));
     a.batch('Two', () => {
-      a.add({ kind: 'mark', layer: 'main', pose: box(0), data: { fill: 'red' }, id: 'fresh' });
-      a.add({ kind: 'mark', layer: 'main', pose: box(1), data: { fill: 'red' }, id: 'taken' });
+      a.add({ kind: 'mark', layer: 'main', pose: box(0), data: { fill: 'red' }, id: asNodeId('fresh') });
+      a.add({ kind: 'mark', layer: 'main', pose: box(1), data: { fill: 'red' }, id: asNodeId('taken') });
     });
     const b = make();
-    b.add({ kind: 'mark', layer: 'main', pose: box(9), data: { fill: 'gray' }, id: 'taken' });
+    b.add({ kind: 'mark', layer: 'main', pose: box(9), data: { fill: 'gray' }, id: asNodeId('taken') });
     const before = b.toJSON();
     expect(() => b.replay(wire(steps[0]!))).toThrow(/taken/);
     expect(b.toJSON()).toEqual(before);
