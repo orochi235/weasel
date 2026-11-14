@@ -659,10 +659,6 @@ name a package. Breaking changes are in scope.
   `AttributesPane`. The model goes to `@weasel-js/prefs` as `./edit`; the editor and `PrefConditionEditor` go to a
   new `prefs-editor` package, which needs the maintainer to seed on npm. Closes when neither lives in ui.
 
-- **(P3) [agent] Move `GestureRoute` and `FallthroughDiagram` to devtools.** They import
-  `@weasel-js/core/routing` descriptors, and their only consumers are `devtools/src/views/Bindings.tsx` and
-  `TraceTable.tsx`. Closes when they live in devtools.
-
 - **(P3) [agent] Move React-free helpers to paint, geom, and text.** `paintValue.ts` (its own `./paint-value`
   subpath), `src/paintPreview.ts`, `TokenPanel/color.ts`'s `parsesAsColor`, `src/color/oklch.ts`, and
   `src/color/ramp.ts` go to `@weasel-js/paint`; `CurveEditor`'s `interpolation`, `catmullRom`, and `monotone` and

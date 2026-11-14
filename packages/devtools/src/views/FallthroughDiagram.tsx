@@ -8,10 +8,10 @@ import type {
   RecordCandidate,
   WalkStep,
 } from '@weasel-js/core/routing';
-import { Badge } from '../Badge';
-import { Code } from '../Code';
-import { GestureRoute } from '../GestureRoute';
-import { KeyCap, KeySequence, keySpecFromKey, keySpecsFromMods, type LogicalModSpec } from '../Keycaps';
+import { Badge } from '@weasel-js/ui/components/Badge';
+import { Code } from '@weasel-js/ui/components/Code';
+import { GestureRoute } from './GestureRoute';
+import { KeyCap, KeySequence, keySpecFromKey, keySpecsFromMods, type LogicalModSpec } from '@weasel-js/ui/components/Keycaps';
 import s from './FallthroughDiagram.module.css';
 
 function placedByLabel(p: PlacedBy): string {
