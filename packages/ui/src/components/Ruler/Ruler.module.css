@@ -1,0 +1,79 @@
+.ruler {
+  position: relative;
+}
+
+/* Ticks take no pointer, so the hit area stays the ruler's own box. */
+.tick {
+  position: absolute;
+  pointer-events: none;
+}
+
+.label {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  color: var(--wzl-fg-muted);
+  white-space: nowrap;
+}
+
+/* A label that would crowd a neighbor that outranks it gives way; its notch stays. */
+.label[data-crowded] {
+  visibility: hidden;
+}
+
+.notch .tick {
+  bottom: calc(-1 * var(--wzl-ruler-reach, 0px));
+  width: 1px;
+  height: calc(6px + var(--wzl-ruler-reach, 0px));
+  background: var(--wzl-fg-subtle);
+}
+
+.notch .label {
+  position: absolute;
+  bottom: calc(9px + var(--wzl-ruler-reach, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: var(--wzl-font-weight-medium);
+  font-size: var(--wzl-font-size-xs);
+  line-height: var(--wzl-leading-tight);
+}
+
+.notch .mark {
+  background: var(--wzl-fg-muted);
+}
+
+.mark .label {
+  color: var(--wzl-fg);
+}
+
+.mark[data-side='start'] .label {
+  transform: none;
+}
+
+/* Drawn just inside the ruler's end rather than one pixel past it. */
+.mark[data-side='end'] {
+  margin-left: -1px;
+}
+
+.mark[data-side='end'] .label {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.line .tick {
+  top: 0;
+  border-left: 1px solid var(--wzl-border);
+}
+
+.line .label {
+  display: block;
+  padding-inline-start: 1px;
+}
+
+.ruler .cursor {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  height: auto;
+  border: 0;
+  background: var(--wzl-accent-strong);
+}

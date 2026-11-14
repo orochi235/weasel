@@ -34,67 +34,14 @@
  * reach down across the gap to the strip, but take no pointer, so the hit
  * area stays the ruler's own box. */
 .ruler {
-  position: relative;
+  --wzl-ruler-reach: var(--be-gap);
   height: var(--be-ruler-height, 22px);
   cursor: crosshair;
-}
-
-.tick {
-  position: absolute;
-  left: var(--be-at);
-  bottom: calc(-1 * var(--be-gap));
-  width: 1px;
-  height: calc(6px + var(--be-gap));
-  background: var(--wzl-fg-subtle);
-  pointer-events: none;
-}
-
-.tickLabel {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  position: absolute;
-  bottom: calc(9px + var(--be-gap));
-  left: 50%;
-  transform: translateX(-50%);
-  font-weight: var(--wzl-font-weight-medium);
-  font-size: var(--wzl-font-size-xs);
-  line-height: var(--wzl-leading-tight);
-  color: var(--wzl-fg-muted);
-  white-space: nowrap;
 }
 
 /* Taller where a label stacks, so a fraction's numerator stays inside the strip. */
 .ruler:has(mfrac) {
   height: var(--be-ruler-height, 30px);
-}
-
-/* A label that would crowd a neighbor that outranks it gives way; its notch stays. */
-.tickLabel[data-crowded] {
-  visibility: hidden;
-}
-
-/* The range's own ends: heavier than an ordinary tick, and labeled inward so
- * the text stays over the track rather than hanging off it. */
-.endTick {
-  background: var(--wzl-fg-muted);
-}
-
-.endTick .tickLabel {
-  color: var(--wzl-fg);
-}
-
-/* Drawn just inside the track's right edge rather than one pixel past it. */
-.maxTick {
-  margin-left: -1px;
-}
-
-.startLabel {
-  transform: none;
-}
-
-.endLabel {
-  left: auto;
-  right: 0;
-  transform: none;
 }
 
 .bands {

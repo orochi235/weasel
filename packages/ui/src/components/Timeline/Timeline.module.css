@@ -1,39 +1,10 @@
 .ruler {
-  position: relative;
   height: var(--wzl-control-h);
   border-bottom: 1px solid var(--wzl-border);
   background: var(--wzl-surface-raised);
   cursor: ew-resize;
   user-select: none;
   overflow: hidden;
-}
-
-.tick {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  position: absolute;
-  top: 0;
-  transform: translateX(2px);
-  color: var(--wzl-fg-muted);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.tick::before {
-  content: '';
-  position: absolute;
-  left: -2px;
-  top: 0;
-  bottom: 0;
-  border-left: 1px solid var(--wzl-border);
-}
-
-.playhead {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--wzl-accent-strong);
-  pointer-events: none;
 }
 
 .lane {

@@ -23,7 +23,7 @@ import { trackOf, withinAxis } from './scale';
 import { retagBands, untag } from './retag';
 import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
 import { DraftGhost, type DraftGhostAt } from './DraftGhost';
-import { Ruler, rulerDisplay, type BandTick } from './Ruler';
+import { BandRuler, rulerDisplay, type BandTick } from './BandRuler';
 import { BandStrip } from './BandStrip';
 import {
   bandBounds,
@@ -174,7 +174,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const axisMin = Math.min(min, lo);
   const axisMax = Math.max(max, hi);
   const sc = prefNumberScale(scale ?? 'log', 'BandEditor') ?? linearScale;
-  const { toUnit, fromUnit } = trackOf(sc, axisMin, axisMax);
+  const { unit: axis, toUnit, fromUnit } = trackOf(sc, axisMin, axisMax);
 
   const snapRadiusPx = useSnapRadiusPx();
   const trackWidth = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;
@@ -318,8 +318,9 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
       data-dragging={draft ? ('at' in draft.ghost ? 'seam' : 'band') : undefined}
     >
       {label !== undefined && <div id={labelId} className={s.label}>{label}</div>}
-      <Ruler
-        trackRef={trackRef}
+      <BandRuler
+        ref={trackRef}
+        scale={axis}
         ticks={ticks?.filter((tick) => tick.at >= axisMin && tick.at <= axisMax)}
         display={props.display}
         ends={
@@ -328,7 +329,6 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
             { edge: 'max', at: hi, label: <QuantityText value={hi} display={rulerDisplay(display)} mute /> },
           ]
         }
-        toUnit={toUnit}
         onPointerDown={onTrackPointerDown}
       />
       <div className={s.bands}>

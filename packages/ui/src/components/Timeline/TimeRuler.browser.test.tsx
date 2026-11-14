@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
-import { Ruler } from '@weasel-js/ui/components/Timeline';
+import { TimeRuler } from '@weasel-js/ui/components/Timeline';
 import type { TimeWindow } from './timeScale';
 
 afterEach(cleanup);
@@ -10,7 +10,7 @@ function setup(window: TimeWindow) {
   const onWindowChange = vi.fn<(w: TimeWindow) => void>();
   const { getByTestId } = render(
     <div style={{ width: 500 }}>
-      <Ruler window={window} bounds={{ from: 0, to: 1000 }} playhead={0} onScrub={() => {}} onWindowChange={onWindowChange} />
+      <TimeRuler window={window} bounds={{ from: 0, to: 1000 }} playhead={0} onScrub={() => {}} onWindowChange={onWindowChange} />
     </div>,
   );
   const ruler = getByTestId('timeline-ruler');

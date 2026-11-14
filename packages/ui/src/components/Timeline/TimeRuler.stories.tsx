@@ -1,15 +1,15 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { Ruler, type TimeWindow } from '@weasel-js/ui/components/Timeline';
-import s from './Ruler.stories.module.css';
+import { TimeRuler, type TimeWindow } from '@weasel-js/ui/components/Timeline';
+import s from './TimeRuler.stories.module.css';
 
-const meta: Meta<typeof Ruler> = {
-  title: 'ui/Ruler',
-  component: Ruler,
+const meta: Meta<typeof TimeRuler> = {
+  title: 'ui/TimeRuler',
+  component: TimeRuler,
 };
 export default meta;
 
-type Story = StoryObj<typeof Ruler>;
+type Story = StoryObj<typeof TimeRuler>;
 
 const BOUNDS: TimeWindow = { from: 0, to: 12000 };
 
@@ -18,7 +18,7 @@ function Live({ initial }: { initial: TimeWindow }) {
   const [playhead, setPlayhead] = useState(4200);
   return (
     <div className={s.track}>
-      <Ruler window={win} bounds={BOUNDS} playhead={playhead} onScrub={setPlayhead} onWindowChange={setWin} />
+      <TimeRuler window={win} bounds={BOUNDS} playhead={playhead} onScrub={setPlayhead} onWindowChange={setWin} />
     </div>
   );
 }

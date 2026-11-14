@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
-import { Ruler } from './Ruler';
+import { TimeRuler } from './TimeRuler';
 
 const TRACK_WIDTH = 500;
 
@@ -22,17 +22,18 @@ const props = {
 };
 
 const ruler = (): HTMLElement => screen.getByTestId('timeline-ruler');
+const tickLabels = (): (string | null)[] => [...ruler().querySelectorAll('[data-tick-at]')].map((el) => el.textContent);
 
-describe('Ruler', () => {
+describe('TimeRuler', () => {
   it('renders tick labels', () => {
-    render(<Ruler {...props} />);
-    expect(screen.getAllByTestId('timeline-tick').length).toBeGreaterThan(1);
+    render(<TimeRuler {...props} />);
+    expect(tickLabels().length).toBeGreaterThan(1);
   });
 
   it('labels every tick differently at the narrowest zoom', () => {
     for (const window of [{ from: 0, to: 1 }, { from: 1000, to: 1001 }]) {
-      const { unmount } = render(<Ruler {...props} window={window} />);
-      const labels = screen.getAllByTestId('timeline-tick').map((el) => el.textContent);
+      const { unmount } = render(<TimeRuler {...props} window={window} />);
+      const labels = tickLabels();
       expect(labels.length).toBeGreaterThan(2);
       expect(new Set(labels).size).toBe(labels.length);
       unmount();
@@ -40,8 +41,8 @@ describe('Ruler', () => {
   });
 
   it('labels whole milliseconds and seconds without decimals', () => {
-    render(<Ruler {...props} window={{ from: 0, to: 2000 }} bounds={{ from: 0, to: 2000 }} />);
-    const labels = screen.getAllByTestId('timeline-tick').map((el) => el.textContent);
+    render(<TimeRuler {...props} window={{ from: 0, to: 2000 }} bounds={{ from: 0, to: 2000 }} />);
+    const labels = tickLabels();
     expect(labels).toContain('0ms');
     expect(labels).toContain('500ms');
     expect(labels).toContain('1s');
@@ -49,20 +50,20 @@ describe('Ruler', () => {
   });
 
   it('positions the playhead at its fraction of the window', () => {
-    render(<Ruler {...props} />);
+    render(<TimeRuler {...props} />);
     expect(screen.getByTestId('timeline-playhead')).toHaveStyle({ left: '25%' });
   });
 
   it('scrubs to the pointer on pointerdown', () => {
     const onScrub = vi.fn();
-    render(<Ruler {...props} onScrub={onScrub} />);
+    render(<TimeRuler {...props} onScrub={onScrub} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0 });
     expect(onScrub).toHaveBeenCalledWith(200);
   });
 
   it('scrubs continuously through a drag', () => {
     const onScrub = vi.fn();
-    render(<Ruler {...props} onScrub={onScrub} />);
+    render(<TimeRuler {...props} onScrub={onScrub} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0 });
     fireEvent.pointerMove(document, { clientX: 300, clientY: 5 });
     fireEvent.pointerUp(document, { clientX: 300, clientY: 5 });
@@ -71,7 +72,7 @@ describe('Ruler', () => {
 
   it('stops scrubbing after pointerup', () => {
     const onScrub = vi.fn();
-    render(<Ruler {...props} onScrub={onScrub} />);
+    render(<TimeRuler {...props} onScrub={onScrub} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0 });
     fireEvent.pointerUp(document, { clientX: 100, clientY: 5 });
     onScrub.mockClear();
@@ -81,7 +82,7 @@ describe('Ruler', () => {
 
   it('stops scrubbing after pointercancel', () => {
     const onScrub = vi.fn();
-    render(<Ruler {...props} onScrub={onScrub} />);
+    render(<TimeRuler {...props} onScrub={onScrub} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0 });
     fireEvent.pointerCancel(document, {});
     onScrub.mockClear();
@@ -91,7 +92,7 @@ describe('Ruler', () => {
 
   it('clamps a scrub past the end of the window', () => {
     const onScrub = vi.fn();
-    render(<Ruler {...props} onScrub={onScrub} />);
+    render(<TimeRuler {...props} onScrub={onScrub} />);
     fireEvent.pointerDown(ruler(), { clientX: 900, clientY: 5, button: 0 });
     expect(onScrub).toHaveBeenCalledWith(1000);
   });
@@ -104,7 +105,7 @@ describe('Ruler', () => {
   it('never captures the pointer', () => {
     const capture = vi.fn();
     Element.prototype.setPointerCapture = capture;
-    render(<Ruler {...props} />);
+    render(<TimeRuler {...props} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0 });
     fireEvent.pointerMove(document, { clientX: 300, clientY: 5 });
     fireEvent.pointerUp(document, { clientX: 300, clientY: 5 });
@@ -113,7 +114,7 @@ describe('Ruler', () => {
 
   it('zooms in on a wheel with ctrl held', () => {
     const onWindowChange = vi.fn();
-    render(<Ruler {...props} onWindowChange={onWindowChange} />);
+    render(<TimeRuler {...props} onWindowChange={onWindowChange} />);
     fireEvent.wheel(ruler(), { deltaY: -100, ctrlKey: true, clientX: 250 });
     const next = onWindowChange.mock.calls[0][0];
     expect(next.to - next.from).toBeLessThan(1000);
@@ -121,7 +122,7 @@ describe('Ruler', () => {
 
   it('pans on a plain wheel', () => {
     const onWindowChange = vi.fn();
-    render(<Ruler {...props} window={{ from: 200, to: 700 }} onWindowChange={onWindowChange} />);
+    render(<TimeRuler {...props} window={{ from: 200, to: 700 }} onWindowChange={onWindowChange} />);
     fireEvent.wheel(ruler(), { deltaY: 100, clientX: 250 });
     const next = onWindowChange.mock.calls[0][0];
     expect(next.to - next.from).toBeCloseTo(500, 6);
@@ -129,12 +130,12 @@ describe('Ruler', () => {
   });
 });
 
-describe('Ruler pointer session', () => {
+describe('TimeRuler pointer session', () => {
   it('ends a scrub released outside the ruler', () => {
     const outside = document.createElement('div');
     document.body.appendChild(outside);
     const onScrub = vi.fn();
-    render(<Ruler {...props} onScrub={onScrub} />);
+    render(<TimeRuler {...props} onScrub={onScrub} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0, buttons: 1 });
     fireEvent.pointerUp(outside, { clientX: 900, clientY: 900, bubbles: true });
     onScrub.mockClear();
@@ -149,7 +150,7 @@ describe('Ruler pointer session', () => {
   // pointerSession.test.ts, which owns it without React in the way.
   it('keeps scrubbing when the ruler loses capture but stays mounted', () => {
     const onScrub = vi.fn();
-    render(<Ruler {...props} onScrub={onScrub} />);
+    render(<TimeRuler {...props} onScrub={onScrub} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0, buttons: 1 });
     fireEvent(ruler(), new PointerEvent('lostpointercapture', { pointerId: 0, bubbles: true }));
     onScrub.mockClear();
@@ -159,7 +160,7 @@ describe('Ruler pointer session', () => {
 
   it('treats a move with no button held as the release it missed', () => {
     const onScrub = vi.fn();
-    render(<Ruler {...props} onScrub={onScrub} />);
+    render(<TimeRuler {...props} onScrub={onScrub} />);
     fireEvent.pointerDown(ruler(), { clientX: 100, clientY: 5, button: 0, buttons: 1 });
     fireEvent.pointerMove(document, { clientX: 300, clientY: 5, buttons: 1 });
     expect(onScrub).toHaveBeenLastCalledWith(600);
