@@ -108,7 +108,7 @@ export { useVelocityTracker } from '../core/viewport/useVelocityTracker';
 export { createVelocityTracker } from '../core/viewport/createVelocityTracker';
 export type { VelocityTracker } from '../core/viewport/createVelocityTracker';
 export { useDecayLoop } from '../core/viewport/useDecayLoop';
-export type { DecayLoopConfig, PanBounds, InertiaOptions } from '../core/viewport/useDecayLoop';
+export type { DecayLoopOptions, PanBounds, InertiaOptions } from '../core/viewport/useDecayLoop';
 export { interpolateView } from '../core/viewport/interpolateView';
 export { useViewAnimation, useViewAnimationOn, viewAxes, VIEW_ANIMATION_KEY } from '../core/viewport/useViewAnimation';
 

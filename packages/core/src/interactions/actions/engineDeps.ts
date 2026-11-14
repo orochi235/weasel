@@ -10,7 +10,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { FramedBox } from '@weasel-js/geom';
 import type { PlaneMap } from 'core/viewport/parallax';
-import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
+import type { DecayLoopOptions } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -73,7 +73,7 @@ export interface ViewApi {
   /** Optional momentum decay. `<SceneCanvas>` wires this from `useDecayLoop`;
    *  a consumer publishing their own `view` dep need not, and `viewport.dragPan`
    *  simply lands the pan without coasting. */
-  decay?(config: DecayLoopConfig): void;
+  decay?(config: DecayLoopOptions): void;
   stopDecay?(): void;
   /** Whether a scene layer reaches the screen in this view — its own
    *  `layerVisibility` / `layerOrder`, on top of the scene's `visible` flag.

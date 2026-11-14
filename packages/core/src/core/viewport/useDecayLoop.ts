@@ -10,7 +10,7 @@ export interface PanBounds {
 }
 
 /** Momentum settings for a pan: how quickly a flung view slows, when it stops,
- *  and what happens at the pan limits. The `DecayLoopConfig` fields a caller
+ *  and what happens at the pan limits. The `DecayLoopOptions` fields a caller
  *  chooses up front, without the per-gesture `velocity` / `onTick`. */
 export interface InertiaOptions {
   friction?: number;
@@ -23,7 +23,7 @@ export interface InertiaOptions {
 
 /** How a decay should run: its starting velocity, how fast it slows, and what
  *  happens if it reaches the pan limits. */
-export interface DecayLoopConfig {
+export interface DecayLoopOptions {
   velocity: { vx: number; vy: number };
   friction?: number;
   minSpeed?: number;
@@ -135,7 +135,7 @@ export function useDecayLoop() {
     stateRef.current = null;
   }, [frameLoop]);
 
-  const start = useCallback((config: DecayLoopConfig) => {
+  const start = useCallback((config: DecayLoopOptions) => {
     cancel();
     const { velocity, friction = 0.92, minSpeed = 0.01, viewBounds, boundary, initialPosition, onTick, onEnd } = config;
     const speed = Math.sqrt(velocity.vx ** 2 + velocity.vy ** 2);

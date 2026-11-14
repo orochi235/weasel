@@ -8,7 +8,7 @@ import { useLatest } from '@weasel-js/react';
 import type React from 'react';
 import type { ViewApi } from 'interactions/actions/depSchema';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
-import type { DecayLoopConfig } from 'core/viewport/useDecayLoop';
+import type { DecayLoopOptions } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
@@ -25,7 +25,7 @@ interface Wiring {
 
 /** The slice of `useDecayLoop` the view dep republishes. */
 export interface DecayApi {
-  start(config: DecayLoopConfig): void;
+  start(config: DecayLoopOptions): void;
   cancel(): void;
 }
 
@@ -74,7 +74,7 @@ export function useViewDepSource(
       : {}),
     ...(hasDecay
       ? {
-          decay: (config: DecayLoopConfig) => wiring.current.decay!.start(config),
+          decay: (config: DecayLoopOptions) => wiring.current.decay!.start(config),
           stopDecay: () => wiring.current.decay!.cancel(),
         }
       : {}),
