@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { runs, timeoutFor, uniform } from '../../pbt.fixture';
-import { spanFraction, toFraction, windowScale, type TimeWindow } from './timeScale';
+import { spanShare, spanPlace, windowScale, type TimeWindow } from './timeScale';
 
 const RUNS = 500;
 
@@ -17,10 +17,10 @@ describe('window fractions', () => {
   it('place a time and a duration as the pixel scale does', () => {
     fc.assert(fc.property(window, ms, fc.integer({ min: 1, max: 4000 }), (w, at, width) => {
       const scale = windowScale(w, width);
-      expect(toFraction(w, w.from)).toBe(0);
-      expect(toFraction(w, w.to)).toBeCloseTo(1, 9);
-      expect(toFraction(w, at) * width).toBeCloseTo(scale.map(at), Math.max(0, 4 - Math.log10(1 + Math.abs(scale.map(at)))));
-      expect(spanFraction(w, at - w.from)).toBeCloseTo(toFraction(w, at), 9);
+      expect(spanPlace(w, w.from)).toBe(0);
+      expect(spanPlace(w, w.to)).toBeCloseTo(1, 9);
+      expect(spanPlace(w, at) * width).toBeCloseTo(scale.map(at), Math.max(0, 4 - Math.log10(1 + Math.abs(scale.map(at)))));
+      expect(spanShare(w, at - w.from)).toBeCloseTo(spanPlace(w, at), 9);
     }), runs(RUNS));
   }, timeoutFor(RUNS, 1));
 });
