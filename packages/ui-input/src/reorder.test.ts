@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dropBand, gapByMidpoint, isNoopDrop, isNudgeChord, moveItems, movedIndex, nearestGap, nudgeGap, nudgeOf } from './reorder';
+import { dropBand, dropSide, gapByMidpoint, isNoopDrop, isNudgeChord, moveItems, movedIndex, nearestGap, nudgeGap, nudgeOf } from './reorder';
 
 const L = ['a', 'b', 'c', 'd', 'e'];
 
@@ -129,5 +129,14 @@ describe('dropBand', () => {
   it('keeps the middle for a drop into the item', () => {
     expect([0.1, 0.25, 0.5, 0.74, 0.75, 0.9].map((f) => dropBand(f, 0.25)))
       .toEqual(['before', 'into', 'into', 'into', 'after', 'after']);
+  });
+});
+
+describe('dropSide', () => {
+  it('seams the row a gap sits before, and the last row for the end gap', () => {
+    expect(dropSide(1, 1, 3)).toBe('before');
+    expect(dropSide(3, 2, 3)).toBe('after');
+    expect(dropSide(1, 0, 3)).toBeUndefined();
+    expect(dropSide(null, 0, 3)).toBeUndefined();
   });
 });

@@ -32,7 +32,7 @@ measure alike. `draw` is per target and does not take the measured box: a target
 coordinates measures with `exactly(w, h)` itself, and the DOM lays out by CSS from the same tokens.
 
 `measureButton` and `measureRowList` are the two so far, with `buttonParts` and `listMode` saying which
-parts and roles a state shows; `pressStep` is a press's hover-and-hold state machine. `@weasel-js/ui`'s
+parts and roles a state shows. `@weasel-js/ui`'s
 `domButton` and `domItemList` and `@weasel-js/hud`'s `hudButton` and `hudList` implement them.
 
 ## License

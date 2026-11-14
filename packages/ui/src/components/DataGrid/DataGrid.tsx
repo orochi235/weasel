@@ -5,7 +5,7 @@
  */
 import { Fragment, useId, useMemo, useState } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
-import { dropSide } from '@weasel-js/ui-logic';
+import { dropSide } from '@weasel-js/ui-input';
 import { useReorderDragList } from '../../useReorderDragList';
 import { Disclosure } from '../Disclosure';
 import { ReorderHandle, type ReorderHandleProps } from '../ReorderHandle/ReorderHandle';

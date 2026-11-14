@@ -21,8 +21,10 @@ export { CHORD_MODIFIERS, chordKey, codeLetter } from './keyLetter';
 export type { ChordSource } from './keyLetter';
 export type { EditCause, EditEnd, EditEndShape, KeySource } from './textCommit';
 export {
-  moveItems, movedIndex, isNoopDrop, nudgeGap, gapByMidpoint, nearestGap, dropBand, isNudgeChord, nudgeOf,
+  moveItems, movedIndex, isNoopDrop, nudgeGap, gapByMidpoint, nearestGap, dropBand, dropSide, isNudgeChord, nudgeOf,
 } from './reorder';
+export { IDLE_PRESS, pressStep, isPressKey } from './press';
+export type { PressState, PressInput } from './press';
 export type { NudgeKey } from './reorder';
 export { EDGE_SCROLL_MARGIN, edgePush, edgeScroll } from './edgeScroll';
 export { HEADING_DRIFT, headingOf, headingCost, nearestToward } from './spatial';

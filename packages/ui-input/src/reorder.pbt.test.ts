@@ -1,12 +1,12 @@
 /**
  * Property tests of reordering: `moveItems` against a plain take-out-and-put-back model, `movedIndex` naming where
- * the moved run starts, `isNoopDrop` exactly when a drop changes nothing, nudges moving a run by one place, and
- * the gap pickers.
+ * the moved run starts, `isNoopDrop` exactly when a drop changes nothing, nudges moving a run by one place, the
+ * gap pickers, and `dropSide` seaming one row per gap.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { runs, tally, timeoutFor } from './pbt.fixture';
-import { gapByMidpoint, isNoopDrop, moveItems, movedIndex, nearestGap, nudgeGap } from './reorder';
+import { dropSide, gapByMidpoint, isNoopDrop, moveItems, movedIndex, nearestGap, nudgeGap } from './reorder';
 
 const RUNS = 400;
 
@@ -108,6 +108,18 @@ describe('moveItems at the edges', () => {
       },
     ), runs(RUNS));
   }, timeoutFor(RUNS, 1));
+});
+
+describe('dropSide', () => {
+  it('seams exactly one row for each gap, and none for no drop', () => {
+    fc.assert(fc.property(fc.integer({ min: 1, max: 8 }), fc.option(fc.integer({ min: 0, max: 10 }), { nil: null }), (count, gap) => {
+      const sides = Array.from({ length: count }, (_, i) => dropSide(gap, i, count));
+      const marked = sides.filter((s) => s !== undefined).length;
+      expect(marked).toBe(gap === null ? 0 : 1);
+      if (gap !== null && gap < count) expect(sides[gap]).toBe('before');
+      if (gap !== null && gap >= count) expect(sides[count - 1]).toBe('after');
+    }), runs(RUNS));
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('shrunk counterexamples', () => {

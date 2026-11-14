@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode, Ref } from 'react';
-import { dropSide } from '@weasel-js/ui-logic';
+import { dropSide } from '@weasel-js/ui-input';
 import type { ReorderDragState } from '../../useReorderDragList';
 import { Badge } from '../Badge';
 import s from './TokenField.module.css';

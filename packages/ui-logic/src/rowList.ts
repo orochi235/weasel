@@ -32,14 +32,6 @@ export const LIST_ROLES: Readonly<Record<ListMode, { readonly container: string;
   grid: { container: 'grid', row: 'row' },
 };
 
-/** Which edge of row `i` of `count` carries the seam for a drop at gap `dropIndex`, if either. */
-export function dropSide(dropIndex: number | null | undefined, i: number, count: number): 'before' | 'after' | undefined {
-  if (dropIndex == null) return undefined;
-  if (dropIndex === i) return 'before';
-  if (dropIndex >= count && i === count - 1) return 'after';
-  return undefined;
-}
-
 /** One row as measuring reads it. The leading decoration and the trailing controls are measured by their width. */
 export interface RowFace {
   readonly id: string;

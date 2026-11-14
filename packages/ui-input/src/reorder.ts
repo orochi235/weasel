@@ -71,6 +71,14 @@ export function dropBand(f: number, band = 0.5): 'before' | 'into' | 'after' {
   return f >= 1 - band ? 'after' : 'into';
 }
 
+/** Which edge of row `i` of `count` carries the seam for a drop at gap `dropIndex`, if either. */
+export function dropSide(dropIndex: number | null | undefined, i: number, count: number): 'before' | 'after' | undefined {
+  if (dropIndex == null) return undefined;
+  if (dropIndex === i) return 'before';
+  if (dropIndex >= count && i === count - 1) return 'after';
+  return undefined;
+}
+
 /** The keys and modifiers a nudge chord reads off a keystroke. */
 export interface NudgeKey {
   key: string;

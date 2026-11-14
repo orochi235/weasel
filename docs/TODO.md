@@ -681,10 +681,6 @@ name a package. Breaking changes are in scope.
   on `ItemList`; draw's `ToolIcon` repeats each tool's declared `icon`. `JobProgress`, `Split`, and `HeldClock` stay
   in labkit. Closes when the five live in ui, `Readout` folds into `DetailList`, and `ToolIcon` reads `ToolDef.icon`.
 
-- **(P3) [agent] Move ui-logic's key and pointer helpers to ui-input.** ui-logic's index says that is ui-input's
-  job, yet it exports `pressStep`, `isPressKey`, `IDLE_PRESS`, and `dropSide` (which belongs beside `dropBand` and
-  `nearestGap`). Closes when ui-logic exports only the measure/draw contract.
-
 - **(P3) [agent] Move Badge's lab out of the component.** Badge is about 10.5k lines, of which `Badge.tsx` is 247
   and `lab/` is 2,382, exported only through `testing/labViews.ts`; the lab hand-rolls a params panel
   (`lab/ParamControl.tsx`, `controls.ts`). Rebuild it in labkit or an app on `ControlPanel` and `Sequence`. Closes

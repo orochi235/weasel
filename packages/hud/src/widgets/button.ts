@@ -4,9 +4,9 @@ import type { Widget, WidgetBounds, HudDrawCtx, HudKeyEvent, HudPointerEvent } f
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns } from '@weasel-js/core';
 import { roundRectPath } from '@weasel-js/geom';
+import { IDLE_PRESS, isPressKey, pressStep, type PressInput, type PressState } from '@weasel-js/ui-input';
 import {
-  envPx, exactly, IDLE_PRESS, isPressKey, measureButton, pressStep, type ButtonFace, type ButtonLayout,
-  type ButtonSize, type HeadlessComponent, type PressInput, type PressState,
+  envPx, exactly, measureButton, type ButtonFace, type ButtonLayout, type ButtonSize, type HeadlessComponent,
 } from '@weasel-js/ui-logic';
 import { hudMeasureEnv } from '../measureEnv';
 
