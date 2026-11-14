@@ -5097,9 +5097,9 @@
       }
     },
     {
-      "id": "tests/perf/bench/pinWarp.bench.ts > puppet warp — setup per pin set > mesh + factor, ~200 vertices",
+      "id": "tests/perf/bench/puppet.bench.ts > puppet warp — setup per pin set > mesh + factor, ~200 vertices",
       "params": {
-        "file": "tests/perf/bench/pinWarp.bench.ts",
+        "file": "tests/perf/bench/puppet.bench.ts",
         "group": "puppet warp — setup per pin set",
         "name": "mesh + factor, ~200 vertices"
       },
@@ -5127,9 +5127,9 @@
       }
     },
     {
-      "id": "tests/perf/bench/pinWarp.bench.ts > puppet warp — setup per pin set > mesh + factor, ~400 vertices",
+      "id": "tests/perf/bench/puppet.bench.ts > puppet warp — setup per pin set > mesh + factor, ~400 vertices",
       "params": {
-        "file": "tests/perf/bench/pinWarp.bench.ts",
+        "file": "tests/perf/bench/puppet.bench.ts",
         "group": "puppet warp — setup per pin set",
         "name": "mesh + factor, ~400 vertices"
       },
@@ -5157,9 +5157,9 @@
       }
     },
     {
-      "id": "tests/perf/bench/pinWarp.bench.ts > puppet warp — setup per pin set > mesh + factor, ~800 vertices",
+      "id": "tests/perf/bench/puppet.bench.ts > puppet warp — setup per pin set > mesh + factor, ~800 vertices",
       "params": {
-        "file": "tests/perf/bench/pinWarp.bench.ts",
+        "file": "tests/perf/bench/puppet.bench.ts",
         "group": "puppet warp — setup per pin set",
         "name": "mesh + factor, ~800 vertices"
       },
@@ -5187,9 +5187,9 @@
       }
     },
     {
-      "id": "tests/perf/bench/pinWarp.bench.ts > puppet warp — per drag frame > solve, 471 vertices, the two linear steps alone",
+      "id": "tests/perf/bench/puppet.bench.ts > puppet warp — per drag frame > solve, 471 vertices, the two linear steps alone",
       "params": {
-        "file": "tests/perf/bench/pinWarp.bench.ts",
+        "file": "tests/perf/bench/puppet.bench.ts",
         "group": "puppet warp — per drag frame",
         "name": "solve, 471 vertices, the two linear steps alone"
       },
@@ -5217,9 +5217,9 @@
       }
     },
     {
-      "id": "tests/perf/bench/pinWarp.bench.ts > puppet warp — per drag frame > solve, 738 vertices, the two linear steps alone",
+      "id": "tests/perf/bench/puppet.bench.ts > puppet warp — per drag frame > solve, 738 vertices, the two linear steps alone",
       "params": {
-        "file": "tests/perf/bench/pinWarp.bench.ts",
+        "file": "tests/perf/bench/puppet.bench.ts",
         "group": "puppet warp — per drag frame",
         "name": "solve, 738 vertices, the two linear steps alone"
       },
@@ -5247,9 +5247,9 @@
       }
     },
     {
-      "id": "tests/perf/bench/pinWarp.bench.ts > puppet warp — per drag frame > solve, 1251 vertices, the two linear steps alone",
+      "id": "tests/perf/bench/puppet.bench.ts > puppet warp — per drag frame > solve, 1251 vertices, the two linear steps alone",
       "params": {
-        "file": "tests/perf/bench/pinWarp.bench.ts",
+        "file": "tests/perf/bench/puppet.bench.ts",
         "group": "puppet warp — per drag frame",
         "name": "solve, 1251 vertices, the two linear steps alone"
       },
@@ -5277,9 +5277,9 @@
       }
     },
     {
-      "id": "tests/perf/bench/pinWarp.bench.ts > puppet warp — per drag frame > solve, 471 vertices",
+      "id": "tests/perf/bench/puppet.bench.ts > puppet warp — per drag frame > solve, 471 vertices",
       "params": {
-        "file": "tests/perf/bench/pinWarp.bench.ts",
+        "file": "tests/perf/bench/puppet.bench.ts",
         "group": "puppet warp — per drag frame",
         "name": "solve, 471 vertices"
       },
@@ -5307,9 +5307,9 @@
       }
     },
     {
-      "id": "tests/perf/bench/pinWarp.bench.ts > puppet warp — per drag frame > solve, 738 vertices",
+      "id": "tests/perf/bench/puppet.bench.ts > puppet warp — per drag frame > solve, 738 vertices",
       "params": {
-        "file": "tests/perf/bench/pinWarp.bench.ts",
+        "file": "tests/perf/bench/puppet.bench.ts",
         "group": "puppet warp — per drag frame",
         "name": "solve, 738 vertices"
       },
@@ -5337,9 +5337,9 @@
       }
     },
     {
-      "id": "tests/perf/bench/pinWarp.bench.ts > puppet warp — per drag frame > solve + map + refit the star (default mesh)",
+      "id": "tests/perf/bench/puppet.bench.ts > puppet warp — per drag frame > solve + map + refit the star (default mesh)",
       "params": {
-        "file": "tests/perf/bench/pinWarp.bench.ts",
+        "file": "tests/perf/bench/puppet.bench.ts",
         "group": "puppet warp — per drag frame",
         "name": "solve + map + refit the star (default mesh)"
       },
@@ -5367,9 +5367,9 @@
       }
     },
     {
-      "id": "tests/perf/bench/pinWarp.bench.ts > puppet warp — per drag frame > solve, 1251 vertices",
+      "id": "tests/perf/bench/puppet.bench.ts > puppet warp — per drag frame > solve, 1251 vertices",
       "params": {
-        "file": "tests/perf/bench/pinWarp.bench.ts",
+        "file": "tests/perf/bench/puppet.bench.ts",
         "group": "puppet warp — per drag frame",
         "name": "solve, 1251 vertices"
       },
