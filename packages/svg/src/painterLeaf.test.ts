@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mat3, poseFrameOf, registerNodeShape, solid, type DrawCommand, type Paint } from '@weasel-js/core';
+import { mat3, poseFrameOf, registerNodeShape, solid, type DrawCommand } from '@weasel-js/core';
 import { svgNodesFromKit, type SvgKitPose, type SvgKitTree, type SvgKitTreeNode } from './fromKit';
 import { serializeSvg } from './serialize';
 import { applyMatrix } from './transform';
 import type { SvgGroupNode, SvgPathNode } from './types';
 
-const BOX: SvgKitPose = { x: 10, y: 20, width: 40, height: 20 };
+type CommandPaint = NonNullable<NonNullable<Extract<DrawCommand, { kind: 'path' }>['fill']>['paint']>;
+
+const BOX: SvgKitPose ={ x: 10, y: 20, width: 40, height: 20 };
 
 let release: (() => void)[] = [];
 afterEach(() => {
@@ -17,7 +19,7 @@ afterEach(() => {
 function paintBlobs(cmds: (pose: SvgKitPose) => DrawCommand[]): void {
   release.push(registerNodeShape<unknown, SvgKitPose>({
     id: 'test:blob',
-    matches: (node) => node.kind === 'blob',
+    matches: (node) => (node.kind as string) === 'blob',
     paint: (_node, pose) => cmds(pose),
   }));
 }
@@ -62,7 +64,7 @@ describe('svgNodesFromKit over a painter of the app own', () => {
 
   it('keeps a local gradient in the frame its path is drawn in', () => {
     const pose = { ...BOX, rotation: Math.PI / 3 };
-    const local: Paint = {
+    const local: CommandPaint = {
       kind: 'linear-gradient', units: 'local', from: { x: 10, y: 20 }, to: { x: 50, y: 20 },
       stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],
     };
@@ -73,7 +75,7 @@ describe('svgNodesFromKit over a painter of the app own', () => {
 
   it('takes a world gradient back through the pose frame, so it lands where the canvas paints it', () => {
     const pose = { ...BOX, rotation: Math.PI / 3 };
-    const world: Paint = {
+    const world: CommandPaint = {
       kind: 'linear-gradient', units: 'world', from: { x: 0, y: 0 }, to: { x: 100, y: 0 },
       stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],
     };
