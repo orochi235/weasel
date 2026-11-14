@@ -21,7 +21,9 @@
   },
   "type": "module",
   "sideEffects": [
-    "*.css"
+    "*.css",
+    "*.less",
+    "./src/styles.dev.ts"
   ],
   "engines": {
     "node": ">=24"
