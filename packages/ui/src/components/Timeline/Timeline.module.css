@@ -259,3 +259,14 @@
   border: 1px solid var(--wzl-border);
 }
 
+
+.transportButton:is(:disabled, [data-disabled]) {
+  filter: var(--wzl-disabled-filter);
+  cursor: not-allowed;
+}
+
+/* Held: a key pressed selects at most, so nothing invites a drag. */
+.root[data-held] :is(.key, .eventMark) { cursor: default; }
+.root[data-held='disabled'] .lanes {
+  filter: var(--wzl-disabled-filter);
+}

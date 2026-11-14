@@ -12,6 +12,7 @@ import { isInControlWithin } from '@weasel-js/core';
 import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
 import { LIST_KEYS, modsOf, selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { useRowNavigation } from '../../useRowNavigation';
+import { useControlHold } from '../Disabled/controlHold';
 import { TreeDragGhost } from './TreeGhost';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Tree.module.css';
@@ -20,17 +21,10 @@ import { handleMoveKey } from './treeKeyboardMove';
 import { TreeRow } from './TreeRow';
 import type { TreeNode, TreeProps } from './treeTypes';
 import { nodeById } from './treeMoves';
-import { hasControls, idsWhere, textOf, useControlledSet } from './treeUtils';
+import { hasControls, idsWhere, textOf, useControlledSet, visibleRows } from './treeUtils';
 import { useRowTip } from './useRowTip';
 import { useTreeDrag } from './useTreeDrag';
 export type { TreeNode, TreeProps, TreeSelectionMode } from './treeTypes';
-
-interface Visible {
-  node: TreeNode;
-  parentId: string | null;
-  level: number;
-  index: number;
-}
 
 const NO_MODS: PressModifiers = { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
 
@@ -68,6 +62,11 @@ const NO_MODS: PressModifiers = { shiftKey: false, ctrlKey: false, metaKey: fals
  * **Sizing.** `--wzl-tree-row-h` sets every row's height, `--wzl-control-h`
  * when unset; `--wzl-tree-font-size` sets its text.
  *
+ * **Held.** Disabled, by `disabled` or a `Disabled` scope, nothing activates, folds, selects or moves: focus alone
+ * moves between rows, and with no reason anywhere the tree leaves the tab order. Read-only, rows still fold, select
+ * and activate, since choosing a row only looks at it; nothing moves, by drag or by key. Either way the rows'
+ * `controls` are held with it.
+ *
  * **Filtering** is the consumer's: narrow `nodes` with `filterTree`, and pass
  * `treeBranchIds` of the result as `expandedIds` so every match shows.
  */
@@ -78,7 +77,8 @@ export const Tree = forwardRef(function Tree(
     expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', pressFolds = true, hang = false, guides = false,
     selectionMode = 'none', selectionFollowsFocus = false, selectedIds, defaultSelectedIds, onSelectionChange,
     onAction, onRowKeyDown, onRowContextMenu,
-    onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, dropRef,
+    onMove: move, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, dropRef,
+    disabled: off, disabledReason, readOnly, readOnlyReason,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
@@ -88,24 +88,16 @@ export const Tree = forwardRef(function Tree(
   const rowTip = useRowTip();
   const baseId = useId();
   const grid = useMemo(() => hasControls(nodes), [nodes]);
+  const hold = useControlHold({ disabled: off, disabledReason, readOnly, readOnlyReason }, { readonlyRole: false });
+  const onMove = hold.refuses ? undefined : move;
   const alone = useMemo(() => idsWhere(nodes, (n) => !!n.selectsAlone), [nodes]);
 
-  const visible = useMemo(() => {
-    const out: Visible[] = [];
-    const walk = (list: readonly TreeNode[], parentId: string | null, level: number) => {
-      list.forEach((node, index) => {
-        out.push({ node, parentId, level, index });
-        if (node.children && expanded.has(node.id)) walk(node.children, node.id, level + 1);
-      });
-    };
-    walk(nodes, null, 1);
-    return out;
-  }, [nodes, expanded]);
+  const visible = useMemo(() => visibleRows(nodes, expanded), [nodes, expanded]);
   const indexOf = useMemo(() => new Map(visible.map((v, i) => [v.node.id, i])), [visible]);
 
   const nodeAt = (id: string) => visible[indexOf.get(id) ?? -1]?.node;
   const toggle = (node: TreeNode): boolean => {
-    if (!node.children || node.disabled) return false;
+    if (!node.children || node.disabled || hold.disabled) return false;
     const next = new Set(expanded);
     if (next.has(node.id)) next.delete(node.id);
     else next.add(node.id);
@@ -114,7 +106,7 @@ export const Tree = forwardRef(function Tree(
   };
 
   const order = () => visible.map((v) => v.node.id);
-  const disabled = (id: string) => !!nodeAt(id)?.disabled;
+  const disabled = (id: string) => hold.disabled || !!nodeAt(id)?.disabled;
   // Neither joins a selection of more than one row.
   const single = (id: string) => disabled(id) || alone.has(id);
   const commitSelection = (ids: readonly string[]) => {
@@ -132,7 +124,7 @@ export const Tree = forwardRef(function Tree(
   };
 
   const activate = (node: TreeNode, mods: PressModifiers) => {
-    if (node.disabled) return;
+    if (node.disabled || hold.disabled) return;
     if (pressFolds) toggle(node);
     if (selectable) select(node.id, mods);
     onAction?.(node.id, mods);
@@ -148,6 +140,7 @@ export const Tree = forwardRef(function Tree(
     ...(selectionMode === 'multiple' ? {
       onExtend: (id: string) => { if (!single(id)) select(id, { ...NO_MODS, shiftKey: true }); },
       onSelectAll: () => {
+        if (hold.disabled) return;
         const ids = order();
         commitSelection(rangeOf(ids, ids[0]!, ids[ids.length - 1]!, single));
       },
@@ -183,7 +176,7 @@ export const Tree = forwardRef(function Tree(
   });
 
   if (nodes.length === 0) {
-    return <div className={[s.empty, className].filter(Boolean).join(' ')}>{empty ?? '—'}</div>;
+    return <div className={[s.empty, className].filter(Boolean).join(' ')} data-held={hold.held}>{empty ?? '—'}</div>;
   }
 
   const onKeyDown = (node: TreeNode) => (e: KeyboardEvent<HTMLElement>) => {
@@ -207,7 +200,8 @@ export const Tree = forwardRef(function Tree(
           key={node.id}
           node={node} grid={grid} level={level} setSize={list.length} posInSet={pos + 1} open={open}
           selected={selectable ? selected.has(node.id) : undefined}
-          tabStop={node.id === nav.tabStop}
+          tabStop={node.id === nav.tabStop && hold.access.reachable}
+          hold={hold.focus}
           labelId={`${baseId}-${seq++}`}
           foldBy={foldBy}
           drop={drag.state.mark?.id === node.id ? drag.state.mark.where : undefined}
@@ -243,7 +237,7 @@ export const Tree = forwardRef(function Tree(
 
   return (
     <>
-      <ul
+      {hold.wrap(hold.scope(<ul
         ref={treeEl}
         role={grid ? 'treegrid' : 'tree'}
         className={[s.tree, className].filter(Boolean).join(' ')}
@@ -254,9 +248,11 @@ export const Tree = forwardRef(function Tree(
         data-fold={foldBy}
         data-hang={hang ? '' : undefined}
         data-guides={guides ? '' : undefined}
+        data-held={hold.held}
+        aria-readonly={(grid && hold.access.state === 'readOnly') || undefined}
       >
         {renderLevel(nodes, 1)}
-      </ul>
+      </ul>))}
       {tipNode?.tooltip != null && (
         // The trigger is the row, handed over by ref: the tooltip only reads its open state from the wrapper.
         <TooltipTrigger isOpen>

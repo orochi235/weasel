@@ -1,5 +1,6 @@
 import type { AriaRole, FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from 'react';
 import type { DropMark } from '../../dropTarget';
+import type { FocusHoldAttrs } from '../Disabled/controlHold';
 import s from './Tree.module.css';
 import { TreeRowBox, TreeRowLead } from './TreeRowLead';
 import type { TreeNode } from './treeTypes';
@@ -16,6 +17,8 @@ export interface TreeRowProps {
   /** Unset in a tree that does not select. */
   selected: boolean | undefined;
   tabStop: boolean;
+  /** The whole tree's hold, as each row carries it. */
+  hold: FocusHoldAttrs;
   labelId: string;
   foldBy: 'twisty' | 'leading';
   drop: DropMark['where'] | undefined;
@@ -56,6 +59,7 @@ export function TreeRow(p: TreeRowProps) {
     'aria-current': node.current ? ('true' as const) : undefined,
     'aria-labelledby': trailingId ? `${p.labelId} ${trailingId}` : p.labelId,
     'aria-description': typeof node.tooltip === 'string' ? node.tooltip : undefined,
+    ...p.hold,
     tabIndex: p.tabStop ? 0 : -1,
     onKeyDown: p.onKeyDown,
     onFocus: p.onFocus,

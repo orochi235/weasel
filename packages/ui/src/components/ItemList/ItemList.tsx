@@ -19,6 +19,8 @@ import { modsOf, REORDER_SKIP, type PressModifiers, type ReorderGhost } from '..
 import { useRowNavigation } from '../../useRowNavigation';
 import { untabControls, walkControls } from '../../rowControls';
 import { DragGhost } from '../DragGhost';
+import type { HoldProps } from '../Disabled';
+import { useControlHold, type ControlHold } from '../Disabled/controlHold';
 import s from './ItemList.module.css';
 
 /** One row. `id` is the React key. */
@@ -47,8 +49,13 @@ export interface ItemListRow {
   rowProps?: HTMLAttributes<HTMLDivElement> & Record<`data-${string}`, unknown>;
 }
 
-/** Props for {@link ItemList}. */
-export interface ItemListProps {
+/**
+ * Props for {@link ItemList}. Disabled, by `disabled` or a scope, rows only take focus: nothing activates, extends,
+ * moves, or starts a drag, and with no reason anywhere the list leaves the tab order. Read-only, rows still activate
+ * and extend, since a list's activation chooses a row; nothing moves by key, and a row's `rowProps.onPointerDown`,
+ * where a drag starts, is not called. Either way the rows' `trailing` controls are held with it.
+ */
+export interface ItemListProps extends HoldProps {
   rows: readonly ItemListRow[];
   /** Shown in place of the rows when there are none. */
   empty?: ReactNode;
@@ -120,13 +127,15 @@ export interface ItemListProps {
 export const ItemList = forwardRef(function ItemList(
   {
     rows, empty, className, selection, onActivate, onNudge, onSelectRange, dropIndex, overlay,
-    containerProps, ghost,
+    containerProps, ghost, ...own
   }: ItemListProps,
   ref: Ref<HTMLDivElement>,
 ) {
   const hasTrailing = rows.some((r) => r.trailing != null);
   const mode = listMode({ selection, activatable: onActivate !== undefined, controls: hasTrailing });
   const interactive = mode !== 'list';
+  const hold = useControlHold(own, { readonlyRole: mode === 'grid' });
+  const looks = !hold.disabled;
 
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const setRefs = useCallback(
@@ -139,7 +148,7 @@ export const ItemList = forwardRef(function ItemList(
 
   /** The element of each row that takes focus: the row itself, or in a grid its label cell. */
   const targets = useRef(new Map<string, HTMLElement>());
-  const ranges = selection === 'multi' && onSelectRange !== undefined;
+  const ranges = selection === 'multi' && onSelectRange !== undefined && looks;
   const nav = useRowNavigation<HTMLDivElement>({
     rows,
     isSelected: (id) => !!rows.find((r) => r.id === id)?.selected,
@@ -156,25 +165,19 @@ export const ItemList = forwardRef(function ItemList(
         onSelectRange(rows.slice(Math.min(at, end), Math.max(at, end) + 1).map((r) => r.id));
       },
     } : {}),
-    ...(onNudge ? { onNudge: (id: string, delta: -1 | 1) => onNudge(id, rows.findIndex((r) => r.id === id), delta) } : {}),
+    ...(onNudge && !hold.refuses ? { onNudge: (id: string, delta: -1 | 1) => onNudge(id, rows.findIndex((r) => r.id === id), delta) } : {}),
     onActivate: (id, mods) => {
       nav.anchor.current = id;
-      onActivate?.(id, rows.findIndex((r) => r.id === id), mods);
+      if (looks) onActivate?.(id, rows.findIndex((r) => r.id === id), mods);
     },
   });
 
-  useLayoutEffect(() => {
-    if (mode !== 'grid') return;
-    for (const target of targets.current.values()) {
-      const cell = target.parentElement?.querySelector(`.${s.trailing}`);
-      if (cell) untabControls(cell);
-    }
-  });
+  useUntabbedTrailing(mode === 'grid', targets.current);
 
   const cls = [s.list, className].filter(Boolean).join(' ');
   if (rows.length === 0) {
     return (
-      <div className={cls} ref={setRefs} {...containerProps}>
+      <div className={cls} ref={setRefs} {...containerProps} data-held={hold.held}>
         <div className={s.empty}>{empty ?? '—'}</div>
       </div>
     );
@@ -212,7 +215,7 @@ export const ItemList = forwardRef(function ItemList(
     row.rowProps?.onClick?.(e);
     if (e.defaultPrevented || isInControlWithin(e.target, e.currentTarget)) return;
     nav.anchor.current = row.id;
-    onActivate?.(row.id, i, modsOf(e));
+    if (looks) onActivate?.(row.id, i, modsOf(e));
   };
 
   const onFocus = (row: ItemListRow) => (e: FocusEvent<HTMLDivElement>) => {
@@ -227,20 +230,22 @@ export const ItemList = forwardRef(function ItemList(
 
   const trailingColumn = mode === 'grid' && rows.some((row) => row.trailing != null);
   const roles = LIST_ROLES[mode];
-  return (
+  return hold.wrap(hold.scope(
     <div
       className={cls}
       ref={setRefs}
       {...containerProps}
       role={roles.container}
       aria-multiselectable={selection === 'multi' && mode !== 'list' ? true : undefined}
+      aria-readonly={hold.focus['aria-readonly']}
+      data-held={hold.held}
     >
       {overlay !== undefined && <div className={s.overlay} {...{ [REORDER_SKIP]: '' }}>{overlay}</div>}
       {ghost && container ? (
         <DragGhost at={ghost} from={container}><GhostRows rows={rows} ids={ghost.ids} /></DragGhost>
       ) : null}
       {rows.map((row, i) => {
-        const tabIndex = interactive ? (row.id === nav.tabStop ? 0 : -1) : undefined;
+        const tabIndex = interactive ? (row.id === nav.tabStop && hold.access.reachable ? 0 : -1) : undefined;
         const content = (
           <>
             {row.leading}
@@ -256,7 +261,7 @@ export const ItemList = forwardRef(function ItemList(
               row.muted && s.muted,
               row.className,
             ].filter(Boolean).join(' ')}
-            {...row.rowProps}
+            {...heldRowProps(row, hold)}
             role={roles.row}
             aria-selected={selection && mode !== 'list' ? !!row.selected : undefined}
             ref={(el) => {
@@ -269,6 +274,7 @@ export const ItemList = forwardRef(function ItemList(
             onFocus={interactive ? onFocus(row) : row.rowProps?.onFocus}
             data-drop={dropSide(dropIndex, i, rows.length)}
             data-dragging={row.dragging ? 'true' : undefined}
+            {...(interactive ? rowHold(hold) : {})}
           >
             {mode === 'grid' ? (
               <>
@@ -283,9 +289,32 @@ export const ItemList = forwardRef(function ItemList(
           </div>
         );
       })}
-    </div>
-  );
+    </div>,
+  ));
 });
+
+/** Takes each row's trailing controls out of the tab order, after every render, while the list is a grid. */
+function useUntabbedTrailing(grid: boolean, targets: ReadonlyMap<string, HTMLElement>): void {
+  useLayoutEffect(() => {
+    if (!grid) return;
+    for (const target of targets.values()) {
+      const cell = target.parentElement?.querySelector(`.${s.trailing}`);
+      if (cell) untabControls(cell);
+    }
+  });
+}
+
+/** A row's own props, less the press a drag starts from while the list is held. */
+function heldRowProps(row: ItemListRow, hold: ControlHold): ItemListRow['rowProps'] {
+  if (!hold.refuses || !row.rowProps?.onPointerDown) return row.rowProps;
+  const { onPointerDown: _, ...rest } = row.rowProps;
+  return rest;
+}
+
+/** What each row carries of the list's hold: `aria-disabled` and the reason, which a row takes and an option too. */
+function rowHold(hold: ControlHold) {
+  return { 'aria-disabled': hold.focus['aria-disabled'], 'aria-describedby': hold.focus['aria-describedby'] };
+}
 
 /** The dragged rows as the ghost draws them: leading and label, no controls. */
 function GhostRows({ rows, ids }: { rows: readonly ItemListRow[]; ids: readonly string[] }) {

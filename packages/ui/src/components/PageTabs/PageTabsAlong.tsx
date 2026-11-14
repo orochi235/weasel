@@ -11,7 +11,7 @@ import { TabList, Tabs } from '../Tabs';
 import { TabSlotsContext } from '../Tabs/Tabs';
 import { TabRule } from '../Tabs/TabRule';
 import type { PageTabItem, PageTabsProps } from './PageTabs';
-import { NONE, usePageTabs } from './usePageTabs';
+import { NONE, usePageTabs, type PageTabsParts } from './usePageTabs';
 import t from '../Tabs/Tabs.module.css';
 import s from './PageTabs.module.css';
 
@@ -47,7 +47,7 @@ export function PageTabsAlong<P extends PageTabItem>(props: PageTabsAlongProps<P
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     parts.onPointerDownCapture();
     // A tab that moves takes a drag along the run as its own; the run scrolls from a press between the tabs.
-    if (props.onMove && (e.target as Element).closest('[role="tab"]')) return;
+    if (props.onMove && !parts.hold.refuses && (e.target as Element).closest('[role="tab"]')) return;
     host.rootProps.onPointerDownCapture(e);
   };
 
@@ -60,6 +60,7 @@ export function PageTabsAlong<P extends PageTabItem>(props: PageTabsAlongProps<P
       onKeyDownCapture={parts.onKeyDownCapture}
       className={[t.along, s.along, props.className].filter(Boolean).join(' ')}
       data-shape={shape.kind}
+      data-held={parts.hold.held}
     >
       <RunBand row={host} shape={shape} />
       <TabRule run={run} host={host} selected={current} drop={drop} ref={frame} />
@@ -70,7 +71,7 @@ export function PageTabsAlong<P extends PageTabItem>(props: PageTabsAlongProps<P
               {parts.tabs}
             </TabList>
           </Tabs>
-          {props.onAdd && <AddOnRun onAdd={props.onAdd} />}
+          {props.onAdd && parts.hold.wrap(<AddOnRun add={parts.add} />)}
         </RunScope>
       </TabSlotsContext.Provider>
       <RunEnds row={host} run={run} />
@@ -80,10 +81,10 @@ export function PageTabsAlong<P extends PageTabItem>(props: PageTabsAlongProps<P
 }
 
 /** The + button, in its place on the run. */
-function AddOnRun({ onAdd }: { onAdd: () => void }): ReactElement {
+function AddOnRun({ add }: { add: PageTabsParts['add'] }): ReactElement {
   const slot = useRunSlot(TabSlotsContext, ADD);
   return (
-    <button type="button" {...slot} className={slotClass(slot, s.add)} aria-label="Add page" title="Add page" onClick={onAdd}>+</button>
+    <button type="button" {...slot} className={slotClass(slot, s.add)} aria-label="Add page" title="Add page" {...add}>+</button>
   );
 }
 

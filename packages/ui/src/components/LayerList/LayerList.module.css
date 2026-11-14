@@ -111,3 +111,9 @@
   background: var(--wzl-surface);
   color: var(--wzl-fg);
 }
+
+/* Held: the add buttons and toggles change nothing, so they say so. */
+:is(.add, .lockToggle, .check):is(:disabled, [data-disabled]) {
+  filter: var(--wzl-disabled-filter);
+  cursor: not-allowed;
+}

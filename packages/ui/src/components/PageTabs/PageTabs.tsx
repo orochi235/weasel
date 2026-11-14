@@ -1,4 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
+import type { HoldProps } from '../Disabled';
 import { useRun } from '../Run';
 import { TabList, Tabs } from '../Tabs';
 import { PageTabsAlong } from './PageTabsAlong';
@@ -11,8 +12,9 @@ export interface PageTabItem {
   name?: string;
 }
 
-/** Props for {@link PageTabs}. */
-export interface PageTabsProps<P extends PageTabItem> {
+/** Props for {@link PageTabs}. Disabled or read-only, by its own props or a scope, nothing renames, moves, or adds a
+ *  page; going to a page is navigation and still works, as {@link Tabs} does under a scope. */
+export interface PageTabsProps<P extends PageTabItem> extends HoldProps {
   pages: readonly P[];
   /** The lit tab's page, or `null` to light none. */
   current: string | null;
@@ -53,6 +55,7 @@ function PageTabsLine<P extends PageTabItem>(props: PageTabsProps<P>): ReactNode
   return (
     <div
       className={[s.strip, props.className].filter(Boolean).join(' ')}
+      data-held={parts.hold.held}
       onPointerDownCapture={parts.onPointerDownCapture}
       onKeyDownCapture={parts.onKeyDownCapture}
     >
@@ -61,8 +64,8 @@ function PageTabsLine<P extends PageTabItem>(props: PageTabsProps<P>): ReactNode
           {parts.tabs}
         </TabList>
       </Tabs>
-      {props.onAdd && (
-        <button type="button" className={s.add} aria-label="Add page" title="Add page" onClick={props.onAdd}>+</button>
+      {props.onAdd && parts.hold.wrap(
+        <button type="button" className={s.add} aria-label="Add page" title="Add page" {...parts.add}>+</button>,
       )}
       {parts.ghost}
     </div>

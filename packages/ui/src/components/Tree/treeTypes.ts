@@ -1,4 +1,5 @@
 import type { KeyboardEvent, MouseEvent, ReactNode, Ref } from 'react';
+import type { HoldProps } from '../Disabled';
 import type { TreeDropTarget } from '../../dropTarget';
 import type { PressModifiers } from '../../useReorderDragList';
 import type { TreeGhost, TreeGhostWhere } from './TreeGhost';
@@ -48,8 +49,8 @@ export interface TreeNode {
 /** Whether and how rows are selectable. */
 export type TreeSelectionMode = 'none' | 'single' | 'multiple';
 
-/** Props for {@link Tree}. */
-export interface TreeProps {
+/** Props for {@link Tree}. `disabled` and `readOnly`, its own or a scope's, hold the tree as its Held section says. */
+export interface TreeProps extends HoldProps {
   nodes: readonly TreeNode[];
   /** Shown in place of the tree when `nodes` is empty. */
   empty?: ReactNode;

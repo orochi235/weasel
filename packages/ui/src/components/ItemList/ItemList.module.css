@@ -101,3 +101,8 @@
 .overlay {
   display: contents;
 }
+
+.list[data-held='disabled'] .row {
+  color: var(--wzl-fg-subtle);
+  cursor: not-allowed;
+}

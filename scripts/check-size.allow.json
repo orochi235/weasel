@@ -214,10 +214,10 @@
     "longestFunction": 291
   },
   "packages/ui/src/components/DataGrid/DataGrid.tsx": {
-    "longestFunction": 164
+    "longestFunction": 161
   },
   "packages/ui/src/components/ItemList/ItemList.tsx": {
-    "longestFunction": 169
+    "longestFunction": 168
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
     "longestFunction": 145
@@ -241,16 +241,13 @@
     "longestFunction": 132
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
-    "longestFunction": 130
+    "longestFunction": 122
   },
   "packages/ui/src/components/Timeline/Timeline.tsx": {
-    "longestFunction": 178
-  },
-  "packages/ui/src/components/TokenPanel/TokenPanel.tsx": {
-    "lines": 425
+    "longestFunction": 166
   },
   "packages/ui/src/components/Tree/Tree.tsx": {
-    "longestFunction": 199
+    "longestFunction": 196
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
     "longestFunction": 136

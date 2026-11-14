@@ -32,3 +32,24 @@ export function useControlledSet(
   };
   return [controlled ?? own, set];
 }
+
+/** A row the tree shows: a node whose every ancestor is open. */
+export interface VisibleRow {
+  node: TreeNode;
+  parentId: string | null;
+  level: number;
+  index: number;
+}
+
+/** The rows `nodes` shows with `expanded` open, top to bottom. */
+export function visibleRows(nodes: readonly TreeNode[], expanded: ReadonlySet<string>): VisibleRow[] {
+  const out: VisibleRow[] = [];
+  const walk = (list: readonly TreeNode[], parentId: string | null, level: number) => {
+    list.forEach((node, index) => {
+      out.push({ node, parentId, level, index });
+      if (node.children && expanded.has(node.id)) walk(node.children, node.id, level + 1);
+    });
+  };
+  walk(nodes, null, 1);
+  return out;
+}
