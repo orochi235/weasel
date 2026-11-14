@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { DiagramView, diagramScene } from '@weasel-js/diagram';
 import type { PrefCondition, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { PrefConditionEditor, prefConditionFlow } from '@weasel-js/ui/components/PrefConditionEditor';
+import { PrefConditionEditor } from '@weasel-js/prefs-editor';
+import { prefConditionFlow } from '@weasel-js/prefs/edit';
 import { FONT } from './diagram/shared';
 import s from './PrefConditionDiagramDemo.module.css';
 import { DemoStage } from './DemoStage';

@@ -5,7 +5,6 @@ import { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './components/CurveEdito
 import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/ui-input';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type ParamsSurface } from './components/Prefs/commitPolicy';
 import type { ParamsPolicy } from './components/Prefs/useParamsPolicy';
-import { COALESCE_MS } from './components/PrefSchemaEditor/useDocument';
 import { FOCUS_DELAY, HELP_ICON } from './components/Properties/rowHelp';
 import { STOP_SNAP_PX } from './components/Slider/stops';
 import { DEFAULT_TTL_MS } from './components/Toast/queue';
@@ -14,6 +13,10 @@ import { IDLE_SETTLE_MS, SETTLE_WHEN_IDLE } from './useIdleSettle';
 import { REST_MS } from './components/Tree/useRowTip';
 import { HOVER_EXPAND_MS } from './components/Tree/useTreeDrag';
 import { SNAP_RADIUS_PX } from './snap';
+
+/** Edits this close together under one coalesce key undo as one, so typing a name is one step: what
+ *  `history.coalesceMs` holds until an app sets it. */
+export const HISTORY_COALESCE_MS = 800;
 
 declare module '@weasel-js/react' {
   interface KitSettings {
@@ -97,6 +100,6 @@ export const uiKitSettingsSchema = pref.group('Components', {
     snapRadiusPx: px('Tick snap', SNAP_RADIUS_PX, 'How near a dragged value must come to a tick to snap to it.'),
   }),
   history: pref.group('History', {
-    coalesceMs: ms('Coalesce', COALESCE_MS, 5000, 'Edits this close together undo as one step.'),
+    coalesceMs: ms('Coalesce', HISTORY_COALESCE_MS, 5000, 'Edits this close together undo as one step.'),
   }),
 });

@@ -93,10 +93,8 @@ export * from './components/PlotDataPanel';
 export * from './components/PointPlotter';
 export * from './components/Popover';
 export * from './components/Powerline';
-export * from './components/PrefConditionEditor';
 export * from './components/Prefs';
 export * from './components/PrefsBar';
-export * from './components/PrefSchemaEditor';
 export * from './components/Properties';
 export * from './components/QuantityText';
 export * from './components/RadioGroup';
@@ -134,12 +132,15 @@ export * from './components/Tooltip';
 export * from './components/Transport';
 export * from './components/Tree';
 export * from './components/ZoomControl';
+export { byRank } from './byRank';
+export { MIXED_HINT } from './components/Field/mixedHint';
 export { dlog, isDebugEnabled } from './dlog';
 export { domFocusScope } from './domFocusScope';
 export { domMeasureEnv, type DomTarget } from './domMeasureEnv';
 export { HANDLE_SIZE_TOKENS, handleHalf, handleSize } from './handles';
 export type { HandleSizeToken } from './handles';
-export { uiKitSettingsSchema } from './kitSettings';
+export { MARK_GROUP } from './icons.gen';
+export { HISTORY_COALESCE_MS, uiKitSettingsSchema } from './kitSettings';
 export { nodeText } from './nodeText';
 export type { OptionKey } from './optionKey';
 export * from './overlays/portalHost';
@@ -150,7 +151,8 @@ export { useAsyncOptions } from './useAsyncOptions';
 export type { AsyncOption, AsyncOptionsResult, UseAsyncOptionsProps } from './useAsyncOptions';
 export { I18nProvider, useFieldLocale } from './useFieldLocale';
 export { IDLE_SETTLE_MS, useIdleSettle } from './useIdleSettle';
-export { useReorderDragList } from './useReorderDragList';
+export { heirOf, type FocusRow } from './useRemovedRowFocus';
+export { swallowNextClick, useReorderDragList } from './useReorderDragList';
 export type {
   ReorderItem,
   UseReorderDragListOptions,

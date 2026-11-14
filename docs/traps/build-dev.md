@@ -68,7 +68,7 @@ reach by path (`scripts/vitest-browser-prebundle.ts`); watch mode and `WEASEL_DE
 from source. So a browser test imports its own package by specifier wherever the package exports what it
 needs: one relative import of a component serves it and everything it imports from source to every test
 file whose bundle reaches it, and passes. What no entry exports, a test reaches through a re-export in its
-package's `src/testing/` (`@weasel-js/ui/testing/prefSchemaEditor`), which is never published. A `vi.mock` of
+package's `src/testing/` (`@weasel-js/prefs-editor/testing/prefSchemaEditor`), which is never published. A `vi.mock` of
 a path never reaches the bundled copy a bundle imports, so a browser test mocks a specifier instead, as
 `apps/chart/src/pipeline/pages.browser.test.tsx` mocks `@weasel-js/diagram/effect`.
 

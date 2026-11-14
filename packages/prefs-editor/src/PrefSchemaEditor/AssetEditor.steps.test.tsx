@@ -1,0 +1,60 @@
+import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent } from '@testing-library/react';
+import { asset, Live, pickRow, rekey, structure, tool } from './AssetEditor.fixture';
+import type { Workspace } from '@weasel-js/prefs/edit';
+import { CODE, WORKSPACE } from '@weasel-js/prefs/testing/editWorkspace';
+import { rowKey } from './treeRows.fixture';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+
+afterEach(cleanup);
+
+// The panel's pointers under a heading, which can be re-keyed as a pointer cannot.
+const START: Workspace = { assets: [WORKSPACE.assets[0]!, { ...WORKSPACE.assets[1]!, root: { name: 'Code', children: { rows: { name: 'Rows', as: 'section', children: CODE.children } } } }] };
+
+/** The asset shown, and the keys of the rows selected in it. */
+const shown = () => ({
+  asset: ['Settings', 'Code'].find((label) => asset(label).getAttribute('aria-selected') === 'true'),
+  selected: [...structure().querySelectorAll('[role="treeitem"][aria-selected="true"]')].map(rowKey),
+});
+
+// Each test renders the whole editor through a dozen edits and steps: over 1 s on an idle machine, against a 5 s default.
+describe('AssetEditor steps across assets', { timeout: 20_000 }, () => {
+  it('selects in the asset a step lands on what was selected there, however many times the step is taken', () => {
+    renderWithIcons(<Live start={START} />);
+    pickRow('grid');
+    rekey('lines');
+    fireEvent.click(asset('Code'));
+    pickRow('rows');
+    rekey('main');
+    expect(shown()).toEqual({ asset: 'Code', selected: ['main'] });
+
+    fireEvent.click(tool('Undo'));
+    expect(shown()).toEqual({ asset: 'Code', selected: ['rows'] });
+    fireEvent.click(tool('Undo'));
+    expect(shown()).toEqual({ asset: 'Settings', selected: ['grid'] });
+    fireEvent.click(tool('Redo'));
+    expect(shown()).toEqual({ asset: 'Settings', selected: ['lines'] });
+    fireEvent.click(tool('Redo'));
+    expect(shown()).toEqual({ asset: 'Code', selected: ['main'] });
+    fireEvent.click(tool('Undo'));
+    expect(shown()).toEqual({ asset: 'Code', selected: ['rows'] });
+  });
+
+  it('selects it when the step is taken from the other asset', () => {
+    renderWithIcons(<Live start={START} />);
+    fireEvent.click(asset('Code'));
+    pickRow('rows');
+    rekey('main');
+    fireEvent.click(asset('Settings'));
+    pickRow('snap');
+    fireEvent.click(tool('Undo'));
+    expect(shown()).toEqual({ asset: 'Code', selected: ['rows'] });
+    fireEvent.click(asset('Settings'));
+    pickRow('grid');
+    fireEvent.click(tool('Redo'));
+    expect(shown()).toEqual({ asset: 'Code', selected: ['main'] });
+    fireEvent.click(asset('Settings'));
+    fireEvent.click(tool('Undo'));
+    expect(shown()).toEqual({ asset: 'Code', selected: ['rows'] });
+  });
+});

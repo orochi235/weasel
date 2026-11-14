@@ -57,15 +57,6 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     expect(screen.getByLabelText('Swatches here')).toBeInTheDocument();
   });
 
-  it.each(['Empty', 'ARowPerKind', 'AnyOf', 'Groups', 'NoneOf', 'Problems', 'OverAnotherSchema'])(
-    'PrefConditionEditor %s',
-    async (name) => {
-      const mod = (await import('./PrefConditionEditor/PrefConditionEditor.stories')) as unknown as Record<string, Story>;
-      draw(mod[name], { 'aria-label': 'Visible when' });
-      expect(screen.getAllByLabelText('Visible when').length).toBeGreaterThan(0);
-    },
-  );
-
   it.each(['Default', 'NoneAndTranslucent', 'Gradient'])('FillStrokeSwatch %s', async (name) => {
     const mod = (await import('./FillStrokeSwatch/FillStrokeSwatch.stories')) as unknown as Record<string, Story>;
     draw(mod[name], { 'aria-label': 'Paints here' });
@@ -185,7 +176,6 @@ describe('a story drawing one instance of a generic or union-typed component pas
     ['TokenField', 'Records', () => import('./TokenField/TokenField.stories')],
     ['ActionBar', 'Default', () => import('./ActionBar/ActionBar.stories')],
     ['PageTabs', 'Editable', () => import('./PageTabs/PageTabs.stories')],
-    ['PrefSchemaEditor', 'Default', () => import('./PrefSchemaEditor/PrefSchemaEditor.stories')],
     ['Tree', 'Selectable', () => import('./Tree/Tree.stories')],
   ])('%s %s', async (_, name, load) => {
     draw((await load() as Record<string, Story>)[name], { className: 'arg-here' });

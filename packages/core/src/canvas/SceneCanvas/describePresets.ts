@@ -1,20 +1,7 @@
+import type { PresetDescription } from '@weasel-js/prefs/edit';
 import { namesBuiltins, presetToolIds, type FeaturePreset } from './features';
 
-/** One preset as data: what it holds by id, for a tool that lists or rearranges presets. */
-export interface PresetDescription {
-  id: string;
-  label: string;
-  /** The package that ships it, as `describePresets` was told. */
-  package: string;
-  /** It has a role beyond actions, built-in tools, and includes, so its parts only work together. */
-  atom: boolean;
-  /** Its own action ids, in registration order. */
-  actions: readonly string[];
-  /** Its own tools' ids: built-ins with their sets opened, then tools of its own. */
-  tools: readonly string[];
-  /** The ids of the presets it includes. */
-  includes: readonly string[];
-}
+export type { PresetDescription };
 
 const ATOM_ROLES = [
   'ambient', 'moveBehaviors', 'snapSources', 'layers', 'chrome', 'chromeRules', 'pathEdit', 'contributions', 'refines',

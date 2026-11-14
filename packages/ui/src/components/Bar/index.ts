@@ -10,7 +10,7 @@ export {
   type BarReadoutProps,
 } from './barParts';
 export { BarField, type BarFieldProps, type BarFieldCellProps } from './BarField';
-export { BarMenu, type BarMenuProps, type BarMenuSources } from './BarMenu';
+export { BarMenu, useBarMenuResolver, type BarMenuProps, type BarMenuSources } from './BarMenu';
 export { BarPopover, type BarPopoverProps } from './BarPopover';
 export { renderBarLeaf, type BarLeaf } from './renderBarLeaf';
 export { runPlaces, type RunSpot } from '@weasel-js/geom';

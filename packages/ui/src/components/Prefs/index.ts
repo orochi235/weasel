@@ -5,7 +5,7 @@ export {
   type LeafRenderer,
   type LeafContext,
 } from './PrefsForm';
-export type { PrefSelectHow } from './selection';
+export { pathWithin, type PrefSelectHow } from './selection';
 export type { PrefSplitProps, SplitCtx } from './splitRows';
 export type { MarkHiddenProps } from './hidden';
 export { prefFieldProps, type PrefFieldState } from './prefField';
@@ -36,7 +36,8 @@ export { MapEditor, type MapEditorProps } from './MapEditor';
 export { UnionPicker, type UnionPickerProps } from './UnionPicker';
 export { PrefsRail, type PrefsRailProps } from './PrefsRail';
 export { PrefsPane, type PrefsPaneProps } from './PrefsPane';
-export type { WalkCtx } from './PrefsRow';
+export { renderPrefControl, type WalkCtx } from './PrefsRow';
+export { actionShortcutText } from './actionShortcutText';
 export { PrefsDialog, type PrefsDialogProps } from './PrefsDialog';
 export { PrefKindBadge, type PrefKindBadgeProps } from './PrefKindBadge';
 export {

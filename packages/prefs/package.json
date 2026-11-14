@@ -20,6 +20,10 @@
       "import": "./dist/react.js",
       "types": "./dist/react.d.ts"
     },
+    "./edit": {
+      "import": "./dist/edit.js",
+      "types": "./dist/edit.d.ts"
+    },
     "./vite": {
       "import": "./dist/vite.js",
       "types": "./dist/vite.d.ts"
@@ -49,6 +53,8 @@
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
+    "@weasel-js/geom": "1.19.1",
+    "@weasel-js/history": "1.19.1",
     "@weasel-js/icons": "1.19.1",
     "@weasel-js/paint": "1.19.1",
     "@weasel-js/quantity": "1.19.1",

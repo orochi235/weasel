@@ -6,6 +6,7 @@
 import fc from 'fast-check';
 import { isPaint, tryParseColor } from '@weasel-js/paint';
 import { isPlainObject } from '@weasel-js/registry';
+import type { PrefGroup } from './groups';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefBoolean, PrefColor, PrefEnum, PrefField, PrefLeaf, PrefNumber, PrefObject, PrefPaint, PrefString } from './schema';
@@ -39,6 +40,23 @@ export const key = fc.oneof(
   { weight: 1, arbitrary: fc.constantFrom('__proto__', 'constructor', '$by', '$in', '$else', '$at', 'value') },
   { weight: 1, arbitrary: fc.string({ maxLength: 4 }) },
 );
+
+/** A key a dotted path can name: no `.` and not empty. */
+export const segment = key.filter((k) => k !== '' && !k.includes('.'));
+
+/** A prefs group of boolean leaves and nested groups, up to a few levels, keyed by {@link segment}s and named from
+ *  `names`, each key set as an own key. */
+export function prefGroup(names: fc.Arbitrary<string> = fc.constantFrom('Grid', 'Snap', 'Size', 'Color')): fc.Arbitrary<PrefGroup> {
+  const leaf = names.map((name): PrefLeaf => ({ kind: 'boolean', name, default: false }) as PrefLeaf);
+  return fc.letrec<{ g: PrefGroup }>((tie) => ({
+    g: fc.tuple(names, fc.uniqueArray(fc.tuple(segment, fc.oneof({ depthSize: 'small' }, leaf, tie('g') as fc.Arbitrary<PrefGroup | PrefLeaf>)), { selector: (e) => e[0], maxLength: 4 }))
+      .map(([name, entries]) => {
+        const children: Record<string, PrefGroup | PrefLeaf> = {};
+        for (const [k, v] of entries) Object.defineProperty(children, k, { value: v, enumerable: true, writable: true, configurable: true });
+        return { name, children } as PrefGroup;
+      }),
+  })).g;
+}
 
 /** An object built with own keys only, as `JSON.parse` builds one: a `__proto__` key is a key. */
 export const own = (entries: readonly (readonly [string, unknown])[]): Record<string, unknown> => Object.fromEntries(entries);

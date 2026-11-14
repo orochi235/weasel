@@ -265,7 +265,9 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-tree-font-size', type: "dimension", group: "tree", defaultValue: "var(--wzl-font-size-sm)", description: "Size of a Tree row’s text.", hook: true },
   { name: '--wzl-tree-guide', type: "color", group: "tree", defaultValue: "var(--wzl-fg-subtle)", description: "Color of the bracket a Tree draws down a branch.", hook: true },
   { name: '--wzl-tree-indent', type: "dimension", group: "tree", defaultValue: "calc(var(--wzl-control-h-xs) + var(--wzl-space-2))", description: "Indent of each Tree level. Unset, it is one twisty and one gap, so a child’s twisty sits under its parent’s label.", hook: true },
+  { name: '--wzl-tree-leading-size', type: "dimension", group: "tree", defaultValue: "auto", description: "Side of the square every leading glyph of a Tree sits centered in, and the gutter a hung glyph takes. Unset, each glyph keeps its own size.", hook: true },
   { name: '--wzl-tree-leaf-indent', type: "dimension", group: "tree", defaultValue: "0", description: "How far in from its branches' glyphs a Tree with guides sets a row that folds nothing.", hook: true },
+  { name: '--wzl-tree-root-leaf-indent', type: "dimension", group: "tree", defaultValue: "var(--wzl-tree-leaf-indent, 0)", description: "The `tree-leaf-indent` of a leaf no branch holds, for a host whose own text stands at another edge.", hook: true },
   { name: '--wzl-tree-row-h', type: "dimension", group: "tree", defaultValue: "var(--wzl-control-h)", description: "Height of every row in a Tree below the container that sets it, and of its drag ghost. Unset, the control height.", hook: true },
   { name: '--wzl-tree-selected', type: "color", group: "tree", defaultValue: "var(--wzl-border)", description: "Background of a selected Tree row.", hook: true },
 ];

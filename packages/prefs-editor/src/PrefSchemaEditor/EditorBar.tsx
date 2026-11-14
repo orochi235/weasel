@@ -1,0 +1,44 @@
+import type { ReactNode } from 'react';
+import { ActionButton, Icon, ToolGroup } from '@weasel-js/ui';
+import s from './PrefSchemaEditor.module.css';
+import { icon } from '../icons.gen';
+
+const DRAFT_TIME = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+
+/**
+ * The strip across the top of the editor: the host's own controls, the tools that add to and remove from the
+ * schema, and the steps back and forward through the edits.
+ */
+export function EditorBar({ lead, toolSlot, canUndo, canRedo, onStep, draftSavedAt, onDiscard, prefs }: {
+  /** The host's controls, set first. */
+  lead?: ReactNode;
+  /** Takes the element the structure pane draws its tools into. */
+  toolSlot(el: HTMLDivElement | null): void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onStep(to: 'undo' | 'redo'): void;
+  /** When the draft was last kept, or `null` with none. */
+  draftSavedAt: number | null;
+  onDiscard(): void;
+  /** The way into the editor's own settings. */
+  prefs: ReactNode;
+}) {
+  return (
+    <div className={s.bar} role="group" aria-label="Schema tools">
+      <div className={s.barLead}>{lead}</div>
+      <div className={s.barTools} ref={toolSlot} />
+      <div className={s.barEnd}>
+        <div className={s.palette}>
+          <ToolGroup aria-label="History and settings">
+            <ActionButton icon={<Icon name={icon('core:undo')} />} label="Undo" disabled={!canUndo} onPress={() => onStep('undo')} />
+            <ActionButton icon={<Icon name={icon('core:redo')} />} label="Redo" disabled={!canRedo} onPress={() => onStep('redo')} />
+            {draftSavedAt !== null && <ActionButton icon={<Icon name={icon('ui:reset')} />} label="Discard draft" tooltip="Go back to the schema in source" onPress={onDiscard} />}
+            {prefs}
+          </ToolGroup>
+        </div>
+        {/* Last: the time changes, and nothing sits after it to be pushed about. */}
+        {draftSavedAt !== null && <span className={s.draftNote}>Draft saved {DRAFT_TIME.format(draftSavedAt)}</span>}
+      </div>
+    </div>
+  );
+}

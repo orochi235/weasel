@@ -1,0 +1,21 @@
+import '@weasel-js/theme/tokens.css';
+import { cleanup, screen } from '@testing-library/react';
+import { afterEach, expect, test } from 'vitest';
+import type { LeafContext } from '@weasel-js/ui';
+import { loneLeafContext } from '@weasel-js/ui/components/PrefsSource';
+import { ATTR_RENDERERS } from '@weasel-js/prefs-editor/testing/prefSchemaEditor';
+import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+
+// What color a flagged chip resolves to is the theme's cascade, which jsdom does not do.
+
+afterEach(cleanup);
+
+const ctx = (value: unknown): LeafContext =>
+  loneLeafContext('x', { kind: 'enum-options', name: 'X', description: '', default: undefined }, value, () => {});
+
+test('a flagged option draws its chip in another color than a sound one', () => {
+  renderWithIcons(<div style={{ width: 400 }}>{ATTR_RENDERERS['enum-options'](ctx([{ value: 'a', label: 'A' }, { value: 'a', label: 'B' }]))}</div>);
+  const sound = screen.getByRole('button', { name: 'A' });
+  const flagged = screen.getByRole('button', { name: 'B, Repeats an earlier value' });
+  expect(getComputedStyle(flagged).color).not.toBe(getComputedStyle(sound).color);
+});

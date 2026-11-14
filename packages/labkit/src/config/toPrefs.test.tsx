@@ -1,6 +1,6 @@
 import { act, screen } from '@testing-library/react';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
+import { PrefSchemaEditor } from '@weasel-js/prefs-editor';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';

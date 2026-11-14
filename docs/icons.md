@@ -46,7 +46,7 @@ glyph is explicit, through the registry's `override(ref, glyph)`.
 | `diagram` | `@weasel-js/diagram` | `packages/diagram/icons/` | The container, org chart, network, BPMN, mind map, UML, and ERD stencils |
 | `draw` | `apps/draw` | `apps/draw/icons/` | WeaselDraw's own actions |
 
-`labkit`, `forge`, `site`, `theme-editor` and `forge-app` draw nothing. Their `icons/index.mjs`
+`labkit`, `forge`, `devtools`, `prefs-editor`, `site`, `theme-editor`, and `forge-app` draw nothing. Their `icons/index.mjs`
 declares a namespace and owner and no groups, so their `icon()` takes qualified names only.
 
 ## Adding a glyph
@@ -244,7 +244,7 @@ const ICONS = [coreIcons, uiIcons];
 A component that lists glyphs rather than naming them asks for a variant by name:
 `useIconVariant('all')` runs the app's loader once, adds its tables, and returns
 `{ entries, state }`. A variant with no loader lists what is already registered.
-PrefSchemaEditor's icon picker reads `all`.
+`@weasel-js/prefs-editor`'s icon picker reads `all`.
 
 ## The build plugin
 

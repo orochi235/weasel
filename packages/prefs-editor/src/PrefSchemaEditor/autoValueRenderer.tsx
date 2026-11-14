@@ -1,0 +1,16 @@
+import type { ReactNode } from 'react';
+import { type LeafContext, type LeafRenderer, Switch } from '@weasel-js/ui';
+import s from './PrefSchemaEditor.module.css';
+
+/** The Auto panel's value row: a switch that sets it, beside its control. Unset, the control shows the default it would
+ *  start from and takes no input. */
+export function autoValueRenderer(unset: boolean, onSet: (on: boolean) => void, control: (ctx: LeafContext) => ReactNode): LeafRenderer {
+  return Object.assign<LeafRenderer, { group: boolean }>((ctx) => (
+    <span className={s.autoValue}>
+      <Switch aria-label={`Set ${ctx.pref.name}`} isSelected={!unset} onChange={onSet} />
+      <fieldset className={s.autoValueControl} disabled={unset}>
+        {control(ctx)}
+      </fieldset>
+    </span>
+  ), { group: true });
+}

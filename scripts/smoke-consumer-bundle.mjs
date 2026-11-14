@@ -326,12 +326,16 @@ await writeFile(
     // devtools is a Vite library build with a stylesheet of its own, like ui.
     `import * as devtools from '@weasel-js/devtools';\n` +
     `import '@weasel-js/devtools/style.css';\n` +
+    // prefs-editor is a Vite library build with a stylesheet of its own; its model is prefs' `./edit` subpath.
+    `import * as prefsEditor from '@weasel-js/prefs-editor';\n` +
+    `import '@weasel-js/prefs-editor/style.css';\n` +
+    `import * as prefsEdit from '@weasel-js/prefs/edit';\n` +
     `import '@weasel-js/theme/tokens.css';\n` +
     `import { registerFont as coreFont } from '@weasel-js/core/renderer';\n` +
     `import { registerFont as directFont } from '@weasel-js/font';\n` +
     `void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, curves, tessellate, warp, history, menu, select, svg, theme, ui, hud,\n` +
-    `  guides, devtools, rig, editor,\n` +
+    `  guides, devtools, prefsEditor, prefsEdit, rig, editor,\n` +
     `  toolPalette, prefs, callout, icon, appearance, portalHost, paintGradientTrack, kitSettings, floating, roving,\n` +
     `  toastSub, selectionPanel };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
@@ -436,6 +440,8 @@ await writeFile(
     `type _Ui = typeof import('@weasel-js/ui');\n` +
     `type _Hud = typeof import('@weasel-js/hud');\n` +
     `type _Devtools = typeof import('@weasel-js/devtools');\n` +
+    `type _PrefsEditor = typeof import('@weasel-js/prefs-editor');\n` +
+    `type _PrefsEdit = typeof import('@weasel-js/prefs/edit');\n` +
     // The subpath must carry types too, not just resolve as JS. The wildcard's
     // `types` condition points into the tsc-emitted tree, which is laid out to
     // mirror the Vite entry keys; if those two ever drift, this is TS7016.

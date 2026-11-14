@@ -1,0 +1,79 @@
+/* Set as the prefs dialog's own list of pages is (ui's `railList` and `railItem`, which a package outside ui cannot
+   compose): a heading, and its assets a step in under it. */
+.list { display: flex; flex-direction: column; gap: 1px; user-select: none; -webkit-user-select: none; }
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  border: none;
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  color: var(--wzl-fg);
+  font: inherit;
+  font-size: var(--wzl-font-size);
+  text-align: start;
+  cursor: default;
+  margin-inline-start: calc(var(--heading-icon) + var(--wzl-space-2));
+  font-weight: var(--wzl-font-weight-light);
+}
+.row:hover { background: var(--wzl-surface-raised); }
+.row:focus-visible { outline: 2px solid var(--wzl-focus-ring); outline-offset: -2px; }
+.row[data-rail-mark='current'] {
+  background: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
+}
+.label { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; min-width: 0; white-space: nowrap; }
+.changed { composes: changed from './PrefSchemaEditor.module.css'; }
+.row[data-rail-mark='current'] .changed { color: var(--wzl-secondary-strong); }
+.group { --heading-icon: 16px; display: flex; flex-direction: column; gap: 1px; }
+/* Bracketed as the structure tree brackets an open branch (ui's Tree `guide`), from under the heading's glyph. */
+.open { position: relative; }
+.open::before {
+  content: '';
+  position: absolute;
+  inset-block: var(--wzl-control-h) var(--wzl-space-1);
+  inset-inline-start: calc(var(--wzl-space-3) + var(--heading-icon) / 2);
+  inline-size: 10px;
+  border-inline-start: 1px solid var(--wzl-tree-guide, var(--wzl-fg-subtle));
+  border-block-end: 1px solid transparent;
+  border-end-start-radius: 10px;
+  pointer-events: none;
+}
+.group + .group { margin-block-start: var(--wzl-space-3); }
+.heading {
+  font-size: var(--wzl-font-size);
+  color: var(--wzl-fg);
+}
+.fold {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  width: 100%;
+  block-size: var(--wzl-control-h);
+  padding: 0 var(--wzl-space-3);
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.headingIcon, .rowIcon { flex: none; color: var(--wzl-fg-muted); }
+.fold:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: -2px;
+}
+.badge { flex: none; margin-inline-start: auto; }
+/* Each heading names its badge's color in `--_heading`, leaning toward the foreground as a pref kind's badge does. */
+.dialog { --_heading: color-mix(in oklab, var(--wzl-swatch-violet) 55%, var(--wzl-fg)); }
+.properties { --_heading: color-mix(in oklab, var(--wzl-swatch-teal) 55%, var(--wzl-fg)); }
+.panel { --_heading: color-mix(in oklab, var(--wzl-swatch-blue) 55%, var(--wzl-fg)); }
+.toolbar { --_heading: color-mix(in oklab, var(--wzl-swatch-amber) 55%, var(--wzl-fg)); }
+.menu { --_heading: color-mix(in oklab, var(--wzl-swatch-rose) 55%, var(--wzl-fg)); }
+.bundle { --_heading: color-mix(in oklab, var(--wzl-swatch-green) 55%, var(--wzl-fg)); }
+.row[data-rail-mark='current'] .badge { --_heading: var(--wzl-fg-on-accent); }
+.dynamic { flex: none; color: var(--wzl-fg-muted); }

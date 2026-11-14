@@ -154,6 +154,15 @@
   "packages/labkit/src/trial/TrialChrome.tsx": {
     "longestFunction": 195
   },
+  "packages/prefs-editor/src/PrefSchemaEditor/AssetEditor.tsx": {
+    "longestFunction": 183
+  },
+  "packages/prefs-editor/src/PrefSchemaEditor/AttributesPane.tsx": {
+    "longestFunction": 181
+  },
+  "packages/prefs-editor/src/PrefSchemaEditor/StructurePane.tsx": {
+    "longestFunction": 188
+  },
   "packages/renderer/src/WeaselRenderer.ts": {
     "lines": 519
   },
@@ -223,15 +232,6 @@
   },
   "packages/ui/src/components/Plot2D/Plot2D.tsx": {
     "longestFunction": 214
-  },
-  "packages/ui/src/components/PrefSchemaEditor/AssetEditor.tsx": {
-    "longestFunction": 183
-  },
-  "packages/ui/src/components/PrefSchemaEditor/AttributesPane.tsx": {
-    "longestFunction": 181
-  },
-  "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
-    "longestFunction": 188
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
     "longestFunction": 126

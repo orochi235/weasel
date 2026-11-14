@@ -1,0 +1,67 @@
+import { useMemo, type ReactNode } from 'react';
+import { Badge } from '@weasel-js/ui';
+import {
+  baselinePaths, type BundleProblem, bundleProblems, conditionProblems, deadActionPaths, deadPointers, joinPath,
+  keyClashes, keysOf, nodeAt, pointerTarget, type SchemaChange, type SchemaRoot,
+} from '@weasel-js/prefs/edit';
+import type { EditorAction } from './editorActions';
+import { isPrefLeaf, type PrefAlias } from '@weasel-js/prefs';
+
+const NO_PATHS: ReadonlySet<string> = new Set();
+const NO_PROBLEMS: ReadonlyMap<string, BundleProblem> = new Map();
+
+/**
+ * What the structure tree draws on a row before its kind: the editor's own marks for a node that is wired to
+ * nothing, then the host's. `undefined` while there is nothing to draw on any row.
+ */
+export function useRowMarks({ schema, over, changes, actions, bundles = false, rowMark }: {
+  schema: SchemaRoot;
+  /** The dialog a layout's pointers name settings in. */
+  over?: SchemaRoot;
+  /** The schema's changes from its baseline, which say where each node sat there. */
+  changes: readonly SchemaChange[];
+  /** The actions a pref may fire; `null` with no way to know which keys exist. */
+  actions: readonly EditorAction[] | null;
+  /** The schema is a bundle tree: its action leaves name presets' actions, not the registry's, and a bundle that
+   *  includes itself or names what another loaded with it names is marked. */
+  bundles?: boolean;
+  /** The host's mark, asked by a node's path in the baseline. A layout's pointer is asked about by the path of
+   *  the setting it names, and its other rows are not asked about: the host's marks are its settings'. */
+  rowMark?: (original: string) => ReactNode;
+}): ((path: string) => ReactNode) | undefined {
+  // With no list there is no telling a dead key from a live one, so nothing is marked.
+  const dead = useMemo(
+    () => (actions && !bundles ? deadActionPaths(schema, new Set(actions.map((a) => a.key)), joinPath) : NO_PATHS),
+    [actions, schema, bundles],
+  );
+  const bundled = useMemo(() => (bundles ? bundleProblems(schema) : NO_PROBLEMS), [schema, bundles]);
+  const lost = useMemo(() => (over ? new Set(deadPointers(schema, over)) : NO_PATHS), [schema, over]);
+  const unsound = useMemo(() => conditionProblems(schema, over), [schema, over]);
+  const clashing = useMemo(() => keyClashes(schema), [schema]);
+  return useMemo(() => {
+    if (!rowMark && dead.size === 0 && lost.size === 0 && unsound.size === 0 && clashing.size === 0 && bundled.size === 0) return undefined;
+    const baseline = baselinePaths(changes);
+    const asked = (path: string): string | undefined => {
+      if (!over) return keysOf(baseline(path)).join('.');
+      const node = nodeAt(schema, path);
+      return node && isPrefLeaf(node) && node.kind === 'alias' ? pointerTarget(over, node as PrefAlias)?.path : undefined;
+    };
+    const hostMark = (path: string): ReactNode => {
+      const at = rowMark ? asked(path) : undefined;
+      return at === undefined ? null : rowMark!(at);
+    };
+    return (path: string) => (
+      <>
+        {dead.has(path) && <Badge size="xs" grade="danger" variant="subtle">no action</Badge>}
+        {lost.has(path) && <Badge size="xs" grade="danger" variant="subtle">no setting</Badge>}
+        {clashing.has(path) && <Badge size="xs" grade="danger" variant="subtle" tooltip={clashing.get(path)}>key taken</Badge>}
+        {unsound.has(path) && (
+          <Badge size="xs" grade="danger" variant="subtle" tooltip={unsound.get(path)!.map((p) => p.problem).join('; ')}>bad condition</Badge>
+        )}
+        {bundled.get(path)?.cycle && <Badge size="xs" grade="danger" variant="subtle" tooltip="It includes itself through the bundles it includes">cycle</Badge>}
+        {bundled.get(path)?.twice !== undefined && <Badge size="xs" grade="warn" variant="subtle" tooltip={bundled.get(path)!.twice}>twice</Badge>}
+        {hostMark(path)}
+      </>
+    );
+  }, [rowMark, changes, dead, lost, unsound, clashing, bundled, schema, over]);
+}

@@ -5,7 +5,6 @@ import { ANCHOR_SNAP_PX, CURVE_HIT_PX as FUNCTION_CURVE_HIT_PX } from './compone
 import { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './components/CurveEditor/createKeyframeLayer';
 import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/ui-input';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type ParamsSurface } from './components/Prefs/commitPolicy';
-import { COALESCE_MS } from './components/PrefSchemaEditor/useDocument';
 import { FOCUS_DELAY, HELP_ICON } from './components/Properties/rowHelp';
 import { STOP_SNAP_PX } from './components/Slider/stops';
 import { DEFAULT_TTL_MS } from './components/Toast/queue';
@@ -13,7 +12,7 @@ import { TYPEAHEAD_MS } from './useTypeahead';
 import { IDLE_SETTLE_MS, SETTLE_WHEN_IDLE } from './useIdleSettle';
 import { REST_MS } from './components/Tree/useRowTip';
 import { HOVER_EXPAND_MS } from './components/Tree/useTreeDrag';
-import { uiKitSettingsSchema } from './kitSettings';
+import { HISTORY_COALESCE_MS, uiKitSettingsSchema } from './kitSettings';
 import { SNAP_RADIUS_PX } from './snap';
 
 type Schema = typeof uiKitSettingsSchema;
@@ -45,7 +44,7 @@ const expected: Record<string, unknown> = {
   'targets.functionCurveHitPx': FUNCTION_CURVE_HIT_PX,
   'targets.sliderStopSnapPx': STOP_SNAP_PX,
   'targets.snapRadiusPx': SNAP_RADIUS_PX,
-  'history.coalesceMs': COALESCE_MS,
+  'history.coalesceMs': HISTORY_COALESCE_MS,
 };
 
 describe('uiKitSettingsSchema', () => {

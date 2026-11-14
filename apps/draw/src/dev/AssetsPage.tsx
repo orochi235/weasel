@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { AssetEditor, PREF_SCHEMA_EDITOR_PREFS, workspaceCodec, type CustomKinds } from '@weasel-js/ui/components/PrefSchemaEditor';
+import { AssetEditor, PREF_SCHEMA_EDITOR_PREFS } from '@weasel-js/prefs-editor';
+import { type CustomKinds, workspaceCodec } from '@weasel-js/prefs/edit';
 import { usePrefsStore } from '@weasel-js/prefs/react';
 import type { LeafRenderer } from '@weasel-js/ui/components/Prefs';
 import { localStorageAdapter } from '@weasel-js/storage';

@@ -1,0 +1,42 @@
+import { swapOp as swap, type Op, type SerializedHistory } from '@weasel-js/history';
+
+/**
+ * Where a draft is kept: the calls of a `Storage` the editor makes. `setItem` may throw when the text is more
+ * than it can hold, and is then asked again with fewer steps.
+ */
+export type DraftStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
+/** The name of the editor's one op: a whole value swapped for another. Stored drafts name it. */
+export const SWAP = 'schema.swap';
+
+/** A draft as a document opens it. */
+export interface OpenedDocument<V> {
+  savedAt: number;
+  value: V;
+  /** The steps around it, when they were kept and still read. */
+  stacks: SerializedHistory | null;
+  /** How the draft met the baseline it opens on: saved against this `same` one, `carried` onto it from another,
+   *  or of a baseline `unknown`. */
+  met: 'same' | 'carried' | 'unknown';
+}
+
+/** How one kind of value is kept in storage and reconciled with its baseline. */
+export interface DocumentCodec<V> {
+  openDraft(key: string, base: V, storage?: DraftStorage): OpenedDocument<V> | null;
+  saveDraft(key: string, value: V, base: V, stacks: SerializedHistory, savedAt: number, storage?: DraftStorage): void;
+  dropDraft(key: string, storage?: DraftStorage): void;
+  /** `value`, just submitted, as storage can hold it. */
+  packSent(value: V, base: V): unknown;
+  /** `value` once what was `sent` is in `base`: edits made since the submission stay. */
+  afterTaken(value: V, sent: unknown, base: V): V;
+  /** Keep what {@link packSent} made beside the draft under `key`. */
+  saveSent(key: string, sent: unknown, storage?: DraftStorage): void;
+  /** What was last kept so; `null` with none. */
+  openSent(key: string, storage?: DraftStorage): unknown;
+  dropSent(key: string, storage?: DraftStorage): void;
+}
+
+/** An edit as the swap of one whole value for another: values are immutable, so the snapshots cost nothing. */
+export function swapOp<V>(before: V, after: V, emit: (v: V) => void, coalesceKey?: string): Op {
+  return swap({ name: SWAP, label: 'edit schema', before, after, emit, coalesceKey });
+}

@@ -533,12 +533,6 @@ name a package. Breaking changes are in scope.
   folding is agent work. Closes when each is a preset, a builder (`fontWeightOptions()`,
   `useFontFamilyOptions()`), or gone.
 
-- **(P2) [maintainer] Move `PrefSchemaEditor` out of ui.** 8,341 source lines plus 10,308 of tests; 43 files
-  (3,624 lines) are pure model with no React or CSS (`schemaEdit`, `schemaExport`, `workspaceCodec`, `bundle*`,
-  `kindSchemas`, `draft`). Only `apps/draw/src/dev` uses it, and `PrefConditionEditor` is used only by its
-  `AttributesPane`. The model goes to `@weasel-js/prefs` as `./edit`; the editor and `PrefConditionEditor` go to a
-  new `prefs-editor` package, which needs the maintainer to seed on npm. Closes when neither lives in ui.
-
 ## forge
 
 `@weasel-js/forge` is the component workshop built on labkit: each story renders
@@ -567,6 +561,10 @@ only story runner in the repo.
   Closes when the icons are on the package pages.
 
 ## Demos & visual regression
+
+- **(P3) [maintainer] `prefs-editor` has no badge on the site's Releases chips.** `PACKAGE_ICONS`
+  (`apps/site/releaseIcons.ts`) has no entry for it, so its chip draws no glyph; the badges are drawn in
+  `apps/site/icons/packages.mjs` and need the maintainer's sketch first. Closes when `prefs-editor` has one.
 
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
   arc, edge to edge, and the well runs one rim past the first and last"

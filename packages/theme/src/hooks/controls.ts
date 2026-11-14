@@ -168,6 +168,18 @@ export const CONTROL_HOOKS: readonly TokenHook[] = [
     description: 'How far in from its branches\' glyphs a Tree with guides sets a row that folds nothing.',
   },
   {
+    name: 'tree-root-leaf-indent',
+    type: 'dimension',
+    value: 'var(--wzl-tree-leaf-indent, 0)',
+    description: 'The `tree-leaf-indent` of a leaf no branch holds, for a host whose own text stands at another edge.',
+  },
+  {
+    name: 'tree-leading-size',
+    type: 'dimension',
+    value: 'auto',
+    description: 'Side of the square every leading glyph of a Tree sits centered in, and the gutter a hung glyph takes. Unset, each glyph keeps its own size.',
+  },
+  {
     name: 'button-pad-x',
     type: 'dimension',
     value: 'var(--wzl-space-6)',
