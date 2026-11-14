@@ -65,12 +65,17 @@ export function rememberWarpResult(held: HeldPathWarp, result: PolygonPath): voi
   results.set(held, result);
 }
 
+const WARP_KINDS: Readonly<Record<PathWarp['kind'], true>> = { plane: true, cloth: true, pin: true };
+
+/** Whether `kind` is a warp this build can make again; a document saved before a rename holds one it cannot. */
+const isWarpKind = (kind: unknown): boolean => typeof kind === 'string' && Object.hasOwn(WARP_KINDS, kind);
+
 function isHeldWarp(v: unknown): v is HeldPathWarp {
   if (v === null || typeof v !== 'object') return false;
   const h = v as Partial<HeldPathWarp>;
   return typeof h.id === 'string' && typeof h.tolerance === 'number'
     && (h.source as { kind?: string } | undefined)?.kind === 'polygon'
-    && typeof (h.warp as { kind?: unknown } | undefined)?.kind === 'string'
+    && isWarpKind((h.warp as { kind?: unknown } | undefined)?.kind)
     && Array.isArray(h.frame) && h.frame.length === 6;
 }
 
