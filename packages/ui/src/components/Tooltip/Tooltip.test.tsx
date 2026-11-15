@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { Button } from '../Button';
 import { Focusable } from './Focusable';
 import { TooltipTrigger, Tooltip } from './Tooltip';
 
@@ -30,6 +31,18 @@ describe('Tooltip', () => {
     const tip = screen.getByRole('tooltip');
     expect(tip.textContent).toContain('Save the document');
     expect(btn.getAttribute('aria-describedby')).toBe(tip.id);
+  });
+
+  it('takes the kit Button as a trigger under Focusable', () => {
+    render(
+      <TooltipTrigger>
+        <Focusable><Button>Save</Button></Focusable>
+        <Tooltip>Save the document</Tooltip>
+      </TooltipTrigger>,
+    );
+    const btn = screen.getByRole('button');
+    keyboardFocus(btn);
+    expect(btn.getAttribute('aria-describedby')).toBe(screen.getByRole('tooltip').id);
   });
 
   it('hides on blur', () => {

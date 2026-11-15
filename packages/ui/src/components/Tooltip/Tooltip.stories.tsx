@@ -1,10 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Sequence, values } from '@weasel-js/ui/components/Sequence';
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
-
-// NOTE: native <button> triggers wrapped in <Focusable>, not the kit
-// <Button> — kit Button doesn't forward react-aria's hover/focus props,
-// so Focusable's cloned props would be dropped and the tooltip never open.
+import { Button } from '@weasel-js/ui/components/Button';
 
 const meta: Meta<typeof Tooltip> = {
   title: 'ui/Tooltip',
@@ -19,7 +16,7 @@ export const Basic: Story = {
   render: (args) => (
     <TooltipTrigger>
       <Focusable>
-        <button type="button">Hover or focus me</button>
+        <Button>Hover or focus me</Button>
       </Focusable>
       <Tooltip {...args} />
     </TooltipTrigger>
@@ -32,7 +29,7 @@ export const Placements: Story = {
       {(p) => (
         <TooltipTrigger>
           <Focusable>
-            <button type="button">{p}</button>
+            <Button>{p}</Button>
           </Focusable>
           <Tooltip {...args} placement={p}>Placement: {p}</Tooltip>
         </TooltipTrigger>
