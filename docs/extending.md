@@ -763,7 +763,8 @@ scene.add({
 
 The built-in `kit:derived` painter draws whatever `derivePath` returns, reading
 `data.fill` and `data.stroke` the way `kit:path` does. The returned path is in
-**world** coordinates, not the pose frame: the pose above is a zero-sized
+the coordinates the node's pose is stored in — world for a root, as here, or
+its container's frame — not the pose's own box: the pose above is a zero-sized
 placeholder, and all it still contributes is rotation. A bounds-relative fill
 resolves against the derived path's own box.
 
@@ -782,7 +783,9 @@ disabled, and a document holding one does not load.
 `derivePath` receives each dependency in `dependsOn` order as
 `{ node, pose }` — the node itself, and its **effective** pose: its ephemeral
 override when it has one, else its own derived pose, else the pose the scene
-stores, which is exactly what the render walks paint. The node comes along
+stores, which is exactly what the render walks paint — expressed in the frame
+the deriving node's own pose is stored in, so a dependency inside another
+container arrives where it draws. The node comes along
 because a connector legitimately reads more than a box: one that thickens with
 its endpoint's weight, or routes only to nodes on a given layer, is answering
 off `data` and `layer`, and the scene already invalidates on both. A dependency
@@ -840,8 +843,9 @@ switching a container between an id list and `'children'`. Order is significant
 and declaring what a node already declares records nothing.
 
 Reparenting a node out from under its dependents is legal and intended: the
-geometry keeps recomputing across the new frame, because `derivePath` reads world
-poses and `Scene` stores them absolutely.
+geometry keeps recomputing across the new frame, because each dependency's pose
+reaches `derivePath` carried into the deriving node's frame, wherever the two
+sit in the tree.
 
 ### Deriving a pose
 
