@@ -130,7 +130,7 @@ describe('chart persistence', () => {
       localStorage.setItem(CHART_SCENE_KEY, saved);
       localStorage.setItem(CHART_HISTORY_KEY, '{"version":1}');
       const target = newScene();
-      const restore = vi.spyOn(target, 'restoreHistory').mockImplementation(() => {});
+      const restore = vi.spyOn(target, 'restoreHistory').mockImplementation(() => ({ restored: true, unresolved: [] }));
       renderHook(() => useSessionPersistence(target, CHART_SESSION)).unmount();
       return restore.mock.calls[0]?.[0] ?? null;
     };

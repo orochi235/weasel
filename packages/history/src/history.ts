@@ -8,7 +8,7 @@ import {
   snapshot, touchedIdsFromOps,
   type Entry, type HistoryLogger, type SerializedHistory,
 } from './serialized';
-import { HistoryRestoreError, rebuilt, type HistoryRestoreReport, type RestoreOptions } from './restore';
+import { rebuilt, type HistoryRestoreReport, type RestoreOptions } from './restore';
 import type {
   CreateHistoryOptions, History, HistoryBranch, HistoryStep, RecordEntryOptions,
 } from './historyTypes';
@@ -377,15 +377,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     restore(serialized: SerializedHistory, restoreOptions: RestoreOptions = {}): HistoryRestoreReport {
       const { stacks: next, unresolved } = rebuilt(serialized, customRebuild, restoreOptions, logger);
-      if (unresolved.length > 0 && (restoreOptions.recovery ?? 'strict') === 'strict') {
-        throw new HistoryRestoreError({ restored: false, unresolved });
-      }
       undoStack.splice(0, undoStack.length, ...next.undoStack);
       redoStack.splice(0, redoStack.length, ...next.redoStack);
       forks.clear();
       for (const [at, kept] of next.forks) forks.set(at, kept);
-      floorId = next.floorId;
-      nextEntryId = next.nextEntryId;
+      floorId = next.floorId; nextEntryId = next.nextEntryId;
       bump(stepOf('restore'));
       return { restored: true, unresolved };
     },

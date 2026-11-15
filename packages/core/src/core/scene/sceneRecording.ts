@@ -37,8 +37,8 @@ export interface SceneRecordingEnv {
     getActiveJournal?: (() => Journal | null) | undefined;
     coalesceWindowMs?: number | undefined;
     historyLimit?: number | undefined;
+    opRegistry?: OpRegistry | undefined;
   };
-  opRegistry: OpRegistry;
 }
 
 export interface SceneRecording {
@@ -48,7 +48,7 @@ export interface SceneRecording {
   methods: SceneHistoryMethods & Pick<
     Scene<unknown, string, unknown>,
     | 'registerOp' | 'recordOp' | 'applyBatch' | 'history' | 'batch' | 'untracked'
-    | 'setActiveJournalAccessor' | 'setHistoryAdapter' | 'addEditPass' | 'replay'
+    | 'setActiveJournalAccessor' | 'setHistoryAdapter' | 'opRegistry' | 'addEditPass' | 'replay'
   >;
 }
 
@@ -78,8 +78,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
   });
 
   const outer = createOuterOps({
-    own: ops.rebuild,
-    opRegistry: env.opRegistry,
+    own: ops.rebuild, opRegistry: config.opRegistry,
     recorder: () => recorder,
     // Deferred rather than muted, so a throwing op cannot strand subscribers
     // after earlier ops in the batch already mutated state.
@@ -167,7 +166,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
       batch: recorder.batch,
       untracked: recorder.untracked,
       setActiveJournalAccessor: outer.setActiveJournalAccessor,
-      setHistoryAdapter: outer.setHistoryAdapter,
+      setHistoryAdapter: outer.setHistoryAdapter, opRegistry: outer.opRegistry,
       addEditPass: passes.add,
       replay: (ops) => replayOps({ open: mode.open, rebuild: outer.rebuild, seal: history.seal, notify, replaying: (step) => replay(step, true) }, ops),
     },

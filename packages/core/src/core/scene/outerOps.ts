@@ -8,7 +8,7 @@
  */
 import type { History, Journal, RebuildContext, UnresolvableOp } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
-import type { OpRegistry } from 'core/ops/registry';
+import { defaultOpRegistry, type OpRegistry } from 'core/ops/registry';
 import { bindOpToAdapter, bindOpToHistoryAdapter } from './boundOps';
 import type { Recorder } from './recorder';
 
@@ -16,8 +16,8 @@ import type { Recorder } from './recorder';
 export interface OuterOpsEnv {
   /** The scene's own op for a kind it has registered, or `null`. */
   own(name: string, args: unknown): Op | null;
-  /** Where an op the scene does not own finds its factory. */
-  opRegistry: OpRegistry;
+  /** Where an op the scene does not own finds its factory; `defaultOpRegistry` when unset. */
+  opRegistry: OpRegistry | undefined;
   /** The scene's recorder, built after this is. */
   recorder(): Pick<Recorder, 'capturing' | 'joins' | 'join'>;
   /** Run a step that applies ops through a history engine: all-or-nothing,
@@ -44,6 +44,8 @@ export interface OuterOps {
    *  when there is one, else on the active journal, else on `engine`. */
   apply(engine: History, ops: Op[], label: string, adapter: unknown): void;
   setHistoryAdapter(fn: (() => unknown) | null): void;
+  /** The registry `rebuild` resolves outer ops through. */
+  readonly opRegistry: OpRegistry;
   setActiveJournalAccessor(fn: (() => Journal | null) | null): void;
   /** The journal edits go to now, or null for the scene's own history. */
   activeJournal(): Journal | null;
@@ -58,6 +60,7 @@ function keyed(kit: Op, outerKey: string | undefined): Op {
 
 export function createOuterOps(env: OuterOpsEnv): OuterOps {
   let historyAdapter: (() => unknown) | null = null;
+  const opRegistry = env.opRegistry ?? defaultOpRegistry;
   let activeJournal = env.getActiveJournal;
 
   function causing(op: Op, given: Op = op): Op {
@@ -84,7 +87,7 @@ export function createOuterOps(env: OuterOpsEnv): OuterOps {
     rebuild(name, args, context) {
       const own = env.own(name, args);
       if (own !== null) return own;
-      const rebuilt = env.opRegistry.rebuild(name, args);
+      const rebuilt = opRegistry.rebuild(name, args);
       if (rebuilt === null) return null;
       if (historyAdapter === null) return { unresolved: 'no-adapter' };
       return bindOpToHistoryAdapter(rebuilt, () => historyAdapter, context);
@@ -104,6 +107,7 @@ export function createOuterOps(env: OuterOpsEnv): OuterOps {
     setHistoryAdapter(fn) {
       historyAdapter = fn;
     },
+    opRegistry,
     setActiveJournalAccessor(fn) {
       activeJournal = fn;
     },
