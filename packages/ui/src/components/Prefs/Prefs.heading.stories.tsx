@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { PrefGroup } from '@weasel-js/prefs';
+import { openPrefsSync, type PrefGroup } from '@weasel-js/prefs';
+import { usePrefsValues } from '@weasel-js/prefs/react';
+import { createMemoryAdapter } from '@weasel-js/storage';
 import { PrefsForm, type PrefsFormProps } from '@weasel-js/ui/components/Prefs';
 
 const meta: Meta<typeof PrefsForm> = {
@@ -52,14 +54,9 @@ const SCHEMA: PrefGroup = {
 };
 
 function Form(args: Partial<PrefsFormProps>) {
-  const [values, setValues] = useState<Record<string, unknown>>({});
-  return <PrefsForm {...args} schema={SCHEMA} values={values} onChange={(path, value) => setValues((v) => withValue(v, path, value))} />;
-}
-
-function withValue(values: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
-  const [key, ...rest] = path.split('.') as [string, ...string[]];
-  if (rest.length === 0) return { ...values, [key]: value };
-  return { ...values, [key]: withValue((values[key] ?? {}) as Record<string, unknown>, rest.join('.'), value) };
+  const [store] = useState(() => openPrefsSync(SCHEMA, { storage: createMemoryAdapter(), prefix: 'story.' }));
+  const { values, set } = usePrefsValues(store);
+  return <PrefsForm {...args} schema={SCHEMA} values={values} onChange={set} />;
 }
 
 /** A leaf marked `heading` is drawn in its section's heading and its panel's title, and has no row beneath. Shadow

@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useRef, useState } from 'react';
-import type { PrefGroup } from '@weasel-js/prefs';
+import { openPrefsSync, type PrefGroup } from '@weasel-js/prefs';
+import { usePrefsValues } from '@weasel-js/prefs/react';
+import { createMemoryAdapter } from '@weasel-js/storage';
 import { PrefsPane } from '@weasel-js/ui/components/Prefs';
 import { useValuesSource } from '@weasel-js/ui/components/PrefsSource';
 
@@ -27,16 +29,6 @@ const PAGE: PrefGroup = {
   },
 };
 
-/** `values` with `value` written at the dotted `path`. */
-function withValueAt(values: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
-  const next = structuredClone(values);
-  const parts = path.split('.');
-  let at = next;
-  for (const part of parts.slice(0, -1)) at = (at[part] ??= {}) as Record<string, unknown>;
-  at[parts.at(-1)!] = value;
-  return next;
-}
-
 const meta: Meta<typeof PrefsPane> = {
   title: 'ui/Prefs/PrefsPane',
   component: PrefsPane,
@@ -48,9 +40,9 @@ type Story = StoryObj<typeof PrefsPane>;
 /** One rail page: its heading and description, its leaves, a nested group as a section, and sibling `tab` groups as one strip. */
 export const Default: Story = {
   render: (args) => {
-    const [values, setValues] = useState<Record<string, unknown>>({});
+    const [store] = useState(() => openPrefsSync(PAGE, { storage: createMemoryAdapter(), prefix: 'story.' }));
+    const { values, set: onChange } = usePrefsValues(store);
     const scrollRef = useRef<HTMLDivElement | null>(null);
-    const onChange = (path: string, value: unknown) => setValues((prev) => withValueAt(prev, path, value));
     const source = useValuesSource(PAGE, values, onChange);
     return (
       <PrefsPane

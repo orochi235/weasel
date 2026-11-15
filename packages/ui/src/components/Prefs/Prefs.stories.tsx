@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
-import type { PrefGroup } from '@weasel-js/prefs';
+import { openPrefsSync, type PrefGroup } from '@weasel-js/prefs';
+import { usePrefsValues } from '@weasel-js/prefs/react';
+import { createMemoryAdapter } from '@weasel-js/storage';
 import { PrefsForm, type LeafContext, PrefsDialog } from '@weasel-js/ui/components/Prefs';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Select } from '@weasel-js/ui/components/Select';
@@ -161,20 +163,11 @@ const DEEP_SCHEMA: PrefGroup = {
 /** Story-local stand-in for an app registry. */
 const TOOL_REGISTRY = ['pen', 'rect', 'ellipse', 'hand'];
 
-function useStoryValues() {
-  const [values, setValues] = useState<Record<string, unknown>>({});
-  const onChange = (path: string, value: unknown) =>
-    setValues((prev) => {
-      const next = structuredClone(prev);
-      const parts = path.split('.');
-      let cur: Record<string, unknown> = next;
-      for (const seg of parts.slice(0, -1)) {
-        cur = (cur[seg] ??= {}) as Record<string, unknown>;
-      }
-      cur[parts[parts.length - 1]] = value;
-      return next;
-    });
-  return { values, onChange };
+/** A form's values held in a prefs store in memory, as an app holds its own. */
+function useStoryValues(schema: PrefGroup) {
+  const [store] = useState(() => openPrefsSync(schema, { storage: createMemoryAdapter(), prefix: 'story.' }));
+  const { values, set } = usePrefsValues(store);
+  return { values, onChange: set };
 }
 
 const STORY_RENDERERS = {
@@ -190,7 +183,7 @@ const STORY_RENDERERS = {
 
 export const Form: Story = {
   render: function FormStory(args) {
-    const { values, onChange } = useStoryValues();
+    const { values, onChange } = useStoryValues(SCHEMA);
     return (
       <PrefsForm {...args} schema={SCHEMA} values={values} onChange={onChange} renderers={STORY_RENDERERS} />
     );
@@ -204,7 +197,7 @@ const MIXED: ReadonlySet<string> = new Set(['canvas.zoomStep']);
  *  press reports a toggle, which this story takes as adding the row or taking it out. */
 export const SeveralSelected: Story = {
   render: function SeveralSelectedStory(args) {
-    const { values, onChange } = useStoryValues();
+    const { values, onChange } = useStoryValues(SCHEMA);
     const [selected, setSelected] = useState<readonly string[]>(SEVERAL);
     return (
       <PrefsForm {...args} schema={SCHEMA} values={values} onChange={onChange} renderers={STORY_RENDERERS} mixed={MIXED}
@@ -219,7 +212,7 @@ export const InDialog: Story = {
   render: function DialogStory() {
     const [open, setOpen] = useState(false);
     const [showHidden, setShowHidden] = useState(false);
-    const { values, onChange } = useStoryValues();
+    const { values, onChange } = useStoryValues(SCHEMA);
     return (
       <>
         <Button onClick={() => setOpen(true)}>Open preferences</Button>
@@ -288,7 +281,7 @@ export const Rail: Story = {
     });
   },
   render: function RailStory(args) {
-    const { values, onChange } = useStoryValues();
+    const { values, onChange } = useStoryValues(DEEP_SCHEMA);
     return (
       <div className={st.frame}>
         <PrefsForm {...args}
@@ -305,7 +298,7 @@ export const Rail: Story = {
 
 export const RailFilterable: Story = {
   render: function RailFilterableStory(args) {
-    const { values, onChange } = useStoryValues();
+    const { values, onChange } = useStoryValues(DEEP_SCHEMA);
     return (
       <div className={st.frame}>
         <PrefsForm {...args}
@@ -324,7 +317,7 @@ export const RailFilterable: Story = {
 export const RailInDialog: Story = {
   render: function RailInDialogStory() {
     const [open, setOpen] = useState(true);
-    const { values, onChange } = useStoryValues();
+    const { values, onChange } = useStoryValues(DEEP_SCHEMA);
     return (
       <>
         <Button onClick={() => setOpen(true)}>Open preferences</Button>
@@ -378,7 +371,7 @@ const CONDITIONS_SCHEMA: PrefGroup = {
 /** `enableIf` and `showIf`: with Snap off, two rows are drawn disabled and the spacing row is not drawn at all. */
 export const Conditions: Story = {
   render: function ConditionsStory(args) {
-    const { values, onChange } = useStoryValues();
+    const { values, onChange } = useStoryValues(CONDITIONS_SCHEMA);
     return <PrefsForm {...args} layout="list" schema={CONDITIONS_SCHEMA} values={values} onChange={onChange} />;
   },
 };
