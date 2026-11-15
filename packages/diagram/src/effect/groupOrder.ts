@@ -1,6 +1,6 @@
 /** Where each group sits along the main chain, and the sequence a group's title drags it along. */
 import type { Vec2 } from '@weasel-js/core';
-import { maxOf, minOf } from '@weasel-js/geom';
+import { maxOf, minOf, rectContainsPoint } from '@weasel-js/geom';
 import { groupLabelIdOf } from '../dataGroups';
 import { sequenceSlots, type ReorderItem, type ReorderSlots } from '../reorder';
 import type { ReorderSource } from './editorReorder';
@@ -35,8 +35,6 @@ export function groupRuns(pipeline: EffectPipeline, chain: readonly string[]): M
 
 type Box = { x: number; y: number; width: number; height: number };
 
-const holds = (b: Box, p: Vec2) => p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height;
-
 /** The band across a group's box from its top edge to the top of its highest
  *  member: its title row, or the top padding where it has no title. */
 export function groupGripOf(doc: EffectDoc, group: string, boxOf: ReorderSource['boxOf']): Box | undefined {
@@ -66,7 +64,7 @@ export function groupAt(doc: EffectDoc, boxOf: ReorderSource['boxOf'], at: Vec2,
   const depth = (id: string): number => (parent.has(id) ? 1 + depth(parent.get(id)!) : 0);
   const held = (doc.pipeline.groups ?? []).filter((g) => {
     const grip = among(g.id) ? groupGripOf(doc, g.id, boxOf) : undefined;
-    return grip !== undefined && holds(grip, at);
+    return grip !== undefined && rectContainsPoint(grip, at.x, at.y);
   });
   return held.sort((a, b) => depth(b.id) - depth(a.id))[0]?.id;
 }

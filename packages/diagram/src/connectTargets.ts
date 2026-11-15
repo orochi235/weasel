@@ -12,7 +12,7 @@ import {
   type PoseDescriptor,
   type Vec2,
 } from '@weasel-js/core/math';
-import { pathContainsPoint } from '@weasel-js/geom';
+import { pathContainsPoint, rectContainsPoint } from '@weasel-js/geom';
 import { boxCenter, endAims, resolveEnd, type Router } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
 import { diagramGroupOf } from './group';
@@ -77,8 +77,7 @@ export function bodyAt<TPose>(
       ? at
       : rotatePoint(at.x, at.y, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, -rotation);
     const inside = trait.outline === undefined
-      ? local.x >= bounds.x && local.x <= bounds.x + bounds.width
-        && local.y >= bounds.y && local.y <= bounds.y + bounds.height
+      ? rectContainsPoint(bounds, local.x, local.y)
       : pathContainsPoint(outlinePath(trait.outline, bounds), local.x, local.y);
     if (inside) hit = { end: { kind: 'body', nodeId: node.id, point: { x: at.x, y: at.y } }, participant };
   }

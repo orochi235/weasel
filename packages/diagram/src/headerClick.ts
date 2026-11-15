@@ -1,4 +1,5 @@
 import { useLatest, type RectPose, type Scene, type SceneCanvasHit } from '@weasel-js/core';
+import { rectContainsPoint } from '@weasel-js/geom';
 import { useCallback } from 'react';
 import type { DiagramSceneData } from './dataTypes';
 import { worldRectOf } from './overlays';
@@ -12,7 +13,7 @@ export function onHeaderBand(scene: DiagramScene, id: string, at: { x: number; y
   const header = node === undefined ? undefined : diagramNodeOf(node)?.header;
   const box = header === undefined ? null : worldRectOf(scene, id);
   if (header === undefined || box === null) return false;
-  return at.x >= box.x && at.x <= box.x + box.width && at.y >= box.y && at.y <= box.y + Math.min(header.height, box.height);
+  return rectContainsPoint({ ...box, height: Math.min(header.height, box.height) }, at.x, at.y);
 }
 
 /** Hears clicks on header bands: pass it as the canvas's `onClick`. */
