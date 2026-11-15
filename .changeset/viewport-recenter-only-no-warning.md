@@ -2,6 +2,6 @@
 '@weasel-js/core': patch
 ---
 
-`<SceneCanvas>` no longer warns that `viewport` configures viewPreset when the only field set is `recenter`, which reaches the view dep without viewPreset.
+`<SceneCanvas>` no longer warns about a `viewport` whose only field is `recenter`, which the view dep carries without viewPreset.
 
 <!-- entry: fix -->
