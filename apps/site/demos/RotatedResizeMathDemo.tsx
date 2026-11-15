@@ -187,84 +187,61 @@ export function RotatedResizeMathDemo() {
     ?? (scenes[panel].get(asNodeId('a'))!.pose as Rect);
 
   return (
-    <div>
-      <header>
-        <p>
-          Resizing a rotated rect requires three coordinated steps, and a
-          fourth discipline: keep the rotation property orthogonal to the
-          resize. Each panel below runs the same drag against its own
-          starting pose, but uses a different <code>PoseDescriptor</code> &mdash;
-          three are subverted. Drag any corner handle in the green panel
-          and all four rects resize in lockstep, each through its own
-          projection, so one input drives four diverging outputs. The
-          &ldquo;fixed corner&rdquo; ledger below each panel should stay
-          constant in the full-math panel; it drifts in the counterexamples.
-        </p>
-        <ul>
-          <li><strong>Full math (green):</strong> drag projected into local frame, anchor math runs there, position is corrected so the diagonal corner stays pinned, rotation preserved.</li>
-          <li><strong>No projection (orange):</strong> drag delta applied in world frame &mdash; rect distorts under rotation.</li>
-          <li><strong>No correction (purple):</strong> projection on, but the post-remap fixed-corner correction is a no-op &mdash; the perceived fixed corner drifts.</li>
-          <li><strong>Coupled rotation (teal):</strong> remap couples rotation to the AABB diagonal angle &mdash; rect rotates as you resize.</li>
-          <li><strong>Live overlay:</strong> all four stacked at 60% opacity so divergence shows as color separation.</li>
-          <li><strong>Median panel:</strong> per-component median of orange + purple + teal. Two of the three get each of width, height, and rotation right, so the median recovers size and rotation. Position stays wrong: orange and purple both skip the fixed-corner correction, and outvote teal.</li>
-        </ul>
-      </header>
-      <div className="rrmd-grid">
-        <Panel
-          title="Full math (drag me)"
-          showHandles
-          scene={greenScene}
-          livePose={livePose('green')}
-          ghostColor={ghostColorFor('green')}
-          fixedOrigin={originFixed}
-          anchor={activeAnchor}
-          ledgerAnchor={ledgerAnchor}
-          onPointerDown={(e) => handlePointerDown('green', e)}
-        />
-        <Panel
-          title="No projection — world-frame delta"
-          showHandles={false}
-          scene={orangeScene}
-          livePose={livePose('orange')}
-          ghostColor={ghostColorFor('orange')}
-          fixedOrigin={originFixed}
-          anchor={activeAnchor}
-          ledgerAnchor={ledgerAnchor}
-        />
-        <Panel
-          title="No correction — anchor drifts"
-          showHandles={false}
-          scene={purpleScene}
-          livePose={livePose('purple')}
-          ghostColor={ghostColorFor('purple')}
-          fixedOrigin={originFixed}
-          anchor={activeAnchor}
-          ledgerAnchor={ledgerAnchor}
-        />
-        <Panel
-          title="Coupled rotation — pivot follows size"
-          showHandles={false}
-          scene={tealScene}
-          livePose={livePose('teal')}
-          ghostColor={ghostColorFor('teal')}
-          fixedOrigin={originFixed}
-          anchor={activeAnchor}
-          ledgerAnchor={ledgerAnchor}
-        />
-        <StackedOverlayPanel
-          poses={{
-            green: displayedPose('green'),
-            orange: displayedPose('orange'),
-            purple: displayedPose('purple'),
-            teal: displayedPose('teal'),
-          }}
-        />
-        <MedianPanel
-          orange={displayedPose('orange')}
-          purple={displayedPose('purple')}
-          teal={displayedPose('teal')}
-        />
-      </div>
+    <div className="rrmd-grid">
+      <Panel
+        title="Full math (drag me)"
+        showHandles
+        scene={greenScene}
+        livePose={livePose('green')}
+        ghostColor={ghostColorFor('green')}
+        fixedOrigin={originFixed}
+        anchor={activeAnchor}
+        ledgerAnchor={ledgerAnchor}
+        onPointerDown={(e) => handlePointerDown('green', e)}
+      />
+      <Panel
+        title="No projection — world-frame delta"
+        showHandles={false}
+        scene={orangeScene}
+        livePose={livePose('orange')}
+        ghostColor={ghostColorFor('orange')}
+        fixedOrigin={originFixed}
+        anchor={activeAnchor}
+        ledgerAnchor={ledgerAnchor}
+      />
+      <Panel
+        title="No correction — anchor drifts"
+        showHandles={false}
+        scene={purpleScene}
+        livePose={livePose('purple')}
+        ghostColor={ghostColorFor('purple')}
+        fixedOrigin={originFixed}
+        anchor={activeAnchor}
+        ledgerAnchor={ledgerAnchor}
+      />
+      <Panel
+        title="Coupled rotation — pivot follows size"
+        showHandles={false}
+        scene={tealScene}
+        livePose={livePose('teal')}
+        ghostColor={ghostColorFor('teal')}
+        fixedOrigin={originFixed}
+        anchor={activeAnchor}
+        ledgerAnchor={ledgerAnchor}
+      />
+      <StackedOverlayPanel
+        poses={{
+          green: displayedPose('green'),
+          orange: displayedPose('orange'),
+          purple: displayedPose('purple'),
+          teal: displayedPose('teal'),
+        }}
+      />
+      <MedianPanel
+        orange={displayedPose('orange')}
+        purple={displayedPose('purple')}
+        teal={displayedPose('teal')}
+      />
     </div>
   );
 }
