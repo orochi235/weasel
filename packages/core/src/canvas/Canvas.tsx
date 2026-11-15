@@ -81,7 +81,6 @@ function CanvasInner<TPose>(
       backend: props.worker ? 'webgl2' : props.backend },
   );
   const { getPaintedVersion, markPainted } = usePaintedVersion(props.contentVersion);
-  const { extrasRef, extrasVersion, registerLayer, hitTestExtrasIn } = useExtraLayers(gateRef);
 
   const {
     viewRef, setView, getView, subscribeView,
@@ -104,7 +103,8 @@ function CanvasInner<TPose>(
 
   // One view's overlay-aware state. A hook, so N views are N components each
   // calling it once — not a loop in this body.
-  const layers = useSlotLayers(props.layers, tools, props.backgroundFill, props.decorationLayer);
+  const { stack: layers, slots } = useSlotLayers(props.layers, tools, props.backgroundFill, props.decorationLayer);
+  const { extrasRef, extrasVersion, registerLayer, hitTestExtrasIn } = useExtraLayers(gateRef, useLatest(slots));
   const { helpers: viewHelpers } = useViewHelpers<TPose>({
     adapter: props.adapter, geometry, boundsOf: props.boundsOf, boundsOfPose: props.boundsOfPose,
     nodes: props.nodes, gestureSource: props.gestureSource, previewPoseExtra: props.previewPoseExtra,

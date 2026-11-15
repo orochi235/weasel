@@ -7,20 +7,21 @@ import { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
 import type { CanvasProps } from './canvasProps';
 import type { ViewRegistry } from './viewRegistry';
 
-/** The `layers` prop's slots and custom entries in draw order, with the background fill beneath,
- *  the decoration layer above, and the active tool's overlays placed among them. */
+/** The `layers` prop's slots and custom entries in draw order (`slots`), with the background fill
+ *  beneath and the decoration layer above, and the same with the active tool's overlays placed
+ *  among them (`stack`). Overlays only paint, so hit-testing reads `slots`. */
 export function useSlotLayers(
   layersMap: CanvasProps<unknown>['layers'],
   tools: CanvasProps<unknown>['tools'],
   backgroundFill: Paint | undefined,
   decorationLayer: RenderLayer<unknown> | undefined,
-): RenderLayer<unknown>[] {
+): { stack: RenderLayer<unknown>[]; slots: readonly RenderLayer<unknown>[] } {
   const backgroundLayer = useMemo(
     () => (backgroundFill ? createBackgroundFillLayer(backgroundFill) : undefined),
     [backgroundFill],
   );
 
-  return useMemo<RenderLayer<unknown>[]>(() => {
+  return useMemo(() => {
     const standardLayers: Partial<
       Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>
     > = {};
@@ -32,10 +33,11 @@ export function useSlotLayers(
       decorationLayer ? { ...layersMap, decorationLayer: { layer: decorationLayer } } : layersMap,
       standardLayers, layersMap.scene?.layers, backgroundLayer,
     );
+    const slots = [...out];
     if (tools) {
       placeToolOverlays(out, standardLayers.selectionOverlay, tools.getActiveOverlays);
     }
-    return out;
+    return { stack: out, slots };
   }, [layersMap, tools, backgroundLayer, decorationLayer]);
 }
 

@@ -21,8 +21,13 @@ export interface ExtraLayers {
   hitTestExtrasIn: HitTestExtrasIn;
 }
 
-/** Layers attached from outside the `layers` prop (a HUD, a loupe), and hit-testing over them. */
-export function useExtraLayers(gateRef: { readonly current: LayerGate }): ExtraLayers {
+/** Layers attached from outside the `layers` prop (a HUD, a loupe), and
+ *  hit-testing over them and then over `slotLayersRef`'s, the slot stack in
+ *  paint order: the topmost painted is asked first. */
+export function useExtraLayers(
+  gateRef: { readonly current: LayerGate },
+  slotLayersRef: { readonly current: readonly RenderLayer<unknown>[] },
+): ExtraLayers {
   const [extrasVersion, setExtrasVersion] = useState(0);
   const extrasRef = useRef<Set<RenderLayer<unknown>>>(new Set());
   const registerLayer = useCallback((layer: RenderLayer<unknown>) => {
@@ -35,10 +40,11 @@ export function useExtraLayers(gateRef: { readonly current: LayerGate }): ExtraL
   }, []);
 
   // Registration order is draw order, so the last-registered layer gets first
-  // refusal. `<SceneCanvas>` folds this into its `affordanceAt` thunk; Canvas
-  // has the layers but not the dispatcher.
+  // refusal, and registered layers paint above every slot. `<SceneCanvas>`
+  // folds this into its `affordanceAt` thunk; Canvas has the layers but not
+  // the dispatcher.
   const hitTestExtrasIn = useCallback<HitTestExtrasIn>((worldX, worldY, view, dims, data, only) => {
-    const layers = [...extrasRef.current].reverse();
+    const layers = [...extrasRef.current].reverse().concat([...slotLayersRef.current].reverse());
     const gate = gateRef.current;
     const isVisible = gate.getIsVisible?.() ?? alwaysVisible;
     const visibility = gate.layerVisibility ?? NO_LAYER_VISIBILITY;
@@ -51,7 +57,7 @@ export function useExtraLayers(gateRef: { readonly current: LayerGate }): ExtraL
       if (hit) return { layerId: layer.id, hit };
     }
     return null;
-  }, [gateRef]);
+  }, [gateRef, slotLayersRef]);
 
   return { extrasRef, extrasVersion, registerLayer, hitTestExtrasIn };
 }

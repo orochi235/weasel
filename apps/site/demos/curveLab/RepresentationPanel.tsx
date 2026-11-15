@@ -11,7 +11,6 @@ import type {
   AffordanceRegion,
   InvocationCtx,
   OngoingHandle,
-  SurfaceContribution,
 } from '@weasel-js/core';
 import type { CurveRepresentation, SharedAnchor } from '@weasel-js/geom/curves';
 import { anchorsOf, renderLayerOf, REPS, setAnchors, type CurveScene } from './curveScene';
@@ -86,12 +85,10 @@ export function RepresentationPanel({
     })),
   }), [scene, layerId]);
 
-  // Registered through an ambient entry rather than `layers`, which paints but is never hit-tested.
-  const ambient = useMemo<SurfaceContribution[]>(() => [{
-    id: layerId,
-    eligibility: {},
-    layers: [composeAffordanceLayer(layerId, 'Curve anchor handles', [anchorHandles])],
-  }], [layerId, anchorHandles]);
+  const handlesLayer = useMemo(
+    () => composeAffordanceLayer(layerId, 'Curve anchor handles', [anchorHandles]),
+    [layerId, anchorHandles],
+  );
 
   const dragAnchor = useMemo<Action>(() => ({
     id: actionId,
@@ -132,6 +129,7 @@ export function RepresentationPanel({
     ...(overlays.anchors ? { anchorsOverlay: { layer: anchorsLayer, after: 'scene' as const } } : {}),
     ...(overlays.comb ? { combOverlay: { layer: combLayer, after: 'scene' as const } } : {}),
     ...(overlays.inflections ? { inflectionsOverlay: { layer: inflectionsLayer, after: 'scene' as const } } : {}),
+    anchorHandles: { layer: handlesLayer },
   };
 
   const actions = useMemo<ActionsProp>(() => ({
@@ -147,7 +145,6 @@ export function RepresentationPanel({
           scene={scene}
           layerVisibility={layerVisibility}
           actions={actions}
-          ambient={ambient}
           layers={layers}
         />
       </DemoStage>

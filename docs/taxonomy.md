@@ -246,7 +246,7 @@ A `RenderLayer<TData>` is a named draw function: `{ id, label, draw(data, view, 
 Layers are the kit's composable rendering primitive. Each frame the canvas reduces
 the active layer stack into a flat `DrawCommand[]` tree and hands it to the
 renderer. Layers declare whether they operate in world space (default) or
-screen space. A layer registered with `registerLayer`, or carried in a `SurfaceContribution`'s `layers`, may declare a `hitTest(worldX, worldY, data, view, dims, isVisible?)` returning a `LayerHit`; these are tested last-registered-first, ahead of the kit's selection chrome, and the first non-null result wins. A layer that reaches the stack any other way is painted but never hit-tested. See `packages/core/src/core/layers/render.ts`.
+screen space. A layer registered with `registerLayer`, or carried in a `SurfaceContribution`'s `layers`, may declare a `hitTest(worldX, worldY, data, view, dims, isVisible?)` returning a `LayerHit`; these are tested last-registered-first, then a `layers` map entry's, topmost painted first, all ahead of the kit's selection chrome, and the first non-null result wins. An overlay (a tool's or a contribution's `overlay`) is painted but never hit-tested. See `packages/core/src/core/layers/render.ts`.
 
 ### Slot
 

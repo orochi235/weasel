@@ -117,14 +117,14 @@ export interface RenderLayer<TData> {
   /**
    * Optional hit-test for **consumer-attached** layers.
    *
-   * Only layers registered through `CanvasExtensionApi.registerLayer`, or
-   * carried in a `SurfaceContribution`'s `layers`, are hit-tested, last-registered-first, ahead of the kit's own selection
-   * chrome. First non-null result wins; null means "I don't claim this hit,
-   * try the next layer."
+   * Layers registered through `CanvasExtensionApi.registerLayer` or carried
+   * in a `SurfaceContribution`'s `layers` are hit-tested last-registered-first,
+   * then the `layers` map's, topmost painted first, all ahead of the kit's own
+   * selection chrome. First non-null result wins; null means "I don't claim
+   * this hit, try the next layer."
    *
-   * Layers that reach the draw stack some other way — a `Tool.overlay`, an
-   * entry in the `layers` map — are painted but never hit-tested, so defining
-   * `hitTest` on one has no effect.
+   * An overlay (`Tool.overlay`, a contribution's `overlay`) is painted but
+   * never hit-tested, so defining `hitTest` on one has no effect.
    *
    * Coordinates are world-space.
    */
