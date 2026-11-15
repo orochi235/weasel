@@ -673,7 +673,7 @@ directly. Several expose more than the root does, `/state` most of all.
 
 | Subpath | |
 | --- | --- |
-| `@weasel-js/labkit` | Everything but `/loupe` and `/overview` |
+| `@weasel-js/labkit` | Everything but `/loupe`, `/overview`, `/dragdrop`, and `/weasel-canvas` |
 | `/styles.css` | The one stylesheet |
 | `/primitives` | PersistedFloatingPanel, Split, JobProgress |
 | `/chrome` | Regions, contribution types, built-in contributions |
@@ -687,9 +687,9 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/surface` | Tiled surface hooks for your own renderer |
 | `/job` | `useJob` and the job capability types |
 | `/state` | The lab store, storage adapters (re-exported from `@weasel-js/storage`), `useTrialState`, serialization helpers |
-| `/undo` | Undo stack |
-| `/dragdrop` | `<Palette>`, `<DragGhost>`, `useDragDrop` |
-| `/weasel-canvas` | Scene-view and minimap passthroughs from `@weasel-js/core` and `@weasel-js/minimap` |
+| `/undo` | The `undo` capability's type |
+| `/dragdrop` | `<Palette>`, `<DragGhost>`, `useDragDrop`. Not in the root barrel |
+| `/weasel-canvas` | Scene-view and minimap passthroughs from `@weasel-js/core` and `@weasel-js/minimap`. Not in the root barrel |
 
 ## Development
 

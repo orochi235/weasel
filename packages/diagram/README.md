@@ -711,7 +711,8 @@ neighbors never share space, and the hung nodes stand in the order of the ports
 they connect to. An edge between a chain node and one hung beside it, both ends
 naming ports that face each other, runs on a track of its own in the gap
 between them, so a fan of them never crosses; the gap grows to keep tracks 12
-apart. Groups are ignored.
+apart. A group's members hang in one stretch of columns that nothing else
+hangs among, with room left along the line for its box.
 
 `radial` is the mind-map layout. The first root `tree` would find sits in the middle, and its
 children are dealt to its right and its left, in graph order, each to whichever side holds fewer
@@ -768,7 +769,7 @@ spec on a layer other than `'main'`.
 
 `outline` is a name from the outline table, or a `Path` drawn in a unit square
 — `(0, 0)` the box's top-left, `(1, 1)` its bottom-right — which is stretched
-over the box, so it follows its node as marks do. The built-in names are the
+over the box, so it follows its node as marks do. The built-in names include the
 flowchart shapes `'rect'`, `'diamond'`, `'stadium'`, `'ellipse'`, `'parallelogram'`,
 `'trapezoid'` (a demultiplexer: tall at the right, short at the left), and
 `'hexagon'` (pointed at the left and right, its rows kept between the points);
@@ -836,8 +837,8 @@ so a bend added or removed elsewhere leaves it where it was.
 diagramScene({ nodes, edges, groups: [{ id: 'ingest', members: ['fetch', 'decode'], label: 'ingest' }] });
 ```
 
-A group may be a member of another. `layered`, `tree` and `force` keep a
-group's members together; `chain` ignores groups but still draws them. Under
+A group may be a member of another. `layered`, `tree`, `force` and `chain`
+keep a group's members together; `radial` ignores groups but still draws them. Under
 `layered` and `tree` each group gets a column on the cross axis that nothing
 else enters, in every rank from its first member's to its last, and rank gaps
 widen where a box needs the room; `force` pulls a group's members toward each

@@ -77,8 +77,8 @@ await elkPlan(graph, { layoutOptions: { 'elk.algorithm': 'mrtree' } });
 
 ## Size, and where it runs
 
-elkjs 0.12.0's bundled build, `elkjs/lib/elk.bundled.js`, is 1,609,707 bytes:
-466,718 gzipped at level 9 and 348,494 under brotli. This package imports it
+elkjs 0.12.1's bundled build, `elkjs/lib/elk.bundled.js`, is 1,646,241 bytes:
+477,152 gzipped at level 9 and 356,421 under brotli. This package imports it
 dynamically on the first layout, so a bundler splits it into a chunk of its own
 that loads only when a layout runs. The adapter itself is about 10 KB.
 
