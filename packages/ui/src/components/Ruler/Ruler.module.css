@@ -1,5 +1,6 @@
 .ruler {
   position: relative;
+  user-select: none;
 }
 
 /* Ticks take no pointer, so the hit area stays the ruler's own box. */

@@ -23,9 +23,9 @@ export function TrialLayerList({
         snapshot('layers.reorder');
         setOrder(moveLayers(items, move).map((l) => l.id));
       }}
-      onVisibilityChange={(id, visible) => {
+      onVisibilityChange={(changes) => {
         snapshot('layers.toggle');
-        setVisibility((prev) => ({ ...prev, [id]: visible }));
+        setVisibility((prev) => ({ ...prev, ...changes }));
       }}
     />
   );

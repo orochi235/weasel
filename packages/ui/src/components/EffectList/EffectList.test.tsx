@@ -126,6 +126,18 @@ describe('EffectList', () => {
     expect(onItems.mock.lastCall![0][0]).toMatchObject({ id: 'a', on: false });
   });
 
+  it('runs one card alone on an Alt-click of its switch, and every card on a second', () => {
+    const onItems = vi.fn();
+    renderWithIcons(<Held onItems={onItems} />);
+    const on = () => onItems.mock.lastCall![0].map((it: EffectListItem) => it.on);
+    fireEvent.click(screen.getByRole('switch', { name: 'Run C' }), { altKey: true });
+    expect(on()).toEqual([false, false, true]);
+    fireEvent.click(screen.getByRole('switch', { name: 'Run C' }), { altKey: true });
+    expect(on()).toEqual([true, true, true]);
+    fireEvent.click(screen.getByRole('switch', { name: 'Run A' }));
+    expect(on()).toEqual([false, true, true]);
+  });
+
   it('renames a card', () => {
     const onItems = vi.fn();
     renderWithIcons(<Held onItems={onItems} />);

@@ -86,11 +86,13 @@ export const Nested: Story = {
           {...args}
           items={shown(items)}
           onReorder={(move) => setItems(moveLayers(items, move))}
-          onVisibilityChange={(id, visible) =>
+          onVisibilityChange={(changes) =>
             setHidden((prev) => {
               const next = new Set(prev);
-              if (visible) next.delete(id);
-              else next.add(id);
+              for (const [id, visible] of Object.entries(changes)) {
+                if (visible) next.delete(id);
+                else next.add(id);
+              }
               return next;
             })
           }

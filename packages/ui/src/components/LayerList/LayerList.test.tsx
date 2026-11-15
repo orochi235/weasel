@@ -135,7 +135,7 @@ describe('LayerList selection', () => {
     fireEvent.pointerDown(screen.getByLabelText('Show Beta'), { pointerId: 1, button: 0, isPrimary: true });
     fireEvent.pointerUp(document, { pointerId: 1 });
     fireEvent.click(screen.getByLabelText('Show Beta'));
-    expect(onVisibilityChange).toHaveBeenCalledWith('b', false);
+    expect(onVisibilityChange).toHaveBeenCalledWith({ b: false });
     expect(onSelectionChange).not.toHaveBeenCalled();
   });
 });
@@ -255,7 +255,7 @@ describe('LayerList controls', () => {
     const onVisibilityChange = vi.fn();
     list({ items: [{ id: 'a', label: 'Alpha', visible: false }, BG], onVisibilityChange });
     fireEvent.click(screen.getByLabelText('Show Alpha'));
-    expect(onVisibilityChange).toHaveBeenCalledWith('a', true);
+    expect(onVisibilityChange).toHaveBeenCalledWith({ a: true });
     expect(screen.queryByLabelText('Show Background')).toBeNull();
   });
 
@@ -265,6 +265,16 @@ describe('LayerList controls', () => {
       const control = screen.getByLabelText(name);
       expect(screen.getByText('Alpha').compareDocumentPosition(control) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
+  });
+
+  it('shows one layer alone on an Alt-click of its checkbox, and locks one alone on an Alt-click of its lock', () => {
+    const onVisibilityChange = vi.fn();
+    const onLockChange = vi.fn();
+    list({ items: [...FLAT, BG], onVisibilityChange, onLockChange });
+    fireEvent.click(screen.getByLabelText('Show Beta'), { altKey: true });
+    expect(onVisibilityChange).toHaveBeenCalledWith({ a: false, c: false });
+    fireEvent.click(screen.getByLabelText('Lock Beta'), { altKey: true });
+    expect(onLockChange).toHaveBeenCalledWith({ b: true });
   });
 
   it('reports a lock toggle, gives fixed layers none, and leaves a locked layer hideable', () => {
@@ -277,7 +287,7 @@ describe('LayerList controls', () => {
     expect(screen.getByLabelText('Lock Alpha')).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByLabelText('Lock Alpha'));
     fireEvent.click(screen.getByLabelText('Lock Beta'));
-    expect(onLockChange.mock.calls).toEqual([['a', false], ['b', true]]);
+    expect(onLockChange.mock.calls).toEqual([[{ a: false }], [{ b: true }]]);
     expect(screen.queryByLabelText('Lock Background')).toBeNull();
     expect(screen.getByLabelText('Show Alpha')).toBeInTheDocument();
     expect(screen.queryByLabelText('Remove Alpha')).toBeNull();

@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef, type KeyboardEvent, type ReactNode } 
 import type { IconRef } from '@weasel-js/icons';
 import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
-import { dropSide, moveItems, nudgeOf } from '@weasel-js/ui-input';
+import { dropSide, moveItems, nudgeOf, soloChanges } from '@weasel-js/ui-input';
 import { useReorderDragList } from '../../useReorderDragList';
 import { useRemovedRowFocus } from '../../useRemovedRowFocus';
 import { tintSource } from '../appearance';
@@ -51,7 +51,8 @@ export interface EffectListProps<T extends EffectListItem> {
  * An ordered list of effects or operations that run top to bottom, each drawn as a card
  * in its kind's color. A card is dragged by its number, or moved with Alt+Up / Alt+Down from anywhere in it;
  * a press on the number that does not drag opens or closes it. Each card switches on and off, is renamed in
- * place, and can be duplicated and removed. Only the open card shows its body.
+ * place, and can be duplicated and removed; an Alt-click on a card's switch runs that card alone, or, when it
+ * already runs alone, every card again. Only the open card shows its body.
  */
 export function EffectList<T extends EffectListItem>({
   items,
@@ -99,6 +100,10 @@ export function EffectList<T extends EffectListItem>({
   };
   const patch = (id: string, next: Partial<EffectListItem>): void =>
     onChange(items.map((it) => (it.id === id ? { ...it, ...next } : it)));
+  const solo = (id: string): void => {
+    const changes = soloChanges(new Map(items.map((it) => [it.id, it.on])), new Set([id]));
+    onChange(items.map((it) => (it.id in changes ? { ...it, on: changes[it.id]! } : it)));
+  };
   const remove = (item: T): void => {
     onChange(items.filter((it) => it.id !== item.id));
     if (selected === item.id) onSelectionChange?.(null);
@@ -133,6 +138,7 @@ export function EffectList<T extends EffectListItem>({
             onToggleOpen={() => onSelectionChange?.(selected === item.id ? null : item.id)}
             onKeyDown={(e) => nudge(e, item, i)}
             onPatch={(next) => patch(item.id, next)}
+            onSolo={() => solo(item.id)}
             onDuplicate={duplicate && (() => duplicate(item, i))}
             onRemove={removable ? () => remove(item) : undefined}
           >

@@ -44,6 +44,26 @@ export interface UseSceneLayerListOptions<TData, TLayer extends string, TPose> {
   annotations?: SceneLayerListAnnotations;
 }
 
+/** Commits a toggle's `changes` as one history entry. An annotation layer's row toggles the layer through
+ *  `layerTo`, since a layer is no node and has no op. */
+function commitToggle<TLayer extends string>(
+  commit: (ops: Op[], entry: string) => void,
+  changes: Readonly<Record<string, boolean>>,
+  layerTo: (layer: TLayer, on: boolean) => void,
+  opOf: (id: string, on: boolean) => Op,
+  [on, off, mixed]: readonly [string, string, string],
+): void {
+  const ops = Object.entries(changes).flatMap(([id, to]) => {
+    if (!id.startsWith(ANNOTATION_LAYER_ROW)) return [opOf(id, to)];
+    layerTo(id.slice(ANNOTATION_LAYER_ROW.length) as TLayer, to);
+    return [];
+  });
+  if (ops.length === 0) return;
+  // The entry names the direction every row went, or `mixed` for an Alt-click that went both ways.
+  const values = Object.values(changes);
+  commit(ops, values.every(Boolean) ? on : values.some(Boolean) ? mixed : off);
+}
+
 /** The `<LayerList>` props `useSceneLayerList` answers. */
 export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelectionChange' | 'onReorder' | 'canMove' | 'onVisibilityChange' | 'onLockChange'>>
   & Pick<LayerListProps, 'onRemove' | 'onRename'>;
@@ -53,7 +73,7 @@ export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selec
  * children nested under it, the front-most at the top, selection read from and
  * written to `selection`, a drag — among siblings or into another container —
  * dispatched as a `MoveToIndexOp`, and each row's visibility and lock toggling
- * the node's own (`setHidden` / `setLocked` ops), each one undo step.
+ * the node's own (`setHidden` / `setLocked` ops), each click one undo step, an Alt-click's batch included.
  * Annotation layers are left out unless `annotations` says how to show them;
  * shown, an annotation moves only within its own layer's row.
  */
@@ -151,14 +171,10 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
       });
       commit([...joining, createMoveToIndexOp({ ids, parentId: parent, index: to })], label);
     },
-    onVisibilityChange: (id, visible) => {
-      if (id.startsWith(ANNOTATION_LAYER_ROW)) scene.setLayerVisible(id.slice(ANNOTATION_LAYER_ROW.length) as TLayer, visible);
-      else commit([createSetHiddenOp({ id, from: scene.get(asNodeId(id))?.hidden === true, to: !visible })], visible ? 'Show' : 'Hide');
-    },
-    onLockChange: (id, locked) => {
-      if (id.startsWith(ANNOTATION_LAYER_ROW)) scene.setLayerLocked(id.slice(ANNOTATION_LAYER_ROW.length) as TLayer, locked);
-      else commit([createSetLockedOp({ id, from: scene.get(asNodeId(id))?.locked === true, to: locked })], locked ? 'Lock' : 'Unlock');
-    },
+    onVisibilityChange: (changes) => commitToggle(commit, changes, (layer: TLayer, on) => scene.setLayerVisible(layer, on),
+      (id, on) => createSetHiddenOp({ id, from: scene.get(asNodeId(id))?.hidden === true, to: !on }), ['Show', 'Hide', 'Show Only']),
+    onLockChange: (changes) => commitToggle(commit, changes, (layer: TLayer, on) => scene.setLayerLocked(layer, on),
+      (id, on) => createSetLockedOp({ id, from: scene.get(asNodeId(id))?.locked === true, to: on }), ['Lock', 'Unlock', 'Lock Only']),
     ...(rename ? {
       onRename: (id: string, to: string) => {
         const node = scene.get(asNodeId(id));
