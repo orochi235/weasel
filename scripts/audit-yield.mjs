@@ -18,7 +18,7 @@ const lanes = new Map();
 for (const line of merges) {
   const [sha, date, subject] = line.split('\t');
   const named = subject.match(/branch '(audit(\d*)-([^']+))'/);
-  const batched = subject.match(/branch '([^']+)' into '?batch\/[\d-]+-audit(\d+)/);
+  const batched = subject.match(/'?([\w./-]+)'? into '?batch\/[\d-]+-audit(\d+)/);
   if ((!named && !batched) || /^(origin\/)?main$/.test(batched?.[1] ?? '')) continue;
   const [branch, round, lane] = named
     ? [named[1], named[2] ? Number(named[2]) : 1, named[3]]

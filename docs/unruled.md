@@ -2434,3 +2434,23 @@ Calls the lanes made without a ruling:
   `theme-editor:snapshot` are dropped, not migrated.
 - 2026-11-15 (the lane's call): a `ReadOnly` scope around one radio disables it, since React Aria has no read-only
   state for a single radio.
+
+## Audit round twenty-six (2026-11-15): the docs as promises
+
+- 2026-11-15 (the lane's call): a `kit:` op kind passed through `useScene({ ops })` or `createScene({ ops })` throws,
+  as `scene.registerOp` already did; it had silently replaced the kit's own handler.
+- 2026-11-15 (the controller's call): resize constraints get `moveGestureAdapter` over the scene as `ctx.adapter`, and
+  insert behaviors get one whenever the canvas has a scene. Both had `undefined` cast to `MoveAdapter`. A scene-less
+  insert, where the `insert` dep mints the node, still passes none behind the required type.
+- Open: whether moving a node into a container should honor `MoveAdapter.findSnapTarget`
+  (`packages/core/src/core/adapters/types.ts`), which `docs/adapters.md` describes and nothing calls, or whether the
+  field and its paragraph go.
+- Open: whether `ResizeAdapter` and `RotateAdapter` are deleted or read by the resize and rotate behaviors. Nothing
+  reads either; they appear only in `SceneCanvasAdapter`'s intersection (`canvas/sceneAdapter.ts`).
+- Open: whether `claimed` eligibility filters input to the entry's own affordances, as `docs/taxonomy.md` and
+  `contributions/types.ts` say, or means `always`, as `liveScope` (`contributions/eligibility.ts`) treats it. The HUD's
+  `loupe.aim` hover bindings rely on the second.
+- Open: whether a reader may split or join a scoped pref. `packages/prefs/README.md` says never; the `scopes` JSDoc in
+  `packages/prefs/src/schema.ts` says an open entry may.
+- Open: whether a new scene starts at version 1, so that `getPaintedVersion()`'s `0` means "nothing painted yet" again
+  (`core/scene/notifier.ts`, `canvas/useCanvasPaint.ts`). `docs/concepts.md` now says a fresh scene is also at 0.
