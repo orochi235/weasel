@@ -233,7 +233,9 @@ is this". A pose **override** is the same value for one frame — `scene.overrid
 holds a per-node `{ pose?, alpha?, path?, data? }` that the render and hit-test paths read
 through, and that history and `toJSON()` never see. A 60 Hz camera, a drag
 preview, a physics settle and an animation tween all want this: motion that is
-not an edit.
+not an edit. Overrides are editing-session state: an `EditingSession` over the
+scene holds its own, so a preview in one canvas does not show in another
+(`docs/editing-sessions.md`).
 
 ```ts
 const entry = { pose: { x: 0, y: 0, width: 16, height: 16 } };

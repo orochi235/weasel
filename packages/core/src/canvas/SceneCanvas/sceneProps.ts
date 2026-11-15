@@ -3,7 +3,9 @@ import type { Scene, SerializedScene } from 'core/scene/types';
 
 /** `<SceneCanvas>`'s scene: a live one, or a saved one it bakes. */
 export interface SceneCanvasSceneProps<TData, TLayer extends string, TPose> {
-  /** A `Scene` (typically from `useScene`) — or a `SerializedScene` JSON
+  /** A `Scene` (typically from `useScene`) or an `EditingSession` over one —
+   *  the session whose selection, previews and scroll this canvas and its views
+   *  act on, the scene's own when handed the scene — or a `SerializedScene` JSON
    *  object, which SceneCanvas bakes into a Scene on first render. The
    *  serialized form is read once; pass a `key` on `<SceneCanvas>` to force
    *  a fresh canvas from updated JSON.

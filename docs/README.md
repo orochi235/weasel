@@ -22,6 +22,9 @@ Read in roughly this order:
 - [icons.md](./icons.md) — icon names (`core:undo`), where each glyph is
   drawn, the registry, and the build plugin that ships only the glyphs a
   build names.
+- [editing-sessions.md](./editing-sessions.md) — what a scene's document owns
+  and what each editing session over it owns: selection, previews, scroll, and
+  whose selection an undo restores.
 - [scene-serialization.md](./scene-serialization.md) — `scene.toJSON()` and
   `sceneFromJSON()`: snapshot + restore a scene, the JSON shape, the function
   registry for `clipFromPose`, and loading static `*.scene.json` files.

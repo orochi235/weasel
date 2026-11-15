@@ -459,6 +459,15 @@ const DEMO_META: DemoMeta[] = [
     load: () => import('./demos/CanvasViewDemo').then((m) => m.CanvasViewDemo),
     path: 'apps/site/demos/CanvasViewDemo.tsx',
   },
+  {
+    id: 'editing-sessions',
+    title: 'Editing sessions (two canvases, one document)',
+    category: 'Viewport',
+    description: 'One scene, two canvases. The left canvas is handed the scene, which is its own default editing session; the right is handed `useEditingSession(scene)`, a second session over the same document. Each selects, previews a drag and scrolls in its own session, and every committed edit lands in the one document both draw. The PiP on the left is a <CanvasView>, which acts on its canvas\'s session, so it shares the left canvas\'s selection. There is one history: undo in either canvas takes back the last edit made anywhere, and puts the selection it was made under back into the canvas that undid it.',
+    hint: 'select different nodes in each canvas · drag in one and watch the other follow on release · click a canvas, then Cmd/Ctrl+Z',
+    load: () => import('./demos/EditingSessionsDemo').then((m) => m.EditingSessionsDemo),
+    path: 'apps/site/demos/EditingSessionsDemo.tsx',
+  },
 
   // ─── Rendering & paint ────────────────────────────────────────────────────
   {

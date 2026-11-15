@@ -272,17 +272,6 @@ Owner tags, after the priority (2026-10-26):
   strict undo/redo preserves its stack entry and state under a documented external-op rollback contract,
   and callers can inspect restoration and replay failures in production.
 
-- **(P1) [agent] Give document and editing-session state explicit ownership before 2.0.** `Scene` combines
-  content, history, selection, previews and scrolling (`packages/core/src/core/scene/scene.ts`,
-  `sceneSelection.ts`, `scrollOffsets.ts`), while `CanvasView` permits independent selections
-  (`packages/core/src/canvas/canvasViewProps.ts`). Introduce an editing session over a document, owning
-  selection, previews, scrolling and action context. Views can share a session or use independent ones;
-  retain a convenient default. Define history ownership and which session's selection undo restores rather
-  than implicitly creating history per view. Preserve document sharing across 2D and kernel3d hosts.
-  Closes when two sessions edit one document with independent selection, scrolling and previews, views
-  sharing a session share those states, history/selection restoration has an explicit tested policy, and
-  the public API, demos and migration docs use that ownership model.
-
 - **(P2) [agent] Scope extension registries and standardize registration semantics.** Scene function
   registries and scene ops are local, but external op factories silently overwrite in a module singleton
   (`packages/core/src/core/ops/registry.ts`), and shader sources replace in development but reject
