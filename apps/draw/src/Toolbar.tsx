@@ -28,8 +28,6 @@ import type { PaperSizeKey } from './paperSizes';
 import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgExport';
 
-// ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
-
 export interface ToolbarProps {
   scene: DrawScene;
   selection: SelectionApi;
@@ -63,10 +61,7 @@ export function Toolbar({
   // time, and `produceFlavors` runs synchronously inside `clipboard.copy()`,
   // so walking the live `scene` by those ids here is correct: nothing has
   // had a chance to mutate the scene in between. Only the serialization
-  // waits, on paint kinds that load on demand; the walk has already run. (Verified: `sceneToSvgNodes`
-  // skips ids it can't resolve — `kindOf`/`objOf` both fall through to
-  // "not found" — rather than throwing, so no id-existence filter is needed
-  // even in the shouldn't-happen case.)
+  // waits, on paint kinds that load on demand; the walk has already run.
   const produceFlavors = useCallback((snapshot: ClipboardSnapshot) => {
     const json = buildWeaselClipboardText(snapshot.items, snapshotReplacer);
     const roots = clipboardSnapshotRootIds(
@@ -107,9 +102,5 @@ export function Toolbar({
   useDebugCommands();
   useFileCommands({ scene, filename, paperSize, page, selection, setFilename, showFirstPage, leaveMode });
 
-  return (
-    <>
-      <CommandBar menus={menus} />
-    </>
-  );
+  return <CommandBar menus={menus} />;
 }

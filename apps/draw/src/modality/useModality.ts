@@ -96,16 +96,7 @@ export function useModality(
     [machine, scene],
   );
 
-  // No path-edit anchor painter here on purpose. The kit's
-  // `pathEditingOverlayLayer` (inside SceneCanvas) owns that chrome — it
-  // reads `editAnchors.editingId`, which is the same state the anchor
-  // hit-test and every anchor-editing Action key off. This app used to
-  // register a second painter keyed on `machine.getActiveTargetId()`
-  // instead; the two drew the same anchors from two different sources of
-  // truth, the app's on top and in world space (so its markers grew with
-  // zoom, unlike the kit's screen-space ones). Nothing here needs to
-  // re-add it.
-
+  // No anchor painter: SceneCanvas's path-editing overlay draws the open path's anchors.
   const decorationLayer = useMemo(() => createModeDecorationLayer(decorations), [decorations]);
 
   const [anchors] = useState(createAnchorSelection);
