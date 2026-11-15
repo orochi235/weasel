@@ -1,3 +1,4 @@
+import { createRef } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import type { ColorModePreference } from '@weasel-js/theme';
@@ -78,5 +79,32 @@ describe('CycleButton', () => {
     renderWithIcons(<Mode value={'sepia' as 'auto'} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Theme: Auto — click for Light' }));
     expect(onChange).toHaveBeenCalledWith('light');
+  });
+
+  it("runs a caller's onClick first, and a prevented one keeps the value", () => {
+    const onChange = vi.fn();
+    const { rerender } = renderWithIcons(
+      <CycleButton value="auto" onChange={onChange} options={COLOR_MODE_OPTIONS} aria-label="Theme" onClick={() => {}} />,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    expect(onChange).toHaveBeenCalledOnce();
+    rerender(
+      <CycleButton value="auto" onChange={onChange} options={COLOR_MODE_OPTIONS} aria-label="Theme" onClick={(e) => e.preventDefault()} />,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    expect(onChange).toHaveBeenCalledOnce();
+  });
+
+  it('passes native attributes through and forwards its ref', () => {
+    const ref = createRef<HTMLButtonElement>();
+    renderWithIcons(
+      <CycleButton ref={ref} value="auto" onChange={() => {}} options={COLOR_MODE_OPTIONS} aria-label="Theme" tabIndex={-1} aria-describedby="hint" />,
+    );
+    const button = screen.getByRole('button');
+    expect(ref.current).toBe(button);
+    expect(button).toHaveAttribute('tabindex', '-1');
+    expect(button).toHaveAttribute('aria-describedby', 'hint');
+    // @ts-expect-error the rotation draws the face
+    void (<CycleButton value="auto" onChange={() => {}} options={COLOR_MODE_OPTIONS} aria-label="Theme">x</CycleButton>);
   });
 });

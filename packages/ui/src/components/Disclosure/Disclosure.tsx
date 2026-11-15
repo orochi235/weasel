@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
+import { composeHandler, type DataAttributes } from '../../nativeProps';
 import s from './Disclosure.module.css';
 
 /** Props for `<DisclosureMark>`. */
@@ -38,29 +39,25 @@ export function DisclosureMark({ open, size = 13, className }: DisclosureMarkPro
   );
 }
 
-/** Props for `<Disclosure>`. */
-export interface DisclosureProps {
+/** Props for `<Disclosure>`. Every native `<button>` attribute and handler but the ones it writes itself passes
+ *  through: `aria-controls` names the section it opens, and `tabIndex={-1}` keeps it out of the tab order for a row
+ *  whose own keys fold it. */
+export type DisclosureProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>, 'aria-expanded' | 'aria-label' | 'type' | 'children'
+> & DataAttributes & {
   /** Whether the section it controls is open. The consumer owns this. */
   open: boolean;
+  /** The press, after `onClick`; an `onClick` that calls `preventDefault()` skips it. */
   onToggle: () => void;
   /**
    * Names the section, for a screen reader. The control has no text of its
    * own, so without this it announces as an unlabeled button.
    */
   label: string;
-  /**
-   * `id` of the element this expands. Sets `aria-controls`, which lets a
-   * screen reader move to the revealed content.
-   */
-  controls?: string;
   /** Mark size in px. The hit target is at least 20px and grows with it.
    *  Default 13. */
   size?: number;
-  disabled?: boolean;
-  /** `-1` keeps it out of the tab order, for a row whose own keys fold it. */
-  tabIndex?: number;
-  className?: string;
-}
+};
 
 /**
  * The twisty on a collapsible section: a `<DisclosureMark>` in a button.
@@ -72,30 +69,35 @@ export interface DisclosureProps {
  * and a text glyph falls back to whatever the system offers. The hit target is
  * larger than the mark. And it is a sibling of the row's label rather than a
  * child, so clicking to expand does not actuate the label's own control.
+ *
+ * `ref` forwards to the `<button>`.
  */
-export function Disclosure({ open, onToggle, label, controls, size = 13, disabled, tabIndex, className }: DisclosureProps) {
+export const Disclosure = forwardRef(function Disclosure(
+  { open, onToggle, label, size = 13, className, onClick, ...native }: DisclosureProps,
+  ref: Ref<HTMLButtonElement>,
+) {
   return (
     <button
+      {...native}
+      ref={ref}
       type="button"
       className={className ? `${s.twisty} ${className}` : s.twisty}
       aria-expanded={open}
-      aria-controls={controls}
       aria-label={label}
-      disabled={disabled}
-      tabIndex={tabIndex}
-      onClick={onToggle}
+      onClick={composeHandler(onClick, onToggle)}
     >
       <DisclosureMark open={open} size={size} />
     </button>
   );
-}
+});
 
 /** Props for `<DisclosureRow>`. */
-export interface DisclosureRowProps extends Omit<DisclosureProps, 'className'> {
+export type DisclosureRowProps = Omit<DisclosureProps, 'className'> & {
   /** The row's own content — a label, a checkbox, a count. */
   children: ReactNode;
+  /** The row's, not the twisty's. */
   className?: string;
-}
+};
 
 /**
  * A `<Disclosure>` and a row of content beside it, laid out so the twisty

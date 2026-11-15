@@ -106,10 +106,10 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
           tabStop={!hold.unreachable && i === tab.stop}
           current={i === current}
           apply={apply}
-          held={hold.focus}
+          {...hold.focus}
           onKeyDown={swatchKeyDown(i, options, columns, apply, swatches, lastRow)}
           onFocus={() => tab.focused(i)}
-          data={tiles.item(i)}
+          {...tiles.item(i)}
         />
       ))}
     </div>

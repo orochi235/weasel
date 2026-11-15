@@ -1,6 +1,7 @@
-import type { ReactElement, ReactNode } from 'react';
+import { forwardRef, type ReactElement, type ReactNode, type Ref } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
-import { Button, type ButtonVariant } from '../Button/Button';
+import { Button, type ButtonBase, type ButtonVariant } from '../Button/Button';
+import { composeHandler } from '../../nativeProps';
 import { useDensity, type ControlSize } from '../Density';
 import { COLOR_MODES } from '../ColorModeControl/colorModes';
 import { Icon } from '../Icon/Icon';
@@ -21,8 +22,11 @@ export const COLOR_MODE_OPTIONS: readonly CycleButtonOption<ColorModePreference>
   label: m.label,
 }));
 
-/** Props for {@link CycleButton}. */
-export interface CycleButtonProps<T extends string = string> {
+/** Props for {@link CycleButton}: a {@link Button}'s, but for what the rotation decides (the face, the name, the
+ *  tooltip, and `value`), and every native `<button>` attribute and handler among them. */
+export type CycleButtonProps<T extends string = string> = Omit<
+  ButtonBase, 'value' | 'onChange' | 'children' | 'leadingIcon' | 'trailingIcon' | 'tooltip' | 'shortcut' | 'size' | 'variant'
+> & {
   value: T;
   onChange: (next: T) => void;
   /** The rotation, in order. */
@@ -34,26 +38,12 @@ export interface CycleButtonProps<T extends string = string> {
   size?: ControlSize;
   /** Defaults to `ghost`. */
   variant?: ButtonVariant;
-  className?: string;
-}
+};
 
-/**
- * One icon button that steps through a list of options: a click moves to the
- * next, a shift-click to the previous, both wrapping. It shows the current
- * option's icon, and its name and tooltip say what is current and what a
- * click chooses. With {@link COLOR_MODE_OPTIONS} it is the compact alternative
- * to `ColorModeControl`'s three segments; pair it with `useColorModePreference`
- * from `@weasel-js/theme/react`. Controlled.
- */
-export function CycleButton<T extends string = string>({
-  value,
-  onChange,
-  options,
-  'aria-label': ariaLabel,
-  size,
-  variant = 'ghost',
-  className,
-}: CycleButtonProps<T>): ReactElement {
+function CycleButtonInner<T extends string = string>(
+  { value, onChange, options, 'aria-label': ariaLabel, size, variant = 'ghost', onClick, ...rest }: CycleButtonProps<T>,
+  ref: Ref<HTMLButtonElement>,
+): ReactElement {
   const resolved = useDensity(size, 'sm');
   const count = options.length;
   const index = Math.max(0, options.findIndex((o) => o.value === value));
@@ -64,15 +54,31 @@ export function CycleButton<T extends string = string>({
 
   return (
     <Button
+      {...rest}
+      ref={ref}
       variant={variant}
       size={resolved}
       iconOnly
       aria-label={name}
       tooltip={name}
-      className={className}
-      onClick={(event) => onChange((event.shiftKey ? previous : next).value)}
+      onClick={composeHandler(onClick, (event) => onChange((event.shiftKey ? previous : next).value))}
     >
       {current.icon}
     </Button>
   );
 }
+
+/**
+ * One icon button that steps through a list of options: a click moves to the
+ * next, a shift-click to the previous, both wrapping. It shows the current
+ * option's icon, and its name and tooltip say what is current and what a
+ * click chooses. With {@link COLOR_MODE_OPTIONS} it is the compact alternative
+ * to `ColorModeControl`'s three segments; pair it with `useColorModePreference`
+ * from `@weasel-js/theme/react`. Controlled.
+ *
+ * A caller's `onClick` runs first, and one that calls `preventDefault()` keeps the value where it is. `ref`
+ * forwards to the `<button>`.
+ */
+export const CycleButton = forwardRef(CycleButtonInner) as <T extends string = string>(
+  props: CycleButtonProps<T> & { ref?: Ref<HTMLButtonElement> },
+) => ReactElement;

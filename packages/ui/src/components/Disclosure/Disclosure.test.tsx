@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { Disclosure, DisclosureMark, DisclosureRow } from './Disclosure';
+import { createRef } from 'react';
+import { describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { Disclosure, DisclosureMark, DisclosureRow, type DisclosureProps } from './Disclosure';
 
 describe('Disclosure', () => {
   it('reports its state through aria-expanded', () => {
@@ -36,7 +37,7 @@ describe('Disclosure', () => {
   });
 
   it('points at the section it opens', () => {
-    render(<Disclosure open onToggle={() => {}} label="Shapes" controls="shapes-panel" />);
+    render(<Disclosure open onToggle={() => {}} label="Shapes" aria-controls="shapes-panel" />);
     expect(screen.getByRole('button', { name: 'Shapes' })).toHaveAttribute(
       'aria-controls',
       'shapes-panel',
@@ -108,5 +109,29 @@ describe('DisclosureRow', () => {
     fireEvent.click(twisty);
     expect(onToggle).toHaveBeenCalledTimes(1);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("runs a caller's onClick before onToggle, and a prevented one skips it", () => {
+    const onToggle = vi.fn();
+    const { rerender } = render(<Disclosure open={false} onToggle={onToggle} label="Shapes" onClick={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Shapes' }));
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    rerender(<Disclosure open={false} onToggle={onToggle} label="Shapes" onClick={(e) => e.preventDefault()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Shapes' }));
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('passes native attributes through and forwards its ref', () => {
+    const ref = createRef<HTMLButtonElement>();
+    const onKeyDown = vi.fn();
+    render(<Disclosure ref={ref} open onToggle={() => {}} label="Shapes" tabIndex={-1} onKeyDown={onKeyDown} data-row="3" />);
+    const button = screen.getByRole('button', { name: 'Shapes' });
+    expect(ref.current).toBe(button);
+    expect(button).toHaveAttribute('tabindex', '-1');
+    expect(button).toHaveAttribute('data-row', '3');
+    fireEvent.keyDown(button, { key: 'ArrowLeft' });
+    expect(onKeyDown).toHaveBeenCalledTimes(1);
+    // `open` owns it; JSX lets any hyphenated name through, so the type is what says it.
+    expectTypeOf<DisclosureProps>().not.toHaveProperty('aria-expanded');
   });
 });

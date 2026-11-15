@@ -139,6 +139,7 @@ export { HANDLE_SIZE_TOKENS, handleHalf, handleSize } from './handles';
 export type { HandleSizeToken } from './handles';
 export { MARK_GROUP } from './icons.gen';
 export { HISTORY_COALESCE_MS, uiKitSettingsSchema } from './kitSettings';
+export type { DataAttributes } from './nativeProps';
 export { nodeText } from './nodeText';
 export type { OptionKey } from './optionKey';
 export * from './overlays/portalHost';

@@ -302,16 +302,6 @@ Owner tags, after the priority (2026-10-26):
   commit-only consumers need no dummy callback, and tests cover pointer/keyboard edits, cancellation,
   consumer-normalized values and exactly one commit per finished edit, with migration docs and examples.
 
-- **(P2) [agent] Preserve native DOM composition through UI primitives.** `ButtonBase` enumerates a
-  narrow prop list and `Button` forwards only selected attributes (`packages/ui/src/components/Button/Button.tsx`).
-  Standard trigger/form integrations cannot pass through `aria-expanded`, `aria-controls`,
-  `aria-describedby`, focus/key handlers, `tabIndex`, or form association reliably. Derive primitive props
-  from their native element, omit intentional conflicts, forward remaining attributes, and compose caller
-  handlers with internal behavior. Retain the icon-only accessible-name requirement and disabled policy.
-  Closes when a kit button composes as a custom disclosure trigger, a composite-widget member and a
-  form submitter using standard DOM props, with type/runtime tests for forwarding, handler composition,
-  prevented defaults and disabled controls; apply the same contract to other native primitives.
-
 - **(P2) [agent] Standardize focus refs and numeric-field integration.** `Input`/`NumberField` refs reach
   inputs, `Checkbox`/`Switch` refs reach labels, `MenuButton` takes `buttonRef`, and `UnitField`/`Select`
   expose no equivalent focus ref (`packages/ui/src/components/`). `NumberField` has label, description

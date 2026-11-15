@@ -293,6 +293,33 @@ A kit component's props use the DOM's and React Aria's names where one exists
   step through `onInput` and the finished gesture through `onChange`
   (`Slider`, `Timeline`, `useDetents`).
 
+## A primitive over one native element takes that element's props
+
+A ui component that is a thin wrapper over one native interactive element
+(`Button`, `ActionButton`, `CycleButton`, `Disclosure`, `SwatchButton`) takes
+that element's props, so it composes as a disclosure trigger, a member of a
+composite widget, or a form submitter with the standard DOM props (2026-11-14):
+
+- **Props**: derive them from the element (`ButtonHTMLAttributes<HTMLButtonElement>`)
+  plus `DataAttributes`, and `Omit` only the attributes the component writes
+  itself (`aria-pressed` under `pressed`, `aria-label` under a required
+  `label`) or that mean something else on it (`ActionButton`'s `form` is
+  where it is drawn). Name each omitted key in a type with a doc comment, so
+  the reason is beside it. An icon-only control still requires
+  `'aria-label'`.
+- **Forwarding**: spread the rest onto the element first and write the owned
+  attributes after it; `className` joins the component's own, `style` merges
+  over its appearance, and `ref` forwards to the element.
+- **Handlers**: compose a caller's handler with the component's own through
+  `composeHandler` (`packages/ui/src/nativeProps.ts`). The caller's runs first,
+  and one that calls `preventDefault()` skips the component's, so a caller can
+  veto a toggle or a cycle without replacing it.
+- **Disabled**: the hold policy above wins over a forwarded handler. Held with
+  no reason the element is natively `disabled`; held for a reason
+  (`ButtonTooltip`) it drops every press handler, so it neither fires nor
+  submits, and keeps its focus, hover and key handlers, so it keeps its place
+  in a roving focus.
+
 ## Story titles
 
 A ui story is titled for the folder it sits in: `ui/<folder>` in a file named for the folder, or `ui/<folder>/<export>`
