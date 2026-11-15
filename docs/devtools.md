@@ -66,9 +66,11 @@ naming both versions, and the panel decides how far to degrade.
 | panel → page | `set-tool` | `toolId`, which must be registered, or null |
 | panel → page | `set-overlays` | debug overlay flags, merged over earlier ones and laid over the canvas's own `debug` prop |
 
-Values a panel did not author — node data, poses, probes, trace records — pass through `serialize`:
-functions become `ƒ name`, typed arrays `{ $type, length }`, maps and sets `{ $type, size, entries }`,
-cycles `'[cycle]'`, and depth, length and string size are capped.
+Values a panel did not author — node data, poses, probes, trace records — pass through `serialize`.
+What JSON cannot say arrives as an object tagged with `$type`: functions `{ $type: 'function', name }`,
+typed arrays `{ $type, length }`, maps and sets `{ $type, size, entries }`, cycles `{ $type: 'cycle' }`.
+A plain object's own keys starting with `$` get one more `$`, and depth, length and string size are
+capped.
 
 ## Traces
 
