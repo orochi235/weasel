@@ -37,7 +37,7 @@ const createLabScene = () =>
     ],
   });
 
-function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function SnipTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const snip = useSnipTool({ radiusPx: ctx.config.reach });
   const tools = useMemo(() => ({ snip }), [snip]);
@@ -62,7 +62,7 @@ const snipInstrument = defineInstrument<State, Config>({
       { id: 'select', label: 'Select', icon: icon('core:select') },
     ],
   },
-  render: (ctx) => <TrimTrial ctx={ctx} />,
+  render: (ctx) => <SnipTrial ctx={ctx} />,
 });
 
 export function SnipLabDemo() {
