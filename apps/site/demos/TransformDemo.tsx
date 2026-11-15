@@ -15,17 +15,6 @@ const CELL = { value: 1, unit: 'tile' } as const;
 const GRID = createGridLayer({ spacing: CELL, unitSystem: UNITS, accentEvery: 5 });
 const SNAP = { sources: [gridSnapSource({ spacing: CELL, unitSystem: UNITS })] };
 
-/**
- * The select tool's full transform surface on one canvas — no per-gesture
- * wiring. Body-drag moves (snapping to the 20px grid through `gridSnapSource`, which
- * snaps a dragged corner too), corner handles resize in each leaf's local frame (the `poseDescriptor` prop
- * supplies `ROTATED_POSE_DESCRIPTOR`, which keeps the diagonal corner pinned
- * even when the rect is rotated), the handle
- * above a selection rotates it, and Alt+drag clones (the `move` preset's
- * alt-drag binding → `cloneAction`). `pick` brings the select tool, `move`
- * the move and clone bindings, `transform` the handles; no other tool is
- * registered, so select stays the active tool throughout.
- */
 export function TransformDemo() {
   return (
     <DemoStage width={W} height={H}>

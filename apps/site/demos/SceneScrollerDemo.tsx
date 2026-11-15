@@ -327,7 +327,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       </div>
       <div className="ckd-hint">
         A platformer built as a load test for the animation timeline, the audio
-        engine and the scene graph: every tile, coin, enemy and bone is a scene
+        engine, and the scene graph: every tile, coin, enemy, and bone is a scene
         node, and the camera is the canvas view. Arrow keys or WASD to move,
         space to jump.
       </div>
