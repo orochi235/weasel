@@ -15,24 +15,25 @@ import type { SandParams } from './sand/sand';
 import type { KneadParams } from './knead/knead';
 import type { WarpKind, WarpSettings } from './warp/warpTargets';
 
-/** A path effect's settings as params; a tween's `reverse` also takes
- *  `'auto'`, handing the direction back to `autoAlign`. */
-type SettingsOf<E> = { [K in Exclude<keyof E, 'kind'>]?: E[K] };
-type TweenParams = Omit<SettingsOf<TweenEffect>, 'reverse'> & { reverse?: boolean | 'auto' };
-/** Either field left out keeps that part of each selected corner. */
-type SetFilletsParams = { shape: CornerShape; radius: number };
-type EditPathEffectParams = TweenParams & SettingsOf<BendAlongEffect> & SettingsOf<RepeatAlongEffect>
-  & SettingsOf<RoughenEffect> & SettingsOf<ZigzagEffect> & SettingsOf<PuckerBloatEffect>
+/** A path effect's settings as params: every field but `kind`, each optional. */
+export type PathEffectParams<E> = { [K in Exclude<keyof E, 'kind'>]?: E[K] };
+/** The `tween` action's params; its `reverse` also takes `'auto'`, handing the direction back to `autoAlign`. */
+export type TweenParams = Omit<PathEffectParams<TweenEffect>, 'reverse'> & { reverse?: boolean | 'auto' };
+/** The `setFillets` action's params. Either field left out keeps that part of each selected corner. */
+export type SetFilletsParams = { shape: CornerShape; radius: number };
+/** The `editPathEffect` action's params: the effects' settings, and which nodes and effect kind they edit. */
+export type EditPathEffectParams = TweenParams & PathEffectParams<BendAlongEffect> & PathEffectParams<RepeatAlongEffect>
+  & PathEffectParams<RoughenEffect> & PathEffectParams<ZigzagEffect> & PathEffectParams<PuckerBloatEffect>
   & { ids?: readonly string[]; kind?: PathEffect['kind'] };
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {
     tween: TweenParams;
-    bendAlong: SettingsOf<BendAlongEffect>;
-    repeatAlong: SettingsOf<RepeatAlongEffect>;
-    roughen: SettingsOf<RoughenEffect>;
-    zigzag: SettingsOf<ZigzagEffect>;
-    puckerBloat: SettingsOf<PuckerBloatEffect>;
+    bendAlong: PathEffectParams<BendAlongEffect>;
+    repeatAlong: PathEffectParams<RepeatAlongEffect>;
+    roughen: PathEffectParams<RoughenEffect>;
+    zigzag: PathEffectParams<ZigzagEffect>;
+    puckerBloat: PathEffectParams<PuckerBloatEffect>;
     editPathEffect: EditPathEffectParams;
     sand: SandParams;
     knead: KneadParams;

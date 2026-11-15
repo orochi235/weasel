@@ -3,7 +3,7 @@
  * layout has run, and the specs the regions are drawn with.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { maxOf, minOf } from '@weasel-js/geom';
+import { maxOf, minOf, type Rect } from '@weasel-js/geom';
 import type { GroupInset } from './cluster';
 import { containerShape } from './containers/layouts';
 import { stackedLanes } from './containers/laneStack';
@@ -15,8 +15,6 @@ import { ownNodeStyle } from './dataColors';
 import { dataRegionStyle } from './dataStyles';
 import { grownBy } from './footprint';
 import type { DiagramTheme } from './theme/types';
-
-type Rect = { x: number; y: number; width: number; height: number };
 
 /** A data node as placement reads it: where it asked to start, its size, and how far past its box it reaches. */
 export interface PlacedNodeSize {

@@ -1,12 +1,13 @@
 import type { Polyline } from '@weasel-js/geom/tessellate';
-import { type Cap, emitCap, emitJoin, type Join, makeSeg, type Seg } from './ribbon';
+import type { Stroke } from '@weasel-js/paint';
+import { emitCap, emitJoin, makeSeg, type Seg } from './ribbon';
 import { meetInnerEdges } from './innerJoins';
 
 /** How a ribbon is drawn around its polyline. */
 export interface RibbonStyle {
   width: number;
-  join: Join;
-  cap: Cap;
+  join: NonNullable<Stroke['join']>;
+  cap: NonNullable<Stroke['cap']>;
   miterLimit: number;
   varyingThreshold: number;
   /** Whether the segments of a turn meet along one edge inside it (`innerJoins`), the default,
@@ -186,7 +187,7 @@ function ownVertices(out: RibbonOut, mark: Mark, s: number, copy = true): void {
  * the direction of the line a zero-length dash was cut from, or else the x axis.
  */
 function emitDot(
-  pl: Polyline & { tangent?: readonly [number, number] }, cap: Cap, pos: number, neg: number,
+  pl: Polyline & { tangent?: readonly [number, number] }, cap: RibbonStyle['cap'], pos: number, neg: number,
   a: number, b: number, t: number, out: RibbonOut, at?: ArrayLike<number>,
 ): void {
   const { verts, idx, anchorA, anchorB, anchorT } = out;

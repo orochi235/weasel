@@ -6,8 +6,8 @@ import { linesNear, mapLines, type GridLines, type GridSpacing } from '../grid/a
 import { containerLines, gridLines, type GridScopes } from '../grid/reading';
 import { gridOwner, type GridOwners } from '../grid/regions';
 import { axisLine, frameLine } from './lines';
+import type { Point } from '@weasel-js/geom';
 
-type Point = { x: number; y: number };
 const AXES = ['x', 'y'] as const;
 
 /** Options for `gridSnapSource`. */

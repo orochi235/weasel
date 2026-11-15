@@ -7,8 +7,7 @@ import type { SpacingEdge } from '../guides/alignment/types';
 import type { SpacingGap } from '../guides/types';
 import { landedBox, sideLine } from './lines';
 import { cachedPerScene, type TargetFilter } from './targets';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** A side of the box the gesture moves on `axis`, at `rate` per unit of the move. */
 interface Moving { axis: 'x' | 'y'; edge: SpacingEdge; rate: Point }

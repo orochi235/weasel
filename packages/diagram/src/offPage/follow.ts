@@ -29,10 +29,8 @@ export interface OffPageTarget {
   page: string;
 }
 
-type SceneReads = NonNullable<ActionDeps['scene']>;
-
 /** Where tag `tagId` leads, or `null` when it is no tag of a split connector. */
-export function offPageTargetOf(scene: SceneReads, tagId: string): OffPageTarget | null {
+export function offPageTargetOf(scene: NonNullable<ActionDeps['scene']>, tagId: string): OffPageTarget | null {
   const node = scene.get(tagId as never);
   const tag = node === undefined ? null : offPageTagOf(node);
   const edgeNode = tag === null ? undefined : scene.get(tag.edge as never);

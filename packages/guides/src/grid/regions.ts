@@ -1,10 +1,8 @@
 import {
   sceneBoxFrames, scenePoseFrame, sceneUnitScopes, type NodeId, type Scene, type ScopedScene, type UnitScope,
 } from '@weasel-js/core';
-import { transformPoint, pointInPolygon, type Affine } from '@weasel-js/geom';
+import { transformPoint, pointInPolygon, type Affine, type Point } from '@weasel-js/geom';
 import type { GridSpacing } from './axes';
-
-type Point = { x: number; y: number };
 
 /** Which of a scene's containers run a grid of their own. */
 export interface GridOwners {

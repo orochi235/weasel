@@ -60,35 +60,6 @@
   "@weasel-js/devtools": [
     "DistributiveOmit"
   ],
-  "@weasel-js/diagram": [
-    "AnyScene",
-    "Bounds",
-    "Box",
-    "BoxField",
-    "Boxes",
-    "CanvasMetrics",
-    "EdgeEndOptions",
-    "EdgeEnds",
-    "Font",
-    "HeldEnd",
-    "Like",
-    "Ref",
-    "ResolvedAvoidOptions",
-    "SceneLike",
-    "SceneReads",
-    "SeqActivationPlace",
-    "SeqBoxPlace",
-    "SeqFragmentPlace",
-    "SeqHeadPlace",
-    "SeqLifelinePlace",
-    "SeqMessagePlace",
-    "SeqNotePlace",
-    "Size",
-    "Stencil",
-    "Steps",
-    "Types",
-    "Values"
-  ],
   "@weasel-js/editor": [
     "FileRun"
   ],
@@ -103,26 +74,8 @@
     "Shared",
     "StoryHosts"
   ],
-  "@weasel-js/geom": [
-    "Comps"
-  ],
-  "@weasel-js/gestures": [
-    "SpecKind"
-  ],
-  "@weasel-js/guides": [
-    "AnyScene",
-    "Axis",
-    "Point",
-    "Rect"
-  ],
   "@weasel-js/icons": [
     "ShapeIconNames"
-  ],
-  "@weasel-js/kernel3d": [
-    "InsertCommon",
-    "InsertMake",
-    "Point",
-    "Quad"
   ],
   "@weasel-js/labkit": [
     "LensActionId",
@@ -133,25 +86,6 @@
     "SnapshotActions",
     "TrialWriters",
     "Write"
-  ],
-  "@weasel-js/paint": [
-    "Rgba",
-    "Supports"
-  ],
-  "@weasel-js/path-tools": [
-    "AnyScene",
-    "EditPathEffectParams",
-    "Kind",
-    "LinkScene",
-    "Point",
-    "Pt",
-    "SetFilletsParams",
-    "SettingsOf",
-    "TweenParams"
-  ],
-  "@weasel-js/plot": [
-    "AnyScene",
-    "Unit"
   ],
   "@weasel-js/prefs": [
     "AssetBase",
@@ -170,34 +104,6 @@
     "RegisteredAction",
     "Rest",
     "ValueMove"
-  ],
-  "@weasel-js/renderer": [
-    "BatchCut",
-    "BatchVariantPrograms",
-    "DrawBatch",
-    "GLImageCache",
-    "GLMeshCache",
-    "GLTextureCache",
-    "GradientRampAtlas",
-    "GroupState",
-    "WebGLDevice"
-  ],
-  "@weasel-js/routing": [
-    "ActionsNode",
-    "CaptureThresholds",
-    "KeyBindingEvent",
-    "LastOperationHost",
-    "Params",
-    "ScopeTree"
-  ],
-  "@weasel-js/stroke": [
-    "MeasuredPolyline",
-    "RibbonStyle"
-  ],
-  "@weasel-js/svg": [
-    "SvgInherits",
-    "SvgKitInherited",
-    "WarmOptions"
   ],
   "@weasel-js/ui": [
     "AppliedColor",

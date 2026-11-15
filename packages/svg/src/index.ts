@@ -48,6 +48,7 @@ export {
   type SvgKitTreeNode,
   type SvgKitLeafData,
   type SvgKitPose,
+  type SvgKitInherited,
   type SvgNodesFromKitOptions,
 } from './fromKit';
 export type {
@@ -64,6 +65,7 @@ export type {
   SvgImageNode,
   SvgPaint,
   SvgStroke,
+  SvgInherits,
   Matrix,
 } from './types';
 export { IDENTITY_MATRIX } from './types';

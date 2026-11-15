@@ -32,12 +32,12 @@ const GESTURE_TO_SPEC_KIND = new Map<GestureName, SpecKind>(
 
 /** The route-grammar gesture a `GestureSpec.kind` routes as, or `undefined`
  *  for a kind the grammar has no name for. */
-export function routeGestureForSpecKind(kind: SpecKind): GestureName | undefined {
+export function routeGestureForSpecKind(kind: GestureSpec['kind']): GestureName | undefined {
   return SPEC_KIND_TO_GESTURE[kind];
 }
 
 /** The `GestureSpec.kind` a route-grammar gesture is written as, or
  *  `undefined` for a gesture no spec can express. */
-export function specKindForRouteGesture(gesture: GestureName): SpecKind | undefined {
+export function specKindForRouteGesture(gesture: GestureName): GestureSpec['kind'] | undefined {
   return GESTURE_TO_SPEC_KIND.get(gesture);
 }

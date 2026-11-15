@@ -5,8 +5,7 @@
  */
 import { effectivePose, type NodeId, type Scene } from '@weasel-js/core';
 import type { ReorderItem, ReorderSlots } from './reorder';
-
-export type Box = { x: number; y: number; width: number; height: number };
+import type { Rect } from '@weasel-js/geom';
 
 /** Where an item stands along the axis: its start and its length. */
 interface Span {
@@ -45,7 +44,7 @@ export function slideOthers(scene: Scene<unknown, string, unknown>, slots: Reord
     id: item.id,
     poses: carriedBy(item).flatMap((id) => {
       const node = scene.get(id as NodeId);
-      return node === undefined || node.derivePose !== undefined ? [] : [{ id: id as NodeId, pose: effectivePose(scene, node) as Box }];
+      return node === undefined || node.derivePose !== undefined ? [] : [{ id: id as NodeId, pose: effectivePose(scene, node) as Rect }];
     }),
   }));
   const hold = scene.overrides.hold();

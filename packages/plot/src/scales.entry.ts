@@ -16,6 +16,6 @@ export {
   powScale, warpScale, type PowScale, type PowScaleOptions, type WarpScale, type WarpScaleOptions,
 } from './scales/warp';
 export { bandScale, type BandScale, type BandScaleOptions } from './scales/band';
-export { timeScale, formatInstant, type TimeScale, type TimeScaleOptions } from './scales/time';
+export { timeScale, formatInstant, type TimeScale, type TimeScaleOptions, type TimeUnit } from './scales/time';
 export { ordinalScale, type OrdinalScale, type OrdinalScaleOptions } from './scales/ordinal';
 export { polarScale, type PolarScale, type PolarScaleOptions } from './scales/polar';

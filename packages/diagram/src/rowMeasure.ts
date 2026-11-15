@@ -41,14 +41,12 @@ export function capCenterFrom(m: CapMetrics, size: number): number {
   return baseline - (m.capHeight * size) / 2;
 }
 
-type CanvasMetrics = { width: number; fontBoundingBoxAscent?: number; fontBoundingBoxDescent?: number; actualBoundingBoxAscent?: number };
-
 /** Adapts the kit's `measureText` for a caller holding a 2D context. Pass the
  *  same context the renderer measures with, or the floor will not match what
  *  is painted. Where the context reports font and glyph bounds, it also
  *  reports `capCenter`, from a capital H. */
 export function canvasMeasure(
-  ctx: { measureText(text: string): CanvasMetrics; font: string },
+  ctx: { measureText(text: string): { width: number; fontBoundingBoxAscent?: number; fontBoundingBoxDescent?: number; actualBoundingBoxAscent?: number }; font: string },
 ): MeasureRowText {
   return (text, style) => {
     const size = style.fontSize ?? FALLBACK_LINE;

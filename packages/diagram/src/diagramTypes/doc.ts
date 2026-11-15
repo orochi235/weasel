@@ -13,24 +13,22 @@ export interface DiagramTypeScene {
   batch<T>(label: string, fn: () => T): T;
 }
 
-type Types = Readonly<Record<string, DiagramType>>;
-
 /** Options for the diagram type writers. */
 export interface DiagramTypeWriteOptions {
   /** The catalog type ids resolve in. Default {@link DIAGRAM_TYPES}. */
-  types?: Types;
+  types?: Readonly<Record<string, DiagramType>>;
   label?: string;
 }
 
 /** A new document's value for type `id`: it, and its groups. Flowchart for an id `types` lacks. */
-export function diagramTypeDocValue(id: string, types: Types = DIAGRAM_TYPES): DiagramTypeDoc {
+export function diagramTypeDocValue(id: string, types: Readonly<Record<string, DiagramType>> = DIAGRAM_TYPES): DiagramTypeDoc {
   const type = types[id] ?? FLOWCHART_TYPE;
   return { type: type.id, groups: [...type.groups] };
 }
 
 /** The type and shown groups a scene holds. A scene holding none, or naming a type `types` lacks,
  *  reads as flowchart with its groups. */
-export function diagramTypeDocOf(scene: DiagramTypeReadable, types: Types = DIAGRAM_TYPES): DiagramTypeDoc {
+export function diagramTypeDocOf(scene: DiagramTypeReadable, types: Readonly<Record<string, DiagramType>> = DIAGRAM_TYPES): DiagramTypeDoc {
   const value = scene.doc.get(DIAGRAM_TYPE_DOC_KEY) as Partial<DiagramTypeDoc> | null | undefined;
   const id = typeof value?.type === 'string' && types[value.type] !== undefined ? value.type : null;
   if (id === null) return diagramTypeDocValue(FLOWCHART_TYPE.id, types);
@@ -39,16 +37,16 @@ export function diagramTypeDocOf(scene: DiagramTypeReadable, types: Types = DIAG
 }
 
 /** The type a scene holds, as {@link diagramTypeDocOf} reads it. */
-export function diagramTypeOf(scene: DiagramTypeReadable, types: Types = DIAGRAM_TYPES): DiagramType {
+export function diagramTypeOf(scene: DiagramTypeReadable, types: Readonly<Record<string, DiagramType>> = DIAGRAM_TYPES): DiagramType {
   return types[diagramTypeDocOf(scene, types).type] ?? FLOWCHART_TYPE;
 }
 
 /** The notation a graph page of the scene's type is written in. */
-export const diagramNotationOf = (scene: DiagramTypeReadable, types: Types = DIAGRAM_TYPES): string =>
+export const diagramNotationOf = (scene: DiagramTypeReadable, types: Readonly<Record<string, DiagramType>> = DIAGRAM_TYPES): string =>
   diagramTypeOf(scene, types).notations?.[0] ?? FLOWCHART_NOTATION;
 
 /** The type whose pages `notation` writes, unset read as a flowchart's; `null` when no type in `types` claims it. */
-export function diagramTypeOfNotation(notation: string | undefined, types: Types = DIAGRAM_TYPES): DiagramType | null {
+export function diagramTypeOfNotation(notation: string | undefined, types: Readonly<Record<string, DiagramType>> = DIAGRAM_TYPES): DiagramType | null {
   const n = notation ?? FLOWCHART_NOTATION;
   return Object.values(types).find((t) => (t.notations ?? []).includes(n)) ?? null;
 }

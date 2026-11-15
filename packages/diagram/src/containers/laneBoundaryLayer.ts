@@ -44,8 +44,6 @@ export function laneScratchOf(hit: { payload?: unknown } | null | undefined): La
   return payload !== undefined && typeof payload.poolId === 'string' ? payload : null;
 }
 
-type AnyScene = Scene<unknown, string, unknown>;
-
 /** A pool as the affordances see it: its box, the axis it stacks along, and its lanes in order.
  *  `pose` is as stored, `at` where it draws. */
 export interface PoolLanes {
@@ -57,7 +55,7 @@ export interface PoolLanes {
 }
 
 /** Every pool in `scene` that is drawn and not locked. */
-export function poolsOf(scene: AnyScene): PoolLanes[] {
+export function poolsOf(scene: Scene<unknown, string, unknown>): PoolLanes[] {
   const out: PoolLanes[] = [];
   const world = worldWith(scene);
   for (const node of scene.renderOrderNodes()) {
@@ -117,7 +115,7 @@ function addPaint(sizePx: number, fill: CommandFill, stroke: CommandStroke): Aff
 }
 
 /** The affordance: a boundary region after each lane of each pool, and an add-lane button per pool. */
-export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {}): Affordance {
+export function createLaneAffordance(scene: Scene<unknown, string, unknown>, opts: LaneLayerOptions = {}): Affordance {
   const { hitRadiusPx = 4, addSizePx = 14 } = opts;
   const fill = opts.fill ?? DEFAULT_FILL;
   const stroke = opts.stroke ?? DEFAULT_STROKE;
@@ -161,6 +159,6 @@ export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {
 }
 
 /** The composed layer, for `CanvasExtensionApi.registerLayer`. */
-export function laneLayer(scene: AnyScene, opts: LaneLayerOptions = {}): RenderLayer<unknown> {
+export function laneLayer(scene: Scene<unknown, string, unknown>, opts: LaneLayerOptions = {}): RenderLayer<unknown> {
   return composeAffordanceLayer(LANE_LAYER_ID, 'Diagram lanes', [createLaneAffordance(scene, opts)]) as unknown as RenderLayer<unknown>;
 }

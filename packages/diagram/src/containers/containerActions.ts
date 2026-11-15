@@ -33,8 +33,6 @@ export const ADD_LANE_ACTION_ID = 'diagram.addLane';
 export const RELEASE_MEMBERS_ACTION_ID = 'diagram.releaseMembers';
 const GRAB_LANE_ACTION_ID = 'diagram.grabLane';
 
-type AnyScene = Scene<unknown, string, unknown>;
-
 /** A lane resized: its new size along its pool's stack. */
 export interface LaneResize {
   poolId: string;
@@ -45,7 +43,7 @@ export interface LaneResize {
 /** The default commit: the lane's and the pool's new size, as one history
  *  entry labeled "Resize lane". The pool's layout restacks the lanes after it. */
 export function commitLaneResizeToScene(resize: LaneResize, ctx: InvocationCtx): void {
-  const scene = ctx.deps.scene as AnyScene | undefined;
+  const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
   const pool = scene?.get(resize.poolId as NodeId);
   const lane = scene?.get(resize.laneId as NodeId);
   if (scene === undefined || pool === undefined || lane === undefined) return;
@@ -61,7 +59,7 @@ export function commitLaneResizeToScene(resize: LaneResize, ctx: InvocationCtx):
 
 /** Where everything stands with the lane at `index` of `pool` resized to `size`: the
  *  lane, its title, the pool and its title, and every later lane with what it holds. */
-export function laneResizeFrame(scene: AnyScene, pool: PoolLanes, index: number, size: number): Map<string, RectPose> {
+export function laneResizeFrame(scene: Scene<unknown, string, unknown>, pool: PoolLanes, index: number, size: number): Map<string, RectPose> {
   const { axis } = pool;
   const along = (r: RectPose) => (axis === 'y' ? r.height : r.width);
   const grow = (r: RectPose, by: number): RectPose => (axis === 'y' ? { ...r, height: r.height + by } : { ...r, width: r.width + by });
@@ -91,7 +89,7 @@ export function laneResizeFrame(scene: AnyScene, pool: PoolLanes, index: number,
 
 /** Options for the container actions. */
 export interface LaneActionOptions extends LaneLayerOptions {
-  scene: AnyScene;
+  scene: Scene<unknown, string, unknown>;
   /** The selected ids, which Release members reads. */
   selected?: () => readonly string[];
   /** Defaults to {@link commitLaneResizeToScene}. */
@@ -149,7 +147,7 @@ const NO_MODIFIERS = { alt: false, shift: false, meta: false, ctrl: false };
 /** The `diagram.addLane` action: the add-lane button's click. */
 export function createAddLaneAction(opts: LaneActionOptions): Action {
   const commit = opts.commitAddLane ?? ((poolId: string, ctx: InvocationCtx) => {
-    const scene = ctx.deps.scene as AnyScene | undefined;
+    const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
     if (scene !== undefined) addLane(scene, poolId);
   });
   return {

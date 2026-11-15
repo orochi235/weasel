@@ -1,6 +1,5 @@
 import { nearestLine, type GridLines } from './axes';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** A point of `gridFit` off its line on one axis, by `distance`. */
 export interface GridMiss {

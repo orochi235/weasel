@@ -3,8 +3,6 @@ import { bezierDirection, bezierPoint } from './bezier';
 import { segmentArc, tableInternals, type LengthTable, type SegmentArc } from './lengthTable';
 import { lerp } from '../scalar';
 
-type Comps = [number, number, number];
-
 /**
  * The point at pen-order length `s`, and the unit tangent of the segment
  * arriving there (leaving, at a run's start); on a curve, the exact point and
@@ -12,7 +10,7 @@ type Comps = [number, number, number];
  * `dim` read 0. Clamps to the path; where two runs meet, answers the end of the
  * earlier one. A path with no length answers a zero tangent.
  */
-export function pointAtLength(t: LengthTable, s: number): { point: Comps; tangent: Comps } {
+export function pointAtLength(t: LengthTable, s: number): { point: [number, number, number]; tangent: [number, number, number] } {
   const { cum } = tableInternals(t);
   const len = Number.isNaN(s) ? 0 : Math.min(Math.max(s, 0), t.total);
   let r = 0;
@@ -39,7 +37,7 @@ export function pointAtLength(t: LengthTable, s: number): { point: Comps; tangen
  * @internal {@link pointAtLength} on a segment already found: the point at
  * pen-order length `len` on segment `i` of run `r`, `len` clamped to it.
  */
-export function pointOnSegment(t: LengthTable, r: number, i: number, len: number): { point: Comps; tangent: Comps } {
+export function pointOnSegment(t: LengthTable, r: number, i: number, len: number): { point: [number, number, number]; tangent: [number, number, number] } {
   const arc = segmentArc(t, r, i);
   if (arc) {
     const u = arcParam(t, arc, r, i, len);
@@ -51,8 +49,8 @@ export function pointOnSegment(t: LengthTable, r: number, i: number, len: number
 /** @internal {@link pointOnSegment}'s point alone, given the segment's `segmentArc` when the caller kept it, and
  *  written into `out` on a curve when given. */
 export function pointOnSegmentOnly(
-  t: LengthTable, r: number, i: number, len: number, arc: SegmentArc | null = segmentArc(t, r, i), out?: Comps,
-): Comps {
+  t: LengthTable, r: number, i: number, len: number, arc: SegmentArc | null = segmentArc(t, r, i), out?: [number, number, number],
+): [number, number, number] {
   return arc ? bezierPoint(arc.coords, t.dim, arcParam(t, arc, r, i, len), out) : linePoint(t, r, i, len);
 }
 
@@ -61,7 +59,7 @@ function arcParam(t: LengthTable, arc: SegmentArc, r: number, i: number, len: nu
   return lookupT(arc.coords, t.dim, arc.lookup, Math.min(Math.max(len - c[i], 0), c[i + 1] - c[i]));
 }
 
-function linePoint(t: LengthTable, r: number, i: number, len: number): Comps {
+function linePoint(t: LengthTable, r: number, i: number, len: number): [number, number, number] {
   const c = tableInternals(t).cum[r];
   const span = c[i + 1] - c[i];
   const local = Math.min(Math.max(len - c[i], 0), span);
@@ -72,7 +70,7 @@ function linePoint(t: LengthTable, r: number, i: number, len: number): Comps {
 }
 
 /** Point `i` of run `r`, wrapping a closed run's closing edge back to its first. */
-function at(t: LengthTable, r: number, i: number): Comps {
+function at(t: LengthTable, r: number, i: number): [number, number, number] {
   const { points } = t.runs[r];
   const n = Math.floor(points.length / t.dim);
   const o = (i % n) * t.dim;
@@ -80,17 +78,17 @@ function at(t: LengthTable, r: number, i: number): Comps {
 }
 
 /** The direction of segment `i`, or of the nearest one with length, looking back first. */
-function tangentNear(t: LengthTable, r: number, i: number): Comps {
+function tangentNear(t: LengthTable, r: number, i: number): [number, number, number] {
   const last = tableInternals(t).cum[r].length - 2;
   for (let k = i; k >= 0; k--) { const d = direction(t, r, k); if (d) return d; }
   for (let k = i + 1; k <= last; k++) { const d = direction(t, r, k); if (d) return d; }
   return [0, 0, 0];
 }
 
-function direction(t: LengthTable, r: number, i: number): Comps | null {
+function direction(t: LengthTable, r: number, i: number): [number, number, number] | null {
   const a = at(t, r, i);
   const b = at(t, r, i + 1);
-  const d: Comps = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
   const l = Math.hypot(d[0], d[1], d[2]);
   return l > 0 ? [d[0] / l, d[1] / l, d[2] / l] : null;
 }

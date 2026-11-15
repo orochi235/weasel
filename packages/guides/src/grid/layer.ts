@@ -17,9 +17,9 @@ import {
   type Dims,
   type View,
 } from '@weasel-js/core';
-import { transformPoint, invert, mat3, PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
+import { transformPoint, invert, mat3, PATH_L, PATH_M, PATH_Z, type PolygonPath, type Point, type Rect } from '@weasel-js/geom';
 import { mapLines, type GridLines, type GridSpacing } from './axes';
-import { hasArea, intersect, lattice, outlineBox, type LatticeStyles, type Rect } from './lattice';
+import { hasArea, intersect, lattice, outlineBox, type LatticeStyles } from './lattice';
 import type { GridRegion } from './regions';
 import { containerLines, gridLines, type GridScopes } from './reading';
 
@@ -59,8 +59,6 @@ export interface GridLayerOptions {
     sub?: CommandStroke;
   };
 }
-
-type Point = { x: number; y: number };
 
 // A mid gray, weighted by opacity, shows on a white canvas and a dark one alike.
 // Override per-canvas via `style.{line,accent,sub}.paint` if a hard color is needed.

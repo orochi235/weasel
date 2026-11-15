@@ -10,8 +10,7 @@ import { MIN_LANE_SIZE } from './containers/laneStack';
 import type { ContainerRole } from './containers/trait';
 import { DEFAULT_LANE_SIZE, DEFAULT_POOL_ACROSS, type DataContainer, type NodeStyle } from './dataTypes';
 import type { GraphGroup, GraphNode } from './graph';
-
-type Rect = { x: number; y: number; width: number; height: number };
+import type { Rect } from '@weasel-js/geom';
 
 /** A container's size when it gives no box and holds nothing to fit. */
 export const EMPTY_CONTAINER = { width: 240, height: 160 };

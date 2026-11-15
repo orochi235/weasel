@@ -6,15 +6,13 @@ import {
 /** What a run supplies to its source stages. */
 export interface AudioSources { audio?: AudioBuffer }
 
-type Values = Readonly<Record<string, unknown>>;
-
 /** How one stage type becomes a graph node: its settings, its levels, and the node it builds. */
 export interface AudioStageNode {
   /** The stage's discrete settings, from its param values and the run's sources. Throws to fail the stage. */
-  settings(params: Values, sources: AudioSources): Values;
+  settings(params: Readonly<Record<string, unknown>>, sources: AudioSources): Readonly<Record<string, unknown>>;
   /** The ids of its numeric params, each a `params` key of the def `build` returns. */
   levels: readonly string[];
-  build(ctx: BaseAudioContext, settings: Values, levels: Readonly<Record<string, number>>): GraphNodeDef;
+  build(ctx: BaseAudioContext, settings: Readonly<Record<string, unknown>>, levels: Readonly<Record<string, number>>): GraphNodeDef;
 }
 /** The graph node of each stage type, by `type`. */
 export type AudioStageNodes = Readonly<Record<string, AudioStageNode>>;

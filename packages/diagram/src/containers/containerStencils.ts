@@ -11,6 +11,7 @@ import { themeWrites, type ThemedScene } from '../theme/themeWrites';
 import { DIAGRAM_THEME_KEY } from '../theme/types';
 import { firstLanes, regionSpecs, type ContainerBuildOptions } from './regionSpecs';
 import { diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
+import type { Rect } from '@weasel-js/geom';
 
 export type { ContainerBuildOptions };
 
@@ -36,11 +37,8 @@ export { CONTAINER_STENCILS } from '../stencils/containers';
 /** A lane added to a pool, along its stack. */
 const NEW_LANE_SIZE = 120;
 
-type Bounds = { x: number; y: number; width: number; height: number };
-type AnyScene = Scene<unknown, string, unknown>;
-
 /** A zero-size box — a click rather than a drag — becomes the stencil's own size centered on it. */
-function placedBounds(stencil: ContainerStencil, b: Bounds): RectPose {
+function placedBounds(stencil: ContainerStencil, b: Rect): RectPose {
   if (b.width > 0 && b.height > 0) return { ...b };
   const { width, height } = stencil.size;
   return { x: b.x + b.width / 2 - width / 2, y: b.y + b.height / 2 - height / 2, width, height };
@@ -50,7 +48,7 @@ function placedBounds(stencil: ContainerStencil, b: Bounds): RectPose {
  *  pool's first lanes. Applied as one batch, they are one undo entry. */
 export function containerBuild<TLayer extends string>(
   stencil: ContainerStencil,
-  bounds: Bounds,
+  bounds: Rect,
   opts: ContainerBuildOptions<TLayer>,
 ): { id: string; ops: Op[] } {
   const id = opts.newId();
@@ -74,7 +72,7 @@ export function containerBuild<TLayer extends string>(
 export const poolAxisOf = (pool: DiagramContainer): 'x' | 'y' => (pool.header?.side === 'top' ? 'x' : 'y');
 
 /** The lanes of `poolId`, in the order they stack. */
-export function lanesOf(scene: AnyScene, poolId: string): NodeId[] {
+export function lanesOf(scene: Scene<unknown, string, unknown>, poolId: string): NodeId[] {
   const pool = scene.get(poolId as NodeId);
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (pool === undefined || trait?.role !== 'pool') return [];
@@ -93,7 +91,7 @@ export function lanesOf(scene: AnyScene, poolId: string): NodeId[] {
  * stack, as one history entry. The pool grows to hold it. Returns the new
  * lane's id, or null when `poolId` is not a pool.
  */
-export function addLane(scene: AnyScene, poolId: string, index?: number, style?: NodeStyle): string | null {
+export function addLane(scene: Scene<unknown, string, unknown>, poolId: string, index?: number, style?: NodeStyle): string | null {
   const pool = scene.get(poolId as NodeId);
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (pool === undefined || trait?.role !== 'pool') return null;
@@ -126,7 +124,7 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
 }
 
 /** The node a release lands members beside: `id`, or the pool around a lane. */
-function releasedFrom(scene: AnyScene, id: NodeId): NodeId {
+function releasedFrom(scene: Scene<unknown, string, unknown>, id: NodeId): NodeId {
   const parent = scene.get(id)!.parent;
   const around = parent === null ? undefined : scene.get(parent);
   return around !== undefined && diagramContainerOf(around)?.role === 'pool' ? around.id : id;
@@ -137,7 +135,7 @@ function releasedFrom(scene: AnyScene, id: NodeId): NodeId {
  * parent, as one history entry. A pool's members are its lanes' members, and
  * a lane's go past its pool. Connectors on what is removed go with it.
  */
-export function releaseMembers(scene: AnyScene, id: string): void {
+export function releaseMembers(scene: Scene<unknown, string, unknown>, id: string): void {
   const node = scene.get(id as NodeId);
   const trait = node === undefined ? null : diagramContainerOf(node);
   if (node === undefined || trait === null) return;

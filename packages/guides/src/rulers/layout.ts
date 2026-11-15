@@ -3,8 +3,7 @@ import type { UnitValue } from '@weasel-js/quantity';
 import type { Guide } from '../guides/types';
 import type { RulerFrame } from './reading';
 import { rulerTicks, type RulerTicks } from './ticks';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** What the rulers show now: the view and canvas they run along, the pointer,
  *  the frame under it, and the guide a drag off a ruler is placing. */

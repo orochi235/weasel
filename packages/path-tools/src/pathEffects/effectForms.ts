@@ -6,12 +6,10 @@
 import { pref, prefLeaves, type PrefGroup } from '@weasel-js/prefs';
 import type { PathEffect } from '@weasel-js/core';
 
-type Kind = PathEffect['kind'];
-
 const ALIGN = [{ value: 'start', label: 'Start' }, { value: 'center', label: 'Center' }, { value: 'end', label: 'End' }];
 
 /** Each kind of path effect's settings, as a form. */
-export const PATH_EFFECT_PARAMS: { readonly [K in Kind]: PrefGroup } = {
+export const PATH_EFFECT_PARAMS: { readonly [K in PathEffect['kind']]: PrefGroup } = {
   tween: pref.group('Tween', {
     spaceBy: pref.enum('Space by', 'count', [{ value: 'count', label: 'Count' }, { value: 'distance', label: 'Distance' }], {
       description: 'Steps evenly by count, or one every distance.', control: 'toggle',
@@ -85,7 +83,7 @@ export const PATH_EFFECT_PARAMS: { readonly [K in Kind]: PrefGroup } = {
 };
 
 /** Each setting of a `kind` effect and its default, by name. */
-export function effectSettingDefaults(kind: Kind): Record<string, unknown> {
+export function effectSettingDefaults(kind: PathEffect['kind']): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [path, leaf] of prefLeaves(PATH_EFFECT_PARAMS[kind])) out[path] = leaf.default;
   return out;

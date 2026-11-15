@@ -3,8 +3,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { BooleanOpOptions, NodeId, PathOverlay, TransientPath } from '@weasel-js/core';
 import { facesAlong, planShapeBuilder, type ShapeBuilderMode, type ShapeBuilderPlan } from './shapeBuilder';
 import type { ImmediateParams } from '@weasel-js/routing';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** Screen pixels between the points a drag is sampled at for the faces it crosses. */
 const SAMPLE_PX = 2;

@@ -10,7 +10,7 @@
 import { rectPath, type Path } from '@weasel-js/core/math';
 import { transformPath } from '@weasel-js/geom';
 import { resolveOutline, type BuiltinOutline } from './outlines/table';
-import type { Bounds, Size } from './outlines/types';
+import type { Bounds } from './outlines/types';
 
 export type { Bounds, OutlineDef } from './outlines/types';
 export type { BuiltinOutline } from './outlines/table';
@@ -57,7 +57,7 @@ export function contentBox(outline: Outline, bounds: Bounds): Bounds {
 
 /** The box whose {@link contentBox} is at least `content` — the inverse, for
  *  sizing a node to what its rows measured. */
-export function boxForContent(outline: Outline, content: Size): Size {
+export function boxForContent(outline: Outline, content: Pick<Bounds, 'width' | 'height'>): Pick<Bounds, 'width' | 'height'> {
   if (typeof outline !== 'string') return content;
   return resolveOutline(outline).boxForContent?.(content) ?? content;
 }
