@@ -45,8 +45,10 @@ glyph is explicit, through the registry's `override(ref, glyph)`.
 | `shape` | `@weasel-js/icons` | `packages/icons/icons/` | Plain geometry: polygons, round shapes, stars |
 | `diagram` | `@weasel-js/diagram` | `packages/diagram/icons/` | The container, org chart, network, BPMN, mind map, UML, and ERD stencils |
 | `draw` | `apps/draw` | `apps/draw/icons/` | WeaselDraw's own actions |
+| `chart` | `apps/chart` | `apps/chart/icons/` | WeaselChart's own actions |
+| `site` | `apps/site` | `apps/site/icons/` | The site's package marks and changelog change kinds |
 
-`labkit`, `forge`, `devtools`, `prefs-editor`, `site`, `theme-editor`, and `forge-app` draw nothing. Their `icons/index.mjs`
+`labkit`, `forge`, `devtools`, `prefs-editor`, `theme-editor`, and `forge-app` draw nothing. Their `icons/index.mjs`
 declares a namespace and owner and no groups, so their `icon()` takes qualified names only.
 
 ## Adding a glyph
@@ -133,7 +135,7 @@ Pick where the curve ends so that run points along an axis or a diagonal. On a d
 off and blur at 16px. A straight arrow at 16px puts its shaft and tip on pixel centers (`px(k)` in
 `packages/icons/scripts/lib/base.mjs`) and its head at `GRID_HEAD`, whose barbs end two whole pixels
 back and two aside. A head also needs a shaft showing behind its barbs, or it reads as a caret.
-A ring or an open arc is free to turn: before reshaping anything, slide its gap round until the
+A ring or an open arc is free to turn: before reshaping anything, slide its gap around until the
 head lands on the flattest stretch that is clear of other strokes.
 Where there is no room for a straight run, hang the head on the shaft instead of on its tangent:
 walk one trail of arc back from the tip and put the two barb ends on the curve's normal there, the
@@ -158,9 +160,9 @@ axis end is bent 2.5 times as far as the ring beneath it, its middle kept at the
 stopped short of the crossing are worse again: the gap pinches, and the strokes read as unrelated.
 
 **The small check is a separate check, and it is the pixel grid.** Proofing
-large tells you nothing about chrome size. Rasterise at the size the chrome
+large tells you nothing about chrome size. Rasterize at the size the chrome
 actually renders — labkit's chrome regions draw glyphs at `size={16}` — magnify with
-nearest-neighbour, and look at the pixels the renderer produced. A 16px glyph
+nearest-neighbor, and look at the pixels the renderer produced. A 16px glyph
 inside a screenshot of a proof page has been resampled twice before you see it.
 
 **Check 1× and 2× separately; they disagree.** At 1× a 16px icon gets 16 device
@@ -264,7 +266,7 @@ const ICON_VARIANTS = { all: () => import('virtual:weasel-icons/all') };
 ```
 
 Without the build plugin, an app passes the tables themselves, each imported as `icons` from
-`@weasel-js/core/icons`, `@weasel-js/ui/icons`, `@weasel-js/path-tools/icons`, `@weasel-js/rig/icons` or `@weasel-js/diagram/icons`. The list is a
+`@weasel-js/core/icons`, `@weasel-js/ui/icons`, `@weasel-js/path-tools/icons`, `@weasel-js/rig/icons`, `@weasel-js/kernel3d/icons`, or `@weasel-js/diagram/icons`. The list is a
 module constant: the provider releases and registers its tables again whenever the array is a new one.
 
 ```tsx
@@ -299,7 +301,7 @@ left alone and the build warns; its glyph resolves only from a loaded variant.
 
 | | `mode: 'library'` | `mode: 'app'` |
 |---|---|---|
-| Used by | Every kit package's build: the tsup preset, labkit's tsup, and core's, ui's and hud's vite builds | apps/draw, the site, the theme editor, the forge app; the `site` and `draw` vitest projects |
+| Used by | Every kit package's build: the tsup preset, labkit's and headless's tsup, and core's, ui's, hud's, and prefs-editor's vite builds | apps/draw, apps/chart, the site, the theme editor, the forge app, ui-lab, and the devtools extension; the `site` and `draw` vitest projects |
 | Rewrites `icon()` | Yes | Yes |
 | Emits `virtual:weasel-icons` | No | Yes |
 | Bundlers | vite, rollup, rolldown, esbuild | vite, rollup, rolldown; esbuild has no hook to fill the virtual modules once every module is seen |
