@@ -16,10 +16,8 @@ import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Se
 import { RAD_TO_DEG } from '@weasel-js/geom';
 
 /**
- * Gestures showcase — every gesture *form* in `src/interactions/gestures` on one
- * surface. Pick a mode; the canvas binds to that one gesture and draws a live
- * overlay so the differences between the drag variants are visible, not just
- * described. The point is to *feel* how each hook reports motion differently.
+ * The drag primitives under the dispatcher, driven by this demo's own pointer
+ * handlers on purpose: an app binds gestures to actions instead.
  */
 
 const W = 520;
