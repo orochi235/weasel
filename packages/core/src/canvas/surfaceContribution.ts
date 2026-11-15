@@ -60,9 +60,10 @@ export interface SurfaceContribution extends Contribution {
    * Runs once the surface mounts; returns its teardown. For what the roles
    * above cannot say — a subscription, a listener on the canvas element.
    *
-   * Keyed by the function's identity, so a contribution built once (in a
-   * `useMemo`, or at module scope) attaches once however often the host
-   * re-renders.
+   * Keyed by the function's identity and the surface it attached to, so a
+   * contribution built once (in a `useMemo`, or at module scope) attaches once
+   * however often the host re-renders, and moves when the surface's API or dep
+   * registry is replaced: torn down on the old one, attached to the new.
    */
   attach?: (api: CanvasExtensionApi, deps: ContributionDepReader) => () => void;
   /**

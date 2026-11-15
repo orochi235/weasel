@@ -273,17 +273,6 @@ Owner tags, after the priority (2026-10-26):
   editor through public APIs, works on two canvases with explicit scope, and removing it releases its roles
   without removing another installation or leaving a selectable tool that cannot insert.
 
-- **(P2) [agent] Rebind stable contribution roles when their host API or dep registry changes.**
-  `useContributionRoles` keys installation only by role-object identity, although installation closes
-  over `api` and `depRegistry` (`packages/core/src/canvas/SceneCanvas/useContributionRoles.ts`).
-  Reproduced in a focused hook probe: keep one `attach` function, change API A to API B on rerender;
-  it remains attached to A, with no teardown or attachment to B until unmount. Stable author functions
-  should avoid churn on the same host, not pin the first host forever. Include the owning target in
-  installation identity and handle registry transitions consistently for deps/watch/layers.
-  Closes when unchanged roles install once on one target, a target/registry replacement tears down the
-  old installation and installs on the new one, and tests cover API null transitions, provider swaps,
-  StrictMode and final cleanup without duplicate role registration.
-
 - **(P2) [agent] Compile and exercise a complete public-only extension example.** The custom-kind test
   uses internal `useInsertDepSource`/`sceneToAdapter` and `as never` to drive an invoker directly
   (`packages/core/src/canvas/customNodeKind.test.tsx`), so it does not verify mounting the documented
