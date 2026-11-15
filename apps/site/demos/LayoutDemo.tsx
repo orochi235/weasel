@@ -1,8 +1,7 @@
 import { useState, useSyncExternalStore } from 'react';
 import {
   SceneCanvas,
-  composeWorldPose,
-  scenePoseAdapter,
+  worldPoseOf,
   asNodeId,
   easeOutCubic,
   sceneFromJSON,
@@ -83,7 +82,7 @@ export function LayoutDemo() {
     .filter((id) => !scene.get(id)!.data.isContainer)
     .map((childId) => {
       const child = scene.get(childId)!;
-      const pose = composeWorldPose(scenePoseAdapter(scene as never), childId, scene.composition.compose as never) as P;
+      const pose = worldPoseOf(scene, childId, 'document')!;
       return {
         id: childId as string,
         parent: child.parent as string | null,

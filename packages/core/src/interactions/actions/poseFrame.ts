@@ -17,6 +17,7 @@ import { boxFrameOf, type Affine } from '@weasel-js/geom';
 import { definesFrame, effectivePose, type PoseSource } from 'core/scene/effectivePose';
 import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
 import { viewPoseAdapter } from 'core/scene/scrollOffsets';
+import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
 import {
   childFrameAt,
   composeChildFrame,
@@ -99,4 +100,34 @@ export function scenePoseFrame(scene: Scene<unknown, string, unknown>): PoseFram
 export function sceneBoxFrames(scene: Scene<unknown, string, unknown>): (id: string) => Affine | null {
   const frame = scenePoseFrame(scene);
   return (id) => (scene.get(id as NodeId) === undefined ? null : boxFrameOf(frame.world(id as NodeId)));
+}
+
+/** Which world a read sees: as shown — a gesture's in-flight pose, scrolled
+ *  containers' content moved by their offsets — or as the document holds it. */
+export type PoseReading = 'shown' | 'document';
+
+/** A world-pose lookup over `scene`, folded up through every container frame
+ *  under the scene's composition: to build once per pass and ask per node. */
+export function worldPoses<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  reading: PoseReading = 'shown',
+): (id: NodeId) => TPose {
+  const untyped = scene as unknown as Scene<unknown, string, unknown>;
+  if (reading === 'shown') {
+    const frame = scenePoseFrame(untyped);
+    return (id) => frame.world(id) as TPose;
+  }
+  const adapter = scenePoseAdapter(untyped);
+  const compose = untyped.composition.compose;
+  return (id) => composeWorldPose(adapter, id as string, compose) as TPose;
+}
+
+/** Where `id` is in world, read as `reading` says (`'shown'` by default), or
+ *  `undefined` for a node not in `scene`. */
+export function worldPoseOf<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  id: NodeId,
+  reading: PoseReading = 'shown',
+): TPose | undefined {
+  return scene.get(id) === undefined ? undefined : worldPoses(scene, reading)(id);
 }

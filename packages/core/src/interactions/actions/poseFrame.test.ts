@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { scenePoseFrame } from './poseFrame';
+import { scenePoseFrame, worldPoseOf } from './poseFrame';
+import type { NodeId } from 'core/scene/types';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import {
   makeFrameFixture,
@@ -50,5 +51,25 @@ describe('scenePoseFrame', () => {
       expect(frame.world(id)).toEqual(FRAME_FIXTURE_LOCAL[id]);
       expect(frame.local(id, FRAME_FIXTURE_LOCAL[id])).toEqual(FRAME_FIXTURE_LOCAL[id]);
     }
+  });
+});
+
+describe('worldPoseOf', () => {
+  it('folds a child of a turned container to its world pose, typed as the scene\'s pose', () => {
+    const scene = makeFrameFixture();
+    const world: RectPose | undefined = worldPoseOf(scene, FRAME_FIXTURE_IDS.turned);
+    expectSamePose(world!, FRAME_FIXTURE_WORLD.b);
+  });
+
+  it('reads an in-flight override when shown, and the stored pose for the document', () => {
+    const scene = makeFrameFixture();
+    scene.overrides.set(FRAME_FIXTURE_IDS.upright, { pose: { x: 0, y: 0, width: 20, height: 10 } });
+    scene.overrides.commit();
+    expectSamePose(worldPoseOf(scene, FRAME_FIXTURE_IDS.upright)!, { x: 85, y: 5, width: 20, height: 10, rotation: Math.PI / 2 });
+    expectSamePose(worldPoseOf(scene, FRAME_FIXTURE_IDS.upright, 'document')!, FRAME_FIXTURE_WORLD.a);
+  });
+
+  it('is undefined for a node not in the scene', () => {
+    expect(worldPoseOf(makeFrameFixture(), 'missing' as NodeId)).toBeUndefined();
   });
 });

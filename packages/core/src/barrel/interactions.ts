@@ -136,10 +136,10 @@ export {
   visualBoundsViaDescriptor,
 } from '../interactions/actions/align';
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
-export { sceneBoxFrames, scenePoseFrame } from '../interactions/actions/poseFrame';
+export { sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';
 export { undeclaredMagnifications, unitFrameAt, type UndeclaredMagnification } from '../interactions/actions/magnification';
 export { moveNodes, moveNodesOps, MOVE_NODES_REQUIRES } from '../interactions/actions/moveNodes';
-export type { PoseFrame } from '../interactions/actions/poseFrame';
+export type { PoseFrame, PoseReading } from '../interactions/actions/poseFrame';
 export type { SpatialReference, SpatialReferenceSources } from '../interactions/actions/spatialReference';
 export type { FlipAxis, FlipPivot } from '../interactions/actions/flip/helpers';
 export { lastTransform, recordTransform, forgetTransform } from '../interactions/actions/transform-again/memory';
