@@ -10,7 +10,7 @@ import {
   type SvgKitLeafData,
   type SvgKitPose,
 } from '@weasel-js/svg';
-import { Button } from '@weasel-js/ui/components/Button';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './SvgDemo.module.css';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 
@@ -70,6 +70,8 @@ const PRESETS: { name: string; svg: string }[] = [
 </svg>`,
   },
 ];
+
+const PRESET_ITEMS = PRESETS.map((p) => ({ value: p.name, label: p.name }));
 
 /** Parse a source string and lower it to the node specs a scene adds, parent before child. */
 function sceneFromSvg(source: string) {
@@ -139,13 +141,13 @@ function SvgRoundTrip() {
       <div className={s.demo}>
         <div className={s.top}>
           <div className={s.source}>
-            <div className={s.presets}>
-              {PRESETS.map((p) => (
-                <Button key={p.name} size="sm" pressed={source === p.svg} onClick={() => setSource(p.svg)}>
-                  {p.name}
-                </Button>
-              ))}
-            </div>
+            <SegmentedBar
+              items={PRESET_ITEMS}
+              value={PRESETS.find((p) => p.svg === source)?.name ?? null}
+              onChange={(name) => { const p = PRESETS.find((q) => q.name === name); if (p) setSource(p.svg); }}
+              aria-label="Preset"
+              size="sm"
+            />
             <textarea
               className={s.code}
               spellCheck={false}

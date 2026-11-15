@@ -22,12 +22,6 @@
   min-width: 0;
 }
 
-.presets {
-  display: flex;
-  gap: var(--wzl-space-3);
-  flex-wrap: wrap;
-}
-
 .code {
   margin: 0;
   padding: var(--wzl-space-4);

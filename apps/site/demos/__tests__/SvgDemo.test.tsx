@@ -25,7 +25,7 @@ describe('SvgDemo', () => {
 
   it('reads and writes its mesh preset without a warning either way', async () => {
     render(<SvgDemo />);
-    fireEvent.click(screen.getByRole('button', { name: 'Mesh gradient' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Mesh gradient' }));
     await waitFor(() => expect(document.querySelector('pre')?.textContent).toContain('<wzl:patch'), { timeout: 10_000 });
     expect(screen.queryByLabelText('parseSvg warnings')).toBeNull();
     expect(screen.queryByLabelText('serializeSvg warnings')).toBeNull();
