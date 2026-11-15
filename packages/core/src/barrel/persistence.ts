@@ -1,5 +1,9 @@
-/** Part of the `@weasel-js/core` barrel. The canonical JSON codec for snapshots, and the document envelope that
- *  pairs a scene with its undo history. */
+/**
+ * Part of the `@weasel-js/core` barrel. The canonical JSON codec for snapshots, and the document envelope that
+ * pairs a scene with its undo history.
+ *
+ * @packageDocumentation
+ */
 export {
   decodeSnapshot, encodeSnapshot, parseSnapshot, snapshotReplacer, stringifySnapshot,
 } from '../core/persistence/codec';
