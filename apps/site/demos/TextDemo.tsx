@@ -3,7 +3,7 @@ import {
   SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit,
   editPreset, movePreset, pickPreset, resizePreset, viewPreset,
 } from '@weasel-js/core';
-import type { Fill } from '@weasel-js/core';
+import type { Fill, RectPose } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui/components/inspector/CharacterOptions';
@@ -22,12 +22,10 @@ interface NodeData {
   verticalAlign?: TextVerticalAlign;
 }
 
-type Box = { x: number; y: number; width: number; height: number; rotation?: number };
-
 const INK = { paint: solid('#1c1c1c') };
 const BOX_FILL = { paint: solid('#e8eef8') };
 
-const text = (id: string, pose: Box, data: NodeData) => ({
+const text = (id: string, pose: RectPose, data: NodeData) => ({
   kind: 'mark' as const,
   layer: 'default' as const,
   id: asNodeId(id),

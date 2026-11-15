@@ -3,6 +3,7 @@ import {
   SceneCanvas, asNodeId, createPageRun, createPresentationContribution, createScene, fitViewToPage, createPagesLayer, placedPagesOf,
   solid, type Path, type PlacedPage, type RectPose,
 } from '@weasel-js/core';
+import { DemoStage } from './DemoStage';
 
 const W = 640, H = 360;
 const SLIDE = { width: 320, height: 180 };
@@ -41,10 +42,8 @@ export function SlideNavigationDemo() {
   const start = useMemo(() => fitViewToPage(pages[0]!, { width: W, height: H }, { x: 0, y: 0, scale: { x: 1, y: 1 } }) ?? undefined, [pages]);
   return (
     <div>
-      <div className="ckd-canvas-frame">
+      <DemoStage width={W} height={H}>
         <SceneCanvas
-          width={W}
-          height={H}
           className="ckd-canvas"
           backgroundFill={{ color: '#2b2b30' }}
           scene={scene}
@@ -52,7 +51,7 @@ export function SlideNavigationDemo() {
           ambient={ambient}
           {...(start ? { defaultView: start } : {})}
         />
-      </div>
+      </DemoStage>
       <p className="ckd-readout" aria-live="polite">Slide {shown.index + 1} of {pages.length}</p>
     </div>
   );

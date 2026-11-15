@@ -44,12 +44,6 @@ const NODES = [
   leaf('plain', 176, 28, { text: 'The same line without it' }),
 ];
 
-/**
- * Synthetic small caps: `fontVariantCaps: 'small-caps'` on a run or a node
- * draws its lowercase letters as capitals at a smaller size. The text itself
- * stays as typed — double-click a line and the editor shows the same capitals
- * over the source letters, and commits what you typed.
- */
 export function SmallCapsDemo() {
   // The scale is the face's own heights once its atlas has loaded.
   useSyncExternalStore(subscribeGlyphReady, glyphGeneration);
@@ -62,17 +56,15 @@ export function SmallCapsDemo() {
         Small capitals are set at {(scale * 100).toFixed(1)}% — the face&apos;s x-height over its
         cap height, from its <code>OS/2</code> table.
       </p>
-      <div className="ckd-canvas-frame">
-        <DemoStage width={W} height={H}>
-          <SceneCanvas
-            className="ckd-canvas"
-            backgroundFill={{ color: '#ffffff' }}
-            scene={scene}
-            selectable={false}
-            features={[textEditPreset]}
-          />
-        </DemoStage>
-      </div>
+      <DemoStage width={W} height={H}>
+        <SceneCanvas
+          className="ckd-canvas"
+          backgroundFill={{ color: '#ffffff' }}
+          scene={scene}
+          selectable={false}
+          features={[textEditPreset]}
+        />
+      </DemoStage>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { shareBrushSize } from '@weasel-js/brush';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { DemoStage } from './DemoStage';
 
 type Point = { x: number; y: number };
 const DOT = '#5b7bd5';
@@ -94,10 +95,8 @@ export function SharedBrushSizeDemo() {
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
       <Checkbox isSelected={shared} onChange={setShared}>Share brush size</Checkbox>
       <ActiveToolOptionsBar tools={tools} values={values} />
-      <div className="ckd-canvas-frame">
+      <DemoStage width={520} height={300}>
         <SceneCanvas
-          width={520}
-          height={300}
           className="ckd-canvas"
           backgroundFill={{ color: '#f4f1ea' }}
           scene={scene}
@@ -107,7 +106,7 @@ export function SharedBrushSizeDemo() {
           toolOptionValues={values}
           onToolsCreated={setTools}
         />
-      </div>
+      </DemoStage>
     </div>
   );
 }
