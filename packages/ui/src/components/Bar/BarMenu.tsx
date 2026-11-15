@@ -13,6 +13,7 @@ import { ButtonTooltip } from '../Tooltip/buttonTooltip';
 import f from '../Field/Field.module.css';
 import { DockBarContext } from '../ToolbarDock/dockContext';
 import { useBarLead } from './barLeadHandle';
+import { useMenuLeast } from './useMenuLeast';
 import { useRun } from '../Run';
 import { PopFace, popIconAttr } from './popFace';
 import s from './Bar.module.css';
@@ -51,6 +52,7 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
   const trigger = useMenuTrigger();
   const { side } = useRun();
   const handle = useBarLead(null);
+  const lead = useMenuLeast(trigger.button);
 
   // `defaultOpen` holds until the menu has opened once or the reader has touched it.
   const pending = useRef(defaultOpen === true);
@@ -71,7 +73,7 @@ export function BarMenu({ label, icon, description, schema, values, onChange, ov
   return (
     <DockBarContext.Provider value={null}>
       {trigger.anchor}
-      {handle && <span className={s.lead} {...handle.attrs}>{handle.content}</span>}
+      {handle && <span ref={lead} className={s.lead} {...handle.attrs}>{handle.content}</span>}
       <ButtonTooltip tip={{ description }}>
         <button
           ref={trigger.button}

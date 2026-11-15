@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
-import { Bar, type BarOrientation } from '@weasel-js/ui/components/Bar';
+import { Bar, BarMenu, type BarOrientation } from '@weasel-js/ui/components/Bar';
 import { barNodeChildren } from '@weasel-js/ui/components/PrefsBar';
 import { ToolbarDock } from '@weasel-js/ui/components/ToolbarDock';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
@@ -219,4 +219,21 @@ test('in a squeezed row, a short bar keeps its only item and the long bars give 
   for (const name of ['File', 'View']) expect(screen.getByRole('toolbar', { name }).querySelector('[data-bar-more]')).not.toBeNull();
   const row = document.querySelector('[data-dock-row]')!;
   expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth);
+});
+
+test('in a squeezed row, a bar drawn as a menu keeps its whole button', async () => {
+  const constraints: DockBar = {
+    id: 'constraints', label: 'Constraints', docks: ['top'],
+    render: () => <BarMenu label="Constraints" schema={{ name: 'Constraints', children: {} }} values={() => undefined} />,
+  };
+  const offered = [menuBar('file', 'File', 6), constraints, menuBar('view', 'View', 6)];
+  renderWithIcons(
+    <div className={`${s.frame} ${s.narrow}`}>
+      <ToolbarDock docks={docks} bars={offered} layout={{ docks: { top: [['file', 'constraints', 'view']] }, floating: {} }} movable />
+    </div>,
+  );
+  await expect.poll(() => screen.queryAllByRole('button', { name: 'More' }).length).toBe(2);
+  const button = screen.getByRole('button', { name: 'Constraints' });
+  await expect.poll(() => button.getBoundingClientRect().right - document.querySelector('[data-dock-bar="constraints"]')!.getBoundingClientRect().right).toBeLessThanOrEqual(0.5);
+  expect(button.scrollWidth).toBeLessThanOrEqual(button.clientWidth);
 });
