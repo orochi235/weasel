@@ -1,3 +1,4 @@
+import type { CountStepParams } from 'interactions/actions/actionParamSchema';
 import { setToolOption, steppedOption, toolOptionNumberLeaf, toolOptionParams, type ToolOptions, type ToolOptionValues } from '@weasel-js/routing';
 
 /** Step `toolId`'s count option `option` by one, up or down as `params` say: a key binding's `delta`, or a wheel's
@@ -8,11 +9,10 @@ export function stepCountOption(
   options: ToolOptions,
   option: string,
   values: ToolOptionValues | undefined,
-  params: Readonly<Record<string, unknown>> | undefined,
+  params: Readonly<Partial<CountStepParams>> | undefined,
 ): boolean {
   const leaf = toolOptionNumberLeaf(options, option);
-  const p = params as { deltaY?: number; delta?: number } | undefined;
-  const step = p?.delta ?? (p?.deltaY ? Math.sign(p.deltaY) : 0);
+  const step = params?.delta ?? (params?.deltaY ? Math.sign(params.deltaY) : 0);
   if (!values || !leaf || step === 0) return false;
   const current = toolOptionParams(toolId, options, values)[option];
   const from = typeof current === 'number' ? current : leaf.default ?? 0;

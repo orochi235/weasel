@@ -5,7 +5,7 @@ import type { Tool } from '../../overlayBinding';
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { Action, ActionDeps, InvocationCtx, ToolKeybinding } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { createPointerFollower } from '../shared/pointerFollower';
 import { sliceAction } from 'interactions/actions/defaults/slice';
 import { withinPxRadius } from '@weasel-js/geom';
@@ -15,7 +15,7 @@ import { ellipsePath, polylineFromPoints } from '@weasel-js/geom';
 import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
 import { createEmitter } from '@weasel-js/registry';
 import { icon } from '../../../icons.gen';
-import type { GestureBinding, ImmediateParams } from '@weasel-js/routing';
+import type { GestureBinding } from '@weasel-js/routing';
 
 /** Options for `useSliceTool`. */
 export interface UseSliceToolOptions {
@@ -111,7 +111,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
     const eligible = { capability: 'edits-page' } as const;
     return [
       sliceAction,
-      {
+      defineAction({
         id: 'slice.addPoint',
         label: 'Slice — place point',
         eligible,
@@ -120,12 +120,12 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
         invoker: {
           timing: 'immediate',
           run: (deps, params) => {
-            const press = (params as ImmediateParams | undefined)?.press;
+            const press = params?.press;
             if (!press) return;
             place(deps, press.x, press.y);
           },
         },
-      },
+      }),
       {
         id: 'slice.dragPoint',
         label: 'Slice — drag out a point',
@@ -145,7 +145,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
           }),
         },
       },
-      {
+      defineAction({
         id: 'slice.finish',
         label: 'Slice — cut along the points',
         eligible,
@@ -156,11 +156,11 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
           run: (deps, params) => {
             // A double click arrives after both of its clicks, so the second
             // has already placed a point on top of the first.
-            if ((params as { viaDoubleClick?: boolean } | undefined)?.viaDoubleClick) points().pop();
+            if (params?.viaDoubleClick) points().pop();
             commit(deps);
           },
         },
-      },
+      }),
       {
         id: 'slice.dropPoint',
         label: 'Slice — take back the last point',

@@ -4,10 +4,10 @@ import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { HotkeyTrigger } from '@weasel-js/routing';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import type { Action } from '@weasel-js/routing';
+import { defineAction, type Action } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
-import type { ActionDeps, ImmediateParams, WorldPoint } from '@weasel-js/routing';
+import type { ActionDeps, WorldPoint } from '@weasel-js/routing';
 import { viewWorldToScreen } from '@weasel-js/geom';
 import { THROUGH_CHROME } from '../throughChrome';
 
@@ -67,7 +67,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
   const pickAction = useMemo<Action>(() => {
     // Presses so far: an answer `colorAt` gives late reports only if no press has come since.
     let presses = 0;
-    return {
+    return defineAction({
       id: 'eyedropper.pick',
       label: 'Eyedropper — sample color',
       // Same tag the tool declares, so a mode that disallows color sampling
@@ -75,9 +75,9 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
       eligible: { capability: 'samples-color' },
       requires: ['nodeAtPoint', 'colorAt', 'view'],
       invoker: {
-        timing: 'immediate' as const,
+        timing: 'immediate',
         run: (deps, params) => {
-          const press = (params as ImmediateParams | undefined)?.press;
+          const press = params?.press;
           if (!press) return;
           const mine = ++presses;
           const colorOf = colorOfRef.current;
@@ -92,7 +92,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
           else report(got);
         },
       },
-    };
+    });
   }, [onPickRef, colorOfRef]);
 
   return useMemo(() => {

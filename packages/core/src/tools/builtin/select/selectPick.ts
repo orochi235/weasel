@@ -1,4 +1,4 @@
-import type { Action, ImmediateParams, SelectionApi, WorldPoint } from '@weasel-js/routing';
+import { defineAction, type Action, type SelectionApi, type WorldPoint } from '@weasel-js/routing';
 import type { SelectModifiers } from '@weasel-js/select';
 import type { NodeId } from 'core/scene/types';
 import { extendPressLocked, extendsSelection } from 'core/selection/extendPressLocked';
@@ -29,15 +29,14 @@ export interface SelectPickOptions {
  * `moveAction` and `cloneAction` read `selection.get()` in their `start`).
  */
 export function createSelectPickAction(opts: SelectPickOptions): Action {
-  return {
+  return defineAction({
     id: 'select.pick',
     label: 'Select — pick under pointer',
     eligible: { capability: 'creates-selection' },
     requires: ['selection', 'enteredGroup'],
     invoker: {
-      timing: 'immediate' as const,
-      run: (deps, params) => {
-        const p = params as ImmediateParams | undefined;
+      timing: 'immediate',
+      run: (deps, p) => {
         const selection = deps.selection;
         if (!selection || !p?.world) return;
         const mods = p.mods ?? { alt: false, ctrl: false, meta: false, shift: false };
@@ -60,7 +59,7 @@ export function createSelectPickAction(opts: SelectPickOptions): Action {
         opts.pressed(press.deferred);
       },
     },
-  };
+  });
 }
 
 /** `selection.applyClick`, handing it `between` only when there is one. */

@@ -3,7 +3,7 @@ import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
-import { shareToolOptions, withToolOptionDefault, type Action, type WorldPoint } from '@weasel-js/routing';
+import { defineAction, shareToolOptions, withToolOptionDefault, type Action, type WorldPoint } from '@weasel-js/routing';
 import { STAR_INSERT_PARAMS } from 'interactions/actions/insert/params';
 import { DEFAULT_SHAPE_PAINT, shapeToolOptions } from '../shared/styleOptions';
 import { stepCountOption } from '../shared/countOption';
@@ -57,12 +57,12 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
   // Wheel-to-adjust-points action. Phase-gated to `[engaged]` so it
   // fires only mid-drag.
   const adjustPointsAction = useMemo<Action>(
-    () => ({
+    () => defineAction({
       id: 'star.adjustPoints',
       label: 'Star — adjust points',
       requires: ['toolOptionValues'],
       invoker: {
-        timing: 'immediate' as const,
+        timing: 'immediate',
         run: (deps, params) => {
           if (stepCountOption('star', toolOptions, 'points', deps.toolOptionValues, params)) bumpPoints();
         },

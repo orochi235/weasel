@@ -3,7 +3,7 @@ import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
-import { shareToolOptions, withToolOptionDefault, type Action, type WorldPoint } from '@weasel-js/routing';
+import { defineAction, shareToolOptions, withToolOptionDefault, type Action, type WorldPoint } from '@weasel-js/routing';
 import { POLYGON_INSERT_PARAMS } from 'interactions/actions/insert/params';
 import { DEFAULT_SHAPE_PAINT, shapeToolOptions } from '../shared/styleOptions';
 import { stepCountOption } from '../shared/countOption';
@@ -59,12 +59,12 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
   // ArrowUp/ArrowDown key bindings; `deltaY` from the wheel, where up (deltaY
   // > 0 under natural scrolling) adds a side.
   const adjustSidesAction = useMemo<Action>(
-    () => ({
+    () => defineAction({
       id: 'polygon.adjustSides',
       label: 'Polygon — adjust sides',
       requires: ['toolOptionValues'],
       invoker: {
-        timing: 'immediate' as const,
+        timing: 'immediate',
         run: (deps, params) => {
           if (stepCountOption('polygon', toolOptions, 'sides', deps.toolOptionValues, params)) bumpSides();
         },
