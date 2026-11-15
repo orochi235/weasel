@@ -211,8 +211,10 @@ describe('seam drag teardown', () => {
     fireEvent.pointerMove(document, { clientX: 120, clientY: 20 });
     expect(onInput).toHaveBeenCalledTimes(1);
     fireEvent.pointerCancel(document, {});
+    // The cancel puts the preview back: the bands as they were.
+    expect(onInput).toHaveBeenCalledTimes(2);
     fireEvent.pointerMove(document, { clientX: 300, clientY: 20 });
-    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onInput).toHaveBeenCalledTimes(2);
     expect(onChange).not.toHaveBeenCalled();
   });
 

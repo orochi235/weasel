@@ -70,8 +70,10 @@ export function useRegionDrag<T extends Thumb>({ props, min, max, scale, geometr
       },
       onCancel: () => {
         sessionRef.current = null;
-        if (latest) onCancel();
+        if (!latest) return;
+        onInput(moved(0));
+        onCancel();
       },
-    }, { capture: false });
+    }, { capture: false, escape: true });
   };
 }

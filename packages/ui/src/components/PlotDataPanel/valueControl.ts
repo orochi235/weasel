@@ -28,7 +28,7 @@ export function valueControl(spec: ValueSpec, name: string, set: (value: PlotVal
         options: type.options.map((o) => ({ value: o, label: o })), onChange: set, onClear: clear,
       };
     case 'color':
-      return { kind: 'color', name, readOnly, value: typeof value === 'string' ? value : undefined, onChange: set, onInput: () => {} };
+      return { kind: 'color', name, readOnly, value: typeof value === 'string' ? value : undefined, onChange: set };
     case 'string':
       return {
         kind: 'string', name, readOnly, value: typeof value === 'string' ? value : undefined, placeholder: type.placeholder,

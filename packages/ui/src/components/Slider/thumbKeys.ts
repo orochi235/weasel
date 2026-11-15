@@ -15,7 +15,7 @@ export interface ThumbKeyArgs<T extends Thumb> {
   /** The finite range, where the track runs past it to an endless end's stop. */
   range: readonly [number, number] | undefined;
   onInput: (next: T[]) => void;
-  onChange: ((next: T[]) => void) | undefined;
+  onChange: (next: T[]) => void;
   /** Under `'rtl'` the horizontal arrows are mirrored, as the values run from the right end. */
   direction: 'ltr' | 'rtl';
 }
@@ -42,6 +42,6 @@ export function onThumbKeyDown<T extends Thumb>(a: ThumbKeyArgs<T>) {
     e.preventDefault();
     next[index] = { ...next[index], value: v };
     a.onInput(next);
-    a.onChange?.(next);
+    a.onChange(next);
   };
 }

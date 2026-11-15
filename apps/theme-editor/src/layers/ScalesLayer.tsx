@@ -127,6 +127,7 @@ function ScaleSection({
                 max={p.max}
                 step={p.step}
                 onChange={(v) => onChange(setScale(draft, lookup, name, (e) => ({ ...e, [p.key]: v })), `scales.${name}.${p.key}`)}
+                onInput={(v) => onChange(setScale(draft, lookup, name, (e) => ({ ...e, [p.key]: v })), `scales.${name}.${p.key}`)}
               />
             );
           })}

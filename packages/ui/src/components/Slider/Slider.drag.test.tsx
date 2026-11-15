@@ -77,8 +77,11 @@ describe('Slider drag teardown', () => {
     fireEvent.pointerMove(document, { clientX: 120, clientY: 12, pointerId: 1 });
     expect(onInput).toHaveBeenCalledTimes(1);
     fireEvent.pointerCancel(document, { pointerId: 1 });
+    // The cancel puts the preview back where the drag began.
+    expect(onInput).toHaveBeenCalledTimes(2);
+    expect(onInput.mock.calls[1][0][0].value).toBe(0.5);
     fireEvent.pointerMove(document, { clientX: 180, clientY: 12, pointerId: 1 });
-    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onInput).toHaveBeenCalledTimes(2);
   });
 
   it('unmounting mid-drag ends the drag without committing it', () => {
@@ -95,7 +98,8 @@ describe('Slider drag teardown', () => {
     unmount();
     fireEvent.pointerMove(document, { clientX: 160, clientY: 12, pointerId: 1 });
     fireEvent.pointerUp(document, { clientX: 160, clientY: 12, pointerId: 1 });
-    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onInput).toHaveBeenCalledTimes(2);
+    expect(onInput.mock.calls[1][0][0].value).toBe(0.5);
     expect(onChange).not.toHaveBeenCalled();
   });
 

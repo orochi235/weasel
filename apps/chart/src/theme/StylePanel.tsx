@@ -60,7 +60,7 @@ export function StylePanel({ scene, selected, theme }: { scene: ChartScene; sele
     return (
       <PropertyField
         kind="color" label={label} value={color.value} mixed={color.mixed} disabled={among.length === 0}
-        onChange={(next) => setDiagramColor(scene, among.map((s) => s.id), name, next)} onInput={() => {}}
+        onChange={(next) => setDiagramColor(scene, among.map((s) => s.id), name, next)}
       />
     );
   };

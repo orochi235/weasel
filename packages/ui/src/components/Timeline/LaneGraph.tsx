@@ -34,6 +34,8 @@ export interface LaneGraphProps {
   onKeysInput?: (keys: readonly Keyframe<number>[]) => void;
   /** Once per edit: a drag's end, a handle's release, a key press. */
   onKeysCommit: (keys: readonly Keyframe<number>[]) => void;
+  /** A key drag was canceled, after its preview was put back. */
+  onCancel?: () => void;
   /** False: keys and segments still select, and nothing drags or steps. Default true. */
   edits?: boolean;
 }
@@ -54,7 +56,7 @@ function valueRange(keys: readonly Keyframe<number>[]): [number, number] {
 export function LaneGraph(props: LaneGraphProps): ReactElement {
   const {
     keys, label, window: win, offset, snapTimes, selection, selectedSegment,
-    onSelect, onSelectSegment, onKeysInput, onKeysCommit, edits = true,
+    onSelect, onSelectSegment, onKeysInput, onKeysCommit, onCancel, edits = true,
   } = props;
 
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -70,6 +72,8 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   // Held only while a gesture is in flight, so a consumer echoing live input
   // back through `keys` cannot move the keys out from under the drag.
   const [live, setLive] = useState<KeyframeLayerState | null>(null);
+  // The keys a previewed drag began from, to put back if it is canceled.
+  const previewed = useRef<readonly Keyframe<number>[] | null>(null);
   const state = live ?? committed;
   const stateRef = useLatest(state);
 
@@ -83,12 +87,24 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
     // would grow the consumer's easing cache by one entry per pixel.
     if (next.drag.kind !== 'key') return;
     const applied = applyKeyframeDrag(next).keys;
-    if (applied !== next.keys) onKeysInput?.(applied);
+    if (applied === next.keys) return;
+    previewed.current ??= prev.keys;
+    onKeysInput?.(applied);
   };
 
   const onLayerCommit = (next: KeyframeLayerState, prev: KeyframeLayerState): void => {
     setLive(null);
+    previewed.current = null;
     if (edits && next.keys !== prev.keys) onKeysCommit(next.keys);
+  };
+
+  const onLayerCancel = (): void => {
+    setLive(null);
+    const from = previewed.current;
+    previewed.current = null;
+    if (!from) return;
+    onKeysInput?.(from);
+    onCancel?.();
   };
 
   const [yLo, yHi] = valueRange(state.keys);
@@ -120,8 +136,9 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
             xClamp={TRACK_TIME}
             step={KEY_STEP}
             state={state}
-            onChange={onLayerChange}
-            onCommit={onLayerCommit}
+            onInput={onLayerChange}
+            onChange={onLayerCommit}
+            onCancel={onLayerCancel}
           />
         </LayeredCurveEditor>
       ) : null}

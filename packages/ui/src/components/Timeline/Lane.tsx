@@ -41,6 +41,8 @@ export interface LaneProps {
   onKeysInput?: (keys: readonly Keyframe<number>[]) => void;
   /** Once per graph-mode edit: the row's whole key list. */
   onKeysCommit?: (keys: readonly Keyframe<number>[]) => void;
+  /** A drag in either mode was canceled, after its preview was put back. */
+  onCancel?: () => void;
   onInsert: (atMs: number) => void;
   onToggleExpand: () => void;
   expanded: boolean;
@@ -70,7 +72,7 @@ export function Lane(props: LaneProps): ReactElement {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const times = entryTimes(row);
   const { drag, msAt, onKeyPointerDown } = useKeyDrag({
-    trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyCommit, drags: hold.edits,
+    trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyCommit, onCancel: props.onCancel, drags: hold.edits,
   });
   const pct = (ms: number): string => toPercent(win, ms + row.offset);
 
@@ -127,7 +129,7 @@ export function Lane(props: LaneProps): ReactElement {
             onSelect={onSelect}
             onSelectSegment={onSelectSegment}
             onKeysInput={hold.edits ? props.onKeysInput : undefined}
-            onKeysCommit={(keys) => { if (hold.edits) props.onKeysCommit?.(keys); }}
+            onKeysCommit={(keys) => { if (hold.edits) props.onKeysCommit?.(keys); }} onCancel={props.onCancel}
             edits={hold.edits}
           />
         ) : (

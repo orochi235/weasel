@@ -47,10 +47,12 @@ export interface BandEditorProps<T, F extends Quantity = number> extends HoldPro
   /** Ascending by `from`. `value[0].from` is normalized to `min` on read. A
    *  tagged `from` stays tagged through every edit, with its display and unit. */
   value: Band<T, F>[];
-  /** Live during a drag — wire for preview, do not write to history. */
+  /** `onInput`, `onChange` and `onCancel` are the kit's edit protocol (`docs/conventions.md`, "Edit callbacks"): a
+   *  seam drag, a key step, a split, a merge and a lock are each one edit. Escape cancels a drag. `onCancel` also
+   *  ends an edge drag, whose preview went to `onRangeInput`. */
   onInput?: (next: Band<T, F>[]) => void;
-  /** Committed at gesture end: one call per gesture. */
   onChange: (next: Band<T, F>[]) => void;
+  onCancel?: () => void;
   min: number;
   max: number;
   /**
@@ -61,7 +63,7 @@ export interface BandEditorProps<T, F extends Quantity = number> extends HoldPro
    * range is fixed and no edge handles are drawn.
    */
   onRangeChange?: (min: number, max: number, bands: Band<T, F>[]) => void;
-  /** Live during an edge drag — wire for preview, do not write to history. */
+  /** `onRangeChange`'s `onInput`, live during an edge drag. */
   onRangeInput?: (min: number, max: number, bands: Band<T, F>[]) => void;
   /** How far outward `min` and `max` may be dragged. Default unbounded. */
   limits?: readonly [number, number];
@@ -197,18 +199,18 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     return width === 0 ? unit : attract(unit, ticks.map((tick) => toUnit(tick.at)), snapRadiusPx / width);
   };
 
-  // An edge drag, which a second finger's press leaves to the first. One that ends without a release commits nothing.
-  const drag = (
-    down: ReactPointerEvent<HTMLElement>,
-    onMove: (ev: PointerEvent) => void,
-    onEnd: () => void,
-  ): void => {
+  // An edge drag, which a second finger's press leaves to the first. One canceled puts its preview back.
+  const drag = (down: ReactPointerEvent<HTMLElement>, onMove: (ev: PointerEvent) => void, onEnd: () => void): void => {
     if (sessionRef.current?.active) return;
     sessionRef.current = openPointerSession(down.currentTarget, down, {
       onMove,
       onEnd: () => { sessionRef.current = null; setDraft(null); onEnd(); },
-      onCancel: () => { sessionRef.current = null; setDraft(null); },
-    }, { capture: false });
+      onCancel: () => {
+        sessionRef.current = null;
+        if (draftRef.current) { props.onRangeInput?.(min, max, retagged(committed)); props.onCancel?.(); }
+        setDraft(null);
+      },
+    }, { capture: false, escape: true });
   };
 
   const seamInput = (seams: number[]): void => {
@@ -354,7 +356,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
           hold={hold}
           onInput={seamInput}
           onChange={seamCommit}
-          onCancel={() => setDraft(null)}
+          onCancel={() => { setDraft(null); props.onCancel?.(); }}
         />
         {props.onRangeChange && edgeHandle('max')}
         {draft && <DraftGhost ghost={draft.ghost} toUnit={toUnit} />}

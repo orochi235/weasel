@@ -11,7 +11,21 @@ import { useLatestHandlers } from './useLatestHandlers';
 
 /** A custom `ThumbShape.render` may put interactive content inside the thumb,
  *  and capture would retarget pointerup and kill the click on it. */
-const NO_CAPTURE = { capture: false } as const;
+const NO_CAPTURE = { capture: false, escape: true } as const;
+
+const copy = <T extends Thumb>(thumbs: readonly T[]): T[] => thumbs.map(t => ({ ...t }));
+const sameValues = (a: readonly Thumb[], b: readonly Thumb[]) => a.length === b.length && a.every((t, i) => t.value === b[i].value);
+
+type Handlers<T extends Thumb> = ReturnType<typeof useLatestHandlers<T>>;
+
+/** End a drag that began at `start`: commit what it moved, or on a cancel put the preview back and say so. A drag
+ *  that moved nothing does neither. */
+function finish<T extends Thumb>(buffer: T[] | null, start: readonly T[], commit: boolean, h: Handlers<T>): void {
+  if (!buffer || sameValues(buffer, start)) return;
+  if (commit) { h.onChange(copy(buffer)); return; }
+  h.onInput(copy(start));
+  h.onCancel();
+}
 
 /** What the drags read: the slider's props, the span and scale they run over, and the geometry they measure through. */
 export interface ThumbDragArgs<T extends Thumb> {
@@ -24,7 +38,7 @@ export interface ThumbDragArgs<T extends Thumb> {
 /** A slider's two pointer gestures: one thumb dragged along the rail, and every thumb moved together. */
 export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }: ThumbDragArgs<T>) {
   const { thumbs, step, constraint } = props;
-  const { onInput, onChange, onCancel: canceled } = useLatestHandlers(props);
+  const handlers = useLatestHandlers(props), { onInput, onChange } = handlers;
   const { even, min, max } = span;
   const { valueToFraction, fractionToValue, valueAt } = scale;
   // In-flight thumb buffer during a drag; null when not dragging.
@@ -40,7 +54,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
   // movement would commit the stale buffer and undo that move.
   const beginThumbDrag = useCallback(
     (origin: Element, down: ReactPointerEvent, index: number, seed?: readonly T[]) => {
-      const buf: T[] = (seed ?? thumbs).map(t => ({ ...t }));
+      const start = copy(thumbs), buf: T[] = copy(seed ?? thumbs);
       dragBufferRef.current = buf;
       setDragged(index);
       let droppedOff = false;
@@ -62,13 +76,12 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
         onInput(buffer.map(t => ({ ...t })));
       };
 
-      // A drag that ends without a release — canceled pointer, lost capture,
-      // an unmount — drops the buffer without committing.
       const onCancel = () => {
         sessionRef.current = null;
+        const buffer = dragBufferRef.current;
         dragBufferRef.current = null;
         setDragged(null);
-        canceled();
+        finish(buffer, start, false, handlers);
       };
 
       const onEnd = () => {
@@ -88,18 +101,18 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
           }
         }
 
-        onChange(buffer.map(t => ({ ...t })));
+        finish(buffer, start, true, handlers);
       };
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
-    [thumbs, onInput, onChange, canceled, valueAt, min, max, step, constraint, props, geometry],
+    [thumbs, onInput, onChange, handlers, valueAt, min, max, step, constraint, props, geometry],
   );
 
   const beginShiftAllDrag = useCallback(
     (origin: Element, down: ReactPointerEvent, anchorG: number) => {
       setDragged(null);
-      const buf: T[] = thumbs.map(t => ({ ...t }));
+      const start = copy(thumbs), buf: T[] = copy(thumbs);
       const startValues = buf.map(t => t.value);
       dragBufferRef.current = buf;
 
@@ -138,19 +151,20 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
         onInput(buffer.map(t => ({ ...t })));
       };
 
-      const onCancel = () => { sessionRef.current = null; dragBufferRef.current = null; canceled(); };
-      const onEnd = () => {
+      const settle = (commit: boolean) => {
         sessionRef.current = null;
         const buffer = dragBufferRef.current;
         dragBufferRef.current = null;
-        if (buffer) onChange(buffer.map(t => ({ ...t })));
+        finish(buffer, start, commit, handlers);
       };
+      const onCancel = () => settle(false);
+      const onEnd = () => settle(true);
 
       sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
     },
-    [thumbs, onInput, onChange, canceled, min, max, step, even, props.scale, valueToFraction, fractionToValue, geometry],
+    [thumbs, onInput, handlers, min, max, step, even, props.scale, valueToFraction, fractionToValue, geometry],
   );
 
   // `held`: a drag belongs to the finger that started it, so a second finger's press is not a new drag.
-  return { beginThumbDrag, beginShiftAllDrag, dragged, held: () => sessionRef.current?.active === true };
+  return { beginThumbDrag, beginShiftAllDrag, dragged, held: () => sessionRef.current?.active === true, onInput, onChange };
 }

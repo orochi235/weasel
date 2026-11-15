@@ -9,7 +9,7 @@ import type { SliderProps, Thumb } from './types';
  */
 export function useLatestHandlers<T extends Thumb>(props: Pick<SliderProps<T>, 'onInput' | 'onChange' | 'onCancel'>) {
   const latest = useLatest({ onInput: props.onInput, onChange: props.onChange, onCancel: props.onCancel });
-  const onInput = useCallback((next: T[]) => latest.current.onInput(next), [latest]);
+  const onInput = useCallback((next: T[]) => latest.current.onInput?.(next), [latest]);
   const onChange = useCallback((next: T[]) => latest.current.onChange?.(next), [latest]);
   const onCancel = useCallback(() => latest.current.onCancel?.(), [latest]);
   return { onInput, onChange, onCancel };

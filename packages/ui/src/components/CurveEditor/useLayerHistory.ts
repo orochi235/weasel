@@ -45,8 +45,8 @@ export function useLayerHistory(layers: () => readonly LayerEntry[]) {
       const prev = snap.get(entry);
       const current = entry.state;
       if (prev !== undefined && prev !== current) {
-        entry.onChange(prev);
-        entry.onCommit?.(prev, current);
+        entry.onInput?.(prev);
+        entry.onChange?.(prev, current);
       }
     }
   });

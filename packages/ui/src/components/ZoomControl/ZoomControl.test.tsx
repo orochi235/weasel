@@ -18,17 +18,17 @@ describe('ZoomControl', () => {
     expect(slider.getAttribute('aria-valuenow')).toBe('0');
   });
 
-  it('commits a typed zoom through onZoomCommit, held inside its range', () => {
+  it('commits a typed zoom through onZoomChange alone, held inside its range', () => {
+    const onZoomInput = vi.fn();
     const onZoomChange = vi.fn();
-    const onZoomCommit = vi.fn();
-    render(<ZoomControl zoom={1} onZoomChange={onZoomChange} onZoomCommit={onZoomCommit} max={2} />);
+    render(<ZoomControl zoom={1} onZoomInput={onZoomInput} onZoomChange={onZoomChange} max={2} />);
     fireEvent.change(field(), { target: { value: '150%' } });
     fireEvent.blur(field());
-    expect(onZoomCommit).toHaveBeenCalledWith(1.5);
-    expect(onZoomChange).not.toHaveBeenCalled();
+    expect(onZoomChange).toHaveBeenCalledWith(1.5);
+    expect(onZoomInput).not.toHaveBeenCalled();
   });
 
-  it('commits through onZoomChange when there is no onZoomCommit', () => {
+  it('commits through onZoomChange when there is no onZoomInput', () => {
     const onZoomChange = vi.fn();
     render(<ZoomControl zoom={1} onZoomChange={onZoomChange} />);
     fireEvent.change(field(), { target: { value: '25%' } });

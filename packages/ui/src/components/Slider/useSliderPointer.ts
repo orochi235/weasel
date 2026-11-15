@@ -13,7 +13,7 @@ const THUMB = '[role="slider"]';
 /** What the presses read: the thumbs and the props that steer them, the geometry and scale that turn a pointer into a value, and the drags they hand off to. */
 export interface SliderPointerArgs<T extends Thumb> {
   thumbs: readonly T[];
-  props: Pick<SliderProps<T>, 'trackClick' | 'onAddThumb' | 'onRemoveThumb' | 'allowShiftAll' | 'onChange' | 'constraint' | 'step' | 'regionDrag'>;
+  props: Pick<SliderProps<T>, 'trackClick' | 'onAddThumb' | 'onRemoveThumb' | 'allowShiftAll' | 'constraint' | 'step' | 'regionDrag'>;
   min: number;
   max: number;
   trackRef: RefObject<HTMLDivElement | null>;
@@ -21,13 +21,14 @@ export interface SliderPointerArgs<T extends Thumb> {
   valueAt: (f: number, length: number, free?: boolean) => number;
   valueToFraction: (v: number) => number;
   onInput: (next: T[]) => void;
+  onChange: (next: T[]) => void;
   drags: Pick<ReturnType<typeof useThumbDrags<T>>, 'beginThumbDrag' | 'beginShiftAllDrag' | 'held'>;
 }
 
 /** The presses on a slider: a thumb, a thumb's context menu, and the bare track. */
 export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
-  const { thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput, drags } = a;
-  const { onChange, constraint, step } = props;
+  const { thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput, onChange, drags } = a;
+  const { constraint, step } = props;
 
   const onThumbPointerDown = (index: number) => (e: ReactPointerEvent) => {
     if (!isPrimaryPress(e) || drags.held()) return;
@@ -49,7 +50,7 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
     if (!accepted) return;
     const next = thumbs.filter((_, i) => i !== index).map(t => ({ ...t })) as T[];
     onInput(next);
-    onChange?.(next);
+    onChange(next);
   };
 
   const onTrackPointerDown = (e: ReactPointerEvent<Element>) => {
@@ -71,7 +72,7 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
       if (!created) return;
       const next = [...thumbs.map(t => ({ ...t })), created] as T[];
       onInput(next);
-      onChange?.(next);
+      onChange(next);
       return;
     }
 

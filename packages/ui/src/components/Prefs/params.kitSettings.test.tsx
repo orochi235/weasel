@@ -102,7 +102,8 @@ describe('params.<surface>.textWaitMs', () => {
     waits(() => onChange.mock.calls.map(([, v]) => [v]), () => screen.getByLabelText('Title'));
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Hey' } });
     fireEvent.blur(screen.getByLabelText('Title'));
-    expect(onChange.mock.calls.map(([, v]) => v)).toEqual(['Hi', 'Hey']);
+    // The blur sends the waiting text as a preview, then commits the edit with the same text.
+    expect(onChange.mock.calls.map(([, v]) => v)).toEqual(['Hi', 'Hey', 'Hey']);
   });
 
   it("makes PrefControl's leaf wait", () => {

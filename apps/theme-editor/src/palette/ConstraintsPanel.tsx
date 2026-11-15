@@ -28,6 +28,7 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
             max={32}
             step={1}
             onChange={(v) => onSet('count', v)}
+            onInput={(v) => onSet('count', v)}
           />
         )}
         <PropertyField
@@ -55,6 +56,7 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           max={1}
           step={0.01}
           onChange={(v) => onSet('hueFloor', v)}
+          onInput={(v) => onSet('hueFloor', v)}
           format={(v) => ((v * 360) / Math.max(1, c.count)).toFixed(0)}
           unit="°"
           description={`A share of the even ${(360 / Math.max(1, c.count)).toFixed(1)}° this many colors would get. Held as a share so the floor means the same thing at any count. 0 turns it off.`}
@@ -68,6 +70,7 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           max={7}
           step={0.1}
           onChange={(v) => onSet('minContrast', v)}
+          onInput={(v) => onSet('minContrast', v)}
           description="WCAG, which reads lightness only. 3:1 is its floor for graphical objects. 0 turns it off."
         />
         <PropertyField
@@ -79,6 +82,7 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           max={0.6}
           step={0.01}
           onChange={(v) => onSet('minSurfaceDistance', v)}
+          onInput={(v) => onSet('minSurfaceDistance', v)}
           description="Perceptual distance from the surface — the gate contrast cannot express, because it counts chroma. This is what lets a yellow stay yellow on paper. 0 turns it off."
         />
         <PropertyField
@@ -90,6 +94,7 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           max={0.4}
           step={0.01}
           onChange={(v) => onSet('minDistance', v)}
+          onInput={(v) => onSet('minDistance', v)}
           description="Perceptual distance between any two swatches. Catches the pair that shares a hue gap but still reads alike. 0 turns it off."
         />
       </PropertyGroup>
@@ -104,6 +109,7 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           max={0.92}
           step={0.01}
           onChange={(v) => onSet('lightnessTarget', v)}
+          onInput={(v) => onSet('lightnessTarget', v)}
         />
         <PropertyField
           kind="number"
@@ -114,6 +120,7 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           max={1}
           step={0.05}
           onChange={(v) => onSet('lightnessPull', v)}
+          onInput={(v) => onSet('lightnessPull', v)}
           description="0 leaves every hue at its own chroma peak; 1 flattens them all onto the target."
         />
       </PropertyGroup>
@@ -128,6 +135,7 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           max={1}
           step={0.01}
           onChange={(v) => onSet('chromaFraction', v)}
+          onInput={(v) => onSet('chromaFraction', v)}
         />
         <PropertyField
           kind="number"
@@ -138,6 +146,7 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           max={1}
           step={0.05}
           onChange={(v) => onSet('equalize', v)}
+          onInput={(v) => onSet('equalize', v)}
           description="Pulls chroma toward the set mean. The weak hues are already at the gamut ceiling, so this buys their chroma by moving lightness."
         />
       </PropertyGroup>

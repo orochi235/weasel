@@ -3,7 +3,6 @@ import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
 import { PaintField } from '../PaintField';
 import { PaintInput } from '../PaintInput';
-import { ignore } from './NumberControls';
 import type { PropertyColorFieldProps, PropertyPaintFieldProps } from './fieldTypes';
 import s from './Properties.module.css';
 
@@ -44,11 +43,8 @@ export function ColorControl(p: PropertyColorFieldProps) {
       if (half.rgb || !own) write(next.rgb);
       if (half.alpha) own?.(a);
     };
-  // As a number does: one callback is the live one, and the commit at the end
-  // of a gesture would only repeat its last call.
-  const drafting = p.onInput !== undefined || p.onAlphaInput !== undefined;
-  const live = route(p.onInput ?? p.onChange, p.onAlphaInput ?? p.onAlphaChange, false);
-  const settled = drafting ? route(p.onChange, p.onAlphaChange, true) : ignore;
+  const live = route((hex) => p.onInput?.(hex), p.onAlphaInput, false);
+  const settled = route(p.onChange, p.onAlphaChange, true);
   return (
     <ColorField
       id={p.id}

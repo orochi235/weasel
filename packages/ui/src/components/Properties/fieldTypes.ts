@@ -73,18 +73,12 @@ export interface PropertyNumberFieldProps extends PropertyFieldBase {
   /** Absent reads as an empty field. */
   value: number | null | undefined;
   /**
-   * The committed value. A typed field fires it on blur, Enter, or a step, or
-   * once typing rests where `settleWhenIdle` holds, never per keystroke. A slider given `onInput` as well fires it once a drag
-   * ends; on its own it fires on every move, and a caller wanting settled
-   * values only passes a no-op `onInput`.
+   * `onInput`, `onChange` and `onCancel` are the kit's edit protocol (`docs/conventions.md`, "Edit callbacks"). A
+   * typed field's edit ends on blur, Enter, or a step, or once typing rests where `settleWhenIdle` holds; a slider's
+   * when the drag ends. Escape, or text the field cannot read, cancels a typed edit.
    */
   onChange: (next: number) => void;
-  /** The live value, fired continuously. Pass it alongside `onChange` when the
-   *  write is expensive — cheap state here, the costly work there. */
   onInput?: (next: number) => void;
-  /** A typed field's live edit was abandoned, by Escape or by text it cannot
-   *  read. A field showing a value has already sent that value back through
-   *  the live callback; a mixed one has none to send, so this is all it says. */
   onCancel?: () => void;
   /** A typed field was emptied and left by blur or Enter: the value is to be unset. Without it an emptied
    *  field puts its value back. */
@@ -141,11 +135,12 @@ export interface PropertyStringFieldProps extends PropertyFieldBase {
   /** Absent reads as an empty field. */
   value: string | null | undefined;
   /**
-   * The committed text: fires on blur or Enter, or once typing rests where
-   * `settleWhenIdle` holds, and only if the text changed. `onInput` gets each keystroke.
+   * The kit's edit protocol (`docs/conventions.md`, "Edit callbacks"): an edit ends on blur or Enter, or once typing
+   * rests where `settleWhenIdle` holds, and commits only if the text changed. Escape cancels it.
    */
   onChange: (next: string) => void;
   onInput?: (next: string) => void;
+  onCancel?: () => void;
   /** How long `onInput` waits for the next keystroke before it gets the text, in ms. Whatever is waiting is
    *  sent when the edit settles, before `onChange`. Absent or 0, every keystroke. */
   inputWaitMs?: number;
@@ -185,9 +180,8 @@ export interface PropertyColorFieldProps extends PropertyFieldBase {
   /** `#rrggbb`, or `#rrggbbaa` when `alpha` is `true`. */
   value: string | undefined;
   /**
-   * The committed color. Given `onInput` as well, it fires once per gesture —
-   * the picker closing, or the opacity track let go; on its own it fires on
-   * every move. A caller wanting settled values only passes a no-op `onInput`.
+   * The kit's edit protocol (`docs/conventions.md`, "Edit callbacks"): an edit ends as the picker closes or the
+   * opacity track is let go.
    */
   onChange: (next: string) => void;
   onInput?: (next: string) => void;
@@ -197,6 +191,7 @@ export interface PropertyColorFieldProps extends PropertyFieldBase {
    * `onAlphaChange` / `onAlphaInput`.
    */
   alpha?: boolean | number;
+  /** The alpha's own `onChange` and `onInput`, where `alpha` is a number. */
   onAlphaChange?: (next: number) => void;
   onAlphaInput?: (next: number) => void;
   /** Draw the opacity track inert, for a consumer that drops alpha. */

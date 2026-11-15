@@ -53,8 +53,8 @@ export function Edge({ points }: { points: readonly [OverlayPoint, OverlayPoint,
 /**
  * One draggable point. `onDrag` receives overlay pixels: where the point
  * goes, which trails the pointer by wherever on the handle it was grabbed. A
- * press that never moved writes nothing, and a canceled gesture puts the
- * preview back, then tells the overlay's `onCancel`.
+ * press that never moved writes nothing, and a canceled gesture (Escape, a lost pointer) puts the preview back,
+ * then tells the overlay's `onCancel`.
  */
 export function DragPoint({
   at,
@@ -88,6 +88,7 @@ export function DragPoint({
       onDrag(start.current, 'input');
       onCancel?.();
     },
+    escape: true,
   });
   const onKeyDown = (e: ReactKeyboardEvent<SVGCircleElement>): void => {
     const move = arrowMove(e.key, e.shiftKey);

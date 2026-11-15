@@ -2,11 +2,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
 import { PropertyField } from './PropertyField';
 
-const settledOnly = (): void => {};
-
 function slider(value: number) {
   return (
-    <PropertyField kind="number" control="slider" label="Width" value={value} min={0} max={10} onInput={settledOnly} onChange={() => {}} />
+    <PropertyField kind="number" control="slider" label="Width" value={value} min={0} max={10} onChange={() => {}} />
   );
 }
 

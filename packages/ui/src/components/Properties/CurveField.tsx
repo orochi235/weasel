@@ -23,10 +23,11 @@ export interface CurveFieldProps extends HoldProps {
   height?: number;
   /** Flat default curve. When provided, a Reset button restores it. */
   defaults?: readonly number[];
-  /** A finished edit: the curve a drag settles on, a flip, a reset. Without `onInput`, every move of a drag too. */
+  /** The kit's edit protocol (`docs/conventions.md`, "Edit callbacks"): a drag, a flip and a reset are each one
+   *  edit. Escape cancels a drag. */
   onChange: (next: number[]) => void;
-  /** Every move of a drag. Given, `onChange` hears only the curve the drag settles on, once. */
   onInput?: (next: number[]) => void;
+  onCancel?: () => void;
   /** Optional vertical marks overlaid on the plot (e.g. landmarks). */
   marks?: readonly CurveMark[];
 }
@@ -47,6 +48,7 @@ export function CurveField({
   defaults,
   onChange,
   onInput,
+  onCancel,
   marks,
   ...own
 }: CurveFieldProps) {
@@ -76,16 +78,8 @@ export function CurveField({
     },
     [min, max, step],
   );
-  const handleInput = useCallback(
-    (next: ControlPoint[]) => (onInput ?? onChange)(snapped(next)),
-    [onInput, onChange, snapped],
-  );
-  const handleSettled = useCallback(
-    (next: ControlPoint[]) => {
-      if (onInput) onChange(snapped(next));
-    },
-    [onInput, onChange, snapped],
-  );
+  const handleInput = useCallback((next: ControlPoint[]) => onInput?.(snapped(next)), [onInput, snapped]);
+  const handleSettled = useCallback((next: ControlPoint[]) => onChange(snapped(next)), [onChange, snapped]);
 
   const handleFlip = useCallback(() => {
     const flipped: Array<{ x: number; y: number }> = [];
@@ -116,6 +110,7 @@ export function CurveField({
           value={points}
           onInput={handleInput}
           onChange={handleSettled}
+          onCancel={onCancel}
           domain="1d"
           constrain="function"
           xRange={[0, 1]}

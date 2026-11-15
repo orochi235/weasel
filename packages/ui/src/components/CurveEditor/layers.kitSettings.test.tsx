@@ -88,7 +88,7 @@ describe('LayeredCurveEditor kit settings', () => {
     } as unknown as CurveLayer<null>;
     const editor = (
       <LayeredCurveEditor width={200} height={100} xRange={[0, 1000]} yRange={[0, 10]} history={false}>
-        <CustomLayer layer={probe} state={null} onChange={() => {}} />
+        <CustomLayer layer={probe} state={null} onInput={() => {}} />
       </LayeredCurveEditor>
     );
     render(wrap ? <KitSettingsProvider value={{ targets: { curveKeyHitPx: 30 } }}>{editor}</KitSettingsProvider> : editor);
@@ -108,7 +108,7 @@ describe('createKeyframeLayer snap reach', () => {
     const [state, setState] = useState(() => keyframeLayerState([{ t: 0, value: 0 }, { t: 500, value: 10 }, { t: 1000, value: 5 }]));
     return (
       <LayeredCurveEditor width={200} height={100} xRange={[0, 1000]} yRange={[0, 10]} history={false}>
-        <KeyframeLayer {...config} state={state} onChange={setState} onCommit={(next) => onCommit(next)} />
+        <KeyframeLayer {...config} state={state} onInput={setState} onChange={(next) => onCommit(next)} />
       </LayeredCurveEditor>
     );
   }

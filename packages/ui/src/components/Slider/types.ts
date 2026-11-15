@@ -99,8 +99,8 @@ export type SliderStop = Stop<ReactNode>;
 /**
  * Props for {@link Slider}.
  *
- * `onInput` fires continuously through a drag; `onChange` fires once when it
- * ends and is the one to write to history.
+ * `onInput`, `onChange` and `onCancel` follow the kit's edit protocol (`docs/conventions.md`, "Edit callbacks"): a
+ * drag, a key step, a track press and an added or removed thumb are each one edit. Escape cancels a drag.
  *
  * `stops` are attractors: a drag that passes within a few pixels of one lands
  * on it, and the arrow keys move stop to stop. `step` still quantizes the
@@ -155,7 +155,7 @@ export type SliderStop = Stop<ReactNode>;
  */
 export type SliderProps<T extends Thumb<Quantity> = Thumb> = HoldProps & {
   thumbs: readonly T[];
-  onInput: (next: T[]) => void;
+  onInput?: (next: T[]) => void;
   onChange?: (next: T[]) => void;
   min: number;
   max: number;
@@ -183,9 +183,7 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = HoldProps & {
   regionDrag?: boolean;
   /** Not under `spacing: 'even'`, which places values by its stops. Default linear. */
   scale?: ContinuousScaleFactory;
-  /** A drag ended without a release — a canceled pointer, a lost origin, an
-   *  unmount — and commits nothing. The thumbs are where its last `onInput`
-   *  left them; a consumer holding that preview drops it here. */
+  /** A drag was abandoned: Escape, a canceled pointer, a lost origin, an unmount. */
   onCancel?: () => void;
   thumbFit?: 'inside' | 'overhang';
   /** The track's height: a number in px, or a CSS length such as `var(--wzl-slider-track-h)`. On a curve it defaults to

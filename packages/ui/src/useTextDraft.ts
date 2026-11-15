@@ -8,6 +8,8 @@ export interface TextDraftTarget {
   onChange: (next: string) => void;
   /** Each keystroke, and on Escape the value it last committed. */
   onInput?: (next: string) => void;
+  /** Escape dropped a draft. */
+  onCancel?: () => void;
   /** Overrides the `typing.settleWhenIdle` kit setting. */
   settleWhenIdle?: boolean;
 }
@@ -16,7 +18,7 @@ export interface TextDraftTarget {
  * The text a field shows and how an edit to it lands: the draft shows while it
  * differs from `value`, `onInput` gets each keystroke, and the draft settles
  * through `onChange` on blur or Enter, and once typing rests where it settles when
- * idle. Escape drops it, and gives `onInput` back the value it last committed.
+ * idle. Escape cancels it: `onInput` gets back the value it last committed, then `onCancel` runs.
  * `drop` discards the draft for a caller that has written it some other way.
  */
 export function useTextDraft(p: TextDraftTarget) {
@@ -50,8 +52,11 @@ export function useTextDraft(p: TextDraftTarget) {
     keyDown: (e: { key: string; target: EventTarget }) => {
       if (e.key !== 'Escape') return;
       canceled.current = true;
-      if (draft !== null) p.onInput?.(value);
       drop();
+      if (draft !== null) {
+        p.onInput?.(value);
+        p.onCancel?.();
+      }
       (e.target as HTMLElement).blur();
     },
   };

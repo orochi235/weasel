@@ -4,11 +4,16 @@ import { PropertyField } from './PropertyField';
 import { pick } from './testing/selectRow';
 
 describe('color field', () => {
-  it('emits the new hex on change', () => {
+  it('previews the new hex as it is picked, and commits it once the picker is left', () => {
+    const onInput = vi.fn();
     const onChange = vi.fn();
-    const { container } = render(<PropertyField kind="color" label="Fill" value="#ffffff" onChange={onChange} />);
+    const { container } = render(<PropertyField kind="color" label="Fill" value="#ffffff" onInput={onInput} onChange={onChange} />);
     const input = container.querySelector('input[type="color"]') as HTMLInputElement;
     fireEvent.input(input, { target: { value: '#aa3300' } });
+    expect(onInput).toHaveBeenCalledWith('#aa3300');
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith('#aa3300');
   });
 });

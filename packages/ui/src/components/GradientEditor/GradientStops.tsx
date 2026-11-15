@@ -38,6 +38,7 @@ export interface GradientStopsProps {
   disabled?: boolean;
   onInput?: (next: Paint) => void;
   onChange: (next: Paint) => void;
+  onCancel?: () => void;
 }
 
 /**
@@ -46,7 +47,7 @@ export interface GradientStopsProps {
  * selected by taking focus, which a press on it gives it.
  */
 export function GradientStops(props: GradientStopsProps): ReactElement {
-  const { value, spaceBar, onInput, onChange } = props;
+  const { value, spaceBar, onInput, onChange, onCancel } = props;
   const stops = value.stops;
   const space = value.interpolate ?? 'rgb';
   const order = stopOrder(stops);
@@ -117,8 +118,9 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
           thumbs={thumbs}
           aria-label="Gradient stop"
           readoutPlacement="none"
-          onInput={(next) => onInput?.(fromThumbs(next))}
+          onInput={onInput && ((next) => onInput(fromThumbs(next)))}
           onChange={(next) => onChange(fromThumbs(next))}
+          onCancel={onCancel}
           onAddThumb={(at) => {
             select(stops.length);
             focusNext.current = { index: stops.length, count: stops.length + 1 };

@@ -227,4 +227,30 @@ describe('openPointerSession', () => {
     expect(onCancel).not.toHaveBeenCalled();
     expect(s!.active).toBe(true);
   });
+
+  it('ends as canceled on Escape when opened with escape, and keeps the key from anything else', () => {
+    const onCancel = vi.fn();
+    const onEnd = vi.fn();
+    const elsewhere = vi.fn();
+    const origin = el();
+    origin.addEventListener('keydown', elsewhere);
+    const s = openPointerSession(origin, down(), { onCancel, onEnd }, { escape: true });
+    origin.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+    expect(s.active).toBe(true);
+    origin.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(onCancel).toHaveBeenCalledWith('escape');
+    expect(elsewhere).toHaveBeenCalledTimes(1);
+    expect(s.active).toBe(false);
+    origin.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onEnd).not.toHaveBeenCalled();
+  });
+
+  it('leaves Escape alone without escape', () => {
+    const onCancel = vi.fn();
+    const s = openPointerSession(el(), down(), { onCancel });
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(s.active).toBe(true);
+  });
 });

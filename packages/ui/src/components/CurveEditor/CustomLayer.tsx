@@ -1,18 +1,21 @@
-import { useCallback, useContext, useLayoutEffect, useRef, type ReactElement } from 'react';
+import { useCallback, useContext, useLayoutEffect, useReducer, useRef, type ReactElement } from 'react';
 import { useColorCss, useTints } from '@weasel-js/theme/react';
 import { handleHalf as themeHandleHalf, type HandleSizeToken } from '../../handles';
-import { LayerHostContext, type LayerEntry } from './layerHost';
+import { LayerHostContext, stateOf, type LayerEntry } from './layerHost';
 import { NO_MODIFIERS } from './layerCtx';
 import type { CurveLayer } from './layerTypes';
 
-/** Props for {@link CustomLayer}, and the state half of every built-in layer's props. */
+/**
+ * Props for {@link CustomLayer}, and the state half of every built-in layer's props. The callbacks are the kit's edit
+ * protocol (`docs/conventions.md`, "Edit callbacks"): a drag, a one-shot insert or delete, a key, and an undo or redo
+ * are each one edit. `onChange` takes the state the edit began from as well.
+ */
 export interface LayerStateProps<S> {
-  /** The layer's state, held by the consumer: the editor never stores it. */
+  /** The layer's state, held by the consumer. Without `onInput` the editor draws its own draft while an edit runs. */
   state: S;
-  /** Every change a gesture, key, or undo makes, live during a drag. */
-  onChange(next: S): void;
-  /** Once per finished edit (a drag's end, a one-shot insert or delete, an undo or redo), with the state before it. */
-  onCommit?(next: S, prev: S): void;
+  onInput?(next: S): void;
+  onChange?(next: S, prev: S): void;
+  onCancel?(): void;
 }
 
 /** Props for {@link CustomLayer}. */
@@ -24,14 +27,15 @@ export interface CustomLayerProps<S> extends LayerStateProps<S> {
  * One layer of a `LayeredCurveEditor`, from any {@link CurveLayer}. It draws where it sits among the editor's
  * children, so a later child draws over it and is asked about a press before it.
  */
-export function CustomLayer<S>({ layer, state, onChange, onCommit }: CustomLayerProps<S>): ReactElement {
+export function CustomLayer<S>({ layer, state, onInput, onChange, onCancel }: CustomLayerProps<S>): ReactElement {
   const host = useContext(LayerHostContext);
   if (!host) throw new Error('A curve layer must sit inside a LayeredCurveEditor or a CurveEditor.');
   const group = useRef<SVGGElement>(null);
+  const [, redraw] = useReducer((n: number) => n + 1, 0);
   const entry = useRef<LayerEntry | null>(null);
-  entry.current ??= { layer, state, onChange, onCommit, el: null } as LayerEntry;
+  entry.current ??= { layer, state, onInput, onChange, onCancel, redraw, el: null } as LayerEntry;
   useLayoutEffect(() => {
-    Object.assign(entry.current!, { layer, state, onChange, onCommit });
+    Object.assign(entry.current!, { layer, state, onInput, onChange, onCancel });
   });
   const { register } = host;
   useLayoutEffect(() => {
@@ -45,7 +49,7 @@ export function CustomLayer<S>({ layer, state, onChange, onCommit }: CustomLayer
   const handleHalf = useCallback((token: HandleSizeToken) => themeHandleHalf(token, resolved), [resolved]);
   return (
     <g ref={group} data-layer-id={layer.id}>
-      {layer.render(state, { ...host.base, modifiers: NO_MODIFIERS, colorCss, handleHalf, isActive: host.active === entry.current })}
+      {layer.render((entry.current!.draft ? stateOf(entry.current!) : state) as S, { ...host.base, modifiers: NO_MODIFIERS, colorCss, handleHalf, isActive: host.active === entry.current })}
     </g>
   );
 }

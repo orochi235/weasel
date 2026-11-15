@@ -325,4 +325,20 @@ describe('useHandleDrag — callbacks from a later render', () => {
     expect(latest).toHaveBeenCalledTimes(1);
     target.remove();
   });
+
+  it('cancels on Escape only when asked to', () => {
+    for (const escape of [true, false]) {
+      const target = mount();
+      const onCancel = vi.fn();
+      const onEnd = vi.fn();
+      const { result, unmount } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove: () => {}, onCancel, onEnd, escape }));
+      result.current.onPointerDown(press(target, 10, 10));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(onCancel.mock.calls).toEqual(escape ? [['escape']] : []);
+      document.dispatchEvent(makePointerEvent('pointerup', { clientX: 10, clientY: 10 }));
+      expect(onEnd).toHaveBeenCalledTimes(escape ? 0 : 1);
+      unmount();
+      target.remove();
+    }
+  });
 });

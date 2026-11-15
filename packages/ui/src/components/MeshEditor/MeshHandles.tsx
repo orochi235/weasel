@@ -9,6 +9,7 @@ import {
 } from '@weasel-js/core/mesh';
 import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
+import { useEditDraft } from '../../useEditDraft';
 import {
   DragPoint,
   Edge,
@@ -18,8 +19,8 @@ import {
   type OverlayPoint as Point,
 } from '../GradientEditor/handleOverlay';
 
-/** Props for {@link MeshHandles}. `onInput` fires throughout a drag and
- *  `onChange` once at its end, or `onCancel` if it is abandoned. */
+/** Props for {@link MeshHandles}. `onInput`, `onChange` and `onCancel` are the kit's edit protocol
+ *  (`docs/conventions.md`, "Edit callbacks"): a drag or an arrow-key step is one edit, and Escape cancels a drag. */
 export interface MeshHandlesProps {
   /** The mesh whose points these handles move, in the space `toScreen`
    *  maps from. A `units: 'bounds'` mesh is resolved first with
@@ -30,14 +31,9 @@ export interface MeshHandlesProps {
   toScreen: (p: Point) => Point;
   /** Overlay pixels → mesh space. Must invert `toScreen`. */
   toLocal: (p: Point) => Point;
-  /** Live during a drag — wire for preview, do not write to history. Emitted
-   *  as a `Paint`, which is what every paint control passes around. */
+  /** Emitted as a `Paint`, which is what every paint control passes around. */
   onInput?: (next: Paint) => void;
-  /** Committed at drag end: one call per gesture. */
   onChange: (next: Paint) => void;
-  /** A drag was abandoned (the pointer was canceled). Its last `onInput` put
-   *  the value back where the drag began; an owner that opened an edit on
-   *  `onInput` ends it here without keeping it. */
   onCancel?: () => void;
   /** Overlay size in CSS pixels. */
   width: number;
@@ -56,14 +52,19 @@ export interface MeshHandlesProps {
  * The overlay ignores pointer events except on the handles themselves.
  */
 export function MeshHandles(props: MeshHandlesProps): ReactElement {
-  const { value, toScreen, toLocal, onInput, onChange, onCancel, width, height, className } = props;
+  const { toScreen, toLocal, width, height, className } = props;
+  const { shown: value, onInput, onChange, onCancel } = useEditDraft<MeshGradientPaint>(props.value, {
+    onInput: props.onInput && ((next) => props.onInput!(asPaint(next))),
+    onChange: (next) => props.onChange(asPaint(next)),
+    onCancel: props.onCancel,
+  });
   const { edges, arms } = meshGuides(value);
   const handles = meshHandles(value);
   const { resolved } = useTints();
 
   const emit = (handle: MeshHandle, p: Point, phase: EditPhase): void => {
-    const next = asPaint(moveMeshHandle(value, handle, toLocal(p)));
-    if (phase === 'input') onInput?.(next);
+    const next = moveMeshHandle(value, handle, toLocal(p));
+    if (phase === 'input') onInput(next);
     else onChange(next);
   };
 

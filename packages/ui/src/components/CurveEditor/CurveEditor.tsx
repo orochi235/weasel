@@ -36,16 +36,16 @@ export type {
 };
 
 /**
- * Props for {@link CurveEditor}. `onInput` fires throughout a gesture and
- * `onChange` once at its end, with the pre-gesture points as `prev`. An undo
- * or redo of the built-in `history` is reported through both, like any other
- * finished change; a consumer that keeps its own undo turns `history` off.
- * Disabled or read-only, it is held as a {@link LayeredCurveEditor} is.
+ * Props for {@link CurveEditor}. `onInput`, `onChange` and `onCancel` are the kit's edit protocol
+ * (`docs/conventions.md`, "Edit callbacks"); `onChange` takes the points the edit began from as `prev`. An undo
+ * or redo of the built-in `history` is an edit like any other; a consumer that keeps its own undo turns `history`
+ * off. Disabled or read-only, it is held as a {@link LayeredCurveEditor} is.
  */
 export interface CurveEditorProps extends HoldProps {
   value: readonly ControlPoint[];
-  onInput: (next: ControlPoint[]) => void;
+  onInput?: (next: ControlPoint[]) => void;
   onChange?: (next: ControlPoint[], prev: readonly ControlPoint[]) => void;
+  onCancel?: () => void;
   domain?: CurveDomain;
   interpolation?: InterpolationMode;
   endpoints?: EndpointMode;
@@ -84,7 +84,7 @@ export interface CurveEditorProps extends HoldProps {
  */
 export function CurveEditor(props: CurveEditorProps) {
   const {
-    value, onInput, onChange,
+    value, onInput, onChange, onCancel,
     domain, endpoints, interpolation, constrain, addPointMode,
     minPoints, maxPoints, curve, fill, hideNonInteractive, renderAnchor,
     width, height, xRange, yRange, grid, axes, xTicks, yTicks, history,
@@ -94,7 +94,7 @@ export function CurveEditor(props: CurveEditorProps) {
   // The points are local only while an anchor is held, so a drag advances
   // without the consumer writing `value` back on every move. Outside one,
   // `value` is what is drawn, including when the consumer declined or
-  // normalized what `onInput` offered.
+  // normalized what it was offered.
   const [held, setHeld] = useState<FunctionLayerState | null>(null);
   const idle = useMemo<FunctionLayerState>(() => ({ points: value, activeIndex: null }), [value]);
   const layerState = held ?? idle;
@@ -103,17 +103,18 @@ export function CurveEditor(props: CurveEditorProps) {
   const handleLayerChange = useCallback((next: FunctionLayerState) => {
     const prevPoints = layerStateRef.current.points;
     setHeld(next.activeIndex === null ? null : next);
-    if (next.points !== prevPoints) {
-      onInput(next.points as ControlPoint[]);
-    }
+    if (next.points !== prevPoints) onInput?.(next.points as ControlPoint[]);
   }, [onInput, layerStateRef]);
 
   const handleLayerCommit = useCallback((next: FunctionLayerState, prev: FunctionLayerState) => {
-    if (!onChange) return;
-    if (next.points !== prev.points) {
-      onChange?.(next.points as ControlPoint[], prev.points);
-    }
+    setHeld(null);
+    if (next.points !== prev.points) onChange?.(next.points as ControlPoint[], prev.points);
   }, [onChange]);
+
+  const handleLayerCancel = useCallback(() => {
+    setHeld(null);
+    onCancel?.();
+  }, [onCancel]);
 
   return (
     <LayeredCurveEditor
@@ -135,8 +136,9 @@ export function CurveEditor(props: CurveEditorProps) {
       <FunctionLayer
         id="function"
         state={layerState}
-        onChange={handleLayerChange}
-        onCommit={handleLayerCommit}
+        onInput={handleLayerChange}
+        onChange={handleLayerCommit}
+        onCancel={handleLayerCancel}
         domain={domain} endpoints={endpoints} interpolation={interpolation} constrain={constrain}
         addPointMode={addPointMode} minPoints={minPoints} maxPoints={maxPoints} curve={curve} fill={fill}
         hideNonInteractive={hideNonInteractive} renderAnchor={renderAnchor}

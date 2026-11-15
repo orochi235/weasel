@@ -24,9 +24,9 @@ describe('a custom layer', () => {
   it('writes a color source as CSS from its render context', () => {
     const { container } = render(
       <LayeredCurveEditor width={200} height={100}>
-        <CustomLayer layer={swatch('token', { ref: 'accent' })} state={null} onChange={noop} />
-        <CustomLayer layer={swatch('literal', { space: 'srgb', coords: [1, 0, 0] })} state={null} onChange={noop} />
-        <CustomLayer layer={swatch('nothing', { ref: 'nope' })} state={null} onChange={noop} />
+        <CustomLayer layer={swatch('token', { ref: 'accent' })} state={null} onInput={noop} />
+        <CustomLayer layer={swatch('literal', { space: 'srgb', coords: [1, 0, 0] })} state={null} onInput={noop} />
+        <CustomLayer layer={swatch('nothing', { ref: 'nope' })} state={null} onInput={noop} />
       </LayeredCurveEditor>,
     );
     expect(fillOf(container, 'token')).toBe('var(--wzl-accent)');
@@ -39,7 +39,7 @@ describe('a custom layer', () => {
     const { container } = render(
       <ThemeProvider palette={palette}>
         <LayeredCurveEditor width={200} height={100}>
-          <CustomLayer layer={swatch('brand', { ref: 'brand' })} state={null} onChange={noop} />
+          <CustomLayer layer={swatch('brand', { ref: 'brand' })} state={null} onInput={noop} />
         </LayeredCurveEditor>
       </ThemeProvider>,
     );
@@ -48,7 +48,7 @@ describe('a custom layer', () => {
 
   it('refuses to render outside an editor', () => {
     vi.spyOn(console, 'error').mockImplementation(noop);
-    expect(() => render(<svg><CustomLayer layer={swatch('lost', { ref: 'accent' })} state={null} onChange={noop} /></svg>)).toThrow(/LayeredCurveEditor/);
+    expect(() => render(<svg><CustomLayer layer={swatch('lost', { ref: 'accent' })} state={null} onInput={noop} /></svg>)).toThrow(/LayeredCurveEditor/);
     vi.mocked(console.error).mockRestore();
   });
 });
@@ -68,9 +68,9 @@ describe('the layer stack', () => {
     const pressed: string[] = [];
     const { container } = render(
       <LayeredCurveEditor width={200} height={100} history={false}>
-        <CustomLayer layer={claimer('below', pressed)} state={null} onChange={noop} />
+        <CustomLayer layer={claimer('below', pressed)} state={null} onInput={noop} />
         <rect data-chrome="" />
-        <CustomLayer layer={claimer('above', pressed)} state={null} onChange={noop} />
+        <CustomLayer layer={claimer('above', pressed)} state={null} onInput={noop} />
       </LayeredCurveEditor>,
     );
     const order = [...container.querySelectorAll('[data-claimer], [data-chrome]')].map((el) => el.getAttribute('data-claimer') ?? 'chrome');
@@ -84,7 +84,7 @@ describe('the layer stack', () => {
     const a = claimer('a', pressed);
     const b = claimer('b', pressed);
     function Stack({ flip, drop }: { flip: boolean; drop?: boolean }) {
-      const layers = [<CustomLayer key="a" layer={a} state={null} onChange={noop} />, <CustomLayer key="b" layer={b} state={null} onChange={noop} />];
+      const layers = [<CustomLayer key="a" layer={a} state={null} onInput={noop} />, <CustomLayer key="b" layer={b} state={null} onInput={noop} />];
       const shown = flip ? layers.reverse() : layers;
       return <LayeredCurveEditor width={200} height={100} history={false}>{drop ? shown.slice(0, 1) : shown}</LayeredCurveEditor>;
     }
@@ -108,7 +108,7 @@ describe('the layer stack', () => {
       const [n, setN] = useState(0);
       return (
         <LayeredCurveEditor width={200} height={100}>
-          <CustomLayer layer={inserter} state={n} onChange={setN} onCommit={onCommit} />
+          <CustomLayer layer={inserter} state={n} onInput={setN} onChange={onCommit} />
         </LayeredCurveEditor>
       );
     }
@@ -127,7 +127,7 @@ describe('the keyframe layer', () => {
     const { container } = render(
       <ThemeProvider theme={big}>
         <LayeredCurveEditor width={200} height={100}>
-          <KeyframeLayer label="x" state={state} onChange={noop} />
+          <KeyframeLayer label="x" state={state} onInput={noop} />
         </LayeredCurveEditor>
       </ThemeProvider>,
     );
