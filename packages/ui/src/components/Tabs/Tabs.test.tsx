@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
+import { Disabled } from '../Disabled';
 import { Tabs, TabList, Tab, TabPanel } from './Tabs';
 
 function Sample() {
@@ -41,5 +42,11 @@ describe('Tabs', () => {
   it('exposes role=tab on tab triggers', () => {
     render(<Sample />);
     expect(screen.getAllByRole('tab').length).toBe(3);
+  });
+
+  it('stays usable inside a Disabled scope, since a tab moves between views and sets no value', () => {
+    render(<Disabled reason="Locked"><Sample /></Disabled>);
+    fireEvent.click(screen.getByText('B'));
+    expect(screen.getByText('panel-b')).toBeTruthy();
   });
 });

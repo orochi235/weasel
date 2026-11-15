@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
+import { Disabled } from '../Disabled';
 import { RadioGroup, Radio } from './RadioGroup';
 
 function Sample(props: { value?: string; onChange?: (v: string) => void; disabled?: boolean }) {
@@ -43,5 +44,16 @@ describe('RadioGroup', () => {
     for (const r of screen.getAllByRole('radio') as HTMLInputElement[]) {
       expect(r.disabled).toBe(true);
     }
+  });
+
+  it('takes a Disabled scope around the group, through the group', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(<Disabled><Sample onChange={onChange} /></Disabled>);
+    for (const r of screen.getAllByRole('radio') as HTMLInputElement[]) expect(r.disabled).toBe(true);
+    rerender(<Disabled reason="Locked"><Sample onChange={onChange} /></Disabled>);
+    const green = screen.getByLabelText('Green') as HTMLInputElement;
+    expect(green.disabled).toBe(false);
+    fireEvent.click(green);
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
