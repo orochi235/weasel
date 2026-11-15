@@ -279,6 +279,13 @@ describe('a group inside a frame', () => {
     expect(sym.read(group)!.center).toEqual({ x: 300, y: 50 });
   });
 
+  it('reads its center where it is shown while a drag previews its frame elsewhere', () => {
+    const { scene, sym, group, frame } = framed();
+    scene.overrides.set(frame, { pose: { x: 300, y: 80, width: 0, height: 0 } });
+    scene.overrides.commit();
+    expect(sym.read(group)!.center).toEqual({ x: 360, y: 80 });
+  });
+
   it('keeps an edited path symmetric about the center its copies turn about', () => {
     const { scene, group } = framed();
     const [m] = editSymmetries(scene as never, group);

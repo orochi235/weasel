@@ -1,25 +1,12 @@
 import {
-  AUTO_POSE_DESCRIPTOR, composesFrames, composeWorldPose, heldInFrame, poseDescriptorForNode, rebaseLocalPose,
-  scenePoseAdapter, visualBoundsViaDescriptor, type NodeId, type Scene,
+  AUTO_POSE_DESCRIPTOR, composesFrames, heldInFrame, poseDescriptorForNode, rebaseLocalPose, scenePoseAdapter,
+  visualBoundsViaDescriptor, worldPoses, type AnyScene, type NodeId,
 } from '@weasel-js/core';
 import type { Point } from '@weasel-js/geom';
 
-type AnyScene = Scene<unknown, string, unknown>;
-
-/** Where `id` draws: its pose folded through every frame above it. */
+/** Where `id` draws as the document holds it: its pose folded through every frame above it. */
 export function worldPoseOf(scene: AnyScene, id: NodeId): unknown {
-  return composeWorldPose(scenePoseAdapter(scene), id, scene.composition.compose);
-}
-
-/** Where `id` is shown: its pose, or the one an override previews it at,
- *  folded through every frame above it. */
-export function shownWorldPoseOf(scene: AnyScene, id: NodeId): unknown {
-  const node = scene.get(id)!;
-  const shown = scene.overrides.read(id)?.pose ?? node.pose;
-  if (node.parent === null || !composesFrames(scene.composition)) return shown;
-  const base = scenePoseAdapter(scene);
-  const adapter = { ...base, getPose: (n: string) => (n === id ? shown : base.getPose(n)) };
-  return composeWorldPose(adapter, id, scene.composition.compose);
+  return worldPoses(scene, 'document')(id);
 }
 
 /** `world` as a pose stored under `parent`, so the node draws there, or `null`

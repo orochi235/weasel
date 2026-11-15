@@ -1,6 +1,8 @@
 import type { Affine, Point } from '@weasel-js/geom';
-import { clipNothing, type AddNodeSpec, type CopiesFromPoseFn, type NodeId, type Scene, type SceneRegistry } from '@weasel-js/core';
-import { localPoseUnder, shownWorldPoseOf } from './frames';
+import {
+  clipNothing, worldPoses, type AddNodeSpec, type CopiesFromPoseFn, type NodeId, type Scene, type SceneRegistry,
+} from '@weasel-js/core';
+import { localPoseUnder } from './frames';
 import {
   DEFAULT_SYMMETRY, SYMMETRY_KINDS, symmetryTransforms, type SymmetryExtent, type SymmetrySpec, type WallpaperCell,
 } from './kinds';
@@ -133,7 +135,7 @@ export function symmetryGroupOf(scene: Scene<unknown, string, unknown>, id: Node
 export function readGroup(scene: Scene<unknown, string, unknown>, id: NodeId | string | null): { spec: SymmetrySpec; center: Point } | null {
   if (!isSymmetryGroup(scene, id)) return null;
   const node = scene.get(id as NodeId)!;
-  return { spec: specOfData(node.data), center: centerOfPose(shownWorldPoseOf(scene, node.id)) };
+  return { spec: specOfData(node.data), center: centerOfPose(worldPoses(scene, 'shown')(node.id)) };
 }
 
 /**
