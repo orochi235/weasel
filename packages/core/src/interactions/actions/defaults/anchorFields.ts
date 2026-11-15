@@ -10,6 +10,7 @@ import {
 } from '@weasel-js/geom';
 import { pathOperationTags } from '../pathGestureTags';
 import { commitAnchorEdit, depOf, requiresAnchorSelection } from './anchorEditing';
+import type {} from '../actionParamSchema';
 
 /** What `setAnchorField` takes: the field, and either the value every
  *  selected anchor gets (`to`) or the amount added to each one's own (`by`). */

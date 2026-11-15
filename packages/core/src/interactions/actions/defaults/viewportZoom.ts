@@ -8,6 +8,7 @@ import { screenToWorld } from 'core/viewport/viewTransform';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import { fitViewToBounds } from 'core/viewport/fitViewToBounds';
 import { resetView } from 'core/viewport/homeView';
+import type {} from '../actionParamSchema';
 
 // Multiplicative step for keyboard zoom (matches useKeyboardZoomTool default).
 const KEY_STEP = 1.25;

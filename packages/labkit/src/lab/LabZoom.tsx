@@ -15,6 +15,7 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import { useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
+import type {} from '../actionParamSchema';
 import type { CameraView } from '../canvas/CameraInput';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { atScale, viewMiddle } from '../canvas/cameraZoom';

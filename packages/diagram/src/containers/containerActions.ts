@@ -24,6 +24,7 @@ import { MIN_LANE_SIZE } from './laneStack';
 import { titleInFrame } from './titlePose';
 import { diagramContainerOf, titleIdOf } from './trait';
 import type { AnyScene } from '@weasel-js/core';
+import type {} from '../actionParamSchema';
 
 /** The action that drags a lane's boundary. */
 export const LANE_RESIZE_ACTION_ID = 'diagram.resizeLane';

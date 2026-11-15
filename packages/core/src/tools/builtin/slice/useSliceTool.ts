@@ -16,6 +16,7 @@ import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
 import { createEmitter } from '@weasel-js/registry';
 import { icon } from '../../../icons.gen';
 import type { GestureBinding } from '@weasel-js/routing';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** Options for `useSliceTool`. */
 export interface UseSliceToolOptions {

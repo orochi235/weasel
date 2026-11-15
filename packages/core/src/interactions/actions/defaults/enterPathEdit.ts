@@ -14,6 +14,7 @@
 import type { NodeId } from 'core/scene/types';
 import { ActionDisabledReason, defineAction, isBody } from '@weasel-js/routing';
 import { effectSourceFor } from 'domains/pathEffects/effectSources';
+import type {} from '../actionParamSchema';
 
 export const enterPathEditAction = defineAction({
   id: 'enterPathEdit',

@@ -45,6 +45,7 @@ export type {
   FinishPathParams, IngestParams, InsertParams, MoveParams, OffsetPathParams, PaintParams, RotateParams,
   PlaceParams, CountStepParams, OpacityParams, ViewportZoomParams, WheelScrollParams, PickParams,
 } from '../interactions/actions/actionParamSchema';
+export type { ReparentOnDrop } from '../interactions/actions/move/session';
 export { bindAction, defineAction, dynamicActionId, routedOpts } from '@weasel-js/routing';
 export type {
   ActionOf, ActionParamsOf, ActionSettingsOf, ActionVariantOf, BindingOf, DynamicActionId, InvokeParams,

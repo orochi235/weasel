@@ -9,6 +9,7 @@ import { nextFrame } from './frame';
 import { commitMove } from './commit';
 import { recordTransform } from '../transform-again/memory';
 import { SNAP_ROLES } from 'domains/snap/roles';
+import type {} from '../actionParamSchema';
 export type { ReparentOnDrop };
 
 /**

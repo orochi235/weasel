@@ -1,6 +1,7 @@
 import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import { pathOperationTags } from '../pathGestureTags';
+import type {} from '../actionParamSchema';
 
 /**
  * Static descriptor for the `slice` Action.

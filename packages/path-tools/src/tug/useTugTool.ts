@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { isAnchor } from '@weasel-js/routing';
 import { defineTool, type Tool } from '@weasel-js/core';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 /**
  * Tug, a path-edit tool: a declarative shell whose one binding routes a

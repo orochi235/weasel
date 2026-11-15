@@ -10,6 +10,7 @@ import { createRigEditState, type RigEditState } from '../bone/rigEditState';
 import { createWeightActions, weighedPaths, WEIGHT_TOOL_OPTIONS, type WeightEnv } from './weightActions';
 import { createWeightOverlay } from './weightOverlay';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 /** Options for `useWeightTool`. */
 export interface UseWeightToolOptions {

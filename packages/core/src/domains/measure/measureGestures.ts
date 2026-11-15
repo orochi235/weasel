@@ -15,6 +15,7 @@ import { addMeasureOp, moveEndOps, moveMeasureOps, translatedMeasure } from './m
 import { MEASURE_ACTION_IDS } from './actionIds';
 import { pxReach } from '@weasel-js/geom';
 import type { AnyScene } from 'core/scene/anyScene';
+import type {} from '../../interactions/actions/actionParamSchema';
 
 /** Screen-px radius around a measurement that picks it. */
 export const MEASURE_HIT_PX = 6;

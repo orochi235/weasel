@@ -5,6 +5,7 @@ import { type PrefGroup, type PrefLeaf, pref } from '@weasel-js/prefs';
 import { useEffect, useMemo } from 'react';
 import { type GlobalDeclarations, isForgePath } from '../globals';
 import type { ForgeComparison } from './conditions';
+import type {} from '../../actionParamSchema';
 
 /** The actions whose variants are the compare menu's rows, each setting the comparison of the lens it opened on.
  *  DPR rows have one of their own, which a lens showing no Pixels disables. */

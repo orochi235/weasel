@@ -18,6 +18,7 @@ import { onBody, onEmptyCanvas } from './selectionContributions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 import { icon } from '../../../icons.gen';
+import type {} from '../../../interactions/actions/actionParamSchema';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };
 

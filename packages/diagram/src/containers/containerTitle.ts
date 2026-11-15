@@ -12,6 +12,7 @@ import {
   type RectPose,
 } from '@weasel-js/core';
 import { diagramContainerOf, headerBox } from './trait';
+import type {} from '../actionParamSchema';
 
 /** The action a double-click on a region's header runs. */
 export const EDIT_CONTAINER_TITLE_ACTION_ID = 'diagram.editContainerTitle';

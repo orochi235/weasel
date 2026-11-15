@@ -1,4 +1,5 @@
 import { ActionDisabledReason, defineAction, isBody } from '@weasel-js/routing';
+import type {} from '../actionParamSchema';
 
 /**
  * Opens the top-most text node at the pointer in place, the caret at the glyph

@@ -2,6 +2,7 @@ import type { ToolKeybinding } from '@weasel-js/routing';
 import { type Tool } from '@weasel-js/core';
 import { useStrokeClickTool, type StrokeClickToolOptions } from '../shared/strokeClickTool';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 /** Options for `useReachTool`; the default keybinding is `{ key: 'U', shift: true }` (Shift+U). */
 export type UseReachToolOptions = StrokeClickToolOptions;

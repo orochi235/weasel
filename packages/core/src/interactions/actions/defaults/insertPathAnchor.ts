@@ -20,6 +20,7 @@ import { editAnchorSetTracked, insertAnchorOnSegment } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 import { segmentUnder } from './segmentUnder';
 import { pathOperationTags } from '../pathGestureTags';
+import type {} from '../actionParamSchema';
 
 const INSERT_CURSOR: CursorSpec = { glyph: 'pen', mark: 'add', fallback: 'crosshair' };
 

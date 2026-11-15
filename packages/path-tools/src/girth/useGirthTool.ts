@@ -9,6 +9,7 @@ import {
 } from './girthActions';
 import { createGirthOverlay } from './girthOverlay';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 /** Options for `useGirthTool`. */
 export interface UseGirthToolOptions {

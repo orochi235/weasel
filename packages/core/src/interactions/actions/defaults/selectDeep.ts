@@ -1,6 +1,7 @@
 import { defineAction, type Action, type WorldPoint } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { extendPressLocked } from 'core/selection/extendPressLocked';
+import type {} from '../actionParamSchema';
 
 export interface SelectDeepOptions {
   /** The node under the point, past every group. Locked nodes are the

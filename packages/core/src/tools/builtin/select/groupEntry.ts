@@ -7,6 +7,7 @@ import {
 import type { Contribution } from '../../overlayBinding';
 import { onBody, onEmptyCanvas } from './selectionContributions';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** Id of the entry {@link createGroupEntryContribution} builds. */
 export const GROUP_ENTRY_ID = 'group.entry';

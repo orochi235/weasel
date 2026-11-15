@@ -7,6 +7,7 @@ import { useActionsRegistry } from '@weasel-js/routing/react';
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import { resolveEditablePathOf, type EditableShape, type NodeId } from '@weasel-js/core';
 import { FILLET_CONTROLS, FILLET_CONTROLS_PROMPT, filletControlsParams, filletControlsState } from './filletControls';
+import type {} from '../actionParamSchema';
 
 /** The part of a scene the controls read. */
 export interface FilletControlsScene {

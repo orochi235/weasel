@@ -7,6 +7,7 @@ import { shareToolOptions } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** A single pointer sample captured during a freehand pencil stroke.
  *

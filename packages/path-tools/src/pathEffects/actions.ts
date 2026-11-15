@@ -34,6 +34,7 @@ import { hiddenOnItsOwn, hiddenOps } from './hiding';
 import { icon } from '../icons.gen';
 import { pathEffectSettingsForm } from './settingsForm';
 import { PATH_EFFECT_PARAMS } from './effectForms';
+import type {} from '../actionParamSchema';
 
 type AnyNode = Node<unknown, string, unknown>;
 

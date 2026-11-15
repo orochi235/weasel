@@ -16,6 +16,7 @@ import { beginInsert } from './session';
 import { insertKind, insertShape } from './shape';
 import { insertLanding } from './lands';
 import { finiteFrame } from '../finiteFrame';
+import type {} from '../actionParamSchema';
 
 /** How far, in CSS pixels, a drag travels before it draws a shape: past the wobble of a click, so a
  *  press that drifts a few pixels draws nothing rather than a shape a few pixels wide. */

@@ -7,6 +7,7 @@ import type { Hud } from './hud';
 import { ANY_MODS, defineAction, hitPredicate, viewToTransform, worldToScreen, type TargetPredicate } from '@weasel-js/core';
 import { claimsOf, type Widget, type HudPointerEvent } from './widget';
 import { createOpenPresses, type OpenPresses } from './openPresses';
+import type {} from './actionParamSchema';
 
 /** What the HUD layer's `hitTest` resolves and hands to the actions below. */
 export interface HudHitPayload {

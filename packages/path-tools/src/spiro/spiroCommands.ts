@@ -10,6 +10,7 @@ import {
 } from '@weasel-js/core';
 import { respiroWithKind, spiroOf, withoutSpiro } from './spiroShape';
 import { icon, type PathToolsIconName } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
 

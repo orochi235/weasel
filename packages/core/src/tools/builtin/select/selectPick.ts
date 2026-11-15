@@ -4,6 +4,7 @@ import type { NodeId } from 'core/scene/types';
 import { extendPressLocked, extendsSelection } from 'core/selection/extendPressLocked';
 import { pressTarget, type PressTargetTree } from '../pressTarget';
 import { pressDecision, type PressTree } from './pressDecision';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 type Between = (from: NodeId, to: NodeId) => readonly NodeId[];
 

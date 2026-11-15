@@ -10,6 +10,7 @@ import { icon } from '../../../icons.gen';
 import type { ActionDeps, WorldPoint } from '@weasel-js/routing';
 import { viewWorldToScreen } from '@weasel-js/geom';
 import { THROUGH_CHROME } from '../throughChrome';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** Options for `useEyedropperTool`. */
 export interface UseEyedropperToolOptions {

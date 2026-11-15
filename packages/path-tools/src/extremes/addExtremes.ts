@@ -7,6 +7,7 @@ import { addExtremaAnchors, anchorAt, segmentEnds, type AnchorSet, type ExtremaA
 import { pref } from '@weasel-js/prefs';
 import { anchorEditWouldChange, commitAnchorEdit, depOf, pathOperationTags } from '@weasel-js/core';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 const LABEL = 'Add extremes';
 

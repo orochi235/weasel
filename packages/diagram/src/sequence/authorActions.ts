@@ -13,6 +13,7 @@ import { sequenceCommitOf, startSequence, type SequenceEditOptions } from './com
 import { SEQUENCE_MARK_PARAMS, SEQUENCE_PARTICIPANT_PARAMS } from './authorParams';
 
 import type { SeqMark, SequenceData } from './types';
+import type {} from '../actionParamSchema';
 
 /** The action a Participant tool's click runs. */
 export const ADD_PARTICIPANT_ACTION_ID = 'diagram.sequence.addParticipant';

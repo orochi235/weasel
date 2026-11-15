@@ -9,6 +9,7 @@ import { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoi
 import type { Skeleton } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from './placedRig';
 import type { RigEditState } from './rigEditState';
+import type {} from '../actionParamSchema';
 
 /** What the bone tool's actions read and write, all of it the tool's own. */
 export interface BoneEnv {

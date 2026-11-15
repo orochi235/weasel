@@ -1,5 +1,6 @@
 import type { Contribution } from '../../overlayBinding';
 import type { DragPanParams } from '../../../interactions/actions/defaults/viewportDragPan';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** Id of the entry {@link dragPanContribution} builds. */
 export const DRAG_PAN_ID = 'viewport.dragPanBinding';
