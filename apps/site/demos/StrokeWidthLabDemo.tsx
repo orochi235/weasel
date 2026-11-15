@@ -1,6 +1,6 @@
 import {
   asNodeId, boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene,
-  solid, type Stroke, drawPreset,
+  solid, type Stroke, drawPreset, useLatest,
 } from '@weasel-js/core';
 import { useGirthTool } from '@weasel-js/path-tools';
 import { strokeToPath } from '@weasel-js/stroke';
@@ -97,14 +97,63 @@ function fieldsFor(key: keyof Style, style: Style): Partial<Stroke> {
   return { nib: style.nib ? { angle: radians(style.nibAngle), ratio: style.nibRatio } : undefined };
 }
 
-/** Write each panel style setting that changed onto the selected strokes,
- *  as one undo entry. */
-function useStyleControls(scene: Scene<Data, 'default', RectPose>, style: Style): void {
+const STYLE_KEYS = ['width', 'cap', 'join', 'nib', 'nibAngle', 'nibRatio'] as const satisfies readonly (keyof Style)[];
+
+/** The panel style `stroke` shows, over `style` for what it does not say: a width in screen pixels, a nib's angle
+ *  and ratio while it has none. */
+function styleOf(stroke: Stroke, style: Style): Style {
+  const { nib } = stroke;
+  return {
+    width: typeof stroke.width === 'number' ? stroke.width : style.width,
+    cap: stroke.cap ?? style.cap,
+    join: stroke.join ?? style.join,
+    nib: nib !== undefined,
+    nibAngle: nib ? Math.round(nib.angle / DEG_TO_RAD * 1e6) / 1e6 : style.nibAngle,
+    nibRatio: nib ? nib.ratio : style.nibRatio,
+  };
+}
+
+/**
+ * The panel's style settings, kept as the selected stroke's style. A change in the panel writes onto the selected
+ * strokes as one scene edit, which is the undo step: the trial records no settings entry for these, and an undo
+ * puts the panel back by reading the stroke again.
+ */
+function useStyleControls(scene: Scene<Data, 'default', RectPose>, ctx: RenderContext<State, Config>): void {
+  const { width, cap, join, nib, nibAngle, nibRatio } = ctx.config;
+  const style: Style = { width, cap, join, nib, nibAngle, nibRatio };
   const previous = useRef(style);
-  const { width, cap, join, nib, nibAngle, nibRatio } = style;
+  // Values the panel is taking from the stroke, which it is not to write back.
+  const following = useRef<Partial<Style>>({});
+  const latest = useLatest({ style, setConfig: ctx.setConfig });
+
+  useEffect(() => {
+    const follow = () => {
+      const id = scene.getSelection().find((s) => scene.get(s)?.data?.stroke);
+      const stroke = id === undefined ? undefined : scene.get(id)?.data?.stroke;
+      if (!stroke) return;
+      const now = latest.current.style;
+      const shown = styleOf(stroke, now);
+      for (const k of STYLE_KEYS) {
+        if (shown[k] === now[k]) continue;
+        following.current = { ...following.current, [k]: shown[k] };
+        latest.current.setConfig(k, shown[k]);
+      }
+    };
+    follow();
+    return scene.subscribe(follow);
+  }, [scene, latest]);
+
   useEffect(() => {
     const now = { width, cap, join, nib, nibAngle, nibRatio };
-    const changed = (Object.keys(now) as (keyof Style)[]).filter((k) => now[k] !== previous.current[k]);
+    const changed = STYLE_KEYS.filter((k) => {
+      if (now[k] === previous.current[k]) return false;
+      if (!(k in following.current)) return true;
+      const followed = following.current[k] === now[k];
+      const rest = { ...following.current };
+      delete rest[k];
+      following.current = rest;
+      return !followed;
+    });
     previous.current = now;
     if (changed.length === 0) return;
     const patch = Object.assign({}, ...changed.map((k) => fieldsFor(k, now))) as Partial<Stroke>;
@@ -123,7 +172,7 @@ function useStyleControls(scene: Scene<Data, 'default', RectPose>, style: Style)
 
 function WidthTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, seed);
-  useStyleControls(scene, ctx.config);
+  useStyleControls(scene, ctx);
   const girthTool = useGirthTool({ reachPx: ctx.config.reach });
   const tools = useMemo(() => ({ girth: girthTool }), [girthTool]);
   const layers = useMemo(
@@ -139,6 +188,8 @@ const widthInstrument = defineInstrument<State, Config>({
   name: 'Width',
   config,
   initialState: () => ({ scene: null }),
+  // The style settings are the selected stroke's, and their undo step is the scene edit writing them.
+  undo: { snapshotOn: ['config.change:reach', 'config.change:outline'] },
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select') },

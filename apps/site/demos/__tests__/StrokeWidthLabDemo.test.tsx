@@ -83,4 +83,20 @@ describe('StrokeWidthLabDemo', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Nib' }));
     expect(strokes()[4]?.nib).toBeUndefined();
   });
+
+  it('takes a style change back with one Undo, the panel with it, and makes it again with one Redo', async () => {
+    await renderSettled(<StrokeWidthLabDemo />, { wrapper: withIcons });
+    const input = () => screen.getByRole('spinbutton', { name: /Nib thinnest/ }) as HTMLInputElement;
+    await userEvent.clear(input());
+    await userEvent.type(input(), '0.5{Enter}');
+    expect(strokes()[4]?.nib?.ratio).toBeCloseTo(0.5, 6);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(strokes()[4]?.nib?.ratio).toBeCloseTo(0.15, 6);
+    expect(Number(input().value)).toBeCloseTo(0.15, 6);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(strokes()[4]?.nib?.ratio).toBeCloseTo(0.5, 6);
+    expect(Number(input().value)).toBeCloseTo(0.5, 6);
+  });
 });
