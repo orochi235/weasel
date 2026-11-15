@@ -24,10 +24,9 @@ npm install @weasel-js/core react
 
 `react` (>=18), `@weasel-js/font` and `@msb235/blits` are peer dependencies. npm and pnpm install them for you; with Yarn, add them to the install.
 
-Import core's stylesheet once. It gives every canvas the kit renders its size
-on the page, and styles the canvas's debug overlays (`cursorCoordsHud`,
-`pickHud`, `modalityHud`). Without it a canvas is as large as its drawing
-buffer, which on a high-density screen is twice the size you asked for:
+Import core's stylesheet once. It styles the canvas's debug overlays
+(`cursorCoordsHud`, `pickHud`, `modalityHud`) and the tag that says why a
+gesture cannot land where the pointer is. A canvas sizes itself without it:
 
 ```ts
 import '@weasel-js/core/style.css';
@@ -49,7 +48,7 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 | `resizePreset` | resize handles |
 | `rotatePreset` | the rotation handle |
 | `transformPreset` | `resizePreset` and `rotatePreset` |
-| `editPreset` | delete, duplicate, group/ungroup, nudge, select-all, Escape, cut/copy/paste, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
+| `editPreset` | delete, duplicate, group/ungroup, nudge, select-all, Escape, the context menu, cut/copy/paste, fill and stroke, double-click to edit text in place, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
 | `arrangePreset` | align, distribute, reorder, flip |
 | `pathsPreset` | pathfinder operations, path editing and anchor editing |
 | `ingestPreset` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
@@ -111,7 +110,8 @@ An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `
 A tuning applies to whichever descriptor holds the id, whether a preset or a tool registered it, and whether it registered before the tuning or after. Changing `params` never requires knowing what gesture reaches the action.
 
 ```tsx
-import { pathsPreset } from '@weasel-js/core';
+import { useMemo, useRef } from 'react';
+import { SceneCanvas, pathsPreset, type ActionTunings } from '@weasel-js/core';
 import { filletPreset, sandPreset } from '@weasel-js/path-tools';
 
 const radius = useRef(8);
@@ -234,7 +234,7 @@ none. To capture what a camera shows, planes and all, render with that camera:
 places each plane as `view` does, and its `scale` changes only the resolution.
 
 `exportRegions(scene, regions, formatId, opts)` writes them in the format
-registered under `formatId` and answers a `Blob`. It throws for an id nothing
+registered under `formatId` and answers a `Blob`. It rejects for an id nothing
 registered, and for several regions handed to a format that is not
 `multiRegion`. Every format takes `background` (default none: core holds no
 page color), `onDiagnostic`, and `strict`; the rest of `opts`
