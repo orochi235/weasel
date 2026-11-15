@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
 import { rotationSnapSource } from 'domains/snap/rotationSource';
@@ -12,8 +12,8 @@ import { drawnBoxes } from '../drawnBoxes';
 import type { SnapDep } from '../snapDep';
 import { rotateAction } from './action';
 import type { Point } from '@weasel-js/geom';
+import type { AnyScene } from 'core/scene/anyScene';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type Pose = { x: number; y: number; width: number; height: number; rotation: number };
 
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };

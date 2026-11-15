@@ -13,7 +13,7 @@ export { useLassoSelectDepSource } from './lassoSelect';
 export { useTextEditDepSource } from './textEdit';
 export { useEditAnchorsDepSource } from './editAnchors';
 export { useSelectionSnapshotDepSource } from './selectionSnapshot';
-export { useInsertDepSource, type InsertNodeFactory, type InsertNodeFactories } from './insert';
+export { useInsertDepSource, type InsertNodeFactory, type InsertNodeFactories, type KitInsertKind } from './insert';
 export { useSnapDepSource } from './snap';
 export { useTransformFollower } from './transformFollowers';
 export { useSliceDepSource } from './slice';

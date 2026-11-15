@@ -9,7 +9,8 @@
 import { useEffect } from 'react';
 import { createEmitter } from '@weasel-js/registry';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** The group a press resolves inside of, held beside the selection; `<SceneCanvas enteredGroup>` takes one. */
 export interface EnteredGroupApi {
@@ -31,7 +32,7 @@ export function isEnterable(node: { kind?: string; consumesChildren?: boolean } 
  *  not consumed by a node inside it (`SceneNode.consumesChildren`). With nothing entered every node
  *  no node consumes is. Picking, region selects and select-all all ask this. */
 export function reachableInGroup(
-  scene: Pick<Scene<unknown, string, unknown>, 'ancestorsOf' | 'get'>,
+  scene: Pick<AnyScene, 'ancestorsOf' | 'get'>,
   group: NodeId | null,
   id: string,
 ): boolean {
@@ -42,10 +43,8 @@ export function reachableInGroup(
   return group === null;
 }
 
-type SceneReads = Pick<Scene<unknown, string, unknown>, 'get' | 'ancestorsOf' | 'subscribe'>;
-
 /** A new entered-group store over `scene`, with nothing entered, apart from the one `useEnteredGroup` shares. */
-export function createEnteredGroup(scene: SceneReads): EnteredGroupApi {
+export function createEnteredGroup(scene: Pick<AnyScene, 'get' | 'ancestorsOf' | 'subscribe'>): EnteredGroupApi {
   let chain: NodeId[] = [];
   let announced: NodeId | null = null;
   const listeners = createEmitter();
@@ -100,7 +99,7 @@ const BY_SCENE = new WeakMap<object, EnteredGroupApi>();
 
 /** `scene`'s entered group: one store per scene, shared by every caller and by a `<SceneCanvas>`
  *  over it that is given no `enteredGroup`. `createEnteredGroup` makes a separate one. */
-export function useEnteredGroup(scene: SceneReads): EnteredGroupApi {
+export function useEnteredGroup(scene: Pick<AnyScene, 'get' | 'ancestorsOf' | 'subscribe'>): EnteredGroupApi {
   let entered = BY_SCENE.get(scene);
   if (!entered) BY_SCENE.set(scene, (entered = createEnteredGroup(scene)));
   return entered;

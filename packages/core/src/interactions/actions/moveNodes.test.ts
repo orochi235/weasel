@@ -7,13 +7,12 @@ import type { ActionDeps, InvocationCtx, OngoingHandle, OngoingInvoker } from '@
 import { createScene } from 'core/scene/scene';
 import { makeFrameFixture, FRAME_FIXTURE_IDS } from 'core/scene/frameFixture';
 import type { Op } from 'core/ops/types';
-import type { NodeId, RectPose, Scene } from 'core/scene/types';
+import type { NodeId, RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { moveAction } from './move/action';
 import { moveNodes, moveNodesOps, MOVE_NODES_REQUIRES } from './moveNodes';
 import * as Barrel from '../../index';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 const box = (x: number, y: number, w = 10, h = 10): RectPose => ({ x, y, width: w, height: h });
 

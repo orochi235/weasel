@@ -7,14 +7,13 @@ import { createTransformOp } from 'core/ops/transform';
 import { sameValue } from 'core/scene/sameValue';
 import { finiteThroughout } from './finiteFrame';
 import type { Op } from 'core/ops/types';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import { geometryDataOp, type GeometryProjection } from './geometryProjection';
 import { nodeDescriptors, poseDescriptorOf } from './poseDescriptorDep';
 import { scenePoseFrame } from './poseFrame';
 import { moveSources, storedDelta, translateTargets } from './selectionSubtree';
 import { commitTransformOps } from './transformFinish';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** The deps {@link moveNodes} reads; an action calling it declares these. */
 export const MOVE_NODES_REQUIRES = [

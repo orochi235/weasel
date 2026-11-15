@@ -13,7 +13,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { KitSettingsStore } from '@weasel-js/react';
-import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';
+import type { PenScratch, PenDraftAnchor, PenSubpath } from 'tools/builtin/pen';
 import { PATH_C, PATH_L, PATH_M, type PolygonPath, anchorsToPath, circlePath, viewWorldToScreen } from '@weasel-js/geom';
 
 /** Appearance of the pen tool's in-progress path. */
@@ -80,7 +80,7 @@ function subpathToPath(
     const { x: x, y: y } = viewWorldToScreen(view, p);
     return { x, y };
   };
-  const anchors = sp.anchors.map((a: PenAnchor) => ({
+  const anchors = sp.anchors.map((a: PenDraftAnchor) => ({
     ...pt(a),
     ...(a.inHandle ? { inHandle: pt(a.inHandle) } : {}),
     ...(a.outHandle ? { outHandle: pt(a.outHandle) } : {}),

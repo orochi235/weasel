@@ -8,13 +8,12 @@ import type { LassoHitMode } from 'core/adapters/types';
 import type { SelectRegion } from 'core/geometry/regionHit';
 import { IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { regionPickQuery } from 'canvas/deps/hitTestArea';
 import { scenePointQuery } from 'canvas/SceneCanvas/scenePointQuery';
 import type { PickQuery } from 'canvas/pickWalk';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** The select tool's point query at `(x, y)` under view scale `s`. */
 export function pointPick(

@@ -3,7 +3,7 @@ import { sameDependsOn } from '../scene/dependents';
 import { alreadyHolds } from './alreadyHolds';
 import { registerOpFactory } from './registry';
 
-type DependsOn = readonly string[] | 'children' | undefined;
+type DependsOn = SetDependsOnArgs['from'];
 type Sources = Parameters<typeof sameDependsOn>[0];
 
 interface SetDependsOnAdapter {
@@ -14,8 +14,8 @@ interface SetDependsOnAdapter {
  *  from the sources `from` to `to`. `undefined` is no derivation. */
 export interface SetDependsOnArgs {
   id: string;
-  from: DependsOn;
-  to: DependsOn;
+  from: readonly string[] | 'children' | undefined;
+  to: readonly string[] | 'children' | undefined;
   label?: string;
   coalesceKey?: string;
 }

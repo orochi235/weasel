@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import type { NodeId, RectPose, Scene } from 'core/scene/types';
+import type { NodeId, RectPose } from 'core/scene/types';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { createMeasurements } from './measurements';
 import { measureNode } from './measurement';
 import { measurementsLayer } from './measureLayer';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** The centers of the handle squares `cmds` draws, in screen px. */
 function handleCenters(cmds: readonly DrawCommand[]): { x: number; y: number }[] {

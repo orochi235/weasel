@@ -1,6 +1,6 @@
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import { translateSelection } from 'interactions/actions/defaults/nudge';
 import { requiresSelection } from 'interactions/actions/defaults/requiresSelection';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
@@ -12,11 +12,10 @@ import { measurementOf, type Measurement } from './measurement';
 import { currentMeasureId, measureIds, type Measurements } from './measurements';
 import { deleteMeasureOps, MEASURE_LABELS } from './measureEdits';
 import { MEASURE_ACTION_IDS } from './actionIds';
+import type { AnyScene } from 'core/scene/anyScene';
 
 const MOVE_LABEL = 'Move by Measurement';
 const ROTATE_LABEL = 'Rotate by Measurement';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 function current(deps: ActionDeps | undefined, ms: Measurements): { id: NodeId; m: Measurement } | null {
   const scene = deps?.scene as AnyScene | undefined;

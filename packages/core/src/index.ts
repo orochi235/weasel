@@ -38,5 +38,3 @@ export * from './barrel/renderer';
 export * from './barrel/snap';
 export type { CoreKitTargetSettings, GestureKitSettings, ViewKitSettings } from './kitSettings';
 export { coreKitSettingsSchema } from './kitSettingsSchema';
-// Both the tools star and the paths barrel export this name; saying which settles it.
-export type { PenAnchor } from './barrel/paths';

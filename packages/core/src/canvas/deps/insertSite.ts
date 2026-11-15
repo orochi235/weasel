@@ -1,4 +1,4 @@
-import type { Scene, NodeId } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
 import { insertParent } from 'interactions/actions/insert/parent';
 import { composeChildFrame, composesFrames, type PoseAdapter } from 'core/scene/composeFrame';
@@ -9,6 +9,7 @@ import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/p
 import { keepOnPage, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
 import { pageOfNode } from 'core/pages/pageNodes';
 import type { PlacedPage } from 'core/pages/pages';
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** Where a new node lands: its parent, its layer, and how a world pose becomes its stored one. */
 export interface InsertSite {
@@ -17,15 +18,13 @@ export interface InsertSite {
   local: (world: unknown) => unknown;
 }
 
-type SiteScene = Scene<unknown, string, unknown>;
-
 /**
  * A new node under `parentId`: on that container's layer, with the pose made
  * local to it when the scene composes frames — through its scroll offset,
  * since the world pose is where the view shows it — or at the top of the
  * tree, on the first layer, for `null`.
  */
-export function siteIn(sc: SiteScene, parentId: NodeId | null): InsertSite {
+export function siteIn(sc: AnyScene, parentId: NodeId | null): InsertSite {
   if (parentId === null) {
     return { parent: null, layer: (sc.layers[0]?.id ?? 'default') as string, local: (p) => p };
   }
@@ -67,7 +66,7 @@ export interface InsertSiteOptions {
  * the pasteboard off is moved so part of it is on the page.
  */
 export function insertSite(
-  sc: SiteScene,
+  sc: AnyScene,
   { at, into, canDropInto, descriptor = AUTO_POSE_DESCRIPTOR }: InsertSiteOptions = {},
 ): InsertSite {
   const site = siteIn(sc, insertParent(sc, into, canDropInto, at));

@@ -10,6 +10,7 @@ import type { Page, PageLayoutOptions, PlacedPage } from './pages';
 import { layoutPages } from './pages';
 import { PAGE_RUN_LAYOUT } from './pageRunLayout';
 import { pageClip } from './pageClip';
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** What makes a node a page (`SceneNode.page`): its name, and what other packages keep on it. */
 export interface PageInfo {
@@ -37,8 +38,6 @@ export interface PagesDoc {
   readonly pages: readonly Page[];
   readonly layout?: PageLayoutOptions;
 }
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** What finding a node's page reads of a scene. A `Scene` satisfies it. */
 export interface PageTreeReader {

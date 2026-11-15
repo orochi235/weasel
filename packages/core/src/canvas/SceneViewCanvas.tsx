@@ -32,7 +32,7 @@ import { WorkerSceneView, type WorkerCanvasHandle } from './renderWorker/WorkerS
 import type { FollowedClock } from './renderWorker/startSceneRenderWorker';
 
 /** What `<SceneViewCanvas>` takes whether the page or a worker paints it. */
-interface SceneViewCanvasCommon<TData, TLayer extends string, TPose> extends SurfaceSizeProps {
+export interface SceneViewCanvasCommon<TData, TLayer extends string, TPose> extends SurfaceSizeProps {
   /** Scene to render. The component subscribes to it and repaints when it
    *  changes. */
   scene: Scene<TData, TLayer, TPose>;
@@ -67,7 +67,7 @@ interface SceneViewCanvasCommon<TData, TLayer extends string, TPose> extends Sur
 }
 
 /** The page paints the view: `drawOne` and the props beside it are functions it calls. */
-interface PagePaintedView<TData, TLayer extends string, TPose> {
+export interface PagePaintedView<TData, TLayer extends string, TPose> {
   /** Per-node draw callback. See `SceneViewDrawOne`. Default `defaultDrawOne`, the registered node
    *  painters `<SceneCanvas>` paints with when it is given none. */
   drawOne?: SceneViewDrawOne<TData, TLayer, TPose>;
@@ -90,7 +90,7 @@ interface PagePaintedView<TData, TLayer extends string, TPose> {
 
 /** A worker paints the view into this canvas, handed to it with `transferControlToOffscreen`:
  *  the page sends it only what changed in the scene. */
-interface WorkerPaintedView {
+export interface WorkerPaintedView {
   /** Start the worker, whose module calls `serveSceneRender` from `@weasel-js/core/render-worker`
    *  — `() => new Worker(new URL('./render.worker.ts', import.meta.url), { type: 'module' })`.
    *  Called once per mount; the worker is stopped on unmount. A function cannot cross to a

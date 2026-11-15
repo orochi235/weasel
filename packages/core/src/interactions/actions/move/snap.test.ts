@@ -5,7 +5,7 @@ import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } fro
 import { pathFromD, type Point } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { SnapTarget } from 'core/adapters/types';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
@@ -17,8 +17,7 @@ import type { SnapBegin, SnapDep } from '../snapDep';
 import type { GroupTransform, MoveBehavior } from '../../gestures/types';
 import { snapToContainer } from './behaviors/snapToContainer';
 import { moveAction } from './action';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };

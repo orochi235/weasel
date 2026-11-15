@@ -28,6 +28,7 @@ export { makeEditAnchorsDep as createEditAnchorsDepForTests } from 'interactions
 export {
   useEditAnchorsDepSource as useEditAnchorsDepSourceForTests, type EditAnchorsStateRef,
 } from 'canvas/deps/editAnchors';
+export type { AnchorMarquee, PathEditState } from 'domains/paths/pathEditState';
 export { rootsTree as rootsTreeForTests } from 'core/adapters/testing/rootsTree';
 export {
   createSnapSession2d as createSnapSession2dForTests, type SnapSession2dOptions,

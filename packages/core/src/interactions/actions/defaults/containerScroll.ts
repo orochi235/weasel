@@ -11,12 +11,11 @@ import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
 import { composeWorldPose } from 'core/scene/composePose';
 import { nodeGates } from 'core/scene/nodeGates';
 import { scenePoseAdapter, sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import { wheelPan } from 'core/viewport/wheelHandler';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import type { ImmediateParams } from '@weasel-js/routing';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** How far a container's content can scroll on each axis, in its own units:
  *  `[min, max]`, zero included, so an unscrolled container is in range. */
@@ -70,11 +69,12 @@ function shownAt(pose: unknown, at: { x: number; y: number }, bounds: () => BoxL
   return p !== null && p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height;
 }
 
-interface Scrollable { id: NodeId; range: ScrollRange }
+/** A container whose content can scroll, with how far. */
+export interface ScrollableContainer { id: NodeId; range: ScrollRange }
 
 /** The shown containers under the world point `at` whose content can scroll,
  *  innermost first: the innermost one and each that holds it. */
-function scrollablesAt(scene: AnyScene, at: { x: number; y: number }, descriptor: PoseDescriptor<unknown>): Scrollable[] {
+function scrollablesAt(scene: AnyScene, at: { x: number; y: number }, descriptor: PoseDescriptor<unknown>): ScrollableContainer[] {
   const gates = nodeGates(scene);
   const view = sceneViewPoseAdapter(scene);
   const { compose } = scene.composition;
@@ -96,7 +96,7 @@ function scrollablesAt(scene: AnyScene, at: { x: number; y: number }, descriptor
     }
   };
   visit(scene.roots);
-  const out: Scrollable[] = [];
+  const out: ScrollableContainer[] = [];
   for (let id: NodeId | null = innermost; id !== null; id = scene.get(id)?.parent ?? null) {
     const range = hits.get(id);
     if (range) out.push({ id, range });
@@ -110,7 +110,7 @@ export function scrollableAt(
   scene: AnyScene,
   at: { x: number; y: number },
   descriptor: PoseDescriptor<unknown>,
-): Scrollable | null {
+): ScrollableContainer | null {
   return scrollablesAt(scene, at, descriptor)[0] ?? null;
 }
 

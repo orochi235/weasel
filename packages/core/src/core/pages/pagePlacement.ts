@@ -6,8 +6,7 @@ import type { Bounds } from '@weasel-js/routing';
 import type { NodeId, Scene } from '../scene/types';
 import { pageAt, pageHolding, pageOfBounds, type PlacedPage } from './pages';
 import { pageNodeOf, pageOfNode, pageRunOf, placedPagesOf, type PageTreeReader } from './pageNodes';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** Whether the scene's page run lets content sit outside every page. `false` in a scene without pages. */
 export function pasteboardOn<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): boolean {

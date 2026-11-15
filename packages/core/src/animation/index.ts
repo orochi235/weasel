@@ -57,5 +57,5 @@ export {
 } from './rig';
 export type {
   BindRigOptions, PaintedSkins, RestPath, Rig, RigApply, RigApplyContext, RigNodeData, RigNodeParts, RigNodeSource,
-  RigScene, UseRigNodeOptions,
+  RigScene, SkinScene, UseRigNodeOptions,
 } from './rig';

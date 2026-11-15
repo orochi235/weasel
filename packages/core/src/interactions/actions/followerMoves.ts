@@ -4,9 +4,8 @@ import type { Op } from 'core/ops/types';
 import { rehomedFollowers } from 'core/pages/pagePlacement';
 import { composeWorldPose, rebaseLocalPose } from 'core/scene/composePose';
 import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
-import type { NodeId, Scene } from 'core/scene/types';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { NodeId } from 'core/scene/types';
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** A node following others moved into `into`, from `parent`, its stored pose `from` becoming `to` so it keeps
  *  the world place it has. */

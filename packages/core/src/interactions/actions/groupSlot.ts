@@ -1,6 +1,5 @@
-import type { NodeId, Scene } from 'core/scene/types';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { NodeId } from 'core/scene/types';
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** `nodes` in the order they paint, back to front, whatever order they were selected in. */
 export function inPaintOrder<N extends { id: string }>(scene: AnyScene, nodes: readonly N[]): N[] {

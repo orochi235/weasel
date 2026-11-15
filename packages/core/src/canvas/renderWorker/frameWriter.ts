@@ -2,16 +2,14 @@
  * What a frame message carries: each input the worker has not yet been sent, and the scene's
  * changes since the last frame.
  */
-import type { Scene } from '../../core/scene/types';
 import { resolveDpr } from '../canvasRenderer';
 import type { ToWorker } from './protocol';
 import { createSceneDiff } from './sceneDiff';
 import { wireOverrides, wireScroll } from './sceneMirror';
 import type { SceneRenderInputs } from './startSceneRenderWorker';
+import type { AnyScene } from 'core/scene/anyScene';
 
 type FrameMessage = Extract<ToWorker, { type: 'frame' }>;
-type AnyScene = Scene<unknown, string, unknown>;
-
 export interface FrameWriter {
   /** The next frame for `inputs`. */
   write(inputs: SceneRenderInputs<unknown, string, unknown>): FrameMessage;

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
-import type { Scene } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import { gridSource, lineSource, sessionDep } from 'domains/snap/testing/sessionDep';
 import type { SnapSource } from 'domains/snap/types';
@@ -12,10 +11,9 @@ import type { InsertBehavior } from '../../gestures/types';
 import { insertAction } from './action';
 import { insertRepositionAction } from './repositionAction';
 import type { Point } from '@weasel-js/geom';
+import type { AnyScene } from 'core/scene/anyScene';
 
 type Bounds = { x: number; y: number; width: number; height: number };
-type AnyScene = Scene<unknown, string, unknown>;
-
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };
 
 /** Every node's left and right edges, as vertical lines: a sibling's edges. */

@@ -109,7 +109,7 @@ export function* sceneAncestors<TNode extends { parent?: string | null }>(
 }
 
 /** The fields {@link withInheritedPaint} resolves. */
-type ResolvedPaintFields<T> = Omit<T, 'fill' | 'stroke'> & {
+export type ResolvedPaintFields<T> = Omit<T, 'fill' | 'stroke'> & {
   fill?: Exclude<T extends { fill?: infer F } ? F : never, Inherit>;
   stroke?: Exclude<T extends { stroke?: infer S } ? S : never, Inherit>;
 };

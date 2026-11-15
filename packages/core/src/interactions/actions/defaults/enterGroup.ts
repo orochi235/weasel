@@ -1,12 +1,10 @@
-import { rectContainsPoint } from '@weasel-js/geom';
+import { rectContainsPoint, type Rect } from '@weasel-js/geom';
 import type { Action, ActionDeps, WorldPoint } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { isEnterable, type EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { NodeId } from 'core/scene/types';
 import { pressTarget, type PressTargetTree } from '../../../tools/builtin/pressTarget';
 import type { ImmediateParams } from '@weasel-js/routing';
-
-type Box = { x: number; y: number; width: number; height: number };
 
 /** What `group.enter` reads: the node under a point and the tree above it. */
 export interface EnterGroupOptions {
@@ -18,7 +16,7 @@ export interface EnterGroupOptions {
 
 /** What `group.leave` reads: where a group's box is. */
 export interface LeaveGroupOptions {
-  boxOf: (id: string) => Box | null;
+  boxOf: (id: string) => Rect | null;
 }
 
 /**
