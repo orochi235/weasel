@@ -14,14 +14,14 @@ const text = (id: string): string => screen.getByTestId(id).textContent ?? '';
 
 test('a playing score shows the bar in force, and a new mood on the next bar line', async () => {
   render(<ScoreDemo />);
-  await userEvent.click(screen.getByRole('button', { name: 'urgency' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'urgency' }));
   await userEvent.click(screen.getByRole('button', { name: 'play' }));
   // 140 bpm: a bar is 1.7 s.
   await expect.poll(() => text('bar'), { timeout: 8000 }).toBe('bar 2, 2 into the cue');
   expect(text('cue')).toBe('urgency');
 
   // Clicked and read in one task, so no bar can be booked in between.
-  act(() => screen.getByRole('button', { name: 'dread' }).click());
+  act(() => screen.getByRole('radio', { name: 'dread' }).click());
   expect(text('cue'), 'the bar in force is still the one playing').toBe('urgency');
   await expect.poll(() => text('cue'), { timeout: 8000 }).toBe('dread');
   expect(text('bar')).toMatch(/^bar \d+, 1 into the cue$/);

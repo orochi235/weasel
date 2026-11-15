@@ -7,6 +7,7 @@ import type { AudioEngine, Score, ScoreMood, ScoreParams, ScoreState } from '@we
 import { scoreRoll } from './score/scoreRoll';
 import { Button } from '@weasel-js/ui/components/Button';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './ScoreDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -42,6 +43,8 @@ function shown(params: ScoreParams, key: keyof ScoreParams): string {
     default: return String(params[key]);
   }
 }
+
+const CUE_ITEMS = scoreCues.map((c) => ({ value: c.name, label: c.name }));
 
 const sameMood = (a: ScoreMood, b: ScoreMood): boolean =>
   a.valence === b.valence && a.tension === b.tension && a.urgency === b.urgency;
@@ -91,11 +94,12 @@ export function ScoreDemo() {
     <div className="ckd-demo">
       <div className="ckd-toolbar">
         <Button pressed={heard !== null} onClick={toggle}>{heard ? 'stop' : 'play'}</Button>
-        {scoreCues.map((c) => (
-          <Button key={c.name} pressed={sameMood(mood, c.mood)} onClick={() => steer(c.mood)}>
-            {c.name}
-          </Button>
-        ))}
+        <SegmentedBar
+          items={CUE_ITEMS}
+          value={scoreCues.find((c) => sameMood(mood, c.mood))?.name ?? null}
+          onChange={(name) => { const c = scoreCues.find((q) => q.name === name); if (c) steer(c.mood); }}
+          aria-label="Cue"
+        />
         <span className={s.bar} data-testid="bar">
           {heard ? `bar ${heard.bar + 1}, ${heard.cueBar + 1} into the cue` : 'stopped'}
         </span>
@@ -146,15 +150,6 @@ export function ScoreDemo() {
             </section>
           ))}
         </div>
-      </div>
-      <div className="ckd-hint">
-        <code>createScore</code> writes music a bar at a time from a mood on three axes. Each
-        slider sets one axis, and the rows under it are what <code>scoreParams</code> reads off
-        that axis alone. The name under the roll is the cue <code>readScoreCue</code> finds
-        nearest the mood, with the device that cue applies and each cue&apos;s share. The roll is{' '}
-        <code>scoreBar</code> for those parameters: one bar, low notes at the bottom. While the
-        score plays, everything shown comes from <code>onBar</code>, so a slider&apos;s move shows
-        up on the next bar line, when it is heard.
       </div>
     </div>
   );

@@ -16,9 +16,9 @@ describe('ScoreDemo', () => {
 
   it('moves every slider to a cue when that cue is picked, and shows its parameters', () => {
     const { container, getByRole, getByTestId, getByLabelText } = render(<ScoreDemo />);
-    fireEvent.click(getByRole('button', { name: 'dread' }));
+    fireEvent.click(getByRole('radio', { name: 'dread' }));
     expect(getByTestId('cue').textContent).toBe('dread');
-    expect(getByRole('button', { name: 'dread' }).getAttribute('aria-pressed')).toBe('true');
+    expect(getByRole('radio', { name: 'dread' }).getAttribute('aria-checked')).toBe('true');
     expect((getByLabelText('valence') as HTMLInputElement).value).toBe('-1');
     expect(reading(container, 'mode')).toBe('phrygian');
     expect(reading(container, 'harmony')).toBe('cluster');
@@ -28,11 +28,11 @@ describe('ScoreDemo', () => {
 
   it('reads the parameters and the cue off a slider as it moves', () => {
     const { container, getByLabelText, getByTestId, getByRole } = render(<ScoreDemo />);
-    fireEvent.click(getByRole('button', { name: 'dread' }));
+    fireEvent.click(getByRole('radio', { name: 'dread' }));
     fireEvent.change(getByLabelText('urgency'), { target: { value: '1' } });
     expect(reading(container, 'tempo')).toBe('140 bpm');
     expect(reading(container, 'articulation')).toBe('plucked');
     expect(getByTestId('cue').textContent).toBe('urgency');
-    expect(getByRole('button', { name: 'dread' }).getAttribute('aria-pressed')).toBe('false');
+    expect(getByRole('radio', { name: 'dread' }).getAttribute('aria-checked')).toBe('false');
   });
 });
