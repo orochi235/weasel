@@ -34,8 +34,8 @@ export class MarkHistory {
   /** Per target, the ids of the entries its scene could redo when last seen. */
   private readonly ahead = new Map<string, ReadonlySet<string>>();
   /** Per change, its target and when it was first made. */
-  private undoable: Step[] = [];
-  private redoable: Step[] = [];
+  private undoable: MarkOrderStep[] = [];
+  private redoable: MarkOrderStep[] = [];
 
   private see(target: string, scene: HistoryScene): { now: number; current: string | undefined } {
     const now = scene.historyIndex();
@@ -72,10 +72,10 @@ export class MarkHistory {
   /** The change `undo` would act on, skipping any whose scene has nothing
    *  left — a scene can drop entries this ordering still lists. */
   private next(
-    stack: readonly Step[],
+    stack: readonly MarkOrderStep[],
     can: (s: HistoryScene) => boolean,
     at: (t: string) => HistoryScene | undefined,
-  ): Step | null {
+  ): MarkOrderStep | null {
     for (let i = stack.length - 1; i >= 0; i--) {
       const step = stack[i];
       if (step === undefined) continue;
@@ -142,8 +142,8 @@ export class MarkHistory {
 
 /** What `MarkHistory.toJSON` writes. */
 export interface MarkOrder {
-  undoable: Step[];
-  redoable: Step[];
+  undoable: MarkOrderStep[];
+  redoable: MarkOrderStep[];
 }
 
 /** A mark store's undo as data: each target's scene history and the order across them. */
@@ -181,10 +181,10 @@ export function withoutMarkHistory(doc: unknown): unknown {
   return rest;
 }
 
-function steps(raw: unknown): Step[] {
+function steps(raw: unknown): MarkOrderStep[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter(
-    (s): s is Step => typeof s?.target === 'string' && typeof s?.stamp === 'number',
+    (s): s is MarkOrderStep => typeof s?.target === 'string' && typeof s?.stamp === 'number',
   );
 }
 
@@ -202,13 +202,13 @@ export function markUndo(history: MarkHistory, at: (t: string) => HistoryScene |
 }
 
 /** One change in the ordering. */
-interface Step {
+export interface MarkOrderStep {
   target: string;
   stamp: number;
 }
 
 /** Remove the last step on `target`, in place, and return it. */
-function drop(stack: Step[], target: string): Step | undefined {
+function drop(stack: MarkOrderStep[], target: string): MarkOrderStep | undefined {
   for (let i = stack.length - 1; i >= 0; i--) {
     if (stack[i]?.target === target) return stack.splice(i, 1)[0];
   }

@@ -5,7 +5,7 @@
  * as gesture chrome and, on release, hands one edit of the root's data to the
  * commit, by default one undo entry in the scene.
  */
-import { resolveParams, type Action, type InvocationCtx, type OngoingHandle, type OngoingOverlay, type Scene, type Vec2 } from '@weasel-js/core';
+import { resolveParams, type Action, type InvocationCtx, type OngoingHandle, type OngoingOverlay, type Vec2, type AnyScene } from '@weasel-js/core';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { SEQ_ARROWS, insertMessage, insertNote, wrapSteps, type SeqArrow, type SeqArrowName } from './authorSteps';
 import { columnNear, sequenceAt, sequenceHitOf, slotNear, type SequenceHit } from './authorPlace';
@@ -22,8 +22,6 @@ export const DRAW_MESSAGE_ACTION_ID = 'diagram.sequence.drawMessage';
 export const DRAW_NOTE_ACTION_ID = 'diagram.sequence.drawNote';
 /** The action a Fragment tool's drag runs. */
 export const WRAP_FRAGMENT_ACTION_ID = 'diagram.sequence.wrapFragment';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** What a drag proposes with the pointer at a point: the edit, and the chrome previewing it. */
 interface Proposal { data: SequenceData; label: string; overlay: OngoingOverlay[] }

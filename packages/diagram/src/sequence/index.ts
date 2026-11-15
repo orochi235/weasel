@@ -15,7 +15,10 @@ export {
   setFragmentType, setMessageActivation, setMessageArrow, unwrapFragment, wrapSteps,
   type NewSeqFragment, type NewSeqMessage, type NewSeqNote, type SeqArrow, type SeqArrowName,
 } from './authorSteps';
-export { sequenceLayout, type SeqRect, type SequenceLayout, type SequenceLayoutOptions, type SeqSlot } from './layout';
+export {
+  sequenceLayout, type SeqActivationPlace, type SeqBoxPlace, type SeqFragmentPlace, type SeqHeadPlace, type SeqLifelinePlace,
+  type SeqMessagePlace, type SeqNotePlace, type SeqRect, type SequenceLayout, type SequenceLayoutOptions, type SeqSlot,
+} from './layout';
 export { SEQUENCE_ROLES, sequenceSpecs, type SequenceSpecsOptions } from './specs';
 export {
   sequencePartOf, sequenceRootOf, type SeqPartKind, type SeqPartTrait, type SequenceGeometry, type SequenceRootTrait,

@@ -2,7 +2,7 @@
  * Writing a sequence edit into a scene: the root's data replaced and its parts
  * built again, as one undo entry.
  */
-import { addOnPages, composeWorldPose, scenePoseAdapter, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
+import { addOnPages, composeWorldPose, scenePoseAdapter, type InvocationCtx, type RectPose, type AnyScene } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import { diagramThemeOf } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
@@ -10,8 +10,6 @@ import { setSequenceText } from './edit';
 import { sequenceSpecs } from './specs';
 import { sequencePartOf, sequenceRootOf } from './trait';
 import type { SequenceData } from './types';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** How a scene's sequences are drawn when an edit builds their parts again. */
 export interface SequenceDrawOptions {

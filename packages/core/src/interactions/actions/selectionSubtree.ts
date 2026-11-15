@@ -1,12 +1,11 @@
 import { outermost } from '@weasel-js/select';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { scenePoseFrame, type PoseFrame } from './poseFrame';
 import { composesFrames } from 'core/scene/composeFrame';
 import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** The ids in `ids` that are in the scene and that no ancestor in `ids` holds, less pages and the
  *  page run, which no action copies or moves. */

@@ -57,7 +57,7 @@ export interface StaggerSpringOptions<T, TItem> extends StaggerOptions,
 }
 
 /** What the stagger builder's methods share where each item's animation moves a {@link Target}. */
-interface StaggerOnTarget<T, TItem> extends StaggerOptions {
+export interface StaggerOnTarget<T, TItem> extends StaggerOptions {
   /** The target an item's animation moves: one for them all, or a function of the item.
    *  Default: the item itself, where the items are targets. */
   target?: StaggerPerItem<Target<T>, TItem>;

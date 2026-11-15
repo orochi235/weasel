@@ -3,7 +3,7 @@
  * and the edits on one: adding a lane to a pool, and releasing a container's
  * members.
  */
-import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type Scene } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type AnyScene } from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
@@ -11,6 +11,7 @@ import { themeWrites, type ThemedScene } from '../theme/themeWrites';
 import { DIAGRAM_THEME_KEY } from '../theme/types';
 import { firstLanes, regionSpecs, type ContainerBuildOptions } from './regionSpecs';
 import { diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
+import type { Rect } from '@weasel-js/geom';
 
 export type { ContainerBuildOptions };
 
@@ -36,11 +37,8 @@ export { CONTAINER_STENCILS } from '../stencils/containers';
 /** A lane added to a pool, along its stack. */
 const NEW_LANE_SIZE = 120;
 
-type Bounds = { x: number; y: number; width: number; height: number };
-type AnyScene = Scene<unknown, string, unknown>;
-
 /** A zero-size box — a click rather than a drag — becomes the stencil's own size centered on it. */
-function placedBounds(stencil: ContainerStencil, b: Bounds): RectPose {
+function placedBounds(stencil: ContainerStencil, b: Rect): RectPose {
   if (b.width > 0 && b.height > 0) return { ...b };
   const { width, height } = stencil.size;
   return { x: b.x + b.width / 2 - width / 2, y: b.y + b.height / 2 - height / 2, width, height };
@@ -50,7 +48,7 @@ function placedBounds(stencil: ContainerStencil, b: Bounds): RectPose {
  *  pool's first lanes. Applied as one batch, they are one undo entry. */
 export function containerBuild<TLayer extends string>(
   stencil: ContainerStencil,
-  bounds: Bounds,
+  bounds: Rect,
   opts: ContainerBuildOptions<TLayer>,
 ): { id: string; ops: Op[] } {
   const id = opts.newId();

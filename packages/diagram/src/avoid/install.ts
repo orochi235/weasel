@@ -13,6 +13,7 @@ import {
   type SceneEditSummary,
   type TransformFollower,
   type TransformPreviewNode,
+  type AnyScene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramEdgeOf, samePoints, type DiagramEdge } from '../edgeTrait';
@@ -39,8 +40,6 @@ export interface AvoidRouting {
   dispose(): void;
 }
 
-type AnyScene = Scene<unknown, string, unknown>;
-
 /** `data` with its edge trait holding `route`, or no route when null. */
 function withRoute(data: unknown, edge: DiagramEdge, route: readonly Vec2[] | null): Record<string, unknown> {
   const { route: _r, ...rest } = edge;
@@ -48,7 +47,7 @@ function withRoute(data: unknown, edge: DiagramEdge, route: readonly Vec2[] | nu
 }
 
 /** The data writes that store `routes` on their edges, skipping any unchanged or locked. */
-export function routeDataOps(scene: Scene<unknown, string, unknown>, routes: AvoidRoutes): Op[] {
+export function routeDataOps(scene: AnyScene, routes: AvoidRoutes): Op[] {
   const ops: Op[] = [];
   for (const [id, route] of routes) {
     const node = scene.get(id as never);

@@ -46,6 +46,7 @@ export { chain } from './chain';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {
   AvoidEdge, AvoidEnd, AvoidInput, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
+  HeldEnd, ResolvedAvoidOptions,
 } from './avoid';
 export { edgeHops } from './hops/crossings';
 export { DEFAULT_HOP_SIZE, HOPS_DOC_KEY } from './hops/types';

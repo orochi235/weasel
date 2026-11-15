@@ -3,7 +3,7 @@
  * mark whose datum names an `edit` is the spec's text, and closing the editor
  * folds what was typed into one edit of the spec.
  */
-import { isTextData, useLatest, type NodeId, type RectPose, type Scene, type SceneCanvasTextEditor } from '@weasel-js/core';
+import { isTextData, useLatest, type NodeId, type RectPose, type SceneCanvasTextEditor, type AnyScene } from '@weasel-js/core';
 import { useMemo } from 'react';
 import type { PlotDatum } from '../marks/types';
 import { textMeasure } from '../measure';
@@ -11,8 +11,6 @@ import { compilePlot } from '../plotData';
 import { plotMarkOf, plotRootOf } from '../plotScene';
 import type { PlotEdit } from './dragAction';
 import { plotEditorOf } from './editors';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** The datum of a text mark an edit can set: one naming what it edits under `edit`, or `null` for any other node. */
 export function plotTextOf(node: { data: unknown } | undefined): PlotDatum | null {

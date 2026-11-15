@@ -14,6 +14,7 @@ import {
   addPageNode, createPageRun, pageIdsOf, pageInfo, pageNodeOf, pageOfNode, pagePoses, pageRunOf, pagesOf, placedPagesOf,
   runInfo, runPose, type PagesDoc,
 } from './pageNodes';
+import type { AnyScene } from 'core/scene/anyScene';
 
 export { PAGES_DOC_KEY, pagesOf, placedPagesOf, type PagesDoc } from './pageNodes';
 
@@ -26,7 +27,6 @@ export interface PageEditOptions {
   descriptor?: PoseDescriptor<unknown>;
 }
 
-type AnyScene = Scene<unknown, string, unknown>;
 const asAny = <TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>) =>
   scene as unknown as AnyScene;
 

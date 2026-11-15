@@ -21,3 +21,6 @@ export {
   useTrialFrame,
 } from './trialFrames';
 export { Workshop, type WorkshopProps } from './Workshop';
+export type { FrameReady } from './readyKey';
+export type { Revision } from './loupe/captureContext';
+export type { StoryHosts } from './storyHosts';

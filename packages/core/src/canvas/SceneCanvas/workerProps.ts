@@ -53,4 +53,5 @@ export interface WorkerPaintedScene {
   layers?: { scene?: WorkerSceneSlot | CustomLayerEntry | null };
 }
 
+/** Who paints a `SceneCanvas`'s scene layers: the page, or a worker. */
 export type SceneCanvasPaintedBy = PagePaintedScene | WorkerPaintedScene;

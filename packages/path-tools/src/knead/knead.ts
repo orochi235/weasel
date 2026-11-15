@@ -6,14 +6,12 @@ import {
   type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
-import { pxReach, kneadPath, type PolygonPath } from '@weasel-js/geom';
+import { pxReach, kneadPath, type PolygonPath, type Point } from '@weasel-js/geom';
 import { brushRing } from '@weasel-js/cursor';
 import { commitOps, drawnAABBOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { kneadTargets } from './kneadTargets';
 import { outlineSession } from '../shared/outlineSession';
-
-type Point = { x: number; y: number };
 
 /** The brush's radius in screen px when no param gives one. */
 export const DEFAULT_KNEAD_RADIUS_PX = 40;

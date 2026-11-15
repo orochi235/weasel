@@ -10,7 +10,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { rectRegion, regionOf } from 'core/geometry/regionHit';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 import { regionPickQuery } from 'canvas/deps/hitTestArea';
 import { scenePaintedPoseOf } from 'canvas/derivedPath';
 import { pickWalk, scenePickSource } from 'canvas/pickWalk';
@@ -20,8 +20,7 @@ import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { scenePointQuery } from './scenePointQuery';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useSceneSelectTool } from './useSceneSelectTool';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** `mixedScene` plus the overrides a drag leaves: a framed child moved, and a
  *  plain node shown as a path. */

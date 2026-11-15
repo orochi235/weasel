@@ -10,7 +10,7 @@ import {
 import { createEmitter } from '@weasel-js/registry';
 import { transformPoint, invert, type Point } from '@weasel-js/geom';
 import { moveWarpControl, pathWarpMap, unwarpPoint, warpControls } from '@weasel-js/geom/warp';
-import { commitOps, createSetDataOp, type Op, quantizedShape, type Scene, reshapeTo, pathOperationTags } from '@weasel-js/core';
+import { commitOps, createSetDataOp, type Op, quantizedShape, reshapeTo, pathOperationTags, type AnyScene } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
 import {
   freshWarpBox, storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
@@ -69,7 +69,7 @@ const BEGINS = [...REQUIRES, 'history', 'createOutlinesAdapter', 'notices'] as c
  */
 function beginOnText(deps: ActionDeps, kind: WarpKind, label: string): { session: OutlineSession; box: ReturnType<typeof freshWarpBox> } {
   const leaves = selectedWarpLeaves(deps);
-  const scene = deps.scene as Pick<Scene<unknown, string, unknown>, 'get' | 'childrenOf'> | undefined;
+  const scene = deps.scene as Pick<AnyScene, 'get' | 'childrenOf'> | undefined;
   const box = scene ? freshWarpBox(scene, leaves, kind) : null;
   const session = outlineSession(deps, leaves.texts, label);
   session.convert();

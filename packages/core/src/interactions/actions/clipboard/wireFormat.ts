@@ -9,9 +9,6 @@ export const WEASEL_CLIPBOARD_MIME_WEB = `web ${WEASEL_CLIPBOARD_MIME}`;
 
 interface WeaselClipboardPayload { weaselClipboard: 1; nodes: unknown[] }
 
-type Replacer = (key: string, value: unknown) => unknown;
-type Reviver = (key: string, value: unknown) => unknown;
-
 /** Serialize snapshot items into the versioned wire text.
  *
  *  JSON drops a function-valued field (a container's `clipFromPose`, a
@@ -19,7 +16,7 @@ type Reviver = (key: string, value: unknown) => unknown;
  *  `SceneRegistry` key (`clipFromPoseKey`, `derivePathKey`, …), which does
  *  cross, and its paste restores the function from the pasting scene's
  *  registry. A function that is not registered does not survive. */
-export function buildWeaselClipboardText(items: unknown[], replacer?: Replacer): string {
+export function buildWeaselClipboardText(items: unknown[], replacer?: (key: string, value: unknown) => unknown): string {
   const payload: WeaselClipboardPayload = { weaselClipboard: 1, nodes: items };
   return JSON.stringify(payload, replacer as Parameters<typeof JSON.stringify>[1]);
 }
@@ -79,7 +76,7 @@ export function extractWeaselClipboardFromSvg(svgText: string): string | null {
 
 /** Parse wire text to snapshot items, or null when malformed/mismatched
  *  (callers decline to the next content handler). */
-export function parseWeaselClipboardText(text: string, reviver?: Reviver): unknown[] | null {
+export function parseWeaselClipboardText(text: string, reviver?: (key: string, value: unknown) => unknown): unknown[] | null {
   try {
     const parsed = JSON.parse(text, reviver as Parameters<typeof JSON.parse>[1]) as
       Partial<WeaselClipboardPayload> | null;

@@ -5,13 +5,22 @@
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  commitOps, createSetDependsOnOp, deleteNode, hiddenSourceDeleteOps, hiddenSourcesTakenWith, isTextData, type NodeId, type Op, pathEffectOf,
-  type Scene, type SceneNode as Node, sourcesOf,
+  commitOps,
+  createSetDependsOnOp,
+  deleteNode,
+  hiddenSourceDeleteOps,
+  hiddenSourcesTakenWith,
+  isTextData,
+  type NodeId,
+  type Op,
+  pathEffectOf,
+  type SceneNode as Node,
+  sourcesOf,
+  type AnyScene,
 } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP, selectedEffects } from './actions';
 import { releasedOps, takenOps } from './hiding';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
 
 /** Whether `effect` reading `target` would loop: `target` is already one of

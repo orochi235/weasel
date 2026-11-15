@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type Bounds, type Scene, type SnapSource } from '@weasel-js/core';
+import { createScene, type Bounds, type SnapSource, type AnyScene } from '@weasel-js/core';
 import { alignmentSnapSource } from './alignment';
 import { gridSnapSource } from './grid';
 import { spacingSnapSource } from './spacing';
@@ -39,7 +39,7 @@ describe('snap sources over a crowded row', () => {
     const tally: Tally = { offered: new Map(), measured: 0 };
     const sceneSources = [alignmentSnapSource(), spacingSnapSource()];
     const sources = [gridSnapSource({ spacing: 10 }), ...sceneSources].map((s) => counted(s, tally));
-    const m = moveBy({ sources, ids: [moving], scene: scene as unknown as Scene<unknown, string, unknown> });
+    const m = moveBy({ sources, ids: [moving], scene: scene as unknown as AnyScene });
     let worst = 0;
     const measuredPerFrame: number[] = [];
     for (let i = 0; i < 100; i++) {

@@ -33,9 +33,6 @@
   "packages/core/src/core/scene/renderOrder.ts": {
     "longestFunction": 164
   },
-  "packages/core/src/core/scene/types.ts": {
-    "lines": 480
-  },
   "packages/core/src/domains/paths/penPreviewLayer.ts": {
     "longestFunction": 138
   },
@@ -163,7 +160,7 @@
     "longestFunction": 188
   },
   "packages/renderer/src/WeaselRenderer.ts": {
-    "lines": 519
+    "lines": 518
   },
   "packages/renderer/src/drawBatch.ts": {
     "lines": 457

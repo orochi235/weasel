@@ -6,8 +6,6 @@ import { dwarn } from 'debug/flag';
 import type { ClipboardDep } from '../editDeps';
 import { defaultFlavors, writeOsClipboard, type ClipboardFlavors } from './osClipboard';
 
-type Replacer = (key: string, value: unknown) => unknown;
-
 /** What a paste wrote: the new nodes' ids, and the copies the next paste of this clipboard starts from. */
 export interface PastedItems<TItem> {
   ids: string[];
@@ -34,7 +32,7 @@ export interface UseClipboardOptions<TItem> {
    *  `copy()`, so it reads the document as it stood at the copy. */
   produceFlavors?: (copied: { items: readonly TItem[] }) => ClipboardFlavors;
   /** Replacer for the default JSON flavor. Ignored when `produceFlavors` is given. */
-  jsonReplacer?: Replacer;
+  jsonReplacer?: (key: string, value: unknown) => unknown;
 }
 
 /**

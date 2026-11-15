@@ -9,8 +9,6 @@ import { materializePaste } from './materializePaste';
 import type { ClipboardFlavors } from './osClipboard';
 import { useClipboard } from './useClipboard';
 
-type Replacer = (key: string, value: unknown) => unknown;
-
 export type { ClipboardFlavors } from './osClipboard';
 
 /** Options for `useClipboardOps`. */
@@ -43,7 +41,7 @@ export interface UseClipboardOpsOptions {
   produceFlavors?: (snapshot: ClipboardSnapshot) => ClipboardFlavors;
   /** Replacer for the kit-default JSON flavor (typed arrays etc.). Ignored
    *  when `produceFlavors` is supplied. */
-  jsonReplacer?: Replacer;
+  jsonReplacer?: (key: string, value: unknown) => unknown;
 }
 
 /** Return shape of `useClipboardOps`: imperative `copy`, `paste`, and `isEmpty` functions. */

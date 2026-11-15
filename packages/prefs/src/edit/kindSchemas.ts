@@ -158,6 +158,7 @@ function kindAttrs(kind: string, custom: CustomKinds): KindAttrs {
   return Object.hasOwn(custom, kind) ? custom[kind]! : {};
 }
 
+/** A schema node's attributes, split by where the editor shows them. */
 export interface AttributeSchema {
   /** Attributes every kind has, edited beside the key and the kind. */
   shared: KindAttrs;

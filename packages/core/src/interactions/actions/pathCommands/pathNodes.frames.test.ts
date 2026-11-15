@@ -3,12 +3,11 @@ import { PathBuilder, boundsOfPath, pathInWorld, type PolygonPath } from '@wease
 import type { ImmediateInvoker, InvocationCtx } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { createScene } from 'core/scene/scene';
-import type { NodeId, RectPose, Scene } from 'core/scene/types';
+import type { NodeId, RectPose } from 'core/scene/types';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { snipAtCrossingsAction } from './cutJoin';
 import { pathCopy, pathNodesOf, reshapeOps } from './pathNodes';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 const line = (x0: number, y0: number, x1: number, y1: number): PolygonPath =>
   new PathBuilder().moveTo(x0, y0).lineTo(x1, y1).build() as PolygonPath;

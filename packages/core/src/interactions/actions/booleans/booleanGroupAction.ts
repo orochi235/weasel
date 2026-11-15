@@ -11,14 +11,13 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { unionBounds } from 'core/geometry/unionBounds';
-import type { Node, NodeId, Scene } from 'core/scene/types';
+import type { Node, NodeId } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import { requiresContent } from '../defaults/requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { inPaintOrder, slotAbove } from '../groupSlot';
 import { icon } from '../../../icons.gen';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 const PAINT_KEYS = ['fill', 'stroke'] as const;
 

@@ -1,5 +1,3 @@
-type Join<A extends string, B extends string> = A extends '' ? B : `${A}.${B}`;
-
 /** Every value's dotted path in a `PrefGroup` schema, where a group's key is a
  *  segment; an `object` leaf is one path, its fields are not, and an `action`,
  *  `actions`, `alias`, `label`, or `separator` leaf, holding no value, has none. A `PrefSection`
@@ -7,12 +5,12 @@ type Join<A extends string, B extends string> = A extends '' ? B : `${A}.${B}`;
 export type PrefPath<G, Prefix extends string = ''> =
   G extends { children: infer C }
     ? string extends keyof C
-      ? Join<Prefix, string>
+      ? Prefix extends '' ? string : `${Prefix}.${string}`
       : {
           [K in keyof C & string]: C[K] extends { kind: string }
-            ? C[K] extends { kind: 'action' | 'actions' | 'alias' | 'label' | 'separator' } ? never : Join<Prefix, K>
+            ? C[K] extends { kind: 'action' | 'actions' | 'alias' | 'label' | 'separator' } ? never : Prefix extends '' ? K : `${Prefix}.${K}`
             : C[K] extends { children: Record<string, unknown> }
-              ? PrefPath<C[K], Join<Prefix, K>>
+              ? PrefPath<C[K], Prefix extends '' ? K : `${Prefix}.${K}`>
               : never;
         }[keyof C & string]
     : never;
@@ -37,12 +35,13 @@ export type PrefAtPath<G, P extends string> =
         : never
     : never;
 
-type AllOf<U> = (U extends unknown ? (x: U) => void : never) extends (x: infer I) => void ? I : never;
-
 /** The fields an `object` leaf's `children` describe, sections folded in. Each is optional: an object may omit any. */
-type PrefFieldsOf<C> = {
+export type PrefFieldsOf<C> = {
   [K in keyof C as C[K] extends { kind: string } ? K : never]?: PrefValueOf<C[K]>;
-} & AllOf<{ [K in keyof C]: C[K] extends { members: infer M } ? PrefFieldsOf<M> : never }[keyof C]>;
+} & (
+  ({ [K in keyof C]: C[K] extends { members: infer M } ? (x: PrefFieldsOf<M>) => void : never }[keyof C]) extends
+    (x: infer I) => void ? I : never
+);
 
 /** What a leaf holds: its kind's value type for a built-in kind, the type of
  *  its `default` for an app-defined one. A list holds an array of what its

@@ -78,7 +78,7 @@ export {
   setPages,
 } from '../core/pages/pageEdits';
 export type { PageEditOptions, PagesDoc } from '../core/pages/pageEdits';
-export { createPageRun, isPaged, pageNodeOf, pageOfNode, pageRunOf } from '../core/pages/pageNodes';
+export { createPageRun, isPaged, pageNodeOf, pageOfNode, pageRunOf, type PageTreeReader } from '../core/pages/pageNodes';
 export type { CreatePageRunOptions, PageInfo, PageRunInfo } from '../core/pages/pageNodes';
 export { PAGE_RUN, pageRunLayout } from '../core/pages/pageRunLayout';
 export { PAGE_CLIP, pageClip } from '../core/pages/pageClip';
@@ -135,7 +135,7 @@ export { VIEW_MARKER_DRAG, viewMarkerDragAction, createViewMarkerContribution } 
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a
 // given view; `<MinimapCanvas>` is the opinionated minimap built on top.
 export { SceneViewCanvas } from '../canvas/SceneViewCanvas';
-export type { SceneViewCanvasProps } from '../canvas/SceneViewCanvas';
+export type { PagePaintedView, SceneViewCanvasCommon, SceneViewCanvasProps, WorkerPaintedView } from '../canvas/SceneViewCanvas';
 // A scene view a worker paints: `<SceneViewCanvas worker>`, or the client under it for a host of its own.
 export { startSceneRenderWorker } from '../canvas/renderWorker/startSceneRenderWorker';
 export type { FollowedClock, SceneRenderInputs, SceneRenderWorker } from '../canvas/renderWorker/startSceneRenderWorker';

@@ -3,7 +3,7 @@
  * with every commit swapped for a report, and the header double-click.
  */
 import { isDiagramBody } from './bodyNode';
-import type { Contribution, NodeId, RectPose, Scene, SurfaceContribution } from '@weasel-js/core';
+import type { Contribution, NodeId, RectPose, SurfaceContribution, AnyScene } from '@weasel-js/core';
 import { worldWith } from './worldWith';
 import { diagramContainers, laneResizeFrame, type LaneResize } from './containers/containerActions';
 import { editContainerTitleAction, editContainerTitleBinding } from './containers/containerTitle';
@@ -12,8 +12,6 @@ import { diagramContainerOf } from './containers/trait';
 import { DEFAULT_LANE_SIZE } from './dataTypes';
 import { laneList, type ContainerEdit } from './regionSync';
 import type { NodeMove } from './sceneSync';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** Where region edits and the moves they bring about are reported. */
 export interface RegionReports {

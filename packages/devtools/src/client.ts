@@ -10,10 +10,10 @@ import {
 } from '@weasel-js/core/devtools-protocol';
 import { createEmitter } from '@weasel-js/registry';
 
-type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
-
 /** A request as a caller writes it: the client adds the protocol, the request id and the root. */
-export type DevtoolsRequestBody = DistributiveOmit<DevtoolsRequest, 'protocol' | 'requestId' | 'rootId'>;
+export type DevtoolsRequestBody = DevtoolsRequest extends infer R
+  ? R extends unknown ? Omit<R, 'protocol' | 'requestId' | 'rootId'> : never
+  : never;
 
 /** What each request resolves to. */
 export interface DevtoolsResultMap {

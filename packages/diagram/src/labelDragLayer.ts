@@ -15,7 +15,7 @@ import {
   type CursorSpec,
   type NodeId,
   type RenderLayer,
-  type Scene,
+  type AnyScene,
 } from '@weasel-js/core';
 import type { Path, Vec2 } from '@weasel-js/core/math';
 import { boxIndex, boxesMeeting, keyedIndex, type BoxIndex } from './keyedIndex';
@@ -51,7 +51,7 @@ export interface DraggableLabel {
 }
 
 /** Whether an edit may touch a label: neither it nor its edge is locked, and it is not hidden. */
-export const labelEditable = (scene: Scene<unknown, string, unknown>, labelId: NodeId, edgeId: NodeId): boolean =>
+export const labelEditable = (scene: AnyScene, labelId: NodeId, edgeId: NodeId): boolean =>
   !scene.isLocked(labelId) && !scene.isLocked(edgeId) && !scene.isHidden(labelId);
 
 /** A label an edit may touch, and the one edge it stands on. */
@@ -65,7 +65,7 @@ export interface EditableLabel {
  *  label trait, on exactly one edge, that `labelEditable` passes. With `edges`,
  *  only the labels on those edges. */
 export function* editableLabels(
-  scene: Scene<unknown, string, unknown>, edges?: ReadonlySet<string>,
+  scene: AnyScene, edges?: ReadonlySet<string>,
 ): Iterable<EditableLabel> {
   for (const node of scene.renderOrderNodes()) {
     const label = diagramLabelOf(node);
@@ -79,7 +79,7 @@ export function* editableLabels(
 }
 
 /** Every editable label in `scene` whose edge derives a path, in render order. */
-export function* draggableLabels(scene: Scene<unknown, string, unknown>): Iterable<DraggableLabel> {
+export function* draggableLabels(scene: AnyScene): Iterable<DraggableLabel> {
   for (const { labelId, edgeId } of editableLabels(scene)) {
     const path = documentDepOf(scene as never, edgeId)?.path ?? null;
     if (path === null) continue;
@@ -89,8 +89,6 @@ export function* draggableLabels(scene: Scene<unknown, string, unknown>): Iterab
 }
 
 const holds = (b: Bounds, at: Vec2) => at.x >= b.x && at.x <= b.x + b.width && at.y >= b.y && at.y <= b.y + b.height;
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** Each scene's draggable labels, boxed. Read at document poses, so the scene's version is the whole key. */
 const INDEXES = new WeakMap<AnyScene, () => { labels: DraggableLabel[]; boxes: BoxIndex } | null>();
@@ -160,7 +158,7 @@ function createLabelDragAffordance(scene: AnyScene, cursor: CursorSpec): Afforda
  *  before the port layer: the last registered is hit first, and a port or a
  *  route handle must win over a label beside it. */
 export function labelDragLayer(
-  scene: Scene<unknown, string, unknown>,
+  scene: AnyScene,
   opts: { cursor?: CursorSpec } = {},
 ): RenderLayer<unknown> {
   return composeAffordanceLayer(

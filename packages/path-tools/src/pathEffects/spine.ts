@@ -7,14 +7,20 @@
  */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  commitOps, createSetDependsOnOp, type NodeId, type Op, pathEffectOf, type Scene, type SceneNode as Node, sourcesOf,
+  commitOps,
+  createSetDependsOnOp,
+  type NodeId,
+  type Op,
+  pathEffectOf,
+  type SceneNode as Node,
+  sourcesOf,
+  type AnyScene,
 } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP } from './actions';
 import { releasedOps, takenOps } from './hiding';
 import { closesLoop } from './retarget';
 import { icon } from '../icons.gen';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
 
 const isTween = (node: AnyNode | undefined): node is AnyNode =>

@@ -12,7 +12,6 @@ import {
   type GestureBinding,
   type InvocationCtx,
   type RectPose,
-  type Scene,
   textEditJoin,
 } from '@weasel-js/core';
 import type { MeasureRowText, RowTextStyle } from './body';
@@ -21,7 +20,7 @@ import { LABEL_DERIVE_POSE } from './label';
 import { labelScratchOf, labelUnder } from './labelDragLayer';
 import { LABEL_PLACEMENT, diagramLabelOf, type DiagramLabel } from './labelTrait';
 import { estimatedWidth } from './rowMeasure';
-import type { ImmediateParams } from '@weasel-js/core';
+import type { ImmediateParams, AnyScene } from '@weasel-js/core';
 
 /** The face an edge label is set in: the diagram's, two sizes down. */
 export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => ({ ...font, fontSize: font.fontSize - 2 });
@@ -90,7 +89,7 @@ export function edgeLabelSpec<TLayer extends string>(
  * passes this as its text edit's `onEnd` to drop one that ends empty; the
  * removal joins the add's undo entry, so undo brings no empty label back.
  */
-export function dropEmptyEdgeLabel(scene: Scene<unknown, string, unknown>, id: string): boolean {
+export function dropEmptyEdgeLabel(scene: AnyScene, id: string): boolean {
   const node = scene.get(id as never);
   if (node === undefined || diagramLabelOf(node) === null) return false;
   const text = (node.data as { text?: unknown }).text;

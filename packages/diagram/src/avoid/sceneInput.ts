@@ -4,10 +4,13 @@
  * split across pages, with the ports each end may use and its label. A split
  * connector's label, on its first stub, is an obstacle of its own.
  */
-import { composeWorldPose, scenePoseAdapter,
+import {
+  composeWorldPose,
+  scenePoseAdapter,
   AUTO_POSE_DESCRIPTOR,
   type PoseDescriptor,
   type Scene,
+  type AnyScene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramContainerOf, headerBox } from '../containers/trait';
@@ -25,7 +28,6 @@ export interface AvoidSceneOptions<TPose> extends PortsOptions<TPose> {
   routerKey?: string;
 }
 
-type AnyScene = Scene<unknown, string, unknown>;
 type SceneNode = ReturnType<AnyScene['renderOrderNodes']>[number];
 
 /** The id of a container's header obstacle. */

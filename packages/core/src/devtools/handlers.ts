@@ -1,5 +1,5 @@
 /** The answer to each devtools request, for one root. The session owns the override a steering request changes. */
-import type { Node, NodeId, Scene } from 'core/scene/types';
+import type { Node, NodeId } from 'core/scene/types';
 import type { DebugFlags } from '../debug/types';
 import type { DevtoolsRoot } from './root';
 import type {
@@ -8,8 +8,8 @@ import type {
 } from './protocol';
 import { serialize } from './serialize';
 import { historySlice } from './history';
+import type { AnyScene } from 'core/scene/anyScene';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
 
 function sceneOf(root: DevtoolsRoot): AnyScene {

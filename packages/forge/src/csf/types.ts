@@ -43,7 +43,7 @@ export interface CsfPlayContext extends CsfStoryContext {
 export type CsfDecorator = (Story: ComponentType, context: CsfStoryContext) => ReactNode;
 
 /** Fields a meta and a story both accept. A story's value wins. */
-interface Shared<T> {
+export interface CsfShared<T> {
   args?: Partial<ArgsOf<T>>;
   argTypes?: Partial<Record<keyof ArgsOf<T> & string, ArgType>> & Record<string, ArgType>;
   parameters?: Record<string, unknown>;
@@ -58,7 +58,7 @@ interface Shared<T> {
 
 /** A CSF file's default export: what its stories share, and where they sit in
  *  the sidebar. */
-export interface Meta<T = unknown> extends Shared<T> {
+export interface Meta<T = unknown> extends CsfShared<T> {
   /** Sidebar path, `/`-separated. Derived from the file's location when omitted. */
   title?: string;
   component?: ComponentType<ArgsOf<T>>;
@@ -68,7 +68,7 @@ export interface Meta<T = unknown> extends Shared<T> {
 }
 
 /** One story: a named export of a CSF file. */
-export interface StoryObj<T = unknown> extends Shared<T> {
+export interface StoryObj<T = unknown> extends CsfShared<T> {
   /** Overrides the name derived from the export's identifier. */
   name?: string;
   /** Storybook's older spelling of `name`; forge reads both. */

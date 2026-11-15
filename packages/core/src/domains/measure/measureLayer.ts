@@ -1,7 +1,6 @@
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { LayerHit } from 'affordances/types';
-import type { Scene } from 'core/scene/types';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { viewToTransform } from 'core/viewport/view';
 import { pxReach, rectPath } from '@weasel-js/geom';
@@ -12,6 +11,7 @@ import { measureEndsOf, type MeasurePoint } from './measurement';
 import type { Measurements } from './measurements';
 import { measureAt, type MeasureHit } from './measureHit';
 import { MEASURE_HIT_PX } from './measureGestures';
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** The registered layer's id; a press it claims routes as `layer:<id>`. */
 export const MEASURE_LAYER_ID = 'weasel-measure';
@@ -19,8 +19,6 @@ export const MEASURE_LAYER_ID = 'weasel-measure';
 export const MEASURE_AFFORDANCE_KIND = `layer:${MEASURE_LAYER_ID}`;
 
 const HANDLE_PX = 3.5;
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /**
  * The measurements' interactive layer, under every tool: it draws the

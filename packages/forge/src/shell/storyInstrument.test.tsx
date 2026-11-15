@@ -16,6 +16,7 @@ import { createAnswerBook } from './answers';
 import { FrameView } from './FrameView';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { storyInstrument } from './storyInstrument';
+import type { FrameReady } from './readyKey';
 import { useStoryRegistry } from './useStoryRegistry';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -26,8 +27,7 @@ const entry: IndexEntry = {
   exportName: 'Counter',
   file: '/x.stories.tsx',
 };
-type Ready = Extract<FromFrame, { type: 'ready' }>;
-const ready: Ready = {
+const ready: FrameReady = {
   type: 'ready',
   schema: describeSchema(f.schema({ label: f.string('clicks') })),
   layout: 'centered',
@@ -100,7 +100,7 @@ function captureLab() {
 }
 
 function labWith(
-  instrumentReady: Ready | undefined,
+  instrumentReady: FrameReady | undefined,
   onReady = vi.fn(),
   answers = createAnswerBook(),
   labGlobals: Globals = globals,
@@ -137,7 +137,7 @@ function connect(iframe: HTMLIFrameElement) {
   return { frame, received, port };
 }
 
-async function mountWith(instrumentReady: Ready | undefined, onReady = vi.fn(), answers = createAnswerBook()) {
+async function mountWith(instrumentReady: FrameReady | undefined, onReady = vi.fn(), answers = createAnswerBook()) {
   lab = null;
   ctx = null;
   const view = await renderSettled(labWith(instrumentReady, onReady, answers), { wrapper: withIcons });
@@ -190,7 +190,7 @@ describe('FrameView', () => {
   });
 
   it('holds init until its instrument describes the frame, then sends the real defaults', async () => {
-    const grid: Ready = { ...ready, schema: describeSchema(f.schema({ grid: f.group({ size: f.number(4) }) })) };
+    const grid: FrameReady = { ...ready, schema: describeSchema(f.schema({ grid: f.group({ size: f.number(4) }) })) };
     const { view, frame, received, onReady } = await mountWith(undefined);
     frame.send(grid);
     await flush();
@@ -309,10 +309,10 @@ describe('FrameView', () => {
 
   it('sends one init when onReady synchronously builds the instrument that describes the frame', async () => {
     function SyncReady() {
-      const [held, setHeld] = useState<Ready | undefined>(undefined);
+      const [held, setHeld] = useState<FrameReady | undefined>(undefined);
       return labWith(
         held,
-        vi.fn((_entry: IndexEntry, next: Ready) => flushSync(() => setHeld(next))),
+        vi.fn((_entry: IndexEntry, next: FrameReady) => flushSync(() => setHeld(next))),
       );
     }
     const view = await renderSettled(<SyncReady />, { wrapper: withIcons });

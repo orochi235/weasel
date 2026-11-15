@@ -5,11 +5,17 @@
  * hid it stays hidden.
  */
 import {
-  createSetDataOp, createSetHiddenOp, type NodeId, type Op, pathEffectOf, type PathEffect, type Scene, type SceneNode as Node,
+  createSetDataOp,
+  createSetHiddenOp,
+  type NodeId,
+  type Op,
+  pathEffectOf,
+  type PathEffect,
+  type SceneNode as Node,
   sourcesHiddenBy,
+  type AnyScene,
 } from '@weasel-js/core';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
 
 /** Whether an effect other than those `leaving` holds `source` hidden. */

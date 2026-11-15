@@ -10,7 +10,8 @@
 
 export { inkWidth, tessellateStroke, resolveStrokeWidth, ribbonAligns } from './tessellate/stroke';
 export type { StrokeOptions } from './tessellate/stroke';
-export { dashLength, splitForDash } from './tessellate/dash';
+export { dashLength, splitForDash, type MeasuredPolyline } from './tessellate/dash';
+export type { RibbonStyle } from './tessellate/expandPolyline';
 export { populatePolylineWidths, widestStrokeWidth } from './tessellate/vertexWidths';
 export { nibWidthScale } from './tessellate/nib';
 export type { WidthScale } from './tessellate/vertexWidths';

@@ -26,7 +26,7 @@ export interface PropertyOption<T extends string> {
 }
 
 /** Props every kind of field shares. */
-interface FieldBase extends DisableableProps {
+export interface PropertyFieldBase extends DisableableProps {
   /** The control's accessible name. A `<PropertyField>` takes it from a string
    *  `label` when this is omitted. */
   name?: string;
@@ -50,7 +50,7 @@ interface FieldBase extends DisableableProps {
 }
 
 /** A boolean field. */
-export interface PropertyBooleanFieldProps extends FieldBase {
+export interface PropertyBooleanFieldProps extends PropertyFieldBase {
   kind: 'boolean';
   /** `checkbox` (default), `switch`, or `toggle` — a one-segment pressable bar. */
   control?: 'checkbox' | 'switch' | 'toggle';
@@ -65,7 +65,7 @@ export interface PropertyBooleanFieldProps extends FieldBase {
 }
 
 /** A number field. */
-export interface PropertyNumberFieldProps extends FieldBase {
+export interface PropertyNumberFieldProps extends PropertyFieldBase {
   kind: 'number';
   /** `input` (default) for a typed number; `slider` for a track with an
    *  editable readout, where the range matters more than the exact value. */
@@ -135,7 +135,7 @@ export interface PropertyNumberFieldProps extends FieldBase {
 }
 
 /** A text field. */
-export interface PropertyStringFieldProps extends FieldBase {
+export interface PropertyStringFieldProps extends PropertyFieldBase {
   kind: 'string';
   control?: 'input' | 'textarea';
   /** Absent reads as an empty field. */
@@ -156,7 +156,7 @@ export interface PropertyStringFieldProps extends FieldBase {
 }
 
 /** A choice among fixed options. */
-export interface PropertyEnumFieldProps<T extends string = string> extends FieldBase {
+export interface PropertyEnumFieldProps<T extends string = string> extends PropertyFieldBase {
   kind: 'enum';
   /**
    * `select` (default) is a dropdown. `radio` and `toggle` show every option
@@ -180,7 +180,7 @@ export interface PropertyEnumFieldProps<T extends string = string> extends Field
 }
 
 /** A single color. */
-export interface PropertyColorFieldProps extends FieldBase {
+export interface PropertyColorFieldProps extends PropertyFieldBase {
   kind: 'color';
   /** `#rrggbb`, or `#rrggbbaa` when `alpha` is `true`. */
   value: string | undefined;
@@ -204,7 +204,7 @@ export interface PropertyColorFieldProps extends FieldBase {
 }
 
 /** A whole paint: a solid, a gradient, a pattern, or none. */
-export interface PropertyPaintFieldProps extends FieldBase {
+export interface PropertyPaintFieldProps extends PropertyFieldBase {
   kind: 'paint';
   /** `swatch` (default) opens the editor in a popover, for a narrow slot;
    *  `inline` draws the kind bar and its editor in place. */
@@ -223,7 +223,7 @@ export interface PropertyPaintFieldProps extends FieldBase {
 }
 
 /** A font family, picked from the live font registry. */
-export interface PropertyFontFamilyFieldProps extends FieldBase {
+export interface PropertyFontFamilyFieldProps extends PropertyFieldBase {
   kind: 'font-family';
   value: string | undefined;
   onChange: (next: string) => void;
@@ -234,7 +234,7 @@ export interface PropertyFontFamilyFieldProps extends FieldBase {
 }
 
 /** A font weight, picked from the weights its family has registered. */
-export interface PropertyFontWeightFieldProps extends FieldBase {
+export interface PropertyFontWeightFieldProps extends PropertyFieldBase {
   kind: 'font-weight';
   value: number | undefined;
   onChange: (next: number) => void;

@@ -39,6 +39,7 @@ import { authoredOver } from './route';
 import { diagramThemeFrom, themeFont, themeLabelFont } from './theme/resolve';
 import { offPageTagLook } from './offPage/tag';
 import type { Vec2 } from '@weasel-js/core/math';
+import type { Rect } from '@weasel-js/geom';
 
 export type { DiagramTextStyle };
 export { DEFAULT_NODE_STYLE };
@@ -81,8 +82,6 @@ function graphEdgeOf(e: DataEdge, room: EdgeLabelRoom | null): GraphEdge {
     ...(room !== null ? { label: room } : {}),
   };
 }
-
-type Rect = { x: number; y: number; width: number; height: number };
 
 /** Whether `n` is drawn collapsed: asked to be, and with a header to collapse to. */
 const folded = (n: DataNode): boolean => n.collapsed === true && n.rows?.[0]?.kind === 'header';

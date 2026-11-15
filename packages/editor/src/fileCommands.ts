@@ -13,7 +13,8 @@ export interface FileCommandOptions extends Omit<CommandOptions, 'keys'> {
   keys?: CommandOptions['keys'] | null;
 }
 
-type FileRun = (params?: Readonly<Record<string, unknown>>) => void;
+/** What a file command runs, handed the params its invocation carried. */
+export type FileRun = (params?: Readonly<Record<string, unknown>>) => void;
 
 function useFileCommand(
   slot: keyof typeof FILE_KEYS, id: string, label: string, run: FileRun, options: FileCommandOptions | undefined,

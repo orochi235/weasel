@@ -5,8 +5,6 @@
  */
 import type { SeqFragment, SeqStep, SeqTextTarget, SequenceData, StepPlace } from './types';
 
-type Steps = readonly SeqStep[];
-
 /** Whether two places are in the same list. */
 export const sameList = (a: StepPlace['parent'], b: StepPlace['parent']): boolean =>
   a === b || (a !== null && b !== null && a.fragment === b.fragment && a.section === b.section);
@@ -15,14 +13,14 @@ export const sameList = (a: StepPlace['parent'], b: StepPlace['parent']): boolea
 export const hasId = (s: SeqStep): s is Extract<SeqStep, { id: string }> => 'id' in s;
 
 /** The step list `parent` names: the top level, or one section of a fragment anywhere in `steps`. `null` when there is none. */
-export function stepListOf(steps: Steps, parent: StepPlace['parent']): Steps | null {
+export function stepListOf(steps: readonly SeqStep[], parent: StepPlace['parent']): readonly SeqStep[] | null {
   if (parent === null) return steps;
   const frag = findStep(steps, parent.fragment);
   return frag?.kind === 'fragment' ? frag.sections[parent.section]?.steps ?? null : null;
 }
 
 /** The step with `id`, at any depth. */
-export function findStep(steps: Steps, id: string): SeqStep | null {
+export function findStep(steps: readonly SeqStep[], id: string): SeqStep | null {
   for (const s of steps) {
     if (hasId(s) && s.id === id) return s;
     if (s.kind === 'fragment') {
@@ -36,7 +34,7 @@ export function findStep(steps: Steps, id: string): SeqStep | null {
 }
 
 /** Where the step with `id` stands. */
-export function placeOf(steps: Steps, id: string, parent: StepPlace['parent'] = null): StepPlace | null {
+export function placeOf(steps: readonly SeqStep[], id: string, parent: StepPlace['parent'] = null): StepPlace | null {
   for (const [index, s] of steps.entries()) {
     if (hasId(s) && s.id === id) return { parent, index };
     if (s.kind === 'fragment') {
@@ -50,7 +48,7 @@ export function placeOf(steps: Steps, id: string, parent: StepPlace['parent'] = 
 }
 
 /** `steps` with every step `fn` maps, fragments' sections included, rebuilt only along changed paths. */
-export function mapSteps(steps: Steps, fn: (s: SeqStep) => SeqStep): Steps {
+export function mapSteps(steps: readonly SeqStep[], fn: (s: SeqStep) => SeqStep): readonly SeqStep[] {
   let changed = false;
   const out = steps.map((s) => {
     let next = fn(s);
@@ -73,7 +71,7 @@ export function mapSteps(steps: Steps, fn: (s: SeqStep) => SeqStep): Steps {
  * `null` dropped; a fragment is mapped after its sections are. Rebuilt only
  * along changed paths.
  */
-export function pruneSteps(steps: Steps, fn: (s: SeqStep) => SeqStep | null): Steps {
+export function pruneSteps(steps: readonly SeqStep[], fn: (s: SeqStep) => SeqStep | null): readonly SeqStep[] {
   let changed = false;
   const out: SeqStep[] = [];
   for (const s of steps) {
@@ -93,7 +91,7 @@ export function pruneSteps(steps: Steps, fn: (s: SeqStep) => SeqStep | null): St
 }
 
 /** `steps` with the list at `parent` replaced by `fn` of it. */
-export function withList(steps: Steps, parent: StepPlace['parent'], fn: (list: Steps) => Steps): Steps {
+export function withList(steps: readonly SeqStep[], parent: StepPlace['parent'], fn: (list: readonly SeqStep[]) => readonly SeqStep[]): readonly SeqStep[] {
   if (parent === null) return fn(steps);
   return mapSteps(steps, (s) => {
     if (s.kind !== 'fragment' || s.id !== parent.fragment) return s;

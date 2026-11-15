@@ -43,6 +43,7 @@ export interface PathEditSource {
   extensions?: readonly PathEditExtension[];
 }
 
+/** Which node path editing is on, and its live state, as a canvas reads it. */
 export interface PathEditState {
   /**
    * The node whose anchors are editable now, or `''`: the stored id, or the

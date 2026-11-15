@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
+import { asNodeId, type RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { moveAction } from '../move/action';
 import { rotateAction } from '../rotate/action';
@@ -11,8 +11,7 @@ import { duplicateAction } from '../defaults/duplicate';
 import { nudgeRightAction } from '../defaults/nudge';
 import { transformAgainAction } from './action';
 import { lastTransform, recordTransform } from './memory';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 const box = (x: number, y: number, w = 10, h = 10): RectPose => ({ x, y, width: w, height: h });
 

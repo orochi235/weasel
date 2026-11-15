@@ -4,7 +4,7 @@
 import { catalogUnit } from '@weasel-js/quantity';
 import type { PrefGroup } from './groups';
 import { prefHoldsValue, prefLeaves, prefValueAtPath } from './helpers';
-import { isPrefScope, scopeOptionValue, type PrefScope, type OverridesOf, type PrefSelection } from './scope';
+import { isPrefScope, scopeOptionValue, type PrefScope, type PrefOverridesLookup, type PrefSelection } from './scope';
 import { overridesOfPref } from './scopeSpec';
 import type { PrefEnum, PrefLeaf, PrefNumber } from './schema';
 import { prefSelectors } from './splitCheck';
@@ -69,7 +69,7 @@ function cssValue(leaf: PrefLeaf, value: unknown): string | null {
 type Told = { under: [selector: string, option: string][]; value: unknown };
 
 /** Every choice of options a held value tells apart, outermost selector first. */
-function toldApart(held: unknown, optionsOf: (selector: string) => readonly string[], absent: unknown, overridesOf?: OverridesOf): Told[] {
+function toldApart(held: unknown, optionsOf: (selector: string) => readonly string[], absent: unknown, overridesOf?: PrefOverridesLookup): Told[] {
   const out: Told[] = [];
   const walk = (value: unknown, under: Told['under']): void => {
     if (!isPrefScope(value)) {

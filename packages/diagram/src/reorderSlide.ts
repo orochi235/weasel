@@ -3,10 +3,9 @@
  * others in the places they would take, published as pose overrides so
  * everything that derives its pose from them follows.
  */
-import { effectivePose, type NodeId, type Scene } from '@weasel-js/core';
+import { effectivePose, type NodeId, type AnyScene } from '@weasel-js/core';
 import type { ReorderItem, ReorderSlots } from './reorder';
-
-export type Box = { x: number; y: number; width: number; height: number };
+import type { Rect } from '@weasel-js/geom';
 
 /** Where an item stands along the axis: its start and its length. */
 interface Span {
@@ -35,7 +34,7 @@ export const carriedBy = (item: ReorderItem): readonly string[] => item.carries 
 const RELEASE_MS = 500;
 
 /** Slides `slots`' items around `carried` until dropped, or kept past a commit. */
-export function slideOthers(scene: Scene<unknown, string, unknown>, slots: ReorderSlots, carried: string) {
+export function slideOthers(scene: AnyScene, slots: ReorderSlots, carried: string) {
   const { axis } = slots;
   const size = axis === 'x' ? 'width' : 'height';
   const ids = slots.items.map((i) => i.id);
@@ -45,7 +44,7 @@ export function slideOthers(scene: Scene<unknown, string, unknown>, slots: Reord
     id: item.id,
     poses: carriedBy(item).flatMap((id) => {
       const node = scene.get(id as NodeId);
-      return node === undefined || node.derivePose !== undefined ? [] : [{ id: id as NodeId, pose: effectivePose(scene, node) as Box }];
+      return node === undefined || node.derivePose !== undefined ? [] : [{ id: id as NodeId, pose: effectivePose(scene, node) as Rect }];
     }),
   }));
   const hold = scene.overrides.hold();

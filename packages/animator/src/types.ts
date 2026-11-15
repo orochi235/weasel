@@ -4,12 +4,14 @@ import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions } from 
 import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
 import type { StaggerBuilder, StaggerDelay, StaggerFactory, StaggerOptions } from './staggerTypes';
 import type {
-  HoldHandle, HoldOptions, HoldRowsOptions, RowsHoldHandle, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions, TargetTweenOptions,
+  HoldHandle, HoldOptions, HoldRowsOptions, OnTarget, RowsHoldHandle, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions,
+  TargetTweenOptions,
 } from './targetTypes';
 
 export type { BezierEasing, EasingFn, EasingSpec, SpringPreset, SpringPresetName } from '@weasel-js/geom';
 export type {
-  HoldHandle, HoldOptions, HoldRowsOptions, RowsHoldHandle, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions, TargetTweenOptions,
+  HoldHandle, HoldOptions, HoldRowsOptions, OnTarget, RowsHoldHandle, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions,
+  TargetTweenOptions,
 };
 export type * from './staggerTypes';
 

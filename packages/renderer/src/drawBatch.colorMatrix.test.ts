@@ -17,6 +17,7 @@ import { colorFolding } from './draw';
 import { BATCH_MATRIX_SLOTS, matrixOf } from './shaders/batchFill';
 import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/geom';
 import { glProgramHandle, glUniformLocation } from './gpu/webgl/GlProgram';
+import { rendererParts } from './rendererParts';
 
 /** Offset of the color within a vertex: after the vec2 position. */
 const COLOR = 2;
@@ -85,7 +86,7 @@ describe('renderer — a group color matrix and the run', () => {
    * each holds its own.
    */
   const uniformsAtDraws = (): { bias: number[]; alpha: number[] }[] => {
-    const programs = [r._batchFill(), r._batchVariants().get(true, false)];
+    const programs = [r._batchFill(), rendererParts(r).batchVariants.get(true, false)];
     const held = new Map(programs.map((p) => [glProgramHandle(p) as unknown, { bias: [] as number[], alpha: [] as number[] }]));
     const owner = (loc: unknown, name: string) => {
       const p = programs.find((q) => glUniformLocation(q, name) === loc);
@@ -244,7 +245,7 @@ describe('renderer — a group color matrix and the run', () => {
     expect(draws()).toEqual([30]);
     expect(biasAtDraws()).toEqual([[0, 0.25, 0.125]]);
     expect(quadMatrices()).toEqual([0, 0, 1, 2, 0]);
-    expect(drawPrograms()).toEqual([glProgramHandle(r._batchVariants().get(true, false))]);
+    expect(drawPrograms()).toEqual([glProgramHandle(rendererParts(r).batchVariants.get(true, false))]);
     // The last rect is mapped by the second matrix: red 0.5 + 0.125.
     expect(quadColors()[4]).toEqual([0.625, 0, 0, 1]);
   });

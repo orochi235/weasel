@@ -13,6 +13,7 @@ import {
   type PoseDescriptor,
   type Scene,
   type SceneEditSummary,
+  type AnyScene,
 } from '@weasel-js/core';
 import { PATH_M, type Path, type Vec2 } from '@weasel-js/core/math';
 import type { MeasureRowText } from '../body';
@@ -43,7 +44,6 @@ export interface LabelPlacement {
   dispose(): void;
 }
 
-type AnyScene = Scene<unknown, string, unknown>;
 type Size = { width: number; height: number };
 type SceneNode = ReturnType<AnyScene['renderOrderNodes']>[number];
 

@@ -13,7 +13,6 @@ import type { InsertDep, InsertEnds, InsertExtras, InsertLive } from 'interactio
 import { insertSite } from './insertSite';
 import { poseDescriptorOf } from 'interactions/actions/poseDescriptorDep';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { commitSelectionOps } from 'interactions/actions/defaultCommitAdapter';
 import {
@@ -37,10 +36,7 @@ import { stickyData, type StickyLook } from '../../tools/builtin/sticky/stickyNo
 import { minSizeOf } from 'core/scene/minSize';
 import { shapeKindInfo } from 'core/shapeKinds';
 import { textEditJoin } from 'domains/text/sceneTextDrafts';
-
-interface OpsApplier {
-  applyOps(ops: Op[], label?: string): void;
-}
+import type { OpsApplier } from './slice';
 
 /**
  * Consumer-supplied node factory for one insert `kind`. Given the drag AABB
@@ -65,7 +61,7 @@ export type InsertNodeFactory<E extends InsertExtras = InsertExtras> = {
 }['factory'];
 
 /** The kinds the kit's tools insert with extras of their own shape. */
-type KitInsertKind = InsertExtras extends infer E
+export type KitInsertKind = InsertExtras extends infer E
   ? E extends { kind: infer K extends string } ? (string extends K ? never : K) : never
   : never;
 

@@ -1,8 +1,5 @@
-import { sceneBoxFrames, sceneUnitScopes, unitFrameAt, type NodeId, type Scene, type UnitScope } from '@weasel-js/core';
-import { transformPoint } from '@weasel-js/geom';
-
-type Point = { x: number; y: number };
-type AnyScene = Scene<unknown, string, unknown>;
+import { sceneBoxFrames, sceneUnitScopes, unitFrameAt, type NodeId, type UnitScope, type AnyScene } from '@weasel-js/core';
+import { transformPoint, type Point } from '@weasel-js/geom';
 
 /** The frame a ruler reads in: its unit scopes, and where it reads 0. */
 export interface RulerFrame {

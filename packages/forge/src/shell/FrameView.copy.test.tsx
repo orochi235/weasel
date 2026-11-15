@@ -11,13 +11,13 @@ import { type FramePool, FramePoolContext } from './framePool';
 import { FrameView } from './FrameView';
 import { connectFrame, flush } from './labHarness';
 import { reportFrameScroll, scrollOf } from './loupe/frameScroll';
-import { type Ready, readyKey } from './readyKey';
+import { type FrameReady, readyKey } from './readyKey';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 import { createTrialFrames, type TrialFrames, TrialFramesContext } from './trialFrames';
 
 const entry: IndexEntry = { id: 'test-live--live', title: 'Test/Live', name: 'Live', exportName: 'Live', file: '/x.stories.tsx' };
 const other: IndexEntry = { ...entry, id: 'test-live--other', name: 'Other', exportName: 'Other' };
-const ready: Ready = {
+const ready: FrameReady = {
   type: 'ready',
   schema: describeSchema(f.schema({ label: f.string('A'), size: f.number(1) })),
   layout: 'centered',
@@ -34,7 +34,7 @@ let lab: LabContextValue;
 let pool: FramePool;
 let trial: RenderContext<unknown, unknown>;
 let setConfig: ReturnType<typeof vi.fn<(path: string, value: unknown) => void>>;
-let onReady: ReturnType<typeof vi.fn<(entry: IndexEntry, ready: Ready) => void>>;
+let onReady: ReturnType<typeof vi.fn<(entry: IndexEntry, ready: FrameReady) => void>>;
 const answers = createAnswerBook();
 const closers: (() => void)[] = [];
 
@@ -45,7 +45,7 @@ beforeEach(() => {
   lab = { instruments: [{ name: entry.id }, { name: other.id }], swapTrial: vi.fn() } as unknown as LabContextValue;
   pool = { claim: vi.fn(() => null) } as unknown as FramePool;
   setConfig = vi.fn<(path: string, value: unknown) => void>();
-  onReady = vi.fn<(entry: IndexEntry, ready: Ready) => void>();
+  onReady = vi.fn<(entry: IndexEntry, ready: FrameReady) => void>();
   trial = {
     config: { label: 'A', size: 1, $globals: { mode: 'light' } },
     state: { count: 5 },

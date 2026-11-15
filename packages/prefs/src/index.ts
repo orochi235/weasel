@@ -95,6 +95,7 @@ export {
   type PrefScope,
   type PrefSelection,
   type PrefOverrides,
+  type PrefOverridesLookup,
   type PrefWeighted,
   type PrefWeights,
 } from './scope';
@@ -102,7 +103,7 @@ export { prefWeightAxes, type PrefWeightAxes } from './weightAxes';
 export { PREF_BLENDS, type PrefBlend } from './blend';
 export { checkPrefSplits, type PrefSplitProblem } from './splitCheck';
 export { prefOverridesOf, prefScopedDefault, prefScopesOf, type PrefScopeSpec } from './scopeSpec';
-export { pref } from './build';
+export { pref, type PrefLeafRest } from './build';
 export { prefsCss, prefsCssAttributes, type PrefsCssOptions, type PrefsCssSource } from './css';
 export { prefsDefaultsSource } from './defaultsSource';
 export { kitSettingsCssOptions } from './kitCss';
@@ -118,7 +119,7 @@ export { prefType } from './type';
 export { prefAsBox, prefGroupIsPage } from './groups';
 export { prefFitsHeading, prefHeadingKey } from './heading';
 export type { PrefBarLead, PrefBarOverflow, PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
-export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
+export type { PrefAtPath, PrefFieldsOf, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
 export { repairPrefValue, type PrefValidator } from './repair';
@@ -132,6 +133,7 @@ export {
   type PrefFunctionUnit,
   type PrefLinearUnit,
   type PrefNumberUnit,
+  type PrefUnitText,
   type ResolvedPrefUnit,
 } from './unit';
 export { prefLeafInScopes, scopedPrefUnit } from './scopedUnit';

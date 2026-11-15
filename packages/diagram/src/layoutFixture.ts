@@ -1,8 +1,8 @@
 /** Graphs for layout tests, built the way a scene builds one. */
 import { buildGraph, type Graph, type GraphNodeLike } from './graph';
 import type { LayoutResult } from './layout';
+import type { Rect } from '@weasel-js/geom';
 
-interface Rect { x: number; y: number; width: number; height: number }
 export type Box = readonly [x: number, y: number, width?: number, height?: number];
 
 const DEGENERATE: Rect = { x: 0, y: 0, width: 0, height: 0 };

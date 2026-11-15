@@ -11,13 +11,11 @@ import { fromAimPoint, groundAxes, groundHit, toAimPoint, type GroundAxes } from
 import { projectPoint, rayAt, rectOf, type Viewport3d } from './project';
 import { DEFAULT_UP } from './world';
 
-type Quad = readonly [Vec3, Vec3, Vec3, Vec3];
-
 /** The frustum a camera shows: its eye, and its near and far rectangles, corners clockwise from the top-left as seen. */
 export interface Frustum3d {
   eye: Vec3;
-  near: Quad;
-  far: Quad;
+  near: readonly [Vec3, Vec3, Vec3, Vec3];
+  far: readonly [Vec3, Vec3, Vec3, Vec3];
 }
 
 /** A kernel3d view's aim: the frustum its camera sees, with the viewport it was read from. */
@@ -52,8 +50,8 @@ function frustumOf(viewport: Viewport3d): Frustum3d {
     });
   return {
     eye,
-    near: at(camera.near) as unknown as Quad,
-    far: at(camera.far) as unknown as Quad,
+    near: at(camera.near) as unknown as Frustum3d['near'],
+    far: at(camera.far) as unknown as Frustum3d['far'],
   };
 }
 

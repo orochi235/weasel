@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
-  createScene, insertAction, RIGID_POSE_COMPOSITION,
-  type Bounds, type InsertDep, type InvocationCtx, type NodeId, type OngoingInvoker, type Scene, type SnapDep, type UnitScope,
+  createScene,
+  insertAction,
+  RIGID_POSE_COMPOSITION,
+  type Bounds,
+  type InsertDep,
+  type InvocationCtx,
+  type NodeId,
+  type OngoingInvoker,
+  type SnapDep,
+  type UnitScope,
+  type AnyScene,
 } from '@weasel-js/core';
 import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
 import { transformPoint, invert, rotateAboutPoint, type Affine } from '@weasel-js/geom';
@@ -20,7 +29,7 @@ function assembly() {
   const g = scene.add({ kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {}, units: MM });
   const inside = scene.add({ kind: 'mark', layer: 'default', parent: g, pose: { ...box }, data: {} }) as string;
   const outside = scene.add({ kind: 'mark', layer: 'default', pose: { ...box }, data: {} }) as string;
-  return { scene: scene as unknown as Scene<unknown, string, unknown>, g: g as string, inside, outside };
+  return { scene: scene as unknown as AnyScene, g: g as string, inside, outside };
 }
 
 describe('gridSnapSource — unit scopes', () => {
@@ -99,7 +108,7 @@ function framed(pose: Bounds & { rotation?: number }) {
   const inside = scene.add({
     kind: 'mark', layer: 'default', parent: g as NodeId, pose: { x: 0, y: 0, width: pose.width, height: pose.height }, data: {},
   }) as string;
-  return { scene: scene as unknown as Scene<unknown, string, unknown>, g, inside };
+  return { scene: scene as unknown as AnyScene, g, inside };
 }
 
 const through = (m: Affine, p: { x: number; y: number }) => {
@@ -137,7 +146,7 @@ describe('gridSnapSource — a container\'s own frame', () => {
       const g = scene.add({ kind: 'group', layer: 'default', pose: { x: at, y: at, width: 20, height: 20 }, data: {}, units: HALF });
       return scene.add({ kind: 'mark', layer: 'default', parent: g, pose: { x: 10 - at, y: 10 - at, width: 1, height: 1 }, data: {} }) as string;
     });
-    const s = scene as unknown as Scene<unknown, string, unknown>;
+    const s = scene as unknown as AnyScene;
     // On the containers' 5-unit lattice, the union box's left edge at 11.8
     // rounds to 10 and its bottom at 9.1 to 10.
     expectNear(moveBy({ sources: [grid], scene: s, ids }).by(1.8, -1.9).point, { x: 0, y: -1 });

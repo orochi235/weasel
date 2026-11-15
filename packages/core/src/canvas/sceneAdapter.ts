@@ -87,15 +87,6 @@ export interface SceneAdapterSelection {
   setSelection?(ids: string[]): void;
 }
 
-/** Sibling z-order surface used by reorder ops. Inlined here (rather than
- *  pulled from `core/ops/reorder` to avoid import cycles); the `null` parent
- *  channel addresses the root sibling list. */
-/** @internal */
-interface ReorderAdapter {
-  getChildren(parentId: string | null): string[];
-  setChildOrder(parentId: string | null, ids: string[]): void;
-}
-
 /** Everything the interaction layer can ask of a scene, as one type: the
  *  move, resize, rotate, selection, layer and reorder contracts combined.
  *  `<SceneCanvas>` synthesizes one of these, which is why most consumers never
@@ -107,7 +98,8 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & AreaSelectAdapter
   & LassoSelectAdapter
   & LayerEnumerableAdapter<TLayer>
-  & ReorderAdapter
+  // The sibling z-order reorder ops write; a `null` parent is the root list.
+  & { getChildren(parentId: string | null): string[]; setChildOrder(parentId: string | null, ids: string[]): void }
   & Partial<InsertAdapter<Node<TData, TLayer, TPose>>>
   // Optional on the underlying adapter contracts, but unconditionally
   // provided by a scene-backed adapter.

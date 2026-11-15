@@ -28,9 +28,10 @@ export {
   DepRegistryProvider, useDepRegistry, useOptionalDepRegistry, useDepSource,
 } from './interactions/actions/depRegistry';
 export type { DepRegistry } from './interactions/actions/depRegistry';
-export type { ScopeNode } from './interactions/actions/scopeNode';
+export type { ScopeNode, ScopeTree } from './interactions/actions/scopeNode';
+export type { ActionsNode } from './interactions/actions/ActionsProvider';
 export type { DepNode } from './interactions/actions/depNode';
-export type { LastOperationKeeper } from './interactions/actions/lastOperation';
+export type { LastOperationHost, LastOperationKeeper } from './interactions/actions/lastOperation';
 export {
   ActiveToolContextProvider, ActiveToolContextProviderIfRoot,
   useActiveToolContext, useOptionalActiveToolContext,

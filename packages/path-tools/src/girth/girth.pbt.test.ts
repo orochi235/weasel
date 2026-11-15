@@ -10,7 +10,7 @@ import fc from 'fast-check';
 import { anchorsToPath, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { vertexHalfWidths, type Stroke } from '@weasel-js/paint';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
-import { asNodeId, createScene, defaultCommitAdapter, IDENTITY_POSE_COMPOSITION, type Op, type Scene } from '@weasel-js/core';
+import { asNodeId, createScene, defaultCommitAdapter, IDENTITY_POSE_COMPOSITION, type Op, type AnyScene } from '@weasel-js/core';
 import { createGirthActions, GIRTH_CLEAR_ID, GIRTH_DRAG_ID, type GirthFocus } from './girthActions';
 import { anchorNormals } from './widthEdit';
 import { checkPath, densePath, penPath, runs, snap, tally, timeoutFor } from '../pbt.fixture';
@@ -23,7 +23,7 @@ function sceneOf(strokes: readonly { path: PolygonPath; width: number }[]) {
   for (const [k, { path, width }] of strokes.entries()) {
     scene.add({ id: asNodeId(`s${k}`), kind: 'mark', layer: 'main', pose: path, data: { stroke: { paint: { kind: 'solid', color: '#000' }, width } } });
   }
-  const loose = scene as unknown as Scene<unknown, string, unknown>;
+  const loose = scene as unknown as AnyScene;
   const applyOps = (ops: Op[], label = '') => { scene.applyBatch(ops, label, defaultCommitAdapter(loose)); };
   const deps = { scene: loose, applyOps, view: VIEW, selection: { get: () => [], set: () => {} } } as never;
   let focus: GirthFocus | null = null;

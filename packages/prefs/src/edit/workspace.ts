@@ -3,7 +3,8 @@ import { isPrefLeaf, isPrefSection } from '../index';
 import { bundleTree } from './bundleTree';
 import type { SchemaRoot } from './schemaEdit';
 
-interface AssetBase {
+/** The fields every asset in the editor's workspace carries. */
+export interface AssetBase {
   id: string;
   label: string;
   root: SchemaRoot;

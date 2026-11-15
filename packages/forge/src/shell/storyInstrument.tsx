@@ -8,16 +8,16 @@ import type { AnswerBook } from './answers';
 import { FrameView } from './FrameView';
 import { CaptureInputs } from './loupe/CaptureInputs';
 import { type GlobalDeclarations, withGlobals } from './globals';
-import { type Ready, readyKey } from './readyKey';
+import { type FrameReady, readyKey } from './readyKey';
 import { DEFAULT_LAYOUT } from '../protocol/messages';
 
 export interface StoryInstrumentOptions {
   entry: IndexEntry;
   /** The frame's `ready`, once one arrived; absent, the instrument is provisional. */
-  ready?: Ready;
+  ready?: FrameReady;
   answers: AnswerBook;
   frameUrl: string;
-  onReady: (entry: IndexEntry, ready: Ready) => void;
+  onReady: (entry: IndexEntry, ready: FrameReady) => void;
   /** Declared globals, which the schema gains as a `$globals` group of per-trial pins. */
   globals?: GlobalDeclarations;
   /** The workshop's frame setup, which applies the globals to a lens copy's host. */

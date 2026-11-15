@@ -16,6 +16,7 @@ import type { CommandPaint, CommandStroke, Stroke, StrokeTrim } from '@weasel-js
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from '../DrawCommand';
 import { glProgramHandle } from '../gpu/webgl/GlProgram';
+import { rendererParts } from '../rendererParts';
 
 const W = 200;
 const H = 160;
@@ -40,10 +41,10 @@ export function paint(commands: DrawCommand[], antialias: boolean, clip: boolean
   const gl = canvas.getContext('webgl2', { stencil: true, preserveDrawingBuffer: true, antialias })!;
   const r = new WeaselRenderer({ gl, width: W, height: H, dpr: 1, flattenTolerance: TOLERANCE });
   renderers.push(r);
-  if (!clip) Object.defineProperty(r._batchVariants(), 'trimClip', { value: false });
+  if (!clip) Object.defineProperty(rendererParts(r).batchVariants, 'trimClip', { value: false });
   let used = 0;
   const select = gl.useProgram.bind(gl);
-  const trimmed = glProgramHandle(r._batchVariants().trimmedRibbon());
+  const trimmed = glProgramHandle(rendererParts(r).batchVariants.trimmedRibbon());
   gl.useProgram = (p) => { if (p === trimmed) used++; select(p); };
   r.render(commands);
   const px = new Uint8Array(W * H * 4);

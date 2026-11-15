@@ -3,9 +3,7 @@
  * or the one `frame` gives it, folded through every container's frame. A node
  * a moving container carries moves with it though `frame` does not name it.
  */
-import { composeWorldPose, definesFrame, type Scene } from '@weasel-js/core';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import { composeWorldPose, definesFrame, type AnyScene } from '@weasel-js/core';
 
 /** `(id) => where it draws` with `frame`'s poses in place of the stored ones. */
 export function worldWith(sc: AnyScene, frame: ReadonlyMap<string, unknown> = new Map()): (id: string) => unknown {

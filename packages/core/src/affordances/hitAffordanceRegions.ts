@@ -114,14 +114,15 @@ export function transformOf(state: ChromeState, targetId: string | null): Target
 
 // ─── Shape resolution ───────────────────────────────────────────────────────
 
-type PointShape = Extract<AffordanceRegion['shape'], { kind: 'point' }>;
+/** A point region's shape: the `kind: 'point'` arm of `AffordanceRegion['shape']`. */
+export type PointRegionShape = Extract<AffordanceRegion['shape'], { kind: 'point' }>;
 
 /** Where a point region's hit square sits: its center in world coords, its
  *  turn on screen, its screen half-extent, and the span of the square that
  *  takes a press along each of its own axes (`[-half, half]` unless
  *  `cornerOf` cuts it). */
 export function pointRegionFrame(
-  shape: PointShape,
+  shape: PointRegionShape,
   xf: TargetTransform,
   view: View,
 ): { x: number; y: number; angle: number; half: number; u: [number, number]; v: [number, number] } {
@@ -147,7 +148,7 @@ export function pointRegionFrame(
 /** Whether a point region is live in `view`: false for an edge handle whose
  *  body is too small on screen to have room for one (`edgeOf`). A region that
  *  is not live is neither hit nor painted. */
-export function pointRegionLive(shape: PointShape, xf: TargetTransform, view: View): boolean {
+export function pointRegionLive(shape: PointRegionShape, xf: TargetTransform, view: View): boolean {
   return !shape.edgeOf || edgeHandlesFit(shape.edgeOf, xf, view.scale, shape.hitRadiusPx);
 }
 
@@ -158,7 +159,7 @@ const SMALL_BODY_RADII = 4;
 /** A point region's hit square as four screen-space corners, relative to its
  *  world center carried to the screen by `toScreen`. */
 export function pointRegionScreenQuad(
-  shape: PointShape,
+  shape: PointRegionShape,
   xf: TargetTransform,
   view: View,
   toScreen: (x: number, y: number) => [number, number],
@@ -174,7 +175,7 @@ export function pointRegionScreenQuad(
 
 /** A point region's anchor in world coords, its `standoff` applied. */
 export function pointRegionAnchor(
-  shape: PointShape,
+  shape: PointRegionShape,
   xf: TargetTransform,
   view: View,
 ): { x: number; y: number } {

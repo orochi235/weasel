@@ -6,7 +6,13 @@
  * core's delete would.
  */
 import {
-  commitDeleteToScene, createDeleteAction, type Action, type ActionDeps, type NodeId, type Scene, type SelectionApi,
+  commitDeleteToScene,
+  createDeleteAction,
+  type Action,
+  type ActionDeps,
+  type NodeId,
+  type SelectionApi,
+  type AnyScene,
 } from '@weasel-js/core';
 import { removeBox, removeParticipant } from './author';
 import { removeMarks, removeStep } from './authorSteps';
@@ -17,8 +23,6 @@ import type { SeqMarkRef, SequenceData } from './types';
 
 /** The action a click on a sequence part runs. */
 export const SELECT_SEQUENCE_PART_ACTION_ID = 'diagram.sequence.select';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** The id of the node that draws what `s` names, among its root's parts: a head, a message, a note, a fragment's box, a box. */
 export function sequencePartNodeOf(scene: AnyScene, s: Pick<SequenceScratch, 'root' | 'part' | 'id'>): string | null {

@@ -4,7 +4,7 @@ import { rowRun } from '../Along/rowRun';
 import { curvedGeometry, lineGeometry, type SliderGeometry } from './sliderGeometry';
 import { fractionToPosition } from './stops';
 import type { TrackCtx } from './types';
-import type { Box } from './useBoxes';
+import type { BoxSize } from './useBoxes';
 
 /** What picks a slider's geometry: the shape it lies along, how its thumbs fit the ends, and the elements it measures. */
 export interface SliderGeometryArgs {
@@ -40,7 +40,7 @@ export function useSliderGeometry(args: SliderGeometryArgs): { geometry: SliderG
 
 /** What a track painter is handed. With no shape the span runs along the rail, centered in the painted layer, from its
  *  right end under `'rtl'`. */
-export function trackCtxOf(run: TrackRun | null, track: Box | undefined, layer: Box | undefined, rail: Box | undefined, valueToFraction: (v: number) => number, direction: 'ltr' | 'rtl' = 'ltr'): TrackCtx {
+export function trackCtxOf(run: TrackRun | null, track: BoxSize | undefined, layer: BoxSize | undefined, rail: BoxSize | undefined, valueToFraction: (v: number) => number, direction: 'ltr' | 'rtl' = 'ltr'): TrackCtx {
   if (run) return { shape: run, trackWidth: run.length, valueToFraction, fractionToPosition, along: true };
   const w = layer?.width ?? 0;
   const h = layer?.height ?? 0;

@@ -10,15 +10,25 @@ import type { FlipAxis, FlipPivot } from './flip/helpers';
 import type { EditAnchorsParams } from './edit-anchors/params';
 import type { SetAnchorFieldParams } from './defaults/anchorFields';
 
-/** A point a spatial reference of `'pointer'` resolves to in place of the
- *  pointer dep, when the invocation has one of its own. */
-type AtPoint = { world: WorldPoint };
-
-type AlignParams = AtPoint & { to: AlignReference };
-type FlipParams = AtPoint & { axis: FlipAxis; pivot: FlipPivot };
-type DistributeParams = { mode: DistributeMode };
-type ReorderParams = { distance: 'adjacent' | 'extreme' };
-type NudgeParams = { magnitude: 'small' | 'big' };
+/** `align.*`'s params. */
+export type AlignParams = {
+  /** The point a reference of `'pointer'` resolves to in place of the pointer dep. */
+  world: WorldPoint;
+  to: AlignReference;
+};
+/** `flip`'s params. */
+export type FlipParams = {
+  /** The point a pivot of `'pointer'` resolves to in place of the pointer dep. */
+  world: WorldPoint;
+  axis: FlipAxis;
+  pivot: FlipPivot;
+};
+/** A `distribute.*` action's params: what it spaces evenly. */
+export type DistributeParams = { mode: DistributeMode };
+/** A reorder action's params: one step, or all the way to the front or back. */
+export type ReorderParams = { distance: 'adjacent' | 'extreme' };
+/** A nudge action's params: the small or the big step. */
+export type NudgeParams = { magnitude: 'small' | 'big' };
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {

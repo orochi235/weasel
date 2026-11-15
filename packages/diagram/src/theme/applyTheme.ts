@@ -2,7 +2,7 @@
  * The edits a theme makes to a scene, each one undo entry: applying a theme,
  * naming a shape's or connector's role, and setting a color by hand.
  */
-import type { Scene } from '@weasel-js/core';
+import type { AnyScene } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import { relayoutBodies, type RelayoutScene } from '../bodyRelayout';
 import { redrawSequences } from '../sequence/commit';
@@ -10,7 +10,6 @@ import { diagramThemeOf, themeDocValue } from './resolve';
 import { themeWrites, type ThemedScene } from './themeWrites';
 import { DIAGRAM_THEME_KEY, type DiagramTheme, type FontField, type StyleField } from './types';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type Paint = { paint?: Record<string, unknown> } & Record<string, unknown>;
 type Data = Record<string, unknown> & { diagram?: Record<string, unknown>; fill?: Paint; stroke?: Paint };
 

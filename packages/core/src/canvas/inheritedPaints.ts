@@ -4,11 +4,6 @@ import { inheritedPaintIn, inheritedPaintOf, sceneAncestors, type InheritedPaint
 import type { SceneViewDrawOne } from './nodeShapeTypes';
 import type { PaintBoundsFn } from './paintCull';
 
-/** The part of a scene the lookup reads. */
-type ParentLookup<TNode> = { get(id: NodeId): TNode | undefined };
-
-type PaintedNode = { data?: unknown; parent?: NodeId | null };
-
 export { inheritedPaintIn };
 
 const INHERITS_BOTH = { data: { fill: INHERIT, stroke: INHERIT } };
@@ -16,13 +11,13 @@ const INHERITS_BOTH = { data: { fill: INHERIT, stroke: INHERIT } };
 /** What an `'inherit'` fill and stroke on `node` would take from its
  *  containers in `scene`, whatever `node` holds now — what an editor offering
  *  the choice shows it would paint. */
-export function paintAbove<TNode extends PaintedNode>(scene: ParentLookup<TNode>, node: TNode): InheritedPaint {
+export function paintAbove<TNode extends { data?: unknown; parent?: NodeId | null }>(scene: { get(id: NodeId): TNode | undefined }, node: TNode): InheritedPaint {
   return inheritedPaintOf(INHERITS_BOTH, sceneAncestors((id: never) => scene.get(id), node));
 }
 
 /** {@link inheritedPaintIn} bound to `scene`. */
-export function sceneInheritedPaintOf<TNode extends PaintedNode>(
-  scene: ParentLookup<TNode>,
+export function sceneInheritedPaintOf<TNode extends { data?: unknown; parent?: NodeId | null }>(
+  scene: { get(id: NodeId): TNode | undefined },
 ): (node: TNode) => InheritedPaint | undefined {
   return (node) => inheritedPaintIn(scene, node);
 }
@@ -35,7 +30,7 @@ export function sceneInheritedPaintOf<TNode extends PaintedNode>(
  * passes the caller's `ctx` through untouched.
  */
 export function withInheritedPaints<TData, TLayer extends string, TPose>(
-  scene: ParentLookup<Node<TData, TLayer, TPose>>,
+  scene: { get(id: NodeId): Node<TData, TLayer, TPose> | undefined },
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>,
 ): SceneViewDrawOne<TData, TLayer, TPose> {
   const inheritedOf = sceneInheritedPaintOf(scene);
@@ -52,7 +47,7 @@ export function withInheritedPaints<TData, TLayer extends string, TPose>(
  * own scene walk with `defaultPaintBounds`, which cannot bound such a node alone.
  */
 export function withInheritedPaintBounds<TData, TLayer extends string, TPose>(
-  scene: ParentLookup<Node<TData, TLayer, TPose>>,
+  scene: { get(id: NodeId): Node<TData, TLayer, TPose> | undefined },
   paintBounds: PaintBoundsFn<Node<TData, TLayer, TPose>, TPose>,
 ): PaintBoundsFn<Node<TData, TLayer, TPose>, TPose> {
   const inheritedOf = sceneInheritedPaintOf(scene);

@@ -30,11 +30,13 @@ export interface SeqMessagePlace {
 }
 /** An activation bar, with what opened it and what closed it; one the diagram's end closed has no `closer`. */
 export interface SeqActivationPlace { participant: string; depth: number; box: SeqRect; opener: SeqMarkRef; closer?: SeqMarkRef }
+/** A note's box. */
 export interface SeqNotePlace { id: string; box: SeqRect }
 /** A fragment's box, its type tab (none for a `region`), and each section's top and label. */
 export interface SeqFragmentPlace {
   id: string; type: SeqFragment['type']; box: SeqRect; tab?: SeqRect; sections: { y: number; label?: SeqRect }[];
 }
+/** A box around some participants' columns (`SeqBox`): its outline and its label. */
 export interface SeqBoxPlace { id: string; box: SeqRect; label?: SeqRect }
 /** Where a dragged step dropped at `y` would go. */
 export interface SeqSlot { y: number; place: StepPlace }

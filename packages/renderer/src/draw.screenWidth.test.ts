@@ -16,6 +16,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { mat3 } from '@weasel-js/geom';
 import { _resetStrokeMeshCacheForTests, STROKE_CONFIGS_PER_PATH } from './cache/strokeMeshCache';
+import { rendererParts } from './rendererParts';
 
 const M = 0, L = 1;
 
@@ -57,7 +58,7 @@ describe('renderer — screen-pixel stroke widths', () => {
     _resetStrokeMeshCacheForTests();
     recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
-    Object.defineProperty(r._batchVariants(), 'cuts', { value: false });
+    Object.defineProperty(rendererParts(r).batchVariants, 'cuts', { value: false });
   });
 
   const paint = { color: '#222222' };

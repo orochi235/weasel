@@ -8,9 +8,9 @@ import {
   type InvocationCtx,
   type NodeId,
   type ResizeAnchor,
-  type Scene,
   type SnapDep,
   type SnapSource,
+  type AnyScene,
 } from '@weasel-js/core';
 import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
 import type { Guide } from '../guides/types';
@@ -18,8 +18,6 @@ import { alignmentSnapSource } from './alignment';
 import { spacingSnapSource } from './spacing';
 
 type Pose = { x: number; y: number; width: number; height: number; rotation?: number };
-type AnyScene = Scene<unknown, string, unknown>;
-
 // 100x40 turned a quarter turn about its center (50, 20): the ink spans
 // x 30..70, y -30..70. Its local bottom-right corner sits at world (30, 70),
 // and the local top-left corner, pinned by that handle, at world (70, -30).

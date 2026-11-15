@@ -20,3 +20,7 @@ export {
 } from './dynamic/dynamicAtlas';
 export { _resetFontOutlinesForTests } from './outline/outlineRegistry';
 export { _resetDomFacesForTests } from './domFace';
+export type { DynamicPage } from './dynamic/dynamicPages';
+export type {
+  GlyphRasterizer, RasterFaceMetrics, RasterizedColorGlyph, RasterizedGlyph,
+} from './dynamic/glyphRasterizer';

@@ -3,10 +3,8 @@
  * diamond for a g4 point, a square for a corner, and a half-disc for a point
  * beside a straight segment, its flat side toward the line.
  */
-import { circlePath, polygonFromPoints, squarePath, type PolygonPath, type SpiroKind } from '@weasel-js/geom';
+import { circlePath, polygonFromPoints, squarePath, type PolygonPath, type SpiroKind, type Point } from '@weasel-js/geom';
 import type { AnchorMarkerShape } from '@weasel-js/core';
-
-type Point = { x: number; y: number };
 
 const HALF_DISC_STEPS = 12;
 

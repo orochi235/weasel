@@ -4,8 +4,14 @@
  * kind a press reports.
  */
 import {
-  composeAffordanceLayer, composeWorldPose, scenePoseAdapter,
-  type Affordance, type AffordanceRegion, type RectPose, type RenderLayer, type Scene,
+  composeAffordanceLayer,
+  composeWorldPose,
+  scenePoseAdapter,
+  type Affordance,
+  type AffordanceRegion,
+  type RectPose,
+  type RenderLayer,
+  type AnyScene,
 } from '@weasel-js/core';
 import type { PlotPoint } from '../marks/types';
 import { plotMarkOf, plotRootOf, plotRootsIn } from '../plotScene';
@@ -32,8 +38,6 @@ export function plotHandleScratchOf(hit: { payload?: unknown } | null | undefine
   const p = hit?.payload as PlotHandleScratch | undefined;
   return p !== undefined && typeof p.rootId === 'string' && typeof p.markId === 'string' ? p : null;
 }
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** Where the plot root `rootId`'s corner stands in world coordinates. */
 export function plotOrigin(scene: AnyScene, rootId: string): PlotPoint {
@@ -84,6 +88,6 @@ function handleAffordance(scene: AnyScene): Affordance {
 }
 
 /** The handle layer, for a contribution's `layers` (as `plotEditing` carries it) or `registerLayer`. */
-export function plotHandleLayer(scene: Scene<unknown, string, unknown>): RenderLayer<unknown> {
+export function plotHandleLayer(scene: AnyScene): RenderLayer<unknown> {
   return composeAffordanceLayer(PLOT_HANDLE_LAYER_ID, 'Plot handles', [handleAffordance(scene)]) as unknown as RenderLayer<unknown>;
 }

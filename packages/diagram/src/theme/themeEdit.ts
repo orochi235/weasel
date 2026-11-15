@@ -5,16 +5,14 @@
 import { DIAGRAM_THEMES } from './themes';
 import { DIAGRAM_ROLES, type DiagramTheme } from './types';
 
-type BoxField = 'fill' | 'stroke' | 'text';
-
 /** Where one value sits in a {@link DiagramTheme}. */
 export type ThemePath =
-  | readonly ['roles', string, BoxField]
+  | readonly ['roles', string, 'fill' | 'stroke' | 'text']
   | readonly ['edge', 'stroke']
   | readonly ['label', 'fill']
-  | readonly ['container', BoxField]
-  | readonly ['lane', 'header', BoxField]
-  | readonly ['lane', 'bodies', number, BoxField]
+  | readonly ['container', 'fill' | 'stroke' | 'text']
+  | readonly ['lane', 'header', 'fill' | 'stroke' | 'text']
+  | readonly ['lane', 'bodies', number, 'fill' | 'stroke' | 'text']
   | readonly ['page']
   | readonly ['font', 'family']
   | readonly ['font', 'size']

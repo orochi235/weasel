@@ -4,8 +4,16 @@ import {
 } from '@weasel-js/geom';
 import type { PlaneWarp } from '@weasel-js/geom/warp';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
-import { IDENTITY_POSE_COMPOSITION,
-  asNodeId, commitOps, createScene, createTransformOp, type RectPose, resolveEditablePathOf, type Scene, selectedPathNodes,
+import {
+  IDENTITY_POSE_COMPOSITION,
+  asNodeId,
+  commitOps,
+  createScene,
+  createTransformOp,
+  type RectPose,
+  resolveEditablePathOf,
+  selectedPathNodes,
+  type AnyScene,
 } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp } from './pathWarp';
 import { splitByWarp } from './warpTargets';
@@ -14,7 +22,7 @@ import {
   configureWarpAction, createAddPinAction, createWarpDragAction, expandWarpAction, type WarpHandleScratch,
 } from './warpActions';
 
-type S = Scene<unknown, string, unknown>;
+type S = AnyScene;
 
 /** A 100×100 square stored on `data.path`, at (`x`, `y`). */
 function makeScene(x = 0, y = 0): S {

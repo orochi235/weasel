@@ -14,7 +14,6 @@ import {
   type NodeId,
   type OngoingHandle,
   type RectPose,
-  type Scene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { grabPortAction, grabPortBindings } from '../connect';
@@ -23,7 +22,7 @@ import { LANE_AFFORDANCE_KIND, laneLayer, laneScratchOf, poolsOf, type LaneLayer
 import { MIN_LANE_SIZE } from './laneStack';
 import { titleInFrame } from './titlePose';
 import { diagramContainerOf, titleIdOf } from './trait';
-import type { ImmediateParams } from '@weasel-js/core';
+import type { ImmediateParams, AnyScene } from '@weasel-js/core';
 
 /** The action that drags a lane's boundary. */
 export const LANE_RESIZE_ACTION_ID = 'diagram.resizeLane';
@@ -32,8 +31,6 @@ export const ADD_LANE_ACTION_ID = 'diagram.addLane';
 /** The command that removes the selected containers and keeps their members. */
 export const RELEASE_MEMBERS_ACTION_ID = 'diagram.releaseMembers';
 const GRAB_LANE_ACTION_ID = 'diagram.grabLane';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** A lane resized: its new size along its pool's stack. */
 export interface LaneResize {

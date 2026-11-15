@@ -3,14 +3,12 @@ import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { meanScale, pathToAnchors, pxReach, type PolygonPath, type Point } from '@weasel-js/geom';
 import type { VertexWidth } from '@weasel-js/paint';
-import { commitOps, reshapeTo, type Scene } from '@weasel-js/core';
+import { commitOps, reshapeTo, type AnyScene } from '@weasel-js/core';
 import {
   anchorNormals, draggedWidth, gripAt, isWidthSet, movedSide, storedWith, widthEdgeAt, widthPointNear, widthsOf,
   widthTargetAt, type WidthGrip, type WidthTarget,
 } from './widthEdit';
 import type { ImmediateParams } from '@weasel-js/routing';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** What the Girth tool's overlay shows, in world space: the anchors of the
  *  stroke last hovered or pressed on, each with its unit normal toward its

@@ -3,14 +3,6 @@ import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDe
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { WorldPoint } from '@weasel-js/routing';
 
-/** @internal */
-interface HitAdapter<TNode extends { id: string }, TPose> {
-  getNode: (id: string) => TNode | undefined;
-  getNodes: () => TNode[];
-  getPose: (id: string) => TPose;
-  getParent: (id: string) => string | null;
-}
-
 /** Options for `nestedHitTester`. */
 export interface NestedHitOptions<TNode extends { id: string }, TPose> {
   /** Compose a child's local pose into world coords given its parent's world
@@ -45,7 +37,12 @@ export interface NestedHitTester {
  *  top-level ancestor, and alt-clicking descends one level at a time toward
  *  the leaf actually under the pointer. */
 export function nestedHitTester<TNode extends { id: string }, TPose>(
-  adapter: HitAdapter<TNode, TPose>,
+  adapter: {
+    getNode: (id: string) => TNode | undefined;
+    getNodes: () => TNode[];
+    getPose: (id: string) => TPose;
+    getParent: (id: string) => string | null;
+  },
   opts: NestedHitOptions<TNode, TPose>,
 ): NestedHitTester {
   const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;

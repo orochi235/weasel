@@ -17,7 +17,7 @@ import { applyGlobalsTo } from './hostConditions';
 import { useKeptFrame } from './keptFrame';
 import { scrollOf } from './loupe/frameScroll';
 import { type LensFrameCopy, LiveFrameCopies, useCopyConfig } from './loupe/LiveCopies';
-import type { Ready } from './readyKey';
+import type { FrameReady } from './readyKey';
 import { TrialFramesContext } from './trialFrames';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
 
@@ -25,7 +25,7 @@ export interface FrameViewProps {
   entry: IndexEntry;
   frameUrl: string;
   answers: AnswerBook;
-  onReady: (entry: IndexEntry, ready: Ready) => void;
+  onReady: (entry: IndexEntry, ready: FrameReady) => void;
   /** `readyKey` of the ready this view's instrument was built from; null while the instrument is provisional. */
   descriptionKey: string | null;
   ctx: RenderContext<unknown, unknown>;

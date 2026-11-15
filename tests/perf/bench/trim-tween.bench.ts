@@ -14,6 +14,7 @@ import type { CommandPaint, CommandStroke } from '@weasel-js/paint';
 import { markerDrawCommands, WeaselRenderer, type DrawCommand } from '@weasel-js/renderer';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { createGLRecorder } from '../../../packages/renderer/src/testing/glRecorder';
+import { rendererParts } from '../../../packages/renderer/src/rendererParts';
 import { group } from './group';
 
 function wave(n: number): PolygonPath {
@@ -43,7 +44,7 @@ function tween(stroke: CommandStroke, rebuilt: boolean): () => void {
   const path = wave(1000);
   const recorder = createGLRecorder();
   const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
-  if (rebuilt) Object.defineProperty(r._batchVariants(), 'trimClip', { value: false });
+  if (rebuilt) Object.defineProperty(rendererParts(r).batchVariants, 'trimClip', { value: false });
   let f = 0;
   return () => {
     recorder.reset();

@@ -6,6 +6,7 @@ import { registerProgram, _resetProgramRegistryForTests } from './shaders/regist
 import { mat3 } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
 import { stencilledEvenOdd } from './testing/stencilledEvenOdd';
+import { rendererParts } from './rendererParts';
 
 const MINIMAL_FRAG = `#version 300 es
 precision highp float;
@@ -106,7 +107,7 @@ describe('WeaselRenderer context loss', () => {
 
   it('frees GLMeshCache transient resources at the end of render()', () => {
     const r = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 100, dpr: 1 });
-    const cache = r._meshCache();
+    const cache = rendererParts(r).meshCache;
     // Simulate a stroke draw allocating a transient ribbon mesh.
     cache.uploadTransient({
       vertices: new Float32Array([0, 0, 1, 0, 1, 1]),
@@ -128,7 +129,7 @@ describe('WeaselRenderer context loss', () => {
 
   it('drains GLMeshCache pending deletes at the start of render()', () => {
     const r = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 100, dpr: 1 });
-    const cache = r._meshCache();
+    const cache = rendererParts(r).meshCache;
     cache._enqueueDeleteForTest({
       geometry: { kind: 'geometry', indexFormat: 'uint32', vao: { __id: 'vao_z' }, indexBuffer: {} },
       vbo: { kind: 'vertex', handle: { __id: 'vbo_z' } },

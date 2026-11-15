@@ -55,7 +55,7 @@ export interface AvoidLabel {
  */
 export interface AvoidObstacle {
   id: string;
-  box: Box;
+  box: Bounds;
   kind: 'shape' | 'region' | 'label';
   /** For a region: the shapes inside it, at any depth. */
   members?: ReadonlySet<string>;

@@ -13,14 +13,13 @@ import { inheritedPaintOf, inheritsPaint } from 'core/scene/inheritedPaint';
 import { nodesAsShown } from 'core/scene/nodeAsShown';
 import { nodeMemoGeneration } from 'core/scene/nodeMemo';
 import { outsideGeneration } from 'core/scene/outsideReads';
-import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { scenePaintedPoseOf } from '../derivedPath';
 import type { PickBroad, PickCandidate } from '../pickWalk';
 import { sceneParentsOf, sceneShownPathOf } from '../scenePickReads';
 import { nodeBroadBox, type Box2 } from './nodeBroadBox';
+import type { AnyScene } from 'core/scene/anyScene';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type Order = readonly PickCandidate<unknown>[];
 
 export interface ScenePickIndex {

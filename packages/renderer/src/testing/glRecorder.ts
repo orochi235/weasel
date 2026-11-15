@@ -8,6 +8,11 @@
  * correctness check: it sees the call sequence, never a pixel.
  */
 
+import { paintTextures } from '../draw/paintBind';
+import { webglDevice } from '../gpu/webgl/WebGLDevice';
+import type { PaintBindContext } from '../paintKinds';
+
+/** One recorded call on the context: its name, its arguments, and what it returned. */
 export interface GLCall {
   readonly name: string;
   readonly args: readonly unknown[];
@@ -211,7 +216,11 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
 }
 
 /** The GL program and uniform locations behind a renderer program, for a
- *  test matching them against recorded calls, and the device over a
- *  recorder, for a test driving the layer itself. */
+ *  test matching them against recorded calls. */
 export { glProgramHandle, glUniformLocation } from '../gpu/webgl/GlProgram';
-export { webglDevice } from '../gpu/webgl/WebGLDevice';
+
+/** A paint kind's texture calls over recorded `gl`, as the renderer binds them, for a test driving a kind's
+ *  `bind` without a renderer. */
+export function recordedPaintTextures(gl: WebGL2RenderingContext): Pick<PaintBindContext, 'createTexture' | 'deleteTexture'> {
+  return paintTextures(webglDevice(gl));
+}

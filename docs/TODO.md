@@ -273,14 +273,6 @@ Owner tags, after the priority (2026-10-26):
   a grid cell off the container's painted edge. Children still compose from the stored pose, and
   picking reads it by design. Closes when the maintainer rules whether a clip follows the drawn pose,
   and the walk does what was ruled.
-- **(P3) [agent] draw can strand a newer session in localStorage behind an older one in IndexedDB.**
-  `openSession` (`apps/draw/src/openSession.ts`) moves a localStorage session across only when
-  IndexedDB holds no scene. A visit where IndexedDB would not open keeps editing in localStorage, so
-  the next visit that opens it shows the older IndexedDB drawing and never surfaces the newer one
-  (it stays in localStorage, unread). Preferring localStorage outright is wrong too: a move whose
-  localStorage delete did not land would later overwrite newer IndexedDB edits. Needs each copy to
-  say when it was written. Found by reading, not reproduced (2026-11-14). Closes when the newer of
-  the two copies opens, with a test for each order.
 
 ---
 
@@ -316,7 +308,10 @@ Owner tags, after the priority (2026-10-26):
   placement in a `flushSync` of its own; it now commits a frame's tiles together, and
   `AnnotationOverlay.many.browser.test.tsx` mounts 100 (2026-11-12). iconfab's Review page
   (`~/src/iconfab/apps/lab/src/review/Review.tsx`, `TARGET_BATCH`) and its README's "Known problems" still work
-  around it, on labkit 1.19.0 from npm. Closes when a labkit release carries the fix and iconfab drops the batching.
+  around it, on labkit 1.19.0 from npm. The fix (7e27df1ba) landed after 1.19.1, so no release has it. iconfab's
+  branch `drop-annotation-batching` (worktree `~/src/iconfab-wt/drop-annotation-batching`, 91f8293) drops the
+  batching and typechecks; at release, bump its labkit pin, run `apps/lab/e2e/review.spec.ts`, and merge it
+  (2026-11-14). Closes when a labkit release carries the fix and iconfab drops the batching.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
@@ -565,15 +560,6 @@ only story runner in the repo.
 ---
 
 ## Release-gate & build hygiene
-
-- **(P2) [agent] Public declarations name types their package does not export.** A consumer can pass a value of
-  one but cannot annotate, extend or re-export it: core's `SceneCanvasProps` is built from `SceneCanvasPointerProps`
-  and four more unexported pieces, `Scene` from `SceneChanges` and its siblings, diagram's `SequenceLayout` from
-  seven `Seq*Place` types. `npm run check:unnameable` reads the built `.d.ts` and fails on a new one; the rest are in
-  `scripts/check-unnameable-types.allow.json`. Each is an export to add or a type to inline, and core's typedoc
-  config already rules a few internal on purpose (`HitAdapter`, `ReorderAdapter`), which inlining or a narrower
-  public type answers. Filed 2026-11-14 at 167 names, too many export calls for the audit pass that found them.
-  Closes when the allowlist is empty.
 
 - **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
   once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second

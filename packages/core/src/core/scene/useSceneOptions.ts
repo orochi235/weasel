@@ -9,10 +9,8 @@ import type { AddNodeSpec, RectPose, RegisteredOp, SceneRegistry } from './types
  *  holding, and how its history behaves. A scene whose `TPose` is not a
  *  {@link RectPose} has no default composition and must name one. */
 export type UseSceneOptions<TData, TLayer extends string, TPose = RectPose> =
-  SceneOptions<TData, TLayer, TPose> & NamesComposition<TPose>;
-
-/** `composition` is required unless `TPose` is a rect the default can fold. */
-type NamesComposition<TPose> = [TPose] extends [RectPose] ? unknown : { composition: PoseComposition<TPose> };
+  & SceneOptions<TData, TLayer, TPose>
+  & ([TPose] extends [RectPose] ? unknown : { composition: PoseComposition<TPose> });
 
 /** Everything `useScene` takes, with `composition` optional. */
 export interface SceneOptions<TData, TLayer extends string, TPose = RectPose> {

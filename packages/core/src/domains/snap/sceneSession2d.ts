@@ -2,7 +2,6 @@ import type { ResizeAnchor, WorldPoint } from '@weasel-js/routing';
 import type { View } from '@weasel-js/geom';
 import type { DebugSink } from '@weasel-js/routing';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { Scene } from 'core/scene/types';
 import type { PlaneMap } from 'core/viewport/parallax';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { DrawnBoxes, DrawnBoxesSource } from 'interactions/actions/drawnBoxes';
@@ -15,8 +14,7 @@ import { buildProbes, subjectOf } from './probes2d';
 import { sceneProbeReads, sceneRotations, sceneSnapFrames, withSubtrees } from './sceneReads';
 import { createSession2d, DEFAULT_SNAP_PX } from './session2d';
 import type { SnapAnchors, SnapGesture, SnapSource } from './types';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** What a session over a scene runs on: its subject's probes and boxes come
  *  from `scene`, measured through `boxes`. */

@@ -8,8 +8,7 @@ import { rulersGuideAction, rulersPointerAction } from './actions';
 import { rulersHitLayer } from './hit';
 import { rulersLayout, type RulersLayout, type RulersState } from './layout';
 import { documentRulerFrame } from './reading';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 /** Options for {@link createRulers}. */
 export interface RulersOptions {

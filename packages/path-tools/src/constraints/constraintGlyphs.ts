@@ -11,12 +11,7 @@
  */
 
 import type { DrawCommand } from '@weasel-js/renderer';
-import { constraintFits, PathBuilder, type AnchorPair, type PathConstraint } from '@weasel-js/geom';
-
-interface Pt {
-  x: number;
-  y: number;
-}
+import { constraintFits, PathBuilder, type AnchorPair, type PathConstraint, type Point } from '@weasel-js/geom';
 
 /** How far a mark sits off its segment or anchor. */
 const OFFSET = 12;
@@ -29,25 +24,25 @@ export interface ConstraintGlyphStyle {
   conflictStroke: string;
 }
 
-const at = (p: Pt, d: Pt, k: number): Pt => ({ x: p.x + d.x * k, y: p.y + d.y * k });
+const at = (p: Point, d: Point, k: number): Point => ({ x: p.x + d.x * k, y: p.y + d.y * k });
 
-function line(b: PathBuilder, p: Pt, q: Pt): void {
+function line(b: PathBuilder, p: Point, q: Point): void {
   b.moveTo(p.x, p.y).lineTo(q.x, q.y);
 }
 
-function centroidOf(points: readonly Pt[]): Pt {
+function centroidOf(points: readonly Point[]): Point {
   const n = points.length || 1;
   return { x: points.reduce((s, p) => s + p.x, 0) / n, y: points.reduce((s, p) => s + p.y, 0) / n };
 }
 
 /** The unit vector from `p` toward `to`, or straight down when they meet. */
-function toward(p: Pt, to: Pt): Pt {
+function toward(p: Point, to: Point): Point {
   const len = Math.hypot(to.x - p.x, to.y - p.y);
   return len > 1e-9 ? { x: (to.x - p.x) / len, y: (to.y - p.y) / len } : { x: 0, y: 1 };
 }
 
 /** The segment's midpoint, direction, the inward normal its marks sit along, and where its mark sits. */
-function frameOf(points: readonly Pt[], [i, j]: AnchorPair, inside: Pt) {
+function frameOf(points: readonly Point[], [i, j]: AnchorPair, inside: Point) {
   const a = points[i];
   const c = points[j];
   const len = Math.hypot(c.x - a.x, c.y - a.y);
@@ -72,7 +67,7 @@ function segmentsOf(c: PathConstraint): readonly AnchorPair[] {
 }
 
 /** Where `c`'s marks sit, one point per mark. */
-function markCenters(points: readonly Pt[], c: PathConstraint, inside: Pt): Pt[] {
+function markCenters(points: readonly Point[], c: PathConstraint, inside: Point): Point[] {
   if (c.kind === 'fixed' || c.kind === 'tangent' || c.kind === 'onPath' || c.kind === 'coincident') {
     const p = points[c.kind === 'coincident' ? c.anchors[0] : c.anchor];
     return [at(p, toward(p, inside), c.kind === 'fixed' ? 11 : 13)];
@@ -83,7 +78,7 @@ function markCenters(points: readonly Pt[], c: PathConstraint, inside: Pt): Pt[]
   });
 }
 
-function letter(b: PathBuilder, o: Pt, which: 'H' | 'V'): void {
+function letter(b: PathBuilder, o: Point, which: 'H' | 'V'): void {
   if (which === 'H') {
     line(b, { x: o.x - 3, y: o.y - 4 }, { x: o.x - 3, y: o.y + 4 });
     line(b, { x: o.x + 3, y: o.y - 4 }, { x: o.x + 3, y: o.y + 4 });
@@ -93,7 +88,7 @@ function letter(b: PathBuilder, o: Pt, which: 'H' | 'V'): void {
   }
 }
 
-function segmentMark(b: PathBuilder, points: readonly Pt[], kind: PathConstraint['kind'], s: AnchorPair, inside: Pt): void {
+function segmentMark(b: PathBuilder, points: readonly Point[], kind: PathConstraint['kind'], s: AnchorPair, inside: Point): void {
   const { m, u, n, o } = frameOf(points, s, inside);
   switch (kind) {
     case 'parallel':
@@ -115,7 +110,7 @@ function segmentMark(b: PathBuilder, points: readonly Pt[], kind: PathConstraint
   }
 }
 
-function glyphOf(b: PathBuilder, points: readonly Pt[], c: PathConstraint, inside: Pt): void {
+function glyphOf(b: PathBuilder, points: readonly Point[], c: PathConstraint, inside: Point): void {
   switch (c.kind) {
     case 'fixed': {
       // A pin standing on the anchor, pointing at it from inside the shape.
@@ -162,12 +157,12 @@ function glyphOf(b: PathBuilder, points: readonly Pt[], c: PathConstraint, insid
   }
 }
 
-function circle(b: PathBuilder, o: Pt, r: number): void {
+function circle(b: PathBuilder, o: Point, r: number): void {
   b.moveTo(o.x + r, o.y);
   for (let k = 1; k <= 12; k++) b.lineTo(o.x + r * Math.cos((k * Math.PI) / 6), o.y + r * Math.sin((k * Math.PI) / 6));
 }
 
-const xy = (p: Pt): [number, number] => [p.x, p.y];
+const xy = (p: Point): [number, number] => [p.x, p.y];
 
 /**
  * Draw commands marking `constraints` on anchors at the screen positions
@@ -177,7 +172,7 @@ const xy = (p: Pt): [number, number] => [p.x, p.y];
  * nothing.
  */
 export function constraintGlyphs(
-  points: readonly Pt[],
+  points: readonly Point[],
   constraints: readonly PathConstraint[],
   unsatisfied: ReadonlySet<number>,
   style: ConstraintGlyphStyle,
@@ -200,9 +195,9 @@ export function constraintGlyphs(
  * for marks drawn on anchors at the screen positions `points`; -1 for none.
  */
 export function constraintMarkAt(
-  points: readonly Pt[],
+  points: readonly Point[],
   constraints: readonly PathConstraint[],
-  p: Pt,
+  p: Point,
   radius: number,
 ): number {
   const inside = centroidOf(points);

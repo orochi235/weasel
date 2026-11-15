@@ -27,7 +27,7 @@ import { anchorCount, buildPath, freshScratch, resetScratch, startSubpath } from
  * sets `outHandle` to the drag point and `inHandle` to its mirror through
  * the anchor, which shapes the segment coming into it.
  */
-export interface PenAnchor {
+export interface PenDraftAnchor {
   x: number;
   y: number;
   outHandle?: { x: number; y: number };
@@ -41,7 +41,7 @@ export interface PenAnchor {
 /** One in-progress subpath of the pen tool: its anchors so far, and whether
  *  the user has closed it. */
 export interface PenSubpath {
-  anchors: PenAnchor[]; // LOCAL PenAnchor — in-progress
+  anchors: PenDraftAnchor[];
   closed: boolean;
   /** Begun by the press right after one that closed and committed a path:
    *  the second click of a double click on the first anchor, which the

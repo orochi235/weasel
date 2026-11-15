@@ -4,10 +4,8 @@
  * neither locked nor hidden.
  */
 import type { ActionDeps } from '@weasel-js/routing';
-import { type NodeId, type PathNode, pathNodesOf, type Scene } from '@weasel-js/core';
+import { type NodeId, type PathNode, pathNodesOf, type AnyScene } from '@weasel-js/core';
 import { leavesOf, scenePathNodes } from '../shared/scenePaths';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** The paths a stroke pushes and the text it may convert to push. */
 export interface KneadTargets {

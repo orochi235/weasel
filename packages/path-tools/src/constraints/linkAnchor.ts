@@ -9,12 +9,28 @@ import {
   type OngoingInvoker, resolveParams,
 } from '@weasel-js/routing';
 import {
-  editAnchorSetTracked, pathAnchorPoints, pathToAnchors, segmentAt, segmentBetween, translateAnchorBy,
-  type AnchorSet, type PathConstraint, type PolygonPath,
+  editAnchorSetTracked,
+  pathAnchorPoints,
+  pathToAnchors,
+  segmentAt,
+  segmentBetween,
+  translateAnchorBy,
+  type AnchorSet,
+  type PathConstraint,
+  type PolygonPath,
+  type Point,
 } from '@weasel-js/geom';
 import {
-  annotationLayerIds, commitOps, createInsertOp, editAnchorsAction, pathEditPathOf, pathOperationTags,
-  type EditAnchorsDep, type NodeId, type Scene, type SceneNode,
+  annotationLayerIds,
+  commitOps,
+  createInsertOp,
+  editAnchorsAction,
+  pathEditPathOf,
+  pathOperationTags,
+  type EditAnchorsDep,
+  type NodeId,
+  type SceneNode,
+  type AnyScene,
 } from '@weasel-js/core';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
@@ -40,9 +56,6 @@ export const LINK_ANCHOR_PARAMS = pref.group(LABEL, {
 
 const reachOf = (params: LinkAnchorParams | undefined): number =>
   typeof params?.reachPx === 'number' && params.reachPx > 0 ? params.reachPx : DEFAULT_REACH_PX;
-
-type Point = { x: number; y: number };
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** What the released anchor lands on: another node, the constraint tying it there in that node's own numbering, and the point. */
 export interface LinkTarget {

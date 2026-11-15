@@ -5,16 +5,14 @@ import {
   type OriginProjection,
   type PlaneMap,
   type ResizeAnchor,
-  type Scene,
   type SnapGesture,
   type SnapMods,
   type SnapOutcome,
   type SnapSource,
+  type AnyScene,
 } from '@weasel-js/core';
 import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
-
-type Point = { x: number; y: number };
-type AnyScene = Scene<unknown, string, unknown>;
+import type { Point } from '@weasel-js/geom';
 
 export const FREE: SnapMods = { suspend: false, constrain: false };
 

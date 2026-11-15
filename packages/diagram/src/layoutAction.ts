@@ -15,6 +15,7 @@ import {
   type Action,
   type PoseDescriptor,
   type Scene,
+  type AnyScene,
 } from '@weasel-js/core';
 import { force } from './force';
 import { buildGraph, type GraphSource } from './graph';
@@ -96,7 +97,7 @@ export function layoutPoses<TPose>(
   result: LayoutResult,
   geometry: PoseDescriptor<TPose> = AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>,
 ): Map<string, TPose> {
-  const sc = scene as unknown as Scene<unknown, string, unknown>;
+  const sc = scene as unknown as AnyScene;
   const { compose, decompose } = sc.composition;
   const stored = scenePoseAdapter(sc);
   const out = new Map<string, TPose>();

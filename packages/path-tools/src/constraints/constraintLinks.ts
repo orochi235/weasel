@@ -28,8 +28,14 @@ import {
   registerNodeShape,
   resolveEditablePathOf,
   shownNodeOf,
-  type AddNodeSpec, type NodeId, type NodeShapeEntry, type PathEditFinishCtx, type PathEditOther,
-  type PathTransformFinishCtx, type RectPose, type Scene,
+  type AddNodeSpec,
+  type NodeId,
+  type NodeShapeEntry,
+  type PathEditFinishCtx,
+  type PathEditOther,
+  type PathTransformFinishCtx,
+  type RectPose,
+  type AnyScene,
 } from '@weasel-js/core';
 import { deepEqual } from '@weasel-js/registry';
 import { constraintAxisOf, constraintsOf } from './pathConstraints';
@@ -216,10 +222,8 @@ export interface BrokenConstraintLink {
   points: ConstraintPoint[] | null;
 }
 
-type LinkScene = Pick<Scene<unknown, string, unknown>, 'get'>;
-
 /** Link node `id` when its constraint does not hold, else null — null too when `id` is no link. */
-export function brokenConstraintLink(scene: LinkScene, id: string): BrokenConstraintLink | null {
+export function brokenConstraintLink(scene: Pick<AnyScene, 'get'>, id: string): BrokenConstraintLink | null {
   const link = linkAt({ node: (nid) => scene.get(nid as NodeId) ?? null, dependents: () => [] }, id);
   if (!link) return null;
   const paths = link.nodes.map((n) => resolveEditablePathOf(shownNodeOf(scene, n)));
@@ -229,7 +233,7 @@ export function brokenConstraintLink(scene: LinkScene, id: string): BrokenConstr
 }
 
 /** Every link in `scene` whose constraint does not hold. */
-export function brokenConstraintLinks(scene: LinkScene & Pick<Scene<unknown, string, unknown>, 'renderOrderNodes'>): BrokenConstraintLink[] {
+export function brokenConstraintLinks(scene: Pick<AnyScene, 'get' | 'renderOrderNodes'>): BrokenConstraintLink[] {
   return [...scene.renderOrderNodes()].flatMap((n) => {
     const broken = constraintLinkOf(n.data) ? brokenConstraintLink(scene, n.id) : null;
     return broken ? [broken] : [];
@@ -237,7 +241,7 @@ export function brokenConstraintLinks(scene: LinkScene & Pick<Scene<unknown, str
 }
 
 /** The ids of the link nodes tying `id` whose constraint does not hold in the nodes' committed paths. */
-export function constraintLinkConflictsOf(scene: Pick<Scene<unknown, string, unknown>, 'get' | 'removalClosure'>, id: string): string[] {
+export function constraintLinkConflictsOf(scene: Pick<AnyScene, 'get' | 'removalClosure'>, id: string): string[] {
   if (!scene.get(id as NodeId)) return [];
   return scene.removalClosure([id as NodeId]).flatMap((lid) => {
     const broken = lid === id ? null : brokenConstraintLink(scene, lid);

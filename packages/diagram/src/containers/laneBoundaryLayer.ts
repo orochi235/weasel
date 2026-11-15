@@ -20,7 +20,7 @@ import {
   type NodeId,
   type RectPose,
   type RenderLayer,
-  type Scene,
+  type AnyScene,
 } from '@weasel-js/core';
 import { lanesOf, poolAxisOf } from './containerStencils';
 import { diagramContainerOf } from './trait';
@@ -43,8 +43,6 @@ export function laneScratchOf(hit: { payload?: unknown } | null | undefined): La
   const payload = hit?.payload as LaneScratch | undefined;
   return payload !== undefined && typeof payload.poolId === 'string' ? payload : null;
 }
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** A pool as the affordances see it: its box, the axis it stacks along, and its lanes in order.
  *  `pose` is as stored, `at` where it draws. */

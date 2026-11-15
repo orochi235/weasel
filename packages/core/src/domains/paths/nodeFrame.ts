@@ -16,13 +16,11 @@ export interface NodeFrame {
   local(world: unknown): unknown;
 }
 
-type FramedShape = { id: string; parent?: string | null; pose: unknown };
-
 /** `node`'s frame, or null where its stored pose is already world: a root, or
  *  a polygon pose, which draws as stored. */
 export function nodeFrameOf(
   scene: Pick<Scene<unknown, string, unknown>, 'get'>,
-  node: FramedShape | null | undefined,
+  node: { id: string; parent?: string | null; pose: unknown } | null | undefined,
 ): NodeFrame | null {
   if (node?.parent == null || !isRectPose(node.pose)) return null;
   const frame = scenePoseFrame(scene as Scene<unknown, string, unknown>);

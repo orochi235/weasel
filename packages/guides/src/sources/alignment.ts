@@ -4,8 +4,8 @@ import { stretchSpan } from '../guides/alignment/match';
 import type { Guide } from '../guides/types';
 import { axisLine, landedBox, landedShift } from './lines';
 import { cachedPerScene, type TargetFilter } from './targets';
+import type { Point } from '@weasel-js/geom';
 
-type Point = { x: number; y: number };
 type Axis = 'x' | 'y';
 
 /** Options for `alignmentSnapSource`. */

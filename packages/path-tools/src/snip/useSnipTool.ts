@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { Action, ToolKeybinding } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
-import { type Scene, type Tool } from '@weasel-js/core';
+import { type Tool, type AnyScene } from '@weasel-js/core';
 import { planSnip } from './snip';
 import { useStrokeClickTool, type StrokeClickExtras, type StrokeClickToolOptions } from '../shared/strokeClickTool';
 import { createPiecePreview } from './piecePreview';
@@ -32,7 +32,7 @@ export function useSnipTool(options: UseSnipToolOptions = {}): Tool {
         timing: 'immediate',
         run: (deps, params) => {
           const plan = deps.scene ? planSnip(deps, params) : null;
-          const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+          const scene = deps.scene as AnyScene | undefined;
           preview.show(plan && scene ? { path: plan.result.removed as PolygonPath, scene } : null);
         },
       },

@@ -10,7 +10,17 @@ import {
 import { pathWarpMap, warpControls, type PathWarp } from '@weasel-js/geom/warp';
 import type { DrawCommand } from '@weasel-js/renderer';
 import {
-  type Affordance, type AffordanceRegion, type ChromeState, composeAffordanceLayer, type CreateOutlinesAdapter, DEFAULT_OVERLAY_STYLE, type RenderLayer, type Scene, type View, viewToTransform, worldToScreen,
+  type Affordance,
+  type AffordanceRegion,
+  type ChromeState,
+  composeAffordanceLayer,
+  type CreateOutlinesAdapter,
+  DEFAULT_OVERLAY_STYLE,
+  type RenderLayer,
+  type View,
+  viewToTransform,
+  worldToScreen,
+  type AnyScene,
 } from '@weasel-js/core';
 import { warpLeavesOf } from './warpSelection';
 import type { WarpHandleScratch, WarpLive } from './warpActions';
@@ -30,7 +40,7 @@ export interface WarpHandleLayerSource {
   active(): boolean;
   /** What a fresh warp is made with. */
   settings(): WarpSettings;
-  scene(): Pick<Scene<unknown, string, unknown>, 'get' | 'childrenOf'> | undefined;
+  scene(): Pick<AnyScene, 'get' | 'childrenOf'> | undefined;
   /** What tells text from other nodes; absent, text gets no controls. */
   outlines?(): Pick<CreateOutlinesAdapter, 'getTextSource'> | undefined;
   live: WarpLive;

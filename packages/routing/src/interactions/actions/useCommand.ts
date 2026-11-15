@@ -8,18 +8,16 @@ import type { ActionSettings, ActionSettingsState } from './actionSettings';
 import type { BoundGesture } from './binding';
 import { useAction } from './ActionsProvider';
 
-type Params = Readonly<Record<string, unknown>>;
-
 /** What a command offers besides its id, label and callback. */
 export interface CommandOptions {
   /** True when the command can run, else why not: an `ActionDisabledReason`, or a sentence shown as it is.
    *  Read each time it is asked, with the params the run would get: a variant's, for one variant. */
-  enabled?: (params?: Params) => true | ActionUnavailable;
+  enabled?: (params?: Readonly<Record<string, unknown>>) => true | ActionUnavailable;
   /** Whether it reads as held down, for the variant `params` names. Read each time it is asked. */
-  active?: (params?: Params) => boolean;
+  active?: (params?: Readonly<Record<string, unknown>>) => boolean;
   /** Show what running it with `params` would do, and change nothing; returns what takes that down. Read each
    *  time it is asked. See `Action.preview`. */
-  preview?: (params?: Params) => (() => void) | void;
+  preview?: (params?: Readonly<Record<string, unknown>>) => (() => void) | void;
   /** A form of the settings it changes: `read` gives the values now, and each change runs it with the params
    *  the change makes. `read` and `params` are read each time they are asked. See `Action.settings`. */
   settings?: CommandSettings;

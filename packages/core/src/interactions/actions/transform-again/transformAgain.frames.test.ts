@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { FRAME_FIXTURE_IDS, FRAME_FIXTURE_WORLD, makeFrameFixture } from 'core/scene/frameFixture';
-import type { RectPose, Scene } from 'core/scene/types';
+import type { RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { moveAction } from '../move/action';
@@ -9,8 +9,7 @@ import { cloneAction } from '../clone/action';
 import { duplicateAction } from '../defaults/duplicate';
 import { nudgeRightAction } from '../defaults/nudge';
 import { transformAgainAction } from './action';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** Child `a` of a group turned a quarter turn: its parent's +x is the world's +y. */
 function setup() {

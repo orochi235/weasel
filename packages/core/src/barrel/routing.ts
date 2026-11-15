@@ -40,7 +40,9 @@ export type { BindingOverrides, ResolvedBindingOverrides } from '@weasel-js/rout
 export { tuneAction } from '@weasel-js/routing';
 export { roleReader, roleMods, keysHeld, modifierStateOf } from '@weasel-js/routing';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel-js/routing';
-export type { ActionParamSchema, ActionTunings } from '../interactions/actions/actionParamSchema';
+export type {
+  ActionParamSchema, ActionTunings, AlignParams, DistributeParams, FlipParams, NudgeParams, ReorderParams,
+} from '../interactions/actions/actionParamSchema';
 export { evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
 export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionItemShortcuts, actionShortcuts, keySpecShortcut } from '@weasel-js/routing';
@@ -76,7 +78,7 @@ export {
   type ViewportWheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
 export {
-  containerScrollAction, scrollRange, scrollableAt, type ScrollRange,
+  containerScrollAction, scrollRange, scrollableAt, type ScrollRange, type ScrollableContainer,
 } from '../interactions/actions/defaults/containerScroll';
 export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
 export { deleteAnchorsAction, selectAnchorAction } from '../interactions/actions/defaults/anchorEditing';
@@ -131,6 +133,7 @@ export type { DepName, DepRegistry, DepListing, DepSource } from '@weasel-js/rou
 // Exported from its defining module rather than through depRegistry's
 // re-export, so `DepName = keyof DepSchema` resolves to a documented symbol.
 export type { DepSchema } from '../interactions/actions/depSchema';
+export type { RangeBetween, SelectRangeDep } from '../tools/builtin/select/selectRange';
 export type {
   AreaSelectDep,
   HitTestView,

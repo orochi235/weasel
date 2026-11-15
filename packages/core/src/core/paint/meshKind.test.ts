@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { createGLRecorder, recordedPaintTextures } from '@weasel-js/renderer/testing/glRecorder';
 import { getPaintKind, listGradientKinds, listPaintKinds, switchGradientKind } from 'core/paint/paintKinds';
 import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
 import { seedMeshPatch, isMeshGradientPaint, meshGradientXml, MESH_GRADIENT_KIND } from '@weasel-js/renderer/mesh';
@@ -8,7 +8,6 @@ import { MESH_BAKE_SIZE } from '@weasel-js/renderer/mesh';
 import 'core/paint/registerMesh';
 import type { Paint } from '@weasel-js/paint';
 import type { PaintBindContext } from '@weasel-js/renderer';
-import { webglDevice } from '@weasel-js/renderer/testing/glRecorder';
 
 const BOX = { x: 10, y: 20, width: 200, height: 100 };
 
@@ -27,8 +26,6 @@ function bindContext(deviceScale = 1): {
 } {
   const rec = createGLRecorder();
   const releases: Array<() => void> = [];
-  const gpu = webglDevice(rec.gl);
-  const sampling = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' } as const;
   const ctx: PaintBindContext = {
     alpha: 1,
     spaceInverse: () => scaling(1),
@@ -36,8 +33,7 @@ function bindContext(deviceScale = 1): {
     maxTextureSize: 16384,
     resources: { onRelease: (fn) => { releases.push(fn); } },
     ramp: () => ({ texture: { kind: 'texture' }, v: 0 }),
-    createTexture: (width, height, data) => gpu.createTexture('rgba8', sampling, { width, height, data }),
-    deleteTexture: (texture) => gpu.deleteTexture(texture),
+    ...recordedPaintTextures(rec.gl),
   };
   return {
     ctx,

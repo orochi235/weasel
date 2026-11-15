@@ -13,6 +13,7 @@ import { NODE_STROKE_WIDTH } from './dataTypes';
 import { asideFace, rowTextStyle } from './rowStyle';
 import type { IconSpec } from '@weasel-js/icons';
 import type { Outline } from './outline';
+import type { Rect } from '@weasel-js/geom';
 
 /** One shape a palette offers. `size` is what a click places; `rows` default
  *  to one empty label, so the body has a text node to type into. `icon` is its
@@ -49,11 +50,9 @@ export function stencilIdOf(kind: string): string | null {
 
 const DEFAULT_ROWS: readonly Row[] = [{ kind: 'label', text: '' }];
 
-type Bounds = { x: number; y: number; width: number; height: number };
-
 /** A zero-size box — a click rather than a drag — becomes the stencil's own
  *  size centered on where it landed. */
-function placedBounds(stencil: DiagramStencil, b: Bounds): Bounds {
+function placedBounds(stencil: DiagramStencil, b: Rect): Rect {
   if (b.width > 0 && b.height > 0) return b;
   const { width, height } = stencil.size;
   return { x: b.x + b.width / 2 - width / 2, y: b.y + b.height / 2 - height / 2, width, height };
@@ -68,7 +67,7 @@ function placedBounds(stencil: DiagramStencil, b: Bounds): Bounds {
  */
 export function stencilBuild<TLayer extends string>(
   stencil: DiagramStencil,
-  bounds: Bounds,
+  bounds: Rect,
   opts: {
     layer: TLayer; newId: () => string; measure?: MeasureRowText; style?: NodeStyle;
     font?: { fontFamily: string; fontSize: number }; parent?: string | null;

@@ -27,15 +27,13 @@ export type AxisLines =
 /** A grid's lines on each axis, `null` where it has none. */
 export type GridLines = PerAxis<AxisLines | null>;
 
-type Axis = 'x' | 'y';
-
 export function isGridLength(v: unknown): v is GridLength {
   return typeof v === 'number' || (typeof v === 'object' && v !== null && 'value' in v);
 }
 
 /** `spacing`'s lines, each length read by `read` for its axis. */
-export function resolveGridLines(spacing: GridSpacing, read: (v: GridLength, axis: Axis) => number): GridLines {
-  const on = (axis: Axis): AxisLines | null => {
+export function resolveGridLines(spacing: GridSpacing, read: (v: GridLength, axis: 'x' | 'y') => number): GridLines {
+  const on = (axis: 'x' | 'y'): AxisLines | null => {
     const a = isGridLength(spacing) ? spacing : spacing[axis];
     if (a === undefined) return null;
     try {

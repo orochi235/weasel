@@ -4,10 +4,10 @@ import {
   type NodeId,
   nodeGates,
   type PoseDescriptor,
-  type Scene,
   scenePoseFrame,
   unionAABB,
   visualBoundsViaDescriptor,
+  type AnyScene,
 } from '@weasel-js/core';
 
 
@@ -21,7 +21,7 @@ export interface SceneBoundsOptions {
 /** The world box each id is drawn in, rotation included, skipping ids the
  *  scene no longer holds. Read through the scene's composition. */
 export function worldBoundsOf(
-  scene: Scene<unknown, string, unknown>,
+  scene: AnyScene,
   ids: Iterable<NodeId>,
   opts: SceneBoundsOptions = {},
 ): Bounds[] {
@@ -37,7 +37,7 @@ export function worldBoundsOf(
 
 /** The union of `ids`' world boxes, or null when none is in the scene. */
 export function worldUnionOf(
-  scene: Scene<unknown, string, unknown>,
+  scene: AnyScene,
   ids: Iterable<NodeId>,
   opts: SceneBoundsOptions = {},
 ): Bounds | null {
@@ -47,7 +47,7 @@ export function worldUnionOf(
 
 /** Every node sharing a parent with one of `ids`, outside the set, and not
  *  hidden (`nodeGates`). */
-export function siblingIds(scene: Scene<unknown, string, unknown>, ids: readonly NodeId[]): NodeId[] {
+export function siblingIds(scene: AnyScene, ids: readonly NodeId[]): NodeId[] {
   const moving = new Set(ids);
   const gates = nodeGates(scene);
   const parents = new Set<NodeId | null>();
@@ -71,7 +71,7 @@ export function siblingIds(scene: Scene<unknown, string, unknown>, ids: readonly
  * equal-spacing snap measures gaps between while `ids` move.
  */
 export function siblingBounds(
-  scene: Scene<unknown, string, unknown>,
+  scene: AnyScene,
   ids: readonly NodeId[],
   opts: SceneBoundsOptions = {},
 ): Bounds[] {

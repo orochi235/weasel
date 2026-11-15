@@ -3,11 +3,9 @@
  * participants, messages, notes, fragments, and boxes its parts draw. What a
  * host's panel reads to offer the edits that apply to a selection.
  */
-import type { Scene } from '@weasel-js/core';
+import type { AnyScene } from '@weasel-js/core';
 import { sequencePartOf, sequenceRootOf } from './trait';
 import type { SequenceData } from './types';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** A selection read as one sequence's parts. Each list is in selection order, without repeats. */
 export interface SequenceSelection {

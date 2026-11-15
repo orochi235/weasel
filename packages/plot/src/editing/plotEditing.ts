@@ -1,4 +1,4 @@
-import type { Action, Scene, SurfaceContribution } from '@weasel-js/core';
+import type { Action, SurfaceContribution, AnyScene } from '@weasel-js/core';
 import { PLOT_DRAG_ACTION_ID, createPlotDragAction, type PlotDragOptions } from './dragAction';
 import { PLOT_HANDLE_AFFORDANCE_KIND, plotHandleLayer } from './handleLayer';
 
@@ -18,7 +18,7 @@ const grabHandleAction: Action = {
  * handle layer, and a drag on a handle bound to `plot.dragValue`.
  */
 export function plotEditing(
-  opts: PlotDragOptions & { scene: Scene<unknown, string, unknown> },
+  opts: PlotDragOptions & { scene: AnyScene },
 ): SurfaceContribution {
   const actionId = opts.id ?? PLOT_DRAG_ACTION_ID;
   const target = `affordance:${PLOT_HANDLE_AFFORDANCE_KIND}` as const;

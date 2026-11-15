@@ -10,8 +10,7 @@ import { DEFAULT_UP, viewportOf, type World3d } from '../world';
 import { inputFlat3d, planeBasis, tuple, vec3Of } from './plane';
 import { landingOf } from './landing';
 import { boxProbes, subjectOf } from './probes3d';
-
-type Point = { x: number; y: number };
+import type { Point } from '@weasel-js/geom';
 
 const ZERO: Vec3 = { x: 0, y: 0, z: 0 };
 

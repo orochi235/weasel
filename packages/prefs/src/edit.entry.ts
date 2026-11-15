@@ -10,13 +10,15 @@ export { actionCatalog, dissolve, filed, firedBy, keyTails, NO_CATALOG } from '.
 export { actionLeaf, actionLeafKey, deadActionPaths, type SchemaAction } from './edit/actionLeaves';
 export { exportOf, type AssetExport } from './edit/assetExport';
 export { pathsIn, scopedPath } from './edit/assetScope';
-export { aggregateAttributes, catalogAttributes, isObjectField, setAutoRow, setObjectField } from './edit/attrAggregate';
+export {
+  aggregateAttributes, catalogAttributes, isObjectField, setAutoRow, setObjectField, type AttributeAggregate,
+} from './edit/attrAggregate';
 export { type AutoRow } from './edit/autoRows';
 export { bundleLoads, bundleProblems, type BundleProblem } from './edit/bundleChecks';
 export { bundleChanges, bundlesDocument, presetsHash, type BundleChange, type BundlesDocument } from './edit/bundleExport';
 export {
   BUNDLE_KINDS, BUNDLE_LINKS, bundleIdOf, bundleParts, bundleTree, isAtomLeaf, isBundleAt, memberKey, memberOf,
-  membership, readBundles, type Bundle, type BundleMember,
+  membership, readBundles, type Bundle, type BundleMember, type PrefAtom,
 } from './edit/bundleTree';
 export {
   CONDITION_FLOW_END, CONDITION_FLOW_START, prefConditionFlow, type ConditionFlow, type ConditionFlowEdge,
@@ -27,26 +29,27 @@ export {
   testRowOf, type ConditionGroup, type Quantifier, type TestRow,
 } from './edit/conditionGroups';
 export { conditionLeafOf, conditionLeaves, leafKey, type ConditionLeaf } from './edit/conditionLeaves';
-export { conditionProblems } from './edit/conditionMarks';
+export { conditionProblems, type ConditionMark } from './edit/conditionMarks';
 export {
   clauseChoices, clausesOf, COMPARISON_LABEL, comparisonsFor, openBound, operatorOf, printOperators, rowAt,
-  withBound, withComparison, withoutClause, withValue, type Comparison,
+  withBound, withComparison, withoutClause, withValue, type Comparison, type Operator,
 } from './edit/conditionRows';
 export { SWAP, swapOp, type DocumentCodec, type DraftStorage, type OpenedDocument } from './edit/document';
 export { draftChangedAssets } from './edit/draftChangedAssets';
-export { foldablePaths, foldsUnder, openAfterStep } from './edit/folds';
+export { foldablePaths, foldsUnder, openAfterStep, type Folds } from './edit/folds';
 export { CONDITION_KIND, type CustomKinds, type KindAttr, type KindAttrs } from './edit/kindAttrTable';
 export {
   attributeSchema, blankGroup, blankLeaf, blankSection, BUILTIN_KINDS, changeKind, convertLeaf, entryOf, leafOf,
-  normalizeAttr,
+  normalizeAttr, type AttributeSchema,
 } from './edit/kindSchemas';
 export {
   holdsPages, isLoose, looseKeys, looseTarget, mayUnplace, placedOnly, schemaTarget, topLevelAllows,
 } from './edit/loose';
-export { trackOrigins } from './edit/nodeOrigins';
+export { trackOrigins, type NodeOrigins } from './edit/nodeOrigins';
 export { asWorkspace, catalogIn, ONE, oneAssetCodec, sameSchema, schemaOf } from './edit/oneAsset';
 export { deadPointers, drawnLeaf, pointerAttributes, pointerTarget } from './edit/pointers';
 export { type PresetDescription } from './edit/presets';
+export { type RegisteredAction } from './edit/registeredActionAttrs';
 export { schemaCodec } from './edit/schemaCodec';
 export { aliasNodes, aliasOf, canAlias, copyNodes, VALUE_LINKS, type LinkRule } from './edit/schemaCopy';
 export {
@@ -54,7 +57,7 @@ export {
 } from './edit/schemaEdit';
 export {
   baselinePaths, changedAttributes, changedPaths, containsCode, diffSchemas, formatChanges, KEEP, printSchema,
-  printValue, STUB, type SchemaChange,
+  printValue, STUB, type OriginOf, type SchemaChange,
 } from './edit/schemaExport';
 export { keyClashes, keyFromName, keyProblem, keysTakenAt, takesDottedKey, uniqueKey } from './edit/schemaKeys';
 export {
@@ -64,10 +67,10 @@ export {
 export { pointable, pointedAt, pointersTo } from './edit/settingPointers';
 export { choiceOf, entryChoices, kindChoices, NO_TYPES, typeNamed, type KindChoice, type PrefTypes } from './edit/types';
 export { stillUnplaced, unplacedAt } from './edit/unplaced';
-export { valuePathOf, valuePathsAt } from './edit/valuePaths';
+export { valuePathOf, valuePathsAt, type ValueMove } from './edit/valuePaths';
 export {
   assetOf, bundlesAsset, catalogOf, headingOf, isShown, overOf, sameRoots, shownAssets, withRoots, type ActionsAsset,
-  type Asset, type AssetHeading, type BundlesAsset, type LayoutAsset, type ListedAsset, type SchemaAsset,
+  type Asset, type AssetBase, type AssetHeading, type BundlesAsset, type LayoutAsset, type ListedAsset, type SchemaAsset,
   type ShownAsset, type Workspace,
 } from './edit/workspace';
 export { changedAsset, workspaceChanges, type AssetChanges } from './edit/workspaceChanges';

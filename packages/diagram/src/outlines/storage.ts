@@ -6,7 +6,7 @@
 import { PathBuilder, polygonFromPoints } from '@weasel-js/core/math';
 import { polylineFromPoints } from '@weasel-js/geom';
 import { KAPPA } from './flowchart';
-import type { OutlineDef, Size } from './types';
+import type { Bounds, OutlineDef } from './types';
 
 /** A cylinder's cap height: a fraction of its height, flattened for a narrow box. */
 const capOf = (w: number, h: number): number => Math.min(h * 0.15, w * 0.25);
@@ -120,7 +120,7 @@ const folder: OutlineDef = {
 const DEPTH = 0.15;
 
 /** The box whose sides, less `k` of the shorter one, are `c`. */
-export function insetByShorter(c: Size, k: number): Size {
+export function insetByShorter(c: Pick<Bounds, 'width' | 'height'>, k: number): Pick<Bounds, 'width' | 'height'> {
   const d = (k * Math.min(c.width, c.height)) / (1 - k);
   return { width: c.width + d, height: c.height + d };
 }

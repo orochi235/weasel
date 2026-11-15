@@ -2,12 +2,10 @@
  * Reading a presented canvas back: the one readback a loupe, an eyedropper or
  * anything else showing the canvas's own pixels goes through.
  */
-import { clamp } from '@weasel-js/geom';
+import { clamp, type Rect } from '@weasel-js/geom';
 import { layoutBoxOf } from '@weasel-js/routing';
 import { canvasPaintsWith } from './canvasBackend';
 import { readCanvasPixels } from './readCanvasPixels';
-
-type Rect = { x: number; y: number; width: number; height: number };
 
 /**
  * The `rw × rh` device-pixel rect centered on `pointer`, top-left origin.

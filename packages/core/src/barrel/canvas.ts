@@ -18,6 +18,10 @@ export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
 export { overChildren, isOverChildren, splitOverChildren } from '../canvas/overChildren';
 export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
+export type { SceneCanvasActionProps } from '../canvas/SceneCanvas/actionProps';
+export type { SceneCanvasPointerProps } from '../canvas/SceneCanvas/pointerProps';
+export type { SceneCanvasSampleProps } from '../canvas/SceneCanvas/sampleProps';
+export type { PagePaintedScene, SceneCanvasPaintedBy, WorkerPaintedScene, WorkerSceneSlot } from '../canvas/SceneCanvas/workerProps';
 export type { SceneCanvasTextEditor } from '../canvas/SceneCanvas/defaultTextEditor';
 export type { SceneCanvasGeometry } from '../canvas/SceneCanvas/geometryProps';
 export type { SceneCanvasIngestion } from '../canvas/SceneCanvas/ingestionProps';
@@ -60,6 +64,7 @@ export type {
 export { drawnBoundsOf, drawnAABBOf, inkExtentsOf, findShapeDrawnBounds } from '../canvas/drawnBounds';
 export { inheritedPaintIn, paintAbove, withInheritedPaintBounds, withInheritedPaints } from '../canvas/inheritedPaints';
 export { inheritedPaintOf, inheritsPaint, withInheritedPaint } from '../core/scene/inheritedPaint';
+export type { ResolvedPaintFields } from '../core/scene/inheritedPaint';
 export type { DrawnBoundsOptions, DrawnBoundsScene } from '../canvas/drawnBounds';
 export { drawnBoundsScene } from '../canvas/derivedPath';
 export { sceneContentBounds } from '../canvas/contentBounds';
@@ -97,6 +102,7 @@ export {
   rotationDegreesUnit,
 } from '../canvas/SceneCanvas/defaultNodeProperties';
 export type { CanvasProps, CanvasRetainOptions } from '../canvas/Canvas';
+export type { CanvasWorkerSurface } from '../canvas/renderWorker/workerStack';
 export { canvasPaintsWith, type CanvasBackend } from '../canvas/canvasBackend';
 export { CanvasBackendProvider } from '../canvas/canvasBackendContext';
 export type { ViewPoseAdapter } from '../canvas/useViewHelpers';

@@ -10,6 +10,7 @@ import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 import { stencilledEvenOdd } from '@weasel-js/renderer/testing/stencilledEvenOdd';
 import { HULL_UNITS } from '@weasel-js/renderer/testing/batch';
+import { rendererParts } from './rendererParts';
 
 const W = 96;
 const H = 80;
@@ -37,13 +38,13 @@ function paint(commands: DrawCommand[], opts: { antialias?: boolean; hulls?: boo
   renderers.push(r);
   if (opts.hulls === false) {
     // The stencil as it came: no hull, and no CPU cut standing in for one.
-    Object.defineProperty(r._batchVariants(), 'hulls', { value: false });
-    Object.defineProperty(r._batchVariants(), 'cuts', { value: false });
+    Object.defineProperty(rendererParts(r).batchVariants, 'hulls', { value: false });
+    Object.defineProperty(rendererParts(r).batchVariants, 'cuts', { value: false });
   }
   r.render(commands);
   const px = new Uint8Array(W * H * 4);
   gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, px);
-  return { px, draws: r.lastFrameStats().drawCalls, hulls: r._batchVariants().hulls };
+  return { px, draws: r.lastFrameStats().drawCalls, hulls: rendererParts(r).batchVariants.hulls };
 }
 
 /** Pixels whose channels differ, as `x,y` with a top-left origin. */

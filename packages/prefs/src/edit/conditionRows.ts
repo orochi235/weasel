@@ -23,7 +23,8 @@ export const COMPARISON_LABEL: Record<Comparison, string> = {
 };
 
 const OPERATORS = ['is', 'isNot', 'in', 'above', 'atLeast', 'below', 'atMost'] as const;
-type Operator = (typeof OPERATORS)[number];
+/** A `PrefTest` field that compares the value at its `path`. */
+export type Operator = (typeof OPERATORS)[number];
 const BY_KIND: Record<string, readonly Comparison[]> = {
   boolean: ['on', 'off'],
   enum: ['is', 'isNot', 'in', 'notIn'],

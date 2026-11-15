@@ -170,7 +170,7 @@ export {
 export type { Palette, PaletteEntry } from '@weasel-js/paint';
 export { pathPaintOf } from '../canvas/nodeShapes/nodePaint';
 export type { PathPaint } from '../canvas/nodeShapes/nodePaint';
-export { strokedBounds } from '../canvas/nodeShapes/strokedBounds';
+export { strokedBounds, type ScreenMap } from '../canvas/nodeShapes/strokedBounds';
 
 // ─── Color helpers (parse / normalize / convert) ────────────────────────────
 export {

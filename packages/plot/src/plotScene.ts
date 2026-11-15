@@ -3,7 +3,7 @@
  * children rebuilt from it. An edit replaces the spec and rebuilds the marks
  * as one undo entry.
  */
-import type { AddNodeSpec, NodeId, RectPose, Scene } from '@weasel-js/core';
+import type { AddNodeSpec, NodeId, RectPose, Scene, AnyScene } from '@weasel-js/core';
 import type { PlotMark, PlotMarkData, PlotMarkTrait } from './marks/types';
 import { textMeasure, type PlotMeasure } from './measure';
 import { compilePlot, type PlotData } from './plotData';
@@ -85,8 +85,6 @@ export interface ReplacePlotOptions {
   measure?: PlotMeasure;
 }
 
-type AnyScene = Scene<unknown, string, unknown>;
-
 /** The plot root `rootId`'s trait. Throws when `rootId` is not one. */
 function rootTrait(scene: AnyScene, rootId: string): { node: NonNullable<ReturnType<AnyScene['get']>>; trait: PlotRootTrait } {
   const node = scene.get(rootId as NodeId);
@@ -113,7 +111,7 @@ export function replacePlotData<TData, TLayer extends string, TPose>(
 }
 
 /** The id of the plot root `id` is, or is a mark of; `null` for a node outside every plot. */
-export function plotRootContaining(scene: Scene<unknown, string, unknown>, id: string): NodeId | null {
+export function plotRootContaining(scene: AnyScene, id: string): NodeId | null {
   const node = scene.get(id as NodeId);
   if (node === undefined) return null;
   if (plotRootOf(node) !== null) return node.id;
@@ -122,6 +120,6 @@ export function plotRootContaining(scene: Scene<unknown, string, unknown>, id: s
 }
 
 /** Every plot root in `scene`, in render order. */
-export function plotRootsIn(scene: Scene<unknown, string, unknown>): NodeId[] {
+export function plotRootsIn(scene: AnyScene): NodeId[] {
   return scene.renderOrderNodes().filter((n) => plotRootOf(n) !== null).map((n) => n.id);
 }

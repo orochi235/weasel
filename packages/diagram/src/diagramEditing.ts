@@ -13,8 +13,8 @@ import {
   type Contribution,
   type FeaturePreset,
   type RectPose,
-  type Scene,
   type SurfaceContribution,
+  type AnyScene,
 } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { isBodyEnd } from './connectTargets';
@@ -38,8 +38,6 @@ import { createSequenceDeleteAction } from './sequence/select';
 const AMBIENT = [dragPanContribution()];
 // A drag on empty canvas pans: the select tool's marquee would outrank the ambient pan.
 const NO_MARQUEE = { areaSelect: null };
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** `id`, a region, and every node and region inside it, into `out`. */
 function regionAndMembers(scene: AnyScene, id: string, out: Set<string>): void {
@@ -80,7 +78,7 @@ export function reportDeleteAction(report: (removed: DeleteReport) => void): Act
   return createDeleteAction({
     commit: (ids, deps) => {
       if (deps.scene === undefined) return;
-      const removed = removedData(deps.scene as Scene<unknown, string, unknown>, ids);
+      const removed = removedData(deps.scene as AnyScene, ids);
       if (removed.nodes.length > 0 || removed.edges.length > 0) report(removed);
     },
   });
