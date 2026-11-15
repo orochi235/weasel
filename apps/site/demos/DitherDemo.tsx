@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  OUTPUT_GRID_KEY, SceneCanvas, defaultDrawOne, solid, useScene,
+  OUTPUT_GRID_KEY, SceneCanvas, solid, useScene,
   type DrawCommand, type LayerGroup, type RectPose, type RenderLayer, type View, viewPreset,
 } from '@weasel-js/core';
 import {
@@ -185,10 +185,7 @@ export function DitherDemo() {
           scene={scene}
           backgroundFill={solid('#c9ccd1')}
           layerGroups={layerGroups}
-          layers={{
-            paper: { layer: PAPER, before: 'scene' },
-            scene: { drawOne: defaultDrawOne },
-          }}
+          layers={{ paper: { layer: PAPER, before: 'scene' } }}
         />
       </DemoStage>
       <div className="ckd-controls">

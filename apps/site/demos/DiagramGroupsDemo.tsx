@@ -20,8 +20,6 @@ const GROUPS: DataGroup[] = [
   { id: 'health', members: ['probe', 'score', 'report'], label: 'health' },
 ];
 
-
-
 /** The nodes where the layered layout puts them. Laid out once: a layout in
  *  `groupSpecs` would run again on every drag and take the drag back. */
 export const START: DataNode[] = (() => {
