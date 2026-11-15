@@ -165,8 +165,8 @@ describe('a version 1 save draws as version 1 drew it', () => {
     expect(clip && boundsOfPath(clip)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
   });
 
-  it('leaves them unclipped under a container no painter claimed', () => {
-    expect(childClip(sceneFromJSON(saved({})) as never)).toBeUndefined();
+  it('clips them to its box under a container no painter claimed', () => {
+    expect(childClip(sceneFromJSON(saved({})) as never)).toEqual({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
   });
 
   it('gives a container a classifier makes a mark no implicit clip', () => {

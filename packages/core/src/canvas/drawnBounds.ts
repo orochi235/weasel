@@ -19,6 +19,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { boundsOfPath, meanScale, type Path, type Scale2 } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { findNodeShape, type NodeInkCtx, type NodeShapes } from './NodeShape';
+import { groupBoxDrawnBounds } from './nodeShapes/groupBoxPainter';
 
 /** The scene reads {@link drawnBoundsOf} makes. `childrenOf` absent: every
  *  node is a leaf. `derivedPathOf` absent: every node is measured by its pose,
@@ -50,7 +51,7 @@ export interface DrawnBoundsOptions {
  * drawn in: a turned node's box comes back turned with it. A node with no
  * stroke, a painter that declares no {@link NodeShapeEntry.drawnBounds}, or
  * `includeStroke: false` answers `framedBounds` unchanged. A group's box
- * reaches as far as its members' boxes do; a mark's, as far as its own ink and its
+ * reaches as far as its members' boxes and its own border do; a mark's, as far as its own ink and its
  * children's do. A node showing a derived path is
  * boxed around that path, and its placeholder pose plays no part.
  */
@@ -80,8 +81,10 @@ export function inkExtentsOf(
   const unframed = { x: own.x, y: own.y, width: own.width, height: own.height };
   const members = scene.childrenOf?.(id) ?? [];
   const reached = members.length > 0 ? membersExtents(scene, members, own, opts) : NO_INK_EXTENTS;
-  if (node.kind === 'group' && members.length > 0) return reached;
-  const drawn = findShapeDrawnBounds(node, pose, withInherited(scene, node, inkCtx(opts.scale, own)));
+  const ctx = inkCtx(opts.scale, own);
+  const drawn = node.kind === 'group'
+    ? groupBoxDrawnBounds(node.data, pose, ctx)
+    : findShapeDrawnBounds(node, pose, withInherited(scene, node, ctx));
   if (drawn === null) return reached;
   const ink = inkExtentsBetween(normalized(unframed), drawn);
   return {

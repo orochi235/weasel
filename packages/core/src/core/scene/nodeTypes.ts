@@ -73,8 +73,8 @@ export interface NodeBase<TData, TLayer extends string, TPose> {
    *  means "clip everything out" (children render nowhere). Wins over `clip`. */
   readonly clipFromPose?: ClipFromPoseFn<TPose>;
   /** `'outline'` clips the children to this node's own outline: a mark's
-   *  painter silhouette, or for a group the silhouette of its `data.path`.
-   *  Absent, and with no `clipFromPose`, the children are not clipped. */
+   *  painter silhouette, or for a group the silhouette of its `data.path`,
+   *  else its box. Absent, and with no `clipFromPose`, the children are not clipped. */
   readonly clip?: NodeClip;
   /** Draws the whole subtree again under each affine it returns, on top of
    *  the original, which still draws once as authored. The copies are paint,
@@ -114,7 +114,8 @@ export interface MarkNode<TData, TLayer extends string, TPose = RectPose>
 }
 
 /** A node the user gathers things into: what Cmd+G creates, what SVG `<g>`
- *  round-trips to. An emptied group is still a group. */
+ *  round-trips to. An emptied group is still a group. It paints only its box,
+ *  under its children, from `data.background` and `data.border` (`GroupBoxData`). */
 export interface GroupNode<TData, TLayer extends string, TPose = RectPose>
   extends NodeBase<TData, TLayer, TPose> {
   readonly kind: 'group';

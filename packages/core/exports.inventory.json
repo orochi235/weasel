@@ -466,6 +466,7 @@
     "GradStop": "type",
     "GradientKind": "type",
     "GradientPaint": "type",
+    "GroupBoxData": "type",
     "GroupDrawCommand": "type",
     "GroupNode": "type",
     "GroupTransform": "type",

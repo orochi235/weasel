@@ -16,26 +16,28 @@ import { overChildren } from './overChildren';
 import { INHERIT } from '@weasel-js/paint';
 import { poseFrameOf } from '@weasel-js/geom';
 import { pixelScaleAt, pixelScaleCtx } from './pixelScale';
+import { groupBoxBounds, paintGroupBox } from './nodeShapes/groupBoxPainter';
 
 // `globalThis`, not `window`: a render worker has no window, and sets the density it paints at here.
 const ambientDpr = (): number => globalThis.devicePixelRatio || 1;
 
 /** Paint one node the way the kit does by default: dispatch to the first
  *  registered node-shape painter that matches, then draw its `data.label` on
- *  top when it has one: on top of a container's children too. Consumers replace or wrap this via `drawOne`. */
+ *  top when it has one: on top of a container's children too. A group paints
+ *  only its box, from `data.background` and `data.border` (`GroupBoxData`). Consumers replace or wrap this via `drawOne`. */
 export function defaultDrawOne<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,
   view?: View,
   ctx?: NodePaintCtx,
 ): DrawCommand[] {
-  // A group is structure: it never paints, whatever its data holds.
+  // No painter claims a group: its data's `fill`, `stroke`, `path` or `shape` are its children's.
   const painter = node.kind === 'group' ? undefined : findNodeShape(node, ctx?.shapes);
   // A frame builder that knows the density it paints at fills `pixelScale`; the window's is the fallback.
   const paintCtx = !view || ctx?.pixelScale !== undefined
     ? ctx
     : ctx ? { ...ctx, pixelScale: pixelScaleAt(view, ambientDpr()) } : pixelScaleCtx(view, ambientDpr());
-  const primary = painter ? painter.paint(node, pose, paintCtx) : [];
+  const primary = painter ? painter.paint(node, pose, paintCtx) : node.kind === 'group' ? paintGroupBox(node, pose) : [];
 
   // Label overlay — skipped for text nodes (their content is the label).
   const data = node.data as { label?: string; text?: string } | null;
@@ -76,6 +78,7 @@ export function defaultPaintBounds<TData, TLayer extends string, TPose>(
   const data = node.data as { label?: string; text?: string; stroke?: unknown } | null;
   if (data?.label && data.text == null) return null;
   const inherited = ctx?.inherited;
+  if (node.kind === 'group') return groupBoxBounds(node.data, pose, screenScalesOf(view, pose));
   if (data?.stroke === INHERIT && inherited === undefined) return null;
   return findShapeBounds(node, pose, { ...screenScalesOf(view, pose), inherited, shapes: ctx?.shapes });
 }

@@ -210,6 +210,7 @@ export type {
 export type { EditingDrawOne } from '../domains/text/editingDrawOne';
 export { textBoxOf, type TextNodeData, type TextOverflow } from '../canvas/nodeShapes/textPainter';
 export { shapePathOf } from '../canvas/nodeShapes/shapePainter';
+export type { GroupBoxData } from '../canvas/nodeShapes/groupBoxPainter';
 export { edgeColor, textFrameOf, type TextEdge, type TextFrame, type TextShadow } from '../canvas/nodeShapes/textFrame';
 export type { StyleToggle } from '@weasel-js/text-dom';
 export type { Vec2 } from '../core/geometry/vec2';
