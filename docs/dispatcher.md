@@ -51,6 +51,6 @@ down the list.
 ![Input scopes](./diagrams/input-scopes.svg)
 
 Follow the amber path to see what chrome at the root is talking to, and the
-dashed green arrows to see what a canvas can see. A pointerdown or wheel is
-what moves the amber path. That is why a keystroke goes to the canvas you last
+dashed green arrows to see what a canvas can see. A pointerdown, wheel or
+contextmenu is what moves the amber path. That is why a keystroke goes to the canvas you last
 clicked in, not the one under the pointer.

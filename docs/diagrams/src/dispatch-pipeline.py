@@ -11,8 +11,8 @@ GAP = 30
 steps = [
     ('dom', Card('1  A DOM event reaches the canvas', [
         'Pointer, wheel, pinch and context-menu listeners sit on the canvas element; key and paste listeners on `window`.',
-        '• A pointerdown or wheel first calls `activate()`, making this canvas the active scope.',
-        '• A keydown is dropped unless `isActive()`: only the active scope acts on keys.',
+        '• A pointerdown, wheel or contextmenu first calls `activate()`, making this canvas the active scope and handing it the keys.',
+        '• A keydown is dropped unless this canvas holds the keys (`holdsKeys()`), or, for a binding with `over`, the pointer is over it.',
         '• A press dispatches at once with `stage: \'press\'`. Its drag copy waits until the pointer passes the drag threshold; a release before that becomes a click.',
     ], PW, 'blue')),
     ('view', Card('2  Route it to a view', [
