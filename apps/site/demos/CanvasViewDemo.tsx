@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  asNodeId,
   CanvasView,
   PointerContextProvider,
   SceneCanvas,
@@ -8,14 +9,13 @@ import {
   useScene,
   useSelection, movePreset, pickPreset, viewPreset,
 } from '@weasel-js/core';
-import type { Fill, View } from '@weasel-js/core';
+import type { Fill, RectPose, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './CanvasViewDemo.module.css';
 import { DemoStage } from './DemoStage';
 
 interface NodeData { fill: Fill }
 type LayerId = 'default';
-interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 400;
 
@@ -24,7 +24,7 @@ export function makeRandomScene() {
   const items = [];
   for (let i = 0; i < 12; i++) {
     items.push({
-      id: `n${i}` as never,
+      id: asNodeId(`n${i}`),
       kind: 'mark' as const,
       layer: 'default' as LayerId,
       pose: {
@@ -78,7 +78,7 @@ function PointerReadout() {
 
 export function CanvasViewDemo() {
   const [initial] = useState(makeRandomScene);
-  const scene = useScene<NodeData, LayerId, Pose>({
+  const scene = useScene<NodeData, LayerId, RectPose>({
     systemLayers: [{ id: 'default' }],
     initial,
   });

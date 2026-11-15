@@ -1,18 +1,17 @@
 import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
 import {
-  ActionsProvider, SceneCanvas, rectPath, solid, useMenus, useScene, useSelection, arrangePreset, editPreset, movePreset, pickPreset,
+  ActionsProvider, SceneCanvas, asNodeId, rectPath, solid, useMenus, useScene, useSelection, arrangePreset, editPreset, movePreset, pickPreset,
 } from '@weasel-js/core';
-import type { Fill, MenuDef, NodeId, Path } from '@weasel-js/core';
+import type { Fill, MenuDef, NodeId, Path, RectPose } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { ContextMenuHost, useContextMenu } from '@weasel-js/ui/components/Menu';
 import { DemoStage } from './DemoStage';
 
 interface NodeData { path: Path; fill: Fill }
-interface Pose { x: number; y: number; width: number; height: number }
 
-const rect = (id: string, pose: Pose, color: string) => ({
-  id: id as NodeId, kind: 'mark' as const, layer: 'default' as const, pose,
+const rect = (id: string, pose: RectPose, color: string) => ({
+  id: asNodeId(id), kind: 'mark' as const, layer: 'default' as const, pose,
   data: { path: rectPath(0, 0, pose.width, pose.height), fill: { paint: solid(color) } },
 });
 
@@ -32,7 +31,7 @@ const MENUS: MenuDef[] = [
 ];
 
 function Demo() {
-  const scene = useScene<NodeData, 'default', Pose>({
+  const scene = useScene<NodeData, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [
       rect('Green', { x: 30, y: 50, width: 90, height: 70 }, '#7fb069'),
