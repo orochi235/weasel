@@ -678,6 +678,8 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/primitives` | PersistedFloatingPanel, Split, JobProgress |
 | `/chrome` | Regions, contribution types, built-in contributions |
 | `/controls` | `<ControlPanel>` and the config field types |
+| `/config` | The config schema builder (`f`) and its node types, `auto`, and the default-filling helpers |
+| `/theme` | `interstellarTheme` alone, for an app that themes its chrome as labkit does without loading the rest |
 | `/canvas` | `<CanvasStack>`, `<Stage>`, `<Orbit>`, `<CameraInput>`, coordinate helpers |
 | `/layers` | `<LayerList>` from `@weasel-js/ui`, and the layers capability types |
 | `/loupe` | `<TrialLoupe>`, the magnifier an instrument mounts in its content; the trial offers a Loupe toggle while one is mounted. `labLoupe`, lab chrome giving any lab lenses (`<Lab labChrome={[labLoupe]} />`, Alt+L then L). Not in the root barrel |
