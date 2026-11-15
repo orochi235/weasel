@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
+import { useState } from 'react';
 import type { GradientPaint } from '@weasel-js/core';
 import { GradientHandles } from './GradientHandles';
 import { handleHalf } from '../../handles';
@@ -208,5 +209,20 @@ describe('GradientHandles', () => {
     rerender(<GradientHandles value={radial} toScreen={toScreen} toLocal={toLocal} onChange={() => {}} width={400} height={300} />);
     expect(screen.getByLabelText('Gradient radius')).toBeInTheDocument();
     expect(screen.queryByLabelText('Gradient start')).not.toBeInTheDocument();
+  });
+  it("keeps a commit-only drag's draft over a paint the consumer rebuilds as it re-renders", () => {
+    let rerender = () => {};
+    function Host() {
+      const [, setTick] = useState(0);
+      rerender = () => setTick((t) => t + 1);
+      return <GradientHandles value={{ ...linear }} toScreen={toScreen} toLocal={toLocal} onChange={() => {}} width={400} height={300} />;
+    }
+    render(<Host />);
+    const handle = screen.getByLabelText('Gradient end');
+    fireEvent.pointerDown(handle, { clientX: 110, clientY: 20, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 210, clientY: 120, pointerId: 1 });
+    expect(screen.getByLabelText('Gradient end')).toHaveAttribute('cx', '210');
+    act(() => rerender());
+    expect(screen.getByLabelText('Gradient end')).toHaveAttribute('cx', '210');
   });
 });
