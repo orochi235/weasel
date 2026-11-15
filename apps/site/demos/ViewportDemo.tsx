@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { SceneCanvas, useScene, textCommandFromRuns, meanScale, viewPreset } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, useScene, textCommandFromRuns, meanScale, viewPreset } from '@weasel-js/core';
+import type { RectPose } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useColorHex } from '@weasel-js/theme/react';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
@@ -8,9 +9,8 @@ import { DemoStage } from './DemoStage';
 
 type Layer = 'scene';
 interface Data { color: string; label: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
-const NODES: Array<{ id: string; pose: Pose; data: Data }> = [
+const NODES: Array<{ id: string; pose: RectPose; data: Data }> = [
   { id: 'a', pose: { x:  40, y:  40, width: 100, height: 70 }, data: { color: '#7fb069', label: 'A' } },
   { id: 'b', pose: { x: 220, y:  80, width: 100, height: 70 }, data: { color: '#a48bd4', label: 'B' } },
   { id: 'c', pose: { x: 420, y:  30, width: 100, height: 70 }, data: { color: '#e8a87c', label: 'C' } },
@@ -31,9 +31,9 @@ export function ViewportDemo() {
   const background = colorHex({ ref: 'workspace-surface' });
   const backgroundFill = useMemo(() => (background ? { color: background } : undefined), [background]);
 
-  const scene = useScene<Data, Layer, Pose>({
+  const scene = useScene<Data, Layer, RectPose>({
     systemLayers: [{ id: 'scene' }],
-    initial: NODES.map((n) => ({ ...n, id: n.id as never, kind: 'mark' as const, layer: 'scene' })),
+    initial: NODES.map((n) => ({ ...n, id: asNodeId(n.id), kind: 'mark' as const, layer: 'scene' })),
   });
 
   const inertiaConfig = inertiaOn
@@ -75,8 +75,7 @@ export function ViewportDemo() {
           }}
           layers={{
             scene: {
-              drawOne: (node, pose, view): DrawCommand[] => {
-                const p = pose as Pose;
+              drawOne: (node, p, view): DrawCommand[] => {
                 const fontSize = 14 / meanScale(view.scale);
                 return [
                   {

@@ -24,10 +24,10 @@ function download(blob: Blob, name: string): void {
 }
 
 export function TimelineFramesDemo() {
-  const scene = useScene<{ shape: 'rect'; fill: Fill }, 'main', RectPose>({
+  const scene = useScene<{ fill: Fill }, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: useMemo(() => [
-      { id: BALL, kind: 'mark' as const, layer: 'main' as const, pose: at(20, 140), data: { shape: 'rect' as const, fill: { paint: solid('#5b8fd4') } } },
+      { id: BALL, kind: 'mark' as const, layer: 'main' as const, pose: at(20, 140), data: { fill: { paint: solid('#5b8fd4') } } },
     ], []),
     subscribe: false,
   });

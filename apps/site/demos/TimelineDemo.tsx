@@ -70,11 +70,11 @@ const CLIP: Clip = {
 };
 
 const rect = (id: string, pose: RectPose, paint: Paint) =>
-  ({ id: asNodeId(id), kind: 'mark' as const, layer: 'main' as const, pose, data: { shape: 'rect' as const, fill: { paint } } });
+  ({ id: asNodeId(id), kind: 'mark' as const, layer: 'main' as const, pose, data: { fill: { paint } } });
 
 export function TimelineDemo() {
   // Nothing here renders scene data as DOM. The scrub readout drives its own `setNow`.
-  const scene = useScene<{ shape: 'rect'; fill: Fill }, 'main', RectPose>({
+  const scene = useScene<{ fill: Fill }, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: useMemo(() => [
       rect('x', box(20, 24), solid('#7fb069')),
@@ -95,7 +95,7 @@ export function TimelineDemo() {
     const tint = createTarget<Lab>({
       get: () => lab,
       set: (next) => { lab = next; },
-      show: (next) => scene.untracked(() => scene.update(TINT, { data: { shape: 'rect', fill: { paint: tintFill(next) } } })),
+      show: (next) => scene.untracked(() => scene.update(TINT, { data: { fill: { paint: tintFill(next) } } })),
     });
     const sceneTarget = sceneClipTargets(scene);
     return bindClip(CLIP, {

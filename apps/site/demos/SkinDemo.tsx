@@ -31,7 +31,7 @@ const armAt = (x: number): Skeleton => ({
 const RIGID = armAt(40);
 const SKINNED = armAt(340);
 
-type Data = { shape: 'rect'; fill: Fill; stroke: Stroke } | { path: Path; fill: Fill; stroke: Stroke };
+type Data = { path?: Path; fill: Fill; stroke: Stroke };
 interface NodeSpec { id: NodeId; kind: 'mark'; layer: 'main'; pose: RectPose; data: Data }
 
 const INK: Stroke = { paint: { color: '#2b2118' }, width: 3, join: 'round' };
@@ -46,7 +46,7 @@ const SLEEVE_PATH = polygonFromPoints([
 const piece = (id: NodeId, x: number, color: string): NodeSpec => ({
   id, kind: 'mark', layer: 'main',
   pose: { x, y: Y - HALF, width: BONE, height: 2 * HALF },
-  data: { shape: 'rect', fill: { paint: solid(color) }, stroke: INK },
+  data: { fill: { paint: solid(color) }, stroke: INK },
 });
 const INITIAL: NodeSpec[] = [
   piece(UPPER, 40, '#7fb069'),
