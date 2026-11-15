@@ -11,8 +11,8 @@
 }
 
 .status {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   min-width: 34ch;
   color: var(--wzl-fg-subtle);
   font-size: var(--wzl-font-size-sm);
-  font-variant-numeric: tabular-nums;
 }

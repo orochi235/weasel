@@ -1183,6 +1183,7 @@
     "SceneCanvasSelectTool": "type",
     "SceneCanvasSnap": "type",
     "SceneCanvasTextEditor": "type",
+    "SceneCanvasToolProps": "type",
     "SceneCanvasViewport": "type",
     "SceneChanges": "type",
     "SceneClipTargetsOptions": "type",

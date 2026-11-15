@@ -19,6 +19,7 @@ export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
 export type { SceneCanvasActionProps } from '../canvas/SceneCanvas/actionProps';
 export type { SceneCanvasPointerProps } from '../canvas/SceneCanvas/pointerProps';
+export type { SceneCanvasToolProps } from '../canvas/SceneCanvas/toolProps';
 export type { SceneCanvasSampleProps } from '../canvas/SceneCanvas/sampleProps';
 export type { PagePaintedScene, SceneCanvasPaintedBy, WorkerPaintedScene, WorkerSceneSlot } from '../canvas/SceneCanvas/workerProps';
 export type { SceneCanvasTextEditor } from '../canvas/SceneCanvas/defaultTextEditor';

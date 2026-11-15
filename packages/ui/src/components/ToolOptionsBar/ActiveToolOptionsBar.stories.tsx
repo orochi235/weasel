@@ -6,7 +6,7 @@ import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { Button } from '@weasel-js/ui/components/Button';
 
 const meta: Meta<typeof ActiveToolOptionsBar> = {
-  title: 'ui/ActiveToolOptionsBar',
+  title: 'ui/ToolOptionsBar/ActiveToolOptionsBar',
   component: ActiveToolOptionsBar,
 };
 export default meta;
