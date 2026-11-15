@@ -163,6 +163,7 @@ What `collect` is handed (`SnapCollect`):
 | `also` | geometry the gesture brings that is in no node: the still parts of a path being edited |
 | `reachPx`, `reachWorld(px)` | the reach that applies to this source, and screen px as world units, to cull by |
 | `scene` | the scene, absent in a host with none |
+| `frameOf(id)` | a node's own frame, the turned coordinates its box is laid out in, as `toWorld` / `toLocal`; undefined for a node with no box |
 | `plane` | the parallax plane the probes are in; a target the camera draws (a grid, a guide) is carried into it |
 
 Rules a source follows:
