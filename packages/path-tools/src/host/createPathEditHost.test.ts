@@ -30,11 +30,15 @@ describe('createPathEditHost', () => {
   it('as a mode: opening a path enters path edit, and closing it leaves for the exit mode', () => {
     const modes = createModeRegistry({ initial: 'normal' });
     const host = createPathEditHost({ modes });
+    const heard = vi.fn();
+    host.subscribe(heard);
     host.setEditingId('a');
     expect(modes.current().id).toBe('path-edit');
     expect(host.editingId()).toBe('a');
     host.setEditingId(null);
     expect(modes.current().id).toBe('normal');
+    // Once per change: the mode's switch says it, not the host again.
+    expect(heard).toHaveBeenCalledTimes(2);
   });
 
   it('as a mode: a path counts as open only while the mode is, and comes back with it', () => {

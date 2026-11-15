@@ -48,10 +48,12 @@ export function createPathEditHost(opts: PathEditHostOptions = {}): PathEditStor
     editingId: () => (inMode() ? id : null),
     setEditingId(next) {
       const wasOpen = inMode();
+      const was = modes?.current().id;
       id = next;
       if (modes && next) modes.setMode(mode);
       else if (modes && wasOpen) modes.setMode(exitMode);
-      changed.emit();
+      // A mode switch has told every subscriber already.
+      if (modes?.current().id === was) changed.emit();
     },
     selectedAnchors: () => anchors,
     setSelectedAnchors(next) {
