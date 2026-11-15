@@ -3,6 +3,7 @@ import { composeAffordanceLayer } from './composeAffordanceLayer';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
+import type { RenderLayer } from 'core/layers/render';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -35,6 +36,16 @@ describe('composeAffordanceLayer', () => {
     expect(layer.id).toBe('test-overlay');
     expect(layer.label).toBe('Test');
     expect(layer.space).toBe('screen');
+  });
+
+  it('is a layer `registerLayer` takes as it is, reading the chrome state off whatever data it is handed', () => {
+    const a: Affordance = {
+      id: 'a',
+      regions: () => [pointRegion({ id: 'r', paint: { kind: 'square', sizePx: 4, fill: { paint: { color: 'red' } } } })],
+    };
+    const layer: RenderLayer<unknown> = composeAffordanceLayer('x', 'X', [a]);
+    expect(layer.draw({ getChromeState: () => makeState() }, VIEW, DIMS)).toHaveLength(1);
+    expect(layer.draw(makeState(), VIEW, DIMS)).toHaveLength(1);
   });
 
   it('draw emits a square paint command per region in array order', () => {

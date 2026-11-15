@@ -34,12 +34,15 @@ import type {
  * reverse and stops at the first that claims the point; within it the nearest region wins.
  *
  * `decorate(state, view)` runs *after* a given affordance's regions, for paint only.
+ *
+ * The layer takes whatever data the canvas hands its layers and reads the chrome state off it,
+ * so it registers with `registerLayer` or a `layers` slot as it is.
  */
 export function composeAffordanceLayer(
   id: string,
   label: string,
   affordances: readonly Affordance[],
-): RenderLayer<ChromeState> & {
+): RenderLayer<unknown> & {
   hitTest(
     wx: number,
     wy: number,

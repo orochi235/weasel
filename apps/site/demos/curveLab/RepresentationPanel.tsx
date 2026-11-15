@@ -12,7 +12,6 @@ import type {
   AffordanceRegion,
   InvocationCtx,
   OngoingHandle,
-  RenderLayer,
   SceneCanvasApi,
 } from '@weasel-js/core';
 import type { CurveRepresentation, SharedAnchor } from '@weasel-js/geom/curves';
@@ -102,11 +101,8 @@ export function RepresentationPanel({
     })),
   }), [scene, layerId]);
 
-  // `composeAffordanceLayer` types its data slot as `ChromeState`; the layer
-  // registry takes `RenderLayer<unknown>`. Both receive the same live
-  // `CanvasHelpers` envelope at runtime.
   const anchorLayer = useMemo(
-    () => composeAffordanceLayer(layerId, 'Curve anchor handles', [anchorHandles]) as unknown as RenderLayer<unknown>,
+    () => composeAffordanceLayer(layerId, 'Curve anchor handles', [anchorHandles]),
     [layerId, anchorHandles],
   );
 
@@ -161,7 +157,7 @@ export function RepresentationPanel({
           scene={scene}
           layerVisibility={layerVisibility}
           actions={actions}
-          layers={layers as never}
+          layers={layers}
         />
       </DemoStage>
       <ReadoutHud rep={rep} anchors={anchors} />
