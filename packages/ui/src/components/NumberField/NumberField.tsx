@@ -12,11 +12,13 @@ import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSl
 import type { StepperSide } from './UnitField';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
+import type { ControlSizeProps } from '../ControlSize';
+import { useFieldSizeClass } from '../Field/fieldSize';
 import f from '../Field/Field.module.css';
 import s from './NumberField.module.css';
 
 /** Props for {@link NumberField}, on top of React Aria's `NumberField` props. */
-export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & {
+export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & ControlSizeProps & {
   /** Hide the up/down stepper buttons. Defaults to false. */
   hideSteppers?: boolean;
   /** Which end of the field the steppers sit at. Defaults to `'start'`. */
@@ -63,14 +65,16 @@ export const NumberField = forwardRef(function NumberField(
     mixed,
     width = 'fill',
     className,
+    size,
     ...rest
   } = hold.rest;
+  const sized = useFieldSizeClass(size, className);
   return hold.wrap(
     <RACNumberField
       {...rest}
       {...hold.rac}
       value={mixed ? NaN : rest.value}
-      className={fieldRootClass({ orientation, width, fit: s.fit, className })}
+      className={fieldRootClass({ orientation, width, fit: s.fit, className: sized })}
     >
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <Group

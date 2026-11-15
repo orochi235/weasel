@@ -5,7 +5,7 @@ import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { PrefsBar } from '../PrefsBar/PrefsBar';
 import { ActionsLeaf } from '../Prefs/ActionsLeaf';
 import type { Orientation } from '../Run';
-import type { DensityProps } from '../Density';
+import type { ControlSizeProps } from '../ControlSize';
 import type { LeafRenderer } from '../inspector/SelectionPanel/renderContext';
 import type { DisableableProps } from '../Disabled';
 
@@ -27,7 +27,7 @@ export type ActionBarSource =
 export type ActionBarProps = ActionBarSource & ActionBarOptions;
 
 /** What an {@link ActionBar} takes besides its {@link ActionBarSource}. */
-export interface ActionBarOptions extends DensityProps, DisableableProps {
+export interface ActionBarOptions extends ControlSizeProps, DisableableProps {
   /** Layout direction. Defaults to the way the run the bar sits in goes, else `'horizontal'`. */
   orientation?: Orientation;
   /**

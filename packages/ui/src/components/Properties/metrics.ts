@@ -5,7 +5,7 @@ import s from './Properties.module.css';
  * moved together. Set on any container in the family; it reaches every
  * descendant, so an inner group can differ from the panel around it.
  */
-export type PropertyDensity = 'tight' | 'normal' | 'roomy';
+export type PropertySpacing = 'tight' | 'normal' | 'loose';
 
 /** Where an inline row's label and control sit on the row's cross axis. Set on
  *  a container to line a whole column of them up. */
@@ -15,7 +15,7 @@ export type PropertyAlign = 'start' | 'center' | 'end' | 'baseline';
  *  so the nearest container that states one wins. */
 export interface PropertyMetricProps {
   /** Room the rows get. Unset inherits from an outer container, else `normal`. */
-  density?: PropertyDensity;
+  spacing?: PropertySpacing;
   /**
    * Cross-axis alignment of an inline row's label and control. `baseline` sits
    * the control on the label's first-line baseline, which is what lines a
@@ -27,10 +27,10 @@ export interface PropertyMetricProps {
   align?: PropertyAlign;
 }
 
-const DENSITY_CLASS: Record<PropertyDensity, string> = {
-  tight: s.densityTight,
-  normal: s.densityNormal,
-  roomy: s.densityRoomy,
+const SPACING_CLASS: Record<PropertySpacing, string> = {
+  tight: s.spacingTight,
+  normal: s.spacingNormal,
+  loose: s.spacingLoose,
 };
 
 const ALIGN_CLASS: Record<PropertyAlign, string> = {
@@ -44,10 +44,10 @@ const ALIGN_CLASS: Record<PropertyAlign, string> = {
  *  Exported for the family's other files, which share the same two props. */
 export function propertyMetricClass(
   base: string,
-  { density, align }: PropertyMetricProps,
+  { spacing, align }: PropertyMetricProps,
   className?: string,
 ): string {
-  return [base, density && DENSITY_CLASS[density], align && ALIGN_CLASS[align], className]
+  return [base, spacing && SPACING_CLASS[spacing], align && ALIGN_CLASS[align], className]
     .filter(Boolean)
     .join(' ');
 }

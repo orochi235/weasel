@@ -1,7 +1,7 @@
 /* ── Container metrics ──────────────────────────────────────────────
    Every spacing number the family lays out with is read from a `--wzl-prop-*`
    custom property with its own value as the fallback, so a consumer can move
-   any of them from an ancestor without selector surgery. The `density` classes
+   any of them from an ancestor without selector surgery. The `spacing` classes
    below set them in preset bundles; nothing in this file declares one, so an
    inherited value always reaches the use site. */
 

@@ -73,7 +73,7 @@ export function PropertyRow(props: PropertyRowProps) {
     htmlFor,
     group,
     className,
-    density,
+    spacing,
     align,
     hint,
     mixed = false,
@@ -101,7 +101,7 @@ export function PropertyRow(props: PropertyRowProps) {
     ]
       .filter(Boolean)
       .join(' '),
-    { density, align },
+    { spacing, align },
     className,
   );
   // A stacked row reads label, readout, control down the column, so its readout

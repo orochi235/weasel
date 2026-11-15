@@ -66,8 +66,10 @@
 
 /* A control restyling part of the frame sets the matching `--_frame-*`
    property rather than restating the declaration, so no rule here ties with
-   one of its own on specificity and neither stylesheet has to load first. */
+   one of its own on specificity and neither stylesheet has to load first.
+   Its border sits inside its height, so it stands as tall as a button of the same size. */
 .frame {
+  box-sizing: border-box;
   height: var(--_frame-h, var(--wzl-field-h, var(--wzl-control-h)));
   background: var(--_frame-bg, var(--wzl-input-surface, var(--wzl-surface-sunken)));
   border: var(--_frame-border, var(--wzl-field-border, 1px solid color-mix(in srgb, var(--wzl-border), var(--wzl-border-strong) 30%)));

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SegmentedBar, type SegmentedEachItem, type SegmentedMode, type SegmentedVariant } from '@weasel-js/ui/components/Segmented';
 import { range, Sequence, values } from '@weasel-js/ui/components/Sequence';
-import type { ControlSize } from '@weasel-js/ui/components/Density';
+import type { ControlSize } from '@weasel-js/ui/components/ControlSize';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
 

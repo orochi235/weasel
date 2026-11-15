@@ -53,7 +53,7 @@ export function DialogRow({
   description,
   readout,
   span,
-  density,
+  spacing,
   align,
   disabled: own,
   disabledReason,
@@ -77,7 +77,7 @@ export function DialogRow({
       layout={layout}
       description={description}
       span={span}
-      density={density}
+      spacing={spacing}
       align={align}
       disabled={own}
       disabledReason={disabledReason}

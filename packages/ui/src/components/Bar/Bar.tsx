@@ -8,7 +8,7 @@ import { BarLine } from './BarLine';
 import { FormScope } from '../ActionButton/controlForm';
 import { BarDivider, BarGroup, BarItem, BarReadout, BarSpacer } from './barParts';
 import { useRun, type Orientation } from '../Run';
-import { useDensity, withDensity, type DensityProps } from '../Density';
+import { useControlSize, withControlSize, type ControlSizeProps } from '../ControlSize';
 import { holdScope, useDisabled, type HoldProps } from '../Disabled';
 
 /** Which way a bar runs. */
@@ -18,7 +18,7 @@ export type BarOrientation = Orientation;
 export type BarOverflowMode = PrefBarOverflow;
 
 /** Props for {@link Bar}. `disabled` and `readOnly` hold every cell. */
-export interface BarProps extends DensityProps, HoldProps {
+export interface BarProps extends ControlSizeProps, HoldProps {
   /** What the bar holds, in order: any controls, and `Bar.Group`s, `Bar.Spacer`s, `Bar.Divider`s, `Bar.Item`s, and
    *  `Bar.Readout`s. Each child is one cell on the line. */
   children?: ReactNode;
@@ -93,7 +93,7 @@ export function Bar(own: BarProps) {
   const run = useRun();
   // Off or disabled, the bar's lead dims as a heading's name does; disabled, every cell is disabled too.
   const props = { ...own, off: useDisabled(own).disabled || own.off === true };
-  const sm = useDensity(props.size) === 'sm';
+  const sm = useControlSize(props.size) === 'sm';
   const read = lineItems(props.children, props.onReorder !== undefined);
   const items = props.divided ? dividedItems(read) : read;
   const bar = run.shape !== undefined && run.shape.kind !== 'line'
@@ -101,7 +101,7 @@ export function Bar(own: BarProps) {
     : <BarLine {...props} items={items} sm={sm} orientation={props.orientation ?? run.orientation} />;
   return holdScope(own, (
     <BarMarkContext.Provider value={props.onReorder !== undefined}>
-      <FormScope form="bar">{withDensity(own.size, bar)}</FormScope>
+      <FormScope form="bar">{withControlSize(own.size, bar)}</FormScope>
     </BarMarkContext.Provider>
   ));
 }

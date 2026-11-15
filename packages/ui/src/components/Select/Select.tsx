@@ -22,6 +22,8 @@ import s from './Select.module.css';
 import { TriggerTooltip, tooltipContent, type TooltipFields } from '../Tooltip/buttonTooltip';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
+import type { ControlSizeProps } from '../ControlSize';
+import { useFieldSizeClass } from '../Field/fieldSize';
 import type { ListOption } from '../listOption';
 import { Caret } from '../Caret';
 import { optionLabels, withIcon } from './optionLabels';
@@ -50,7 +52,7 @@ export type SelectPopup = 'over' | 'below';
  * Props for {@link Select}, on top of React Aria's `Select` props, with the
  * selection key narrowed to the option value type.
  */
-export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'isDisabled'> & FieldSlotProps & HoldProps & {
+export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'isDisabled'> & FieldSlotProps & HoldProps & ControlSizeProps & {
   placeholder?: string;
   /** The select stands for several values that differ: nothing is selected,
    *  and the trigger reads `Mixed` in place of `placeholder`. */
@@ -134,6 +136,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
     portalContainer,
     shortcut,
     tooltip,
+    size,
     ...rest
   } = hold.rest;
 
@@ -161,7 +164,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           indicator === 'underline' && s.underlined,
           indicator === 'none' && s.plain,
           orientation === 'row' && s.row,
-          className,
+          useFieldSizeClass(size, className),
         ]
           .filter(Boolean)
           .join(' '),

@@ -1,13 +1,13 @@
 import { Children, type ReactNode } from 'react';
 import { useRun } from '../Run';
 import { tiling } from '../../tiling';
-import { withDensity, type DensityProps } from '../Density';
+import { withControlSize, type ControlSizeProps } from '../ControlSize';
 import s from './ToolGroup.module.css';
 import { holdScope, type HoldProps } from '../Disabled';
 import { FormScope } from '../ActionButton/controlForm';
 
 /** Props for {@link ToolGroup}. */
-export interface ToolGroupProps extends DensityProps, HoldProps {
+export interface ToolGroupProps extends ControlSizeProps, HoldProps {
   children: ReactNode;
   /** Lays children in a grid this many across, in place of the run's single line. */
   columns?: number;
@@ -36,7 +36,7 @@ export function ToolGroup(props: ToolGroupProps) {
   const style = tiles?.style;
   return (
     <div className={cls} style={style} role="group" data-group={groupKey} aria-label={ariaLabel}>
-      <FormScope form="palette">{holdScope(props, withDensity(size, children))}</FormScope>
+      <FormScope form="palette">{holdScope(props, withControlSize(size, children))}</FormScope>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import type { RovingTabIndex } from '../../useRovingTabIndex';
 import { useRun, type Orientation } from '../Run';
 import { SegmentsAlong } from './segmentsAlong';
 import type { SegmentedVariant } from './segmentedVariant';
-import { useDensity, type ControlSize } from '../Density';
+import { useControlSize, type ControlSize } from '../ControlSize';
 import s from './segmentedControl.module.css';
 import type { LastRow, SelectState, Tiling } from '@weasel-js/ui-input';
 import { tiling } from '../../tiling';
@@ -38,7 +38,7 @@ export interface SegmentedRowProps {
   ariaLabel?: string;
   className?: string;
   height?: number;
-  /** Default: the nearest `Density` scope's, else `'md'`. */
+  /** Default: the nearest `ControlSizeScope`'s, else `'md'`. */
   size?: ControlSize;
   variant?: SegmentedVariant;
   segments: readonly Segment[];
@@ -86,7 +86,7 @@ export function segmentPlaceProps(place: SegmentPlace | undefined): Partial<Omit
  */
 export function SegmentedRow(props: SegmentedRowProps): ReactElement {
   const enclosing = useRun();
-  const size = useDensity(props.size);
+  const size = useControlSize(props.size);
   if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return <SegmentsAlong {...props} size={size} shape={enclosing.shape} align={enclosing.align ?? 'center'} />;
   const { roving, role, ariaLabel, className, height, variant, segments, wrap } = props;
   const tiles = props.tiling ? tiling(segments.length, props.tiling) : null;

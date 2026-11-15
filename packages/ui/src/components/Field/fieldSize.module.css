@@ -1,0 +1,14 @@
+/* A field's own `size`, or its nearest control-size scope's: the height and type of a button of that size. Unsized
+   and unscoped, a field sets neither and takes the `--wzl-field-h` its container gives it. `--wzl-select-h` is
+   restated because a container declares it from its own `--wzl-field-h`, which is substituted there. */
+.sm {
+  --wzl-field-h: var(--wzl-control-h-sm);
+  --wzl-select-h: var(--wzl-control-h-sm);
+  --wzl-field-font-size: var(--wzl-font-size-sm);
+}
+
+.md {
+  --wzl-field-h: var(--wzl-control-h);
+  --wzl-select-h: var(--wzl-control-h);
+  --wzl-field-font-size: var(--wzl-font-size);
+}

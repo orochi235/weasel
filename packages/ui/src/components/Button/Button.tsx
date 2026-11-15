@@ -9,7 +9,7 @@ import s from './Button.module.css';
 import { ButtonTooltip, type TooltipFields } from '../Tooltip/buttonTooltip';
 import type { DisableableProps } from '../Disabled';
 import { type AppearanceProps, useAppearance } from '../appearance';
-import { useDensity } from '../Density';
+import { useControlSize } from '../ControlSize';
 
 /** Visual weight of a button. Defaults to `solid`. `link` drops the
  *  control box entirely and reads as a hyperlink in running text -- for an
@@ -20,7 +20,7 @@ export type ButtonVariant = 'solid' | 'ghost' | 'link';
 /** What every {@link Button} takes. */
 export type ButtonBase = {
   variant?: ButtonVariant;
-  /** Default: the nearest `Density` scope's, else `'md'`. */
+  /** Default: the nearest `ControlSizeScope`'s, else `'md'`. */
   size?: ControlSize;
   /** A button that stays down: renders `aria-pressed` and holds the active
    *  treatment while it is on. For a control that reports a state rather than
@@ -123,7 +123,7 @@ export const Button = forwardRef(function Button(
     id,
   } = props;
   const dataAttrs = Object.fromEntries(Object.entries(props).filter(([k]) => k.startsWith('data-')));
-  const size = useDensity(props.size);
+  const size = useControlSize(props.size);
 
   const cls = [
     s.button,

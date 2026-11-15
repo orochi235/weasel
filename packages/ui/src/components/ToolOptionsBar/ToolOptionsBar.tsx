@@ -3,12 +3,12 @@ import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { LeafRenderer } from '../inspector/SelectionPanel/renderContext';
 import { Bar } from '../Bar/Bar';
 import { PrefsBar } from '../PrefsBar/PrefsBar';
-import type { DensityProps } from '../Density';
+import type { ControlSizeProps } from '../ControlSize';
 import s from './ToolOptionsBar.module.css';
 import type { HoldProps } from '../Disabled';
 
 /** Props for {@link ToolOptionsBar}. */
-export interface ToolOptionsBarProps extends DensityProps, HoldProps {
+export interface ToolOptionsBarProps extends ControlSizeProps, HoldProps {
   /**
    * Context label for the row — e.g. the active tool's name. Shown as the
    * bar's lead, and names the toolbar, which is `'Tool options'` without

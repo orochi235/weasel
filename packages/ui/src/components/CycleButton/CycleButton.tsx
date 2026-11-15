@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
 import { Button, type ButtonVariant } from '../Button/Button';
-import { useDensity, type ControlSize } from '../Density';
+import { useControlSize, type ControlSize } from '../ControlSize';
 import { COLOR_MODES } from '../ColorModeControl/colorModes';
 import { Icon } from '../Icon/Icon';
 
@@ -30,7 +30,7 @@ export interface CycleButtonProps<T extends string = string> {
   /** What is being switched, leading the accessible name and tooltip
    *  (`Theme: Auto — click for Light`). */
   'aria-label': string;
-  /** Default: the nearest `Density` scope's, else `sm`, the size of a header's icon buttons. */
+  /** Default: the nearest `ControlSizeScope`'s, else `sm`, the size of a header's icon buttons. */
   size?: ControlSize;
   /** Defaults to `ghost`. */
   variant?: ButtonVariant;
@@ -54,7 +54,7 @@ export function CycleButton<T extends string = string>({
   variant = 'ghost',
   className,
 }: CycleButtonProps<T>): ReactElement {
-  const resolved = useDensity(size, 'sm');
+  const resolved = useControlSize(size, 'sm');
   const count = options.length;
   const index = Math.max(0, options.findIndex((o) => o.value === value));
   const current = options[index];

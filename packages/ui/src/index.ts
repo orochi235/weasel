@@ -20,7 +20,7 @@ export * from './components/ComboBox';
 export * from './components/CommandPalette';
 export * from './components/CurveEditor';
 export * from './components/DataGrid';
-export * from './components/Density';
+export * from './components/ControlSize';
 export * from './components/DetailList';
 export * from './components/Dialog';
 export * from './components/Disabled';

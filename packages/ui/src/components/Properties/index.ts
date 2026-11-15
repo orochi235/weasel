@@ -38,7 +38,7 @@ export type {
 } from './PropertyList';
 export type { PropertyPanelProps } from './PropertyPanel';
 export type { PropertyRowLayout, PropertyRowProps, PropertyRowVariant } from './PropertyRow';
-export type { PropertyAlign, PropertyDensity, PropertyMetricProps } from './metrics';
+export type { PropertyAlign, PropertySpacing, PropertyMetricProps } from './metrics';
 export { PropertyList, PropertyNote, PropertySpan } from './PropertyList';
 export { PropertyPanel } from './PropertyPanel';
 export { PropertyRow } from './PropertyRow';

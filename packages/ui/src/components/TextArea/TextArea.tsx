@@ -4,11 +4,13 @@ import { MIXED_HINT } from '../Field/mixedHint';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
+import type { ControlSizeProps } from '../ControlSize';
+import { useFieldSizeClass } from '../Field/fieldSize';
 import f from '../Field/Field.module.css';
 import s from './TextArea.module.css';
 
 /** Props for {@link TextArea}, on top of React Aria's `TextField` props. */
-export type TextAreaProps = Omit<RACTextFieldProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & {
+export type TextAreaProps = Omit<RACTextFieldProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & ControlSizeProps & {
   placeholder?: string;
   /** The field stands for several values that differ: it reads `Mixed` in
    *  place of `placeholder` while its value is empty. */
@@ -26,9 +28,10 @@ export type TextAreaProps = Omit<RACTextFieldProps, 'children' | 'className' | '
  */
 export const TextArea = forwardRef(function TextArea(props: TextAreaProps, ref: Ref<HTMLTextAreaElement>) {
   const hold = useRacHold(props);
-  const { label, orientation, description, errorMessage, placeholder, mixed, rows = 4, className, ...textFieldProps } = hold.rest;
+  const { label, orientation, description, errorMessage, placeholder, mixed, rows = 4, className, size, ...textFieldProps } = hold.rest;
+  const sized = useFieldSizeClass(size, className);
   return hold.wrap(
-    <TextField {...textFieldProps} {...hold.rac} className={fieldRootClass({ orientation, className })}>
+    <TextField {...textFieldProps} {...hold.rac} className={fieldRootClass({ orientation, className: sized })}>
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>
         <RACTextArea ref={ref} placeholder={mixed ? MIXED_HINT : placeholder} rows={rows} />
