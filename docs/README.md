@@ -17,8 +17,18 @@ Read in roughly this order:
   hand.
 - [extending.md](./extending.md) — custom layers, custom gesture behaviors,
   non-rect poses via `PoseDescriptor<TPose>`.
+- [taxonomy.md](./taxonomy.md) — what gesture, action, interaction, binding,
+  group, and selection each mean, and the precedence rules a binding wins by.
 - [dispatcher.md](./dispatcher.md) — diagrams of input routing: the dispatch
   pipeline, which binding wins, and how input scopes and yokes answer.
+- [snapping.md](./snapping.md) — snap sources, how the resolver ranks them,
+  and writing a source or an action that snaps.
+- [path-operations.md](./path-operations.md) — every operation that changes a
+  path's shape, by the gesture that drives it.
+- [devtools.md](./devtools.md) — the hook a page publishes its canvases on,
+  the panel protocol, and the devtools panel and extension.
+- [conventions.md](./conventions.md) — API naming and design rules, tokens,
+  and the appearance props.
 - [icons.md](./icons.md) — icon names (`core:undo`), where each glyph is
   drawn, the registry, and the build plugin that ships only the glyphs a
   build names.
