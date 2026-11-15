@@ -5,12 +5,6 @@
   gap: var(--wzl-space-6);
 }
 
-.note {
-  font-size: calc(var(--wzl-font-size-sm) + 1px);
-  color: var(--wzl-fg-muted);
-  max-width: 980px;
-}
-
 .grid {
   display: grid;
   grid-template-columns: minmax(280px, 1fr) minmax(220px, 1fr) auto;

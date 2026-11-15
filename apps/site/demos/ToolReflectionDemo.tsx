@@ -39,20 +39,12 @@ function ToolReflectionDemoInner() {
   const hand = useHandTool();
   const tools = useTools({ active: 'select', registry: { select, hand } });
 
-  // Feed the reflection consumers the live Tools — routes are `Tool.bindings`
-  // now, not anything on the authored def.
   const toolList = useMemo(() => Object.values(tools.registry), [tools.registry]);
   const registry: RegistryEntry[] = useMemo(() => buildRouteRegistry(toolList), [toolList]);
   const conflicts: Conflict[] = useMemo(() => findConflicts(toolList), [toolList]);
 
   return (
     <div className={styles.demo}>
-      <p className={styles.note}>
-        Live introspection of the registered <code>useSelectTool</code> +{' '}
-        <code>useHandTool</code> via their attached <code>tool.def</code>.
-        Registry on the left, conflict report in the middle, the canvas
-        they're driving on the right.
-      </p>
       <div className={styles.grid}>
         <div className={styles.panel}>
           <h3 className={styles.panelTitle}>Action registry ({registry.length})</h3>
