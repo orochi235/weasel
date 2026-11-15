@@ -188,16 +188,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * - `selectPreset` — the select tool, as the initial active tool and
      *   Escape's return target: click to pick, drag on empty to marquee, click
      *   on empty to clear.
-     * - `outlinePreset` — the selection outline, whichever tool sets the selection.
-     * - `pickPreset` — `selectPreset` and `outlinePreset`.
+     * - `outlinePreset` — the selection outline; `pickPreset` is it and `selectPreset`.
      * - `movePreset` — drag a body to move it, Alt-drag to clone it. Ambient,
      *   so it runs under any tool that does not claim the drag.
      * - `resizePreset`, `rotatePreset` — the resize and rotation handles,
      *   drawn and bound; `transformPreset` is both.
      * - `editPreset` — delete, duplicate, group/ungroup, nudge, select-all,
-     *   Escape, cancel-gesture, cut/copy/paste, fill and stroke, and their
-     *   keys. Cmd/Ctrl+V pastes nodes a kit canvas copied, from this tab or
-     *   another, and nothing else.
+     *   Escape, cut/copy/paste of kit nodes, fill and stroke, and their keys.
      * - `arrangePreset` — align, distribute, reorder, flip.
      * - `pathsPreset` — pathfinder operations, path-edit entry and anchor editing.
      * - `ingestPreset` — dropped and pasted content: images, SVG, files, and
@@ -210,14 +207,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *   tool set and nothing else.
      *
      * The parts of `editPreset`, `arrangePreset` and `pathsPreset` are presets
-     * of their own (`nudgePreset`, `clipboardPreset`, `alignPreset`,
-     * `pathfinderPreset`, …), for a canvas that wants one without the rest. A
-     * package's preset goes beside them the same way. Undo and redo are on
-     * whatever is passed. Tools add the actions they bind — a shape tool
-     * brings `insert`, the hand tool drag-pan — so `defaultTools` composes
-     * with any preset. `actions` then adds, overrides or removes on top of
-     * what the presets registered. To name presets instead, see
-     * `namedFeatures` in `@weasel-js/core/named-features`.
+     * of their own (`nudgePreset`, `alignPreset`, …), and a package's preset
+     * goes beside them. Undo and redo are always on. Tools add the actions
+     * they bind (a shape tool `insert`, the hand tool drag-pan), and `actions`
+     * adds, overrides or removes on top. `namedFeatures` in
+     * `@weasel-js/core/named-features` maps core's names to these objects.
      */
     features?: readonly FeaturePreset[];
 
