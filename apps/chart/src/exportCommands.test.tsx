@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, documentOf, type ExportScene } from '@weasel-js/core';
 import { App } from './App';
 import { chartPrefs } from './prefs';
 import { withIcons } from './testIcons';
@@ -13,6 +13,12 @@ type Heard = { onDiagnostic?: (d: { kind: string; subject: string; message: stri
 const pdf = vi.hoisted(() => vi.fn(async (_scene: unknown, _pages: readonly unknown[], _opts?: Heard) =>
   new Blob(['%PDF'], { type: 'application/pdf' })));
 const warned = vi.hoisted(() => vi.fn());
+
+/** What a page export was handed as its page or pages, read from the scene it was handed. */
+const readPages = (call: readonly unknown[]): unknown => {
+  const [scene, pages] = call as [ExportScene, unknown];
+  return typeof pages === 'function' ? (pages as (doc: ExportScene) => unknown)(documentOf(scene)) : pages;
+};
 const noPages = vi.hoisted(() => ({ on: false }));
 const between = vi.hoisted(() => ({ on: false }));
 const svgWarns = vi.hoisted(() => ({ on: false }));
@@ -43,7 +49,7 @@ vi.mock('./pages/useChartPages', async (actual) => {
       const pages = real.useChartPages(...args);
       if (noPages.on) return { ...pages, placed: [], current: null, shown: null };
       // The view between pages: no current page, and the one last shown is not the first.
-      if (between.on && pages.shown) return { ...pages, current: null, shown: { ...pages.shown, id: 'last-shown' } };
+      if (between.on && pages.shown) return { ...pages, current: null, shown: { ...pages.shown, name: 'Last shown' } };
       return pages;
     },
   };
@@ -93,7 +99,7 @@ describe('File › Export', () => {
     await vi.waitFor(() => expect(saved).toHaveLength(1));
     expect(saved[0]!.name).toBe('Page 1@2x.png');
     expect(saved[0]!.blob.type).toBe('image/png');
-    expect(png.mock.calls[0]![1]).toMatchObject({ id: 'page-1', x: 0, y: 0 });
+    expect(readPages(png.mock.calls[0]!)).toMatchObject({ name: 'Page 1', x: 0, y: 0 });
     expect(png.mock.calls[0]![2]).toMatchObject({ scale: 2 });
   });
 
@@ -101,8 +107,7 @@ describe('File › Export', () => {
     exportAs('Pages as PDF');
     await vi.waitFor(() => expect(saved).toHaveLength(1));
     expect(saved[0]!.name).toBe('chart.pdf');
-    expect(pdf.mock.calls[0]![1]).toHaveLength(1);
-    expect(pdf.mock.calls[0]![1][0]).toMatchObject({ id: 'page-1' });
+    expect(readPages(pdf.mock.calls[0]!)).toEqual([expect.objectContaining({ name: 'Page 1', x: 0, y: 0 })]);
   });
 
   it('reports what the PDF could not carry', async () => {
@@ -124,8 +129,8 @@ describe('File › Export', () => {
   it('draws the page last shown while the view is between pages', async () => {
     between.on = true;
     exportAs('Page as PNG (2×)');
-    await new Promise((r) => setTimeout(r, 0));
-    expect((png.mock.calls[0]?.[1] as { id: string } | undefined)?.id).toBe('last-shown');
+    await vi.waitFor(() => expect(saved).toHaveLength(1));
+    expect(saved[0]!.name).toBe('Last shown@2x.png');
   });
 
   it('writes no PDF when no page is placed', async () => {

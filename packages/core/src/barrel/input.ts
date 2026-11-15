@@ -76,7 +76,7 @@ export {
   type SteppedTimeline, type TimelineFrame, type TimelineFrameProgress, type TimelineFramesOptions,
 } from '../canvas/timelineFrames';
 export { exportFormatRegistry, exportFormats, exportRegions, registerExportFormat } from '../canvas/export/exportFormats';
-export { exportPages, pageRegion } from '../canvas/export/exportPages';
+export { exportPages, pageRegion, pageRegionOf, pageRegionsOf } from '../canvas/export/exportPages';
 export { exportRegionPng, type ExportRegionPngOptions, type PngExportOptions } from '../canvas/export/regionPng';
 export { selectionRegion } from '../canvas/export/selectionRegion';
 export { regionRenderArgs, type RegionRenderArgs, type RegionRenderArgsOptions } from '../canvas/export/regionRenderArgs';

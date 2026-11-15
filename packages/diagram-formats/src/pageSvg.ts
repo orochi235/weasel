@@ -15,6 +15,16 @@ export type PageExportScene = ExportScene;
 /** A page's rect in world space. A `PlacedPage` is one. */
 export type PageRect = Pick<ExportRegion, 'x' | 'y' | 'width' | 'height'>;
 
+/**
+ * A page as the page exports take it: a fixed rect, or a function reading it
+ * from the document the export draws, as core's `pageRegionOf(page)` does, so
+ * the page's bounds come from the revision drawn in them.
+ */
+export type PageSource = PageRect | ((doc: PageExportScene) => PageRect);
+
+/** Pages as {@link exportPagesPdf} takes them: fixed rects, or a function reading them from the document, as `pageRegionsOf(pages)` does. */
+export type PagesSource = readonly PageRect[] | ((doc: PageExportScene) => readonly PageRect[]);
+
 /** Options for {@link exportPageSvg}. */
 export interface ExportPageSvgOptions extends Omit<ExportRegionSvgOptions, 'background' | 'painters'> {
   /** The color painted under the page. Default: the page color of the
@@ -45,6 +55,9 @@ const painters = () => [diagramShape<RectPose>(), markShape<RectPose>()];
 /** `page` as a bare rect: a page's name titles neither its SVG nor its PDF page here. */
 const rectOf = ({ x, y, width, height }: PageRect) => ({ x, y, width, height });
 
+const sourceOf = (page: PageSource) =>
+  typeof page === 'function' ? (doc: PageExportScene) => rectOf(page(doc)) : rectOf(page);
+
 /**
  * The `SvgNode`s of everything on `page`, as `@weasel-js/svg`'s
  * `regionSvgNodes` writes them, with diagram outlines and drawn marks drawn by
@@ -59,8 +72,8 @@ export function pageSvgNodes(scene: PageExportScene, page: PageRect): SvgNode[] 
  * `exportRegionSvg` does, drawing diagram outlines and marks with the diagram
  * painters, on the diagram theme's page color unless told otherwise.
  */
-export function exportPageSvg(scene: PageExportScene, page: PageRect, opts: ExportPageSvgOptions = {}): Promise<string> {
-  return exportRegionSvg(scene, rectOf(page), { ...opts, painters: painters(), background: pageBackground(scene, opts.background) });
+export function exportPageSvg(scene: PageExportScene, page: PageSource, opts: ExportPageSvgOptions = {}): Promise<string> {
+  return exportRegionSvg(scene, sourceOf(page), { ...opts, painters: painters(), background: pageBackground(scene, opts.background) });
 }
 
 /**
@@ -69,8 +82,8 @@ export function exportPageSvg(scene: PageExportScene, page: PageRect, opts: Expo
  * has registered the diagram painters (`registerDiagramShape`,
  * `registerMarkShape`) and the fonts the scene uses. Needs WebGL2.
  */
-export function exportPagePng(scene: PageExportScene, page: PageRect, opts: ExportPagePngOptions): Promise<Blob> {
-  return exportRegionPng(scene, rectOf(page), { ...opts, background: pageBackground(scene, opts.background) });
+export function exportPagePng(scene: PageExportScene, page: PageSource, opts: ExportPagePngOptions): Promise<Blob> {
+  return exportRegionPng(scene, sourceOf(page), { ...opts, background: pageBackground(scene, opts.background) });
 }
 
 /**
@@ -80,7 +93,8 @@ export function exportPagePng(scene: PageExportScene, page: PageRect, opts: Expo
  * painting with, as for {@link exportPagePng}, including each font's outlines.
  */
 export function exportPagesPdf(
-  scene: PageExportScene, pages: readonly PageRect[], opts: ExportPagesPdfOptions = {},
+  scene: PageExportScene, pages: PagesSource, opts: ExportPagesPdfOptions = {},
 ): Promise<Blob> {
-  return exportRegionsPdf(scene, pages.map(rectOf), { ...opts, background: pageBackground(scene, opts.background) });
+  const regions = typeof pages === 'function' ? (doc: PageExportScene) => pages(doc).map(rectOf) : pages.map(rectOf);
+  return exportRegionsPdf(scene, regions, { ...opts, background: pageBackground(scene, opts.background) });
 }

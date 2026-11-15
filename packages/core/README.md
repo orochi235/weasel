@@ -251,7 +251,8 @@ only if no content changed meanwhile, or starts again, up to
 `EXPORT_CAPTURE_ATTEMPTS` times before rejecting with `ExportRevisionError`.
 Regions may be a function of the document, `(doc) => regions`, read again each
 time, so bounds measured from it belong to the revision drawn: `exportPages`
-places its pages that way, by id. A format of your own goes through
+places its pages that way, by id, through `pageRegionsOf(pages)`, and
+`pageRegionOf(page)` is the same for one page. A format of your own goes through
 `captureExport` too, warming in `warm` and reading everything it writes in
 `read`.
 What an export draws without reaches `onDiagnostic` once each, as an

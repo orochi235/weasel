@@ -28,5 +28,5 @@ export { PAGE_TEMPLATES, TEMPLATE_PAGE_SIZE, type PageTemplate, type PageTemplat
 export { addTemplatePage, templateSpecs, type AddTemplatePageOptions } from './templates/templateScene';
 export {
   exportPagePng, exportPageSvg, exportPagesPdf, pageSvgNodes,
-  type ExportPagePngOptions, type ExportPageSvgOptions, type ExportPagesPdfOptions, type PageExportScene, type PageRect,
+  type ExportPagePngOptions, type ExportPageSvgOptions, type ExportPagesPdfOptions, type PageExportScene, type PageRect, type PageSource, type PagesSource,
 } from './pageSvg';

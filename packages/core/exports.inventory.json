@@ -2233,6 +2233,8 @@
     "pageOfBounds": "function",
     "pageOfNode": "function",
     "pageRegion": "function",
+    "pageRegionOf": "function",
+    "pageRegionsOf": "function",
     "pageRunLayout": "function",
     "pageRunOf": "function",
     "pageShown": "function",
