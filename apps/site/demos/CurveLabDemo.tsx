@@ -29,16 +29,8 @@ export function CurveLabDemo() {
     if (next && id !== presetId) applyPreset(scene, next);
   };
 
-  // E2e probe: expose live anchor state. Re-register whenever anchors change
-  // so the probe returns the latest snapshot.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const hook = (window as unknown as {
-      __weaselTest?: { registerProbe?: (name: string, fn: () => unknown) => () => void };
-    }).__weaselTest;
-    if (!hook?.registerProbe) return;
-    return hook.registerProbe('curveLab', () => ({ anchors, presetId }));
-  }, [anchors, presetId]);
+  // Test probe `curveLab`: the anchors and preset as they stand.
+  useEffect(() => window.__weaselTest?.registerProbe('curveLab', () => ({ anchors, presetId })), [anchors, presetId]);
 
   return (
     <div className="curve-lab-root">

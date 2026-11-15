@@ -1,4 +1,4 @@
-import { asNodeId, IDENTITY_POSE_COMPOSITION, type NodeId, type Scene, type UseSceneOptions } from '@weasel-js/core';
+import { asNodeId, IDENTITY_POSE_COMPOSITION, type NodeId, type Scene, solid, type Stroke, type UseSceneOptions } from '@weasel-js/core';
 import {
   bezierCubic,
   bezierQuadratic,
@@ -15,7 +15,10 @@ export type CurveKind = (typeof REPS)[number]['kind'];
 export type CurvePose = ReturnType<CurveRepresentation['toPath']>;
 export interface CurveData {
   rep: CurveKind;
+  stroke: Stroke;
 }
+
+const CURVE_STROKE: Stroke = { paint: solid('#7fb069'), width: 2 };
 /** One scene for every panel: each representation's curve on a layer of its own, the anchors they share in its
  *  document, so one history holds them all. */
 export type CurveScene = Scene<CurveData, CurveKind, CurvePose>;
@@ -41,7 +44,7 @@ export function curveSceneOptions(): UseSceneOptions<CurveData, CurveKind, Curve
       kind: 'mark' as const,
       layer: rep.kind,
       pose: rep.toPath(anchors),
-      data: { rep: rep.kind },
+      data: { rep: rep.kind, stroke: CURVE_STROKE },
     })),
     doc: { [ANCHORS]: anchors, [PRESET]: id },
   };

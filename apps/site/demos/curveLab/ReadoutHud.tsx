@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { PATH_M, PATH_Z } from '@weasel-js/geom';
 import type { CurveRepresentation, SharedAnchor } from '@weasel-js/geom/curves';
 import num from '@weasel-js/theme/numeric.module.css';
 
@@ -38,7 +39,7 @@ function computeStats(rep: CurveRepresentation, anchors: SharedAnchor[]): CurveS
   let segs = 0;
   for (let i = 0; i < path.commands.length; i++) {
     const c = path.commands[i];
-    if (c !== 0 && c !== 4) segs++;
+    if (c !== PATH_M && c !== PATH_Z) segs++;
   }
   return {
     anchorCount: anchors.length,

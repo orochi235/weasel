@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   ANCHOR_HIT_BASE_PX,
   composeAffordanceLayer,
   SceneCanvas,
 } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
 import type {
   Action,
   ActionsProp,
@@ -12,10 +11,10 @@ import type {
   AffordanceRegion,
   InvocationCtx,
   OngoingHandle,
-  SceneCanvasApi,
+  SurfaceContribution,
 } from '@weasel-js/core';
 import type { CurveRepresentation, SharedAnchor } from '@weasel-js/geom/curves';
-import { anchorsOf, renderLayerOf, REPS, setAnchors, type CurvePose, type CurveScene } from './curveScene';
+import { anchorsOf, renderLayerOf, REPS, setAnchors, type CurveScene } from './curveScene';
 import {
   createAnchorsLayer,
   createCurvatureCombLayer,
@@ -67,20 +66,6 @@ export function RepresentationPanel({
   const combLayer = useMemo(() => createCurvatureCombLayer(rep, getAnchors), [rep, getAnchors]);
   const inflectionsLayer = useMemo(() => createInflectionsLayer(rep, getAnchors), [rep, getAnchors]);
 
-  const layers = {
-    scene: {
-      drawOne: (_n: unknown, p: CurvePose): DrawCommand[] => [{
-        kind: 'path',
-        path: p,
-        stroke: { paint: { color: '#7fb069' }, width: 2 },
-      } as DrawCommand],
-    },
-    selectionOverlay: null,
-    ...(overlays.anchors ? { anchorsOverlay: { layer: anchorsLayer, after: 'scene' as const } } : {}),
-    ...(overlays.comb ? { combOverlay: { layer: combLayer, after: 'scene' as const } } : {}),
-    ...(overlays.inflections ? { inflectionsOverlay: { layer: inflectionsLayer, after: 'scene' as const } } : {}),
-  };
-
   // The shared anchors are not the derived path's anchors — NURBS flattens to
   // a polyline, so the kit's path-edit chrome would grab the wrong points.
   // Declaring them as affordance regions instead keeps the hit-test, the
@@ -101,13 +86,12 @@ export function RepresentationPanel({
     })),
   }), [scene, layerId]);
 
-  const anchorLayer = useMemo(
-    () => composeAffordanceLayer(layerId, 'Curve anchor handles', [anchorHandles]),
-    [layerId, anchorHandles],
-  );
-
-  const canvasRef = useRef<SceneCanvasApi | null>(null);
-  useEffect(() => canvasRef.current?.registerLayer(anchorLayer), [anchorLayer]);
+  // Registered through an ambient entry rather than `layers`, which paints but is never hit-tested.
+  const ambient = useMemo<SurfaceContribution[]>(() => [{
+    id: layerId,
+    eligibility: {},
+    layers: [composeAffordanceLayer(layerId, 'Curve anchor handles', [anchorHandles])],
+  }], [layerId, anchorHandles]);
 
   const dragAnchor = useMemo<Action>(() => ({
     id: actionId,
@@ -143,6 +127,13 @@ export function RepresentationPanel({
     },
   }), [actionId, scene, layerId]);
 
+  const layers = {
+    selectionOverlay: null,
+    ...(overlays.anchors ? { anchorsOverlay: { layer: anchorsLayer, after: 'scene' as const } } : {}),
+    ...(overlays.comb ? { combOverlay: { layer: combLayer, after: 'scene' as const } } : {}),
+    ...(overlays.inflections ? { inflectionsOverlay: { layer: inflectionsLayer, after: 'scene' as const } } : {}),
+  };
+
   const actions = useMemo<ActionsProp>(() => ({
     [actionId]: dragAnchor,
   }), [actionId, dragAnchor]);
@@ -152,11 +143,11 @@ export function RepresentationPanel({
       <div className="curve-lab-panel-title">{rep.label}</div>
       <DemoStage width={width} height={height}>
         <SceneCanvas
-          ref={canvasRef}
           className="ckd-canvas"
           scene={scene}
           layerVisibility={layerVisibility}
           actions={actions}
+          ambient={ambient}
           layers={layers}
         />
       </DemoStage>
