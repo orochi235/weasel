@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { EASINGS, PATH_M, PATH_L, type EasingName } from '@weasel-js/geom';
+import { EASINGS, type EasingName } from '@weasel-js/geom';
 import {
   SceneCanvas,
+  linePath,
+  polylineFromPoints,
   solid,
   useScene,
   scenePoseTarget,
@@ -28,6 +30,7 @@ const TOP_PAD = 16;
 const H = TOP_PAD * 2 + ALL_EASINGS.length * ROW_HEIGHT;
 const MARKER_SIZE = 14;
 const TRACK_WIDTH = TRACK_RIGHT - TRACK_LEFT;
+const PLOT_SAMPLES = 32;
 
 // One lane per easing, every lane the same length. After `linear`, the curves
 // come in In/Out/InOut triples, and each variant keeps one color.
@@ -70,7 +73,6 @@ export function EasingsDemo() {
     }
   };
 
-  // Custom overlay layer: per-row labels + track lines.
   const trackLayer: RenderLayer<unknown> = {
     id: 'tracks', label: 'Tracks',
     draw: () => {
@@ -85,39 +87,23 @@ export function EasingsDemo() {
           { fontFamily: 'sans-serif', fontSize: 11, align: 'right' },
           undefined, ROW_HEIGHT, 'center',
         ));
-        // Track line as 2-point polygon path stroke.
         cmds.push({
           kind: 'path',
-          path: {
-            kind: 'polygon',
-            commands: new Uint8Array([PATH_M, PATH_L]),
-            coords: new Float32Array([TRACK_LEFT, y, TRACK_RIGHT, y]),
-            fillRule: 'nonzero',
-          },
+          path: linePath({ x: TRACK_LEFT, y }, { x: TRACK_RIGHT, y }),
           stroke: { paint: { color: '#3a2e22' }, width: 1 },
         });
-        // Mini curve plot.
-        const plotY = y + 3;
-        const plotH = 6;
+        // The curve's shape, plotted in a strip just under the track.
         const fn = EASINGS[name];
-        const samples = 32;
-        const commands = new Uint8Array(samples + 1);
-        const coords = new Float32Array((samples + 1) * 2);
-        for (let s = 0; s <= samples; s++) {
-          const t = s / samples;
-          const px = TRACK_LEFT + t * TRACK_WIDTH;
-          const v = Math.max(0, Math.min(1, fn(t)));
-          const py = plotY + (1 - v) * plotH;
-          commands[s] = s === 0 ? PATH_M : PATH_L;
-          coords[s * 2] = px;
-          coords[s * 2 + 1] = py;
-        }
+        const plot = Array.from({ length: PLOT_SAMPLES + 1 }, (_, s) => {
+          const t = s / PLOT_SAMPLES;
+          return { x: TRACK_LEFT + t * TRACK_WIDTH, y: y + 3 + (1 - Math.max(0, Math.min(1, fn(t)))) * 6 };
+        });
         cmds.push({
           kind: 'group',
           alpha: 0.5,
           children: [{
             kind: 'path',
-            path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' },
+            path: polylineFromPoints(plot),
             stroke: { paint: { color: colorOf(i) }, width: 1 },
           }],
         });
@@ -151,13 +137,6 @@ export function EasingsDemo() {
           }}
         />
       </DemoStage>
-      <p className="ckd-hint ckd-prose">
-        Click <strong>play all</strong> to fire one tween per easing simultaneously, all sharing
-        the same duration. Each marker's x is driven by its named curve from <code>EASINGS</code>;
-        the dim line below each track plots the curve shape (clamped to [0,1] for the back/
-        elastic overshoot rows — the marker itself still shows the overshoot through its
-        actual position).
-      </p>
     </div>
   );
 }
