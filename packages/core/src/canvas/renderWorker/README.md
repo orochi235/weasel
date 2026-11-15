@@ -139,7 +139,10 @@ sets `globalThis.devicePixelRatio` to the page's density, which `defaultDrawOne`
 
 A lost context skips frames; the renderer rebuilds itself on restore, and the worker sends `dirty`.
 
-Unmount terminates the worker, and the context with it. A canvas can be transferred once, so a
+Unmount terminates the worker, and the context with it. `startSceneRenderWorker` owns the worker
+it is handed from the call: a setup that throws (the transfer, or an init message that cannot be
+posted) terminates it, stops watching the scene and rethrows its own error, so a React host's
+error boundary sees what went wrong. A canvas whose transfer went through cannot be handed over again. A canvas can be transferred once, so a
 StrictMode remount, which runs cleanup and setup back to back on one element, keeps the client:
 cleanup releases it a task later and the setup in between takes it back.
 

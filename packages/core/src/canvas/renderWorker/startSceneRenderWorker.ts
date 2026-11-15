@@ -118,7 +118,11 @@ function watchStartup(worker: Worker, warn: (what: string, detail: unknown) => v
 
 /** Start painting `inputs.scene` into `canvas` from `worker`, a worker whose module calls
  *  `serveSceneRender`. The canvas is the worker's from here on: the page can no longer open a
- *  context on it or set its size attributes. */
+ *  context on it or set its size attributes.
+ *
+ *  The client owns `worker` from the call: `dispose` terminates it, and so does a setup that
+ *  throws, which rethrows its own error and leaves nothing watching. A canvas whose transfer went
+ *  through before the throw cannot be handed over again. */
 export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   worker: Worker,
   canvas: HTMLCanvasElement,
@@ -157,7 +161,6 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     unwatch();
     unwatch = watchInputs(inputs, due.emit, frames.overridesChanged);
   };
-  watch();
 
   // A worker that never started answers nothing asked of it.
   const startup = watchStartup(worker, warnOnce, () => { snapshots.drain(null); idReads.drain(EMPTY_IDS()); });
@@ -174,9 +177,17 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     else if (msg.type === 'error') warnOnce('the render worker failed:', msg.message);
   });
 
-  const dpr = resolveDpr(initial.dpr);
-  const offscreen = canvas.transferControlToOffscreen();
-  post({ type: 'init', canvas: offscreen, width: initial.width, height: initial.height, dpr }, [offscreen]);
+  try {
+    const dpr = resolveDpr(initial.dpr);
+    const offscreen = canvas.transferControlToOffscreen();
+    post({ type: 'init', canvas: offscreen, width: initial.width, height: initial.height, dpr }, [offscreen]);
+    watch();
+  } catch (e) {
+    disposed = true;
+    unwatch();
+    worker.terminate();
+    throw e;
+  }
 
   return {
     update(next) {

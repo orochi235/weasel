@@ -342,18 +342,6 @@ Owner tags, after the priority (2026-10-26):
   recoverable errors allow later frames, fatal failures reach callers and release owned work, and
   tests cover post-start errors, an unresponsive worker, message errors, disposal and restart.
 
-- **(P2) [agent] Roll back render-worker setup when canvas transfer or initialization throws.**
-  `startSceneRenderWorker` subscribes to scene/override/scroll/clock stores before
-  `transferControlToOffscreen` and the init `postMessage`; neither has exception cleanup. The
-  `holdRenderWorker(canvas, start(), inputs)` caller has already created the worker, and a thrown
-  setup returns no handle to dispose (`packages/core/src/canvas/renderWorker/startSceneRenderWorker.ts`,
-  `liveClients.ts`). Reproduced with a throwing transfer: the scene subscription was installed,
-  its unsubscribe was never called, and the supplied worker was never terminated. Use transactional
-  setup that releases all acquired resources on failure, including init-send failures after transfer.
-  Closes when every setup failure point leaves no subscriptions, timers, requests or owned worker
-  alive, the ownership/failure contract is documented, and tests cover failed transfer, failed init
-  cloning/posting, worker construction and StrictMode cleanup without masking the original error.
-
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
