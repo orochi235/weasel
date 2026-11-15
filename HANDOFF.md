@@ -30,22 +30,10 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
-- 2026-11-14 audit round twenty-four: the site's HandleSnapLab demo (its degree controls now convert to the
-  radians handle snapping takes; a slip shows as snapping at the wrong steps); on a Mac, Ctrl-click on a `Tree` or
-  `LayerList` row opening the menu and leaving the selection alone; the pref schema editor's zoom readout at 2.25
-  and 4; draw opening an SVG saved with a Blend effect and a session holding a warped path from before the renames;
-  `KeyBank` labels still shortening in a narrow parent now that the fit scope measures only its own box.
-- 2026-11-14 second batch: kernel3d's axis-move handles in the 3D lab (`npm run dev:3d` in `packages/labkit`) —
-  their look, hover, and a drag along each axis, up included; the site's `path-motion` demo (the rider turning
-  with the curve) and `timeline-frames` demo (whether a browser allows its ~25 PNG downloads); the prefs rail and
-  prefs-editor's asset list on the new `RailList` parts, and the `ui/RailList` stories; a stepped `SegmentedBar`
-  keeping its width with its segments stretched. A fitted `Bar` placed as a row item beside siblings that squeeze
-  it no longer steps its labels (the price of measuring only its own box); check none of draw's or labkit's bars
-  relied on that.
-- 2026-11-14 batch: draw opening its session from IndexedDB (no starter drawing flashing first) and moving an
-  old localStorage session across on first open; a document with several photos saving; the renamed path
-  tools' labels, icons and menus in draw (Fillet, Sand, Knead, Snip, Reach, Tug, Poise, Fairing, Drape,
-  Pin warp, Plane warp, Cloth warp, Tween) and the site's renamed labs.
+- 2026-11-14, by eye only (the rest of the day's list was driven headless the same evening): the look of
+  kernel3d's axis-move handles in the 3D lab (`npm run dev:3d` in `packages/labkit`), which have no hover state
+  beyond the move cursor; the `timeline-frames` demo in a headed Chrome, which asks once before a site saves
+  several files; labkit's annotation options bar squeezed beside its siblings.
 
 - 2026-11-09, round thirteen: two 3D views on one surface picking through their own cameras; View › Snapping and
   Mod+Shift+;; MenuBar's Alt+letter only with focus on a title; a press on a selected lens taking focus back;
