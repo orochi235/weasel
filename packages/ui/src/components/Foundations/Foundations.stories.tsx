@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { toHex } from '../TokenPanel/color';
 import s from './Foundations.module.css';
 
@@ -122,16 +123,15 @@ function TextView(): ReactElement {
       </div>
 
       <div className={s.sampleSizeRow}>
-        <h3 className={s.subhead} style={{ margin: 0 }}>Families & weights</h3>
+        <h3 className={`${s.subhead} ${s.flush}`}>Families & weights</h3>
         <label className={s.sampleSizeControl}>
           <span className={s.sampleSizeLabel}>sample size</span>
-          <input
-            type="range"
+          <InlineRange
             min={10}
             max={48}
             step={1}
             value={sampleSize}
-            onChange={(e) => setSampleSize(Number(e.target.value))}
+            onChange={(e) => setSampleSize(Number(e.currentTarget.value))}
           />
           <code className={s.sampleSizeValue}>{sampleSize}px</code>
         </label>
@@ -212,17 +212,14 @@ function LinesView(): ReactElement {
   ];
   return (
     <Section title="Lines">
-      <div
-        className={s.borderGrid}
-        style={{ background: 'var(--wzl-surface-sunken)', padding: '12px 16px', borderRadius: 'var(--wzl-radius-md)' }}
-      >
+      <div className={`${s.borderGrid} ${s.linesStage}`}>
         {lines.map((l) => (
           <div key={l.token} className={s.borderRow}>
             <code className={s.borderToken}>{l.token}</code>
             <div className={s.borderSampleWrap}>
-              <div style={{ width: '100%', height: 1, background: `var(${l.token})` }} />
+              <div className={s.lineSample} style={{ background: `var(${l.token})` }} />
             </div>
-            <span style={{ color: 'var(--wzl-fg-muted)', fontSize: 12 }}>{l.description}</span>
+            <span className={s.lineCaption}>{l.description}</span>
           </div>
         ))}
       </div>

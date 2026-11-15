@@ -372,3 +372,23 @@
   white-space: pre;
   overflow-x: auto;
 }
+
+.flush {
+  margin: 0;
+}
+
+.linesStage {
+  padding: var(--wzl-space-6) var(--wzl-space-8);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-sunken);
+}
+
+.lineSample {
+  width: 100%;
+  height: 1px;
+}
+
+.lineCaption {
+  font-size: var(--wzl-font-size-xs);
+  color: var(--wzl-fg-muted);
+}
