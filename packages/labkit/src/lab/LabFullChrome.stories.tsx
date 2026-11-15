@@ -75,7 +75,7 @@ async function* sweep(spec: SweepSpec, signal: AbortSignal): AsyncGenerator<JobE
 }
 
 // Rendered for its effect alone: a mark seeded on mount gives every trial one
-// undoable edit, so Undo reads live instead of starting greyed out.
+// undoable edit, so Undo reads live instead of starting grayed out.
 function SeedMarks({ ctx }: { ctx: RenderContext<ScanState, ScanConfig> }) {
   const seeded = useRef(false);
   useEffect(() => {
@@ -288,9 +288,8 @@ export const SingleInstrument: Story = {
   },
 };
 
-/** The shell footer, which `<Lab>` had no prop for — reaching it used to mean
- *  building `<LabShell>` yourself. Trial chrome is contributions now; see
- *  `labkit/Chrome/Regions` for those. */
+/** The shell footer, through `<Lab footer>`. Chrome inside a trial is a
+ *  contribution instead; see `labkit/Chrome/Regions`. */
 export const WithFooter: Story = {
   args: {
     instruments: [spectrometer, beamProfile],
