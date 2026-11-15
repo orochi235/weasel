@@ -26,7 +26,7 @@ loop allocates nothing. The types that do exist are small:
 
 | Type | Shape | Notes |
 |---|---|---|
-| `Mat3` | `[a, b, c, d, e, f]` | A 2D affine in canvas and `DOMMatrix` order: `x' = a·x + c·y + e`, `y' = b·x + d·y + f`. |
+| `Affine` | `[a, b, c, d, e, f]` | A 2D affine in canvas and `DOMMatrix` order: `x' = a·x + c·y + e`, `y' = b·x + d·y + f`. |
 | `Box` | `[minX, minY, maxX, maxY]` | An axis-aligned box as a tuple. |
 | `Rect` | `{ x, y, width, height }` | The same box in object form. |
 | `View` | `{ x, y, scale: { x, y } }` | A viewport: the world point drawn at the canvas's top-left corner, and pixels per world unit on each axis. |
@@ -34,7 +34,7 @@ loop allocates nothing. The types that do exist are small:
 | `Path` | `RectPath \| PolygonPath` | A shape. See below. |
 
 `translate`, `scale`, `rotate`, `rotateAboutPoint`, and `boxToBox` build a
-`Mat3`. `multiply(m, n)` composes two, applying `n` first. `invert` returns
+`Affine`. `multiply(m, n)` composes two, applying `n` first. `invert` returns
 `null` for a singular matrix, and `transformPoint` maps one point.
 
 ```ts
@@ -44,7 +44,7 @@ import { transformPoint, invert, multiply, scale, translate } from '@weasel-js/g
 const worldToScreen = multiply(scale(2, 2), translate(-10, -20));
 transformPoint(worldToScreen, 15, 25); // [10, 10]
 
-const screenToWorld = invert(worldToScreen); // Mat3 | null
+const screenToWorld = invert(worldToScreen); // Affine | null
 ```
 
 The `mat3` namespace holds the `GlMat3` operations (`mat3.fromAffine`,
