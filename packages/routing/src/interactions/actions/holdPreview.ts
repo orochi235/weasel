@@ -7,6 +7,7 @@ import type { Action } from './action';
 import { evaluateEnabled } from './actionEnabled';
 import { resolveParams, type OngoingHandle } from './invoker';
 import { dynamicActionId, type DynamicActionId } from './actionIds';
+import { showPreview } from './showPreview';
 
 /** The id {@link holdPreview} gives the hold of action `id`. Its params are the action's, which the schema does
  *  not name under this id, so it is a dynamic one. */
@@ -32,11 +33,11 @@ export function holdPreview(action: Action): Action {
       timing: 'ongoing',
       start: (ctx, opts): OngoingHandle => {
         const params = resolveParams(opts?.params);
-        const hide = action.preview?.(ctx.deps, params);
+        const hide = showPreview(action, () => ctx.deps, params, ctx.world);
         return {
           // An end's ctx carries no deps, so the run takes the press's.
           onEnd: (_end, reason) => {
-            hide?.();
+            hide();
             if (reason !== 'commit' || invoker?.timing !== 'immediate') return;
             // Asked again: what the press previewed may have stopped applying while the key was held.
             if (evaluateEnabled(action, ctx.deps, ctx.world, params).enabled) invoker.run(ctx.deps, params);

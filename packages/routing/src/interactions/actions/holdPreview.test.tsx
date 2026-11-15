@@ -15,7 +15,7 @@ import { keymapContribution } from '../../keymaps/keymapContribution';
 import type { KeymapStack } from '../../keymaps/keymapStack';
 import { holdPreview, holdPreviewId } from './holdPreview';
 
-function rig(opts: { enabled?: Action['enabled'] } = {}) {
+function rig(opts: { enabled?: Action['enabled']; throws?: boolean } = {}) {
   const dispatcher = createDispatcher();
   const shown = vi.fn();
   const hidden = vi.fn();
@@ -25,7 +25,11 @@ function rig(opts: { enabled?: Action['enabled'] } = {}) {
     label: 'Unite',
     requires: ['keymaps'],
     ...(opts.enabled ? { enabled: opts.enabled } : {}),
-    preview: (deps, params) => { shown(params, deps); return hidden; },
+    preview: (deps, params) => {
+      shown(params, deps);
+      if (opts.throws) throw new Error('preview failed');
+      return hidden;
+    },
     invoker: { timing: 'immediate', run: (deps, params) => run(params, deps) },
   };
   // What core's cancelGesture is: Escape, live only while a gesture is in flight.
@@ -131,5 +135,17 @@ describe('holdPreview', () => {
     r.send('keyup', 'u');
     expect(r.shown).not.toHaveBeenCalled();
     expect(r.run).not.toHaveBeenCalled();
+  });
+
+  it('still holds and runs on release when the preview throws', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = rig({ throws: true });
+    r.tap('p');
+    r.send('keydown', 'u');
+    expect(r.shown).toHaveBeenCalledTimes(1);
+    r.send('keyup', 'u');
+    expect(r.run).toHaveBeenCalledWith({ op: 'union' }, expect.anything());
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('preview of "unite" threw'), expect.any(Error));
+    error.mockRestore();
   });
 });

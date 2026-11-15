@@ -1,5 +1,5 @@
 /**
- * Running an action's `preview` for `ActionsRegistry.preview`: asked only while `enabled` allows it, and handing
+ * Running an action's `preview`, for `ActionsRegistry.preview` and `holdPreview`: asked only while `enabled` allows it, and handing
  * back a take-down that is safe to call twice.
  */
 import type { Action } from './action';
