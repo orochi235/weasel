@@ -213,7 +213,7 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    * not named here compiles on that frame. Each handle comes from a
    * module-level `registerProgram()`. The array is read at each paint and
    * registered again when its ids change, so a handle added after mount is
-   * picked up. Re-registering one of these ids with new source repaints the
+   * picked up. Replacing the source of one of these ids (`replace: true`) repaints the
    * canvas, and the renderer recompiles it for that frame.
    */
   shaders?: ShaderProgramHandle[];

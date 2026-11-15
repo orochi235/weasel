@@ -1,6 +1,6 @@
 import type { Op } from './types';
 import { alreadyHolds } from './alreadyHolds';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 
 interface SetLayerAdapter {
   setLayer(id: string, layer: string): void;
@@ -37,4 +37,4 @@ export function createSetLayerOp(args: SetLayerArgs): Op {
   };
 }
 
-registerOpFactory<SetLayerArgs>('setLayer', (args) => createSetLayerOp(args));
+registerKitOpFactory<SetLayerArgs>('setLayer', (args) => createSetLayerOp(args));

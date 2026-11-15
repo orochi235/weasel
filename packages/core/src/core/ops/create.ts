@@ -1,6 +1,6 @@
 import type { Op } from './types';
 import { createDeleteOp, type PlacedNode } from './delete';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 import { parentOf, resolveSlot, slotFromIndex, type OrderedReader, type SiblingSlot } from './slot';
 
 interface InsertAdapter<TNode> extends OrderedReader {
@@ -61,4 +61,4 @@ export function createInsertOp<TNode extends { id: string }>(args: InsertArgs<TN
   };
 }
 
-registerOpFactory<InsertArgs<{ id: string }>>('insert', (args) => createInsertOp(args));
+registerKitOpFactory<InsertArgs<{ id: string }>>('insert', (args) => createInsertOp(args));

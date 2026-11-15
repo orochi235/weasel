@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createDeleteOp } from './delete';
-import { rebuildOp } from './registry';
+import { defaultOpRegistry } from './registry';
 
 interface Obj { id: string; value: number; parent: string | null }
 
@@ -62,7 +62,7 @@ describe('createDeleteOp', () => {
     op.apply(adapter as never);
     op.invert().apply(adapter as never);
     expect(adapter.getNode('a')).toEqual({ id: 'a', value: 7, parent: null });
-    expect(rebuildOp('delete', JSON.parse(JSON.stringify(op.args)))!.invert().args).toMatchObject({
+    expect(defaultOpRegistry.rebuild('delete', JSON.parse(JSON.stringify(op.args)))!.invert().args).toMatchObject({
       node: { id: 'a', value: 7, parent: null },
     });
   });
@@ -118,7 +118,7 @@ describe('createDeleteOp', () => {
     const inverse = op.invert();
     expect(inverse.name).toBe('insert');
 
-    const rebuilt = rebuildOp(inverse.name!, JSON.parse(JSON.stringify(inverse.args)))!;
+    const rebuilt = defaultOpRegistry.rebuild(inverse.name!, JSON.parse(JSON.stringify(inverse.args)))!;
     rebuilt.apply(adapter as never);
     expect(adapter.getChildren(null)).toEqual(['a', 'g']);
     expect(adapter.getChildren('g')).toEqual(['c1', 'c2']);

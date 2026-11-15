@@ -44,15 +44,21 @@ export { unionBounds, unionAABB, axisAlignedBounds, positiveBox } from '../core/
 export type { RectPose } from '../core/geometry/unionBounds';
 
 // ─── Undo history: createHistory + entry shape ──────────────────────────────
-// Core's `createHistory` stands in for the engine's own: the wrapper injects
-// the global op-factory registry as the restore-time rebuild hook (see
-// ./core/ops/createHistory). The engine's types are named rather than
-// `export *`: esbuild cannot enumerate a star re-export across a package
-// boundary and emits no binding for it.
-export { createHistory } from '../core/ops/createHistory';
+// Core's `createHistory` stands in for the engine's own: the wrapper restores
+// ops through an op registry (see ./core/ops/createHistory). The engine's
+// types are named rather than `export *`: esbuild cannot enumerate a star
+// re-export across a package boundary and emits no binding for it.
+export { createHistory, type CreateHistoryOptions } from '../core/ops/createHistory';
+export { HistoryRestoreError } from '@weasel-js/history';
 export type {
   History,
-  CreateHistoryOptions,
+  HistoryRecovery,
+  HistoryRestoreReport,
+  RebuildContext,
+  RebuildOp,
+  RestoreOptions,
+  UnresolvableOp,
+  UnresolvedOp,
   HistoryEntry,
   EvictedEntry,
   SerializedOp,
@@ -79,7 +85,7 @@ export {
   createScene, sceneFromJSON, nodeKindOf, specsFromSerialized, isSerializedScene, localizeInScene, localizeWorldPoses, worldPosesOf, sceneSelectionStore, useScene, asNodeId, hasChildren, isLeaf, statedFields, SCENE_HISTORY_FORM,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentDepOf, documentOf, documentPose, effectivePose, nodeAsShown,
   CLIP_NOTHING, UNION_OF_CHILDREN, clipNothing, unionOfChildren, SceneArrivalRefused, SnapshotKeyError, SnapshotShapeError, reconcileSpecs, sceneDeclaredScopes, sceneMagnification, sceneSharedUnitScopes, sceneUnitScopes,
-  BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf, booleanGroupFields,
+  BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf, booleanGroupFields, RestoredOpError,
 } from '../core/scene';
 export type { BooleanShapeOp, PlacedSpec, PoseSource, PosedNode, ScopedScene, ShownDataSource } from '../core/scene';
 export type {

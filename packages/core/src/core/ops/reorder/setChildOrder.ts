@@ -1,6 +1,6 @@
 import { sameList } from '@weasel-js/registry';
 import type { Op } from '../types';
-import { registerOpFactory } from '../registry';
+import { registerKitOpFactory } from '../registry';
 
 interface ChildOrderAdapter {
   getChildren(parentId: string | null): string[];
@@ -51,4 +51,4 @@ export function createSetChildOrderOp(args: SetChildOrderArgs): Op {
   };
 }
 
-registerOpFactory<SetChildOrderArgs>('setChildOrder', (args) => createSetChildOrderOp(args));
+registerKitOpFactory<SetChildOrderArgs>('setChildOrder', (args) => createSetChildOrderOp(args));

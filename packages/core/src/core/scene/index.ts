@@ -8,6 +8,7 @@ export { isSerializedScene, nodeKindOf, specsFromSerialized } from './serializat
 export { SnapshotKeyError, SnapshotShapeError } from './snapshotShape';
 export { localizeInScene, localizeWorldPoses, worldPosesOf, type PlacedSpec } from './worldSave';
 export type { SkippedKey, SpecsFromSerializedOptions, V1Classifier } from './serialization';
+export { RestoredOpError } from './boundOps';
 export { SCENE_HISTORY_FORM } from './historyForm';
 export type { SerializedSceneHistory } from './historyForm';
 export type {

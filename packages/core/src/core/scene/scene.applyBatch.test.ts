@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createScene } from './scene';
 import type { Op } from 'core/ops/types';
-import { registerOpFactory } from 'core/ops/registry';
 import { POSE, makeScene, type Data, type Layer } from './testing/makeScene';
 
 describe('untracked', () => {
@@ -142,116 +141,5 @@ describe('coalescing (coalesceWindowMs)', () => {
     expect(cell).toEqual({ a: 0, b: 0 });
     s.redo();
     expect(cell).toEqual({ a: 2, b: 2 });
-  });
-});
-
-describe('history persistence (serializeHistory / restoreHistory)', () => {
-  /** Serialize scene A's state+history, rebuild both into a fresh scene. */
-  function roundTrip(a: ReturnType<typeof makeScene>) {
-    const snap = a.serializeHistory();
-    const b = makeScene();
-    b.loadState(a.toJSON());
-    b.restoreHistory(snap);
-    return b;
-  }
-
-  it('external-op entries replay through the lazy history adapter (wired after restore)', () => {
-    const NAME = 'scenetest:cellSet';
-    let cell = 0;
-    const mk = (f: number, t: number): Op => ({
-      name: NAME, args: { from: f, to: t },
-      apply: (adapter) => { (adapter as { set(v: number): void }).set(t); },
-      invert: () => mk(t, f),
-    });
-    registerOpFactory(NAME, (args) => {
-      const { from, to } = args as { from: number; to: number };
-      return mk(from, to);
-    });
-    const liveAdapter = { set: (v: number) => { cell = v; } };
-    const a = makeScene();
-    a.applyBatch([mk(0, 7)], 'set cell', liveAdapter);
-    expect(cell).toBe(7);
-
-    const b = roundTrip(a);
-    // Adapter wired AFTER restore — lazy binding must not care.
-    b.setHistoryAdapter(() => liveAdapter);
-    b.undo();
-    expect(cell).toBe(0);
-    b.redo();
-    expect(cell).toBe(7);
-  });
-
-  it('external-op entries replay through the lazy history adapter (wired before restore)', () => {
-    const NAME = 'scenetest:cellSetPre';
-    let cell = 0;
-    const mk = (f: number, t: number): Op => ({
-      name: NAME, args: { from: f, to: t },
-      apply: (adapter) => { (adapter as { set(v: number): void }).set(t); },
-      invert: () => mk(t, f),
-    });
-    registerOpFactory(NAME, (args) => {
-      const { from, to } = args as { from: number; to: number };
-      return mk(from, to);
-    });
-    const liveAdapter = { set: (v: number) => { cell = v; } };
-    const a = makeScene();
-    a.applyBatch([mk(0, 7)], 'set cell', liveAdapter);
-    const snap = a.serializeHistory();
-    const b = makeScene();
-    b.loadState(a.toJSON());
-    b.setHistoryAdapter(() => liveAdapter); // wired BEFORE restore
-    b.restoreHistory(snap);
-    b.undo();
-    expect(cell).toBe(0);
-    b.redo();
-    expect(cell).toBe(7);
-  });
-
-  it('restored external ops with no history adapter are warning no-ops, never throws', () => {
-    const NAME = 'scenetest:noAdapter';
-    let cell = 0;
-    registerOpFactory(NAME, (args) => {
-      const { to } = args as { to: number };
-      const mk = (t: number): Op => ({
-        name: NAME, args: { to: t },
-        apply: (adapter) => { (adapter as { set(v: number): void }).set(t); },
-        invert: () => mk(0),
-      });
-      return mk(to);
-    });
-    const a = makeScene();
-    a.applyBatch([{
-      name: NAME, args: { to: 9 },
-      apply: (adapter) => { (adapter as { set(v: number): void }).set(9); },
-      invert: () => ({ name: NAME, args: { to: 0 }, apply: () => { cell = 0; }, invert: () => { throw new Error('unused'); } }),
-    }], 'set', { set: (v: number) => { cell = v; } });
-    const b = roundTrip(a);
-    expect(() => b.undo()).not.toThrow(); // no adapter wired: no-op with a debug warning
-    expect(cell).toBe(9);
-  });
-
-  it('restored external ops whose apply throws against the wired adapter degrade to no-ops', () => {
-    const NAME = 'scenetest:adapterGap';
-    let cell = 0;
-    const mk = (t: number): Op => ({
-      name: NAME, args: { to: t },
-      // Rebuilt op calls a method the wired adapter may not have — mirrors a
-      // live-adapter/history-adapter surface mismatch (e.g. setData).
-      apply: (adapter) => { (adapter as { missing(v: number): void }).missing(t); },
-      invert: () => mk(0),
-    });
-    registerOpFactory(NAME, (args) => mk((args as { to: number }).to));
-    const a = makeScene();
-    a.applyBatch([{
-      name: NAME, args: { to: 9 },
-      apply: (adapter) => { (adapter as { missing(v: number): void }).missing(9); },
-      invert: () => ({ name: NAME, args: { to: 0 }, apply: () => { cell = 0; }, invert: () => { throw new Error('unused'); } }),
-    }], 'set', { missing: (v: number) => { cell = v; } });
-    expect(cell).toBe(9);
-    const b = roundTrip(a);
-    b.setHistoryAdapter(() => ({})); // wired adapter lacks `missing`
-    expect(() => b.undo()).not.toThrow(); // throw degrades to a warned no-op
-    expect(b.canRedo()).toBe(true);       // entry still lands on the redo stack
-    expect(cell).toBe(9);                 // state untouched by the failed replay
   });
 });

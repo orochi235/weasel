@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createSetLayerOp } from './setLayer';
-import { rebuildOp } from './registry';
+import { defaultOpRegistry } from './registry';
 
 describe('createSetLayerOp', () => {
   it('applies the new layer to the adapter', () => {
@@ -35,7 +35,7 @@ describe('createSetLayerOp', () => {
     const b = vi.fn();
     const original = createSetLayerOp({ id: 'a', from: 'main', to: 'overlay' });
     original.apply({ setLayer: a });
-    const rebuilt = rebuildOp(original.name!, original.args)!;
+    const rebuilt = defaultOpRegistry.rebuild(original.name!, original.args)!;
     rebuilt.apply({ setLayer: b });
     expect(b.mock.calls).toEqual(a.mock.calls);
   });

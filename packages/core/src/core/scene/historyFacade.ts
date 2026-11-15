@@ -8,7 +8,7 @@
  * version, so every member that mutates routes through the scene's own
  * wrappers and one `notify()`; reads forward to the engine.
  */
-import type { History, Journal } from '@weasel-js/history';
+import { HistoryRestoreError, type History, type Journal } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { dwarn } from 'debug/flag';
 import { SCENE_HISTORY_FORM, type SerializedSceneHistory } from './historyForm';
@@ -117,14 +117,18 @@ export function createSceneHistory(env: SceneHistoryEnv): {
       return step(() => target !== engine.undoDepth(), () => engine.goto(target));
     },
     serializeHistory: () => ({ ...engine.serialize(), form: SCENE_HISTORY_FORM }),
-    restoreHistory(snapshot) {
+    restoreHistory(snapshot, options = {}) {
       if ((snapshot as Partial<SerializedSceneHistory>).form !== SCENE_HISTORY_FORM) {
-        dwarn('scene', 'restoreHistory: snapshot is not in the current recorded form — dropped');
-        return;
+        const report = { restored: false, unresolved: [] };
+        const message = `Scene.restoreHistory: the snapshot is not in recorded form ${SCENE_HISTORY_FORM}`;
+        if ((options.recovery ?? 'strict') === 'strict') throw new HistoryRestoreError(report, message);
+        dwarn('scene', `${message} — dropped`);
+        return report;
       }
       // Only the stacks are rebuilt: no op applies.
-      engine.restore(snapshot);
+      const report = engine.restore(snapshot, options);
       notify();
+      return report;
     },
   };
 

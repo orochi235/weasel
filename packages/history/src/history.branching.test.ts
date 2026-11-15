@@ -194,7 +194,7 @@ describe('branching on', () => {
     write(4, 30);
     history.undo();
     history.undo();
-    const restored = createHistory(null, { branching: true, rebuildOp: () => ({ apply() {}, invert() { return this; } }) });
+    const restored = createHistory(null, { branching: true, rebuildOp: () => { const op: Op = { apply() {}, invert: () => op }; return op; } });
     restored.restore(history.serialize());
     expect(restored.branches().map((b) => [b.label, b.current])).toEqual([
       ['to 2', false],
@@ -218,7 +218,7 @@ describe('branching on', () => {
     history.undo();
     write(3, 15);
     history.undo();
-    const restored = createHistory(null, { branching: true, rebuildOp: () => ({ apply() {}, invert() { return this; } }) });
+    const restored = createHistory(null, { branching: true, rebuildOp: () => { const op: Op = { apply() {}, invert: () => op }; return op; } });
     restored.restore(history.serialize());
     expect(restored.branches().map((b) => [b.label, b.current])).toEqual([
       ['to 2', false],

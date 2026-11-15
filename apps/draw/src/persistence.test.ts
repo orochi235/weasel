@@ -69,8 +69,9 @@ describe('persistence — history snapshot round-trip', () => {
     const wire = stringifySnapshot(h.serialize());
     const revived = parseSnapshot(wire) as SerializedHistory;
 
+    // Nothing registers `test:push`, so the entry restores as a placeholder: this checks the wire, not the rebuild.
     const h2 = createHistory({ values: [] as number[] });
-    h2.restore(revived);
+    h2.restore(revived, { recovery: 'best-effort' });
 
     expect(h2.canUndo()).toBe(true);
     expect(h2.entries().undo.map((e) => e.label)).toEqual(['push 7']);

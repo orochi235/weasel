@@ -1,7 +1,7 @@
 import type { Op } from './types';
 import { sameDependsOn } from '../scene/dependents';
 import { alreadyHolds } from './alreadyHolds';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 
 type DependsOn = SetDependsOnArgs['from'];
 type Sources = Parameters<typeof sameDependsOn>[0];
@@ -40,4 +40,4 @@ export function createSetDependsOnOp(args: SetDependsOnArgs): Op {
   };
 }
 
-registerOpFactory<SetDependsOnArgs>('setDependsOn', (args) => createSetDependsOnOp(args));
+registerKitOpFactory<SetDependsOnArgs>('setDependsOn', (args) => createSetDependsOnOp(args));

@@ -49,7 +49,7 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     expect(ext).toBe('renamed');
   });
 
-  it('unknown op kinds restore as placeholders that keep their stack slot', () => {
+  it('an unregistered op kind refuses a strict restore, and a best-effort one keeps its stack slot', () => {
     const a = makeScene();
     a.registerOp('app:oneoff', { apply: () => {}, revert: () => {} });
     a.recordOp({ kind: 'app:oneoff', payload: null });
@@ -57,7 +57,9 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     const snap = a.serializeHistory();
     const b = makeScene();       // 'app:oneoff' NOT re-registered
     b.loadState(a.toJSON());
-    b.restoreHistory(snap);
+    expect(() => b.restoreHistory(snap)).toThrow(/"app:oneoff" \(unknown\)/);
+    expect(b.canUndo()).toBe(false);
+    b.restoreHistory(snap, { recovery: 'best-effort' });
     expect(b.historyEntries()).toHaveLength(2); // slot preserved
     b.undo();                                    // undoes the add
     b.undo();                                    // placeholder — no throw, no effect

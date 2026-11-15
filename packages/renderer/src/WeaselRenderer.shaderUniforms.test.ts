@@ -162,7 +162,7 @@ describe('re-registered program source', () => {
     const [first] = createdPrograms();
     r.render([shader(h, { u_a: 1 })]);
 
-    registerProgram('hot', { glsl: { frag: FRAG_B } });
+    registerProgram('hot', { glsl: { frag: FRAG_B } }, { replace: true });
     mark();
     r.render([shader(h, { u_b: 0.5 })]);
 
@@ -203,7 +203,7 @@ describe('re-registered program source', () => {
 
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     failing = true;
-    registerProgram('hot-broken', { glsl: { frag: FRAG_B } });
+    registerProgram('hot-broken', { glsl: { frag: FRAG_B } }, { replace: true });
     mark();
     renderer.render([shader(h, { u_a: 1 })]);
     renderer.render([shader(h, { u_a: 1 })]);

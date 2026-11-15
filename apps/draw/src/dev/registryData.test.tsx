@@ -49,12 +49,12 @@ describe('registryData static collectors', () => {
 
   it('collectOpKinds lists every op kind registered with the kit', () => {
     const listed = collectOpKinds().map((o) => o.id).sort();
-    expect(listed).toEqual([...Weasel.registeredOpNames()].sort());
+    expect(listed).toEqual(Weasel.defaultOpRegistry.entries().map((e) => e.key).sort());
   });
 
   it('collectOpFactories names a real factory export for every registered op kind', () => {
     const ids = collectOpFactories().map((f) => f.id).sort();
-    const expected = Weasel.registeredOpNames()
+    const expected = Weasel.defaultOpRegistry.entries().map((e) => e.key)
       .map((n) => `create${n[0]!.toUpperCase()}${n.slice(1)}Op`)
       .sort();
     expect(ids).toEqual(expected);

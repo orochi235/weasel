@@ -1,7 +1,7 @@
 import type { Op } from './types';
 import type { LayoutStrategy } from '../../layout/types';
 import { alreadyHolds } from './alreadyHolds';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 
 /** A container's layout as an op names it: the strategy itself, its key in
  *  the scene's `SceneRegistry.layout`, or `null` for none. */
@@ -49,4 +49,4 @@ export function createSetLayoutOp<TPose = unknown>(args: SetLayoutArgs<TPose>): 
   };
 }
 
-registerOpFactory<SetLayoutArgs>('setLayout', (args) => createSetLayoutOp(args));
+registerKitOpFactory<SetLayoutArgs>('setLayout', (args) => createSetLayoutOp(args));

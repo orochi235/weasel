@@ -2,6 +2,7 @@
 import type { Op } from './op';
 import type { Journal, BeginJournalOptions } from './journal';
 import type { HistoryLogger, SerializedHistory } from './serialized';
+import type { HistoryRestoreReport, RebuildOp, RestoreOptions } from './restore';
 
 /** Snapshot of an entry handed to `onEvict` when it permanently leaves the
  *  reachable stacks. Ops are live references — read `name`/`args`, don't
@@ -152,11 +153,12 @@ export interface History {
    *  `droppedEntries`. The in-memory stacks aren't modified. */
   serialize(): SerializedHistory;
   /** Replace the current undo + redo stacks with the deserialized contents
-   *  of `snapshot`. Ops are rebuilt via the `rebuildOp` option when
-   *  provided, then the global registry; unknown names become no-op
-   *  placeholders so stack ordering survives across kit-version skew.
-   *  Bumps `version` and notifies subscribers exactly once. */
-  restore(snapshot: SerializedHistory): void;
+   *  of `snapshot`, each op rebuilt through the `rebuildOp` option. An op
+   *  nothing rebuilds makes a strict restore (the default) throw
+   *  `HistoryRestoreError`, leaving the history as it was; a best-effort one
+   *  puts a placeholder that changes nothing in its place and lists it in the
+   *  report. Bumps `version` and notifies subscribers exactly once. */
+  restore(snapshot: SerializedHistory, options?: RestoreOptions): HistoryRestoreReport;
   /** Push an entry whose ops have already been applied to the adapter.
    *  Unlike `applyOps`, does NOT call `op.apply()`. Used by Journal.commit
    *  to flush a session's net forward ops to the parent as one entry without
@@ -246,18 +248,18 @@ export interface CreateHistoryOptions {
    *  before it, which nothing can return to; the ones forking from the state
    *  it leaves stay, at the bottom of the undo stack. Default `false`. */
   branching?: boolean;
-  /** Custom op rebuilder consulted by `restore()` before the global
-   *  op-factory registry. Return `null` to fall through (global registry,
-   *  then a no-op placeholder). Lets an owner rebuild ops whose handlers
-   *  live in per-instance state the global registry can't reach (e.g. a
-   *  Scene's registered op kinds).
+  /** How `restore()` turns a serialized op back into a live one. This engine
+   *  knows nothing of any op registry; `@weasel-js/core`'s `createHistory`
+   *  supplies its host's. Return `null` for a name it does not know, or an
+   *  `UnresolvableOp` for one it knows but cannot make usable; either is
+   *  reported, and refused by a strict restore. Without a hook every op is
+   *  unknown.
    *
    *  May be invoked more than once per entry with the same `(name, args)` —
    *  once per op for `forwardOps` and again for `baseOps` (the same array
-   *  until a coalesce splits them). Unlike `onEvict`, a throwing hook is
-   *  NOT caught: it aborts `restore()` mid-rebuild and can leave the
-   *  stacks partially rebuilt. */
-  rebuildOp?: (name: string, args: unknown) => Op | null;
+   *  until a coalesce splits them). A throwing hook aborts `restore()`, which
+   *  leaves the history as it was. */
+  rebuildOp?: RebuildOp;
   /** Diagnostics sink. Omitted, the engine is silent — it deliberately owns no
    *  logging utility, so that this package depends on nothing. `@weasel-js/core`'s
    *  `createHistory` wrapper routes these into its `debug/flag` namespace, which

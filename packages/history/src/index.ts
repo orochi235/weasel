@@ -1,5 +1,12 @@
-export { createHistory, touchedIdsFromOps } from './history';
+export { createHistory, touchedIdsFromOps, HistoryRestoreError } from './history';
 export type {
+  HistoryRecovery,
+  HistoryRestoreReport,
+  RebuildContext,
+  RebuildOp,
+  RestoreOptions,
+  UnresolvableOp,
+  UnresolvedOp,
   History,
   CreateHistoryOptions,
   HistoryEntry,

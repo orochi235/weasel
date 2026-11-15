@@ -1,6 +1,6 @@
 import { sceneMutators } from '../scene/sceneMutators';
 import type { NodeId, Scene } from '../scene/types';
-import { rebuildOp } from './registry';
+import { defaultOpRegistry } from './registry';
 import type { Op } from './types';
 
 /** A node's pose and data, as a batch of ops leaves them. */
@@ -46,5 +46,5 @@ export function writtenBy(sc: Scene<unknown, string, unknown>, ops: readonly Op[
 }
 
 function copyOf(op: Op): Op | null {
-  return op.name ? rebuildOp(op.name, op.args) : null;
+  return op.name ? defaultOpRegistry.rebuild(op.name, op.args) : null;
 }

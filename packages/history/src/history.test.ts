@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createHistory } from './history';
+import { createHistory, HistoryRestoreError } from './history';
 import type { Op } from './op';
 
 interface Pose { x: number; y: number }
@@ -438,9 +438,30 @@ describe('createHistory — serialize / restore', () => {
     expect(snap.droppedEntries).toBe(0);
   });
 
-  it('substitutes placeholder for unknown op names on restore', () => {
+  it('refuses a snapshot naming an op it cannot rebuild, leaving the history as it was', () => {
     const a = makeAdapter();
     const h = createHistory(a as any);
+    h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    const fake: any = {
+      version: 1,
+      undoStack: [{ id: 1, label: 'Future feature', forwardOps: [{ name: 'futureOp', args: {} }], baseOps: [{ name: 'futureOp', args: {} }] }],
+      redoStack: [],
+      nextEntryId: 2,
+    };
+    let caught: unknown;
+    try { h.restore(fake); } catch (err) { caught = err; }
+    expect(caught).toBeInstanceOf(HistoryRestoreError);
+    expect((caught as HistoryRestoreError).report).toEqual({
+      restored: false,
+      unresolved: [{ entryId: 1, label: 'Future feature', name: 'futureOp', args: {}, reason: 'unknown' }],
+    });
+    expect(h.entries().undo.map((e) => e.label)).toEqual(['']);
+  });
+
+  it('best-effort: substitutes a reporting placeholder for unknown op names on restore', () => {
+    const a = makeAdapter();
+    const h = createHistory(a as any);
+    const skipped: string[] = [];
     const fake: any = {
       version: 1,
       undoStack: [{
@@ -452,11 +473,14 @@ describe('createHistory — serialize / restore', () => {
       redoStack: [],
       nextEntryId: 2,
     };
-    h.restore(fake);
+    const report = h.restore(fake, { recovery: 'best-effort', onSkip: (u) => skipped.push(`${u.name}:${u.reason}`) });
+    expect(report.restored).toBe(true);
+    expect(report.unresolved.map((u) => u.name)).toEqual(['futureOp']);
     expect(h.canUndo()).toBe(true);
     expect(() => h.undo()).not.toThrow();
     // Undo turns it into a redo entry; redo apply is also a no-op.
     expect(() => h.redo()).not.toThrow();
+    expect(skipped).toEqual(['futureOp:unknown', 'futureOp:unknown']);
   });
 
   const restoredEntry = (id: number) => ({
@@ -474,7 +498,7 @@ describe('createHistory — serialize / restore', () => {
       redoStack: [],
       nextEntryId: 2,
       droppedEntries: 0,
-    });
+    }, { recovery: 'best-effort' });
     h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     expect(h.entries().undo.map((e) => e.id)).toEqual([9, 10]);
   });
@@ -488,7 +512,7 @@ describe('createHistory — serialize / restore', () => {
       branches: [{ at: 0, entries: [restoredEntry(9)] }],
       nextEntryId: 2,
       droppedEntries: 0,
-    });
+    }, { recovery: 'best-effort' });
     h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     expect(h.entries().undo.map((e) => e.id)).toEqual([10]);
   });

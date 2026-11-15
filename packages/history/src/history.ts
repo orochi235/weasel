@@ -5,15 +5,20 @@ import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoal
 import { createWalk, type Walked } from './walk';
 import { createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive, type Journal, type BeginJournalOptions } from './journal';
 import {
-  rebuilt, snapshot, touchedIdsFromOps,
+  snapshot, touchedIdsFromOps,
   type Entry, type HistoryLogger, type SerializedHistory,
 } from './serialized';
+import { rebuilt, type HistoryRestoreReport, type RestoreOptions } from './restore';
 import type {
   CreateHistoryOptions, History, HistoryBranch, HistoryStep, RecordEntryOptions,
 } from './historyTypes';
 
 export { touchedIdsFromOps } from './serialized';
 export type { HistoryLogger, SerializedHistory, SerializedHistoryEntry, SerializedOp } from './serialized';
+export { HistoryRestoreError } from './restore';
+export type {
+  HistoryRecovery, HistoryRestoreReport, RebuildContext, RebuildOp, RestoreOptions, UnresolvableOp, UnresolvedOp,
+} from './restore';
 export type {
   EvictedEntry, HistoryEntry, HistoryBranch, History, HistorySelection, HistoryStep, RecordEntryOptions,
   CreateHistoryOptions,
@@ -370,15 +375,15 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       _resumeJournalInternal(journal);
       activeJournal = journal;
     },
-    restore(serialized: SerializedHistory): void {
-      const next = rebuilt(serialized, customRebuild, logger);
+    restore(serialized: SerializedHistory, restoreOptions: RestoreOptions = {}): HistoryRestoreReport {
+      const { stacks: next, unresolved } = rebuilt(serialized, customRebuild, restoreOptions, logger);
       undoStack.splice(0, undoStack.length, ...next.undoStack);
       redoStack.splice(0, redoStack.length, ...next.redoStack);
       forks.clear();
       for (const [at, kept] of next.forks) forks.set(at, kept);
-      floorId = next.floorId;
-      nextEntryId = next.nextEntryId;
+      floorId = next.floorId; nextEntryId = next.nextEntryId;
       bump(stepOf('restore'));
+      return { restored: true, unresolved };
     },
   };
   JOURNAL_ACCESS.set(history, {

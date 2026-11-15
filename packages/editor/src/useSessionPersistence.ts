@@ -1,4 +1,7 @@
-import { defaultCommitAdapter, encodeSceneDocument, restorePairedHistory, type Scene, useLatest } from '@weasel-js/core';
+import {
+  defaultCommitAdapter, encodeSceneDocument, restorePairedHistory, type HistoryRecovery, type HistoryRestore, type Scene,
+  useLatest,
+} from '@weasel-js/core';
 import type { RecordCache } from '@weasel-js/storage';
 import { useEffect, useRef } from 'react';
 import { readSlot, sessionSlots } from './sessionStore';
@@ -19,6 +22,12 @@ export interface SessionPersistenceOptions {
   debounceMs?: number;
   /** Called after every save attempt with whether the scene was written. */
   onSaved?: (ok: boolean) => void;
+  /** How the saved undo stack is restored (`Scene.restoreHistory`'s `recovery`). Defaults to `'strict'`, under which
+   *  a stack naming an op this build cannot replay is dropped whole. */
+  historyRecovery?: HistoryRecovery;
+  /** Called once a saved undo stack has been read: with how `restorePairedHistory` went (any status but
+   *  `'restored'` drops the stack), or with `'failed'` and the error that dropped it. */
+  onHistoryRestore?: (outcome: HistoryRestore | { status: 'failed'; error: unknown }) => void;
 }
 
 /** When the scene entry `value` was saved, in milliseconds since the epoch, as `useSessionPersistence` stamps each
@@ -55,16 +64,18 @@ export function useSessionPersistence<D, L extends string, P>(
   // history with the empty initial stack first.
   const restoredRef = useRef(false);
   useEffect(() => {
-    const { historyKey, loadHistory, records } = optsRef.current;
+    const { historyKey, loadHistory, records, historyRecovery, onHistoryRestore } = optsRef.current;
     const slots = sessionSlots(records);
     const history = slots.slot(historyKey);
     let snap: unknown = null;
     try { snap = loadHistory ? loadHistory() : readSlot(history, (value) => value, () => null); } catch { /* treated as none */ }
     if (snap !== null) {
-      let restored = false;
-      // A parseable-but-malformed stack must not wedge every boot: it is dropped, and the stack starts empty.
-      try { restored = restorePairedHistory(scene, snap) === 'restored'; } catch { /* dropped below */ }
-      if (!restored) history.records.delete(history.name);
+      let outcome: HistoryRestore | { status: 'failed'; error: unknown };
+      // A stack this build cannot restore must not wedge every boot: it is dropped, and the stack starts empty.
+      try { outcome = restorePairedHistory(scene, snap, { recovery: historyRecovery ?? 'strict' }); }
+      catch (error) { outcome = { status: 'failed', error }; }
+      if (outcome.status !== 'restored') history.records.delete(history.name);
+      onHistoryRestore?.(outcome);
     }
     void slots.close();
     restoredRef.current = true;

@@ -6,9 +6,9 @@
  * needs an adapter to replay through: the one it was applied with, or after a
  * reload the one `setHistoryAdapter` supplies.
  */
-import type { History, Journal } from '@weasel-js/history';
+import type { History, Journal, RebuildContext, UnresolvableOp } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
-import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
+import { defaultOpRegistry, type OpRegistry } from 'core/ops/registry';
 import { bindOpToAdapter, bindOpToHistoryAdapter } from './boundOps';
 import type { Recorder } from './recorder';
 
@@ -16,6 +16,8 @@ import type { Recorder } from './recorder';
 export interface OuterOpsEnv {
   /** The scene's own op for a kind it has registered, or `null`. */
   own(name: string, args: unknown): Op | null;
+  /** Where an op the scene does not own finds its factory; `defaultOpRegistry` when unset. */
+  opRegistry: OpRegistry | undefined;
   /** The scene's recorder, built after this is. */
   recorder(): Pick<Recorder, 'capturing' | 'joins' | 'join'>;
   /** Run a step that applies ops through a history engine: all-or-nothing,
@@ -29,10 +31,12 @@ export interface OuterOpsEnv {
 }
 
 export interface OuterOps {
-  /** The op a restored history names: the scene's own, or an outer op bound
-   *  to the adapter `setHistoryAdapter` supplies. `null` when nothing knows
-   *  the name, and the engine places its no-op placeholder. */
-  rebuild(name: string, args: unknown): Op | null;
+  /** The op a restored history names: the scene's own, or an outer op from
+   *  the scene's op registry bound to the adapter `setHistoryAdapter`
+   *  supplies. `null` when nothing knows the name; `'no-adapter'` for an outer
+   *  op while no adapter is wired. Without `context`, as for a replay, the
+   *  rebuild is strict. */
+  rebuild(name: string, args: unknown, context?: RebuildContext): Op | UnresolvableOp | null;
   /** `op` as an engine applies it: its entry records the kit ops it caused,
    *  or the op itself when it caused none. */
   causing(op: Op): Op;
@@ -40,6 +44,8 @@ export interface OuterOps {
    *  when there is one, else on the active journal, else on `engine`. */
   apply(engine: History, ops: Op[], label: string, adapter: unknown): void;
   setHistoryAdapter(fn: (() => unknown) | null): void;
+  /** The registry `rebuild` resolves outer ops through. */
+  readonly opRegistry: OpRegistry;
   setActiveJournalAccessor(fn: (() => Journal | null) | null): void;
   /** The journal edits go to now, or null for the scene's own history. */
   activeJournal(): Journal | null;
@@ -54,6 +60,7 @@ function keyed(kit: Op, outerKey: string | undefined): Op {
 
 export function createOuterOps(env: OuterOpsEnv): OuterOps {
   let historyAdapter: (() => unknown) | null = null;
+  const opRegistry = env.opRegistry ?? defaultOpRegistry;
   let activeJournal = env.getActiveJournal;
 
   function causing(op: Op, given: Op = op): Op {
@@ -77,11 +84,13 @@ export function createOuterOps(env: OuterOpsEnv): OuterOps {
   }
 
   return {
-    rebuild(name, args) {
+    rebuild(name, args, context) {
       const own = env.own(name, args);
       if (own !== null) return own;
-      const rebuilt = rebuildGlobalOp(name, args);
-      return rebuilt === null ? null : bindOpToHistoryAdapter(rebuilt, () => historyAdapter);
+      const rebuilt = opRegistry.rebuild(name, args);
+      if (rebuilt === null) return null;
+      if (historyAdapter === null) return { unresolved: 'no-adapter' };
+      return bindOpToHistoryAdapter(rebuilt, () => historyAdapter, context);
     },
     causing: (op) => causing(op),
     apply(engine, ops, label, adapter) {
@@ -98,6 +107,7 @@ export function createOuterOps(env: OuterOpsEnv): OuterOps {
     setHistoryAdapter(fn) {
       historyAdapter = fn;
     },
+    opRegistry,
     setActiveJournalAccessor(fn) {
       activeJournal = fn;
     },

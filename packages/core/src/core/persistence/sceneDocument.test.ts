@@ -27,7 +27,7 @@ describe('the scene document', () => {
     const file = viaText(encodeSceneDocument(scene));
     const doc = decodeSceneDocument<Record<string, unknown>, 'main', Pose>(file);
     const loaded = sceneFromJSON(doc.scene);
-    expect(restorePairedHistory(loaded, doc.history)).toBe('restored');
+    expect(restorePairedHistory(loaded, doc.history)).toMatchObject({ status: 'restored' });
     expect(loaded.history.canUndo()).toBe(true);
     loaded.history.undo();
     expect(loaded.get(id)!.pose).toEqual({ x: 0, y: 0, width: 10, height: 10 });
@@ -43,7 +43,7 @@ describe('the scene document', () => {
     const paired = viaText(pairHistory(scene));
     const other = createScene<Record<string, unknown>, 'main', Pose>({ systemLayers: LAYERS });
     other.add({ kind: 'mark', layer: 'main', pose: { x: 1, y: 1, width: 1, height: 1 }, data: {} });
-    expect(restorePairedHistory(other, paired)).toBe('mismatched');
+    expect(restorePairedHistory(other, paired)).toEqual({ status: 'mismatched' });
     expect(other.history.undoDepth()).toBe(1);
   });
 
@@ -52,21 +52,21 @@ describe('the scene document', () => {
     const doc = decodeSceneDocument<Record<string, unknown>, 'main', Pose>(viaText(encodeSceneDocument(scene)));
     const loaded = sceneFromJSON(doc.scene);
     loaded.untracked(() => loaded.update(id, { data: { migrated: true } }));
-    expect(restorePairedHistory(loaded, doc.history)).toBe('mismatched');
+    expect(restorePairedHistory(loaded, doc.history)).toEqual({ status: 'mismatched' });
   });
 
   it('reads a history saved without a pairing as unpaired', () => {
     const { scene } = drawn();
     const fresh = sceneFromJSON(scene.toJSON());
-    expect(restorePairedHistory(fresh, encodeSnapshot(scene.serializeHistory()))).toBe('unpaired');
-    expect(restorePairedHistory(fresh, null)).toBe('unpaired');
+    expect(restorePairedHistory(fresh, encodeSnapshot(scene.serializeHistory()))).toEqual({ status: 'unpaired' });
+    expect(restorePairedHistory(fresh, null)).toEqual({ status: 'unpaired' });
   });
 
   it('reads a history in another recorded form as stale', () => {
     const { scene } = drawn();
     const paired = pairHistory(scene);
     const old = { ...paired, history: { ...(paired.history as object), form: SCENE_HISTORY_FORM - 1 } };
-    expect(restorePairedHistory(sceneFromJSON(scene.toJSON()), old)).toBe('stale');
+    expect(restorePairedHistory(sceneFromJSON(scene.toJSON()), old)).toEqual({ status: 'stale' });
   });
 
   it('fingerprints state, not identity', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createSetDataOp } from './setData';
-import { rebuildOp } from './registry';
+import { defaultOpRegistry } from './registry';
 
 interface D { color: string }
 
@@ -37,7 +37,7 @@ describe('createSetDataOp', () => {
     const b = vi.fn();
     const original = createSetDataOp<D>({ id: 'a', from: { color: 'red' }, to: { color: 'blue' } });
     original.apply({ setData: a });
-    const rebuilt = rebuildOp(original.name!, original.args)!;
+    const rebuilt = defaultOpRegistry.rebuild(original.name!, original.args)!;
     rebuilt.apply({ setData: b });
     expect(b.mock.calls).toEqual(a.mock.calls);
   });

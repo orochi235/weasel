@@ -5,6 +5,13 @@
  * Adapters are intentionally typed loosely here so different op types can
  * require different adapter capabilities. Each op is responsible for
  * narrowing the adapter via the methods it calls.
+ *
+ * **Rollback contract.** An `apply` either completes or throws having
+ * changed nothing. When one throws, the history takes back the ops before it
+ * in the step (inverting them, newest first), leaves the entry on the stack
+ * it was on, and rethrows; it cannot take back a partial write by the op
+ * that threw. A scene also reverts its own node writes, the throwing op's
+ * included, so the contract binds an op writing anywhere else.
  */
 export interface Op {
   /** Apply the mutation. Return `false` (or `'noop'`) to signal that
@@ -29,6 +36,6 @@ export interface Op {
    *  `History.serialize()` and are dropped from persisted snapshots. */
   name?: string;
   /** Serializable args (JSON / structured-clone-safe) that, paired with
-   *  `name`, reconstruct the op via the registry's `rebuildOp`. */
+   *  `name`, reconstruct the op through the history's `rebuildOp`. */
   args?: unknown;
 }

@@ -66,7 +66,7 @@ function boot(scene: S): S {
   const next = createScene<Data, 'main', Pose>({ systemLayers: LAYERS, initial: nodeSpecsFromSnapshot(json), ...(doc ? { doc } : {}) });
   const adapter = defaultCommitAdapter(next);
   next.setHistoryAdapter(() => adapter);
-  expect(restorePairedHistory(next, history)).toBe('restored');
+  expect(restorePairedHistory(next, history)).toMatchObject({ status: 'restored' });
   return next;
 }
 

@@ -104,7 +104,7 @@ describe('serialized timestamps', () => {
     const { history } = stamped();
     history.undo();
     const restored = createHistory(null);
-    restored.restore(history.serialize());
+    restored.restore(history.serialize(), { recovery: 'best-effort' });
     expect([0, 1, 2].map((i) => restored.timestampAt(i))).toEqual([10, 20, 30]);
   });
 
@@ -113,7 +113,7 @@ describe('serialized timestamps', () => {
     const snap = history.serialize();
     for (const e of snap.undoStack) delete e.timestamp;
     const restored = createHistory(null);
-    restored.restore(snap);
+    restored.restore(snap, { recovery: 'best-effort' });
     expect(restored.timestampAt(0)).toBe(0);
   });
 });

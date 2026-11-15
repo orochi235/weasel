@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createSetHiddenOp, createSetLockedOp } from './nodeFlags';
-import { rebuildOp } from './registry';
+import { defaultOpRegistry } from './registry';
 
 describe.each([
   ['setHidden', createSetHiddenOp],
@@ -19,7 +19,7 @@ describe.each([
     const b = vi.fn();
     const original = create({ id: 'a', from: false, to: true, label: 'Hide' });
     original.apply({ [method]: a });
-    rebuildOp(original.name!, original.args)!.apply({ [method]: b });
+    defaultOpRegistry.rebuild(original.name!, original.args)!.apply({ [method]: b });
     expect(b.mock.calls).toEqual(a.mock.calls);
   });
 });

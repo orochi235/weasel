@@ -1,5 +1,5 @@
 import type { Op } from './types';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 
 interface SelectionAdapter {
   setSelection(ids: string[]): void;
@@ -35,7 +35,7 @@ export function createSetSelectionOp(args: SetSelectionArgs): Op {
   };
 }
 
-registerOpFactory<SetSelectionArgs>('setSelection', (args) => createSetSelectionOp(args));
+registerKitOpFactory<SetSelectionArgs>('setSelection', (args) => createSetSelectionOp(args));
 
 function sequenceEqual(a: readonly string[], b: readonly string[]): boolean {
   if (a.length !== b.length) return false;

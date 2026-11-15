@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { ExtensionConflictError } from '@weasel-js/registry';
 import {
   registerProgram,
   programSourceRegistry,
@@ -31,37 +32,47 @@ describe('registerProgram', () => {
     expect(getProgramSource('not-registered')).toBeNull();
   });
 
-  it('throws on duplicate id in prod mode', () => {
+  it('throws on a different source under a taken id, in development and production alike', () => {
     const origEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
     try {
-      registerProgram('dup-test', { glsl: { frag: MINIMAL_FRAG } });
-      expect(() => registerProgram('dup-test', { glsl: { frag: MINIMAL_FRAG } })).toThrow(/duplicate/i);
+      for (const env of ['production', 'development']) {
+        process.env.NODE_ENV = env;
+        _resetProgramRegistryForTests();
+        registerProgram('dup-test', { glsl: { frag: MINIMAL_FRAG } });
+        expect(() => registerProgram('dup-test', { glsl: { frag: MINIMAL_FRAG.replace('0.5', '0.8') } })).toThrow(ExtensionConflictError);
+      }
     } finally {
       process.env.NODE_ENV = origEnv;
     }
   });
 
-  it('replaces source on duplicate id in dev mode', () => {
-    const origEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'development';
-    try {
-      registerProgram('hot-prog', { glsl: { frag: MINIMAL_FRAG } });
-      const frag2 = MINIMAL_FRAG.replace('0.5', '0.8');
-      registerProgram('hot-prog', { glsl: { frag: frag2 } });
-      expect(getProgramSource('hot-prog')?.glsl?.frag).toContain('0.8');
-    } finally {
-      process.env.NODE_ENV = origEnv;
-    }
+  it('is no change when the same source registers again', () => {
+    registerProgram('same', { glsl: { frag: MINIMAL_FRAG } });
+    expect(() => registerProgram('same', { glsl: { frag: MINIMAL_FRAG } })).not.toThrow();
+  });
+
+  it('replaces the source when the call asks to, as hot reload does', () => {
+    registerProgram('hot-prog', { glsl: { frag: MINIMAL_FRAG } });
+    const frag2 = MINIMAL_FRAG.replace('0.5', '0.8');
+    registerProgram('hot-prog', { glsl: { frag: frag2 } }, { replace: true });
+    expect(getProgramSource('hot-prog')?.glsl?.frag).toContain('0.8');
   });
 
   it('reflects each id once, the latest source replacing the earlier with no conflict', () => {
     const listener = vi.fn();
     const off = programSourceRegistry.subscribe(listener);
     registerProgram('refl', { glsl: { vert: 'v1', frag: MINIMAL_FRAG } });
-    registerProgram('refl', { glsl: { vert: 'v2', frag: MINIMAL_FRAG } });
+    registerProgram('refl', { glsl: { vert: 'v2', frag: MINIMAL_FRAG } }, { replace: true });
     const entries = programSourceRegistry.entries().filter((e) => e.key === 'refl');
     expect(entries.map((e) => [e.value.glsl?.vert, e.shadowed.length])).toEqual([['v2', 0]]);
     expect(listener).toHaveBeenCalledTimes(2);
     off();
-  });});
+  });
+
+  it('a registration through the registry hands back its release', () => {
+    const release = programSourceRegistry.register('released', { glsl: { frag: MINIMAL_FRAG } });
+    expect(getProgramSource('released')).not.toBeNull();
+    release();
+    expect(getProgramSource('released')).toBeNull();
+  });
+});

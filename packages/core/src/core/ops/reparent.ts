@@ -1,5 +1,5 @@
 import type { Op } from './types';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 import { captureSlot, resolveSlot, slotFromIndex, type OrderedReader, type SiblingSlot } from './slot';
 
 interface ReparentAdapter extends OrderedReader {
@@ -111,4 +111,4 @@ export function createReparentOp(args: ReparentArgs): Op {
   };
 }
 
-registerOpFactory<ReparentArgs>('reparent', (args) => createReparentOp(args));
+registerKitOpFactory<ReparentArgs>('reparent', (args) => createReparentOp(args));

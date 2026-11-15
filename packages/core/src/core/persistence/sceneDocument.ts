@@ -4,6 +4,7 @@
  * whose state has that fingerprint: never over a different document, a tree a load rebuilt, or content an
  * application migration rewrote.
  */
+import type { HistoryRestoreReport, RestoreOptions } from '@weasel-js/history';
 import { SCENE_HISTORY_FORM, type SerializedSceneHistory } from '../scene/historyForm';
 import type { SavedScene, SerializedScene } from '../scene/serializedTypes';
 import { SnapshotShapeError, assertSnapshotShape } from '../scene/snapshotShape';
@@ -42,12 +43,15 @@ export interface SceneDocument<TData, TLayer extends string, TPose> {
 export interface PersistedScene<TData, TLayer extends string, TPose> {
   toJSON(): SerializedScene<TData, TLayer, TPose>;
   serializeHistory(): SerializedSceneHistory;
-  restoreHistory(snapshot: SerializedSceneHistory): void;
+  restoreHistory(snapshot: SerializedSceneHistory, options?: RestoreOptions): HistoryRestoreReport;
 }
 
-/** How {@link restorePairedHistory} went: restored; not a paired history at all (none, or one saved unpaired);
- *  paired with a scene whose state differs from this one; or recorded in a form this build does not replay. */
-export type HistoryRestore = 'restored' | 'unpaired' | 'mismatched' | 'stale';
+/** How {@link restorePairedHistory} went: restored, with the scene's restore report; not a paired history at all
+ *  (none, or one saved unpaired); paired with a scene whose state differs from this one; or recorded in a form this
+ *  build does not replay. */
+export type HistoryRestore =
+  | { status: 'restored'; report: HistoryRestoreReport }
+  | { status: 'unpaired' | 'mismatched' | 'stale' };
 
 /** A fingerprint of encoded text: its length and a 53-bit hash of it. */
 function fingerprintText(text: string): string {
@@ -117,16 +121,17 @@ export function decodeSceneDocument<TData, TLayer extends string, TPose>(
  * once the paired snapshot has loaded, and after any application migration of the loaded data, since a migration
  * that changed the content leaves a history whose ops would write the old content back. Anything else leaves the
  * history as it was and says why. `paired` is the value as it was stored, so an older unpaired history reads as
- * `'unpaired'`.
+ * `'unpaired'`. `options` are `Scene.restoreHistory`'s: strict by default, so a paired history naming an op this
+ * scene cannot rebuild throws `HistoryRestoreError` and is not restored.
  */
 export function restorePairedHistory(
   scene: PersistedScene<unknown, string, unknown>,
   paired: unknown,
+  options?: RestoreOptions,
 ): HistoryRestore {
-  if (!isPaired(paired)) return 'unpaired';
-  if (paired.scene !== sceneFingerprint(scene.toJSON())) return 'mismatched';
+  if (!isPaired(paired)) return { status: 'unpaired' };
+  if (paired.scene !== sceneFingerprint(scene.toJSON())) return { status: 'mismatched' };
   const history = decodeSnapshot(paired.history);
-  if (history.form !== SCENE_HISTORY_FORM) return 'stale';
-  scene.restoreHistory(history);
-  return 'restored';
+  if (history.form !== SCENE_HISTORY_FORM) return { status: 'stale' };
+  return { status: 'restored', report: scene.restoreHistory(history, options) };
 }

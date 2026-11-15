@@ -3,7 +3,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { sceneMutators } from 'core/scene/sceneMutators';
 import { createSetDependsOnOp } from './setDependsOn';
-import { rebuildOp } from './registry';
+import { defaultOpRegistry } from './registry';
 
 describe('createSetDependsOnOp', () => {
   it('applies the new sources to the adapter, and inverts back to the old', () => {
@@ -19,7 +19,7 @@ describe('createSetDependsOnOp', () => {
     const b = vi.fn();
     const original = createSetDependsOnOp({ id: 'e', from: undefined, to: ['a'], label: 'Retarget' });
     original.apply({ setDependsOn: a });
-    rebuildOp(original.name!, original.args)!.apply({ setDependsOn: b });
+    defaultOpRegistry.rebuild(original.name!, original.args)!.apply({ setDependsOn: b });
     expect(b.mock.calls).toEqual(a.mock.calls);
   });
 

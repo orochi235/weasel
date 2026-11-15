@@ -205,7 +205,7 @@ function buildScene<TData, TLayer extends string, TPose>(
  *  carry, and how its nodes are read back. */
 export type SceneFromJSONOptions<TData, TLayer extends string, TPose> = Pick<
   SceneOptions<TData, TLayer, TPose>,
-  'registry' | 'historyLimit' | 'coalesceWindowMs' | 'generateId' | 'ops' | 'composition' | 'layoutFrame' | 'quantize'
+  'registry' | 'opRegistry' | 'historyLimit' | 'coalesceWindowMs' | 'generateId' | 'ops' | 'composition' | 'layoutFrame' | 'quantize'
 > & SpecsFromSerializedOptions<TData, TLayer, TPose>;
 
 /** Reconstruct a Scene from a JSON snapshot produced by `scene.toJSON()`.

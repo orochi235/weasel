@@ -1,5 +1,5 @@
 import type { Op } from './types';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 
 interface ArrangeAdapter {
   setPose(id: string, pose: unknown): void;
@@ -59,4 +59,4 @@ export function createArrangeOp(
   };
 }
 
-registerOpFactory<ArrangeArgs>('arrange', (args) => createArrangeOp(args));
+registerKitOpFactory<ArrangeArgs>('arrange', (args) => createArrangeOp(args));

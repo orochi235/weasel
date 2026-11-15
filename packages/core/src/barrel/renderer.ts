@@ -231,8 +231,11 @@ export type { Rect } from '@weasel-js/geom';
 
 // The read-only surface each kit registry hands out (`paintKindRegistry`,
 // `markerRegistry`, `fontRegistry`, …), and the store behind it.
-export { createReflectable } from '@weasel-js/registry';
+export { createReflectable, createExtensionRegistry, ExtensionConflictError } from '@weasel-js/registry';
 export type {
+  ExtensionRegistry,
+  ExtensionRegistryOptions,
+  ExtensionRegisterOptions,
   Reflectable,
   Reflection,
   ReflectedEntry,
