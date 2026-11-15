@@ -32,7 +32,6 @@ function SceneFromJson() {
           backgroundFill={{ color: '#f4e9d8' }}
         />
       </DemoStage>
-      <p className="ckd-hint">Drag a rectangle to move it. Cmd/Ctrl+Z undoes, Shift+Cmd/Ctrl+Z redoes.</p>
     </div>
   );
 }
