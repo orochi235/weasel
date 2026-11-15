@@ -38,6 +38,8 @@ reorders it. There is no separate adapter for arrays.
 | `commitInsert` | The factory an insert drag calls with its bounds. Return `{ pose, data, id? }`, or `null` to abort. |
 | `insertLayer` | The layer inserted nodes land on. Default `'default'`. |
 | `poseDescriptor` | How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. |
+| `pasteInto` | The container a paste lands in, read at each paste. `<SceneCanvas>` passes its `insertInto` dep's. |
+| `canDropInto` | The `canDropInto` dep, read at each paste. |
 
 What the adapter answers:
 
