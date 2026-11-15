@@ -3,7 +3,7 @@
  * others in the places they would take, published as pose overrides so
  * everything that derives its pose from them follows.
  */
-import { effectivePose, type NodeId, type Scene } from '@weasel-js/core';
+import { effectivePose, type NodeId, type AnyScene } from '@weasel-js/core';
 import type { ReorderItem, ReorderSlots } from './reorder';
 import type { Rect } from '@weasel-js/geom';
 
@@ -34,7 +34,7 @@ export const carriedBy = (item: ReorderItem): readonly string[] => item.carries 
 const RELEASE_MS = 500;
 
 /** Slides `slots`' items around `carried` until dropped, or kept past a commit. */
-export function slideOthers(scene: Scene<unknown, string, unknown>, slots: ReorderSlots, carried: string) {
+export function slideOthers(scene: AnyScene, slots: ReorderSlots, carried: string) {
   const { axis } = slots;
   const size = axis === 'x' ? 'width' : 'height';
   const ids = slots.items.map((i) => i.id);

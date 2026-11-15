@@ -2,13 +2,13 @@
  * A scene's connectors as line jumps read them: each one's route before any
  * hop, and the data write that stores its hops.
  */
-import { AUTO_POSE_DESCRIPTOR, createSetDataOp, documentPose, type DerivedDep, type Op, type Scene } from '@weasel-js/core';
+import { AUTO_POSE_DESCRIPTOR, createSetDataOp, documentPose, type DerivedDep, type Op, type AnyScene } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { edgeRouter, type EdgeRouteOptions } from '../edge';
 import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
 import type { EdgeHop } from './types';
 
-export type AnyScene = Scene<unknown, string, unknown>;
+export type { AnyScene };
 export type SceneNode = ReturnType<AnyScene['renderOrderNodes']>[number];
 
 /** A connector: its node and the ids of its two ends. */

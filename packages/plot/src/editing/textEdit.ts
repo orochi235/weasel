@@ -3,7 +3,7 @@
  * mark whose datum names an `edit` is the spec's text, and closing the editor
  * folds what was typed into one edit of the spec.
  */
-import { isTextData, useLatest, type NodeId, type RectPose, type Scene, type SceneCanvasTextEditor } from '@weasel-js/core';
+import { isTextData, useLatest, type NodeId, type RectPose, type SceneCanvasTextEditor, type AnyScene } from '@weasel-js/core';
 import { useMemo } from 'react';
 import type { PlotDatum } from '../marks/types';
 import { textMeasure } from '../measure';
@@ -19,7 +19,7 @@ export function plotTextOf(node: { data: unknown } | undefined): PlotDatum | nul
 }
 
 /** The text the spec gives mark `markId`, as compiled: what it showed before an edit. */
-function compiledText(scene: Scene<unknown, string, unknown>, rootId: string, markId: string): string | undefined {
+function compiledText(scene: AnyScene, rootId: string, markId: string): string | undefined {
   const root = scene.get(rootId as NodeId)!;
   const trait = plotRootOf(root)!;
   const { width, height } = root.pose as RectPose;
@@ -38,7 +38,7 @@ export const isPlotText = (data: unknown): boolean => isTextData(data) && plotTe
  * nothing. Text that does not read (a value that is not a number) is undone,
  * so the mark shows the spec again.
  */
-export function foldPlotText(scene: Scene<unknown, string, unknown>, textId: string, commit: (edit: PlotEdit & { label: string }) => void): void {
+export function foldPlotText(scene: AnyScene, textId: string, commit: (edit: PlotEdit & { label: string }) => void): void {
   const node = scene.get(textId as NodeId);
   const datum = plotTextOf(node);
   const rootId = datum === null ? null : node!.parent;
@@ -60,7 +60,7 @@ export function foldPlotText(scene: Scene<unknown, string, unknown>, textId: str
  * the edit closes, fold it into one edit of the spec for `commit`.
  */
 export function usePlotTextEdit(
-  scene: Scene<unknown, string, unknown>, commit: (edit: PlotEdit & { label: string }) => void,
+  scene: AnyScene, commit: (edit: PlotEdit & { label: string }) => void,
 ): Exclude<SceneCanvasTextEditor<unknown>, false> {
   const latest = useLatest(commit);
   return useMemo(() => ({

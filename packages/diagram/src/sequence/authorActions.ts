@@ -4,7 +4,7 @@
  * the row nearest the click. Each hands one edit of the root's data to the
  * commit, by default one undo entry in the scene.
  */
-import type { Action, ActionDeps, Scene, Vec2 } from '@weasel-js/core';
+import type { Action, ActionDeps, Vec2, AnyScene } from '@weasel-js/core';
 import { sequenceLayout } from './layout';
 import { addParticipant, newParticipant, type SeqParticipantKind } from './author';
 import { insertMark, insertNote } from './authorSteps';
@@ -31,8 +31,6 @@ export interface SequenceAuthorOptions extends SequenceEditOptions {
    */
   start?: ((at: Vec2, data: SequenceData, deps: ActionDeps) => void) | null;
 }
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** Within this many world units of a lifeline, a note click lands over it rather than beside it. */
 export const NOTE_OVER_REACH = 20;

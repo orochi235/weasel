@@ -1,5 +1,11 @@
 import {
-  sceneBoxFrames, scenePoseFrame, sceneUnitScopes, type NodeId, type Scene, type ScopedScene, type UnitScope,
+  sceneBoxFrames,
+  scenePoseFrame,
+  sceneUnitScopes,
+  type NodeId,
+  type ScopedScene,
+  type UnitScope,
+  type AnyScene,
 } from '@weasel-js/core';
 import { transformPoint, pointInPolygon, type Affine, type Point } from '@weasel-js/geom';
 import type { GridSpacing } from './axes';
@@ -44,7 +50,7 @@ export interface GridRegion {
  * other pose.
  */
 export function sceneGridRegions(
-  scene: Scene<unknown, string, unknown>,
+  scene: AnyScene,
   owners: GridOwners,
   outlineOf?: (id: NodeId) => readonly Point[] | null,
 ): GridRegion[] {

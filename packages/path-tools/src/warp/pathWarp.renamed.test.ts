@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type EditableShape, type Scene } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, type EditableShape, type AnyScene } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp } from './pathWarp';
 import { createWarpDragAction } from './warpActions';
 
-type S = Scene<unknown, string, unknown>;
+type S = AnyScene;
 
 const depsOf = (scene: S) => ({
   scene,

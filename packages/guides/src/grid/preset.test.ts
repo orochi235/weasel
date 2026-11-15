@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type Scene } from '@weasel-js/core';
+import { createScene, type AnyScene } from '@weasel-js/core';
 import { createGridPreset } from './preset';
 import { expectNear, moveBy } from '../sources/testing/session';
 
@@ -8,7 +8,7 @@ type Pose = { x: number; y: number; width: number; height: number };
 function moved(preset: ReturnType<typeof createGridPreset>, x: number, y: number) {
   const scene = createScene<object, 'default', Pose>({ systemLayers: [{ id: 'default', visible: true, locked: false }] });
   const id = scene.add({ kind: 'mark', layer: 'default', pose: { x, y, width: 10, height: 10 }, data: {} });
-  return moveBy({ sources: preset.snapSources!, ids: [id], scene: scene as unknown as Scene<unknown, string, unknown> }).by(0, 0);
+  return moveBy({ sources: preset.snapSources!, ids: [id], scene: scene as unknown as AnyScene }).by(0, 0);
 }
 
 describe('createGridPreset', () => {

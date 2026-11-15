@@ -18,8 +18,8 @@ import {
   type Action,
   type CursorSpec,
   type NodeId,
-  type Scene,
   type SurfaceContribution,
+  type AnyScene,
 } from '@weasel-js/core';
 import {
   CONNECT_ACTION_ID,
@@ -144,7 +144,7 @@ function selectLabelEdgeAction(): Action {
  * `EDIT_EDGE_LABEL_ACTION_ID`, which the host registers.
  */
 export function diagramLabelDrag(
-  opts: LabelDragOptions & { scene: Scene<unknown, string, unknown>; selected: () => readonly string[]; cursor?: CursorSpec },
+  opts: LabelDragOptions & { scene: AnyScene; selected: () => readonly string[]; cursor?: CursorSpec },
 ): SurfaceContribution {
   const actionId = opts.id ?? MOVE_LABEL_ACTION_ID;
   const target = `affordance:${LABEL_DRAG_AFFORDANCE_KIND}` as const;

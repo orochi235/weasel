@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, RIGID_POSE_COMPOSITION, type Bounds, type NodeId, type Scene } from '@weasel-js/core';
+import { createScene, RIGID_POSE_COMPOSITION, type Bounds, type NodeId, type AnyScene } from '@weasel-js/core';
 import { gridSnapSource } from './grid';
 import { expectNear, moveBy } from './testing/session';
 
@@ -40,7 +40,7 @@ function container(pose: Bounds & { transform?: readonly number[] }, child: Boun
   });
   const g = scene.add({ kind: 'group', layer: 'default', pose: pose as Bounds, data: {} }) as string;
   const inside = scene.add({ kind: 'mark', layer: 'default', parent: g as NodeId, pose: child, data: {} }) as string;
-  return { scene: scene as unknown as Scene<unknown, string, unknown>, g, inside };
+  return { scene: scene as unknown as AnyScene, g, inside };
 }
 
 describe('gridSnapSource — a container\'s own grid', () => {
@@ -81,7 +81,7 @@ describe('gridSnapSource — a container\'s own grid', () => {
       return [g as string, pitch, scene.add({ kind: 'mark', layer: 'default', parent: g, pose: { x: 1, y: 1, width: 4, height: 4 }, data: {} }) as string] as const;
     });
     const grid = gridSnapSource({ spacing: 10, gridOf: (id) => ids.find(([g]) => g === id)?.[1] });
-    const s = scene as unknown as Scene<unknown, string, unknown>;
+    const s = scene as unknown as AnyScene;
     expect(moveBy({ sources: [grid], scene: s, ids: ids.map(([, , c]) => c) }).by(3.3, 4.4).point).toEqual({ x: 3.3, y: 4.4 });
   });
 });

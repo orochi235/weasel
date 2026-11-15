@@ -3,8 +3,8 @@ import {
   createScene,
   createSnapOutcomeStore,
   type ActionDeps,
-  type Scene,
   type SurfaceContribution,
+  type AnyScene,
 } from '@weasel-js/core';
 import { createSpacingHintsPreset, type SpacingHintsOptions } from './preset';
 import { expectNear, moveBy } from '../sources/testing/session';
@@ -26,7 +26,7 @@ describe('createSpacingHintsPreset', () => {
   it('snaps a moved shape to the spacing between its siblings and marks the equal gaps in its color', () => {
     const { scene, moving, preset } = fixture({ color: '#e0397f' });
     const out = moveBy({
-      sources: preset.snapSources!, ids: [moving], scene: scene as unknown as Scene<unknown, string, unknown>,
+      sources: preset.snapSources!, ids: [moving], scene: scene as unknown as AnyScene,
     }).by(0, 0);
     // Its gap to the middle shape is 22; the gap beside it is 20, within reach.
     expectNear(out.point, { x: -2, y: 0 });
@@ -69,7 +69,7 @@ describe('createSpacingHintsPreset', () => {
   it('gives its filter to both sources', () => {
     const { scene, moving, preset } = fixture({ align: true, filter: () => false });
     const out = moveBy({
-      sources: preset.snapSources!, ids: [moving], scene: scene as unknown as Scene<unknown, string, unknown>,
+      sources: preset.snapSources!, ids: [moving], scene: scene as unknown as AnyScene,
     }).by(0, 0);
     expect(out).toMatchObject({ point: { x: 0, y: 0 }, marks: [] });
   });

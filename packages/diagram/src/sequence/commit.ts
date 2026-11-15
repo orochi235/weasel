@@ -2,7 +2,7 @@
  * Writing a sequence edit into a scene: the root's data replaced and its parts
  * built again, as one undo entry.
  */
-import { addOnPages, composeWorldPose, scenePoseAdapter, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
+import { addOnPages, composeWorldPose, scenePoseAdapter, type InvocationCtx, type RectPose, type AnyScene } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import { diagramThemeOf } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
@@ -20,11 +20,11 @@ export interface SequenceDrawOptions {
 }
 
 /** The world pose `id` stands at. */
-const worldPose = (scene: Scene<unknown, string, unknown>, id: string): RectPose =>
+const worldPose = (scene: AnyScene, id: string): RectPose =>
   composeWorldPose(scenePoseAdapter(scene as never), id, scene.composition.compose as never) as RectPose;
 
 /** The parts of root `id` built from `data`, in the batch the caller has open. A selected part still drawn stays selected. */
-function rebuild(scene: Scene<unknown, string, unknown>, id: string, data: SequenceData, opts: SequenceDrawOptions): void {
+function rebuild(scene: AnyScene, id: string, data: SequenceData, opts: SequenceDrawOptions): void {
   const root = scene.get(id as never)!;
   const at = worldPose(scene, id);
   const [own, ...parts] = sequenceSpecs(data, {
@@ -42,7 +42,7 @@ function rebuild(scene: Scene<unknown, string, unknown>, id: string, data: Seque
 }
 
 /** Replaces root `id`'s sequence with `data` and builds its parts again, as one undo entry under `label`. */
-export function commitSequence(scene: Scene<unknown, string, unknown>, id: string, data: SequenceData, label: string, opts: SequenceDrawOptions = {}): void {
+export function commitSequence(scene: AnyScene, id: string, data: SequenceData, label: string, opts: SequenceDrawOptions = {}): void {
   const node = scene.get(id as never);
   if (node === undefined || sequenceRootOf(node) === null) return;
   scene.batch(label, () => rebuild(scene, id, data, opts));
@@ -55,7 +55,7 @@ export function commitSequence(scene: Scene<unknown, string, unknown>, id: strin
  * the scene's first.
  */
 export function startSequence(
-  scene: Scene<unknown, string, unknown>, at: { x: number; y: number }, data: SequenceData, label: string, opts: SequenceDrawOptions & { layer?: string } = {},
+  scene: AnyScene, at: { x: number; y: number }, data: SequenceData, label: string, opts: SequenceDrawOptions & { layer?: string } = {},
 ): string {
   const id = scene.mintId() as string;
   const layer = opts.layer ?? scene.layers[0]?.id ?? 'main';
@@ -68,7 +68,7 @@ export function startSequence(
 }
 
 /** Builds every sequence in `scene` again from its own data, in the batch the caller has open: after a theme change. */
-export function redrawSequences(scene: Scene<unknown, string, unknown>, opts: SequenceDrawOptions = {}): void {
+export function redrawSequences(scene: AnyScene, opts: SequenceDrawOptions = {}): void {
   for (const node of scene.renderOrderNodes()) {
     const root = sequenceRootOf(node);
     if (root !== null) rebuild(scene, node.id, root.sequence, opts);
@@ -90,7 +90,7 @@ export interface SequenceEdit {
  * part that the next build would overwrite. Does nothing for any other node,
  * or text that did not change.
  */
-export function foldSequenceText(scene: Scene<unknown, string, unknown>, textId: string, commit: (edit: SequenceEdit) => void): void {
+export function foldSequenceText(scene: AnyScene, textId: string, commit: (edit: SequenceEdit) => void): void {
   const node = scene.get(textId as never);
   const part = node === undefined ? null : sequencePartOf(node);
   const root = part === null ? undefined : scene.get(part.root as never);
@@ -114,7 +114,7 @@ export interface SequenceEditOptions extends SequenceDrawOptions {
 /** `opts.commit`, or {@link commitSequence} against the scene the edit's deps hold, drawn with `opts`. */
 export function sequenceCommitOf(opts: SequenceEditOptions): (edit: SequenceEdit, ctx: Pick<InvocationCtx, 'deps'>) => void {
   return opts.commit ?? ((edit, ctx) => {
-    const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
+    const scene = ctx.deps.scene as AnyScene | undefined;
     if (scene !== undefined) commitSequence(scene, edit.id, edit.data, edit.label, opts);
   });
 }

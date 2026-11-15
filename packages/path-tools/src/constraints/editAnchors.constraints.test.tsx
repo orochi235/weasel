@@ -6,9 +6,19 @@ import {
 } from '@weasel-js/geom';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
-import { IDENTITY_POSE_COMPOSITION,
-  createScene, defaultCommitAdapter, deleteAnchorsAction, editAnchorsAction, nudgeAnchorsUpAction, selectAnchorAction,
-  type EditAnchorsDep, type NodeId, type PathEditMark, type Scene, type SelectionApi,
+import {
+  IDENTITY_POSE_COMPOSITION,
+  createScene,
+  defaultCommitAdapter,
+  deleteAnchorsAction,
+  editAnchorsAction,
+  nudgeAnchorsUpAction,
+  selectAnchorAction,
+  type EditAnchorsDep,
+  type NodeId,
+  type PathEditMark,
+  type SelectionApi,
+  type AnyScene,
 } from '@weasel-js/core';
 import {
   useEditAnchorsDepSourceForTests as useEditAnchorsDepSource, type EditAnchorsStateRef,
@@ -53,7 +63,7 @@ function setup(constraints: PathConstraint[] = PARALLELOGRAM, pose: PolygonPath 
     getHandleLocks: () => null,
     setHandleLocks: () => {},
   };
-  const loose = scene as unknown as Scene<unknown, string, unknown>;
+  const loose = scene as unknown as AnyScene;
   const adapter = {
     applyOps: (ops: Parameters<typeof scene.applyBatch>[0], label = '') => {
       scene.applyBatch(ops, label, defaultCommitAdapter(loose));

@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { Action, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { asNodeId, createScene, defaultCommitAdapter, IDENTITY_POSE_COMPOSITION, type NodeId, type Op, type Scene } from '@weasel-js/core';
+import { asNodeId, createScene, defaultCommitAdapter, IDENTITY_POSE_COMPOSITION, type NodeId, type Op, type AnyScene } from '@weasel-js/core';
 import { reachToMeetAction, kneadAction, snipPathAction } from './index';
 import { checkPath, densePath, penPath, point, runs, snap, tally, timeoutFor } from './pbt.fixture';
 
@@ -17,7 +17,7 @@ const VIEW = { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }) };
 function sceneOf(paths: readonly PolygonPath[]) {
   const scene = createScene<Record<string, never>, 'main', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   for (const [k, pose] of paths.entries()) scene.add({ id: asNodeId(`p${k}`), kind: 'mark', layer: 'main', pose, data: {} });
-  const loose = scene as unknown as Scene<unknown, string, unknown>;
+  const loose = scene as unknown as AnyScene;
   const applyOps = (ops: Op[], label = '') => { scene.applyBatch(ops, label, defaultCommitAdapter(loose)); };
   const selection = { get: () => scene.getSelection(), set: (ids: readonly string[]) => scene.setSelection(ids.map(asNodeId)) };
   const deps = { scene: loose, selection, applyOps, view: VIEW, history: scene.history, notices: { warn: () => {} } } as never;

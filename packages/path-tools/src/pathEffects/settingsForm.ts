@@ -4,7 +4,7 @@
  */
 import type { ActionDeps, ActionSettings, ActionSettingsState } from '@weasel-js/routing';
 import { mapPrefConditionPaths, type PrefGroup } from '@weasel-js/prefs';
-import { pathEffectOf, type NodeId, type PathEffect, type Scene } from '@weasel-js/core';
+import { pathEffectOf, type NodeId, type PathEffect, type AnyScene } from '@weasel-js/core';
 import { SettingsFields } from '../settingsFields';
 import { effectSettingDefaults, PATH_EFFECT_PARAMS } from './effectForms';
 
@@ -47,7 +47,7 @@ export const PATH_EFFECT_SETTINGS_SCHEMA: PrefGroup = {
 
 /** What the form shows for the selected path effects. */
 export function readPathEffectSettings(deps: ActionDeps): ActionSettingsState {
-  const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+  const scene = deps.scene as AnyScene | undefined;
   const fields = new SettingsFields();
   const counts: Record<string, number> = Object.fromEntries(Object.values(COUNT).map((name) => [name, 0]));
   for (const id of deps.selection?.get() ?? []) {

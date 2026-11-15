@@ -1,6 +1,16 @@
 import {
-  commitOps, snapMods, SNAP_ROLES, viewWorldToScreen,
-  type Action, type ActionDeps, type ImmediateParams, type InvocationCtx, type Op, type OngoingHandle, type Scene, type UnitScope,
+  commitOps,
+  snapMods,
+  SNAP_ROLES,
+  viewWorldToScreen,
+  type Action,
+  type ActionDeps,
+  type ImmediateParams,
+  type InvocationCtx,
+  type Op,
+  type OngoingHandle,
+  type UnitScope,
+  type AnyScene,
 } from '@weasel-js/core';
 import { addGuideOp, removeGuideOp, replaceGuideOp, type GuideStore } from '../guides/ops';
 import type { Guide } from '../guides/types';
@@ -8,8 +18,6 @@ import { guideAxisOf, rulerPartAt, type RulerHit, type RulerPart } from './hit';
 import { documentRulerFrame, rulerFrameAt, type RulerFrame } from './reading';
 import type { RulersState } from './layout';
 import type { Point } from '@weasel-js/geom';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** What the rulers' actions read and write. */
 export interface RulersActionCtx {

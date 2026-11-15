@@ -3,7 +3,7 @@
  * claims the press; this action previews every mark the proposed spec
  * redraws, and commits the spec as one edit of the plot's root.
  */
-import type { Action, InvocationCtx, NodeId, OngoingHandle, RectPose, Scene } from '@weasel-js/core';
+import type { Action, InvocationCtx, NodeId, OngoingHandle, RectPose, AnyScene } from '@weasel-js/core';
 import type { PlotPoint } from '../marks/types';
 import { textMeasure, type PlotMeasure } from '../measure';
 import { compilePlot, type PlotData } from '../plotData';
@@ -28,8 +28,6 @@ export interface PlotDragOptions {
   /** Defaults to {@link replacePlotData} against `deps.scene`, labeled "Edit value". */
   commit?: (edit: PlotEdit, ctx: InvocationCtx) => void;
 }
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** What a drag captured at its press, read-only after. */
 interface PlotPress {

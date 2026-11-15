@@ -1,7 +1,7 @@
 /**
  * The label edit that is not a drag: the Reset label command.
  */
-import { ActionDisabledReason, type Action, type InvocationCtx, type Scene } from '@weasel-js/core';
+import { ActionDisabledReason, type Action, type InvocationCtx, type AnyScene } from '@weasel-js/core';
 import { commitLabelToScene, type LabelEdit } from './labelDragAction';
 import { editableLabels } from './labelDragLayer';
 
@@ -11,7 +11,7 @@ export const RESET_LABEL_ACTION_ID = 'diagram.resetLabel';
 const NO_MODIFIERS = { alt: false, shift: false, meta: false, ctrl: false };
 
 /** The labels on `selected` edges that a drag has pinned (`dodge: false`) and an edit may touch. */
-function draggedLabels(scene: Scene<unknown, string, unknown> | undefined, selected: readonly string[]): LabelEdit[] {
+function draggedLabels(scene: AnyScene | undefined, selected: readonly string[]): LabelEdit[] {
   if (scene === undefined || selected.length === 0) return [];
   const out: LabelEdit[] = [];
   for (const { labelId, edgeId, label } of editableLabels(scene, new Set(selected))) {

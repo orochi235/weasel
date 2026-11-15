@@ -3,12 +3,10 @@
  * frame, the lifeline nearest it, the participant index it falls between, and
  * the row slot nearest it. What the authoring actions read a press with.
  */
-import type { Scene, Vec2 } from '@weasel-js/core';
+import type { Vec2, AnyScene } from '@weasel-js/core';
 import { placedSequences, type PlacedSequence } from './layer';
 import { sequenceRootOf } from './trait';
 import type { SequenceData, StepPlace } from './types';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** A root under a pointer: where it is, its data, and the pointer in its frame. */
 export interface SequenceHit {

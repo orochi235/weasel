@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ActionDisabledReason, createScene, overlaysOf, type InvocationCtx, type OngoingHandle, type Scene } from '@weasel-js/core';
+import { ActionDisabledReason, createScene, overlaysOf, type InvocationCtx, type OngoingHandle, type AnyScene } from '@weasel-js/core';
 import { createReorderAction, reorderContribution, sequenceSlots, REORDER_ACTION_ID, type ReorderOptions } from './reorder';
 
 const box = (x: number, y: number, width = 100, height = 40) => ({ x, y, width, height });
@@ -11,7 +11,7 @@ const SLOTS = sequenceSlots('x', [
   { id: 'c', bounds: box(280, 10, 100, 60) },
 ]);
 
-const scene = { get: (id: string) => ({ id, pose: SLOTS.items.find((i) => i.id === id)?.bounds }) } as unknown as Scene<unknown, string, unknown>;
+const scene = { get: (id: string) => ({ id, pose: SLOTS.items.find((i) => i.id === id)?.bounds }) } as unknown as AnyScene;
 
 function ctx(x: number, y: number, start = { x: 20, y: 20 }): InvocationCtx {
   return {
@@ -69,7 +69,7 @@ describe('createReorderAction with the insertion bar', () => {
 
   it('carries every id in carries under a bar drag, each by the drag offset', () => {
     const poses: Record<string, ReturnType<typeof box>> = { g: box(0, 0), m1: box(50, 100), m2: box(80, 200) };
-    const carryScene = { get: (id: string) => ({ id, pose: poses[id] }) } as unknown as Scene<unknown, string, unknown>;
+    const carryScene = { get: (id: string) => ({ id, pose: poses[id] }) } as unknown as AnyScene;
     const slots = sequenceSlots('x', [{ id: 'g', bounds: box(0, 0), carries: ['g', 'm1', 'm2'] }, { id: 'b', bounds: box(140, 0) }]);
     const action = createReorderAction({ slots: () => slots, commit: () => {} });
     if (action.invoker?.timing !== 'ongoing') throw new Error('expected an ongoing invoker');

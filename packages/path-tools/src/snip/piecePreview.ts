@@ -1,12 +1,12 @@
 import { createEmitter } from '@weasel-js/registry';
 import { transformPath, type PolygonPath } from '@weasel-js/geom';
-import { OVERLAY_ROLE_STROKES, type RenderLayer, type Scene, viewToTransform } from '@weasel-js/core';
+import { OVERLAY_ROLE_STROKES, type RenderLayer, viewToTransform, type AnyScene } from '@weasel-js/core';
 
 /** A piece of a stroke shown before it is cut away, and the scene it was
  *  measured on. */
 export interface PiecePreviewState {
   path: PolygonPath;
-  scene: Pick<Scene<unknown, string, unknown>, 'getVersion'>;
+  scene: Pick<AnyScene, 'getVersion'>;
 }
 
 /**

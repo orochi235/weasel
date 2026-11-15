@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, type OutputGrid } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { asNodeId, createScene, OUTPUT_GRID_KEY, type RectPose, type Scene } from '@weasel-js/core';
+import { asNodeId, createScene, OUTPUT_GRID_KEY, type RectPose, type AnyScene } from '@weasel-js/core';
 import { createWarpDragAction } from './warpActions';
 
 const GRID: OutputGrid = { pitch: 1, origin: { x: 0, y: 0 } };
@@ -19,7 +19,7 @@ describe('a warp drag under a quantize rule', () => {
       quantize: { stored: ({ pose }) => ({ pose: round(pose) }) },
       doc: { [OUTPUT_GRID_KEY]: GRID },
       initial: [{ id: asNodeId('a'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { path } }],
-    }) as unknown as Scene<unknown, string, unknown>;
+    }) as unknown as AnyScene;
     const from = { x: 100, y: 100 };
     const ctx = (at: { x: number; y: number }): InvocationCtx => ({
       world: at,

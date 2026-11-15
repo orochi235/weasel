@@ -18,8 +18,8 @@ import {
   type NodeId,
   type OngoingHandle,
   type OngoingOverlay,
-  type Scene,
   type Vec2,
+  type AnyScene,
 } from '@weasel-js/core';
 import {
   defaultCanConnect,
@@ -65,8 +65,6 @@ export interface ReconnectOptions<TPose> extends Omit<ConnectActionOptions<TPose
   /** Defaults to {@link commitReconnectToScene} against `deps.scene`. */
   commit?: (change: EndChange, ctx: InvocationCtx) => void;
 }
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** Moves follower `id` onto the page the nodes it follows share, else into the
  *  page run (`followerHome`), keeping its world place, and then each follower

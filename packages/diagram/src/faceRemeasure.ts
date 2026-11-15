@@ -5,7 +5,7 @@
  * text as it measured then; this lays them out again when the faces change.
  */
 import { faceGeneration, subscribeGlyphReady } from '@weasel-js/font';
-import type { Scene } from '@weasel-js/core';
+import type { Scene, AnyScene } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
 import { relayoutBodies, type RelayoutScene } from './bodyRelayout';
 import { labelFitOps } from './labels/fit';
@@ -13,8 +13,6 @@ import { diagramLabelOf } from './labelTrait';
 import { redrawSequences } from './sequence/commit';
 import type { DiagramTheme } from './theme/types';
 import { diagramNodeOf } from './trait';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** How {@link remeasureText} measures, and draws the sequences it builds again. */
 export interface RemeasureOptions {

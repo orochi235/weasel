@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { polylineFromPoints, type PolygonPath } from '@weasel-js/geom';
 import { ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
-import { createScene, defaultCommitAdapter, IDENTITY_POSE_COMPOSITION, type Op, type Scene } from '@weasel-js/core';
+import { createScene, defaultCommitAdapter, IDENTITY_POSE_COMPOSITION, type Op, type AnyScene } from '@weasel-js/core';
 import { createGirthActions, GIRTH_CLEAR_ID } from './girthActions';
 import { anchorNormals } from './widthEdit';
 
@@ -18,7 +18,7 @@ describe('girth counterexamples', () => {
   it('disables clearing a width point with no click and no set point under the press', () => {
     const scene = createScene<unknown, 'main', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     scene.add({ kind: 'mark', layer: 'main', pose: polylineFromPoints([{ x: -100, y: 0 }, { x: -90, y: 0 }]) as PolygonPath, data: { stroke: { paint: { kind: 'solid', color: '#000' }, width: 1 } } });
-    const loose = scene as unknown as Scene<unknown, string, unknown>;
+    const loose = scene as unknown as AnyScene;
     const deps = { scene: loose, view: { get: () => ({ scale: { x: 1, y: 1 } }) }, applyOps: (ops: Op[], label?: string) => scene.applyBatch(ops, label ?? '', defaultCommitAdapter(loose)) } as never;
     const clear = createGirthActions({ focus: () => null, setFocus: () => {}, reachPx: () => 6 }).find((a) => a.id === GIRTH_CLEAR_ID)!;
     expect(clear.enabled!(deps)).toBe(ActionDisabledReason.NotApplicable);

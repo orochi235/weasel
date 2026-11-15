@@ -20,7 +20,7 @@ import {
   type NodeId,
   type RectPose,
   type RenderLayer,
-  type Scene,
+  type AnyScene,
 } from '@weasel-js/core';
 import { lanesOf, poolAxisOf } from './containerStencils';
 import { diagramContainerOf } from './trait';
@@ -55,7 +55,7 @@ export interface PoolLanes {
 }
 
 /** Every pool in `scene` that is drawn and not locked. */
-export function poolsOf(scene: Scene<unknown, string, unknown>): PoolLanes[] {
+export function poolsOf(scene: AnyScene): PoolLanes[] {
   const out: PoolLanes[] = [];
   const world = worldWith(scene);
   for (const node of scene.renderOrderNodes()) {
@@ -115,7 +115,7 @@ function addPaint(sizePx: number, fill: CommandFill, stroke: CommandStroke): Aff
 }
 
 /** The affordance: a boundary region after each lane of each pool, and an add-lane button per pool. */
-export function createLaneAffordance(scene: Scene<unknown, string, unknown>, opts: LaneLayerOptions = {}): Affordance {
+export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {}): Affordance {
   const { hitRadiusPx = 4, addSizePx = 14 } = opts;
   const fill = opts.fill ?? DEFAULT_FILL;
   const stroke = opts.stroke ?? DEFAULT_STROKE;
@@ -159,6 +159,6 @@ export function createLaneAffordance(scene: Scene<unknown, string, unknown>, opt
 }
 
 /** The composed layer, for `CanvasExtensionApi.registerLayer`. */
-export function laneLayer(scene: Scene<unknown, string, unknown>, opts: LaneLayerOptions = {}): RenderLayer<unknown> {
+export function laneLayer(scene: AnyScene, opts: LaneLayerOptions = {}): RenderLayer<unknown> {
   return composeAffordanceLayer(LANE_LAYER_ID, 'Diagram lanes', [createLaneAffordance(scene, opts)]) as unknown as RenderLayer<unknown>;
 }

@@ -1,7 +1,5 @@
-import { nodeGates, type Bounds, type NodeId, type Scene, type SceneNode, type SnapCollect } from '@weasel-js/core';
+import { nodeGates, type Bounds, type NodeId, type SceneNode, type SnapCollect, type AnyScene } from '@weasel-js/core';
 import { siblingIds } from '../guides/alignment/sceneBounds';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 function visibleRoots(scene: AnyScene): readonly NodeId[] {
   const gates = nodeGates(scene);

@@ -10,13 +10,12 @@ import {
   type Scene,
   type TransformFollower,
   type TransformPreviewNode,
+  type AnyScene,
 } from '@weasel-js/core';
 import { recordedLayout } from './bodyRelayout';
 import type { Bounds } from './outline';
 import { diagramNodeOf } from './trait';
 import { posesMovedBy } from './waypointFollower';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** Each row node of every body `frame` resizes, at the pose the new size puts it in. */
 function restacked(sc: AnyScene, geometry: PoseDescriptor<unknown>, frame: ReadonlyMap<string, unknown>): TransformPreviewNode[] {

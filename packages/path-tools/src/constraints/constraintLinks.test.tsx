@@ -4,9 +4,24 @@ import { createElement, type ReactNode } from 'react';
 import { pathAnchorPoints, polygonFromPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
-import { IDENTITY_POSE_COMPOSITION,
-  createScene, createTransformOp, defaultCommitAdapter, effectivePose, moveAction, pathEditPreset, deleteAnchorsAction, editAnchorsAction, findNodeShape,
-  type EditAnchorsDep, type NodeId, type Op, type PathEditMark, type Scene, type SelectionApi, type TransformFollower,
+import {
+  IDENTITY_POSE_COMPOSITION,
+  createScene,
+  createTransformOp,
+  defaultCommitAdapter,
+  effectivePose,
+  moveAction,
+  pathEditPreset,
+  deleteAnchorsAction,
+  editAnchorsAction,
+  findNodeShape,
+  type EditAnchorsDep,
+  type NodeId,
+  type Op,
+  type PathEditMark,
+  type SelectionApi,
+  type TransformFollower,
+  type AnyScene,
 } from '@weasel-js/core';
 import {
   useEditAnchorsDepSourceForTests as useEditAnchorsDepSource, type EditAnchorsStateRef,
@@ -51,7 +66,7 @@ function setup() {
     getHandleLocks: () => null,
     setHandleLocks: () => {},
   };
-  const loose = scene as unknown as Scene<unknown, string, unknown>;
+  const loose = scene as unknown as AnyScene;
   const adapter = {
     applyOps: (ops: Parameters<typeof scene.applyBatch>[0], label = '') => {
       scene.applyBatch(ops, label, defaultCommitAdapter(loose));

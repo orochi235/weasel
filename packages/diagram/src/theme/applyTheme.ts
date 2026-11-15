@@ -2,7 +2,7 @@
  * The edits a theme makes to a scene, each one undo entry: applying a theme,
  * naming a shape's or connector's role, and setting a color by hand.
  */
-import type { Scene } from '@weasel-js/core';
+import type { AnyScene } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import { relayoutBodies, type RelayoutScene } from '../bodyRelayout';
 import { redrawSequences } from '../sequence/commit';
@@ -41,7 +41,7 @@ export function diagramStyleOf(node: { data: unknown }): DiagramStyleState | nul
 type Sized = { style?: { fontSize?: unknown } } | undefined;
 
 /** Writes each node's new data, then lays out again every body whose text changed size. */
-function writeAll(scene: Scene<unknown, string, unknown>, writes: ReadonlyMap<string, unknown>, measure?: MeasureRowText): void {
+function writeAll(scene: AnyScene, writes: ReadonlyMap<string, unknown>, measure?: MeasureRowText): void {
   const bodies: string[] = [];
   for (const [id, data] of writes) {
     const node = scene.get(id as never)!;
@@ -66,7 +66,7 @@ export interface ApplyDiagramThemeOptions {
 /** Recolors the whole scene in `theme` and saves it as the `diagram:theme` document value, as one
  *  undo entry. Colors the author set by hand stay. */
 export function applyDiagramTheme(
-  scene: Scene<unknown, string, unknown>, theme: DiagramTheme, label = `Theme: ${theme.name}`, opts: ApplyDiagramThemeOptions = {},
+  scene: AnyScene, theme: DiagramTheme, label = `Theme: ${theme.name}`, opts: ApplyDiagramThemeOptions = {},
 ): void {
   const from = opts.from ?? diagramThemeOf(scene);
   scene.batch(label, () => {
@@ -90,7 +90,7 @@ const withTrait = (data: Data, trait: Record<string, unknown>): Data => ({ ...da
  * it, as one undo entry. Choosing a role hands back any color the author had
  * set, so the role shows.
  */
-export function setDiagramStyle(scene: Scene<unknown, string, unknown>, ids: readonly string[], role: string, opts: DiagramStyleEditOptions = {}): void {
+export function setDiagramStyle(scene: AnyScene, ids: readonly string[], role: string, opts: DiagramStyleEditOptions = {}): void {
   const theme = opts.theme ?? diagramThemeOf(scene);
   const styled = ids.filter((id) => { const n = scene.get(id as never); return n !== undefined && diagramStyleOf(n) !== null; });
   if (styled.length === 0) return;
@@ -107,7 +107,7 @@ export function setDiagramStyle(scene: Scene<unknown, string, unknown>, ids: rea
 const painted = (paint: Paint | undefined, color: string): Paint => ({ ...paint, paint: { ...paint?.paint, color } });
 
 /** The text nodes a shape's or connector's `text` color reaches: a shape's rows, a connector's labels. */
-function textNodesOf(scene: Scene<unknown, string, unknown>, id: string, kind: DiagramStyleState['kind']): string[] {
+function textNodesOf(scene: AnyScene, id: string, kind: DiagramStyleState['kind']): string[] {
   if (kind === 'shape') return scene.childrenOf(id as never).filter((c) => typeof (scene.get(c)?.data as Data)?.text === 'string');
   return scene.renderOrderNodes().filter((n) => {
     const deps = n.dependsOn;
@@ -121,7 +121,7 @@ function textNodesOf(scene: Scene<unknown, string, unknown>, id: string, kind: D
  * `ownStyle`, so a theme change leaves it. One undo entry. A connector has no
  * fill, and ignores one.
  */
-export function setDiagramColor(scene: Scene<unknown, string, unknown>, ids: readonly string[], field: StyleField, color: string, opts: Pick<DiagramStyleEditOptions, 'label'> = {}): void {
+export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: StyleField, color: string, opts: Pick<DiagramStyleEditOptions, 'label'> = {}): void {
   scene.batch(opts.label ?? `Set ${field} color`, () => {
     for (const id of ids) {
       const node = scene.get(id as never);
@@ -149,7 +149,7 @@ export function setDiagramColor(scene: Scene<unknown, string, unknown>, ids: rea
  * theme's size change leaves it. One undo entry.
  */
 export function setDiagramFontSize(
-  scene: Scene<unknown, string, unknown>, ids: readonly string[], size: number, opts: Pick<DiagramStyleEditOptions, 'label'> & { measure?: MeasureRowText } = {},
+  scene: AnyScene, ids: readonly string[], size: number, opts: Pick<DiagramStyleEditOptions, 'label'> & { measure?: MeasureRowText } = {},
 ): void {
   scene.batch(opts.label ?? 'Set text size', () => {
     const writes = new Map<string, unknown>();

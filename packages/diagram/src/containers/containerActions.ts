@@ -14,7 +14,6 @@ import {
   type NodeId,
   type OngoingHandle,
   type RectPose,
-  type Scene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { grabPortAction, grabPortBindings } from '../connect';
@@ -23,7 +22,7 @@ import { LANE_AFFORDANCE_KIND, laneLayer, laneScratchOf, poolsOf, type LaneLayer
 import { MIN_LANE_SIZE } from './laneStack';
 import { titleInFrame } from './titlePose';
 import { diagramContainerOf, titleIdOf } from './trait';
-import type { ImmediateParams } from '@weasel-js/core';
+import type { ImmediateParams, AnyScene } from '@weasel-js/core';
 
 /** The action that drags a lane's boundary. */
 export const LANE_RESIZE_ACTION_ID = 'diagram.resizeLane';
@@ -43,7 +42,7 @@ export interface LaneResize {
 /** The default commit: the lane's and the pool's new size, as one history
  *  entry labeled "Resize lane". The pool's layout restacks the lanes after it. */
 export function commitLaneResizeToScene(resize: LaneResize, ctx: InvocationCtx): void {
-  const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
+  const scene = ctx.deps.scene as AnyScene | undefined;
   const pool = scene?.get(resize.poolId as NodeId);
   const lane = scene?.get(resize.laneId as NodeId);
   if (scene === undefined || pool === undefined || lane === undefined) return;
@@ -59,7 +58,7 @@ export function commitLaneResizeToScene(resize: LaneResize, ctx: InvocationCtx):
 
 /** Where everything stands with the lane at `index` of `pool` resized to `size`: the
  *  lane, its title, the pool and its title, and every later lane with what it holds. */
-export function laneResizeFrame(scene: Scene<unknown, string, unknown>, pool: PoolLanes, index: number, size: number): Map<string, RectPose> {
+export function laneResizeFrame(scene: AnyScene, pool: PoolLanes, index: number, size: number): Map<string, RectPose> {
   const { axis } = pool;
   const along = (r: RectPose) => (axis === 'y' ? r.height : r.width);
   const grow = (r: RectPose, by: number): RectPose => (axis === 'y' ? { ...r, height: r.height + by } : { ...r, width: r.width + by });
@@ -89,7 +88,7 @@ export function laneResizeFrame(scene: Scene<unknown, string, unknown>, pool: Po
 
 /** Options for the container actions. */
 export interface LaneActionOptions extends LaneLayerOptions {
-  scene: Scene<unknown, string, unknown>;
+  scene: AnyScene;
   /** The selected ids, which Release members reads. */
   selected?: () => readonly string[];
   /** Defaults to {@link commitLaneResizeToScene}. */
@@ -147,7 +146,7 @@ const NO_MODIFIERS = { alt: false, shift: false, meta: false, ctrl: false };
 /** The `diagram.addLane` action: the add-lane button's click. */
 export function createAddLaneAction(opts: LaneActionOptions): Action {
   const commit = opts.commitAddLane ?? ((poolId: string, ctx: InvocationCtx) => {
-    const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
+    const scene = ctx.deps.scene as AnyScene | undefined;
     if (scene !== undefined) addLane(scene, poolId);
   });
   return {

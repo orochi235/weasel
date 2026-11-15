@@ -3,7 +3,7 @@
  * participants, messages, notes, fragments, and boxes its parts draw. What a
  * host's panel reads to offer the edits that apply to a selection.
  */
-import type { Scene } from '@weasel-js/core';
+import type { AnyScene } from '@weasel-js/core';
 import { sequencePartOf, sequenceRootOf } from './trait';
 import type { SequenceData } from './types';
 
@@ -29,7 +29,7 @@ const LIST_OF = {
  * them, or a selected root, else the scene's only sequence (with nothing
  * selected in it), else `null`. Parts of any other root are left out.
  */
-export function sequenceSelectionOf(scene: Scene<unknown, string, unknown>, ids: readonly string[]): SequenceSelection | null {
+export function sequenceSelectionOf(scene: AnyScene, ids: readonly string[]): SequenceSelection | null {
   let root: string | null = null;
   for (const id of ids) {
     const node = scene.get(id as never);

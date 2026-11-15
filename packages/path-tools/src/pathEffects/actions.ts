@@ -6,7 +6,26 @@
 import { type Action, type ActionDeps, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
 import {
-  commitOps, createSetDataOp, deleteNode, derivedDepOf, documentOf, hiddenSourceDeleteOps, insertAt, isTextData, type NodeId, type Op, type PathEffect, pathEffectNode, pathEffectOf, pathEffectParts, resolvePartPaint, registeredPathEffects, type Scene, type SceneNode as Node, slotOf, pathOperationTags,
+  commitOps,
+  createSetDataOp,
+  deleteNode,
+  derivedDepOf,
+  documentOf,
+  hiddenSourceDeleteOps,
+  insertAt,
+  isTextData,
+  type NodeId,
+  type Op,
+  type PathEffect,
+  pathEffectNode,
+  pathEffectOf,
+  pathEffectParts,
+  resolvePartPaint,
+  registeredPathEffects,
+  type SceneNode as Node,
+  slotOf,
+  pathOperationTags,
+  type AnyScene,
 } from '@weasel-js/core';
 import { newEffect, withEffectSettings } from './params';
 import { hiddenOnItsOwn, hiddenOps } from './hiding';
@@ -14,7 +33,6 @@ import { icon } from '../icons.gen';
 import { pathEffectSettingsForm } from './settingsForm';
 import { PATH_EFFECT_PARAMS } from './effectForms';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
 
 /** The `group` every path-effect action is in, for an `<ActionBar>`. */

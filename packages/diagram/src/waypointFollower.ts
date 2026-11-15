@@ -12,12 +12,11 @@ import {
   type Scene,
   type TransformFollower,
   type TransformPreviewNode,
+  type AnyScene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { diagramEdgeOf, samePoints, type DiagramEdge } from './edgeTrait';
 import { worldWith } from './worldWith';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 const EPS = 1e-6;
 

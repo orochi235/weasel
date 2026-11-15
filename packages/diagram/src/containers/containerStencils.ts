@@ -3,7 +3,7 @@
  * and the edits on one: adding a lane to a pool, and releasing a container's
  * members.
  */
-import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type Scene } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type AnyScene } from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
@@ -72,7 +72,7 @@ export function containerBuild<TLayer extends string>(
 export const poolAxisOf = (pool: DiagramContainer): 'x' | 'y' => (pool.header?.side === 'top' ? 'x' : 'y');
 
 /** The lanes of `poolId`, in the order they stack. */
-export function lanesOf(scene: Scene<unknown, string, unknown>, poolId: string): NodeId[] {
+export function lanesOf(scene: AnyScene, poolId: string): NodeId[] {
   const pool = scene.get(poolId as NodeId);
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (pool === undefined || trait?.role !== 'pool') return [];
@@ -91,7 +91,7 @@ export function lanesOf(scene: Scene<unknown, string, unknown>, poolId: string):
  * stack, as one history entry. The pool grows to hold it. Returns the new
  * lane's id, or null when `poolId` is not a pool.
  */
-export function addLane(scene: Scene<unknown, string, unknown>, poolId: string, index?: number, style?: NodeStyle): string | null {
+export function addLane(scene: AnyScene, poolId: string, index?: number, style?: NodeStyle): string | null {
   const pool = scene.get(poolId as NodeId);
   const trait = pool === undefined ? null : diagramContainerOf(pool);
   if (pool === undefined || trait?.role !== 'pool') return null;
@@ -124,7 +124,7 @@ export function addLane(scene: Scene<unknown, string, unknown>, poolId: string, 
 }
 
 /** The node a release lands members beside: `id`, or the pool around a lane. */
-function releasedFrom(scene: Scene<unknown, string, unknown>, id: NodeId): NodeId {
+function releasedFrom(scene: AnyScene, id: NodeId): NodeId {
   const parent = scene.get(id)!.parent;
   const around = parent === null ? undefined : scene.get(parent);
   return around !== undefined && diagramContainerOf(around)?.role === 'pool' ? around.id : id;
@@ -135,7 +135,7 @@ function releasedFrom(scene: Scene<unknown, string, unknown>, id: NodeId): NodeI
  * parent, as one history entry. A pool's members are its lanes' members, and
  * a lane's go past its pool. Connectors on what is removed go with it.
  */
-export function releaseMembers(scene: Scene<unknown, string, unknown>, id: string): void {
+export function releaseMembers(scene: AnyScene, id: string): void {
   const node = scene.get(id as NodeId);
   const trait = node === undefined ? null : diagramContainerOf(node);
   if (node === undefined || trait === null) return;

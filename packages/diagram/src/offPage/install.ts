@@ -17,6 +17,7 @@ import {
   type PlacedPage,
   type Scene,
   type SceneEditSummary,
+  type AnyScene,
 } from '@weasel-js/core';
 import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
 import { DIAGRAM_PASS_ORDER } from '../passOrder';
@@ -35,7 +36,6 @@ export interface OffPageMarkerOptions {
   theme?: DiagramTheme;
 }
 
-type AnyScene = Scene<unknown, string, unknown>;
 type SceneNode = ReturnType<AnyScene['renderOrderNodes']>[number];
 const ENDS = ['from', 'to'] as const;
 

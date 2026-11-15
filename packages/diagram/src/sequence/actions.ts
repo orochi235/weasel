@@ -4,7 +4,7 @@
  * parts it carries and, on release, hands one edit of the root's data to
  * `commit`, which by default replaces it in the scene as one undo entry.
  */
-import type { Action, InvocationCtx, OngoingHandle, RectPose, Scene, SurfaceContribution, Vec2 } from '@weasel-js/core';
+import type { Action, InvocationCtx, OngoingHandle, RectPose, SurfaceContribution, Vec2, AnyScene } from '@weasel-js/core';
 import { moveParticipant, moveStep, reconnectMessage } from './edit';
 import { sequenceCommitOf, type SequenceEditOptions } from './commit';
 import { SELECT_SEQUENCE_PART_ACTION_ID, selectSequencePartAction } from './select';
@@ -16,8 +16,6 @@ import type { SequenceData } from './types';
 export const SEQUENCE_DRAG_ACTION_ID = 'diagram.sequence.drag';
 /** The action that absorbs the rest of a press on a sequence part, so it reaches neither marquee nor pan. */
 export const GRAB_SEQUENCE_ACTION_ID = 'diagram.sequence.grab';
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** What a drag captured at its press, read-only after. */
 interface Press {
@@ -149,7 +147,7 @@ const grab: Action = {
  * Text is edited in place by the host's text editor, through
  * `foldSequenceText`.
  */
-export function diagramSequence(opts: SequenceEditOptions & { scene: Scene<unknown, string, unknown> }): SurfaceContribution {
+export function diagramSequence(opts: SequenceEditOptions & { scene: AnyScene }): SurfaceContribution {
   const actionId = opts.id ?? SEQUENCE_DRAG_ACTION_ID;
   const target = `affordance:${SEQUENCE_AFFORDANCE_KIND}` as const;
   return {

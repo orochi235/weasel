@@ -3,7 +3,7 @@
  * lane stands, and the region edits a change to that is reported as.
  */
 import { worldWith } from './worldWith';
-import type { RectPose, Scene } from '@weasel-js/core';
+import type { RectPose, AnyScene } from '@weasel-js/core';
 import { lanesOf, poolAxisOf } from './containers/containerStencils';
 import { diagramContainerOf } from './containers/trait';
 import type { Rect } from '@weasel-js/geom';
@@ -29,8 +29,6 @@ export interface RegionStanding {
   regions: Map<string, RegionAt>;
   pools: Map<string, { id: string; size: number }[]>;
 }
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** Each lane of `poolId` with its size along the stack, in order. */
 export function laneList(scene: AnyScene, poolId: string): { id: string; size: number }[] {

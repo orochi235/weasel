@@ -4,8 +4,14 @@
  * kind a press reports.
  */
 import {
-  composeAffordanceLayer, composeWorldPose, scenePoseAdapter,
-  type Affordance, type AffordanceRegion, type RectPose, type RenderLayer, type Scene,
+  composeAffordanceLayer,
+  composeWorldPose,
+  scenePoseAdapter,
+  type Affordance,
+  type AffordanceRegion,
+  type RectPose,
+  type RenderLayer,
+  type AnyScene,
 } from '@weasel-js/core';
 import type { PlotPoint } from '../marks/types';
 import { plotMarkOf, plotRootOf, plotRootsIn } from '../plotScene';
@@ -34,13 +40,13 @@ export function plotHandleScratchOf(hit: { payload?: unknown } | null | undefine
 }
 
 /** Where the plot root `rootId`'s corner stands in world coordinates. */
-export function plotOrigin(scene: Scene<unknown, string, unknown>, rootId: string): PlotPoint {
+export function plotOrigin(scene: AnyScene, rootId: string): PlotPoint {
   const pose = composeWorldPose(scenePoseAdapter(scene as never), rootId, scene.composition.compose as never) as RectPose;
   return { x: pose.x, y: pose.y };
 }
 
 /** Every handle in `scene` an edit may take, in world coordinates, in render order. */
-export function* plotHandles(scene: Scene<unknown, string, unknown>): Iterable<PlotHandleScratch & PlotHandle> {
+export function* plotHandles(scene: AnyScene): Iterable<PlotHandleScratch & PlotHandle> {
   for (const rootId of plotRootsIn(scene)) {
     const root = scene.get(rootId);
     const trait = plotRootOf(root);
@@ -65,7 +71,7 @@ export function* plotHandles(scene: Scene<unknown, string, unknown>): Iterable<P
 
 const HIT_RADIUS_PX = 6;
 
-function handleAffordance(scene: Scene<unknown, string, unknown>): Affordance {
+function handleAffordance(scene: AnyScene): Affordance {
   // Boxes first, so a point handle inside one wins a press at an equal distance.
   const regions = (): AffordanceRegion[] => [...plotHandles(scene)]
     .sort((a, b) => Number(b.box !== undefined) - Number(a.box !== undefined))
@@ -82,6 +88,6 @@ function handleAffordance(scene: Scene<unknown, string, unknown>): Affordance {
 }
 
 /** The handle layer, for a contribution's `layers` (as `plotEditing` carries it) or `registerLayer`. */
-export function plotHandleLayer(scene: Scene<unknown, string, unknown>): RenderLayer<unknown> {
+export function plotHandleLayer(scene: AnyScene): RenderLayer<unknown> {
   return composeAffordanceLayer(PLOT_HANDLE_LAYER_ID, 'Plot handles', [handleAffordance(scene)]) as unknown as RenderLayer<unknown>;
 }

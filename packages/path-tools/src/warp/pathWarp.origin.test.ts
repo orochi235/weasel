@@ -5,12 +5,17 @@ import {
 import type { PlaneWarp } from '@weasel-js/geom/warp';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import {
-  IDENTITY_POSE_COMPOSITION, asNodeId, commitOps, createScene, createTransformOp, type Scene,
+  IDENTITY_POSE_COMPOSITION,
+  asNodeId,
+  commitOps,
+  createScene,
+  createTransformOp,
+  type AnyScene,
 } from '@weasel-js/core';
 import { resolvePathWarp } from './pathWarp';
 import { createWarpDragAction } from './warpActions';
 
-type S = Scene<unknown, string, unknown>;
+type S = AnyScene;
 
 const FAR = 262_144;
 

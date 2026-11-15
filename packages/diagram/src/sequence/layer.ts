@@ -5,8 +5,15 @@
  * The parts themselves take no press, so these regions are the only way in.
  */
 import {
-  composeAffordanceLayer, composeWorldPose, scenePoseAdapter, type Affordance, type AffordanceRegion, type RectPose,
-  type RenderLayer, type Scene, type Vec2,
+  composeAffordanceLayer,
+  composeWorldPose,
+  scenePoseAdapter,
+  type Affordance,
+  type AffordanceRegion,
+  type RectPose,
+  type RenderLayer,
+  type Vec2,
+  type AnyScene,
 } from '@weasel-js/core';
 import { keyedIndex } from '../keyedIndex';
 import type { SeqRect } from './layout';
@@ -35,8 +42,6 @@ export function sequenceScratchOf(hit: { payload?: unknown } | null | undefined)
   const p = hit?.payload as SequenceScratch | undefined;
   return p !== undefined && typeof p.root === 'string' && typeof p.id === 'string' && typeof p.part === 'string' ? p : null;
 }
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** One root an edit may touch: its id, its world origin and size, and the geometry its parts were built with. */
 export interface PlacedSequence { id: string; origin: Vec2; width: number; height: number; geometry: SequenceGeometry }
@@ -117,7 +122,7 @@ function regionsIn(scene: AnyScene) {
 }
 
 /** The composed layer, for `CanvasExtensionApi.registerLayer`. Register it last: the last registered is hit first. */
-export function sequenceLayer(scene: Scene<unknown, string, unknown>): RenderLayer<unknown> {
+export function sequenceLayer(scene: AnyScene): RenderLayer<unknown> {
   const parts: Affordance = { id: SEQUENCE_LAYER_ID, regions: () => regionsIn(scene).parts };
   const ends: Affordance = { id: `${SEQUENCE_LAYER_ID}-ends`, regions: () => regionsIn(scene).ends };
   return composeAffordanceLayer(SEQUENCE_LAYER_ID, 'Sequence diagram parts', [parts, ends]) as unknown as RenderLayer<unknown>;

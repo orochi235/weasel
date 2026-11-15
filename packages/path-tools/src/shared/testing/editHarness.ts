@@ -8,8 +8,15 @@ import type { PathConstraint, PolygonPath } from '@weasel-js/geom';
 import type { ActionDeps } from '@weasel-js/routing';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';
 import {
-  IDENTITY_POSE_COMPOSITION, createScene, defaultCommitAdapter, type EditAnchorsDep, type HandleLocks, type NodeId,
-  type PathEditMark, type Scene, type SelectionApi,
+  IDENTITY_POSE_COMPOSITION,
+  createScene,
+  defaultCommitAdapter,
+  type EditAnchorsDep,
+  type HandleLocks,
+  type NodeId,
+  type PathEditMark,
+  type SelectionApi,
+  type AnyScene,
 } from '@weasel-js/core';
 import { useEditAnchorsDepSourceForTests as useEditAnchorsDepSource, type EditAnchorsStateRef } from '@weasel-js/core/test-seams';
 import { createConstraintsExtension } from '../../constraints/constraintsExtension';
@@ -38,7 +45,7 @@ export function editHarness(path: PolygonPath) {
     getHandleLocks: () => locks,
     setHandleLocks: (next) => { locks = next; },
   };
-  const loose = scene as unknown as Scene<unknown, string, unknown>;
+  const loose = scene as unknown as AnyScene;
   const applyOps = (ops: Parameters<typeof scene.applyBatch>[0], label = '') => {
     scene.applyBatch(ops, label, defaultCommitAdapter(loose));
   };

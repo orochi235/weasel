@@ -8,7 +8,7 @@
  */
 import type { DrawCommand } from '@weasel-js/renderer';
 import { nearestOnCubic, PathBuilder, viewWorldToScreen, type ConstraintPoint, type View, type Point } from '@weasel-js/geom';
-import type { CanvasExtensionApi, ContributionDepReader, RenderLayer, Scene, SurfaceContribution } from '@weasel-js/core';
+import type { CanvasExtensionApi, ContributionDepReader, RenderLayer, SurfaceContribution, AnyScene } from '@weasel-js/core';
 import { constraintGlyphs, type ConstraintGlyphStyle } from './constraintGlyphs';
 import { brokenConstraintLinks, type BrokenConstraintLink } from './constraintLinks';
 
@@ -67,7 +67,7 @@ export function constraintLinkMarks(
 const toScreenIn = (view: View) => (p: Point): Point => viewWorldToScreen(view, p);
 
 /** The layer drawing the broken links of `scene`, with a cache of its own. */
-function linkMarksLayer(scene: Scene<unknown, string, unknown>, style: ConstraintGlyphStyle): RenderLayer<unknown> {
+function linkMarksLayer(scene: AnyScene, style: ConstraintGlyphStyle): RenderLayer<unknown> {
   let cache: { version: number; links: BrokenConstraintLink[] } | null = null;
   const broken = () => {
     const version = scene.getVersion();
@@ -97,7 +97,7 @@ export function createConstraintLinkMarks(style: ConstraintGlyphStyle): SurfaceC
     id: CONSTRAINT_LINK_MARKS_ID,
     eligibility: { always: true },
     attach: (api: CanvasExtensionApi, deps: ContributionDepReader) => {
-      const scene = deps.get('scene') as Scene<unknown, string, unknown> | undefined;
+      const scene = deps.get('scene') as AnyScene | undefined;
       if (!scene) return () => {};
       const off = api.registerLayer(linkMarksLayer(scene, style));
       api.requestRedraw();

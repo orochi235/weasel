@@ -7,11 +7,17 @@ import type { ActionDeps } from '@weasel-js/routing';
 import { unionRects } from '@weasel-js/geom';
 import type { WarpBox } from '@weasel-js/geom/warp';
 import {
-  type CreateOutlinesAdapter, drawnAABBOf, type NodeId, type PathNode, pathNodesOf, type Scene, shownNodeOf,
+  type CreateOutlinesAdapter,
+  drawnAABBOf,
+  type NodeId,
+  type PathNode,
+  pathNodesOf,
+  shownNodeOf,
+  type AnyScene,
 } from '@weasel-js/core';
 import { leavesOf } from '../shared/scenePaths';
 
-type WarpScene = Pick<Scene<unknown, string, unknown>, 'get' | 'childrenOf'>;
+type WarpScene = Pick<AnyScene, 'get' | 'childrenOf'>;
 
 /** The selection's warpable leaves. */
 export interface WarpLeaves {

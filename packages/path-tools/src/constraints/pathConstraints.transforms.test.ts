@@ -7,8 +7,16 @@
 import { describe, expect, it } from 'vitest';
 import { polygonFromPoints, type PathConstraint, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
-import { IDENTITY_POSE_COMPOSITION,
-  asNodeId, createScene, flipAction, type NodeId, type RectPose, resizeAction, rotateAction, type Scene,
+import {
+  IDENTITY_POSE_COMPOSITION,
+  asNodeId,
+  createScene,
+  flipAction,
+  type NodeId,
+  type RectPose,
+  resizeAction,
+  rotateAction,
+  type AnyScene,
 } from '@weasel-js/core';
 import { constraintConflictsOf } from './pathConstraints';
 
@@ -31,7 +39,7 @@ const RECT = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 50 }, { x: 0, y: 50
 function polygonScene() {
   const scene = createScene<{ constraints: PathConstraint[] }, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   scene.add({ id: ID, kind: 'mark', layer: 'main', pose: polygonFromPoints(RECT), data: { constraints: CONSTRAINTS } });
-  return scene as unknown as Scene<unknown, string, unknown>;
+  return scene as unknown as AnyScene;
 }
 
 function dataPathScene() {
@@ -41,12 +49,12 @@ function dataPathScene() {
     pose: { x: 0, y: 0, width: 100, height: 50 },
     data: { path: polygonFromPoints(RECT) as PolygonPath, constraints: CONSTRAINTS },
   });
-  return scene as unknown as Scene<unknown, string, unknown>;
+  return scene as unknown as AnyScene;
 }
 
-const conflicts = (scene: Scene<unknown, string, unknown>) => constraintConflictsOf(scene.get(ID));
+const conflicts = (scene: AnyScene) => constraintConflictsOf(scene.get(ID));
 
-function ctx(scene: Scene<unknown, string, unknown>, at: { x: number; y: number }, affordance?: object): InvocationCtx {
+function ctx(scene: AnyScene, at: { x: number; y: number }, affordance?: object): InvocationCtx {
   return {
     world: at,
     screen: { x: 0, y: 0 },
@@ -58,7 +66,7 @@ function ctx(scene: Scene<unknown, string, unknown>, at: { x: number; y: number 
 
 function dragWith(
   action: { invoker?: unknown },
-  scene: Scene<unknown, string, unknown>,
+  scene: AnyScene,
   from: { x: number; y: number },
   to: { x: number; y: number },
   affordance?: object,

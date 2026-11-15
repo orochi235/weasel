@@ -21,8 +21,16 @@ import {
   type Point,
 } from '@weasel-js/geom';
 import {
-  annotationLayerIds, commitOps, createInsertOp, editAnchorsAction, pathEditPathOf, pathOperationTags,
-  type EditAnchorsDep, type NodeId, type Scene, type SceneNode,
+  annotationLayerIds,
+  commitOps,
+  createInsertOp,
+  editAnchorsAction,
+  pathEditPathOf,
+  pathOperationTags,
+  type EditAnchorsDep,
+  type NodeId,
+  type SceneNode,
+  type AnyScene,
 } from '@weasel-js/core';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
@@ -89,7 +97,7 @@ function landingOn(path: PolygonPath, p: Point, reach: number, scale: Point): Om
  * passed over. Null when it lands on nothing.
  */
 export function linkTargetAt(
-  scene: Pick<Scene<unknown, string, unknown>, 'renderOrderNodes'> & Partial<Pick<Scene<unknown, string, unknown>, 'isLocked' | 'isHidden'>>,
+  scene: Pick<AnyScene, 'renderOrderNodes'> & Partial<Pick<AnyScene, 'isLocked' | 'isHidden'>>,
   dep: Pick<EditAnchorsDep, 'editingId' | 'getEditablePath'>,
   p: Point,
   reachPx: number,
@@ -124,7 +132,7 @@ const pressedAnchor = (ctx: InvocationCtx): number => {
   return m ? parseInt(m[1], 10) : -1;
 };
 
-function linkLayer(scene: Scene<unknown, string, unknown>, editedLayer: string, params: LinkAnchorParams | undefined): string {
+function linkLayer(scene: AnyScene, editedLayer: string, params: LinkAnchorParams | undefined): string {
   if (params?.layer) return params.layer;
   const [annotation] = annotationLayerIds(scene.layers);
   return annotation ?? editedLayer;
@@ -133,7 +141,7 @@ function linkLayer(scene: Scene<unknown, string, unknown>, editedLayer: string, 
 /** The ops that leave anchor `anchor` of `path`, the edit of the open node, on `target` and tied there. Empty when the dep cannot make them. */
 function linkOps(deps: ActionDeps, path: PolygonPath, anchor: number, target: LinkTarget, params: LinkAnchorParams | undefined) {
   const dep = deps.editAnchors!;
-  const scene = deps.scene as Scene<unknown, string, unknown>;
+  const scene = deps.scene as AnyScene;
   const edited = scene.get(dep.editingId as NodeId);
   const p = pathAnchorPoints(path)[anchor];
   if (!edited || !p || !dep.editOps) return [];
@@ -187,7 +195,7 @@ export const linkAnchorAction: Action & { requires: string[] } = {
       let dropped: { path: PolygonPath; scale: Point | undefined } | null = null;
       const targetOf = (path: PolygonPath, params: LinkAnchorParams | undefined, scale: Point | undefined) => {
         const p = pathAnchorPoints(path)[anchor];
-        return p ? linkTargetAt(deps.scene as Scene<unknown, string, unknown>, dep, p, reachOf(params), scale) : null;
+        return p ? linkTargetAt(deps.scene as AnyScene, dep, p, reachOf(params), scale) : null;
       };
       return {
         ...move,

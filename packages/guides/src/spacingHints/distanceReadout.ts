@@ -1,7 +1,7 @@
-import { sceneMagnification, type Action, type GestureBinding, type ModSpec, type NodeId, type Scene, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
+import { sceneMagnification, type Action, type GestureBinding, type ModSpec, type NodeId, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
 import { measureDistances, type DistanceReadout } from './distance';
 import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
-import type { ImmediateParams } from '@weasel-js/core';
+import type { ImmediateParams, AnyScene } from '@weasel-js/core';
 
 
 /** Options for `distanceReadout`. */
@@ -45,7 +45,7 @@ const EMPTY: DistanceReadout = { gaps: [], leaders: [] };
 const MODIFIERS: readonly NonNullable<DistanceReadoutOptions['modifier']>[] = ['alt', 'ctrl', 'meta', 'shift'];
 
 /** The ids and every node under them: what the pick under the pointer skips. */
-function subtreeOf(scene: Scene<unknown, string, unknown>, ids: readonly NodeId[]): Set<NodeId> {
+function subtreeOf(scene: AnyScene, ids: readonly NodeId[]): Set<NodeId> {
   const out = new Set<NodeId>();
   const stack = [...ids];
   while (stack.length > 0) {
