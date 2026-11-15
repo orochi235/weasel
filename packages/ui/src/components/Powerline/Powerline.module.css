@@ -4,11 +4,6 @@
   gap: var(--powerline-gap, 0.2em);
 }
 
-.matrix {
-  display: grid;
-  gap: var(--wzl-space-6);
-}
-
 /* Reset Badge's opinionated text defaults — Powerline segments should pick up
  * the surrounding text style instead of forcing uppercase / 10px / extra
  * tracking. Consumers can still override via className on Powerline. */
