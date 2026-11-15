@@ -850,8 +850,8 @@ sit in the tree.
 ### Deriving a pose
 
 `derivePose` is the same machinery driving a node's **pose** rather than its
-path — same `dependsOn`, same registry-keyed serialization, pushed
-invalidation only. The difference is reach: a derived path is resolved at paint time
+path — same `dependsOn`, same registry-keyed serialization, the
+same pushed and pulled invalidation. The difference is reach: a derived path is resolved at paint time
 and reaches only the painter, while a derived pose is what the node *is* at, so
 it feeds bounds, hit-testing, selection chrome, snapping and layout.
 
