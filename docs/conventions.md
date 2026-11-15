@@ -99,9 +99,8 @@ Local- vs world-space bounds, and `nodeAtPoint` vs `pickBest`, are different
 questions. Miter apex vs capsule, and butt cap vs half-disc, are a defensible hit
 model over shared base geometry. `unionBounds` stays rotation-free beside
 `unionAABB` for commit-time actions that write poses back in the unrotated frame.
-SVG's `#000000` initial fill is a spec default, not drift. `resolveNodeFill`'s
-split between `kit:path` and `kit:shape` is documented and correct.
-`useBuiltinShapeTools`' nine hook calls are not a list, and are already
+SVG's `#000000` initial fill is a spec default, not drift.
+`useBuiltinShapeTools`' run of hook calls are not a list, and are already
 compiler-linked through the return type. `sceneToAdapter`'s area walk
 returns containers where the live marquee dep does not — one flag on the shared
 walk, because a bare-adapter consumer has no selection parent-folding to fold
@@ -640,14 +639,16 @@ blue grays, so a green tint comes out blue.
 
 A **motif** is how a titled frame draws its title and its edge: a visual idiom
 borrowed from something real. It's neither a stance (the angle a surface comes from) nor a
-theme (token values). `<MotifFrame motif>` and `<PropertyGroup motif>` take one
-from a factory: `rule()` (a title between two rules, the default), `stereo()` (a
-label bar along one edge, as on the back of an A/V receiver), `notch()` (the
-title cut into the border), `tab()`, `plaque()` (the tint fills the frame) and
-`titlebar()` (a solid strip across the top, as a desktop window is titled).
-The root barrel has them as `motifs.stereo()`; `@weasel-js/ui/components/MotifFrame`
-exports the bare names. `<DefaultMotif motif>` changes the default for every
-frame below it, which is how an app pairs a theme with the motif it wants.
+theme (token values). `<MotifFrame motif>`, `<PropertyPanel motif>`, `<PropertyGroup motif>` and
+`<Subpanel motif>` take one from a factory: `sheet()` (a raised sheet titled along the top, a
+panel's default), `rule()` (a title between two rules, a group's default), `divider()` (a small
+title trailed by a rule, a subpanel's default), `stereo()` (a label bar along one edge, as on the
+back of an A/V receiver), `notch()` (the title cut into the border), `tab()`, `plaque()` (the tint
+fills the frame), `well()` (a sunken well, a settings form's groups) and `titlebar()` (a solid strip
+across the top, as a desktop window is titled). The root barrel has them as `motifs.stereo()`;
+`@weasel-js/ui/components/MotifFrame` exports the bare names. `<DefaultMotif panel group subpanel>`
+changes the default for each kind of frame below it, and its `named` map gives motifs a schema
+group can ask for by name; that is how an app pairs a theme with the motif it wants.
 
 `titlebar` is the one motif a theme repaints: its strip, its title's color and
 alignment, and the frame's border and inset are the `--wzl-titlebar-*` hooks,
