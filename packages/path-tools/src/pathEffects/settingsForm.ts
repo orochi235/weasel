@@ -2,11 +2,13 @@
  * `editPathEffect`'s settings form: a section per kind of effect the
  * selection holds, the values they hold, and the params a change makes.
  */
-import type { ActionDeps, ActionSettings, ActionSettingsState } from '@weasel-js/routing';
+import type { ActionDeps, ActionSettingsOf, ActionSettingsState } from '@weasel-js/routing';
 import { mapPrefConditionPaths, type PrefGroup } from '@weasel-js/prefs';
 import { pathEffectOf, type NodeId, type PathEffect, type AnyScene } from '@weasel-js/core';
 import { SettingsFields } from '../settingsFields';
 import { effectSettingDefaults, PATH_EFFECT_PARAMS } from './effectForms';
+import { effectSettings } from './params';
+import type { EditPathEffectParams } from '../actionParamSchema';
 
 type Kind = PathEffect['kind'];
 const KINDS: readonly Kind[] = ['tween', 'bendAlong', 'repeatAlong', 'textAlong', 'roughen', 'zigzag', 'puckerBloat'];
@@ -62,14 +64,14 @@ export function readPathEffectSettings(deps: ActionDeps): ActionSettingsState {
 }
 
 /** A field's change as `editPathEffect` params, reaching only effects of the
- *  kind whose section it was made in. */
-export function pathEffectSettingsParams(path: string, value: unknown): Record<string, unknown> | null {
+ *  kind whose section it was made in; a value of the wrong type sets nothing. */
+export function pathEffectSettingsParams(path: string, value: unknown): EditPathEffectParams | null {
   const [kind, field] = path.split('.') as [Kind, string | undefined];
-  return field !== undefined && KINDS.includes(kind) ? { kind, [field]: value } : null;
+  return field !== undefined && KINDS.includes(kind) ? { ...effectSettings(kind, { [field]: value }), kind } : null;
 }
 
 /** `editPathEffect`'s form. */
-export const pathEffectSettingsForm: ActionSettings = {
+export const pathEffectSettingsForm: ActionSettingsOf<EditPathEffectParams> = {
   schema: PATH_EFFECT_SETTINGS_SCHEMA,
   read: readPathEffectSettings,
   params: pathEffectSettingsParams,

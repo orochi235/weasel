@@ -3,7 +3,7 @@
  * text included once the brush reaches it, as one undo entry per stroke.
  */
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type InvocationCtx, type OngoingHandle, resolveParams,
+  type ActionDeps, ActionDisabledReason, defineAction, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { pxReach, kneadPath, type PolygonPath, type Point } from '@weasel-js/geom';
@@ -33,12 +33,12 @@ export const KNEAD_PARAMS = pref.group(LABEL, {
 }, { description: 'The size and strength of Knead.' });
 
 /** The params `knead` reads, each on every pointer move. */
-export interface KneadParams {
+export type KneadParams = {
   /** The brush's radius, in screen px. */
   radiusPx?: number;
   /** `1` moves the outline under the brush's center as far as the pointer; less, less. */
   strength?: number;
-}
+};
 
 const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 
@@ -117,25 +117,24 @@ function strokeFrom(deps: ActionDeps, start: Point) {
  * it was. The last-operation panel changes Size and Strength by replaying every dab
  * from the stroke's start, text put back and met again by the brush at its new size.
  */
-export const kneadAction: Action & { requires: string[] } = {
+export const kneadAction = defineAction({
   id: 'knead',
   label: LABEL,
   icon: icon('knead'),
   tags: pathOperationTags('brush'),
   group: 'path',
   eligible: { capability: 'creates-shapes' },
-  cursor: (params) => brushRing(radiusOf(params as KneadParams | undefined)),
+  cursor: (params) => brushRing(radiusOf(params)),
   requires: ['selection', 'scene', 'view', 'applyOps', 'history', 'createOutlinesAdapter', 'notices'],
   params: KNEAD_PARAMS,
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+    start(ctx, opts): OngoingHandle<KneadParams> {
       const { deps } = ctx;
       const start = { x: ctx.drag?.start.x ?? ctx.world.x, y: ctx.drag?.start.y ?? ctx.world.y };
       const live = strokeFrom(deps, start);
       if (live.empty) return {};
-      const params = (move: InvocationCtx): KneadParams =>
-        ({ ...resolveParams(opts?.params), ...move.params }) as KneadParams;
+      const params = (move: InvocationCtx): KneadParams => ({ ...resolveParams(opts?.params), ...move.params });
       let radiusPx = radiusOf(params(ctx));
       // Every dab, since each pushes on from where the one before left the outline.
       const dabs: Dab[] = [];
@@ -146,20 +145,20 @@ export const kneadAction: Action & { requires: string[] } = {
       return {
         kind: 'knead',
         cursor: () => brushRing(radiusPx),
-        onMove(move: InvocationCtx): void {
+        onMove(move): void {
           const p = params(move);
           radiusPx = radiusOf(p);
           const dab = { to: { x: move.world.x, y: move.world.y }, scale: deps.view?.get().scale };
           dabs.push(dab);
           live.dab(dab, p);
         },
-        onEnd(_end: InvocationCtx, reason: 'commit' | 'cancel'): void {
+        onEnd(_end, reason): void {
           if (reason === 'cancel') { live.shapes.clear(); live.text.cancel(); return; }
           live.commit();
         },
-        replay(replayed: Record<string, unknown>): void {
+        replay(replayed): void {
           const again = strokeFrom(deps, start);
-          for (const dab of dabs) again.dab(dab, replayed as KneadParams);
+          for (const dab of dabs) again.dab(dab, replayed);
           again.commit();
         },
         previewIds: () => (live.shapes.size > 0 ? [...live.shapes.keys()] : null),
@@ -172,4 +171,4 @@ export const kneadAction: Action & { requires: string[] } = {
     const { paths, texts } = kneadTargets(deps);
     return paths.length > 0 || texts.length > 0 ? true : ActionDisabledReason.NotApplicable;
   },
-};
+});

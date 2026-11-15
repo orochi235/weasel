@@ -3,7 +3,9 @@
  * path from the selection, or a live roughen, zigzag, or pucker and bloat of
  * each selected shape; change one's settings; and expand one into ordinary paths.
  */
-import { type Action, type ActionDeps, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
+import {
+  type Action, type ActionDeps, ActionDisabledReason, type ActionParamsOf, BETWEEN_GESTURES, defineAction, type ImmediateInvoker,
+} from '@weasel-js/routing';
 import { worldEditToStorage } from '@weasel-js/geom';
 import {
   commitOps,
@@ -67,8 +69,11 @@ function holdsEffect(deps?: ActionDeps): true | ActionDisabledReason {
   return selectedEffects(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired;
 }
 
-interface CreateSpec {
-  id: string;
+/** The id of an action making a path effect: its kind's. */
+type CreateId = PathEffect['kind'];
+
+interface CreateSpec<Id extends CreateId = CreateId> {
+  id: Id;
   label: string;
   icon: Action['icon'];
   kind: PathEffect['kind'];
@@ -92,8 +97,8 @@ function sourcesFor(spec: CreateSpec, deps: ActionDeps | undefined): AnyNode[] |
   return leaves && spec.order ? spec.order(leaves) : leaves;
 }
 
-function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
-  return {
+function createEffectAction<const Id extends CreateId>(spec: CreateSpec<Id>) {
+  return defineAction<Id, ActionParamsOf<Id>>({
     id: spec.id,
     label: spec.label,
     icon: spec.icon,
@@ -118,7 +123,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
         const groups = spec.each
           ? leaves.map((n) => [n]).sort(([x], [y]) => slotOf(scene, y!.id) - slotOf(scene, x!.id))
           : [spec.third && c ? [a, b, c] : [a, b]];
-        const settled = newEffect(spec.kind, params as Record<string, unknown> | undefined);
+        const settled = newEffect(spec.kind, params);
         const ops: Op[] = [];
         const made: NodeId[] = [];
         for (const group of groups) {
@@ -142,14 +147,14 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
         }
         commitOps(deps, ops, spec.label, { select: made });
       },
-    } satisfies ImmediateInvoker,
+    },
     enabled: (deps) => {
       const scene = deps?.scene as AnyScene | undefined;
       if (scene && registeredPathEffects(scene.registry) === null) return ActionDisabledReason.NotApplicable;
       if (sourcesFor(spec, deps)) return true;
       return selectedLeaves(deps, spec.each ? 1 : 2) ? ActionDisabledReason.NotApplicable : ActionDisabledReason.SelectionRequired;
     },
-  };
+  });
 }
 
 /**
@@ -236,7 +241,7 @@ const EDIT_LABEL = 'Edit Path Effect';
  * of one effect coalesce, so a slider dragged through many values is one
  * undo step where the scene coalesces.
  */
-export const editPathEffectAction: Action & { requires: string[] } = {
+export const editPathEffectAction = defineAction({
   id: 'editPathEffect',
   label: EDIT_LABEL,
   icon: icon('core:tune'),
@@ -245,11 +250,9 @@ export const editPathEffectAction: Action & { requires: string[] } = {
   enabled: holdsEffect,
   invoker: {
     timing: 'immediate',
-    run: (deps, params) => {
-      const p = params as Record<string, unknown> | undefined;
-      const ids = Array.isArray(p?.ids) ? (p.ids as string[]) : undefined;
+    run: (deps, p) => {
       const ops: Op[] = [];
-      for (const node of selectedEffects(deps, ids, p?.kind)) {
+      for (const node of selectedEffects(deps, p?.ids, p?.kind)) {
         const effect = pathEffectOf(node)!;
         const next = withEffectSettings(effect, p);
         if (sameEffect(effect, next)) continue;
@@ -263,8 +266,8 @@ export const editPathEffectAction: Action & { requires: string[] } = {
       }
       commitOps(deps, ops, EDIT_LABEL);
     },
-  } satisfies ImmediateInvoker,
-};
+  },
+});
 
 function sameEffect(a: PathEffect, b: PathEffect): boolean {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);

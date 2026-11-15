@@ -2,8 +2,7 @@
  * Add extremes in path edit: an anchor at each turn of a curved segment, in x
  * and in y, with the shape left as it was.
  */
-import type { Action, ImmediateInvoker } from '@weasel-js/routing';
-import { ActionDisabledReason, BETWEEN_GESTURES } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import { addExtremaAnchors, anchorAt, segmentEnds, type AnchorSet, type ExtremaAxes, type PenAnchor } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
 import { anchorEditWouldChange, commitAnchorEdit, depOf, pathOperationTags } from '@weasel-js/core';
@@ -26,7 +25,7 @@ export const ADD_EXTREMES_PARAMS = pref.group(LABEL, {
   ], { description: 'Which turns of a curve get an anchor.', control: 'radio' }),
 });
 
-const axesOf = (params: Record<string, unknown> | undefined): ExtremaAxes =>
+const axesOf = (params: Readonly<AddExtremesParams> | undefined): ExtremaAxes =>
   params?.axes === 'x' || params?.axes === 'y' ? params.axes : 'xy';
 
 /** The segments whose two ends are both in `selected`, as `addExtremaAnchors`
@@ -64,7 +63,7 @@ function addExtremesTo(set: AnchorSet, selected: ReadonlySet<number>, axes: Extr
  * The selected anchors stay selected, and the new ones join them. Alt+X.
  * Enabled only where it would add an anchor.
  */
-export const addExtremeAnchorsAction: Action & { requires: string[] } = {
+export const addExtremeAnchorsAction = defineAction({
   id: 'addExtremeAnchors',
   icon: icon('extremeAnchors'),
   label: LABEL,
@@ -85,7 +84,7 @@ export const addExtremeAnchorsAction: Action & { requires: string[] } = {
       commitAnchorEdit(dep, LABEL, (set) => (next = addExtremesTo(set, dep.selectedAnchors, axes)) !== null);
       if (next) dep.setSelectedAnchors(next);
     },
-  } as ImmediateInvoker,
+  },
   enabled: (deps) => {
     const dep = depOf(deps);
     if (!dep) return ActionDisabledReason.SelectionRequired;
@@ -93,4 +92,4 @@ export const addExtremeAnchorsAction: Action & { requires: string[] } = {
       ? true
       : ActionDisabledReason.NotApplicable;
   },
-};
+});

@@ -4,8 +4,8 @@
  * They change which anchors are selected and nothing else, so none of them
  * is an undo step.
  */
-import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
-import { ActionDisabledReason, BETWEEN_GESTURES } from '@weasel-js/routing';
+import type { ActionDeps, ActionParamsOf } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import {
   cornerAnchors, everyNthAnchor, growAnchorSelection, invertAnchorSelection, pathToAnchors,
   shrinkAnchorSelection, smoothAnchors, type AnchorSet, type PolygonPath,
@@ -19,7 +19,7 @@ import { pref, type PrefGroup } from '@weasel-js/prefs';
 /** The group every action here is in, which an `ActionBar` can show. */
 export const ANCHOR_SELECTION_GROUP = 'anchorSelection';
 
-type Pick = (set: AnchorSet, selected: number[], params: Record<string, unknown> | undefined) => number[];
+type Pick<P> = (set: AnchorSet, selected: number[], params: Readonly<Partial<P>> | undefined) => number[];
 
 /** The edited path decoded, or null when it is not a polygon. */
 function editedSet(dep: EditAnchorsDep): AnchorSet | null {
@@ -32,11 +32,11 @@ const pathOpen = (deps?: ActionDeps): true | ActionDisabledReason =>
 
 /** A selection command bound to `key`; `needsSelection` when `pick` reads
  *  the current selection and so has nothing to do without one. */
-function makeSelectCommand(
-  id: PathToolsIconName, label: string, key: KeySpec, needsSelection: boolean, pick: Pick, params?: PrefGroup,
-): Action & { requires: string[] } {
+function makeSelectCommand<const Id extends PathToolsIconName>(
+  id: Id, label: string, key: KeySpec, needsSelection: boolean, pick: Pick<ActionParamsOf<Id>>, params?: PrefGroup,
+) {
   const enabled = needsSelection ? requiresAnchorSelection : pathOpen;
-  return {
+  return defineAction<Id, ActionParamsOf<Id>>({
     id,
     label,
     icon: icon(id),
@@ -53,9 +53,9 @@ function makeSelectCommand(
         const set = dep && enabled(deps) === true ? editedSet(dep) : null;
         if (set) dep!.setSelectedAnchors(pick(set, [...dep!.selectedAnchors], params));
       },
-    } as ImmediateInvoker,
+    },
     enabled,
-  };
+  });
 }
 
 /** A key with Alt held, matched on `code` too: with Alt held on a Mac the
@@ -69,7 +69,7 @@ export const SELECT_EVERY_NTH_ANCHOR_PARAMS = pref.group('Select every Nth ancho
 });
 
 /** The count `params.n` asks for, the form's default when it names none. */
-const stepOf = (params: Record<string, unknown> | undefined): number => {
+const stepOf = (params: Readonly<{ n?: number }> | undefined): number => {
   const n = params?.n;
   return typeof n === 'number' && Number.isFinite(n) && n >= 1 ? Math.floor(n) : SELECT_EVERY_NTH_ANCHOR_PARAMS.children.n.default;
 };

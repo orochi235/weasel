@@ -167,8 +167,9 @@ export {
   heldPathWarpOf, resolvePathWarp, withoutPathWarp, type HeldPathWarp, type ResolvedPathWarp,
 } from './warp/pathWarp';
 export {
-  DEFAULT_CLOTH_SIZE, DEFAULT_WARP_TOLERANCE, withPathWarp, type WarpKind, type WarpSettings,
+  DEFAULT_CLOTH_SIZE, DEFAULT_WARP_TOLERANCE, withPathWarp, type ConfigureWarpParams, type WarpKind, type WarpSettings,
 } from './warp/warpTargets';
+export type { StrokePressParams } from './shared/scenePaths';
 
 // Carries path-tools' IconName augmentation into the published declarations.
 export type { PathToolsIconName } from './icons.gen';

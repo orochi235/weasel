@@ -2,7 +2,7 @@
  * Commands on spiro curves (`spiroShape`): set the kind of the points
  * selected in path edit, and convert a spiro curve to an ordinary path.
  */
-import { ActionDisabledReason, type Action, type ActionDeps, type ImmediateInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, type Action, type ActionDeps, type ImmediateInvoker } from '@weasel-js/routing';
 import { SPIRO_KINDS, isSpiroKind, type SpiroKind } from '@weasel-js/geom';
 import {
   commitOps, createSetDataOp, pathOperationTags, reshapeTo, resolveEditablePathOf, storeEditablePath,
@@ -49,7 +49,7 @@ function setKindOps(deps: ActionDeps | undefined, kind: SpiroKind, label: string
   return reshapeTo(node, { pose: stored.pose, data: { ...(stored.data as object), representation: solved.spiro } }, label);
 }
 
-const kindOf = (params: Record<string, unknown> | undefined): SpiroKind =>
+const kindOf = (params: Readonly<{ kind?: SpiroKind }> | undefined): SpiroKind =>
   (isSpiroKind(params?.kind) ? params.kind : 'smooth');
 
 /**
@@ -57,7 +57,7 @@ const kindOf = (params: Record<string, unknown> | undefined): SpiroKind =>
  * kind `params.kind` (default `'smooth'`) and solve the curve again. One
  * variant per kind.
  */
-export const setSpiroKindAction: Action & { requires: string[] } = {
+export const setSpiroKindAction = defineAction({
   id: 'setSpiroKind',
   label: 'Set spiro point kind',
   tags: pathOperationTags('command'),
@@ -72,10 +72,10 @@ export const setSpiroKindAction: Action & { requires: string[] } = {
       const ops = setKindOps(deps, kind, KIND_LABELS[kind]);
       if (ops) commitOps(deps, ops, KIND_LABELS[kind]);
     },
-  } satisfies ImmediateInvoker,
+  },
   enabled: (deps) =>
     (editedSpiro(deps) && deps?.editAnchors?.selectedAnchors.size ? true : ActionDisabledReason.SelectionRequired),
-};
+});
 
 /** The selected spiro nodes, or the one in path edit. */
 function spiroTargets(deps: ActionDeps | undefined): AnyNode[] {

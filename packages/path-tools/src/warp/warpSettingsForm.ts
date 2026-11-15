@@ -2,12 +2,13 @@
  * `configureWarp`'s settings form: the selection's warps by kind, the values
  * they hold, and the params a change to one of them makes.
  */
-import type { ActionDeps, ActionSettings, ActionSettingsState } from '@weasel-js/routing';
+import type { ActionDeps, ActionSettingsOf, ActionSettingsState } from '@weasel-js/routing';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { selectedWarpPaths } from './warpSelection';
 import { resolvePathWarp } from './pathWarp';
 import { SettingsFields } from '../settingsFields';
 import { WARP_SETTING_FIELDS } from './warpParams';
+import type { ConfigureWarpParams } from './warpTargets';
 
 /** The warp settings as a prefs schema: a section per kind the selection
  *  holds, and the tolerance every kind refits at. */
@@ -57,14 +58,20 @@ export function readWarpSettings(deps: ActionDeps): ActionSettingsState {
 
 /** A field's change as `configureWarp` params: a kind's own field reaches
  *  only warps of that kind. */
-export function warpSettingsParams(path: string, value: unknown): Record<string, unknown> | null {
-  const [section, field] = path.split('.');
-  if (field === undefined) return section === 'tolerance' ? { tolerance: value } : null;
-  return section === 'plane' || section === 'cloth' ? { kind: section, [field]: value } : null;
+export function warpSettingsParams(path: string, value: unknown): ConfigureWarpParams | null {
+  const num = typeof value === 'number' ? value : undefined;
+  switch (path) {
+    case 'tolerance': return num !== undefined ? { tolerance: num } : null;
+    case 'plane.mode': return value === 'free' || value === 'perspective' ? { kind: 'plane', mode: value } : null;
+    case 'cloth.mapping': return value === 'bicubic' || value === 'coons' ? { kind: 'cloth', mapping: value } : null;
+    case 'cloth.rows': return num !== undefined ? { kind: 'cloth', rows: num } : null;
+    case 'cloth.cols': return num !== undefined ? { kind: 'cloth', cols: num } : null;
+    default: return null;
+  }
 }
 
 /** `configureWarp`'s form. */
-export const warpSettingsForm: ActionSettings = {
+export const warpSettingsForm: ActionSettingsOf<ConfigureWarpParams> = {
   schema: WARP_SETTINGS_SCHEMA,
   read: readWarpSettings,
   params: warpSettingsParams,

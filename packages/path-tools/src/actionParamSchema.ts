@@ -3,8 +3,9 @@
  * `ActionParamSchema` so `<SceneCanvas tune>` types them.
  */
 import type { CornerShape, PathConstraintKind, SegmentType, SpiroKind } from '@weasel-js/geom';
+import type { AffordanceHit, ImmediateParams } from '@weasel-js/routing';
 import type {
-  BendAlongEffect, TweenEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, ZigzagEffect,
+  BendAlongEffect, TweenEffect, PathEffect, PuckerBloatEffect, RepeatAlongEffect, RoughenEffect, TextAlongEffect, ZigzagEffect,
 } from '@weasel-js/core';
 import type { ConstrainAnchorsParams } from './constraints/anchorConstraints';
 import type { TugPathParams } from './tug/tugPath';
@@ -13,7 +14,12 @@ import type { AddExtremesParams } from './extremes/addExtremes';
 import type { ReachToMeetParams } from './reach/reachToMeet';
 import type { SandParams } from './sand/sand';
 import type { KneadParams } from './knead/knead';
-import type { WarpKind, WarpSettings } from './warp/warpTargets';
+import type { ConfigureWarpParams, WarpSettings } from './warp/warpTargets';
+import type { StrokePressParams } from './shared/scenePaths';
+import type { GirthDragParams } from './girth/girthActions';
+import type { LinkAnchorParams } from './constraints/linkAnchor';
+import type { EditFilletParams } from './fillet/editFillet';
+import type { CycleFilletParams } from './fillet/filletCommands';
 
 /** A path effect's settings as params: every field but `kind`, each optional. */
 export type PathEffectParams<E> = { [K in Exclude<keyof E, 'kind'>]?: E[K] };
@@ -23,14 +29,15 @@ export type TweenParams = Omit<PathEffectParams<TweenEffect>, 'reverse'> & { rev
 export type SetFilletsParams = { shape?: CornerShape; radius?: number };
 /** The `editPathEffect` action's params: the effects' settings, and which nodes and effect kind they edit. */
 export type EditPathEffectParams = TweenParams & PathEffectParams<BendAlongEffect> & PathEffectParams<RepeatAlongEffect>
-  & PathEffectParams<RoughenEffect> & PathEffectParams<ZigzagEffect> & PathEffectParams<PuckerBloatEffect>
-  & { ids?: readonly string[]; kind?: PathEffect['kind'] };
+  & PathEffectParams<TextAlongEffect> & PathEffectParams<RoughenEffect> & PathEffectParams<ZigzagEffect>
+  & PathEffectParams<PuckerBloatEffect> & { ids?: readonly string[]; kind?: PathEffect['kind'] };
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {
     tween: TweenParams;
     bendAlong: PathEffectParams<BendAlongEffect>;
     repeatAlong: PathEffectParams<RepeatAlongEffect>;
+    textAlong: PathEffectParams<TextAlongEffect>;
     roughen: PathEffectParams<RoughenEffect>;
     zigzag: PathEffectParams<ZigzagEffect>;
     puckerBloat: PathEffectParams<PuckerBloatEffect>;
@@ -41,23 +48,33 @@ declare module '@weasel-js/routing' {
     bridgePaths: { tension?: number };
     bridgeAnchors: { tension?: number };
     setSpiroKind: { kind?: SpiroKind };
-    'spiro.placePoint': { kind?: SpiroKind };
+    'spiro.placePoint': { kind?: SpiroKind } & Pick<ImmediateParams, 'press' | 'mods'>;
     constrainAnchors: ConstrainAnchorsParams;
+    linkAnchor: LinkAnchorParams;
     unconstrainAnchors: { kind?: PathConstraintKind };
     'plane.drag': WarpSettings;
     'cloth.drag': WarpSettings;
     'pin.drag': WarpSettings;
-    'pin.addPin': WarpSettings;
-    configureWarp: WarpSettings & { kind?: WarpKind };
+    'pin.addPin': WarpSettings & Pick<ImmediateParams, 'press' | 'world'>;
+    configureWarp: ConfigureWarpParams;
     convertSegments: { to?: SegmentType };
-    convertSegmentAt: { to?: SegmentType };
+    convertSegmentAt: { to?: SegmentType } & Pick<ImmediateParams, 'world'>;
     selectEveryNthAnchor: { n?: number };
     resamplePath: ResamplePathParams;
     addExtremeAnchors: AddExtremesParams;
     reachToMeet: ReachToMeetParams;
     setFillets: SetFilletsParams;
+    editFillet: EditFilletParams;
+    cycleFillet: CycleFilletParams;
     'spiro.finish': { viaDoubleClick?: boolean };
-    'girth.drag': { reachPx?: number };
+    'girth.drag': GirthDragParams;
+    'girth.clear': Pick<ImmediateParams, 'press'>;
+    'girth.hover': Pick<ImmediateParams, 'world'>;
+    snipPath: StrokePressParams;
+    'snip.preview': StrokePressParams;
+    'shapeBuilder.hover': Pick<ImmediateParams, 'world' | 'mods'>;
+    'shapeBuilder.click': Pick<ImmediateParams, 'press' | 'mods'>;
+    equalizeHandles: { affordance?: AffordanceHit };
   }
 }
 

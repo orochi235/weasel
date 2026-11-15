@@ -19,7 +19,7 @@
  */
 
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker, type InvocationCtx, isPoiseGrip, type OngoingHandle, roleMods,
+  type Action, type ActionDeps, ActionDisabledReason, defineAction, type InvocationCtx, isPoiseGrip, type OngoingHandle, roleMods,
 } from '@weasel-js/routing';
 import {
   poiseFactorToward,
@@ -119,7 +119,7 @@ export const poiseHandlesAction: Action & { requires: string[] } = inPlane({
 
 /** Double-click a segment's poise grip to even out its handles' proportions, every image of them with them under a
  *  `pathSymmetry` dep. */
-export const equalizeHandlesAction: Action & { requires: string[] } = {
+export const equalizeHandlesAction = defineAction({
   id: 'equalizeHandles',
   label: 'Equalize handles',
   icon: icon('equalizeHandles'),
@@ -130,13 +130,13 @@ export const equalizeHandlesAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const kind = (params?.affordance as { kind?: string } | undefined)?.kind;
+      const kind = params?.affordance?.kind;
       const target = gripTarget(deps.editAnchors, kind);
       if (!target) return;
       const { dep, sub, segIdx } = target;
       commitAnchorEdit(dep, 'Equalize handles', (set) =>
         equalizeSegmentHandles(set, sub, segIdx, editedPathSymmetries(deps.pathSymmetry, dep.editingId, set)));
     },
-  } as ImmediateInvoker,
+  },
   enabled: gripEnabled,
-};
+});

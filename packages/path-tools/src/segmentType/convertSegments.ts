@@ -3,17 +3,16 @@
  * (`convertSegments`): the selected segments from the keyboard, or the one
  * under a Shift+double-click.
  */
-import { ActionDisabledReason, BETWEEN_GESTURES, type Action, type ImmediateInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import { convertSegments, editAnchorSetTracked, segmentsBetweenAnchors, type SegmentType } from '@weasel-js/geom';
 import {
   anchorEditWouldChange, commitAnchorEdit, depOf, editingLayer, inPlane, pathOperationTags, segmentUnder,
 } from '@weasel-js/core';
 import { icon } from '../icons.gen';
-import type { ImmediateParams } from '@weasel-js/routing';
 
 const LABEL = 'Convert segments';
 
-const typeOf = (params: Record<string, unknown> | undefined): SegmentType | undefined =>
+const typeOf = (params: Readonly<{ to?: SegmentType }> | undefined): SegmentType | undefined =>
   (params?.to === 'line' || params?.to === 'curve' ? params.to : undefined);
 
 /**
@@ -23,7 +22,7 @@ const typeOf = (params: Record<string, unknown> | undefined): SegmentType | unde
  * (Shift+C) curves them all when any is straight and straightens them
  * otherwise.
  */
-export const convertSegmentsAction: Action & { requires: string[] } = {
+export const convertSegmentsAction = defineAction({
   id: 'convertSegments',
   icon: icon('convertSegment'),
   label: LABEL,
@@ -44,20 +43,20 @@ export const convertSegmentsAction: Action & { requires: string[] } = {
       const selected = [...dep.selectedAnchors];
       commitAnchorEdit(dep, LABEL, (set) => convertSegments(set, segmentsBetweenAnchors(set, selected), typeOf(params)));
     },
-  } as ImmediateInvoker,
+  },
   enabled: (deps) => {
     const selected = [...(depOf(deps)?.selectedAnchors ?? [])];
     const any = selected.length > 1
       && anchorEditWouldChange(deps, (set) => convertSegments(set, segmentsBetweenAnchors(set, selected)));
     return any ? true : ActionDisabledReason.SelectionRequired;
   },
-};
+});
 
 /**
  * Shift+double-click a segment of the path being edited to flip
  * it between straight and curved. Off every segment the click falls through.
  */
-export const convertSegmentAtAction: Action & { requires: string[] } = inPlane({
+export const convertSegmentAtAction = inPlane(defineAction({
   id: 'convertSegmentAt',
   icon: icon('convertSegment'),
   label: 'Convert segment',
@@ -68,7 +67,7 @@ export const convertSegmentAtAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'immediate',
     run(deps, params) {
-      const world = (params as ImmediateParams | undefined)?.world;
+      const world = params?.world;
       if (!world) return;
       const under = segmentUnder(deps, world.x, world.y);
       if (!under) return;
@@ -76,10 +75,10 @@ export const convertSegmentAtAction: Action & { requires: string[] } = inPlane({
       const next = editAnchorSetTracked(path, (set) => convertSegments(set, [hit], typeOf(params)));
       if (next) dep.applyEdit(dep.editingId, next.path, 'Convert segment', next.origins);
     },
-  } as ImmediateInvoker,
+  },
   enabled: (deps, at) => {
     if (!deps?.editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
     if (at && !segmentUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
     return true;
   },
-}, editingLayer);
+}), editingLayer);

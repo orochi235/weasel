@@ -1,8 +1,7 @@
 import type { Action, ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { BooleanOpOptions, NodeId, PathOverlay, TransientPath } from '@weasel-js/core';
 import { facesAlong, planShapeBuilder, type ShapeBuilderMode, type ShapeBuilderPlan } from './shapeBuilder';
-import type { ImmediateParams } from '@weasel-js/routing';
 import type { Point } from '@weasel-js/geom';
 
 /** Screen pixels between the points a drag is sampled at for the faces it crosses. */
@@ -64,22 +63,21 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
   const eligible = { capability: 'edits-page' } as const;
   const requires = ['booleansAdapter', 'selection', 'view'] as const;
 
-  const hover: Action = {
+  const hover = defineAction({
     id: 'shapeBuilder.hover',
     label: 'Shape Builder — show the face under the pointer',
     eligible,
     requires,
     invoker: {
       timing: 'immediate',
-      run: (deps, params) => {
-        const p = params as ImmediateParams | undefined;
+      run: (deps, p) => {
         const plan = enoughSelected(deps) === true ? plans.get(deps) : null;
         const at = plan && p?.world ? plan.faceAt(p.world.x, p.world.y) : -1;
         if (!plan || at < 0) overlay.clear();
         else show(plan, [at], modeFor(p?.mods?.alt) === 'delete' ? 'remove' : 'chrome');
       },
     },
-  };
+  });
 
   const leave: Action = {
     id: 'shapeBuilder.leave',
@@ -88,7 +86,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
     invoker: { timing: 'immediate', run: () => overlay.clear() },
   };
 
-  const click: Action = {
+  const click = defineAction({
     id: 'shapeBuilder.click',
     label: 'Shape Builder — take the face clicked',
     eligible,
@@ -96,8 +94,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
     enabled: enoughSelected,
     invoker: {
       timing: 'immediate',
-      run: (deps, params) => {
-        const p = params as ImmediateParams | undefined;
+      run: (deps, p) => {
         const plan = plans.get(deps);
         if (!plan || !p?.press) return;
         const at = plan.faceAt(p.press.x, p.press.y);
@@ -107,7 +104,7 @@ export function createShapeBuilderActions(overlay: PathOverlay, settings: () => 
         plan.commit([at], modeFor(p.mods?.alt));
       },
     },
-  };
+  });
 
   const drag: Action = {
     id: 'shapeBuilder',

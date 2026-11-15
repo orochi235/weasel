@@ -1,5 +1,5 @@
 /** Reach: carry an open end on until it meets a stroke. */
-import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker, type ImmediateParams } from '@weasel-js/routing';
+import { type ActionDeps, ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import {
   anchorAt, anchorsToPath, DEG_TO_RAD, distance, editAnchorSetTracked, reachToMeet, tugPathEnd, openEndAt, openEndRay,
   openPathEnds, pathDistanceToPoint, pathEndAnchorIndex, pathToAnchors,
@@ -7,7 +7,9 @@ import {
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
 import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
-import { pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress } from '../shared/scenePaths';
+import {
+  pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress, type StrokePressParams,
+} from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 
 const REACH_LABEL = 'Reach';
@@ -19,9 +21,7 @@ export type ReachToMeetParams = {
   shape?: 'eased' | 'straight';
   /** How far, in radians, an eased end turns before it runs straight. Default π/6. */
   easeTurn?: number;
-  /** How far, in screen px, a click reaches for the stroke it extends. Default 6. */
-  radiusPx?: number;
-} & Pick<ImmediateParams, 'world' | 'press'>;
+} & StrokePressParams;
 
 /** Reach's params as a form, for the last-operation panel. */
 export const REACH_TO_MEET_PARAMS = pref.group(REACH_LABEL, {
@@ -37,8 +37,7 @@ export const REACH_TO_MEET_PARAMS = pref.group(REACH_LABEL, {
 });
 
 /** `params` as `reachToMeet` options. */
-function extendOptions(params: unknown): ReachToMeetOptions {
-  const p = (params ?? {}) as ReachToMeetParams;
+function extendOptions(p: Readonly<ReachToMeetParams> = {}): ReachToMeetOptions {
   if (p.shape === 'straight') return { mode: 'tangent' };
   const turn = p.easeTurn;
   return typeof turn === 'number' && Number.isFinite(turn) && turn > 0 ? { mode: 'eased', easeTurn: turn } : { mode: 'eased' };
@@ -107,7 +106,7 @@ function extendEnds(
 }
 
 /** What Reach would make of each node it reaches. */
-function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string, Extended> {
+function planExtend(deps: ActionDeps | undefined, params?: Readonly<ReachToMeetParams>): Map<string, Extended> {
   const out = new Map<string, Extended>();
   const all = scenePathNodes(deps);
   const editing = deps?.editAnchors?.editingId;
@@ -134,7 +133,7 @@ function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string,
  * binding supplies), the open end nearest it of the topmost stroke within
  * `radiusPx` instead. An end that meets nothing stays put. One undo step.
  */
-export const reachToMeetAction: Action & { requires: string[] } = {
+export const reachToMeetAction = defineAction({
   id: 'reachToMeet',
   icon: icon('reach'),
   label: REACH_LABEL,
@@ -159,11 +158,11 @@ export const reachToMeetAction: Action & { requires: string[] } = {
       for (const { node, path } of plan.values()) ops.push(...reshapeOps(node, path, REACH_LABEL));
       commitOps(deps, ops, REACH_LABEL);
     },
-  } satisfies ImmediateInvoker,
+  },
   // A click's point arrives here without the binding's reach, so `run` decides there. Handed no params, either
   // shape reaching a stroke enables it, since the last-operation panel can switch shapes; handed params, the
   // run they make does.
-  enabled: (deps?: ActionDeps, at?: { x: number; y: number }, _carried?: unknown, params?: unknown) =>
+  enabled: (deps, at, _carried, params) =>
     (at || planExtend(deps, params).size > 0 || (params === undefined && planExtend(deps, { shape: 'straight' }).size > 0)
       ? true : ActionDisabledReason.NotApplicable),
-};
+});

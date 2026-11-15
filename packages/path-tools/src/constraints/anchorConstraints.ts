@@ -5,7 +5,9 @@
  * `constrainAnchors` once per kind.
  */
 
-import { type Action, type ActionDeps, ActionDisabledReason, type ActionVariant, type ImmediateInvoker } from '@weasel-js/routing';
+import {
+  type Action, type ActionDeps, ActionDisabledReason, type ActionParamsOf, type ActionVariantOf, defineAction, type ImmediateInvoker,
+} from '@weasel-js/routing';
 import { deepEqual } from '@weasel-js/registry';
 import {
   constraintAnchors,
@@ -99,7 +101,7 @@ export function constraintsForAnchors(
 const sameConstraint = (a: PathConstraint, b: PathConstraint) => deepEqual(a, b, { undefinedAsAbsent: true });
 
 /** The constraints adding `params` to the edited path's would leave it with, or null for no change. */
-function withAdded(dep: EditAnchorsDep, params: Partial<ConstrainAnchorsParams> | undefined): PathConstraint[] | null {
+function withAdded(dep: EditAnchorsDep, params: Readonly<Partial<ConstrainAnchorsParams>> | undefined): PathConstraint[] | null {
   const path = editedPath(dep);
   if (!path || !params?.kind) return null;
   const current = constraintsOf(dep.getNodeShape(dep.editingId)?.data);
@@ -116,18 +118,18 @@ function withRemoved(dep: EditAnchorsDep, kind: PathConstraintKind | undefined):
   return kept.length < current.length ? kept : null;
 }
 
-function constraintCommand(
-  id: string,
+function constraintCommand<const Id extends 'constrainAnchors' | 'unconstrainAnchors'>(
+  id: Id,
   label: string,
   glyph: IconRef,
-  next: (dep: EditAnchorsDep, params: Record<string, unknown> | undefined) => PathConstraint[] | null,
-  variants?: readonly ActionVariant[],
-): Action & { requires: string[] } {
+  next: (dep: EditAnchorsDep, params: Readonly<Partial<ActionParamsOf<Id>>> | undefined) => PathConstraint[] | null,
+  variants?: readonly ActionVariantOf<ActionParamsOf<Id>>[],
+) {
   const ready = (deps: ActionDeps | undefined) => {
     const dep = depOf(deps);
     return dep?.store && dep.selectedAnchors.size > 0 ? dep : null;
   };
-  return {
+  return defineAction<Id, ActionParamsOf<Id>>({
     id,
     label,
     icon: glyph,
@@ -143,14 +145,14 @@ function constraintCommand(
         const list = dep && next(dep, params);
         if (dep && list) setConstraints(dep, list, label);
       },
-    } as ImmediateInvoker,
+    },
     // An edit that would change nothing is disabled (ruled 2026-11-10), by the same `next` the run takes.
     enabled: (deps, _at, _carried, params) => {
       const dep = ready(deps);
       if (!dep) return ActionDisabledReason.SelectionRequired;
       return next(dep, params) ? true : ActionDisabledReason.NotApplicable;
     },
-  };
+  });
 }
 
 /**
@@ -188,7 +190,7 @@ export const constrainAnchorsAction = constraintCommand(
   'constrainAnchors',
   'Constrain anchors',
   icon('constrainAnchors'),
-  (dep, params) => withAdded(dep, params as Partial<ConstrainAnchorsParams> | undefined),
+  (dep, params) => withAdded(dep, params),
   (Object.entries(CONSTRAINT_KIND_LABELS) as [PathConstraintKind, string][])
     .map(([kind, label]) => ({ key: kind, label, params: { kind } })),
 );
@@ -201,5 +203,5 @@ export const unconstrainAnchorsAction = constraintCommand(
   'unconstrainAnchors',
   'Remove constraints',
   icon('unconstrainAnchors'),
-  (dep, params) => withRemoved(dep, params?.kind as PathConstraintKind | undefined),
+  (dep, params) => withRemoved(dep, params?.kind),
 );

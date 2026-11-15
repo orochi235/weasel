@@ -5,7 +5,8 @@
  * the `paths` preset.
  */
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type ImmediateInvoker, type InvocationCtx, type OngoingHandle, resolveParams,
+  type Action, type ActionDeps, ActionDisabledReason, defineAction, type ImmediateInvoker, type ImmediateParams, type OngoingHandle,
+  resolveParams,
 } from '@weasel-js/routing';
 import { createEmitter } from '@weasel-js/registry';
 import { transformPoint, invert, type Point } from '@weasel-js/geom';
@@ -20,7 +21,6 @@ import { outlineSession, type OutlineSession } from '../shared/outlineSession';
 import { icon } from '../icons.gen';
 import { warpSettingsForm } from './warpSettingsForm';
 import { configureWarpParams, settingsOfWarp, warpDragParams } from './warpParams';
-import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What a press on a warp control hands the drag that follows. */
 export interface WarpHandleScratch {
@@ -134,7 +134,7 @@ type QuantizedScene = Parameters<typeof quantizedShape>[0] | undefined;
  */
 export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
   const label = WARP_LABELS[kind];
-  return {
+  return defineAction<`${WarpKind}.drag`, WarpSettings>({
     id: `${kind}.drag`,
     label: `${label} — drag control`,
     tags: pathOperationTags(kind === 'pin' ? 'brush' : 'box'),
@@ -142,11 +142,11 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
     params: warpDragParams(kind),
     invoker: {
       timing: 'ongoing',
-      start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+      start(ctx, opts): OngoingHandle<WarpSettings> {
         const scratch = warpHandleScratchOf(ctx.drag?.affordance);
         if (!scratch) return {};
         const deps = ctx.deps;
-        const settings = (resolveParams(opts?.params) ?? {}) as WarpSettings;
+        const settings = resolveParams(opts?.params) ?? {};
         const grabbed = grabControl(deps, kind, label, scratch, settings);
         if (!grabbed) return {};
         const { session, targets, control } = grabbed;
@@ -157,7 +157,7 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
         let last: Point | null = null;
         return {
           kind: `${kind}.drag`,
-          onMove(m: InvocationCtx): void {
+          onMove(m): void {
             const at = m.drag?.current ?? m.world;
             const world = { x: control.x + at.x - press.x, y: control.y + at.y - press.y };
             if (last !== null && last.x === world.x && last.y === world.y) return;
@@ -165,19 +165,19 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
             current = shapesWith(deps.scene as QuantizedScene, targets, scratch.index, world);
             publish();
           },
-          onEnd(_end: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          onEnd(_end, reason): void {
             const done = current;
             current = new Map();
             live?.set(null);
             if (reason === 'cancel' || done.size === 0) session.cancel();
             else session.commit(() => commitTargets(deps, done, label), label);
           },
-          params: () => settingsOfWarp(targets[0].held) as Record<string, unknown>,
-          replay(params: Record<string, unknown>): void {
+          params: () => settingsOfWarp(targets[0].held),
+          replay(params): void {
             const to = last;
             const again = to && grabControl(deps, kind, label, scratch, settings);
             if (!to || !again) return;
-            const done = shapesWith(deps.scene as QuantizedScene, again.targets, scratch.index, to, params as WarpSettings);
+            const done = shapesWith(deps.scene as QuantizedScene, again.targets, scratch.index, to, params);
             if (done.size === 0) again.session.cancel();
             else again.session.commit(() => commitTargets(deps, done, label), label);
           },
@@ -187,12 +187,11 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
         };
       },
     },
-  };
+  });
 }
 
 /** A click's world point: where the press landed. */
-function clickPoint(params: Record<string, unknown> | undefined): Point | null {
-  const p = params as ImmediateParams | undefined;
+function clickPoint(p: Readonly<Pick<ImmediateParams, 'press' | 'world'>> | undefined): Point | null {
   return p?.press ?? p?.world ?? null;
 }
 
@@ -203,7 +202,7 @@ function clickPoint(params: Record<string, unknown> | undefined): Point | null {
  * place until the pin is dragged.
  */
 export function createAddPinAction(): Action {
-  return {
+  return defineAction<'pin.addPin'>({
     id: 'pin.addPin',
     label: `${WARP_LABELS.pin} — add pin`,
     tags: pathOperationTags('brush'),
@@ -215,7 +214,7 @@ export function createAddPinAction(): Action {
         if (!at) return;
         const { session, box } = beginOnText(deps, 'pin', 'Add Pin');
         const next = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
-        for (const target of warpTargets(deps, 'pin', (params ?? {}) as WarpSettings, box)) {
+        for (const target of warpTargets(deps, 'pin', params ?? {}, box)) {
           const { warp } = target.held;
           const back = invert(target.toWorld);
           if (warp.kind !== 'pin' || !back) continue;
@@ -229,12 +228,12 @@ export function createAddPinAction(): Action {
         if (next.size === 0) session.cancel();
         else session.commit(() => commitTargets(deps, next, 'Add Pin'), 'Add Pin');
       },
-    } satisfies ImmediateInvoker,
+    },
     enabled: (deps) => {
       const { paths, texts } = selectedWarpLeaves(deps);
       return paths.length > 0 || texts.length > 0 ? true : ActionDisabledReason.SelectionRequired;
     },
-  };
+  });
 }
 
 /** Take out the pin the click landed on, from every path sharing its warp. */
@@ -313,7 +312,7 @@ export const expandWarpAction: Action = {
  * step. Its settings form shows what the selection holds, and the
  * last-operation panel the settings a run changed (`configureWarpParams`).
  */
-export const configureWarpAction: Action = {
+export const configureWarpAction = defineAction({
   id: 'configureWarp',
   label: 'Warp Settings',
   icon: icon('core:tune'),
@@ -326,7 +325,7 @@ export const configureWarpAction: Action = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const settings = (params ?? {}) as WarpSettings & { kind?: WarpKind };
+      const settings = params ?? {};
       const next = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
       for (const node of selectedWarpPaths(deps)) {
         const resolved = resolvePathWarp(node.shown);
@@ -338,5 +337,5 @@ export const configureWarpAction: Action = {
       }
       commitTargets(deps, next, 'Warp Settings');
     },
-  } satisfies ImmediateInvoker,
-};
+  },
+});
