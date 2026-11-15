@@ -68,12 +68,6 @@
   color: var(--wzl-fg-subtle);
 }
 
-
-
-
-
-
-
 .pushes {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   margin-inline-start: auto;
