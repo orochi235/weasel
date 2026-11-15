@@ -1,6 +1,6 @@
 /** The trial's tool slot and the canvas's active tool settle, whatever each side is handed. */
 import { act, renderHook, screen } from '@testing-library/react';
-import { createScene, type ToolsApi, useEllipseTool, useLatest } from '@weasel-js/core';
+import { createScene, type ToolsApi, useEllipseTool, useLatest, drawPreset } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { StrictMode, useEffect } from 'react';
@@ -49,7 +49,7 @@ function Body({
   }, [everyRender, setActiveTool, pick]);
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={[drawPreset]}
       defaultTools={[]}
       tools={{ ellipse }}
       scene={scene}

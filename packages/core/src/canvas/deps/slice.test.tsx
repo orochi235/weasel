@@ -16,6 +16,7 @@ import { RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from 'core/scene/compos
 import type { SliceDep } from 'interactions/actions/depSchema';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { pathInWorld } from '@weasel-js/geom';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 afterEach(() => { cleanup(); });
 
@@ -58,7 +59,7 @@ function mount(scene: S, opts: {
     sel = useSelection({ scene: scene as never, initial: (opts.select ?? []) as NodeId[] });
     return (
       <SceneCanvas<Data, Layer, RectPose>
-        features={['draw']}
+        features={[drawPreset]}
         scene={scene}
         selection={sel}
         layers={{}}

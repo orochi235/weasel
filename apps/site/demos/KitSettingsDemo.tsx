@@ -1,4 +1,4 @@
-import { coreKitSettingsSchema, SceneCanvas, useScene, type Fill } from '@weasel-js/core';
+import { coreKitSettingsSchema, SceneCanvas, useScene, type Fill, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
 import { alignmentSnapSource } from '@weasel-js/guides';
 import { kitSettingsCssOptions, mergePrefGroups, prefsCss } from '@weasel-js/prefs';
 import { KitSettingsFromPrefs, usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
@@ -33,7 +33,7 @@ function Specimens() {
     <div className={s.specimens}>
       <Tree aria-label="Files" nodes={FILES} defaultExpandedIds={['src']} />
       <UnitField aria-label="Count" value={n} onChange={setN} steppers />
-      <SceneCanvas features={['pick', 'move', 'transform']} width={260} height={160} className="ckd-canvas" scene={scene} snap={SNAP} />
+      <SceneCanvas features={[pickPreset, movePreset, transformPreset]} width={260} height={160} className="ckd-canvas" scene={scene} snap={SNAP} />
     </div>
   );
 }

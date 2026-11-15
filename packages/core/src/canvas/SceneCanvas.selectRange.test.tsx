@@ -10,6 +10,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import type { SelectRangeDep } from 'tools/builtin/select/selectRange';
+import { pickPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -38,7 +39,7 @@ function mount() {
   function Host() {
     seen.selection = useSelection({ scene, mode: 'multi', extend: 'meta', range: 'shift' });
     return (
-      <SceneCanvas<object, 'main', P> scene={scene} width={200} height={200} selection={seen.selection} features={['pick']}>
+      <SceneCanvas<object, 'main', P> scene={scene} width={200} height={200} selection={seen.selection} features={[pickPreset]}>
         <Probe />
       </SceneCanvas>
     );

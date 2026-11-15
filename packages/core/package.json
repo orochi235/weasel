@@ -107,6 +107,10 @@
       "types": "./dist/render-worker.d.ts",
       "import": "./dist/render-worker.js"
     },
+    "./named-features": {
+      "types": "./dist/named-features.d.ts",
+      "import": "./dist/named-features.js"
+    },
     "./test-seams": {
       "types": "./dist/test-seams.d.ts",
       "import": "./dist/test-seams.js"

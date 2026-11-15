@@ -12,6 +12,7 @@ import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Contribution } from '../tools/overlayBinding';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -56,7 +57,7 @@ function mount(initial: (ids: NodeId[]) => NodeId[] = () => []) {
     const selection = useSelection({ mode: 'multi', initial: initial(ids) });
     api = selection;
     return (
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={200}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={200} height={200}
         ambient={ambient} selection={selection} />
     );
   }

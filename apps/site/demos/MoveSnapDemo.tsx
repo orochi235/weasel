@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { SceneCanvas, solid, useDepSource, useScene, useSelection, type Fill } from '@weasel-js/core';
+import { SceneCanvas, solid, useDepSource, useScene, useSelection, type Fill, movePreset, pickPreset } from '@weasel-js/core';
 import { snapToContainer, snapBackOrDelete } from '@weasel-js/core/move';
 import { DemoStage } from './DemoStage';
 
@@ -46,7 +46,7 @@ export function MoveSnapDemo() {
 
   return (
     <DemoStage width={W} height={H}>
-      <SceneCanvas features={['pick', 'move']}
+      <SceneCanvas features={[pickPreset, movePreset]}
         className="ckd-canvas"
         scene={scene}
         selection={selection}

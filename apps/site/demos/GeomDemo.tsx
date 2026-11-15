@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { SceneCanvas, useScene, circlePath, polylineFromPoints, rectPath } from '@weasel-js/core';
+import { SceneCanvas, useScene, circlePath, polylineFromPoints, rectPath, movePreset, pickPreset } from '@weasel-js/core';
 import type { CanvasHelpers, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import {
@@ -148,7 +148,7 @@ export function GeomDemo() {
     <div className={s.demo}>
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={['pick', 'move']}
+          features={[pickPreset, movePreset]}
           className="ckd-canvas"
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}

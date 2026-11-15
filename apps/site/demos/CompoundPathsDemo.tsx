@@ -10,7 +10,7 @@ import { IDENTITY_POSE_COMPOSITION,
   useScene,
   asNodeId,
   textCommandFromRuns,
-  translatePath,
+  translatePath, movePreset, pickPreset, transformPreset,
 } from '@weasel-js/core';
 import { joinPaths } from '@weasel-js/geom';
 import styles from './CompoundPathsDemo.module.css';
@@ -161,7 +161,7 @@ export function CompoundPathsDemo() {
     <div className={styles.demo}>
     <div className={styles.stage}>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['pick', 'move', 'transform']}
+        <SceneCanvas features={[pickPreset, movePreset, transformPreset]}
           className="ckd-canvas"
           scene={scene}
           backgroundFill={{ color: '#87ceeb' }}

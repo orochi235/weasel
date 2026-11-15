@@ -10,6 +10,7 @@ import { createScene } from 'core/scene/scene';
 import type { SceneCanvasSnap } from 'domains/snap/types';
 import type { SnapReadoutDep } from 'domains/snap/readoutDep';
 import { SceneCanvas } from './SceneCanvas';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 const painted = vi.hoisted(() => ({ commands: [] as readonly unknown[] }));
 
@@ -61,7 +62,7 @@ async function mountWith(snap?: SceneCanvasSnap): Promise<SnapReadoutDep> {
     systemLayers: [{ id: 'base' }],
   });
   render(
-    <SceneCanvas features={['draw']} scene={scene} width={300} height={200} {...(snap ? { snap } : {})}>
+    <SceneCanvas features={[drawPreset]} scene={scene} width={300} height={200} {...(snap ? { snap } : {})}>
       <Probe />
     </SceneCanvas>,
   );

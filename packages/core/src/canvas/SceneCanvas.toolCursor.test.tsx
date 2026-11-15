@@ -8,6 +8,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { defineTool } from '../tools/overlayBinding';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { color: string };
 type L = 'main';
@@ -29,7 +30,7 @@ describe('SceneCanvas tool cursor', () => {
       const tool = defineTool({ id: 'cursor', cursor });
       return (
         <SceneCanvas
-          features={['draw']}
+          features={[drawPreset]}
           scene={scene}
           width={200}
           height={200}

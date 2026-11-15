@@ -13,8 +13,8 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import type { ToolsApi } from '../tools/overlayBinding';
 import { SceneCanvas } from './SceneCanvas';
-import { presetToolIds, resolveFeatures, type Feature } from './SceneCanvas/features';
-import { BASELINE_ACTION_IDS, CORE_NAMED_PRESETS, FEATURE_PRESETS } from './SceneCanvas/namedPresets';
+import { presetToolIds, resolveFeatures, type FeaturePreset } from './SceneCanvas/features';
+import { BASELINE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS } from './SceneCanvas/namedPresets';
 import type { CanvasHelpers } from './useViewHelpers';
 
 type P = { x: number; y: number; width: number; height: number; rotation: number };
@@ -53,7 +53,7 @@ function Probe({ into }: { into: Seen }) {
   return null;
 }
 
-function mountWith(preset: Feature) {
+function mountWith(preset: FeaturePreset) {
   const scene = createScene<{ kind: 'rect' }, 'main', P>({ systemLayers: [{ id: 'main' }] });
   let id!: NodeId;
   scene.batch('seed', () => {
@@ -85,14 +85,14 @@ function mountWith(preset: Feature) {
   };
 }
 
-const PRESET_IDS = Object.keys(FEATURE_PRESETS) as Feature[];
+const PRESET_IDS = FEATURE_NAMES;
 const OWNED_CHROME = PRESET_IDS.flatMap((id) => FEATURE_PRESETS[id].chrome ?? []);
 
 describe('<SceneCanvas features={[preset]}>', () => {
   it.each(PRESET_IDS)("'%s' installs its rows: tools, actions, ambient entries, and chrome", (preset) => {
-    const rows = resolveFeatures([preset], CORE_NAMED_PRESETS).presets;
+    const rows = resolveFeatures([FEATURE_PRESETS[preset]]).presets;
     const chrome = rows.flatMap((row) => row.chrome ?? []);
-    const got = mountWith(preset);
+    const got = mountWith(FEATURE_PRESETS[preset]);
     expect([...got.tools].sort()).toEqual(rows.flatMap(presetToolIds).sort());
     // `ingest` answers the paste event alone, so `clipboard.pasteEvent` is held back beside it.
     const own = rows.flatMap((row) => (row.actions ?? []).map((a) => a.id))

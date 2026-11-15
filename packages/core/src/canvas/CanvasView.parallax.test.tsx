@@ -12,6 +12,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -39,7 +40,7 @@ describe('<CanvasView> chrome on a parallax layer', () => {
       return null;
     }
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{ probe: { layer: probe } }} width={300} height={200}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{ probe: { layer: probe } }} width={300} height={200}>
         <CanvasView id="panel" bounds={{ x: 100, y: 0, w: 100, h: 100 }} view={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} />
         <Peek />
       </SceneCanvas>,

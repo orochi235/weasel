@@ -6,6 +6,7 @@ import { createScene } from 'core/scene/scene';
 import { useAction, useOngoingAction } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const recorder = createGLRecorder();
@@ -42,7 +43,7 @@ describe('<SceneCanvas> first tool', () => {
   it('does not cancel an edit opened while the canvas seeds its first tool', () => {
     const scene = createScene<{ label: string }, 'main'>({ systemLayers: [{ id: 'main' }] });
     render(
-      <SceneCanvas features={['draw']} width={100} height={100} scene={scene} layers={{}}>
+      <SceneCanvas features={[drawPreset]} width={100} height={100} scene={scene} layers={{}}>
         <OpensOnMount />
       </SceneCanvas>,
     );

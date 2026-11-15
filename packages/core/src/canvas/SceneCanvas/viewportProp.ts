@@ -5,13 +5,15 @@ import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
 import type { ViewportWheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
 import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 
-/** `<SceneCanvas viewport>`: configures the `view` preset, and implies
- *  it: passing this turns `view` on.
+/** `<SceneCanvas viewport>`: configures the navigation `viewPreset` turns
+ *  on. It implies nothing: without `viewPreset` (or a preset including it,
+ *  such as `drawPreset`) the canvas does not pan or zoom, whatever this
+ *  says, and a development build warns.
  *
  *  - `inertia` and `animatedZoom` are opt-in: pass `true` for defaults or
  *    an object to tune. Omitted means off.
  *  - `pan` (wheel pan), `zoom` (Cmd+wheel + Cmd+=/-/0), and `pinchZoom`
- *    (two-finger pinch) are on under `view`; pass `false` to disable one.
+ *    (two-finger pinch) are on under `viewPreset`; pass `false` to disable one.
  *    Disabling via the `actions` prop
  *    (`actions: { 'viewport.wheelPan': null }`) also works and runs after
  *    this. */
@@ -43,7 +45,7 @@ export interface SceneCanvasViewport {
    *  yourself, which is what a controlled canvas does. */
   recenter?: () => View | void;
   /** Scroll the view while a drag of content holds the pointer near the
-   *  canvas's edge: a move, resize, insert, or marquee. On under `view`;
+   *  canvas's edge: a move, resize, insert, or marquee. On under `viewPreset`;
    *  `false` disables; an object sets the zone and the speed. */
   edgePan?: boolean | EdgePanOptions;
 }

@@ -4,9 +4,8 @@
  * resulting live registry, route table, conflicts, and dispatch trace. Mounted
  * under `#/dev/toolkits` (sibling to `RegistryInspector` at `#/dev/registry`).
  */
-import {
-  asNodeId, type Feature, type FeatureEntry, type Fill, SCENE_CANVAS_FEATURES, SceneCanvas, solid, useScene,
-} from '@weasel-js/core';
+import { asNodeId, type FeaturePreset, type Fill, SceneCanvas, solid, useScene } from '@weasel-js/core';
+import { FEATURE_NAMES, type FeatureName, namedFeatures } from '@weasel-js/core/named-features';
 import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Switch } from '@weasel-js/ui/components/Switch';
@@ -22,11 +21,11 @@ import { ToolsWidget } from './toolkit/ToolsWidget';
 import { useToolReflection } from './toolkit/useToolReflection';
 import s from './ToolkitBuilder.module.css';
 
-const TOOL_PRESETS = SCENE_CANVAS_FEATURES.filter((f) => f.startsWith('tools:'));
-const BASES = SCENE_CANVAS_FEATURES.filter((f) => !f.startsWith('tools:'));
-const isFeature = (f: string): f is Feature => (SCENE_CANVAS_FEATURES as readonly string[]).includes(f);
+const TOOL_PRESETS = FEATURE_NAMES.filter((f) => f.startsWith('tools:'));
+const BASES = FEATURE_NAMES.filter((f) => !f.startsWith('tools:'));
+const isFeature = (f: string): f is FeatureName => (FEATURE_NAMES as readonly string[]).includes(f);
 
-interface Setup { base: Feature; tools: readonly Feature[]; paths: boolean }
+interface Setup { base: FeatureName; tools: readonly FeatureName[]; paths: boolean }
 
 function parseSetup(hash: string): Setup {
   const q = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
@@ -64,7 +63,7 @@ function ToolkitForSetup({ base, tools, paths }: Setup): ReactElement {
   const reflection = useToolReflection();
   const actions = useRegisteredActions();
   const pathToolsTools = usePathToolsTools();
-  const features: FeatureEntry[] = [base, ...tools, ...(paths ? [pathTools] : [])];
+  const features: FeaturePreset[] = [...namedFeatures(base, ...tools), ...(paths ? [pathTools] : [])];
 
   return (
     <div className={s.layout}>
@@ -131,7 +130,7 @@ export function ToolkitBuilder(): ReactElement {
       title="Toolkit Builder"
       header={
         <>
-          <Select<Feature>
+          <Select<FeatureName>
             label="preset"
             orientation="row"
             width="fit"

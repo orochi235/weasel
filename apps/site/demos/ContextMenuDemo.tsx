@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
 import {
-  ActionsProvider, SceneCanvas, rectPath, solid, useMenus, useScene, useSelection,
+  ActionsProvider, SceneCanvas, rectPath, solid, useMenus, useScene, useSelection, arrangePreset, editPreset, movePreset, pickPreset,
 } from '@weasel-js/core';
 import type { Fill, MenuDef, NodeId, Path } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
@@ -54,7 +54,7 @@ function Demo() {
       <ContextMenuHost />
       <DemoStage width={400} height={260}>
         <SceneCanvas
-          features={['pick', 'move', 'edit', 'arrange']}
+          features={[pickPreset, movePreset, editPreset, arrangePreset]}
           claimKeys
           className="ckd-canvas"
           scene={scene}

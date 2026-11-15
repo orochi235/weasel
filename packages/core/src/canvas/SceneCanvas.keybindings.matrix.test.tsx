@@ -13,6 +13,7 @@ import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -89,7 +90,7 @@ describe('default keybindings: tool activation', () => {
       render(
         <ActiveToolContextProvider initialActive={initial}>
           <ActiveTap tapRef={tap} />
-          <SceneCanvas features={['draw']}
+          <SceneCanvas features={[drawPreset]}
             scene={scene}
             layers={{}}
             width={64}
@@ -135,7 +136,7 @@ describe('default keybindings: action shortcuts', () => {
       const scene = makeScene();
       const run = vi.fn();
       render(
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           layers={{}}
           width={64}

@@ -14,6 +14,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { MoveBehavior } from 'interactions/gestures/types';
 import { screenTolerance } from 'interactions/gestures/shared/screenTolerance';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -70,7 +71,7 @@ describe('a press over a view', () => {
   it('selects the node the view shows under the pointer', () => {
     const { scene, inLens } = makeScene();
     const { container } = render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={300}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={400} height={300}>
         <CanvasView id="lens" bounds={LENS} defaultView={LENS_VIEW} />
       </SceneCanvas>,
     );
@@ -81,7 +82,7 @@ describe('a press over a view', () => {
   it('drags in the view’s world units: 40 screen px at 4× is 10', () => {
     const { scene, inLens } = makeScene();
     const { container } = render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={300}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={400} height={300}>
         <CanvasView id="lens" bounds={LENS} defaultView={LENS_VIEW} />
       </SceneCanvas>,
     );
@@ -111,7 +112,7 @@ describe('a behavior\'s screen-pixel tolerance goes through the camera the drag 
     const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
     const { container } = render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={300}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={400} height={300}
         defaultView={view} selectTool={guideSnap(guide)} />,
     );
     // 20 screen px right, starting inside the node.
@@ -134,7 +135,7 @@ describe('a behavior\'s screen-pixel tolerance goes through the camera the drag 
     const run = (guide: number) => {
       const { scene, inLens } = makeScene();
       const { container } = render(
-        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={300}
+        <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={400} height={300}
           selectTool={guideSnap(guide)}>
           <CanvasView id="lens" bounds={LENS} defaultView={LENS_VIEW} />
         </SceneCanvas>,
@@ -152,7 +153,7 @@ describe('SceneCanvasApi.addView', () => {
   function mount(props: Parameters<SceneCanvasApi['addView']>[0]) {
     const { scene, inLens, underLens } = makeScene();
     const ref = createRef<SceneCanvasApi>();
-    const r = render(<SceneCanvas features={['draw']} ref={ref} scene={scene} layers={{}} width={400} height={300} />);
+    const r = render(<SceneCanvas features={[drawPreset]} ref={ref} scene={scene} layers={{}} width={400} height={300} />);
     let handle!: ReturnType<SceneCanvasApi['addView']>;
     act(() => { handle = ref.current!.addView(props); });
     return { scene, inLens, underLens, handle, canvas: r.container.querySelector('canvas')!, ref };
@@ -195,7 +196,7 @@ describe('a view that is not interactive', () => {
   it('leaves a press to the canvas beneath it, as a plain viewport layer does', () => {
     const { scene, underLens } = makeScene();
     const { container } = render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={300}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={400} height={300}>
         <CanvasView id="lens" bounds={LENS} defaultView={LENS_VIEW} interactive={false} />
       </SceneCanvas>,
     );
@@ -224,7 +225,7 @@ describe('registered layers and views', () => {
     const { scene } = makeScene();
     const ref = createRef<SceneCanvasApi>();
     const { container } = render(
-      <SceneCanvas features={['draw']} ref={ref} scene={scene} layers={{}} width={400} height={300}>
+      <SceneCanvas features={[drawPreset]} ref={ref} scene={scene} layers={{}} width={400} height={300}>
         <CanvasView id="lens" bounds={LENS} defaultView={LENS_VIEW} />
       </SceneCanvas>,
     );
@@ -240,7 +241,7 @@ describe('registered layers and views', () => {
     const { scene, inLens } = makeScene();
     const ref = createRef<SceneCanvasApi>();
     const { container } = render(
-      <SceneCanvas features={['draw']} ref={ref} scene={scene} layers={{}} width={400} height={300}>
+      <SceneCanvas features={[drawPreset]} ref={ref} scene={scene} layers={{}} width={400} height={300}>
         <CanvasView id="lens" bounds={LENS} defaultView={LENS_VIEW} />
       </SceneCanvas>,
     );
@@ -266,7 +267,7 @@ describe('a view on a detached pane', () => {
     );
     const ref = createRef<SceneCanvasApi>();
     render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         ref={ref} scene={scene} layers={{}} width={400} height={300}
         paintInto={{ canvas: shared, x: 420, y: 20 }} inputElement={input}
       />,

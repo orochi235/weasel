@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { type ClockHandle, createClock, createClockRegistry } from '@weasel-js/clock';
 import { useClockLoop } from '@weasel-js/clock/react';
 import { clampMove } from '@weasel-js/core/move';
-import { SceneCanvas, asNodeId, effectivePose, ellipsePath, useLatest, useScene } from '@weasel-js/core';
-import type { Action, Dims, Feature, ImmediateParams, RectPose, RenderLayer, Scene } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, effectivePose, ellipsePath, useLatest, useScene, movePreset, pickPreset } from '@weasel-js/core';
+import type { Action, Dims, FeaturePreset, ImmediateParams, RectPose, RenderLayer, Scene } from '@weasel-js/core';
 import {
   registerTexture,
   type DrawCommand, type ShaderProgramHandle, type ShaderUniform, type TextureHandle,
@@ -160,7 +160,7 @@ function Panel({
 
 type SeedScene = Scene<unknown, 'default', RectPose>;
 const SEED_R = 6;
-const SEED_FEATURES: Feature[] = ['pick', 'move'];
+const SEED_FEATURES: FeaturePreset[] = [pickPreset, movePreset];
 
 const drawSeed = (p: RectPose): DrawCommand[] => [{
   kind: 'path',

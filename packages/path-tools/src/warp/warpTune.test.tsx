@@ -4,7 +4,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { polygonFromPoints } from '@weasel-js/geom';
 import type { ActionTunings } from '@weasel-js/routing';
 import {
-  asNodeId, type CanvasExtensionApi, type ChromeState, createScene, type RenderLayer, SceneCanvas,
+  asNodeId, type CanvasExtensionApi, type ChromeState, createScene, type RenderLayer, SceneCanvas, pathsPreset,
 } from '@weasel-js/core';
 import { useClothWarpTool, type UseClothWarpToolOptions } from './useWarpTool';
 
@@ -36,7 +36,7 @@ function controlsDrawn(options: UseClothWarpToolOptions, tune: ActionTunings = {
   });
   render(
     <SceneCanvas
-      features={['paths']} scene={scene} layers={{}} width={64} height={64}
+      features={[pathsPreset]} scene={scene} layers={{}} width={64} height={64}
       selectionOptions={{ mode: 'multi', initial: [asNodeId('a')] }}
       tools={{ cloth: watched }}
       tune={tune}

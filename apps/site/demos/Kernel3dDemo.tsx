@@ -10,7 +10,7 @@ import { IDENTITY_POSE_COMPOSITION,
   type SurfaceContribution,
   type ToolsApi,
   useLatest,
-  useScene,
+  useScene, pickPreset,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
@@ -164,7 +164,7 @@ export function Kernel3dDemo() {
           className="ckd-canvas"
           backgroundFill={{ color: '#1e1610' }}
           scene={scene}
-          features={['pick']}
+          features={[pickPreset]}
           tools={{ orbit }}
           onToolsCreated={setTools}
           ambient={[cameraRig]}

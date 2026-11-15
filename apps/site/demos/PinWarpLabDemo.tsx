@@ -1,4 +1,4 @@
-import { asNodeId, createScene, PathBuilder, type RectPose, useSelection } from '@weasel-js/core';
+import { asNodeId, createScene, PathBuilder, type RectPose, useSelection, drawPreset } from '@weasel-js/core';
 import { usePinWarpTool, warpPreset, withPathWarp } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -16,7 +16,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', warpPreset] as const;
+const FEATURES = [drawPreset, warpPreset] as const;
 
 const config = f.schema({
   tolerance: f.number(0.5).range(0.05, 5).step(0.05).suffix('px').label('Refit tolerance'),

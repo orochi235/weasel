@@ -9,6 +9,7 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number; rotation?: number };
 
@@ -29,7 +30,7 @@ function mount(): { scene: Scene<object, 'main', P>; id: NodeId; canvas: HTMLCan
   const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
   const id = scene.add({ kind: 'mark', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 50, height: 50 } });
   const { container } = render(
-    <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={200}
+    <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={200} height={200}
       selectionOptions={{ initial: [id] }}
       actions={{ move: FORCE_ENABLED, resize: FORCE_ENABLED, rotate: FORCE_ENABLED }}
     />,

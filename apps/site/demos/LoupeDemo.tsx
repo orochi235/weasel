@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, solid, useLatest, useScene } from '@weasel-js/core';
+import { SceneCanvas, solid, useLatest, useScene, movePreset, pickPreset } from '@weasel-js/core';
 import type { Fill, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
@@ -162,7 +162,7 @@ function Demo() {
         <span className="ckd-hint">clicked: {picked ?? '—'}</span>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['pick', 'move']}
+        <SceneCanvas features={[pickPreset, movePreset]}
           ref={ref}
           className="ckd-canvas"
           scene={scene}

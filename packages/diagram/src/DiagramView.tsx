@@ -7,13 +7,13 @@ import {
   useToolOptionValues,
   viewRectToScreen,
   WeaselProvider,
-  type FeatureEntry,
+  type FeaturePreset,
   type RectPose,
   type CanvasSize,
   type Scene,
   type SceneCanvasApi,
   type SceneCanvasHit,
-  type ToolOptionValues,
+  type ToolOptionValues, editPreset, movePreset, pickPreset, resizePreset, viewPreset,
 } from '@weasel-js/core';
 import { adoptCssOnce } from '@weasel-js/react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactElement, type Ref, type RefObject } from 'react';
@@ -165,8 +165,8 @@ function Inner({
   const resizes = onResize !== undefined || onEditContainer !== undefined;
   const sequences = onEditSequence !== undefined;
   const edits = moves || resizes || sequences || edgeEdits || onDelete !== undefined || onConnect !== undefined || onReorder !== undefined;
-  const features = useMemo((): FeatureEntry[] => [
-    'view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : []), ...(sequences ? ['edit' as const] : []),
+  const features = useMemo((): FeaturePreset[] => [
+    viewPreset, pickPreset, ...(moves ? [movePreset as const] : []), ...(resizes ? [resizePreset as const] : []), ...(sequences ? [editPreset as const] : []),
     ...editing.presets,
   ], [moves, resizes, sequences, editing.presets]);
   const textEditor = useSequenceTextEdit(scene, onEditSequence);

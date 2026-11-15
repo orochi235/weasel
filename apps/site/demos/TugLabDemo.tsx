@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid, useLatest } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid, useLatest, drawPreset } from '@weasel-js/core';
 import { tugPreset, useTugTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
@@ -10,7 +10,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', tugPreset] as const;
+const FEATURES = [drawPreset, tugPreset] as const;
 
 const PATHS = {
   straight: { d: 'M60 70 L280 70', color: '#7fb069' },

@@ -6,7 +6,7 @@ import {
   pathFromD,
   type RectPose,
   solid,
-  useSelection,
+  useSelection, movePreset, pathsPreset, pickPreset,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
@@ -51,7 +51,7 @@ const createLabScene = () => {
   });
 };
 
-const FEATURES = ['pick', 'move', 'paths', segmentTypePreset] as const;
+const FEATURES = [pickPreset, movePreset, pathsPreset, segmentTypePreset] as const;
 
 /** Opens in path edit with the top edge's two anchors selected, so Shift+C has a segment to convert. */
 const OPENING = { id: 'tab', anchors: [1, 2] };

@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { CanvasView, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import { CanvasView, SceneCanvas, useScene, useSelection, drawPreset } from '@weasel-js/core';
 import type { NodeId, SceneCanvasApi, SelectionApi } from '@weasel-js/core';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '../react';
@@ -85,7 +85,7 @@ async function mount(opts: { panel?: boolean; panelHides?: boolean; panelSelects
       ],
     });
     return (
-      <SceneCanvas features={['draw']} ref={ref} scene={scene} layers={{}} width={400} height={400} ambient={[contribution]}>
+      <SceneCanvas features={[drawPreset]} ref={ref} scene={scene} layers={{}} width={400} height={400} ambient={[contribution]}>
         {opts.panel ? (
           <CanvasView id="panel" bounds={PANEL} defaultView={PANEL_VIEW}
             {...(opts.panelHides ? { layerVisibility: { 'scene:default': false } } : {})}

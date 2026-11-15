@@ -9,6 +9,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number; rotation: number };
@@ -28,7 +29,7 @@ function mount() {
   let api!: SelectionApi;
   function App() {
     api = useSelection({ mode: 'multi' });
-    return <SceneCanvas scene={scene} width={300} height={300} features={['draw']} selection={api} />;
+    return <SceneCanvas scene={scene} width={300} height={300} features={[drawPreset]} selection={api} />;
   }
   render(<App />);
   return { scene, a, b, api: () => api };

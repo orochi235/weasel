@@ -12,6 +12,7 @@ import { defineTool, type useTools } from '../tools/overlayBinding';
 import type { Action } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { color: string };
 type L = 'main';
@@ -56,7 +57,7 @@ function setup() {
     return (
       <>
         <input aria-label="field" />
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           width={200} height={200}
           layers={{}}

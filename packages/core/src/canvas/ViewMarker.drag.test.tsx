@@ -25,6 +25,7 @@ import type { View } from 'core/viewport/view';
 import type { NodeId } from 'core/scene/types';
 import type { ViewMarkerProps } from 'domains/viewports/viewMarker';
 import { createViewMarkerContribution } from 'domains/viewports/viewMarkerDrag';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -140,7 +141,7 @@ describe('dragging a view marker', () => {
   });
 
   it('wins over the select tool on a draw surface', () => {
-    mount({ features: ['draw'] });
+    mount({ features: [drawPreset] });
     drag([300, 200], [310, 210]);
     expect(last(onViewChange)).toMatchObject({ x: 40, y: 40 });
     expect(selection!.get()).toEqual([]);
@@ -171,7 +172,7 @@ describe('dragging a view marker', () => {
   });
 
   it('lets a press on a marker that is not interactive fall through to the view', () => {
-    mount({ features: ['draw'] }, { rootAim: { interactive: false } });
+    mount({ features: [drawPreset] }, { rootAim: { interactive: false } });
     drag([300, 200], [310, 210]);
     expect(onViewChange).not.toHaveBeenCalled();
     expect(scene.get(node)!.pose).toMatchObject({ x: 220, y: 100 });
@@ -179,7 +180,7 @@ describe('dragging a view marker', () => {
 
   it('lets a press on a marker whose source has no writer fall through to the view', () => {
     const source = { aim: () => api.current!.aimOf(null) };
-    mount({ features: ['draw'] }, { rootAim: { source } });
+    mount({ features: [drawPreset] }, { rootAim: { source } });
     drag([300, 200], [310, 210]);
     expect(onViewChange).not.toHaveBeenCalled();
     expect(scene.get(node)!.pose).toMatchObject({ x: 220, y: 100 });
@@ -189,27 +190,27 @@ describe('dragging a view marker', () => {
 describe('a surface that installs no marker drag', () => {
   it('lets a press on a marker fall through to the view under actions={null}', () => {
     // `actions={null}` mutes the kit's move too, so the select tool's own pick is what answers.
-    mount({ features: ['draw'], actions: null });
+    mount({ features: [drawPreset], actions: null });
     drag([300, 200], [310, 210]);
     expect(onViewChange).not.toHaveBeenCalled();
     expect(selection!.get()).toEqual([node]);
   });
 
   it('drags the marker again under actions={null} given the entry in ambient', () => {
-    mount({ features: ['draw'], actions: null, ambient: [createViewMarkerContribution()] });
+    mount({ features: [drawPreset], actions: null, ambient: [createViewMarkerContribution()] });
     drag([300, 200], [310, 210]);
     expect(last(onViewChange)).toMatchObject({ x: 40, y: 40 });
   });
 
   it("drags the marker under a tools takeover, whose tool set says nothing of markers", () => {
-    mount({ features: ['draw'] }, { takeover: true });
+    mount({ features: [drawPreset] }, { takeover: true });
     drag([300, 200], [310, 210]);
     expect(last(onViewChange)).toMatchObject({ x: 40, y: 40 });
     expect(scene.get(node)!.pose).toMatchObject({ x: 180, y: 60 });
   });
 
   it("drags the marker once under a tools takeover that also lists the entry in its ambient", () => {
-    mount({ features: ['draw'] }, { takeover: true, markerDrag: true });
+    mount({ features: [drawPreset] }, { takeover: true, markerDrag: true });
     drag([300, 200], [310, 210]);
     expect(last(onViewChange)).toMatchObject({ x: 40, y: 40 });
     expect(scene.get(node)!.pose).toMatchObject({ x: 180, y: 60 });

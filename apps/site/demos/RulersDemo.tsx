@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, useScene, type RectPose, type UnitScope } from '@weasel-js/core';
+import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, useScene, type RectPose, type UnitScope, movePreset, selectPreset, viewPreset } from '@weasel-js/core';
 import { createGuidesLayer, createRulers, guideSnapSource, useGuides } from '@weasel-js/guides';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { METRIC_MM } from '@weasel-js/quantity';
@@ -40,7 +40,7 @@ export function RulersDemo() {
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        features={['select', 'move', 'view']}
+        features={[selectPreset, movePreset, viewPreset]}
         className="ckd-canvas"
         scene={scene}
         ambient={ambient}

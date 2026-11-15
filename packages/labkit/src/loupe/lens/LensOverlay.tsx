@@ -10,7 +10,7 @@ import {
   useTransformFollower,
   type View,
   viewWorldToScreen,
-  WeaselProvider,
+  WeaselProvider, editPreset, movePreset, pickPreset, transformPreset,
 } from '@weasel-js/core';
 import {
   type CSSProperties,
@@ -339,7 +339,7 @@ export function LensOverlay<C>({
         <WeaselProvider isolate>
           <ReticleFollower scene={scene} />
           <SceneCanvas<LensNodeData<C>, 'lenses', RectPose>
-            features={['pick', 'move', 'transform', 'edit']}
+            features={[pickPreset, movePreset, transformPreset, editPreset]}
             ref={attachSceneCanvas}
             scene={scene}
             width={size.w}

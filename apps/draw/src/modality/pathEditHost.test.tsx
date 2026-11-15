@@ -8,7 +8,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD,
-  rectPath, useActionsRegistry, useDepRegistry, type Path, type PolygonPath,
+  rectPath, useActionsRegistry, useDepRegistry, type Path, type PolygonPath, drawPreset,
 } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
@@ -56,7 +56,7 @@ function setup(pathOfA: Path = pathFromD('M 0 0 L 10 0 L 10 10') as PolygonPath)
     grabbed.editAnchors = () => (deps.get as (k: string) => EditAnchors)('editAnchors');
     const pathEdit = useMemo(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))), []);
     return (
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
         modes={machine.registry} pathEdit={pathEdit} />
     );
   }

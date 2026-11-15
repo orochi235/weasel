@@ -1,4 +1,4 @@
-import { asNodeId, createScene, ellipsePath, PathBuilder, type PolygonPath, type RectPose, useSelection } from '@weasel-js/core';
+import { asNodeId, createScene, ellipsePath, PathBuilder, type PolygonPath, type RectPose, useSelection, drawPreset } from '@weasel-js/core';
 import { usePlaneWarpTool, warpPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -16,7 +16,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', warpPreset] as const;
+const FEATURES = [drawPreset, warpPreset] as const;
 
 const config = f.schema({
   mode: f.enum('perspective', [

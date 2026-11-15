@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ReactElement } from 'react';
-import { asNodeId, SceneCanvas, useScene, type CanvasHelpers, type RenderLayer } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, useScene, type CanvasHelpers, type RenderLayer, movePreset, pickPreset } from '@weasel-js/core';
 import type { ArcTrackSpec, Point } from '@weasel-js/geom';
 import { num, Readouts, type Readout } from './Readouts';
 import { Presets } from './Presets';
@@ -123,7 +123,7 @@ export function TrackGeometryView({ config, onConfig }: { config: TrackGeometryC
       <div className={`${s.stack} ${s.main}`}>
         <div className={s.stage}>
           <SceneCanvas
-            features={['pick', 'move']}
+            features={[pickPreset, movePreset]}
             scene={scene}
             helpersRef={helpersRef}
             width={STAGE.width}

@@ -5,7 +5,7 @@ import {
   pathFromD,
   type RectPose,
   solid,
-  useSelection,
+  useSelection, movePreset, pathsPreset, pickPreset,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
@@ -59,7 +59,7 @@ function FieldsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <>
       <TrialSceneCanvas
-        features={['pick', 'move', 'paths']}
+        features={[pickPreset, movePreset, pathsPreset]}
         scene={scene}
         selection={selection}
         trial={ctx.trial}

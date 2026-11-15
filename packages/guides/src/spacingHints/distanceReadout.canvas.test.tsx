@@ -2,7 +2,7 @@
  *  builds each action's deps from its `requires` and throws on any other read. */
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { asNodeId, createScene, SceneCanvas, type RectPose } from '@weasel-js/core';
+import { asNodeId, createScene, SceneCanvas, type RectPose, pickPreset } from '@weasel-js/core';
 import { createSpacingHintsPreset } from './preset';
 import type { DistanceReadoutContribution } from './distanceReadout';
 
@@ -32,7 +32,7 @@ describe('distanceReadout on a SceneCanvas', () => {
     const preset = createSpacingHintsPreset();
     const readout = preset.contributions!.find((c) => c.id === 'distanceReadout') as DistanceReadoutContribution;
     const { container } = render(
-      <SceneCanvas features={['pick', preset]} width={300} height={200} scene={scene}
+      <SceneCanvas features={[pickPreset, preset]} width={300} height={200} scene={scene}
         selectionOptions={{ mode: 'multi', initial: [asNodeId('a')] }} />,
     );
     const canvas = container.querySelector('canvas')!;

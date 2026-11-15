@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { useState } from 'react';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
-import { key, SceneCanvas, createScene, type BindingOverrides, type ToolsApi } from '@weasel-js/core';
+import { key, SceneCanvas, createScene, type BindingOverrides, type ToolsApi, drawPreset } from '@weasel-js/core';
 import { formatShortcut } from '@weasel-js/gestures';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';
@@ -29,7 +29,7 @@ function setup(initial: BindingOverrides) {
     return (
       <>
         {tools && <ToolPalette tools={tools} stacks={[['ellipse', 'polygon']]} />}
-        <SceneCanvas features={['draw']} scene={scene} width={64} height={64} defaultTools={TOOLS}
+        <SceneCanvas features={[drawPreset]} scene={scene} width={64} height={64} defaultTools={TOOLS}
           bindingOverrides={overrides} onToolsCreated={setTools} />
       </>
     );

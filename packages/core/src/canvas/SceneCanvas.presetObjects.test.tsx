@@ -1,6 +1,6 @@
 /**
- * A preset object turns on everything it carries, on either canvas, and the
- * lean canvas resolves no names.
+ * A preset object turns on everything it carries, a canvas registers nothing
+ * it was not handed beyond undo and redo, and it resolves no names.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
@@ -10,12 +10,10 @@ import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import type { ToolsApi } from '../tools/overlayBinding';
-import { LeanSceneCanvas } from './LeanSceneCanvas';
 import { SceneCanvas } from './SceneCanvas';
 import type { FeaturePreset } from './SceneCanvas/features';
-import { BASELINE_ACTIONS } from './SceneCanvas/presets/baseline';
-import { selectPreset } from './SceneCanvas/presets/select';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
+import { BASELINE_ACTIONS, pickPreset, selectPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -52,7 +50,7 @@ describe('a preset object', () => {
     const seen: Seen = { actionIds: [], dep: undefined };
     let tools: ToolsApi | null = null;
     render(
-      <SceneCanvas scene={scene()} width={100} height={100} features={['pick', mine]} onToolsCreated={(t) => { tools = t; }}>
+      <SceneCanvas scene={scene()} width={100} height={100} features={[pickPreset, mine]} onToolsCreated={(t) => { tools = t; }}>
         <Probe into={seen} />
       </SceneCanvas>,
     );
@@ -64,13 +62,13 @@ describe('a preset object', () => {
   });
 });
 
-describe('<LeanSceneCanvas>', () => {
-  it('registers undo, redo, and what its presets carry, and nothing a name would have', () => {
+describe('<SceneCanvas features>', () => {
+  it('registers undo, redo, and what its presets carry, and no other kit action', () => {
     const seen: Seen = { actionIds: [], dep: undefined };
     render(
-      <LeanSceneCanvas scene={scene()} width={100} height={100} features={[selectPreset, mine]}>
+      <SceneCanvas scene={scene()} width={100} height={100} features={[selectPreset, mine]}>
         <Probe into={seen} />
-      </LeanSceneCanvas>,
+      </SceneCanvas>,
     );
     const expected = [...BASELINE_ACTIONS, ...(selectPreset.actions ?? []), go].map((a) => a.id).sort();
     const kitOrMine = (id: string) => KIT_STANDARD_ACTION_IDS.includes(id) || id === 'mine.go';
@@ -80,7 +78,7 @@ describe('<LeanSceneCanvas>', () => {
   it('throws on a name', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => render(
-      <LeanSceneCanvas scene={scene()} width={100} height={100} features={['draw' as never]} />,
-    )).toThrow(/resolves no preset names/);
+      <SceneCanvas scene={scene()} width={100} height={100} features={['draw' as never]} />,
+    )).toThrow(/takes preset objects, not names/);
   });
 });

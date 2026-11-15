@@ -8,7 +8,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import type { Skeleton } from '@weasel-js/animator';
 import { polygonFromPoints } from '@weasel-js/geom';
 import {
-  SceneCanvas, createScene, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type RectPose, type ToolsApi,
+  SceneCanvas, createScene, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type RectPose, type ToolsApi, drawPreset,
 } from '@weasel-js/core';
 import { RIG_TOOLS } from './toolSets';
 import { useRigTools } from './useRigTools';
@@ -38,7 +38,7 @@ function mount() {
   function Harness() {
     const tools = useRigTools({ scene: scene as never });
     return (
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={400} tools={tools}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={400} height={400} tools={tools}
         onToolsCreated={(t) => { api.tools = t; }}>
         <Grab />
       </SceneCanvas>

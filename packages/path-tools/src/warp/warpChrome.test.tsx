@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { polygonFromPoints } from '@weasel-js/geom';
-import { asNodeId, createScene, SceneCanvas, type ToolsApi } from '@weasel-js/core';
+import { asNodeId, createScene, SceneCanvas, type ToolsApi, drawPreset } from '@weasel-js/core';
 import { usePlaneWarpTool } from './useWarpTool';
 
 type P = { x: number; y: number; width: number; height: number };
@@ -20,7 +20,7 @@ function heightAfterTopHandleDrag(toolId: 'select' | 'plane'): number {
   const tools: { current?: ToolsApi } = {};
   const { container } = render(
     <SceneCanvas
-      features={['draw']} scene={scene} layers={{}} width={128} height={128}
+      features={[drawPreset]} scene={scene} layers={{}} width={128} height={128}
       selectionOptions={{ mode: 'multi', initial: [asNodeId('a')] }}
       tools={{ plane }} onToolsCreated={(t) => { tools.current = t; }}
     />,

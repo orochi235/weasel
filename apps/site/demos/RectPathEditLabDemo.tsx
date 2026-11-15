@@ -7,7 +7,7 @@ import {
   rectPath,
   type RectPose,
   type Scene,
-  solid,
+  solid, drawPreset,
 } from '@weasel-js/core';
 import {
   defineInstrument,
@@ -111,7 +111,7 @@ function RectPathEditTrial({ ctx }: { ctx: RenderContext<State, unknown> }) {
   return (
     <div className={s.trial}>
       <TrialSceneCanvas
-        features={['draw']}
+        features={[drawPreset]}
         defaultTools={['rect', 'pen']}
         scene={scene}
         trial={ctx.trial}

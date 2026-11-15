@@ -5,6 +5,7 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import type { Scene } from 'core/scene/types';
 import { useSelection } from '../core/selection/useSelection';
+import { pickPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: string };
 type L = 'main';
@@ -41,7 +42,7 @@ function setup(seed?: (scene: Scene<D, L, P>) => void, pickEvery?: () => string 
   function Harness({ scene }: { scene: Scene<D, L, P> }) {
     const selection = useSelection({ scene, mode: 'single' });
     return (
-      <SceneCanvas features={['pick']} scene={scene} selection={selection} layers={{}} width={400} height={400}
+      <SceneCanvas features={[pickPreset]} scene={scene} selection={selection} layers={{}} width={400} height={400}
         {...(pickEvery ? { geometry: { pickEvery } } : {})}
         onClick={(hit) => onClick(hit, selection.get())}
       />

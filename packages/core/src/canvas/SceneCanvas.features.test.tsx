@@ -6,7 +6,8 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, type Feature } from './SceneCanvas';
+import { SceneCanvas } from './SceneCanvas';
+import type { FeaturePreset } from './SceneCanvas/features';
 import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';
 import { polygonFromPoints } from '@weasel-js/geom';
@@ -16,6 +17,10 @@ import type { Action } from '@weasel-js/routing';
 import type { ToolsApi } from '../tools/overlayBinding';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
+import {
+  drawPreset, editPreset, movePreset, outlinePreset, pickPreset, resizePreset, rotatePreset, selectPreset, transformPreset,
+  viewPreset,
+} from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -78,7 +83,7 @@ function Probe({ into }: { into: Seen }) {
   return null;
 }
 
-function mount(props: { features?: readonly Feature[] } & Record<string, unknown> = {}) {
+function mount(props: { features?: readonly FeaturePreset[] } & Record<string, unknown> = {}) {
   const { scene, id } = makeScene();
   const seen: Seen = { actionIds: [], selection: null };
   let tools: ToolsApi | null = null;
@@ -147,7 +152,7 @@ describe('a bare <SceneCanvas>', () => {
 
 describe('<SceneCanvas features>', () => {
   it("'pick' makes select the active tool and picks on click, without moving", () => {
-    const { seen, canvas, id, scene, tools } = mount({ features: ['pick'] });
+    const { seen, canvas, id, scene, tools } = mount({ features: [pickPreset] });
     expect(tools().active).toBe('select');
     click(canvas, [10, 10]);
     expect(seen.selection!.get()).toEqual([id]);
@@ -156,13 +161,13 @@ describe('<SceneCanvas features>', () => {
   });
 
   it("'pick' + 'move' drags an unselected body to move it", () => {
-    const { canvas, id, scene } = mount({ features: ['pick', 'move'] });
+    const { canvas, id, scene } = mount({ features: [pickPreset, movePreset] });
     drag(canvas, [10, 10], [40, 10]);
     expect(xOf(scene, id)).toBe(30);
   });
 
   it("undoes a move without 'edit', since every canvas has undo and redo", () => {
-    const { canvas, id, scene } = mount({ features: ['pick', 'move'] });
+    const { canvas, id, scene } = mount({ features: [pickPreset, movePreset] });
     drag(canvas, [10, 10], [40, 10]);
     act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true })); });
     expect(xOf(scene, id)).toBe(0);
@@ -171,7 +176,7 @@ describe('<SceneCanvas features>', () => {
   });
 
   it("'transform' takes a handle drag ahead of 'move', though the handle sits on the body", () => {
-    const { seen, canvas, id, scene } = mount({ features: ['pick', 'move', 'transform'] });
+    const { seen, canvas, id, scene } = mount({ features: [pickPreset, movePreset, transformPreset] });
     act(() => seen.selection!.set([id]));
     drag(canvas, [50, 50], [70, 70]);
     const pose = scene.get(id)!.pose as P;
@@ -180,14 +185,14 @@ describe('<SceneCanvas features>', () => {
   });
 
   it("'transform' takes a drag on the rotation handle, which sits off the body, from the select tool's marquee", () => {
-    const { seen, canvas, id, scene } = mount({ features: ['pick', 'transform'] });
+    const { seen, canvas, id, scene } = mount({ features: [pickPreset, transformPreset] });
     act(() => seen.selection!.set([id]));
     drag(canvas, [25, -24], [60, 10]);
     expect((scene.get(id)!.pose as P).rotation).not.toBe(0);
   });
 
   it("without 'transform' a handle is neither drawn nor grabbed", () => {
-    const { seen, canvas, id, scene } = mount({ features: ['pick', 'move'] });
+    const { seen, canvas, id, scene } = mount({ features: [pickPreset, movePreset] });
     act(() => seen.selection!.set([id]));
     drag(canvas, [50, 50], [70, 70]);
     const pose = scene.get(id)!.pose as P;
@@ -196,7 +201,7 @@ describe('<SceneCanvas features>', () => {
 
   it("'resize' takes a handle drag, and the rotation handle is neither drawn nor grabbed", () => {
     const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
-    const { seen, canvas, id, scene } = mount({ features: ['pick', 'resize'], helpersRef });
+    const { seen, canvas, id, scene } = mount({ features: [pickPreset, resizePreset], helpersRef });
     act(() => seen.selection!.set([id]));
     const isVisible = helpersRef.current!.getIsVisible();
     expect(isVisible('selection.resize-handles')).toBe(true);
@@ -212,7 +217,7 @@ describe('<SceneCanvas features>', () => {
 
   it("'rotate' takes the rotation handle, and the resize handles are neither drawn nor grabbed", () => {
     const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
-    const { seen, canvas, id, scene } = mount({ features: ['pick', 'rotate'], helpersRef });
+    const { seen, canvas, id, scene } = mount({ features: [pickPreset, rotatePreset], helpersRef });
     act(() => seen.selection!.set([id]));
     const isVisible = helpersRef.current!.getIsVisible();
     expect(isVisible('selection.resize-handles')).toBe(false);
@@ -227,7 +232,7 @@ describe('<SceneCanvas features>', () => {
 
   it("'outline' draws the selection outline without mounting the select tool", () => {
     const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
-    const { seen, id, tools } = mount({ features: ['outline'], helpersRef });
+    const { seen, id, tools } = mount({ features: [outlinePreset], helpersRef });
     act(() => seen.selection!.set([id]));
     expect(helpersRef.current!.getIsVisible()('selection.outline')).toBe(true);
     expect(Object.keys(tools().registry)).toEqual([]);
@@ -236,7 +241,7 @@ describe('<SceneCanvas features>', () => {
 
   it("'select' mounts the select tool without the selection outline", () => {
     const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
-    const { seen, canvas, id, tools } = mount({ features: ['select'], helpersRef });
+    const { seen, canvas, id, tools } = mount({ features: [selectPreset], helpersRef });
     expect(tools().active).toBe('select');
     click(canvas, [10, 10]);
     expect(seen.selection!.get()).toEqual([id]);
@@ -245,7 +250,7 @@ describe('<SceneCanvas features>', () => {
 
   it("'move' runs under a tool that leaves the drag unclaimed", () => {
     const { seen, canvas, id, scene, tools } = mount({
-      features: ['move'],
+      features: [movePreset],
       tools: { idle: { id: 'idle', eligibility: {}, bindings: [] } },
       defaultActiveTool: 'idle',
     });
@@ -256,20 +261,20 @@ describe('<SceneCanvas features>', () => {
   });
 
   it("'edit' binds Delete; without it the key does nothing", () => {
-    const bare = mount({ features: ['pick'] });
+    const bare = mount({ features: [pickPreset] });
     act(() => bare.seen.selection!.set([bare.id]));
     key('Delete');
     expect(bare.scene.get(bare.id)).toBeDefined();
     bare.unmount();
 
-    const edit = mount({ features: ['pick', 'edit'] });
+    const edit = mount({ features: [pickPreset, editPreset] });
     act(() => edit.seen.selection!.set([edit.id]));
     key('Delete');
     expect(edit.scene.get(edit.id)).toBeUndefined();
   });
 
   it("'draw' registers every kit action a bare canvas leaves out", () => {
-    const { seen, tools } = mount({ features: ['draw'] });
+    const { seen, tools } = mount({ features: [drawPreset] });
     expect(tools().active).toBe('select');
     expect(Object.keys(tools().registry).sort()).toEqual(['anchors', 'hand', 'lasso', 'select']);
     const missing = KIT_STANDARD_ACTION_IDS.filter((i) => !seen.actionIds.includes(i));
@@ -279,7 +284,7 @@ describe('<SceneCanvas features>', () => {
   });
 
   it("'edit' without 'ingest' registers the paste-event action in its place", () => {
-    const { seen } = mount({ features: ['edit'] });
+    const { seen } = mount({ features: [editPreset] });
     expect(seen.actionIds).toContain('clipboard.pasteEvent');
     expect(seen.actionIds).not.toContain('ingest');
   });
@@ -290,19 +295,36 @@ describe('<SceneCanvas features>', () => {
   });
 
   it('defaultActiveTool overrides the select default', () => {
-    const { tools } = mount({ features: ['pick'], defaultTools: ['rect'], defaultActiveTool: 'rect' });
+    const { tools } = mount({ features: [pickPreset], defaultTools: ['rect'], defaultActiveTool: 'rect' });
     expect(tools().active).toBe('rect');
   });
 
-  it('a viewport config implies view: the hand tool is registered', () => {
+  it('a viewport config implies nothing: no hand tool, no wheel, pinch, or zoom keys, and a warning', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { tools, seen } = mount({ viewport: {} });
+    expect(Object.keys(tools().registry)).toEqual([]);
+    for (const id of ['viewport.wheelPan', 'viewport.zoom', 'viewport.pinchZoom', 'viewport.dragPan']) expect(seen.actionIds).not.toContain(id);
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures viewPreset/));
+    warn.mockRestore();
+  });
+
+  it('viewPreset turns navigation on, and viewport configures it', () => {
+    const { tools, seen } = mount({ features: [viewPreset], viewport: { zoom: false } });
     expect(Object.keys(tools().registry)).toEqual(['hand']);
     expect(seen.actionIds).toContain('viewport.wheelPan');
+    expect(seen.actionIds).toContain('viewport.dragPan');
+    expect(seen.actionIds).not.toContain('viewport.zoom');
+  });
+
+  it('a hand tool without viewPreset drags the view, and nothing else navigates', () => {
+    const { seen } = mount({ defaultTools: ['hand'] });
+    expect(seen.actionIds).toContain('viewport.dragPan');
+    expect(seen.actionIds).not.toContain('viewport.wheelPan');
   });
 
   it("'draw' no longer rotates a selection on a drag no tool claims", () => {
     const { seen, canvas, id, scene } = mount({
-      features: ['draw'],
+      features: [drawPreset],
       tools: { idle: { id: 'idle', eligibility: {}, bindings: [] } },
       defaultActiveTool: 'idle',
     });
@@ -381,7 +403,7 @@ describe('<SceneCanvas pathEdit>', () => {
     let editing: string | null = null;
     const host = { editingId: () => editing, setEditingId: vi.fn((next: string | null) => { editing = next; }) };
     render(
-      <SceneCanvas features={['draw']} scene={scene} width={200} height={200} pathEdit={host}>
+      <SceneCanvas features={[drawPreset]} scene={scene} width={200} height={200} pathEdit={host}>
         <Grab />
       </SceneCanvas>,
     );

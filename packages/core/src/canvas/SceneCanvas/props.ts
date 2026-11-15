@@ -36,7 +36,7 @@ import type { InsertNodeFactories } from '../deps';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { SceneCameraProps } from './sceneViewBounds';
 import type { SceneCanvasSceneProps } from './sceneProps';
-import type { FeatureEntry } from './features';
+import type { FeaturePreset } from './features';
 import type { BuiltinToolOptions } from './useBuiltinShapeTools';
 import type { VersionCheck } from './useContributionRoles';
 import type { SceneCanvasViewport } from './viewportProp';
@@ -175,49 +175,51 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     selectable?: boolean;
 
     /**
-     * Behavior presets to turn on, composable in any combination. A canvas
-     * with none renders its scene and keeps a selection (the `selection` API
-     * works) that no input sets: no tools, no standard actions or their keys,
-     * no clipboard, no drop or paste, and no selection chrome. The dispatcher
-     * is still mounted, so bindings a consumer adds work.
+     * Behavior presets to turn on, as `FeaturePreset` objects, composable in
+     * any combination. A canvas with none renders its scene and keeps a
+     * selection (the `selection` API works) that no input sets: no tools, no
+     * standard actions or their keys, no clipboard, no drop or paste, and no
+     * selection chrome. The dispatcher is still mounted, so bindings a
+     * consumer adds work. A preset the app does not import is not in its bundle.
      *
-     * - `view` — wheel pan and zoom, pinch, the zoom keys, and the hand tool
-     *   (H, or hold Space). Passing `viewport` implies it.
-     * - `select` — the select tool, as the initial active tool and Escape's
-     *   return target: click to pick, drag on empty to marquee, click on empty
-     *   to clear.
-     * - `outline` — the selection outline, whichever tool sets the selection.
-     * - `pick` — `select` and `outline`.
-     * - `move` — drag a body to move it, Alt-drag to clone it. Ambient, so it
-     *   runs under any tool that does not claim the drag.
-     * - `resize` — resize handles, drawn and bound.
-     * - `rotate` — the rotation handle, drawn and bound.
-     * - `transform` — `resize` and `rotate`.
-     * - `edit` — undo/redo, delete, duplicate, group/ungroup, nudge,
-     *   select-all, Escape, cancel-gesture, cut/copy/paste, fill and stroke,
-     *   and their keys. Cmd/Ctrl+V pastes nodes a kit canvas copied, from
-     *   this tab or another, and nothing else.
-     * - `arrange` — align, distribute, reorder, flip.
-     * - `paths` — pathfinder operations, path-edit entry and anchor editing.
-     * - `ingest` — dropped and pasted content: images, SVG, files, and
+     * - `viewPreset` — wheel pan and zoom, pinch, the zoom keys, edge pan, and
+     *   the hand tool (H, or hold Space). The only thing that turns navigation
+     *   on: `viewport` configures it and implies nothing.
+     * - `selectPreset` — the select tool, as the initial active tool and
+     *   Escape's return target: click to pick, drag on empty to marquee, click
+     *   on empty to clear.
+     * - `outlinePreset` — the selection outline, whichever tool sets the selection.
+     * - `pickPreset` — `selectPreset` and `outlinePreset`.
+     * - `movePreset` — drag a body to move it, Alt-drag to clone it. Ambient,
+     *   so it runs under any tool that does not claim the drag.
+     * - `resizePreset`, `rotatePreset` — the resize and rotation handles,
+     *   drawn and bound; `transformPreset` is both.
+     * - `editPreset` — delete, duplicate, group/ungroup, nudge, select-all,
+     *   Escape, cancel-gesture, cut/copy/paste, fill and stroke, and their
+     *   keys. Cmd/Ctrl+V pastes nodes a kit canvas copied, from this tab or
+     *   another, and nothing else.
+     * - `arrangePreset` — align, distribute, reorder, flip.
+     * - `pathsPreset` — pathfinder operations, path-edit entry and anchor editing.
+     * - `ingestPreset` — dropped and pasted content: images, SVG, files, and
      *   whatever `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop.
-     * - `draw` — all of the above.
-     * - `whiteboard` — `view`, `pick`, `move`, `resize` and `edit`, with the
+     * - `drawPreset` — all of the above.
+     * - `whiteboardPreset` — view, pick, move, resize and edit, with the
      *   pencil, text and sticky-note tools.
-     * - `tools:select`, `tools:view`, `tools:shape`, `tools:draw`,
-     *   `tools:type`, `tools:page` — a built-in tool set and nothing else.
+     * - `selectToolsPreset`, `viewToolsPreset`, `shapeToolsPreset`,
+     *   `drawToolsPreset`, `typeToolsPreset`, `pageToolsPreset` — a built-in
+     *   tool set and nothing else.
      *
-     * The parts of `edit`, `arrange` and `paths` are names of their own
-     * (`nudge`, `clipboard`, `align`, `pathfinder`, …), for a canvas that
-     * wants one without the rest; `SCENE_CANVAS_FEATURES` lists every name.
-     *
-     * Any `FeaturePreset` object goes beside the names: core's own
-     * (`pathsPreset`), or one a package ships.
-     * Tools add the actions they bind — a shape tool brings `insert` — so
-     * `defaultTools` composes with any preset. `actions` then adds, overrides
-     * or removes on top of what the presets registered.
+     * The parts of `editPreset`, `arrangePreset` and `pathsPreset` are presets
+     * of their own (`nudgePreset`, `clipboardPreset`, `alignPreset`,
+     * `pathfinderPreset`, …), for a canvas that wants one without the rest. A
+     * package's preset goes beside them the same way. Undo and redo are on
+     * whatever is passed. Tools add the actions they bind — a shape tool
+     * brings `insert`, the hand tool drag-pan — so `defaultTools` composes
+     * with any preset. `actions` then adds, overrides or removes on top of
+     * what the presets registered. To name presets instead, see
+     * `namedFeatures` in `@weasel-js/core/named-features`.
      */
-    features?: readonly FeatureEntry[];
+    features?: readonly FeaturePreset[];
 
     /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
      *
@@ -309,7 +311,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  feedback shown while it is held. */
     longPress?: SceneCanvasLongPress;
 
-    /** Configures the `view` preset, and implies it. See {@link SceneCanvasViewport}. */
+    /** Configures what `viewPreset` turns on, and turns nothing on itself.
+     *  See {@link SceneCanvasViewport}. */
     viewport?: SceneCanvasViewport;
 
     /**

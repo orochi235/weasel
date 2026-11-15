@@ -1,4 +1,4 @@
-import { asNodeId, createScene, type RectPose, solid, useSelection } from '@weasel-js/core';
+import { asNodeId, createScene, type RectPose, solid, useSelection, drawPreset } from '@weasel-js/core';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
 import {
   type ConfigOf,
@@ -60,7 +60,7 @@ function SpacingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={['draw', spacingHints]}
+      features={[drawPreset, spacingHints]}
       defaultTools={['rect']}
       scene={scene}
       selection={selection}

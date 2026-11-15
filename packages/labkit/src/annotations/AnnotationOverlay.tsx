@@ -6,7 +6,7 @@ import {
   useActiveToolContext,
   useLatest,
   type View,
-  WeaselProvider,
+  WeaselProvider, editPreset, movePreset, pickPreset, transformPreset,
 } from '@weasel-js/core';
 import type { ToolOptionValues } from '@weasel-js/routing';
 import {
@@ -290,7 +290,7 @@ export function AnnotationOverlay({
         <WeaselProvider isolate>
           <ToolBridge toolId={annotationToolInfo(activeToolId)?.weaselTool ?? 'select'} />
           <SceneCanvas<AnnotationData, 'marks', WorldRect>
-            features={['pick', 'move', 'transform', 'edit']}
+            features={[pickPreset, movePreset, transformPreset, editPreset]}
             ref={attachSceneCanvas}
             scene={scene}
             width={visible.w}

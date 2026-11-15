@@ -3,7 +3,7 @@ import {
   SceneCanvas,
   useScene,
   HOME_VIEW,
-  fitViewToBounds,
+  fitViewToBounds, viewPreset,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
@@ -76,7 +76,7 @@ export function PerAxisZoomDemo() {
       </span>
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={['view']}
+          features={[viewPreset]}
           className="ckd-canvas"
           scene={scene}
           view={view}

@@ -5,6 +5,7 @@ import type { ActionTunings } from '@weasel-js/routing';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
+import { arrangePreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -21,7 +22,7 @@ function setup(tune: ActionTunings) {
   });
   render(
     <SceneCanvas
-      features={['arrange']} scene={scene} layers={{}} width={64} height={64}
+      features={[arrangePreset]} scene={scene} layers={{}} width={64} height={64}
       selectionOptions={{ mode: 'multi', initial: [asNodeId('a'), asNodeId('b')] }}
       tune={tune}
     />,

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import {
-  PathBuilder, SceneCanvas, WeaselProvider, commandFill, sceneFromJSON, useSelection,
+  PathBuilder, SceneCanvas, WeaselProvider, commandFill, sceneFromJSON, useSelection, movePreset, pickPreset,
 } from '@weasel-js/core';
 import type { Path, SceneCanvasApi, SerializedScene, View, Fill } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -108,7 +108,7 @@ function Pane({
       {surface && input && (
         // Isolated so each pane keeps its own selection.
         <WeaselProvider isolate>
-          <SceneCanvas features={['pick', 'move']}
+          <SceneCanvas features={[pickPreset, movePreset]}
             ref={apiRef}
             width={PANE_W}
             height={PANE_H}

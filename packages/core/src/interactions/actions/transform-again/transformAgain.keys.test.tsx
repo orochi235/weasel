@@ -9,6 +9,7 @@ import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { recordTransform } from './memory';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -24,7 +25,7 @@ function setup() {
   const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ id: ID, kind: 'mark', data: {}, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
-  render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} />);
+  render(<SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} />);
   const key = (key: string, init: KeyboardEventInit = {}) => act(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...init }));
   });

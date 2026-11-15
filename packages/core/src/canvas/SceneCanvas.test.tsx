@@ -11,6 +11,7 @@ import {
 } from './SceneCanvas';
 import { defaultPaintBounds } from './defaultDrawOne';
 import { layersOverPresets } from './SceneCanvas/mergeLayers';
+import { pickPreset, resizePreset } from 'canvas/SceneCanvas/presets';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -72,7 +73,7 @@ describe('SceneCanvas', () => {
       scene.setSelection([id]);
       const { container, unmount } = render(
         <SceneCanvas
-          features={['pick', 'resize']} width={400} height={400} scene={scene}
+          features={[pickPreset, resizePreset]} width={400} height={400} scene={scene}
           {...(handleHitRadius === undefined ? {} : { selectTool: { handleHitRadius } })}
         />,
       );
@@ -103,7 +104,7 @@ describe('SceneCanvas', () => {
       const { container, unmount } = render(
         <KitSettingsProvider value={{ targets: { handlePx } }}>
           <SceneCanvas
-            features={['pick', 'resize']} width={400} height={400} scene={scene}
+            features={[pickPreset, resizePreset]} width={400} height={400} scene={scene}
             {...(handleHitRadius === undefined ? {} : { selectTool: { handleHitRadius } })}
           />
         </KitSettingsProvider>,

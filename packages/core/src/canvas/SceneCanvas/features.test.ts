@@ -2,22 +2,21 @@ import { describe, it, expect } from 'vitest';
 import type { Action } from '@weasel-js/routing';
 import { KIT_STANDARD_ACTION_IDS } from 'interactions/actions/useStandardActions';
 import {
-  SCENE_CANVAS_FEATURES,
   resolveFeatures,
   presetActions,
   presetAmbient,
   presetBuiltinTools,
   presetChromeRules,
   presetToolIds,
-  type Feature,
-  type FeatureEntry,
   type FeaturePreset,
 } from './features';
 import {
-  CORE_NAMED_PRESETS,
   FEATURE_ACTION_IDS,
+  FEATURE_NAMES,
   FEATURE_PRESETS,
+  namedFeatures,
   BASELINE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS,
+  type FeatureName,
 } from './namedPresets';
 import { PRESET_OWNED_CHROME } from './presets/chrome';
 import { BUILTIN_TOOL_IDS } from './props';
@@ -29,10 +28,12 @@ import {
 } from 'tools/builtin/select/selectionContributions';
 import { MIDDLE_DRAG_PAN_ID } from 'tools/builtin/hand/dragPanContribution';
 
-const resolve = (features?: readonly FeatureEntry[], opts?: { viewport?: boolean }) =>
-  resolveFeatures(features, CORE_NAMED_PRESETS, opts);
-const ids = (features: readonly FeatureEntry[]) => resolve(features).presets.map((p) => p.id);
-const actionIds = (features: readonly FeatureEntry[]) => new Set(presetActions(resolve(features)).map((a) => a.id));
+// Names keep these tables readable; `namedFeatures` maps each to its object.
+type Entry = FeatureName | FeaturePreset;
+const resolve = (features?: readonly Entry[]) =>
+  resolveFeatures(features?.map((f) => (typeof f === 'string' ? namedFeatures(f)[0]! : f)));
+const ids = (features: readonly Entry[]) => resolve(features).presets.map((p) => p.id);
+const actionIds = (features: readonly Entry[]) => new Set(presetActions(resolve(features)).map((a) => a.id));
 const action = (id: string): Action => ({ id, label: id, invoker: { timing: 'immediate', run: () => {} } }) as Action;
 
 describe('FEATURE_ACTION_IDS', () => {
@@ -60,7 +61,7 @@ describe('resolveFeatures', () => {
 
   it('turns on, under draw, every core preset but the tools that make things and the shorthands beside it', () => {
     const left = ['tools:shape', 'tools:draw', 'tools:type', 'tools:page', 'pick', 'transform', 'whiteboard'];
-    expect(ids(['draw']).sort()).toEqual(SCENE_CANVAS_FEATURES.filter((f) => !left.includes(f)).sort());
+    expect(ids(['draw']).sort()).toEqual(FEATURE_NAMES.filter((f) => !left.includes(f)).sort());
   });
 
   it('registers, under draw, every kit-standard action a preset owns', () => {
@@ -68,12 +69,8 @@ describe('resolveFeatures', () => {
     expect([...actionIds(['draw'])].sort()).toEqual([...owned].sort());
   });
 
-  it('throws on a name no preset has', () => {
-    expect(() => resolve(['nope' as Feature])).toThrow(/no preset is named "nope"/);
-  });
-
-  it('adds view when a viewport config is passed', () => {
-    expect(resolve(['outline'], { viewport: true }).presets.map((p) => p.id).sort()).toEqual(['outline', 'tools:view', 'view']);
+  it('turns on only what it is handed: nothing implies view', () => {
+    expect(ids(['outline'])).toEqual(['outline']);
   });
 
   it('turns on select and outline under pick, and resize and rotate under transform', () => {
@@ -135,9 +132,8 @@ describe('resolveFeatures', () => {
     for (const twin of ['escape', 'cancelGesture']) before('exitPathEdit', twin);
   });
 
-  it('resolves no names where none are given, and says which', () => {
-    expect(() => resolveFeatures(['select'], null)).toThrow(/pass the preset for "select"/);
-    expect(resolveFeatures([], null, { viewport: true }).presets).toEqual([]);
+  it('takes no names, and says what to pass instead', () => {
+    expect(() => resolveFeatures(['select' as never])).toThrow(/pass the preset for "select" or namedFeatures\("select"\)/);
   });
 
   it("gathers the presets' path-edit extensions in preset order, and lays their chrome rules under the owned ones", () => {
@@ -156,15 +152,15 @@ describe('resolveFeatures', () => {
 });
 
 describe('FEATURE_PRESETS', () => {
-  const rows = Object.entries(FEATURE_PRESETS) as [Feature, FeaturePreset][];
+  const rows = Object.entries(FEATURE_PRESETS) as [FeatureName, FeaturePreset][];
   // A preset that includes others turns them on too, so what it alone brings is read from those that include none.
   const leaves = rows.filter(([, row]) => !row.includes?.length);
   const all = resolve(['draw']);
 
   it('has one row for every name, each under its own id, and includes only named presets', () => {
-    expect(rows.map(([id]) => id)).toEqual([...SCENE_CANVAS_FEATURES]);
+    expect(rows.map(([id]) => id)).toEqual([...FEATURE_NAMES]);
     for (const [id, row] of rows) expect(row.id).toBe(id);
-    for (const [, row] of rows) for (const inner of row.includes ?? []) expect(FEATURE_PRESETS[inner.id as Feature]).toBe(inner);
+    for (const [, row] of rows) for (const inner of row.includes ?? []) expect(FEATURE_PRESETS[inner.id as FeatureName]).toBe(inner);
   });
 
   it('is where the action table comes from', () => {
@@ -251,5 +247,16 @@ describe('EnabledPresets.layers', () => {
     expect(layers.grid!.layer.id).toBe('b-grid');
     expect(layers.ruler!.layer.id).toBe('a-ruler');
     expect(resolve(['draw']).layers).toEqual({});
+  });
+});
+
+describe('namedFeatures', () => {
+  it('maps each name to its core preset, in order, and nothing else', () => {
+    expect(namedFeatures('pick', 'move')).toEqual([FEATURE_PRESETS.pick, FEATURE_PRESETS.move]);
+    expect(namedFeatures()).toEqual([]);
+  });
+
+  it('throws on a name no core preset has', () => {
+    expect(() => namedFeatures('nope' as FeatureName)).toThrow(/no core preset is named "nope"/);
   });
 });

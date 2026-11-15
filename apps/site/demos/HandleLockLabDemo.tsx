@@ -7,8 +7,9 @@ import { BLOB, type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
 
-const FEATURES = ['pick', 'move', 'paths', handleLocksPreset] as const;
+const FEATURES = [pickPreset, movePreset, pathsPreset, handleLocksPreset] as const;
 
 /** The two handle-lock toggles, drawn from the actions registry. */
 const LOCK_BAR: PrefGroup = {

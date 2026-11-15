@@ -13,6 +13,7 @@ import { PointerContextProvider, createPointerStore } from '@weasel-js/routing/r
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { SceneCanvas } from './SceneCanvas';
+import { pickPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -79,7 +80,7 @@ function mount() {
   const { container } = render(
     <PointerContextProvider store={pointer}>
       <SceneCanvas
-        features={['pick']} scene={scene} layers={{}} width={400} height={400}
+        features={[pickPreset]} scene={scene} layers={{}} width={400} height={400}
         clientToWorld={halfScale} onClick={onClick}
         modes={modes} chromeVisibility={{}}
       />

@@ -8,6 +8,7 @@ import type { MenuHost } from '@weasel-js/routing';
 import { SceneCanvas } from '../SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SurfaceContribution } from '../surfaceContribution';
+import { editPreset, pickPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -64,7 +65,7 @@ describe('contributed menus', () => {
       menus: [{ id: 'body', when: { bodyTarget: ['selected-body', 'empty'] }, menu: pref.group('', { cut: pref.action('cut') }) }],
     } as unknown as SurfaceContribution;
     const { container, unmount } = render(
-      <SceneCanvas features={['pick', 'edit']} scene={scene} layers={{}} width={300} height={200} ambient={[onBody]}>
+      <SceneCanvas features={[pickPreset, editPreset]} scene={scene} layers={{}} width={300} height={200} ambient={[onBody]}>
         <Probe />
       </SceneCanvas>,
     );

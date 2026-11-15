@@ -7,7 +7,7 @@ import {
   useScene,
   useSelection,
   ellipsePath,
-  linePath,
+  linePath, viewPreset,
 } from '@weasel-js/core';
 import type {
   Action,
@@ -229,7 +229,7 @@ export function ForceGraphDemo() {
       </div>
       <div className={s.canvas}>
         <DemoStage width={W} height={H}>
-          <SceneCanvas features={['view']}
+          <SceneCanvas features={[viewPreset]}
             className="ckd-canvas"
             scene={scene}
             selection={selection}

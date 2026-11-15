@@ -9,7 +9,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   IDENTITY_POSE_COMPOSITION, SceneCanvas, asNodeId, createScene, pathFromD, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type PolygonPath,
-  type ToolsApi,
+  type ToolsApi, drawPreset,
 } from '@weasel-js/core';
 import { pathTools } from './presets';
 import { PATH_EDIT_TOOLS, PATH_TOOLS_TOOLS, usePathToolsTools } from './toolSets';
@@ -42,7 +42,7 @@ function mount(paths: Record<string, string>, selected: string[] = []) {
   function Harness() {
     const tools = usePathToolsTools();
     return (
-      <SceneCanvas features={['draw', pathTools]} scene={scene} layers={{}} width={400} height={400} tools={tools}
+      <SceneCanvas features={[drawPreset, pathTools]} scene={scene} layers={{}} width={400} height={400} tools={tools}
         onToolsCreated={(t) => { api.tools = t; }}>
         <Grab />
       </SceneCanvas>

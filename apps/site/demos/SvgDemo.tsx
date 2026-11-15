@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { RIGID_POSE_COMPOSITION, SceneCanvas, WeaselProvider, useScene, useSelection } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, SceneCanvas, WeaselProvider, useScene, useSelection, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
 import {
   parseSvg,
   serializeSvg,
@@ -157,7 +157,7 @@ function SvgRoundTrip() {
           </div>
           <DemoStage width={W} height={H} className={s.stage}>
             <SceneCanvas
-              features={['pick', 'move', 'transform']}
+              features={[pickPreset, movePreset, transformPreset]}
               className="ckd-canvas"
               backgroundFill={{ color: '#ffffff' }}
               scene={scene}

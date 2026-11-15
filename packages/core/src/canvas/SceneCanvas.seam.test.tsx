@@ -7,6 +7,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { useActionsRegistry, ActionsProvider } from '@weasel-js/routing/react';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: string };
 type L = 'main';
@@ -86,7 +87,7 @@ describe('Behavior 3: pickEvery receives view-adjusted worldXY', () => {
     };
 
     const { container } = render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={400}
@@ -125,7 +126,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     let capturedIds: string[] = [];
 
     render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={200}
@@ -145,7 +146,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     let capturedIds: string[] = [];
 
     render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={200}
@@ -165,7 +166,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     let capturedIds: string[] = [];
 
     render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={200}
@@ -185,7 +186,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     let capturedIds: string[] = [];
 
     render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={200}
@@ -209,8 +210,8 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
     function Pair({ showB }: { showB: boolean }) {
       return (
         <ActionsProvider>
-          <SceneCanvas features={['draw']} scene={sceneA} layers={{}} width={200} height={200} />
-          {showB ? <SceneCanvas features={['draw']} scene={sceneB} layers={{}} width={200} height={200} /> : null}
+          <SceneCanvas features={[drawPreset]} scene={sceneA} layers={{}} width={200} height={200} />
+          {showB ? <SceneCanvas features={[drawPreset]} scene={sceneB} layers={{}} width={200} height={200} /> : null}
           <ActionProbe onIds={(ids) => { capturedIds = ids; }} />
         </ActionsProvider>
       );
@@ -274,7 +275,7 @@ describe('Seam: selectTool.pickBest forwards into the internal select tool', () 
     );
 
     const { container } = render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={200}
@@ -308,7 +309,7 @@ describe('Seam: selectTool.pickBest forwards into the internal select tool', () 
 
     const selApi = makeSelectionStub();
     const { container } = render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={200}

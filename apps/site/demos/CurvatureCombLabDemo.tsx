@@ -1,4 +1,4 @@
-import { editingAnchors, never, type RectPose, useSelection } from '@weasel-js/core';
+import { editingAnchors, never, type RectPose, useSelection, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
 import { createCurvatureCombPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -36,7 +36,7 @@ function CombTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);
   const features = useMemo(() => [
-    'pick', 'move', 'paths', createCurvatureCombPreset(() => ({ scale, samplesPerSegment: teeth })),
+    pickPreset, movePreset, pathsPreset, createCurvatureCombPreset(() => ({ scale, samplesPerSegment: teeth })),
   ] as const, [scale, teeth]);
 
   return (

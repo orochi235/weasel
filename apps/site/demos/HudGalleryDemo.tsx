@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { SceneCanvas, useScene } from '@weasel-js/core';
+import { SceneCanvas, useScene, pickPreset } from '@weasel-js/core';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import type { Hud } from '@weasel-js/hud';
 import { DemoStage } from './DemoStage';
@@ -88,7 +88,7 @@ function Demo() {
   return (
     <>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['pick']}
+        <SceneCanvas features={[pickPreset]}
           className="ckd-canvas"
           scene={scene}
           ambient={[hudEntry]}

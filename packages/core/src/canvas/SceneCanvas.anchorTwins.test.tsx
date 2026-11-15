@@ -10,6 +10,7 @@ import { countPathAnchors, pathToAnchors, polygonFromPoints, type PolygonPath } 
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = vi.fn(() => null) as unknown as HTMLCanvasElement['getContext'];
@@ -29,7 +30,7 @@ function mount() {
   const path = polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]);
   const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { path } });
   scene.setSelection([id]);
-  render(<SceneCanvas features={['draw']} scene={scene} width={200} height={200}><Grab /></SceneCanvas>);
+  render(<SceneCanvas features={[drawPreset]} scene={scene} width={200} height={200}><Grab /></SceneCanvas>);
   const editAnchors = () => deps.get('editAnchors') as { setSelectedAnchors(next: number[]): void };
   const key = (k: string, shiftKey = false) => act(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: k, shiftKey, bubbles: true, cancelable: true }));

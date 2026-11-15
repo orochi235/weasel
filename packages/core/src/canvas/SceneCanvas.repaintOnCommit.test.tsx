@@ -17,6 +17,7 @@ import type { SurfaceContribution } from './surfaceContribution';
 import type { VisibilityRules } from 'domains/chrome-caps';
 import { never } from 'domains/chrome-caps';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -61,7 +62,7 @@ function mount() {
   const ambient: SurfaceContribution[] = [{ id: 'probe', eligibility: { always: true }, overlay: paintProbe(count) }];
   const layers = {};
   const ui = (chromeVisibility: VisibilityRules) => (
-    <SceneCanvas features={['draw']} scene={scene} layers={layers} width={200} height={200}
+    <SceneCanvas features={[drawPreset]} scene={scene} layers={layers} width={200} height={200}
       ambient={ambient} chromeVisibility={chromeVisibility} />
   );
   const shown: VisibilityRules = {};

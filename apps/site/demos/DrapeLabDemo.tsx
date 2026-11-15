@@ -1,4 +1,4 @@
-import { useLatest } from '@weasel-js/core';
+import { useLatest, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { createDrapePreset } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
@@ -26,7 +26,7 @@ const WAVE = (() => {
 function DrapeTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, WAVE, '#3478f6');
   const live = useLatest(ctx);
-  const features = useMemo(() => ['pick', 'move', 'paths', createDrapePreset(() => {
+  const features = useMemo(() => [pickPreset, movePreset, pathsPreset, createDrapePreset(() => {
     const { drape, radius, falloff } = live.current.config;
     return drape
       ? { radiusPx: radius, falloff, onRadius: (px: number) => live.current.setConfig('radius', Math.round(px)) }

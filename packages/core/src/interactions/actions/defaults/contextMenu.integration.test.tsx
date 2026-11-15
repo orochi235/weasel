@@ -8,6 +8,7 @@ import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import { editPreset, pickPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: string };
 type P = { x: number; y: number; width: number; height: number };
@@ -59,7 +60,7 @@ function setup(declare = true, menus: unknown[] = defs, seed?: Seed, pickEvery?:
     return (
       <ActionsProvider>
         <SceneCanvas
-          features={['pick', 'edit']} claimKeys scene={scene} selection={sel} layers={{}} width={400} height={300}
+          features={[pickPreset, editPreset]} claimKeys scene={scene} selection={sel} layers={{}} width={400} height={300}
           ambient={[clickProbe as never]}
           {...(pickEvery ? { geometry: { pickEvery } } : {})}
           routing={[{ name: 'rect', matches: (d: unknown) => (d as D).kind === 'rect' }]}

@@ -11,6 +11,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { SceneCanvas, createScene, asNodeId, type SceneNode as Node, type RectPose, useSelection } from '@weasel-js/core';
+import { outlinePreset, resizePreset } from 'canvas/SceneCanvas/presets';
 
 const W = 340;
 const H = 200;
@@ -55,7 +56,7 @@ function Stage() {
   return createElement(SceneCanvas<object, 'main', RectPose>, {
     scene,
     selection,
-    features: ['outline', 'resize'],
+    features: [outlinePreset, resizePreset],
     width: W,
     height: H,
     layers: {

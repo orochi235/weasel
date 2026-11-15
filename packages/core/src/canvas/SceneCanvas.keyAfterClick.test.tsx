@@ -4,6 +4,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import { useSelection } from '../core/selection/useSelection';
+import { deletePreset, selectPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: string };
 type L = 'main';
@@ -39,7 +40,7 @@ function setup(mode: 'single' | 'multi') {
   });
   function Harness() {
     const selection = useSelection({ scene, mode });
-    return <SceneCanvas features={['select', 'delete']} scene={scene} selection={selection} layers={{}} width={400} height={400} />;
+    return <SceneCanvas features={[selectPreset, deletePreset]} scene={scene} selection={selection} layers={{}} width={400} height={400} />;
   }
   const { container } = render(<Harness />);
   const canvas = container.querySelector('canvas')!;

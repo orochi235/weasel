@@ -7,7 +7,7 @@ import {
   pathFromD,
   type RectPose,
   solid,
-  useSelection,
+  useSelection, movePreset, pathsPreset, pickPreset,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
@@ -63,7 +63,7 @@ const createLabScene = () =>
     ],
   });
 
-const FEATURES = ['pick', 'move', 'paths', pathStructurePreset] as const;
+const FEATURES = [pickPreset, movePreset, pathsPreset, pathStructurePreset] as const;
 
 /** Opens on the ring in path edit with its third anchor selected, ready for Make start point. */
 const OPENING = { id: 'ring', anchors: [2] };

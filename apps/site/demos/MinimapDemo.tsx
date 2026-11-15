@@ -5,7 +5,7 @@ import {
   dragPanContribution,
   solid,
   useScene,
-  useSelection,
+  useSelection, viewPreset,
 } from '@weasel-js/core';
 import { MinimapCanvas, createMinimapContribution } from '@weasel-js/minimap';
 import type { CanvasSize, Fill, View } from '@weasel-js/core';
@@ -75,7 +75,7 @@ export function MinimapDemo() {
         </div>
         <div className={styles.row}>
           <DemoStage width={MAIN_W} height={MAIN_H}>
-            <SceneCanvas features={['view']}
+            <SceneCanvas features={[viewPreset]}
               className="ckd-canvas"
               scene={scene}
               selection={selection}

@@ -12,6 +12,8 @@ import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
+import { drawPreset, viewPreset } from 'canvas/SceneCanvas/presets';
+import type { FeaturePreset } from './SceneCanvas/features';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -36,17 +38,17 @@ function mountAndPinch(
   pinchZoom: PinchConfig | undefined,
   offset: { left: number; top: number } = { left: 0, top: 0 },
   /** Features to rerender with before the pinch, changing the canvas's standard actions. */
-  then?: readonly string[],
+  then?: readonly FeaturePreset[],
 ): View[] {
   const emitted: View[] = [];
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  const canvasWith = (features?: readonly string[]) => (
+  const canvasWith = (features: readonly FeaturePreset[] = [viewPreset]) => (
     <SceneCanvas
       scene={scene}
       layers={{}}
       width={400}
       height={400}
-      {...(features ? { features: features as never } : {})}
+      features={features}
       viewport={pinchZoom === undefined ? {} : { pinchZoom }}
       onViewChange={(v) => { emitted.push(v); }}
     />
@@ -94,7 +96,7 @@ describe('SceneCanvas pinch zoom', () => {
   });
 
   it('keeps the clamp from viewport.pinchZoom after the canvas\'s actions change', () => {
-    const emitted = mountAndPinch({ min: 0.5, max: 1.5 }, undefined, ['draw']);
+    const emitted = mountAndPinch({ min: 0.5, max: 1.5 }, undefined, [drawPreset]);
     expect(emitted.map((v) => v.scale.x)).toEqual([1.5]);
   });
 

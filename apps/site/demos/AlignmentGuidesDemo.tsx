@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SceneCanvas, useScene, useSelection, rectPath, solid } from '@weasel-js/core';
+import { SceneCanvas, useScene, useSelection, rectPath, solid, movePreset, pickPreset, viewPreset } from '@weasel-js/core';
 import { alignmentSnapSource, spacingSnapSource } from '@weasel-js/guides';
 import type { NodeId, Path, ToolsApi, Fill } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
@@ -45,7 +45,7 @@ export function AlignmentGuidesDemo() {
     <div className="ckd-shape-tools-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['pick', 'move']}
+        <SceneCanvas features={[viewPreset, pickPreset, movePreset]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

@@ -16,6 +16,7 @@ import { measureEndsOf } from 'domains/measure/measurement';
 import { measurementsContribution } from 'domains/measure/measureContribution';
 import { measureEndSource } from 'domains/measure/measureHit';
 import { MEASURE_ACTION_IDS } from 'domains/measure/actionIds';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 const ms0 = () => createMeasurements({ layer: 'notes' });
 
@@ -100,7 +101,7 @@ describe('measurements through <SceneCanvas>', () => {
     const snap = useMemo(() => ({ sources: [measureEndSource()] }), []);
     return (
       <SceneCanvas
-        features={['draw']} scene={s} selection={selection} layers={{}} width={400} height={400}
+        features={[drawPreset]} scene={s} selection={selection} layers={{}} width={400} height={400}
         tools={{ measure, eyedropper, hand }} ambient={ambient} snap={snap} onViewChange={onView}
       >
         <Probe />

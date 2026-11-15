@@ -9,7 +9,7 @@ import {
   useSelectTool,
   useHandTool,
   useTools,
-  type Fill,
+  type Fill, movePreset, outlinePreset,
 } from '@weasel-js/core';
 import {
   buildRouteRegistry,
@@ -65,7 +65,7 @@ function ToolReflectionDemoInner() {
         <div className={`${styles.panel} ${styles.canvasPanel}`}>
           <h3 className={styles.panelTitle}>Canvas (select + hand)</h3>
           <DemoStage width={W} height={H}>
-            <SceneCanvas features={['outline', 'move']}
+            <SceneCanvas features={[outlinePreset, movePreset]}
               className="ckd-canvas"
               scene={scene}
               selection={selection}

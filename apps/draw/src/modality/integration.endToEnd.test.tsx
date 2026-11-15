@@ -17,7 +17,7 @@ import { ModeBreadcrumb } from './chrome/ModeBreadcrumb';
 import { modePathEdit } from './pathEditHost';
 import { useCanvasModes } from './useCanvasModes';
 import { DEFAULT_MODES } from '@weasel-js/modes';
-import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, solid, useSelection, type PolygonPath } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, hasEditablePath, pathFromD, solid, useSelection, type PolygonPath, drawPreset } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 
 beforeAll(() => {
@@ -81,7 +81,7 @@ function MachineHarness({
         onCommit={() => machine.commitMode()}
         onCancel={() => machine.cancelMode()}
       />
-      <SceneCanvas features={['draw']} scene={scene} selection={selection} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={scene} selection={selection} layers={{}} width={64} height={64}
         ambient={modes.ambient}
         modes={machine.registry}
         pathEdit={modes.pathEdit} />

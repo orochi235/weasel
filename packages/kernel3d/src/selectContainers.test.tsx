@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, createEnteredGroup, useSelection, type EnteredGroupApi, type SelectionApi } from '@weasel-js/core';
+import { SceneCanvas, createEnteredGroup, useSelection, type EnteredGroupApi, type SelectionApi, pickPreset } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 import { homeAction } from './tools';
@@ -55,7 +55,7 @@ function setup() {
   function Canvas() {
     sel = useSelection({ mode: 'multi' });
     return (
-      <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={['pick']}
+      <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={[pickPreset]}
         enteredGroup={entered} poseDescriptor={poseDescriptor} geometry={{ pickEvery }} ambient={[cameraRig]} />
     );
   }

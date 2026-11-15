@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { SceneCanvas, useScene } from '@weasel-js/core';
+import { SceneCanvas, useScene, pickPreset } from '@weasel-js/core';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import type { ButtonWidget } from '@weasel-js/hud';
 import { DemoStage } from './DemoStage';
@@ -54,7 +54,7 @@ export function HudDemo() {
         between the buttons, and Enter or Space to press the focused one.
       </p>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['pick']}
+        <SceneCanvas features={[pickPreset]}
           className="ckd-canvas"
           scene={scene}
           ambient={[hudEntry]}

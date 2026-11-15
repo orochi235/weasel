@@ -12,6 +12,7 @@ import { useDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Scene } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import { pickPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -153,7 +154,7 @@ describe('click policy is the selection’s mode', () => {
       const selection = useSelection({ scene, mode: own === 'multi' ? 'multi' : 'single' });
       return (
         <SceneCanvas<D, L, P>
-          features={['pick']} scene={scene} width={200} height={200}
+          features={[pickPreset]} scene={scene} width={200} height={200}
           {...(own === 'internal-multi'
             ? { selectionOptions: { mode: 'multi' } }
             : { selection })}

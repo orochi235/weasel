@@ -1,5 +1,7 @@
 import type { Contribution, Tool } from '../../tools/overlayBinding';
-import type { EnabledPresets, FeatureBindingOptions, PresetSource } from './features';
+import type { EnabledPresets, FeatureBindingOptions } from './features';
+import { BASELINE_ACTIONS } from './presets/baseline';
+import { builtinToolActions } from './presets/toolDriven';
 import type { SceneCanvasProps } from './props';
 import { useCanvasTools, useFeatureBindings } from './useCanvasTools';
 
@@ -19,7 +21,6 @@ export function useSceneCanvasTools(args: {
   /** The select tool's move options, which the selection's `move` binding takes. */
   move: unknown;
   enabled: EnabledPresets;
-  presetSource: PresetSource;
   /** Entering and leaving groups, installed with the `select` preset. */
   groupEntry: Contribution;
 }) {
@@ -40,7 +41,7 @@ export function useSceneCanvasTools(args: {
     onToolsCreated: props.onToolsCreated,
   });
   const { contributions, standardActions } = useFeatureBindings({
-    enabled, pool: args.presetSource.pool, baseline: args.presetSource.baseline,
+    enabled, pool: builtinToolActions, baseline: BASELINE_ACTIONS,
     tools,
     surface,
     move: args.move as FeatureBindingOptions['move'],

@@ -1,6 +1,6 @@
 import {
   asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, solid, type NodeId, type RectPose,
-  type SceneRegistry,
+  type SceneRegistry, drawPreset,
 } from '@weasel-js/core';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas, useTrialScene,
@@ -167,7 +167,7 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={[drawPreset]}
       defaultTools={['rect', 'ellipse', 'pen', 'pencil']}
       scene={scene}
       trial={ctx.trial}

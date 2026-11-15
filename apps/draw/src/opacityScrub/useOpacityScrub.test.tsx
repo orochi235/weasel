@@ -17,7 +17,7 @@ import {
   useSelection,
   type View,
   type Fill,
-  type Tool,
+  type Tool, drawPreset,
 } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
 import { WD_RENDERERS } from '../paintRenderers';
@@ -76,7 +76,7 @@ function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } a
         routing={PANEL_ROUTING}
         renderers={WD_RENDERERS}
       />
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         selection={selection}
         width={200} height={200}

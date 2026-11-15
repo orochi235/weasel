@@ -8,7 +8,7 @@ import {
   solid,
   textCommandFromRuns,
   useScene,
-  useSelection,
+  useSelection, movePreset, pickPreset,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { DrawCommand, Fill, RenderLayer } from '@weasel-js/core';
@@ -278,7 +278,7 @@ export function AudioDemo() {
       </div>
       <div className="ckd-row">
         <DemoStage width={W} height={H}>
-          <SceneCanvas features={['pick', 'move']}
+          <SceneCanvas features={[pickPreset, movePreset]}
             className="ckd-canvas"
             scene={scene}
             selection={selection}

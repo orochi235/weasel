@@ -11,6 +11,7 @@ import { asNodeId } from 'core/scene/types';
 import { enterInsertedText } from 'interactions/actions/insert/commit';
 import { placeAction } from 'interactions/actions/insert/placeAction';
 import { SceneCanvas } from './SceneCanvas';
+import { editPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -30,7 +31,7 @@ function mount() {
   }
   const frame = render(
     <div data-testid="frame">
-      <SceneCanvas scene={scene} width={300} height={200} features={['edit']}>
+      <SceneCanvas scene={scene} width={300} height={200} features={[editPreset]}>
         <Capture />
       </SceneCanvas>
     </div>,

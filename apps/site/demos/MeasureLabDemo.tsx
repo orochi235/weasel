@@ -7,7 +7,7 @@ import {
   measurementsContribution,
   type RectPose,
   solid,
-  useMeasureTool,
+  useMeasureTool, drawPreset,
 } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {
@@ -93,7 +93,7 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <div className={s.stage}>
       <TrialSceneCanvas
-        features={['draw']}
+        features={[drawPreset]}
         defaultTools={['rect']}
         tools={tools}
         ambient={ambient}

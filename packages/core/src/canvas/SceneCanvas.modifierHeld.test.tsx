@@ -9,6 +9,7 @@ import { useDepRegistry } from '@weasel-js/routing/react';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { modifierHeld } from 'domains/chrome-caps';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { pickPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -44,7 +45,7 @@ describe('<SceneCanvas chromeVisibility> with modifierHeld', () => {
         scene={scene}
         width={200}
         height={200}
-        features={['pick']}
+        features={[pickPreset]}
         helpersRef={helpersRef}
         chromeVisibility={{ 'selection.outline': modifierHeld('shift') }}
       >

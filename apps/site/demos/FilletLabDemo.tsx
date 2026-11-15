@@ -8,7 +8,7 @@ import {
   type PolygonPath,
   type RectPose,
   solid,
-  withCorner,
+  withCorner, drawPreset,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
@@ -97,7 +97,7 @@ function useEditHost(): { host: PathEditHost; selection: FilletControlsSelection
   })[0];
 }
 
-const FEATURES = ['draw', filletPreset] as const;
+const FEATURES = [drawPreset, filletPreset] as const;
 const TUNE: ActionTunings = { cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] } };
 
 function FilletsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {

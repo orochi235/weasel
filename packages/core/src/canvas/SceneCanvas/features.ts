@@ -7,9 +7,9 @@
  * chrome, and contributions one behavior brings, and the presets it includes.
  * One that holds only actions, tools, and includes is a bundle, pure grouping;
  * one with any other role is an atom, whose parts only work together. Core's
- * own are named (`'select'`, `'draw'`) and live in `namedPresets.ts`; a
- * package ships its own the same way and an app passes the object. Nothing
- * here imports an action, so a canvas reaches only the presets it is handed.
+ * own are exported objects (`selectPreset`, `drawPreset`), a package ships its
+ * own the same way, and an app passes the objects it imports. Nothing here
+ * imports an action, so a canvas reaches only the presets it is handed.
  *
  * A preset is not one of the `packages/core/src/domains/<name>/` source
  * directories that `docs/taxonomy.md` calls a feature; the two share a word
@@ -27,20 +27,6 @@ import type { SnapSource } from 'domains/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CustomLayerEntry } from '../layerSlots';
 import type { BuiltinToolId } from './props';
-
-/** Every core preset's name `<SceneCanvas features>` accepts, each after the
- *  presets it includes. */
-export const SCENE_CANVAS_FEATURES = [
-  'tools:select', 'tools:view', 'tools:shape', 'tools:draw', 'tools:type', 'tools:page',
-  'view', 'select', 'outline', 'pick', 'move', 'resize', 'rotate', 'transform',
-  'escape', 'contextMenu', 'selectAll', 'duplicate', 'delete', 'group', 'nudge', 'style', 'clipboard', 'textEdit', 'edit',
-  'flip', 'reorder', 'align', 'distribute', 'arrange',
-  'anchorKeys', 'pathfinder', 'outlines', 'pathEdit', 'pathCommands', 'paths',
-  'ingest', 'draw', 'whiteboard',
-] as const;
-
-/** A core preset's name, as `<SceneCanvas features>` takes it. */
-export type Feature = (typeof SCENE_CANVAS_FEATURES)[number];
 
 /** What a preset's ambient bindings are built from: the `selectTool` options
  *  that configure them. */
@@ -102,23 +88,6 @@ export interface FeaturePreset {
   readonly includes?: readonly FeaturePreset[];
 }
 
-/** What `<SceneCanvas features>` takes: a core preset's name or any preset. */
-export type FeatureEntry = Feature | FeaturePreset;
-
-/** The names a canvas resolves, each to its preset. */
-export type NamedPresets = Readonly<Record<string, FeaturePreset>>;
-
-/** Where a canvas finds presets beyond the objects it is handed: the names it
- *  resolves, if any, and the actions it registers once a tool binds them. */
-export interface PresetSource {
-  readonly named: NamedPresets | null;
-  /** Actions every canvas registers whatever its presets: undo and redo, since anything that changes
-   *  the scene — a preset's action, a tool, the host — leaves history to step through. */
-  readonly baseline?: readonly Action[];
-  /** Actions registered only when a tool or contribution binds them. */
-  readonly pool: readonly Action[];
-}
-
 /** The presets a canvas runs with, in the order their actions register. */
 export interface EnabledPresets {
   readonly presets: readonly FeaturePreset[];
@@ -133,19 +102,18 @@ export interface EnabledPresets {
 }
 
 /**
- * The presets a canvas runs with: names expanded, `includes` pulled in, each
- * preset once, and every one placed ahead of the presets it `refines` and what those include. Ties
- * keep the order given. Where names resolve, a `viewport` config turns on the
- * `view` preset, since that prop only configures what `view` turns on.
+ * The presets a canvas runs with: `includes` pulled in, each preset once, and
+ * every one placed ahead of the presets it `refines` and what those include.
+ * Ties keep the order given. Nothing is implied: a `viewport` config without
+ * `viewPreset` turns no navigation on.
  *
  * `selectRotates: false` is `selectTool.rotate === false`: every preset keeps
  * its actions, but loses its ambient `rotate` bindings and the rotation handle
  * from its chrome, which hides the handle unless a consumer rule shows it.
  */
 export function resolveFeatures(
-  features: readonly FeatureEntry[] | undefined,
-  named: NamedPresets | null,
-  opts: { viewport?: boolean; selectRotates?: boolean } = {},
+  features: readonly FeaturePreset[] | undefined,
+  opts: { selectRotates?: boolean } = {},
 ): EnabledPresets {
   const listed: FeaturePreset[] = [];
   const byId = new Map<string, FeaturePreset>();
@@ -158,12 +126,11 @@ export function resolveFeatures(
     listed.push(p);
   };
   for (const f of features ?? []) {
-    if (typeof f !== 'string') add(f);
-    else if (!named) throw new Error(`[SceneCanvas] this canvas resolves no preset names; pass the preset for "${f}"`);
-    else if (!Object.hasOwn(named, f)) throw new Error(`[SceneCanvas] no preset is named "${f}"`);
-    else add(named[f]!);
+    if (typeof f === 'string') {
+      throw new Error(`[SceneCanvas] features takes preset objects, not names; pass the preset for "${f as string}" or namedFeatures("${f as string}") from @weasel-js/core/named-features`);
+    }
+    add(f);
   }
-  if (opts.viewport && named?.view) add(named.view);
 
   // Each preset's id and the ids of every preset that includes it, at any depth: what a refinement of it can name.
   const parents = new Map<string, string[]>();

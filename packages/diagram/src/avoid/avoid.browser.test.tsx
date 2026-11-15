@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { createScene, SceneCanvas, useSelection, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, SceneCanvas, useSelection, type RectPose, type Scene, movePreset, pickPreset, viewPreset } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, withDiagramRegistry, registerDiagramShape, useAvoidRouting } from '@weasel-js/diagram';
 import type { DiagramEdge } from '../edgeTrait';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
@@ -50,7 +50,7 @@ function Routing({ scene }: { scene: AvoidScene }): null {
 function Stage({ scene }: { scene: AvoidScene }) {
   const selection = useSelection({ scene, mode: 'single' });
   return createElement(SceneCanvas<unknown, 'main', RectPose>, {
-    scene, selection, features: ['view', 'pick', 'move'], width: W, height: H, view: VIEW, onViewChange: () => {},
+    scene, selection, features: [viewPreset, pickPreset, movePreset], width: W, height: H, view: VIEW, onViewChange: () => {},
     backgroundFill: { color: '#000000' },
   }, createElement(Routing, { scene }));
 }

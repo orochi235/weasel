@@ -1,4 +1,4 @@
-import { editingAnchors, never, type RectPose, useSelection } from '@weasel-js/core';
+import { editingAnchors, never, type RectPose, useSelection, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
 import { poisePreset, createCurvatureCombPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -38,7 +38,7 @@ function PoiseTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     'path-edit.comb': comb ? editingAnchors : never,
   }), [poise, comb]);
   const features = useMemo(() => [
-    'pick', 'move', 'paths', poisePreset, createCurvatureCombPreset(() => ({ scale })),
+    pickPreset, movePreset, pathsPreset, poisePreset, createCurvatureCombPreset(() => ({ scale })),
   ] as const, [scale]);
 
   return (

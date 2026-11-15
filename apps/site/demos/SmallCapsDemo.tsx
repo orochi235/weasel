@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { SceneCanvas, asNodeId, solid, useScene } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, solid, useScene, textEditPreset } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
 import { glyphGeneration, subscribeGlyphReady } from '@weasel-js/font';
 import { DEFAULT_TEXT_STYLE, smallCapsScaleFor } from '@weasel-js/text';
@@ -69,7 +69,7 @@ export function SmallCapsDemo() {
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             selectable={false}
-            features={['textEdit']}
+            features={[textEditPreset]}
           />
         </DemoStage>
       </div>

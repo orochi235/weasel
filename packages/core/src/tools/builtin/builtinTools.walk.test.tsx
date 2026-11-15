@@ -20,6 +20,7 @@ import { asNodeId, type Scene } from 'core/scene/types';
 import type { ToolsApi } from '../overlayBinding';
 import { SceneCanvas } from '../../canvas/SceneCanvas';
 import { BUILTIN_TOOL_GROUPS, BUILTIN_TOOL_IDS, type BuiltinToolId } from '../../canvas/SceneCanvas/builtinToolSets';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = Record<string, unknown>;
 type P = { x: number; y: number; width: number; height: number; rotation?: number };
@@ -55,7 +56,7 @@ function mount() {
   }
   const { container } = render(
     <SceneCanvas
-      features={['draw']} scene={scene} width={400} height={400}
+      features={[drawPreset]} scene={scene} width={400} height={400}
       defaultTools={BUILTIN_TOOL_IDS} defaultActiveTool="select"
       onToolsCreated={(t) => { tools.current = t; }}
       onViewChange={(v) => { view = v; }}

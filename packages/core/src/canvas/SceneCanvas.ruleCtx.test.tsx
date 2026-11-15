@@ -10,6 +10,7 @@ import type { RuleCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { SceneCanvas } from './SceneCanvas';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -38,7 +39,7 @@ function mount(props: Record<string, unknown> = {}) {
   const scene = createScene<{ kind: 'rect' }, 'main', P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ id: ID, kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
-  return render(<SceneCanvas features={['draw']} scene={scene} width={64} height={64} {...props} />);
+  return render(<SceneCanvas features={[drawPreset]} scene={scene} width={64} height={64} {...props} />);
 }
 
 describe("<SceneCanvas>'s own rule context", () => {

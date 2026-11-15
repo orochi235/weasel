@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, solid, useScene, useSceneTextEdit, textEditPreset } from '@weasel-js/core';
 import type { Fill } from '@weasel-js/core';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { CharacterOptions, isCharacterChrome } from '@weasel-js/ui/components/inspector/CharacterOptions';
@@ -116,7 +116,7 @@ export function TextNodesDemo() {
             backgroundFill={{ color: '#ffffff' }}
             scene={scene}
             selectable={false}
-            features={['textEdit']}
+            features={[textEditPreset]}
           />
         </DemoStage>
       </div>

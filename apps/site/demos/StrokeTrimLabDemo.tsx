@@ -9,7 +9,7 @@ import {
   type Path,
   type RectPose,
   type Stroke,
-  type StrokeAlign,
+  type StrokeAlign, viewPreset,
 } from '@weasel-js/core';
 import { asPolygonPath } from '@weasel-js/geom';
 import {
@@ -157,7 +157,7 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <div className={s.trial}>
       <div className={s.canvas}>
-        <TrialSceneCanvas scene={scene} trial={ctx.trial} defaultTools={['hand']} viewport={WHEEL_ZOOM} />
+        <TrialSceneCanvas scene={scene} trial={ctx.trial} features={[viewPreset]} defaultTools={['hand']} viewport={WHEEL_ZOOM} />
       </div>
       <aside className={s.exports} aria-label="Exports">
         <h3 className={s.heading}>Exported SVG</h3>

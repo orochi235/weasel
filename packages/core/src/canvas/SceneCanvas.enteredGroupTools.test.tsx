@@ -17,6 +17,7 @@ import { asNodeId, type NodeId } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import { createEnteredGroup } from './deps/enteredGroup';
 import { SceneCanvas } from './SceneCanvas';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -52,7 +53,7 @@ function setup(tool: 'select' | 'rect' = 'select') {
   function Canvas() {
     sel = useSelection({ mode: 'multi', scene });
     return (
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={100} selection={sel}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={100} selection={sel}
         enteredGroup={entered} defaultTools={['select', 'rect']} defaultActiveTool={tool}>
         <Grab />
       </SceneCanvas>

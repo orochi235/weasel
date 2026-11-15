@@ -6,7 +6,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene, drawPreset } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { appCommandsContribution, type AppCommands } from './index';
 import { withIcons } from '../testIcons';
@@ -47,7 +47,7 @@ function setup(over: Partial<AppCommands> = {}) {
         <ActionBar group="view" />
         <ActionBar group="compound" />
         <ActionBar group="app" />
-        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+        <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
           ambient={[appCommandsContribution(() => commands)]} />
       </ActionsProvider>
     </DepRegistryProvider>,

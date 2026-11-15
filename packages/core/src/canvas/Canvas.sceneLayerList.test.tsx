@@ -8,6 +8,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type Scene } from 'core/scene/types';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { SceneCanvas } from './SceneCanvas';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 const painted = vi.hoisted(() => ({ commands: [] as readonly unknown[] }));
 
@@ -70,7 +71,7 @@ const nextFrame = () => act(async () => {
 function mount(): Scene<D, L, P> {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'base' }] });
   scene.add({ kind: 'mark', id: asNodeId('a'), layer: 'base', data: { color: BASE }, pose: { x: 0, y: 0, width: 10, height: 10 } });
-  render(<SceneCanvas features={['draw']} scene={scene} width={300} height={200} layers={LAYERS} />);
+  render(<SceneCanvas features={[drawPreset]} scene={scene} width={300} height={200} layers={LAYERS} />);
   return scene;
 }
 

@@ -21,6 +21,7 @@ import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
+import { drawPreset, viewPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -92,6 +93,7 @@ describe('useHandTool held-key engagement in a bare <SceneCanvas>', () => {
           scene={scene}
           width={100} height={100}
           layers={{}}
+          features={[viewPreset]}
           viewport={{ pinchZoom: true }}
           onToolsCreated={(t) => { tools = t; }}
         />
@@ -117,7 +119,7 @@ describe('the hand under a held modifier', () => {
       const start: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
       let last = start;
       const { container, unmount } = render(
-        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={200}
+        <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={200} height={200}
           view={start} onViewChange={(v) => { last = v; }}
           defaultTools={['select', 'hand']} defaultActiveTool="hand" />,
       );
