@@ -8,6 +8,7 @@ import {
   type DitherMethod, type ProtectTexture,
 } from '@weasel-js/dither';
 import num from '@weasel-js/theme/numeric.module.css';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
@@ -198,19 +199,15 @@ export function DitherDemo() {
           Method
           <SegmentedBar items={METHODS} value={method} onChange={(v) => { if (v) setMethod(v); }} aria-label="Method" size="sm" />
         </div>
-        <div className="ckd-control">
-          Keep marks crisp
-          <SegmentedBar items={CRISP} value={crisp} onChange={(v) => { if (v) setCrisp(v); }} aria-label="Keep marks crisp" size="sm" />
-        </div>
-        <div className="ckd-control">
-          Marks
-          <SegmentedBar items={SNAP} value={snap} onChange={(v) => { if (v) setSnap(v); }} aria-label="Marks" size="sm" />
-        </div>
-        <label className="ckd-control">
-          Threshold
+        <Field orientation="row" className="ckd-control" label="Keep marks crisp">
+          <SegmentedBar items={CRISP} value={crisp} onChange={(v) => { if (v) setCrisp(v); }} size="sm" />
+        </Field>
+        <Field orientation="row" className="ckd-control" label="Marks">
+          <SegmentedBar items={SNAP} value={snap} onChange={(v) => { if (v) setSnap(v); }} size="sm" />
+        </Field>
+        <Field orientation="row" className="ckd-control" label="Threshold" output={<span className={s.readout}>{threshold}</span>}>
           <InlineRange min={0} max={255} step={1} value={threshold} onChange={(e) => setThreshold(Number(e.target.value))} />
-          <output className={`${num.numeric} ${s.readout}`}>{threshold}</output>
-        </label>
+        </Field>
       </div>
       <p className="ckd-hint">{notes}</p>
       <figure className={s.export}>

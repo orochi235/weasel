@@ -8,6 +8,7 @@ import {
   resolveCursorTier,
   type CursorVariant,
 } from '@weasel-js/cursor';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './CursorDemo.module.css';
 import { DemoStage } from './DemoStage';
@@ -73,16 +74,14 @@ export function CursorDemo() {
       </div>
 
       <div className={s.controls}>
-        <label className={s.control}>
-          Size
+        <Field orientation="row" className={s.control} label="Size" output={<span className={s.readout}>{String(size).padStart(3, ' ')} px</span>}>
           <InlineRange
             min={16} max={256} step={1} value={size}
             className={s.slider}
             data-testid="size"
             onChange={(e) => setSize(Number(e.target.value))}
           />
-          <span className={s.readout}>{String(size).padStart(3, ' ')} px</span>
-        </label>
+        </Field>
         <span className={tier === 'css' ? s.tierCss : s.tierPainted}>
           {tier === 'css' ? 'CSS url() cursor' : `painted — past the ${CURSOR_MAX_CSS_PX}px cap`}
         </span>

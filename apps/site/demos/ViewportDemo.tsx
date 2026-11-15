@@ -3,6 +3,7 @@ import { SceneCanvas, asNodeId, useScene, solid, viewPreset } from '@weasel-js/c
 import type { RectPose, TextNodeData } from '@weasel-js/core';
 import { useColorHex } from '@weasel-js/theme/react';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { Field } from '@weasel-js/ui/components/Field';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
@@ -58,15 +59,15 @@ export function ViewportDemo() {
     <div className="ckd-demo">
       <div className="ckd-toolbar">
         <Checkbox isSelected={inertiaOn} onChange={setInertiaOn}>inertia</Checkbox>
-        <span className="ckd-toolbar-note">boundary:</span>
-        <SegmentedBar
-          items={BOUNDARY_ITEMS}
-          disabled={!inertiaOn}
-          value={boundary}
-          onChange={(b) => b && setBoundary(b)}
-          aria-label="Boundary"
-          size="sm"
-        />
+        <Field orientation="row" label="boundary:">
+          <SegmentedBar
+            items={BOUNDARY_ITEMS}
+            disabled={!inertiaOn}
+            value={boundary}
+            onChange={(b) => b && setBoundary(b)}
+            size="sm"
+          />
+        </Field>
         <span className="ckd-hint">
           {boundary !== 'none' && inertiaOn ? `(bounds: x ${BOUNDS.minX}–${BOUNDS.maxX}, y ${BOUNDS.minY}–${BOUNDS.maxY})` : ''}
         </span>

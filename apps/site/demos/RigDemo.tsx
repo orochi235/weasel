@@ -32,6 +32,7 @@ import type {
   Skeleton,
 } from '@weasel-js/animator';
 import num from '@weasel-js/theme/numeric.module.css';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
@@ -250,22 +251,18 @@ export function RigDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <label className="ckd-field">
-          blend A → B
+        <Field orientation="row" className="ckd-field" label="blend A → B" output={<span className="ckd-readout">{blend.toFixed(2)}</span>}>
           <InlineRange
             min={0} max={1} step={0.01}
             value={blend} onChange={(e) => setBlend(Number(e.target.value))}
           />
-          <span className={`ckd-readout ${num.numeric}`}>{blend.toFixed(2)}</span>
-        </label>
-        <label className="ckd-field">
-          reach
+        </Field>
+        <Field orientation="row" className="ckd-field" label="reach" output={<span className="ckd-readout">{reach.toFixed(2)}</span>}>
           <InlineRange
             min={0} max={1} step={0.01}
             value={reach} onChange={(e) => setReach(Number(e.target.value))}
           />
-          <span className={`ckd-readout ${num.numeric}`}>{reach.toFixed(2)}</span>
-        </label>
+        </Field>
         <Button onClick={() => setPlaying((p) => !p)}>
           {playing ? 'stop track' : 'play track'}
         </Button>

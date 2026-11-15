@@ -5,6 +5,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
@@ -149,15 +150,13 @@ function Demo() {
           aria-label="Loupe mode"
           size="sm"
         />
-        <label className="ckd-field">
-          scale
+        <Field orientation="row" className="ckd-field" label="scale" output={<span className={s.factor}>{factor}×</span>}>
           <InlineRange min={2} max={16} step={1} value={factor}
             onChange={(e) => {
               const f = Number(e.target.value);
               setFactor(f); loupeRef.current?.setFactor(f);
             }} />
-          <span className={s.factor}>{factor}×</span>
-        </label>
+        </Field>
         <Checkbox isSelected={editing} onChange={setEditing}>edit through the lens</Checkbox>
         <span className={`ckd-hint ${s.color}`}>under the aim point: {color ?? '—'}</span>
         <span className="ckd-hint">clicked: {picked ?? '—'}</span>

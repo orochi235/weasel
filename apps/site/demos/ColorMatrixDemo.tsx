@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DrawCanvas } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
+import { Field } from '@weasel-js/ui/components/Field';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 import s from './ColorMatrixDemo.module.css';
@@ -73,16 +74,14 @@ export function ColorMatrixDemo() {
       </DemoStage>
       <div className={s.rows}>
         {GROUPS.map((id) => (
-          <div key={id} className={s.row}>
-            <strong className={s.label}>{id}</strong>
+          <Field key={id} label={<strong className={s.label}>{id}</strong>}>
             <SegmentedBar
               items={PRESET_NAMES.map((p) => ({ value: p, label: p }))}
               value={presets[id]}
               onChange={(p) => p && setPresets((was) => ({ ...was, [id]: p }))}
-              aria-label={`${id} preset`}
               size="sm"
             />
-          </div>
+          </Field>
         ))}
       </div>
       <p className="ckd-hint">

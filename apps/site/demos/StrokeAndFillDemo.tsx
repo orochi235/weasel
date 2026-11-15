@@ -32,10 +32,10 @@ import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
 import type { PaintSlot } from '@weasel-js/paint';
 import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { PaintField } from '@weasel-js/ui/components/PaintField';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
-import num from '@weasel-js/theme/numeric.module.css';
 import { DemoStage } from './DemoStage';
 
 const W = 600, H = 420;
@@ -284,33 +284,27 @@ function PaintPanel({
         )}
 
         {data.stroke && (
-          <div className="ckd-field">
-            <span>Width</span>
+          <Field orientation="row" className="ckd-field" label="Width" output={width.toFixed(0)}>
             <InlineRange
               value={width}
               min={1}
               max={20}
               step={1}
-              aria-label="Stroke width"
               onChange={(e) => run('setStrokeWidth', { width: Number(e.target.value) })}
             />
-            <output className={num.numeric}>{width.toFixed(0)}</output>
-          </div>
+          </Field>
         )}
 
         {taper !== undefined && (
-          <div className="ckd-field">
-            <span>Taper</span>
+          <Field orientation="row" className="ckd-field" label="Taper" output={taper.toFixed(0)}>
             <InlineRange
               value={taper}
               min={1}
               max={40}
               step={1}
-              aria-label="Center width"
               onChange={(e) => run('setStrokeWidth', { vertexWidths: taperWidths(Number(e.target.value)) })}
             />
-            <output className={num.numeric}>{taper.toFixed(0)}</output>
-          </div>
+          </Field>
         )}
       </div>
       <p className="ckd-panel-note">

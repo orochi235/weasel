@@ -13,10 +13,10 @@ import { useAnimator } from '@weasel-js/animator/react';
 import type { Dims, PoseTransitionSeat } from '@weasel-js/core';
 import type { Animator } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './AnimationDemo.module.css';
-import num from '@weasel-js/theme/numeric.module.css';
 import { AnimatorWatch } from './animation/AnimatorWatch';
 import { FlickSnapPanel } from './animation/FlickSnapPanel';
 import { DemoStage } from './DemoStage';
@@ -169,8 +169,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
       </div>
       <div className="ckd-toolbar">
         <Button onClick={onTogglePause}>{paused ? 'Resume' : 'Pause'} animations</Button>
-        <label className="ckd-field">
-          time-scale
+        <Field orientation="row" className="ckd-field" label="time-scale" output={<span className={styles.scale}>{timeScale.toFixed(2)}×</span>}>
           <InlineRange
             min={0}
             max={2}
@@ -178,8 +177,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
             value={timeScale}
             onChange={(e) => onTimeScale(Number(e.target.value))}
           />
-          <output className={`${num.numeric} ${styles.scale}`}>{timeScale.toFixed(2)}×</output>
-        </label>
+        </Field>
         <span className="ckd-toolbar-note">Select one card to see the breathing pulse.</span>
       </div>
       <DemoStage width={W} height={H}>

@@ -9,6 +9,7 @@ import {
 } from '@weasel-js/core';
 import type { Fill, RectPose, Stroke } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
+import { Field } from '@weasel-js/ui/components/Field';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
@@ -109,15 +110,15 @@ function D3SortableDemoInner() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <span className="ckd-toolbar-note">order:</span>
-        <SegmentedBar
-          items={SORT_KEYS.map((k) => ({ value: k, label: k, disabled: animating && sortKey === k }))}
-          value={sortKey}
-          onChange={(k) => setSortKey(k ?? 'index')}
-          allowDeselect
-          aria-label="Order"
-          size="sm"
-        />
+        <Field orientation="row" label="order:">
+          <SegmentedBar
+            items={SORT_KEYS.map((k) => ({ value: k, label: k, disabled: animating && sortKey === k }))}
+            value={sortKey}
+            onChange={(k) => setSortKey(k ?? 'index')}
+            allowDeselect
+            size="sm"
+          />
+        </Field>
         <span className="ckd-hint">
           d3Bind → join → transition().duration(600).ease(easeInOutCubic).delay(i × 30)
           {animating ? ' · animating…' : ''}

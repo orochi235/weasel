@@ -42,7 +42,7 @@ describe('StrokeAndFillDemo', () => {
     expect(container.querySelector('canvas')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Fill' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Stroke' })).toBeTruthy();
-    expect(screen.getByLabelText('Stroke width')).toBeTruthy();
+    expect(screen.getByLabelText('Width')).toBeTruthy();
   });
 
   it('swaps the panel for the vertex swatches when the heptagon is selected', () => {
@@ -90,7 +90,7 @@ describe('StrokeAndFillDemo', () => {
   it('sets the stroke width from the panel slider', () => {
     renderWithIcons(<StrokeAndFillDemo />);
     act(() => {
-      fireEvent.change(screen.getByLabelText('Stroke width'), { target: { value: '7' } });
+      fireEvent.change(screen.getByLabelText('Width'), { target: { value: '7' } });
     });
     expect(data('swatch').stroke!.width).toBe(7);
   });
@@ -101,7 +101,7 @@ describe('StrokeAndFillDemo', () => {
 
     click(canvas, 300, 380);
     act(() => {
-      fireEvent.change(screen.getByLabelText('Center width'), { target: { value: '32' } });
+      fireEvent.change(screen.getByLabelText('Taper'), { target: { value: '32' } });
     });
 
     expect(data('ribbon').stroke!.vertexWidths).toEqual([4, 32, 32, 32, 4]);
