@@ -2,8 +2,9 @@
  * Regions of a scene as one PDF, a page each, and the `pdf` export format.
  */
 import {
-  captureExport, commandRasterizer, createRasterSession, holdImageBitmaps, planPixelRender, regionRenderArgs, registerExportFormat,
-  viewToMat3, warmRender, type ExportFormat, type ExportOptions, type ExportRegion, type ExportRegions, type ExportScene,
+  captureExport, commandRasterizer, createRasterSession, exportReporter, holdImageBitmaps, planPixelRender, regionRenderArgs,
+  registerExportFormat, viewToMat3, warmRender, type ExportDiagnostic, type ExportFormat, type ExportOptions, type ExportRegion,
+  type ExportRegions, type ExportScene, type RenderDiagnosticSink,
 } from '@weasel-js/core';
 import { registryFontSource } from './fonts/fontSource';
 import { writePdf, type PdfPage, type PdfSkip } from './writePdf';
@@ -12,7 +13,7 @@ import { writePdf, type PdfPage, type PdfSkip } from './writePdf';
 const PT_PER_UNIT = 0.75;
 
 /** Options for {@link exportRegionsPdf}. */
-export interface ExportRegionsPdfOptions {
+export interface ExportRegionsPdfOptions extends Pick<ExportOptions, 'onDiagnostic' | 'strict'> {
   /** The color painted under each page. Default none: the page is left unpainted. */
   background?: string | null;
   /** The document's title. */
@@ -28,8 +29,10 @@ export interface ExportRegionsPdfOptions {
  * points in size, in the order given, each labeled with its region's `name`.
  * Shapes and strokes are vector; text is real, selectable text in its
  * embedded face. What a PDF cannot draw is painted through the renderer and
- * placed as an image, and anything it could not carry at all comes back in
- * `skipped`. Annotation layers are left out.
+ * placed as an image. What it could not carry at all, and what failed to
+ * load, goes to `onDiagnostic`, and a `strict` export rejects with
+ * `ExportIncompleteError` rather than write the file. Annotation layers are
+ * left out.
  *
  * Every page is of one revision of the document, bounds read from it
  * included: see `captureExport`.
@@ -42,14 +45,24 @@ export async function exportRegionsPdf(
   scene: ExportScene,
   regions: ExportRegions,
   opts: ExportRegionsPdfOptions = {},
-): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
+): Promise<Blob> {
+  const reporter = exportReporter(opts);
   // A page's commands hold bitmaps while the next page's images load.
   const release = holdImageBitmaps();
   try {
-    return await writeRegions(scene, regions, opts.background ?? null, opts);
+    const blob = await writeRegions(scene, regions, opts.background ?? null, opts, reporter.report);
+    reporter.settle();
+    return blob;
   } finally {
     release();
   }
+}
+
+/** What the writer left out, as the diagnostic an export reports. */
+function skipDiagnostic(skip: PdfSkip): ExportDiagnostic {
+  return skip.kind === 'glyph'
+    ? { kind: 'font', subject: 'pdf', message: skip.detail }
+    : { kind: 'unsupported', subject: 'pdf', message: skip.detail };
 }
 
 /** Every region of `doc` as a page: its size in points, and the commands it is drawn with. */
@@ -72,14 +85,14 @@ function pagesOf(doc: ExportScene, regions: readonly ExportRegion[], background:
 }
 
 async function writeRegions(
-  scene: ExportScene, regions: ExportRegions, background: string | null, opts: ExportRegionsPdfOptions,
-): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
+  scene: ExportScene, regions: ExportRegions, background: string | null, opts: ExportRegionsPdfOptions, report: RenderDiagnosticSink,
+): Promise<Blob> {
   const out = await captureExport(scene, regions, {
-    warm: async (doc, rs) => {
-      await Promise.all(rs.map((r) => warmRender({ render: regionRenderArgs(doc, r, { scale: PT_PER_UNIT }) })));
+    warm: async (doc, rs, hear) => {
+      await Promise.all(rs.map((r) => warmRender({ render: regionRenderArgs(doc, r, { scale: PT_PER_UNIT }), report: hear })));
     },
     read: (doc, rs) => pagesOf(doc, rs, background),
-  });
+  }, report);
 
   const session = createRasterSession();
   try {
@@ -90,21 +103,21 @@ async function writeRegions(
       ...(opts.compress !== undefined ? { compress: opts.compress } : {}),
       rasterize: commandRasterizer(session),
     });
+    for (const skip of skipped) report(skipDiagnostic(skip));
     const copy = new ArrayBuffer(bytes.byteLength);
     new Uint8Array(copy).set(bytes);
-    return { blob: new Blob([copy], { type: 'application/pdf' }), skipped };
+    return new Blob([copy], { type: 'application/pdf' });
   } finally {
     session.dispose();
   }
 }
 
 /** What the `pdf` format reads beyond the options every format takes. */
-export type PdfExportOptions = ExportOptions & Omit<ExportRegionsPdfOptions, 'background'>;
+export type PdfExportOptions = ExportOptions & Omit<ExportRegionsPdfOptions, 'background' | 'onDiagnostic' | 'strict'>;
 
 /**
  * The `pdf` format: every region as a page of one PDF, through
- * {@link exportRegionsPdf}. What the PDF could not carry goes to `onWarn`, one
- * call per thing left out.
+ * {@link exportRegionsPdf}.
  */
 export const PDF_EXPORT: ExportFormat<PdfExportOptions> = {
   id: 'pdf',
@@ -112,15 +125,9 @@ export const PDF_EXPORT: ExportFormat<PdfExportOptions> = {
   mimeType: 'application/pdf',
   extension: 'pdf',
   multiRegion: true,
-  async export(scene, regions, { background, title, lang, compress, onWarn }) {
-    const { blob, skipped } = await exportRegionsPdf(scene, regions, {
-      ...(background !== undefined ? { background } : {}),
-      ...(title !== undefined ? { title } : {}),
-      ...(lang !== undefined ? { lang } : {}),
-      ...(compress !== undefined ? { compress } : {}),
-    });
-    for (const skip of skipped) onWarn?.(skip.detail);
-    return blob;
+  export(scene, regions, { background, title, lang, compress, onDiagnostic, strict }) {
+    const picked = { background, title, lang, compress, onDiagnostic, strict };
+    return exportRegionsPdf(scene, regions, Object.fromEntries(Object.entries(picked).filter(([, v]) => v !== undefined)));
   },
 };
 

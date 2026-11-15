@@ -2,8 +2,8 @@
  * One region of a scene as an SVG document, and the `svg` export format.
  */
 import {
-  captureExport, layoutTextPose, regionsOfOne, registerExportFormat,
-  type ExportFormat, type ExportOptions, type ExportRegion, type ExportRegionSource, type ExportScene,
+  captureExport, exportReporter, layoutTextPose, regionsOfOne, registerExportFormat,
+  type ExportFormat, type ExportOptions, type ExportRegion, type ExportRegionSource, type ExportScene, type RenderDiagnosticSink,
 } from '@weasel-js/core';
 import { regionSvgNodes, type RegionSvgNodesOptions } from './regionSvgNodes';
 import { serializeSvg } from './serialize';
@@ -11,7 +11,8 @@ import type { SerializeOptions, SvgNode } from './types';
 import { warmSvg } from './warm';
 
 /** Options for {@link exportRegionSvg}. */
-export interface ExportRegionSvgOptions extends Pick<SerializeOptions, 'title' | 'onWarn' | 'pretty' | 'text'>, RegionSvgNodesOptions {
+export interface ExportRegionSvgOptions
+  extends Pick<SerializeOptions, 'title' | 'pretty' | 'text'>, Pick<RegionSvgNodesOptions, 'painters'>, Pick<ExportOptions, 'onDiagnostic' | 'strict'> {
   /** The color painted under the region. Default none: the region is transparent. */
   background?: string | null;
 }
@@ -25,27 +26,30 @@ export interface ExportRegionSvgOptions extends Pick<SerializeOptions, 'title' |
  *
  * It waits for the paint kinds and faces the document needs, so its text is
  * written in the lines the canvas lays it out into, and writes one revision
- * of the document: see `captureExport`. A load that fails goes to `onWarn`,
- * and the export goes ahead without it. `text` sets how text is written: live
- * `<text>` (the default), glyph outlines, or live text with its faces
- * embedded.
+ * of the document: see `captureExport`. What failed to load, and what SVG
+ * cannot hold, goes to `onDiagnostic`, and the file is written without it;
+ * a `strict` export rejects with `ExportIncompleteError` instead. `text` sets
+ * how text is written: live `<text>` (the default), glyph outlines, or live
+ * text with its faces embedded.
  */
-export function exportRegionSvg(
+export async function exportRegionSvg(
   scene: ExportScene,
   region: ExportRegionSource,
   opts: ExportRegionSvgOptions = {},
 ): Promise<string> {
-  const { background, painters, title: given, ...rest } = opts;
-  const nodesOf = (doc: ExportScene, r: ExportRegion, onWarn = rest.onWarn): SvgNode[] => {
+  const { background, painters, title: given, onDiagnostic, strict, ...rest } = opts;
+  const reporter = exportReporter({ ...(onDiagnostic ? { onDiagnostic } : {}), ...(strict !== undefined ? { strict } : {}) });
+  const said = (report: RenderDiagnosticSink) => (message: string) => report({ kind: 'unsupported', subject: 'svg', message });
+  const nodesOf = (doc: ExportScene, r: ExportRegion, report: RenderDiagnosticSink): SvgNode[] => {
     const { x, y, width, height } = r;
     const nodes: SvgNode[] = [];
     if (background != null) {
       nodes.push({ kind: 'path', path: { kind: 'rect', x, y, width, height }, fill: { kind: 'solid', color: background } });
     }
-    nodes.push(...regionSvgNodes(doc, r, { ...(painters ? { painters } : {}), ...(onWarn ? { onWarn } : {}) }));
+    nodes.push(...regionSvgNodes(doc, r, { ...(painters ? { painters } : {}), onWarn: said(report) }));
     return nodes;
   };
-  const serializeOf = (r: ExportRegion): SerializeOptions => {
+  const serializeOf = (r: ExportRegion, report: RenderDiagnosticSink): SerializeOptions => {
     const title = given ?? r.name;
     return {
       ...rest,
@@ -54,24 +58,20 @@ export function exportRegionSvg(
       width: r.width,
       height: r.height,
       textLayout: layoutTextPose,
+      onWarn: said(report),
     };
   };
-  return captureExport(scene, regionsOfOne(region), {
-    async warm(doc, [r]) {
-      const serialize = serializeOf(r!);
-      try {
-        // What these nodes cannot hold is said when `read` writes them.
-        await warmSvg(nodesOf(doc, r!, () => {}), serialize);
-      } catch (err) {
-        serialize.onWarn?.(`a paint kind or font this export uses failed to load: ${String(err)}`);
-      }
-    },
-    read: (doc, [r]) => serializeSvg(nodesOf(doc, r!), serializeOf(r!)),
-  });
+  const svg = await captureExport(scene, regionsOfOne(region), {
+    // What these nodes cannot hold is said when `read` writes them.
+    warm: (doc, [r], report) => warmSvg(nodesOf(doc, r!, () => {}), serializeOf(r!, report), report),
+    read: (doc, [r], report) => serializeSvg(nodesOf(doc, r!, report), serializeOf(r!, report)),
+  }, reporter.report);
+  reporter.settle();
+  return svg;
 }
 
 /** What the `svg` format reads beyond the options every format takes. */
-export type SvgExportOptions = ExportOptions & Omit<ExportRegionSvgOptions, 'background' | 'onWarn'>;
+export type SvgExportOptions = ExportOptions & Omit<ExportRegionSvgOptions, 'background' | 'onDiagnostic' | 'strict'>;
 
 /** The `svg` format: one region as an SVG document, through {@link exportRegionSvg}. */
 export const SVG_EXPORT: ExportFormat<SvgExportOptions> = {
@@ -80,8 +80,8 @@ export const SVG_EXPORT: ExportFormat<SvgExportOptions> = {
   mimeType: 'image/svg+xml',
   extension: 'svg',
   multiRegion: false,
-  async export(scene, regions, { background, onWarn, title, pretty, text, painters }) {
-    const picked = { background, onWarn, title, pretty, text, painters };
+  async export(scene, regions, { background, onDiagnostic, strict, title, pretty, text, painters }) {
+    const picked = { background, onDiagnostic, strict, title, pretty, text, painters };
     const given = Object.fromEntries(Object.entries(picked).filter(([, v]) => v !== undefined)) as ExportRegionSvgOptions;
     const svg = await exportRegionSvg(scene, typeof regions === 'function' ? (doc) => regions(doc)[0]! : regions[0]!, given);
     return new Blob([svg], { type: 'image/svg+xml' });

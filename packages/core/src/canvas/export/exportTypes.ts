@@ -2,6 +2,7 @@
 import type { Rect } from '@weasel-js/geom';
 import type { RectPose } from 'core/geometry/rectPose';
 import type { Scene } from 'core/scene/types';
+import type { RenderDiagnostic } from '../renderDiagnostics';
 
 /**
  * A rectangle of the document to export: a page (`exportPages` makes one of
@@ -33,8 +34,12 @@ export type ExportScene = Scene<unknown, string, RectPose>;
 export interface ExportOptions {
   /** The color painted under each region. Default none: core holds no page color. */
   background?: string | null;
-  /** Hears what the export left out or could not load; the export goes ahead without it. */
-  onWarn?: (message: string) => void;
+  /** Hears each thing the export could not draw or load, once: a picture or face
+   *  that failed, a paint kind or shader nothing can draw, what the format cannot hold. */
+  onDiagnostic?: (diagnostic: RenderDiagnostic) => void;
+  /** Write nothing when anything is diagnosed, and reject with `ExportIncompleteError`.
+   *  Default `false`: best-effort, the file is written without it. */
+  strict?: boolean;
 }
 
 /**

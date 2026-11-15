@@ -44,7 +44,7 @@ export function useExportCommands(scene: ChartScene, pages: ChartPages): void {
   usePdfCommand(scene, pages);
   useCommand(EXPORT_ACTIONS.svg, 'Page as SVG…', () => exportPage(pages, async (page, name) => {
     const said: string[] = [];
-    const svg = await exportPageSvg(scene, page, { title: name, onWarn: (w) => said.push(w) });
+    const svg = await exportPageSvg(scene, page, { title: name, onDiagnostic: (d) => said.push(d.message) });
     return { blob: new Blob([svg], { type: 'image/svg+xml' }), name: `${name}.svg`, warnings: { toast: 'chart-export-svg', said } };
   }));
   usePngCommand(scene, pages, 1);
@@ -62,10 +62,11 @@ function usePngCommand(scene: ChartScene, pages: ChartPages, scale: 1 | 2 | 4): 
 function usePdfCommand(scene: ChartScene, pages: ChartPages): void {
   useCommand(EXPORT_ACTIONS.pdf, 'Pages as PDF…', () => {
     if (pages.placed.length === 0) return;
-    exportPagesPdf(scene, pages.placed)
-      .then(({ blob, skipped }) => {
+    const said: string[] = [];
+    exportPagesPdf(scene, pages.placed, { onDiagnostic: (d) => said.push(d.message) })
+      .then((blob) => {
         downloadBlob(blob, 'chart.pdf');
-        reportFileWarnings('Exported', skipped.map((s) => s.detail), 'chart-export-pdf');
+        reportFileWarnings('Exported', said, 'chart-export-pdf');
       })
       .catch(reportFailure('Could not export the pages'));
   });

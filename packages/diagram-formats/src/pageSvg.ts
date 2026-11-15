@@ -6,7 +6,6 @@ import {
   exportRegionPng, type ExportRegion, type ExportRegionPngOptions, type ExportScene, type RectPose,
 } from '@weasel-js/core';
 import { diagramShape, diagramThemeOf, markShape } from '@weasel-js/diagram';
-import type { PdfSkip } from '@weasel-js/pdf';
 import { exportRegionsPdf, type ExportRegionsPdfOptions } from '@weasel-js/pdf/export';
 import { exportRegionSvg, regionSvgNodes, type ExportRegionSvgOptions, type SvgNode } from '@weasel-js/svg';
 
@@ -82,6 +81,6 @@ export function exportPagePng(scene: PageExportScene, page: PageRect, opts: Expo
  */
 export function exportPagesPdf(
   scene: PageExportScene, pages: readonly PageRect[], opts: ExportPagesPdfOptions = {},
-): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
+): Promise<Blob> {
   return exportRegionsPdf(scene, pages.map(rectOf), { ...opts, background: pageBackground(scene, opts.background) });
 }

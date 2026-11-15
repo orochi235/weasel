@@ -84,6 +84,8 @@ export type { ExportFormat, ExportOptions, ExportRegion, ExportRegionSource, Exp
 export {
   captureExport, EXPORT_CAPTURE_ATTEMPTS, exportRegionsOf, ExportRevisionError, regionsOfOne, type ExportCaptureSteps,
 } from '../canvas/export/captureExport';
+export { exportReporter, ExportIncompleteError, type ExportDiagnostic, type ExportReporter } from '../canvas/export/exportDiagnostics';
+export type { RenderDiagnostic, RenderDiagnosticKind, RenderDiagnosticSink } from '../canvas/renderDiagnostics';
 
 // --- Pointer ambient context ----------------------------------------------
 export {

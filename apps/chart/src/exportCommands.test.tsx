@@ -9,8 +9,9 @@ import { withIcons } from './testIcons';
 const saved = vi.hoisted(() => [] as { blob: Blob; name: string }[]);
 const png = vi.hoisted(() => vi.fn(async (_scene: unknown, _page: unknown, opts: { scale: number }) =>
   new Blob([`png@${opts.scale}`], { type: 'image/png' })));
-const pdf = vi.hoisted(() => vi.fn(async (_scene: unknown, _pages: readonly unknown[]) =>
-  ({ blob: new Blob(['%PDF'], { type: 'application/pdf' }), skipped: [] as { kind: string; detail: string }[] })));
+type Heard = { onDiagnostic?: (d: { kind: string; subject: string; message: string }) => void };
+const pdf = vi.hoisted(() => vi.fn(async (_scene: unknown, _pages: readonly unknown[], _opts?: Heard) =>
+  new Blob(['%PDF'], { type: 'application/pdf' })));
 const warned = vi.hoisted(() => vi.fn());
 const noPages = vi.hoisted(() => ({ on: false }));
 const between = vi.hoisted(() => ({ on: false }));
@@ -27,7 +28,7 @@ vi.mock('@weasel-js/diagram-formats', async (actual) => {
   return {
     ...real,
     exportPageSvg: (...args: Parameters<typeof real.exportPageSvg>) => {
-      if (svgWarns.on) args[2]?.onWarn?.('a font this export uses failed to load');
+      if (svgWarns.on) args[2]?.onDiagnostic?.({ kind: 'font', subject: 'serif', message: 'a font this export uses failed to load' });
       return real.exportPageSvg(...args);
     },
     exportPagePng: png,
@@ -105,7 +106,10 @@ describe('File › Export', () => {
   });
 
   it('reports what the PDF could not carry', async () => {
-    pdf.mockResolvedValueOnce({ blob: new Blob(['%PDF']), skipped: [{ kind: 'glyph', detail: 'glyph U+1F600' }] });
+    pdf.mockImplementationOnce(async (_scene, _pages, opts) => {
+      opts?.onDiagnostic?.({ kind: 'font', subject: 'pdf', message: 'glyph U+1F600' });
+      return new Blob(['%PDF']);
+    });
     exportAs('Pages as PDF');
     await vi.waitFor(() => expect(warned).toHaveBeenCalledWith('Exported', ['glyph U+1F600'], 'chart-export-pdf'));
   });

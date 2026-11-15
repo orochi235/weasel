@@ -80,7 +80,7 @@ const rgb = (img: ImageData, x: number, y: number): number[] => {
 describe('exportPagesPdf', () => {
   it('writes one page per page, each at the page size in points', async () => {
     const { scene, pages } = pageScene();
-    const doc = await read((await exportPagesPdf(scene, pages)).blob);
+    const doc = await read(await exportPagesPdf(scene, pages));
     expect(doc.numPages).toBe(2);
     const vp = (await doc.getPage(1)).getViewport({ scale: 1 });
     expect([vp.width, vp.height]).toEqual([150, 75]);
@@ -88,7 +88,7 @@ describe('exportPagesPdf', () => {
 
   it('holds the text row as text a reader can extract', async () => {
     const { scene, pages } = pageScene();
-    const page = await (await read((await exportPagesPdf(scene, pages)).blob)).getPage(1);
+    const page = await (await read(await exportPagesPdf(scene, pages))).getPage(1);
     const items = (await page.getTextContent()).items;
     expect(items.map((i) => ('str' in i ? i.str : '')).join('')).toContain('Start');
   });
@@ -98,20 +98,22 @@ describe('exportPagesPdf', () => {
     scene.update('a/row' as never, {
       data: { text: 'Start here', style: { fontFamily: 'sans-serif', fontSize: 10 }, fill: { paint: { color: '#000000' } } },
     } as never);
-    const page = await (await read((await exportPagesPdf(scene, pages)).blob)).getPage(1);
+    const page = await (await read(await exportPagesPdf(scene, pages))).getPage(1);
     const items = (await page.getTextContent()).items;
     expect(items.map((i) => ('str' in i ? i.str : '')).join('')).toContain('Start here');
   });
 
   it('skips nothing on a plain diagram page', async () => {
     const { scene, pages } = pageScene();
-    expect((await exportPagesPdf(scene, pages)).skipped).toEqual([]);
+    const heard: unknown[] = [];
+    await exportPagesPdf(scene, pages, { onDiagnostic: (d) => heard.push(d) });
+    expect(heard).toEqual([]);
   });
 
   it('paints the page color to the edge of a page whose size is not a whole number of points', async () => {
     const { scene } = pageScene();
     // 203 × 101 units is 152.25 × 75.75 points; at scale 4 the last column and row are partly page.
-    const doc = await read((await exportPagesPdf(scene, [{ x: 0, y: 0, width: 203, height: 101 }], { background: '#000000' })).blob);
+    const doc = await read(await exportPagesPdf(scene, [{ x: 0, y: 0, width: 203, height: 101 }], { background: '#000000' }));
     const img = await draw(doc, 1, 4);
     expect([img.width, img.height]).toEqual([609, 303]);
     expect(rgb(img, 608, 150)[0]).toBeLessThan(80);
@@ -122,7 +124,7 @@ describe('exportPagesPdf', () => {
     const { scene, pages } = pageScene();
     scene.add(gradientBox('g', 10, 'bounds') as never);
     scene.add(gradientBox('w', 50, 'world') as never);
-    const doc = await read((await exportPagesPdf(scene, pages, { background: '#ffffff' })).blob);
+    const doc = await read(await exportPagesPdf(scene, pages, { background: '#ffffff' }));
     const first = await draw(doc, 1, 2);
     await draw(doc, 2, 2);
     // Each box spans x 150 to 190: 0.75 pt per unit and scale 2 put 25% at pixel 240 and 50% at 255.

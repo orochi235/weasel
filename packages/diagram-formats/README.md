@@ -405,7 +405,7 @@ import { exportPagePng, exportPageSvg, exportPagesPdf } from '@weasel-js/diagram
 const pages = placedPagesOf(scene);
 const svg = await exportPageSvg(scene, pages[0], { title: 'Page 1' });
 const png = await exportPagePng(scene, pages[0], { scale: 2 });
-const { blob, skipped } = await exportPagesPdf(scene, pages, { title: 'Chart' });
+const pdf = await exportPagesPdf(scene, pages, { title: 'Chart', onDiagnostic: (d) => console.info(d.message) });
 ```
 
 Pages sit apart in one world, and a connector between two pages draws as two

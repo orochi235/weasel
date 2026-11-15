@@ -65,7 +65,7 @@ describe('exportPagesFile', () => {
   it('toasts what the format left out, and why an export failed', async () => {
     renderWithIcons(<ToastRegion />);
     const { scene, pages } = twoPages();
-    const warns = fake('warns', true, { export: async (_s, _r, opts) => { opts.onWarn?.('a glyph'); return new Blob([]); } });
+    const warns = fake('warns', true, { export: async (_s, _r, opts) => { opts.onDiagnostic?.({ kind: 'font', subject: 'serif', message: 'a glyph' }); return new Blob([]); } });
     await act(() => exportPagesFile(scene, warns, pages, DOC));
     expect(await screen.findByText(/Exported/)).toBeTruthy();
     const fails = fake('fails', true, { export: async () => { throw new Error('no WebGL2'); } });

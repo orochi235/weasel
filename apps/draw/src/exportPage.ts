@@ -31,7 +31,7 @@ async function writeExport(
   const warnings: string[] = [];
   try {
     const blob = await write({
-      background: doc.backgroundColor, scale: PNG_SCALE, title: name, onWarn: (w: string) => warnings.push(w),
+      background: doc.backgroundColor, scale: PNG_SCALE, title: name, onDiagnostic: (d) => warnings.push(d.message),
     });
     downloadBlob(blob, `${name}.${format.extension}`);
   } catch (err) {

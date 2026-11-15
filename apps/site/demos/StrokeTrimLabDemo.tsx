@@ -129,7 +129,7 @@ function PdfExport({ scene }: { scene: ExportScene }) {
     return () => { live.current = false; };
   }, []);
   const write = async () => {
-    const { blob } = await exportRegionsPdf(scene, [PAGE], { background: '#ffffff', title: 'Stroke trim' });
+    const blob = await exportRegionsPdf(scene, [PAGE], { background: '#ffffff', title: 'Stroke trim' });
     if (live.current) setUrl(URL.createObjectURL(blob));
   };
   return (

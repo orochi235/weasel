@@ -44,7 +44,7 @@ describe("exportRegionSvg's text modes", () => {
   it("writes a shrink-to-fit headline as outlines inside its box with text: 'outline'", async () => {
     const { scene, page } = headline();
     const warnings: string[] = [];
-    const svg = await exportRegionSvg(scene, page, { text: 'outline', onWarn: (m) => warnings.push(m) });
+    const svg = await exportRegionSvg(scene, page, { text: 'outline', onDiagnostic: (d) => warnings.push(d.message) });
     expect(warnings).toEqual([]);
     expect(svg).not.toContain('<text');
     const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');

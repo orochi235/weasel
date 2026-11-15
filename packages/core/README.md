@@ -237,7 +237,7 @@ places each plane as `view` does, and its `scale` changes only the resolution.
 registered under `formatId` and answers a `Blob`. It throws for an id nothing
 registered, and for several regions handed to a format that is not
 `multiRegion`. Every format takes `background` (default none: core holds no
-page color) and `onWarn`, which hears what it left out; the rest of `opts`
+page color), `onDiagnostic`, and `strict`; the rest of `opts`
 goes to the format (`scale` for `png`, `title` for `svg` and `pdf`).
 `exportFormats()` lists what is registered, `png` first, the same array until
 the registry changes; `exportFormatRegistry` is its reflection, with
@@ -254,6 +254,19 @@ time, so bounds measured from it belong to the revision drawn: `exportPages`
 places its pages that way, by id. A format of your own goes through
 `captureExport` too, warming in `warm` and reading everything it writes in
 `read`.
+What an export draws without reaches `onDiagnostic` once each, as an
+`ExportDiagnostic`: `{ kind, subject, message }`, where `kind` is `image` (a
+picture that failed to load, drawn as a placeholder), `font` (a face that
+failed, or glyphs a format could not carry), `paint-kind` (a kind nothing
+registered, or one whose load failed), `shader` (a program with no source the
+target draws), or `unsupported` (what the format cannot hold), and `subject`
+names the source, family, kind or program. An export is best-effort: it
+writes the file without them, so a caller that heard nothing has a complete
+file. With `strict: true` it writes nothing when it hears anything and rejects
+with `ExportIncompleteError`, whose `diagnostics` lists them. Nothing goes to
+the console. A format of your own reports through `exportReporter(opts)`, and
+`warmRender({ render, report })` reports a headless render's losses the same way.
+
 `exportRegionPng(scene, region, { scale, background })` is the `png` format
 on its own: the renderer's pixels, `region × scale` in size. It needs WebGL2.
 

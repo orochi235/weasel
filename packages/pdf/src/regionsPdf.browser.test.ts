@@ -36,8 +36,9 @@ const rgb = (img: ImageData, x: number, y: number): number[] => {
 describe('exportRegionsPdf', () => {
   it('writes one page per page, each at the page size in points, skipping nothing', async () => {
     const { scene, pages } = plainScene();
-    const { blob, skipped } = await exportRegionsPdf(scene, pages);
-    expect(skipped).toEqual([]);
+    const heard: unknown[] = [];
+    const blob = await exportRegionsPdf(scene, pages, { onDiagnostic: (d) => heard.push(d), strict: true });
+    expect(heard).toEqual([]);
     const doc = await read(blob);
     expect(doc.numPages).toBe(2);
     const vp = (await doc.getPage(1)).getViewport({ scale: 1 });
@@ -46,7 +47,7 @@ describe('exportRegionsPdf', () => {
 
   it('draws each page its own shapes, with annotation layers left out', async () => {
     const { scene, pages } = plainScene();
-    const doc = await read((await exportRegionsPdf(scene, pages)).blob);
+    const doc = await read(await exportRegionsPdf(scene, pages));
     const first = await draw(doc, 1);
     // 0.75 points to the unit: the red rect's center (50, 40) is at (37, 30), the gray note's (160, 80) at (120, 60).
     expect(rgb(first, 37, 30)).toEqual([255, 0, 0]);
@@ -58,7 +59,7 @@ describe('exportRegionsPdf', () => {
   it('labels each page with its region name', async () => {
     const { scene, pages } = plainScene();
     const regions = [{ ...pages[0]!, name: 'Front' }, { x: 0, y: 0, width: 440, height: 100, name: 'Spread' }];
-    const doc = await read((await exportRegionsPdf(scene, regions)).blob);
+    const doc = await read(await exportRegionsPdf(scene, regions));
     expect(await doc.getPageLabels()).toEqual(['Front', 'Spread']);
     const vp = (await doc.getPage(2)).getViewport({ scale: 1 });
     expect([vp.width, vp.height]).toEqual([330, 75]);
@@ -68,7 +69,7 @@ describe('exportRegionsPdf', () => {
     const scene = parallaxScene({ pan: 0.5, zoom: 0.5, anchor: { x: 37, y: -12 } });
     scene.setHidden('b' as never, true);
     const region = { x: 90, y: -10, width: 30, height: 30 };
-    const page = await draw(await read((await exportRegionsPdf(scene, [region])).blob), 1);
+    const page = await draw(await read(await exportRegionsPdf(scene, [region])), 1);
     // The node spans (100, 0) to (110, 10): 7.5 to 15 points into the page on both axes.
     expect(rgb(page, 11, 11)).toEqual([255, 0, 0]);
     expect(rgb(page, 4, 4)).toEqual([255, 255, 255]);
@@ -92,7 +93,7 @@ describe('exportRegionsPdf', () => {
       scene.update('r' as never, { data: green });
       scene.update('p' as never, { data: { path: { kind: 'rect', x: 300, y: 30, width: 40, height: 30 }, fill: green.fill } });
       release();
-      const doc = await read((await pdf).blob);
+      const doc = await read(await pdf);
       expect(rgb(await draw(doc, 1), 37, 30)).toEqual([0, 255, 0]);
       expect(rgb(await draw(doc, 2), 60, 33)).toEqual([0, 255, 0]);
     } finally {

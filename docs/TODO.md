@@ -278,18 +278,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Export, worker and headless contracts
 
-- **(P2) [agent] Honor common export diagnostics for raster omissions and asset failures.**
-  `ExportOptions.onWarn` promises to report omitted or unloadable content, but `PNG_EXPORT` drops it
-  (`packages/core/src/canvas/export/regionPng.ts`). `warmRender` filters unknown paint kinds and
-  deliberately resolves after failed image loads; missing content can therefore produce a successful
-  PNG with no export callback explaining the loss (`packages/core/src/canvas/warmRender.ts`). SVG
-  and PDF have warning/skip paths, with different failure behavior. Supply a per-export diagnostic
-  path for missing images, unknown paints and unsupported shader/backend sources; define whether
-  strict export rejects and best-effort export warns, without relying on process-wide console output.
-  Closes when the common callback receives actionable diagnostics for raster failures, callers can
-  distinguish complete output from degraded output, and format tests cover image/font/paint failures
-  and unsupported commands under the documented strict or best-effort policy.
-
 - **(P2) [agent] Let the headless page reconstruct a scene's registered behavior and composition.**
   `@weasel-js/headless` accepts generic live scenes and lets a custom `pageScript` register painters
   and fonts, but its bundled page always calls `sceneFromJSON` without options
