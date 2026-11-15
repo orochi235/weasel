@@ -6,11 +6,11 @@ import { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import {
   type CollapseProps,
   type PropertyAlign,
-  type PropertySpacing,
   PropertyList,
   type PropertyListPack,
   PropertyPanel,
   type PropertyRowLayout,
+  type PropertySpacing,
 } from '@weasel-js/ui/components/Properties';
 import { type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue, isAuto } from '../config/auto';

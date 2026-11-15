@@ -19,7 +19,12 @@ const contributions: TrialContribution[] = [
     id: 'zoom-control',
     region: 'viewport',
     render: (c) => (
-      <ZoomControl className="lk-test-zoom" zoom={c.zoom ?? 1} onZoomInput={c.setZoom} onZoomChange={c.setZoom} />
+      <ZoomControl
+        className="lk-test-zoom"
+        zoom={c.zoom ?? 1}
+        onZoomInput={c.setZoom}
+        onZoomChange={c.setZoom}
+      />
     ),
   },
 ];

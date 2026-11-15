@@ -22,23 +22,10 @@ export function SliderCells() {
     <>
       <Cell label="Field, Slider">
         <Field label="Range" output={span.map((t) => Math.round(t.value)).join(' – ')}>
-          <Slider
-            min={0}
-            max={100}
-            step={1}
-            constraint="ordered"
-            thumbs={span}
-            onInput={setSpan}
-          />
+          <Slider min={0} max={100} step={1} constraint="ordered" thumbs={span} onInput={setSpan} />
         </Field>
         <Field label="Opacity" output={`${Math.round(level[0]?.value ?? 0)}%`}>
-          <Slider
-            min={0}
-            max={100}
-            step={1}
-            thumbs={level}
-            onInput={setLevel}
-          />
+          <Slider min={0} max={100} step={1} thumbs={level} onInput={setLevel} />
         </Field>
         <Slider
           aria-label="Pair"

@@ -12,10 +12,10 @@ import { GroupTabs } from '@weasel-js/ui/components/Prefs';
 import {
   type CollapseProps,
   type PropertyAlign,
-  type PropertySpacing,
   PropertyGroup,
   PropertyList,
   type PropertyListPack,
+  type PropertySpacing,
   PropertySpan,
   Subpanel,
 } from '@weasel-js/ui/components/Properties';
