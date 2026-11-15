@@ -109,13 +109,6 @@ function answerFromPage(
   if (!answered) unhook = onDispose(stop);
 }
 
-/** Start painting `inputs.scene` into `canvas` from `worker`, a worker whose module calls
- *  `serveSceneRender`. The canvas is the worker's from here on: the page can no longer open a
- *  context on it or set its size attributes.
- *
- *  The client owns `worker` from the call: `dispose` terminates it, and so does a setup that
- *  throws, which rethrows its own error and leaves nothing watching. A canvas whose transfer went
- *  through before the throw cannot be handed over again. */
 /** A warning that says each different thing once, so a worker that fails the same way every
  *  frame warns once, and a new failure still warns. */
 function onceEach(): (what: string, detail: unknown) => void {
