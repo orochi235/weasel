@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { SceneCanvas, useScene, useSelection, rectPath, solid, movePreset, pickPreset, viewPreset } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, useScene, useSelection, rectPath, solid, movePreset, pickPreset, viewPreset } from '@weasel-js/core';
 import { alignmentSnapSource, spacingSnapSource } from '@weasel-js/guides';
-import type { NodeId, Path, ToolsApi, Fill } from '@weasel-js/core';
+import type { Fill, Path, RectPose, ToolsApi } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
@@ -9,7 +9,6 @@ import { DemoStage } from './DemoStage';
 // kit's path painter draws both without a custom drawOne.
 interface NodeData { path: Path; fill: Fill }
 type LayerId = 'default';
-interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 460, H = 320;
 const COLOR = '#e0397f';
@@ -20,13 +19,13 @@ const SNAP = {
   ],
 };
 
-const rect = (id: string, pose: Pose, color: string) => ({
-  id: id as NodeId, kind: 'mark' as const, layer: 'default' as const, pose,
+const rect = (id: string, pose: RectPose, color: string) => ({
+  id: asNodeId(id), kind: 'mark' as const, layer: 'default' as const, pose,
   data: { path: rectPath(0, 0, pose.width, pose.height), fill: { paint: solid(color) } },
 });
 
 export function AlignmentGuidesDemo() {
-  const scene = useScene<NodeData, LayerId, Pose>({
+  const scene = useScene<NodeData, LayerId, RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [
       rect('a', { x: 30, y: 50, width: 70, height: 60 }, '#7fb069'),
