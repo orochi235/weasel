@@ -1,0 +1,7 @@
+.ledger {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wzl-fg-muted);
+}

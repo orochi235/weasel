@@ -17,6 +17,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import sceneJson from './data/layout.scene.json';
 import { DemoStage } from './DemoStage';
+import s from './LayoutDemo.module.css';
 
 // --- Scene model ---
 //
@@ -76,10 +77,7 @@ export function LayoutDemo() {
     });
   };
 
-  // Committed-pose ledger: every tile's committed pose in world + parent,
-  // whether it sits in a container or was dropped outside them all. Because the demo re-renders
-  // on scene version change, these rows update the instant a drag commits —
-  // letting you watch a child reparent and reflow into its destination.
+  // Every tile's committed world pose and parent, in or out of a container.
   const rows = scene.roots
     .flatMap((rootId) => [rootId, ...scene.childrenOf(rootId)])
     .filter((id) => !scene.get(id)!.data.isContainer)
@@ -94,7 +92,7 @@ export function LayoutDemo() {
     });
 
   return (
-    <div>
+    <div className="ckd-demo">
       <DemoStage width={620} height={260}>
         <SceneCanvas features={[pickPreset, movePreset]}
           scene={scene}
@@ -122,13 +120,14 @@ export function LayoutDemo() {
           <LayoutsTakeDrops scene={scene} />
         </SceneCanvas>
       </DemoStage>
-      <Button onClick={addTile} disabled={tiles >= 4}>add tile</Button>
-      <Checkbox isSelected={animate} onChange={setAnimate}>animate reflow</Checkbox>
-      <ul className="ld-ledger">
+      <div className="ckd-toolbar">
+        <Button onClick={addTile} disabled={tiles >= 4}>add tile</Button>
+        <Checkbox isSelected={animate} onChange={setAnimate}>animate reflow</Checkbox>
+      </div>
+      <ul className={s.ledger}>
         {rows.map((row) => (
           <li
             key={row.id}
-            className="ld-row"
             data-testid={`ld-pose-${row.id}`}
             data-parent={row.parent ?? ''}
           >
