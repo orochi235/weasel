@@ -12,6 +12,14 @@ import { isPackagePage } from './Packages/catalog';
 import { SiteNav } from './SiteNav';
 import { DemoFrame } from './DemoFrame';
 import { DevtoolsSplit } from './DevtoolsSplit';
+import { ColorModeControl } from '@weasel-js/ui/components/ColorModeControl';
+import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
+import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
+import { Switch } from '@weasel-js/ui/components/Switch';
+import { SiteColorModeContext, useSiteColorMode } from './colorMode';
+import { SiteThemeProvider } from './SiteThemeProvider';
+import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
+import logoUrl from './assets/weasel-logo.svg';
 
 // These are lazy so the entry bundle carries only the nav: `Releases`
 // pulls in `virtual:changelogs` (every published changelog entry), and
@@ -38,14 +46,6 @@ function formatRelativeOrIso(iso: string): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
-import { ColorModeControl } from '@weasel-js/ui/components/ColorModeControl';
-import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
-import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
-import { Switch } from '@weasel-js/ui/components/Switch';
-import { SiteColorModeContext, useSiteColorMode } from './colorMode';
-import { SiteThemeProvider } from './SiteThemeProvider';
-import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
-import logoUrl from './assets/weasel-logo.svg';
 
 function readHash(): string {
   if (window.location.hash === `#${DEMOS_ID}`) return DEMOS[0].id;
