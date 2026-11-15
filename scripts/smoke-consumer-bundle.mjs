@@ -446,18 +446,17 @@ await writeFile(
     // `types` condition points into the tsc-emitted tree, which is laid out to
     // mirror the Vite entry keys; if those two ever drift, this is TS7016.
     `type _UiSubpath = typeof import('@weasel-js/ui/components/Toast');\n` +
-    // A consumer's own dep must merge into DepSchema. Declaration merging
-    // targets the module where the interface is DECLARED, not one that
-    // re-exports the type. DepSchema lives in `@weasel-js/routing` and core
-    // re-exports it, so this says the merge still reaches through that hop in
+    // A consumer's own dep must merge into DepSchema. A consumer augments
+    // `@weasel-js/routing`, which declares it, and reads it through core's
+    // re-export, so this says the merge still reaches through that hop in
     // the PUBLISHED .d.ts, where rollup-plugin-dts has flattened the chunks.
     // In-repo typechecks resolve to SOURCE and cannot catch it.
     //
-    // The declaration has to sit in routing's own barrel — the module core
-    // re-exports from — and not in a module that barrel re-exports. One hop
-    // further and TS declares a fresh interface instead of merging, which
-    // surfaces as TS2536 on every `DepSchema[K]` back inside routing.
-    `declare module '@weasel-js/core' {\n` +
+    // The declaration has to sit in routing's own barrel, and not in a module
+    // that barrel re-exports. One hop further and TS declares a fresh
+    // interface instead of merging, which surfaces as TS2536 on every
+    // `DepSchema[K]` back inside routing.
+    `declare module '@weasel-js/routing' {\n` +
     `  interface DepSchema { smokeDep?: { ping(): number } }\n` +
     `}\n` +
     `type _Augmented = DepSchema['smokeDep'];\n` +
@@ -551,10 +550,10 @@ try {
       '  • a package shipped NO .d.ts at all (TS7016 on its import above) — its\n' +
       '    declaration build step silently emitted nothing; see npm run check:manifests\n' +
       '  • DepSchema came back empty (its fields must be a plain `export interface`\n' +
-      "    in depSchema.ts, not a `declare module './depRegistry'` augmentation)\n" +
-      "  • a consumer's `declare module '@weasel-js/core'` no longer merges into\n" +
-      '    DepSchema — the interface must be DECLARED in the module the\n' +
-      '    augmentation names, not merely re-exported from it\n' +
+      "    in routing's barrel, not a `declare module './…'` augmentation)\n" +
+      "  • a consumer's `declare module '@weasel-js/routing'` no longer merges into\n" +
+      "    core's DepSchema — the interface must be DECLARED in routing's barrel,\n" +
+      '    not in a module that barrel re-exports\n' +
       "  • core's or ui's `declare module '@weasel-js/icons'` IconName augmentation\n" +
       '    is missing from its published .d.ts, so its icon names do not typecheck\n' +
       "  • routing's defineTool/Tool no longer default to core's overlay type —\n" +

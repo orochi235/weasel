@@ -145,7 +145,7 @@ that ships in the public API (e.g. how `DepSchema` is assembled): those do
 **not** survive `.d.ts` bundling — `rollup-plugin-dts` flattens both files into
 one chunk and the augmentation no longer targets anything, silently emptying the
 interface for consumers. Declare such interfaces directly with their fields in
-one place (consumers can still augment via `declare module '@weasel-js/core'`).
+one place (consumers augment it via `declare module '@weasel-js/routing'`, the module that declares it).
 
 **Guard:** `npm run test:smoke:consumer` (part of `prepublishOnly` / CI) bundles
 *and* typechecks a synthetic third-party consumer against the built `dist`,
