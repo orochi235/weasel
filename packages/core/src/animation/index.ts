@@ -53,7 +53,7 @@ export {
   type ColorSpace, type OklchDeg, type ColorInterpolationSpace, type HueInterpolation,
 } from '@weasel-js/paint';
 export {
-  bindRig, dataRestPath, placeSkeleton, rigFromNode, rigidRigApply, unplaceSkeleton, useRig, useRigNode,
+  bindRig, dataRestPath, placeSkeleton, remapSkin, rigFromNode, rigidRigApply, unplaceSkeleton, useRig, useRigNode,
 } from './rig';
 export type {
   BindRigOptions, PaintedSkins, RestPath, Rig, RigApply, RigApplyContext, RigNodeData, RigNodeParts, RigNodeSource,
