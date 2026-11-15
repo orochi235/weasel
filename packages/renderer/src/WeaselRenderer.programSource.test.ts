@@ -76,7 +76,7 @@ describe('a program registered in GLSL, WGSL or both', () => {
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
     const h = registerProgram('wgsl-then-glsl', { wgsl: { frag: WGSL } });
     r.render([shader(h)]);
-    registerProgram('wgsl-then-glsl', { glsl: { frag: GLSL }, wgsl: { frag: WGSL } });
+    registerProgram('wgsl-then-glsl', { glsl: { frag: GLSL }, wgsl: { frag: WGSL } }, { replace: true });
     rec.reset();
     r.render([shader(h)]);
     expect(rec.calls.some((c) => c.name === 'drawElements')).toBe(true);

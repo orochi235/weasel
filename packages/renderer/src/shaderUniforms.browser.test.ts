@@ -69,7 +69,7 @@ describe('array uniforms in a real context', () => {
     draw(renderer, gl, 'browser-hot', { u_colors: COLORS });
     const before = gl.getParameter(gl.CURRENT_PROGRAM) as WebGLProgram;
 
-    registerProgram('browser-hot', { glsl: { frag: frag('u_colors[3 - i]') } });
+    registerProgram('browser-hot', { glsl: { frag: frag('u_colors[3 - i]') } }, { replace: true });
     expect(draw(renderer, gl, 'browser-hot', { u_colors: COLORS })).toEqual([
       [255, 255, 255, 255], [0, 0, 255, 255], [0, 255, 0, 255], [255, 0, 0, 255],
     ]);

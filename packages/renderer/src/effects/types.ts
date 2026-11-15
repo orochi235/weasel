@@ -1,3 +1,4 @@
+import type { ExtensionRegisterOptions } from '@weasel-js/registry';
 import {
   registerProgram, type ProgramSource, type ShaderProgramHandle, type ShaderUniform,
 } from '../shaders/registerProgram';
@@ -60,12 +61,12 @@ export type EffectProgramSource =
  * (`gpu/webgpu/wgsl/effectPrelude.ts`); each backend draws an effect from its
  * own language alone.
  */
-export function registerEffect(id: string, source: EffectProgramSource): ShaderProgramHandle {
+export function registerEffect(id: string, source: EffectProgramSource, options?: ExtensionRegisterOptions): ShaderProgramHandle {
   if (source.glsl === undefined && source.wgsl === undefined) {
     throw new Error(`weasel registerEffect: effect "${id}" has no source; pass \`glsl\`, \`wgsl\` or both.`);
   }
   return registerProgram(id, {
     ...(source.glsl !== undefined && { glsl: { vert: EFFECT_VERT_SRC, frag: source.glsl } }),
     ...(source.wgsl !== undefined && { wgsl: { frag: assembleEffectWgsl(source.wgsl) } }),
-  } as ProgramSource);
+  } as ProgramSource, options);
 }

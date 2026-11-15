@@ -71,6 +71,7 @@ export {
   registerProgram,
   programSourceRegistry,
   type ProgramSource,
+  type ProgramSourceRegistry,
   type ShaderLanguage,
   type ShaderSource,
   type ShaderProgramHandle,

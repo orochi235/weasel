@@ -1,4 +1,6 @@
-import { defaultCommitAdapter, isSerializedScene, type PagesDoc, type Scene, useLatest } from '@weasel-js/core';
+import {
+  defaultCommitAdapter, isSerializedScene, type HistoryRecovery, type HistoryRestoreReport, type PagesDoc, type Scene, useLatest,
+} from '@weasel-js/core';
 import type { RecordCache } from '@weasel-js/storage';
 import { useEffect, useRef } from 'react';
 import { keptUnreadable, readSlot, type SessionSlot, sessionSlots } from './sessionStore';
@@ -22,6 +24,11 @@ export interface SessionPersistenceOptions {
   onSaved?: (ok: boolean) => void;
   /** The pages the scene's load gives a snapshot saved without any (`SnapshotLoadOptions.pages`). */
   pages?: PagesDoc;
+  /** How the saved undo stack is restored (`Scene.restoreHistory`'s `recovery`). Defaults to `'strict'`, under which
+   *  a stack naming an op this build cannot replay is dropped whole. */
+  historyRecovery?: HistoryRecovery;
+  /** Called once a saved undo stack has been read: with the restore's report, or with the error that dropped it. */
+  onHistoryRestore?: (outcome: { report: HistoryRestoreReport } | { error: unknown }) => void;
 }
 
 /** Whether an undo stack saved beside the scene in `slot` would replay wrongly: the scene loads with its
@@ -64,7 +71,7 @@ export function useSessionPersistence<D, L extends string, P>(
   // history with the empty initial stack first.
   const restoredRef = useRef(false);
   useEffect(() => {
-    const { sceneKey, historyKey, loadHistory, pages, records } = optsRef.current;
+    const { sceneKey, historyKey, loadHistory, pages, records, historyRecovery, onHistoryRestore } = optsRef.current;
     const slots = sessionSlots(records);
     const history = slots.slot(historyKey);
     const drop = (): void => history.records.delete(history.name);
@@ -75,11 +82,13 @@ export function useSessionPersistence<D, L extends string, P>(
     }
     if (snap) {
       try {
-        scene.restoreHistory(snap as Parameters<typeof scene.restoreHistory>[0]);
-      } catch {
-        // A parseable-but-malformed snapshot must not wedge every boot:
+        const report = scene.restoreHistory(snap as Parameters<typeof scene.restoreHistory>[0], { recovery: historyRecovery ?? 'strict' });
+        onHistoryRestore?.({ report });
+      } catch (error) {
+        // A snapshot this build cannot restore must not wedge every boot:
         // drop it and start with an empty undo stack.
         drop();
+        onHistoryRestore?.({ error });
       }
     }
     void slots.close();

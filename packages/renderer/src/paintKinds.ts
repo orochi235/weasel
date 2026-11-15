@@ -13,7 +13,7 @@ import type { FillPoseBox } from './fillInPoseFrame';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { GpuTexture } from './gpu/types';
 import {
-  getProgramSource, registerProgram, sameProgramSource, type ProgramSource, type ShaderUniform,
+  registerProgram, type ProgramSource, type ShaderUniform,
 } from './shaders/registerProgram';
 import { assemblePaintWgsl } from './gpu/webgpu/wgsl/paintPrelude';
 
@@ -162,8 +162,8 @@ export function registerPaintDrawKind(entry: PaintDrawKind): () => void {
   }
   for (const [id, declared] of Object.entries(entry.programs ?? {})) {
     const src = paintProgramSource(declared);
-    const have = getProgramSource(id);
-    if (!have || !sameProgramSource(have, src)) registerProgram(id, src);
+    // The kind owns the programs it declares: registering it again is a newer copy of them.
+    registerProgram(id, src, { replace: true });
   }
   return KINDS.push(entry.id, entry);
 }

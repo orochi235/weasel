@@ -72,7 +72,7 @@ describe('Canvas shaders prop', () => {
     await settle();
 
     const spy = vi.spyOn(WeaselRenderer.prototype, 'render');
-    registerProgram('canvas-shaders-hot', { glsl: { frag: FRAGMENT.replace('0.0, 0.0, 0.0', '1.0, 0.0, 0.0') } });
+    registerProgram('canvas-shaders-hot', { glsl: { frag: FRAGMENT.replace('0.0, 0.0, 0.0', '1.0, 0.0, 0.0') } }, { replace: true });
     await waitForFrame();
 
     expect(spy).toHaveBeenCalled();

@@ -1,11 +1,10 @@
 /**
  * Public API for registering custom shader programs. Module-level state is
  * source strings only; each WeaselRenderer compiles them into its own
- * programRegistry, which keeps registration GL-context-agnostic. Program
- * sources live for the module lifetime.
+ * programRegistry, which keeps registration GL-context-agnostic.
  */
 
-import { createReflectable, isDev, type Reflection } from '@weasel-js/registry';
+import { createExtensionRegistry, type ExtensionRegisterOptions, type ExtensionRegistry } from '@weasel-js/registry';
 import { type TextureHandle } from '../textures/registerTexture';
 
 export type { TextureHandle };
@@ -79,10 +78,15 @@ export function sameProgramSource(a: ProgramSource, b: ProgramSource): boolean {
   return same(a.glsl, b.glsl) && same(a.wgsl, b.wgsl);
 }
 
-const registry = createReflectable<ProgramSource>();
+/** Program sources by id. Registration follows `ExtensionRegistry`'s rules, with two sources the
+ *  same when {@link sameProgramSource} says so. */
+export type ProgramSourceRegistry = ExtensionRegistry<ProgramSource>;
 
-/** Every registered program's GLSL source, keyed by program id. */
-export const programSourceRegistry: Reflection<ProgramSource> = registry.reflection;
+const registry = createExtensionRegistry<ProgramSource>({ kind: 'shader program', same: sameProgramSource });
+
+/** Every registered program's source, keyed by program id. `register` on it returns the release
+ *  `registerProgram` does not. */
+export const programSourceRegistry: ProgramSourceRegistry = registry;
 
 /** @internal Test helper — do not call from product code. */
 export function _resetProgramRegistryForTests(): void {
@@ -131,29 +135,28 @@ export function getProgramSource(id: string): ProgramSource | null {
  * The renderer blends premultiplied (`ONE, ONE_MINUS_SRC_ALPHA`) to match.
  * Opaque fragments (a=1) are unaffected; only fragments with a < 1 differ.
  *
- * **Re-registration behavior:**
- * - Dev mode (`NODE_ENV !== 'production'`): calling with an existing id and new
- *   source replaces it (hot reload). Every renderer that compiled the old source
- *   recompiles on its next frame and deletes the program it replaces; a
- *   `<Canvas shaders>` naming the id repaints to show it. If the new source fails
- *   to compile, the renderer logs the error once and keeps drawing the old one.
- *   WebGPU reports a WGSL failure only after the frame that compiled it, so
- *   there the program logs the error once and draws nothing from then on.
- * - Prod mode: calling with an existing id throws.
+ * **Re-registration** follows the same rules in development and production:
+ * - The same source under an id already holding it is no change.
+ * - A different source throws `ExtensionConflictError` unless `options.replace`
+ *   is set, as a module re-registering its program on hot reload sets it. Every
+ *   renderer that compiled the old source recompiles on its next frame and
+ *   deletes the program it replaces; a `<Canvas shaders>` naming the id repaints
+ *   to show it. If the new source fails to compile, the renderer logs the error
+ *   once and keeps drawing the old one. WebGPU reports a WGSL failure only after
+ *   the frame that compiled it, so there the program logs the error once and
+ *   draws nothing from then on.
+ * - The registration lasts for the module's lifetime. To remove it later,
+ *   register through `programSourceRegistry.register`, which returns the release.
  *
  * Nothing compiles here. A renderer compiles the source the first time it
  * draws with it and reports a failure to the console, drawing nothing for
  * that command; `WeaselRenderer.registerProgram()` compiles ahead of that and
  * throws `ShaderCompileError`.
  */
-export function registerProgram(id: string, source: ProgramSource): ShaderProgramHandle {
-  if (registry.has(id) && !isDev()) {
-    throw new Error(`weasel registerProgram: duplicate program id "${id}". ` +
-      `In production, re-registration is not allowed. Pass a unique id or call in dev mode.`);
-  }
+export function registerProgram(id: string, source: ProgramSource, options?: ExtensionRegisterOptions): ShaderProgramHandle {
   if (!source.glsl && !source.wgsl) {
     throw new Error(`weasel registerProgram: program "${id}" has no source; pass \`glsl\`, \`wgsl\` or both.`);
   }
-  registry.set(id, source);
+  registry.register(id, source, options);
   return { id };
 }

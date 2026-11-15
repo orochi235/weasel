@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
-import { savedAtOf, useSessionPersistence } from './useSessionPersistence';
+import { HistoryRestoreError, IDENTITY_POSE_COMPOSITION, SCENE_HISTORY_FORM, createScene } from '@weasel-js/core';
+import { savedAtOf, useSessionPersistence, type SessionPersistenceOptions } from './useSessionPersistence';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -59,6 +59,34 @@ describe('useSessionPersistence', () => {
       expect(localStorage.getItem('test:history')).toBeNull();
       unmount();
     }
+  });
+
+  describe('a saved undo stack naming an op this build cannot replay', () => {
+    const entry = { id: 1, label: 'gone', forwardOps: [{ name: 'app:gone', args: {} }], baseOps: [{ name: 'app:gone', args: {} }] };
+    const stack = { version: 1, form: SCENE_HISTORY_FORM, undoStack: [entry], redoStack: [], nextEntryId: 2, droppedEntries: 0 };
+    const mount = (opts: Partial<SessionPersistenceOptions>) => {
+      localStorage.setItem('test:scene', JSON.stringify({ version: 3, systemLayers: [{ id: 'main' }], nodes: [] }));
+      localStorage.setItem('test:history', JSON.stringify(stack));
+      const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+      const outcomes: unknown[] = [];
+      renderHook(() => useSessionPersistence(scene, {
+        sceneKey: 'test:scene', historyKey: 'test:history', onHistoryRestore: (o) => outcomes.push(o), ...opts,
+      }));
+      return { scene, outcomes };
+    };
+
+    it('is dropped under strict recovery, and the error reported', () => {
+      const { scene, outcomes } = mount({});
+      expect(scene.canUndo()).toBe(false);
+      expect(localStorage.getItem('test:history')).toBeNull();
+      expect(outcomes).toEqual([{ error: expect.any(HistoryRestoreError) }]);
+    });
+
+    it('keeps its entries under best-effort recovery, and reports what it could not rebuild', () => {
+      const { scene, outcomes } = mount({ historyRecovery: 'best-effort' });
+      expect(scene.canUndo()).toBe(true);
+      expect(outcomes).toEqual([{ report: { restored: true, unresolved: [expect.objectContaining({ name: 'app:gone', reason: 'unknown' })] } }]);
+    });
   });
 
   it('drops a saved undo stack beside a scene its load kept aside as unreadable', () => {

@@ -85,7 +85,7 @@ export function collectBundles(): readonly BundleEntry[] {
  *  the `typeof` guard turns a break in that convention into a missing row
  *  rather than a crash, and `registryData.test.ts` fails when it breaks. */
 export function collectOpFactories(): readonly OpFactoryEntry[] {
-  return Weasel.registeredOpNames()
+  return Weasel.defaultOpRegistry.entries().map((e) => e.key)
     .map((name) => `create${name[0]!.toUpperCase()}${name.slice(1)}Op`)
     .filter((name) => typeof (Weasel as unknown as Record<string, unknown>)[name] === 'function')
     .map((id) => ({ kind: 'opFactory', id, label: id }));
@@ -149,7 +149,7 @@ export function collectGestures(): readonly GestureEntry[] {
  *  factory stamps onto its `Op`. Read from the live factory registry so a
  *  newly-registered op appears here without a second list to update. */
 export function collectOpKinds(): readonly OpKindEntry[] {
-  return Weasel.registeredOpNames().map((id) => ({ kind: 'opKind', id, label: id }));
+  return Weasel.defaultOpRegistry.entries().map((e) => ({ kind: 'opKind', id: e.key, label: e.key }));
 }
 
 /** `@weasel-js/core`'s entry points, from the checked-in exports inventory. */

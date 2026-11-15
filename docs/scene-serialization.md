@@ -196,6 +196,44 @@ than silently losing data.
 | Child on a layer below its parent's | `sceneFromJSON`, `loadState` | `Scene: cannot place node '<id>' on layer '<layer>' under parent '<pid>' on layer '<plyr>' — a child may not render below its parent's layer` |
 | Node with a function field (`clipFromPose`, `layout`, …) not registered in the scene's registry | `scene.toJSON()` | `Scene.toJSON: node '<id>' has <field> but no matching registry key. The function must be registered via createScene's registry option to round-trip.` |
 
+## Restoring history
+
+`scene.restoreHistory(snapshot)` rebuilds each recorded op. A kind taught with `registerOp` rebuilds as
+the scene's own op. Anything else was handed to `applyBatch` (a selection change, an app's own op) and
+rebuilds through the scene's op registry (`createScene({ opRegistry })`, `defaultOpRegistry` when none is
+given), applying against the adapter `scene.setHistoryAdapter` supplies, which must be set before the
+restore.
+
+The restore is strict unless told otherwise (2026-11-14):
+
+| What goes wrong | Strict (default) | `{ recovery: 'best-effort' }` |
+|---|---|---|
+| No factory or registered kind has the op's name | Throws `HistoryRestoreError`; the history is left as it was | The op becomes a placeholder that changes nothing, so its entry keeps its place |
+| An `applyBatch` op while no history adapter is set | Same | Same |
+| A snapshot in another recorded form | Same | Dropped: the report says `restored: false` |
+| A restored op's adapter was cleared before an undo or redo | Throws `RestoredOpError` (`reason: 'no-adapter'`) | The op is skipped |
+| A restored op throws on undo or redo | Throws `RestoredOpError` (`reason: 'threw'`, the original as `cause`) | Same: a swallowed throw would hide a partial write |
+
+Both modes return a report, `{ restored, unresolved }`, listing each op it could not rebuild with its
+entry and reason; `HistoryRestoreError.report` carries the same. `onSkip` hears each op a best-effort undo
+or redo steps past. None of this depends on the debug flag, so a production build can log it or show it.
+
+When an undo or redo throws, its entry stays on the stack it was on and the scene's nodes are as they
+were. The engine takes back the ops before the failing one; the scene reverts its own writes, the
+failing op's included. An op writing outside the scene has to be atomic itself: its `apply` either
+completes or throws having changed nothing (the rollback contract on `Op`, `@weasel-js/history`).
+
+```ts
+try {
+  scene.restoreHistory(saved);
+} catch (err) {
+  if (!(err instanceof HistoryRestoreError)) throw err;
+  // Keep what can be kept, and say what was lost.
+  const { unresolved } = scene.restoreHistory(saved, { recovery: 'best-effort' });
+  report(`Undo history kept ${unresolved.length} op(s) this version cannot replay as no-ops`);
+}
+```
+
 ## Loading demo data from a JSON file
 
 Initial scene data can ship as a static `*.scene.json` file instead of an

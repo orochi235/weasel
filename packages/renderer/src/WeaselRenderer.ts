@@ -188,7 +188,8 @@ export class WeaselRenderer {
    * this after the module-level `registerProgram()` to pay for the compile
    * before that frame, or to catch the `ShaderCompileError` it throws.
    *
-   * In dev mode, calling again with the same handle replaces the compiled program.
+   * A source the module-level registry replaced (`registerProgram(id, src, { replace: true })`)
+   * recompiles on the next frame.
    */
   registerProgram(handle: ShaderProgramHandle): void {
     // A disposed renderer must not compile programs into the cleared registry.
