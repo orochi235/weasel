@@ -1,3 +1,14 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+}
+
+.scale {
+  min-width: 5ch;
+  text-align: end;
+}
+
 .watch {
   display: grid;
   grid-template-columns: 1fr 1fr;

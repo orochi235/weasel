@@ -1,25 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   asNodeId,
-  createTransformOp,
   easeInOutSine,
   momentum,
   SceneCanvas,
   WeaselProvider,
   useAnimatedReflow,
   useScene,
-  useSelection,
-  useVelocityTracker, movePreset, pickPreset,
+  useSelection, movePreset, pickPreset,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
-import { createGridLayer } from '@weasel-js/guides';
-import type { Dims, MoveBehavior, PoseTransitionSeat } from '@weasel-js/core';
-import type { AnimationInfo, Animator, LiveAnimation, PhysicsHandle } from '@weasel-js/animator';
+import type { Dims, PoseTransitionSeat } from '@weasel-js/core';
+import type { Animator } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './AnimationDemo.module.css';
 import num from '@weasel-js/theme/numeric.module.css';
+import { AnimatorWatch } from './animation/AnimatorWatch';
+import { FlickSnapPanel } from './animation/FlickSnapPanel';
 import { DemoStage } from './DemoStage';
 
 interface Card { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -36,24 +35,6 @@ const INITIAL: Card[] = [
 
 /** A card collapsed to a point at its center: where one grows from and shrinks into. */
 const toCenter = (p: Card): Card => ({ ...p, x: p.x + p.width / 2, y: p.y + p.height / 2, width: 0, height: 0 });
-
-// Flick-snap panel: a second canvas below the cards, showing decay → snap.
-const FLICK_W = 600, FLICK_H = 160;
-const FLICK_GRID = 60;
-
-const FLICK_GRID_LAYER = createGridLayer({ spacing: FLICK_GRID });
-const FLICK_BLOCK = 40;
-const FLICK_COAST_MS = 180;
-
-interface Vec2 { x: number; y: number }
-
-function nearestGridCell(p: Vec2, area: Dims): Vec2 {
-  const round = (v: number) => Math.round(v / FLICK_GRID) * FLICK_GRID;
-  return {
-    x: Math.max(0, Math.min(area.width - FLICK_BLOCK, round(p.x))),
-    y: Math.max(0, Math.min(area.height - FLICK_BLOCK, round(p.y))),
-  };
-}
 
 export function AnimationCards({ animator }: { animator: Animator }) {
   const scene = useScene<Card>({ items: INITIAL });
@@ -181,8 +162,8 @@ export function AnimationCards({ animator }: { animator: Animator }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+    <div className={styles.demo}>
+      <div className="ckd-toolbar">
         <Button onClick={() => tweenTo('a', 400, 200)}>Tween A → (400, 200)</Button>
         <Button onClick={() => tweenTo('b', 100, 300)}>Tween B → (100, 300)</Button>
         <Button onClick={addCard}>Add card</Button>
@@ -191,10 +172,10 @@ export function AnimationCards({ animator }: { animator: Animator }) {
         <Button onClick={() => scene.undo()} disabled={!scene.canUndo()}>Undo</Button>
         <Button onClick={() => scene.redo()} disabled={!scene.canRedo()}>Redo</Button>
       </div>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div className="ckd-toolbar">
         <Button onClick={onTogglePause}>{paused ? 'Resume' : 'Pause'} animations</Button>
         <label className="ckd-field">
-          time-scale: <span className={num.numeric}>{timeScale.toFixed(2)}×</span>
+          time-scale
           <InlineRange
             min={0}
             max={2}
@@ -202,8 +183,9 @@ export function AnimationCards({ animator }: { animator: Animator }) {
             value={timeScale}
             onChange={(e) => onTimeScale(Number(e.target.value))}
           />
+          <output className={`${num.numeric} ${styles.scale}`}>{timeScale.toFixed(2)}×</output>
         </label>
-        <span style={{ opacity: 0.7 }}>Tip: select one card to see the breathing pulse.</span>
+        <span className="ckd-toolbar-note">Select one card to see the breathing pulse.</span>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas features={[pickPreset, movePreset]}
@@ -239,191 +221,16 @@ export function AnimationCards({ animator }: { animator: Animator }) {
   );
 }
 
-/** A flick in flight, and how to record it where it stands. */
-interface Flight { handle: PhysicsHandle<Pose>; land(): void }
-
-/**
- * Move behavior: on release, coast on the flick velocity, then retarget the
- * same in-flight physics to the nearest grid cell. One animation throughout —
- * `PhysicsHandle.setTarget` turns the decay into a spring without restarting.
- * It runs on the node's pose target, so each frame is a pose override, and the
- * whole flick records as one transform once it lands.
- */
-function flickToGrid(args: {
-  animator: Animator;
-  tracker: ReturnType<typeof useVelocityTracker>;
-  flight: React.MutableRefObject<Flight | null>;
-  area: () => Dims;
-}): MoveBehavior<Pose> {
-  const { animator, tracker, flight, area } = args;
-  const PREV = 'flickToGrid.prev';
-  const pointer = (ctx: { pointer: { worldX: number; worldY: number } }): Vec2 =>
-    ({ x: ctx.pointer.worldX, y: ctx.pointer.worldY });
-
-  return {
-    onStart(ctx) {
-      flight.current?.land();
-      tracker.reset();
-      ctx.scratch[PREV] = pointer(ctx);
-    },
-    onMove(ctx) {
-      const prev = ctx.scratch[PREV] as Vec2;
-      const now = pointer(ctx);
-      tracker.record(now.x - prev.x, now.y - prev.y, performance.now());
-      ctx.scratch[PREV] = now;
-    },
-    onEnd(ctx, end) {
-      if (end.answered) return undefined;
-      const id = ctx.draggedIds[0];
-      const release = id ? ctx.current.get(id) : undefined;
-      const target = id ? ctx.adapter.poseTarget?.(id) : undefined;
-      if (!id || !release || !target) return undefined;
-      const from = ctx.origin.get(id) ?? target.committed();
-
-      let live: Pose = release;
-      let landed = false;
-      let handle: PhysicsHandle<Pose> | undefined;
-      const land = (): void => {
-        if (landed) return;
-        landed = true;
-        if (flight.current?.land === land) flight.current = null;
-        handle?.cancel();
-        // The target committed the landing untracked; put the document back so the op records the move.
-        const to = target.committed();
-        target.commit(from);
-        ctx.adapter.applyOps?.([createTransformOp<Pose>({ id, from, to })], 'flick');
-      };
-      const { vx, vy } = tracker.getVelocity();
-      handle = animator.physics<Pose>({
-        target,
-        from: release,
-        to: null, // start in decay mode
-        // useVelocityTracker reports px/ms; physics velocity is units/sec.
-        velocity: { x: vx * 1000, y: vy * 1000, width: 0, height: 0 },
-        damping: 5,
-        stiffness: 80,
-        onTick: (p) => { live = p; },
-        onDone: () => land(),
-      });
-      if (landed) return null;
-      const self: Flight = { handle, land };
-      flight.current = self;
-      // A newer flick, or the demo unmounting, has already ended this one.
-      setTimeout(() => {
-        if (flight.current === self) self.handle.setTarget({ ...live, ...nearestGridCell(live, area()) });
-      }, FLICK_COAST_MS);
-      return null;
-    },
-  };
-}
-
-function FlickSnapPanel({ animator }: { animator: Animator }) {
-  const scene = useScene<{ color: string }, 'default', Pose>({
-    systemLayers: [{ id: 'default' }],
-    initial: [{
-      id: asNodeId('block'),
-      kind: 'mark',
-      layer: 'default',
-      pose: { x: 60, y: 60, width: FLICK_BLOCK, height: FLICK_BLOCK },
-      data: { color: '#7fb069' },
-    }],
-  });
-  const selection = useSelection({ scene });
-  const tracker = useVelocityTracker();
-  const flight = useRef<Flight | null>(null);
-  const size = useRef<Dims>({ width: FLICK_W, height: FLICK_H });
-  useEffect(() => () => {
-    flight.current?.handle.cancel();
-    flight.current = null;
-  }, []);
-
-  const behaviors = useMemo(
-    () => [flickToGrid({ animator, tracker, flight, area: () => size.current })],
-    [animator, tracker],
-  );
-
-  // The demo site mounts one provider set at its root; isolated so this canvas
-  // and the card canvas each keep their own selection.
-  return (
-    <WeaselProvider isolate>
-      <DemoStage width={FLICK_W} height={FLICK_H}>
-        <SceneCanvas features={[pickPreset, movePreset]}
-          className="ckd-canvas"
-          onResize={(s) => { size.current = s; }}
-          scene={scene}
-          selection={selection}
-          selectTool={{ move: { behaviors } }}
-          layers={{
-            grid: { layer: FLICK_GRID_LAYER },
-            scene: {
-              drawOne: (n, p): DrawCommand[] => [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { paint: { color: n.data.color } },
-              }],
-            },
-            selectionOverlay: { handles: false },
-          }}
-        />
-      </DemoStage>
-    </WeaselProvider>
-  );
-}
-
-const nameOf = (a: AnimationInfo): string => `#${a.id} ${a.kind} ${a.label ?? a.key ?? ''}`;
-
-/** What the animator is running, from `live()`, and its last few lifecycle
- *  events, from `watch()`. Refreshed on the animator's own frames. */
-function AnimatorWatch({ animator }: { animator: Animator }) {
-  const [rows, setRows] = useState<LiveAnimation[]>([]);
-  const [log, setLog] = useState<string[]>([]);
-  useEffect(() => {
-    const refresh = () => setRows(animator.live());
-    const stopTick = animator.onTick(refresh);
-    const stopWatch = animator.watch((e) => {
-      if (e.type === 'fire' || e.type === 'lap') return;
-      setLog((l) => [`${e.type.padEnd(9)} ${nameOf(e.animation)}`, ...l].slice(0, 8));
-      refresh();
-    });
-    refresh();
-    return () => { stopTick(); stopWatch(); };
-  }, [animator]);
-  return (
-    <div className={styles.watch}>
-      <div>
-        <h4>live ({rows.length})</h4>
-        <table>
-          <tbody>
-            {rows.map((a) => (
-              <tr key={a.id}>
-                <td>{nameOf(a)}</td>
-                <td className={styles.num}>{a.progress == null ? '' : `${(a.progress * 100).toFixed(0)}%`}</td>
-                <td>{a.paused ? 'paused' : ''}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div>
-        <h4>events</h4>
-        <ul className={styles.log}>{log.map((line, i) => <li key={i}>{line}</li>)}</ul>
-      </div>
-    </div>
-  );
-}
-
 export function AnimationDemo() {
   const animator = useAnimator();
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className={styles.demo}>
       <WeaselProvider isolate><AnimationCards animator={animator} /></WeaselProvider>
       <AnimatorWatch animator={animator} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ opacity: 0.7 }}>
-          Flick-snap: drag the block, release with velocity. Decay first, then snaps to nearest 60-px grid cell.
-        </span>
-        <FlickSnapPanel animator={animator} />
-      </div>
+      <span className="ckd-toolbar-note">
+        Flick-snap: drag the block, release with velocity. Decay first, then snaps to nearest 60-px grid cell.
+      </span>
+      <FlickSnapPanel animator={animator} />
     </div>
   );
 }
