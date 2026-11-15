@@ -250,14 +250,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-
-- **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids
-  stops painting.** `scenePickIds` numbers each node on its first paint and keeps the number for the
-  scene's life, so an id learned from an id frame stays good. Nodes removed keep theirs, and once a scene
-  has painted `MAX_PICK_ID` (2^24 - 1) distinct ids, `idOf` throws in the paint: a particle emitter
-  minting 100 ids a frame reaches it in about 45 minutes at 60 fps. Reusing a removed node's number
-  breaks the "stays good" promise for ids read before the removal, so it needs a ruling. Closes when
-  removed nodes' numbers are reclaimed or the promise is kept some other bounded way (filed 2026-11-11).
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
