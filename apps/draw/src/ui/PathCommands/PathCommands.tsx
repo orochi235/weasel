@@ -8,11 +8,13 @@ import {
   DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, setToolOption, SIMPLIFY_PATH_PARAMS, useOngoingAction, useToolOptionParams,
 } from '@weasel-js/core';
 import { SAND_TOOL_OPTIONS } from '@weasel-js/path-tools';
+import { decimal } from '@weasel-js/quantity';
 import { drawToolOptionValues } from '../../toolOptions';
 import { Slider } from '@weasel-js/ui/components/Slider';
 import s from './PathCommands.module.css';
 
-const readout = (t: { value: number }): string => t.value.toFixed(1);
+/** Each slider's readout and spoken value. */
+const ONE_PLACE = decimal({ places: 1, grouping: false });
 const TOLERANCE = SIMPLIFY_PATH_PARAMS.children.tolerance;
 const DISTANCE = OFFSET_PATH_PARAMS.children.distance;
 
@@ -52,7 +54,7 @@ export function SimplifySlider({ tolerance, onTolerance, className = s.slider }:
       }}
       onChange={([t]) => simplify.commit({ tolerance: t.value })}
       readoutPlacement="inline-after"
-      renderReadout={readout}
+      display={ONE_PLACE}
     />
   );
 }
@@ -78,7 +80,7 @@ export function OffsetSlider({ className = s.slider }: PathSliderProps): ReactEl
         setDistance(DISTANCE.default);
       }}
       readoutPlacement="inline-after"
-      renderReadout={readout}
+      display={ONE_PLACE}
     />
   );
 }

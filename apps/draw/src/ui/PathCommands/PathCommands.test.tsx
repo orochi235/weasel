@@ -44,6 +44,16 @@ describe('the path command sliders', () => {
     expect(simplify.commit).toHaveBeenCalledWith({ tolerance: expect.closeTo(1.1, 5) });
   });
 
+  it('shows and speaks each value to one decimal place', () => {
+    render(<Simplify />);
+    const slider = screen.getByRole('slider', { name: 'Simplify tolerance' });
+    act(() => {
+      fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    });
+    expect(slider).toHaveAttribute('aria-valuetext', '1.1');
+    expect(screen.getByText('1.1')).toBeInTheDocument();
+  });
+
   it('drives Offset Path from its slider, by distance', () => {
     render(<OffsetSlider />);
     const slider = screen.getByRole('slider', { name: 'Offset distance' });
