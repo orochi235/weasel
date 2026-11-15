@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAction, useMenus, type Action, type MenuDef } from '@weasel-js/core';
+import { defineAction, useAction, useMenus, type Action, type MenuDef } from '@weasel-js/core';
 import { pref, type PrefAction, type PrefGroup } from '@weasel-js/prefs';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
 import { usePref } from '../prefs';
@@ -23,20 +23,23 @@ export function switchChoices(asset: SurfaceAsset, current: SurfaceKind): { surf
 /** The id of the action that moves `id` to another surface: one variant per surface it allows. */
 export const switchActionId = (id: string): string => `draw.surface.${id}`;
 
+/** A surface switch's params: the surface to move to. */
+type SwitchParams = { surface?: SurfaceKind };
+
 /** The action that moves `asset` between its surfaces, a variant per surface. */
 function switchAction(asset: SurfaceAsset, setSurface: (id: string, surface: SurfaceKind) => void): Action {
-  return {
+  return defineAction<string, SwitchParams>({
     id: switchActionId(asset.id),
     label: asset.label,
     variants: asset.surfaces.map((surface) => ({ key: surface, label: SHOW_AS[surface], params: { surface } })),
     invoker: {
       timing: 'immediate',
       run: (_deps, params) => {
-        const surface = params?.surface as SurfaceKind | undefined;
+        const surface = params?.surface;
         if (surface) setSurface(asset.id, surface);
       },
     },
-  };
+  });
 }
 
 /** The switch as a schema of action leaves, one per surface `asset` can move to: what a menu draws. */
