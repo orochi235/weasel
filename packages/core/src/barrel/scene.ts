@@ -149,7 +149,7 @@ export { replaceDoc } from '../core/scene/docValues';
 export { OUTPUT_GRID_KEY, outputGridOf, quantizedShape, quantizeSize } from '../core/scene/outputGrid';
 export type { QuantizeRule, SceneQuantize } from '../core/scene/useSceneOptions';
 export type { SceneDeclaredFieldSetters } from '../core/scene/declaredFieldSetters';
-export type { AnyScene } from '../core/scene/anyScene';
+export type { AnyNode, AnyScene } from '../core/scene/anyScene';
 export type { NodeBase as SceneNodeBase } from '../core/scene/types';
 export type { LayerRecordBase, SceneLayerMembers } from '../core/scene/layerTypes';
 export type { SceneChanges } from '../core/scene/sceneChanges';

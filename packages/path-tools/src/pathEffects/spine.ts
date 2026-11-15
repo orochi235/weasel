@@ -12,7 +12,7 @@ import {
   type NodeId,
   type Op,
   pathEffectOf,
-  type SceneNode as Node,
+  type AnyNode,
   sourcesOf,
   type AnyScene,
 } from '@weasel-js/core';
@@ -20,8 +20,6 @@ import { PATH_EFFECTS_GROUP } from './actions';
 import { releasedOps, takenOps } from './hiding';
 import { closesLoop } from './retarget';
 import { icon } from '../icons.gen';
-
-type AnyNode = Node<unknown, string, unknown>;
 
 const isTween = (node: AnyNode | undefined): node is AnyNode =>
   node !== undefined && pathEffectOf(node)?.kind === 'tween' && sourcesOf(node).length >= 2;

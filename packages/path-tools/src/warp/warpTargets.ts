@@ -25,10 +25,8 @@ import {
 import {
   heldWarpResult, rememberWarpResult, resolvePathWarp, warpFrameFor, type HeldPathWarp,
 } from './pathWarp';
-import { type PathNode, resolveEditablePathOf, type SceneNode, withShownPath } from '@weasel-js/core';
+import { type AnyNode, type PathNode, resolveEditablePathOf, withShownPath } from '@weasel-js/core';
 import { selectedWarpPaths, textsBox, unionBox, type WarpLeaves } from './warpSelection';
-
-type AnyNode = SceneNode<unknown, string, unknown>;
 
 /** Which warp a tool or action works with. */
 export type WarpKind = PathWarp['kind'];

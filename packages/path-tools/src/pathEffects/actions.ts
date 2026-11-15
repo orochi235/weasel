@@ -24,7 +24,7 @@ import {
   pathEffectParts,
   resolvePartPaint,
   registeredPathEffects,
-  type SceneNode as Node,
+  type AnyNode,
   slotOf,
   pathOperationTags,
   type AnyScene,
@@ -35,8 +35,6 @@ import { icon } from '../icons.gen';
 import { pathEffectSettingsForm } from './settingsForm';
 import { PATH_EFFECT_PARAMS } from './effectForms';
 import type {} from '../actionParamSchema';
-
-type AnyNode = Node<unknown, string, unknown>;
 
 /** The `group` every path-effect action is in, for an `<ActionBar>`. */
 export const PATH_EFFECTS_GROUP = 'pathEffects';

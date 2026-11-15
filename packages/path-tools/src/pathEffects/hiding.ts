@@ -11,12 +11,10 @@ import {
   type Op,
   pathEffectOf,
   type PathEffect,
-  type SceneNode as Node,
+  type AnyNode,
   sourcesHiddenBy,
   type AnyScene,
 } from '@weasel-js/core';
-
-type AnyNode = Node<unknown, string, unknown>;
 
 /** Whether an effect other than those `leaving` holds `source` hidden. */
 export function hiddenByOthers(scene: AnyScene, source: NodeId, leaving: ReadonlySet<NodeId> = new Set()): boolean {

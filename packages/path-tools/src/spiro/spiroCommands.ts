@@ -6,13 +6,11 @@ import { ActionDisabledReason, defineAction, type Action, type ActionDeps, type 
 import { SPIRO_KINDS, isSpiroKind, type SpiroKind } from '@weasel-js/geom';
 import {
   commitOps, createSetDataOp, pathOperationTags, reshapeTo, resolveEditablePathOf, storeEditablePath,
-  type NodeId, type Op, type SceneNode,
+  type AnyNode, type NodeId, type Op,
 } from '@weasel-js/core';
 import { respiroWithKind, spiroOf, withoutSpiro } from './spiroShape';
 import { icon, type PathToolsIconName } from '../icons.gen';
 import type {} from '../actionParamSchema';
-
-type AnyNode = SceneNode<unknown, string, unknown>;
 
 const KIND_ICONS: Record<SpiroKind, PathToolsIconName> = {
   smooth: 'spiroSmooth', g4: 'spiroG4', corner: 'spiroCorner', left: 'spiroLeft', right: 'spiroRight',

@@ -5,11 +5,9 @@
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import { type Path, pxReach } from '@weasel-js/geom';
-import { type NodeId, nodeOutline, type PathNode, pathNodesOf, type SceneNode, shownNodeOf, type AnyScene } from '@weasel-js/core';
+import { type NodeId, nodeOutline, type PathNode, pathNodesOf, shownNodeOf, type AnyNode, type AnyScene } from '@weasel-js/core';
 import type { ImmediateParams } from '@weasel-js/routing';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
-
-type AnyNode = SceneNode<unknown, string, unknown>;
 
 /** Default reach of a click from the stroke it acts on, in screen pixels. */
 export const DEFAULT_STROKE_REACH_PX = 6;

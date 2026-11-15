@@ -8,7 +8,7 @@ import {
   WeaselRenderer, subscribeGlyphReady, subscribeImageReady, viewToMat3,
   type DrawCommand, type FlattenTolerance, type IdBuffer, type ImageMinification, type ShaderProgramHandle,
 } from '@weasel-js/renderer';
-import type { Node } from '../../core/scene/types';
+import type { AnyNode } from '../../core/scene/anyScene';
 import type { View } from '../../core/viewport/view';
 import { CANVAS_CONTEXT_ATTRIBUTES } from '../contextAttributes';
 import { defaultDrawOne, paintBoundsFor } from '../defaultDrawOne';
@@ -21,8 +21,6 @@ import type { FrameInputs, FromWorker, ToWorker } from './protocol';
 import { createSceneMirror, type SceneMirror, type SceneMirrorOptions } from './sceneMirror';
 import { createWorkerAnimations, type WorkerAnimation } from './workerAnimations';
 import { loadFromPage } from './workerImages';
-
-type AnyNode = Node<unknown, string, unknown>;
 
 /** How a render worker paints. Everything here is code, so it is the worker module's to give:
  *  a function cannot cross from the page. */

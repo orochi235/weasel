@@ -14,7 +14,7 @@ import {
   type Mixed,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
-  type SceneNode,
+  type AnyNode,
 } from '@weasel-js/core';
 import type { IconSpec } from '@weasel-js/icons';
 import {
@@ -43,7 +43,7 @@ export { MIXED };
 export type { Mixed };
 
 /** A scene node of any data, layer, and pose. */
-export type AnyNode = SceneNode<unknown, string, unknown>;
+export type { AnyNode };
 
 /**
  * One editable property in a {@link SelectionPanel}, paired with the dotted

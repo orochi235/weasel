@@ -1,11 +1,10 @@
-import type { Node, NodeId } from 'core/scene/types';
+import type { AnyNode } from 'core/scene/anyScene';
+import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createSetLockedOp } from 'core/ops/nodeFlags';
 import { copiedRoots } from '../selectionSubtree';
 import type { AnyScene } from 'core/scene/anyScene';
-
-type AnyNode = Node<unknown, string, unknown>;
 
 /** The pose a copy of `node` is stored with. `isRoot` is true for a selected
  *  node and false for one copied because an ancestor was. */

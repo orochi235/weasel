@@ -14,14 +14,12 @@ import {
   type NodeId,
   type Op,
   pathEffectOf,
-  type SceneNode as Node,
+  type AnyNode,
   sourcesOf,
   type AnyScene,
 } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP, selectedEffects } from './actions';
 import { releasedOps, takenOps } from './hiding';
-
-type AnyNode = Node<unknown, string, unknown>;
 
 /** Whether `effect` reading `target` would loop: `target` is already one of
  *  its sources, or derives from it. */
