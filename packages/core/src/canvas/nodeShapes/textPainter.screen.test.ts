@@ -9,6 +9,7 @@ import { asNodeId, type Node, type RectPose } from 'core/scene/types';
 import { findNodeShape, findShapeSilhouette, shapeCoversPoint, _resetShapePaintersForTests } from '../NodeShape';
 import { defaultDrawOne } from '../defaultDrawOne';
 import { drawnBoundsOf } from '../drawnBounds';
+import { hitTestArea } from '../deps/hitTestArea';
 import { textPoseOf, type TextNodeData } from './textPainter';
 
 const RED = { kind: 'solid', color: '#f00' } as const;
@@ -79,6 +80,17 @@ describe('kit:text — a { px } font size', () => {
     const y = full!.height * 0.25;
     expect(shapeCoversPoint(node(data), POSE, x, y, { scale: 1 })).toBe(true);
     expect(shapeCoversPoint(node(data), POSE, x, y, { scale: 2 })).toBe(false);
+  });
+
+  it('is taken by a marquee where its lines are at the asking view\'s scale', () => {
+    const data = { text: 'AB', style: PX };
+    const [full] = textLineBoxes(textPoseOf(data, POSE));
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    scene.add({ id: asNodeId('t'), kind: 'mark', layer: 'main', data, pose: POSE });
+    const box = { x: full!.width * 0.7, y: full!.height * 0.2, width: full!.width * 0.1, height: full!.height * 0.1 };
+    const at = (s: number) => hitTestArea(scene, box, { camera: { x: 0, y: 0, scale: { x: s, y: s } } });
+    expect(at(1)).toEqual([asNodeId('t')]);
+    expect(at(2)).toEqual([]);
   });
 
   it('bounds a stroked line by its width at the view scale', () => {

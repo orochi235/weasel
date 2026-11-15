@@ -7,7 +7,7 @@
  * rect, rotated if the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
-import { transformPoint, boundsOfPath, pathIntersectsRect, type Affine } from '@weasel-js/geom';
+import { transformPoint, boundsOfPath, meanScale, pathIntersectsRect, type Affine } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,
@@ -49,6 +49,9 @@ export interface RegionQueryOptions {
    *  selects the same ink twice. A bare-adapter consumer, which has nothing
    *  to fold members back into their group, asks for them. */
   includeGroups?: boolean;
+  /** The asking view's scale, for a node that sizes itself in screen pixels
+   *  (`{ px }` text). `hitTestArea` and its siblings read it off the camera. */
+  scale?: number;
 }
 
 
@@ -134,7 +137,8 @@ function walkArea(
   query: RegionQueryOptions,
 ): NodeId[] {
   const src = scenePickSource(scene, { ...opts, index: { descriptor } });
-  return pickWalk<unknown>(src, regionPickQuery(region, mode, descriptor, query)) as NodeId[];
+  const scaled = opts?.camera && query.scale === undefined ? { ...query, scale: meanScale(opts.camera.scale) } : query;
+  return pickWalk<unknown>(src, regionPickQuery(region, mode, descriptor, scaled)) as NodeId[];
 }
 
 /** The query a marquee or a lasso over `r` asks of each node. */
@@ -164,7 +168,7 @@ export function regionPickQuery(
       let ink: boolean | undefined;
       const filled = (): boolean => ink ??= findShapeInk(node as never, pose, { inherited, shapes })?.filled !== false;
       return regionTakes(r, mode, asInked(filled, pose), b, () =>
-        asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived, shapes }) ?? derived ?? poseOutline(pose, b)), filled);
+        asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived, shapes, ...(query.scale !== undefined ? { scale: query.scale } : {}) }) ?? derived ?? poseOutline(pose, b)), filled);
     },
     inPlane: (m) => regionPickQuery(regionInPlane(r, m), mode, descriptor, query),
     // A copy is tested by every walk, so the query carried into one asks no index.
