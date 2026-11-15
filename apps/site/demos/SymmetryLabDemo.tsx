@@ -148,6 +148,10 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     sym.update(group, { spec: { ...specOf(config), ...preset }, center: { x: config.centerX, y: config.centerY } });
   }, [sym, group, kind, pattern, config]);
 
+  // A config write records a history entry, which notifies the scene before React
+  // renders again: `show` reads what it last wrote, or it writes the same field forever.
+  const shown = useRef(config);
+  useLayoutEffect(() => { shown.current = config; }, [config]);
   useLayoutEffect(() => {
     const show = () => {
       const g = sym.read(group);
@@ -155,7 +159,9 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       const have = fieldsOf(g.spec, g.center);
       for (const k of Object.keys(have) as (keyof Fields)[]) {
         const v = ROUNDED.has(k) ? Math.round(have[k] as number) : have[k];
-        if (!near(v, ctx.config[k])) setConfig(k, v);
+        if (near(v, shown.current[k])) continue;
+        shown.current = { ...shown.current, [k]: v };
+        setConfig(k, v);
       }
     };
     const offScene = scene.subscribe(show);
@@ -163,7 +169,7 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     // The effect above can change the group in this same commit, while this one is unsubscribed.
     show();
     return () => { offScene(); offSym(); };
-  }, [scene, sym, group, setConfig, ctx.config]);
+  }, [scene, sym, group, setConfig]);
 
   return (
     <TrialSceneCanvas

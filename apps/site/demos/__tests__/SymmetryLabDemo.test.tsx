@@ -1,7 +1,7 @@
 import { act, cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { GROUP_ID, PETAL_ID, SymmetryLabDemo } from '../SymmetryLabDemo';
 import { withIcons } from '../../testIcons';
 
@@ -101,6 +101,7 @@ describe('SymmetryLabDemo', () => {
   });
 
   it('takes back a panel edit, panel and group together, in one Undo', async () => {
+    const errors = vi.spyOn(console, 'error');
     await mount();
     await userEvent.click(screen.getByRole('checkbox', { name: 'Glide rows' }));
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
@@ -109,6 +110,9 @@ describe('SymmetryLabDemo', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Redo' }));
     expect(screen.getByRole('checkbox', { name: 'Glide rows' })).toBeChecked();
     expect(node(GROUP_ID).data.symmetry?.glideRows).toBe(true);
+    // A panel write notifies the scene, whose subscriber must not write it again.
+    expect(errors).not.toHaveBeenCalledWith('weasel: a subscriber threw', expect.anything());
+    errors.mockRestore();
   });
 
   it('takes back a canvas edit in one Undo', async () => {
