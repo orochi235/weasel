@@ -3,7 +3,9 @@ import type { RunAlign } from '@weasel-js/geom';
 import { useRun } from '../Run';
 import type { HoldProps } from '../Disabled';
 import { ownHold, useControlHold } from '../Disabled/controlHold';
-import { heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, useSwatchStop, type SwatchChange } from './SwatchButton';
+import {
+  heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, swatchMarks, useSwatchApply, useSwatchStop, type SwatchChange, type SwatchValue,
+} from './SwatchButton';
 import { tiling } from '../../tiling';
 import { SwatchRings } from './SwatchRings';
 import s from './SwatchGrid.module.css';
@@ -21,20 +23,29 @@ export interface SwatchGridOption {
   glyph?: ReactNode;
   /** The glyph's color. Default: the text color around the palette. */
   ink?: string;
+  /** The swatch applies nothing. It stays reachable by the arrows, so its reason can be read. */
+  disabled?: boolean;
+  /** Why it is disabled: its tooltip and description while `disabled`. */
+  disabledReason?: string;
 }
 
 /** Props for {@link SwatchGrid}. Disabled or read-only, its swatches apply nothing; the arrows still move among them
  *  unless it is disabled with no reason, which takes it out of the tab order. */
 export interface SwatchGridProps extends HoldProps {
   options: readonly SwatchGridOption[];
-  /** The id of the swatch to mark current, if any matches: its color unless it names an `id`. */
-  value?: string | null;
+  /** The id of the swatch to mark current, if any matches: its color unless it names an `id`. A list of ids makes
+   *  every swatch a toggle, pressed while its id is listed, as a set of pinned colors is; a click hands the swatch
+   *  back either way, for the app to add or take out. */
+  value?: SwatchValue;
   /** A click, Enter or Space on a swatch, with its id and the swatch. */
   onChange: SwatchChange;
   /** The alternate target — shift-click, right-click (the browser menu is
    *  suppressed) and Shift+Enter. Drawing apps route this to the slot that
    *  isn't focused: click for fill, shift-click for stroke. */
   onAltChange?: SwatchChange;
+  /** The swatch under the pointer or holding focus, and `null` as the pointer leaves or focus goes: for a readout
+   *  naming it. */
+  onHoverChange?: (option: SwatchGridOption | null) => void;
   /** Swatches per row; also the step for ArrowUp/ArrowDown. Default 6. */
   columns?: number;
   /** Where the last row sits in a grid when it is shorter than the rest. Default: the nearest `Along`'s, else
@@ -61,7 +72,7 @@ export interface SwatchGridProps extends HoldProps {
 export function SwatchGrid(props: SwatchGridProps): ReactElement {
   const run = useRun();
   if (run.shape !== undefined && run.shape.kind !== 'line') {
-    const { options, value, columns = 6, onChange, onAltChange, className } = props;
+    const { options, value, columns = 6, onChange, onAltChange, onHoverChange, className } = props;
     return (
       <SwatchRings
         {...ownHold(props)}
@@ -69,6 +80,7 @@ export function SwatchGrid(props: SwatchGridProps): ReactElement {
         align={run.align ?? 'center'}
         onChange={onChange}
         onAltChange={onAltChange}
+        onHoverChange={onHoverChange}
         groups={[{ key: 'grid', label: props['aria-label'], options, value, columns, className }]}
       />
     );
@@ -77,7 +89,7 @@ export function SwatchGrid(props: SwatchGridProps): ReactElement {
 }
 
 function SwatchGridLine(props: SwatchGridProps): ReactElement {
-  const { options, value, className } = props;
+  const { options, value, className, onHoverChange: hover } = props;
   const hold = useControlHold(props);
   const apply = heldApply(useSwatchApply(props.onChange, props.onAltChange), hold);
   const columns = props.columns ?? 6;
@@ -85,8 +97,8 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
   const tiles = tiling(options.length, { columns, lastRow });
   const rootRef = useRef<HTMLDivElement | null>(null);
 
-  const current = value === undefined ? -1 : options.findIndex((o) => swatchId(o) === value);
-  const tab = useSwatchStop(current, options.length);
+  const marks = swatchMarks(options, value);
+  const tab = useSwatchStop(marks.first, options.length);
   const swatches = () => swatchesIn(rootRef.current);
 
   return hold.wrap(
@@ -97,18 +109,27 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
       aria-label={props['aria-label']}
       style={tiles.style}
       data-held={hold.held}
-      onBlur={tab.onBlur}
+      onBlur={(e) => {
+        tab.onBlur(e);
+        if (hover && !e.currentTarget.contains(e.relatedTarget as Node | null)) hover(null);
+      }}
+      onPointerLeave={hover && (() => hover(null))}
     >
       {options.map((o, i) => (
         <SwatchButton
           key={swatchId(o) ?? `none-${i}`}
           option={o}
           tabStop={!hold.unreachable && i === tab.stop}
-          current={i === current}
+          current={marks.marked(i)}
+          toggle={marks.toggles}
           apply={apply}
           {...hold.focus}
           onKeyDown={swatchKeyDown(i, options, columns, apply, swatches, lastRow)}
-          onFocus={() => tab.focused(i)}
+          onFocus={() => {
+            tab.focused(i);
+            hover?.(o);
+          }}
+          onPointerEnter={hover && (() => hover(o))}
           {...tiles.item(i)}
         />
       ))}

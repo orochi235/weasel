@@ -239,50 +239,13 @@
 .crayonGrid {
   min-height: 0;
   overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
   gap: var(--wzl-space-2);
-}
-
-.crayon {
-  aspect-ratio: 1;
-  width: 100%;
-  padding: 0;
-  border: var(--wzl-border-w) solid rgb(0 0 0 / 0.25);
-  border-radius: var(--wzl-radius-sm);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-
-.crayon:hover:not(:disabled),
-.crayon:focus-visible {
-  outline: 2px solid var(--wzl-focus-ring);
-  outline-offset: 1px;
-}
-
-/* Square, matching a pinned swatch in the main row. */
-.crayonPinned {
-  composes: crayon;
-  border-radius: 0;
 }
 
 .crayonPin {
   color: rgb(0 0 0 / 0.6);
   filter: drop-shadow(0 0 1px rgb(255 255 255 / 0.7));
 }
-
-.crayon:disabled {
-  opacity: 0.4;
-  filter: var(--wzl-disabled-filter);
-  cursor: default;
-}
-
-/* A pinned swatch is never disabled — clicking it is how you unpin. */
-.crayonPin {
-  pointer-events: none;
-}
-
 
 .presets {
   display: flex;

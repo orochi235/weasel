@@ -6,7 +6,10 @@ import { useInlineDirection } from '../Along/useRowRun';
 import { RunBand, RunEnds, useRunRow, type RunItemPlace } from '../Along/useRunRow';
 import type { HoldProps } from '../Disabled';
 import { useControlHold, type ControlHold } from '../Disabled/controlHold';
-import { heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, useSwatchStop, type SwatchApply, type SwatchChange } from './SwatchButton';
+import {
+  heldApply, SwatchButton, swatchesIn, swatchId, swatchKeyDown, swatchMarks, useSwatchApply, useSwatchStop, type SwatchApply, type SwatchChange,
+  type SwatchValue,
+} from './SwatchButton';
 import type { SwatchGridOption } from './SwatchGrid';
 import { inwardSign, ringDepths, ringPlan, ringsOf, ringThicknesses, viableRings, type SwatchRing } from './ringPlan';
 import s from './SwatchGrid.module.css';
@@ -17,8 +20,8 @@ export interface SwatchRingGroup {
   key: string;
   label?: string;
   options: readonly SwatchGridOption[];
-  /** The id of the swatch to mark current. */
-  value?: string | null;
+  /** The id of the swatch to mark current, or the ids of the toggles pressed. */
+  value?: SwatchValue;
   columns: number;
   /** First on the group's first ring, before its swatches: a heading, a picker. */
   lead?: ReactNode;
@@ -34,6 +37,7 @@ export interface SwatchRingsProps extends HoldProps {
   groups: readonly SwatchRingGroup[];
   onChange: SwatchChange;
   onAltChange?: SwatchChange;
+  onHoverChange?: (option: SwatchGridOption | null) => void;
   className?: string;
 }
 
@@ -72,7 +76,7 @@ function useSwatchMetrics(root: RefObject<HTMLElement | null>): SwatchMetrics {
  * keep two swatches apart; a palette's rows past there share its last ring, which scrolls along itself as any ring
  * too long for its run does.
  */
-export function SwatchRings({ shape, align, groups, onChange, onAltChange, className, ...own }: SwatchRingsProps): ReactElement {
+export function SwatchRings({ shape, align, groups, onChange, onAltChange, onHoverChange, className, ...own }: SwatchRingsProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const { size, gap, leads } = useSwatchMetrics(root);
   const direction = useInlineDirection(root);
@@ -92,7 +96,9 @@ export function SwatchRings({ shape, align, groups, onChange, onAltChange, class
     <div ref={root} className={className ? `${s.rings} ${className}` : s.rings} data-held={hold.held}>
       <RunScope fresh>
         {groups.map((g, i) => (
-          <RingGroup key={g.key} group={g} rings={rings.slice(firsts[i], firsts[i]! + plan[i]!)} align={align} apply={apply} hold={hold} />
+          <RingGroup
+            key={g.key} group={g} rings={rings.slice(firsts[i], firsts[i]! + plan[i]!)} align={align} apply={apply} hold={hold} hover={onHoverChange}
+          />
         ))}
       </RunScope>
     </div>
@@ -105,11 +111,20 @@ interface RingEntry {
   render: (place: RunItemPlace) => ReactElement;
 }
 
-function RingGroup({ group, rings, align, apply, hold }: { group: SwatchRingGroup; rings: readonly SwatchRing[]; align: RunAlign; apply: SwatchApply; hold: ControlHold }): ReactElement {
+interface RingGroupProps {
+  group: SwatchRingGroup;
+  rings: readonly SwatchRing[];
+  align: RunAlign;
+  apply: SwatchApply;
+  hold: ControlHold;
+  hover: SwatchRingsProps['onHoverChange'];
+}
+
+function RingGroup({ group, rings, align, apply, hold, hover }: RingGroupProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
   const { options, value, columns, lead, empty } = group;
-  const current = value === undefined ? -1 : options.findIndex((o) => swatchId(o) === value);
-  const tab = useSwatchStop(current, options.length);
+  const marks = swatchMarks(options, value);
+  const tab = useSwatchStop(marks.first, options.length);
   const swatches = () => swatchesIn(root.current);
 
   const swatch = (i: number): RingEntry => ({
@@ -119,11 +134,16 @@ function RingGroup({ group, rings, align, apply, hold }: { group: SwatchRingGrou
         key={swatchId(options[i]!) ?? `none-${i}`}
         option={options[i]!}
         tabStop={!hold.unreachable && i === tab.stop}
-        current={i === current}
+        current={marks.marked(i)}
+        toggle={marks.toggles}
         apply={apply}
         {...hold.focus}
         onKeyDown={ringKeyDown(i, columns, swatches, swatchKeyDown(i, options, columns, apply, swatches))}
-        onFocus={() => tab.focused(i)}
+        onFocus={() => {
+          tab.focused(i);
+          hover?.(options[i]!);
+        }}
+        onPointerEnter={hover && (() => hover(options[i]!))}
         className={place.className}
         style={place.style}
         data-ring-item={String(i)}
@@ -141,7 +161,13 @@ function RingGroup({ group, rings, align, apply, hold }: { group: SwatchRingGrou
   });
 
   return (
-    <div ref={root} className={group.className ? `${s.ringGroup} ${group.className}` : s.ringGroup} role="group" aria-label={group.label} onBlur={tab.onBlur}>
+    <div ref={root} className={group.className ? `${s.ringGroup} ${group.className}` : s.ringGroup} role="group" aria-label={group.label}
+      onBlur={(e) => {
+        tab.onBlur(e);
+        if (hover && !e.currentTarget.contains(e.relatedTarget as Node | null)) hover(null);
+      }}
+      onPointerLeave={hover && (() => hover(null))}
+    >
       {rings.map((ring, k) => {
         const lo = k * columns;
         const hi = k === rings.length - 1 ? options.length : Math.min(options.length, lo + columns);

@@ -38,7 +38,7 @@
   border-color: var(--wzl-fg-muted);
 }
 
-.swatch[aria-current] {
+.swatch:is([aria-current], [aria-pressed='true']) {
   border-color: var(--wzl-accent);
   box-shadow: 0 0 0 1px var(--wzl-accent);
 }
@@ -111,6 +111,6 @@
   cursor: not-allowed;
 }
 
-.swatch:is([aria-disabled], [aria-readonly]):hover:not([aria-current]) {
+.swatch:is([aria-disabled], [aria-readonly]):hover:not([aria-current], [aria-pressed='true']) {
   border-color: var(--wzl-border);
 }

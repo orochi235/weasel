@@ -9,9 +9,13 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { Input } from '@weasel-js/ui/components/Input';
 import { Slider } from '@weasel-js/ui/components/Slider';
+import { SwatchGrid, type SwatchGridOption } from '@weasel-js/ui/components/SwatchGrid';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 
 const HEX6 = /^#[0-9a-f]{6}$/i;
+const FULL = 'Every slot is pinned — raise the color count to add more.';
+/** Swatches to a row of the crayon grid. */
+const CRAYON_COLUMNS = 12;
 
 export type SourceId = 'named' | 'lego' | 'copic';
 
@@ -102,6 +106,17 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
     onChange([...anchors, { ...a, name }]);
   };
   const unpin = (name: string) => onChange(anchors.filter((a) => a.name !== name));
+  const byKey = new Map(swatches.map((s) => [s.key, s]));
+  const crayons: SwatchGridOption[] = swatches.map((s) => {
+    const pinned = pinnedNames.has(s.name);
+    return {
+      id: s.key,
+      value: s.hex,
+      label: s.label,
+      ...(pinned ? { glyph: <PinIcon size={13} className={styles.crayonPin} /> } : {}),
+      ...(!pinned && full ? { disabled: true, disabledReason: FULL } : {}),
+    };
+  });
 
   const TABS: readonly { id: SourceId; label: string }[] = [
     { id: 'named', label: `Named · ${sets.named.length}` },
@@ -159,30 +174,22 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
       </header>
 
       <TabPanel id={source} className={styles.swatchTabPanel}>
-        <div className={styles.crayonGrid} onMouseLeave={() => setHovered(null)} role="group">
-          {swatches.map((s) => {
-            const isPinned = pinnedNames.has(s.name);
-            return (
-              <button
-                key={s.key}
-                type="button"
-                className={isPinned ? styles.crayonPinned : styles.crayon}
-                style={{ background: s.hex }}
-                disabled={!isPinned && full}
-                title={`${s.label} ${s.hex}`}
-                aria-label={isPinned ? `Unpin ${s.label}` : `Pin ${s.label}`}
-                aria-pressed={isPinned}
-                onMouseEnter={() => setHovered(`${s.label} · ${s.hex}`)}
-                onFocus={() => setHovered(`${s.label} · ${s.hex}`)}
-                onClick={() => (isPinned ? unpin(s.name) : add(s.anchor))}
-              >
-                {isPinned && <PinIcon size={13} className={styles.crayonPin} />}
-              </button>
-            );
-          })}
-        </div>
+        <SwatchGrid
+          className={styles.crayonGrid}
+          aria-label="Swatches to pin"
+          options={crayons}
+          value={swatches.filter((s) => pinnedNames.has(s.name)).map((s) => s.key)}
+          columns={CRAYON_COLUMNS}
+          onChange={(key) => {
+            const s = key === null ? undefined : byKey.get(key);
+            if (!s) return;
+            if (pinnedNames.has(s.name)) unpin(s.name);
+            else add(s.anchor);
+          }}
+          onHoverChange={(o) => setHovered(o && `${o.label} · ${o.value}`)}
+        />
       </TabPanel>
-      {full && <p className={styles.anchorHint}>Every slot is pinned — raise the color count to add more.</p>}
+      {full && <p className={styles.anchorHint}>{FULL}</p>}
     </Tabs>
     </section>
   );

@@ -64,3 +64,35 @@ export const Glyphs: Story = {
     );
   },
 };
+
+const PINS = 3;
+
+/** A list of ids as `value` makes every swatch a toggle. With three pinned, the rest are disabled for a reason,
+ *  which their tooltips give; a pinned one still unpins. */
+export const Pinned: Story = {
+  args: { options: PALETTE.slice(1, 13), columns: 6, 'aria-label': 'Pinned colors' },
+  render: (args) => {
+    const [pinned, setPinned] = useState<readonly string[]>(['#c64a3aff', '#3aa0c6ff']);
+    const [hovered, setHovered] = useState<SwatchGridOption | null>(null);
+    const full = pinned.length >= PINS;
+    const options = (args.options ?? PALETTE).map((o) => {
+      const off = full && o.value !== null && !pinned.includes(o.value);
+      return off ? { ...o, disabled: true, disabledReason: `Only ${PINS} colors can be pinned` } : o;
+    });
+    return (
+      <div>
+        <SwatchGrid
+          {...args}
+          options={options}
+          value={pinned}
+          onChange={(id) => {
+            if (id === null) return;
+            setPinned((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+          }}
+          onHoverChange={setHovered}
+        />
+        <p>pinned {pinned.join(', ') || 'none'} · {hovered?.value ?? 'nothing hovered'}</p>
+      </div>
+    );
+  },
+};
