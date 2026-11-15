@@ -28,7 +28,7 @@ top and bottom.
 | `radial` | `count - 1` turns, evenly spaced | `count` |
 | `kaleidoscope` | the radial turns, and a mirror through each wedge | `count`, `angle` |
 | `repeat` | `count - 1` steps of `spacing` along `angle`, every other one mirrored under `glide` | `count`, `spacing`, `angle`, `glide` |
-| `wallpaper` | the `cell` kind about every lattice point inside `extent`, every other column mirrored under `glide` | `cell`, `cellAngle`, `spacing`, `angle`, `rowSpacing`, `rowAngle`, `extent`, `glide`, and what the cell reads |
+| `wallpaper` | the `cell` kind about every lattice point inside `extent`, every other column mirrored under `glide` (every other row with `glideRows`) | `cell`, `cellAngle`, `spacing`, `angle`, `rowSpacing`, `rowAngle`, `extent`, `glide`, `glideRows`, and what the cell reads |
 
 `SYMMETRY_KINDS` holds them as a table, and a new kind is a row in it. Each
 row also names its `pointGroup`: the copies that keep the center where it is,
@@ -45,9 +45,9 @@ the center, with a copy at every lattice point inside it. Past
 the `cell` kind is drawn, its axis turned `cellAngle` from `angle`.
 
 `wallpaperSpec(name, spacing)` gives the fields for a named wallpaper group,
-and `WALLPAPER_GROUPS` lists them: p1, p2, pm, pg, cm, pmm, pmg, cmm, p4, p4m,
-p3, p3m1, p31m, p6, and p6m. pgg and p4g are missing, since their glides run
-between the lattice's rows rather than along them.
+and `WALLPAPER_GROUPS` lists all seventeen: p1, p2, pm, pg, cm, pmm, pmg, pgg, cmm,
+p4, p4m, p4g, p3, p3m1, p31m, p6, and p6m. pgg and p4g set `glideRows`, so their
+glides mirror alternate rows of a centered lattice and run between the rows.
 
 ```ts
 symmetry.update(id, { spec: { ...wallpaperSpec('p4m', 80), extent: { x: -320, y: -240, width: 640, height: 480 } } });
@@ -56,7 +56,7 @@ symmetry.update(id, { spec: { ...wallpaperSpec('p4m', 80), extent: { x: -320, y:
 ## Use
 
 ```tsx
-const scene = createScene({ systemLayers: [{ id: 'main' }], registry: symmetryRegistry });
+const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: symmetryRegistry });
 const symmetry = createSymmetry(scene);
 symmetry.create({ center: { x: 300, y: 200 }, symmetry: { kind: 'kaleidoscope', count: 6 } });
 
