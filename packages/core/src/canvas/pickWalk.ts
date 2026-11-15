@@ -124,6 +124,9 @@ export interface PickQuery<TPose> {
   /** Where the query can hit at all, for a source with an index. `inPlane`
    *  carries it with the query; without it the walk visits every node. */
   broad?: PickBroad;
+  /** The asking view's scale in this query's world, which a container's
+   *  `{ px }` text outline is clipped at. Absent is 1. */
+  scale?: number;
   /** Does this node, drawn at this pose, cover the query region? `derived`
    *  is the node's resolved path when it has one — a derived node's pose is a
    *  placeholder, so a region test that reads only the pose answers for the
@@ -180,8 +183,10 @@ export function pickWalk<TPose>(
   const clipOf = (ancestor: PickCandidate<TPose>): Path | null => {
     const cached = clipPath.get(ancestor.id);
     if (cached !== undefined) return cached;
+    // Drawn in its own layer's plane, so sized at the scale the view reaches it with.
     const resolved = ownClipOf(
       ancestor, src.poseOf(ancestor), () => src.derivedPathOf?.(ancestor), src.shapes,
+      (queryFor(ancestor.layer) ?? q).scale,
     );
     clipPath.set(ancestor.id, resolved);
     return resolved;

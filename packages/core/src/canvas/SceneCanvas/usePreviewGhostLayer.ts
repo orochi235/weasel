@@ -104,7 +104,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         }
         // The node's clip is its children's, not its own paint's.
         const clip = kids.length > 0
-          ? ownClipOf(effNode, entry.pose, () => slot.derivedPathOf?.(effNode, entry.pose), nodeShapesOf(sc)) : null;
+          ? ownClipOf(effNode, entry.pose, () => slot.derivedPathOf?.(effNode, entry.pose), nodeShapesOf(sc), scaled.scale) : null;
         const children: DrawCommand[] = [
           ...wrapWithPoseRotation(self, entry.pose as unknown),
           ...(clip ? [{ kind: 'group', clip, children: kids } as GroupDrawCommand] : kids),

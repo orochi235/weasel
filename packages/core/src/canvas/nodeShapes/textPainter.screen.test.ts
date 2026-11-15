@@ -3,13 +3,21 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { textLineBoxes } from '@weasel-js/text';
-import type { DrawCommand } from '@weasel-js/renderer';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
+import type { Path } from '@weasel-js/geom';
+import { renderHook } from '@testing-library/react';
+import type { Dispatcher, OngoingHandle } from '@weasel-js/routing';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type RectPose } from 'core/scene/types';
 import { findNodeShape, findShapeSilhouette, shapeCoversPoint, _resetShapePaintersForTests } from '../NodeShape';
 import { defaultDrawOne } from '../defaultDrawOne';
 import { drawnBoundsOf } from '../drawnBounds';
 import { hitTestArea } from '../deps/hitTestArea';
+import { buildSceneViewCommands } from '../sceneViewRender';
+import { pickWalk, scenePickSource } from '../pickWalk';
+import { scenePointQuery } from '../SceneCanvas/scenePointQuery';
+import { usePreviewGhostLayer } from '../SceneCanvas/usePreviewGhostLayer';
 import { textPoseOf, type TextNodeData } from './textPainter';
 
 const RED = { kind: 'solid', color: '#f00' } as const;
@@ -102,5 +110,76 @@ describe('kit:text — a { px } font size', () => {
     // At scale 2 the line is half as wide, so it no longer reaches the right edge.
     expect(drawnBoundsOf(scene, asNodeId('t'), tight, { scale: 2 }))
       .toEqual({ x: -5, y: -5, width: line!.width + 5, height: 205 });
+  });
+});
+
+describe('kit:text — a { px } font size, clipping its children', () => {
+  const data = { text: 'AB', style: PX };
+  // Inside the world-size line box, outside the one drawn at scale 2.
+  const inWorldOnly = () => {
+    const [full] = textLineBoxes(textPoseOf(data, POSE));
+    return { x: full!.width * 0.75, y: full!.height * 0.25, w: full!.width, h: full!.height };
+  };
+  function clipScene() {
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const t = scene.add({ id: asNodeId('t'), kind: 'mark', layer: 'main', data, pose: POSE, clip: 'outline' });
+    scene.add({ id: asNodeId('c'), kind: 'mark', layer: 'main', parent: t, data: {}, pose: POSE });
+    return scene;
+  }
+  const at = (s: number) => ({ x: 0, y: 0, scale: { x: s, y: s } });
+  const silhouetteAt = (s: number) => findShapeSilhouette(node(data), POSE, { scale: s });
+  const clipsOf = (cmds: DrawCommand[]): Path[] => {
+    const out: Path[] = [];
+    const visit = (c: DrawCommand): void => {
+      if (c.kind !== 'group') return;
+      const g = c as GroupDrawCommand;
+      if (g.clip) out.push(g.clip as Path);
+      g.children.forEach(visit);
+    };
+    cmds.forEach(visit);
+    return out;
+  };
+
+  it('clips them to the outline it draws at the view scale, and follows a zoom', () => {
+    const scene = clipScene();
+    for (const s of [2, 1, 2]) {
+      const clips = clipsOf(buildSceneViewCommands(scene, at(s), defaultDrawOne));
+      expect(clips).toHaveLength(1);
+      expect(clips[0]).toEqual(silhouetteAt(s));
+    }
+    expect(silhouetteAt(2)).not.toEqual(silhouetteAt(1));
+  });
+
+  it('keeps a world-size outline\'s clip through a zoom', () => {
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const t = scene.add({ kind: 'mark', layer: 'main', data: { text: 'AB', style: { fontFamily: 'inter', fontSize: 20 } }, pose: POSE, clip: 'outline' });
+    scene.add({ kind: 'mark', layer: 'main', parent: t, data: {}, pose: POSE });
+    const [first] = clipsOf(buildSceneViewCommands(scene, at(2), defaultDrawOne));
+    expect(clipsOf(buildSceneViewCommands(scene, at(4), defaultDrawOne))[0]).toBe(first);
+  });
+
+  it('lets a point reach a child only inside the outline drawn at the view scale', () => {
+    const scene = clipScene();
+    const { x, y } = inWorldOnly();
+    const pick = (s: number) => pickWalk(scenePickSource(scene), scenePointQuery<RectPose>(AUTO_POSE_DESCRIPTOR, true, 0)(x, y, { x: s, y: s }));
+    expect(pick(1)).toContain('c');
+    expect(pick(2)).not.toContain('c');
+  });
+
+  it('lets a marquee take a child only inside the outline drawn at the asking view\'s scale', () => {
+    const scene = clipScene();
+    const { x, y, w, h } = inWorldOnly();
+    const box = { x, y, width: w * 0.05, height: h * 0.1 };
+    expect(hitTestArea(scene, box, { camera: at(1) })).toContain(asNodeId('c'));
+    expect(hitTestArea(scene, box, { camera: at(2) })).not.toContain(asNodeId('c'));
+  });
+
+  it('clips them in a gesture preview to the outline drawn at the view scale', () => {
+    const scene = clipScene();
+    const handle: OngoingHandle = { previewIds: () => [asNodeId('t'), asNodeId('c')], previewPose: () => null };
+    const dispatcher = { inFlight: () => new Map([['g', handle]]), subscribe: () => () => {}, getVersion: () => 0 } as unknown as Dispatcher;
+    const { result } = renderHook(() => usePreviewGhostLayer<unknown, 'main', RectPose>({ scene, sceneSlot: { drawOne: defaultDrawOne }, dispatcher }));
+    const envelope = { getPreviewSources: () => [handle] };
+    expect(clipsOf(result.current.draw(envelope, at(2), { width: 800, height: 600, dpr: 1 }))).toEqual([silhouetteAt(2)]);
   });
 });

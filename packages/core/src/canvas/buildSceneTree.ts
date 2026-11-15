@@ -2,7 +2,7 @@ import type { NodeShapes } from './nodeShapeRegistry';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import { ownClipOf, type ClipBearing } from './ownClip';
-import { mat3, type Affine, type Path } from '@weasel-js/geom';
+import { mat3, meanScale, type Affine, type Path } from '@weasel-js/geom';
 import { definesFrame } from 'core/scene/effectivePose';
 import { deriveParallaxView, type ParallaxOptions, type PlaneMap } from 'core/viewport/parallax';
 import { scenePlaneOf } from './pickWalk';
@@ -154,7 +154,7 @@ export function buildSceneTree<
     const maybeContainer = node as ClipBearing<TPose> & {
       copiesFromPose?: (pose: TPose, node: unknown) => readonly Affine[] | null;
     };
-    const clip = ownClipOf(maybeContainer, pose, () => derivedPathOf?.(node, pose), shapes);
+    const clip = ownClipOf(maybeContainer, pose, () => derivedPathOf?.(node, pose), shapes, meanScale(v.scale));
     if (clip) {
       ownClip = { path: clip, layer: node.layer };
       ownClips = [...ancestorClips, ownClip];

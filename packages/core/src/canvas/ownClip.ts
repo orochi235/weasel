@@ -15,15 +15,17 @@ export interface ClipBearing<TPose> {
  * What a node declaring `clip: 'outline'` clips its children to, in world
  * coordinates: the silhouette of whichever painter claims it, the rect
  * fallback's box included, else for a group its box, or `null`. `derived`
- * supplies a derived path when there is one.
+ * supplies a derived path when there is one. `scale` is the view scale the
+ * node is drawn at, which a `{ px }` text outline is laid out at.
  */
 export function clipOutline<TPose>(
   node: Node<unknown, string, TPose>,
   pose: TPose,
   derived?: () => Path | null | undefined,
   shapes?: NodeShapes,
+  scale?: number,
 ): Path | null {
-  const sil = findShapeSilhouette(node, pose, { derivedPath: derived?.() ?? null, shapes });
+  const sil = findShapeSilhouette(node, pose, { derivedPath: derived?.() ?? null, shapes, scale });
   if (sil !== null || node.kind !== 'group' || !isRectPose(pose)) return sil;
   return nodeMemo(node, 'shape:group-box-clip', pose, () => pathThroughPoseFrame(groupBoxPath(pose), pose));
 }
@@ -36,8 +38,9 @@ export function ownClipOf<TPose>(
   pose: TPose,
   derived?: () => Path | null | undefined,
   shapes?: NodeShapes,
+  scale?: number,
 ): Path | null {
   if (typeof node.clipFromPose === 'function') return node.clipFromPose(pose);
   if (node.clip !== 'outline') return null;
-  return clipOutline(node as unknown as Node<unknown, string, TPose>, pose, derived, shapes);
+  return clipOutline(node as unknown as Node<unknown, string, TPose>, pose, derived, shapes, scale);
 }

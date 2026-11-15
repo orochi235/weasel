@@ -23,6 +23,7 @@ export function scenePointQuery<TPose>(
     const scale = meanScale(s);
     const tolerance = { px: pickTolerancePx, scale: s };
     return {
+      scale,
       hits: (n, pose, derived, inherited, shapes) => {
         // The pre-filter has to be at least as generous as the refinement
         // that follows it, or it rejects points the refinement would have

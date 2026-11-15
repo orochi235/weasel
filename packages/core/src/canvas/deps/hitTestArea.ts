@@ -152,6 +152,7 @@ export function regionPickQuery(
     includeGroups: query.includeGroups === true,
     intersectClips: true,
     broad: { box: r.bounds },
+    ...(query.scale !== undefined ? { scale: query.scale } : {}),
     clipAdmits: (clip, node, pose, derived) => {
       const g = poseDescriptorForNode(descriptor, node);
       return pathIntersectsRect(clip, derived ? boundsOfPath(derived) : visualBoundsViaDescriptor(pose, g))
