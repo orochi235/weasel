@@ -6,11 +6,9 @@ import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { pathInPoseFrame } from '@weasel-js/geom';
-import { commandFill, commandStroke } from '@weasel-js/renderer';
-import type { DrawCommand } from '@weasel-js/renderer';
 import { DERIVED_PAINTER, derivedDrawnBounds } from './derivedPainter';
 import { PAINT_SLOT } from './memo';
-import { inkReach, inkStroke, pathPaintOf, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
+import { inkReach, inkStroke, pathCommand, pathPaintOf, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
 import { resolveStroke } from '@weasel-js/paint';
 import { paintsPose, poseBoxBounds } from './poseBox';
 import { strokedPoseBox } from './strokedBounds';
@@ -33,21 +31,10 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     ? DERIVED_PAINTER.paint(node, pose, ctx)
     : withAnimatedTrim(withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as PathData & { path: Path };
-    const projected = pathInPoseFrame(d.path, pose);
-    const { fill: declared, stroke: strokeSpec } = pathPaintOf(d, ctx?.inherited);
-    // The pose is baked into `projected` rather than emitted as a transform,
-    // so a box-relative gradient has to be baked onto the same box here or
-    // it would arrive in the renderer referring to a frame that never exists.
-    const fill = declared && commandFill(declared, pose);
-    const stroke = strokeSpec && commandStroke(strokeSpec, pose);
-    const cmd: DrawCommand = {
-      kind: 'path',
-      path: projected,
-      ...(fill ? { fill } : {}),
-      ...(fill && d.vertexColors ? { vertexColors: d.vertexColors } : {}),
-      ...(stroke ? { stroke } : {}),
-    };
-    return [cmd];
+    const { fill, stroke } = pathPaintOf(d, ctx?.inherited);
+    // The pose is baked into the path rather than emitted as a transform, so a box-relative
+    // gradient is baked onto the same box, or it would refer to a frame that never exists.
+    return [pathCommand(pathInPoseFrame(d.path, pose), fill, stroke, d.vertexColors, pose)];
   }, ctx?.inherited), ctx), ctx),
   silhouette: (node, pose, ctx) => {
     if (ctx?.derivedPath != null) return ctx.derivedPath;

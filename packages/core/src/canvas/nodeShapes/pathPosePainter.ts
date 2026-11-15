@@ -3,9 +3,8 @@ import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { isPathLike, isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { nodeMemo } from 'core/scene/nodeMemo';
-import { commandFill, commandStroke, type DrawCommand } from '@weasel-js/renderer';
 import { PAINT_SLOT } from './memo';
-import { inkReach, inkStroke, pathPaintOf, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
+import { inkReach, inkStroke, pathCommand, pathPaintOf, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
 import { poseBoxBounds } from './poseBox';
 import { strokedBounds } from './strokedBounds';
 
@@ -24,19 +23,8 @@ export const PATH_POSE_PAINTER: NodeShapeEntry<unknown, Path> = {
   id: 'kit:path-pose',
   matches: (node) => node.kind !== 'group' && isPathLike(node.pose) && !isRectPose(node.pose),
   paint: (node, pose, ctx) => withAnimatedTrim(withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
-    const { fill: declared, stroke: strokeSpec } = paintOf(node, ctx?.inherited);
-    const box = boundsOfPath(pose);
-    const fill = declared && commandFill(declared, box);
-    const stroke = strokeSpec && commandStroke(strokeSpec, box);
-    const vertexColors = (node.data as PaintData | null)?.vertexColors;
-    const cmd: DrawCommand = {
-      kind: 'path',
-      path: pose,
-      ...(fill ? { fill } : {}),
-      ...(fill && vertexColors ? { vertexColors } : {}),
-      ...(stroke ? { stroke } : {}),
-    };
-    return [cmd];
+    const { fill, stroke } = paintOf(node, ctx?.inherited);
+    return [pathCommand(pose, fill, stroke, (node.data as PaintData | null)?.vertexColors)];
   }, ctx?.inherited), ctx), ctx),
   silhouette: (_node, pose) => pose,
   ink: (node, _pose, ctx) => {

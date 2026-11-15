@@ -1,11 +1,11 @@
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import { resolveFill, resolveStroke, strokeTrimKey } from '@weasel-js/paint';
 import type { NodeInk, NodeInkCtx, NodePaintCtx } from 'canvas/NodeShape';
-import { countPathAnchors } from '@weasel-js/geom';
+import { boundsOfPath, countPathAnchors, type Path } from '@weasel-js/geom';
 import { markerReach } from '@weasel-js/stroke';
 import { inkWidth, resolveStrokeWidth, widestStrokeWidth } from '@weasel-js/stroke';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
-import { paintDrawKindRegistry } from '@weasel-js/renderer';
+import { commandFill, commandStroke, paintDrawKindRegistry } from '@weasel-js/renderer';
 import { bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
 
@@ -138,4 +138,24 @@ export function pathPaintOf(
   const stroke = resolveStroke(data.stroke, inherited?.stroke);
   const fill = resolveFill(data.fill, inherited?.fill);
   return stroke !== null ? { fill, stroke } : { fill };
+}
+
+/** The command painting `path` in a resolved `fill` and `stroke`, whose box-relative paints are baked onto `box`:
+ *  the path's own bounds unless given. The kit's path painters all build their command here. */
+export function pathCommand(
+  path: Path,
+  fill: Fill | null,
+  stroke: Stroke | null | undefined,
+  vertexColors: readonly number[] | undefined,
+  box: Parameters<typeof commandFill>[1] = boundsOfPath(path),
+): DrawCommand {
+  const drawnFill = fill && commandFill(fill, box);
+  const drawnStroke = stroke && commandStroke(stroke, box);
+  return {
+    kind: 'path',
+    path,
+    ...(drawnFill ? { fill: drawnFill } : {}),
+    ...(drawnFill && vertexColors ? { vertexColors: vertexColors as number[] } : {}),
+    ...(drawnStroke ? { stroke: drawnStroke } : {}),
+  };
 }

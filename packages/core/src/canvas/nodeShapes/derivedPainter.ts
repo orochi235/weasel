@@ -1,18 +1,17 @@
-import { boundsOfPath, pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
+import { pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { unionBounds } from 'core/geometry/unionBounds';
-import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { derivedPartsOf, resolvePartPaint, type DerivedPart } from 'core/scene/derivedParts';
 import { derivesPath } from './memo';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import { strokedBounds } from './strokedBounds';
 import { inkCovers, trimmedOutline, type PickReach, type TrimmedOutline } from './pickOutline';
-import { inkReach, inkStroke, withAnimatedStrokeTrim, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
+import { inkReach, inkStroke, pathCommand, withAnimatedStrokeTrim, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
 import {
-  INHERIT, resolveFill, resolveStroke, strokeTrimKey, type PaintedFill, type PaintedStroke,
+  INHERIT, resolveFill, resolveStroke, strokeTrimKey,
 } from '@weasel-js/paint';
 
 /** A derived part's path framed by one pose, and its trimmed outline under one trim. */
@@ -41,24 +40,6 @@ export function _framedPartOutlineForTests(path: Path): TrimmedOutline | undefin
 }
 
 type PaintData = { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null; vertexColors?: number[] };
-
-function pathCommand(
-  path: Path,
-  declared: PaintedFill | null,
-  strokeSpec: PaintedStroke | null,
-  vertexColors: number[] | undefined,
-): DrawCommand {
-  const box = boundsOfPath(path);
-  const fill = declared && commandFill(declared, box);
-  const stroke = strokeSpec && commandStroke(strokeSpec, box);
-  return {
-    kind: 'path',
-    path,
-    ...(fill ? { fill } : {}),
-    ...(fill && vertexColors ? { vertexColors } : {}),
-    ...(stroke ? { stroke } : {}),
-  };
-}
 
 /** The stroked box of the path on `ctx`, each of its parts in its own stroke, or `null` with no
  *  path or no stroke. */
