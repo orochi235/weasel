@@ -7,9 +7,8 @@ import { IDENTITY_POSE_COMPOSITION,
   type RenderLayer,
   SceneCanvas,
   solid,
-  type ToolsApi,
   useLatest,
-  useScene, pickPreset,
+  useScene, pickPreset, WeaselProvider,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
@@ -126,7 +125,6 @@ export function Kernel3dDemo() {
   const scene = useScene<Solid, 'solids', Pose3>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'solids' }], initial: SOLIDS });
   const [camera, setCamera] = useState(() =>
     createCamera({ distance: 11, pitch: 0.45, yaw: 0.6, target: { x: 0, y: 0.5, z: 0 } }));
-  const [tools, setTools] = useState<ToolsApi | null>(null);
   const cameraRef = useLatest(camera);
   const size = useRef<CanvasSize>({ width: W, height: H });
 
@@ -143,32 +141,33 @@ export function Kernel3dDemo() {
   const layer = useMemo(() => solidsLayer(camera, scene), [camera, scene]);
 
   return (
-    <div className={styles.demo}>
-      <div className={styles.toolbar}>
-        {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-        <span className={styles.readout}>
-          yaw {deg(camera.yaw)}°  pitch {deg(camera.pitch)}°  distance {camera.distance.toFixed(2).padStart(6, '\u2007')}
-        </span>
+    <WeaselProvider>
+      <div className={styles.demo}>
+        <div className={styles.toolbar}>
+          <ToolPalette orientation="horizontal" />
+          <span className={styles.readout}>
+            yaw {deg(camera.yaw)}°  pitch {deg(camera.pitch)}°  distance {camera.distance.toFixed(2).padStart(6, '\u2007')}
+          </span>
+        </div>
+        <DemoStage width={W} height={H}>
+          <SceneCanvas
+            className="ckd-canvas"
+            backgroundFill={{ color: '#1e1610' }}
+            scene={scene}
+            features={[pickPreset]}
+            tools={{ orbit }}
+            ambient={[rig]}
+            poseDescriptor={poseDescriptor}
+            geometry={{ pickEvery }}
+            onResize={(next) => { size.current = next; }}
+            layers={{
+              // Faces need depth order across nodes, which a per-node painter cannot give.
+              scene: { drawOne: () => [] },
+              solids: { layer, before: 'scene' },
+            }}
+          />
+        </DemoStage>
       </div>
-      <DemoStage width={W} height={H}>
-        <SceneCanvas
-          className="ckd-canvas"
-          backgroundFill={{ color: '#1e1610' }}
-          scene={scene}
-          features={[pickPreset]}
-          tools={{ orbit }}
-          onToolsCreated={setTools}
-          ambient={[rig]}
-          poseDescriptor={poseDescriptor}
-          geometry={{ pickEvery }}
-          onResize={(next) => { size.current = next; }}
-          layers={{
-            // Faces need depth order across nodes, which a per-node painter cannot give.
-            scene: { drawOne: () => [] },
-            solids: { layer, before: 'scene' },
-          }}
-        />
-      </DemoStage>
-    </div>
+    </WeaselProvider>
   );
 }

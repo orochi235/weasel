@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { SceneCanvas, asNodeId, solid, stickyData, useScene, useSelection, type ToolsApi, editPreset, movePreset, pickPreset, resizePreset } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, solid, stickyData, useScene, useSelection, editPreset, movePreset, pickPreset, resizePreset, WeaselProvider } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
@@ -24,21 +23,21 @@ const INITIAL = [
 export function StickyNotesDemo() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const selection = useSelection({ scene, mode: 'multi' });
-  const [tools, setTools] = useState<ToolsApi | null>(null);
   return (
-    <div className="ckd-demo">
-      {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <DemoStage width={W} height={H}>
-        <SceneCanvas
-          className="ckd-canvas"
-          backgroundFill={{ color: '#f4f1ea' }}
-          scene={scene}
-          selection={selection}
-          features={[pickPreset, movePreset, resizePreset, editPreset]}
-          defaultTools={['sticky', 'pencil', 'text']}
-          onToolsCreated={setTools}
-        />
-      </DemoStage>
-    </div>
+    <WeaselProvider>
+      <div className="ckd-demo">
+        <ToolPalette orientation="horizontal" />
+        <DemoStage width={W} height={H}>
+          <SceneCanvas
+            className="ckd-canvas"
+            backgroundFill={{ color: '#f4f1ea' }}
+            scene={scene}
+            selection={selection}
+            features={[pickPreset, movePreset, resizePreset, editPreset]}
+            defaultTools={['sticky', 'pencil', 'text']}
+          />
+        </DemoStage>
+      </div>
+    </WeaselProvider>
   );
 }

@@ -1,10 +1,8 @@
-import { useState } from 'react';
 import {
   SceneCanvas,
   useScene,
   useSelection,
-  type ToolsApi,
-  BUILTIN_TOOL_IDS, pickPreset,
+  BUILTIN_TOOL_IDS, pickPreset, WeaselProvider,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
@@ -20,21 +18,21 @@ export function ShapeToolsDemo() {
     initial: [],
   });
   const selection = useSelection({ scene, mode: 'multi' });
-  const [tools, setTools] = useState<ToolsApi | null>(null);
 
   return (
-    <div className="ckd-demo">
-      {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <DemoStage width={W} height={H}>
-        <SceneCanvas
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          features={[pickPreset]}
-          defaultTools={TOOLS}
-          onToolsCreated={setTools}
-        />
-      </DemoStage>
-    </div>
+    <WeaselProvider>
+      <div className="ckd-demo">
+        <ToolPalette orientation="horizontal" />
+        <DemoStage width={W} height={H}>
+          <SceneCanvas
+            className="ckd-canvas"
+            scene={scene}
+            selection={selection}
+            features={[pickPreset]}
+            defaultTools={TOOLS}
+          />
+        </DemoStage>
+      </div>
+    </WeaselProvider>
   );
 }

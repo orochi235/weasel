@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   SceneCanvas,
   WeaselProvider,
   solid,
   useScene,
   useSelection,
-  type Fill, type ToolsApi, movePreset, pickPreset,
+  type Fill, movePreset, pickPreset, useScopedTools,
 } from '@weasel-js/core';
 import {
   buildRouteRegistry,
@@ -29,7 +29,7 @@ const INITIAL: Rect[] = [
 function ToolReflectionDemoInner() {
   const scene = useScene<Rect>({ items: INITIAL });
   const selection = useSelection({ scene, mode: 'multi' });
-  const [tools, setTools] = useState<ToolsApi | null>(null);
+  const tools = useScopedTools();
 
   const toolList = useMemo(() => (tools ? Object.values(tools.registry) : []), [tools]);
   const registry: RegistryEntry[] = useMemo(() => buildRouteRegistry(toolList), [toolList]);
@@ -52,7 +52,6 @@ function ToolReflectionDemoInner() {
             <SceneCanvas
               features={[pickPreset, movePreset]}
               defaultTools={['hand']}
-              onToolsCreated={setTools}
               className="ckd-canvas"
               scene={scene}
               selection={selection}

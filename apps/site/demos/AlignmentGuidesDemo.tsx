@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import { asNodeId, SceneCanvas, useScene, useSelection, rectPath, solid, movePreset, pickPreset, viewPreset } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, useScene, useSelection, rectPath, solid, movePreset, pickPreset, viewPreset, WeaselProvider } from '@weasel-js/core';
 import { alignmentSnapSource, spacingSnapSource } from '@weasel-js/guides';
-import type { Fill, Path, RectPose, ToolsApi } from '@weasel-js/core';
+import type { Fill, Path, RectPose } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
 
@@ -38,22 +37,22 @@ export function AlignmentGuidesDemo() {
   // Multi-select so Cmd-clicking several rects and dragging snaps the
   // selection's union box, not just one rect.
   const selection = useSelection({ scene, mode: 'multi' });
-  const [tools, setTools] = useState<ToolsApi | null>(null);
 
   return (
-    <div className="ckd-demo">
-      {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <DemoStage width={W} height={H}>
-        <SceneCanvas features={[viewPreset, pickPreset, movePreset]}
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          defaultTools={['rect']}
-          onToolsCreated={setTools}
-          viewport={{}}
-          snap={SNAP}
-        />
-      </DemoStage>
-    </div>
+    <WeaselProvider>
+      <div className="ckd-demo">
+        <ToolPalette orientation="horizontal" />
+        <DemoStage width={W} height={H}>
+          <SceneCanvas features={[viewPreset, pickPreset, movePreset]}
+            className="ckd-canvas"
+            scene={scene}
+            selection={selection}
+            defaultTools={['rect']}
+            viewport={{}}
+            snap={SNAP}
+          />
+        </DemoStage>
+      </div>
+    </WeaselProvider>
   );
 }

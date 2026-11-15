@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath,
   type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, solid, type Tool,
-  type ToolOptions, type ToolOptionShare, type ToolsApi, useScene, useSelection,
+  type ToolOptions, type ToolOptionShare, useScene, useSelection, WeaselProvider,
 } from '@weasel-js/core';
 import { pxReach } from '@weasel-js/geom';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
@@ -86,27 +86,27 @@ function brushes(shared: boolean): Record<string, Tool> {
 export function SharedBrushSizeDemo() {
   const scene = useScene({ systemLayers: [{ id: 'default' }] });
   const selection = useSelection({ scene, mode: 'multi' });
-  const [tools, setTools] = useState<ToolsApi | null>(null);
   const [values] = useState(createToolOptionValues);
   const [shared, setShared] = useState(false);
   const registry = useMemo(() => brushes(shared), [shared]);
   return (
-    <div className="ckd-demo">
-      {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <Checkbox isSelected={shared} onChange={setShared}>Share brush size</Checkbox>
-      <ActiveToolOptionsBar tools={tools} values={values} />
-      <DemoStage width={520} height={300}>
-        <SceneCanvas
-          className="ckd-canvas"
-          backgroundFill={{ color: '#f4f1ea' }}
-          scene={scene}
-          selection={selection}
-          tools={registry}
-          defaultActiveTool="dots"
-          toolOptionValues={values}
-          onToolsCreated={setTools}
-        />
-      </DemoStage>
-    </div>
+    <WeaselProvider>
+      <div className="ckd-demo">
+        <ToolPalette orientation="horizontal" />
+        <Checkbox isSelected={shared} onChange={setShared}>Share brush size</Checkbox>
+        <ActiveToolOptionsBar values={values} />
+        <DemoStage width={520} height={300}>
+          <SceneCanvas
+            className="ckd-canvas"
+            backgroundFill={{ color: '#f4f1ea' }}
+            scene={scene}
+            selection={selection}
+            tools={registry}
+            defaultActiveTool="dots"
+            toolOptionValues={values}
+          />
+        </DemoStage>
+      </div>
+    </WeaselProvider>
   );
 }

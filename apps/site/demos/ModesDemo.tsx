@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import {
   asNodeId,
   SceneCanvas,
@@ -7,8 +7,7 @@ import {
   solid,
   createModeDecorationLayer,
   createWorkspaceTintLayer,
-  type DrawCommand,
-  type ToolsApi, movePreset, pickPreset, transformPreset,
+  type DrawCommand, movePreset, pickPreset, transformPreset, WeaselProvider,
 } from '@weasel-js/core';
 import {
   ALL_TAGS,
@@ -80,7 +79,6 @@ const INK = '#5a4632';
 
 export function ModesDemo() {
   const scene = useScene({ items: SHAPES });
-  const [tools, setTools] = useState<ToolsApi | null>(null);
 
   const registry = useMemo(() => createModeRegistry({ modes: MODES, initial: 'draw' }), []);
   useSyncExternalStore(registry.subscribe, registry.getVersion);
@@ -137,62 +135,63 @@ export function ModesDemo() {
 
   const exitKey = shortcutOn(mode.exit?.shortcut, isApplePlatform());
   return (
-    <div className={styles.demo}>
-      <div className={styles.bar}>
-        <SegmentedBar
-          items={registry.list().map((m) => ({
-            value: m.id,
-            label: <>{modeLabel(m)} <kbd className={styles.key}>{shortcutOn(m.entry?.shortcut, isApplePlatform())}</kbd></>,
-            tooltip: m.description,
-          }))}
-          value={mode.id}
-          onChange={(id) => id && enter(id)}
-          aria-label="Mode"
-          size="sm"
-        />
-        {tools && <ToolPalette tools={tools} orientation="horizontal" modeRegistry={registry} />}
+    <WeaselProvider>
+      <div className={styles.demo}>
+        <div className={styles.bar}>
+          <SegmentedBar
+            items={registry.list().map((m) => ({
+              value: m.id,
+              label: <>{modeLabel(m)} <kbd className={styles.key}>{shortcutOn(m.entry?.shortcut, isApplePlatform())}</kbd></>,
+              tooltip: m.description,
+            }))}
+            value={mode.id}
+            onChange={(id) => id && enter(id)}
+            aria-label="Mode"
+            size="sm"
+          />
+          <ToolPalette orientation="horizontal" modeRegistry={registry} />
+        </div>
+
+        <DemoStage width={W} height={H}>
+          <SceneCanvas
+            className="ckd-canvas"
+            backgroundFill={{ color: '#ffffff' }}
+            scene={scene}
+            selectionOptions={{ mode: 'multi' }}
+            features={[pickPreset, movePreset, transformPreset]}
+            defaultTools={['select', 'hand', 'rect', 'ellipse']}
+            modes={registry}
+            ambient={shortcuts}
+            alphaFor={scoping.alphaFor}
+            isPointerInteractive={scoping.isPointerInteractive}
+            redrawOn={redrawOn}
+            decorationLayer={decorationLayer}
+            layers={{ modeTint: { layer: tintLayer, before: 'scene' } }}
+          />
+        </DemoStage>
+
+        <dl className={styles.readout}>
+          <dt>Mode</dt>
+          <dd>
+            <strong>{modeLabel(mode)}</strong> — {mode.description}
+            {exitKey && <> Press <kbd className={styles.key}>{exitKey}</kbd> to leave.</>}
+          </dd>
+          <dt>Scoping</dt>
+          <dd>{mode.scoping ? 'on — shapes outside the target dim and ignore the pointer' : 'off'}</dd>
+          <dt>Allows</dt>
+          <dd className={styles.tags}>
+            {ALL_TAGS.map((tag) => {
+              const implicit = IMPLICIT_TAGS.includes(tag);
+              const on = implicit || allowed.has(tag);
+              return (
+                <span key={tag} className={`${styles.tag} ${on ? styles.on : ''}`}>
+                  {tag}{implicit && ' (implicit)'}
+                </span>
+              );
+            })}
+          </dd>
+        </dl>
       </div>
-
-      <DemoStage width={W} height={H}>
-        <SceneCanvas
-          className="ckd-canvas"
-          backgroundFill={{ color: '#ffffff' }}
-          scene={scene}
-          selectionOptions={{ mode: 'multi' }}
-          features={[pickPreset, movePreset, transformPreset]}
-          defaultTools={['select', 'hand', 'rect', 'ellipse']}
-          onToolsCreated={setTools}
-          modes={registry}
-          ambient={shortcuts}
-          alphaFor={scoping.alphaFor}
-          isPointerInteractive={scoping.isPointerInteractive}
-          redrawOn={redrawOn}
-          decorationLayer={decorationLayer}
-          layers={{ modeTint: { layer: tintLayer, before: 'scene' } }}
-        />
-      </DemoStage>
-
-      <dl className={styles.readout}>
-        <dt>Mode</dt>
-        <dd>
-          <strong>{modeLabel(mode)}</strong> — {mode.description}
-          {exitKey && <> Press <kbd className={styles.key}>{exitKey}</kbd> to leave.</>}
-        </dd>
-        <dt>Scoping</dt>
-        <dd>{mode.scoping ? 'on — shapes outside the target dim and ignore the pointer' : 'off'}</dd>
-        <dt>Allows</dt>
-        <dd className={styles.tags}>
-          {ALL_TAGS.map((tag) => {
-            const implicit = IMPLICIT_TAGS.includes(tag);
-            const on = implicit || allowed.has(tag);
-            return (
-              <span key={tag} className={`${styles.tag} ${on ? styles.on : ''}`}>
-                {tag}{implicit && ' (implicit)'}
-              </span>
-            );
-          })}
-        </dd>
-      </dl>
-    </div>
+    </WeaselProvider>
   );
 }

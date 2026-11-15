@@ -1,10 +1,8 @@
-import { useState } from 'react';
 import {
   SceneCanvas,
   useScene,
   useSelection,
-  useImageTool,
-  type ToolsApi, movePreset, pickPreset,
+  useImageTool, movePreset, pickPreset, WeaselProvider,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
@@ -39,21 +37,21 @@ export function ImageDemo() {
 
   // Image-insert tool: drag on empty space to drop another copy of this src.
   const imageTool = useImageTool({ src: swatch('#d4a574') });
-  const [tools, setTools] = useState<ToolsApi | null>(null);
 
   return (
-    <div className="ckd-demo">
-      {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <DemoStage width={W} height={H}>
-        <SceneCanvas
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          features={[pickPreset, movePreset]}
-          tools={{ image: imageTool }}
-          onToolsCreated={setTools}
-        />
-      </DemoStage>
-    </div>
+    <WeaselProvider>
+      <div className="ckd-demo">
+        <ToolPalette orientation="horizontal" />
+        <DemoStage width={W} height={H}>
+          <SceneCanvas
+            className="ckd-canvas"
+            scene={scene}
+            selection={selection}
+            features={[pickPreset, movePreset]}
+            tools={{ image: imageTool }}
+          />
+        </DemoStage>
+      </div>
+    </WeaselProvider>
   );
 }
