@@ -15,7 +15,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { overChildren } from './overChildren';
 import { INHERIT } from '@weasel-js/paint';
 import { poseFrameOf } from '@weasel-js/geom';
-import { pixelScaleAt, pixelScaleCtx } from './pixelScale';
+import { pixelScaleCtx } from './pixelScale';
 import { groupBoxBounds, paintGroupBox } from './nodeShapes/groupBoxPainter';
 
 // `globalThis`, not `window`: a render worker has no window, and sets the density it paints at here.
@@ -36,7 +36,7 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   // A frame builder that knows the density it paints at fills `pixelScale`; the window's is the fallback.
   const paintCtx = !view || ctx?.pixelScale !== undefined
     ? ctx
-    : ctx ? { ...ctx, pixelScale: pixelScaleAt(view, ambientDpr()) } : pixelScaleCtx(view, ambientDpr());
+    : ctx ? { ...ctx, ...pixelScaleCtx(view, ambientDpr()), ...(ctx.scale !== undefined ? { scale: ctx.scale } : {}) } : pixelScaleCtx(view, ambientDpr());
   const primary = painter ? painter.paint(node, pose, paintCtx) : node.kind === 'group' ? paintGroupBox(node, pose) : [];
 
   // Label overlay — skipped for text nodes (their content is the label).

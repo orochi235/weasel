@@ -56,6 +56,12 @@ describe('kit:text — a { px } font size', () => {
     expect(textOf(cmds).runs[0]!.fontSize).toBe(10);
   });
 
+  it('is sized by the view defaultDrawOne paints at when the caller\'s ctx states no density', () => {
+    const n = node({ text: 'AB', style: PX });
+    const cmds = defaultDrawOne(n, POSE, { x: 0, y: 0, scale: { x: 2, y: 2 } }, {});
+    expect(textOf(cmds).runs[0]!.fontSize).toBe(10);
+  });
+
   it('reports the line boxes it draws as its silhouette', () => {
     const data = { text: 'AB', style: PX };
     const at2 = findShapeSilhouette(node(data), POSE, { scale: 2 });
