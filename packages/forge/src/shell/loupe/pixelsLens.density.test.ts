@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { makeMatchMedia } from '../../../../core/src/core/device/testing/matchMedia';
+import { makeMatchMedia } from '@weasel-js/core/testing/matchMedia';
 import { endpoint, hosts, payload, request, revisions, settle, shown, stubBitmaps } from './pixels.fixture';
 import { createPixelsSource } from './pixelsSource';
 import type { TrialHit } from './trialAt';

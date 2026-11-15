@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { registerPaintKind, getPaintKind } from 'core/paint/paintKinds';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
-import { makeMatchMedia } from '../core/device/testing/matchMedia';
+import { makeMatchMedia } from '../testing/matchMedia';
 import { DrawCanvas } from './DrawCanvas';
 
 const renderMock = vi.fn<(commands: DrawCommand[]) => void>();

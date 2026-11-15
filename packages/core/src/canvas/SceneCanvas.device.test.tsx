@@ -11,7 +11,7 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useDeviceProfile } from '../core/device/useDeviceProfile';
 import { COARSE_TARGET_SCALE } from '@weasel-js/routing';
-import { makeMatchMedia } from '../core/device/testing/matchMedia';
+import { makeMatchMedia } from '../testing/matchMedia';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';

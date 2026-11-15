@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { type Action, ActionsProvider, useActionsRegistry } from '@weasel-js/core';
+import { makeMatchMedia } from '@weasel-js/core/testing/matchMedia';
 import { StrictMode, useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { makeMatchMedia } from '../../../../core/src/core/device/testing/matchMedia';
 import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
 import type { LensSource, LensSourceRequest, LensSourceStatus, LensSources } from './lensSource';

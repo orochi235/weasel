@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { createElement } from 'react';
 import { render, renderHook, act } from '@testing-library/react';
 import { useCanvasSize, useElementSize } from './useCanvasSize';
-import { makeMatchMedia } from '../device/testing/matchMedia';
+import { makeMatchMedia } from '../../testing/matchMedia';
 
 beforeAll(() => {
   if (typeof (globalThis as { ResizeObserver?: unknown }).ResizeObserver === 'undefined') {

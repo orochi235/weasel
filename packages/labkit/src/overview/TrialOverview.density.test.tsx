@@ -1,8 +1,8 @@
 import { act } from '@testing-library/react';
+import { makeMatchMedia } from '@weasel-js/core/testing/matchMedia';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
-import { makeMatchMedia } from '../../../core/src/core/device/testing/matchMedia';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
 import { TrialOverview } from './TrialOverview';

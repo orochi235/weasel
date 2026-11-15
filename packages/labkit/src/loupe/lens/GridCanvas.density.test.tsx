@@ -1,6 +1,6 @@
 import { act, cleanup, render } from '@testing-library/react';
+import { makeMatchMedia } from '@weasel-js/core/testing/matchMedia';
 import { afterEach, beforeAll, expect, test, vi } from 'vitest';
-import { makeMatchMedia } from '../../../../core/src/core/device/testing/matchMedia';
 import { GridCanvas } from './GridCanvas';
 import type { LensSource, LensSourceRequest } from './lensSource';
 
