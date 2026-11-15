@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Workspace } from '@weasel-js/labkit';
+import type { ReactNode } from 'react';
+import '../frames.stories.less';
+import './Workspace.stories.less';
 
 const meta: Meta<typeof Workspace> = {
   title: 'labkit/Lab/Workspace',
@@ -9,27 +12,13 @@ export default meta;
 
 type Story = StoryObj<typeof Workspace>;
 
-const Tile = ({ children }: { children: React.ReactNode }) => (
-  <div
-    style={{
-      background: 'var(--wzl-surface-raised)',
-      border: '1px solid var(--wzl-border)',
-      borderRadius: 'var(--wzl-radius-md)',
-      padding: 'var(--wzl-space-md)',
-      minHeight: 120,
-      height: '100%',
-      boxSizing: 'border-box',
-      display: 'grid',
-      placeItems: 'center',
-    }}
-  >
-    {children}
-  </div>
+const Tile = ({ children }: { children: ReactNode }) => (
+  <div className="lk-story-tile">{children}</div>
 );
 
 export const OneTile: Story = {
   render: (args) => (
-    <div style={{ height: 400 }}>
+    <div className="lk-story-h400">
       <Workspace {...args}>
         <Tile>1</Tile>
       </Workspace>
@@ -39,7 +28,7 @@ export const OneTile: Story = {
 
 export const ThreeTiles: Story = {
   render: (args) => (
-    <div style={{ height: 400 }}>
+    <div className="lk-story-h400">
       <Workspace {...args}>
         <Tile>1</Tile>
         <Tile>2</Tile>
@@ -51,7 +40,7 @@ export const ThreeTiles: Story = {
 
 export const SevenTiles: Story = {
   render: (args) => (
-    <div style={{ height: 600 }}>
+    <div className="lk-story-h600">
       <Workspace {...args}>
         {Array.from({ length: 7 }).map((_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static demo list
@@ -66,7 +55,7 @@ export const SevenTiles: Story = {
  *  a grid moves extents a whole cell at a time. */
 export const Resizable: Story = {
   render: (args) => (
-    <div style={{ height: 500 }}>
+    <div className="lk-story-h500">
       <Workspace {...args} ids={['a', 'b', 'c', 'd', 'e']} resizable>
         <Tile>1</Tile>
         <Tile>2</Tile>
@@ -84,7 +73,7 @@ export const Resizable: Story = {
  *  Tile 1 also opens on a double-click, through `expandOnDoubleClick`. */
 export const Lightbox: Story = {
   render: (args) => (
-    <div style={{ height: 500 }}>
+    <div className="lk-story-h500">
       <Workspace {...args} ids={['a', 'b', 'c']} resizable expandOnDoubleClick={(id) => id === 'a'}>
         <Tile>1</Tile>
         <Tile>2</Tile>

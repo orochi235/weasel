@@ -3,6 +3,7 @@ import { Stage } from '@weasel-js/labkit/canvas';
 import { TrialOverview, type TrialOverviewProps } from '@weasel-js/labkit/overview';
 import { useState } from 'react';
 import type { ViewTransform } from '../instrument/types';
+import '../frames.stories.less';
 
 const meta: Meta<typeof TrialOverview> = {
   title: 'labkit/Overview/TrialOverview',
@@ -32,7 +33,7 @@ function Picture() {
 function Harness(args: Partial<TrialOverviewProps>) {
   const [view, setView] = useState<ViewTransform>({ zoom: 2, pan: { x: -200, y: -120 } });
   return (
-    <div style={{ width: '100cqi', height: '100cqb' }}>
+    <div className="lk-story-fill">
       <Stage
         size={SIZE}
         view={view}

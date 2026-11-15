@@ -4,6 +4,7 @@ import { LabRoot } from '@weasel-js/labkit';
 import { SidebarPanes } from '@weasel-js/labkit/chrome';
 import { useState } from 'react';
 import type { SidebarSlotContext } from '../types';
+import '../../frames.stories.less';
 
 const meta: Meta<typeof SidebarPanes> = {
   title: 'labkit/Chrome/SidebarPanes',
@@ -26,18 +27,20 @@ function Stack({ args }: { args: Story['args'] }) {
   };
   return (
     <LabRoot>
-      <div className="lk-lab__aside" data-testid="pane" style={{ height: 400 }}>
-        <SidebarPanes
-          {...args}
-          ctx={ctx}
-          heights={heights}
-          onHeightsChange={setHeights}
-          contributions={[
-            { id: 'long', region: 'sidebar', item: { title: 'Long', body: lines(40) } },
-            { id: 'short', region: 'sidebar', item: { title: 'Short', body: lines(2) } },
-            { id: 'last', region: 'sidebar', item: { title: 'Last', body: lines(40) } },
-          ]}
-        />
+      <div className="lk-story-h400">
+        <div className="lk-lab__aside" data-testid="pane">
+          <SidebarPanes
+            {...args}
+            ctx={ctx}
+            heights={heights}
+            onHeightsChange={setHeights}
+            contributions={[
+              { id: 'long', region: 'sidebar', item: { title: 'Long', body: lines(40) } },
+              { id: 'short', region: 'sidebar', item: { title: 'Short', body: lines(2) } },
+              { id: 'last', region: 'sidebar', item: { title: 'Last', body: lines(40) } },
+            ]}
+          />
+        </div>
       </div>
     </LabRoot>
   );

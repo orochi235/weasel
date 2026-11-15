@@ -3,6 +3,7 @@ import { expect } from '@weasel-js/forge/play';
 import { LabRoot } from '@weasel-js/labkit';
 import { SidebarRegion } from '@weasel-js/labkit/chrome';
 import type { SidebarSlotContext } from '../types';
+import '../../frames.stories.less';
 
 const meta: Meta<typeof SidebarRegion> = {
   title: 'labkit/Chrome/SidebarRegion',
@@ -19,15 +20,17 @@ const ctx: SidebarSlotContext = { collapsedSections: {}, setSectionCollapsed: ()
 export const LastSectionFillsItsPane: Story = {
   render: (args) => (
     <LabRoot>
-      <div className="lk-lab__aside" data-testid="pane" style={{ height: 400 }}>
-        <SidebarRegion
-          {...args}
-          ctx={ctx}
-          contributions={[
-            { id: 'first', region: 'sidebar', item: { title: 'First', body: <p>one</p> } },
-            { id: 'last', region: 'sidebar', item: { title: 'Last', body: <p>two</p> } },
-          ]}
-        />
+      <div className="lk-story-h400">
+        <div className="lk-lab__aside" data-testid="pane">
+          <SidebarRegion
+            {...args}
+            ctx={ctx}
+            contributions={[
+              { id: 'first', region: 'sidebar', item: { title: 'First', body: <p>one</p> } },
+              { id: 'last', region: 'sidebar', item: { title: 'Last', body: <p>two</p> } },
+            ]}
+          />
+        </div>
       </div>
     </LabRoot>
   ),

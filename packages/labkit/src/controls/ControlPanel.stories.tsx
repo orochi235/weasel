@@ -8,6 +8,7 @@ import { compact } from '@weasel-js/quantity';
 import { PropertyRow } from '@weasel-js/ui/components/Properties';
 import { useState } from 'react';
 import type { ConfigRule, ConfigSchema } from '../config/types';
+import '../frames.stories.less';
 
 const meta: Meta<typeof ControlPanel> = {
   title: 'labkit/Controls/ControlPanel',
@@ -365,7 +366,7 @@ export const Inline: Story = {
     const schema = resolveConfigSchema(inline, []);
     const [config, setConfig] = useState<Record<string, unknown>>(inline.defaults());
     return (
-      <div style={{ width: 360 }}>
+      <div className="lk-story-w360">
         <ControlPanel
           {...args}
           schema={schema}
@@ -415,7 +416,7 @@ export const SidebarSliders: Story = {
     const schema = resolveConfigSchema(sidebarSliders, []);
     const [config, setConfig] = useState<Record<string, unknown>>(sidebarSliders.defaults());
     return (
-      <div style={{ width: 300 }}>
+      <div className="lk-story-w300">
         <ControlPanel
           {...args}
           schema={schema}
@@ -456,7 +457,7 @@ export const AliasesIntoAnotherSchema: Story = {
     const schema = resolveConfigSchema(shortcuts, []);
     const [config, setConfig] = useState<Record<string, unknown>>({});
     return (
-      <div style={{ width: 300 }}>
+      <div className="lk-story-w300">
         <ControlPanel
           {...args}
           schema={schema}

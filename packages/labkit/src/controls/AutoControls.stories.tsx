@@ -3,6 +3,7 @@ import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
 import { ControlPanel, type ControlPanelProps } from '@weasel-js/labkit/controls';
 import { useState } from 'react';
 import { applyConfigWrite } from '../config/autoConfig';
+import '../frames.stories.less';
 
 /**
  * The ghosting and the muted accent are CSS, and jsdom resolves neither
@@ -62,12 +63,12 @@ function Panel({
 
 function Pair({ args }: { args: Story['args'] }) {
   return (
-    <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
-      <div style={{ flex: '1 1 0', minWidth: 0 }}>
+    <div className="lk-story-pair">
+      <div>
         <h3>Pinned</h3>
         <Panel {...args} start={[]} />
       </div>
-      <div style={{ flex: '1 1 0', minWidth: 0 }}>
+      <div>
         <h3>Auto</h3>
         <Panel {...args} start={EVERY_AUTO} />
       </div>

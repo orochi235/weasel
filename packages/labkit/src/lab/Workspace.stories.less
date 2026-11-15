@@ -1,0 +1,29 @@
+// Tiles for the Workspace and TileGrip stories.
+.lk-story-tile {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 120px;
+  box-sizing: border-box;
+  padding: var(--wzl-space-md);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+}
+
+.lk-story-tile--gripped {
+  grid-template-rows: auto 1fr;
+  place-items: stretch;
+  min-height: 0;
+  padding: 0;
+}
+
+.lk-story-tile__grip {
+  padding: var(--wzl-space-sm) var(--wzl-space-md);
+  border-bottom: 1px solid var(--wzl-border);
+}
+
+.lk-story-tile__body {
+  display: grid;
+  place-items: center;
+}

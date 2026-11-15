@@ -4,6 +4,7 @@ import { DEFAULT_VIEW, LabContext, type LabContextValue, TrialChrome } from '@we
 import { createLabStore, LabStoreContext } from '@weasel-js/labkit/state';
 import type { Instrument } from '../instrument/types';
 import type { TrialRecord } from '../state/types';
+import '../frames.stories.less';
 
 const noop = () => {};
 
@@ -47,7 +48,7 @@ function Harness() {
   return (
     <LabStoreContext.Provider value={{ store }}>
       <LabContext.Provider value={lab}>
-        <div style={{ height: '500px' }}>
+        <div className="lk-story-h500">
           <TrialChrome trialId="ws-demo" record={record} instrument={stub} isLastTrial={true}>
             {stub.render({
               state: {},

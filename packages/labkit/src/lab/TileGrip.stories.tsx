@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { TileGrip, Workspace } from '@weasel-js/labkit';
 import { useState } from 'react';
+import '../frames.stories.less';
+import './Workspace.stories.less';
 
 const meta: Meta<typeof TileGrip> = {
   title: 'labkit/Lab/Workspace/TileGrip',
@@ -11,34 +13,18 @@ export default meta;
 type Story = StoryObj<typeof TileGrip>;
 
 const Tile = ({ args, label }: { args: Story['args']; label: string }) => (
-  <div
-    style={{
-      background: 'var(--wzl-surface-raised)',
-      border: '1px solid var(--wzl-border)',
-      borderRadius: 'var(--wzl-radius-md)',
-      height: '100%',
-      boxSizing: 'border-box',
-      display: 'grid',
-      gridTemplateRows: 'auto 1fr',
-    }}
-  >
-    <TileGrip
-      {...args}
-      style={{
-        padding: 'var(--wzl-space-sm) var(--wzl-space-md)',
-        borderBottom: '1px solid var(--wzl-border)',
-      }}
-    >
+  <div className="lk-story-tile lk-story-tile--gripped">
+    <TileGrip {...args} className="lk-story-tile__grip">
       Tile {label}
     </TileGrip>
-    <div style={{ display: 'grid', placeItems: 'center' }}>{label}</div>
+    <div className="lk-story-tile__body">{label}</div>
   </div>
 );
 
 function ReorderableTiles({ args }: { args: Story['args'] }) {
   const [ids, setIds] = useState(['a', 'b', 'c']);
   return (
-    <div style={{ height: 400 }}>
+    <div className="lk-story-h400">
       <Workspace ids={ids} reorderable onReorder={setIds}>
         {ids.map((id) => (
           <Tile key={id} args={args} label={id} />
@@ -57,7 +43,7 @@ export const Reorderable: Story = {
 /** Outside a reorderable workspace a grip is a plain `div`. */
 export const OutsideWorkspace: Story = {
   render: (args) => (
-    <div style={{ height: 160, width: 240 }}>
+    <div className="lk-story-card">
       <Tile args={args} label="a" />
     </div>
   ),

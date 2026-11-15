@@ -3,6 +3,7 @@ import { useArgs } from '@weasel-js/forge/preview-api';
 import type { CanvasLayerDescriptor } from '@weasel-js/labkit/canvas';
 import { CanvasStack, type CanvasStackProps } from '@weasel-js/labkit/canvas';
 import { ScaleBar } from '@weasel-js/ui/components/ScaleBar';
+import '../frames.stories.less';
 
 const meta: Meta<typeof CanvasStack> = {
   title: 'labkit/Canvas/CanvasStack',
@@ -40,14 +41,14 @@ function Harness({
   const [, updateArgs] = useArgs();
   const shown = view ?? { zoom: 1, pan: { x: 50, y: 50 } };
   return (
-    <div style={{ width: '100cqi', height: '100cqb' }}>
+    <div className="lk-story-fill">
       <CanvasStack
         {...args}
         layers={layers}
         view={shown}
         onViewChange={(next) => updateArgs({ view: next })}
       >
-        <div style={{ position: 'absolute', top: 8, right: 8 }}>
+        <div className="lk-story-corner">
           <ScaleBar zoom={shown.zoom} />
         </div>
       </CanvasStack>
