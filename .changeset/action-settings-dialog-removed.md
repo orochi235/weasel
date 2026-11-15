@@ -12,7 +12,7 @@
 // after
 const settings = useActionSettings(item ?? undefined);
 {item && settings && (
-  <PrefsDialog {...settings} isOpen onOpenChange={(open) => { if (!open) close(); }} layout="list" />
+  <PrefsDialog {...settings} open onOpenChange={(open) => { if (!open) close(); }} layout="list" />
 )}
 ```
 

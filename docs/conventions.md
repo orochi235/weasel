@@ -271,6 +271,14 @@ A kit component's props use the DOM's and React Aria's names where one exists
   `readOnlyReason` beside them (2026-11-13). A wrapper translates React Aria's
   `isDisabled` and `isReadOnly` once, at its boundary (`Disabled/racHold.ts`),
   and never exposes them. React Aria's `isSelected` stays.
+- **Other state**: the same goes for `open`, `invalid`, `required`, `loading`,
+  and `indeterminate` (2026-11-15), never React Aria's `isOpen`, `isInvalid`,
+  `isRequired`, `isLoading`, or `isIndeterminate`. A field's `invalid` and
+  `required` become React Aria's through `useRacField` (`Field/racField.ts`);
+  an overlay hands its `open` on as `isOpen` where it renders React Aria's.
+  `defaultOpen` and `onOpenChange` keep their names. A predicate over rows,
+  like a tree shape's `isOpen(row)`, is a question rather than a prop and keeps
+  its `is`.
 - **Disabled and read-only scopes**: a component that is or holds a control
   takes `DisableableProps` (and `ReadOnlyProps` where it holds a value). On a
   container they are sugar for wrapping its content in `<Disabled>` or
@@ -287,7 +295,7 @@ A kit component's props use the DOM's and React Aria's names where one exists
   reports through `onSelectionChange`, as React Aria's does, whatever its prop
   is called. `onSelect` is left for a pick that is not a held selection, such
   as a row clicked with how it was clicked. A modal surface is held by
-  `isOpen`/`onOpenChange`, as `Dialog` is.
+  `open`/`onOpenChange`, as `Dialog` is.
 - **Live and committed**: a value edited continuously reports through
   `onInput`, `onChange` and `onCancel`, as "Edit callbacks" below defines them.
 

@@ -2,13 +2,13 @@
 '@weasel-js/editor': major
 ---
 
-`EditorPrefsDialog` opens through `isOpen` and `onOpenChange`, like `PrefsDialog` and every other modal in the kit.
+`EditorPrefsDialog` asks to close through `onOpenChange`, like `PrefsDialog` and every other modal in the kit; `onClose` is gone.
 
 ```tsx
 // before
 <EditorPrefsDialog store={store} open={open} onClose={() => setOpen(false)} />
 // after
-<EditorPrefsDialog store={store} isOpen={open} onOpenChange={setOpen} />
+<EditorPrefsDialog store={store} open={open} onOpenChange={setOpen} />
 ```
 
 <!-- entry: breaking api -->

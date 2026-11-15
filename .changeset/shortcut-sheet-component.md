@@ -9,7 +9,7 @@ It reads the live bindings, so a key rebound or unbound through `bindingOverride
 ```tsx
 const [open, setOpen] = useState(false);
 useShortcutSheetCommand(() => setOpen(true));
-<ShortcutSheet isOpen={open} onOpenChange={setOpen} tools={tools} toolSets={[SELECT_TOOLS, SHAPE_TOOLS]} />
+<ShortcutSheet open={open} onOpenChange={setOpen} tools={tools} toolSets={[SELECT_TOOLS, SHAPE_TOOLS]} />
 ```
 
 <!-- entry: rank=10 api new -->

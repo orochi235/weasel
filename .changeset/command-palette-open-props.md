@@ -2,13 +2,13 @@
 '@weasel-js/ui': major
 ---
 
-`CommandPalette` is held open by `isOpen` and asks to close through `onOpenChange`, as `Dialog` and `PrefsDialog` are.
+`CommandPalette` asks to close through `onOpenChange`, as `Dialog` and `PrefsDialog` do; `onClose` is gone.
 
 ```tsx
 // before
 <CommandPalette open={open} onClose={() => setOpen(false)} />
 // after
-<CommandPalette isOpen={open} onOpenChange={setOpen} />
+<CommandPalette open={open} onOpenChange={setOpen} />
 ```
 
 <!-- entry: breaking api -->
