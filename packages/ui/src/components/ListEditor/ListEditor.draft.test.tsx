@@ -97,6 +97,17 @@ describe('ListEditor text entries hold a draft', () => {
     expect(entry(2)).toHaveValue('ax');
   });
 
+  it('keeps a draft with the entry it began on when typing moves to another without a blur', () => {
+    const { onChange, entry } = setup(['a', 'b']);
+    type(entry(1), 'ax');
+    fireEvent.change(entry(2), { target: { value: 'a' } });
+    expect(onChange.mock.calls).toEqual([[['ax', 'b']]]);
+    expect(entry(1)).toHaveValue('ax');
+    expect(entry(2)).toHaveValue('a');
+    fireEvent.blur(entry(2));
+    expect(onChange.mock.calls).toEqual([[['ax', 'b']], [['ax', 'a']]]);
+  });
+
   it('commits once typing rests where typing.settleWhenIdle is on', () => {
     const { onChange, entry } = setup(['a'], { kit: true });
     type(entry(1), 'ab', 'abc');

@@ -43,9 +43,11 @@ export function useTextDraft(p: TextDraftTarget) {
   return {
     draft,
     shown: draft ?? value,
-    type: (next: string) => {
+    /** `began` is the text an edit starting with this keystroke begins from, for a caller whose `value` moves to
+     *  another text in the same event; it defaults to `value`. */
+    type: (next: string, began: string = value) => {
       canceled.current = false;
-      from.current ??= value;
+      from.current ??= began;
       setDraft(next);
       idle.typed();
       p.onInput?.(next);
