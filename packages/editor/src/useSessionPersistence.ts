@@ -45,6 +45,7 @@ export function savedAtOf(value: unknown): number | undefined {
  * was saved ({@link savedAtOf}) and the stack paired with it. A stack is restored only onto the state it was saved beside
  * (`restorePairedHistory`); one saved beside a scene that loaded otherwise, rebuilt, migrated, unreadable or replaced, is dropped.
  * The scene is read by the app, from the `sceneKey` entry through `decodeSnapshot`, before the scene is made.
+ * `scene` may be an `EditingSession`: restored entries' recorded selection changes replay into the one passed.
  */
 export function useSessionPersistence<D, L extends string, P>(
   scene: Scene<D, L, P>,

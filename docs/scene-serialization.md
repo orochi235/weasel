@@ -52,20 +52,24 @@ An undo history is recorded against one tree, and replayed over any other it wri
 carries both, the history paired with a fingerprint of the scene it was saved beside:
 
 ```ts
-import { decodeSceneDocument, encodeSceneDocument, restorePairedHistory, sceneFromJSON } from '@weasel-js/core';
+import {
+  decodeSceneDocument, defaultCommitAdapter, encodeSceneDocument, restorePairedHistory, sceneFromJSON,
+} from '@weasel-js/core';
 
 const file = JSON.stringify(encodeSceneDocument(scene));
 // { "format": "weasel/scene-document", "version": 1, "scene": { …encoded… }, "history": { "scene": "<fingerprint>", "history": { … } } }
 
 const doc = decodeSceneDocument(JSON.parse(file));   // throws SnapshotShapeError on anything else
 const loaded = sceneFromJSON(doc.scene, { registry });
-restorePairedHistory(loaded, doc.history);           // 'restored' | 'unpaired' | 'mismatched' | 'stale'
+loaded.setHistoryAdapter(() => defaultCommitAdapter(loaded));
+restorePairedHistory(loaded, doc.history);           // { status: 'restored', report } | { status: 'unpaired' | 'mismatched' | 'stale' }
 ```
 
 `restorePairedHistory` compares the fingerprint against the scene it restores onto, so it refuses a history saved
 beside other content (`'mismatched'`), whether that is another document, a tree the load rebuilt (pages adopted
 from a `core:pages` value), or content an application migration rewrote. Call it after any migration of the loaded
-data. A history kept apart from its scene, as `useSessionPersistence` (`@weasel-js/editor`) keeps them under two
+data. Its third argument is `restoreHistory`'s options, so it is strict the same way (see "Restoring history"
+below) and its report comes back under `report`. A history kept apart from its scene, as `useSessionPersistence` (`@weasel-js/editor`) keeps them under two
 keys, is paired the same way with `pairHistory(scene)`. `encodeSceneDocument(scene, { history: false })` leaves the
 history out.
 
