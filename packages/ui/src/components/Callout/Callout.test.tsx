@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { Pressable } from 'react-aria-components';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { Callout, CalloutTrigger } from './Callout';
+import { Button } from '../Button';
 import { renderWithIcons, withIcons as WithIcons } from '../../testing/withIcons';
 
 function TriggerSubject() {
@@ -54,6 +55,19 @@ describe('Callout', () => {
     expect(screen.getByText('Body text')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close callout' }));
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('opens from the kit Button in a Pressable, as its story composes one', () => {
+    renderWithIcons(
+      <CalloutTrigger>
+        <Pressable>
+          <Button variant="ghost">Explain</Button>
+        </Pressable>
+        <Callout title="Heads up">Body text</Callout>
+      </CalloutTrigger>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Explain' }));
+    expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
   it('supports programmatic triggerRef + controlled open', () => {

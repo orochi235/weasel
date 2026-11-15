@@ -22,7 +22,7 @@ export const Composed: Story = {
   render: (args) => (
     <CalloutTrigger>
       <Pressable>
-        <button type="button">What does this do?</button>
+        <Button variant="ghost">What does this do?</Button>
       </Pressable>
       <Callout {...args} />
     </CalloutTrigger>
@@ -38,9 +38,9 @@ export const Grades: Story = {
       const [open, setOpen] = useState<'info' | 'warning' | 'danger' | null>('info');
       return (
         <>
-          <button ref={infoRef} type="button" onClick={() => setOpen('info')}>info</button>
-          <button ref={warnRef} type="button" onClick={() => setOpen('warning')}>warning</button>
-          <button ref={dangerRef} type="button" onClick={() => setOpen('danger')}>danger</button>
+          <Button ref={infoRef} variant="ghost" onClick={() => setOpen('info')}>info</Button>
+          <Button ref={warnRef} variant="ghost" onClick={() => setOpen('warning')}>warning</Button>
+          <Button ref={dangerRef} variant="ghost" onClick={() => setOpen('danger')}>danger</Button>
           <Callout {...args} triggerRef={infoRef} isOpen={open === 'info'} onOpenChange={(o) => !o && setOpen(null)} grade="info" title="Info">Neutral guidance.</Callout>
           <Callout {...args} triggerRef={warnRef} isOpen={open === 'warning'} onOpenChange={(o) => !o && setOpen(null)} grade="warn" title="Warning">Something needs attention.</Callout>
           <Callout {...args} triggerRef={dangerRef} isOpen={open === 'danger'} onOpenChange={(o) => !o && setOpen(null)} grade="danger" title="Danger">Destructive consequence ahead.</Callout>
@@ -63,7 +63,7 @@ export const Modal: Story = {
     const [open, setOpen] = useState(false);
     return (
       <>
-        <button ref={ref} type="button" onClick={() => setOpen(true)}>Delete everything</button>
+        <Button ref={ref} grade="danger" onClick={() => setOpen(true)}>Delete everything</Button>
         <Callout
           {...args}
           triggerRef={ref}
