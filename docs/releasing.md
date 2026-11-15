@@ -181,7 +181,7 @@ expires partway through, run it again.
 build, manifest check, consumer smoke test. It runs only when typed: the root
 package is private, so npm never fires it as a lifecycle hook, and the release
 workflow does not call it. The release workflow builds, then runs `check:imports`,
-`check:lockstep` and `check:first-publish` before it publishes. It
+`check:changesets`, `check:lockstep`, and `check:first-publish` before it publishes. It
 does not run the manifest check, which fails on any `exports`/`types` path
 promising a file `npm pack` would not include: CI and `test:fleet:postbuild` run
 it on the commit before it merges.

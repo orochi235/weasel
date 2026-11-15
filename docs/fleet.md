@@ -73,5 +73,5 @@ its cores busy (`scripts/bench-typecheck.runs.jsonl`). `npm run typecheck` runs 
 From a clean `npm ci` it runs that build and every ci.yml step after it — the manifest, tree-shake
 and React-free checks, both consumer smokes, the site builds — reading the list from ci.yml through
 `scripts/lib/ci-steps.mjs`, as the gate does. It builds in a node tree of its own
-(`weasel-postbuild`), so no test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21; run it
-beside `test:fleet` before merging any branch.
+(`weasel-postbuild`), so no test run shares its `dist`. It took 3.4–5.0 min wall on 2026-10-21; a batch
+runs it beside `test:fleet` on its tip before `main` fast-forwards.
