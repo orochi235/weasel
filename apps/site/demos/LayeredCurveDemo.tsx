@@ -98,20 +98,19 @@ export function LayeredCurveDemo() {
     ],
     activeIndex: null,
   }));
-  const [partitionState, setPartitionState] = useState<PartitionState>(() => ({ x: 0.25 }));
 
   // Moving the seam re-anchors both curves to it.
   const moveSeam = (next: number) => {
     setB(next);
     setBevelState((prev) => ({ ...prev, points: stretchPointsToRange(prev.points, [0, next]) }));
     setSplineState((prev) => ({ ...prev, points: stretchPointsToRange(prev.points, [next, HALF_WIDTH]) }));
-    setPartitionState((prev) => prev.x === next ? prev : { x: next });
   };
 
   // The curves' x bounds follow b.
   const bevelClamp = useMemo(() => [0, b] as const, [b]);
   const splineClamp = useMemo(() => [b, HALF_WIDTH] as const, [b]);
   const partitionLayer = useMemo(() => createPartitionLayer(), []);
+  const partition = useMemo<PartitionState>(() => ({ x: b }), [b]);
 
   const onBevelChange = (next: FunctionLayerState) => {
     setBevelState(next);
@@ -131,10 +130,6 @@ export function LayeredCurveDemo() {
         (i === curr.points.length - 1 ? { ...p, y: seamY } : p),
       ),
     }));
-  };
-  const onPartitionChange = (next: PartitionState) => {
-    setPartitionState(next);
-    moveSeam(next.x);
   };
 
   return (
@@ -168,7 +163,7 @@ export function LayeredCurveDemo() {
           id="spline" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
           xClamp={splineClamp} minPoints={2} state={splineState} onInput={onSplineChange}
         />
-        <CustomLayer layer={partitionLayer} state={partitionState} onInput={onPartitionChange} />
+        <CustomLayer layer={partitionLayer} state={partition} onInput={(next) => moveSeam(next.x)} />
       </LayeredCurveEditor>
     </div>
   );
