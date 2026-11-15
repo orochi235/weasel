@@ -478,9 +478,9 @@ velocity, a tween along the rest of its path — so the two add with no jump. Pl
 point it was taken back, it ends there. A physics handle's `setTarget` and `setVelocity` re-sample
 from where the run stands and stay on the compositor.
 
-Scene nodes cannot be handed off. The renderer draws every node, and the HUD, into one WebGL canvas
+Scene nodes cannot be handed off. The renderer draws every node, and the HUD, into one canvas
 on the main thread each frame; there is no layer per node for the compositor to move, and no browser
-API animates a value inside a WebGL draw. Their animations keep their main-thread cost.
+API animates a value inside a WebGL or WebGPU draw. Their animations keep their main-thread cost.
 
 What the compositor buys is independence from the main thread, not headroom for any count. Every
 handed-off element is a layer of its own, and the compositor's cost per layer is higher than the
@@ -575,12 +575,14 @@ rect-driven machinery:
 
 - `getBounds(pose) → { x, y, width, height }` — AABB.
 - `remapBounds(pose, src, dst) → pose` — affine remap on resize.
-- `translate(pose, dx, dy)` — optional, used by move and snap.
+- `fromBounds(bounds, template) → pose` — a pose filling `bounds`.
+- Optional: `translate` (move and snap), `lerp`, and the rotation trio
+  `getRotation`, `supportsRotation`, `withRotation`.
 
 `RECT_POSE_DESCRIPTOR` is the identity for rect poses; `pathPoseDescriptor`
-is the implementation for `Path`. `<SceneCanvas geometry={{ pickEvery,
-boundsOf }}>` overrides hit-testing and bounds; `UseResizeOptions.geometry`
-carries the descriptor itself. See [extending.md](./extending.md).
+is the implementation for `Path`. `<SceneCanvas poseDescriptor>` gives the
+canvas's actions the descriptor; `<SceneCanvas geometry={{ pickEvery,
+boundsOf }}>` overrides hit-testing and bounds. See [extending.md](./extending.md).
 
 ## Op
 
@@ -588,7 +590,7 @@ An **op** is an invertible mutation:
 
 ```ts
 interface Op {
-  apply(adapter: unknown): void;
+  apply(adapter: unknown): void | boolean | 'noop';   // false or 'noop': nothing changed
   invert(): Op;
   label?: string;
   coalesceKey?: string;
@@ -626,13 +628,13 @@ through optional methods the canvas reads each frame:
 ```ts
 interface OngoingHandle {
   kind?: string;                      // 'move' | 'marquee' | 'lasso' | … for chrome rules
-  onMove?(ctx): void;
+  onMove?(ctx): void | 'pass';              // 'pass' hands the drag on
   onEnd?(ctx, reason: 'commit' | 'cancel'): void;
   previewIds?(): Iterable<string> | null;   // displaced nodes → preview-ghost layer
   previewPose?(id): unknown | null;         // absent: the node's effective pose
   previewData?(id): unknown | null;         // for data-space edits (anchor drag)
   previewHidesSource?: boolean;             // false for clone: original stays put
-  overlay?(): OngoingOverlay | null;        // non-ghost chrome (marquee rect, lasso polyline)
+  overlay?(): OngoingOverlay | readonly OngoingOverlay[] | null;  // non-ghost chrome (marquee rect, lasso polyline)
 }
 ```
 
@@ -649,24 +651,28 @@ nothing but still need feedback. Sources compose first-non-null per axis.
 ## Layer
 
 A `RenderLayer<TData>` is a named draw function. The `layers` prop on
-`<Canvas>` is a map of slot name → config:
+`<SceneCanvas>` is a map of slot name → value:
 
 - **Standard slots** (canonical order): `grid`, `cellHighlight`, `scene`,
-  `selectionOverlay`. Pass slot config (`{ drawOne, ... }` for `scene`,
-  `{ spacing, bounds }` for `grid`, etc.) or `null` to suppress.
+  `selectionOverlay`, then `pathEditingOverlay`. `scene`, `selectionOverlay`
+  and `pathEditingOverlay` take a config the canvas builds the layer from
+  (`{ drawOne, ... }` for `scene`); `grid` and `cellHighlight` take a pre-built
+  `{ layer }` (`createGridLayer`, `createCellHighlightLayer` from
+  `@weasel-js/guides`). Any of them takes `{ layer }` in place of its own, or
+  `null` to suppress it.
 - **Custom layers**: any other key. Value is `{ layer, after?, before? }`
   with a `RenderLayer` and an optional anchor slot for ordering.
 
 ```ts
 layers={{
-  scene: { drawOne: (cx, obj, pose) => { /* ... */ } },
+  scene: { drawOne: (node, pose) => { /* ... */ } },
   hud: { layer: hudLayer, after: 'selectionOverlay' },
 }}
 ```
 
 See [extending.md](./extending.md) for custom-layer details.
 
-**Hit-test channel.** Layers may declare an optional `hitTest(worldX, worldY, data, view, dims): AffordanceBinding | null`, consulted on pointerdown. Registered layers are walked top-down (last-registered first) by `CanvasExtensionApi.hitTestExtras`; `<SceneCanvas>` folds that walk — plus its own selection chrome — into the `affordanceAt` thunk it hands the gesture dispatcher. A hit reaches actions as an `AffordanceHit` (kind `layer:<id>` for a registered layer, carrying whatever the layer resolved as its `payload`), and the layer's owner claims the gesture with a binding whose `target` predicate matches that kind. This is how chrome stays hittable regardless of which tool is active — see `@weasel-js/hud` for the worked example.
+**Hit-test channel.** A registered layer may declare an optional `hitTest(worldX, worldY, data, view, dims, isVisible?): LayerHit | null`, consulted on pointerdown. Registered layers are walked top-down (last-registered first) by `CanvasExtensionApi.hitTestExtras`; `<SceneCanvas>` folds that walk — plus its own selection chrome — into the `affordanceAt` thunk it hands the gesture dispatcher. A hit reaches actions as an `AffordanceHit` (kind `layer:<id>` for a registered layer, carrying whatever the layer resolved as its `payload`), and the layer's owner claims the gesture with a binding whose `target` predicate matches that kind. This is how chrome stays hittable regardless of which tool is active — see `@weasel-js/hud` for the worked example.
 
 **Command caching.** A layer may declare `deps?: (data, view, dims) => readonly unknown[]`. When a `LayerCommandCache` is supplied to `drawLayers` (Canvas owns one), a layer whose deps come back `Object.is`-equal to the previous call reuses its previous `DrawCommand[]` instead of calling `draw` again. A layer without `deps` rebuilds every frame. This skips rebuilding the command tree, not GPU dispatch — every layer is still submitted to the renderer each frame regardless of caching.
 
@@ -696,21 +702,18 @@ paged. A scene saved while its pages were the `core:pages` document value conver
 
 ## Affordance
 
-A reusable factory primitive that produces a `{ render, hitTest? }` triple. Tools that own chrome (selection handles, rotation handle, anchor dots) compose affordances rather than reimplementing the render + hit-test logic inline. The kit ships `createCornerResizeAffordance` and `createRotationAffordance`; both read state from a kit-built `ChromeState` object so the affordance code stays pure (no React, no scene access).
+A reusable piece of interactive chrome: an `Affordance` lists its regions for a `ChromeState` (`regions(state)`), each with a shape in its target's local frame, an optional paint, and the `hitKind` a press on it reports, so paint and hit-test come from one declaration. Chrome (selection handles, rotation handle, anchor dots) is built from affordances rather than reimplementing the paint and hit-test logic inline; `composeAffordanceLayer` turns a list of them into one registered layer. The kit ships `createCornerResizeAffordance` and `createRotationAffordance`; both read state from a kit-built `ChromeState` object so the affordance code stays pure (no React, no scene access).
 
 **Visible chrome is hittable independent of the active tool.** The hit-test walk runs once per pointerdown and the result rides the gesture as `InvocationCtx.drag.affordance`; a corner-handle drag fires the resize action even when a non-select tool is active. A hit is a claim, and a claim of `strength: 'exclusive'` bars every binding whose target doesn't consult the affordance — so chrome is never mistaken for a body pick and the gesture reaches whatever owns it, without each tool having to decline chrome by hand.
 
 ## Interaction
 
-Everything the user does to the scene is an **interaction**. The kit splits
-interactions into two kinds:
-
-- **Gestures** — pointer-driven, with a start/move/end lifecycle. They live
-  under `packages/core/src/interactions/gestures/`.
-- **Actions** — discrete, one-shot mutations that don't have a drag phase.
-  They live under `packages/core/src/interactions/actions/`. Most are keybinding-driven
-  (Esc, Cmd+A, Cmd+D, arrows, Cmd+Z), but they're really just functions
-  that produce ops; the keybinding wiring is optional.
+Everything the user does to the scene is an **interaction**: a
+[gesture](#gesture), the form the input takes, bound to an [action](#action),
+what to do with it. Actions live under
+`packages/core/src/interactions/actions/`, whether one fires once (Esc, Cmd+A,
+arrows) or runs for a whole drag (move, resize, insert); the input primitives
+live under `packages/core/src/interactions/gestures/`.
 
 Same adapter, same op pipeline, same undo history. The split is about
 *how the input arrives*, not about what the code can do.
@@ -770,14 +773,14 @@ allowed (`eligible` / `enabled`), and how it's reached by default
 export const deleteAction: Action & { requires: string[] } = {
   id: 'delete',
   label: 'Delete',
-  defaultBinding: {
-    kind: 'key',
-    key: ['Delete', 'Backspace'],
-    phase: [{ channel: '*', phase: 'initial' }],
-  },
+  defaultBinding: [{
+    spec: { kind: 'key', key: ['Delete', 'Backspace'], phase: BETWEEN_GESTURES },
+    opts: { id: 'delete.key' },
+  }],
   eligible: { capability: 'edits-page' },
   requires: ['scene', 'selection', 'applyOps'],
   invoker: { timing: 'immediate', run: (deps) => { /* … */ } },
+  enabled: deleteEnabled,
 };
 ```
 
@@ -785,8 +788,8 @@ export const deleteAction: Action & { requires: string[] } = {
 `<ActionsProvider>`; `<SceneCanvas>` calls it for you, leaving out whatever
 its `features` presets and tools do not name. Actions reached by a
 pointer gesture (`move`, `resize`, `insert`, …) are the same kind of object —
-an `invoker` with `start` / `move` / `end` rather than a one-shot `run`. A
-tool is just an array of `{ spec, actionId }` bindings pointing at them.
+an `ongoing` invoker whose `start` returns an [ongoing handle](#ongoing-handle)
+rather than a one-shot `run`.
 
 Imperative callers — a toolbar button, a command palette — use
 `registry.trigger(id, params)`, which resolves deps exactly as a gesture
@@ -941,7 +944,7 @@ function Editor() {
   const scene = useScene<Swatch, 'default'>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      { kind: 'leaf', layer: 'default', pose: { x: 40, y: 40, width: 70, height: 50 }, data: { color: '#7fb069' } },
+      { kind: 'mark', layer: 'default', pose: { x: 40, y: 40, width: 70, height: 50 }, data: { color: '#7fb069' } },
     ],
   });
 
@@ -990,7 +993,7 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 | **Paint kinds** | `Paint` discriminant | App (module) lifetime | Runtime-mutable; `registerPaintKind` returns a disposer; overrides stack; a kind with a loader registers on first lookup | Module-global reflectable in `core/paint/paintKinds.ts` | `paintKindRegistry`; `listPaintKinds()`, `listGradientKinds()`; `usePaintKinds()`, `useGradientKinds()`, `usePaintKind(id)` in React | `draw.ts` fill dispatch, `fillInPoseFrame`, `<defs>` emit, `PaintInput`'s and `GradientEditor`'s kind bars, `switchGradientKind` |
 | **Stroke markers** | Marker id string | App (module) lifetime | Runtime-mutable; `registerMarker` returns a disposer; overrides stack | Module-global reflectable in `@weasel-js/stroke` | `markerRegistry`; `listMarkers()` | Stroke end-cap drawing, `markerCommandCache` |
 | **Textures** | Auto-assigned `tex_N` id | App (module) lifetime | Runtime-mutable; append-only, no unregister in v1 | Module-global reflectable in `registerTexture.ts` | `textureRegistry` | `GLTextureCache`, `kind: 'shader'` uniform binding |
-| **Canvas layers** | Slot name string | Component lifetime, fixed at render | Constructor-fixed (prop value at render time) | `LayersMap` prop on `<Canvas>` / `<SceneCanvas>` | Implicitly — `Object.entries` over the prop | `<Canvas>` layer compositor |
+| **Canvas layers** | Slot name string | Component lifetime, fixed at render | Constructor-fixed (prop value at render time) | `LayersMap` prop on `<SceneCanvas>`, built into `<Canvas>`'s `CanvasLayers` | Implicitly — `Object.entries` over the prop | `<Canvas>` layer compositor |
 | **Object-kind classifier** | Target kind string | — | — | — | — | Shipped as the routing trait: `createNodeRouting` and `NodeRoutingEntry` |
 
 **Fonts** (`packages/font/src/registerFont.ts`) use a two-level Map — outer key is the font family, inner key is `weight|style` — so `resolveFontVariant` can walk the fallback chain within a family without scanning everything. Idempotent: re-registering an existing variant is a no-op.

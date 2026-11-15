@@ -1023,7 +1023,8 @@ whose center lies in the box the last node clicked and the pressed one span, wit
 kind (2026-11-07). The last node clicked is the selection's anchor. Cmd+Alt+Shift ranges the same
 way among the deepest node's siblings.
 
-**Saving.** Scenes save as version 2 with `kind: 'mark' | 'group'`. A version 1 save loads
+**Saving.** Scenes save as version 3 with `kind: 'mark' | 'group'` (version 2 had the same
+kinds, with every pose in world). A version 1 save loads
 with each `leaf` as a mark and each `container` as a group, unless `classifyV1` says
 otherwise. Version 1 clipped a container with no clip function to its outline, so such a
 container loading as a group, and one whose clip key a load skipped, gets `clip: 'outline'`; one
@@ -1091,7 +1092,8 @@ Illustrator) are deferred (2026-11-02); they would be another layout policy on t
 ### View / ViewTransform
 
 `View` — the viewport's camera state: `{ x, y, scale }` where `x/y` is the world
-point rendered at the canvas top-left and `scale` is pixels per world unit. The
+point rendered at the canvas top-left and `scale` (`{ x, y }`) is pixels per
+world unit on each axis. The
 canonical pan+zoom representation used throughout the kit. `ViewTransform` is a
 legacy shape (`{ panX, panY, zoom }`) with the opposite sign convention for
 translation; `viewToTransform(view)` bridges between them. See
