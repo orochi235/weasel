@@ -281,20 +281,6 @@ export function RigDemo() {
           layers={{ selectionOverlay: null }}
         />
       </DemoStage>
-      <div className="ckd-hint">
-        Both figures are the same six-joint skeleton, bound to scene nodes by
-        <code> useRig</code>: each bone, joint marker and label is a node that rides its
-        joint through the scene&apos;s pose overrides, so a frame costs no undo entry. A rig
-        is an animation target, <code>rig.target</code>, and everything here moves one. The
-        green figure is <code>animator.hold</code>s on it, poses A and B at weights
-        <code> 1 - t</code> and <code>t</code>. The orange one is a
-        <code> SampledTrack&lt;Pose&gt;</code> naming it as its <code>target</code>, with no
-        <code> interpolate</code>: set the slider to the track&apos;s reported <code>u</code>
-        while it plays and the two bodies coincide. Drag the red target: <code>solveIk</code>
-        {' '}answers with one more pose, held on the arm&apos;s joints alone through
-        <code> axes: jointAxes(skeleton, arm)</code> at the reach weight, where it takes its
-        share from A and B. The body stays theirs.
-      </div>
     </div>
   );
 }

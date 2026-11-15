@@ -98,18 +98,6 @@ export function RigToolsDemo() {
           claimKeys
         />
       </DemoStage>
-      <div className="ckd-hint">
-        The arm is one container node with a skeleton in its <code>data.skeleton</code> and one
-        path under it with weights in its <code>data.skin</code>; <code>useRigNode</code> binds a
-        rig from them and binds again after every edit. Press <kbd>J</kbd> for the bone tool:
-        drag a joint to move it, drag from empty space to draw a bone from the active joint,
-        <kbd>Delete</kbd> to remove it. Press <kbd>W</kbd> for the weight tool: click a joint,
-        then brush over the dots to make them follow it, with <kbd>Alt</kbd> to make them let
-        go. Both tools edit the arm as it rests, so set bend to 0 to see what you are editing,
-        then bend it to see the result. <kbd>V</kbd> goes back to selecting, and there a
-        double-click on the sleeve edits its points: <kbd>Alt</kbd>-click an edge to add one and
-        <kbd>Delete</kbd> to remove the selected ones, and the weights stay with their points.
-      </div>
     </div>
   );
 }
