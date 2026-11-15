@@ -91,6 +91,21 @@ describe('ActionButton forwards the native <button> contract', () => {
     expect(onKeyDown).toHaveBeenCalledOnce();
   });
 
+  test('ignores a press while dead for a missing key, as one disabled for a reason does', () => {
+    const onClick = vi.fn();
+    const onPress = vi.fn();
+    const onPointerDown = vi.fn();
+    render(<ActionButton label="Flatten" missing="layers.flatten" onClick={onClick} onPointerDown={onPointerDown} onPress={onPress} />);
+    const dead = screen.getByRole('button', { name: 'Flatten' });
+    expect(dead).toHaveAttribute('aria-disabled', 'true');
+    expect(dead).not.toBeDisabled();
+    fireEvent.pointerDown(dead);
+    fireEvent.click(dead);
+    expect(onClick).not.toHaveBeenCalled();
+    expect(onPointerDown).not.toHaveBeenCalled();
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
   test('types its props from the native button, less what it writes itself', () => {
     expectTypeOf<ActionButtonProps>().toHaveProperty('aria-expanded');
     expectTypeOf<ActionButtonProps>().toHaveProperty('onKeyDown');

@@ -79,7 +79,8 @@ export const ActionButton = forwardRef(function ActionButton(props: ActionButton
   const { disabled, reason } = useDisabled(props);
   const { show, hide } = usePreviewWhileNear(disabled || dead ? undefined : preview);
   const appearance = useAppearance({ grade });
-  const tip = dead ? { tooltip: `${label}: no action “${missing}”` } : { tooltip, description: description || label, shortcut };
+  // A dead button is held as one disabled for a reason is: reachable, so its tooltip can say why, and pressing nothing.
+  const tip = dead ? { description: label } : { tooltip, description: description || label, shortcut };
   const palette = form === 'palette';
   const words = palette || form === 'menu' || icon == null || (labeled ?? (form === 'row' || form === 'popover'));
   const cls = palette ? [s.tool, className]
@@ -87,8 +88,7 @@ export const ActionButton = forwardRef(function ActionButton(props: ActionButton
   const shown = children ?? label;
   const menu = popup?.type === 'menu' ? popup : undefined;
   return (
-    // A dead or explained button keeps its tooltip, which is the only thing that says why.
-    <ButtonTooltip tip={tip} disabled={disabled && !dead} disabledReason={reason}>
+    <ButtonTooltip tip={tip} disabled={disabled || dead} disabledReason={dead ? `no action “${missing}”` : reason}>
       <button
         {...native}
         ref={(el) => {
@@ -99,8 +99,6 @@ export const ActionButton = forwardRef(function ActionButton(props: ActionButton
         type="button"
         data-form={form}
         aria-label={label}
-        aria-disabled={disabled || dead || undefined}
-        disabled={disabled && !dead && reason === undefined}
         {...(palette ? { 'aria-current': active ? 'true' : undefined } : { 'aria-pressed': active })}
         {...appearance}
         {...(popup ? { 'aria-haspopup': popup.type, 'aria-expanded': popup.expanded } : {})}
