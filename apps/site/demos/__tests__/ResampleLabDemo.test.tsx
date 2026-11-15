@@ -5,6 +5,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { ResampleLabDemo } from '../ResampleLabDemo';
+import { LAB_PATH_ID } from '../pathEditLabScene';
 import { stubResizeObserver } from './pathEditLabHarness';
 import { withIcons } from '../../testIcons';
 
@@ -18,7 +19,7 @@ afterEach(() => {
 });
 
 const anchors = () =>
-  pathToAnchors((window.__weaselTest!.getScene().nodes.find((n) => n.id === 'curve')!.data as { path: PolygonPath }).path)
+  pathToAnchors((window.__weaselTest!.getScene().nodes.find((n) => n.id === LAB_PATH_ID)!.data as { path: PolygonPath }).path)
     .anchors[0].length;
 
 describe('ResampleLabDemo', () => {

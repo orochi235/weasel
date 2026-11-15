@@ -28,12 +28,12 @@ const createLabScene = () =>
   createScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [
-      strokeNode('left', pathFromD('M200 80 V400'), '#7fb069'),
-      strokeNode('right', pathFromD('M320 80 V400'), '#7fb069'),
-      strokeNode('top', pathFromD('M80 160 H440'), '#d4a574'),
-      strokeNode('bottom', pathFromD('M80 300 H440'), '#d4a574'),
-      strokeNode('ring', ellipsePath({ x: 510, y: 150, width: 180, height: 180 }), '#a48bd4', true),
-      strokeNode('axis', pathFromD('M480 240 H720'), '#a48bd4'),
+      strokeNode('left', pathFromD('M200 80 V400'), { color: '#7fb069' }),
+      strokeNode('right', pathFromD('M320 80 V400'), { color: '#7fb069' }),
+      strokeNode('top', pathFromD('M80 160 H440'), { color: '#d4a574' }),
+      strokeNode('bottom', pathFromD('M80 300 H440'), { color: '#d4a574' }),
+      strokeNode('ring', ellipsePath({ x: 510, y: 150, width: 180, height: 180 }), { color: '#a48bd4', fill: '#a48bd433' }),
+      strokeNode('axis', pathFromD('M480 240 H720'), { color: '#a48bd4' }),
     ],
   });
 

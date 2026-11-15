@@ -1,4 +1,4 @@
-import { editingAnchors, never, type RectPose, useSelection, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
+import { editingAnchors, never, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
 import { createCurvatureCombPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -6,12 +6,10 @@ import {
   f,
   Lab,
   type RenderContext,
-  type SceneTrialState,
   TrialSceneCanvas,
-  useTrialScene,
 } from '@weasel-js/labkit';
 import { useMemo } from 'react';
-import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
+import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -22,16 +20,13 @@ const config = f.schema({
   teeth: f.number(24).range(4, 64).step(1).label('Teeth per segment'),
 });
 type Config = ConfigOf<typeof config>;
-type State = SceneTrialState<unknown, 'default', RectPose>;
 
 // Smooth at both inner anchors, but each one's handles are lopsided, so the
 // comb jumps there.
-const createLabScene = () =>
-  createPathLabScene('M80 300 C80 180 160 120 260 120 C300 120 440 140 460 260 C470 320 560 360 620 300');
+const S_CURVE = 'M80 300 C80 180 160 120 260 120 C300 120 440 140 460 260 C470 320 560 360 620 300';
 
-function CombTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
-  const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ scene, initial: [EDITED_ID] });
+function CombTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
+  const { scene, selection, pathEdit } = usePathEditTrial(ctx, S_CURVE);
   const { comb, scale, teeth } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);
@@ -45,13 +40,13 @@ function CombTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       scene={scene}
       trial={ctx.trial}
       selection={selection}
-      defaultPathEdit={EDITED_OPENING}
+      pathEdit={pathEdit}
       chromeVisibility={chromeVisibility}
     />
   );
 }
 
-const combInstrument = defineInstrument<State, Config>({
+const combInstrument = defineInstrument<PathLabState, Config>({
   name: 'Comb',
   config,
   initialState: () => ({ scene: null }),

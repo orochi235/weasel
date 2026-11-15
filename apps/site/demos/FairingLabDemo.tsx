@@ -1,4 +1,4 @@
-import { ANCHORS_GROUP, type ActionTunings, editingAnchors, never, type RectPose, useSelection, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
+import { ANCHORS_GROUP, type ActionTunings, editingAnchors, never, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
 import { createCurvatureCombPreset, fairingPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -6,13 +6,11 @@ import {
   f,
   Lab,
   type RenderContext,
-  type SceneTrialState,
   TrialSceneCanvas,
-  useTrialScene,
 } from '@weasel-js/labkit';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useMemo } from 'react';
-import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
+import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import s from './FairingLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -23,21 +21,17 @@ const config = f.schema({
   scale: f.number(4000).range(200, 12000).step(100).label('Comb scale'),
 });
 type Config = ConfigOf<typeof config>;
-type State = SceneTrialState<unknown, 'default', RectPose>;
 
 // A closed blob, smooth at every anchor, with each anchor's two handles of
 // different lengths: the comb steps at all four.
-const createLabScene = () =>
-  createPathLabScene(
-    'M200 100 C260 100 420 110 460 200 C480 245 470 330 380 340 C299 349 160 360 140 260 C125 185 160 100 200 100 Z',
-  );
+const LOPSIDED =
+  'M200 100 C260 100 420 110 460 200 C480 245 470 330 380 340 C299 349 160 360 140 260 C125 185 160 100 200 100 Z';
 
 // The command has no key of its own; this canvas gives it one.
 const tune: ActionTunings = { fairAnchors: { bindings: [{ kind: 'key', key: 'h' }] } };
 
-function FairingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
-  const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ scene, initial: [EDITED_ID] });
+function FairingTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
+  const { scene, selection, pathEdit } = usePathEditTrial(ctx, LOPSIDED);
   const { comb, scale } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);
@@ -55,7 +49,7 @@ function FairingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         trial={ctx.trial}
         selection={selection}
-        defaultPathEdit={EDITED_OPENING}
+        pathEdit={pathEdit}
         chromeVisibility={chromeVisibility}
         tune={tune}
       />
@@ -63,7 +57,7 @@ function FairingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
 }
 
-const fairingInstrument = defineInstrument<State, Config>({
+const fairingInstrument = defineInstrument<PathLabState, Config>({
   name: 'Fairing',
   config,
   initialState: () => ({ scene: null }),

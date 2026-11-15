@@ -17,7 +17,7 @@ const config = f.schema({
 type Config = ConfigOf<typeof config>;
 
 function HandleSnapTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
-  const { scene, selection, defaultPathEdit } = usePathEditTrial(ctx, BLOB, '#d4a574');
+  const { scene, selection, pathEdit } = usePathEditTrial(ctx, BLOB, { color: '#d4a574' });
   const live = useLatest(ctx.config);
   const features = useMemo(() => [pickPreset, movePreset, pathsPreset, createHandleSnapPreset(() => {
     const { snap, step, tolerance, opposite } = live.current;
@@ -29,7 +29,7 @@ function HandleSnapTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) 
       features={features}
       scene={scene}
       selection={selection}
-      defaultPathEdit={defaultPathEdit}
+      pathEdit={pathEdit}
       trial={ctx.trial}
     />
   );

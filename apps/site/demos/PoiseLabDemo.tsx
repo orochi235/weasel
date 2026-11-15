@@ -1,4 +1,4 @@
-import { editingAnchors, never, type RectPose, useSelection, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
+import { editingAnchors, never, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
 import { poisePreset, createCurvatureCombPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -6,12 +6,10 @@ import {
   f,
   Lab,
   type RenderContext,
-  type SceneTrialState,
   TrialSceneCanvas,
-  useTrialScene,
 } from '@weasel-js/labkit';
 import { useMemo } from 'react';
-import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
+import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -22,15 +20,12 @@ const config = f.schema({
   scale: f.number(3000).range(200, 12000).step(100).label('Comb scale'),
 });
 type Config = ConfigOf<typeof config>;
-type State = SceneTrialState<unknown, 'default', RectPose>;
 
 // Two curved segments, the first with one handle much longer than the other.
-const createLabScene = () =>
-  createPathLabScene('M100 320 C140 200 260 140 340 140 C420 140 520 180 560 320');
+const ARCS = 'M100 320 C140 200 260 140 340 140 C420 140 520 180 560 320';
 
-function PoiseTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
-  const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ scene, initial: [EDITED_ID] });
+function PoiseTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
+  const { scene, selection, pathEdit } = usePathEditTrial(ctx, ARCS);
   const { poise, comb, scale } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({
@@ -47,13 +42,13 @@ function PoiseTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       scene={scene}
       trial={ctx.trial}
       selection={selection}
-      defaultPathEdit={EDITED_OPENING}
+      pathEdit={pathEdit}
       chromeVisibility={chromeVisibility}
     />
   );
 }
 
-const poiseInstrument = defineInstrument<State, Config>({
+const poiseInstrument = defineInstrument<PathLabState, Config>({
   name: 'Poise',
   config,
   initialState: () => ({ scene: null }),

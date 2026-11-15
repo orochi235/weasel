@@ -1,4 +1,4 @@
-import { type ActionTunings, PathBuilder, type RectPose, useSelection, drawPreset } from '@weasel-js/core';
+import { type ActionTunings, PathBuilder, drawPreset } from '@weasel-js/core';
 import { ANCHOR_SELECTION_GROUP, anchorSelectionPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -6,13 +6,11 @@ import {
   f,
   Lab,
   type RenderContext,
-  type SceneTrialState,
   TrialSceneCanvas,
-  useTrialScene,
 } from '@weasel-js/labkit';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useMemo } from 'react';
-import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
+import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -22,7 +20,6 @@ const config = f.schema({
   n: f.number(4).range(2, 8).step(1).label('Every Nth: N'),
 });
 type Config = ConfigOf<typeof config>;
-type State = SceneTrialState<unknown, 'default', RectPose>;
 
 /** A closed flower: smooth petal tips between corner notches, 16 anchors. */
 function flower() {
@@ -46,12 +43,11 @@ function flower() {
   return b.close().build();
 }
 
-const createLabScene = () => createPathLabScene(flower(), '#f2c6de');
+const FLOWER = flower();
 const features = [drawPreset, anchorSelectionPreset] as const;
 
-function AnchorSelectTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
-  const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ scene, initial: [EDITED_ID] });
+function AnchorSelectTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
+  const { scene, selection, pathEdit } = usePathEditTrial(ctx, FLOWER, { fill: '#f2c6de' });
   const { n } = ctx.config;
   const tune = useMemo<ActionTunings>(() => ({ selectEveryNthAnchor: { params: { n } } }), [n]);
   return (
@@ -61,7 +57,7 @@ function AnchorSelectTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         trial={ctx.trial}
         selection={selection}
-        defaultPathEdit={EDITED_OPENING}
+        pathEdit={pathEdit}
         tune={tune}
       />
       <OpeningSteps steps={[['selectEveryNthAnchor']]} />
@@ -69,7 +65,7 @@ function AnchorSelectTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
 }
 
-const instrument = defineInstrument<State, Config>({
+const instrument = defineInstrument<PathLabState, Config>({
   name: 'Anchor selection',
   config,
   initialState: () => ({ scene: null }),

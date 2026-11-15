@@ -18,14 +18,14 @@ const LOCK_BAR = pref.group('', {
 });
 
 function HandleLockTrial({ ctx }: { ctx: RenderContext<PathLabState, Record<string, never>> }) {
-  const { scene, selection, defaultPathEdit } = usePathEditTrial(ctx, BLOB, '#a48bd4');
+  const { scene, selection, pathEdit } = usePathEditTrial(ctx, BLOB, { color: '#a48bd4' });
   return (
     <div className={s.trial}>
       <TrialSceneCanvas
         features={FEATURES}
         scene={scene}
         selection={selection}
-        defaultPathEdit={defaultPathEdit}
+        pathEdit={pathEdit}
         trial={ctx.trial}
       />
       <PrefsBar schema={LOCK_BAR} label="Handle locks" className={s.locks} />

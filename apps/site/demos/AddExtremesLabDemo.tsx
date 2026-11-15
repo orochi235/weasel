@@ -1,4 +1,4 @@
-import { ANCHORS_GROUP, type RectPose, useSelection, drawPreset } from '@weasel-js/core';
+import { ANCHORS_GROUP, drawPreset } from '@weasel-js/core';
 import { addExtremesPreset, anchorSelectionPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -6,13 +6,11 @@ import {
   f,
   Lab,
   type RenderContext,
-  type SceneTrialState,
   TrialSceneCanvas,
-  useTrialScene,
 } from '@weasel-js/labkit';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { LastOperationPanel } from '@weasel-js/ui/components/LastOperationPanel';
-import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
+import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -20,18 +18,15 @@ import { icon } from '../icons.gen';
 
 const config = f.schema({});
 type Config = ConfigOf<typeof config>;
-type State = SceneTrialState<unknown, 'default', RectPose>;
 
 /** A blob of three curves, none of whose anchors sits at an extreme. */
 const BLOB = 'M 180 240 C 190 170 250 100 320 80 C 460 40 560 220 460 340 C 380 436 160 380 180 240 Z';
 
-const createLabScene = () => createPathLabScene(BLOB, '#bfe3c0');
 // Anchor selection is what seeds the opening selection.
 const features = [drawPreset, addExtremesPreset, anchorSelectionPreset] as const;
 
-function AddExtremesTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
-  const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ scene, initial: [EDITED_ID] });
+function AddExtremesTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
+  const { scene, selection, pathEdit } = usePathEditTrial(ctx, BLOB, { fill: '#bfe3c0' });
   return (
     <PathLabStage bar={<><ActionBar group={ANCHORS_GROUP} /><LastOperationPanel /></>}>
       <TrialSceneCanvas
@@ -39,7 +34,7 @@ function AddExtremesTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         trial={ctx.trial}
         selection={selection}
-        defaultPathEdit={EDITED_OPENING}
+        pathEdit={pathEdit}
       />
       {/* Anchors 0 and 2: the segment closing the blob is selected. */}
       <OpeningSteps steps={[['selectEveryNthAnchor', { n: 2 }]]} />
@@ -47,7 +42,7 @@ function AddExtremesTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
 }
 
-const instrument = defineInstrument<State, Config>({
+const instrument = defineInstrument<PathLabState, Config>({
   name: 'Add extremes',
   config,
   initialState: () => ({ scene: null }),

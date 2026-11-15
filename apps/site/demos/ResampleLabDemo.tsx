@@ -1,4 +1,4 @@
-import { type RectPose, useActionsRegistry, useSelection, drawPreset } from '@weasel-js/core';
+import { useActionsRegistry, drawPreset } from '@weasel-js/core';
 import { resamplePreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -6,13 +6,11 @@ import {
   f,
   Lab,
   type RenderContext,
-  type SceneTrialState,
   TrialSceneCanvas,
-  useTrialScene,
 } from '@weasel-js/labkit';
 import { Button } from '@weasel-js/ui/components/Button';
 import { LastOperationPanel } from '@weasel-js/ui/components/LastOperationPanel';
-import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
+import { type PathLabState, usePathEditTrial } from './pathEditLabScene';
 import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -21,18 +19,15 @@ import { icon } from '../icons.gen';
 // Resample's params are in the last-operation panel, once it has run.
 const config = f.schema({});
 type Config = ConfigOf<typeof config>;
-type State = SceneTrialState<unknown, 'default', RectPose>;
 
 /** An open wave with anchors bunched unevenly along it, cornered twice in the middle. */
 const WAVE = 'M 80 300 C 120 120 160 120 200 220 C 220 270 300 300 320 180 L 380 120 '
   + 'C 420 60 470 80 520 180 C 540 220 600 260 660 200';
 
-const createLabScene = () => createPathLabScene(WAVE);
 const features = [drawPreset, resamplePreset] as const;
 
-function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
-  const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ scene, initial: [EDITED_ID] });
+function ResampleTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
+  const { scene, selection, pathEdit } = usePathEditTrial(ctx, WAVE);
   const actions = useActionsRegistry();
   const bar = (
     <>
@@ -47,13 +42,13 @@ function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         trial={ctx.trial}
         selection={selection}
-        defaultPathEdit={EDITED_OPENING}
+        pathEdit={pathEdit}
       />
     </PathLabStage>
   );
 }
 
-const instrument = defineInstrument<State, Config>({
+const instrument = defineInstrument<PathLabState, Config>({
   name: 'Resample',
   config,
   initialState: () => ({ scene: null }),
