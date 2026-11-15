@@ -1,0 +1,35 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+  align-items: flex-start;
+}
+
+.control {
+  display: flex;
+  gap: var(--wzl-space-3);
+  align-items: center;
+}
+
+.slider {
+  width: 240px;
+}
+
+.readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  min-width: 4ch;
+  text-align: end;
+}
+
+.handle {
+  cursor: ew-resize;
+}
+
+.editor :global([data-layer-id='bevel']) {
+  --curve-line: goldenrod;
+  --curve-fill: color-mix(in srgb, goldenrod 35%, transparent);
+}
+
+.editor :global([data-layer-id='spline']) {
+  --curve-line: rebeccapurple;
+}

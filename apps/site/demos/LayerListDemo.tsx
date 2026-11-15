@@ -2,6 +2,7 @@ import { SceneCanvas, solid, useScene, useSelection, type SolidPaint, pickPreset
 import { LayerList, useSceneLayerList } from '@weasel-js/ui/components/LayerList';
 import type { CSSProperties } from 'react';
 import { DemoStage } from './DemoStage';
+import s from './LayerListDemo.module.css';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: { paint: SolidPaint } }
 
@@ -31,7 +32,7 @@ export function LayerListDemo() {
   });
 
   return (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+    <div className={s.demo}>
       <DemoStage width={W} height={H}>
         <SceneCanvas features={[pickPreset]}
           className="ckd-canvas"

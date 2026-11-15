@@ -10,6 +10,7 @@ import {
 } from '@weasel-js/core';
 import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
+import s from './LassoDemo.module.css';
 
 const W = 480, H = 320;
 
@@ -44,20 +45,16 @@ const MODE_ITEMS: SegmentedBarItem<LassoHitMode>[] = [
 ];
 
 export function LassoDemo() {
-  // `pick` brings the select tool and `defaultTools` adds the lasso. The
-  // `toolOptions.lasso.mode` knob drives the live hit-mode comparison —
-  // drag a closed polygon, watch which rects get selected based on the
-  // chosen mode.
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const selection = useSelection({ scene, mode: 'multi' });
   const [mode, setMode] = useState<LassoHitMode>('intersect');
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12 }}>
+    <div className={s.demo}>
+      <div className={s.controls}>
         <span>Hit mode:</span>
         <SegmentedBar items={MODE_ITEMS} value={mode} onChange={(m) => m && setMode(m)} aria-label="Hit mode" size="sm" />
-        <span style={{ marginLeft: 'auto', opacity: 0.7 }}><kbd>V</kbd> select · <kbd>L</kbd> lasso</span>
+        <span className={s.keys}><kbd>V</kbd> select · <kbd>L</kbd> lasso</span>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas

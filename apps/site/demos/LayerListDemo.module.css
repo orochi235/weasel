@@ -1,0 +1,5 @@
+.demo {
+  display: flex;
+  gap: var(--wzl-space-4);
+  align-items: flex-start;
+}

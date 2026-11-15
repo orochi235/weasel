@@ -3,6 +3,7 @@ import {
   CustomLayer, FunctionLayer, LayeredCurveEditor, type ControlPoint, type CurveLayer, type FunctionLayerState,
 } from '@weasel-js/ui/components/CurveEditor';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import s from './LayeredCurveDemo.module.css';
 
 /**
  * The rim → contour curve of a beveled solid of revolution, as two function
@@ -35,7 +36,7 @@ function createPartitionLayer(): CurveLayer<PartitionState> {
             x={x - 5} y={h / 2 - 14}
             width={10} height={28} rx={2}
             fill={stroke}
-            style={{ cursor: 'ew-resize' }}
+            className={s.handle}
             data-anchor-index="partition"
           />
         </g>
@@ -137,21 +138,19 @@ export function LayeredCurveDemo() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-        <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
-          bevel width (b):
-          <InlineRange
-            min={0.05}
-            max={0.95}
-            step={0.01}
-            value={b}
-            onChange={(e) => moveSeam(Number(e.currentTarget.value))}
-            style={{ width: 240 }}
-          />
-          <code style={{ minWidth: 48, textAlign: 'right' }}>{b.toFixed(2)}</code>
-        </label>
-      </div>
+    <div className={s.demo}>
+      <label className={s.control}>
+        bevel width (b):
+        <InlineRange
+          min={0.05}
+          max={0.95}
+          step={0.01}
+          value={b}
+          onChange={(e) => moveSeam(Number(e.currentTarget.value))}
+          className={s.slider}
+        />
+        <output className={s.readout}>{b.toFixed(2)}</output>
+      </label>
       <LayeredCurveEditor
         width={PLOT_W}
         height={PLOT_H}
@@ -159,16 +158,8 @@ export function LayeredCurveDemo() {
         yRange={[0, 1]}
         grid={{ divisions: 4 }}
         axes={{}}
+        className={s.editor}
       >
-        <style>{`
-          [data-layer-id="bevel"] {
-            --curve-line: goldenrod;
-            --curve-fill: color-mix(in srgb, goldenrod 35%, transparent);
-          }
-          [data-layer-id="spline"] {
-            --curve-line: rebeccapurple;
-          }
-        `}</style>
         <FunctionLayer
           id="bevel" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
           fill={BEVEL_FILL} xClamp={bevelClamp} minPoints={2} state={bevelState} onInput={onBevelChange}
