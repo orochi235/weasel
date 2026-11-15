@@ -7,6 +7,7 @@ import * as pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { plainScene } from '@weasel-js/core/testing/plainScene';
 import { parallaxScene } from '@weasel-js/core/testing/parallaxScene';
+import { __setImageLoaderForTests, _resetImageCacheForTests } from '@weasel-js/renderer/test-seams';
 import { exportRegionsPdf } from './regionsPdf';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -72,5 +73,30 @@ describe('exportRegionsPdf', () => {
     expect(rgb(page, 11, 11)).toEqual([255, 0, 0]);
     expect(rgb(page, 4, 4)).toEqual([255, 255, 255]);
     expect(rgb(page, 18, 18)).toEqual([255, 255, 255]);
+  });
+
+  it('writes every page from the revision an edit made while a later page loaded its picture', async () => {
+    _resetImageCacheForTests();
+    let release = () => {};
+    const held = new Promise<void>((r) => { release = r; });
+    __setImageLoaderForTests(async () => {
+      await held;
+      return createImageBitmap(new ImageData(new Uint8ClampedArray([0, 0, 255, 255]), 1, 1));
+    });
+    try {
+      const { scene, pages } = plainScene();
+      scene.add({ id: 'i', kind: 'mark', layer: 'main', parent: null, pose: { x: 400, y: 70, width: 20, height: 20 }, data: { image: { src: 'held' } } } as never);
+      const pdf = exportRegionsPdf(scene, pages);
+      await new Promise((r) => setTimeout(r, 0));
+      const green = { shape: 'rect', fill: { paint: { kind: 'solid', color: '#00ff00' } } };
+      scene.update('r' as never, { data: green });
+      scene.update('p' as never, { data: { path: { kind: 'rect', x: 300, y: 30, width: 40, height: 30 }, fill: green.fill } });
+      release();
+      const doc = await read((await pdf).blob);
+      expect(rgb(await draw(doc, 1), 37, 30)).toEqual([0, 255, 0]);
+      expect(rgb(await draw(doc, 2), 60, 33)).toEqual([0, 255, 0]);
+    } finally {
+      _resetImageCacheForTests();
+    }
   });
 });

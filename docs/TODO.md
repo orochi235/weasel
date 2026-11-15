@@ -278,19 +278,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Export, worker and headless contracts
 
-- **(P2) [agent] Export one coherent document revision across asynchronous loading and multiple pages.**
-  `documentOf` suppresses overrides but remains a live view of the source. PNG warms assets and then
-  rebuilds commands; PDF awaits warming inside its region loop and reads each page afterward
-  (`packages/core/src/canvas/export/regionPng.ts`, `regionRenderArgs.ts`,
-  `packages/pdf/src/regionsPdf.ts`). An edit while a font/image loads can change the exported content,
-  introduce an asset that was not warmed, or mix revisions across pages. SVG captures its node list
-  before warming, so the formats do not share one capture boundary. Capture a detached document and
-  region configuration at invocation, or detect revision changes and restart/refuse with a bounded
-  policy. Keep transient previews out and define which registry/asset state the capture depends on.
-  Closes when edits made during deferred font/image loading cannot produce mixed-revision output,
-  all pages and bounds belong to the same documented revision, and tests exercise edits, deletes,
-  newly introduced assets and registry-backed node functions during an export.
-
 - **(P2) [agent] Honor common export diagnostics for raster omissions and asset failures.**
   `ExportOptions.onWarn` promises to report omitted or unloadable content, but `PNG_EXPORT` drops it
   (`packages/core/src/canvas/export/regionPng.ts`). `warmRender` filters unknown paint kinds and

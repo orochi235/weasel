@@ -245,7 +245,15 @@ the registry changes; `exportFormatRegistry` is its reflection, with
 one and returns its disposer; registering an id that is held overrides it.
 
 Each export draws the document, not what an open gesture or edit is showing,
-writes nothing to the scene, and leaves annotation layers out.
+writes nothing to the scene, and leaves annotation layers out. It draws one
+revision of it: `captureExport` loads what the regions need, and reads them
+only if no content changed meanwhile, or starts again, up to
+`EXPORT_CAPTURE_ATTEMPTS` times before rejecting with `ExportRevisionError`.
+Regions may be a function of the document, `(doc) => regions`, read again each
+time, so bounds measured from it belong to the revision drawn: `exportPages`
+places its pages that way, by id. A format of your own goes through
+`captureExport` too, warming in `warm` and reading everything it writes in
+`read`.
 `exportRegionPng(scene, region, { scale, background })` is the `png` format
 on its own: the renderer's pixels, `region × scale` in size. It needs WebGL2.
 

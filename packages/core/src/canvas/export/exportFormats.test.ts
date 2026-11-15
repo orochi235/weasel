@@ -5,6 +5,8 @@ import { plainScene } from '../../testing/plainScene';
 import { _resetExportFormatsForTests, exportFormatRegistry, exportFormats, exportRegions, registerExportFormat } from './exportFormats';
 import { exportPages } from './exportPages';
 import type { ExportFormat, ExportOptions, ExportRegion } from './exportTypes';
+import { documentOf } from 'core/scene/documentOf';
+import { exportRegionsOf } from './captureExport';
 import { selectionRegion } from './selectionRegion';
 
 const calls: { id: string; regions: readonly ExportRegion[]; opts: ExportOptions }[] = [];
@@ -12,8 +14,8 @@ const calls: { id: string; regions: readonly ExportRegion[]; opts: ExportOptions
 function fake(id: string, multiRegion: boolean): ExportFormat {
   return {
     id, label: id.toUpperCase(), mimeType: `test/${id}`, extension: id, multiRegion,
-    export: async (_scene, regions, opts) => {
-      calls.push({ id, regions, opts });
+    export: async (scene, regions, opts) => {
+      calls.push({ id, regions: exportRegionsOf(regions, documentOf(scene)), opts });
       return new Blob([id], { type: `test/${id}` });
     },
   };
@@ -98,6 +100,14 @@ describe('exportRegions', () => {
     const { scene } = plainScene();
     await expect(exportRegions(scene, [], 'many')).rejects.toThrow(/no regions/);
   });
+
+  it('counts regions read from the document each time the format reads them', async () => {
+    registerExportFormat(fake('one', false));
+    const { scene, pages } = plainScene();
+    await exportRegions(scene, () => [pages[0]!], 'one');
+    expect(calls).toHaveLength(1);
+    await expect(exportRegions(scene, () => pages, 'one')).rejects.toThrow(/one region to a file.*handed 2/);
+  });
 });
 
 describe('exportPages', () => {
@@ -109,6 +119,15 @@ describe('exportPages', () => {
       { x: 0, y: 0, width: 200, height: 100, name: 'Page 1' },
       { x: 240, y: 0, width: 200, height: 100, name: 'Page 2' },
     ]);
+  });
+
+  it('places each page as the document holds it when read, and fails for one it no longer holds', async () => {
+    registerExportFormat(fake('many', true));
+    const { scene, pages } = plainScene();
+    const stale = pages.map((p) => ({ ...p, x: p.x + 1000 }));
+    await exportPages(scene, stale, 'many');
+    expect(calls[0]!.regions.map((r) => r.x)).toEqual([0, 240]);
+    await expect(exportPages(scene, [{ ...pages[0]!, id: 'gone' }], 'many')).rejects.toThrow(/no page "gone"/);
   });
 });
 

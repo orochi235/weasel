@@ -175,6 +175,9 @@ export interface RasterSession {
   renderIds<TData, TLayer extends string, TPose>(
     args: RasterRenderArgs<TData, TLayer, TPose>, options?: { minAlpha?: number },
   ): IdBuffer;
+  /** Draw a plan `planPixelRender` made, as `render` draws the plan it makes: for a caller that
+   *  read the scene at one moment and draws later. Throws once disposed. */
+  renderPlan(plan: PixelRenderPlan, options?: { screen?: GlMat3; flattenTolerancePx?: number }): RasterImage;
   /**
    * Draw `commands` with no scene in between, into a `width × height` raster
    * whose pixels they are already placed in: a frame the caller built itself,
@@ -273,6 +276,12 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
     return { plan, ...sized(call, plan.width, plan.height, args.flattenTolerancePx) };
   }
 
+  function drawPlan(call: string, plan: PixelRenderPlan, options: { screen?: GlMat3; flattenTolerancePx?: number }): RasterImage {
+    const { ctx, renderer: r } = sized(call, plan.width, plan.height, options.flattenTolerancePx);
+    const draw = () => r.render(plan.commands, viewToMat3(plan.view), { screen: options.screen });
+    return drawAndRead(call, ctx, draw, plan.width, plan.height);
+  }
+
   /** Draw a frame already sized for, and read its `width × height` back. */
   function drawAndRead(
     call: string, ctx: WebGL2RenderingContext, draw: () => void, width: number, height: number,
@@ -288,9 +297,11 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
 
   return {
     render(args) {
-      const { plan, ctx, renderer: r } = prepare('render', args);
-      const draw = () => r.render(plan.commands, viewToMat3(plan.view), { screen: args.screen });
-      return drawAndRead('render', ctx, draw, plan.width, plan.height);
+      if (disposed) throw new Error('raster session: render() on a disposed session');
+      return drawPlan('render', planPixelRender(args), args);
+    },
+    renderPlan(plan, options = {}) {
+      return drawPlan('renderPlan', plan, options);
     },
     renderCommands(commands, { width, height }, options = {}) {
       const { ctx, renderer: r } = sized('renderCommands', width, height, options.flattenTolerancePx);

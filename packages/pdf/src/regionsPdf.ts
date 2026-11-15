@@ -2,8 +2,8 @@
  * Regions of a scene as one PDF, a page each, and the `pdf` export format.
  */
 import {
-  commandRasterizer, createRasterSession, holdImageBitmaps, planPixelRender, regionRenderArgs, registerExportFormat,
-  viewToMat3, warmRender, type ExportFormat, type ExportOptions, type ExportRegion, type ExportScene,
+  captureExport, commandRasterizer, createRasterSession, holdImageBitmaps, planPixelRender, regionRenderArgs, registerExportFormat,
+  viewToMat3, warmRender, type ExportFormat, type ExportOptions, type ExportRegion, type ExportRegions, type ExportScene,
 } from '@weasel-js/core';
 import { registryFontSource } from './fonts/fontSource';
 import { writePdf, type PdfPage, type PdfSkip } from './writePdf';
@@ -19,6 +19,8 @@ export interface ExportRegionsPdfOptions {
   title?: string;
   /** The document's language, a BCP 47 tag. Default: the language every text on the pages shares, if they share one. */
   lang?: string;
+  /** Deflate the page and image streams. Default `true`; `false` leaves them readable. */
+  compress?: boolean;
 }
 
 /**
@@ -29,13 +31,16 @@ export interface ExportRegionsPdfOptions {
  * placed as an image, and anything it could not carry at all comes back in
  * `skipped`. Annotation layers are left out.
  *
+ * Every page is of one revision of the document, bounds read from it
+ * included: see `captureExport`.
+ *
  * The caller has registered what the scene needs painting with, as for
- * `exportRegionPng`, including each font's outlines. Needs WebGL2 and
- * `OffscreenCanvas`.
+ * `exportRegionPng`, including each font's outlines. What a PDF cannot draw
+ * is painted with WebGL2 and `OffscreenCanvas`.
  */
 export async function exportRegionsPdf(
   scene: ExportScene,
-  regions: readonly ExportRegion[],
+  regions: ExportRegions,
   opts: ExportRegionsPdfOptions = {},
 ): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
   // A page's commands hold bitmaps while the next page's images load.
@@ -47,14 +52,10 @@ export async function exportRegionsPdf(
   }
 }
 
-async function writeRegions(
-  scene: ExportScene, regions: readonly ExportRegion[], background: string | null, opts: ExportRegionsPdfOptions,
-): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
-  const out: PdfPage[] = [];
-  for (const region of regions) {
-    const args = regionRenderArgs(scene, region, { scale: PT_PER_UNIT });
-    await warmRender({ render: args });
-    const plan = planPixelRender(args);
+/** Every region of `doc` as a page: its size in points, and the commands it is drawn with. */
+function pagesOf(doc: ExportScene, regions: readonly ExportRegion[], background: string | null): PdfPage[] {
+  return regions.map((region) => {
+    const plan = planPixelRender(regionRenderArgs(doc, region, { scale: PT_PER_UNIT }));
     const width = region.width * PT_PER_UNIT;
     const height = region.height * PT_PER_UNIT;
     // The planner sizes a background to whole pixels, which can stop short of the page's edge.
@@ -63,11 +64,22 @@ async function writeRegions(
       path: { kind: 'rect' as const, x: 0, y: 0, width, height },
       fill: { paint: { kind: 'solid' as const, color: background } },
     }];
-    out.push({
+    return {
       width, height, commands: [...ground, ...plan.commands], view: viewToMat3(plan.view),
       ...(region.name !== undefined ? { label: region.name } : {}),
-    });
-  }
+    };
+  });
+}
+
+async function writeRegions(
+  scene: ExportScene, regions: ExportRegions, background: string | null, opts: ExportRegionsPdfOptions,
+): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
+  const out = await captureExport(scene, regions, {
+    warm: async (doc, rs) => {
+      await Promise.all(rs.map((r) => warmRender({ render: regionRenderArgs(doc, r, { scale: PT_PER_UNIT }) })));
+    },
+    read: (doc, rs) => pagesOf(doc, rs, background),
+  });
 
   const session = createRasterSession();
   try {
@@ -75,6 +87,7 @@ async function writeRegions(
       fonts: registryFontSource,
       ...(opts.title !== undefined ? { title: opts.title } : {}),
       ...(opts.lang !== undefined ? { lang: opts.lang } : {}),
+      ...(opts.compress !== undefined ? { compress: opts.compress } : {}),
       rasterize: commandRasterizer(session),
     });
     const copy = new ArrayBuffer(bytes.byteLength);
@@ -99,11 +112,12 @@ export const PDF_EXPORT: ExportFormat<PdfExportOptions> = {
   mimeType: 'application/pdf',
   extension: 'pdf',
   multiRegion: true,
-  async export(scene, regions, { background, title, lang, onWarn }) {
+  async export(scene, regions, { background, title, lang, compress, onWarn }) {
     const { blob, skipped } = await exportRegionsPdf(scene, regions, {
       ...(background !== undefined ? { background } : {}),
       ...(title !== undefined ? { title } : {}),
       ...(lang !== undefined ? { lang } : {}),
+      ...(compress !== undefined ? { compress } : {}),
     });
     for (const skip of skipped) onWarn?.(skip.detail);
     return blob;

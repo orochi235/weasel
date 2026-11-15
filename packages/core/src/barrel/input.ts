@@ -80,7 +80,10 @@ export { exportPages, pageRegion } from '../canvas/export/exportPages';
 export { exportRegionPng, type ExportRegionPngOptions, type PngExportOptions } from '../canvas/export/regionPng';
 export { selectionRegion } from '../canvas/export/selectionRegion';
 export { regionRenderArgs, type RegionRenderArgs, type RegionRenderArgsOptions } from '../canvas/export/regionRenderArgs';
-export type { ExportFormat, ExportOptions, ExportRegion, ExportScene } from '../canvas/export/exportTypes';
+export type { ExportFormat, ExportOptions, ExportRegion, ExportRegionSource, ExportRegions, ExportScene } from '../canvas/export/exportTypes';
+export {
+  captureExport, EXPORT_CAPTURE_ATTEMPTS, exportRegionsOf, ExportRevisionError, regionsOfOne, type ExportCaptureSteps,
+} from '../canvas/export/captureExport';
 
 // --- Pointer ambient context ----------------------------------------------
 export {

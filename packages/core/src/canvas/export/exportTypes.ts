@@ -15,6 +15,17 @@ export interface ExportRegion extends Rect {
   readonly name?: string;
 }
 
+/**
+ * The regions an export writes: fixed rects, or a function reading them from
+ * the document. A function is called each time the export reads the document,
+ * so bounds that come from it, a page's or a selection's, belong to the same
+ * revision as what is drawn in them.
+ */
+export type ExportRegions = readonly ExportRegion[] | ((doc: ExportScene) => readonly ExportRegion[]);
+
+/** One region an export writes, fixed or read from the document, as {@link ExportRegions} holds them. */
+export type ExportRegionSource = ExportRegion | ((doc: ExportScene) => ExportRegion);
+
 /** A scene as the exports read it: world-space `RectPose`s. */
 export type ExportScene = Scene<unknown, string, RectPose>;
 
@@ -42,5 +53,5 @@ export interface ExportFormat<TOptions extends ExportOptions = ExportOptions> {
   readonly extension: string;
   /** Whether one file holds several regions, as a PDF's pages do. A single-region format takes exactly one. */
   readonly multiRegion: boolean;
-  export(scene: ExportScene, regions: readonly ExportRegion[], opts: TOptions): Promise<Blob>;
+  export(scene: ExportScene, regions: ExportRegions, opts: TOptions): Promise<Blob>;
 }

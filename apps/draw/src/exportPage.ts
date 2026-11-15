@@ -1,5 +1,5 @@
 import {
-  exportPages, exportRegions, pageName, selectionRegion, type ExportFormat, type ExportOptions, type PlacedPage,
+  exportPages, exportRegions, pageName, selectionRegion, type ExportFormat, type ExportOptions, type ExportScene, type PlacedPage,
 } from '@weasel-js/core';
 import { downloadBlob, reportFileWarnings } from '@weasel-js/editor';
 import { registerPdfExport } from '@weasel-js/pdf/export';
@@ -51,10 +51,16 @@ export function exportPagesFile(scene: DrawScene, format: ExportFormat, pages: r
   return writeExport(format, name, doc, (opts) => exportPages(scene, pages, format.id, opts));
 }
 
-/** Download the box `ids` draw in, in `format`, named for the document. Nothing happens when they draw nothing. */
+/**
+ * Download the box `ids` draw in, in `format`, named for the document, measured in the revision
+ * the export draws. Nothing happens when they draw nothing.
+ */
 export function exportSelectionFile(scene: DrawScene, format: ExportFormat, ids: readonly string[], doc: SavedDoc): Promise<void> {
   const name = `${baseName(doc)} - Selection`;
-  const region = selectionRegion(scene, ids, 'Selection');
-  if (region === null) return Promise.resolve();
-  return writeExport(format, name, doc, (opts) => exportRegions(scene, [region], format.id, opts));
+  if (selectionRegion(scene, ids) === null) return Promise.resolve();
+  const regions = (at: ExportScene) => {
+    const region = selectionRegion(at, ids, 'Selection');
+    return region === null ? [] : [region];
+  };
+  return writeExport(format, name, doc, (opts) => exportRegions(scene, regions, format.id, opts));
 }
