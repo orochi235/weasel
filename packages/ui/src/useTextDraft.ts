@@ -25,13 +25,19 @@ export function useTextDraft(p: TextDraftTarget) {
   const [draft, setDraft] = useState<string | null>(null);
   // Escape leaves by blurring, and that blur runs the handler of the render before the draft was dropped.
   const canceled = useRef(false);
+  // The text the edit began from, or last committed: a caller previewing through `onInput` holds the draft as its
+  // value, so a commit or a cancel measures against this rather than `value`.
+  const from = useRef<string | null>(null);
   const { value } = p;
   // The draft stays up after an idle commit, so a commit that rewrites the text does not move it under the caret.
   const idle = useIdleSettle(() => {
-    if (draft !== null && draft !== value) p.onChange(draft);
+    if (draft === null || draft === (from.current ?? value)) return;
+    from.current = draft;
+    p.onChange(draft);
   }, p.settleWhenIdle);
   const drop = (): void => {
     idle.stop();
+    from.current = null;
     setDraft(null);
   };
   return {
@@ -39,12 +45,13 @@ export function useTextDraft(p: TextDraftTarget) {
     shown: draft ?? value,
     type: (next: string) => {
       canceled.current = false;
+      from.current ??= value;
       setDraft(next);
       idle.typed();
       p.onInput?.(next);
     },
     settle: () => {
-      if (draft !== null && draft !== value && !canceled.current) p.onChange(draft);
+      if (draft !== null && draft !== (from.current ?? value) && !canceled.current) p.onChange(draft);
       canceled.current = false;
       drop();
     },
@@ -52,9 +59,10 @@ export function useTextDraft(p: TextDraftTarget) {
     keyDown: (e: { key: string; target: EventTarget }) => {
       if (e.key !== 'Escape') return;
       canceled.current = true;
+      const began = from.current ?? value;
       drop();
       if (draft !== null) {
-        p.onInput?.(value);
+        p.onInput?.(began);
         p.onCancel?.();
       }
       (e.target as HTMLElement).blur();
