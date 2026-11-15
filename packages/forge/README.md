@@ -337,7 +337,7 @@ specimen of it, tags its meta `lab`, the same way. A full-screen layout is not
 the signal: a sidebar's specimen fills the frame too.
 
 ```ts
-const meta: Meta = { title: 'ui/Bar on an arc', tags: ['lab'] };
+export default meta({ title: 'ui/Bar', layout: 'fullscreen', tags: ['lab'] });
 ```
 
 On an index page a lab story keeps its title link and description but embeds
