@@ -60,8 +60,8 @@ const createLabScene = () =>
       shape('target', 300, 180, 80, 80, '#d4d4d4'),
       shape('mover', 60, 60, 80, 80, '#7fb069'),
       shape('bar', 440, 60, 140, 40, '#a48bd4'),
-      measureNode(asNodeId('rise'), ANNOTATIONS, RISE.start, RISE.end) as never,
-      measureNode(asNodeId('offset'), ANNOTATIONS, OFFSET.start, OFFSET.end) as never,
+      measureNode(asNodeId('rise'), ANNOTATIONS, RISE.start, RISE.end),
+      measureNode(asNodeId('offset'), ANNOTATIONS, OFFSET.start, OFFSET.end),
     ],
   });
 
@@ -71,7 +71,7 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const [measurements] = useState(() => createMeasurements({ layer: ANNOTATIONS }));
   const measure = useMeasureTool({ measurements, angleStep: angleStep * DEG_TO_RAD });
   const tools = useMemo(() => ({ measure }), [measure]);
-  const ambient = useMemo(() => [measurementsContribution(scene as never, measurements)], [scene, measurements]);
+  const ambient = useMemo(() => [measurementsContribution(scene, measurements)], [scene, measurements]);
 
   // A measurement's ends snap a drawing within reach; past them it takes the grid.
   const snapTo = useMemo(
@@ -102,7 +102,7 @@ function MeasureTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         snap={snapTo}
         layers={layers}
       />
-      <MeasureReadout scene={scene as never} measurements={measurements} />
+      <MeasureReadout scene={scene} measurements={measurements} />
     </div>
   );
 }

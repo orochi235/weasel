@@ -1,4 +1,4 @@
-import type { Node, NodeId, RectPose } from 'core/scene/types';
+import type { MarkNode, Node, NodeId, RectPose } from 'core/scene/types';
 import { sceneMagnification, type ScopedScene } from 'core/scene/unitScopes';
 import { rectBetween, type Point } from '@weasel-js/geom';
 
@@ -94,14 +94,15 @@ export function measurePose(start: MeasurePoint, end: MeasurePoint): RectPose {
   return rectBetween(start.x, start.y, end.x, end.y);
 }
 
-/** A measurement node on `layer`, ready to insert. */
-export function measureNode(
+/** A measurement node on `layer`, ready to insert, or to list in a scene's
+ *  `initial` nodes: typed with that layer and a `RectPose`. */
+export function measureNode<TLayer extends string>(
   id: NodeId,
-  layer: string,
+  layer: TLayer,
   start: MeasurePoint,
   end: MeasurePoint,
   frames?: MeasureFrames,
-): Node<unknown, string, unknown> {
+): MarkNode<MeasureData, TLayer, RectPose> {
   const data: MeasureData = { measure: { start: { ...start }, end: { ...end }, ...(frames ? { frames: { ...frames } } : {}) } };
   return { id, kind: 'mark', layer, parent: null, pose: measurePose(start, end), data };
 }
