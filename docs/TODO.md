@@ -250,6 +250,110 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+- **(P1) [agent] Do not overwrite an unreadable document until its recovery copy is durable.**
+  `readSlot`/`keepUnreadable` queue `<key>:unreadable` and immediately return the fallback
+  (`packages/editor/src/sessionStore.ts`). A later `writeSession` checks only the primary's pending
+  write, so a failed backup does not prevent overwriting the original. Reproduced with a memory-backed
+  adapter rejecting only `doc:unreadable`: `readStored` returns an empty fallback, the backup flush fails,
+  and `writeSession` returns true after replacing the original, with no durable backup. The console
+  meanwhile said the original was kept aside. Make recovery preservation a prerequisite for replacing
+  unreadable content, with an observable failure and a retry or explicit recovery path.
+  Closes when backup quota/permission failures and interrupted backup writes leave the original durable
+  value intact, autosave cannot bypass that protection, successful recovery allows normal saves again,
+  and tests cover both localStorage and async record adapters without treating a queued backup as saved.
+
+- **(P2) [agent] Define inverse failure for world-preserving edits into singular frames.**
+  `decomposeRigidPose` falls back to undoing translation/rotation when a parent's linear transform has
+  no inverse (`packages/core/src/core/scene/composePose.ts`); kernel3d's `overAxis` substitutes values
+  on collapsed axes (`packages/kernel3d/src/composePose3.ts`). These keep results finite but cannot
+  satisfy the public rebase promise that recomposition preserves world position. Reproduced in 2D:
+  parent `{ x: 0, y: 0, width: 100, height: 100, transform: [0,0,0,1] }`, requested world rect
+  `{ x: 100, y: 0, width: 10, height: 10 }`; decomposing and recomposing returns `x: 45` with a
+  collapsed transform. Give composition an explicit fallible inverse or equivalent capability, and
+  make world-preserving commands refuse or report impossible edits atomically. Authored collapsed
+  frames may remain valid; distinguish storing one from promising an inverse it does not have.
+  Closes when 2D and kernel3d expose documented singular-frame behavior, reparent/group/ungroup and
+  other world-to-local writes do not silently commit a false world-preserving result, and tests cover
+  zero scales, singular affines, near-singular inverses and unchanged state/history on refusal.
+
+### Export, worker and headless contracts
+
+- **(P2) [agent] Make region exports use a consistent coordinate space for parallax layers.**
+  `selectionRegion` bounds document-world poses, but `regionRenderArgs` feeds the region origin and
+  output scale into a scene walk that still derives parallax views (`packages/core/src/canvas/export/`,
+  `sceneViewRender.ts`, `buildSceneTree.ts`). Reproduced at command level: a node at `x: 100`, width 10,
+  on `{ parallax: { pan: 0.5 } }`, exported as region `{ x: 100, y: 0, width: 10, height: 10 }`,
+  receives net translation -50 rather than -100, placing its left edge at output x=50 outside the
+  10px image. A parallax zoom factor can also make output scale change composition rather than only
+  resolution. Define document-region exports separately from camera-view captures and apply the
+  corresponding coordinate policy consistently across PNG, PDF and SVG.
+  Closes when selection/page/region exports contain their documented bounds across pan/zoom parallax,
+  resolution scaling preserves the chosen composition, and parity tests cover nonzero origins,
+  anchors, mixed layers and flipped/anisotropic views where supported.
+
+- **(P2) [agent] Export one coherent document revision across asynchronous loading and multiple pages.**
+  `documentOf` suppresses overrides but remains a live view of the source. PNG warms assets and then
+  rebuilds commands; PDF awaits warming inside its region loop and reads each page afterward
+  (`packages/core/src/canvas/export/regionPng.ts`, `regionRenderArgs.ts`,
+  `packages/pdf/src/regionsPdf.ts`). An edit while a font/image loads can change the exported content,
+  introduce an asset that was not warmed, or mix revisions across pages. SVG captures its node list
+  before warming, so the formats do not share one capture boundary. Capture a detached document and
+  region configuration at invocation, or detect revision changes and restart/refuse with a bounded
+  policy. Keep transient previews out and define which registry/asset state the capture depends on.
+  Closes when edits made during deferred font/image loading cannot produce mixed-revision output,
+  all pages and bounds belong to the same documented revision, and tests exercise edits, deletes,
+  newly introduced assets and registry-backed node functions during an export.
+
+- **(P2) [agent] Honor common export diagnostics for raster omissions and asset failures.**
+  `ExportOptions.onWarn` promises to report omitted or unloadable content, but `PNG_EXPORT` drops it
+  (`packages/core/src/canvas/export/regionPng.ts`). `warmRender` filters unknown paint kinds and
+  deliberately resolves after failed image loads; missing content can therefore produce a successful
+  PNG with no export callback explaining the loss (`packages/core/src/canvas/warmRender.ts`). SVG
+  and PDF have warning/skip paths, with different failure behavior. Supply a per-export diagnostic
+  path for missing images, unknown paints and unsupported shader/backend sources; define whether
+  strict export rejects and best-effort export warns, without relying on process-wide console output.
+  Closes when the common callback receives actionable diagnostics for raster failures, callers can
+  distinguish complete output from degraded output, and format tests cover image/font/paint failures
+  and unsupported commands under the documented strict or best-effort policy.
+
+- **(P2) [agent] Let the headless page reconstruct a scene's registered behavior and composition.**
+  `@weasel-js/headless` accepts generic live scenes and lets a custom `pageScript` register painters
+  and fonts, but its bundled page always calls `sceneFromJSON` without options
+  (`packages/headless/src/page.ts`, `host.ts`). There is no bootstrap seam to supply the scene's
+  function registry, composition, layout frame or quantize rule as the render-worker host can.
+  Reproduced through the exact wire/load path: a scene with registered `clipFromPose: customClip`
+  serializes successfully and then throws `SnapshotKeyError` in the page load. Registering a painter
+  before importing `headless/page` does not supply these scene options. Add a page-side bootstrap
+  API for code that stays in that realm; keep requests data-only and document the supported pose/render scope.
+  Closes when a custom page script can configure scene reconstruction without replacing the host's
+  private protocol, and browser tests compare direct/headless output for registered clips/derivations,
+  nondefault supported composition and quantization, with clear errors for unsupported scenes.
+
+- **(P2) [agent] Bound worker requests and expose worker failure after startup.**
+  `watchStartup` drains requests only for errors before the first message; later errors only warn
+  (`packages/core/src/canvas/renderWorker/startSceneRenderWorker.ts`). `createRequests` has no
+  timeout/cancellation, and a lost frame acknowledgement leaves `inFlight` true. Reproduced with a
+  worker that first answers, then errors without answering a pending snapshot/frame: the snapshot
+  stays pending and further `sync()` sends no frame. An ordinary error may be recoverable, so define
+  fatal versus recoverable failure and a bounded watchdog rather than assuming every error kills a worker.
+  Expose status/recovery to the host; restarting needs a new transferred canvas, not retransferring
+  the old one. Treat an empty ID buffer as missing data rather than evidence that nothing was hit.
+  Closes when pending snapshot/ID/frame requests terminate predictably on failure or timeout,
+  recoverable errors allow later frames, fatal failures reach callers and release owned work, and
+  tests cover post-start errors, an unresponsive worker, message errors, disposal and restart.
+
+- **(P2) [agent] Roll back render-worker setup when canvas transfer or initialization throws.**
+  `startSceneRenderWorker` subscribes to scene/override/scroll/clock stores before
+  `transferControlToOffscreen` and the init `postMessage`; neither has exception cleanup. The
+  `holdRenderWorker(canvas, start(), inputs)` caller has already created the worker, and a thrown
+  setup returns no handle to dispose (`packages/core/src/canvas/renderWorker/startSceneRenderWorker.ts`,
+  `liveClients.ts`). Reproduced with a throwing transfer: the scene subscription was installed,
+  its unsubscribe was never called, and the supplied worker was never terminated. Use transactional
+  setup that releases all acquired resources on failure, including init-send failures after transfer.
+  Closes when every setup failure point leaves no subscriptions, timers, requests or owned worker
+  alive, the ownership/failure contract is documented, and tests cover failed transfer, failed init
+  cloning/posting, worker construction and StrictMode cleanup without masking the original error.
+
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
