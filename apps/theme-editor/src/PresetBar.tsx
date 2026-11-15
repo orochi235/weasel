@@ -30,14 +30,14 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
     if (BUILTIN_PRESETS.some((p) => p.name === trimmed)) return;
     const next = [...saved.filter((p) => p.name !== trimmed), { name: trimmed, state }];
     onSavedChange(next);
-    setUnkept(!persist(next));
+    void persist(next).then((ok) => setUnkept(!ok));
     setName('');
   };
 
   const remove = (target: string) => {
     const next = saved.filter((p) => p.name !== target);
     onSavedChange(next);
-    setUnkept(!persist(next));
+    void persist(next).then((ok) => setUnkept(!ok));
   };
 
   return (

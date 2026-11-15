@@ -87,13 +87,13 @@ describe('<PaletteLab> with storage refused', () => {
     vi.unstubAllGlobals();
   });
 
-  it('says the palette is not being kept', () => {
+  it('says the palette is not being kept', async () => {
     vi.stubGlobal('localStorage', {
       getItem: () => null,
       setItem: () => { throw new DOMException('full', 'QuotaExceededError'); },
       removeItem: () => {},
     });
     renderWithIcons(<PaletteLab />);
-    expect(screen.getByText(/This palette is not being kept in the browser/)).toBeInTheDocument();
+    expect(await screen.findByText(/This palette is not being kept in the browser/)).toBeInTheDocument();
   });
 });

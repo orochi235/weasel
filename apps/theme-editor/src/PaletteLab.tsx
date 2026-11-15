@@ -48,8 +48,13 @@ export function PaletteLab() {
   const palette = useMemo(() => generate(constraints), [constraints]);
 
   const [unkept, setUnkept] = useState(false);
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- whether the browser took the write is known only once it is made
-  useEffect(() => setUnkept(!persistLive(state)), [state]);
+  useEffect(() => {
+    let live = true;
+    void persistLive(state).then((ok) => live && setUnkept(!ok));
+    return () => {
+      live = false;
+    };
+  }, [state]);
 
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [

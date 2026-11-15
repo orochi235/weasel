@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 describe('<PresetBar>', () => {
-  it('says a saved preset is not being kept when the browser refuses to store it', () => {
+  it('says a saved preset is not being kept when the browser refuses to store it', async () => {
     vi.stubGlobal('localStorage', {
       getItem: () => null,
       setItem: () => { throw new DOMException('full', 'QuotaExceededError'); },
@@ -19,6 +19,6 @@ describe('<PresetBar>', () => {
     renderWithIcons(<PresetBar state={BUILTIN_PRESETS[0]!.state} saved={[]} onSavedChange={() => {}} onLoad={() => {}} />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Preset name' }), { target: { value: 'mine' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(screen.getByRole('status')).toHaveTextContent(/not being kept in the browser/);
+    expect(await screen.findByRole('status')).toHaveTextContent(/not being kept in the browser/);
   });
 });

@@ -1,4 +1,5 @@
 import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from '@weasel-js/theme/engine';
+import { readStored, writeSession } from '@weasel-js/editor';
 import { type LabHistoryStore, localHistoryStore } from './historyStorage';
 
 export type SurfaceKey = 'dark' | 'light';
@@ -59,24 +60,10 @@ export const BUILTIN_PRESETS: readonly Preset[] = [
 const KEY = 'weasel.theme-editor.presets';
 const LIVE_KEY = 'weasel.theme-editor.live';
 
-/**
- * The state currently on screen, restored on load.
- *
- * Separate from presets on purpose: a preset is something you named, this is
- * whatever you were in the middle of. Without it every dev-server reload — and
- * every HMR bounce while someone edits the app — silently discards an
- * exploration that took real work to reach.
- */
-export function parseLive(raw: string | null): LabState | null {
-  if (!raw) return null;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-  if (typeof parsed !== 'object' || parsed === null) return null;
-  return stateOf(parsed);
+/** The live state a stored one, as `JSON.parse` reads it, holds. Throws on a value that is not one. */
+export function liveOf(stored: unknown): LabState {
+  if (typeof stored !== 'object' || stored === null) throw new Error('not a palette lab state');
+  return stateOf(stored);
 }
 
 /** Each stored constraint whose kind matches its default's, the default for the rest. `NaN` is stored as `null`. */
@@ -119,66 +106,41 @@ function stateOf(stored: unknown): LabState {
   };
 }
 
-export function loadLive(): LabState | null {
-  try {
-    return parseLive(localStorage.getItem(LIVE_KEY));
-  } catch {
-    // No storage at all — a private window, or a runtime without it.
-    return null;
-  }
-}
+/**
+ * The state last on screen, restored on load, or null for none. One that cannot be read is kept aside
+ * (`readStored`), since the next edit saves over it.
+ *
+ * Separate from presets on purpose: a preset is something you named, this is
+ * whatever you were in the middle of. Without it every dev-server reload — and
+ * every HMR bounce while someone edits the app — silently discards an
+ * exploration that took real work to reach.
+ */
+export const loadLive = (): LabState | null => readStored<LabState | null>(LIVE_KEY, liveOf, () => null);
 
 /** Where the palette lab keeps its undo history, beside the state it ends on. */
 export const liveHistory: LabHistoryStore<LabState> = localHistoryStore(`${LIVE_KEY}.history`);
 
-/** Store the lab's state; answers whether the browser took it, which a private window or a full quota refuses. */
-export function persistLive(state: LabState): boolean {
-  try {
-    localStorage.setItem(LIVE_KEY, JSON.stringify(state));
-    return true;
-  } catch {
-    return false;
-  }
-}
+/** Store the lab's state; resolves whether the browser took it, which a private window or a full quota refuses, as it
+ *  refuses to write over a state `loadLive` could not read until that one is kept aside. */
+export const persistLive = (state: LabState): Promise<boolean> => writeSession([LIVE_KEY, state]);
 
-/** Saved presets survive the tab; a snapshot that does not is not one. */
-export function parseSaved(raw: string | null): Preset[] {
-  if (!raw) return [];
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return [];
-  }
-  if (!Array.isArray(parsed)) return [];
-  return parsed
+/** The presets a stored list, as `JSON.parse` reads it, holds, dropping entries that are not presets. Throws on a
+ *  value that is not a list. */
+export function savedOf(stored: unknown): Preset[] {
+  if (!Array.isArray(stored)) throw new Error('not a list of palette presets');
+  return stored
     .filter((p): p is Preset => typeof p === 'object' && p !== null && typeof (p as Preset).name === 'string')
     .map((p) => ({ name: p.name, state: stateOf(p.state) }));
 }
 
-export function loadSaved(): Preset[] {
-  try {
-    return parseSaved(localStorage.getItem(KEY));
-  } catch {
-    // A corrupt or unavailable store should cost the presets, not the app.
-    return [];
-  }
-}
+/** The saved presets, or none. A list that cannot be read is kept aside, as {@link loadLive} keeps a state. */
+export const loadSaved = (): Preset[] => readStored(KEY, savedOf, () => []);
 
-/** What gets written for a set of presets — built-ins are the app's, not yours. */
-export function serializeSaved(presets: readonly Preset[]): string {
-  return JSON.stringify(presets.filter((p) => !p.builtin));
-}
+/** What gets stored of a set of presets — built-ins are the app's, not yours. */
+export const storedPresets = (presets: readonly Preset[]): Preset[] => presets.filter((p) => !p.builtin);
 
-/** Store `presets`; answers whether the browser took them, which a private window or a full quota refuses. */
-export function persist(presets: readonly Preset[]): boolean {
-  try {
-    localStorage.setItem(KEY, serializeSaved(presets));
-    return true;
-  } catch {
-    return false;
-  }
-}
+/** Store `presets`; resolves whether the browser took them, under the same refusals as {@link persistLive}. */
+export const persist = (presets: readonly Preset[]): Promise<boolean> => writeSession([KEY, storedPresets(presets)]);
 
 /** A preset as the TS literal that would make it a built-in. */
 export function toSource(preset: Preset): string {
