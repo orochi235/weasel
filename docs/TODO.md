@@ -297,17 +297,6 @@ Owner tags, after the priority (2026-10-26):
   survives save/load, and unregisters cleanly; documentation is generated from or checked against that
   fixture, including operation with no consumer `applyOps` hook.
 
-- **(P2) [agent] Publish declarations that retain their types under NodeNext resolution.** UI's
-  declaration-only tsc build preserves extensionless ESM re-exports such as `./Button`
-  (`packages/ui/tsconfig.build.json`, `src/components/Button/index.ts`). In an external temporary consumer,
-  importing `@weasel-js/ui/components/Button` with `moduleResolution: NodeNext`, `skipLibCheck: false`
-  reports three TS2834 errors in its built index declaration. With `skipLibCheck: true`, an invalid
-  `ButtonProps = { reviewedInvalidProp: true }` passes; bundler resolution correctly rejects it with
-  TS2353. Emit resolution-compatible declarations and check the other packages using the same pipeline.
-  Closes when NodeNext and bundler consumers resolve public/subpath declarations with library checking
-  enabled, the same negative type assertions fail correctly in both, and freshly built packed artifacts
-  rather than workspace source satisfy those checks.
-
 - **(P2) [agent] Add an installed, runnable consumer contract beyond the externalized bundle smoke.**
   `scripts/smoke-consumer-bundle.mjs` packs workspaces but externalizes all third-party dependencies,
   bundles without executing, and typechecks only bundler resolution with `skipLibCheck: true`.
