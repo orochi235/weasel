@@ -26,8 +26,8 @@ page holds a `SequenceData` (see `@weasel-js/diagram`), which carries no places:
 it is laid out whenever it is drawn, and its `name` is the diagram's title. A
 `'plot'` page holds one chart, a `PlotData` from `@weasel-js/plot`, which fills
 the page. Ids share one namespace across the document. Every format lists the
-page `kinds` it holds; a writer leaves out a page of another kind with a
-warning, and `formatHolds` says whether a format can write a whole document.
+page `kinds` it holds; a writer of the whole document leaves out a page of
+another kind with a warning, a one-page writer throws on one, and `formatHolds` says whether a format can write a whole document.
 `scenePageKinds(scene)` says which kinds a scene would export as from its
 top-level nodes alone, and `formatTakes(format, kinds)` whether a format holds
 them: what a menu asks on every render. Edges whose ends are on different pages sit in
@@ -106,8 +106,8 @@ with it and rejects on a file nothing reads.
 
 | Format | Extensions | Reads | Writes |
 | --- | --- | --- | --- |
-| `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes, graph and plot pages | the whole document |
-| `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every page, uncompressed |
+| `DIAGRAM_JSON`, the document as JSON | `.diagram.json` | yes, graph, sequence, and plot pages | the whole document |
+| `DRAW_XML`, draw-style XML | `.xml` | yes, plain or compressed | every graph page, uncompressed |
 | `DIAGRAM_MERMAID`, a Mermaid flowchart, class, state, ER, mind map, requirement, block, architecture, C4, kanban, or sequence diagram, or a chart | `.mmd`, `.mermaid` | yes | one page, a graph, a sequence, or a chart |
 | `DIAGRAM_DOT`, a Graphviz DOT graph | `.dot`, `.gv` | yes | one page |
 
