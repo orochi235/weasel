@@ -5,8 +5,7 @@
  * connector's label, on its first stub, is an obstacle of its own.
  */
 import {
-  composeWorldPose,
-  scenePoseAdapter,
+  worldPoses,
   AUTO_POSE_DESCRIPTOR,
   type PoseDescriptor,
   type Scene,
@@ -62,10 +61,11 @@ export function avoidSceneInput<TPose>(
   const portOpts: PortsOptions<TPose> = { geometry, ...(opts.read ? { read: opts.read } : {}) };
   const key = opts.routerKey ?? 'avoid';
   const poses = new Map<string, TPose>();
+  const stored = worldPoses(sc, 'document');
   const pose = (node: SceneNode): TPose => {
     let p = poses.get(node.id);
     if (p === undefined) {
-      p = poseOf?.(node.id) ?? (composeWorldPose(scenePoseAdapter(sc), node.id, sc.composition.compose) as TPose);
+      p = poseOf?.(node.id) ?? (stored(node.id) as TPose);
       poses.set(node.id, p);
     }
     return p;

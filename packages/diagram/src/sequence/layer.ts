@@ -6,8 +6,7 @@
  */
 import {
   composeAffordanceLayer,
-  composeWorldPose,
-  scenePoseAdapter,
+  worldPoses,
   type Affordance,
   type AffordanceRegion,
   type RectPose,
@@ -50,11 +49,11 @@ export interface PlacedSequence { id: string; origin: Vec2; width: number; heigh
 /** Every sequence root in `scene` that is neither locked nor hidden. */
 export function placedSequences(scene: AnyScene): PlacedSequence[] {
   const out: PlacedSequence[] = [];
-  const poses = scenePoseAdapter(scene as never);
+  const worldOf = worldPoses(scene, 'document');
   for (const node of scene.renderOrderNodes()) {
     const root = sequenceRootOf(node);
     if (root === null || scene.isLocked(node.id) || scene.isHidden(node.id)) continue;
-    const at = composeWorldPose(poses, node.id, scene.composition.compose as never) as RectPose;
+    const at = worldOf(node.id) as RectPose;
     out.push({ id: node.id, origin: { x: at.x, y: at.y }, width: at.width, height: at.height, geometry: root.geometry });
   }
   return out;

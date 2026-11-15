@@ -5,8 +5,7 @@
  */
 import {
   composeAffordanceLayer,
-  composeWorldPose,
-  scenePoseAdapter,
+  worldPoses,
   type Affordance,
   type AffordanceRegion,
   type RectPose,
@@ -41,7 +40,7 @@ export function plotHandleScratchOf(hit: { payload?: unknown } | null | undefine
 
 /** Where the plot root `rootId`'s corner stands in world coordinates. */
 export function plotOrigin(scene: AnyScene, rootId: string): PlotPoint {
-  const pose = composeWorldPose(scenePoseAdapter(scene as never), rootId, scene.composition.compose as never) as RectPose;
+  const pose = worldPoses(scene, 'document')(rootId as never) as RectPose;
   return { x: pose.x, y: pose.y };
 }
 

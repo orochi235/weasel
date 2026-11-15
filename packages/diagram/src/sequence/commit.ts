@@ -2,7 +2,7 @@
  * Writing a sequence edit into a scene: the root's data replaced and its parts
  * built again, as one undo entry.
  */
-import { addOnPages, composeWorldPose, scenePoseAdapter, type InvocationCtx, type RectPose, type AnyScene } from '@weasel-js/core';
+import { addOnPages, worldPoses, type InvocationCtx, type RectPose, type AnyScene } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import { diagramThemeOf } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
@@ -21,7 +21,7 @@ export interface SequenceDrawOptions {
 
 /** The world pose `id` stands at. */
 const worldPose = (scene: AnyScene, id: string): RectPose =>
-  composeWorldPose(scenePoseAdapter(scene as never), id, scene.composition.compose as never) as RectPose;
+  worldPoses(scene, 'document')(id as never) as RectPose;
 
 /** The parts of root `id` built from `data`, in the batch the caller has open. A selected part still drawn stays selected. */
 function rebuild(scene: AnyScene, id: string, data: SequenceData, opts: SequenceDrawOptions): void {
