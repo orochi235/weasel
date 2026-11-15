@@ -1,6 +1,4 @@
 import { withKitRegistry } from './kitRegistry';
-import { createSceneOverrides } from './poseOverrides';
-import { createScrollOffsets } from './scrollOffsets';
 import { createArrivalWindow } from './arrivalWindow';
 import { documentReads, sceneMutators } from './sceneMutators';
 import { createNotifier } from './notifier';
@@ -11,7 +9,7 @@ import { effectivePose } from './effectivePose';
 import { createEditMode } from './editMode';
 import { createSceneEdits } from './sceneEdits';
 import { createSceneRecording } from './sceneRecording';
-import { createSceneSelection } from './sceneSelection';
+import { createSessionHost } from './sessionHost';
 import { createSceneState } from './sceneState';
 import { systemLayerRecord } from './layerStack';
 import { layerFromSerialized, specsFromSerialized, type SpecsFromSerializedOptions } from './serialization';
@@ -26,6 +24,7 @@ import type { SceneOptions } from './useSceneOptions';
 import { isTrivialOptions, trivialSceneOptions, type DefaultLayer, type UseSceneTrivialOptions } from './trivialScene';
 import {
   asNodeId,
+  type PoseOverrides,
   type AddNodeSpec,
   type LayerRecord,
   type NodeId,
@@ -109,13 +108,25 @@ function buildScene<TData, TLayer extends string, TPose>(
   });
 
   const generateId = freshIds(options.generateId ?? defaultGenerateId, (id) => state.nodes.has(id));
-  const selection = createSceneSelection(locks.reachable, (id) => state.nodes.get(id)?.parent);
-  // A selection change is a scene change to every subscriber.
+  /** Session state, deliberately not part of `state`: not document content, never in `toJSON` or history. */
+  const sessions = createSessionHost({
+    reachable: locks.reachable,
+    parentOf: (id) => state.nodes.get(id)?.parent,
+    getNode: (id) => state.nodes.get(id),
+    invalidateDependents: doc.store.invalidateDependents,
+    whenSettled: notifier.whenSettled,
+  });
+  const { selection } = sessions.own;
+  const overrides = sessions.own.overrides as PoseOverrides<TPose, TData>;
+  const scroll = sessions.own.scroll;
+  // The scene's own selection changing is a scene change to every subscriber.
   selection.subscribe(notifier.notify);
-
-  /** Ephemeral, deliberately not part of `state`: not document content, never in `toJSON` or history. */
-  const overrides = createSceneOverrides<TPose, TData>((id) => state.nodes.get(id), doc.store.invalidateDependents, notifier.whenSettled);
-  const scroll = createScrollOffsets();
+  /** Whose selection an edit records, an undo restores, and a refused edit puts back. */
+  const acting = {
+    get: () => sessions.acting().selection.get(),
+    set: (ids: readonly NodeId[]) => sessions.acting().selection.set(ids),
+    replace: (ids: readonly NodeId[]) => sessions.acting().selection.replace(ids),
+  };
 
   const recording = createSceneRecording({
     notifier,
@@ -123,7 +134,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     passAdapter: () => ({ ...sceneMutators(scene), ...documentReads(scene) }),
     stale: doc.stale,
     lifted: locks.lifted,
-    selection,
+    selection: acting,
     arrivals,
     writePose,
     poseWrites,
@@ -142,8 +153,8 @@ function buildScene<TData, TLayer extends string, TPose>(
     arrivals,
     layoutFrame,
     generateId,
-    narrowSelection: selection.narrow,
-    forgetViewState: (id) => { overrides.clear(id); scroll.set(id, null); },
+    narrowSelection: (gone) => sessions.each((held) => held.selection.narrow(gone)),
+    forgetViewState: (id) => sessions.each((held) => { held.overrides.clear(id); held.scroll.set(id, null); }),
   });
   for (const [kind, handler] of Object.entries(options.ops ?? {})) recording.ops.register(kind, handler);
 
@@ -180,17 +191,18 @@ function buildScene<TData, TLayer extends string, TPose>(
         throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
       }
       buildScene(options, json.systemLayers.map(layerFromSerialized), () => specs, json.doc); // a dry run: a bad snapshot keeps the document
-      // Ephemeral, and every id is a new node after this.
-      overrides.clearAll(); scroll.clearAll();
+      // Session state, and every id is a new node after this.
+      sessions.each((held) => { held.overrides.clearAll(); held.scroll.clearAll(); });
       doc.reset(json.systemLayers.map(layerFromSerialized), json.doc);
       recording.clearHistory();
       poseWrites.quiet(() => edits.construct(specs));
-      selection.replace(selection.legal(selection.get()));
+      sessions.each((held) => held.selection.replace(held.selection.legal(held.selection.get())));
       notifier.notify();
     },
 
     ...sceneChanges(notifier, selection),
   };
+  sessions.serve(scene);
 
   const initial = installQuantize(scene, options.quantize, initialNodes(registry), initialDoc);
   if (initial) {

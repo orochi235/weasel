@@ -12,11 +12,12 @@ import type { NodeId } from './types';
 /** A scene's selection members. */
 export interface SceneSelectionMembers {
   /** The transient set of active ids — "operate on these N as a unit".
-   *  Shared by every view over this scene unless a view supplies its own
-   *  (see `CanvasView.selection`). Not document content: it never appears
-   *  in `toJSON`. It does ride on history entries, so undo and redo put
-   *  back the selection an edit was made under; changing it is never an
-   *  undo step of its own. Removing a node deselects it. */
+   *  Session state: a `Scene` answers with its own session's, and an
+   *  `EditingSession` over it with that session's (see `docs/editing-sessions.md`).
+   *  Not document content: it never appears in `toJSON`. It does ride on
+   *  history entries, so undo and redo put back the selection an edit was
+   *  made under, into the session that steps history; changing it is never
+   *  an undo step of its own. Removing a node deselects it in every session. */
   getSelection(): readonly NodeId[];
   setSelection(ids: readonly NodeId[]): void;
   /** `ids` as `setSelection` keeps them: each once, naming a node, neither
@@ -48,6 +49,8 @@ export function createSceneSelection(
   /** `ids` less those out of reach; the same array when none is. */
   reachable: (ids: readonly NodeId[]) => readonly NodeId[],
   parentOf: (id: NodeId) => NodeId | null | undefined,
+  /** How a change reaches subscribers: at once by default, or held until an edit settles. */
+  announce: (emit: () => void) => void = (emit) => emit(),
 ): SceneSelection {
   const legal = (next: readonly NodeId[]) => outermost(reachable(once(next)), parentOf);
   let ids: readonly NodeId[] = [];
@@ -62,7 +65,7 @@ export function createSceneSelection(
       ids = legal(next);
       if (sameIds(was, ids)) return void (ids = was);
       changes++;
-      changed.emit();
+      announce(changed.emit);
     },
     narrow(gone) {
       // A new array only when one is dropped: readers compare the selection by identity.

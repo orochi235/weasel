@@ -1,6 +1,8 @@
 export { createScene, sceneFromJSON, type SceneFromJSONOptions } from './scene';
 export { sceneSelectionStore } from './sceneSelection';
 export { useScene } from './useScene';
+export { createEditingSession, isEditingSession, type EditingSession } from './editingSession';
+export { useEditingSession } from './useEditingSession';
 export { asNodeId } from './types';
 export { hasChildren, isLeaf } from './treeShape';
 export { statedFields, type StatedNodeFields } from './statedFields';

@@ -25,6 +25,7 @@ export const HOST = [
   'useActionSet', 'useStandardDeps', 'StandardDeps', 'ENGINE_STANDARD_ACTIONS',
   'createPoseFeed', 'FeedDelta', 'createEnteredGroupScope', 'useEnteredGroup',
   'documentOf', 'scenePoseFrame', 'GesturePreviewSource',
+  'createEditingSession', 'isEditingSession', 'useEditingSession', 'EditingSession',
   'WeaselProvider', 'IconRegistryProvider', 'CANVAS_CONTEXT_ATTRIBUTES', 'watchDevicePixelRatio',
 ];
 
