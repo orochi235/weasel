@@ -58,16 +58,27 @@ beforeAll(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
   paintedViews.length = 0;
   scenes.length = 0;
 });
 
-// jsdom drives rAF off a setInterval, so faking intervals puts the frame clock
-// and the demo's 200 ms stats readout on one virtual clock.
+// jsdom stamps a frame with its own wall clock, so on a loaded machine six frames can outlast the
+// demo's 200 ms stats readout and its commit lands on a count. These frames run on a virtual clock.
+const pending = new Map<number, FrameRequestCallback>();
+let frameTime = 0;
+let nextHandle = 0;
+const runFramesVirtually = () => {
+  frameTime = 0;
+  pending.clear();
+  vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => (pending.set(++nextHandle, cb), nextHandle));
+  vi.stubGlobal('cancelAnimationFrame', (handle: number) => pending.delete(handle));
+};
 const virtualFrame = () => act(async () => {
-  const painted = new Promise((r) => requestAnimationFrame(() => r(null)));
-  await vi.advanceTimersByTimeAsync(1000 / 60);
-  await painted;
+  frameTime += 1000 / 60;
+  const due = [...pending.values()];
+  pending.clear();
+  for (const cb of due) cb(frameTime);
 });
 
 describe('SceneScrollerDemo', () => {
@@ -103,7 +114,7 @@ describe('SceneScrollerDemo', () => {
   });
 
   it('writes its frames without recording history', async () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    runFramesVirtually();
     const { container } = render(<SceneScrollerDemo />);
     fireEvent.focus(container.querySelector('canvas')!);
     const paintsBefore = paintedViews.length;
@@ -128,9 +139,7 @@ describe('SceneScrollerDemo', () => {
   });
 
   it('advances the camera without re-rendering the demo', async () => {
-    // On a real clock the seven frames below can outlast the demo's 200 ms
-    // stats readout, whose commit then lands on this count.
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    runFramesVirtually();
     let commits = 0;
     render(
       <Profiler id="scroller" onRender={() => { commits++; }}>
