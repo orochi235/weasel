@@ -4,13 +4,11 @@
  * placeholder box per thing the drop would insert, where the handlers would put
  * it, at a size that reads the same at every zoom.
  */
-import { rectPath } from '@weasel-js/geom';
+import { rectPath, type Rect } from '@weasel-js/geom';
 import { pendingKindOf, type ActionDeps, type IngestItem } from '@weasel-js/routing';
 import { couldClaim, type ContentHandlerEntry, type IngestCtx } from './contentHandlers';
 import { arrivalBounds } from './placement';
 import type { IngestParams } from 'interactions/actions/actionParamSchema';
-
-type Box = { x: number; y: number; width: number; height: number };
 
 /** A file's ghost is a square this fraction of the viewport's shorter side;
  *  a string's is twice as wide and a quarter as tall, the shape of a line. */
@@ -26,7 +24,7 @@ export function ghostBounds(
   items: readonly IngestItem[],
   at: Pick<IngestCtx, 'point' | 'viewportWorldRect'>,
   handlers?: readonly ContentHandlerEntry[],
-): Box[] {
+): Rect[] {
   const claimable = items.filter((item) => couldClaim([item], handlers));
   const kindOf = (item: IngestItem) => pendingKindOf(item) ?? item.kind;
   const files = claimable.filter((item) => kindOf(item) === 'file');
