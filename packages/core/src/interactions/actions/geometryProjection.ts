@@ -1,4 +1,4 @@
-import { type Affine } from '@weasel-js/geom';
+import { transformPath, type Affine, type Path } from '@weasel-js/geom';
 import { createSetDataOp } from 'core/ops/setData';
 import type { Op } from 'core/ops/types';
 
@@ -29,6 +29,17 @@ export interface GeometryProjection<TPose = unknown> {
     change: PoseChange<TPose>,
   ): unknown | null;
 }
+
+/** The projection for nodes that hold their geometry in `data.path`, as the
+ *  kit's shape tools store it: the path takes the transform the pose took, so a
+ *  flip mirrors an asymmetric shape. A node without `data.path` is left alone. */
+export const PATH_GEOMETRY_PROJECTION: GeometryProjection = {
+  transform(node, m) {
+    const data = node.data as { path?: Path } | null | undefined;
+    if (!data?.path) return null;
+    return { ...data, path: transformPath(data.path, m) };
+  },
+};
 
 /** Build the `setData` op for a node when a geometryProjection is wired and
  *  returns non-null. Returns `undefined` (no op) otherwise — keeping the data

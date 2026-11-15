@@ -8,7 +8,7 @@ import {
   type SelectionApi,
   type PlacedPage,
   type ToolsApi,
-  transformPath,
+  PATH_GEOMETRY_PROJECTION,
   type UseSceneTextEditReturn,
   useEyedropperTool,
   useMeasureTool,
@@ -242,13 +242,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             modes={machine.registry}
             pathEdit={modes.pathEdit}
             chromeVisibility={pathOverlays.chromeVisibility}
-            geometryProjection={{
-              transform: (node, m) => {
-                const data = node.data as WeaselDrawData;
-                if (!data.path) return null; // text / no geometry — kit leaves data alone
-                return { ...data, path: transformPath(data.path, m) };
-              },
-            }}
+            geometryProjection={PATH_GEOMETRY_PROJECTION}
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
             <CreateOutlinesAdapterPublisher scene={scene} selection={selection} />

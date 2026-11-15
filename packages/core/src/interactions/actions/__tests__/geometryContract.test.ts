@@ -32,11 +32,11 @@ import {
   pathUnion,
   pathIntersect,
   pathSubtract,
-  transformPath,
 } from 'domains/paths';
 import type { Path } from '@weasel-js/geom';
 import { splitPathBySegment } from '@weasel-js/geom/booleans';
 
+import { PATH_GEOMETRY_PROJECTION } from '../geometryProjection';
 import { resizeAction } from '../resize/action';
 import { moveAction } from '../move/action';
 import { rotateAction } from '../rotate/action';
@@ -161,13 +161,7 @@ function baseDeps(scene: StubScene, id: string) {
     // Rewrites `data.path` via the affine the pose underwent: the only way an
     // asymmetric shape's contents mirror under flip-x (a bare-AABB pose flip
     // is identity).
-    geometryProjection: {
-      transform: (node: { data: unknown }, m: import('@weasel-js/geom').Affine) => {
-        const data = node.data as { path: Path } | undefined;
-        if (!data || !data.path) return null;
-        return { ...data, path: transformPath(data.path, m) };
-      },
-    },
+    geometryProjection: PATH_GEOMETRY_PROJECTION,
   });
 }
 

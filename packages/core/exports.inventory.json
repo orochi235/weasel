@@ -794,6 +794,7 @@
     "PATH_CMD_LENGTHS": "const",
     "PATH_EFFECT": "const",
     "PATH_EFFECT_DERIVATIONS": "const",
+    "PATH_GEOMETRY_PROJECTION": "const",
     "PATH_GESTURE_TAGS": "const",
     "PATH_GROUP": "const",
     "PATH_L": "const",
