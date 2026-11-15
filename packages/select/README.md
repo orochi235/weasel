@@ -34,7 +34,7 @@ state = select(state, 'd', intentOf({ shift: true, meta: false, ctrl: false }, p
 | `replace` | `[id]` | `id` |
 | `single` | `[id]`; every intent resolves to it on an id `forceSingle` holds | `id` |
 | `toggle` | the selected ids `forceSingle` does not hold, with `id` added or removed | `id` |
-| `range` | ids from anchor to `id` in `order`, skipping those `forceSingle` holds; `[id]` if there is no anchor or either end is outside `order` | unchanged |
+| `range` | ids from anchor to `id` in `order`, skipping those `forceSingle` holds; `[id]` if there is no anchor or either end is outside `order` | unchanged; `id` when it falls back to `[id]` |
 
 `createSelectionStore` keeps ids outside a component, behind the `SelectionStore` contract that
 `@weasel-js/core`'s `Scene` also satisfies.
