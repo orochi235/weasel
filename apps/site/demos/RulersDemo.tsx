@@ -1,12 +1,11 @@
 import { useMemo } from 'react';
-import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, useScene, type RectPose, type UnitScope, movePreset, selectPreset, viewPreset } from '@weasel-js/core';
+import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, solid, useScene, type Fill, type RectPose, type Stroke, type UnitScope, movePreset, selectPreset, viewPreset } from '@weasel-js/core';
 import { createGuidesLayer, createRulers, guideSnapSource, useGuides } from '@weasel-js/guides';
-import type { DrawCommand } from '@weasel-js/core/renderer';
 import { METRIC_MM } from '@weasel-js/quantity';
 import { Rulers } from '@weasel-js/ui/components/Rulers';
 import { DemoStage } from './DemoStage';
 
-interface Data { color: string | null }
+interface Data { fill?: Fill; stroke?: Stroke }
 
 const W = 520, H = 340;
 /** The document is measured in points, 72 to the inch. */
@@ -17,10 +16,13 @@ const PART: UnitScope = { system: METRIC_MM, scale: 72 / 25.4, drawnAt: 0.5 };
 const START = { x: -40, y: -40, scale: { x: 1, y: 1 } };
 
 const box = (x: number, y: number, width: number, height: number): RectPose => ({ x, y, width, height, rotation: 0 });
+const PART_ID = asNodeId('part');
 const NODES = [
-  { id: asNodeId('part'), kind: 'group' as const, layer: 'default' as const, parent: null, units: PART, pose: { ...box(260, 90, 200, 160), transform: [0.5, 0, 0, 0.5] as const }, data: { color: null } },
-  { id: asNodeId('bolt'), kind: 'mark' as const, layer: 'default' as const, parent: asNodeId('part'), pose: box(60, 60, 80, 40), data: { color: '#7fb069' } },
-  { id: asNodeId('plate'), kind: 'mark' as const, layer: 'default' as const, parent: null, pose: box(70, 110, 120, 80), data: { color: '#e0a458' } },
+  { id: PART_ID, kind: 'group' as const, layer: 'default' as const, parent: null, units: PART, pose: { ...box(260, 90, 200, 160), transform: [0.5, 0, 0, 0.5] as const }, data: {} },
+  // A group never paints, so the part's outline is a mark of its own.
+  { id: asNodeId('outline'), kind: 'mark' as const, layer: 'default' as const, parent: PART_ID, pickable: false, pose: box(0, 0, 200, 160), data: { stroke: { paint: solid('#8aa0c0'), width: 2 } } },
+  { id: asNodeId('bolt'), kind: 'mark' as const, layer: 'default' as const, parent: PART_ID, pose: box(60, 60, 80, 40), data: { fill: { paint: solid('#7fb069') } } },
+  { id: asNodeId('plate'), kind: 'mark' as const, layer: 'default' as const, parent: null, pose: box(70, 110, 120, 80), data: { fill: { paint: solid('#e0a458') } } },
 ];
 
 export function RulersDemo() {
@@ -46,18 +48,7 @@ export function RulersDemo() {
         ambient={ambient}
         snap={snap}
         defaultView={START}
-        layers={{
-          guides: { layer: guidesLayer, after: 'scene' },
-          scene: {
-            drawOne: (node, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              ...(node.data.color
-                ? { fill: { paint: { color: node.data.color } } }
-                : { stroke: { paint: { color: '#8aa0c0' }, width: 2 } }),
-            }],
-          },
-        }}
+        layers={{ guides: { layer: guidesLayer, after: 'scene' } }}
       />
       <Rulers rulers={rulers} />
     </DemoStage>
