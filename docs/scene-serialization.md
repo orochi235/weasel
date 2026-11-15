@@ -152,7 +152,7 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
 | `nodes[i].clipFromPoseKey` | `string?` | Registry key for the node's `clipFromPose`, which wins over `clip`. Omitted when it has none. |
 | `nodes[i].copiesFromPoseKey`, `derivePathKey`, `derivePoseKey`, `layoutKey` | `string?` | Registry keys for the node's other function fields. Omitted when absent. |
 | `nodes[i].dependsOn` | `string[] \| 'children'?` | Ids the node's geometry derives from. |
-| `nodes[i].pickable`, `hidden`, `locked`, `units` | | Present only when stated: `pickable: false`, `hidden: true`, `locked: true`, a unit scope. |
+| `nodes[i].pickable`, `hidden`, `locked`, `units`, `consumesChildren` | | Present only when stated: `pickable: false`, `hidden: true`, `locked: true`, a unit scope, `consumesChildren: true` (its children are operands drawn only through it, as in a boolean group). |
 | `nodes[i].page` | `PageInfo?` | Makes the node a page: its `name` and `meta`. Present only on a page, a child of the page run. |
 | `nodes[i].pageRun` | `PageRunInfo?` | Makes the root the page run: its layout (`direction`, `gap`, `align`) and `pasteboard`. Present only on the run. |
 | `doc` | `Record<string, unknown>?` | The scene's document values (below). Omitted when it has none, so a snapshot written before they existed reads the same. |
@@ -230,8 +230,10 @@ that outlived the code that registered it; `onSkip` hears each key left out, as 
 - **History.** A restored scene starts with empty history. To keep undo across a reload, save the
   history paired with the scene (the document envelope above) and restore it with `restorePairedHistory`
   once the snapshot has loaded; `useSessionPersistence` (`@weasel-js/editor`) does both.
-- **Selection.** Selection lives in `useSelection`, outside the `Scene`
-  primitive; restoring it is the caller's job.
+- **Selection.** Selection belongs to an editing session (the scene's default
+  one, or one from `createEditingSession`), not the document, so `toJSON()`
+  leaves it out and `sceneFromJSON` starts with none; restoring it is the caller's job
+  ([editing-sessions.md](./editing-sessions.md)).
 - **Pose overrides** (`scene.overrides`) — ephemeral per-node pose/alpha for a
   frame loop. Like selection, never document content: absent from `toJSON()`,
   never restored by `loadState`, and never recorded in history. Bake with
