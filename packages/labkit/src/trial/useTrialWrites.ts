@@ -135,19 +135,14 @@ export function useTrialWrites({
       const same = continuing(path);
       const key = keyFor(same);
       const made: { gesture?: WriteGesture } = {};
+      const resolved = (r: TrialRecord): unknown =>
+        resolveAutoConfig(schema, r.config, new Set(r.auto ?? []));
       const run = (): void => {
         made.gesture = recordWrite(path, draft, same, key);
         updateTrialConfig(trialId, path, value);
         const after = stored();
-        if (!after) return;
-        const resolved = (r: TrialRecord): unknown =>
-          resolveAutoConfig(schema, r.config, new Set(r.auto ?? []));
-        if (instrument.onConfigChange) {
-          const next = instrument.onConfigChange(resolved(after), resolved(before), after.state);
-          updateTrialState(trialId, next as never);
-        }
         const handlers = changes();
-        if (handlers.length === 0) return;
+        if (!after || handlers.length === 0) return;
         const config = resolved(after);
         const prev = resolved(before);
         for (const handler of handlers) handler(config, prev);
@@ -155,6 +150,13 @@ export function useTrialWrites({
       const own = ownHistory();
       if (own?.batch) own.batch('config.change', run, { coalesceKey: key });
       else run();
+      // After the batch has closed: a state it returns can replace the scene the batch wrote, which
+      // closing the batch would otherwise store back over it.
+      const after = stored();
+      if (instrument.onConfigChange && after) {
+        const next = instrument.onConfigChange(resolved(after), resolved(before), after.state);
+        updateTrialState(trialId, next as never);
+      }
       // The step this write made is its gesture's own, which the next write to the path continues. A write made
       // inside it has replaced the gesture, which then ends here.
       if (made.gesture && lastWrite.current === made.gesture) {
