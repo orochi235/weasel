@@ -113,7 +113,7 @@ function ModalDemo({ mode = 'path-edit', ...props }: ModalArgs) {
   return <ToolPalette {...props} tools={tools} modeRegistry={modeRegistry} />;
 }
 
-// A mode decides which tools the palette holds. `ineligible: 'dim'` greys out the ones it does not allow;
+// A mode decides which tools the palette holds. `ineligible: 'dim'` grays out the ones it does not allow;
 // `'hide'` leaves them out, so path edit's palette holds only its tools and the hand.
 export const Ineligible: StoryObj<ModalArgs> = {
   args: { mode: 'path-edit', ineligible: 'hide' },

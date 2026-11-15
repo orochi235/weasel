@@ -69,7 +69,7 @@ export const AtCursorSize: StoryObj = {
     <div className={s.wrap}>
       <p className={s.note}>
         Each glyph over white paper, dark chrome and mid-tone artwork. The halo is
-        not a separate drawing — every ink member is stroked in halo colour
+        not a separate drawing — every ink member is stroked in halo color
         beneath its own fill, which is what makes one glyph legible on all three.
       </p>
       <Sheet size={24} />
@@ -112,7 +112,7 @@ export const Hotspots: StoryObj = {
         <style>{css}</style>
         <p className={s.note}>
           Hover each cell. The hotspot is the point the tool acts at — the tip of
-          the pencil, the centre of the crosshair — and a wrong one is invisible
+          the pencil, the center of the crosshair — and a wrong one is invisible
           everywhere except here.
         </p>
         <div className={s.live}>

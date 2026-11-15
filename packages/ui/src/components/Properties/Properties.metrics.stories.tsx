@@ -34,7 +34,7 @@ function Palette({ align }: { align?: PropertyAlign }) {
             value={colors[i]}
             onChange={(next) => setColors((c) => c.map((v, j) => (j === i ? next : v)))}
             // One row carries alpha, so the pair below it shows whether the
-            // track still sits on its neighbour's bottom edge.
+            // track still sits on its neighbor's bottom edge.
             alpha={i === 2 ? alpha : undefined}
             onAlphaChange={setAlpha}
           />
@@ -47,7 +47,7 @@ function Palette({ align }: { align?: PropertyAlign }) {
 /**
  * A column of color rows read as a group. Unset, each row centers its label
  * against its swatch and sinks the pair to the row's bottom edge — which is
- * what keeps an alpha track level with the taller neighbour beside it.
+ * what keeps an alpha track level with the taller neighbor beside it.
  * `align="start"` puts every swatch on one top edge instead.
  */
 export const Align: Story = {
