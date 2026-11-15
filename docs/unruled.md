@@ -404,9 +404,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   an invisible step, after the Align ruling above.
 - Ruled 2026-11-10 (my call, overnight sweep): `toolStacksOf` reports no stack for a stacked set that names no tool, as
   `withoutTools` leaves one cut to nothing: a palette has no button to draw for it.
-- 2026-11-11 (my call, kernel3d second property pass): `POSE3_COMPOSITION.decompose` reads a frame axis whose
-  quotient is not finite, a subnormal scale say, as collapsed, the rule it had for a scale of 0. A world pose rebased
-  into such a frame lands on the frame's origin along that axis when composed back, not where it was.
+- 2026-11-14 (my call, singular frames): `PoseComposition.decompose` answers `null` under a frame with no inverse:
+  a 2D `transform` geom's `invert` refuses, a 3D scale with a zero axis or one `invertible` refuses, or a local
+  pose that would not be finite. Storing such a frame stays valid. An edit that promises a node keeps its world
+  place (reparent, group, ungroup, a drop, a clone or paste landing, a follower move) refuses whole when one node
+  would land in one; a parent whose frame is singular takes no children (`childVerdict`), and an insert there goes
+  to the top of the tree. A transform (move, nudge, rotate, resize, flip, align, distribute) leaves a node stored
+  in one where it is and moves the rest. This replaces the 2026-11-11 call that read such an axis as collapsed.
 
 - 2026-11-11 (my call, core second property pass): `unionBounds` and `unionAABB` skip a box with a corner that is
   not finite (a `NaN` or infinite field, or an edge past the double range), as `unionAABB` skips a hole, and a union of

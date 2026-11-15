@@ -34,10 +34,18 @@ export type PoseClosure = 'identity' | 'translation' | 'rigid';
 
 /** Consumer's pose-composition strategy for hierarchical scenes. `compose`
  *  folds a child's pose (in parent's frame) up to the next frame; `decompose`
- *  is its inverse. A scene's default is `RIGID_POSE_COMPOSITION`. */
+ *  is its inverse. A scene's default is `RIGID_POSE_COMPOSITION`.
+ *
+ *  A frame may be singular: a container scaled to nothing along an axis is a
+ *  valid pose to store, and `compose` folds its children flat. Such a frame has
+ *  no inverse, so `decompose` answers `null` for it, and for one too
+ *  ill-conditioned for the local pose to compose back to `world`. A writer that
+ *  promises to keep a node where it is shown refuses the whole edit then. */
 export interface PoseComposition<TPose> {
   compose(parent: TPose, child: TPose): TPose;
-  decompose(parent: TPose, world: TPose): TPose;
+  /** The local pose `child` with `compose(parent, child)` equal to `world`, or
+   *  `null` when `parent` is a frame with no such inverse. */
+  decompose(parent: TPose, world: TPose): TPose | null;
   closure: PoseClosure;
   /** `frame` with its content scrolled by `offset`: the frame a child composed
    *  under it lands where `compose(frame, child)` would put the child moved by
@@ -116,18 +124,33 @@ export function childFrameAt<TPose>(adapter: PoseAdapter<TPose>, id: string, wor
  *
  * `decompose(parent, world)` returns the local pose `child` such that
  * `compose(parent, child) === world`. Pass `newParentId === null` for the
- * root frame; the function returns `worldPose` unchanged.
+ * root frame; the function returns `worldPose` unchanged. `null` when the
+ * frame is singular and no local pose keeps `worldPose`.
  */
 export function rebaseLocalPose<TPose>(
   adapter: PoseAdapter<TPose>,
   worldPose: TPose,
   newParentId: string | null,
   compose: (parent: TPose, child: TPose) => TPose,
-  decompose: (parent: TPose, world: TPose) => TPose,
-): TPose {
+  decompose: (parent: TPose, world: TPose) => TPose | null,
+): TPose | null {
   const frame = frameAtOrAbove(adapter, newParentId);
   if (frame === null) return worldPose;
   return decompose(composeChildFrame(adapter, frame, compose), worldPose);
+}
+
+/** Whether a pose stored under `id` can keep any world place: false when the
+ *  frame at or above it is singular (`PoseComposition.decompose`), so whatever
+ *  is stored there draws flat. True for the root frame. */
+export function frameInverts<TPose>(
+  adapter: PoseAdapter<TPose>,
+  id: string | null,
+  composition: Pick<PoseComposition<TPose>, 'compose' | 'decompose'>,
+): boolean {
+  const frame = frameAtOrAbove(adapter, id);
+  if (frame === null) return true;
+  const world = composeChildFrame(adapter, frame, composition.compose);
+  return composition.decompose(world, world) !== null;
 }
 
 /** The nearest node at or above `id` whose pose is a frame, or `null` for the

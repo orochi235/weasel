@@ -13,6 +13,7 @@ export {
   composeChildFrame,
   composesFrames,
   composeWorldPose,
+  frameInverts,
   composeRectPose,
   decomposeRectPose,
   composeRigidPose,

@@ -16,6 +16,7 @@ import {
   composesFrames,
   composeWorldPose,
   frameAtOrAbove,
+  frameInverts,
   rebaseLocalPose,
   composeChildFrame,
   childFrameAt,
@@ -24,7 +25,7 @@ import {
   type PoseComposition,
   type ScrollOffset,
 } from 'core/scene/composeFrame';
-export { IDENTITY_POSE_COMPOSITION, childFrameAt, composeChildFrame, composesFrames, composeWorldPose, frameAtOrAbove, rebaseLocalPose };
+export { IDENTITY_POSE_COMPOSITION, childFrameAt, composeChildFrame, composesFrames, composeWorldPose, frameAtOrAbove, frameInverts, rebaseLocalPose };
 export type { PoseAdapter, PoseClosure, PoseComposition, ScrollOffset };
 
 /**
@@ -115,12 +116,14 @@ export function composeRigidPose<TPose extends RectPose>(parent: TPose, child: T
 }
 
 /** Inverse of `composeRigidPose` — un-turns about the parent's center, then
- *  subtracts the parent's offset. */
-export function decomposeRigidPose<TPose extends RectPose>(parent: TPose, world: TPose): TPose {
+ *  subtracts the parent's offset. `null` under a parent whose `transform` has
+ *  no inverse, or one too ill-conditioned for geom's `invert` to give one:
+ *  every child composes flat there, so no local pose reaches `world`. */
+export function decomposeRigidPose<TPose extends RectPose>(parent: TPose, world: TPose): TPose | null {
   const pr = parent.rotation ?? 0;
-  // A singular transform has no inverse: the container draws nothing, and the turn alone is undone.
-  const back = poseLinearOf(parent) && poseFrameInverseOf(parent);
-  if (back) {
+  if (poseLinearOf(parent)) {
+    const back = poseFrameInverseOf(parent);
+    if (!back) return null;
     const [ux, uy] = transformPoint(back, world.x + world.width / 2, world.y + world.height / 2);
     const linear = multiply(back, poseFrameOf(world) ?? NO_FRAME);
     return withLinear(centeredAt(world, ux - parent.x, uy - parent.y), (world.rotation ?? 0) - pr, linear);

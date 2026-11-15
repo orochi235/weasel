@@ -17,7 +17,8 @@ interface FramedNode {
 
 /** `(depId, pose) => that pose in `reader`'s frame`, or `null` when every
  *  pose is already in one frame — the absolute-pose model. `poseOf` answers
- *  each node's own, local pose. */
+ *  each node's own, local pose. A reader in a singular frame, which draws flat
+ *  whatever it derives, is handed the dependency's world pose. */
 export function depFrameRebase<TPose>(
   composition: PoseComposition<TPose> | undefined,
   reader: FramedNode,
@@ -36,7 +37,7 @@ export function depFrameRebase<TPose>(
     const own = frameAtOrAbove(adapter, get(depId)?.parent ?? null);
     if (own === frame) return pose;
     const world = own === null ? pose : composition.compose(composeWorldPose(adapter, own, composition.compose), pose);
-    return frame === null ? world : composition.decompose(composeWorldPose(adapter, frame, composition.compose), world);
+    return frame === null ? world : composition.decompose(composeWorldPose(adapter, frame, composition.compose), world) ?? world;
   };
 }
 

@@ -57,7 +57,7 @@ export function layoutDrop(move: MoveGesture): MoveBehavior<unknown> {
       if (delta.dx === 0 && delta.dy === 0) return;
       // A drop or a release that claims the selection and writes nothing
       // commits nothing: the translate must not run in its place.
-      const orAbort = (ops: Op[]): Op[] | null => (ops.length > 0 ? ops : null);
+      const orAbort = (ops: Op[] | null): Op[] | null => (ops !== null && ops.length > 0 ? ops : null);
       // Layout drop commit — takes precedence over reparent-on-drop when a
       // layout container accepted the drag this gesture. One placement per
       // dragged child, replayed in the order the preview resolved them.

@@ -63,7 +63,7 @@ function landedWorld(scratch: CloneScratch, id: NodeId, dx: number, dy: number):
   return carryPose(d, moved, planeOf(scratch.view, node.layer));
 }
 
-/** Where the copy of `id` lands for a drag of `(dx, dy)`, as stored. */
+/** Where the copy of `id` lands for a drag of `(dx, dy)`, as stored: `null` in a singular frame. */
 function landed(scratch: CloneScratch, id: NodeId, dx: number, dy: number): unknown {
   const world = landedWorld(scratch, id, dx, dy);
   return world === undefined ? undefined : scratch.frame.local(id, world);
@@ -71,21 +71,31 @@ function landed(scratch: CloneScratch, id: NodeId, dx: number, dy: number): unkn
 
 /** The ops making the copies where the drag left them and selecting them;
  *  with a `placement`, each copied root goes under its parent instead, at its
- *  pose there when it has one. */
-function copyOps(scratch: CloneScratch, selection: SelectionApi, placement?: Parameters<CloneEnd['copyOps']>[0]): Op[] {
+ *  pose there when it has one. `null` when a copy would land in a singular
+ *  frame, so the clone refuses whole. */
+function copyOps(scratch: CloneScratch, selection: SelectionApi, placement?: Parameters<CloneEnd['copyOps']>[0]): Op[] | null {
   const { dx, dy } = scratch.currentDelta;
   const parent = placement?.parentId as NodeId | null | undefined;
+  let refused = false;
+  const kept = (pose: unknown, fallback: unknown): unknown => {
+    if (pose !== null) return pose;
+    refused = true;
+    return fallback;
+  };
   const { ops, copies } = copySelection(
     scratch.scene,
     scratch.ids,
     (id, node, isRoot) => {
-      if (placement === undefined || !isRoot) return scratch.originPoses.has(id) ? landed(scratch, id, dx, dy) : node.pose;
+      if (placement === undefined || !isRoot) {
+        return scratch.originPoses.has(id) ? kept(landed(scratch, id, dx, dy), node.pose) : node.pose;
+      }
       const world = placement.poses.get(id) ?? landedWorld(scratch, id, dx, dy) ?? node.pose;
-      return scratch.frame.localUnder(parent ?? null, world);
+      return kept(scratch.frame.localUnder(parent ?? null, world), node.pose);
     },
     'Clone',
     parent,
   );
+  if (refused) return null;
   if (ops.length === 0) return [];
   return [...ops, createSetSelectionOp({ from: selection.get(), to: copies, label: 'Clone' })];
 }
@@ -103,7 +113,7 @@ function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection
   if (answer === null) return false;
   if (answer !== undefined) return answer.length === 0 || apply(answer);
   const ops = copyOps(scratch, selection);
-  return ops.length > 0 && apply(ops);
+  return ops !== null && ops.length > 0 && apply(ops);
 }
 
 /**

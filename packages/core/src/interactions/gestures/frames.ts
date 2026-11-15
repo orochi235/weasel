@@ -14,11 +14,14 @@ export interface GestureFrames<TPose> {
   world(id: string): TPose;
   /** `pose`, as `id` stores it, in world. */
   toWorld(id: string, pose: TPose): TPose;
-  /** `worldPose` as `id` stores it: what a pose op or a preview takes. */
-  toLocal(id: string, worldPose: TPose): TPose;
+  /** `worldPose` as `id` stores it: what a pose op or a preview takes.
+   *  `null` when `id`'s frame is singular and no stored pose shows
+   *  `worldPose`; a behavior refuses its commit then. */
+  toLocal(id: string, worldPose: TPose): TPose | null;
   /** `worldPose` as a child of `parentId` stores it, `null` for the top of
-   *  the tree: what a node reparented there is posed with. */
-  toLocalUnder(parentId: string | null, worldPose: TPose): TPose;
+   *  the tree: what a node reparented there is posed with. `null` as
+   *  `toLocal` is. */
+  toLocalUnder(parentId: string | null, worldPose: TPose): TPose | null;
   /** How the world the gesture edits in maps into the world `layer`'s nodes
    *  are stored in, read now. Null when they are the same world. */
   planeOf(layer: string): PlaneMap | null;

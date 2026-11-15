@@ -127,14 +127,15 @@ function copySubtree(scene: Scene<unknown, string, unknown>, id: NodeId, m: Affi
   if (!node) return;
   const derived = node.dependsOn === 'children' && node.derivePose !== undefined;
   const world = worldPoseOf(scene, id);
-  if (!derived && !isBox(world)) {
+  const pose = derived || !isBox(world) ? node.pose : localPoseUnder(scene, carryPose(world as BoxPose, m), parent);
+  if (!derived && (!isBox(world) || pose === null)) {
     skipped.push(id);
     return;
   }
   const sub = scene.add({
     kind: node.kind,
     layer: node.layer,
-    pose: derived ? node.pose : localPoseUnder(scene, carryPose(world as BoxPose, m), parent),
+    pose,
     data: node.data,
     parent,
     ...statedFields(node),

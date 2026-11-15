@@ -53,7 +53,7 @@ describe('layout pass on a turned container', () => {
     const c = composeWorldPose(doc, C, RIGID_POSE_COMPOSITION.compose);
     for (const id of ids) {
       const w = composeWorldPose(doc, id, RIGID_POSE_COMPOSITION.compose);
-      const local = RIGID_POSE_COMPOSITION.decompose(c, w);
+      const local = RIGID_POSE_COMPOSITION.decompose(c, w)!;
       expect(local.x).toBeGreaterThanOrEqual(-1e-9);
       expect(local.y).toBeGreaterThanOrEqual(-1e-9);
       expect(local.x + local.width).toBeLessThanOrEqual(c.width + 1e-9);

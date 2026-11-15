@@ -37,7 +37,8 @@ export function captureHeld(
 }
 
 /** `previews` with each held node posed in its frame's previewed pose, so it
- *  stays where it drew. */
+ *  stays where it drew. One in a frame that is singular, where it drew flat and
+ *  no stored pose keeps it, keeps its stored pose. */
 export function holdInPlace(
   previews: Map<NodeId, unknown>,
   held: ReadonlyMap<NodeId, HeldNode>,
@@ -48,7 +49,8 @@ export function holdInPlace(
     const stored = previews.get(h.frame);
     if (stored === undefined) continue;
     const above = poseFrame.parentWorld(h.frame);
-    previews.set(id, decompose(poseFrame.childFrame(h.frame, above === null ? stored : compose(above, stored)), h.world));
+    const local = decompose(poseFrame.childFrame(h.frame, above === null ? stored : compose(above, stored)), h.world);
+    if (local !== null) previews.set(id, local);
   }
   return previews;
 }

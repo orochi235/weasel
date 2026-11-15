@@ -22,7 +22,8 @@ export interface InsertSite {
  * A new node under `parentId`: on that container's layer, with the pose made
  * local to it when the scene composes frames — through its scroll offset,
  * since the world pose is where the view shows it — or at the top of the
- * tree, on the first layer, for `null`.
+ * tree, on the first layer, for `null` and for a container whose frame is
+ * singular, where nothing inserted could keep its place.
  */
 export function siteIn(sc: AnyScene, parentId: NodeId | null): InsertSite {
   if (parentId === null) {
@@ -38,7 +39,8 @@ export function siteIn(sc: AnyScene, parentId: NodeId | null): InsertSite {
     getParent: (id) => sc.get(id as NodeId)?.parent ?? null,
     definesFrame: (id) => definesFrame(sc.get(id as NodeId) ?? {}),
   } as PoseAdapter<unknown>), parent.id, composition.compose);
-  return { parent: parent.id, layer: parent.layer, local: (p) => composition.decompose(frame, p) };
+  if (composition.decompose(frame, frame) === null) return siteIn(sc, null);
+  return { parent: parent.id, layer: parent.layer, local: (p) => composition.decompose(frame, p) ?? p };
 }
 
 /** `world`, measured by `d`, shifted by {@link keepOnPage}, so part of it is on `page`. */

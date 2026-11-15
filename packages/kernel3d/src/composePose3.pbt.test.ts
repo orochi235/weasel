@@ -1,7 +1,7 @@
 /**
  * `Pose3` composition read the other way: `decompose` inverts `compose` from either side under any frame, a frame
  * read in itself is the identity, frames peel off a chain one at a time, a frame scaled near the ends of the double
- * range still reads a world pose as a finite local one, and a scene of containers nested a dozen deep folds every
+ * range reads a world pose as a finite local one that composes back to it or refuses it, and a scene of containers nested a dozen deep folds every
  * node to the world pose its chain of frames composes, with its rotation still unit length.
  */
 import { describe, expect, it } from 'vitest';
@@ -41,14 +41,14 @@ const extremeScale = fc.tuple(extreme, extreme, extreme).map(([x, y, z]) => ({ x
 describe('POSE3_COMPOSITION inverted, property', () => {
   it('composes a frame with the local pose it reads any world pose as, back to that world pose', () => {
     fc.assert(fc.property(pose(scale3), pose(), (p, w) => {
-      const back = compose(p, decompose(p, w));
+      const back = compose(p, decompose(p, w)!);
       expect(poseGap(back, w)).toBeLessThanOrEqual(1e-10 * size(p) * shrink(p) * size(w) * 10);
     }), runs(RUNS));
   }, T);
 
   it('reads a frame in itself as the identity', () => {
     fc.assert(fc.property(pose(scale3), (p) => {
-      const self = decompose(p, p);
+      const self = decompose(p, p)!;
       expect(maxDiff3(self.position, { x: 0, y: 0, z: 0 })).toBeLessThanOrEqual(1e-12 * size(p) * shrink(p));
       expect(maxDiff3(self.scale, { x: 1, y: 1, z: 1 })).toBeLessThanOrEqual(1e-15);
       expect(rotationGap(self.rotation, [0, 0, 0, 1])).toBeLessThanOrEqual(1e-12);
@@ -59,21 +59,25 @@ describe('POSE3_COMPOSITION inverted, property', () => {
     fc.assert(fc.property(pose(uniformScale3), pose(uniformScale3), pose(), (a, b, c) => {
       const world = compose(a, compose(b, c));
       const tol = 1e-10 * size(a) * size(b) * size(c) * shrink(a) * shrink(b);
-      expect(poseGap(decompose(compose(a, b), world), c)).toBeLessThanOrEqual(tol);
-      expect(poseGap(decompose(b, decompose(a, world)), c)).toBeLessThanOrEqual(tol);
+      expect(poseGap(decompose(compose(a, b), world)!, c)).toBeLessThanOrEqual(tol);
+      expect(poseGap(decompose(b, decompose(a, world)!)!, c)).toBeLessThanOrEqual(tol);
     }), runs(RUNS));
   }, T);
 
-  it('reads any world pose as a finite local one in a frame scaled anywhere in the double range', () => {
+  it('reads a world pose in a frame scaled anywhere in the double range as a finite local one, or refuses it', () => {
     const seen = tally();
     fc.assert(fc.property(fc.record({ position: v3(50), rotation: quat, scale: extremeScale }), pose(), (p, w) => {
       const local = decompose(p, w);
+      const s = [p.scale.x, p.scale.y, p.scale.z].map(Math.abs);
+      const conditioned = Math.max(...s) / Math.min(...s) < 1e12;
+      if (!conditioned) expect(local).toBeNull();
+      seen.count(local === null ? 'refused' : 'read');
+      if (local === null) return;
       expect(finitePose(local)).toBe(true);
-      expect(finitePose(compose(p, local))).toBe(true);
-      const tiny = [p.scale.x, p.scale.y, p.scale.z].some((s) => Math.abs(s) < 1e-200);
-      seen.count(tiny ? 'tiny' : 'other');
+      expect(poseGap(compose(p, local), w)).toBeLessThanOrEqual(1e-9 * size(p) * shrink(p) * size(w) * 10);
     }), runs(RUNS));
-    seen.atLeast('tiny', 30);
+    seen.atLeast('refused', 30);
+    seen.atLeast('read', 30);
   }, T);
 });
 

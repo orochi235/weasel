@@ -79,8 +79,11 @@ function rehome(scene: AnyScene, id: string, seen = new Set<string>()): void {
     const adapter = sceneViewPoseAdapter(scene);
     const { compose, decompose } = scene.composition;
     const pose = rebaseLocalPose(adapter, composeWorldPose(adapter, id, compose), home, compose, decompose);
-    scene.move(id as NodeId, home);
-    scene.setPose(id as NodeId, pose);
+    // A home in a singular frame could not keep it where it draws, so it stays put.
+    if (pose !== null) {
+      scene.move(id as NodeId, home);
+      scene.setPose(id as NodeId, pose);
+    }
   }
   for (const other of scene.renderOrderNodes()) {
     if (Array.isArray(other.dependsOn) && other.dependsOn.includes(id as never)) rehome(scene, other.id, seen);

@@ -117,7 +117,10 @@ export function layoutPoses<TPose>(
     const dy = at.y - bounds.y;
     if (dx === 0 && dy === 0) continue;
     const parent = scene.get(id as never)!.parent;
-    out.set(id, rebaseLocalPose(decided, translatePoseViaDescriptor(world, dx, dy, geometry), parent, compose, decompose) as TPose);
+    const local = rebaseLocalPose(decided, translatePoseViaDescriptor(world, dx, dy, geometry), parent, compose, decompose);
+    // A node in a singular frame, which no stored pose places, stays where it is.
+    if (local === null) continue;
+    out.set(id, local as TPose);
     const carried = carriedDescendants(sceneCarrySource(sc), id as NodeId, (w) => translatePoseViaDescriptor(w as TPose, dx, dy, geometry));
     for (const [d, pose] of carried) out.set(d, pose as TPose);
   }

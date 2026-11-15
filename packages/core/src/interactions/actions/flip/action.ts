@@ -54,8 +54,8 @@ function localMirror(
     width: 0,
     height: 0,
     rotation: 0,
-  }) as RectPose;
-  const theta = at.rotation ?? 0;
+  }) as RectPose | null;
+  const theta = at?.rotation ?? 0;
   const mirror: Affine = axis === 'x' ? [-1, 0, 0, 1, 0, 0] : [1, 0, 0, -1, 0, 0];
   const turned = multiply(multiply(rotate(theta), mirror), rotate(-theta));
   return multiply(translate(at.x, at.y), multiply(turned, translate(-at.x, -at.y)));
@@ -134,6 +134,8 @@ function flipOps(
       ? flipPoseAboutBounds(world, axis, geom, about)
       : flipPoseViaDescriptor(world, axis, geom);
     const to = frame.local(id, flipped);
+    // A node in a singular frame, which no stored pose mirrors, stays as it is.
+    if (to === null) continue;
     // A mirror image past the double range cannot be drawn, so the flip cannot land.
     if (!finiteThroughout(to)) return [];
     const moved = !sameValue(node.pose, to);

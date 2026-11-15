@@ -5,7 +5,7 @@ import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { isPageStructure } from 'core/scene/nodeGates';
 import { pageOfNode } from 'core/pages/pageNodes';
-import { followerMoveOps, followerMoves } from '../../followerMoves';
+import { followerOpsFor } from '../../followerMoves';
 import { planeToPlane } from 'core/viewport/parallax';
 import { rebaseLocalPose } from 'core/scene/composePose';
 import { sceneViewPoseAdapter } from 'core/scene/scenePoseAdapter';
@@ -80,14 +80,15 @@ export function landAbove(siblings: NodeId[], id: NodeId, above: NodeId | null):
   return toIndex;
 }
 
-/** Root `id`'s pose stored under `newParent` on `newLayer`, keeping the world pose the drag `delta` shows. */
+/** Root `id`'s pose stored under `newParent` on `newLayer`, keeping the world pose the drag `delta` shows.
+ *  `null` when `newParent`'s frame is singular and no stored pose keeps it. */
 export function landedLocalPose(
   session: MoveSession,
   id: NodeId,
   newParent: NodeId | null,
   newLayer: string,
   delta: { dx: number; dy: number },
-): unknown {
+): object | null {
   const { scene, pc, view } = session;
   const adapter = sceneViewPoseAdapter(scene);
   const layer = scene.get(id)!.layer;
@@ -96,26 +97,28 @@ export function landedLocalPose(
     draggedWorldPose(session, grabbedPoseAdapter(session, adapter), id, delta),
     layer !== newLayer ? planeToPlane(planeOf(view, layer), planeOf(view, newLayer)) : null,
   );
-  return rebaseLocalPose(adapter, world, newParent as string | null, pc.compose, pc.decompose);
+  return rebaseLocalPose(adapter, world, newParent as string | null, pc.compose, pc.decompose) as object | null;
 }
 
 /** The ops for `ids`, descendants of a root moved into `newParent`: each one stored in the frame it is
  *  moved into, on `newLayer` when given, at the world place the drag `delta` gives. One a moving frame
- *  carries keeps only what it caught mid-glide, as in a translate. */
+ *  carries keeps only what it caught mid-glide, as in a translate. `null` when one cannot keep its place. */
 export function landedCascadeOps(
   session: MoveSession,
   ids: readonly NodeId[],
   newParent: NodeId | null,
   delta: { dx: number; dy: number },
   newLayer?: string,
-): Op[] {
+): Op[] | null {
   const own = new Map<NodeId, { dx: number; dy: number }>();
   for (const id of ids) {
     const start = session.startPoses.get(id);
     if (start === undefined || session.carried.has(id) || !session.scene.get(id)) continue;
     const d = session.descriptorOf(id);
+    const landed = landedLocalPose(session, id, newParent, newLayer ?? session.scene.get(id)!.layer, delta);
+    if (landed === null) return null;
     const from = d.getBounds(start);
-    const to = d.getBounds(landedLocalPose(session, id, newParent, newLayer ?? session.scene.get(id)!.layer, delta));
+    const to = d.getBounds(landed);
     const c = session.caught.get(id) ?? { dx: 0, dy: 0 };
     own.set(id, { dx: to.x - from.x + c.dx, dy: to.y - from.y + c.dy });
   }
@@ -156,13 +159,14 @@ export function landOps(
 
 /** Reparent and reposition each moved root as ops, keeping the world pose the
  *  drag showed, then the ops that bring uncarried descendants along, and the
- *  followers whose page that changes (`followerMoves`). */
+ *  followers whose page that changes (`followerMoves`). `null` when any of
+ *  them would land in a singular frame, so the drop refuses whole. */
 export function reparentOps(
   session: MoveSession,
   target: DropTarget,
   mode: ReparentOnDrop,
   delta: { dx: number; dy: number },
-): Op[] {
+): Op[] | null {
   const { scene } = session;
   const label = session.lifecycle.label;
   const ops: Op[] = [];
@@ -175,6 +179,7 @@ export function reparentOps(
     // A node removed mid-drag is skipped, as the translate commit skips it.
     if (!session.startPoses.has(id) || node === undefined) continue;
     const to = landedLocalPose(session, id, target.newParent, target.newLayer, delta);
+    if (to === null) return null;
     const toIndex = landAbove(siblings, id, mode === 'above' ? target.hitSibling : null);
     ops.push(...landOps(session, id, target.newParent, toIndex, target.newLayer));
     ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label }));
@@ -183,9 +188,7 @@ export function reparentOps(
   const page = target.newParent === null ? null : pageOfNode(scene, target.newParent);
   const landed = new Map([...roots].filter((id) => session.startPoses.has(id) && scene.get(id) !== undefined)
     .map((id) => [id as string, page]));
-  return [
-    ...ops,
-    ...landedCascadeOps(session, riders, target.newParent, delta, target.newLayer),
-    ...followerMoveOps(followerMoves(scene, landed), label),
-  ];
+  const cascade = landedCascadeOps(session, riders, target.newParent, delta, target.newLayer);
+  const followers = followerOpsFor(scene, landed, label);
+  return cascade === null || followers === null ? null : [...ops, ...cascade, ...followers];
 }

@@ -12,8 +12,11 @@ import { scenePoseFrame } from 'interactions/actions/poseFrame';
 export interface NodeFrame {
   /** A pose as the node stores it, in world. */
   world(stored: unknown): unknown;
-  /** A world pose as the node stores it. */
+  /** A world pose as the node stores it, or `null` when the frame is singular. */
   local(world: unknown): unknown;
+  /** Whether the frame inverts. A node in a singular frame draws flat, and no
+   *  edit made to what it shows can be stored back: path edits leave it alone. */
+  inverts: boolean;
 }
 
 /** `node`'s frame, or null where its stored pose is already world: a root, or
@@ -27,7 +30,19 @@ export function nodeFrameOf(
   const parent = frame.parentWorld(node.id as NodeId);
   if (parent === null) return null;
   const { compose, decompose } = frame.pc;
-  return { world: (stored) => compose(parent, stored), local: (world) => decompose(parent, world) };
+  return {
+    world: (stored) => compose(parent, stored),
+    local: (world) => decompose(parent, world),
+    inverts: decompose(parent, parent) !== null,
+  };
+}
+
+/** Whether an edit to what `node` shows can be stored back: false in a singular frame. */
+export function storesEdits(
+  scene: Pick<Scene<unknown, string, unknown>, 'get'>,
+  node: { id: string; parent?: string | null; pose: unknown } | null | undefined,
+): boolean {
+  return nodeFrameOf(scene, node)?.inverts ?? true;
 }
 
 /** `shape` with its pose in world under `frame`. */

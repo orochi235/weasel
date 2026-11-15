@@ -53,13 +53,13 @@ describe('composeRigidPose under a container that carries a transform', () => {
 
 describe('decomposeRigidPose under a container that carries a transform', () => {
   it.each([['plain', CHILD], ['skewed', SKEWED_CHILD]])('round-trips a %s child', (_name, child) => {
-    const local = decomposeRigidPose(SKEWED, composeRigidPose(SKEWED, child));
+    const local = decomposeRigidPose(SKEWED, composeRigidPose(SKEWED, child))!;
     expect(maxError(corners(local), corners(child))).toBeLessThan(1e-9);
     expect(local.rotation).toBeCloseTo(child.rotation ?? 0, 12);
   });
 
   it('answers a child with no transform of its own without one', () => {
-    const local = decomposeRigidPose(SKEWED, composeRigidPose(SKEWED, CHILD));
+    const local = decomposeRigidPose(SKEWED, composeRigidPose(SKEWED, CHILD))!;
     expect(local.transform).toBeUndefined();
   });
 });

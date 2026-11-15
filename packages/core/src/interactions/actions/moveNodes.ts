@@ -107,7 +107,9 @@ export function moveEachOps(
       targets,
       (id) => {
         const own = storedDelta(frame, descriptorOf(id), id, dx, dy);
-        return lead ? { ...own, lead: leadUnder(frame.pc, frame.parentWorld(id), lead) } : own;
+        if (own === null || !lead) return own;
+        const stored = leadUnder(frame.pc, frame.parentWorld(id), lead);
+        return stored ? { ...own, lead: stored } : own;
       },
       descriptorOf,
       deps?.geometryProjection,

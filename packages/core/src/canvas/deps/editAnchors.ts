@@ -21,7 +21,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
 import { anchorDataPatch } from 'domains/paths/anchorData';
 import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf } from 'domains/paths/editablePath';
-import { nodeFrameOf, shownNodeOf } from 'domains/paths/nodeFrame';
+import { nodeFrameOf, shownNodeOf, storesEdits } from 'domains/paths/nodeFrame';
 import { representationOf } from 'domains/paths/pathRepresentation';
 import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import {
@@ -159,7 +159,7 @@ function pathAccess(
   };
   return {
     getEditablePath(id: string): PolygonPath | null {
-      return pathEditPathOf(shownNodeOf(sc, id), extensions);
+      return storesEdits(sc, sc.get(id as NodeId)) ? pathEditPathOf(shownNodeOf(sc, id), extensions) : null;
     },
     getOutlinePath(id: string): PolygonPath | null {
       return resolveEditablePathOf(shownNodeOf(sc, id));

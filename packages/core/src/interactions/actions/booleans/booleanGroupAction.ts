@@ -28,7 +28,7 @@ const PAINT_KEYS = ['fill', 'stroke'] as const;
  * off and move onto one, and a node following one that changes page goes
  * where `followerMoves` says. The group wears the frontmost
  * operand's `fill` and `stroke`. Null when fewer than two
- * of `ids` are nodes on one layer.
+ * of `ids` are nodes on one layer, or when one would land in a singular frame.
  */
 export function booleanGroupOps(
   scene: AnyScene,
@@ -51,6 +51,13 @@ export function booleanGroupOps(
   const data = { boolean: op, ...Object.fromEntries(PAINT_KEYS.filter((k) => k in own).map((k) => [k, own[k]])) };
   const page = parent === null ? null : pageOfNode(scene, parent);
   const followers = followerMoves(scene, new Map(nodes.map((n) => [n.id as string, page])));
+  const locals = new Map<NodeId, unknown>();
+  for (const n of nodes) {
+    const local = frame.localUnder(parent, worlds.get(n.id)!);
+    if (local === null) return null;
+    locals.set(n.id, local);
+  }
+  if (followers === null) return null;
   const group = scene.mintId();
   const ops: Op[] = [
     createInsertOp({
@@ -62,7 +69,7 @@ export function booleanGroupOps(
   nodes.forEach((n, i) => {
     ops.push(createReparentOp({ id: n.id, fromParentId: n.parent ?? null, toParentId: group, toIndex: i, label }));
     // The group derives its pose from its members, so it is no frame: they keep the frame it sits in.
-    ops.push(createTransformOp<unknown>({ id: n.id, from: n.pose, to: frame.localUnder(parent, worlds.get(n.id)!), label }));
+    ops.push(createTransformOp<unknown>({ id: n.id, from: n.pose, to: locals.get(n.id), label }));
   });
   ops.push(...followerMoveOps(followers, label));
   return { ops, group };

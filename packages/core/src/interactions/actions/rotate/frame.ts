@@ -97,6 +97,8 @@ export function storedPreviews(
     const layer = session.scene.get(id)?.layer;
     const own = layer === undefined ? null : planeOf(session.view, layer);
     const stored = session.poseFrame.local(id, carryPose(session.turn.descriptorOf(id), turned, own));
+    // A node in a singular frame, which no stored pose turns, is left as it is.
+    if (stored === null) continue;
     previews.set(id, quantizedPreview(session.scene, id, stored));
   }
   return previews;

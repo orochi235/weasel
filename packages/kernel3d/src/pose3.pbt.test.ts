@@ -1,6 +1,6 @@
 /**
  * `Pose3` and its container composition: identities, associativity and the matrix product under a uniform frame,
- * `decompose` undoing `compose` under any frame, a collapsed axis included, and the world box a pose occupies.
+ * `decompose` undoing `compose` under any frame that inverts and refusing one with a collapsed axis, and the world box a pose occupies.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -68,22 +68,20 @@ describe('POSE3_COMPOSITION, property', () => {
   it('undoes compose with decompose, and compose with decompose, under any frame', () => {
     fc.assert(fc.property(pose(scale3), pose(), (p, c) => {
       const world = compose(p, c);
-      const back = decompose(p, world);
+      const back = decompose(p, world)!;
       expect(poseGap(back, c)).toBeLessThanOrEqual(1e-10 * size(p) ** 2 * size(c));
       expect(poseGap(compose(p, back), world)).toBeLessThanOrEqual(1e-10 * size(p) ** 2 * size(c));
     }), runs(RUNS));
   }, T);
 
-  it('reads a world pose into a frame with a collapsed axis as one that composes back to it', () => {
+  it('reads no world pose into a frame with a collapsed axis, which has no inverse', () => {
     const seen = tally();
     const collapsed = fc.tuple(factor, factor, factor, fc.integer({ min: 1, max: 7 }))
       .map(([x, y, z, zeros]) => ({ x: zeros & 1 ? 0 : x, y: zeros & 2 ? 0 : y, z: zeros & 4 ? 0 : z }));
     fc.assert(fc.property(pose(collapsed), pose(), pose(), (p, c, w) => {
-      const back = decompose(p, compose(p, c));
-      expect(isFinite3(back.position) && isFinite3(back.scale)).toBe(true);
-      expect(poseGap(compose(p, back), compose(p, c))).toBeLessThanOrEqual(1e-10 * size(p) ** 2 * size(c));
-      const any = decompose(p, w);
-      expect(isFinite3(any.position) && isFinite3(any.scale) && any.rotation.every(Number.isFinite)).toBe(true);
+      expect(decompose(p, compose(p, c))).toBeNull();
+      expect(decompose(p, w)).toBeNull();
+      expect(isFinite3(compose(p, c).position)).toBe(true);
       seen.count(`zeros:${[p.scale.x, p.scale.y, p.scale.z].filter((s) => s === 0).length}`);
     }), runs(RUNS));
     for (const k of [1, 2, 3]) seen.atLeast(`zeros:${k}`, 10);

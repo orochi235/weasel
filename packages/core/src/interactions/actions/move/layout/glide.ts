@@ -78,6 +78,7 @@ export function landReleased(
     const from = parent === r.parent
       ? r.local
       : rebaseLocalPose(adapter, r.world, parent, pc.compose, pc.decompose);
-    reflow.settle(id as string, { from });
+    if (from === null) reflow.settle(id as string);
+    else reflow.settle(id as string, { from });
   }
 }

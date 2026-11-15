@@ -9,12 +9,13 @@ import type { MoveSession } from '../session';
 import { rebaseTransformOp } from './rebase';
 import { opInWorld } from '../layout/view';
 import { pageOfNode } from 'core/pages/pageNodes';
-import { followerMoveOps, followerMoves } from '../../followerMoves';
+import { followerOpsFor } from '../../followerMoves';
 
 /** The ops of a drop a layout container accepted: reparents, then each
  *  placement's `commitDrop`, then the source containers' reflow, then the
- *  followers whose page the reparents change (`followerMoves`). */
-export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
+ *  followers whose page the reparents change (`followerMoves`). `null` when a
+ *  pose would land in a singular frame, so the drop refuses whole. */
+export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] | null {
   const lp = pass;
   const pc = session.pc;
   const commitAdapter = sceneViewPoseAdapter(session.scene);
@@ -24,7 +25,7 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
   // Rebase each transform op to local: a dragged id lands under the
   // destination container; any other id keeps its current parent.
   // `from` rebases under the node's PRE-commit parent.
-  const rebaseOpToLocal = (op: Op): Op => {
+  const rebaseOpToLocal = (op: Op): Op | null => {
     const id = (op.args as { id?: string } | undefined)?.id;
     if (id === undefined) return op;
     const curParent = session.scene.get(asNodeId(id))?.parent ?? null;
@@ -54,7 +55,11 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
       placement.dragged,
       placement.target,
     );
-    for (const op of ops) dropOps.push(rebaseOpToLocal(op));
+    for (const op of ops) {
+      const stored = rebaseOpToLocal(op);
+      if (stored === null) return null;
+      dropOps.push(stored);
+    }
   }
   const reflowOps: Op[] = [];
   for (const [cid, worldPose] of lp.sourceReflow) {
@@ -64,13 +69,15 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] {
     // in `lp.sourceReflow`) is rebased to local. This is the
     // intentional counterpart to the dropOps rebaser above, where
     // `from` comes from a world `commitDrop` op and so does rebase.
+    const to = rebaseLocalPose(commitAdapter, worldPose, parent, pc.compose, pc.decompose);
+    if (to === null) return null;
     reflowOps.push(createTransformOp<unknown>({
       id: cid,
       from: session.scene.get(asNodeId(cid))!.pose,
-      to: rebaseLocalPose(commitAdapter, worldPose, parent, pc.compose, pc.decompose),
+      to,
       label: 'Source reflow',
     }));
   }
-  const followerOps = followerMoveOps(followerMoves(session.scene, landed), session.lifecycle.label);
-  return [...reparentOps, ...dropOps, ...reflowOps, ...followerOps];
+  const followerOps = followerOpsFor(session.scene, landed, session.lifecycle.label);
+  return followerOps === null ? null : [...reparentOps, ...dropOps, ...reflowOps, ...followerOps];
 }

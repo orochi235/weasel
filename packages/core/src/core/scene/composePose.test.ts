@@ -105,7 +105,7 @@ describe('rebaseLocalPose', () => {
     // mid in world = (15, 15); child local = (85, 85)
     expect(local).toEqual({ x: 85, y: 85, width: 8, height: 8 });
     // Re-compose with mid → original world
-    const back = composeRectPose(composeWorldPose(a, 'mid', composeRectPose), local);
+    const back = composeRectPose(composeWorldPose(a, 'mid', composeRectPose), local!);
     expect(back).toEqual(world);
   });
 });

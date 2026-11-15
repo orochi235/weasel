@@ -40,11 +40,14 @@ export interface PoseFrame<TPose> {
   parentWorld(id: NodeId): TPose | null;
   /** The frame `id` gives its children when its own pose folds to `world`. */
   childFrame(id: NodeId, world: TPose): TPose;
-  /** `worldPose` expressed in `id`'s own parent frame — what `setPose` stores. */
-  local(id: NodeId, worldPose: TPose): TPose;
+  /** `worldPose` expressed in `id`'s own parent frame — what `setPose` stores.
+   *  `null` when that frame is singular and no stored pose shows `worldPose`:
+   *  the action refuses its whole edit then. */
+  local(id: NodeId, worldPose: TPose): TPose | null;
   /** `worldPose` expressed under `parentId`'s frame. For a node about to be
-   *  reparented, whose current parent is not the frame it will be stored in. */
-  localUnder(parentId: NodeId | null, worldPose: TPose): TPose;
+   *  reparented, whose current parent is not the frame it will be stored in.
+   *  `null` as `local` is. */
+  localUnder(parentId: NodeId | null, worldPose: TPose): TPose | null;
 }
 
 /** Pair the two directions over an arbitrary pose adapter. */

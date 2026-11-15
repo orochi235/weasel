@@ -105,6 +105,7 @@ export function reshapeOps(
   const node = sc.get(id as NodeId);
   if (!node) return [];
   const frame = nodeFrameOf(sc, node);
+  if (frame?.inverts === false) return [];
   const next = storeEditablePath(shownIn(frame, node), worldPath, extensions);
   if (!next) return [];
   const reshape = createTransformOp({ id, from: node.pose, to: frame ? frame.local(next.pose) : next.pose, label });
@@ -183,7 +184,9 @@ export function transformPreview(
   return [...(others?.values() ?? [])].flatMap((o) => {
     const node = sc.get(o.id as NodeId);
     const frame = node ? nodeFrameOf(sc, node) : null;
-    const stored = node && o.path && !o.remove ? storeEditablePath(shownIn(frame, node), o.path, extensions) : null;
+    const stored = node && o.path && !o.remove && frame?.inverts !== false
+      ? storeEditablePath(shownIn(frame, node), o.path, extensions)
+      : null;
     if (!node || !stored) return [];
     const pose = frame ? frame.local(stored.pose) : stored.pose;
     return [stored.data === node.data ? { id: o.id, pose } : { id: o.id, pose, data: stored.data }];

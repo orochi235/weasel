@@ -132,17 +132,21 @@ export function translateTargets(
 }
 
 /** The world translation `(dx, dy)` as a translation of `id`'s stored pose,
- *  which under a turned frame points another way. */
+ *  which under a turned frame points another way. `null` in a singular frame,
+ *  where no stored translation follows it and the node is left where it is. */
 export function storedDelta(
   frame: PoseFrame<unknown>,
   descriptor: PoseDescriptor<unknown>,
   id: NodeId,
   dx: number,
   dy: number,
-): { dx: number; dy: number } {
+): { dx: number; dy: number } | null {
   if (frame.frame(id) === null) return { dx, dy };
   const world = frame.world(id);
-  const from = descriptor.getBounds(frame.local(id, world));
-  const to = descriptor.getBounds(frame.local(id, translatePoseViaDescriptor(world, dx, dy, descriptor)));
+  const fromPose = frame.local(id, world);
+  const toPose = frame.local(id, translatePoseViaDescriptor(world, dx, dy, descriptor));
+  if (fromPose === null || toPose === null) return null;
+  const from = descriptor.getBounds(fromPose);
+  const to = descriptor.getBounds(toPose);
   return { dx: to.x - from.x, dy: to.y - from.y };
 }

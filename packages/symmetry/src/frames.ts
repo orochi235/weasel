@@ -22,7 +22,8 @@ export function shownWorldPoseOf(scene: AnyScene, id: NodeId): unknown {
   return composeWorldPose(adapter, id, scene.composition.compose);
 }
 
-/** `world` as a pose stored under `parent`, so the node draws there. */
+/** `world` as a pose stored under `parent`, so the node draws there, or `null`
+ *  when `parent`'s frame is singular and no stored pose does. */
 export function localPoseUnder(scene: AnyScene, world: unknown, parent: NodeId | null): unknown {
   const { compose, decompose } = scene.composition;
   return rebaseLocalPose(scenePoseAdapter(scene), world, parent, compose, decompose);
@@ -40,7 +41,11 @@ export function keepContentsPut(scene: AnyScene, id: NodeId, change: () => void)
   }
   const held = heldInFrame(scene, id).map((n) => ({ n, world: worldPoseOf(scene, n) }));
   change();
-  for (const { n, world } of held) scene.setPose(n, localPoseUnder(scene, world, scene.get(n)!.parent));
+  for (const { n, world } of held) {
+    const local = localPoseUnder(scene, world, scene.get(n)!.parent);
+    // A node in a singular frame drew flat before the change and does after it; nothing stored keeps it.
+    if (local !== null) scene.setPose(n, local);
+  }
 }
 
 /**

@@ -14,7 +14,7 @@ import { rebaseTransformOp } from './rebase';
 import { poseDescriptorForNode } from 'core/geometry/poseDescriptor';
 import { boxOf, containerView, draggedInView, opInWorld } from '../layout/view';
 import { pageOfNode } from 'core/pages/pageNodes';
-import { followerMoveOps, followerMoves } from '../../followerMoves';
+import { followerOpsFor } from '../../followerMoves';
 
 function releaseFrom(
   session: MoveSession,
@@ -22,14 +22,14 @@ function releaseFrom(
   srcId: string,
   leaving: Set<NodeId>,
   commitAdapter: PoseAdapter<unknown>,
-): { ops: Op[]; released: NodeId[] } {
+): { ops: Op[]; released: NodeId[] } | null {
   const { dx, dy } = delta;
   const pc = session.pc;
   const released: NodeId[] = [];
   const releasedOps: Op[] = [];
   // Released children keep their parent, so both ends of a transform
   // rebase under the same frame.
-  const rebaseReleased = (op: Op): Op => {
+  const rebaseReleased = (op: Op): Op | null => {
     const id = (op.args as { id?: string } | undefined)?.id;
     if (id === undefined) return op;
     const parent = session.scene.get(asNodeId(id))?.parent ?? null;
@@ -72,7 +72,9 @@ function releaseFrom(
     for (const op of ops) {
       const a = op.args as { id?: string; to?: unknown };
       if (op.name === 'transform' && a.id === (id as string)) landed = a.to;
-      releasedOps.push(rebaseReleased(op));
+      const stored = rebaseReleased(op);
+      if (stored === null) return null;
+      releasedOps.push(stored);
     }
     srcChildren = [...srcChildren, { id: id as string, pose: landed, node: session.scene.get(id) }];
   }
@@ -80,12 +82,13 @@ function releaseFrom(
 }
 
 /** What the source layouts and the exits decide for a drop no container took.
- *  `undefined` when none of them claims any dragged id. */
+ *  `undefined` when none of them claims any dragged id, `null` when a node they
+ *  move would land in a singular frame, so the release refuses whole. */
 export function layoutReleaseOps(
   session: MoveSession,
   delta: { dx: number; dy: number },
   dropCenter: { x: number; y: number } | null,
-): Op[] | undefined {
+): Op[] | null | undefined {
   const { dx, dy } = delta;
   // No container accepted the drop. Each source layout gets a say
   // over its own children before they are left wherever the pointer
@@ -106,6 +109,7 @@ export function layoutReleaseOps(
     );
     for (const [srcId, leaving] of sources) {
       const from = releaseFrom(session, delta, srcId, leaving, commitAdapter);
+      if (from === null) return null;
       for (const id of from.released) released.add(id);
       releasedOps.push(...from.ops);
     }
@@ -115,6 +119,8 @@ export function layoutReleaseOps(
     for (const [id, toParent] of exits) {
       const node = session.scene.get(id)!;
       const world = draggedWorldPose(session, grabbedPoseAdapter(session, commitAdapter), id, { dx, dy });
+      const to = rebaseLocalPose(commitAdapter, world, toParent as string | null, pc.compose, pc.decompose);
+      if (to === null) return null;
       exitOps.push(createReparentOp({
         id: id as string,
         fromParentId: node.parent as string | null,
@@ -124,7 +130,7 @@ export function layoutReleaseOps(
       exitOps.push(createTransformOp<unknown>({
         id: id as string,
         from: node.pose,
-        to: rebaseLocalPose(commitAdapter, world, toParent as string | null, pc.compose, pc.decompose),
+        to,
         label: session.lifecycle.label,
       }));
     }
@@ -132,10 +138,12 @@ export function layoutReleaseOps(
   if (released.size === 0 && exits.size === 0) return undefined;
   const { scene } = session;
   const landed = new Map([...exits].map(([id, to]) => [id as string, to === null ? null : pageOfNode(scene, to)]));
+  const followers = followerOpsFor(scene, landed, session.lifecycle.label);
+  if (followers === null) return null;
   return [
     ...releasedOps,
     ...exitOps,
-    ...followerMoveOps(followerMoves(scene, landed), session.lifecycle.label),
+    ...followers,
     ...translateOps(
       session,
       unreleasedIds(session, released).filter((id) => !exits.has(id)),
