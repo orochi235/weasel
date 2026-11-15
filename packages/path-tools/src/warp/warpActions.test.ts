@@ -304,5 +304,15 @@ describe('Warp Settings form', () => {
   it('turns a field nobody owns into no params', () => {
     expect(warpSettingsParams('planes', 3)).toBeNull();
     expect(warpSettingsParams('tolerance', 1)).toEqual({ tolerance: 1 });
+    expect(warpSettingsParams('plane.rows', 3)).toBeNull();
+  });
+
+  it('turns each kind\'s field into params reaching that kind, and a value of the wrong type into none', () => {
+    expect(warpSettingsParams('cloth.mapping', 'coons')).toEqual({ kind: 'cloth', mapping: 'coons' });
+    expect(warpSettingsParams('cloth.rows', 4)).toEqual({ kind: 'cloth', rows: 4 });
+    expect(warpSettingsParams('cloth.cols', 5)).toEqual({ kind: 'cloth', cols: 5 });
+    expect(warpSettingsParams('plane.mode', 'sideways')).toBeNull();
+    expect(warpSettingsParams('cloth.rows', '4')).toBeNull();
+    expect(warpSettingsParams('tolerance', 'loose')).toBeNull();
   });
 });

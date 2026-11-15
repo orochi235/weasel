@@ -7,7 +7,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { selectedWarpPaths } from './warpSelection';
 import { resolvePathWarp } from './pathWarp';
 import { SettingsFields } from '../settingsFields';
-import { WARP_SETTING_FIELDS } from './warpParams';
+import { KIND_FIELDS, WARP_SETTING_FIELDS, warpSettingOf } from './warpParams';
 import type { ConfigureWarpParams } from './warpTargets';
 
 /** The warp settings as a prefs schema: a section per kind the selection
@@ -59,15 +59,12 @@ export function readWarpSettings(deps: ActionDeps): ActionSettingsState {
 /** A field's change as `configureWarp` params: a kind's own field reaches
  *  only warps of that kind. */
 export function warpSettingsParams(path: string, value: unknown): ConfigureWarpParams | null {
-  const num = typeof value === 'number' ? value : undefined;
-  switch (path) {
-    case 'tolerance': return num !== undefined ? { tolerance: num } : null;
-    case 'plane.mode': return value === 'free' || value === 'perspective' ? { kind: 'plane', mode: value } : null;
-    case 'cloth.mapping': return value === 'bicubic' || value === 'coons' ? { kind: 'cloth', mapping: value } : null;
-    case 'cloth.rows': return num !== undefined ? { kind: 'cloth', rows: num } : null;
-    case 'cloth.cols': return num !== undefined ? { kind: 'cloth', cols: num } : null;
-    default: return null;
-  }
+  const [section, field] = path.split('.') as [string, string | undefined];
+  if (field === undefined) return section === 'tolerance' ? warpSettingOf('tolerance', value) : null;
+  if (section !== 'plane' && section !== 'cloth') return null;
+  const own = KIND_FIELDS[section].find((f) => f === field && f !== 'tolerance');
+  const setting = own === undefined ? null : warpSettingOf(own, value);
+  return setting === null ? null : { kind: section, ...setting };
 }
 
 /** `configureWarp`'s form. */

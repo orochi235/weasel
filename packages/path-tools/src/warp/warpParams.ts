@@ -31,7 +31,7 @@ export const WARP_SETTING_FIELDS = {
 type Field = keyof typeof WARP_SETTING_FIELDS;
 
 /** The settings each kind of warp holds. */
-const KIND_FIELDS: Record<WarpKind, readonly Field[]> = {
+export const KIND_FIELDS: Record<WarpKind, readonly Field[]> = {
   plane: ['mode', 'tolerance'],
   cloth: ['rows', 'cols', 'mapping', 'tolerance'],
   pin: ['tolerance'],
@@ -39,6 +39,14 @@ const KIND_FIELDS: Record<WarpKind, readonly Field[]> = {
 
 function groupOf(name: string, fields: readonly Field[]): PrefGroup {
   return { name, children: Object.fromEntries(fields.map((f) => [f, WARP_SETTING_FIELDS[f]])) };
+}
+
+/** `{ [field]: value }`, or `null` when `value` is not one `field` holds: a number for a number field, one of its
+ *  options for a choice. */
+export function warpSettingOf(field: Field, value: unknown): WarpSettings | null {
+  const leaf = WARP_SETTING_FIELDS[field];
+  const holds = 'options' in leaf ? leaf.options.some((o) => o.value === value) : typeof value === leaf.kind;
+  return holds ? { [field]: value } as WarpSettings : null;
 }
 
 /** A `<kind>.drag`'s form for the last-operation panel: every setting a warp of `kind` holds. */
