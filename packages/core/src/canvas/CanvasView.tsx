@@ -14,8 +14,7 @@ import { createViewportLayer } from 'domains/viewports/viewportLayer';
 import { createDispatcher } from '@weasel-js/routing';
 import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import { useLegalSelection } from 'core/selection/legalSelection';
+import { useSelection } from 'core/selection/useSelection';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
@@ -54,10 +53,6 @@ const NO_INPUTS: Omit<SurfaceViewInputs, 'selectionApi'> = {
 
 const ALWAYS_VISIBLE = (): boolean => true;
 
-// Only a view that owns a selection, or follows one that does, overlays it; otherwise the surface's answer
-// stands, wrappers (`selectable`) included.
-const selectionOverlay = (selection: SelectionApi | undefined) => (selection ? { selection } : {});
-
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
 
 
@@ -73,30 +68,28 @@ export function CanvasView(props: CanvasViewProps): null {
   const {
     id, parent, follows, bounds,
     layers = ALL_LAYERS, layerVisibility, layerOrder, background, order = Infinity, label, cameraRef,
-    selection: selectionProp, selectionOptions, interactive = true, paint = true, deps,
+    interactive = true, paint = true, deps,
   } = props;
 
   const registry = useOptionalViewRegistry();
   const depRegistry = useOptionalDepRegistry();
   const depRegistryRef = useLatest(depRegistry);
 
-  // Hooks run unconditionally; the owned selection goes unused unless this
-  // view asked for one.
+  // A view acts on its surface's session. Hooks run unconditionally; this one's
+  // selection is read only by a view outside a surface.
   const inputs = useOptionalViewInputs();
-  const ownSelection = useSelection(selectionOptions);
-  const kept = useLegalSelection(selectionProp ?? ownSelection, inputs?.selectionRules);
-  const viewSelection = selectionProp || selectionOptions ? kept : undefined;
-  const shared = inputs?.selectionApi ?? ownSelection;
+  const unshared = useSelection();
+  const shared = inputs?.selectionApi ?? unshared;
 
   // Everything the registration reads is behind a ref: the registration object
   // is registered once and must not churn, but what it answers with has to be
   // the last committed render's.
   const live = useLatest({
-    parent, follows, bounds, layers, layerVisibility, layerOrder, viewSelection, shared, deps,
+    parent, follows, bounds, layers, layerVisibility, layerOrder, shared, deps,
   });
 
   const {
-    frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted, ownedSelection, selectionNow,
+    frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted, selectionNow,
   } = useViewNesting(registry, live);
 
   /** The rect for the surface's current frame — what a client point and a
@@ -256,7 +249,6 @@ export function CanvasView(props: CanvasViewProps): null {
     }),
     layerIsPainted,
     drawnLayers,
-    selection: ownedSelection,
     target: {
       dispatcher: dispatcherRef.current!,
       affordanceAt,
@@ -267,7 +259,6 @@ export function CanvasView(props: CanvasViewProps): null {
         ...live.current.deps, view: viewApi, ingestion: ingestionApi, hitAt: hitAtOf(classifyTarget),
         // An Escape here cancels what is in flight here.
         dispatcher: { cancelAll: (reason) => dispatcherRef.current!.cancelAll(reason) },
-        ...selectionOverlay(ownedSelection()),
       }),
       // Action eligibility is chrome-caps evaluated against this view, so a
       // rule that hides an action in one panel cannot decline a gesture in
@@ -276,7 +267,7 @@ export function CanvasView(props: CanvasViewProps): null {
     },
   }), [id, parent, order, interactive, paint, held, aim, setAim, label, background, rectAt, cameraAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere, clientToLocalHere, ruleInputs, ingestionApi, drawnLayers,
-       layerIsPainted, ownedSelection, inputsRef, helpersRef, frameIn, registry, live]);
+       layerIsPainted, inputsRef, helpersRef, frameIn, registry, live]);
 
   useEffect(() => {
     if (!registry) return;

@@ -13,7 +13,7 @@ import type { View } from 'core/viewport/view';
 import type { ViewApi } from 'interactions/actions/depSchema';
 import type { RenderLayer } from 'core/layers/render';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
-import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createSelectionOverlayLayer } from 'domains/selection/overlay';
@@ -72,6 +72,28 @@ function wheelAt(el: Element, clientX: number) {
     }));
   });
 }
+
+/** A selection holding `ids` that ignores writes: the surface's, as a view reads it. */
+function fixedSelection(ids: readonly NodeId[]): SelectionApi {
+  return {
+    current: ids,
+    get: () => [...ids],
+    set: () => {}, add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {},
+    contains: (id: NodeId) => ids.includes(id),
+    intentOf: () => 'replace' as const,
+    applyClick: () => {},
+    adapterMethods: { getSelection: () => [...ids], setSelection: () => {} },
+  } as unknown as SelectionApi;
+}
+
+/** The view inputs a surface whose session has `ids` selected hands its views. */
+const inputsSelecting = (ids: readonly NodeId[], extra: object = {}) => ({
+  adapter: undefined,
+  geometry: AUTO_POSE_DESCRIPTOR as never,
+  boundsOf: undefined,
+  selectionApi: fixedSelection(ids),
+  ...extra,
+});
 
 /** One pointer event on the canvas, at `clientX` on the y = 10 line. */
 function pointer(el: Element, type: string, pointerId: number, clientX: number, pointerType = 'mouse') {
@@ -321,15 +343,12 @@ describe('<CanvasView> draw contribution', () => {
       draw: (data) => { seen = data as Record<string, unknown>; return []; },
     };
     let registry!: ViewRegistry;
-    let panel!: SelectionApi;
-    function Panel() {
-      panel = useSelection({ initial: ['mine' as NodeId] });
-      return <CanvasView id="panel" bounds={PANEL} selection={panel} />;
-    }
     render(
       <ViewRegistryProvider>
-        <Harness layers={[probe]} onReady={(r) => { registry = r; }} />
-        <Panel />
+        <ViewInputsProvider value={inputsSelecting(['mine' as NodeId])}>
+          <Harness layers={[probe]} onReady={(r) => { registry = r; }} />
+          <CanvasView id="panel" bounds={PANEL} />
+        </ViewInputsProvider>
       </ViewRegistryProvider>,
     );
 
@@ -342,132 +361,6 @@ describe('<CanvasView> draw contribution', () => {
     const chrome = (seen as { getChromeState(): { selection: readonly NodeId[] } }).getChromeState();
     expect(chrome.selection).toEqual(['mine']);
     expect((seen as { getDebug(): unknown }).getDebug()).toBe(null);
-  });
-
-  // Chrome-caps rules are the surface's; the context they resolve against is
-  // the asking view's, so a rule keyed on selection answers differently in a
-  // panel that owns one.
-  it('resolves its chrome-caps predicate against its own selection', () => {
-    let seen: Record<string, unknown> | undefined;
-    const probe: RenderLayer<unknown> = {
-      id: 'probe',
-      label: 'probe',
-      draw: (data) => { seen = data as Record<string, unknown>; return []; },
-    };
-    let registry!: ViewRegistry;
-    const inputs = {
-      adapter: undefined,
-      geometry: AUTO_POSE_DESCRIPTOR as never,
-      boundsOf: undefined,
-      selectionApi: { current: ['theirs' as NodeId] } as unknown as SelectionApi,
-      chromeCaps: {
-        ruleCtx: (i: { selection: readonly NodeId[] }) => i as never,
-        // "visible iff this view has something selected" — a rule keyed on
-        // exactly the state that differs between views.
-        isVisible: (i: { selection: readonly NodeId[] }) =>
-          (_id: string) => i.selection.length > 0,
-      },
-    };
-    function Panel() {
-      const panel = useSelection({ initial: [] });
-      return <CanvasView id="panel" bounds={PANEL} selection={panel} />;
-    }
-    render(
-      <ViewRegistryProvider>
-        <ViewInputsProvider value={inputs as never}>
-          <Harness layers={[probe]} onReady={(r) => { registry = r; }} />
-          <Panel />
-        </ViewInputsProvider>
-      </ViewRegistryProvider>,
-    );
-
-    registry.list()[0]!.layer.draw({}, OUTER, DIMS);
-    // The surface has one id selected and the panel has none, so the surface's
-    // answer would be `true` and the panel's is `false`.
-    expect(inputs.chromeCaps.isVisible({ selection: inputs.selectionApi.current } as never)('x'))
-      .toBe(true);
-    expect((seen as { getIsVisible(): (id: string) => boolean }).getIsVisible()('x')).toBe(false);
-  });
-});
-
-describe('SceneCanvas views prop', () => {
-  it('declares the same view a child would', () => {
-    const outer = vi.fn();
-    const panel = vi.fn();
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const { container } = render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{}}
-        width={300}
-        height={200}
-        onViewChange={outer}
-        views={[{ id: 'panel', bounds: PANEL, onViewChange: panel }]}
-      />,
-    );
-
-    wheelAt(container.querySelector('canvas')!, 150);
-
-    expect(panel.mock.calls.at(-1)?.[0]).toMatchObject({ y: 20 });
-    expect(outer).not.toHaveBeenCalled();
-  });
-
-  it('paints a later entry over an earlier one, and a child over both', () => {
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    let registry!: ViewRegistry;
-    function Peek() {
-      const r = useOptionalViewRegistry()!;
-      useEffect(() => { registry = r; }, [r]);
-      return null;
-    }
-    render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{}}
-        width={300}
-        height={200}
-        views={[{ id: 'under', bounds: PANEL }, { id: 'over', bounds: PANEL }]}
-      >
-        <CanvasView id="child" bounds={PANEL} />
-        <Peek />
-      </SceneCanvas>,
-    );
-
-    expect(registry.list().map((r) => r.id)).toEqual(['under', 'over', 'child']);
-  });
-
-  it('follows a selection change the surface owns, with no parent re-render', () => {
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    scene.add({ id: 'a' as NodeId, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
-    let seen: Record<string, unknown> | undefined;
-    const probe: RenderLayer<unknown> = {
-      id: 'probe',
-      label: 'probe',
-      draw: (data) => { seen = data as Record<string, unknown>; return []; },
-    };
-    let registry!: ViewRegistry;
-    function Peek() {
-      const r = useOptionalViewRegistry()!;
-      useEffect(() => { registry = r; }, [r]);
-      return null;
-    }
-    render(
-      <SceneCanvas features={['draw']}
-        scene={scene}
-        layers={{ probe: { layer: probe } }}
-        width={300}
-        height={200}
-      >
-        <CanvasView id="panel" bounds={PANEL} />
-        <Peek />
-      </SceneCanvas>,
-    );
-
-    act(() => { scene.setSelection(['a' as NodeId]); });
-    registry.list()[0]!.layer.draw({}, OUTER, DIMS);
-
-    const chrome = (seen as { getChromeState(): { selection: readonly NodeId[] } }).getChromeState();
-    expect(chrome.selection).toEqual(['a']);
   });
 });
 
@@ -488,21 +381,19 @@ describe('<CanvasView> chrome', () => {
     }),
   });
 
-  it('outlines the view\'s selection where the surface outlines its own', () => {
+  it('outlines its session\'s selection through its own chrome', () => {
     const overlay = createSelectionOverlayLayer<Bounds>({
       getPose: (id) => POSES[id] ?? null,
       handles: false,
       outline: { paint: { kind: 'solid', color: '#fff' }, width: 1, pad: 0 },
     });
     let registry!: ViewRegistry;
-    function Panel() {
-      const selection = useSelection({ initial: ['b' as NodeId] });
-      return <CanvasView id="panel" bounds={PANEL} selection={selection} />;
-    }
     render(
       <ViewRegistryProvider>
-        <Harness layers={[overlay]} onReady={(r) => { registry = r; }} />
-        <Panel />
+        <ViewInputsProvider value={inputsSelecting(['b' as NodeId])}>
+          <Harness layers={[overlay]} onReady={(r) => { registry = r; }} />
+          <CanvasView id="panel" bounds={PANEL} />
+        </ViewInputsProvider>
       </ViewRegistryProvider>,
     );
 
@@ -526,19 +417,7 @@ describe('<CanvasView> hit-testing', () => {
     // Over four coarse hit radii across, so its corners keep their whole hit square.
     c: { x: 20, y: 20, width: 80, height: 80 },
   };
-  /** Stands in for the surface's selection, which a view shares by default. */
-  const SURFACE_SELECTION = {
-    current: [] as readonly NodeId[],
-    get: () => [] as NodeId[],
-    set: () => {},
-    add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {},
-    contains: () => false,
-    intentOf: () => 'replace' as const,
-    applyClick: () => {},
-    adapterMethods: { getSelection: () => [] as NodeId[], setSelection: () => {} },
-  };
-
-  const INPUTS = {
+  const inputsFor = (selected: readonly string[]) => ({
     adapter: undefined,
     geometry: AUTO_POSE_DESCRIPTOR,
     boundsOf: (id: string) => POSES[id] ?? null,
@@ -548,21 +427,17 @@ describe('<CanvasView> hit-testing', () => {
       }
       return null;
     },
-    selectionApi: SURFACE_SELECTION,
-  };
+    selectionApi: fixedSelection(selected as readonly NodeId[]),
+  });
 
   function panelTarget(selected: readonly string[], device?: Partial<DeviceProfile>) {
     let registry!: ViewRegistry;
-    function Panel() {
-      const selection = useSelection({ initial: selected as readonly NodeId[] });
-      return <CanvasView id="panel" bounds={PANEL} selection={selection} />;
-    }
     render(
       <ViewRegistryProvider>
-        <ViewInputsProvider value={INPUTS}>
+        <ViewInputsProvider value={inputsFor(selected)}>
           <DeviceProfileProvider {...(device ? { value: device } : {})}>
             <Harness layers={[]} onReady={(r) => { registry = r; }} />
-            <Panel />
+            <CanvasView id="panel" bounds={PANEL} />
           </DeviceProfileProvider>
         </ViewInputsProvider>
       </ViewRegistryProvider>,
@@ -572,12 +447,12 @@ describe('<CanvasView> hit-testing', () => {
 
   // Both thunks take this view's own world point — the dispatcher converts
   // with the `clientToWorld` the same registration carries.
-  it('answers a resize handle for what this view has selected', () => {
+  it('answers a resize handle for what its session has selected', () => {
     const hit = panelTarget(['b']).affordanceAt!({ x: 40, y: 0 });
     expect(hit?.kind).toBe('handle:top-left');
   });
 
-  it('answers nothing where the surface selected but this view did not', () => {
+  it('answers nothing where its session selected nothing', () => {
     expect(panelTarget(['a']).affordanceAt!({ x: 40, y: 0 })).toBeNull();
   });
 
@@ -613,33 +488,10 @@ describe('<CanvasView> selection', () => {
     return registry.list()[0]!;
   }
 
-  it('shares the surface selection unless asked for its own', () => {
+  it('acts on its surface\'s selection, overlaying none of its own', () => {
     const reg = registrationFor(<CanvasView id="panel" bounds={PANEL} />);
 
     expect(reg.target.deps!().selection).toBeUndefined();
-  });
-
-  it('overlays a selection of its own when selectionOptions asks for one', () => {
-    const reg = registrationFor(
-      <CanvasView id="panel" bounds={PANEL} selectionOptions={{ mode: 'multi' }} />,
-    );
-    const own = reg.target.deps!().selection!;
-
-    expect(own.get()).toEqual([]);
-    act(() => { own.set(['a' as NodeId]); });
-    expect(reg.target.deps!().selection!.get()).toEqual(['a']);
-  });
-
-  it('overlays a supplied selection instead of owning one', () => {
-    let api!: SelectionApi;
-    function Supplied() {
-      api = useSelection({ initial: ['seed' as NodeId] });
-      return <CanvasView id="panel" bounds={PANEL} selection={api} />;
-    }
-    const reg = registrationFor(<Supplied />);
-
-    expect(reg.target.deps!().selection).toBe(api);
-    expect(reg.target.deps!().selection!.get()).toEqual(['seed']);
   });
 });
 
@@ -669,17 +521,6 @@ describe('<CanvasView> state a render abandons', () => {
   const A: Props = { view: { x: 1, y: 2, scale: { x: 1, y: 1 } }, selection: ['a' as NodeId], ruleCtx: { from: 'a' } };
   const B: Props = { view: { x: 9, y: 9, scale: { x: 3, y: 3 } }, selection: ['b' as NodeId], ruleCtx: { from: 'b' } };
 
-  function fixedSelection(ids: readonly NodeId[]): SelectionApi {
-    return {
-      current: ids,
-      get: () => [...ids],
-      set: () => {}, add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {},
-      contains: (id: NodeId) => ids.includes(id),
-      intentOf: () => 'replace' as const,
-      applyClick: () => {},
-      adapterMethods: { getSelection: () => [...ids], setSelection: () => {} },
-    } as unknown as SelectionApi;
-  }
   const SELECTIONS = new Map([[A, fixedSelection(A.selection)], [B, fixedSelection(B.selection)]]);
   const inputsFor = (p: Props) => ({
     adapter: undefined,
@@ -704,7 +545,7 @@ describe('<CanvasView> state a render abandons', () => {
       <ViewRegistryProvider>
         <ViewInputsProvider value={INPUTS.get(p)!}>
           <Harness layers={layers} onReady={onReady} />
-          <CanvasView id="panel" bounds={PANEL} view={p.view} selection={SELECTIONS.get(p)!} />
+          <CanvasView id="panel" bounds={PANEL} view={p.view} />
         </ViewInputsProvider>
       </ViewRegistryProvider>
     ));
@@ -724,10 +565,5 @@ describe('<CanvasView> state a render abandons', () => {
 
   it('routes against the committed surface inputs', () => {
     expect(abandonB().reg.target!.getRuleCtx!()).toBe(A.ruleCtx);
-  });
-
-  it('hands the committed selection to routing', () => {
-    const deps = abandonB().reg.target!.deps!() as { selection?: SelectionApi };
-    expect(deps.selection?.get()).toEqual(A.selection);
   });
 });

@@ -84,7 +84,7 @@ describe('<CanvasView follows>', () => {
     expect(h.drawn('loop-a').length).toBeGreaterThan(0);
   });
 
-  it('acts on and draws the selection of the view it follows, while that view owns one', () => {
+  it('acts on and draws its surface\'s selection, whichever view it follows', () => {
     const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     for (const id of ['p', 'q', 's']) scene.add({ id: id as NodeId, kind: 'mark', layer: 'main', data: {}, pose: {} });
     let registry: ViewRegistry | null = null;
@@ -98,8 +98,7 @@ describe('<CanvasView follows>', () => {
     let target: string | null = 'owner';
     render(
       <SceneCanvas scene={scene} layers={{ probe: { layer: probe } }} width={400} height={300}>
-        <CanvasView id="owner" bounds={PANEL} defaultView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
-          selectionOptions={{ initial: ['p' as NodeId] }} />
+        <CanvasView id="owner" bounds={PANEL} defaultView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }} />
         <CanvasView id="lens" bounds={LENS} view={() => LENS_VIEW} follows={() => target} />
         <Probe />
       </SceneCanvas>,
@@ -111,14 +110,9 @@ describe('<CanvasView follows>', () => {
       return (seen as { getChromeState(): { selection: readonly NodeId[] } }).getChromeState().selection;
     };
 
-    const panelSelection = registry!.get('owner')!.target.deps!().selection!;
-    expect(lens.target.deps!().selection).toBe(panelSelection);
-    expect(chromeSelection()).toEqual(['p']);
-    act(() => { panelSelection.set(['q' as NodeId]); });
-    expect(chromeSelection()).toEqual(['q']);
-
-    target = null;
     expect(lens.target.deps!().selection).toBeUndefined();
+    expect(chromeSelection()).toEqual(['s']);
+    target = null;
     expect(chromeSelection()).toEqual(['s']);
   });
 });

@@ -6,12 +6,13 @@ import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { AimRect } from 'domains/viewports/aim';
-import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
 
 import type { ViewRect } from 'domains/viewports/viewResolver';
 export type { ViewRect } from 'domains/viewports/viewResolver';
 
-/** The props every `<CanvasView>` takes, whichever side it holds. */
+/** The props every `<CanvasView>` takes, whichever side it holds. A view acts on its surface's editing session:
+ *  the selection, previews and scroll offsets of the scene or `EditingSession` the surface was handed. A view that
+ *  must select or preview apart is a canvas of its own over its own session (`docs/editing-sessions.md`). */
 export interface CanvasViewCommonProps {
   /** Identifies the view to the surface and to input routing. Must be unique
    *  among the views on one canvas. */
@@ -35,9 +36,7 @@ export interface CanvasViewCommonProps {
   /**
    * The id of a view whose layers this one paints, read at every paint and
    * pick: what that view paints, as a `parent` gives a nested view, narrowed by
-   * this view's own `layers`, `layerVisibility` and `layerOrder`. Where that
-   * view owns a selection and this one does not, this view acts on that
-   * selection and draws its chrome. Its rect and camera are not taken; this
+   * this view's own `layers`, `layerVisibility` and `layerOrder`. Its rect and camera are not taken; this
    * view is still measured on its own frame. A loupe aimed over a panel
    * follows the panel. `null`, or an id no view has, paints what this view
    * would without it.
@@ -80,23 +79,15 @@ export interface CanvasViewCommonProps {
    * that chrome's z-order rather than the surface's.
    */
   paint?: boolean;
-  /** A selection of this view's own, which actions dispatched inside it read
-   *  and write instead of the surface's. Omit both this and
-   *  `selectionOptions` and the view shares the surface's selection — the
-   *  default, so undo restores one selection rather than N. */
-  selection?: SelectionApi;
-  /** Opts this view into owning a selection, configured thus. Ignored when
-   *  `selection` is supplied. */
-  selectionOptions?: UseSelectionOptions;
   /**
    * Deps of this view's own, which actions dispatched inside it read in front
    * of the surface's: how a view says what it looks through when its camera
    * is not a 2D `View`. A 3D host passes the `camera3d`, `nodeAtPoint` and
-   * `poseDescriptor` built for this view's camera. The view's camera,
-   * selection, `hitAt` and dispatcher stay its own; these cannot replace them.
-   * Read at each event.
+   * `poseDescriptor` built for this view's camera. The view's camera, `hitAt`
+   * and dispatcher stay its own, and its selection its surface's session's;
+   * these cannot replace them. Read at each event.
    */
-  deps?: Partial<DepSchema>;
+  deps?: Partial<Omit<DepSchema, 'selection'>>;
 }
 
 /** A view that holds its camera. */
