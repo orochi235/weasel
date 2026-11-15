@@ -71,7 +71,8 @@
 .readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--wzl-fg-muted);
-  white-space: pre;
+  min-width: 6ch;
+  text-align: end;
 }
 
 .tierCss,
