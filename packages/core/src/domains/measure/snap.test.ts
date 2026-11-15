@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { pathFromD, type Point } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
+import { asNodeId, type RectPose } from 'core/scene/types';
 import type { SnapDep } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
 import { createSession2d } from 'domains/snap/session2d';
@@ -16,8 +16,7 @@ import { createMeasurements, measureIds } from './measurements';
 import { measureCreateAction, measureDragAction } from './measureGestures';
 import { measureEndSource } from './measureHit';
 import { MEASURE_AFFORDANCE_KIND } from './measureLayer';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };
 

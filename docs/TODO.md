@@ -567,13 +567,13 @@ only story runner in the repo.
 ## Release-gate & build hygiene
 
 - **(P2) [agent] Public declarations name types their package does not export.** A consumer can pass a value of
-  one but cannot annotate, extend or re-export it: core's `SceneCanvasProps` is built from `SceneCanvasPointerProps`
-  and four more unexported pieces, `Scene` from `SceneChanges` and its siblings, diagram's `SequenceLayout` from
-  seven `Seq*Place` types. `npm run check:unnameable` reads the built `.d.ts` and fails on a new one; the rest are in
-  `scripts/check-unnameable-types.allow.json`. Each is an export to add or a type to inline, and core's typedoc
-  config already rules a few internal on purpose (`HitAdapter`, `ReorderAdapter`), which inlining or a narrower
-  public type answers. Filed 2026-11-14 at 167 names, too many export calls for the audit pass that found them.
-  Closes when the allowlist is empty.
+  one but cannot annotate, extend or re-export it: diagram's `SequenceLayout` is built from seven `Seq*Place`
+  types. `npm run check:unnameable` reads the built `.d.ts` and fails on a new one; the rest are in
+  `scripts/check-unnameable-types.allow.json`. Each is an export to add or a type to inline; a type a package keeps
+  internal on purpose gets a narrower public type or is inlined. Filed 2026-11-14 at 167 names, too many export
+  calls for the audit pass that found them; core's 49 cleared 2026-11-14 (it now exports `AnyScene` for
+  `Scene<unknown, string, unknown>`, which the other packages' copies can point at). Closes when the allowlist is
+  empty.
 
 - **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
   once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second

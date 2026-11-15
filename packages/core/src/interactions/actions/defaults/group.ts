@@ -1,4 +1,4 @@
-import type { Node, NodeId, Scene } from 'core/scene/types';
+import type { Node, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
@@ -21,6 +21,7 @@ import { commitOps } from '../defaultCommitAdapter';
 import { inPaintOrder, slotAbove } from '../groupSlot';
 import { icon } from '../../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
+import type { AnyScene } from 'core/scene/anyScene';
 
 /**
  * Creates a structural `GroupNode` and reparents the current selection
@@ -133,8 +134,6 @@ export const groupAction: Action & { requires: string[] } = {
 /** Whether ungrouping `node` dissolves it: a group, or a boolean group, which releases its operands. */
 const dissolves = (node: { kind: string; consumesChildren?: boolean } | undefined): boolean =>
   node?.kind === 'group' || node?.consumesChildren === true;
-
-type AnyScene = Scene<unknown, string, unknown>;
 
 /** What ungrouping `containers` touches besides moving their children: the nodes that derive from one of them,
  *  each with the `dependsOn` it keeps. Ungroup removes the containers from every such list, so deleting a container

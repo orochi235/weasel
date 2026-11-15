@@ -19,4 +19,5 @@ export { escapeKey, serialize, serializedNumber, unescapeKey } from '../devtools
 export type { SerializeLimits, SerializedTag, SerializedValue } from '../devtools/serialize';
 export { createDevtoolsRoot } from '../devtools/root';
 export type { DevtoolsRoot, DevtoolsRootSource } from '../devtools/root';
+export type { CoordTraceEntry } from '../canvas/SceneCanvas/coordTrace';
 export type { DevtoolsSchedule } from '../devtools/notices';

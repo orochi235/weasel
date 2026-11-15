@@ -10,7 +10,7 @@ import { createSetDataOp } from 'core/ops/setData';
 import { createDeleteOp } from 'core/ops/delete';
 import { writtenBy } from 'core/ops/writtenBy';
 import type { TransformFollower, TransformPreviewNode } from 'interactions/actions/transformFinish';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import { sceneDependentsOf } from 'core/scene/dependents';
 import { pathEditPathOf, storeEditablePath } from 'domains/paths/editablePath';
 import { nodeFrameOf, shownIn, shownNodeOf } from 'domains/paths/nodeFrame';
@@ -18,8 +18,8 @@ import { withoutShapeGenerator } from 'domains/paths/shapeGenerator';
 import {
   withoutGeometryBoundData, type PathEditExtension, type PathEditFinishCtx, type PathEditOther, type PathTransformFinishCtx,
 } from 'domains/paths/pathEditExtension';
+import type { AnyScene } from 'core/scene/anyScene';
 
-type AnyScene = Scene<unknown, string, unknown>;
 export type EditableNode = { pose: unknown; data: unknown };
 
 /** What {@link finishEdit} answers: the edited path, the data set beside it, and the other nodes it changes, by id. */

@@ -1,11 +1,10 @@
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import { isPaged, pageNodeOf, placedPagesOf } from 'core/pages/pageNodes';
 import { pageForPoint } from 'core/pages/pagePlacement';
 import { pageHolding } from 'core/pages/pages';
 import { admitsChild } from '../admitsChild';
 import type { CanDropIntoDep } from '../layoutDeps';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** The page (its `Page.id`) new content at `at` goes on: the page for `at` (`pageForPoint`) when it admits
  *  an insert (`admitsChild`), or failing that the nearest page to `at` that does. `null` when none does,

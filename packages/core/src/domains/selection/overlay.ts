@@ -47,7 +47,7 @@ function projectBounds<B extends Bounds>(b: B, view: View): B {
 /** Options every selection layer shares. `getSelection` and `getPose` are
  *  declared on {@link SelectionOverlayLayerOptions}, which makes both optional —
  *  omitted, they come off the draw envelope. */
-interface SelectionLayerCommon<TPose> {
+export interface SelectionLayerCommon<TPose> {
   /** How to read poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
   /** Walk a container's direct children (e.g. `scene.childrenOf`). When

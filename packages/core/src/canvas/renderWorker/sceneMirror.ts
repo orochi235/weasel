@@ -6,10 +6,10 @@ import { sceneFromJSON } from '../../core/scene/scene';
 import { reconcileSpecs } from '../../core/scene/reconcileSpecs';
 import { specsFromSerialized } from '../../core/scene/serialization';
 import { adoptScenePickIds } from '../scenePickIds';
-import type { AddNodeSpec, NodeId, Scene, SerializedLayer, SerializedScene } from '../../core/scene/types';
+import type { AddNodeSpec, NodeId, SerializedLayer, SerializedScene } from '../../core/scene/types';
 import type { SceneDelta, WireNode, WireOverride, WireScroll } from './protocol';
+import type { AnyScene } from 'core/scene/anyScene';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type AnySpec = AddNodeSpec<unknown, string, unknown>;
 
 /** What a worker's scene is built with beyond its saved form: the registry its node

@@ -4,11 +4,10 @@ import { WEASEL_CLIPBOARD_MIME, buildWeaselClipboardText } from './wireFormat';
 /** MIME type to payload, as `produceFlavors` returns it. */
 export type ClipboardFlavors = Record<string, string | Promise<string>>;
 
-type Replacer = (key: string, value: unknown) => unknown;
 type Flavor = [mime: string, text: string | Promise<string>];
 
 /** The kit's flavors for a copy: its own MIME, and `text/plain` carrying the same JSON. */
-export function defaultFlavors(items: readonly unknown[], replacer?: Replacer): ClipboardFlavors {
+export function defaultFlavors(items: readonly unknown[], replacer?: (key: string, value: unknown) => unknown): ClipboardFlavors {
   const text = buildWeaselClipboardText(items as unknown[], replacer);
   return { [WEASEL_CLIPBOARD_MIME]: text, 'text/plain': text };
 }

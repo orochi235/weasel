@@ -31,7 +31,6 @@ export interface TextFrame {
   edge: { path: Path; color: string; width: number } | null;
 }
 
-type Box = { x: number; y: number; width: number; height: number };
 
 const BLACK = [0, 0, 0, 1] as const;
 
@@ -45,20 +44,20 @@ export function edgeColor(background: Fill, shade: number): string | null {
 /** The frame of a text node with `d`'s background, edge and shadow, round `box`. */
 export function textFrameOf(
   d: { background?: Fill | null; edge?: TextEdge; shadow?: TextShadow },
-  box: Box,
+  box: Rect,
 ): TextFrame {
   const bg = resolveFill(d.background);
   if (!bg) return { shadow: null, edge: null };
   return { shadow: shadowOf(d.shadow, box), edge: edgeOf(d.edge, bg, box) };
 }
 
-function shadowOf(s: TextShadow | undefined, box: Box): TextFrame['shadow'] {
+function shadowOf(s: TextShadow | undefined, box: Rect): TextFrame['shadow'] {
   if (!s || !(s.alpha > 0)) return null;
   const { paths, alpha } = dropShadowLayers(box, 0, s);
   return { paths, color: rgbaToHex([0, 0, 0, Math.min(1, s.alpha)]), opacity: alpha };
 }
 
-function edgeOf(edge: TextEdge | undefined, bg: Fill, box: Box): TextFrame['edge'] {
+function edgeOf(edge: TextEdge | undefined, bg: Fill, box: Rect): TextFrame['edge'] {
   if (!edge || !(edge.width > 0)) return null;
   const color = edgeColor(bg, edge.shade);
   if (color === null) return null;
@@ -71,7 +70,7 @@ function edgeOf(edge: TextEdge | undefined, bg: Fill, box: Box): TextFrame['edge
 }
 
 /** How far a text node's shadow reaches, as a box, or `null` for none. */
-export function textShadowBox(d: { background?: Fill | null; shadow?: TextShadow }, box: Box): Rect | null {
+export function textShadowBox(d: { background?: Fill | null; shadow?: TextShadow }, box: Rect): Rect | null {
   const s = d.shadow;
   if (!s || !(s.alpha > 0) || !resolveFill(d.background)) return null;
   const e = Math.max(0, s.blur) / 2;

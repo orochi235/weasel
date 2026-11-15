@@ -10,8 +10,7 @@ import { pageNodeOf, pageRunOf, placedPagesOf, type PageRunInfo } from './pageNo
 import {
   asFollower, followerLandings, keepOnPage, pageForBounds, pasteboardOn, type FollowerOf,
 } from './pagePlacement';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** Where a root goes: its page, or `null` for the run, and how far it moves to have part of it on that page. */
 interface Destination {

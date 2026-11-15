@@ -1,6 +1,6 @@
 import type { ParallaxOptions } from '../viewport/parallax';
 
-interface LayerRecordBase<TLayer extends string> {
+export interface LayerRecordBase<TLayer extends string> {
   id: TLayer;
   visible: boolean;
   locked: boolean;

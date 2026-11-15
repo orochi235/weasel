@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Action, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason, evaluateEnabled } from '@weasel-js/routing';
 import { createScene, sceneFromJSON } from 'core/scene/scene';
-import type { NodeId, RectPose, Scene } from 'core/scene/types';
+import type { NodeId, RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { isAnnotationLayer, isAnnotationNode } from 'core/scene/annotation';
 import { lastTransform } from 'interactions/actions/transform-again/memory';
@@ -18,8 +18,8 @@ import { gridSource, sessionDep } from 'domains/snap/testing/sessionDep';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import { inkBoxes } from 'canvas/inkBoxes';
+import type { AnyScene } from 'core/scene/anyScene';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type Pt = { x: number; y: number };
 
 /** The measurement ends `measureEndSource` offers a pointer at `at`, `reach` world units out. */

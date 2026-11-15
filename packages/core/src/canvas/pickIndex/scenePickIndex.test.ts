@@ -8,7 +8,7 @@ import { rectRegion } from 'core/geometry/regionHit';
 import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 import { rectPath } from '@weasel-js/geom';
 import { applyOpsTo, createTransformOp } from 'core/ops';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
@@ -17,8 +17,8 @@ import { pickWalk, scenePickSource, type PickQuery } from 'canvas/pickWalk';
 import { pointPick, regionPick } from './pickIndexFixture';
 import { pickIndexBuildCount } from './scenePickIndex';
 import { addOutsideSource, noteOutsideRead } from 'core/scene/outsideReads';
+import type { AnyScene } from 'core/scene/anyScene';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type Box = { x: number; y: number; width: number; height: number };
 const A = asNodeId('a');
 

@@ -1,14 +1,12 @@
 import type { PolygonPath, Point } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
-import type { Scene } from 'core/scene/types';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type { SnapDep } from 'interactions/actions/snapDep';
 import { createSnapOutcomeStore } from '../outcomeStore';
 import { sceneSession2d } from '../sceneSession2d';
 import type { SnapSource } from '../types';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 

@@ -2,8 +2,7 @@
 import type { Scene } from '../scene/types';
 import { PAGES_DOC_KEY, pageRunOf, type PagesDoc } from './pageNodes';
 import { setPages, type PageEditOptions } from './pageEdits';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /**
  * Turn a scene saved with its pages as the `core:pages` document value into

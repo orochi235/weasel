@@ -53,7 +53,7 @@ export {
   type UsePenToolOptions,
   type PenScratch,
   type PenContinuation,
-  type PenAnchor,
+  type PenDraftAnchor,
   type PenSubpath,
 } from './pen';
 export { useRectTool, RECT_TOOL_OPTIONS } from './rect';

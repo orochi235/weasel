@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, boundsOfPath, type Path, type PolygonPath } from '@weasel-js/geom';
 import { createScene } from 'core/scene/scene';
-import type { RectPose, Scene } from 'core/scene/types';
+import type { RectPose } from 'core/scene/types';
 import { reshapeOps } from 'canvas/deps/pathEditCommits';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { liveEditablePath, resolveEditablePathOf } from './editablePath';
 import { nodeFrameOf, shownNodeOf } from './nodeFrame';
 import { createSceneSnapIndexer } from './pathSnap/sceneIndex';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 const line = (x0: number, y0: number, x1: number, y1: number): PolygonPath =>
   new PathBuilder().moveTo(x0, y0).lineTo(x1, y1).build() as PolygonPath;

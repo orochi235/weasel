@@ -7,13 +7,11 @@ import { describe, expect, it } from 'vitest';
 import type { LassoHitMode } from 'core/adapters/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { polygonRegion, rectRegion } from 'core/geometry/regionHit';
-import type { Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { pickWalk, scenePickSource, type PickQuery, type PickSource } from 'canvas/pickWalk';
 import { mixedScene, pointPick, regionPick, rng } from './pickIndexFixture';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 interface Tally { used: number; candidates: number; order: number; hits: number }
 

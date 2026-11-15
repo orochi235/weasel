@@ -1,5 +1,5 @@
 import type { Op } from 'core/ops/types';
-import type { Node, NodeId, Scene } from 'core/scene/types';
+import type { Node, NodeId } from 'core/scene/types';
 import { createSetDataOp } from 'core/ops/setData';
 import { createTransformOp } from 'core/ops/transform';
 import { deleteNode, insertAt } from 'interactions/actions/pathCommands/pathNodes';
@@ -7,8 +7,8 @@ import {
   measureEndsOf, measureNode, measurePose, withMeasureEnd,
   type MeasureData, type MeasureEnd, type MeasureFrameAt, type MeasureFrames, type MeasurePoint,
 } from './measurement';
+import type { AnyScene } from 'core/scene/anyScene';
 
-type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
 
 /** The labels measurement edits land in history under. */

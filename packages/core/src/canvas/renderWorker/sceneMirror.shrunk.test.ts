@@ -1,11 +1,11 @@
 /** Counterexamples `sceneMirror.pbt.test.ts` shrank to, kept as plain examples. */
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import { asNodeId as id, type RectPose, type Scene } from 'core/scene/types';
+import { asNodeId as id, type RectPose } from 'core/scene/types';
 import { createSceneDiff } from './sceneDiff';
 import { createSceneMirror } from './sceneMirror';
+import type { AnyScene } from 'core/scene/anyScene';
 
-type AnyScene = Scene<unknown, string, unknown>;
 const box = { x: 0, y: 0, width: 1, height: 1 };
 
 describe('the render worker scene copy', () => {

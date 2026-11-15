@@ -1,6 +1,6 @@
 import type { Action, BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
 import { unitFrameAt } from 'interactions/actions/magnification';
 import { SNAP_ANGLE_STEP, SNAP_ROLES, snapMods } from 'domains/snap/roles';
@@ -15,8 +15,7 @@ import { addMeasureOp, moveEndOps, moveMeasureOps, translatedMeasure } from './m
 import { MEASURE_ACTION_IDS } from './actionIds';
 import type { ImmediateParams } from '@weasel-js/routing';
 import { pxReach } from '@weasel-js/geom';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 /** Screen-px radius around a measurement that picks it. */
 export const MEASURE_HIT_PX = 6;

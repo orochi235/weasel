@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker, ResizeAnchor } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
+import { asNodeId, type NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
@@ -14,10 +14,9 @@ import { drawnBoxes } from '../drawnBoxes';
 import type { SnapDep } from '../snapDep';
 import { resizeAction } from './action';
 import type { Point } from '@weasel-js/geom';
+import type { AnyScene } from 'core/scene/anyScene';
 
 type Pose = Bounds & { rotation?: number };
-type AnyScene = Scene<unknown, string, unknown>;
-
 const KEYS = { alt: false, ctrl: false, meta: false, shift: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const SE: ResizeAnchor = { x: 'min', y: 'min' };

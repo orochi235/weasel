@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '../../core/scene/scene';
-import { asNodeId, type RectPose, type Scene } from '../../core/scene/types';
+import { asNodeId, type RectPose } from '../../core/scene/types';
 import { createFrameWriter } from './frameWriter';
 import { createSceneMirror } from './sceneMirror';
 import type { LayoutStrategy } from '../../layout/types';
+import type { AnyScene } from 'core/scene/anyScene';
 
 type D = { fill?: string };
-type AnyScene = Scene<unknown, string, unknown>;
 const id = asNodeId;
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 

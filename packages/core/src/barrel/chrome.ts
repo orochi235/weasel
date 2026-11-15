@@ -150,3 +150,5 @@ export type {
   SelectionOverlayLayerOptions,
   SelectionHandleStyle,
 } from '../domains/selection';
+export type { SelectionLayerCommon } from '../domains/selection/overlay';
+export type { PointRegionShape } from '../affordances/hitAffordanceRegions';

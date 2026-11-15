@@ -8,16 +8,16 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { AUTO_POSE_DESCRIPTOR as d } from 'core/geometry/autoPoseDescriptor';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
+import { asNodeId, type RectPose } from 'core/scene/types';
 import { pickWalk, scenePickSource } from '../pickWalk';
 import { pointPick } from '../pickIndex/pickIndexFixture';
 import { scenePickIds } from '../scenePickIds';
 import { runs, timeoutFor } from '../pbt.fixture';
 import { createSceneDiff, type SceneDiff } from './sceneDiff';
 import { createSceneMirror, wireOverrides, type SceneMirror } from './sceneMirror';
+import type { AnyScene } from 'core/scene/anyScene';
 
 const RUNS = 150;
-type AnyScene = Scene<unknown, string, unknown>;
 const LAYERS = ['main', 'top', '__proto__'] as const;
 const IDS = ['a', 'b', 'c', 'g', 'h', '__proto__', 'toString', 'constructor'];
 const GROUPS = new Set(['g', 'h', 'constructor']);

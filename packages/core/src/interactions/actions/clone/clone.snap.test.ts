@@ -4,7 +4,7 @@ import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingInvoker } fro
 import type { Point } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
 import { sceneSession2d } from 'domains/snap/sceneSession2d';
@@ -13,8 +13,7 @@ import { drawnBoxes } from '../drawnBoxes';
 import type { SnapBegin, SnapDep } from '../snapDep';
 import { lastTransform } from '../transform-again/memory';
 import { cloneAction } from './action';
-
-type AnyScene = Scene<unknown, string, unknown>;
+import type { AnyScene } from 'core/scene/anyScene';
 
 const KEYS = { alt: true, ctrl: false, meta: false, shift: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
