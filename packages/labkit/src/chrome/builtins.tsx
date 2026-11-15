@@ -205,11 +205,6 @@ export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
   'panel',
 ]);
 
-/**
- * The contributions a trial gets from what its instrument declared. This is
- * the whole "declaring a capability provides the chrome" rule — it replaces
- * the presence checks that used to be spread across the runtime.
- */
 // Zoom acts on the view of the trial, so it is a viewport control. A trial
 // holding a non-2D view reports zoom as null and gets none of this.
 function zoomContributions(instrument: Instrument, ctx: TrialChromeContext): TrialContribution[] {
@@ -268,6 +263,11 @@ function zoomContributions(instrument: Instrument, ctx: TrialChromeContext): Tri
   return out;
 }
 
+/**
+ * The contributions a trial gets from what its instrument declared. This is
+ * the whole "declaring a capability provides the chrome" rule — it replaces
+ * the presence checks that used to be spread across the runtime.
+ */
 export function builtinContributions(
   instrument: Instrument,
   ctx: TrialChromeContext,
