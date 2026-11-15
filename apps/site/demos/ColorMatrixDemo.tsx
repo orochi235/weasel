@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
-import { SceneCanvas, useScene } from '@weasel-js/core';
-import type { RenderLayer } from '@weasel-js/core';
+import { useState } from 'react';
+import { DrawCanvas } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
+import s from './ColorMatrixDemo.module.css';
 
 const W = 720;
 const H = 360;
@@ -35,7 +35,10 @@ const PRESETS: Record<PresetName, number[]> = {
 
 const PRESET_NAMES: PresetName[] = ['Identity', 'Grayscale', 'Sepia', 'Invert', 'Hue+90°', 'Brightness×1.5'];
 
-interface GroupConfig { id: 'outer' | 'middle' | 'inner'; preset: PresetName; offsetX: number; }
+type GroupId = 'outer' | 'middle' | 'inner';
+const GROUPS: GroupId[] = ['outer', 'middle', 'inner'];
+/** Where each group's copy of the palette sits. */
+const OFFSET_X: Record<GroupId, number> = { outer: 0, middle: 240, inner: 480 };
 
 const BASE_PALETTE: { x: number; y: number; r: number; color: string }[] = [
   { x: 30,  y: 60, r: 22, color: '#ee5a4a' },
@@ -43,100 +46,48 @@ const BASE_PALETTE: { x: number; y: number; r: number; color: string }[] = [
   { x: 130, y: 60, r: 22, color: '#4f7fff' },
 ];
 
-export function ColorMatrixDemo() {
-  const [groups, setGroups] = useState<GroupConfig[]>([
-    { id: 'outer',  preset: 'Identity', offsetX: 0   },
-    { id: 'middle', preset: 'Sepia',    offsetX: 240 },
-    { id: 'inner',  preset: 'Hue+90°',  offsetX: 480 },
-  ]);
+const drawPalette = (offsetX: number): DrawCommand[] => BASE_PALETTE.map((p) => ({
+  kind: 'path',
+  path: { kind: 'rect', x: offsetX + p.x - p.r, y: p.y - p.r, width: p.r * 2, height: p.r * 2 },
+  fill: { paint: { color: p.color } },
+}));
 
-  function setPreset(id: GroupConfig['id'], preset: PresetName) {
-    setGroups((g) => g.map((x) => x.id === id ? { ...x, preset } : x));
-  }
-
-  const layer: RenderLayer<unknown> = useMemo(() => {
-    const drawPalette = (offsetX: number): DrawCommand[] => BASE_PALETTE.map((p) => ({
-      kind: 'path' as const,
-      path: { kind: 'rect' as const, x: offsetX + p.x - p.r, y: p.y - p.r, width: p.r * 2, height: p.r * 2 },
-      fill: { paint: { color: p.color } },
-    }));
-    return {
-      id: 'color-matrix-stack',
-      label: 'Color matrix stack',
-      draw: () => {
-        const outer = groups[0], middle = groups[1], inner = groups[2];
-        return [{
-          kind: 'group',
-          colorMatrix: PRESETS[outer.preset],
-          children: [
-            ...drawPalette(outer.offsetX),
-            {
-              kind: 'group',
-              colorMatrix: PRESETS[middle.preset],
-              children: [
-                ...drawPalette(middle.offsetX),
-                {
-                  kind: 'group',
-                  colorMatrix: PRESETS[inner.preset],
-                  children: drawPalette(inner.offsetX),
-                },
-              ],
-            },
-          ],
-        }];
-      },
-    };
-  }, [groups]);
-
-  const scene = useScene<never, 'default'>({
-    systemLayers: [{ id: 'default' }],
-    initial: [],
-  });
-
-  return (
-    <div className="ckd-stack">
-      <DemoStage width={W} height={H}>
-        <SceneCanvas
-          className="ckd-canvas"
-          scene={scene}
-          layers={{
-            scene: { drawOne: () => [] },
-            stack: { layer, after: 'scene' },
-          }}
-        />
-      </DemoStage>
-      <div style={{ marginTop: 12, display: 'flex', gap: 24 }}>
-        {groups.map((g) => (
-          <PresetRow
-            key={g.id}
-            label={g.id}
-            value={g.preset}
-            onChange={(p) => setPreset(g.id, p)}
-          />
-        ))}
-      </div>
-      <small style={{ color: '#888', marginTop: 8 }}>
-        Each group&apos;s color matrix multiplies into the next. Inner-group leaves see all three matrices composed.
-      </small>
-    </div>
-  );
+/** Each group holds its own palette and the next group in, so the innermost sees all three matrices. */
+function stack(presets: Record<GroupId, PresetName>, depth = 0): DrawCommand[] {
+  const id = GROUPS[depth];
+  if (!id) return [];
+  return [{
+    kind: 'group',
+    colorMatrix: PRESETS[presets[id]],
+    children: [...drawPalette(OFFSET_X[id]), ...stack(presets, depth + 1)],
+  }];
 }
 
-function PresetRow({
-  label, value, onChange,
-}: {
-  label: string; value: PresetName; onChange: (p: PresetName) => void;
-}) {
+export function ColorMatrixDemo() {
+  const [presets, setPresets] = useState<Record<GroupId, PresetName>>({ outer: 'Identity', middle: 'Sepia', inner: 'Hue+90°' });
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <strong style={{ color: '#ddd', textTransform: 'capitalize' }}>{label}</strong>
-      <SegmentedBar
-        items={PRESET_NAMES.map((p) => ({ value: p, label: p }))}
-        value={value}
-        onChange={(p) => p && onChange(p)}
-        aria-label={`${label} preset`}
-        size="sm"
-      />
+    <div className="ckd-demo">
+      <DemoStage width={W} height={H}>
+        <DrawCanvas className="ckd-canvas" draw={stack(presets)} />
+      </DemoStage>
+      <div className={s.rows}>
+        {GROUPS.map((id) => (
+          <div key={id} className={s.row}>
+            <strong className={s.label}>{id}</strong>
+            <SegmentedBar
+              items={PRESET_NAMES.map((p) => ({ value: p, label: p }))}
+              value={presets[id]}
+              onChange={(p) => p && setPresets((was) => ({ ...was, [id]: p }))}
+              aria-label={`${id} preset`}
+              size="sm"
+            />
+          </div>
+        ))}
+      </div>
+      <p className="ckd-hint">
+        Each group&apos;s color matrix multiplies into the next. Inner-group leaves see all three matrices composed.
+      </p>
     </div>
   );
 }

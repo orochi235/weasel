@@ -1,0 +1,16 @@
+.rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-8);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+}
+
+.label {
+  color: var(--wzl-fg);
+  text-transform: capitalize;
+}
