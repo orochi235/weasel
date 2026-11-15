@@ -4,7 +4,7 @@ import { fraction, type DecimalDisplay, type FractionDisplay, type PercentDispla
 import { BandEditor } from '@weasel-js/ui/components/BandEditor';
 import type { Band, BandEditorProps } from '@weasel-js/ui/components/BandEditor';
 
-/** Stand-in for the first consumer's payload: the layout a wedge uses. */
+/** Each band's payload: the name of the layout a wedge uses across it. */
 type Slice = { name: string };
 
 const MIN = 1 / 64;
