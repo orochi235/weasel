@@ -9,10 +9,10 @@ import {
   useLatest,
   type ViewApi,
 } from '@weasel-js/core';
+import { formatShortcut } from '@weasel-js/gestures';
 import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { Icon } from '@weasel-js/ui/components/Icon';
-import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import { useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import type {} from '../actionParamSchema';

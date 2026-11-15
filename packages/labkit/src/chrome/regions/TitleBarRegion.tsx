@@ -1,5 +1,5 @@
+import { formatShortcut } from '@weasel-js/gestures';
 import { Icon } from '@weasel-js/ui/components/Icon';
-import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import type { ReactNode } from 'react';
 import type { TrialChromeContext, TrialContribution } from '../types';
 

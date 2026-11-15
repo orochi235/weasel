@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaletteLab } from './PaletteLab';
-import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
+import { formatShortcut } from '@weasel-js/gestures';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
 /**

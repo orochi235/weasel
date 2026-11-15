@@ -1,8 +1,8 @@
+import { formatShortcut } from '@weasel-js/gestures';
 import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { Bar } from '@weasel-js/ui/components/Bar';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
-import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import type { ReactNode } from 'react';
 import type {
   RegionContribution,

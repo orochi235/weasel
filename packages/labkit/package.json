@@ -129,6 +129,7 @@
   "dependencies": {
     "@weasel-js/clock": "1.19.1",
     "@weasel-js/geom": "1.19.1",
+    "@weasel-js/gestures": "1.19.1",
     "@weasel-js/icons": "1.19.1",
     "@weasel-js/kernel3d": "1.19.1",
     "@weasel-js/loupe": "1.19.1",

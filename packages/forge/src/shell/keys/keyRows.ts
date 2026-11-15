@@ -9,7 +9,7 @@ import {
   keySpecShortcut,
 } from '@weasel-js/core';
 import type { useLabEntries } from '@weasel-js/labkit';
-import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
+import { formatShortcut } from '@weasel-js/gestures';
 
 /** What a binding's chip says: the keys for a keystroke, a word for any other gesture. */
 export function describeBinding(spec: GestureSpec): string {
