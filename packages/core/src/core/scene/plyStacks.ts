@@ -2,7 +2,7 @@
  * Each node's plies of overrides, kept in the order their writers claimed
  * the node, and the path a stack shows.
  */
-import type { Path } from '@weasel-js/geom';
+import type { Path, Rect } from '@weasel-js/geom';
 import { carryBoxPath } from './depFrame';
 import type { NodeId, PoseOverride } from './types';
 
@@ -81,22 +81,21 @@ export function createPlyStacks<Entry extends object>(): PlyStacks<Entry> {
   };
 }
 
-type Box = { x: number; y: number; width: number; height: number };
 
-const boxOf = (pose: unknown): Box | null => {
-  const p = pose as Partial<Box> | null;
+const boxOf = (pose: unknown): Rect | null => {
+  const p = pose as Partial<Rect> | null;
   return p !== null && typeof p === 'object' && typeof p.x === 'number' && typeof p.y === 'number'
     && typeof p.width === 'number' && typeof p.height === 'number'
-    ? p as Box : null;
+    ? p as Rect : null;
 };
 
-const sameBox = (a: Box, b: Box): boolean => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+const sameBox = (a: Rect, b: Rect): boolean => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
 /** A carried path and what it was carried from and to, so a stack whose poses hold still shows one path. */
 export interface CarriedPath {
   source: Path;
-  from: Box;
-  to: Box;
+  from: Rect;
+  to: Rect;
   path: Path;
 }
 

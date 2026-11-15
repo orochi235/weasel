@@ -49,11 +49,10 @@ export interface TextNodeData {
 /** How a text node treats lines that run past its box. */
 export type TextOverflow = 'visible' | 'clip';
 
-type Box = { x: number; y: number; width: number; height: number };
 
 /** `cmd` cut to `box`: a group whose clip is the box as a rect, which the
  *  renderer cuts on the CPU when the frame keeps it axis-aligned. */
-export function clippedToBox(cmd: DrawCommand, box: Box): DrawCommand {
+export function clippedToBox(cmd: DrawCommand, box: Rect): DrawCommand {
   return {
     kind: 'group',
     clip: { kind: 'rect', x: box.x, y: box.y, width: box.width, height: box.height },
@@ -158,8 +157,8 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
 };
 
 /** Each of `rects` cut to `box`, leaving out any it does not overlap. */
-function cutRects(rects: readonly Box[], box: Box): Box[] {
-  const out: Box[] = [];
+function cutRects(rects: readonly Rect[], box: Rect): Rect[] {
+  const out: Rect[] = [];
   for (const r of rects) {
     const x0 = Math.max(r.x, box.x);
     const y0 = Math.max(r.y, box.y);
