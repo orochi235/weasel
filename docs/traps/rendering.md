@@ -58,10 +58,10 @@ planes on a target without hulls (past 8 facing ways where the shader decides
 them), a mesh past the vertex cap (`meshBatching`), a custom shader command, and a
 registered paint kind (`registerPaintDrawKind`).
 
-**A path-fill painter's bind half and draw half must stay split.** `applyClipTest`
-disables the stencil test at clip depth 0 and overwrites `stencilFunc` otherwise, so any
-function owning its own stencil state — `drawPathStrokeStenciled`, `drawPathFillStencil` —
-binds with `bindPathFillByKind` and draws itself. Calling `drawPathFillByKind` from either
+**A path-fill painter's bind half and draw half must stay split.** `drawPathFillByKind` draws
+under `clipTest(ctx.clipDepth)`, which is no stencil test at clip depth 0 and the clip bits'
+test otherwise, so any function owning its own stencil state — `drawPathStrokeStenciled`,
+`drawPathFillStencil` — binds with `bindPathFillByKind` and draws itself. Calling `drawPathFillByKind` from either
 one paints the full doubled ribbon, or fills the holes of an even-odd path, with every test
 green. Write the naive version first and watch the guard test fail before fixing it.
 
@@ -90,7 +90,9 @@ asks for `{ preserveDrawingBuffer: true, stencil: true }`.
 `<Canvas paintInto>` reads its `x`/`y` from the last render, so a surface painter
 that sets React state and then asks for a redraw can paint the tile where it *was*
 — after that frame's whole-buffer clear, which nothing then erases.
-`AnnotationOverlay` commits the rect with `flushSync` first. A GL trace of
+`useTiledSurface` runs every painter of a frame inside one `flushSync`, and a painter that
+draws against the state it set returns the draw as a function, which runs after the commit, as
+`AnnotationOverlay`'s does. A GL trace of
 `scissor` against `clear` is what shows it; the screenshot only shows a stray mark.
 
 **A blit out of a multisampled buffer writes past the rect it was given, on ANGLE's

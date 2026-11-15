@@ -2,15 +2,15 @@
 
 Things in package exports, typings, vite and the dev servers that pass every test and are still wrong.
 
-**A `declare module` augmentation merges through one re-export hop, not two.** TS merges into
-the module where the interface is *declared*; aimed at a module that only re-exports it, it
-declares a fresh one in that module's scope instead. One hop survives — a consumer augmenting
-`'@weasel-js/core'` reaches `DepSchema` declared in `@weasel-js/routing`'s barrel. Two does not:
-put the declaration in a submodule the barrel re-exports and the shadowed alias poisons every
-`DepSchema[K]`, reported as TS2536 inside routing's own source, nowhere near the augmentation
-that caused it. So the interface has to sit in the barrel core re-exports from.
-`scripts/smoke-consumer-bundle.mjs`'s `smokeDep` check is the guard, and it has to run against
-the *published* `.d.ts` — in-repo typechecks resolve to source and cannot see the flattening.
+**A `declare module` augmentation merges only into the module that declares the interface.**
+Aimed at `'@weasel-js/core'`, which re-exports routing's `DepSchema`, it merges into a separate
+copy, and which copy a reference sees depends on the order files enter the program; lint rejects
+one (2026-11-15). Inside routing the same holds: put the declaration in a submodule the barrel
+re-exports and the shadowed alias poisons every `DepSchema[K]`, reported as TS2536 inside
+routing's own source, nowhere near the augmentation that caused it. So the interface has to sit
+in routing's barrel. `scripts/smoke-consumer-bundle.mjs`'s `smokeDep` check is the guard, and it
+has to run against the *published* `.d.ts` — in-repo typechecks resolve to source and cannot see
+the flattening.
 
 **A bare `export type { X } from '…'` does not bring `X` into the file's own scope.** Replacing a
 local declaration with a re-export leaves every use of the name in that same file unresolved — and
@@ -36,11 +36,6 @@ that `console.error` and return `undefined`. A call to either typechecks clean a
 fails at runtime. If that surface ever widens, hand-write a local `.d.ts` covering
 only what the kit calls.
 
-**Keep a real file extension off a virtual module id, or add `.js`.** A virtual id
-ending in a real extension gets claimed by vite's css/json/jsx transforms — postcss
-will try to parse a JS module as CSS. `virtual:demo-source:<path>.js` is the shape
-that survives.
-
 **A single-threaded static server invents load regressions.** `python3 -m http.server`
 handles one request at a time, which serializes a many-chunk build into a slowdown no
 real host would show. Use a threaded server, and quote build-output byte counts rather
@@ -54,7 +49,8 @@ any extra copy with `WAKE_EXTRA=<port>`, which neither takes over nor gets taken
 **A dev server serves the packages pre-bundled, so a package edit reloads rather than patches.**
 `scripts/vite-prebundle.ts` bundles every `@weasel-js/*` specifier an app imports,
 re-bundling on a saved package file in a few seconds. forge keeps every package holding stories (ui,
-labkit, forge, diagram, devtools, diagram-elk) as source, so edits there still hot-update.
+labkit, prefs-editor, forge, diagram, devtools, hud), and every package depending on one, as source, so edits
+there still hot-update.
 `WEASEL_DEV_BUNDLE_STORIES=1` bundles ui and labkit, whose stories import through package specifiers:
 on 2026-10-21 a forge load fell from 1,624 requests to 1,270 and, at 20 ms of emulated latency, from
 7.1 s to 4.5 s to network idle, while a ui component edit went from a 0.28 s hot update to a ~3.6 s
@@ -88,8 +84,8 @@ file, and vite's default loader imports each load as a new ES module, which Node
 2 MB of bundled config a restart and grew 12.4 MB of RSS, until `restartLeavingNothing` switched restarts to the
 module runner's loader, under which RSS fell 1.0 MB a restart from restart 1 to 30 (teitou, 2026-11-06). The
 probes are `scripts/probe-dev-restarts.ts` (a dev server; `scripts/heap-retainers.mjs` reads its snapshots),
-`scripts/probe-optimize-deps.ts` (the optimizer alone) and `scripts/probe-rolldown-rebuilds.mjs` (rolldown alone),
-each beside its `.runs.jsonl` of records.
+`scripts/probe-optimize-deps.ts` (the optimizer alone) and `scripts/probe-rolldown-rebuilds.mjs` (rolldown alone);
+the first and last keep their records beside them in a `.runs.jsonl`.
 
 **After that restart, nothing a dev config imports can load a module with `import()`.** The module runner that
 evaluates the config closes as soon as the config has loaded, and a later `import()` in any module it evaluated

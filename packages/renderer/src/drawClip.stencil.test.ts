@@ -154,7 +154,7 @@ describe('drawGroup clip integration', () => {
     };
     drawGroup(ctx, cmd);
 
-    // The image draw's applyClipTest at clipDepth=1: EQUAL against ancestor
+    // The image draw's clipTest at clipDepth=1: EQUAL against ancestor
     // mask 0x02 (bit 1), KEEP on all ops. Find that stencilFunc, then confirm
     // STENCIL_TEST is enabled at that point and a drawElements follows it
     // before the popClip clear pass (stencilOp ..., ZERO).

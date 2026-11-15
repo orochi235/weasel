@@ -89,7 +89,7 @@ describe('renderer — non-solid stroke paint', () => {
 
   /** Inner/outer alignment paints a doubled ribbon and stencils half of it
    *  away, so the ribbon draw carries GL state this function set up itself.
-   *  Binding the paint through `drawPathFillByKind` calls `applyClipTest`,
+   *  Drawing the paint through `drawPathFillByKind` draws under `clipTest`,
    *  which at clip depth 0 disables the stencil test outright — the stroke
    *  then paints at double width, centred, and nothing throws. */
   it('keeps the alignment stencil test for a gradient ribbon', () => {
@@ -178,8 +178,8 @@ describe('renderer — non-solid even-odd fill', () => {
   });
 
   /** The parity pass writes bit 0 under a false colour mask and the paint pass
-   *  reads it back. Binding the paint through `drawPathFillByKind` calls
-   *  `applyClipTest`, which at clip depth 0 disables the stencil test outright —
+   *  reads it back. Drawing the paint through `drawPathFillByKind` draws
+   *  under `clipTest`, which at clip depth 0 disables the stencil test outright —
    *  the fill then paints every covered pixel, holes included. */
   it('keeps the even-odd stencil test for a gradient fill', () => {
     renderFill('evenodd', GRADIENT);
