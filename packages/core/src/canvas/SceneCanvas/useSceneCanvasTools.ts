@@ -4,6 +4,7 @@ import { BASELINE_ACTIONS } from './presets/baseline';
 import { builtinToolActions } from './presets/toolDriven';
 import type { SceneCanvasProps } from './props';
 import { useCanvasTools, useFeatureBindings } from './useCanvasTools';
+import { usePublishTools } from '../../tools/toolsScope';
 
 type Props = SceneCanvasProps<unknown, string, unknown>;
 
@@ -14,7 +15,8 @@ export type SceneCanvasToolProps = Pick<
   | 'defaultActiveTool' | 'modes' | 'onToolsCreated' | 'selectTool' | 'actions'
 >;
 
-/** The canvas's tools, and the contributions and standard actions its presets bring. */
+/** The canvas's tools, published to its scope for `useScopedTools`, and the contributions and standard actions its
+ *  presets bring. */
 export function useSceneCanvasTools(args: {
   props: SceneCanvasToolProps;
   select: Tool;
@@ -43,6 +45,7 @@ export function useSceneCanvasTools(args: {
     onToolsCreated: props.onToolsCreated,
     insertBuilds: args.insertBuilds,
   });
+  usePublishTools(tools);
   const { contributions, standardActions } = useFeatureBindings({
     enabled, pool: builtinToolActions, baseline: BASELINE_ACTIONS,
     tools,
