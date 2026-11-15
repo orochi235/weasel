@@ -17,7 +17,7 @@ function Scaled({ scale, placement = 'bottom' }: { scale: number; placement?: 't
   const [box, setBox] = useState<HTMLDivElement | null>(null);
   return (
     <div ref={setBox} className="wzl-popover-test-box" data-scale={scale}>
-      <TooltipTrigger isOpen>
+      <TooltipTrigger open>
         <Focusable>
           <button type="button" className="wzl-popover-test-trigger">
             Save

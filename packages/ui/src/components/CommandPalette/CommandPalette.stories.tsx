@@ -35,7 +35,7 @@ function Demo({ initiallyOpen }: { initiallyOpen: boolean }) {
     <ActionsProvider>
       <RegisterActions actions={ACTIONS} />
       <Button onClick={() => setOpen(true)}>Open commands</Button>
-      <CommandPalette isOpen={open} onOpenChange={setOpen} />
+      <CommandPalette open={open} onOpenChange={setOpen} />
     </ActionsProvider>
   );
 }

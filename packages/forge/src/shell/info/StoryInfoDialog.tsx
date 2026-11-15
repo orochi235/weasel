@@ -11,7 +11,7 @@ export interface StoryInfoDialogProps {
   index: readonly IndexEntry[];
   /** Whether a story's frame has reported its schema — `StoryRegistry.isReady`. */
   isReady: (id: string) => boolean;
-  isOpen: boolean;
+  open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -19,7 +19,7 @@ export interface StoryInfoDialogProps {
  * Get Info for the focused trial's story. Mount inside `<Lab>`: it reads the
  * lab's context, and renders nothing until it is opened.
  */
-export function StoryInfoDialog({ index, isReady, isOpen, onOpenChange }: StoryInfoDialogProps) {
+export function StoryInfoDialog({ index, isReady, open, onOpenChange }: StoryInfoDialogProps) {
   const { focusedTrialId, trials, instruments } = useLabContext();
   const libraries = useContext(LibrariesContext);
   const trial = trials.find((record) => record.id === focusedTrialId);
@@ -34,7 +34,7 @@ export function StoryInfoDialog({ index, isReady, isOpen, onOpenChange }: StoryI
   });
   return (
     <Dialog
-      isOpen={isOpen}
+      open={open}
       onOpenChange={onOpenChange}
       title={breadcrumb(dossier.title, dossier.name)}
       className="fg-info-dialog"

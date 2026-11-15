@@ -643,7 +643,7 @@ describe('PrefsForm — inherited leaves', () => {
     const onAutoChange = vi.fn();
     renderWithIcons(
       <PrefsDialog
-        isOpen
+        open
         onOpenChange={() => {}}
         {...props}
         onChange={() => {}}

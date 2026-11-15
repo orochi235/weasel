@@ -23,7 +23,7 @@ function Scaled({ scale }: { scale: number }) {
         Open
       </button>
       {box ? (
-        <Callout triggerRef={trigger} portalContainer={box} isOpen placement="bottom" offset={12} showCloseButton={false} title="Menu">
+        <Callout triggerRef={trigger} portalContainer={box} open placement="bottom" offset={12} showCloseButton={false} title="Menu">
           Item
         </Callout>
       ) : null}

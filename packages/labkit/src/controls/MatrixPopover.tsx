@@ -41,7 +41,7 @@ export function MatrixPopover({
   return provide(
     <Popover
       triggerRef={triggerRef}
-      isOpen={open !== null}
+      open={open !== null}
       onOpenChange={(next) => {
         if (!next) close();
       }}

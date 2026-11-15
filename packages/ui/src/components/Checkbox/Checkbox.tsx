@@ -23,9 +23,10 @@ export type CheckboxProps = HoldProps & {
   defaultSelected?: boolean;
   onChange?: (isSelected: boolean) => void;
   /** Draws the mixed mark; the input's `indeterminate` is set to match. */
-  isIndeterminate?: boolean;
-  isInvalid?: boolean;
-  isRequired?: boolean;
+  indeterminate?: boolean;
+  /** The box is drawn and announced as invalid. */
+  invalid?: boolean;
+  required?: boolean;
   name?: string;
   value?: string;
   id?: string;
@@ -42,7 +43,7 @@ export type CheckboxProps = HoldProps & {
 /**
  * Single checkbox: a native `<input type="checkbox">` inside a `<label>`, the
  * box drawn by the shared checkbox skin. Supports indeterminate via
- * `isIndeterminate`. The label is supplied as children; with none, and no
+ * `indeterminate`. The label is supplied as children; with none, and no
  * `aria-label`, it takes its name, description and error from a `Field`
  * around it.
  *
@@ -58,13 +59,13 @@ export const Checkbox = forwardRef(function Checkbox(
     isSelected,
     defaultSelected = false,
     onChange,
-    isIndeterminate = false,
+    indeterminate = false,
     disabled,
     disabledReason,
     readOnly,
     readOnlyReason,
-    isInvalid,
-    isRequired,
+    invalid,
+    required,
     rootRef,
     ...own
   } = props;
@@ -75,7 +76,7 @@ export const Checkbox = forwardRef(function Checkbox(
   const checked = isSelected ?? uncontrolled;
   const input = useObjectRef(ref);
   useEffect(() => {
-    if (input.current) input.current.indeterminate = isIndeterminate;
+    if (input.current) input.current.indeterminate = indeterminate;
   });
   return hold.wrap(
     <label
@@ -91,11 +92,11 @@ export const Checkbox = forwardRef(function Checkbox(
         checked={checked}
         {...hold.attrs}
         data-disabled={undefined}
-        required={isRequired}
-        aria-invalid={isInvalid || field['aria-invalid']}
+        required={required}
+        aria-invalid={invalid || field['aria-invalid']}
         onChange={(e) => {
           // A click clears `indeterminate`, and the effect only puts it back if something renders.
-          e.target.indeterminate = isIndeterminate;
+          e.target.indeterminate = indeterminate;
           if (hold.refuses) return;
           if (isSelected === undefined) setUncontrolled(e.target.checked);
           onChange?.(e.target.checked);

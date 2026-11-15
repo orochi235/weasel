@@ -97,7 +97,7 @@ export function EditorPrefsButton({ prefs }: { prefs: EditorPrefs }) {
   return (
     <>
       <ActionButton icon={<Icon name={icon('core:tune')} />} label="Preferences" onPress={() => setOpen(true)} />
-      <PrefsDialog isOpen={open} onOpenChange={setOpen} layout="list" schema={PREF_SCHEMA_EDITOR_PREFS} values={prefs.values} onChange={prefs.set} />
+      <PrefsDialog open={open} onOpenChange={setOpen} layout="list" schema={PREF_SCHEMA_EDITOR_PREFS} values={prefs.values} onChange={prefs.set} />
     </>
   );
 }

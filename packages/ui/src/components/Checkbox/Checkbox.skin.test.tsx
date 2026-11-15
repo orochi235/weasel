@@ -54,7 +54,7 @@ describe('shared checkbox skin', () => {
   it('Checkbox reports invalid and read-only through ARIA', async () => {
     const user = userEvent.setup();
     render(
-      <Checkbox isInvalid readOnly>
+      <Checkbox invalid readOnly>
         Locked
       </Checkbox>,
     );

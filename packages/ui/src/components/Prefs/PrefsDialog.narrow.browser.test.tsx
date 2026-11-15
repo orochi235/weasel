@@ -38,7 +38,7 @@ const SCHEMA: PrefGroup = {
 };
 
 const dialog = (
-  <PrefsDialog isOpen onOpenChange={() => {}} schema={SCHEMA} values={{}} onChange={() => {}} layout="rail" filterable />
+  <PrefsDialog open onOpenChange={() => {}} schema={SCHEMA} values={{}} onChange={() => {}} layout="rail" filterable />
 );
 
 /** A box narrower than the window standing in for the viewport, the way a workshop trial holds a story. */

@@ -61,7 +61,7 @@ function PaletteHarness({ run }: { run: (params?: Record<string, unknown>) => vo
     <ActionsProvider>
       <RegisterAction action={snapAction(run)} />
       <button type="button" onClick={() => setOpen(true)}>open</button>
-      <CommandPalette isOpen={open} onOpenChange={setOpen} />
+      <CommandPalette open={open} onOpenChange={setOpen} />
     </ActionsProvider>
   );
 }

@@ -217,7 +217,7 @@ export const InDialog: Story = {
       <>
         <Button onClick={() => setOpen(true)}>Open preferences</Button>
         <PrefsDialog
-          isOpen={open}
+          open={open}
           onOpenChange={setOpen}
           schema={SCHEMA}
           values={values}
@@ -322,7 +322,7 @@ export const RailInDialog: Story = {
       <>
         <Button onClick={() => setOpen(true)}>Open preferences</Button>
         <PrefsDialog
-          isOpen={open}
+          open={open}
           onOpenChange={setOpen}
           layout="rail"
           filterable

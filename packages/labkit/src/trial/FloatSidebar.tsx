@@ -65,7 +65,7 @@ function FloatSidebar() {
       </button>
       <Popover
         triggerRef={trigger}
-        isOpen={open}
+        open={open}
         onOpenChange={setOpen}
         // A press on the toggle is its own to answer; closing here as well would reopen it on the click.
         shouldCloseOnInteractOutside={(el) => !trigger.current?.contains(el)}

@@ -10,7 +10,7 @@ import {
 import { useRun } from '../Run';
 import { slotClass, useRunSlot } from '../Along/runSlots';
 import { fieldClasses } from '../Field/Field';
-import { FieldFoot, type FieldSlotProps } from '../Field/fieldSlots';
+import { FieldFoot, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { RadioGroupAlong, RadioSlotsContext } from './RadioGroupAlong';
 import { useControlAccess, type HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
@@ -18,7 +18,7 @@ import { useRacField } from '../Field/racField';
 import s from './RadioGroup.module.css';
 
 /** Props for {@link RadioGroup}, on top of React Aria's `RadioGroup` props. */
-export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & Omit<FieldSlotProps, 'orientation'> & HoldProps & {
+export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly' | 'isInvalid' | 'isRequired'> & Omit<FieldSlotProps, 'orientation'> & FieldStateProps & HoldProps & {
   children?: ReactNode;
   className?: string;
 };
@@ -34,8 +34,8 @@ export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className' 
  */
 export function RadioGroup(props: RadioGroupProps) {
   const enclosing = useRun();
-  const { rest: own, rac, wrap } = useRacHold(props);
-  const field = useRacField({ id: own.id, 'aria-label': own['aria-label'], 'aria-labelledby': own['aria-labelledby'], 'aria-describedby': rac['aria-describedby'], isInvalid: own.isInvalid, labeled: own.label !== undefined });
+  const { rest: { invalid, required, ...own }, rac, wrap } = useRacHold(props);
+  const field = useRacField({ id: own.id, 'aria-label': own['aria-label'], 'aria-labelledby': own['aria-labelledby'], 'aria-describedby': rac['aria-describedby'], invalid, required, labeled: own.label !== undefined });
   if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return wrap(<RadioGroupAlong {...own} {...rac} {...field} shape={enclosing.shape} align={enclosing.align ?? 'center'} />);
   const { label, description, errorMessage, children, className, ...rest } = own;
   return wrap(

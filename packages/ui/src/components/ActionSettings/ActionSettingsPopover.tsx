@@ -36,7 +36,7 @@ export function ActionSettingsPopover({ settings, ...button }: ActionSettingsPop
       {ready && provide(
         <Popover
           triggerRef={trigger}
-          isOpen={shown}
+          open={shown}
           onOpenChange={setOpen}
           placement="bottom start"
           className={bar.popover}

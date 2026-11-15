@@ -240,9 +240,9 @@ describe('ComboBox async surface', () => {
     expect(await screen.findByText('No parts')).toBeTruthy();
   });
 
-  it('marks the field pending while isLoading', async () => {
+  it('marks the field pending while loading', async () => {
     const user = userEvent.setup();
-    const { rerender } = render(<ComboBox label="Part" options={OPTIONS} filter="none" isLoading />);
+    const { rerender } = render(<ComboBox label="Part" options={OPTIONS} filter="none" loading />);
     await user.tab();
     await user.keyboard('3');
     expect(screen.getByRole('combobox').getAttribute('aria-busy')).toBe('true');
@@ -253,7 +253,7 @@ describe('ComboBox async surface', () => {
 
   it('keeps stale options arrowable while loading', async () => {
     const user = userEvent.setup();
-    render(<ComboBox label="Part" options={OPTIONS} filter="none" isLoading />);
+    render(<ComboBox label="Part" options={OPTIONS} filter="none" loading />);
 
     await user.tab();
     await user.keyboard('{ArrowDown}');

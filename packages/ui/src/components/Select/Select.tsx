@@ -15,7 +15,7 @@ import {
 } from 'react-aria-components';
 import { Popover } from '../Popover';
 import { AlignOverTrigger, NO_NUDGE, type Press } from './alignOverTrigger';
-import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
+import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { useRacField } from '../Field/racField';
 import f from '../Field/Field.module.css';
@@ -54,7 +54,9 @@ export type SelectPopup = 'over' | 'below';
  * Props for {@link Select}, on top of React Aria's `Select` props, with the
  * selection key narrowed to the option value type.
  */
-export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'isDisabled'> & FieldSlotProps & HoldProps & ControlSizeProps & {
+export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'isDisabled' | 'isOpen' | 'isInvalid' | 'isRequired'> & FieldSlotProps & FieldStateProps & HoldProps & ControlSizeProps & {
+  /** Whether the list is open, controlled; pairs with `defaultOpen` and `onOpenChange`. */
+  open?: boolean;
   placeholder?: string;
   /** The select stands for several values that differ: nothing is selected,
    *  and the trigger reads `Mixed` in place of `placeholder`. */
@@ -141,6 +143,9 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
     shortcut,
     tooltip,
     size,
+    open,
+    invalid,
+    required,
     ...rest
   } = hold.rest;
 
@@ -150,14 +155,14 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const pressRef = useRef<Press | null>(null);
   const [nudge, setNudge] = useState(NO_NUDGE);
   const sized = useFieldSizeClass(size, className);
-  const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], isInvalid: rest.isInvalid, labeled: label !== undefined });
+  const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], invalid, required, labeled: label !== undefined });
 
   return hold.wrap(
     <RACSelect
       {...rest}
       {...racHeld}
       {...field}
-      {...(held ? { isOpen: false, onOpenChange: undefined } : {})}
+      {...(held ? { isOpen: false, onOpenChange: undefined } : open !== undefined ? { isOpen: open } : {})}
       selectedKey={mixed ? null : selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange && !held ? (k) => onSelectionChange(k as T) : undefined}

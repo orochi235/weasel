@@ -8,7 +8,7 @@ import s from './PaintField.module.css';
 export interface PaintEditorPopoverProps extends Omit<PaintInputProps, 'className' | 'subject'> {
   /** The element it opens under, for a popover outside a `DialogTrigger`. */
   triggerRef?: RefObject<Element | null>;
-  isOpen?: boolean;
+  open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
@@ -17,11 +17,11 @@ export interface PaintEditorPopoverProps extends Omit<PaintInputProps, 'classNam
  * the `provide` of the opener's `useOverlayPortal`.
  */
 export function PaintEditorPopover(props: PaintEditorPopoverProps): ReactElement {
-  const { triggerRef, isOpen, onOpenChange, ...input } = props;
+  const { triggerRef, open, onOpenChange, ...input } = props;
   const ariaLabel = input['aria-label'];
   const own = {
     ...(triggerRef ? { triggerRef } : {}),
-    ...(isOpen !== undefined ? { isOpen } : {}),
+    ...(open !== undefined ? { open } : {}),
     ...(onOpenChange ? { onOpenChange } : {}),
   };
   return (

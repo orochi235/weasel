@@ -38,7 +38,7 @@ function SheetCommand({ options, open }: { options: EditorCommandOptions; open: 
 /** The shell's `shortcuts.show` and the sheet it opens, listing the tools `useEditorTools` publishes. */
 export function ShortcutSheetHost({ options, children }: { options: EditorCommandOptions | null; children: ReactNode }) {
   const [shown, setShown] = useState<ShellTools | null>(null);
-  const [isOpen, setOpen] = useState(false);
+  const [sheetOpen, setOpen] = useState(false);
   const open = useCallback(() => setOpen(true), []);
   return (
     <PublishTools.Provider value={setShown}>
@@ -47,7 +47,7 @@ export function ShortcutSheetHost({ options, children }: { options: EditorComman
         <>
           <SheetCommand options={options} open={open} />
           <ShortcutSheet
-            isOpen={isOpen}
+            open={sheetOpen}
             onOpenChange={setOpen}
             tools={shown?.tools ?? null}
             {...(shown?.toolSets ? { toolSets: shown.toolSets } : {})}

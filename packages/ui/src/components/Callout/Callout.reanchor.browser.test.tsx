@@ -13,7 +13,7 @@ const frames = async (n: number) => {
   for (let i = 0; i < n; i++) await new Promise((r) => requestAnimationFrame(r));
 };
 const at = (x: number, y: number) => (
-  <Callout isOpen anchorRect={{ x, y, width: 40, height: 20 }} placement="bottom" title="Here">Anchored</Callout>
+  <Callout open anchorRect={{ x, y, width: 40, height: 20 }} placement="bottom" title="Here">Anchored</Callout>
 );
 const box = () => screen.getByRole('dialog').getBoundingClientRect();
 

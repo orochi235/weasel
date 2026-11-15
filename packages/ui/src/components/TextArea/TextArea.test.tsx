@@ -20,7 +20,7 @@ describe('TextArea', () => {
   });
 
   it('shows its description and error', () => {
-    render(<TextArea label="Z" description="A hint." isInvalid errorMessage="Required" />);
+    render(<TextArea label="Z" description="A hint." invalid errorMessage="Required" />);
     expect(screen.getByText('A hint.')).toBeTruthy();
     expect(screen.getByText('Required')).toBeTruthy();
   });

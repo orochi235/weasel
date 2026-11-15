@@ -33,7 +33,7 @@ export function TemplateDialog({ title, action, initial, onChoose, onClose }: {
     </>
   );
   return (
-    <Dialog isOpen onOpenChange={(isOpen) => { if (!isOpen) onClose(); }} title={title} isDismissable footer={footer}>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }} title={title} isDismissable footer={footer}>
       <div className="wc-templates">
         {GROUPS.map((g) => (
           <section key={g.id} className="wc-templates-group">

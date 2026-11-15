@@ -1,7 +1,7 @@
 import { forwardRef, type Ref } from 'react';
 import { Label, TextArea as RACTextArea, TextField, type TextFieldProps as RACTextFieldProps } from 'react-aria-components';
 import { MIXED_HINT } from '../Field/mixedHint';
-import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
+import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import type { ControlSizeProps } from '../ControlSize';
@@ -11,7 +11,7 @@ import f from '../Field/Field.module.css';
 import s from './TextArea.module.css';
 
 /** Props for {@link TextArea}, on top of React Aria's `TextField` props. */
-export type TextAreaProps = Omit<RACTextFieldProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & ControlSizeProps & {
+export type TextAreaProps = Omit<RACTextFieldProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly' | 'isInvalid' | 'isRequired'> & FieldSlotProps & FieldStateProps & HoldProps & ControlSizeProps & {
   placeholder?: string;
   /** The field stands for several values that differ: it reads `Mixed` in
    *  place of `placeholder` while its value is empty. */
@@ -32,9 +32,9 @@ export type TextAreaProps = Omit<RACTextFieldProps, 'children' | 'className' | '
  */
 export const TextArea = forwardRef(function TextArea(props: TextAreaProps, ref: Ref<HTMLTextAreaElement>) {
   const hold = useRacHold(props);
-  const { label, orientation, description, errorMessage, placeholder, mixed, rows = 4, className, size, ...textFieldProps } = hold.rest;
+  const { label, orientation, description, errorMessage, placeholder, mixed, rows = 4, className, size, invalid, required, ...textFieldProps } = hold.rest;
   const sized = useFieldSizeClass(size, className);
-  const field = useRacField({ id: textFieldProps.id, 'aria-label': textFieldProps['aria-label'], 'aria-labelledby': textFieldProps['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], isInvalid: textFieldProps.isInvalid, labeled: label !== undefined });
+  const field = useRacField({ id: textFieldProps.id, 'aria-label': textFieldProps['aria-label'], 'aria-labelledby': textFieldProps['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: label !== undefined });
   return hold.wrap(
     <TextField {...textFieldProps} {...hold.rac} {...field} className={fieldRootClass({ orientation, className: sized })}>
       {label !== undefined && <Label className={f.label}>{label}</Label>}

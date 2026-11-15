@@ -104,7 +104,7 @@ export function DialogRow({
         </span>
       </button>
       <Dialog
-        isOpen={open}
+        open={open}
         onOpenChange={(next) => {
           if (next) return;
           if (onCancel) cancel();

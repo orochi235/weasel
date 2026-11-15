@@ -23,8 +23,8 @@ export function TokenEditor({ anchor, title, onClose, children }: TokenEditorPro
       {ready && anchor && provide(
         <Popover
           triggerRef={trigger}
-          isOpen
-          onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}
+          open
+          onOpenChange={(open) => { if (!open) onClose(); }}
           placement="bottom start"
           offset={4}
           className={s.popover}

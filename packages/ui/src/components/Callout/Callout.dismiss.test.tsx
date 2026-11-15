@@ -37,7 +37,7 @@ describe('Callout onDismiss and Escape', () => {
   it('stays quiet for an Escape that closed a menu inside a pinned callout', async () => {
     const onDismiss = vi.fn();
     renderWithIcons(
-      <Callout isOpen anchorRect={RECT} title="Note" onDismiss={onDismiss}>
+      <Callout open anchorRect={RECT} title="Note" onDismiss={onDismiss}>
         <ComboBox aria-label="Fruit" options={OPTIONS} />
       </Callout>,
     );
@@ -59,7 +59,7 @@ describe('Callout onDismiss and Escape', () => {
     renderWithIcons(
       <>
         <button type="button">outside</button>
-        <Callout isOpen anchorRect={RECT} title="Note" onDismiss={onDismiss} onOpenChange={onOpenChange}>
+        <Callout open anchorRect={RECT} title="Note" onDismiss={onDismiss} onOpenChange={onOpenChange}>
           <ComboBox aria-label="Fruit" options={OPTIONS} />
         </Callout>
       </>,

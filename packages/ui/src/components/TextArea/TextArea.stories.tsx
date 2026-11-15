@@ -18,7 +18,7 @@ export const WithDescription: Story = {
 };
 
 export const Invalid: Story = {
-  args: { label: 'Description', isInvalid: true, errorMessage: 'Say what went wrong.' },
+  args: { label: 'Description', invalid: true, errorMessage: 'Say what went wrong.' },
 };
 
 export const Disabled: Story = {

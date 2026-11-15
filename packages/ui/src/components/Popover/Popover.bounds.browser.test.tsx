@@ -35,7 +35,7 @@ function Scaled({ scale, at, size, placement }: Case) {
         <Callout
           triggerRef={trigger}
           portalContainer={box}
-          isOpen
+          open
           placement={placement}
           offset={12}
           maxHeight={10_000}
@@ -97,7 +97,7 @@ type Holder = 'positioned' | 'transform' | 'filter';
 
 // `positioned`: the scroller is the overlays' containing block. `transform` and `filter`: a box inside the scroller
 // is, and is the containing block for fixed descendants too.
-function Scroller({ isOpen, holder }: { isOpen: boolean; holder: Holder }) {
+function Scroller({ open, holder }: { open: boolean; holder: Holder }) {
   const trigger = useRef<HTMLButtonElement>(null);
   const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
   const [inner, setInner] = useState<HTMLDivElement | null>(null);
@@ -113,7 +113,7 @@ function Scroller({ isOpen, holder }: { isOpen: boolean; holder: Holder }) {
         <Callout
           triggerRef={trigger}
           portalContainer={box}
-          isOpen={isOpen}
+          open={open}
           placement="bottom"
           showCloseButton={false}
           aria-label="Menu"
@@ -128,11 +128,11 @@ function Scroller({ isOpen, holder }: { isOpen: boolean; holder: Holder }) {
 it.each<Holder>(['positioned', 'transform', 'filter'])(
   'adds nothing to the scroll range of a scroller it opens in, held by a %s box',
   async (holder) => {
-    const { container, rerender } = renderWithIcons(<Scroller isOpen={false} holder={holder} />);
+    const { container, rerender } = renderWithIcons(<Scroller open={false} holder={holder} />);
     await frames(2);
     const scroller = container.querySelector<HTMLElement>('.wzl-popover-test-scroller')!;
     const closed = { width: scroller.scrollWidth, height: scroller.scrollHeight };
-    rerender(<Scroller isOpen holder={holder} />);
+    rerender(<Scroller open holder={holder} />);
     await frames(3);
     expect({ width: scroller.scrollWidth, height: scroller.scrollHeight }).toEqual(closed);
     const trigger = container.querySelector('button')!.getBoundingClientRect();

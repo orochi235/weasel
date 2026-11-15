@@ -55,7 +55,7 @@ describe('Input', () => {
       <Input
         label="Z"
         description="A hint."
-        isInvalid
+        invalid
         errorMessage="Required"
       />,
     );

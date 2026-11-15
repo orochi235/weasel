@@ -20,7 +20,7 @@ export const Basic: Story = {
         <Button onClick={() => setOpen(true)}>Open dialog</Button>
         <Dialog
           {...args}
-          isOpen={open}
+          open={open}
           onOpenChange={setOpen}
           footer={
             <>
@@ -45,7 +45,7 @@ export const AlertDialog: Story = {
         <Button onClick={() => setOpen(true)}>Delete layer</Button>
         <Dialog
           {...args}
-          isOpen={open}
+          open={open}
           onOpenChange={setOpen}
           footer={
             <>

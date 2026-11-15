@@ -28,7 +28,7 @@ export function radioArcs({ sweep, inset }: Pick<RadioArcConfig, 'sweep' | 'inse
 function Group({ arc, name, value, onChange, choices, invalid }: { arc: AlongArc; name: string; value: string; onChange: (v: string) => void; choices: number; invalid: boolean }) {
   return (
     <Along arc={arc}>
-      <RadioGroup label={name} description="Pick one size" value={value} onChange={onChange} isInvalid={invalid} errorMessage="Not in stock">
+      <RadioGroup label={name} description="Pick one size" value={value} onChange={onChange} invalid={invalid} errorMessage="Not in stock">
         {SIZES.slice(0, choices).map((size) => <Radio key={size} value={size}>{size}</Radio>)}
       </RadioGroup>
     </Along>

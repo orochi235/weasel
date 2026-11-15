@@ -16,10 +16,12 @@ import s from './Dialog.module.css';
 /** Props for {@link Dialog}, on top of React Aria's `ModalOverlay` props. */
 export type DialogProps = Omit<
   WithoutPortalTarget<ModalOverlayProps>,
-  'children' | 'className'
+  'children' | 'className' | 'isOpen'
 > &
   OverlayPortalProps &
   AppearanceProps & {
+    /** Whether the dialog is open, controlled; pairs with `onOpenChange`. */
+    open?: boolean;
     /** Heading rendered in the dialog's default header. Omit when supplying
      *  a custom `header` slot via children. */
     title?: ReactNode;
@@ -37,7 +39,7 @@ export type DialogProps = Omit<
     /** Class applied to the modal box (inside the overlay). */
     className?: string;
     /** Draw the dialog's box where it is rendered, in the page's flow: no
-     *  overlay, portal, focus trap or scroll lock, and `isOpen` is ignored. For
+     *  overlay, portal, focus trap or scroll lock, and `open` is ignored. For
      *  showing what a dialog looks like — a preview, a story, a document. */
     inline?: boolean;
     /** Class applied to the scrolling body. For content that owns its own
@@ -48,7 +50,7 @@ export type DialogProps = Omit<
 
 /**
  * Modal dialog wrapping React Aria. Supplies a default header (title +
- * close), scrollable body, and footer slot. Pass `isOpen` + `onOpenChange`
+ * close), scrollable body, and footer slot. Pass `open` + `onOpenChange`
  * for controlled visibility, or omit both and use a `<DialogTrigger>` from
  * `react-aria-components` upstream of this component.
  *
@@ -67,7 +69,7 @@ export function Dialog(props: DialogProps) {
     bodyClassName,
     inline = false,
     'aria-label': ariaLabel,
-    isOpen,
+    open,
     onOpenChange,
     portalContainer,
     stance,
@@ -111,7 +113,7 @@ export function Dialog(props: DialogProps) {
     return (
       <ContainedModal
         root={containedRoot}
-        isOpen={isOpen}
+        open={open}
         defaultOpen={rest.defaultOpen}
         onOpenChange={onOpenChange}
         isDismissable={rest.isDismissable}
@@ -134,7 +136,7 @@ export function Dialog(props: DialogProps) {
       {ready && provide(
         <ModalOverlay
           {...rest}
-          isOpen={isOpen}
+          isOpen={open}
           onOpenChange={onOpenChange}
           className={s.overlay}
           data-weasel-overlay=""

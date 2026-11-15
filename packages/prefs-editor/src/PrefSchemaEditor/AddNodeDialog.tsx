@@ -27,7 +27,7 @@ export interface AddNodeDialogProps {
  *  The id follows the name until it is typed into. */
 export function AddNodeDialog({ what, taken, dottedKey, kinds, onAdd, onClose }: AddNodeDialogProps) {
   return (
-    <Dialog isOpen={what !== null} onOpenChange={(open) => { if (!open) onClose(); }}
+    <Dialog open={what !== null} onOpenChange={(open) => { if (!open) onClose(); }}
       title={`Add ${what ?? 'pref'}`}>
       {what && (
         <AddNodeForm key={what} what={what} taken={taken} dottedKey={dottedKey} kinds={kinds}
@@ -54,13 +54,13 @@ function AddNodeForm({ what, taken, dottedKey, kinds, onAdd, onClose }: Omit<Add
       if (!ready) return;
       onAdd({ key, name: name.trim(), ...(kind !== null ? { kind } : {}) });
     }}>
-      <Input label="Name" value={name} onChange={setName} autoFocus isRequired={what === 'pref'}
+      <Input label="Name" value={name} onChange={setName} autoFocus required={what === 'pref'}
         description={what === 'pref' ? undefined : `Optional: a ${what} with no name shows no heading.`} />
-      <Input label="Key" value={key} onChange={setTypedKey} isRequired className={s.symbol}
-        isInvalid={shownProblem !== null} errorMessage={shownProblem ?? undefined} />
+      <Input label="Key" value={key} onChange={setTypedKey} required className={s.symbol}
+        invalid={shownProblem !== null} errorMessage={shownProblem ?? undefined} />
       {what === 'pref' && (
         <Select label="Kind" placeholder="Choose a kind" selectedKey={kind} onSelectionChange={(k) => setKind(String(k))}
-          options={kinds} isRequired />
+          options={kinds} required />
       )}
       <div className={s.addActions}>
         <Button variant="ghost" onClick={onClose}>Cancel</Button>

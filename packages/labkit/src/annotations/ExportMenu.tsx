@@ -94,7 +94,7 @@ export function ExportMenu() {
       />
       <Callout
         triggerRef={{ current: anchor }}
-        isOpen={open}
+        open={open}
         onOpenChange={setOpen}
         onDismiss={() => setOpen(false)}
         placement="bottom end"

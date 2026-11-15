@@ -41,9 +41,9 @@ export const Grades: Story = {
           <Button ref={infoRef} variant="ghost" onClick={() => setOpen('info')}>info</Button>
           <Button ref={warnRef} variant="ghost" onClick={() => setOpen('warning')}>warning</Button>
           <Button ref={dangerRef} variant="ghost" onClick={() => setOpen('danger')}>danger</Button>
-          <Callout {...args} triggerRef={infoRef} isOpen={open === 'info'} onOpenChange={(o) => !o && setOpen(null)} grade="info" title="Info">Neutral guidance.</Callout>
-          <Callout {...args} triggerRef={warnRef} isOpen={open === 'warning'} onOpenChange={(o) => !o && setOpen(null)} grade="warn" title="Warning">Something needs attention.</Callout>
-          <Callout {...args} triggerRef={dangerRef} isOpen={open === 'danger'} onOpenChange={(o) => !o && setOpen(null)} grade="danger" title="Danger">Destructive consequence ahead.</Callout>
+          <Callout {...args} triggerRef={infoRef} open={open === 'info'} onOpenChange={(o) => !o && setOpen(null)} grade="info" title="Info">Neutral guidance.</Callout>
+          <Callout {...args} triggerRef={warnRef} open={open === 'warning'} onOpenChange={(o) => !o && setOpen(null)} grade="warn" title="Warning">Something needs attention.</Callout>
+          <Callout {...args} triggerRef={dangerRef} open={open === 'danger'} onOpenChange={(o) => !o && setOpen(null)} grade="danger" title="Danger">Destructive consequence ahead.</Callout>
         </>
       );
     }
@@ -67,7 +67,7 @@ export const Modal: Story = {
         <Callout
           {...args}
           triggerRef={ref}
-          isOpen={open}
+          open={open}
           onOpenChange={setOpen}
           footer={
             <>

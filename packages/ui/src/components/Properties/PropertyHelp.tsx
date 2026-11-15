@@ -85,7 +85,7 @@ export function PropertyHelp({ label, description, autoValue, disabledReason, wi
     // The label stays in the accessible tree, so the control it names keeps its name; the keyboard reaches the
     // help through the row's control, which the text describes.
     return (
-      <TooltipTrigger delay={0} isOpen={help.open} onOpenChange={help.setOpen} keepEscape>
+      <TooltipTrigger delay={0} open={help.open} onOpenChange={help.setOpen} keepEscape>
         <span ref={cue} className={s.label} {...hoverProps}>
           {children}
         </span>
@@ -100,7 +100,7 @@ export function PropertyHelp({ label, description, autoValue, disabledReason, wi
     e.stopPropagation();
   };
   return (
-    <TooltipTrigger delay={0} {...(inRow ? { isOpen: help.open, onOpenChange: help.setOpen, keepEscape: true } : {})}>
+    <TooltipTrigger delay={0} {...(inRow ? { open: help.open, onOpenChange: help.setOpen, keepEscape: true } : {})}>
       {children}
       <Focusable excludeFromTabOrder={inRow}>
         {inRow ? (

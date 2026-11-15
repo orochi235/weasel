@@ -23,8 +23,10 @@ import {
 import { InlineMarkdown } from '../InlineMarkdown';
 import s from './Tooltip.module.css';
 
-/** Props for {@link TooltipTrigger}: React Aria's `TooltipTrigger` props, and `keepEscape`. */
-export type TooltipTriggerProps = TooltipTriggerComponentProps & {
+/** Props for {@link TooltipTrigger}: React Aria's `TooltipTrigger` props, with `open` for its `isOpen`, and `keepEscape`. */
+export type TooltipTriggerProps = Omit<TooltipTriggerComponentProps, 'isOpen'> & {
+  /** Whether the tooltip is open, controlled; pairs with `defaultOpen` and `onOpenChange`. */
+  open?: boolean;
   /** Every Escape while the tooltip is open only closes it, as one pressed on the trigger does: for help
    *  that describes the focused control from elsewhere. Default false. */
   keepEscape?: boolean;
@@ -41,14 +43,14 @@ export type TooltipTriggerProps = TooltipTriggerComponentProps & {
  * whatever it was pressed in.
  */
 export function TooltipTrigger(props: TooltipTriggerProps) {
-  const { delay = 600, closeDelay = 0, onOpenChange, keepEscape = false, ...rest } = props;
+  const { delay = 600, closeDelay = 0, onOpenChange, keepEscape = false, open: controlled, ...rest } = props;
   const [open, setOpen] = useState(false);
-  useEscapePassesThrough(!keepEscape && (props.isOpen ?? open));
+  useEscapePassesThrough(!keepEscape && (controlled ?? open));
   const changed = useCallback((next: boolean) => {
     setOpen(next);
     onOpenChange?.(next);
   }, [onOpenChange]);
-  return <RACTooltipTrigger delay={delay} closeDelay={closeDelay} {...rest} onOpenChange={changed} />;
+  return <RACTooltipTrigger delay={delay} closeDelay={closeDelay} {...rest} {...(controlled !== undefined ? { isOpen: controlled } : {})} onOpenChange={changed} />;
 }
 
 /** Whether keyboard focus is on a tooltip's trigger: the element an open tooltip describes. */
@@ -74,8 +76,10 @@ function useEscapePassesThrough(open: boolean): void {
 }
 
 /** Props for {@link Tooltip}, on top of React Aria's `Tooltip` props. */
-export type TooltipProps = Omit<WithoutPortalTarget<RACTooltipProps>, 'children' | 'className'> &
+export type TooltipProps = Omit<WithoutPortalTarget<RACTooltipProps>, 'children' | 'className' | 'isOpen'> &
   OverlayPortalProps & {
+    /** Whether the tooltip is open, controlled; unset, its trigger's state holds it. */
+    open?: boolean;
     /** A string is read as inline markdown ({@link InlineMarkdown}), its links drawn as their
      *  labels; an element is drawn as given. */
     children?: ReactNode;
@@ -90,7 +94,7 @@ export type TooltipProps = Omit<WithoutPortalTarget<RACTooltipProps>, 'children'
  * placement no way to read the trigger or the viewport in the box's px, so this one places itself.
  */
 export function Tooltip(props: TooltipProps) {
-  const { children, className, placement = 'top', offset = 8, portalContainer, ...rest } = props;
+  const { children, className, placement = 'top', offset = 8, portalContainer, open, ...rest } = props;
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   return (
     <>
@@ -98,6 +102,7 @@ export function Tooltip(props: TooltipProps) {
       {ready && provide(
         <TooltipOverlay
           {...rest}
+          {...(open !== undefined ? { isOpen: open } : {})}
           placement={placement}
           offset={offset}
           className={[s.tooltip, className].filter(Boolean).join(' ')}

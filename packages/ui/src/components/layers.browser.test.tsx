@@ -11,7 +11,7 @@ afterEach(cleanup);
 
 function Scene() {
   return (
-    <Dialog isOpen onOpenChange={() => {}} title="Layers">
+    <Dialog open onOpenChange={() => {}} title="Layers">
       <p>Body</p>
       <DragGhost at={{ left: 0, top: 0, width: 80 }} from={document.body}>
         <span data-testid="ghost-item">Row</span>

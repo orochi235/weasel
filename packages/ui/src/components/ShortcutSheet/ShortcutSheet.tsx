@@ -12,8 +12,8 @@ import styles from './ShortcutSheet.module.css';
 
 /** Props for {@link ShortcutSheet}. */
 export interface ShortcutSheetProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   /** The tools whose keys it lists, each under its name and glyph. Absent, it lists no tools. */
   tools?: { readonly registry: Readonly<Record<string, ShortcutTool>> } | null;
   /** The sets the tools are grouped by, in order; tools in none follow under "Other tools". Default core's
@@ -64,18 +64,18 @@ function Group({ group, platform }: { group: ShortcutGroup; platform: Platform }
  * a key, written as shown (`⇧⌘Z`) or spelled out (`Cmd+Shift+Z`). Open it from `useShortcutSheetCommand`.
  */
 export function ShortcutSheet({
-  isOpen, onOpenChange, tools, toolSets = BUILTIN_TOOL_GROUPS, apple = isApplePlatform(), title = 'Keyboard shortcuts',
+  open, onOpenChange, tools, toolSets = BUILTIN_TOOL_GROUPS, apple = isApplePlatform(), title = 'Keyboard shortcuts',
 }: ShortcutSheetProps) {
   const registry = useActionsRegistry();
   const actions = useSyncExternalStore(
-    registry && isOpen ? registry.subscribe : noSubscribe,
-    () => (registry && isOpen ? registry.list() : NO_ACTIONS),
+    registry && open ? registry.subscribe : noSubscribe,
+    () => (registry && open ? registry.list() : NO_ACTIONS),
   );
   const [query, setQuery] = useState('');
-  const [wasOpen, setWasOpen] = useState(isOpen);
-  if (isOpen !== wasOpen) {
-    setWasOpen(isOpen);
-    if (isOpen) setQuery('');
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setQuery('');
   }
   const platform = sheetPlatform(apple);
   const registered = tools?.registry;
@@ -86,7 +86,7 @@ export function ShortcutSheet({
   const parts = sheetParts(description, query, platform);
 
   return (
-    <Dialog isOpen={isOpen} onOpenChange={onOpenChange} isDismissable title={title} className={styles.sheet} bodyClassName={styles.body}>
+    <Dialog open={open} onOpenChange={onOpenChange} isDismissable title={title} className={styles.sheet} bodyClassName={styles.body}>
       <input
         className={styles.search}
         type="search"

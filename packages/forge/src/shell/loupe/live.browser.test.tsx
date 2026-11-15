@@ -109,7 +109,7 @@ function Menu() {
       <button ref={trigger} type="button" className="fg-live-test-open" onClick={() => setOpen(true)}>
         Open
       </button>
-      <Callout triggerRef={trigger} isOpen={open} onOpenChange={setOpen} placement="bottom" showCloseButton={false} title="Menu">
+      <Callout triggerRef={trigger} open={open} onOpenChange={setOpen} placement="bottom" showCloseButton={false} title="Menu">
         Item
       </Callout>
     </>
@@ -124,7 +124,7 @@ function Reference() {
   return (
     <div ref={setRoot} data-wzl-mode="dark" className="fg-live-test-reference">
       {root ? (
-        <Callout portalContainer={root} anchorRect={{ x: 0, y: 0, width: 1, height: 1 }} isOpen placement="bottom" showCloseButton={false} title="Reference">
+        <Callout portalContainer={root} anchorRect={{ x: 0, y: 0, width: 1, height: 1 }} open placement="bottom" showCloseButton={false} title="Reference">
           Item
         </Callout>
       ) : null}

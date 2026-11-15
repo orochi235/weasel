@@ -5,30 +5,30 @@ import { useState } from 'react';
 import { Dialog } from './Dialog';
 
 describe('Dialog', () => {
-  it('renders nothing when isOpen is false', () => {
-    renderWithIcons(<Dialog isOpen={false} title="X">body</Dialog>);
+  it('renders nothing when open is false', () => {
+    renderWithIcons(<Dialog open={false} title="X">body</Dialog>);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('renders title and body when open', () => {
-    renderWithIcons(<Dialog isOpen title="Preferences">body content</Dialog>);
+    renderWithIcons(<Dialog open title="Preferences">body content</Dialog>);
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByText('Preferences')).toBeTruthy();
     expect(screen.getByText('body content')).toBeTruthy();
   });
 
   it('puts its grade and tint on the modal box', () => {
-    renderWithIcons(<Dialog isOpen title="Delete" grade="danger" tint={0} role="alertdialog">body</Dialog>);
+    renderWithIcons(<Dialog open title="Delete" grade="danger" tint={0} role="alertdialog">body</Dialog>);
     const modal = screen.getByRole('alertdialog').parentElement!;
     expect(modal.dataset.grade).toBe('danger');
     expect(modal.style.getPropertyValue('--wzl-tint')).toBe('var(--wzl-swatch-fuchsia)');
   });
 
-  it('draws inline where it is rendered, whatever isOpen says, with its close reporting through onOpenChange', () => {
+  it('draws inline where it is rendered, whatever open says, with its close reporting through onOpenChange', () => {
     const onOpenChange = vi.fn();
     const { container } = renderWithIcons(
       <div data-testid="host">
-        <Dialog inline isOpen={false} onOpenChange={onOpenChange} title="Preview" footer={<span>foot</span>}>body</Dialog>
+        <Dialog inline open={false} onOpenChange={onOpenChange} title="Preview" footer={<span>foot</span>}>body</Dialog>
       </div>,
     );
     const dialog = screen.getByRole('dialog', { name: 'Preview' });
@@ -40,13 +40,13 @@ describe('Dialog', () => {
   });
 
   it('renders the footer slot when provided', () => {
-    renderWithIcons(<Dialog isOpen title="X" footer={<button>OK</button>}>body</Dialog>);
+    renderWithIcons(<Dialog open title="X" footer={<button>OK</button>}>body</Dialog>);
     expect(screen.getByRole('button', { name: 'OK' })).toBeTruthy();
   });
 
   it('shows the close button when onOpenChange is wired and fires it', () => {
     const onOpenChange = vi.fn();
-    renderWithIcons(<Dialog isOpen onOpenChange={onOpenChange} title="X">body</Dialog>);
+    renderWithIcons(<Dialog open onOpenChange={onOpenChange} title="X">body</Dialog>);
     fireEvent.click(screen.getByRole('button', { name: 'Close dialog' }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
@@ -54,7 +54,7 @@ describe('Dialog', () => {
   it('closes via Escape', () => {
     function Wrap() {
       const [open, setOpen] = useState(true);
-      return <Dialog isOpen={open} onOpenChange={setOpen} title="X">body</Dialog>;
+      return <Dialog open={open} onOpenChange={setOpen} title="X">body</Dialog>;
     }
     renderWithIcons(<Wrap />);
     const dialog = screen.getByRole('dialog');

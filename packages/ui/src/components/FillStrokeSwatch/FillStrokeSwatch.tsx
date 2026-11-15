@@ -86,7 +86,7 @@ function Chip(props: {
       {ready && provide(
         <PaintEditorPopover
           triggerRef={trigger}
-          isOpen={open}
+          open={open}
           onOpenChange={setOpen}
           value={paint}
           aria-label={SLOT_LABEL[slot]}

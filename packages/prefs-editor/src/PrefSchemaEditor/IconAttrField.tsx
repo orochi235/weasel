@@ -48,7 +48,7 @@ export function IconAttrField({ value, mixed = false, onChange }: {
             {unregistered && <span className={s.unregistered}>Not registered</span>}
           </span>
         )}
-      <Dialog isOpen={open !== undefined} onOpenChange={(o) => { if (!o) setOpen(undefined); }}
+      <Dialog open={open !== undefined} onOpenChange={(o) => { if (!o) setOpen(undefined); }}
         title={open === 'mark' ? 'Select mark' : 'Select icon'}>
         {open === 'mark'
           ? <IconPicker value={mark} group={MARK_GROUP} onChange={(next) => { onChange(specOf(held!, next)); setOpen(undefined); }} />

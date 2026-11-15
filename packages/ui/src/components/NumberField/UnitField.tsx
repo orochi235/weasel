@@ -76,11 +76,11 @@ export interface UnitFieldProps extends HoldProps, ControlSizeProps, Omit<FieldS
   /** As {@link NumberField}'s `width`. */
   width?: 'fill' | 'fit';
   className?: string;
-  /** Shown under the field while `isInvalid`, and its accessible description then. */
+  /** Shown under the field while `invalid`, and its accessible description then. */
   errorMessage?: ReactNode;
   /** The value is wrong: the field is drawn and announced as invalid, and shows `errorMessage`. */
-  isInvalid?: boolean;
-  isRequired?: boolean;
+  invalid?: boolean;
+  required?: boolean;
   /** Submits the value, as a plain number in the unit the field shows, with a form under this name. */
   name?: string;
   autoFocus?: boolean;
@@ -122,9 +122,9 @@ function reader(accepts: Readonly<UnitTable> | undefined, display: Display, loca
  * description and error of a `Field` around it. `ref` reaches the `<input>`.
  */
 export function UnitField(props: UnitFieldProps) {
-  const { disabled, disabledReason, readOnly, readOnlyReason, label, orientation, description, errorMessage, isInvalid, isRequired, name, width = 'fill', className, size, ...body } = props;
+  const { disabled, disabledReason, readOnly, readOnlyReason, label, orientation, description, errorMessage, invalid: invalidProp, required, name, width = 'fill', className, size, ...body } = props;
   const sized = useFieldSizeClass(size, className);
-  const own = useFieldIds({ id: props.id, label: label !== undefined, description: description !== undefined, error: !!isInvalid && shows(errorMessage) });
+  const own = useFieldIds({ id: props.id, label: label !== undefined, description: description !== undefined, error: !!invalidProp && shows(errorMessage) });
   const field = useFieldControl({
     id: label === undefined ? props.id : own.id,
     'aria-label': props['aria-label'],
@@ -132,12 +132,12 @@ export function UnitField(props: UnitFieldProps) {
     'aria-describedby': describedBy(own.describedBy, props['aria-describedby']),
   });
   const hold = useNativeHold({ disabled, disabledReason, readOnly, readOnlyReason, 'aria-describedby': field['aria-describedby'] });
-  const invalid = isInvalid || field['aria-invalid'];
+  const invalid = invalidProp || field['aria-invalid'];
   const shown = props.mixed ? Number.NaN : props.value;
   return hold.wrap(
     <div className={fieldRootClass({ orientation, width, fit: s.fit, className: sized })} {...(invalid ? { 'data-invalid': '' } : {})}>
       {label !== undefined && <label id={own.labelId} htmlFor={field.id} className={f.label}>{label}</label>}
-      <UnitFieldBody {...body} field={{ ...field, 'aria-invalid': invalid || undefined }} required={isRequired} hold={hold} />
+      <UnitFieldBody {...body} field={{ ...field, 'aria-invalid': invalid || undefined }} required={required} hold={hold} />
       {name !== undefined && <input type="hidden" name={name} value={Number.isNaN(shown) ? '' : String(shown)} />}
       <NativeFieldFoot ids={own} description={description} error={errorMessage} />
     </div>,

@@ -17,6 +17,14 @@ export type FieldSlotProps = {
   errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
 };
 
+/** A form control's state, under the kit's names; React Aria's `isInvalid` and `isRequired` stay behind the wrapper. */
+export type FieldStateProps = {
+  /** The value fails validation: the control shows `errorMessage` and reads as invalid. */
+  invalid?: boolean;
+  /** A value is needed before the form submits. */
+  required?: boolean;
+};
+
 /**
  * The root class of a boxed form control. `fit` is the control's own class for
  * `width='fit'`, added beside the shared one.

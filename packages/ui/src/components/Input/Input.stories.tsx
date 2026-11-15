@@ -31,7 +31,7 @@ export const LabelBeside: Story = {
 };
 
 export const Invalid: Story = {
-  args: { label: 'Name', isInvalid: true, errorMessage: 'Name is required.' },
+  args: { label: 'Name', invalid: true, errorMessage: 'Name is required.' },
 };
 
 export const Disabled: Story = {

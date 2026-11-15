@@ -338,7 +338,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
           <ThemePreview variants={previewVariants} selection={axisValues} inspecting={inspecting} onInspect={inspect} />
         </aside>
       </div>
-      <Dialog isOpen={exporting} onOpenChange={setExporting} title={`Export ${draft.name}`} footer={<Button onClick={() => setExporting(false)}>Done</Button>}>
+      <Dialog open={exporting} onOpenChange={setExporting} title={`Export ${draft.name}`} footer={<Button onClick={() => setExporting(false)}>Done</Button>}>
         <p>The draft as it stands, saved or not.</p>
         <div className={styles.statusActions}>
           {EXPORTS.map(({ kind, label }) => (
@@ -361,7 +361,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
         {exportError && <p role="status">{exportError}</p>}
       </Dialog>
       <Dialog
-        isOpen={creating}
+        open={creating}
         onOpenChange={setCreating}
         title="New theme"
         footer={
@@ -381,7 +381,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
         }
       >
         <p>It extends weasel, starts from three seeds, and stays a draft until you save it into packages/theme/themes/.</p>
-        <Input label="Name" value={newName} onChange={setNewName} errorMessage={newProblem ?? undefined} isInvalid={newProblem !== null} />
+        <Input label="Name" value={newName} onChange={setNewName} errorMessage={newProblem ?? undefined} invalid={newProblem !== null} />
       </Dialog>
     </Lab>
   );

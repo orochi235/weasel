@@ -26,7 +26,7 @@ function Composer({ initiallyOpen }: { initiallyOpen: boolean }) {
   return (
     <>
       <button onClick={() => setOpen(true)}>Open</button>
-      <Dialog isOpen={open} onOpenChange={setOpen} title="Compose">
+      <Dialog open={open} onOpenChange={setOpen} title="Compose">
         <button onClick={() => setClicks((n) => n + 1)}>Inside {clicks}</button>
       </Dialog>
     </>

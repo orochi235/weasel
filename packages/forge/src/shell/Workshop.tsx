@@ -228,7 +228,7 @@ export function Workshop(props: WorkshopProps) {
                 <StoryInfoDialog
                   index={index}
                   isReady={registry.isReady}
-                  isOpen={infoOpen}
+                  open={infoOpen}
                   onOpenChange={setInfoOpen}
                 />
                 <LabGlobals declarations={declarations} onChange={reportLabValues} />

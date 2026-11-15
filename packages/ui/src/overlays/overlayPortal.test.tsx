@@ -49,14 +49,14 @@ describe('overlays portal into the nearest themed ancestor', () => {
   });
 
   it('Dialog overlay', () => {
-    renderWithIcons(<Themed><Dialog isOpen title="Hi" onOpenChange={() => {}}>body</Dialog></Themed>);
+    renderWithIcons(<Themed><Dialog open title="Hi" onOpenChange={() => {}}>body</Dialog></Themed>);
     expect(host()).toBe(screen.getByTestId('themed'));
   });
 
   it('Callout popover', () => {
     renderWithIcons(
       <Themed>
-        <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} aria-label="c">
+        <Callout open anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} aria-label="c">
           body
         </Callout>
       </Themed>,
@@ -67,7 +67,7 @@ describe('overlays portal into the nearest themed ancestor', () => {
   it('Tooltip bubble', () => {
     renderWithIcons(
       <Themed>
-        <TooltipTrigger isOpen delay={0}>
+        <TooltipTrigger open delay={0}>
           <button type="button">trigger</button>
           <Tooltip>hint</Tooltip>
         </TooltipTrigger>
@@ -80,7 +80,7 @@ describe('overlays portal into the nearest themed ancestor', () => {
     renderWithIcons(
       <div data-wzl-theme="outer" data-wzl-mode="light">
         <div data-wzl-theme="inner" data-wzl-mode="dark" data-testid="inner">
-          <Dialog isOpen title="Hi">body</Dialog>
+          <Dialog open title="Hi">body</Dialog>
         </div>
       </div>,
     );
@@ -91,7 +91,7 @@ describe('overlays portal into the nearest themed ancestor', () => {
     renderWithIcons(
       <div data-wzl-theme="outer" data-wzl-mode="light">
         <div data-wzl-portal-host="" data-testid="opted">
-          <Dialog isOpen title="Hi">body</Dialog>
+          <Dialog open title="Hi">body</Dialog>
         </div>
       </div>,
     );
@@ -107,7 +107,7 @@ describe('consumers can override where an overlay portals', () => {
     document.body.appendChild(elsewhere);
     renderWithIcons(
       <Themed>
-        <Dialog isOpen title="Hi" portalContainer={elsewhere}>body</Dialog>
+        <Dialog open title="Hi" portalContainer={elsewhere}>body</Dialog>
       </Themed>,
     );
     expect(document.querySelector('[data-weasel-overlay]')?.closest('[data-testid="elsewhere"]')).toBe(
@@ -119,7 +119,7 @@ describe('consumers can override where an overlay portals', () => {
   it('portalContainer={null} sends it to the body', () => {
     renderWithIcons(
       <Themed>
-        <Dialog isOpen title="Hi" portalContainer={null}>body</Dialog>
+        <Dialog open title="Hi" portalContainer={null}>body</Dialog>
       </Themed>,
     );
     expect(host()).toBeNull();
@@ -128,7 +128,7 @@ describe('consumers can override where an overlay portals', () => {
   it('portalContainer={null} sends it to the body from inside another overlay', () => {
     renderWithIcons(
       <Themed>
-        <Dialog isOpen title="Hi">
+        <Dialog open title="Hi">
           <Select label="Color" options={OPTIONS} portalContainer={null} />
         </Dialog>
       </Themed>,
@@ -140,7 +140,7 @@ describe('consumers can override where an overlay portals', () => {
   it('a nested overlay portals into the themed ancestor too', () => {
     renderWithIcons(
       <Themed>
-        <Dialog isOpen title="Hi">
+        <Dialog open title="Hi">
           <Select label="Color" options={OPTIONS} />
         </Dialog>
       </Themed>,
@@ -155,7 +155,7 @@ describe('consumers can override where an overlay portals', () => {
     renderWithIcons(
       <Themed>
         <OverlayPortalProvider container={elsewhere}>
-          <Dialog isOpen title="Hi">body</Dialog>
+          <Dialog open title="Hi">body</Dialog>
         </OverlayPortalProvider>
       </Themed>,
     );

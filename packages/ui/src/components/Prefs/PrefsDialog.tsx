@@ -9,7 +9,7 @@ import s from './Prefs.module.css';
  */
 export interface PrefsDialogProps extends PrefsFormProps {
   /** Ignored when `inline`. */
-  isOpen?: boolean;
+  open?: boolean;
   /** Draw the dialog in place rather than as a modal, as `Dialog`'s `inline`. */
   inline?: boolean;
   /** Wired, the dialog draws its close button, as `Dialog` does. */
@@ -39,11 +39,11 @@ export interface PrefsDialogProps extends PrefsFormProps {
  * (`--wzl-dialog-max-width`).
  */
 export function PrefsDialog(props: PrefsDialogProps) {
-  const { isOpen, onOpenChange, inline, title, headerExtra, footer, dialogClassName, ...form } = props;
+  const { open, onOpenChange, inline, title, headerExtra, footer, dialogClassName, ...form } = props;
   const rail = form.layout === 'rail';
   return (
     <Dialog
-      isOpen={isOpen}
+      open={open}
       onOpenChange={onOpenChange}
       inline={inline}
       aria-label={typeof title === 'string' ? title : form.schema.name}

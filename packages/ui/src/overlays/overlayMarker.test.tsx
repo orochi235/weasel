@@ -36,18 +36,18 @@ describe('portal overlays carry data-weasel-overlay', () => {
   });
 
   it('Dialog overlay', () => {
-    renderWithIcons(<Dialog isOpen title="Hi" onOpenChange={() => {}}>body</Dialog>);
+    renderWithIcons(<Dialog open title="Hi" onOpenChange={() => {}}>body</Dialog>);
     expect(marked()).toBe(true);
   });
 
   it('Callout popover', () => {
-    renderWithIcons(<Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} aria-label="c">body</Callout>);
+    renderWithIcons(<Callout open anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} aria-label="c">body</Callout>);
     expect(marked()).toBe(true);
   });
 
   it('Tooltip bubble', () => {
     renderWithIcons(
-      <TooltipTrigger isOpen delay={0}>
+      <TooltipTrigger open delay={0}>
         <button type="button">trigger</button>
         <Tooltip>hint</Tooltip>
       </TooltipTrigger>,

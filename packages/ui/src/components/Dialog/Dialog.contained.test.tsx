@@ -19,7 +19,7 @@ function Page({ open, onOpenChange, keep }: { open: boolean; onOpenChange?: (ope
         </div>
         {box ? (
           <OverlayPortalProvider container={box} contained>
-            <Dialog isOpen={open} onOpenChange={onOpenChange} title="Prefs"
+            <Dialog open={open} onOpenChange={onOpenChange} title="Prefs"
               {...(keep ? { isDismissable: true, shouldCloseOnInteractOutside: keep } : {})}>
               <button type="button">inside</button>
             </Dialog>
@@ -74,7 +74,7 @@ describe('Dialog in a contained portal', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('opens from an enclosing DialogTrigger when given no isOpen', () => {
+  it('opens from an enclosing DialogTrigger when given no open', () => {
     function Triggered() {
       const [box, setBox] = useState<HTMLDivElement | null>(null);
       return (

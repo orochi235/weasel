@@ -13,7 +13,7 @@ import {
 } from 'react-aria-components';
 import { imeKey } from '@weasel-js/ui-input';
 import { Popover } from '../Popover';
-import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
+import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { Caret } from '../Caret';
 import { optionLabels, withIcon } from '../Select/optionLabels';
@@ -48,7 +48,7 @@ const admitEverything = () => true;
  * Props for {@link ComboBox}, on top of React Aria's `ComboBox` props, with
  * the selection key narrowed to the option value type.
  */
-export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & {
+export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'isDisabled' | 'isReadOnly' | 'isInvalid' | 'isRequired'> & FieldSlotProps & FieldStateProps & HoldProps & {
   placeholder?: string;
   options?: ReadonlyArray<ListOption<T>>;
   children?: ReactNode;
@@ -66,7 +66,7 @@ export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<
    */
   filter?: ComboBoxFilter;
   /** Marks the options as out of date while the next set is being fetched. */
-  isLoading?: boolean;
+  loading?: boolean;
   /** A failed load, shown as `errorLabel` rather than as an empty corpus. */
   loadError?: unknown | null;
   /**
@@ -111,18 +111,20 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
     emptyLabel = 'No matches',
     errorLabel = "Couldn't load options",
     filter = 'contains',
-    isLoading,
+    loading,
     loadError = null,
     onCommit,
     width = 'fill',
     className,
     portalContainer,
     ref,
+    invalid,
+    required,
     ...rest
   } = hold.rest;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
-  const field = useRacField({ id: rest.id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], isInvalid: rest.isInvalid, labeled: label !== undefined });
+  const field = useRacField({ id: rest.id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: label !== undefined });
   const revertingRef = useRef(false);
 
   return hold.wrap(
@@ -147,7 +149,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       <ComboBoxFrame
         inputRef={ref}
         placeholder={placeholder}
-        isLoading={isLoading}
+        loading={loading}
         revertingRef={revertingRef}
         onCommitText={onCommit && rest.allowsCustomValue ? (text) => onCommit({ source: 'text', text }) : undefined}
       >
@@ -197,14 +199,14 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
 function ComboBoxFrame({
   inputRef,
   placeholder,
-  isLoading,
+  loading,
   revertingRef,
   onCommitText,
   children,
 }: {
   inputRef?: Ref<HTMLInputElement>;
   placeholder?: string;
-  isLoading?: boolean;
+  loading?: boolean;
   /** Set while React Aria puts the selection back on a blur, or on an Enter with no option highlighted: with both
    *  `selectedKey` and `inputValue` controlled it reports that as a selection, which nobody picked. */
   revertingRef: RefObject<boolean>;
@@ -232,7 +234,7 @@ function ComboBoxFrame({
       <RACInput
         ref={inputRef}
         placeholder={placeholder}
-        aria-busy={isLoading || undefined}
+        aria-busy={loading || undefined}
         onKeyDownCapture={onKeyDownCapture}
         onKeyDown={reverted}
         onBlurCapture={() => {

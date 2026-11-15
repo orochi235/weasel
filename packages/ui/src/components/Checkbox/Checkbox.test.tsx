@@ -36,12 +36,12 @@ describe('Checkbox', () => {
   });
 
   it('sets indeterminate on the underlying input', () => {
-    render(<Checkbox isIndeterminate>x</Checkbox>);
+    render(<Checkbox indeterminate>x</Checkbox>);
     expect((screen.getByRole('checkbox') as HTMLInputElement).indeterminate).toBe(true);
   });
 
   it('keeps the mixed mark through a click that changes nothing', () => {
-    render(<Checkbox isIndeterminate readOnly>x</Checkbox>);
+    render(<Checkbox indeterminate readOnly>x</Checkbox>);
     const cb = screen.getByRole('checkbox') as HTMLInputElement;
     fireEvent.click(cb);
     expect(cb.indeterminate).toBe(true);
@@ -49,7 +49,7 @@ describe('Checkbox', () => {
   });
 
   it('keeps the mixed mark while a controlled owner has not answered the click', () => {
-    render(<Checkbox isSelected={false} isIndeterminate onChange={() => {}}>x</Checkbox>);
+    render(<Checkbox isSelected={false} indeterminate onChange={() => {}}>x</Checkbox>);
     const cb = screen.getByRole('checkbox') as HTMLInputElement;
     fireEvent.click(cb);
     expect(cb.indeterminate).toBe(true);

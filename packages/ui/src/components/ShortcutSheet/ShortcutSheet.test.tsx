@@ -37,7 +37,7 @@ function setup(initial: BindingOverrides = {}, initiallyOpen = true) {
     return (
       <WeaselProvider>
         <Commands open={() => setOpen(true)} />
-        <ShortcutSheet isOpen={open} onOpenChange={setOpen} tools={tools} toolSets={[SELECT_TOOLS, SHAPE_TOOLS]} apple={false} />
+        <ShortcutSheet open={open} onOpenChange={setOpen} tools={tools} toolSets={[SELECT_TOOLS, SHAPE_TOOLS]} apple={false} />
         <SceneCanvas features={[drawPreset]} scene={scene} width={64} height={64} defaultTools={[SELECT_TOOLS, SHAPE_TOOLS]}
           bindingOverrides={overrides} onToolsCreated={setTools} />
       </WeaselProvider>

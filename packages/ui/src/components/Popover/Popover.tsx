@@ -5,8 +5,11 @@ import { targetInBlockUnits } from '../../overlays/blockFrame';
 import { frameBoundary, overlayFrameFor, targetInFrame } from '../../overlays/overlayFrame';
 import { useOverlayTarget, withPortalTarget } from '../../overlays/portalHost';
 
-/** Props for {@link Popover}: React Aria's, unchanged. */
-export type PopoverProps = RACPopoverProps;
+/** Props for {@link Popover}: React Aria's, with `open` for its `isOpen`. */
+export type PopoverProps = Omit<RACPopoverProps, 'isOpen'> & {
+  /** Whether the popover is open, controlled; unset, an enclosing trigger's state holds it. */
+  open?: boolean;
+};
 
 /**
  * React Aria's `Popover`, placed correctly inside a positioned container and inside a box drawn at another size.
@@ -27,7 +30,7 @@ export type PopoverProps = RACPopoverProps;
  * preview trigger, is not kept.
  */
 export const Popover = forwardRef<HTMLElement, PopoverProps>(function Popover(
-  { getTargetRect, boundaryElement, ...props },
+  { getTargetRect, boundaryElement, open, ...props },
   ref,
 ) {
   const own = useRef<HTMLElement | null>(null);
@@ -47,6 +50,7 @@ export const Popover = forwardRef<HTMLElement, PopoverProps>(function Popover(
       {ready && (
         <RACPopover
           {...withPortalTarget(props, frame ?? container)}
+          {...(open !== undefined ? { isOpen: open } : {})}
           ref={merged}
           boundaryElement={boundaryElement ?? (frame ? frameBoundary(frame) : undefined)}
           getTargetRect={targetRect}

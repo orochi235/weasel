@@ -47,7 +47,7 @@ function EnumOptions({ ctx }: { ctx: LeafContext }) {
       renderEditor={(o, set, i) => (
         <>
           <Input className={s.symbol} label="Value stored" value={o.value} onChange={(v) => set({ ...o, value: v })}
-            isInvalid={optionProblem(rows, i) !== undefined} errorMessage={optionProblem(rows, i)} />
+            invalid={optionProblem(rows, i) !== undefined} errorMessage={optionProblem(rows, i)} />
           <Input label="Label shown" value={o.label} onChange={(v) => set({ ...o, label: v })} />
           <Input label="Description" value={o.description ?? ''} onChange={(v) => set(optionWith(o, 'description', v))} />
           <Checkbox isSelected={o.disabled === true} onChange={(on) => set(optionWith(on ? o : optionWith(o, 'disabledReason', ''), 'disabled', on))}>Disabled</Checkbox>

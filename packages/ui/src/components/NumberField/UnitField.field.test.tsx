@@ -24,8 +24,8 @@ describe('UnitField, as NumberField', () => {
   });
 
   it.each([
-    ['UnitField', <UnitField key="u" label="Width" errorMessage="Too wide." isInvalid value={2} onChange={none} />, 'spinbutton'],
-    ['NumberField', <NumberField key="n" label="Width" errorMessage="Too wide." isInvalid value={2} />, 'textbox'],
+    ['UnitField', <UnitField key="u" label="Width" errorMessage="Too wide." invalid value={2} onChange={none} />, 'spinbutton'],
+    ['NumberField', <NumberField key="n" label="Width" errorMessage="Too wide." invalid value={2} />, 'textbox'],
   ] as const)('%s shows its error while invalid, which describes it', (_, el, role) => {
     render(el);
     const input = screen.getByRole(role);
@@ -81,7 +81,7 @@ describe('UnitField, as NumberField', () => {
   });
 
   it('marks itself required', () => {
-    render(<UnitField label="Width" isRequired value={2} onChange={none} />);
+    render(<UnitField label="Width" required value={2} onChange={none} />);
     expect(screen.getByRole('spinbutton')).toHaveAttribute('aria-required', 'true');
   });
 });

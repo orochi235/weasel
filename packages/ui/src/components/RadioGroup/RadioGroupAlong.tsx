@@ -11,6 +11,8 @@ import { RunBand, RunEnds } from '../Along/useRunRow';
 import { FieldFoot } from '../Field/fieldSlots';
 import type { HoldProps } from '../Disabled';
 import type { RacHoldProps } from '../Disabled/racHold';
+import type { FieldStateProps } from '../Field/fieldSlots';
+import type { RacFieldProps } from '../Field/racField';
 import type { RadioGroupProps } from './RadioGroup';
 import s from './RadioGroup.module.css';
 
@@ -21,7 +23,7 @@ export const RadioSlotsContext = createContext<RunSlots | null>(null);
 const LEAD = '\u0000lead';
 
 /** Props for {@link RadioGroupAlong}: a radio group's, with the shape it lies along settled. */
-export type RadioGroupAlongProps = Omit<RadioGroupProps, keyof HoldProps> & RacHoldProps & { shape: TrackShape; align: RunAlign };
+export type RadioGroupAlongProps = Omit<RadioGroupProps, keyof HoldProps | keyof FieldStateProps> & RacHoldProps & RacFieldProps & { shape: TrackShape; align: RunAlign };
 
 /**
  * A radio group whose label and radios lie along a curved track shape from its own start, the label first and not

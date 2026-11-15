@@ -39,7 +39,7 @@ function pane(): HTMLElement {
 
 test('with no consumer height, the rail pane is capped by the modal and scrolls', () => {
   renderWithIcons(
-    <PrefsDialog isOpen onOpenChange={() => {}} schema={SCHEMA} values={{}} onChange={() => {}} layout="rail" />,
+    <PrefsDialog open onOpenChange={() => {}} schema={SCHEMA} values={{}} onChange={() => {}} layout="rail" />,
   );
   const el = pane();
   expect(el.clientHeight).toBeGreaterThan(0);
@@ -53,7 +53,7 @@ test('with no consumer height, the rail pane is capped by the modal and scrolls'
 
 test('tall content grows the modal to its max-height, not only to the settled minimum', () => {
   renderWithIcons(
-    <PrefsDialog isOpen onOpenChange={() => {}} schema={SCHEMA} values={{}} onChange={() => {}} layout="rail" />,
+    <PrefsDialog open onOpenChange={() => {}} schema={SCHEMA} values={{}} onChange={() => {}} layout="rail" />,
   );
   const modal = screen.getByRole('dialog').parentElement!;
   expect(modal.clientHeight).toBe(window.innerHeight - 32);
@@ -66,7 +66,7 @@ test('a consumer height on the modal still decides the pane', () => {
   try {
     renderWithIcons(
       <PrefsDialog
-        isOpen
+        open
         onOpenChange={() => {}}
         schema={SCHEMA}
         values={{}}

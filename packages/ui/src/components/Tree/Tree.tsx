@@ -255,7 +255,7 @@ export const Tree = forwardRef(function Tree(
       </ul>))}
       {tipNode?.tooltip != null && (
         // The trigger is the row, handed over by ref: the tooltip only reads its open state from the wrapper.
-        <TooltipTrigger isOpen>
+        <TooltipTrigger open>
           <Tooltip triggerRef={{ current: rowTip.tip!.el }} placement="right">{tipNode.tooltip}</Tooltip>
         </TooltipTrigger>
       )}

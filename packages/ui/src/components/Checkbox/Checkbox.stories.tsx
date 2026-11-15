@@ -12,7 +12,7 @@ type Story = StoryObj<typeof Checkbox>;
 
 export const Basic: Story = { args: { children: 'Snap to grid' } };
 export const DefaultChecked: Story = { args: { children: 'Visible', defaultSelected: true } };
-export const Indeterminate: Story = { args: { children: 'Mixed', isIndeterminate: true } };
+export const Indeterminate: Story = { args: { children: 'Mixed', indeterminate: true } };
 export const Disabled: Story = { args: { children: 'Locked', disabled: true, defaultSelected: true } };
 
 export const Controlled: Story = {

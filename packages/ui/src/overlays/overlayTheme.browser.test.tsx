@@ -88,7 +88,7 @@ it('draws a toast in the theme of the root its region is mounted in', async () =
 });
 
 it('draws a Dialog in the theme of the root it opens from', async () => {
-  inLightRoot(<Dialog isOpen title="Settings">Body</Dialog>);
+  inLightRoot(<Dialog open title="Settings">Body</Dialog>);
   expectLight(await screen.findByRole('dialog'));
 });
 

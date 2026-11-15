@@ -197,7 +197,7 @@ function ButtonsAndToggles() {
           <Checkbox isSelected={snap} onChange={setSnap}>
             Snap to grid
           </Checkbox>
-          <Checkbox isIndeterminate>Mixed</Checkbox>
+          <Checkbox indeterminate>Mixed</Checkbox>
           <Switch isSelected={wifi} onChange={setWifi}>
             Wifi
           </Switch>
@@ -297,7 +297,7 @@ function FieldsAndPickers() {
           trailingAdornment={<span>px</span>}
           defaultValue="120"
         />
-        <Input label="Required" isInvalid errorMessage="Name is required." />
+        <Input label="Required" invalid errorMessage="Name is required." />
       </Cell>
       <Cell label="NumberField, Select, ComboBox">
         <NumberField label="Opacity" minValue={0} maxValue={100} step={5} defaultValue={80} />
@@ -484,7 +484,7 @@ function OverlaysAndFeedback() {
           </button>
           <Callout
             triggerRef={calloutAnchor}
-            isOpen={calloutOpen}
+            open={calloutOpen}
             onOpenChange={setCalloutOpen}
             grade="info"
             title="Info"
@@ -493,7 +493,7 @@ function OverlaysAndFeedback() {
           </Callout>
           <Button onClick={() => setDialogOpen(true)}>Dialog</Button>
           <Dialog
-            isOpen={dialogOpen}
+            open={dialogOpen}
             onOpenChange={setDialogOpen}
             title="Preferences"
             footer={

@@ -147,7 +147,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
             )}
           >
             <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
-              <CommandPalette isOpen={paletteOpen} onOpenChange={setPaletteOpen} />
+              <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
               <EditorTools tools={tools} toolSets={SHEET_TOOL_SETS} />
               <StripDock className="wd-dock">
                 <div className="wd-dock-main">

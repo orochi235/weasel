@@ -30,7 +30,7 @@ export function MenuColorValue({ entry: e, controller: c, row, picking, onPicked
         <Popover
           ref={(el) => register(e.key, el)}
           triggerRef={row}
-          isOpen
+          open
           isNonModal
           onOpenChange={(open) => { if (!open) onPicked(); }}
           placement="end top"

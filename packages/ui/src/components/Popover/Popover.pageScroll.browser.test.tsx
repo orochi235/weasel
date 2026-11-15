@@ -42,7 +42,7 @@ function Held({ low, size, placement }: Case) {
           <Callout
             triggerRef={trigger}
             portalContainer={box}
-            isOpen
+            open
             placement={placement}
             offset={12}
             maxHeight={10_000}

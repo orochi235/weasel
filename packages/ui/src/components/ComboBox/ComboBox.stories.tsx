@@ -110,7 +110,7 @@ export const AsyncOptions: Story = {
           allowsCustomValue
           filter="none"
           options={async.options}
-          isLoading={async.isLoading}
+          loading={async.loading}
           loadError={async.loadError}
           inputValue={async.inputValue}
           onInputChange={async.onInputChange}
@@ -136,7 +136,7 @@ export const LoadFailed: Story = {
         placeholder="Type anything…"
         filter="none"
         options={async.options}
-        isLoading={async.isLoading}
+        loading={async.loading}
         loadError={async.loadError}
         inputValue={async.inputValue}
         onInputChange={async.onInputChange}

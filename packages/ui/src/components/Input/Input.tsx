@@ -6,7 +6,7 @@ import {
   type TextFieldProps as RACTextFieldProps,
 } from 'react-aria-components';
 import { MIXED_HINT } from '../Field/mixedHint';
-import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
+import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import type { ControlSizeProps } from '../ControlSize';
@@ -16,7 +16,7 @@ import f from '../Field/Field.module.css';
 import s from './Input.module.css';
 
 /** Props for {@link Input}, on top of React Aria's `TextField` props. */
-export type InputProps = Omit<RACTextFieldProps, 'children' | 'className' | 'spellCheck' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & ControlSizeProps & {
+export type InputProps = Omit<RACTextFieldProps, 'children' | 'className' | 'spellCheck' | 'isDisabled' | 'isReadOnly' | 'isInvalid' | 'isRequired'> & FieldSlotProps & FieldStateProps & HoldProps & ControlSizeProps & {
   /** Whether the browser checks the text's spelling, as on a native `<input>`. */
   spellCheck?: boolean | 'true' | 'false';
   /** The label on a virtual keyboard's enter key, as on a native `<input>`. */
@@ -61,10 +61,12 @@ export const Input = forwardRef(function Input(
     enterKeyHint,
     autoCapitalize,
     size,
+    invalid,
+    required,
     ...textFieldProps
   } = hold.rest;
   const sized = useFieldSizeClass(size, className);
-  const field = useRacField({ id: textFieldProps.id, 'aria-label': textFieldProps['aria-label'], 'aria-labelledby': textFieldProps['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], isInvalid: textFieldProps.isInvalid, labeled: label !== undefined });
+  const field = useRacField({ id: textFieldProps.id, 'aria-label': textFieldProps['aria-label'], 'aria-labelledby': textFieldProps['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], invalid, required, labeled: label !== undefined });
 
   return hold.wrap(
     <TextField

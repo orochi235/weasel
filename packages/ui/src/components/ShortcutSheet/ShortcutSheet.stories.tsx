@@ -42,7 +42,7 @@ function Demo({ initiallyOpen }: { initiallyOpen: boolean }) {
       <RegisterActions actions={ACTIONS} />
       <Command open={() => setOpen(true)} />
       <Button onClick={() => setOpen(true)}>Keyboard shortcuts</Button>
-      <ShortcutSheet isOpen={open} onOpenChange={setOpen} tools={{ registry: TOOLS }} toolSets={SETS} />
+      <ShortcutSheet open={open} onOpenChange={setOpen} tools={{ registry: TOOLS }} toolSets={SETS} />
     </ActionsProvider>
   );
 }

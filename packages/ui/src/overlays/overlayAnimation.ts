@@ -22,11 +22,11 @@ export function useEnterAnimation(ref: RefObject<HTMLElement | null>, ready = tr
   return active;
 }
 
-/** True from when `isOpen` turns false until the exit animation it starts is done; the overlay stays mounted while it is. */
-export function useExitAnimation(ref: RefObject<HTMLElement | null>, isOpen: boolean): boolean {
-  const [state, setState] = useState<'open' | 'exiting' | 'closed'>(isOpen ? 'open' : 'closed');
-  if (state === 'open' && !isOpen) setState('exiting');
-  else if (state !== 'open' && isOpen) setState('open');
+/** True from when `open` turns false until the exit animation it starts is done; the overlay stays mounted while it is. */
+export function useExitAnimation(ref: RefObject<HTMLElement | null>, open: boolean): boolean {
+  const [state, setState] = useState<'open' | 'exiting' | 'closed'>(open ? 'open' : 'closed');
+  if (state === 'open' && !open) setState('exiting');
+  else if (state !== 'open' && open) setState('open');
   const exiting = state === 'exiting';
   useAnimationEnd(ref, exiting, useCallback(() => setState((s) => (s === 'exiting' ? 'closed' : s)), []));
   return exiting;

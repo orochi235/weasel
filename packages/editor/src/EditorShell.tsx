@@ -86,7 +86,7 @@ function ShellBody({
         </ShortcutSheetHost>
         {store && preferences !== null && <PreferencesCommand options={preferences} open={open} />}
         {store && (
-          <EditorPrefsDialog store={store} isOpen={prefsOpen} onOpenChange={setPrefsOpen} dialog={prefsDialog} />
+          <EditorPrefsDialog store={store} open={prefsOpen} onOpenChange={setPrefsOpen} dialog={prefsDialog} />
         )}
         <ContextMenuHost />
       </AmbientContributionsProvider>

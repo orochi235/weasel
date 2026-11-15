@@ -102,14 +102,14 @@ describe('useAsyncOptions', () => {
       await first.promise;
     });
     expect(result.current.options).toEqual([]);
-    expect(result.current.isLoading).toBe(true);
+    expect(result.current.loading).toBe(true);
 
     await act(async () => {
       second.resolve([BLUE]);
       await second.promise;
     });
     expect(result.current.options).toEqual([BLUE]);
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.loading).toBe(false);
   });
 
   it('aborts a superseded request rather than only ignoring it', async () => {
@@ -156,7 +156,7 @@ describe('useAsyncOptions', () => {
 
     await waitFor(() => expect(result.current.loadError).toBeInstanceOf(Error));
     expect(result.current.options).toEqual([RED]);
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.loading).toBe(false);
   });
 
   it('clears a previous error once a later load succeeds', async () => {
@@ -175,21 +175,21 @@ describe('useAsyncOptions', () => {
     expect(result.current.loadError).toBeNull();
   });
 
-  it('holds isLoading from the call until the response lands', async () => {
+  it('holds loading from the call until the response lands', async () => {
     const first = deferred<typeof RED[]>();
     const load = vi.fn().mockReturnValueOnce(first.promise);
     const { result } = renderHook(() => useAsyncOptions({ load, debounceMs: 0 }));
 
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.loading).toBe(false);
     act(() => result.current.onInputChange('r'));
     act(() => void vi.advanceTimersByTime(1));
-    expect(result.current.isLoading).toBe(true);
+    expect(result.current.loading).toBe(true);
 
     await act(async () => {
       first.resolve([RED]);
       await first.promise;
     });
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.loading).toBe(false);
   });
 
   it('does not call load below minLength, and empties the options', async () => {
@@ -267,6 +267,6 @@ describe('useAsyncOptions', () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     await waitFor(() => expect(result.current.loadError).toBeInstanceOf(Error));
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.loading).toBe(false);
   });
 });

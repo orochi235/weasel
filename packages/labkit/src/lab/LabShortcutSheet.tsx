@@ -5,7 +5,7 @@ import type { TrialTool } from '../tools/types';
 /** The lab's `shortcuts.show`, on Shift+/, and the sheet it opens: every key bound in the lab and the focused trial,
  *  the lab's tools named as its rail names them. */
 export function LabShortcutSheet({ tools }: { tools: readonly TrialTool[] }) {
-  const [isOpen, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   useShortcutSheetCommand(useCallback(() => setOpen(true), []));
   const registry = useMemo(
     () => ({
@@ -15,5 +15,5 @@ export function LabShortcutSheet({ tools }: { tools: readonly TrialTool[] }) {
     }),
     [tools],
   );
-  return <ShortcutSheet isOpen={isOpen} onOpenChange={setOpen} tools={registry} toolSets={[]} />;
+  return <ShortcutSheet open={open} onOpenChange={setOpen} tools={registry} toolSets={[]} />;
 }

@@ -62,7 +62,7 @@ export function useHoldReason(held: string | undefined): HoldReasonParts {
       <>
         {node}
         {reason && <span ref={note} id={id} hidden>{reason}</span>}
-        {reason && <Tooltip triggerRef={target as RefObject<Element>} isOpen={open} onOpenChange={setOpen}>{reason}</Tooltip>}
+        {reason && <Tooltip triggerRef={target as RefObject<Element>} open={open} onOpenChange={setOpen}>{reason}</Tooltip>}
       </>
     ),
   };

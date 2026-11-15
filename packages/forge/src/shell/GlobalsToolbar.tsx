@@ -115,7 +115,7 @@ function NestedGlobals({
       </Button>
       <Callout
         triggerRef={anchor}
-        isOpen={open}
+        open={open}
         onOpenChange={setOpen}
         placement="bottom end"
         showCloseButton={false}

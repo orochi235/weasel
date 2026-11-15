@@ -95,7 +95,7 @@ describe('Tooltip', () => {
     const onEditorKey = vi.fn();
     render(
       <>
-        <TooltipTrigger isOpen onOpenChange={onOpenChange}>
+        <TooltipTrigger open onOpenChange={onOpenChange}>
           <Focusable><button type="button">Save</button></Focusable>
           <Tooltip>Save the document</Tooltip>
         </TooltipTrigger>
@@ -129,7 +129,7 @@ describe('Tooltip', () => {
     const onEditorKey = vi.fn();
     render(
       <>
-        <TooltipTrigger isOpen keepEscape>
+        <TooltipTrigger open keepEscape>
           <Focusable><button type="button">Save</button></Focusable>
           <Tooltip>Save the document</Tooltip>
         </TooltipTrigger>

@@ -13,7 +13,7 @@ export type EditorPrefs<S extends PrefGroup = PrefGroup> = PrefsStore<S> | ({ sc
 /** What the preferences dialog takes past the store's own binding: `layout`, `renderers` for the app's own kinds,
  *  `headerExtra`, `showHidden`, and the rest of `PrefsDialog`'s props. `layout` defaults to `'rail'`. */
 export type EditorPrefsDialogProps = Partial<
-  Omit<PrefsDialogProps, 'isOpen' | 'onOpenChange' | keyof PrefsFormBinding>
+  Omit<PrefsDialogProps, 'open' | 'onOpenChange' | keyof PrefsFormBinding>
 >;
 
 interface EditorPrefsValue {
@@ -46,12 +46,12 @@ export function useOpenPreferences(): () => void {
 
 /** `PrefsDialog` bound to `store`: each change is written at once, turning a leaf's Auto on resets it, and a
  *  scoped leaf splits into its members. */
-export function EditorPrefsDialog({ store, isOpen, onOpenChange, dialog }: {
+export function EditorPrefsDialog({ store, open, onOpenChange, dialog }: {
   store: PrefsStore<PrefGroup>;
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   dialog?: EditorPrefsDialogProps;
 }) {
   const { form } = usePrefsValues(store);
-  return <PrefsDialog layout="rail" {...dialog} {...form} isOpen={isOpen} onOpenChange={onOpenChange} />;
+  return <PrefsDialog layout="rail" {...dialog} {...form} open={open} onOpenChange={onOpenChange} />;
 }

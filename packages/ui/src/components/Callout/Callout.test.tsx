@@ -33,7 +33,7 @@ function ProgrammaticSubject(props: {
       <button type="button" onClick={props.onOutsideClick}>outside</button>
       <Callout
         triggerRef={anchor}
-        isOpen={open}
+        open={open}
         onOpenChange={setOpen}
         modal={props.modal}
         title="Note"
@@ -92,7 +92,7 @@ describe('Callout', () => {
 
   it('renders an invisible fixed anchor for anchorRect mode', () => {
     renderWithIcons(
-      <Callout isOpen anchorRect={{ x: 120, y: 80, width: 40, height: 20 }} title="Here">
+      <Callout open anchorRect={{ x: 120, y: 80, width: 40, height: 20 }} title="Here">
         Anchored
       </Callout>,
     );
@@ -111,7 +111,7 @@ describe('Callout', () => {
     const onResize = vi.fn();
     window.addEventListener('resize', onResize);
     const at = (x: number, y: number) => (
-      <Callout isOpen anchorRect={{ x, y, width: 40, height: 20 }} title="Here">Anchored</Callout>
+      <Callout open anchorRect={{ x, y, width: 40, height: 20 }} title="Here">Anchored</Callout>
     );
     const { rerender } = renderWithIcons(at(10, 10));
     const anchor = document.body.querySelector('[data-callout-anchor]') as HTMLElement;
@@ -132,18 +132,18 @@ describe('Callout', () => {
   it('leaves the anchor as it is when the anchor rect is unchanged', () => {
     const rect = { x: 10, y: 10, width: 40, height: 20 };
     const { rerender } = renderWithIcons(
-      <Callout isOpen anchorRect={rect} title="Here">Anchored</Callout>,
+      <Callout open anchorRect={rect} title="Here">Anchored</Callout>,
     );
     const anchor = document.body.querySelector('[data-callout-anchor]') as HTMLElement;
     const before = anchor.style.width;
     // New object, same numbers: the nudge keys on the values, not identity.
-    rerender(<Callout isOpen anchorRect={{ ...rect }} title="Here">Anchored</Callout>);
+    rerender(<Callout open anchorRect={{ ...rect }} title="Here">Anchored</Callout>);
     expect(anchor.style.width).toBe(before);
   });
 
   it('carries a tint beside the popover’s own positioning', () => {
     renderWithIcons(
-      <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tint={cssColorLiteral('#224a63')} aria-label="Tinted">
+      <Callout open anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tint={cssColorLiteral('#224a63')} aria-label="Tinted">
         !
       </Callout>,
     );
@@ -155,7 +155,7 @@ describe('Callout', () => {
 
   it('keeps a consumer style beside its tint', () => {
     renderWithIcons(
-      <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tint={cssColorLiteral('#224a63')} style={{ outlineColor: 'red' }} aria-label="Styled">
+      <Callout open anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tint={cssColorLiteral('#224a63')} style={{ outlineColor: 'red' }} aria-label="Styled">
         !
       </Callout>,
     );
@@ -167,7 +167,7 @@ describe('Callout', () => {
   it('names the grade it is given', () => {
     renderWithIcons(
       <Callout
-        isOpen
+        open
         anchorRect={{ x: 0, y: 0, width: 10, height: 10 }}
         grade="danger"
         aria-label="Danger callout"
@@ -247,11 +247,11 @@ describe('Callout', () => {
   });
 
   it('leaves a pinned-open callout up until it is dismissed', () => {
-    // The shape a consumer owning dismissal uses: isOpen stays true while the
+    // The shape a consumer owning dismissal uses: open stays true while the
     // message stands, so RAC's own close paths can't retire it early.
     const onDismiss = vi.fn();
     renderWithIcons(
-      <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} title="Note" onDismiss={onDismiss}>
+      <Callout open anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} title="Note" onDismiss={onDismiss}>
         Pinned
       </Callout>,
     );
@@ -274,7 +274,7 @@ describe('Callout', () => {
         <>
           <div ref={triggerRef}>trigger</div>
           <Callout
-            isOpen
+            open
             triggerRef={triggerRef}
             anchorRect={anchor}
             aria-label="Both anchors"

@@ -22,7 +22,7 @@ export function SitePalette() {
       <ActionsProvider>
         <ActiveToolContextProvider>
           <SiteCommands openPalette={useCallback(() => setOpen(true), [])} />
-          <CommandPalette isOpen={open} onOpenChange={setOpen} />
+          <CommandPalette open={open} onOpenChange={setOpen} />
         </ActiveToolContextProvider>
       </ActionsProvider>
     </DepRegistryProvider>

@@ -15,7 +15,7 @@ export function MenuRowTip({ rowId, why }: { rowId: string; why: string | undefi
   }, [rowId, why]);
   if (!rowTip.tip || why === undefined || rowTip.tip.id !== rowId) return null;
   return (
-    <TooltipTrigger isOpen>
+    <TooltipTrigger open>
       <Tooltip triggerRef={{ current: rowTip.tip.el }} placement="right">{why}</Tooltip>
     </TooltipTrigger>
   );

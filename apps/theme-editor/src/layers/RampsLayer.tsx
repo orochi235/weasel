@@ -290,7 +290,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
         );
       })}
       <Dialog
-        isOpen={confirming !== null}
+        open={confirming !== null}
         onOpenChange={(open) => {
           if (!open) setConfirming(null);
         }}

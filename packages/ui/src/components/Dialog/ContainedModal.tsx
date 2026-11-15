@@ -7,9 +7,9 @@ import { OverlayTriggerStateContext } from 'react-aria-components';
 export interface ContainedModalProps {
   /** The element standing in for the viewport. */
   root: Element;
-  isOpen?: boolean;
+  open?: boolean;
   defaultOpen?: boolean;
-  onOpenChange?: (isOpen: boolean) => void;
+  onOpenChange?: (open: boolean) => void;
   isDismissable?: boolean;
   isKeyboardDismissDisabled?: boolean;
   /** Whether a press on `element` outside the modal may close it. */
@@ -20,15 +20,15 @@ export interface ContainedModalProps {
   children: ReactNode;
 }
 
-/** Open state, controlled by `isOpen` when it is given, in the shape React Aria's dialog reads its `close` from.
- *  Given neither `isOpen` nor `defaultOpen`, an enclosing `<DialogTrigger>`'s state, as React Aria's modal reads it. */
-function useOpenState({ isOpen, defaultOpen, onOpenChange }: ContainedModalProps) {
+/** Open state, controlled by `open` when it is given, in the shape React Aria's dialog reads its `close` from.
+ *  Given neither `open` nor `defaultOpen`, an enclosing `<DialogTrigger>`'s state, as React Aria's modal reads it. */
+function useOpenState({ open: controlled, defaultOpen, onOpenChange }: ContainedModalProps) {
   const trigger = useContext(OverlayTriggerStateContext);
   const [own, setOwn] = useState(defaultOpen ?? false);
-  const open = isOpen ?? own;
+  const open = controlled ?? own;
   const local = useMemo(() => {
     const setOpen = (next: boolean) => {
-      if (isOpen === undefined) setOwn(next);
+      if (controlled === undefined) setOwn(next);
       if (next !== open) onOpenChange?.(next);
     };
     return {
@@ -40,8 +40,8 @@ function useOpenState({ isOpen, defaultOpen, onOpenChange }: ContainedModalProps
       point: null,
       setPoint: () => {},
     };
-  }, [open, isOpen, onOpenChange]);
-  return isOpen === undefined && defaultOpen === undefined && trigger ? trigger : local;
+  }, [open, controlled, onOpenChange]);
+  return controlled === undefined && defaultOpen === undefined && trigger ? trigger : local;
 }
 
 /**

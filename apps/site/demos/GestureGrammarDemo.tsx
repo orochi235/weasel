@@ -159,7 +159,7 @@ export function GestureGrammarDemo() {
           onChange={setRoute}
           spellCheck={false}
           aria-label="Route"
-          isInvalid={'error' in result}
+          invalid={'error' in result}
           errorMessage={'error' in result ? result.error : undefined}
         />
         <div className={s.presets}>

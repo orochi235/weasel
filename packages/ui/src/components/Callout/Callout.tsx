@@ -50,7 +50,7 @@ export type CalloutProps = Omit<
   /**
    * Show the close button. Defaults to `!modal`. In programmatic
    * `triggerRef`/`anchorRect` modes the close button needs controlled open
-   * (`isOpen` + `onOpenChange`); with only `defaultOpen` it has no open-state
+   * (`open` + `onOpenChange`); with only `defaultOpen` it has no open-state
    * setter to call and cannot close.
    */
   showCloseButton?: boolean;
@@ -61,12 +61,12 @@ export type CalloutProps = Omit<
    *
    * Distinct from `onOpenChange`, which a non-modal popover *also* fires when
    * interaction or focus merely leaves it. On a canvas that's every click on
-   * the artwork, so a consumer that pins `isOpen` and treats `onOpenChange`
+   * the artwork, so a consumer that pins `open` and treats `onOpenChange`
    * as dismissal retires messages nobody read. Use this instead: it fires
    * only on a deliberate act, and never on incidental focus loss.
    */
   onDismiss?: () => void;
-  /** Anchor to an arbitrary element (programmatic use, with `isOpen`). */
+  /** Anchor to an arbitrary element (programmatic use, with `open`). */
   triggerRef?: RefObject<Element | null>;
   /**
    * Anchor to a client-coordinate rect — e.g. a scene node's on-screen box.

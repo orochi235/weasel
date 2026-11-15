@@ -22,7 +22,7 @@ export type UseAsyncOptionsProps<T extends OptionKey> = {
 /** What {@link useAsyncOptions} returns, shaped to spread into a `ComboBox`. */
 export type AsyncOptionsResult<T extends OptionKey> = {
   options: ReadonlyArray<AsyncOption<T>>;
-  isLoading: boolean;
+  loading: boolean;
   loadError: unknown | null;
   inputValue: string;
   onInputChange: (next: string) => void;
@@ -44,7 +44,7 @@ export function useAsyncOptions<T extends OptionKey = string>({
 }: UseAsyncOptionsProps<T>): AsyncOptionsResult<T> {
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState<ReadonlyArray<AsyncOption<T>>>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<unknown | null>(null);
 
   // Read through a ref: a consumer passing an inline arrow re-creates `load`
@@ -66,7 +66,7 @@ export function useAsyncOptions<T extends OptionKey = string>({
       applied.current = issued.current;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- cancels the in-flight request and resets its results
       setOptions([]);
-      setIsLoading(false);
+      setLoading(false);
       setLoadError(null);
       return;
     }
@@ -76,7 +76,7 @@ export function useAsyncOptions<T extends OptionKey = string>({
       const controller = new AbortController();
       inFlight.current?.abort();
       inFlight.current = controller;
-      setIsLoading(true);
+      setLoading(true);
 
       // A `load` that throws before it returns a promise fails like one that rejects.
       new Promise<ReadonlyArray<AsyncOption<T>>>((resolve) => resolve(loadRef.current(inputValue, controller.signal))).then(
@@ -85,13 +85,13 @@ export function useAsyncOptions<T extends OptionKey = string>({
           applied.current = mine;
           setOptions(next);
           setLoadError(null);
-          setIsLoading(false);
+          setLoading(false);
         },
         (error: unknown) => {
           if (controller.signal.aborted || mine <= applied.current) return;
           applied.current = mine;
           setLoadError(error);
-          setIsLoading(false);
+          setLoading(false);
         },
       );
     }, debounceMs);
@@ -103,5 +103,5 @@ export function useAsyncOptions<T extends OptionKey = string>({
 
   const onInputChange = useCallback((next: string) => setInputValue(next), []);
 
-  return { options, isLoading, loadError, inputValue, onInputChange };
+  return { options, loading, loadError, inputValue, onInputChange };
 }

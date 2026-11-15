@@ -52,7 +52,7 @@ function opened(backing: Map<string, unknown>): PrefsStore<typeof SCHEMA> {
 }
 
 const dialog = (store: PrefsStore<typeof SCHEMA>) =>
-  render(<EditorPrefsDialog store={store} isOpen onOpenChange={() => {}} dialog={{ layout: 'list' }} />);
+  render(<EditorPrefsDialog store={store} open onOpenChange={() => {}} dialog={{ layout: 'list' }} />);
 
 describe('EditorPrefsDialog over a stored schema', () => {
   it('draws a row for every kind of leaf', () => {
