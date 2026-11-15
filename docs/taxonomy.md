@@ -206,11 +206,9 @@ features>` takes are listed in `docs/concepts.md`.
 
 ### Affordance
 
-A reusable factory primitive that produces a `{ id, render, hitTest? }` triple consumed by tools. Lives in `packages/core/src/affordances/`. Tools compose multiple affordances into a single overlay layer via `composeAffordanceLayer`. The dispatcher consults each composite layer's `hitTest` on pointerdown (top-down z-order) before falling through to the active-tool slot walk — so visible chrome is hittable regardless of which tool is currently active.
+A reusable piece of interactive chrome: an `Affordance` is `{ id, regions(state), regionsAt?, decorate? }`, and each region it lists declares a shape in its target's local frame, an optional paint, the `hitKind` a press on it reports, and a `bind()` whose `initialScratch` reaches the matching action as `InvocationCtx.drag.affordance`. Lives in `packages/core/src/affordances/`. The kit's own chrome is hit through `buildAffordanceAt` (topmost first, in `chromeAffordances` order); a consumer bundles its own affordances into one registered layer with `composeAffordanceLayer`. Either way the dispatcher resolves the affordance under a press before it walks the bindings, so visible chrome is hittable regardless of which tool is active.
 
 Examples: `createCornerResizeAffordance`, `createRotationAffordance`. See `packages/core/src/affordances/types.ts`.
-
-The factory pattern: each affordance instance is bound to one tool/context at runtime (it closes over that tool's controllers via the wrapper drag channel), but the factory function is reusable across tools.
 
 An affordance **hit** is a claim: `{ kind, owner, strength, cursor?, payload? }`.
 `owner` names what produced it — a kit affordance's `id`, or a registered
@@ -247,17 +245,18 @@ last two categories, since it adds the declaration. See
 A `RenderLayer<TData>` is a named draw function: `{ id, label, draw(data, view, dims) }`.
 Layers are the kit's composable rendering primitive. Each frame the canvas reduces
 the active layer stack into a flat `DrawCommand[]` tree and hands it to the
-WebGL renderer. Layers declare whether they operate in world space (default) or
-screen space. Layers may declare an optional `hitTest(worldX, worldY, data, view, dims)` that the dispatcher consults on pointerdown before the slot walk; first non-null result wins. See `packages/core/src/core/layers/render.ts`.
+renderer. Layers declare whether they operate in world space (default) or
+screen space. A layer registered with `registerLayer`, or carried in a `SurfaceContribution`'s `layers`, may declare a `hitTest(worldX, worldY, data, view, dims, isVisible?)` returning a `LayerHit`; these are tested last-registered-first, ahead of the kit's selection chrome, and the first non-null result wins. A layer that reaches the stack any other way is painted but never hit-tested. See `packages/core/src/core/layers/render.ts`.
 
 ### Slot
 
-A named position in the `LayersMap` passed to `<Canvas>`. Standard slots render in
-canonical z-order: `grid`, `cellHighlight`, `scene`, `selectionOverlay`. Custom
-slots declare an `after` or `before` anchor relative to a standard slot; unanchored
-custom slots land at the top of the stack. Slot configs are distinct from raw
-`RenderLayer` values — the canvas constructs a `RenderLayer` from each slot config
-internally. See `packages/core/src/canvas/Canvas.tsx`.
+A named position in the `LayersMap` that `<SceneCanvas layers>` takes. Standard slots render in
+canonical z-order: `grid`, `cellHighlight`, `scene`, `selectionOverlay`, with
+`<SceneCanvas>`'s `pathEditingOverlay` above them. Custom
+slots declare an `after` or `before` anchor naming a standard slot or another
+custom key; unanchored custom slots land at the top of the stack. A standard
+slot takes a config the canvas builds its layer from, a pre-built `{ layer }`,
+or `null` to switch it off. See `packages/core/src/canvas/layerSlots.ts`.
 
 ### Adapter
 
@@ -829,7 +828,7 @@ A domain that ships as one installable unit is a `SurfaceContribution`
 
 ### Chrome state
 
-The `ChromeState` object built once per Canvas render and passed to every affordance's `render` and `hitTest` call. Source of truth for selection ids, derived bounds (overlay-aware), multi-union AABB (lazy), and modifier flags. Read-only: an affordance changes nothing through it. Its hit is a claim, and the binding that claim routes to runs the action. See `packages/core/src/core/selection/chromeState.ts`.
+The `ChromeState` object built once per Canvas render and passed to every affordance's `regions`, `regionsAt` and `decorate` call. Source of truth for selection ids, derived bounds (overlay-aware), the multi-selection's union AABB, and modifier flags. Read-only: an affordance changes nothing through it. Its hit is a claim, and the binding that claim routes to runs the action. See `packages/core/src/core/selection/chromeState.ts`.
 
 ### Hook
 
@@ -879,7 +878,7 @@ dependency graph.
   when the selection changes).
 
 The kit avoids module-level cycles by making one side **subscribe** instead of
-**import**. Selection subscribes to scene's `onChange` callbacks; scene exposes
+**import**. Selection subscribes through the scene's `subscribe`; scene exposes
 events but does not import selection. The runtime relationship is bidirectional,
 but compile-time imports stay acyclic.
 
@@ -1125,8 +1124,9 @@ Vocabulary for pointer-driven interactions.
 
 A pointer-driven interaction with a `start` / `move` / `end` / `cancel` lifecycle.
 The primitives are `useDragRect` (drag → bounds), `useDragRadial`
-(drag → center + radius), and `useDragGesture`. They are *input* primitives: a
-tool decides what to do with the geometry they emit.
+(drag → center + radius), and `useDragGesture`. They are *input* primitives: the
+caller decides what to do with the geometry they emit. A tool never runs one; it
+binds a gesture to an action.
 
 Ongoing behavior is an
 [Action](#action) descriptor with an `ongoing` invoker returning an
@@ -1201,9 +1201,11 @@ neither: it declares bindings, and its `cursor` function takes no argument.
 
 ### Backend
 
-The kit renders exclusively via **WebGL2** through `WeaselRenderer`
-(`packages/renderer/src/`). There is no 2D canvas codepath and no `backend`
-prop. WebGPU is a future option tracked in `docs/TODO.md`.
+The kit renders on the GPU through `WeaselRenderer` (`packages/renderer/src/`),
+with WebGL2 or WebGPU; there is no 2D canvas codepath. A canvas's `backend` prop
+(`'webgl2'`, the default, `'webgpu'` or `'auto'`, or the nearest
+`CanvasBackendProvider`'s) picks one, read once when its first renderer is built.
+See `packages/core/src/canvas/canvasBackend.ts`.
 
 
 ### Op coalescing
@@ -1220,11 +1222,11 @@ combined `createSelectionOverlayLayer`. The overlay reads overlay-aware pose
 lookups (live gesture pose wins over committed adapter pose) so handles track
 objects during a drag. The selection overlay is screen-space-constant for handle
 sizes but world-space for object positions. See
-`packages/core/src/domains/selection/overlay.ts`. The
-kit-level affordance factories (`createCornerResizeAffordance`,
-`createRotationAffordance`) render the same chrome via reusable primitives;
-`createSelectionOverlayLayer` is the legacy presentational helper, and
-the two coexist.
+`packages/core/src/domains/selection/overlay.ts`. The overlay paints the
+handles; pressing them is the kit's affordances' job
+(`createCornerResizeAffordance`, `createRotationAffordance`), which place the
+handles with the same geometry (`interactions/actions/resize/cornerHandles.ts`),
+so paint and hit agree.
 
 ---
 
@@ -1236,7 +1238,9 @@ Discussed but not shipped.
 
 Component-level chain-of-responsibility hooks (`onPointerDown`, `pre-render`,
 `post-render`) that would let features attach to the canvas lifecycle without
-modifying `<SceneCanvas>` directly. Discussed, and left out of scope when feature roles were designed.
+modifying `<SceneCanvas>` directly. Left out as a chain: a feature attaches
+through a [`SurfaceContribution`](#contribution)'s `attach`, `beforePaint` and
+`afterPaint`, and pointer input reaches it only through bindings.
 Distinct from gesture-level [Behaviors](#behavior) which already ship.
 
 ### Capability registry (deferred)
@@ -1245,7 +1249,7 @@ A runtime DAG for cross-domain dependency resolution — typed indirect referenc
 between domains (a "provides/requires" contract) rather than direct TypeScript
 import arguments. Explicitly deferred: the in-tree dependency graph is TypeScript
 imports; typed function arguments carry cross-domain
-deps for now. Tracked in the feature-roles spec.
+deps for now.
 
 ### Behaviors at the component level (deferred)
 
