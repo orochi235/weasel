@@ -21,7 +21,7 @@ const NODES: Array<{ id: string; pose: Pose; data: Data }> = [
   { id: 'h', pose: { x: 480, y: 380, width: 100, height: 70 }, data: { color: '#7fb069', label: 'H' } },
 ];
 type Boundary = 'none' | 'stop' | 'bounce';
-const BOUNDARIES: Boundary[] = ['none', 'stop', 'bounce'];
+const BOUNDARY_ITEMS = (['none', 'stop', 'bounce'] as const).map((b) => ({ value: b, label: b }));
 const BOUNDS = { minX: -20, maxX: 300, minY: -20, maxY: 200 };
 
 export function ViewportDemo() {
@@ -52,7 +52,8 @@ export function ViewportDemo() {
         <Checkbox isSelected={inertiaOn} onChange={setInertiaOn}>inertia</Checkbox>
         <span className="ckd-toolbar-note">boundary:</span>
         <SegmentedBar
-          items={BOUNDARIES.map((b) => ({ value: b, label: b, disabled: !inertiaOn }))}
+          items={BOUNDARY_ITEMS}
+          disabled={!inertiaOn}
           value={boundary}
           onChange={(b) => b && setBoundary(b)}
           aria-label="Boundary"
