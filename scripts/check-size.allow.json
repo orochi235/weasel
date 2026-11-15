@@ -33,9 +33,6 @@
   "packages/core/src/core/scene/renderOrder.ts": {
     "longestFunction": 164
   },
-  "packages/core/src/core/scene/types.ts": {
-    "lines": 480
-  },
   "packages/core/src/domains/paths/penPreviewLayer.ts": {
     "longestFunction": 138
   },
