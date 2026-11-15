@@ -6,6 +6,7 @@
  * lens aims through these, so they agree on when it follows.
  */
 import { ANY_MODS, defineAction, type Action, heldKeySpec } from '@weasel-js/routing';
+import type {} from './actionParamSchema';
 
 /** Canonical id of the hold-to-peek action. */
 export const LOUPE_PEEK_ID = 'loupe.peek';

@@ -4,6 +4,7 @@ import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { isEnterable, type EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { NodeId } from 'core/scene/types';
 import { pressTarget, type PressTargetTree } from '../../../tools/builtin/pressTarget';
+import type {} from '../actionParamSchema';
 
 /** What `group.enter` reads: the node under a point and the tree above it. */
 export interface EnterGroupOptions {

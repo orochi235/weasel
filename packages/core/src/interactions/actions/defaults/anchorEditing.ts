@@ -43,6 +43,7 @@ import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { pathOperationTags } from '../pathGestureTags';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
+import type {} from '../actionParamSchema';
 
 /** Screen-pixel radius for "this click landed on an anchor". */
 export const ANCHOR_CLICK_PX = 10;

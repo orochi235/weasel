@@ -7,6 +7,7 @@ import { insertKind } from './shape';
 import { clearedSelection } from './session';
 import { minSizeOf } from 'core/scene/minSize';
 import { insertStyleOf } from './style';
+import type {} from '../actionParamSchema';
 
 /** What the dispatcher lays under an immediate action's params for a click. */
 const CLICK_FIELDS = ['world', 'press', 'affordance', 'mods'] as const;

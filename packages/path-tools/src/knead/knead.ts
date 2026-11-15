@@ -12,6 +12,7 @@ import { commitOps, drawnAABBOf, reshapeOps, shownNodeOf, withPath, type PathNod
 import { icon } from '../icons.gen';
 import { kneadTargets } from './kneadTargets';
 import { outlineSession } from '../shared/outlineSession';
+import type {} from '../actionParamSchema';
 
 /** The brush's radius in screen px when no param gives one. */
 export const DEFAULT_KNEAD_RADIUS_PX = 40;

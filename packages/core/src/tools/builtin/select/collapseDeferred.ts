@@ -2,6 +2,7 @@ import type { RefObject } from 'react';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /**
  * `select.collapseDeferred` — the release half of the deferred multi-click.

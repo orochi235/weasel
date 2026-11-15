@@ -30,6 +30,7 @@ import { LASSO_VERTICES } from './behaviors/selectFromLasso';
 import { reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
 import { hitTargets, selectionFromHits } from '../hitSelection';
 import { finiteThroughout } from '../finiteFrame';
+import type {} from '../actionParamSchema';
 
 /** Compute AABB of a polygon (for fallback hit-test when hitTestLasso is absent). */
 function polygonAABB(

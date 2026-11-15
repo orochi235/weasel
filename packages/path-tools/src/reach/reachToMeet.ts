@@ -11,6 +11,7 @@ import {
   pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress, type StrokePressParams,
 } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 const REACH_LABEL = 'Reach';
 

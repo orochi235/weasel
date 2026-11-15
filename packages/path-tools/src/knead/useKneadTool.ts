@@ -3,6 +3,7 @@ import { shareToolOptions, type ToolKeybinding, type ToolOptionShare } from '@we
 import { defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { KNEAD_PARAMS } from './knead';
+import type {} from '../actionParamSchema';
 
 /** Knead's size and strength: the `knead` action's params, the same form its last-operation
  *  panel shows. */

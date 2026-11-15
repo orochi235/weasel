@@ -6,6 +6,7 @@ import type { UseLassoSelectOptions } from 'interactions/actions/lasso-select/op
 import type { LassoHitMode } from 'core/adapters/types';
 import { withToolOptionDefault, type ToolKeybinding, type ToolOptions } from '@weasel-js/routing';
 import { icon } from '../../../icons.gen';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** The lasso's options: which shapes its loop selects, its own rather than shared. */
 export const LASSO_TOOL_OPTIONS: ToolOptions = {

@@ -5,6 +5,7 @@ import { commitOps, deleteNode, reshapeOps, type PathNode, pathOperationTags } f
 import { pref } from '@weasel-js/prefs';
 import { pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePressParams } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 const SNIP_LABEL = 'Snip';
 

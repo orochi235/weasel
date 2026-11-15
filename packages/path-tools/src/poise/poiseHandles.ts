@@ -36,6 +36,7 @@ import {
   commitAnchorEdit, type EditAnchorsDep, editedPathSymmetries, editingLayer, HANDLE_LOCK_ROLES, inPlane, locksInForce, pathEditPreview, pathOperationTags,
 } from '@weasel-js/core';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 /** The segment a `poise:N` affordance names, on the path being edited. */
 function gripTarget(

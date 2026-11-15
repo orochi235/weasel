@@ -3,6 +3,7 @@ import { defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
 import { shareToolOptions, type ToolOptionShare } from '@weasel-js/routing';
 import { icon } from '../icons.gen';
 import { SAND_PARAMS } from './sand';
+import type {} from '../actionParamSchema';
 
 /** Sand's size and tolerance: the `sand` action's params, the same form its
  *  last-operation panel shows. */

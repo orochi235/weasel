@@ -10,6 +10,7 @@ import {
 import {
   depOf, type EditAnchorsDep, editingLayer, inPlane, pathEditPreview, pathOperationTags,
 } from '@weasel-js/core';
+import type {} from '../actionParamSchema';
 
 /** Params `tugPath` reads on every move. */
 export type TugPathParams = {

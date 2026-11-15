@@ -46,6 +46,7 @@ import {
   waypointLayer,
   type WaypointAffordanceOptions,
 } from './waypointLayer';
+import type {} from './actionParamSchema';
 
 export { CONNECT_ACTION_ID };
 

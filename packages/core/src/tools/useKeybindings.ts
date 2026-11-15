@@ -10,6 +10,7 @@ import {
 } from 'interactions/actions/defaults/toolActivate';
 import { createToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 import type { ToolsApi } from './overlayBinding';
+import type {} from '../interactions/actions/actionParamSchema';
 
 /** Options for `useKeybindings`. */
 export interface UseKeybindingsOptions {

@@ -1,5 +1,6 @@
 import { defineAction } from '@weasel-js/routing';
 import type { InsertLiveGesture } from './live';
+import type {} from '../actionParamSchema';
 
 /** Radians per unit of wheel deltaY. Tuned so a typical mouse-wheel click
  *  (deltaY ≈ 100) yields ~25°, while a trackpad event (deltaY ≈ 1–10)

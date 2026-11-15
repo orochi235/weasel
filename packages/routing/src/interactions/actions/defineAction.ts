@@ -11,9 +11,6 @@ import type { ActionParamsOf } from './actionIds';
 import type { BoundGesture } from './binding';
 import type { ActionDeps, Invoker } from './invoker';
 
-type Typed = 'id' | 'invoker' | 'enabled' | 'active' | 'preview' | 'cursor' | 'variants' | 'defaultBinding' |
-  'settings' | 'params';
-
 /** An {@link ActionVariant} whose params are `P`'s. */
 export interface ActionVariantOf<P> extends Omit<ActionVariant, 'params'> {
   params: Readonly<P>;
@@ -29,7 +26,11 @@ export interface ActionSettingsOf<P> extends Omit<ActionSettings, 'params'> {
  * `ActionParamSchema` entry, or an open record for an id the schema does not name. Each param may be absent where
  * the action reads them, since a palette passes none and a tuning lays only some.
  */
-export interface ActionOf<Id extends string, P = ActionParamsOf<Id>> extends Omit<Action, Typed> {
+export interface ActionOf<Id extends string, P = ActionParamsOf<Id>> extends Omit<
+  Action,
+  'id' | 'invoker' | 'enabled' | 'active' | 'preview' | 'cursor' | 'variants' | 'defaultBinding' |
+  'settings' | 'params'
+> {
   id: Id;
   invoker?: Invoker<P>;
   enabled?: (

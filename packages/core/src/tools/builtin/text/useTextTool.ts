@@ -10,6 +10,7 @@ import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 const PRESENTATION = {
   label: 'Text',

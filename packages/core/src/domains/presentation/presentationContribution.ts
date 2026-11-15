@@ -5,6 +5,7 @@ import type { Contribution } from 'tools/overlayBinding';
 import {
   stepPresentation, viewCamera, type PageRequest, type PresentationStepOptions,
 } from './presentationStep';
+import type {} from '../../interactions/actions/actionParamSchema';
 
 /** The entry {@link createPresentationContribution} builds. */
 export const PRESENTATION_ID = 'weasel-presentation';

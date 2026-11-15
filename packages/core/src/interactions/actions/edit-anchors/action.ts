@@ -68,6 +68,7 @@ import {
 import type { PathEditDrag } from 'domains/paths/pathEditExtension';
 import { editedPathSymmetries } from './symmetry';
 import { pathOperationTags } from '../pathGestureTags';
+import type {} from '../actionParamSchema';
 
 /**
  * Parse an anchor affordance kind — `'anchor:N'` | `'controlIn:N'` |

@@ -20,6 +20,7 @@ import {
 } from '@weasel-js/core';
 import type { Contribution, GestureBinding } from '@weasel-js/routing';
 import { ANY_MODS, defineAction } from '@weasel-js/routing';
+import type {} from '../../actionParamSchema';
 import {
   aimedNodeOf,
   keepHeldOps,

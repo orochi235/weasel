@@ -33,6 +33,7 @@ import { resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import { quantizedShape } from 'core/scene/outputGrid';
 import type { OpsApplier } from './slice';
+import type {} from '../../interactions/actions/actionParamSchema';
 
 /** The part of a `PathEditState` the dep reads and writes. */
 export type EditAnchorsStateRef = Omit<PathEditState, 'subscribe' | 'getEditingIds' | 'setExtensions'>;

@@ -8,6 +8,7 @@ import { measureCreateAction, measurePickAtAction } from 'domains/measure/measur
 import { MEASURE_ACTION_IDS } from 'domains/measure/actionIds';
 import { icon } from '../../../icons.gen';
 import { SNAP_ROLE_MODS } from 'domains/snap/roles';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** Options for `useMeasureTool`. */
 export interface UseMeasureToolOptions {

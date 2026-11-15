@@ -11,6 +11,7 @@ import { placedRig } from './placedRig';
 import { createRigEditState, type RigEditState } from './rigEditState';
 import { createEmitter } from '@weasel-js/registry';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 /** Options for `useBoneTool`. */
 export interface UseBoneToolOptions {

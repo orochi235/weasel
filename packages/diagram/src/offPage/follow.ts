@@ -17,6 +17,7 @@ import {
 } from '@weasel-js/core';
 import { diagramEdgeOf } from '../edgeTrait';
 import { offPageTagOf } from './trait';
+import type {} from '../actionParamSchema';
 
 /** The action that follows an off-page tag to its far page. */
 export const FOLLOW_OFF_PAGE_ACTION_ID = 'diagram.followOffPage';

@@ -15,6 +15,7 @@ import type { NodeId } from 'core/scene/types';
 import { wheelPan } from 'core/viewport/wheelHandler';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import type { AnyScene } from 'core/scene/anyScene';
+import type {} from '../actionParamSchema';
 
 /** How far a container's content can scroll on each axis, in its own units:
  *  `[min, max]`, zero included, so an unscrolled container is in range. */

@@ -21,6 +21,7 @@ import { outlineSession, type OutlineSession } from '../shared/outlineSession';
 import { icon } from '../icons.gen';
 import { warpSettingsForm } from './warpSettingsForm';
 import { configureWarpParams, settingsOfWarp, warpDragParams } from './warpParams';
+import type {} from '../actionParamSchema';
 
 /** What a press on a warp control hands the drag that follows. */
 export interface WarpHandleScratch {

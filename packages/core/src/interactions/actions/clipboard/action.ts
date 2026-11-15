@@ -7,6 +7,7 @@ import { claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest'
 import { ANY_MODS } from '@weasel-js/gestures';
 import { icon } from '../../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
+import type {} from '../actionParamSchema';
 
 /**
  * Static descriptor for the `clipboard.copy` Action (Cmd/Ctrl+C).

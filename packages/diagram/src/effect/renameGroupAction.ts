@@ -3,6 +3,7 @@ import { ActionDisabledReason, defineAction, type Contribution, type Vec2 } from
 import { ANYWHERE } from '../reorder';
 import type { ReorderSource } from './editorReorder';
 import { groupAt } from './groupOrder';
+import type {} from '../actionParamSchema';
 
 /** The action that opens a group's name field. */
 export const RENAME_GROUP_ACTION_ID = 'effect.renameGroup';

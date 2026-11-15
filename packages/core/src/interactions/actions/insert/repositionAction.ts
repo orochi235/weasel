@@ -1,5 +1,6 @@
 import { heldKeySpec, type Action, type GestureBinding } from '@weasel-js/routing';
 import type { InsertLiveGesture } from './live';
+import type {} from '../actionParamSchema';
 
 /**
  * Companion to `insertAction`: while its key is held, dragging moves the
