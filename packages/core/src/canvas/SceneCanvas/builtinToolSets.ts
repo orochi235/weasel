@@ -1,5 +1,6 @@
 import { KIT_SHAPE_KINDS, kitShapeKindsOf, type BuiltinShapeToolId } from 'core/shapeKinds';
 import { toolIdsOf, toolSet, type ToolSet } from '@weasel-js/routing';
+import type {} from '../../interactions/actions/actionParamSchema';
 
 /** Built-in tool ids SceneCanvas knows how to mount, through `defaultTools` or a preset. */
 export type BuiltinToolId = 'select' | 'anchors' | 'hand' | BuiltinShapeToolId | 'slice';

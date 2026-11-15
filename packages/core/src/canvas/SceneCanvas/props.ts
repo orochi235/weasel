@@ -65,7 +65,6 @@ export type SceneCanvasLayers<TNode extends { id: string }, TPose> = LayersMap<
 
 import type { BuiltinToolId } from './builtinToolSets'; import type { SceneCanvasPaintedBy } from './workerProps';
 import type { ToolEntry } from '@weasel-js/routing';
-import type {} from '../../interactions/actions/actionParamSchema';
 export { BUILTIN_TOOL_IDS, type BuiltinToolId } from './builtinToolSets';
 
 export type { SceneCanvasHit };

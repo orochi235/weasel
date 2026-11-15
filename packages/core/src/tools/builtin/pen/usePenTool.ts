@@ -21,7 +21,6 @@ import { createPointerFollower } from '../shared/pointerFollower';
 import { icon } from '../../../icons.gen';
 import { penOptionValues, penToolOptions } from './penOptions';
 import { anchorCount, buildPath, freshScratch, resetScratch, startSubpath } from './penScratch';
-import type {} from '../../../interactions/actions/actionParamSchema';
 
 /**
  * In-progress pen anchor. A click places a corner, with no handles. A drag
