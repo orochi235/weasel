@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene, drawPreset } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { recordingContribution } from './contribution';
 import type { RecordingSession } from './session';
@@ -29,7 +29,7 @@ function setup(state: { recording?: boolean; playing?: boolean } = {}) {
     <DepRegistryProvider>
       <ActionsProvider>
         <ActionBar group="record" />
-        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+        <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
           ambient={[recordingContribution(session)]} />
       </ActionsProvider>
     </DepRegistryProvider>,

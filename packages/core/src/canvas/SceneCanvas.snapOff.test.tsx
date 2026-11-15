@@ -9,6 +9,7 @@ import type { PolygonPath } from '@weasel-js/geom';
 import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { gridSource } from 'domains/snap/testing/sessionDep';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -35,7 +36,7 @@ function penAnchors(enabled: boolean, points: readonly { x: number; y: number }[
   const scene = createScene({ systemLayers: [{ id: 'main' }] });
   const { container } = render(
     <SceneCanvas
-      features={['draw']} scene={scene} width={200} height={200} layers={{}}
+      features={[drawPreset]} scene={scene} width={200} height={200} layers={{}}
       defaultTools={BUILTIN_TOOL_IDS} defaultActiveTool="pen"
       snap={{ sources: [gridSource(10)], enabled }}
     />,

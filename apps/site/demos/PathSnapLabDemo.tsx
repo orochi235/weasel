@@ -1,4 +1,4 @@
-import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource, solid } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene, ellipsePath, pathFromD, pathSnapSource, solid, drawPreset } from '@weasel-js/core';
 import {
   type ConfigOf,
   defineInstrument,
@@ -58,7 +58,7 @@ function PathSnapTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   );
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={[drawPreset]}
       defaultTools={['line', 'pen']}
       scene={scene}
       trial={ctx.trial}

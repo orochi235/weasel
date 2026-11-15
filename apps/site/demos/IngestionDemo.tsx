@@ -5,7 +5,7 @@ import {
   useSelection,
   openFilePicker,
   type SceneCanvasApi,
-  type ContentHandlerEntry,
+  type ContentHandlerEntry, ingestPreset,
 } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
@@ -50,7 +50,7 @@ export function IngestionDemo() {
           className="ckd-canvas"
           scene={scene}
           selection={selection}
-          features={['ingest']}
+          features={[ingestPreset]}
           ingestion={{ handlers: textHandler }}
         />
       </DemoStage>

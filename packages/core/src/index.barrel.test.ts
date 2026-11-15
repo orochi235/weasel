@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as Barrel from './index';
 import { SHAPE_KINDS, shapeKindsWhere } from './core/shapeKinds';
+import { FEATURE_PRESETS } from 'canvas/SceneCanvas/namedPresets';
 
 const ROOT = __dirname;
 
@@ -66,18 +67,15 @@ describe('kit barrel parity', () => {
   // same (canvas) layer, so it's in lockstep by construction — no cross-layer
   // parity test needed (the two no longer straddle a boundary).
 
-  // Consumers list the presets from the kit's own tables rather than a copy —
-  // assert the barrel ships them: one action list per preset.
-  it('exports SCENE_CANVAS_FEATURES and FEATURE_ACTION_IDS for every preset, and describePresets', () => {
-    const features = (Barrel as Record<string, unknown>).SCENE_CANVAS_FEATURES as
-      | readonly string[]
-      | undefined;
-    const table = (Barrel as Record<string, unknown>).FEATURE_ACTION_IDS as
-      | Record<string, readonly string[]>
-      | undefined;
-    expect(features, 'SCENE_CANVAS_FEATURES must be exported').toBeDefined();
-    expect(table, 'FEATURE_ACTION_IDS must be exported').toBeDefined();
-    expect(Object.keys(table!).sort()).toEqual([...features!].sort());
+  // Names live behind `@weasel-js/core/named-features`; the root barrel ships
+  // the preset objects and nothing that resolves a name.
+  it('exports every core preset object and describePresets, and no preset names', () => {
+    for (const [name, preset] of Object.entries(FEATURE_PRESETS)) {
+      expect(Object.values(Barrel), name).toContain(preset);
+    }
+    for (const gone of ['SCENE_CANVAS_FEATURES', 'FEATURE_ACTION_IDS', 'FEATURE_PRESETS', 'namedFeatures', 'LeanSceneCanvas']) {
+      expect(gone in Barrel, gone).toBe(false);
+    }
     expect(Barrel.describePresets).toBeTypeOf('function');
   });
 });

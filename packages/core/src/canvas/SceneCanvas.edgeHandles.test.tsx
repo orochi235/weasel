@@ -12,6 +12,7 @@ import type { NodeId } from 'core/scene/types';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import { movePreset, pickPreset, resizePreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -66,7 +67,7 @@ function mount(a: Partial<P> = {}, props: Record<string, unknown> = {}) {
   });
   const seen: { selection: SelectionApi | null } = { selection: null };
   const result = render(
-    <SceneCanvas scene={scene} width={300} height={300} features={['pick', 'move', 'resize']} {...props}>
+    <SceneCanvas scene={scene} width={300} height={300} features={[pickPreset, movePreset, resizePreset]} {...props}>
       <SelectionProbe into={seen} />
     </SceneCanvas>,
   );
@@ -165,7 +166,7 @@ describe('edge handles are one decision, keyed on the hit radius', () => {
     }
     const result = render(
       <SceneCanvas
-        scene={scene} width={300} height={300} features={['pick', 'move', 'resize']}
+        scene={scene} width={300} height={300} features={[pickPreset, movePreset, resizePreset]}
         selectTool={{ handleHitRadius: hitRadius }}
         layers={{ selectionOverlay: { handles: { size: paintSize } } }}
       >

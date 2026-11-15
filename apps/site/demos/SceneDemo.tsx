@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore } from 'react';
-import { SceneCanvas, sceneFromJSON, useSelection } from '@weasel-js/core';
+import { SceneCanvas, sceneFromJSON, useSelection, editPreset, movePreset, pickPreset } from '@weasel-js/core';
 import type { SerializedScene, Fill } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import sceneJson from './data/scene.scene.json';
@@ -27,7 +27,7 @@ export function SceneDemo() {
       </div>
       <DemoStage width={480} height={320}>
         <SceneCanvas
-          features={['pick', 'move', 'edit']}
+          features={[pickPreset, movePreset, editPreset]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

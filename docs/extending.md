@@ -44,7 +44,7 @@ throws on a duplicate entry id, dep name or view id.
 ### Presets
 
 A package ships its behavior as a `FeaturePreset`, and an app turns it on by
-passing the object beside core's names: `features={['draw', pathTools]}`. An
+passing the object beside core's: `features={[drawPreset, pathTools]}`. An
 app that does not import a preset never loads its code.
 
 ```ts
@@ -67,17 +67,17 @@ interface FeaturePreset {
 ```
 
 Actions register in preset order, and a preset goes ahead of the presets it
-`refines`: core's `anchorKeys` refines `nudge`, `delete`, and `escape`, so
+`refines`, by id: core's `anchorKeys` refines `nudge`, `delete`, and `escape`, so
 anchor nudging is tried before node nudging on the same arrow key. A preset
 with only `actions`, built-in `tools`, and `includes` is a bundle, pure
 grouping; one with any other role is an atom, whose parts only work together.
 `describePresets` reports both as data (each one's own action and tool ids,
 its includes, and whether it is an atom) for a tool that lists or rearranges
-them, such as the asset editor's Bundles asset. Core's own presets are exported too
-(`selectPreset`, `editPreset`, `pathsPreset`, …), and `<SceneCanvas>` resolves
-its names through them. `<SceneCanvas>` itself loads every core preset to
-resolve those names; `<LeanSceneCanvas>` takes objects only, so a bundle
-holds just the presets it was handed.
+them, such as the asset editor's Bundles asset. Core's own presets are exported the
+same way (`selectPreset`, `editPreset`, `pathsPreset`, …), and `<SceneCanvas>`
+resolves no names, so a bundle holds just the presets it was handed. Where
+presets are picked by name, `namedFeatures` in `@weasel-js/core/named-features`
+maps core's names to the objects, at the cost of loading every core preset.
 
 A `ToolSet` names a group of tool ids, and other sets, as one unit: `defaultTools`,
 a preset's `tools`, and `ToolPalette`'s `include` each take one. Core ships one per
@@ -502,7 +502,7 @@ const gemTool = defineTool({
 
 <SceneCanvas
   scene={scene}
-  features={['draw']}
+  features={[drawPreset]}
   defaultTools={['select', 'rect']}
   tools={{ gem: gemTool }}
   insertNodeFactories={{ gem: gemFactory }}

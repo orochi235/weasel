@@ -10,7 +10,8 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { useSceneTextEdit } from 'domains/text/useSceneTextEdit';
 import { SceneCanvas } from './SceneCanvas';
-import type { Feature } from './SceneCanvas/features';
+import type { FeaturePreset } from './SceneCanvas/features';
+import { editPreset } from 'canvas/SceneCanvas/presets';
 import { layersWhileEditing, useCanvasTextEditor, type SceneCanvasTextEditor } from './SceneCanvas/defaultTextEditor';
 import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
 
@@ -37,7 +38,7 @@ function StartEdit(): null {
   return null;
 }
 
-function mount(opts: { features?: Feature[]; textEditor?: SceneCanvasTextEditor<D>; host?: boolean } = {}) {
+function mount(opts: { features?: FeaturePreset[]; textEditor?: SceneCanvasTextEditor<D>; host?: boolean } = {}) {
   const scene = sceneWithText();
   function Host() {
     const [frame, setFrame] = useState<HTMLDivElement | null>(null);
@@ -45,7 +46,7 @@ function mount(opts: { features?: Feature[]; textEditor?: SceneCanvasTextEditor<
     hostEditing = () => edit.editingId;
     return (
       <div ref={setFrame} data-testid="frame">
-        <SceneCanvas scene={scene} width={300} height={60} features={opts.features ?? ['edit']}
+        <SceneCanvas scene={scene} width={300} height={60} features={opts.features ?? [editPreset]}
           {...(opts.textEditor !== undefined ? { textEditor: opts.textEditor } : {})}>
           <StartEdit />
         </SceneCanvas>

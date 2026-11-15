@@ -1,6 +1,6 @@
 /**
  * `@weasel-js/path-tools` — path-editing tools for a weasel canvas, each
- * family a `FeaturePreset` an app turns on beside core's: `features={['draw',
+ * family a `FeaturePreset` an app turns on beside core's: `features={[drawPreset,
  * pathTools]}` for all of them, or one at a time.
  *
  * @packageDocumentation

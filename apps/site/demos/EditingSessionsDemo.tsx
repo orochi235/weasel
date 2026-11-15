@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore, type ReactNode } from 'react';
-import { CanvasView, SceneCanvas, useEditingSession, useScene } from '@weasel-js/core';
+import { CanvasView, SceneCanvas, movePreset, pickPreset, useEditingSession, useScene, viewPreset } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 import { makeRandomScene, pipView, PIP } from './CanvasViewDemo';
@@ -23,7 +23,7 @@ function SessionCanvas({ session, children }: { session: DocScene; children?: Re
   return (
     <div className={styles.column}>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['view', 'pick', 'move']} className="ckd-canvas" scene={session}
+        <SceneCanvas features={[viewPreset, pickPreset, movePreset]} className="ckd-canvas" scene={session}
           selectionOptions={{ mode: 'multi' }}>
           {children}
         </SceneCanvas>

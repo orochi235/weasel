@@ -1,4 +1,4 @@
-import { createScene, screenToWorld, solid, viewToTransform } from '@weasel-js/core';
+import { createScene, screenToWorld, solid, viewToTransform, movePreset, pickPreset, transformPreset, viewPreset } from '@weasel-js/core';
 import type { AddNodeSpec, Fill, Paint, RectPose, UnitSystem, View } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import { useMemo, useRef } from 'react';
@@ -130,7 +130,7 @@ function GardenBody({ ctx }: { ctx: RenderContext<GardenState, GardenConfig> }) 
       >
         <div className="lk-garden-canvas__inner">
           <TrialSceneCanvas
-            features={['view', 'pick', 'move', 'transform']}
+            features={[viewPreset, pickPreset, movePreset, transformPreset]}
             scene={scene}
             trial={ctx.trial}
             defaultView={DEFAULT_VIEW}

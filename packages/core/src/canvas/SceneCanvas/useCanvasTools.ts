@@ -13,8 +13,7 @@ import {
   resolveFeatures,
   type EnabledPresets,
   type FeatureBindingOptions,
-  type FeatureEntry,
-  type NamedPresets,
+  type FeaturePreset,
 } from './features';
 import type { SceneCanvasProps } from './props';
 import type { ToolsPatch } from './toolRegistry';
@@ -30,26 +29,25 @@ function isToolsApi(tools: ToolsApi | ToolsPatch): tools is ToolsApi {
 
 const presetSerials = new WeakMap<object, number>();
 let nextSerial = 0;
-const entryKey = (e: FeatureEntry): string => {
-  if (typeof e === 'string') return e;
+const entryKey = (e: FeaturePreset): string => {
+  // A name from untyped code reaches `resolveFeatures`, which says what to pass instead.
+  if (typeof e !== 'object') return String(e);
   let n = presetSerials.get(e);
   if (n === undefined) presetSerials.set(e, (n = nextSerial++));
   return `#${n}`;
 };
 
 /** The presets a canvas runs with. Keyed on the entries, not the array, so
- *  an inline `features={['draw', pathTools]}` does not re-derive every render. */
+ *  an inline `features={[drawPreset, pathTools]}` does not re-derive every render. */
 export function useEnabledFeatures(
-  features: readonly FeatureEntry[] | undefined,
-  named: NamedPresets | null,
-  hasViewport: boolean,
+  features: readonly FeaturePreset[] | undefined,
   selectRotates: boolean,
 ): EnabledPresets {
   const featuresKey = (features ?? []).map(entryKey).join('|');
   return useMemo(
-    () => resolveFeatures(features, named, { viewport: hasViewport, selectRotates }),
+    () => resolveFeatures(features, { selectRotates }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [featuresKey, named, hasViewport, selectRotates],
+    [featuresKey, selectRotates],
   );
 }
 

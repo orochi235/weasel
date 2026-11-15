@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SceneCanvas, asNodeId, createScene, RIGID_POSE_COMPOSITION } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createScene, RIGID_POSE_COMPOSITION, movePreset, pickPreset } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { tileGrid } from '@weasel-js/guides';
@@ -39,7 +39,7 @@ export function ScrollingGridDemo() {
   return (
     <DemoStage width={420} height={260}>
       <SceneCanvas
-        features={['pick', 'move']}
+        features={[pickPreset, movePreset]}
         scene={scene}
         layers={{
           scene: {

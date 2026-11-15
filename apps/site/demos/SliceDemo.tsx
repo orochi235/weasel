@@ -10,7 +10,7 @@ import {
   useScene,
   useSelection,
   type Path,
-  type ToolsApi,
+  type ToolsApi, editPreset, movePreset, pickPreset,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
@@ -50,7 +50,7 @@ export function SliceDemo() {
           className="ckd-canvas"
           scene={scene}
           selection={selection}
-          features={['pick', 'move', 'edit']}
+          features={[pickPreset, movePreset, editPreset]}
           defaultTools={['slice']}
           defaultActiveTool="slice"
           onToolsCreated={setTools}

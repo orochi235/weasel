@@ -9,7 +9,7 @@ import {
   SceneCanvas,
   solid,
   useRigNode,
-  useScene,
+  useScene, pathsPreset, pickPreset,
 } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import { createRigEditState, useRigTools } from '@weasel-js/rig';
@@ -93,7 +93,7 @@ export function RigToolsDemo() {
         <SceneCanvas
           className="ckd-canvas"
           scene={scene}
-          features={['pick', 'paths']}
+          features={[pickPreset, pathsPreset]}
           tools={tools}
           claimKeys
         />

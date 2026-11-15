@@ -1,4 +1,4 @@
-import { type RectPose, useActionsRegistry, useSelection } from '@weasel-js/core';
+import { type RectPose, useActionsRegistry, useSelection, drawPreset } from '@weasel-js/core';
 import { resamplePreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -28,7 +28,7 @@ const WAVE = 'M 80 300 C 120 120 160 120 200 220 C 220 270 300 300 320 180 L 380
   + 'C 420 60 470 80 520 180 C 540 220 600 260 660 200';
 
 const createLabScene = () => createPathLabScene(WAVE);
-const features = ['draw', resamplePreset] as const;
+const features = [drawPreset, resamplePreset] as const;
 
 function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);

@@ -1,5 +1,5 @@
 import {
-  SceneCanvas, WeaselProvider, useLatest, useScene, type NodeId, type Paint, type RectPose,
+  SceneCanvas, WeaselProvider, useLatest, useScene, type NodeId, type Paint, type RectPose, editPreset, pickPreset,
 } from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { plotEditing } from './editing/plotEditing';
@@ -26,7 +26,7 @@ export interface PlotViewProps {
 }
 
 const ROOT = 'plot';
-const FEATURES = ['pick', 'edit'] as const;
+const FEATURES = [pickPreset, editPreset] as const;
 
 /**
  * A chart on its own canvas, edited by dragging its marks (a bar's end, a

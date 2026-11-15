@@ -11,6 +11,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { defineTool, useTools } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -43,7 +44,7 @@ function mountTakeover(modes: ModeRegistry | undefined) {
     const tools = useTools({ active: 'select', registry: { select, pen, untagged } });
     captured.tools = tools;
     return (
-      <SceneCanvas features={['draw']} scene={scene} width={100} height={100} layers={{}}
+      <SceneCanvas features={[drawPreset]} scene={scene} width={100} height={100} layers={{}}
         tools={tools} {...(modes ? { modes } : {})} />
     );
   }
@@ -56,7 +57,7 @@ function mountInternal(modes: ModeRegistry) {
   function Harness() {
     const scene = useScene<{ color: string }, 'main', P>({ systemLayers: [{ id: 'main' }], initial: [] });
     return (
-      <SceneCanvas features={['draw']} scene={scene} width={100} height={100} layers={{}}
+      <SceneCanvas features={[drawPreset]} scene={scene} width={100} height={100} layers={{}}
         tools={{ pen, untagged }} modes={modes}
         onToolsCreated={(t) => { captured.tools = t; }} />
     );

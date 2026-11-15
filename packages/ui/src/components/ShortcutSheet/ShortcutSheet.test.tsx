@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import {
   SELECT_TOOLS, SHAPE_TOOLS, SceneCanvas, WeaselProvider, createScene, key, toolIdsOf, useCommand,
-  type BindingOverrides, type ToolsApi,
+  type BindingOverrides, type ToolsApi, drawPreset,
 } from '@weasel-js/core';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ShortcutSheet } from './ShortcutSheet';
@@ -38,7 +38,7 @@ function setup(initial: BindingOverrides = {}, initiallyOpen = true) {
       <WeaselProvider>
         <Commands open={() => setOpen(true)} />
         <ShortcutSheet isOpen={open} onOpenChange={setOpen} tools={tools} toolSets={[SELECT_TOOLS, SHAPE_TOOLS]} apple={false} />
-        <SceneCanvas features={['draw']} scene={scene} width={64} height={64} defaultTools={[SELECT_TOOLS, SHAPE_TOOLS]}
+        <SceneCanvas features={[drawPreset]} scene={scene} width={64} height={64} defaultTools={[SELECT_TOOLS, SHAPE_TOOLS]}
           bindingOverrides={overrides} onToolsCreated={setTools} />
       </WeaselProvider>
     );

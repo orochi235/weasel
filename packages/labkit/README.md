@@ -389,7 +389,7 @@ trial then runs no camera of its own, so every pointer, wheel and key gesture
 over the canvas is the scene's, its pan and zoom included.
 
 ```tsx
-import { createScene } from '@weasel-js/core';
+import { createScene, drawPreset } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import { icon } from './icons.gen'; // the app's icon(): see @weasel-js/icons
 import {
@@ -403,7 +403,7 @@ function Body({ ctx }: { ctx: RenderContext<SceneTrialState, ConfigOf<typeof con
   const scene = useTrialScene(ctx, () => createScene({ systemLayers: [{ id: 'default' }], initial: NODES }));
   const snap = useMemo(() => ({ sources: ctx.config.snap ? [gridSnapSource({ spacing: 20 })] : [] }), [ctx.config.snap]);
   return (
-    <TrialSceneCanvas features={['draw']} defaultTools={['rect', 'pen']}
+    <TrialSceneCanvas features={[drawPreset]} defaultTools={['rect', 'pen']}
       scene={scene} trial={ctx.trial} snap={snap} />
   );
 }

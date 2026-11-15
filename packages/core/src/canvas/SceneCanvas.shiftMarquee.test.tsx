@@ -5,6 +5,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -37,7 +38,7 @@ describe('marquee under the select tool', () => {
     function Host() {
       const selection = useSelection({ initial: [a] });
       held.current = selection;
-      return <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={200} selection={selection} />;
+      return <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={200} height={200} selection={selection} />;
     }
     const { container } = render(<Host />);
     return { canvas: container.querySelector('canvas')!, selection: { get: () => held.current!.get() }, a, b };
@@ -60,7 +61,7 @@ describe('drawing a rect with a modifier held from the press', () => {
   function drawWith(mods: { shiftKey?: boolean; altKey?: boolean }) {
     const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={200} defaultTools={["rect"]} defaultActiveTool="rect" />,
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={200} height={200} defaultTools={["rect"]} defaultActiveTool="rect" />,
     );
     const canvas = container.querySelector('canvas')!;
     const at = (type: string, x: number, y: number) =>

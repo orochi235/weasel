@@ -1,5 +1,6 @@
 import * as Weasel from '@weasel-js/core';
 import { defaultNodeProperties, type NodePropertiesEntry } from '@weasel-js/core';
+import { FEATURE_NAMES, FEATURE_PRESETS } from '@weasel-js/core/named-features';
 import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import { type PrefObject, prefSectionLeaves } from '@weasel-js/prefs';
 import { iconSpecRefs, toIconRef } from '@weasel-js/icons';
@@ -66,15 +67,15 @@ export function collectIcons(actions: readonly ActionEntry[]): readonly IconEntr
   return out;
 }
 
-/** Core's named presets, in the order `SCENE_CANVAS_FEATURES` lists them, each with the tools its includes mount. */
+/** Core's named presets, in the order `FEATURE_NAMES` lists them, each with the tools its includes mount. */
 export function collectBundles(): readonly BundleEntry[] {
-  const described = Weasel.describePresets({ '@weasel-js/core': Object.values(Weasel.FEATURE_PRESETS) });
+  const described = Weasel.describePresets({ '@weasel-js/core': Object.values(FEATURE_PRESETS) });
   const byId = new Map(described.map((d) => [d.id, d]));
   const toolsOf = (id: string): string[] => {
     const d = byId.get(id)!;
     return [...new Set([...d.includes.flatMap(toolsOf), ...d.tools])];
   };
-  return Weasel.SCENE_CANVAS_FEATURES.map((id) => {
+  return FEATURE_NAMES.map((id) => {
     const d = byId.get(id)!;
     return { kind: 'bundle', id, label: d.label, atom: d.atom, tools: toolsOf(id), includes: d.includes };
   });

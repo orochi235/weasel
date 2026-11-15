@@ -30,7 +30,7 @@ const poseDescriptor = createPoseDescriptor(world);
 ## On a `<SceneCanvas>`
 
 The deps go where the canvas reads them: `poseDescriptor` and `geometry.pickEvery` as props, and the
-camera, the insert and the snap as one ambient entry's deps. `features={['pick', 'move']}` turns on
+camera, the insert and the snap as one ambient entry's deps. `features={[pickPreset, movePreset]}` turns on
 the select tool's click and drag; the layers are yours to draw.
 
 ```tsx
@@ -54,7 +54,7 @@ const rig: SurfaceContribution = {
 
 <SceneCanvas
   scene={scene}
-  features={['pick', 'move']}
+  features={[pickPreset, movePreset]}
   tools={{ orbit: useOrbitTool(), box }} // `box` binds a drag to `insert`
   ambient={[rig]}
   poseDescriptor={createPoseDescriptor(world)}

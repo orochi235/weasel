@@ -14,6 +14,7 @@ import { createScene } from 'core/scene/scene';
 import type { SurfaceContribution } from './surfaceContribution';
 import type { InsertDep, SnapDep, TextEditDep } from 'interactions/actions/depSchema';
 import { poseBoxes, type DrawnBoxesSource } from 'interactions/actions/drawnBoxes';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -53,7 +54,7 @@ describe('SceneCanvas registration order', () => {
   it('a child of the canvas overrides the kit\'s own deps and actions', () => {
     const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}>
         <ConsumerOverrides />
       </SceneCanvas>,
     );
@@ -65,7 +66,7 @@ describe('SceneCanvas registration order', () => {
   it('a contribution\'s deps override the kit\'s', () => {
     const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ambient={[contribution]}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ambient={[contribution]}>
         <ConsumerOverrides />
       </SceneCanvas>,
     );
@@ -81,7 +82,7 @@ describe('SceneCanvas registration order', () => {
       return null;
     }
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}>
         <MyBoxes />
         <ConsumerOverrides />
       </SceneCanvas>,

@@ -16,6 +16,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { ActionDisabledReason } from '@weasel-js/routing';
 import type { Contribution } from '../tools/overlayBinding';
 import { areaSelectContribution } from '../tools/builtin/select/selectionContributions';
+import { drawPreset, pickPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -93,7 +94,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
 
     // The node's top-left corner handle is at world (0, 0).
     const { container } = render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={200}
@@ -136,7 +137,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     // The rotation handle sits at clientY = -24, which is off-canvas; jsdom
     // doesn't clip client coords, so the press still lands.
     const { container } = render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={200}
@@ -170,7 +171,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
       const scene = makeScene();
       const spy = vi.fn();
       const { container } = render(
-        <SceneCanvas features={['pick']}
+        <SceneCanvas features={[pickPreset]}
           scene={scene}
           layers={{}}
           width={200}
@@ -207,7 +208,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
 
     function mount(scene: Scene<D, L, P>, rotate: object, initial: NodeId[]) {
       const { container } = render(
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           layers={{}}
           width={200}
@@ -288,7 +289,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     const id = firstId(scene);
 
     const { container } = render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={200}

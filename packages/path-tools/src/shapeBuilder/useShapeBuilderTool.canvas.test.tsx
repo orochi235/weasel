@@ -5,7 +5,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import type { Path } from '@weasel-js/geom';
 import {
   createScene, SceneCanvas, useBooleansAdapter, useSelection,
-  type BooleansAdapter, type NodeId, type RenderLayer, type SelectionApi,
+  type BooleansAdapter, type NodeId, type RenderLayer, type SelectionApi, drawPreset,
 } from '@weasel-js/core';
 import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 import { useShapeBuilderTool } from './useShapeBuilderTool';
@@ -61,7 +61,7 @@ function mount() {
     const shapeBuilder = useShapeBuilderTool();
     overlay = shapeBuilder.overlay as RenderLayer<unknown>;
     return (
-      <SceneCanvas features={['draw']} scene={scene} selection={sel} layers={{}} width={400} height={400} tools={{ shapeBuilder }}>
+      <SceneCanvas features={[drawPreset]} scene={scene} selection={sel} layers={{}} width={400} height={400} tools={{ shapeBuilder }}>
         <Publish adapter={adapter} />
       </SceneCanvas>
     );

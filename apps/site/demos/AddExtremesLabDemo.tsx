@@ -1,4 +1,4 @@
-import { type RectPose, useSelection } from '@weasel-js/core';
+import { type RectPose, useSelection, drawPreset } from '@weasel-js/core';
 import { addExtremesPreset, anchorSelectionPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -27,7 +27,7 @@ const BLOB = 'M 180 240 C 190 170 250 100 320 80 C 460 40 560 220 460 340 C 380 
 
 const createLabScene = () => createPathLabScene(BLOB, '#bfe3c0');
 // Anchor selection is what seeds the opening selection.
-const features = ['draw', addExtremesPreset, anchorSelectionPreset] as const;
+const features = [drawPreset, addExtremesPreset, anchorSelectionPreset] as const;
 
 function AddExtremesTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);

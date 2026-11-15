@@ -7,7 +7,7 @@ import {
   easeOutCubic,
   sceneFromJSON,
   useAnimatedReflow,
-  useDepSource,
+  useDepSource, movePreset, pickPreset,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
@@ -96,7 +96,7 @@ export function LayoutDemo() {
   return (
     <div>
       <DemoStage width={620} height={260}>
-        <SceneCanvas features={['pick', 'move']}
+        <SceneCanvas features={[pickPreset, movePreset]}
           scene={scene}
           reflowTransition={reflow}
           layers={{

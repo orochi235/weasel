@@ -19,6 +19,7 @@ import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { CanvasHelpers } from './useViewHelpers';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 const painted = vi.hoisted(() => new Map<unknown, readonly unknown[]>());
 
@@ -118,11 +119,11 @@ describe('<SceneCanvas layerVisibility> hides a layer in that view only', () => 
     return (
       <>
         <div data-view="hidden">
-          <SceneCanvas features={['draw']} scene={scene} selection={hidden} width={300} height={200}
+          <SceneCanvas features={[drawPreset]} scene={scene} selection={hidden} width={300} height={200}
             layers={LAYERS} layerVisibility={HIDE_FX} />
         </div>
         <div data-view="shown">
-          <SceneCanvas features={['draw']} scene={scene} selection={shown} width={300} height={200}
+          <SceneCanvas features={[drawPreset]} scene={scene} selection={shown} width={300} height={200}
             layers={LAYERS} />
         </div>
       </>
@@ -186,7 +187,7 @@ describe('<SceneCanvas layerVisibility> hides a layer in that view only', () => 
     const scene = makeScene();
     scene.setLayerVisible('fx', false);
     const { container } = render(
-      <SceneCanvas features={['draw']} scene={scene} width={300} height={200} layers={LAYERS}
+      <SceneCanvas features={[drawPreset]} scene={scene} width={300} height={200} layers={LAYERS}
         layerVisibility={{ 'scene:fx': true }} />,
     );
     await nextFrame();
@@ -208,7 +209,7 @@ describe('<CanvasView layerVisibility> hides a layer in that view only', () => {
     function Host(): ReactNode {
       selection = useSelection({ mode: 'multi' });
       return (
-        <SceneCanvas features={['draw']} scene={makeScene()} selection={selection} width={800} height={800} layers={LAYERS}
+        <SceneCanvas features={[drawPreset]} scene={makeScene()} selection={selection} width={800} height={800} layers={LAYERS}
           views={[{
             id: 'panel', bounds: { x: 500, y: 500, w: 200, h: 200 },
             layers: onlyScene, layerVisibility: HIDE_FX,
@@ -254,7 +255,7 @@ describe('the chrome state a layer draws with answers for its own view', () => {
     function Host(): ReactNode {
       const ref = useRef<SceneCanvasApi>(null);
       useEffect(() => ref.current?.registerLayer(layer), []);
-      return <SceneCanvas ref={ref} features={['draw']} scene={makeScene()} width={300} height={200}
+      return <SceneCanvas ref={ref} features={[drawPreset]} scene={makeScene()} width={300} height={200}
         layers={LAYERS} layerVisibility={HIDE_FX} />;
     }
     render(<Host />);
@@ -268,7 +269,7 @@ describe('the chrome state a layer draws with answers for its own view', () => {
     // A slot layer: the surface paints registered layers over its views, not in them.
     function Host(): ReactNode {
       return (
-        <SceneCanvas features={['draw']} scene={makeScene()} width={800} height={800}
+        <SceneCanvas features={[drawPreset]} scene={makeScene()} width={800} height={800}
           layers={{ ...LAYERS, probe: { layer } }}
           views={[{ id: 'panel', bounds: { x: 500, y: 500, w: 200, h: 200 }, layerVisibility: HIDE_FX }]}>
           <RegistryOut set={(found) => { registry = found; }} />
@@ -297,7 +298,7 @@ describe('selection chrome stays off a layer a panel hides', () => {
     function Host(): ReactNode {
       const selection = useSelection({ mode: 'multi', initial: [asNodeId('b')] });
       return (
-        <SceneCanvas features={['draw']} scene={makeScene()} selection={selection} width={800} height={800}
+        <SceneCanvas features={[drawPreset]} scene={makeScene()} selection={selection} width={800} height={800}
           layers={LAYERS}
           views={[{
             id: 'panel', bounds: { x: 0, y: 0, w: 400, h: 400 },

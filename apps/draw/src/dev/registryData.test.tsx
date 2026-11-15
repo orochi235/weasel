@@ -8,6 +8,7 @@ import type { ActionEntry, ToolEntry } from './registryEntries';
 import { icon } from '../icons.gen';
 import * as Weasel from '@weasel-js/core';
 import { defaultNodeProperties, type NodePropertiesEntry } from '@weasel-js/core';
+import { FEATURE_NAMES } from '@weasel-js/core/named-features';
 
 describe('registryData static collectors', () => {
   it('collectIcons lists every draw glyph alongside the actions\' glyphs', () => {
@@ -39,7 +40,7 @@ describe('registryData static collectors', () => {
 
   it('collectBundles lists every core preset, each with the tools its includes mount', () => {
     const bundles = collectBundles();
-    expect(bundles.map((b) => b.id)).toEqual([...Weasel.SCENE_CANVAS_FEATURES]);
+    expect(bundles.map((b) => b.id)).toEqual([...FEATURE_NAMES]);
     const draw = bundles.find((b) => b.id === 'draw')!;
     expect([...draw.tools].sort()).toEqual(['anchors', 'hand', 'lasso', 'select']);
     expect(draw.atom).toBe(false);

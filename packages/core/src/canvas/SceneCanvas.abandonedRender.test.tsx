@@ -11,6 +11,7 @@ import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { never } from 'domains/chrome-caps';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: string };
 type L = 'main';
@@ -63,7 +64,7 @@ function visibilityAfterAbandon(
 ): (id: string) => boolean {
   const helpersRef = { current: null as CanvasHelpers<P> | null };
   renderThenAbandon(a, b, (p) => (
-    <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={400}
+    <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={400} height={400}
       helpersRef={helpersRef} {...p} />
   ));
   return helpersRef.current!.getIsVisible();
@@ -118,7 +119,7 @@ describe('<SceneCanvas> after an abandoned render', () => {
     const a = vi.fn();
     const b = vi.fn();
     renderThenAbandon(a, b, (onDoubleClick) => (
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={400}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={400} height={400}
         onDoubleClick={onDoubleClick} />
     ));
     const canvas = document.querySelector('canvas')!;

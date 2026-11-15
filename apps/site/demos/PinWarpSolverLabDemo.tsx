@@ -1,4 +1,4 @@
-import { asNodeId, createScene, type RectPose, solid, useSelection } from '@weasel-js/core';
+import { asNodeId, createScene, type RectPose, solid, useSelection, drawPreset } from '@weasel-js/core';
 import { usePinWarpTool, warpPreset, withPathWarp } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -21,7 +21,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', warpPreset] as const;
+const FEATURES = [drawPreset, warpPreset] as const;
 
 const config = f.schema({
   preset: f.enum<PresetId>('disc', (Object.keys(PRESETS) as PresetId[]).map((value) => ({ value, label: PRESETS[value].label })))

@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
-  SceneCanvas, createEnteredGroup, useSelection, type CanvasViewProps, type NodeId, type SelectionApi,
+  SceneCanvas, createEnteredGroup, useSelection, type CanvasViewProps, type NodeId, type SelectionApi, movePreset, pickPreset, selectPreset,
 } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
 import { createNodeAtPoint, createPickEvery, createPoseDescriptor, worldPoseOf } from './deps';
@@ -58,7 +58,7 @@ function setup(scene: TestScene, aim: Record<ViewName, NodeId>) {
   function Canvas() {
     sel = useSelection({ mode: 'multi' });
     return (
-      <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={['pick', 'select', 'move']}
+      <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={[pickPreset, selectPreset, movePreset]}
         enteredGroup={entered} onHover={(id) => hovered.push(id)}
         poseDescriptor={createPoseDescriptor(world)} geometry={{ pickEvery: createPickEvery(world) }}
         views={[viewProps('left'), viewProps('right')]} />

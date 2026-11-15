@@ -4,7 +4,7 @@ import {
   useScene,
   useSelection,
   type ToolsApi,
-  BUILTIN_TOOL_IDS,
+  BUILTIN_TOOL_IDS, pickPreset,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
@@ -30,7 +30,7 @@ export function ShapeToolsDemo() {
           className="ckd-canvas"
           scene={scene}
           selection={selection}
-          features={['pick']}
+          features={[pickPreset]}
           defaultTools={TOOLS}
           onToolsCreated={setTools}
         />

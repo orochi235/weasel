@@ -1,7 +1,7 @@
 import {
   asNodeId,
   ROTATED_POSE_DESCRIPTOR,
-  SceneCanvas,
+  SceneCanvas, movePreset, pickPreset, transformPreset,
 } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import type { PoseDescriptor, RotatedPose, UnitSystem } from '@weasel-js/core';
@@ -32,7 +32,7 @@ export function TransformDemo() {
       <SceneCanvas
         className="ckd-canvas"
         scene={sceneJson}
-        features={['pick', 'move', 'transform']}
+        features={[pickPreset, movePreset, transformPreset]}
         poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<RotatedPose>}
         snap={SNAP}
         selectionOptions={{ mode: 'multi', initial: [asNodeId('b')] }}

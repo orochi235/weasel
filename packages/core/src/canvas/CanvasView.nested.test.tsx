@@ -17,6 +17,7 @@ import type { CanvasViewCamera, SceneCanvasApi } from './canvasExtension';
 import type { AimHeldViewProps, CameraHeldViewProps } from './canvasViewProps';
 import { ViewMarker } from './ViewMarker';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -91,7 +92,7 @@ function mount(opts: {
       {...(opts.panelHides ? { layerVisibility: { 'scene:main': false } } : {})} />
   );
   const r = render(
-    <SceneCanvas features={['draw']} ref={ref} scene={s.scene} layers={{}} width={400} height={300}>
+    <SceneCanvas features={[drawPreset]} ref={ref} scene={s.scene} layers={{}} width={400} height={300}>
       {opts.insetFirst ? [inset, panel] : [panel, inset]}
       {opts.extra}
       <Probe />

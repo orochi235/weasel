@@ -15,6 +15,7 @@ const shims = [
   'routing',
   'engine',
   'test-seams',
+  'named-features',
   'render-worker',
 ] as const;
 

@@ -3,6 +3,7 @@ import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: string };
 type L = 'main';
@@ -27,7 +28,7 @@ describe('usePencilTool through <SceneCanvas>', () => {
       rect = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 100, y: 100, width: 80, height: 60 } });
     });
     const { container } = render(
-      <SceneCanvas scene={scene} layers={{}} width={400} height={400} features={['draw']}
+      <SceneCanvas scene={scene} layers={{}} width={400} height={400} features={[drawPreset]}
         defaultTools={['select', 'pencil']} defaultActiveTool="pencil" />,
     );
     const canvas = container.querySelector('canvas')!;

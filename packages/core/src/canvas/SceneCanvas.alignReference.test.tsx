@@ -6,6 +6,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { PointerContextProvider, createPointerStore } from '@weasel-js/routing/react';
 import type { BoundGesture } from '@weasel-js/routing';
+import { arrangePreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -29,7 +30,7 @@ function setup() {
   render(
     <PointerContextProvider store={pointer}>
       <SceneCanvas
-        features={['arrange']} scene={scene} layers={{}} width={64} height={64}
+        features={[arrangePreset]} scene={scene} layers={{}} width={64} height={64}
         selectionOptions={{ mode: 'multi', initial: [asNodeId('a'), asNodeId('b')] }}
         actions={{ 'align.left': { defaultBinding: keys } }}
       />

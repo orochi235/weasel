@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import {
-  ActionsProvider, SceneCanvas, rectPath, solid, useIconRegistry, useMenuHost, useMenus, useScene, useSelection,
+  ActionsProvider, SceneCanvas, rectPath, solid, useIconRegistry, useMenuHost, useMenus, useScene, useSelection, arrangePreset, editPreset, movePreset, pickPreset,
 } from '@weasel-js/core';
 import type { Fill, MenuDef, NodeId, Path, SceneCanvasApi } from '@weasel-js/core';
 import { attachMenuHost } from '@weasel-js/hud';
@@ -66,7 +66,7 @@ function Demo() {
     <DemoStage width={W} height={H}>
       <SceneCanvas
         ref={canvasRef}
-        features={['pick', 'move', 'edit', 'arrange']}
+        features={[pickPreset, movePreset, editPreset, arrangePreset]}
         claimKeys
         className="ckd-canvas"
         scene={scene}

@@ -7,7 +7,7 @@
  */
 
 import { act } from '@testing-library/react';
-import { createScene, SceneCanvas } from '@weasel-js/core';
+import { createScene, SceneCanvas, viewPreset } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useContext } from 'react';
@@ -78,7 +78,13 @@ function Body({ withCanvas }: { withCanvas: boolean }) {
       <div className="lk-test-pane" ref={orbit?.viewportRef} />
       {withCanvas ? (
         <div className="lk-test-diagram">
-          <SceneCanvas scene={diagram} viewport={{}} width={200} height={100} />
+          <SceneCanvas
+            scene={diagram}
+            features={[viewPreset]}
+            viewport={{}}
+            width={200}
+            height={100}
+          />
         </div>
       ) : null}
     </>

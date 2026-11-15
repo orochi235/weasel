@@ -5,7 +5,7 @@ import {
   defaultNodeRouting,
   defaultNodeProperties,
   solid,
-  strokeOf,
+  strokeOf, editPreset, pickPreset,
 } from '@weasel-js/core';
 import type { Stroke, Fill } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui/components/inspector/SelectionPanel';
@@ -33,7 +33,7 @@ export function SelectionPanelDemo() {
     <div className="ckd-row">
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={['pick', 'edit']}
+          features={[pickPreset, editPreset]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

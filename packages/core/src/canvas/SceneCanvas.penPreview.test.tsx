@@ -4,6 +4,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import type { useTools } from '../tools/overlayBinding';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -36,7 +37,7 @@ function mount() {
     const scene = useScene<{ color: string }, 'main', P>({ systemLayers: [{ id: 'main' }], initial: [] });
     return (
       <SceneCanvas
-        features={['draw']}
+        features={[drawPreset]}
         scene={scene}
         width={200} height={200}
         layers={{}}

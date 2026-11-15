@@ -1,4 +1,4 @@
-import { useLatest } from '@weasel-js/core';
+import { useLatest, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
 import { DEG_TO_RAD } from '@weasel-js/geom';
 import { type ConfigOf, defineInstrument, f, Lab, type RenderContext, TrialSceneCanvas } from '@weasel-js/labkit';
 import { createHandleSnapPreset } from '@weasel-js/path-tools';
@@ -19,7 +19,7 @@ type Config = ConfigOf<typeof config>;
 function HandleSnapTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
   const { scene, selection, pathEdit } = usePathEditTrial(ctx, BLOB, '#d4a574');
   const live = useLatest(ctx.config);
-  const features = useMemo(() => ['pick', 'move', 'paths', createHandleSnapPreset(() => {
+  const features = useMemo(() => [pickPreset, movePreset, pathsPreset, createHandleSnapPreset(() => {
     const { snap, step, tolerance, opposite } = live.current;
     return snap ? { angleStep: Number(step) * DEG_TO_RAD, reachRad: tolerance * DEG_TO_RAD, opposite } : null;
   })] as const, [live]);

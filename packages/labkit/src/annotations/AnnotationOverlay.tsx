@@ -1,8 +1,12 @@
 import {
+  editPreset,
   type InsertNodeFactory,
+  movePreset,
+  pickPreset,
   registerNodeShape,
   SceneCanvas,
   type SceneCanvasApi,
+  transformPreset,
   useActiveToolContext,
   useLatest,
   type View,
@@ -290,7 +294,7 @@ export function AnnotationOverlay({
         <WeaselProvider isolate>
           <ToolBridge toolId={annotationToolInfo(activeToolId)?.weaselTool ?? 'select'} />
           <SceneCanvas<AnnotationData, 'marks', WorldRect>
-            features={['pick', 'move', 'transform', 'edit']}
+            features={[pickPreset, movePreset, transformPreset, editPreset]}
             ref={attachSceneCanvas}
             scene={scene}
             width={visible.w}

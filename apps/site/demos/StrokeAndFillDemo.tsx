@@ -25,7 +25,7 @@ import {
   type Stroke,
   type ToolsApi,
   type View,
-  type Fill,
+  type Fill, editPreset, pathsPreset, pickPreset,
 } from '@weasel-js/core';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
@@ -178,7 +178,7 @@ function StrokeAndFill() {
         <div className="ckd-canvas-frame" ref={hostRef}>
           <DemoStage width={W} height={H}>
             <SceneCanvas
-              features={['pick', 'edit', 'paths']}
+              features={[pickPreset, editPreset, pathsPreset]}
               className="ckd-canvas"
               scene={scene}
               selection={selection}

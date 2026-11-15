@@ -4,7 +4,7 @@ import { IDENTITY_POSE_COMPOSITION,
   polygonFromPoints,
   SceneCanvas,
   useScene,
-  useSelection,
+  useSelection, movePreset, pickPreset, transformPreset,
 } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type {
@@ -66,7 +66,7 @@ export function PathPoseDemo() {
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={['pick', 'move', 'transform']}
+          features={[pickPreset, movePreset, transformPreset]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

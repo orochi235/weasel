@@ -9,7 +9,7 @@ import {
   useAnimatedReflow,
   useScene,
   useSelection,
-  useVelocityTracker,
+  useVelocityTracker, movePreset, pickPreset,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createGridLayer } from '@weasel-js/guides';
@@ -206,7 +206,7 @@ export function AnimationCards({ animator }: { animator: Animator }) {
         <span style={{ opacity: 0.7 }}>Tip: select one card to see the breathing pulse.</span>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['pick', 'move']}
+        <SceneCanvas features={[pickPreset, movePreset]}
           className="ckd-canvas"
           onResize={setSize}
           scene={scene}
@@ -347,7 +347,7 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
   return (
     <WeaselProvider isolate>
       <DemoStage width={FLICK_W} height={FLICK_H}>
-        <SceneCanvas features={['pick', 'move']}
+        <SceneCanvas features={[pickPreset, movePreset]}
           className="ckd-canvas"
           onResize={(s) => { size.current = s; }}
           scene={scene}

@@ -1,5 +1,5 @@
 /**
- * `<SceneCanvas features={['edit']}>` answering a real `ClipboardEvent` whose
+ * `<SceneCanvas features={[editPreset]}>` answering a real `ClipboardEvent` whose
  * `clipboardData` is a real `DataTransfer` — the two objects jsdom lacks. The
  * event is still constructed here, not produced by Cmd/Ctrl+V against the OS
  * clipboard, so this covers the event's shape and not the browser's choice of
@@ -11,9 +11,10 @@ import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { SceneCanvas, createScene } from '@weasel-js/core';
 import { buildWeaselClipboardText } from '@weasel-js/core/clipboard';
-import type { Feature } from './SceneCanvas/features';
+import type { FeaturePreset } from './SceneCanvas/features';
 import type { Scene } from '../core/scene/types';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
+import { editPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 type S = Scene<object, 'main', P>;
@@ -28,7 +29,7 @@ afterEach(() => {
   host = null;
 });
 
-function mount(features: readonly Feature[]): S {
+function mount(features: readonly FeaturePreset[]): S {
   const scene: S = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
   host = document.createElement('div');
   document.body.appendChild(host);
@@ -59,16 +60,16 @@ const NODE_TEXT = buildWeaselClipboardText([
 
 const settle = () => new Promise((r) => setTimeout(r, 50));
 
-describe('<SceneCanvas features={["edit"]}> and a real paste event', () => {
+describe('<SceneCanvas features={[editPreset]}> and a real paste event', () => {
   it('pastes copied nodes and claims the event', async () => {
-    const scene = mount(['edit']);
+    const scene = mount([editPreset]);
     const ev = paste((dt) => dt.setData('text/plain', NODE_TEXT));
     await expect.poll(() => scene.roots.length).toBe(1);
     expect(ev.defaultPrevented).toBe(true);
   });
 
   it('leaves a pasted image file to the page', async () => {
-    const scene = mount(['edit']);
+    const scene = mount([editPreset]);
     const ev = paste((dt) => dt.items.add(new File(['x'], 'pic.png', { type: 'image/png' })));
     await settle();
     expect(scene.roots.length).toBe(0);

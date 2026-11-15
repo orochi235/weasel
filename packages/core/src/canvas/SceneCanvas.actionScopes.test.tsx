@@ -15,6 +15,7 @@ import { WeaselProvider } from '../WeaselProvider';
 import { ActionsProvider, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -73,12 +74,12 @@ describe('SceneCanvas action scopes', () => {
     const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
       <ActionsProvider>
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={sceneA} layers={{}} width={400} height={400}
           viewport={{ pinchZoom: true }}
           onViewChange={(v) => { keeps.push(v); }}
         />
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={sceneB} layers={{}} width={400} height={400}
           viewport={{ pinchZoom: false }}
           onViewChange={(v) => { optsOut.push(v); }}
@@ -99,12 +100,12 @@ describe('SceneCanvas action scopes', () => {
     const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const both = (
       <ActionsProvider>
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={sceneA} layers={{}} width={400} height={400}
           viewport={{ pinchZoom: true }}
           onViewChange={(v) => { keeps.push(v); }}
         />
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={sceneB} layers={{}} width={400} height={400}
           viewport={{ pinchZoom: false }}
         />
@@ -114,7 +115,7 @@ describe('SceneCanvas action scopes', () => {
     act(() => {
       rerender(
         <ActionsProvider>
-          <SceneCanvas features={['draw']}
+          <SceneCanvas features={[drawPreset]}
             scene={sceneA} layers={{}} width={400} height={400}
             viewport={{ pinchZoom: true }}
             onViewChange={(v) => { keeps.push(v); }}
@@ -132,11 +133,11 @@ describe('SceneCanvas action scopes', () => {
     const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
       <ActionsProvider>
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={sceneA} layers={{}} width={400} height={400}
           onViewChange={(v) => { keeps.push(v); }}
         />
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={sceneB} layers={{}} width={400} height={400}
           actions={{ 'viewport.pinchZoom': null }}
         />
@@ -153,11 +154,11 @@ describe('SceneCanvas action scopes', () => {
     const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
       <ActionsProvider>
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={sceneA} layers={{}} width={400} height={400}
           onViewChange={(v) => { first.push(v); }}
         />
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={sceneB} layers={{}} width={400} height={400}
           onViewChange={(v) => { second.push(v); }}
         />
@@ -181,10 +182,10 @@ describe('SceneCanvas action scopes', () => {
     const sceneB = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     render(
       <WeaselProvider isolate>
-        <SceneCanvas features={['draw']} scene={sceneA} layers={{}} width={400} height={400}>
+        <SceneCanvas features={[drawPreset]} scene={sceneA} layers={{}} width={400} height={400}>
           <Probe at={0} />
         </SceneCanvas>
-        <SceneCanvas features={['draw']} scene={sceneB} layers={{}} width={400} height={400}>
+        <SceneCanvas features={[drawPreset]} scene={sceneB} layers={{}} width={400} height={400}>
           <Probe at={1} />
         </SceneCanvas>
       </WeaselProvider>,

@@ -10,7 +10,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
-import type { Feature } from './SceneCanvas/features';
+import type { FeaturePreset } from './SceneCanvas/features';
 import { ActionsProvider } from '@weasel-js/routing/react';
 // The real unpacker, to keep this an end-to-end check of the injected seam.
 import { unpackSvgFiles } from '@weasel-js/svg';
@@ -32,6 +32,7 @@ import {
   _resetSvgHandlerSeamsForTests,
 } from 'domains/ingestion/svgHandler';
 import { buildWeaselClipboardText } from 'interactions/actions/clipboard/wireFormat';
+import { drawPreset, editPreset, ingestPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { image?: { src: string } };
 type L = 'main';
@@ -97,7 +98,7 @@ describe('SceneCanvas ingestion — handlers belong to the canvas', () => {
   it('mounting a canvas puts nothing in the page-wide registry', () => {
     const entry: ContentHandlerEntry = { id: 'app:test', match: 'text/plain', handle: vi.fn() };
     const { unmount } = render(
-      <SceneCanvas features={['draw']} scene={makeScene()} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={makeScene()} layers={{}} width={64} height={64}
         ingestion={{ handlers: [entry] }} />,
     );
     expect(getContentHandlers()).toEqual([]);
@@ -114,7 +115,7 @@ describe('SceneCanvasApi.ingest', () => {
   it('ingest([pngFile], point) inserts an image node centered on the point', async () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
-    render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    render(<SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
     expect(ref.current?.ingest).toBeTypeOf('function');
 
     await act(async () => {
@@ -139,7 +140,7 @@ describe('SceneCanvasApi.ingest', () => {
   it('ingest with no point centers the node in the viewport', async () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
-    render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    render(<SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
 
     await act(async () => {
       ref.current!.ingest([pngFile()]);
@@ -161,7 +162,7 @@ describe('SceneCanvasApi.ingest', () => {
     __setSvgMeasureForTests(async () => ({ width: 100, height: 80 }));
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
-    render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    render(<SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
 
     const svg = new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'], 'art.svg', { type: 'image/svg+xml' });
     await act(async () => {
@@ -182,7 +183,7 @@ describe('SceneCanvasApi.ingest', () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref}
         ingestion={UNPACK_INGESTION} />,
     );
 
@@ -227,7 +228,7 @@ describe('SceneCanvasApi.ingest', () => {
     const ref = createRef<SceneCanvasApi>();
     render(
       <ActionsProvider>
-        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref} />
+        <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref} />
       </ActionsProvider>,
     );
 
@@ -242,7 +243,7 @@ describe('SceneCanvasApi.ingest', () => {
   it('a weasel-JSON payload pastes through the canvas adapter (fresh id, cascade offset, one undo)', async () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
-    render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    render(<SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
 
     const text = buildWeaselClipboardText([
       {
@@ -271,7 +272,7 @@ describe('SceneCanvasApi.ingest', () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref}
         ingestion={CLIPBOARD_DISABLED_INGESTION} />,
     );
 
@@ -293,7 +294,7 @@ describe('SceneCanvasApi.ingest', () => {
     const scene = makeScene();
     const ref = createRef<SceneCanvasApi>();
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ref={ref}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref}
         ingestion={RESOLVE_SRC_INGESTION} />,
     );
 
@@ -330,7 +331,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   ]);
   const SVG_TEXT = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
 
-  function mount(features: readonly Feature[]) {
+  function mount(features: readonly FeaturePreset[]) {
     const scene = makeScene();
     const { container } = render(
       <SceneCanvas features={features} scene={scene} layers={{}} width={64} height={64} />,
@@ -364,7 +365,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 20)); });
 
   it('edit alone pastes copied nodes from a paste event', async () => {
-    const { scene } = mount(['edit']);
+    const { scene } = mount([editPreset]);
     const ev = paste({ text: NODE_TEXT });
     await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
     expect(scene.get(scene.roots[0])!.id).not.toBe('src-1');
@@ -376,7 +377,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   it('edit alone honors ingestion.clipboard.enabled === false', async () => {
     const scene = makeScene();
     render(
-      <SceneCanvas features={['edit']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[editPreset]} scene={scene} layers={{}} width={64} height={64}
         ingestion={CLIPBOARD_DISABLED_INGESTION} />,
     );
     paste({ text: NODE_TEXT });
@@ -385,7 +386,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   });
 
   it('edit alone leaves a pasted image to the page', async () => {
-    const { scene } = mount(['edit']);
+    const { scene } = mount([editPreset]);
     const ev = paste({ files: [pngFile()] });
     await settle();
     expect(scene.roots).toHaveLength(0);
@@ -393,7 +394,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   });
 
   it('edit alone inserts nothing for pasted SVG text or a pasted SVG file', async () => {
-    const { scene } = mount(['edit']);
+    const { scene } = mount([editPreset]);
     paste({ text: SVG_TEXT });
     paste({ files: [new File([SVG_TEXT], 'art.svg', { type: 'image/svg+xml' })] });
     await settle();
@@ -401,7 +402,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   });
 
   it('edit alone ignores a drop', async () => {
-    const { scene, canvas } = mount(['edit']);
+    const { scene, canvas } = mount([editPreset]);
     dropFile(canvas, pngFile());
     await settle();
     expect(scene.roots).toHaveLength(0);
@@ -419,21 +420,21 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   }
 
   it('edit alone is no drop target for an OS drag', () => {
-    const { canvas } = mount(['edit']);
+    const { canvas } = mount([editPreset]);
     const ev = dragOver(canvas);
     expect(ev.defaultPrevented).toBe(false);
     expect(canvas.classList.contains('weasel-dropover')).toBe(false);
   });
 
   it('ingest makes the canvas a drop target', () => {
-    const { canvas } = mount(['ingest']);
+    const { canvas } = mount([ingestPreset]);
     const ev = dragOver(canvas);
     expect(ev.defaultPrevented).toBe(true);
     expect(canvas.classList.contains('weasel-dropover')).toBe(true);
   });
 
   it('ingest refuses a drag no content handler would claim', () => {
-    const { canvas } = mount(['ingest']);
+    const { canvas } = mount([ingestPreset]);
     const ev = dragOver(canvas, 'application/pdf');
     expect(ev.defaultPrevented).toBe(false);
     expect(canvas.classList.contains('weasel-dropover')).toBe(false);
@@ -442,7 +443,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   it('ingest accepts that drag once a handler for it is registered', () => {
     const scene = makeScene();
     const { container } = render(
-      <SceneCanvas features={['ingest']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[ingestPreset]} scene={scene} layers={{}} width={64} height={64}
         ingestion={{ handlers: [{ id: 'app:pdf', match: 'application/pdf', handle: () => {} }] }} />,
     );
     const canvas = container.querySelector('canvas')!;
@@ -451,7 +452,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   });
 
   it('ingest leaves a paste no content handler claims to the page', async () => {
-    const { scene } = mount(['ingest']);
+    const { scene } = mount([ingestPreset]);
     const ev = paste({ files: [new File(['%PDF'], 'a.pdf', { type: 'application/pdf' })] });
     await settle();
     expect(scene.roots).toHaveLength(0);
@@ -459,7 +460,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   });
 
   it('edit alone leaves pasted text that is no copied node to the page', async () => {
-    mount(['edit']);
+    mount([editPreset]);
     const ev = paste({ text: 'just words' });
     await settle();
     expect(ev.defaultPrevented).toBe(false);
@@ -469,12 +470,12 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     const ref = createRef<SceneCanvasApi>();
     const scene = makeScene();
     const { rerender } = render(
-      <SceneCanvas features={['edit']} scene={scene} layers={{}} width={64} height={64} ref={ref} />,
+      <SceneCanvas features={[editPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref} />,
     );
     let took = true;
     act(() => { took = ref.current!.ingest([pngFile()]); });
     expect(took).toBe(false);
-    rerender(<SceneCanvas features={['edit', 'ingest']} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+    rerender(<SceneCanvas features={[editPreset, ingestPreset]} scene={scene} layers={{}} width={64} height={64} ref={ref} />);
     act(() => { took = ref.current!.ingest([pngFile()]); });
     expect(took).toBe(true);
     await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
@@ -488,7 +489,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
       <SceneCanvas scene={makeScene()} layers={{}} width={64} height={64}
         ingestion={{ handlers: [{ id: 'app:text', match: 'text/plain', handle }] }} />,
     );
-    const { scene } = mount(['edit']);
+    const { scene } = mount([editPreset]);
     paste({ text: NODE_TEXT });
     paste({ text: 'plain words' });
     await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
@@ -497,7 +498,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   });
 
   it('edit with ingest pastes copied nodes once, and still pastes SVG text', async () => {
-    const { scene } = mount(['edit', 'ingest']);
+    const { scene } = mount([editPreset, ingestPreset]);
     paste({ text: NODE_TEXT });
     await settle();
     expect(scene.roots).toHaveLength(1);
@@ -508,7 +509,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   });
 
   it('ingest alone still pastes nodes, images, and SVG, and takes drops', async () => {
-    const { scene, canvas } = mount(['ingest']);
+    const { scene, canvas } = mount([ingestPreset]);
     paste({ text: NODE_TEXT });
     await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
     const img = paste({ files: [pngFile()] });
@@ -521,7 +522,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   });
 
   it('ingest turns pasted plain text into a text node, and leaves node payloads and SVG alone', async () => {
-    const { scene } = mount(['ingest']);
+    const { scene } = mount([ingestPreset]);
     const textNodes = () => scene.roots.map((id) => scene.get(id)!)
       .filter((n) => typeof (n.data as { text?: string }).text === 'string');
 
@@ -538,7 +539,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   });
 
   it('a pasted file inserts once, without a text node for the name riding beside it', async () => {
-    const { scene } = mount(['ingest']);
+    const { scene } = mount([ingestPreset]);
     paste({ files: [pngFile()], text: 'a.png' });
     await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
     await settle();
@@ -549,7 +550,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
   it('ingest alone runs a registered consumer handler on a paste', async () => {
     const handle = vi.fn();
     const off = registerContentHandler({ id: 'app:text', match: 'text/plain', handle });
-    mount(['ingest']);
+    mount([ingestPreset]);
     paste({ text: 'plain words' });
     await vi.waitFor(() => expect(handle).toHaveBeenCalledTimes(1));
     off();
@@ -564,12 +565,12 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     const quiet = makeScene();
     const ref = createRef<SceneCanvasApi>();
     render(
-      <SceneCanvas features={['ingest']} scene={quiet} layers={{}} width={64} height={64} ref={ref}
+      <SceneCanvas features={[ingestPreset]} scene={quiet} layers={{}} width={64} height={64} ref={ref}
         ingestion={NO_TEXT} />,
     );
     const otherRef = createRef<SceneCanvasApi>();
     const other = makeScene();
-    render(<SceneCanvas features={['ingest']} scene={other} layers={{}} width={64} height={64} ref={otherRef} />);
+    render(<SceneCanvas features={[ingestPreset]} scene={other} layers={{}} width={64} height={64} ref={otherRef} />);
 
     act(() => { ref.current!.ingest([{ kind: 'string', mime: 'text/plain', text: 'words' }]); });
     act(() => { otherRef.current!.ingest([{ kind: 'string', mime: 'text/plain', text: 'words' }]); });
@@ -583,7 +584,7 @@ describe('SceneCanvas paste and drop events, by preset', () => {
 
   it('kitHandlers false refuses a drag only a kit handler would take', () => {
     const { container } = render(
-      <SceneCanvas features={['ingest']} scene={makeScene()} layers={{}} width={64} height={64}
+      <SceneCanvas features={[ingestPreset]} scene={makeScene()} layers={{}} width={64} height={64}
         ingestion={NO_KIT} />,
     );
     const canvas = container.querySelector('canvas')!;
@@ -595,12 +596,12 @@ describe('SceneCanvas paste and drop events, by preset', () => {
     const ownRef = createRef<SceneCanvasApi>();
     const own = { handlers: [{ id: 'app:pdf', match: 'application/pdf', handle }] };
     render(
-      <SceneCanvas features={['ingest']} scene={makeScene()} layers={{}} width={64} height={64} ref={ownRef}
+      <SceneCanvas features={[ingestPreset]} scene={makeScene()} layers={{}} width={64} height={64} ref={ownRef}
         ingestion={own} />,
     );
     const otherRef = createRef<SceneCanvasApi>();
     const { container } = render(
-      <SceneCanvas features={['ingest']} scene={makeScene()} layers={{}} width={64} height={64} ref={otherRef} />,
+      <SceneCanvas features={[ingestPreset]} scene={makeScene()} layers={{}} width={64} height={64} ref={otherRef} />,
     );
     const pdf = () => new File(['%PDF'], 'a.pdf', { type: 'application/pdf' });
     expect(dragOver(container.querySelector('canvas')!, 'application/pdf').defaultPrevented).toBe(false);

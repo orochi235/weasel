@@ -6,7 +6,7 @@ import {
   renderDebugSnapshot,
   SceneCanvas,
   useScene,
-  warmRender,
+  warmRender, movePreset, pickPreset, transformPreset, viewPreset,
 } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type {
@@ -113,7 +113,7 @@ export function DebugOverlayDemo() {
         <Button onClick={snapshot} disabled={!debug}>snapshot</Button>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['view', 'pick', 'move', 'transform']}
+        <SceneCanvas features={[viewPreset, pickPreset, movePreset, transformPreset]}
           ref={canvasRef}
           className="ckd-canvas"
           onResize={setSize}

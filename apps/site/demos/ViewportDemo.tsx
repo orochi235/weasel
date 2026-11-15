@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { SceneCanvas, useScene, textCommandFromRuns, meanScale } from '@weasel-js/core';
+import { SceneCanvas, useScene, textCommandFromRuns, meanScale, viewPreset } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useColorHex } from '@weasel-js/theme/react';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
@@ -66,6 +66,7 @@ export function ViewportDemo() {
         <SceneCanvas
           scene={scene}
           backgroundFill={backgroundFill}
+          features={[viewPreset]}
           viewport={{
             inertia: inertiaConfig,
             pinchZoom: true,

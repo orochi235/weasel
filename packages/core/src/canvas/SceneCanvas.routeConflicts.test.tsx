@@ -14,12 +14,13 @@ import { render } from '@testing-library/react';
 import { SceneCanvas, BUILTIN_TOOL_IDS, type BuiltinToolId } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
-import type { Feature } from './SceneCanvas/features';
+import type { FeaturePreset } from './SceneCanvas/features';
 import { WeaselProvider } from '../WeaselProvider';
 import { useSelection } from 'core/selection/useSelection';
 import { useSceneAdapter } from './useSceneAdapter';
 import { useSelectTool } from '../tools/builtin/select/useSelectTool';
 import { useTools } from '../tools/overlayBinding';
+import { arrangePreset, drawPreset, editPreset, movePreset, pickPreset, transformPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -67,7 +68,7 @@ function Harness({ tools }: { tools: readonly BuiltinToolId[] }) {
       data: { color: '#f00' },
     }],
   });
-  return <SceneCanvas features={['draw']} scene={scene} width={200} height={200} layers={{}} defaultTools={tools} />;
+  return <SceneCanvas features={[drawPreset]} scene={scene} width={200} height={200} layers={{}} defaultTools={tools} />;
 }
 
 describe('built-in tool bundles declare no conflicting routes', () => {
@@ -90,7 +91,7 @@ describe('built-in tool bundles declare no conflicting routes', () => {
  * `useTools` under a `<WeaselProvider>` does see them, which is how
  * `MultiSelectDemo` found `resize` and `areaSelect` both claiming a bare drag.
  */
-function ConsumerHarness({ features }: { features: readonly Feature[] }) {
+function ConsumerHarness({ features }: { features: readonly FeaturePreset[] }) {
   const scene = useScene<D, L, P>({
     systemLayers: [{ id: 'main' }],
     initial: [{
@@ -119,9 +120,9 @@ function ConsumerHarness({ features }: { features: readonly Feature[] }) {
 }
 
 describe('kit actions a consumer-assembled tool set sees declare no conflicting routes', () => {
-  const COMBOS: Record<string, readonly Feature[]> = {
-    'pick + move + transform (MultiSelectDemo)': ['pick', 'move', 'transform'],
-    'pick + move + transform + edit + arrange': ['pick', 'move', 'transform', 'edit', 'arrange'],
+  const COMBOS: Record<string, readonly FeaturePreset[]> = {
+    'pick + move + transform (MultiSelectDemo)': [pickPreset, movePreset, transformPreset],
+    'pick + move + transform + edit + arrange': [pickPreset, movePreset, transformPreset, editPreset, arrangePreset],
   };
   for (const [name, features] of Object.entries(COMBOS)) {
     it(name, () => {

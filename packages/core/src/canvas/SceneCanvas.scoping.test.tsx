@@ -5,6 +5,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
 import type { DrawCommand } from '@weasel-js/renderer';
+import { drawPreset, pickPreset } from 'canvas/SceneCanvas/presets';
 
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -117,7 +118,7 @@ describe('SceneCanvas isPointerInteractive', () => {
     const onClick = vi.fn();
     const { container } = render(
       <SceneCanvas
-        features={['pick']} scene={scene} layers={{}} width={200} height={200}
+        features={[pickPreset]} scene={scene} layers={{}} width={200} height={200}
         isPointerInteractive={(id) => id !== bId}
         onClick={onClick}
       />,
@@ -141,7 +142,7 @@ describe('SceneCanvas isPointerInteractive', () => {
     const out = rejected({ a, b });
     const { container } = render(
       <SceneCanvas
-        features={['draw']} scene={scene} layers={{}} width={200} height={200}
+        features={[drawPreset]} scene={scene} layers={{}} width={200} height={200}
         isPointerInteractive={(id) => id !== out}
       />,
     );

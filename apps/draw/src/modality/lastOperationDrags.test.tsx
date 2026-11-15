@@ -8,7 +8,7 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, pathInWorld,
-  useActionsRegistry, usePolygonTool, type PolygonPath, type ToolsApi,
+  useActionsRegistry, usePolygonTool, type PolygonPath, type ToolsApi, drawPreset,
 } from '@weasel-js/core';
 import { tugPreset, usePathEditTools } from '@weasel-js/path-tools';
 import { useMemo } from 'react';
@@ -23,7 +23,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = ['draw', tugPreset] as const;
+const FEATURES = [drawPreset, tugPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup() {

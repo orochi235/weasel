@@ -14,7 +14,7 @@ import {
   useScene,
   useSelection,
   useStandardActions,
-  WeaselProvider,
+  WeaselProvider, pickPreset,
 } from '@weasel-js/core';
 import type { PolygonPath, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
@@ -114,7 +114,7 @@ function InteractivePanel() {
         <Button className="ckd-boolops-reset" onClick={reset}>Reset</Button>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['pick']}
+        <SceneCanvas features={[pickPreset]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

@@ -5,7 +5,7 @@ import {
   useScene,
   useSceneTextEdit,
   type CanvasHelpers,
-  type RenderLayer,
+  type RenderLayer, editPreset, movePreset, pickPreset, resizePreset, viewPreset,
 } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -91,7 +91,7 @@ export function TextDemo() {
     <div ref={setContainer} className="ckd-canvas-frame">
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={['view', 'pick', 'move', 'resize', 'edit']}
+          features={[viewPreset, pickPreset, movePreset, resizePreset, editPreset]}
           className="ckd-canvas"
           backgroundFill={{ color: '#fafafa' }}
           scene={scene}

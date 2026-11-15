@@ -13,7 +13,7 @@ import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-
 import { loadTextOutlines, type TextOutlineSource } from '@weasel-js/text';
 import {
   SceneCanvas, asNodeId, createScene, hasEditablePath, PATH_EFFECT_DERIVATIONS, pathEffectNode, pathFromD,
-  useDepSource, useSelection, withPathEffectsRegistry,
+  useDepSource, useSelection, withPathEffectsRegistry, drawPreset,
 } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 import { createModeMachine, type ModeMachine } from './machine';
@@ -59,7 +59,7 @@ function Harness({ machine, scene, startEdit, into }: {
   into(dim.alphaFor);
   const modes = useCanvasModes(machine, scene, selection, pathEdit);
   return (
-    <SceneCanvas features={['draw']} scene={scene} selection={selection} layers={{}} width={400} height={120}
+    <SceneCanvas features={[drawPreset]} scene={scene} selection={selection} layers={{}} width={400} height={120}
       ambient={modes.ambient} isPointerInteractive={dim.isPointerInteractive} modes={machine.registry} pathEdit={modes.pathEdit}>
       <TextEditStub startEdit={startEdit} />
     </SceneCanvas>

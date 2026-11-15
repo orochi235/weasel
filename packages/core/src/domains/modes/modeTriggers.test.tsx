@@ -12,6 +12,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { createEnteredGroup } from 'canvas/deps/enteredGroup';
 import { modeTriggers, type ModeTriggerHandlers } from './modeTriggers';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -68,7 +69,7 @@ function setup(handlers: ModeTriggerHandlers, enteredId?: string) {
   const entered = createEnteredGroup(scene);
   if (enteredId) entered.enter(asNodeId(enteredId));
   const { container } = render(
-    <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={40}
+    <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={200} height={40}
       ambient={[modeTriggers(registry, handlers)]} modes={registry}
       enteredGroup={entered} />,
   );

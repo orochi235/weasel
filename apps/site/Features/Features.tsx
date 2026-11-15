@@ -1,10 +1,11 @@
 import {
-  actionShortcuts, BASELINE_ACTIONS, FEATURE_PRESETS, type FeaturePreset,
+  actionShortcuts, BASELINE_ACTIONS, type FeaturePreset,
 } from '@weasel-js/core';
 import { formatShortcutParts } from '@weasel-js/gestures';
 import type { Action } from '@weasel-js/routing';
 import { KeySequence } from '@weasel-js/ui/components/Keycaps';
 import s from './Features.module.css';
+import { FEATURE_PRESETS } from '@weasel-js/core/named-features';
 
 type ToolEntry = NonNullable<FeaturePreset['tools']>[number];
 

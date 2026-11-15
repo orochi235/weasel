@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { commandFill, SceneCanvas, solid, textCommand, useScene, useSelection, type DrawCommand, type Fill, type SceneViewDrawOne } from '@weasel-js/core';
+import { commandFill, SceneCanvas, solid, textCommand, useScene, useSelection, type DrawCommand, type Fill, type SceneViewDrawOne, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
 import { ellipsePath } from '@weasel-js/geom';
 import {
   createBrotherPrinter,
@@ -110,7 +110,7 @@ export function PTouchLabelDemo() {
   return (
     <div className="ckd-stack">
       <DemoStage width={LENGTH} height={TAPE.widthPt}>
-        <SceneCanvas features={['pick', 'move', 'transform']} className="ckd-canvas" backgroundFill={{ color: '#ffffff' }} scene={scene} selection={selection} layers={{ scene: { drawOne } }} />
+        <SceneCanvas features={[pickPreset, movePreset, transformPreset]} className="ckd-canvas" backgroundFill={{ color: '#ffffff' }} scene={scene} selection={selection} layers={{ scene: { drawOne } }} />
       </DemoStage>
       <canvas ref={preview} className={s.preview} aria-label="Print preview at the printer's dot pitch" />
       <div className="ckd-row">

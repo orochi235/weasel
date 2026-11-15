@@ -7,7 +7,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   SceneCanvas, asNodeId, createScene, createToolOptionValues, pathFromD, pathInWorld, type PolygonPath, type ToolsApi,
-  useActionsRegistry, useToolOptionValues, type ActionsRegistry,
+  useActionsRegistry, useToolOptionValues, type ActionsRegistry, drawPreset,
 } from '@weasel-js/core';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathToAnchors } from '@weasel-js/geom';
@@ -20,7 +20,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = ['draw', tugPreset, sandPreset, anchorSelectionPreset] as const;
+const FEATURES = [drawPreset, tugPreset, sandPreset, anchorSelectionPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 
 function setup(d: string, width: number, height: number) {

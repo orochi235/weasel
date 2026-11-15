@@ -6,7 +6,7 @@ import {
   solid,
   usePointerPosition,
   useScene,
-  useSelection,
+  useSelection, movePreset, pickPreset, viewPreset,
 } from '@weasel-js/core';
 import type { Fill, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -94,7 +94,7 @@ export function CanvasViewDemo() {
         </div>
         <DemoStage width={W} height={H}>
           <SceneCanvas
-            features={['view', 'pick', 'move']}
+            features={[viewPreset, pickPreset, movePreset]}
             className="ckd-canvas"
             scene={scene}
             selection={selection}

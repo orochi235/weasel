@@ -6,6 +6,8 @@ import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
 import { dragPanContribution } from './dragPanContribution';
 import type { Contribution } from '../../overlayBinding';
+import { viewPreset } from 'canvas/SceneCanvas/presets';
+import type { FeaturePreset } from 'canvas/SceneCanvas/features';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -21,14 +23,14 @@ beforeAll(() => {
 const START: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 interface DragOptions {
-  features?: 'view'[];
+  features?: readonly FeaturePreset[];
   /** `PointerEvent.button` of the press. */
   button?: number;
 }
 
 /** Mount a canvas, drag 30px right and 20px down, and return the last view it
  *  reported and whether the press was default-prevented. */
-function drag(ambient: Contribution[], { features = ['view'], button = 0 }: DragOptions = {}): { view: View; prevented: boolean } {
+function drag(ambient: Contribution[], { features = [viewPreset], button = 0 }: DragOptions = {}): { view: View; prevented: boolean } {
   const scene = createScene<unknown, 'main', { x: number; y: number }>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   let last = START;
   const { container } = render(

@@ -9,7 +9,7 @@ import {
   SceneCanvas,
   solid,
   useRig,
-  useScene,
+  useScene, movePreset, pickPreset,
 } from '@weasel-js/core';
 import {
   jointAxes,
@@ -276,7 +276,7 @@ export function RigDemo() {
         <SceneCanvas
           className="ckd-canvas"
           scene={scene}
-          features={['pick', 'move']}
+          features={[pickPreset, movePreset]}
           animator={animator}
           layers={{ selectionOverlay: null }}
         />

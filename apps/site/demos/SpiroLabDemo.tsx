@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, type RectPose, solid } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, type RectPose, solid, drawPreset } from '@weasel-js/core';
 import { SPIRO_KINDS, type SpiroContour, type SpiroKind } from '@weasel-js/geom';
 import { spiroNodeData, spiroPreset, useSpiroTool } from '@weasel-js/path-tools';
 import {
@@ -27,7 +27,7 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 /** The curve the lab opens on, in path edit. */
 export const SEEDED_SPIRO = 'wave';
 
-const FEATURES = ['draw', spiroPreset] as const;
+const FEATURES = [drawPreset, spiroPreset] as const;
 const OPENING = { id: SEEDED_SPIRO };
 
 function spiroNode(id: string, contour: SpiroContour, color: string) {

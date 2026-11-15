@@ -2,11 +2,15 @@ import {
   type ActionsRegistry,
   commitDeleteToScene,
   createDeleteAction,
+  editPreset,
   effectivePose,
+  movePreset,
   type NodeId,
+  pickPreset,
   type RectPose,
   SceneCanvas,
   type SceneCanvasApi,
+  transformPreset,
   useTransformFollower,
   type View,
   viewWorldToScreen,
@@ -339,7 +343,7 @@ export function LensOverlay<C>({
         <WeaselProvider isolate>
           <ReticleFollower scene={scene} />
           <SceneCanvas<LensNodeData<C>, 'lenses', RectPose>
-            features={['pick', 'move', 'transform', 'edit']}
+            features={[pickPreset, movePreset, transformPreset, editPreset]}
             ref={attachSceneCanvas}
             scene={scene}
             width={size.w}

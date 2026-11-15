@@ -1,4 +1,4 @@
-import type { FeatureEntry, RenderLayer, SceneCanvasSnap, SceneNode } from '@weasel-js/core';
+import { drawPreset, type FeaturePreset, type RenderLayer, type SceneCanvasSnap, type SceneNode } from '@weasel-js/core';
 import { diagramEdgeOf, diagramLabelOf } from '@weasel-js/diagram';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
 import { usePageGrid, type PageSize } from '@weasel-js/editor';
@@ -15,7 +15,7 @@ const isBody = (node: SceneNode<unknown, string, unknown>): boolean =>
 export interface ChartSnap {
   gridLayer: RenderLayer<unknown> | undefined;
   snap: SceneCanvasSnap;
-  features: readonly FeatureEntry[];
+  features: readonly FeaturePreset[];
 }
 
 /** Chart mode's grid and snapping over `page`, from the View preferences, with line colors read against
@@ -33,9 +33,9 @@ export function useChartSnap(page: PageSize & { x: number; y: number }, backgrou
   const source = grid.source;
   const snap = useMemo<SceneCanvasSnap>(() => ({ sources: source ? [source] : [] }), [source]);
 
-  const features = useMemo<readonly FeatureEntry[]>(() => {
-    if (!align && !spacingSnap) return ['draw'];
-    return ['draw', createSpacingHintsPreset({ spacing: spacingSnap, align, filter: isBody, ...(spacingSnap ? {} : { readout: false }) })];
+  const features = useMemo<readonly FeaturePreset[]>(() => {
+    if (!align && !spacingSnap) return [drawPreset];
+    return [drawPreset, createSpacingHintsPreset({ spacing: spacingSnap, align, filter: isBody, ...(spacingSnap ? {} : { readout: false }) })];
   }, [align, spacingSnap]);
 
   return { gridLayer: grid.layer, snap, features };

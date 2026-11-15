@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, type BuiltinToolId, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, type BuiltinToolId, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath, drawPreset } from '@weasel-js/core';
 import { reportRouteConflicts } from '@weasel-js/core/routing';
 import { useMemo } from 'react';
 import { DEFAULT_MODES, activeModeOf } from '@weasel-js/modes';
@@ -49,7 +49,7 @@ function setup() {
   scene.add({ id: ID, kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 } });
   scene.setSelection([ID]);
   render(
-    <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+    <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
       ambient={[modalityShortcuts(machine)]}
       modes={machine.registry} />,
   );
@@ -121,7 +121,7 @@ describe('entering path-edit from the keyboard', () => {
     }), [machine, pathToEdit, scene]);
     const pathEdit = useMemo(() => modePathEdit(machine, () => true), [machine]);
     return (
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
         ambient={[keys]} modes={machine.registry} pathEdit={pathEdit}
         {...(tool ? { defaultTools: ['select', tool] as const, defaultActiveTool: tool } : {})} />
     );

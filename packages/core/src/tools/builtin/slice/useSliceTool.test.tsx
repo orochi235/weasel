@@ -10,6 +10,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { createPointerStore, useDepSource } from '@weasel-js/routing/react';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type Pt = { x: number; y: number };
 
@@ -269,7 +270,7 @@ describe('useSliceTool — through <SceneCanvas>', () => {
       systemLayers: [{ id: 'main' }],
     });
     return (
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={400} height={400} tools={{ slice }}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={400} height={400} tools={{ slice }}>
         <SliceDep commit={commit} />
       </SceneCanvas>
     );

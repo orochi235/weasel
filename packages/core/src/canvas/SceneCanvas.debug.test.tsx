@@ -13,6 +13,7 @@ import { createScene } from 'core/scene/scene';
 import { dragPanContribution } from '../tools/builtin/hand/dragPanContribution';
 import type { CanvasDebugSink, DebugFlags } from '../debug/types';
 import type { Contribution } from '../tools/overlayBinding';
+import { viewPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -31,7 +32,7 @@ function mount(debug: DebugFlags | false, ambient: Contribution[] = []) {
   const ref = { current: null as SceneCanvasApi | null };
   const { container } = render(
     <SceneCanvas
-      features={['view']}
+      features={[viewPreset]}
       ref={ref}
       scene={scene}
       layers={{}}

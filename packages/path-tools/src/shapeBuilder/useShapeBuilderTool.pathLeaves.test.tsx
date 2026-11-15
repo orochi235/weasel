@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { boundsOfPath, type Path } from '@weasel-js/geom';
-import { createScene, SceneCanvas, useSelection, type NodeId, type SelectionApi } from '@weasel-js/core';
+import { createScene, SceneCanvas, useSelection, type NodeId, type SelectionApi, drawPreset } from '@weasel-js/core';
 import { useShapeBuilderTool } from './useShapeBuilderTool';
 
 type P = { x: number; y: number; width: number; height: number };
@@ -31,7 +31,7 @@ function mount() {
     const sel = useSelection({ scene, mode: 'multi' });
     selection = sel;
     const shapeBuilder = useShapeBuilderTool();
-    return <SceneCanvas features={['draw']} scene={scene} selection={sel} layers={{}} width={400} height={400} tools={{ shapeBuilder }} />;
+    return <SceneCanvas features={[drawPreset]} scene={scene} selection={sel} layers={{}} width={400} height={400} tools={{ shapeBuilder }} />;
   }
   const { container } = render(<Harness />);
   const canvas = container.querySelector('canvas')!;

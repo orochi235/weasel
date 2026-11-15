@@ -6,7 +6,7 @@ import {
   solid,
   useScene,
   useSelection,
-  type Path,
+  type Path, movePreset, pathsPreset, pickPreset,
 } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
 
@@ -38,7 +38,7 @@ export function PathAnchorEditDemo() {
 
   return (
     <DemoStage width={W} height={H}>
-      <SceneCanvas features={['pick', 'move', 'paths']}
+      <SceneCanvas features={[pickPreset, movePreset, pathsPreset]}
         className="ckd-canvas"
         scene={scene}
         selection={selection}

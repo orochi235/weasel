@@ -8,6 +8,7 @@ import { useTools } from '../tools/overlayBinding';
 import { defineTool } from '../tools/overlayBinding';
 import { WeaselProvider } from '../WeaselProvider';
 import { STICKY_DEFAULTS } from '../tools/builtin/sticky/stickyNode';
+import { drawPreset, pickPreset } from 'canvas/SceneCanvas/presets';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -75,7 +76,7 @@ describe('SceneCanvas defaultTools selector', () => {
         }],
       });
       return (
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           width={200} height={200}
           layers={{}}
@@ -123,7 +124,7 @@ describe('SceneCanvas defaultTools selector', () => {
         }],
       });
       return (
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           width={200} height={200}
           layers={{}}
@@ -159,7 +160,7 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       captured = tools;
       return (
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           width={100} height={100}
           layers={{}}
@@ -185,7 +186,7 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       captured = tools;
       return (
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           width={100} height={100}
           layers={{}}
@@ -211,7 +212,7 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           width={100} height={100}
           layers={{}}
@@ -236,7 +237,7 @@ describe('SceneCanvas tools prop patch form', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           width={100} height={100}
           layers={{}}
@@ -264,7 +265,7 @@ describe('SceneCanvas tools prop patch form', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas features={['pick']} scene={scene} width={100} height={100} layers={{}}
+        <SceneCanvas features={[pickPreset]} scene={scene} width={100} height={100} layers={{}}
           defaultTools={['slice']}
           onToolsCreated={(t) => { captured = t; }}
         />
@@ -281,7 +282,7 @@ describe('SceneCanvas tools prop patch form', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas features={['pick']} scene={scene} width={100} height={100} layers={{}}
+        <SceneCanvas features={[pickPreset]} scene={scene} width={100} height={100} layers={{}}
           defaultTools={['sticky']}
           toolOptions={{ sticky: { padding: 4, size } }}
           onToolsCreated={(t) => { captured = t; }}
@@ -300,7 +301,7 @@ describe('SceneCanvas tools prop patch form', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           width={100} height={100}
           layers={{}}
@@ -330,7 +331,7 @@ describe('SceneCanvas tools prop patch form', () => {
     function Harness() {
       const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
       return (
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           width={100} height={100}
           layers={{}}

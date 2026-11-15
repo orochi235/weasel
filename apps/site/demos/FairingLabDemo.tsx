@@ -1,4 +1,4 @@
-import { type ActionTunings, editingAnchors, never, type RectPose, useSelection } from '@weasel-js/core';
+import { type ActionTunings, editingAnchors, never, type RectPose, useSelection, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
 import { createCurvatureCombPreset, fairingPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -42,7 +42,7 @@ function FairingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   const chromeVisibility = useMemo(() => ({ 'path-edit.comb': comb ? editingAnchors : never }), [comb]);
   const features = useMemo(() => [
-    'pick', 'move', 'paths', fairingPreset, createCurvatureCombPreset(() => ({ scale })),
+    pickPreset, movePreset, pathsPreset, fairingPreset, createCurvatureCombPreset(() => ({ scale })),
   ] as const, [scale]);
 
   return (

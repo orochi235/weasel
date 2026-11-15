@@ -4,6 +4,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -42,7 +43,7 @@ describe('SceneCanvas keydown dispatch', () => {
     const scene = makeScene();
     scene.setSelection([...scene.renderOrder()]);
     expect(scene.getSelection()).toHaveLength(1);
-    render(<SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} />);
+    render(<SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} />);
     act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
     expect(scene.getSelection()).toEqual([]);
   });
@@ -51,7 +52,7 @@ describe('SceneCanvas keydown dispatch', () => {
     const scene = makeScene();
     const customRun = vi.fn();
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
         actions={{ selectAll: { invoker: { timing: 'immediate' as const, run: () => { customRun(); } } } }} />,
     );
     const input = document.createElement('input');
@@ -67,7 +68,7 @@ describe('SceneCanvas keydown dispatch', () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const next = vi.fn();
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
         actions={{
           selectAll: { invoker: { timing: 'immediate', run: () => { throw new Error('boom'); } } },
           // Override `enabled` so the dispatcher's gate doesn't suppress `escape`

@@ -6,7 +6,7 @@ import {
   useScene,
   useSelection,
   solid,
-  type LassoHitMode,
+  type LassoHitMode, pickPreset,
 } from '@weasel-js/core';
 import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
@@ -64,7 +64,7 @@ export function LassoDemo() {
           className="ckd-canvas"
           scene={scene}
           selection={selection}
-          features={['pick']}
+          features={[pickPreset]}
           defaultTools={['lasso']}
           defaultActiveTool="lasso"
           toolOptions={{ lasso: { mode } }}

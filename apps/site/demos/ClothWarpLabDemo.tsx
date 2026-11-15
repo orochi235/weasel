@@ -1,4 +1,4 @@
-import { asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, starPath, useSelection } from '@weasel-js/core';
+import { asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, starPath, useSelection, drawPreset } from '@weasel-js/core';
 import { useClothWarpTool, warpPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -16,7 +16,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', warpPreset] as const;
+const FEATURES = [drawPreset, warpPreset] as const;
 
 const config = f.schema({
   rows: f.number(3).range(1, 8).step(1).label('Rows'),

@@ -15,6 +15,7 @@ import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { never } from 'domains/chrome-caps';
 import type { VisibilityRules } from 'domains/chrome-caps';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: string };
 type L = 'main';
@@ -81,7 +82,7 @@ function renderWith(
       helpersRef.current = localRef.current;
     });
     return (
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={400}
@@ -163,7 +164,7 @@ describe('SceneCanvas — resize-handles gated by selectTool.resize.resizable', 
       const localRef = useRef<CanvasHelpers<P> | null>(null);
       useEffect(() => { helpersRef.current = localRef.current; });
       return (
-        <SceneCanvas features={['draw']}
+        <SceneCanvas features={[drawPreset]}
           scene={scene}
           layers={{}}
           width={400}
@@ -220,7 +221,7 @@ function renderWithMode(
       helpersRef.current = localRef.current;
     });
     return (
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={400}

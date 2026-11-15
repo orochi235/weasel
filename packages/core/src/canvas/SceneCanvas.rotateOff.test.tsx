@@ -6,7 +6,8 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, type Feature } from './SceneCanvas';
+import { SceneCanvas } from './SceneCanvas';
+import type { FeaturePreset } from './SceneCanvas/features';
 import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -14,6 +15,7 @@ import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
 import { isRotateHandle } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { always } from 'domains/chrome-caps';
+import { pickPreset, transformPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -49,7 +51,7 @@ function Probe({ into }: { into: Seen }) {
   return null;
 }
 
-function mount(props: { features?: readonly Feature[] } & Record<string, unknown> = {}) {
+function mount(props: { features?: readonly FeaturePreset[] } & Record<string, unknown> = {}) {
   const scene: Scene<D, L, P> = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   let id!: NodeId;
   scene.batch('seed', () => {
@@ -87,7 +89,7 @@ const OFF: [number, number] = [60, 10];
 
 describe('<SceneCanvas selectTool={{ rotate: false }}>', () => {
   it('control: the same canvas without it rotates from the handle', () => {
-    const { seen, canvas, isVisible, pose } = mount({ features: ['pick', 'transform'] });
+    const { seen, canvas, isVisible, pose } = mount({ features: [pickPreset, transformPreset] });
     expect(seen.actionIds).toContain('rotate');
     expect(isVisible('selection.rotation-handle')).toBe(true);
     drag(canvas, ON_ROTATE_HANDLE, OFF);
@@ -96,7 +98,7 @@ describe('<SceneCanvas selectTool={{ rotate: false }}>', () => {
 
   it('hides the handle and does not rotate on a drag there, with the rotate action still registered', () => {
     const { id, seen, canvas, isVisible, pose } = mount({
-      features: ['pick', 'transform'], selectTool: { rotate: false },
+      features: [pickPreset, transformPreset], selectTool: { rotate: false },
     });
     expect(seen.actionIds).toContain('rotate');
     expect(seen.actionIds).toContain('resize');
@@ -108,7 +110,7 @@ describe('<SceneCanvas selectTool={{ rotate: false }}>', () => {
   });
 
   it('still resizes from a corner', () => {
-    const { canvas, pose } = mount({ features: ['pick', 'transform'], selectTool: { rotate: false } });
+    const { canvas, pose } = mount({ features: [pickPreset, transformPreset], selectTool: { rotate: false } });
     drag(canvas, [50, 50], [70, 70]);
     expect(pose().width).toBe(70);
   });
@@ -116,7 +118,7 @@ describe('<SceneCanvas selectTool={{ rotate: false }}>', () => {
   it('binds nothing to a handle a consumer rule puts back, so a drag there neither rotates nor warns', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { id, seen, canvas, isVisible, pose } = mount({
-      features: ['pick', 'transform'], selectTool: { rotate: false },
+      features: [pickPreset, transformPreset], selectTool: { rotate: false },
       chromeVisibility: { 'selection.rotation-handle': always },
     });
     expect(isVisible('selection.rotation-handle')).toBe(true);
@@ -133,7 +135,7 @@ describe('<SceneCanvas selectTool={{ rotate: false }}>', () => {
       bindings: [{ spec: { kind: 'drag', target: { kindOf: isRotateHandle } }, actionId: 'rotate' }],
     };
     const { seen, canvas, pose } = mount({
-      features: ['pick', 'transform'], selectTool: { rotate: false },
+      features: [pickPreset, transformPreset], selectTool: { rotate: false },
       tools: { spinner }, defaultActiveTool: 'spinner',
       chromeVisibility: { 'selection.rotation-handle': always },
     });
@@ -144,7 +146,7 @@ describe('<SceneCanvas selectTool={{ rotate: false }}>', () => {
 
   it("merges a consumer's partial `actions.rotate` onto the default, and keeps the handle hidden", () => {
     const { seen, isVisible } = mount({
-      features: ['pick', 'transform'], selectTool: { rotate: false },
+      features: [pickPreset, transformPreset], selectTool: { rotate: false },
       actions: { rotate: { label: 'Spin' } },
     });
     expect(seen.labels.rotate).toBe('Spin');

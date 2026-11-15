@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { pref } from '@weasel-js/prefs';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { ActionsProvider, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import { ActionsProvider, SceneCanvas, useScene, useSelection, editPreset } from '@weasel-js/core';
 import type { SceneCanvasApi, SurfaceContribution } from '@weasel-js/core';
 import { useHud, useHudContribution } from './react';
 import type { Widget } from './widget';
@@ -33,7 +33,7 @@ function Harness() {
   return (
     <ActionsProvider>
       <SceneCanvas
-        ref={ref} width={200} height={200} scene={scene} selection={selection} layers={{}} features={['edit']}
+        ref={ref} width={200} height={200} scene={scene} selection={selection} layers={{}} features={[editPreset]}
         ambient={[hudTool, probe]}
       />
     </ActionsProvider>

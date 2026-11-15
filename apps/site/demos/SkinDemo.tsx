@@ -9,7 +9,7 @@ import {
   SceneCanvas,
   solid,
   useRig,
-  useScene,
+  useScene, pickPreset,
 } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
@@ -121,7 +121,7 @@ export function SkinDemo() {
         <SceneCanvas
           className="ckd-canvas"
           scene={scene}
-          features={['pick']}
+          features={[pickPreset]}
           animator={animator}
         />
       </DemoStage>

@@ -1,4 +1,4 @@
-import { createScene, solid } from '@weasel-js/core';
+import { createScene, solid, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
 import type { AddNodeSpec, Fill, RectPose, UnitSystem } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import { useMemo } from 'react';
@@ -56,7 +56,7 @@ function Body({ ctx }: { ctx: RenderContext<StubState, StubConfig> }) {
 
   return (
     <TrialSceneCanvas
-      features={['pick', 'move', 'transform']}
+      features={[pickPreset, movePreset, transformPreset]}
       scene={scene}
       trial={ctx.trial}
       layers={layers}

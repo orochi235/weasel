@@ -8,7 +8,7 @@ import {
   solid,
   strokeOf,
   useSelection,
-  withPathEffectsRegistry,
+  withPathEffectsRegistry, drawPreset,
 } from '@weasel-js/core';
 import { pathEffectsPreset } from '@weasel-js/path-tools';
 import {
@@ -28,7 +28,7 @@ import 'windease/styles.css';
 import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings, useSeedPathEdit } from './pathEffectLab';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', pathEffectsPreset] as const;
+const FEATURES = [drawPreset, pathEffectsPreset] as const;
 
 const config = f.schema({
   count: f.number(9).range(1, 40).step(1).label('Copies'),

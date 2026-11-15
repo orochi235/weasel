@@ -1,4 +1,4 @@
-import { SceneCanvas, solid, useScene, useSelection, type SolidPaint } from '@weasel-js/core';
+import { SceneCanvas, solid, useScene, useSelection, type SolidPaint, pickPreset } from '@weasel-js/core';
 import { LayerList, useSceneLayerList } from '@weasel-js/ui/components/LayerList';
 import type { CSSProperties } from 'react';
 import { DemoStage } from './DemoStage';
@@ -33,7 +33,7 @@ export function LayerListDemo() {
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['pick']}
+        <SceneCanvas features={[pickPreset]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

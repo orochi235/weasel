@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
-import { resolveFeatures, type Feature } from './features';
-import { CORE_NAMED_PRESETS } from './namedPresets';
+import { resolveFeatures } from './features';
+import { namedFeatures, type FeatureName } from './namedPresets';
+import { selectPreset, viewPreset } from './presets';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
 import { resolveToolRegistry, type BuiltinTools } from './toolRegistry';
 import type { Tool } from 'tools/overlayBinding';
@@ -18,7 +19,7 @@ vi.mock('core/shapeKinds', async (importOriginal) => {
 
 const tool = (id: string): Tool => ({ id, eligibility: { focus: true } }) as Tool;
 const builtins = Object.fromEntries(BUILTIN_TOOL_IDS.map((id) => [id, tool(id)])) as BuiltinTools;
-const presets = (...on: Feature[]) => resolveFeatures(on, CORE_NAMED_PRESETS);
+const presets = (...on: FeatureName[]) => resolveFeatures(namedFeatures(...on));
 const NONE = presets();
 
 afterEach(() => { vi.restoreAllMocks(); });
@@ -55,7 +56,7 @@ describe('resolveToolRegistry', () => {
   });
 
   it("mounts the tools a preset names by set", () => {
-    const enabled = resolveFeatures([{ id: 'mine', tools: [TYPE_TOOLS] }], CORE_NAMED_PRESETS);
+    const enabled = resolveFeatures([{ id: 'mine', tools: [TYPE_TOOLS] }]);
     expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['text', 'sticky']);
   });
 
@@ -70,7 +71,7 @@ describe('resolveToolRegistry', () => {
 
   it("mounts a preset's own tool after the built-ins, and a patch's false drops it", () => {
     const own = tool('own');
-    const enabled = resolveFeatures(['select', { id: 'mine', tools: ['hand', own] }], CORE_NAMED_PRESETS);
+    const enabled = resolveFeatures([selectPreset, { id: 'mine', tools: ['hand', own] }]);
     expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: null }))).toEqual(['select', 'lasso', 'hand', 'own']);
     expect(Object.keys(resolveToolRegistry({ builtins, enabled, patch: { own: false } }))).toEqual(['select', 'lasso', 'hand']);
   });
@@ -104,7 +105,7 @@ describe('resolveToolRegistry', () => {
     const hand = tool('hand');
     const own = tool('own');
     const mine = tool('own');
-    const enabled = resolveFeatures(['select', 'view', { id: 'mine', tools: [own] }], CORE_NAMED_PRESETS);
+    const enabled = resolveFeatures([selectPreset, viewPreset, { id: 'mine', tools: [own] }]);
     const registry = resolveToolRegistry({
       builtins, defaultTools: ['rect' as BuiltinToolId], enabled, patch: { hand, own: mine }, dev: true,
     });

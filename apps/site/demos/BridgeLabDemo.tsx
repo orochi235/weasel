@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, PathBuilder, type PolygonPath, type RectPose, solid } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, PathBuilder, type PolygonPath, type RectPose, solid, drawPreset } from '@weasel-js/core';
 import { bridgePreset, DEFAULT_BRIDGE_TENSION } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -17,7 +17,7 @@ import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
 
-const FEATURES = ['draw', bridgePreset] as const;
+const FEATURES = [drawPreset, bridgePreset] as const;
 
 const config = f.schema({
   tension: f.number(DEFAULT_BRIDGE_TENSION).range(0, 1.5).step(0.05).label('Tension'),

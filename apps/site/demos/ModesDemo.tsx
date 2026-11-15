@@ -7,7 +7,7 @@ import {
   createModeDecorationLayer,
   createWorkspaceTintLayer,
   type DrawCommand,
-  type ToolsApi,
+  type ToolsApi, movePreset, pickPreset, transformPreset,
 } from '@weasel-js/core';
 import {
   ALL_TAGS,
@@ -164,7 +164,7 @@ export function ModesDemo() {
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}
           selectionOptions={{ mode: 'multi' }}
-          features={['pick', 'move', 'transform']}
+          features={[pickPreset, movePreset, transformPreset]}
           defaultTools={['select', 'hand', 'rect', 'ellipse']}
           onToolsCreated={setTools}
           modes={registry}

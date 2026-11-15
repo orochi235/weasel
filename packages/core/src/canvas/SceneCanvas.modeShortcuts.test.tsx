@@ -12,6 +12,7 @@ import { SceneCanvas } from './SceneCanvas';
 import type { ToolsApi } from 'tools/overlayBinding';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -40,7 +41,7 @@ function setup(initial: string, handlers: ModeShortcutHandlers, { wireMode = tru
   scene.setSelection([ID]);
   const tools: { current?: ToolsApi } = {};
   const { container } = render(
-    <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+    <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
       ambient={[modeShortcuts(registry, handlers)]} onToolsCreated={(t) => { tools.current = t; }}
       {...(wireMode ? { modes: registry } : {})} />,
   );

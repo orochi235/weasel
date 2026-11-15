@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { SceneCanvas, useScene } from '@weasel-js/core';
+import { SceneCanvas, useScene, movePreset, pickPreset, transformPreset } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 import type { CanvasHelpers, Dims, Fill, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -93,7 +93,7 @@ export function QuadtreeDemo() {
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        features={['pick', 'move', 'transform']}
+        features={[pickPreset, movePreset, transformPreset]}
         className="ckd-canvas"
         scene={scene}
         helpersRef={helpersRef}

@@ -21,6 +21,7 @@ import { ViewInputsProvider } from './viewInputs';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { DeviceProfileProvider } from 'core/device/useDeviceProfile';
 import type { DeviceProfile } from 'core/device/types';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -46,7 +47,7 @@ function mount(opts: {
 } = {}) {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   const r = render(
-    <SceneCanvas features={['draw']}
+    <SceneCanvas features={[drawPreset]}
       scene={scene}
       layers={{}}
       width={300}
@@ -130,7 +131,7 @@ describe('<CanvasView>', () => {
     const panel = vi.fn();
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas features={['draw']}
+      <SceneCanvas features={[drawPreset]}
         scene={scene}
         layers={{}}
         width={300}
@@ -160,12 +161,12 @@ describe('<CanvasView>', () => {
     const outer = vi.fn();
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container, rerender } = render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200} onViewChange={outer}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={200} onViewChange={outer}>
         <CanvasView id="panel" bounds={PANEL} />
       </SceneCanvas>,
     );
     rerender(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200} onViewChange={outer} />,
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={200} onViewChange={outer} />,
     );
 
     wheelAt(container.querySelector('canvas')!, 150);
@@ -193,7 +194,7 @@ describe('<CanvasView>', () => {
       },
     };
     const { container, rerender } = render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200} actions={actions}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={200} actions={actions}>
         <CanvasView id="panel" bounds={PANEL} />
       </SceneCanvas>,
     );
@@ -206,7 +207,7 @@ describe('<CanvasView>', () => {
     expect(ended).not.toHaveBeenCalled();
 
     rerender(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200} actions={actions} />,
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={200} actions={actions} />,
     );
 
     expect(ended).toHaveBeenCalledTimes(1);
@@ -229,7 +230,7 @@ describe('<CanvasView>', () => {
       },
     };
     const ui = (order: number) => (
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200} actions={actions}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={200} actions={actions}>
         <CanvasView id="panel" bounds={PANEL} order={order} />
       </SceneCanvas>
     );
@@ -500,7 +501,7 @@ describe('<CanvasView> zoom invariant', () => {
     const panel = vi.fn();
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={200}>
         <CanvasView
           id="panel"
           bounds={PANEL}

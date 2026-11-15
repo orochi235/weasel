@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   OUTPUT_GRID_KEY, SceneCanvas, defaultDrawOne, solid, useScene,
-  type DrawCommand, type LayerGroup, type RectPose, type RenderLayer, type View,
+  type DrawCommand, type LayerGroup, type RectPose, type RenderLayer, type View, viewPreset,
 } from '@weasel-js/core';
 import {
   dither, gridOnScreen, protectTexture,
@@ -176,6 +176,7 @@ export function DitherDemo() {
       <DemoStage width={W} height={H}>
         <SceneCanvas
           key={snap}
+          features={[viewPreset]}
           viewport={ZOOM_RANGE}
           defaultActiveTool="hand"
           view={view}

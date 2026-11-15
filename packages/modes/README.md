@@ -23,7 +23,7 @@ import { DEFAULT_MODES } from '@weasel-js/modes/presets/default';
 
 const modes = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
 
-<SceneCanvas scene={scene} features={['draw']} modes={modes} />;
+<SceneCanvas scene={scene} features={[drawPreset]} modes={modes} />;
 
 modes.setMode('path-edit');
 modes.subscribe(() => console.log(modes.current().label));

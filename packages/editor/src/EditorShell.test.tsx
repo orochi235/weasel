@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import {
   type ActionsRegistry, createScene, type MenuHost, SceneCanvas, SHAPE_TOOLS, type ToolsApi, useActionsRegistry, useCommand,
-  useMenuHost,
+  useMenuHost, drawPreset,
 } from '@weasel-js/core';
 import { useState } from 'react';
 import { pref } from '@weasel-js/prefs';
@@ -73,7 +73,7 @@ describe('EditorShell', () => {
     function Workspace() {
       const [tools, setTools] = useState<ToolsApi | null>(null);
       useEditorTools(tools, [SHAPE_TOOLS]);
-      return <SceneCanvas features={['draw']} scene={scene()} layers={{}} width={64} height={64} defaultTools={[SHAPE_TOOLS]} onToolsCreated={setTools} />;
+      return <SceneCanvas features={[drawPreset]} scene={scene()} layers={{}} width={64} height={64} defaultTools={[SHAPE_TOOLS]} onToolsCreated={setTools} />;
     }
     render(<EditorShell><Probe /><Workspace /></EditorShell>);
     key({ key: '?', code: 'Slash', shiftKey: true });
@@ -99,7 +99,7 @@ describe('EditorShell', () => {
     render(
       <EditorShell>
         <Probe run={run} />
-        <SceneCanvas features={['draw']} scene={scene()} layers={{}} width={64} height={64} claimKeys />
+        <SceneCanvas features={[drawPreset]} scene={scene()} layers={{}} width={64} height={64} claimKeys />
       </EditorShell>,
     );
     key({ key: 'q' });
@@ -146,7 +146,7 @@ describe('EditorShell', () => {
     it('opens editor.canvas on a right-click on empty canvas', () => {
       render(
         <EditorShell>
-          <SceneCanvas features={['draw']} scene={scene()} layers={{}} width={64} height={64}>
+          <SceneCanvas features={[drawPreset]} scene={scene()} layers={{}} width={64} height={64}>
             <HostProbe />
           </SceneCanvas>
         </EditorShell>,
@@ -158,7 +158,7 @@ describe('EditorShell', () => {
     it('installs none with `contextMenus={false}`', () => {
       render(
         <EditorShell contextMenus={false}>
-          <SceneCanvas features={['draw']} scene={scene()} layers={{}} width={64} height={64}>
+          <SceneCanvas features={[drawPreset]} scene={scene()} layers={{}} width={64} height={64}>
             <HostProbe />
           </SceneCanvas>
         </EditorShell>,

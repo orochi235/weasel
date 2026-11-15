@@ -8,7 +8,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useState, type ReactElement } from 'react';
 import { createScopingDim, DEFAULT_MODES } from '@weasel-js/modes';
-import { SceneCanvas, asNodeId, createEnteredGroup, createScene, hasEditablePath, pathFromD, solid, useSelection, type EnteredGroupApi, type PolygonPath } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, createEnteredGroup, createScene, hasEditablePath, pathFromD, solid, useSelection, type EnteredGroupApi, type PolygonPath, drawPreset } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 import { createModeMachine, type ModeMachine } from './machine';
 import { modeScope } from './modeScope';
@@ -73,7 +73,7 @@ function Harness({ machine, into }: { machine: ModeMachine; into: (entered: Ente
   into(entered);
   const modes = useCanvasModes(machine, scene, selection, pathEdit);
   return (
-    <SceneCanvas features={['draw']} scene={scene} selection={selection} layers={{}} width={240} height={60}
+    <SceneCanvas features={[drawPreset]} scene={scene} selection={selection} layers={{}} width={240} height={60}
       ambient={modes.ambient}
       isPointerInteractive={dim.isPointerInteractive}
       enteredGroup={entered}

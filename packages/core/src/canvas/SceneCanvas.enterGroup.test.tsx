@@ -15,6 +15,7 @@ import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import type { BindingOverrides } from '@weasel-js/routing';
 import { createEnteredGroup, useEnteredGroup, type EnteredGroupApi } from './deps/enteredGroup';
 import { SceneCanvas } from './SceneCanvas';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -42,7 +43,7 @@ function setup(opts: { entered?: (scene: never) => EnteredGroupApi; overrides?: 
   function Canvas() {
     sel = useSelection({ mode: 'multi' });
     return (
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={40} selection={sel}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={300} height={40} selection={sel}
         ambient={[modeTriggers(registry, { enter })]} modes={registry}
         {...(entered ? { enteredGroup: entered } : {})}
         {...(opts.overrides ? { bindingOverrides: opts.overrides } : {})} />

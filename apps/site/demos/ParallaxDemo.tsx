@@ -7,7 +7,7 @@ import {
   ellipsePath,
   polygonFromPoints,
   rectPath,
-  solid,
+  solid, editPreset, movePreset, pathsPreset, pickPreset, transformPreset, viewPreset,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
@@ -195,7 +195,7 @@ function ParallaxDemoInner() {
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas
-          features={['view', 'pick', 'move', 'transform', 'edit', 'paths']}
+          features={[viewPreset, pickPreset, movePreset, transformPreset, editPreset, pathsPreset]}
           className="ckd-canvas"
           scene={scene}
           view={view}

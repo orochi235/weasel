@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene, useLatest } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, createScene, useLatest, drawPreset } from '@weasel-js/core';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
 import { useMemo } from 'react';
 import { appCommandsContribution, type AppCommands } from '../appCommands';
@@ -51,7 +51,7 @@ function App() {
       <div data-testid="strip"><StripDock /></div>
       <div data-testid="sidebar"><RightSidebar /></div>
       <ShowChrome id="statusBar"><div role="status">status</div></ShowChrome>
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} ambient={ambient} />
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} ambient={ambient} />
     </>
   );
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   SceneCanvas,
   useScene,
-  useSelection,
+  useSelection, viewPreset,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
@@ -55,7 +55,7 @@ export function PanZoomDemo() {
         </span>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={['view']}
+        <SceneCanvas features={[viewPreset]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}

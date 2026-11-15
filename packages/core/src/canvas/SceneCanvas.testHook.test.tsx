@@ -5,6 +5,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { defineTool, type useTools } from '../tools/overlayBinding';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { color: string };
 type L = 'main';
@@ -34,7 +35,7 @@ function setup(defaultActiveTool = 'alpha') {
     const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
     return (
       <SceneCanvas
-        features={['draw']}
+        features={[drawPreset]}
         scene={scene}
         width={200}
         height={200}

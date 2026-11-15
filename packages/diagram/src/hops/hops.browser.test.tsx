@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { createScene, SceneCanvas, useSelection, type RectPose, type Scene } from '@weasel-js/core';
+import { createScene, SceneCanvas, useSelection, type RectPose, type Scene, movePreset, pickPreset, viewPreset } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, withDiagramRegistry, registerDiagramShape, useHops } from '@weasel-js/diagram';
 import { HOPS_DOC_KEY } from '@weasel-js/diagram/layout';
 import type { DiagramEdge } from '../edgeTrait';
@@ -49,7 +49,7 @@ function Hops({ scene }: { scene: HopScene }): null {
 function Stage({ scene }: { scene: HopScene }) {
   const selection = useSelection({ scene, mode: 'single' });
   return createElement(SceneCanvas<unknown, 'main', RectPose>, {
-    scene, selection, features: ['view', 'pick', 'move'], width: W, height: H, view: VIEW, onViewChange: () => {},
+    scene, selection, features: [viewPreset, pickPreset, movePreset], width: W, height: H, view: VIEW, onViewChange: () => {},
     backgroundFill: { color: '#000000' },
   }, createElement(Hops, { scene }));
 }

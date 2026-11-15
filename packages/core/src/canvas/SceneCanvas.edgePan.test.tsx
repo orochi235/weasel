@@ -12,6 +12,7 @@ import type { NodeId } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
 import type { SceneCanvasApi } from './canvasExtension';
 import type { SceneCanvasViewport } from './SceneCanvas/viewportProp';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -39,7 +40,7 @@ function mount(viewport: SceneCanvasViewport) {
   const apiRef = { current: null as SceneCanvasApi | null };
   function Mount(): ReactNode {
     const selection = useSelection({ mode: 'multi', initial: [id] });
-    return <SceneCanvas ref={apiRef} features={['draw']} scene={scene} width={200} height={200} selection={selection} viewport={viewport} />;
+    return <SceneCanvas ref={apiRef} features={[drawPreset]} scene={scene} width={200} height={200} selection={selection} viewport={viewport} />;
   }
   const { container } = render(<Mount />);
   const canvas = container.querySelector('canvas')!;

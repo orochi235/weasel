@@ -1,4 +1,4 @@
-import { asNodeId, SceneCanvas, solid, useScene, ROTATED_POSE_DESCRIPTOR } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, solid, useScene, ROTATED_POSE_DESCRIPTOR, resizePreset, selectPreset } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import type { Fill, RotatedPose, PoseDescriptor } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
@@ -28,7 +28,7 @@ export function ResizeSnapDemo() {
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        features={['select', 'resize']}
+        features={[selectPreset, resizePreset]}
         className="ckd-canvas"
         scene={scene}
         selectionOptions={SELECTED}

@@ -24,13 +24,12 @@ import { GestureReason } from './GestureReason';
 import { CanvasKitProviders } from './SceneCanvas/CanvasKitProviders';
 import { canvasPassThrough } from './SceneCanvas/canvasPassThrough';
 import { SceneCanvasInput, type ContentSource, type SceneCanvasInputOptions } from './SceneCanvas/SceneCanvasInput';
-import type { PresetSource } from './SceneCanvas/features';
-import { CORE_PRESET_SOURCE } from './SceneCanvas/namedPresets';
 import type { BridgeAdapter, SceneCanvasProps } from './SceneCanvas/props';
 import { useBakedScene } from './SceneCanvas/useBakedScene';
 import { useCanvasDispatcher } from './SceneCanvas/useCanvasDispatcher';
 import { useCanvasSelection } from './SceneCanvas/useCanvasSelection';
 import { useEnabledFeatures } from './SceneCanvas/useCanvasTools';
+import { useViewportWithoutView } from './SceneCanvas/useViewportWithoutView';
 import { contributionEntries } from './SceneCanvas/useContributionRoles';
 import { SurfaceDeclarations } from './SceneCanvas/SurfaceDeclarations';
 import { useAddedViews, useSceneCanvasHandle } from './SceneCanvas/useSceneCanvasHandle';
@@ -51,13 +50,12 @@ import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import { ViewRegistryProvider } from './viewRegistry';
 import { useChromeColor } from './accentColor';
 import { ENTERED_FRAME_COLOR, ENTERED_FRAME_TOKEN } from 'domains/selection/enteredGroupFrame';
-export { SCENE_CANVAS_FEATURES, type Feature } from './SceneCanvas/features';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export { defaultDrawOne } from './defaultDrawOne';
 export { rotateAroundAABBCenter } from './poseRotation';
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
-  props: SceneCanvasProps<TData, TLayer, TPose> & { presetSource: PresetSource },
+  props: SceneCanvasProps<TData, TLayer, TPose>,
   ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
   const { selectTool: selectToolOpts, selectable = true, viewport, modes } = props;
@@ -80,9 +78,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const { viewRef } = viewState;
   const kinds = useNodeKinds(scene, props.routing);
   const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf });
-  const enabled = useEnabledFeatures(
-    props.features, props.presetSource.named, viewport !== undefined, selectToolOpts?.rotate !== false,
-  );
+  const enabled = useEnabledFeatures(props.features, selectToolOpts?.rotate !== false);
+  useViewportWithoutView(viewport, enabled);
   const { pathEditState, selectToolWithDefaults } = useSceneCanvasPathEdit({
     host: props.pathEdit, opening: props.defaultPathEdit, getActiveMode, scene, selection,
     extensions: enabled.pathEdit, selectTool: selectToolOpts,
@@ -93,7 +90,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const groupEntry = useGroupEntryContribution({ pickHit: picking.pickBestIn, tree: adapter, boxOf: boundsOf });
   const tools = useSceneCanvasTools({
     props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions,
-    enabled, presetSource: props.presetSource, groupEntry,
+    enabled, groupEntry,
   });
 
   // The wrapper's `<InputScope>` provides it.
@@ -182,40 +179,32 @@ const SceneCanvasInnerForwardRef = forwardRef(SceneCanvasInner);
 // The canvas's input scope sits above `SceneCanvasInner`, whose own hooks
 // (`useTools` among them) must already read this canvas's tool and registries.
 // Its device profile too, so the canvas and everything under it share one.
-/** A scene canvas resolving its `features` through `source`. */
-export function renderSceneCanvas<TData, TLayer extends string, TPose>(
-  source: PresetSource,
-  { device, ...props }: SceneCanvasProps<TData, TLayer, TPose>,
-  ref: React.ForwardedRef<SceneCanvasApi>,
+function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
+  { device, ...props }: SceneCanvasProps<TData, TLayer, TPose>, ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
   return (
     <InputScope yoke={props.yoke}>
       <DeviceProfileProvider value={device}>
         <ViewRegistryProvider>
-          <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} presetSource={source} ref={ref} />
+          <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} ref={ref} />
         </ViewRegistryProvider>
       </DeviceProfileProvider>
     </InputScope>
   );
 }
 
-function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
-  props: SceneCanvasProps<TData, TLayer, TPose>, ref: React.ForwardedRef<SceneCanvasApi>,
-) {
-  return renderSceneCanvas(CORE_PRESET_SOURCE, props, ref);
-}
-
-// Marked pure so a bundle using only `LeanSceneCanvas` drops it, and core's named presets with it.
+// Marked pure so a bundle that never mounts a canvas drops it.
 /**
  * The canvas component: renders a `Scene` and wires the interaction stack
  * around it.
  *
  * Mounted bare it renders the scene, keeps a selection no input sets, and
  * runs a gesture dispatcher for whatever bindings the consumer adds. The
- * `features` presets turn the kit's behavior on — `features={['draw']}` is the
- * whole editor: tools, standard actions and their keys, selection chrome,
- * undo. This is the intended entry point; the lower-level primitives it
- * composes are not part of the public surface.
+ * `features` presets turn the kit's behavior on — `features={[drawPreset]}`
+ * is the whole editor: navigation, tools, standard actions and their keys,
+ * selection chrome. Only the presets it is handed reach its bundle. This is
+ * the intended entry point; the lower-level primitives it composes are not
+ * part of the public surface.
  *
  * Its ref exposes a `SceneCanvasApi` for the imperative operations that do not
  * fit a prop (view control, hit queries, redraw requests).

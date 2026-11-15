@@ -12,7 +12,7 @@ import {
   pagesOf,
   placedPagesOf,
   useActionsRegistry,
-  type ActionsRegistry,
+  type ActionsRegistry, drawPreset,
 } from '@weasel-js/core';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import type { DrawScene } from './drawDocument';
@@ -75,7 +75,7 @@ function setup() {
     <DepRegistryProvider>
       <ActionsProvider>
         <Probe t={t} />
-        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} />
+        <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} />
       </ActionsProvider>
     </DepRegistryProvider>
   );

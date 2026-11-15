@@ -7,6 +7,7 @@ import { render, cleanup } from '@testing-library/react';
 import { createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -42,7 +43,7 @@ function conflictsWith(modes: readonly ModeDefinition[]): string[] {
   const registry = createModeRegistry({ modes, initial: modes[0].id });
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   render(
-    <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+    <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
       modes={registry}
       actions={{ stamp: dragAction('app.stamp', 'stamps'), sweep: dragAction('app.sweep', 'sweeps') }} />,
   );

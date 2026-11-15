@@ -26,12 +26,12 @@ npm install @weasel-js/guides
 A grid you can see and snap to:
 
 ```tsx
-import { SceneCanvas } from '@weasel-js/core';
+import { drawPreset, SceneCanvas } from '@weasel-js/core';
 import { createGridPreset } from '@weasel-js/guides';
 
 const grid = createGridPreset({ spacing: 20 });
 
-<SceneCanvas /* … */ features={['draw', grid]} />;
+<SceneCanvas /* … */ features={[drawPreset, grid]} />;
 ```
 
 The preset draws the grid in the `grid` slot and snaps every snapping gesture
@@ -104,7 +104,7 @@ Alt over a shape measures its distance from the selection. It lives in
 ```tsx
 const spacingHints = useMemo(() => createSpacingHintsPreset({ color: '#e0397f' }), []);
 
-<SceneCanvas /* … */ features={['draw', spacingHints]} />;
+<SceneCanvas /* … */ features={[drawPreset, spacingHints]} />;
 ```
 
 ## License

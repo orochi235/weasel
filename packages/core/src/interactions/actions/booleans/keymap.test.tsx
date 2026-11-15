@@ -7,6 +7,7 @@ import { SceneCanvas } from 'canvas/SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import { PATHFINDER_KEYMAP } from './keymap';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 type D = { path: Path; fill: { paint: { color: string } } };
@@ -32,7 +33,7 @@ function mount() {
   function Harness() {
     const sel = useSelection({ scene, mode: 'multi' });
     selection = sel;
-    return <SceneCanvas features={['draw']} scene={scene} selection={sel} layers={{}} width={400} height={400} ambient={PATHFINDER_KEYMAP} />;
+    return <SceneCanvas features={[drawPreset]} scene={scene} selection={sel} layers={{}} width={400} height={400} ambient={PATHFINDER_KEYMAP} />;
   }
   render(<Harness />);
   act(() => { selection!.set(ids); });

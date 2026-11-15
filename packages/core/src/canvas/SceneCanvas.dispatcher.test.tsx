@@ -14,6 +14,7 @@ import { useActionsRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { useDepRegistry } from '@weasel-js/routing/react';
 import type { InsertDep } from 'interactions/actions/depSchema';
+import { drawPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -61,7 +62,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
 
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}>
         <ActionRegistrar action={action} />
       </SceneCanvas>,
     );
@@ -84,7 +85,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
 
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64} enableGestureDispatcher={false}>
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64} enableGestureDispatcher={false}>
         <ActionRegistrar action={action} />
       </SceneCanvas>,
     );
@@ -114,7 +115,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     // enabled:()=>true bypasses the selection guard so the dispatcher runs the
     // action even without an active selection — verifies routing, not business logic.
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
         actions={{ delete: { invoker: { timing: 'immediate' as const, run: () => { deleteSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
@@ -127,7 +128,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const scene = makeSceneWithNode();
     const deleteSpy = vi.fn();
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
         actions={{ delete: { invoker: { timing: 'immediate' as const, run: () => { deleteSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
@@ -141,7 +142,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const nudgeSpy = vi.fn();
     // nudge descriptor id is "nudge.up" (not "nudge.up.small")
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
         actions={{ 'nudge.up': { invoker: { timing: 'immediate' as const, run: () => { nudgeSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
@@ -154,7 +155,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const scene = makeSceneWithNode();
     const undoSpy = vi.fn();
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
         actions={{ undo: { invoker: { timing: 'immediate' as const, run: () => { undoSpy(); } } } }} />,
     );
     act(() => {
@@ -169,7 +170,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     scene.undo();
     const redoSpy = vi.fn();
     render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
+      <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
         actions={{ redo: { invoker: { timing: 'immediate' as const, run: () => { redoSpy(); } } } }} />,
     );
     act(() => {
@@ -214,7 +215,7 @@ describe('insertDep wired in SceneCanvas', () => {
     let capturedCommit: InsertDep['commit'] | null = null;
 
     render(
-      <SceneCanvas<D14, L14, P14> features={['draw']}
+      <SceneCanvas<D14, L14, P14> features={[drawPreset]}
         scene={scene}
         width={200}
         height={200}
@@ -250,7 +251,7 @@ describe('insertDep wired in SceneCanvas', () => {
     let capturedCommit: InsertDep['commit'] | null = null;
 
     render(
-      <SceneCanvas<D14, L14, P14> features={['draw']}
+      <SceneCanvas<D14, L14, P14> features={[drawPreset]}
         scene={scene}
         width={200}
         height={200}
@@ -285,7 +286,7 @@ describe('insertDep wired in SceneCanvas', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     render(
-      <SceneCanvas<D14, L14, P14> features={['draw']}
+      <SceneCanvas<D14, L14, P14> features={[drawPreset]}
         scene={scene}
         width={200}
         height={200}

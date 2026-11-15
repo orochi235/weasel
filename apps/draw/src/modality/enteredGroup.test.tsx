@@ -9,7 +9,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useState, type ReactElement } from 'react';
 import {
   SceneCanvas, asNodeId, createScene, pathFromD, solid, useSelection, createWorkspaceTintLayer,
-  type PolygonPath, type SelectionApi,
+  type PolygonPath, type SelectionApi, drawPreset,
 } from '@weasel-js/core';
 import { TextEditDepPublisher } from '@weasel-js/editor';
 import type { DrawScene } from '../drawDocument';
@@ -75,7 +75,7 @@ function Harness({ into }: { into: (live: Live) => void }): ReactElement {
         mode={machine.registry.byId(modeId)} targetLabel={null}
         group={groupLabel === null ? null : { label: groupLabel, onExit: group.entered.leaveAll }}
         onExit={() => machine.exitMode()} onCommit={() => machine.commitMode()} onCancel={() => machine.cancelMode()} />
-      <SceneCanvas features={['draw']} scene={scene} selection={selection} layers={{}} width={200} height={40}
+      <SceneCanvas features={[drawPreset]} scene={scene} selection={selection} layers={{}} width={200} height={40}
         ambient={modes.ambient} modes={machine.registry} pathEdit={modes.pathEdit}
         alphaFor={alphaFor} redrawOn={[modality.scopingDim, group.scope]}
         isPointerInteractive={modality.scopingDim.isPointerInteractive}

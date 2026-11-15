@@ -7,7 +7,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useActionsRegistry,
-  type PathConstraint, type PolygonPath,
+  type PathConstraint, type PolygonPath, drawPreset,
 } from '@weasel-js/core';
 import { browserReservedChord } from '@weasel-js/routing';
 import type { KeySpec } from '@weasel-js/gestures';
@@ -24,7 +24,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const A = asNodeId('a');
-const FEATURES = ['draw', constraintsPreset] as const;
+const FEATURES = [drawPreset, constraintsPreset] as const;
 type Pose = { x: number; y: number; width: number; height: number };
 type Data = { path: PolygonPath; constraints?: PathConstraint[] };
 

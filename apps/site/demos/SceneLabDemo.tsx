@@ -1,4 +1,4 @@
-import { createScene, type RectPose, solid } from '@weasel-js/core';
+import { createScene, type RectPose, solid, drawPreset } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {
   type ConfigOf,
@@ -58,7 +58,7 @@ function SceneTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
 
   return (
     <TrialSceneCanvas
-      features={['draw']}
+      features={[drawPreset]}
       defaultTools={['rect', 'pen']}
       scene={scene}
       trial={ctx.trial}
