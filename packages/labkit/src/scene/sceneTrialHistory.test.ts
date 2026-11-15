@@ -1,4 +1,4 @@
-import { createScene, type RectPose } from '@weasel-js/core';
+import { createScene, type Op, type RectPose } from '@weasel-js/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { editStamp } from '../undo/editStamp';
 import { sceneTrialHistory, stampSceneEdits } from './sceneTrialHistory';
@@ -54,5 +54,46 @@ describe('sceneTrialHistory', () => {
     }
     expect(stamps.size).toBeLessThan(40);
     stop();
+  });
+
+  it('makes a batch one entry, a settings entry recorded in it included, folding a run under one key', () => {
+    const scene = make();
+    const source = sceneTrialHistory(scene);
+    const settings = { n: 0 };
+    const setting = (to: number) => {
+      const from = settings.n;
+      settings.n = to;
+      const op = (a: number, b: number): Op => ({
+        label: 'settings',
+        apply: () => {
+          settings.n = b;
+        },
+        invert: () => op(b, a),
+      });
+      return op(from, to);
+    };
+    source.batch?.(
+      'config.change',
+      () => {
+        source.record(setting(1), 'config.change');
+        scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { n: 1 } });
+      },
+      { coalesceKey: 'k' },
+    );
+    source.batch?.(
+      'config.change',
+      () => {
+        scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { n: 2 } });
+      },
+      { coalesceKey: 'k' },
+    );
+    expect(scene.historyEntries()).toHaveLength(1);
+    scene.undo();
+    expect(scene.nodes.size).toBe(0);
+    expect(settings.n).toBe(0);
+    expect(scene.canUndo()).toBe(false);
+    scene.redo();
+    expect(scene.nodes.size).toBe(2);
+    expect(settings.n).toBe(1);
   });
 });

@@ -44,7 +44,9 @@ interface SavedSceneHistory {
 }
 
 /** A scene's history as a trial steps it, taking the trial's settings entries
- *  onto the scene's own stack so one undo order covers both. Each step is
+ *  onto the scene's own stack so one undo order covers both. A `batch` is a
+ *  scene batch, so a settings entry and the scene edits made with it are one
+ *  entry. Each step is
  *  stamped from `stamps` (`stampSceneEdits`), else from the scene's own
  *  timestamp. It saves and restores the scene's history with its stamps; the
  *  trial saves the scene itself, in its state. */
@@ -57,6 +59,8 @@ export function sceneTrialHistory<TData, TLayer extends string, TPose>(
     const entry = side === 'undo' ? undo[undo.length - 1] : redo[0];
     return entry && (stamps.get(entry.id) ?? entry.timestamp);
   };
+  // Inside a batch, a settings entry is applied as part of it, which joins it to the batch's entry.
+  let batching = 0;
   return {
     canUndo: () => scene.canUndo(),
     canRedo: () => scene.canRedo(),
@@ -66,7 +70,22 @@ export function sceneTrialHistory<TData, TLayer extends string, TPose>(
     redoStamp: () => stampOf('redo'),
     dropRedo: () => scene.history.dropRedo(),
     subscribe: (listener) => scene.subscribe(listener),
-    record: (op, label) => scene.history.recordEntry([op], label),
+    record: (op, label) => {
+      if (batching > 0) scene.applyBatch([op], label, null);
+      else scene.history.recordEntry([op], label);
+    },
+    batch: (label, write, options = {}) => {
+      batching += 1;
+      try {
+        scene.batch(
+          label,
+          write,
+          options.coalesceKey === undefined ? {} : { coalesceKey: options.coalesceKey },
+        );
+      } finally {
+        batching -= 1;
+      }
+    },
     serialize: (): SavedSceneHistory => ({
       history: scene.serializeHistory(),
       stamps: [...stamps],

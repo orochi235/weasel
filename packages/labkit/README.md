@@ -428,6 +428,13 @@ defineInstrument<SceneTrialState, ConfigOf<typeof config>>({
   an instrument's own goes the same way: `useTrialHistory({ canUndo, canRedo,
   undo, redo, subscribe, record })`, where `record` takes the trial's settings
   entries.
+- **Settings that write the scene.** Where a setting drives the scene's data —
+  a style panel writing onto the selected strokes — write it from
+  `useTrialConfigChange((config, prev) => …)`. It runs inside the settings
+  write, so what it writes to the scene joins that write's undo entry: one
+  Undo takes back the panel and the strokes, and a slider's drag is one step.
+  A history of your own gets the same by implementing
+  `TrialHistorySource.batch`.
 - **Tools.** A `tools` capability whose ids are the canvas's tool ids makes the
   trial's palette the canvas's tool slot, in both directions: a pick there
   activates the tool, and the canvas's own hotkeys move the palette.

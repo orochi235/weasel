@@ -31,7 +31,7 @@ import { MissingTrial } from './MissingTrial';
 import { TrialChrome, type TrialChromeOptions } from './TrialChrome';
 import { TrialLayerList, useTrialLayerState } from './TrialLayerList';
 import { createTrialActions, TrialScope } from './TrialScope';
-import { TrialHistoryContext, useHistoryVersion, useMountedHistory } from './trialHistory';
+import { TrialHistoryProvider, useHistoryVersion, useMountedHistory } from './trialHistory';
 import { useKeptMarks } from './useKeptMarks';
 import { TrialOrbitProvider } from './useOrbitView';
 import { useTrialCamera } from './useTrialCamera';
@@ -144,7 +144,7 @@ function TrialRuntime({
     clock: clockHandle?.clock,
   });
 
-  const { mount: mountHistory, ...mounted } = useMountedHistory();
+  const mounted = useMountedHistory();
   const setView = (v: unknown): void => updateTrialView(record.id, v);
 
   const cam = useTrialCamera({
@@ -341,7 +341,7 @@ function TrialRuntime({
     <TrialScope pointer={pointer} actions={actions}>
       <CameraPublishContext.Provider value={publishCamera}>
         <LoupeSwitchContext.Provider value={loupeSwitch}>
-          <TrialHistoryContext.Provider value={mountHistory}>{body}</TrialHistoryContext.Provider>
+          <TrialHistoryProvider mounted={mounted}>{body}</TrialHistoryProvider>
         </LoupeSwitchContext.Provider>
       </CameraPublishContext.Provider>
     </TrialScope>

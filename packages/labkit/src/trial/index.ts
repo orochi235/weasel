@@ -11,6 +11,8 @@ export type {
   UndoBindings,
 } from './TrialChrome';
 export { TrialChrome } from './TrialChrome';
+export type { TrialConfigChangeHandler } from './trialConfigChange';
+export { useTrialConfigChange } from './trialConfigChange';
 export type { MountTrialHistory, TrialHistorySource } from './trialHistory';
 export { TrialHistoryContext, useTrialHistory } from './trialHistory';
 export { trialHistoryOf } from './trialHistoryOf';

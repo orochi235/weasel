@@ -1,6 +1,8 @@
 import type { History, Op } from '@weasel-js/core';
 import {
   createContext,
+  createElement,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -9,6 +11,12 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
+import {
+  type MountTrialConfigChange,
+  TrialConfigChangeContext,
+  type TrialConfigChangeHandler,
+  useTrialConfigChanges,
+} from './trialConfigChange';
 
 /**
  * An undo history an instrument keeps itself, which the trial's undo and redo
@@ -41,6 +49,14 @@ export interface TrialHistorySource {
   /** Take an entry the trial records itself — a settings change — onto this
    *  stack, already applied, so one undo order covers both. */
   record(op: Op, label: string): void;
+  /** Run `write` as one step: what it records here, through `record` or the
+   *  history's own edits, is one entry. With `coalesceKey`, that entry folds
+   *  into the one on top when it carries the same key and nothing has been
+   *  recorded since. The trial runs each settings write in one, the
+   *  instrument's `useTrialConfigChange` handlers included, so a setting and
+   *  what they write here undo together and a slider's drag is one step.
+   *  Without it, what the handlers write is a step of its own. */
+  batch?(label: string, write: () => void, options?: { coalesceKey?: string }): void;
   /** This history as data storage can keep, the entries `record` took
    *  included, by their `name` and `args`. The trial saves it in its record
    *  beside its state. Without it, the history starts empty on every load. */
@@ -60,6 +76,8 @@ export interface MountedTrialHistory {
   /** The one mounted now, ahead of the render that shows it — a write in the
    *  same commit as the mount must already see it. */
   current: () => TrialHistorySource | null;
+  /** The instrument's `useTrialConfigChange` handlers, which a settings write runs inside its step. */
+  changes: { mount: MountTrialConfigChange; handlers: () => readonly TrialConfigChangeHandler[] };
 }
 
 /** Reports a history mounted; the returned function reports it gone. */
@@ -111,7 +129,22 @@ export function useMountedHistory(): MountedTrialHistory {
   useSyncExternalStore(subscribe, () =>
     history ? `${history.canUndo()}:${history.canRedo()}` : '',
   );
-  return { mount, history, current };
+  return { mount, history, current, changes: useTrialConfigChanges() };
+}
+
+/** Provides `mounted`'s slots to the trial's body: the history's and the config-change handlers'. */
+export function TrialHistoryProvider({
+  mounted,
+  children,
+}: {
+  mounted: Pick<MountedTrialHistory, 'mount' | 'changes'>;
+  children: ReactNode;
+}): ReactNode {
+  return createElement(
+    TrialHistoryContext.Provider,
+    { value: mounted.mount },
+    createElement(TrialConfigChangeContext.Provider, { value: mounted.changes.mount }, children),
+  );
 }
 
 /** `history`, re-rendering the caller whenever it changes. */
