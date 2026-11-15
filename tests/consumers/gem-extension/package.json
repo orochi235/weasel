@@ -1,0 +1,27 @@
+{
+  "name": "weasel-gem-extension",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A node kind, an action, two tools, and a properties editor for a weasel canvas, on public imports only, with a scenario that runs them under jsdom.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "scenario": "node run.mjs"
+  },
+  "dependencies": {
+    "@weasel-js/core": "*",
+    "@weasel-js/geom": "*",
+    "@weasel-js/routing": "*",
+    "@weasel-js/ui": "*",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "jsdom": "^31.0.0",
+    "typescript": "~6.0.2"
+  }
+}

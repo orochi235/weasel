@@ -466,59 +466,55 @@ on the release, it is the last move's.
 A node kind of your own takes a painter that draws it and says what part of
 it is grabbable, a factory the `insert` action builds it with, a tool binding a
 drag to that action, and, for routing and a properties panel, a classifier and
-a schema. `nodeKindPreset` packages them as one preset, each trait handed to its
-owner while the preset is on and released when it goes:
+a schema. The gem here is all of them. Every snippet in this section and in
+[Custom actions](#custom-actions) is a region of `tests/consumers/gem-extension/`,
+a package that imports only public entries: its scenario inserts a gem, edits it
+in the panel and with a tool, undoes, saves and loads, and turns the feature off,
+both against the repo's source and installed from packed tarballs
+(`npm run test:smoke:consumer`). `npm run check:doc-imports` fails when a snippet
+here stops matching it.
 
-```tsx
-const gemFeature = nodeKindPreset({
-  id: 'app:gem',
-  kind: 'gem',                      // routing kind, properties name, insert kind
-  matches: isGem,
-  shape: gemPainter,                // the `registerNodeShape` entry below
-  insert: gemFactory,
-  properties: { schema: gemSchema },
-  tools: [gemTool],
-});
-
-<SceneCanvas scene={scene} features={[drawPreset, gemFeature]} />;
-<SelectionPanel scene={scene} selection={selection} features={[drawPreset, gemFeature]} />;
-```
-
-A canvas's own `routing` and `insertNodeFactories`, and a panel's `properties`,
-keep any name they give over a preset's; `nodeTraitsOf(features)` reads the
-merged traits. A preset's painters go in the scene's own registry,
-`nodeShapesOf(scene)`, so a canvas of another scene does not paint with them;
-`registerNodeShape` is the process-wide path, for every scene, a headless render
-included. Two presets giving one kind different values throw. A preset's
-tool whose `insert` kind nothing on the canvas builds is left out of the canvas's
-tools. The same pieces can still be installed one by one:
-
-```tsx
+<!-- snippet: tests/consumers/gem-extension/src/gem.ts#gem-kind -->
+```ts
 import {
-  SceneCanvas, defineTool, registerNodeShape, solid,
+  defineTool, solid,
   INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING,
   type InsertNodeFactory, type NodeShapeEntry, type RectPose,
 } from '@weasel-js/core';
-import { pathFromD, transformPath } from '@weasel-js/geom';
+import { pathFromD } from '@weasel-js/geom';
 
-const UNIT_GEM = pathFromD('M50 0 L100 40 L50 100 L0 40 Z'); // in a 100 × 100 box
-const gemIn = (p: RectPose) => transformPath(UNIT_GEM, [p.width / 100, 0, 0, p.height / 100, p.x, p.y]);
-const isGem = (data: unknown): data is { gem: { color: string } } =>
+export interface GemData { gem: { color: string; facets: number } }
+
+export const GEM_BLUE = '#3a7bd5';
+
+export const isGem = (data: unknown): data is GemData =>
   typeof data === 'object' && data !== null && 'gem' in data;
 
+/** The gem's outline: a polygon of `facets` corners inscribed in the pose box, the first at the top. */
+export function gemOutline(pose: RectPose, facets: number) {
+  const corners = Array.from({ length: facets }, (_, i) => {
+    const turn = (i / facets) * 2 * Math.PI;
+    return `${pose.x + (pose.width / 2) * (1 + Math.sin(turn))} ${pose.y + (pose.height / 2) * (1 - Math.cos(turn))}`;
+  });
+  return pathFromD(`M${corners.join(' L')} Z`);
+}
+
 // Paints the gem, and picks it by its outline rather than its pose box.
-registerNodeShape<unknown, RectPose>({
+export const gemShape: NodeShapeEntry<unknown, RectPose> = {
   id: 'app:gem',
   matches: (node) => isGem(node.data),
-  paint: (node, pose) => [{ kind: 'path', path: gemIn(pose), fill: { paint: solid((node.data as { gem: { color: string } }).gem.color) } }],
-  silhouette: (_node, pose) => gemIn(pose),
-});
+  paint: (node, pose) => {
+    const { gem } = node.data as GemData;
+    return [{ kind: 'path', path: gemOutline(pose, gem.facets), fill: { paint: solid(gem.color) } }];
+  },
+  silhouette: (node, pose) => gemOutline(pose, (node.data as GemData).gem.facets),
+};
 
-// The data an insert of kind `gem` gets; the dep adds the id, layer, pose and undo.
-const gemFactory: InsertNodeFactory = () => ({ data: { gem: { color: '#3a7bd5' } } });
+// The data an insert of kind `gem` gets; the insert dep adds the id, layer, pose, and undo.
+export const gemInsert: InsertNodeFactory = () => ({ data: { gem: { color: GEM_BLUE, facets: 4 } } satisfies GemData });
 
 // A declarative shell over `insert`: the binding's `params.kind` names the factory.
-const gemTool = defineTool({
+export const gemTool = defineTool({
   id: 'gem',
   keybinding: { key: 'J' },
   capabilities: ['creates-shapes'],
@@ -529,25 +525,129 @@ const gemTool = defineTool({
     INSERT_REPOSITION_BINDING,
   ],
 });
-
-<SceneCanvas
-  scene={scene}
-  features={[drawPreset]}
-  defaultTools={['select', 'rect']}
-  tools={{ gem: gemTool }}
-  insertNodeFactories={{ gem: gemFactory }}
-/>;
 ```
 
 `paint` and `silhouette` work in world coordinates, before the pose's rotation,
 which the kit applies around them. `INSERT_DRAG_MODS` and `INSERT_REPOSITION_BINDING`
 give the tool the built-in shape tools' Shift to constrain, Alt to draw from the
-center and Space to reposition. A painter registered at the default priority
-runs after the built-ins that claim a node by its data (`text`, `path`, `shape`,
-`image`), so keep its `matches` off those fields or pass `{ priority: 'high' }`.
+center and Space to reposition. A painter runs after the built-ins that claim a
+node by its data (`text`, `path`, `shape`, `image`), so keep its `matches` off
+those fields, or register it with `{ priority: 'high' }`.
+
+`nodeKindPreset` packages them as one preset, each trait handed to its owner
+while the preset is on and released when it goes:
+
+<!-- snippet: tests/consumers/gem-extension/src/index.ts#gem-feature -->
+```ts
+import { nodeKindPreset } from '@weasel-js/core';
+import { GEM_BLUE, gemInsert, gemShape, gemTool, isGem } from './gem.js';
+import { tintTool } from './tint.js';
+
+/** The whole feature as one preset: the kind's routing, painter, insert factory, and properties, and its tools. */
+export const gemFeature = nodeKindPreset({
+  id: 'app:gem',
+  label: 'Gems',
+  kind: 'gem',                      // routing kind, properties name, insert kind
+  matches: isGem,
+  shape: gemShape,
+  insert: gemInsert,
+  properties: {
+    schema: {
+      name: 'Properties',
+      members: {
+        gem: {
+          name: 'Gem',
+          members: {
+            'data.gem.color': { kind: 'color', name: 'Color', description: 'The fill of every facet.', default: GEM_BLUE },
+            'data.gem.facets': { kind: 'number', name: 'Facets', description: 'How many corners the outline has.', default: 4, min: 3, max: 12 },
+          },
+        },
+      },
+    },
+  },
+  tools: [gemTool, tintTool],
+});
+```
+
+A canvas and a panel given the same presets agree on what a gem is. Share one
+selection between them, and keep it in the scene so undo restores it:
+
+<!-- snippet: tests/consumers/gem-extension/src/editor.tsx#gem-editor -->
+```tsx
+import {
+  IconRegistryProvider, SceneCanvas, drawPreset, useSelection,
+  type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi,
+} from '@weasel-js/core';
+import { SelectionPanel } from '@weasel-js/ui';
+import { kitIcons } from '@weasel-js/ui/kit-icons';
+import { gemFeature } from './index.js';
+
+const FEATURES: readonly FeaturePreset[] = [drawPreset, gemFeature];
+
+/** A canvas and a properties panel given the same presets, over one scene and one selection. */
+export function GemEditor({ scene, features = FEATURES, onToolsCreated, onClick }: {
+  scene: Scene<unknown, 'default', RectPose>;
+  features?: readonly FeaturePreset[];
+  onToolsCreated?: (tools: ToolsApi) => void;
+  onClick?: (hit: SceneCanvasHit | null) => void;
+}) {
+  // Kept in the scene, so the canvas, the panel, and undo all read one selection.
+  const selection = useSelection({ scene });
+  return (
+    <IconRegistryProvider icons={kitIcons}>
+      <SceneCanvas
+        scene={scene} selection={selection} width={640} height={480} features={features}
+        onToolsCreated={onToolsCreated} onClick={onClick}
+      />
+      <SelectionPanel scene={scene} selection={selection} features={features} />
+    </IconRegistryProvider>
+  );
+}
+```
+
+A canvas's own `routing` and `insertNodeFactories`, and a panel's `properties`,
+keep any name they give over a preset's; `nodeTraitsOf(features)` reads the
+merged traits. A preset's painters go in the scene's own registry,
+`nodeShapesOf(scene)`, so a canvas of another scene does not paint with them.
+Two presets giving one kind different values throw. A preset's tool whose
+`insert` kind nothing on the canvas builds is left out of the canvas's tools.
+
+The same pieces can still be installed one by one. `registerNodeShape` is the
+process-wide path, for every scene, a headless render included, so whatever
+registers a painter releases it:
+
+<!-- snippet: tests/consumers/gem-extension/src/oneByOne.tsx#gem-one-by-one -->
+```tsx
+import { useEffect } from 'react';
+import {
+  SceneCanvas, drawPreset, registerNodeShape,
+  type RectPose, type Scene, type ToolsApi,
+} from '@weasel-js/core';
+import { gemInsert, gemShape, gemTool } from './gem.js';
+
+const FEATURES = [drawPreset];
+const TOOLS = { gem: gemTool };
+const FACTORIES = { gem: gemInsert };
+
+/** The gem's painter and tool installed one by one rather than as a preset. `registerNodeShape` is process-wide,
+ *  so the canvas that registers it releases it when it unmounts. */
+export function OneByOneGemCanvas({ scene, onToolsCreated }: {
+  scene: Scene<unknown, 'default', RectPose>;
+  onToolsCreated?: (tools: ToolsApi) => void;
+}) {
+  useEffect(() => registerNodeShape(gemShape), []);
+  return (
+    <SceneCanvas
+      scene={scene} width={200} height={200}
+      features={FEATURES} tools={TOOLS} insertNodeFactories={FACTORIES}
+      onToolsCreated={onToolsCreated}
+    />
+  );
+}
+```
+
 `@weasel-js/svg` writes the built-in kinds only: give `svgNodesFromKit` a
 `leaf` for yours (its README shows one).
-`packages/core/src/canvas/customNodeKind.test.tsx` runs this example.
 
 ## Non-rect poses
 
@@ -768,41 +868,86 @@ not cached.
 When no behavior can express what you want — a different commit shape, a
 different overlay, a gesture the kit doesn't ship — write an **action**, not a
 hook. An action is a static descriptor; you register it and bind a gesture to
-it.
+it. The gem's tint drags sideways over the selected gems to step their color,
+previewing as it goes:
 
+<!-- snippet: tests/consumers/gem-extension/src/tint.ts#tint-action -->
 ```ts
-import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/core';
+import { commitOps, createSetDataOp, defineAction, defineTool, resolveParams } from '@weasel-js/core';
+import { isGem, type GemData } from './gem.js';
 
-export const smearAction: Action = {
-  id: 'my-app.smear',
-  label: 'Smear',
+declare module '@weasel-js/routing' {
+  interface ActionParamSchema {
+    /** How far the pointer travels, in world units, to step to the next color. */
+    'gem.tint': { step: number };
+  }
+}
+
+export const GEM_PALETTE = ['#3a7bd5', '#d53a7b', '#7bd53a', '#d5a13a'] as const;
+
+/** `color` moved `steps` places along {@link GEM_PALETTE}, wrapping; a color off the palette starts from its first. */
+export function tintedBy(color: string, steps: number): string {
+  const at = Math.max(0, GEM_PALETTE.indexOf(color as (typeof GEM_PALETTE)[number]));
+  const n = GEM_PALETTE.length;
+  return GEM_PALETTE[(((at + steps) % n) + n) % n]!;
+}
+
+/** Dragging sideways over the selected gems steps their color along the palette, previewing as it goes. */
+export const tintAction = defineAction({
+  id: 'gem.tint',
+  label: 'Tint gem',
   requires: ['scene', 'selection', 'applyOps'],
   invoker: {
     timing: 'ongoing',
-    start: (ctx: InvocationCtx): OngoingHandle => {
-      const origin = snapshotPoses(ctx.deps);
+    start: (ctx, opts) => {
+      const step = resolveParams(opts?.params)?.step ?? 24;
+      const scene = ctx.deps.scene;
+      const gems = new Map<string, GemData>();
+      for (const id of ctx.deps.selection?.get() ?? []) {
+        const data = scene?.get(id)?.data;
+        if (isGem(data)) gems.set(id, data);
+      }
+      let steps = 0;
+      const tinted = (data: GemData): GemData => ({ gem: { ...data.gem, color: tintedBy(data.gem.color, steps) } });
       return {
-        kind: 'smear',                       // what getActiveAction() reports
-        onMove: (m) => { /* update preview state */ },
-        previewIds: () => origin.keys(),     // → preview-ghost layer
-        previewPose: (id) => computed.get(id),
-        onEnd: (e, reason) => {
-          if (reason === 'cancel') return;
-          e.deps.applyOps?.(buildOps(), 'Smear');
+        kind: 'gem.tint',
+        onMove: (m) => { steps = Math.round((m.world.x - ctx.world.x) / step); },
+        previewIds: () => (steps === 0 ? null : gems.keys()),
+        previewData: (id) => {
+          const data = gems.get(id);
+          return data ? tinted(data) : null;
+        },
+        onEnd: (_end, reason) => {
+          if (reason === 'cancel' || steps === 0) return;
+          const ops = [...gems].map(([id, from]) => createSetDataOp({ id, from, to: tinted(from) }));
+          // The standard commit, through the deps `start` was given: `onMove` and `onEnd` get an empty bag.
+          // It goes to the host's `applyOps` when there is one, else straight to the scene.
+          commitOps(ctx.deps, ops, 'Tint gem');
         },
       };
     },
   },
-};
+});
 ```
 
-Then reach it — ambiently via `defaultBinding`, or from a tool:
+Two things in it are easy to get wrong. A gesture's `onMove` and `onEnd` are
+handed an empty deps bag, so the handle commits through the deps `start` got.
+And `commitOps`, the commit the kit's own actions use, sends the ops to the
+host's `applyOps` when there is one and straight to the scene otherwise, so
+`requires` names `applyOps` as well as `scene`: a dep the action reads without
+declaring it is refused. The scenario's host gives no `applyOps`.
 
+Then reach it — ambiently via `defaultBinding`, or from a tool, which registers
+its `actions` while the canvas has it:
+
+<!-- snippet: tests/consumers/gem-extension/src/tint.ts#tint-tool -->
 ```ts
-const smearTool = defineTool({
-  id: 'smear',
-  actions: [smearAction],
-  bindings: [{ spec: { kind: 'drag', target: 'selected-body' }, actionId: 'my-app.smear' }],
+export const tintTool = defineTool({
+  id: 'tint',
+  cursor: 'ew-resize',
+  presentation: { label: 'Tint', group: 'edit' },
+  actions: [tintAction],
+  bindings: [{ spec: { kind: 'drag', target: 'kind:gem:selected' }, actionId: 'gem.tint', opts: { params: { step: 24 } } }],
 });
 ```
 
@@ -810,8 +955,8 @@ What you get for free by doing it this way: the dispatcher owns the
 threshold, the gesture id, cancel-on-blur/Escape, and the
 `commit`-vs-`cancel` distinction; `previewIds` / `previewPose` /
 `previewData` render through the same preview-ghost layer everything else
-uses; `overlay()` covers non-ghost chrome; and the action is triggerable from
-a palette or toolbar via `registry.trigger('my-app.smear')` without a second
+uses; `overlay()` covers non-ghost chrome; and a palette or toolbar can
+start the same gesture with `registry.begin('gem.tint')` without a second
 code path.
 
 **Reference implementations** — all under

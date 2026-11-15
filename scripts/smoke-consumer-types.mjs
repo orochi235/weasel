@@ -150,8 +150,8 @@ export async function smokeDeclarations({ repoRoot, workDir, nodeModules, manife
   }
 }
 
-/** tsc's errors for `config`, split into the consumer's and weasel's own (`ours`) and the rest. */
-function diagnostics(tsc, config, cwd) {
+/** tsc's errors for `config`, split into the consumer's and weasel's own (`ours`) and other packages' (`theirs`). */
+export function diagnostics(tsc, config, cwd) {
   let output = '';
   try {
     execFileSync(tsc, ['-p', config, '--pretty', 'false'], { cwd, stdio: 'pipe' });
@@ -165,13 +165,13 @@ function diagnostics(tsc, config, cwd) {
   }
   const ownFile = (d) => {
     const file = /^(.+?)\(\d+,\d+\): /.exec(d)?.[1];
-    return !file || file === 'consumer.ts' || file.startsWith('../node_modules/@weasel-js/');
+    return !file || !file.includes('node_modules/') || file.includes('node_modules/@weasel-js/');
   };
   return { ours: all.filter(ownFile), theirs: all.filter((d) => !ownFile(d)) };
 }
 
 /** `dirs` and every workspace package their manifests reach, as directory names under `packages/`. */
-async function closure(repoRoot, dirs) {
+export async function closure(repoRoot, dirs) {
   const byName = new Map();
   for (const dir of readdirSync(join(repoRoot, 'packages'))) {
     const file = join(repoRoot, 'packages', dir, 'package.json');

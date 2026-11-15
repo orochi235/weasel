@@ -1,18 +1,17 @@
 /**
- * A custom node kind shipped as one preset, through public imports only: it inserts, paints,
- * picks, routes and edits on each canvas it is given to, and removing it from one canvas
- * releases only that canvas's installation.
+ * The gem extension's preset on two canvases at once, through public imports only: it inserts, paints,
+ * picks, routes, and edits on each canvas it is given to, and removing it from one canvas releases only
+ * that canvas's installation.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import {
-  SceneCanvas, asNodeId, buildSceneViewCommands, createScene, defaultDrawOne, defineTool, getNodeShapes, findNodeShape,
-  nodeKindPreset, nodeShapesOf, selectPreset, solid,
-  INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING,
+  SceneCanvas, asNodeId, buildSceneViewCommands, createScene, defaultDrawOne, getNodeShapes, findNodeShape,
+  nodeKindPreset, nodeShapesOf, selectPreset,
   type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi,
 } from '@weasel-js/core';
-import { pathFromD, transformPath } from '@weasel-js/geom';
 import { SelectionPanel } from '@weasel-js/ui';
+import { GEM_BLUE, gemFeature, gemInsert, gemTool, isGem } from './gem-extension/src/index.js';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -21,55 +20,6 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 afterEach(cleanup);
-
-// --- The package: everything below this line up to the tests is what it would publish. ---
-
-type GemData = { gem: { color: string } };
-const UNIT_GEM = pathFromD('M50 0 L100 40 L50 100 L0 40 Z'); // in a 100 × 100 box
-const gemIn = (p: RectPose) => transformPath(UNIT_GEM, [p.width / 100, 0, 0, p.height / 100, p.x, p.y]);
-const isGem = (data: unknown): data is GemData => typeof data === 'object' && data !== null && 'gem' in data;
-
-const gemTool = defineTool({
-  id: 'gem',
-  capabilities: ['creates-shapes'],
-  cursor: 'crosshair',
-  presentation: { label: 'Gem', group: 'shape' },
-  bindings: [
-    { spec: { kind: 'drag', mods: INSERT_DRAG_MODS }, actionId: 'insert', opts: { params: { kind: 'gem' } } },
-    INSERT_REPOSITION_BINDING,
-  ],
-});
-
-const gemShape = {
-  id: 'app:gem',
-  matches: (node: { data: unknown }) => isGem(node.data),
-  paint: (node: { data: unknown }, pose: RectPose) =>
-    [{ kind: 'path' as const, path: gemIn(pose), fill: { paint: solid((node.data as GemData).gem.color) } }],
-  silhouette: (_node: unknown, pose: RectPose) => gemIn(pose),
-};
-
-const gemKind = {
-  kind: 'gem',
-  matches: isGem,
-  shape: gemShape,
-  insert: () => ({ data: { gem: { color: '#3a7bd5' } } }),
-  properties: {
-    schema: {
-      name: 'Properties',
-      members: {
-        look: {
-          name: 'Look',
-          members: { 'data.gem.color': { kind: 'color' as const, name: 'Facet color', description: 'c', default: '#000000' } },
-        },
-      },
-    },
-  },
-};
-
-/** The whole feature: one preset. */
-const gemFeature: FeaturePreset = nodeKindPreset({ id: 'app:gem', label: 'Gems', ...gemKind, tools: [gemTool] });
-
-// --- The host. ---
 
 function pointer(type: string, x: number, y: number): PointerEvent {
   const ev = new Event(type, { bubbles: true }) as PointerEvent;
@@ -129,7 +79,7 @@ function click(testId: string, at: [number, number]) {
 const gemPainters = (s: Surface) => getNodeShapes(nodeShapesOf(s.scene)).filter((e) => e.id === 'app:gem').length;
 /** Whether the scene's frame, as a canvas builds it, paints anything in the gem's color. */
 const paintsGem = (s: Surface) =>
-  JSON.stringify(buildSceneViewCommands(s.scene, { x: 0, y: 0, scale: { x: 1, y: 1 } }, defaultDrawOne)).includes('#3a7bd5');
+  JSON.stringify(buildSceneViewCommands(s.scene, { x: 0, y: 0, scale: { x: 1, y: 1 } }, defaultDrawOne)).includes(GEM_BLUE);
 
 describe('a custom node feature installed as one preset', () => {
   it('inserts, paints, picks, routes and edits on two canvases, and leaves each other when removed', async () => {
@@ -148,7 +98,7 @@ describe('a custom node feature installed as one preset', () => {
       const nodes = [...s.scene.nodes.values()];
       expect(nodes).toHaveLength(1);
       const node = nodes[0]!;
-      expect(node.data).toEqual({ gem: { color: '#3a7bd5' } });
+      expect(node.data).toEqual({ gem: { color: GEM_BLUE, facets: 4 } });
       expect(node.pose).toMatchObject({ x: 0, y: 0, width: 100, height: 100 });
 
       // Drawn by its painter, as the canvas paints it.
@@ -167,7 +117,7 @@ describe('a custom node feature installed as one preset', () => {
     const node = [...a.scene.nodes.values()][0]!;
     const panel = render(<SelectionPanel scene={a.scene} selection={{ current: [node.id] }} features={on} />);
     expect(panel.container.textContent).toContain('Gem');
-    expect(panel.container.textContent).toContain('Facet color');
+    expect(panel.container.textContent).toContain('Facets');
     panel.unmount();
 
     // Off canvas A: its tool, insert and routing go; B's installation, painter included, stays.
@@ -193,7 +143,7 @@ describe('a custom node feature installed as one preset', () => {
   it('paints and picks a gem only on the canvas whose scene installed the feature', async () => {
     const a = surface();
     const b = surface();
-    const gem = { kind: 'mark' as const, layer: 'default' as const, pose: { x: 0, y: 0, width: 100, height: 100 }, data: { gem: { color: '#3a7bd5' } } };
+    const gem = { kind: 'mark' as const, layer: 'default' as const, pose: { x: 0, y: 0, width: 100, height: 100 }, data: { gem: { color: GEM_BLUE, facets: 4 } } };
     a.scene.add({ id: asNodeId('g'), ...gem });
     b.scene.add({ id: asNodeId('g'), ...gem });
     render(<Host a={a} b={b} featuresA={[selectPreset, gemFeature]} featuresB={[selectPreset]} />);
@@ -211,7 +161,7 @@ describe('a custom node feature installed as one preset', () => {
 
   it('leaves out a tool whose insert factory came from a preset that is gone', async () => {
     const tool = nodeKindPreset({ id: 'app:gem-tool', kind: 'gem', matches: isGem, tools: [gemTool] });
-    const factory = nodeKindPreset({ id: 'app:gem-insert', kind: 'gem', matches: isGem, insert: gemKind.insert });
+    const factory = nodeKindPreset({ id: 'app:gem-insert', kind: 'gem', matches: isGem, insert: gemInsert });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const a = surface();
     const b = surface();

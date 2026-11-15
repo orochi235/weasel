@@ -15,9 +15,12 @@
 // Strategy: `npm pack` every published package, extract them into a
 // node_modules tree in a temp dir OUTSIDE the repo, then (a) bundle a consumer
 // with esbuild, (b) build an app with vite and weaselIcons (smoke-consumer-icons.mjs),
-// (c) typecheck one with tsc, and (d) typecheck every public declaration on NodeNext and Bundler
-// resolution (smoke-consumer-types.mjs). Outside the repo, neither the
-// repo tsconfig paths nor the workspace symlinks are discoverable.
+// (c) typecheck one with tsc, (d) typecheck every public declaration on NodeNext and Bundler
+// resolution (smoke-consumer-types.mjs), and (e) install the small consumers under
+// tests/consumers/ from the tarballs and run them (smoke-consumer-install.mjs). Outside the repo,
+// neither the repo tsconfig paths nor the workspace symlinks are discoverable.
+//
+// The temp directory is deleted on the way out, pass or fail; `--keep` leaves it.
 
 import { build } from 'esbuild';
 import { mkdtemp, writeFile, readFile, readdir } from 'node:fs/promises';
@@ -25,11 +28,12 @@ import { tmpdir } from 'node:os';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import { isShipped } from './check-declared-imports.mjs';
 import { SOURCE, importSpecifiers, importedNames, namedSpecifiers, packageOf } from './lib/imports.mjs';
 import { smokeIcons } from './smoke-consumer-icons.mjs';
 import { smokeDeclarations } from './smoke-consumer-types.mjs';
+import { smokeInstalledConsumers } from './smoke-consumer-install.mjs';
 import { packInto } from './lib/pack-tree.mjs';
 import { exitUnlessOwnInstall } from './lib/own-install.mjs';
 
@@ -46,9 +50,17 @@ const PACKAGES = (await readdir(join(repoRoot, 'packages'), { withFileTypes: tru
   .map((e) => e.name)
   .sort();
 
+let workDir = null;
+const keep = process.argv.includes('--keep');
+const cleanUp = () => {
+  if (!workDir) return;
+  if (keep) console.log(`[smoke] consumer tree left at ${workDir}`);
+  else rmSync(workDir, { recursive: true, force: true });
+};
 const fail = (msg, detail) => {
   console.error(`[smoke] ${msg}\n`);
   if (detail) console.error(detail);
+  cleanUp();
   process.exit(1);
 };
 
@@ -242,7 +254,7 @@ console.log(
 }
 
 // ── Phase 2: pack + extract into a node_modules tree outside the repo ──────
-const workDir = await mkdtemp(join(tmpdir(), 'weasel-smoke-'));
+workDir = await mkdtemp(join(tmpdir(), 'weasel-smoke-'));
 const tarballDir = join(workDir, 'tarballs');
 const nodeModules = join(workDir, 'node_modules');
 
@@ -555,3 +567,7 @@ console.log('[smoke] consumer typecheck OK — .d.ts cross-package types resolve
 
 // ── Phase 5: every public declaration on NodeNext and Bundler, library checking on ──
 await smokeDeclarations({ repoRoot, workDir, nodeModules, manifests, fail });
+
+// ── Phase 6: small consumers installed from the tarballs, typechecked, and run ──
+await smokeInstalledConsumers({ repoRoot, workDir, tarballDir, fail });
+cleanUp();

@@ -55,6 +55,7 @@
     "test:fleet:postbuild": "node scripts/fleet-ci.mjs postbuild",
     "test:browser": "node scripts/vitest-overlap.mjs run --project=browser",
     "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",
+    "test:smoke:install": "node scripts/smoke-consumer-install.mjs",
     "check:first-publish": "node scripts/check-first-publish.mjs",
     "check:manifests": "node scripts/check-publish-manifests.mjs",
     "check:imports": "node scripts/check-declared-imports.mjs",

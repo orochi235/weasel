@@ -179,7 +179,7 @@ export default defineConfig({
           pool: 'vmThreads',
           globals: true,
           setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP, PBT_SEED_SETUP],
-          include: ['packages/**/*.test.{ts,tsx}'],
+          include: ['packages/**/*.test.{ts,tsx}', 'tests/consumers/*.test.{ts,tsx}'],
           // labkit runs in its own project below (own setup + css handling).
           // core runs in the `core` project above — it lived at the repo root
           // until the move into packages/, and this glob would otherwise

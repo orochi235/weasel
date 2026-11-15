@@ -250,19 +250,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Extension authoring and published consumers
 
-- **(P2) [agent] Compile and exercise a complete public-only extension example.** The custom-kind test
-  uses internal `useInsertDepSource`/`sceneToAdapter` and `as never` to drive an invoker directly
-  (`packages/core/src/canvas/customNodeKind.test.tsx`), so it does not verify mounting the documented
-  feature in a consumer. `docs/extending.md`'s gem snippet uses `drawPreset` without importing it;
-  its custom-action snippet commits only through optional `deps.applyOps`, whereas the standard commit
-  helper falls back to the scene (`interactions/actions/defaultCommitAdapter.ts`). `check:doc-imports`
-  passed 392 imported names during this review but does not compile snippet bodies or exercise behavior.
-  Add a runnable custom node/action/tool/property-editor example using public imports only and the
-  actual dispatcher, with the standard commit seam and explicit registration cleanup.
-  Closes when the copied example compiles outside repo aliases, inserts and edits its node, undoes/redoes,
-  survives save/load, and unregisters cleanly; documentation is generated from or checked against that
-  fixture, including operation with no consumer `applyOps` hook.
-
 - **(P2) [agent] Add an installed, runnable consumer contract beyond the externalized bundle smoke.**
   `scripts/smoke-consumer-bundle.mjs` packs workspaces but externalizes all third-party dependencies,
   bundles without executing, and typechecks only bundler resolution with `skipLibCheck: true`.
