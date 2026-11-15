@@ -3,11 +3,12 @@ import { d3Bind } from '@weasel-js/d3';
 import {
   SceneCanvas,
   WeaselProvider,
+  solid,
   useScene,
   easeInOutCubic,
 } from '@weasel-js/core';
+import type { Fill, RectPose, Stroke } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
-import type { DrawCommand } from '@weasel-js/core/renderer';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
@@ -22,8 +23,9 @@ interface Item {
   color: string;
 }
 type LayerId = 'bars';
-interface Pose { x: number; y: number; width: number; height: number }
-interface BarData { color: string; value: number }
+interface BarData { fill: Fill; stroke: Stroke; value: number }
+
+const BAR_STROKE: Stroke = { paint: solid('#222'), width: 1.5 };
 
 const INITIAL: Item[] = Array.from({ length: 12 }, (_, i) => ({
   id: `bar-${i}`,
@@ -57,7 +59,7 @@ function sortItems(items: readonly Item[], key: SortKey): Item[] {
   return arr;
 }
 
-function poseFor(d: Item, i: number): Pose {
+function poseFor(d: Item, i: number): RectPose {
   return {
     x: i * BAR_STRIDE + ORIGIN_X,
     y: BASELINE_Y - d.value * VALUE_SCALE,
@@ -71,7 +73,7 @@ function D3SortableDemoInner() {
   const [animating, setAnimating] = useState(false);
   const items = useMemo(() => sortItems(INITIAL, sortKey), [sortKey]);
 
-  const scene = useScene<BarData, LayerId, Pose>({
+  const scene = useScene<BarData, LayerId, RectPose>({
     systemLayers: [{ id: 'bars' }],
     initial: [],
   });
@@ -85,7 +87,7 @@ function D3SortableDemoInner() {
       animator,
     })
       .pose(poseFor)
-      .data((d) => ({ color: d.color, value: d.value }));
+      .data((d) => ({ fill: { paint: solid(d.color) }, stroke: BAR_STROKE, value: d.value }));
 
     const sel = binding.join();
 
@@ -122,20 +124,7 @@ function D3SortableDemoInner() {
         </span>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas
-          className="ckd-canvas"
-          scene={scene}
-          layers={{
-            scene: {
-              drawOne: (n, p): DrawCommand[] => [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { paint: { kind: 'solid', color: n.data.color } },
-                stroke: { paint: { color: '#222' }, width: 1.5 },
-              }],
-            },
-          }}
-        />
+        <SceneCanvas className="ckd-canvas" scene={scene} />
       </DemoStage>
     </div>
   );
