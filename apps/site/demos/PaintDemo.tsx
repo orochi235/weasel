@@ -61,10 +61,7 @@ const SWATCHES: { id: string; label: string; path: Path; paint: SwatchPaint }[] 
   } },
 ];
 
-/**
- * Each canvas is handed a JSON round-trip of its paint, not the object
- * itself — so what renders is exactly the text printed beside it.
- */
+/** Handed a JSON round-trip of its paint, so what renders is exactly the text printed beside it. */
 function Swatch({ path, paint }: { path: Path; paint: SwatchPaint }) {
   const scene = useScene<SwatchPaint & { path: Path }, 'default'>({
     systemLayers: [{ id: 'default' }],
@@ -88,11 +85,6 @@ function Swatch({ path, paint }: { path: Path; paint: SwatchPaint }) {
   );
 }
 
-/**
- * `@weasel-js/paint` is types and a few pure helpers: a fill or a stroke is
- * a plain object, with no renderer, class or handle behind it. Every paint
- * below goes through `JSON.stringify` and back before a canvas sees it.
- */
 export function PaintDemo() {
   return (
     <DemoStageGroup>
