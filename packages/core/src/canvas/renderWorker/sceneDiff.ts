@@ -3,6 +3,7 @@
  * last delta, in the scene's saved form, so function fields cross as registry keys.
  */
 import type { Scene, SerializedNode } from '../../core/scene/types';
+import { sharedJSON } from '../../core/scene/owned';
 import { scenePickIds } from '../scenePickIds';
 import type { SceneDelta, WireNode } from './protocol';
 
@@ -39,7 +40,7 @@ export function createSceneDiff(): SceneDiff {
   return {
     forget() { sent = null; },
     next(scene) {
-      const json = scene.toJSON();
+      const json = sharedJSON(scene);
       const nodes = new Map<string, WireNode>();
       const order: string[] = [];
       for (const n of json.nodes as readonly SerializedNode<unknown, string, unknown>[]) {

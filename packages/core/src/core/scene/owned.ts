@@ -32,8 +32,9 @@ export function detach<T>(value: T): T {
   }
   if (Array.isArray(value)) return value.map(detach) as T;
   if (!isPlain(value)) return value;
-  const out: Record<string, unknown> = {};
-  for (const key of Object.keys(value)) out[key] = detach((value as Record<string, unknown>)[key]);
+  // `fromEntries` defines keys, so an own `__proto__` stays a key rather than setting the prototype.
+  const out = Object.fromEntries(Object.keys(value).map((k) => [k, detach((value as Record<string, unknown>)[k])]));
+  if (Object.getPrototypeOf(value) === null) Object.setPrototypeOf(out, null);
   return out as T;
 }
 
@@ -52,4 +53,21 @@ function freezePlain(value: unknown): void {
   if (!isPlain(value)) return;
   Object.freeze(value);
   for (const key of Object.keys(value)) freezePlain((value as Record<string, unknown>)[key]);
+}
+
+const sharedSnapshots = new WeakMap<object, () => unknown>();
+
+/** Pairs a scene's `toJSON` with the snapshot {@link sharedJSON} reads in its place. */
+export function registerSharedJSON(toJSON: () => unknown, read: () => unknown): void {
+  sharedSnapshots.set(toJSON, read);
+}
+
+/**
+ * `scene.toJSON()` with the scene's own pose and `data` values in place of
+ * copies, for kit code that diffs snapshots by identity each frame and never
+ * writes to them. A scene whose `toJSON` is not the kit's falls back to it.
+ */
+export function sharedJSON<S extends { toJSON(): unknown }>(scene: S): ReturnType<S['toJSON']> {
+  const read = sharedSnapshots.get(scene.toJSON);
+  return (read ? read() : scene.toJSON()) as ReturnType<S['toJSON']>;
 }

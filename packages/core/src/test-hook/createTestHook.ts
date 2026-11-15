@@ -1,3 +1,4 @@
+import { sharedJSON } from '../core/scene/owned';
 import type { TestHookRefs, WeaselTestHook } from './types';
 
 export function createTestHook(refs: TestHookRefs): WeaselTestHook {
@@ -10,7 +11,7 @@ export function createTestHook(refs: TestHookRefs): WeaselTestHook {
     getScene() {
       const s = refs.getScene();
       if (!s) throw new Error('weasel test hook: scene not mounted yet');
-      return s.toJSON();
+      return sharedJSON(s);
     },
     getSelection() {
       return [...refs.getSelectionIds()];

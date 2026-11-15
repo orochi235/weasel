@@ -8,6 +8,7 @@ import { createLockGuard } from './lockGuard';
 import { createNodeFnFields } from './nodeFnFields';
 import { createNodeStore } from './nodeStore';
 import { createRenderOrder } from './renderOrder';
+import { registerSharedJSON } from './owned';
 import { serializeScene } from './serialization';
 import { createStaleReplay } from './staleReplay';
 import { createTreeReads } from './treeReads';
@@ -59,6 +60,7 @@ export function createSceneState<TData, TLayer extends string, TPose>(
     },
     toJSON: () => serializeScene(state, fnFields, docValues.toJSON()),
   };
+  registerSharedJSON(reads.toJSON, () => serializeScene(state, fnFields, docValues.toJSON(), (v) => v));
 
   return {
     state,

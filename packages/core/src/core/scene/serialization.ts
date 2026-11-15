@@ -60,6 +60,8 @@ export function serializeScene<TData, TLayer extends string, TPose>(
   state: SerializableState<TData, TLayer, TPose>,
   fnFields: readonly NodeFnField[],
   doc?: SerializedDoc,
+  /** What a pose or `data` value becomes in the snapshot: `detach` for one the caller owns. */
+  copy: <T>(value: T) => T = detach,
 ): SerializedScene<TData, TLayer, TPose> {
   const nodes: SerializedNode<TData, TLayer, TPose>[] = [];
   for (const n of treePreorder(state.roots, state.nodes)) {
@@ -68,8 +70,8 @@ export function serializeScene<TData, TLayer extends string, TPose>(
       id,
       kind: n.kind,
       layer: n.layer,
-      pose: detach(n.pose),
-      data: detach(n.data),
+      pose: copy(n.pose),
+      data: copy(n.data),
     };
     if (n.parent != null) out.parent = n.parent;
     if (n.dependsOn === 'children') out.dependsOn = 'children';
