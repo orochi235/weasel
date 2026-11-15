@@ -8,16 +8,9 @@ import type { TextStyle, TextVerticalAlign, Fill } from '@weasel-js/core';
 
 const W = 480, H = 340;
 
-// Exercise the dynamic canvas-SDF tier end-to-end: Arial has no baked atlas
-// here, so it resolves through DynamicGlyphAtlas. (If Arial isn't installed,
-// canvas fillText falls back to another face — the test only asserts that
-// glyph ink renders, not which face.)
+// Arial has no baked atlas, so its text draws through the dynamic canvas-SDF tier.
 registerCanvasFont('Arial');
 
-// `RECT_FALLBACK_PAINTER` (src/canvas/NodeShape.ts) reads `data.fill` and
-// emits it over the pose AABB — no stroke — so that's the shape that
-// guarantees a probe-able interior fill color rather than an outline.
-// `text`/`style`/`verticalAlign` make a node `kit:text`, which lays it out in its pose box.
 interface NodeData {
   fill?: Fill;
   text?: string;
@@ -27,10 +20,7 @@ interface NodeData {
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
-// Rotation and per-node dimming are applied by the scene walk, not by
-// the node painter — so the headless render and the on-screen canvas below it get
-// them from the same place. `dimmed` is deliberately near-black so the
-// multiplier is unmistakable against the white background.
+// The scene walk applies alpha and rotation, not the painter, so both renders get them from one place.
 const ALPHA_FOR = (id: string): number => (id === 'dimmed' ? 0.25 : 1);
 
 export function RenderToPixelsDemo() {
@@ -43,18 +33,12 @@ export function RenderToPixelsDemo() {
         pose: { x: 180, y: 70, width: 120, height: 100 }, data: { fill: { paint: solid('#4a7fb0') } } },
       { id: 'c' as never, kind: 'mark', layer: 'default',
         pose: { x: 330, y: 50, width: 110, height: 140 }, data: { fill: { paint: solid('#d4a574') } } },
-      // Bottom strip, box-aligned text: box is much taller than one line of
-      // text, `verticalAlign: 'bottom'` should push the glyphs to the
-      // bottom of the box instead of the (legacy default) top.
       { id: 'd' as never, kind: 'mark', layer: 'default',
         pose: { x: 10, y: 202, width: 460, height: 36 },
         data: { text: 'WWWWWWWWWWWWWWWW', style: { fontSize: 16 }, verticalAlign: 'bottom', fill: { paint: solid('#000') } } },
-      // Dynamic canvas-SDF text (see registerCanvasFont above).
       { id: 'e' as never, kind: 'mark', layer: 'default',
         pose: { x: 10, y: 4, width: 460, height: 32 },
         data: { text: 'Dynamic SDF 123', style: { fontFamily: 'Arial', fontSize: 22 }, fill: { paint: solid('#000') } } },
-      // Bottom band: rotation and per-node alpha, neither of which the node painter
-      // knows about.
       { id: 'spun' as never, kind: 'mark', layer: 'default',
         pose: { x: 40, y: 260, width: 60, height: 60, rotation: Math.PI / 4 },
         data: { fill: { paint: solid('#b04a7f') } } },
@@ -66,8 +50,7 @@ export function RenderToPixelsDemo() {
   const [readout, setReadout] = useState('rendering…');
 
   useEffect(() => {
-    // Anisotropic on purpose: 2 px/unit horizontally, 1 px/unit vertically —
-    // the label-print shape (full dot pitch across, squeezed vertically).
+    // Anisotropic on purpose: the shape of a label printer's dot pitch.
     const opts = {
       scene,
       sourceRect: { x: 0, y: 0, width: W, height: H },
