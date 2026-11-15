@@ -486,7 +486,10 @@ const gemFeature = nodeKindPreset({
 
 A canvas's own `routing` and `insertNodeFactories`, and a panel's `properties`,
 keep any name they give over a preset's; `nodeTraitsOf(features)` reads the
-merged traits. Two presets giving one kind different values throw. A preset's
+merged traits. A preset's painters go in the scene's own registry,
+`nodeShapesOf(scene)`, so a canvas of another scene does not paint with them;
+`registerNodeShape` is the process-wide path, for every scene, a headless render
+included. Two presets giving one kind different values throw. A preset's
 tool whose `insert` kind nothing on the canvas builds is left out of the canvas's
 tools. The same pieces can still be installed one by one:
 

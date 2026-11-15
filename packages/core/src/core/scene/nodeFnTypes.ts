@@ -29,6 +29,9 @@ export interface DerivedDep<TPose, TData = unknown, TLayer extends string = stri
    *  derivation reading through a group to its contents walks. Resolved on
    *  each read; absent where the lookup cannot list them. */
   readonly children?: readonly (DerivedDep<TPose, TData, TLayer> | undefined)[];
+  /** The scene it was read from, whose painters (`nodeShapesOf`) give its outline. Absent for a
+   *  dependency built by hand, which is outlined by the default painters. */
+  readonly scene?: object;
 }
 
 /** `F` with its parameters checked bivariantly, as a method's are, so that a

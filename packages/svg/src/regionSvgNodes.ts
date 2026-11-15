@@ -11,6 +11,7 @@ import {
   documentOf,
   effectivePose,
   findNodeShape,
+  nodeShapesOf,
   INHERIT,
   resolvePartPaint,
   isAnnotationLayer,
@@ -18,6 +19,7 @@ import {
   type ExportRegion,
   type ExportScene,
   type NodeShapeEntry,
+  type NodeShapes,
   type Path,
   type RectPose,
 } from '@weasel-js/core';
@@ -61,10 +63,12 @@ const poseOf = (pose: RectPose): SvgKitPose => ({
  * claim it, else a registered one. The kit's own (`kit:*`) are left to
  * `svgLeafFromKit`, which writes their text, images and markers as SVG.
  */
-function painterOf(painters: readonly NodeShapeEntry<unknown, RectPose>[], node: SceneNode): NodeShapeEntry<unknown, RectPose> | undefined {
+function painterOf(
+  painters: readonly NodeShapeEntry<unknown, RectPose>[], node: SceneNode, shapes: NodeShapes,
+): NodeShapeEntry<unknown, RectPose> | undefined {
   const given = painters.find((p) => p.matches(node as never));
   if (given) return given;
-  const registered = findNodeShape(node);
+  const registered = findNodeShape(node, shapes);
   return registered && !registered.id.startsWith('kit:') ? registered : undefined;
 }
 
@@ -124,7 +128,9 @@ export function regionSvgNodes(live: ExportScene, region: ExportRegion, opts: Re
     },
   };
 
+  const shapes = nodeShapesOf(scene);
   return svgNodesFromKit(tree, {
+    shapes,
     ...(opts.onWarn ? { onWarn: opts.onWarn } : {}),
     include(id) {
       const node = scene.get(id as never);
@@ -136,7 +142,7 @@ export function regionSvgNodes(live: ExportScene, region: ExportRegion, opts: Re
       const node = scene.get(id as never)!;
       const path = pathOf(node);
       if (path) return one(derivedNodes(path, kit.data as SvgKitLeafData));
-      const painter = painterOf(painters, node);
+      const painter = painterOf(painters, node, shapes);
       return painter ? svgFromPainter(painter as NodeShapeEntry, node, kit.pose, inherited, warn) : undefined;
     },
   });

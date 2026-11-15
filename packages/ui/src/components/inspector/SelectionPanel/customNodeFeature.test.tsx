@@ -6,7 +6,8 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import {
-  SceneCanvas, createScene, defaultDrawOne, defineTool, getNodeShapes, findNodeShape, nodeKindPreset, selectPreset, solid,
+  SceneCanvas, asNodeId, buildSceneViewCommands, createScene, defaultDrawOne, defineTool, getNodeShapes, findNodeShape,
+  nodeKindPreset, nodeShapesOf, selectPreset, solid,
   INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING,
   type FeaturePreset, type RectPose, type Scene, type SceneCanvasHit, type ToolsApi,
 } from '@weasel-js/core';
@@ -125,7 +126,10 @@ function click(testId: string, at: [number, number]) {
   });
 }
 
-const gemPainters = () => getNodeShapes().filter((e) => e.id === 'app:gem').length;
+const gemPainters = (s: Surface) => getNodeShapes(nodeShapesOf(s.scene)).filter((e) => e.id === 'app:gem').length;
+/** Whether the scene's frame, as a canvas builds it, paints anything in the gem's color. */
+const paintsGem = (s: Surface) =>
+  JSON.stringify(buildSceneViewCommands(s.scene, { x: 0, y: 0, scale: { x: 1, y: 1 } }, defaultDrawOne)).includes('#3a7bd5');
 
 describe('a custom node feature installed as one preset', () => {
   it('inserts, paints, picks, routes and edits on two canvases, and leaves each other when removed', async () => {
@@ -134,7 +138,8 @@ describe('a custom node feature installed as one preset', () => {
     const on = [selectPreset, gemFeature];
     const view = render(<Host a={a} b={b} featuresA={on} featuresB={on} />);
     await act(async () => {});
-    expect(gemPainters()).toBe(2);
+    expect(gemPainters(a)).toBe(1);
+    expect(gemPainters(b)).toBe(1);
 
     for (const [s, id] of [[a, 'a'], [b, 'b']] as const) {
       expect(s.tools().has('gem')).toBe(true);
@@ -147,8 +152,8 @@ describe('a custom node feature installed as one preset', () => {
       expect(node.pose).toMatchObject({ x: 0, y: 0, width: 100, height: 100 });
 
       // Drawn by its painter, as the canvas paints it.
-      expect(findNodeShape(node)?.id).toBe('app:gem');
-      expect(defaultDrawOne(node, node.pose)[0]).toMatchObject({ kind: 'path' });
+      expect(findNodeShape(node, nodeShapesOf(s.scene))?.id).toBe('app:gem');
+      expect(paintsGem(s)).toBe(true);
 
       // Picked by its outline and routed as its kind.
       act(() => s.tools().setActive('select'));
@@ -170,7 +175,10 @@ describe('a custom node feature installed as one preset', () => {
     await act(async () => {});
     expect(a.tools().has('gem')).toBe(false);
     expect(b.tools().has('gem')).toBe(true);
-    expect(gemPainters()).toBe(1);
+    expect(gemPainters(a)).toBe(0);
+    expect(gemPainters(b)).toBe(1);
+    expect(paintsGem(a)).toBe(false);
+    expect(paintsGem(b)).toBe(true);
     click('a', [50, 50]);
     expect(a.clicks.at(-1)).toMatchObject({ kind: 'unknown' });
     click('b', [50, 50]);
@@ -178,8 +186,27 @@ describe('a custom node feature installed as one preset', () => {
 
     view.rerender(<Host a={a} b={b} featuresA={[selectPreset]} featuresB={[selectPreset]} />);
     await act(async () => {});
-    expect(gemPainters()).toBe(0);
-    expect(findNodeShape(node)?.id).not.toBe('app:gem');
+    expect(gemPainters(b)).toBe(0);
+    expect(findNodeShape(node, nodeShapesOf(a.scene))?.id).not.toBe('app:gem');
+  });
+
+  it('paints and picks a gem only on the canvas whose scene installed the feature', async () => {
+    const a = surface();
+    const b = surface();
+    const gem = { kind: 'mark' as const, layer: 'default' as const, pose: { x: 0, y: 0, width: 100, height: 100 }, data: { gem: { color: '#3a7bd5' } } };
+    a.scene.add({ id: asNodeId('g'), ...gem });
+    b.scene.add({ id: asNodeId('g'), ...gem });
+    render(<Host a={a} b={b} featuresA={[selectPreset, gemFeature]} featuresB={[selectPreset]} />);
+    await act(async () => {});
+
+    expect(paintsGem(a)).toBe(true);
+    expect(paintsGem(b)).toBe(false);
+    expect(findNodeShape(b.scene.get(asNodeId('g'))!)?.id).not.toBe('app:gem');
+    // Outside the gem's outline but inside its box: A picks by the outline, B by the box.
+    click('a', [3, 97]);
+    expect(a.clicks.at(-1)).toBeNull();
+    click('b', [3, 97]);
+    expect(b.clicks.at(-1)).toMatchObject({ id: 'g' });
   });
 
   it('leaves out a tool whose insert factory came from a preset that is gone', async () => {

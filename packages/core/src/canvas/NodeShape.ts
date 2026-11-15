@@ -1,5 +1,5 @@
 /**
- * NodeShape — the **shape trait's** registry: the per-kind `paint` + `silhouette` used by
+ * NodeShape — the **shape trait's** lookups: the per-kind `paint` + `silhouette` used by
  * `defaultDrawOne`, clipping, non-rect hit-testing, and lasso/area-select. Teaching the kit
  * about a new kind of shape goes through this registry rather than by overriding `drawOne`.
  *
@@ -8,13 +8,15 @@
  * last `kit:rect-fallback`, which takes any rect-posed node nothing else claimed. Every
  * built-in but `kit:derived` additionally requires a rect-shaped pose — a scene whose poses are
  * some other shape matches none of them, and paints through a consumer painter or not at all.
+ *
+ * Every lookup asks a registry (`nodeShapeRegistry.ts`): the scene's own, `nodeShapesOf(scene)`,
+ * where the caller draws or picks for a scene, and `defaultNodeShapes` where it passes none.
  */
 import { glyphGeneration } from '@weasel-js/font';
 import { textEngineGeneration } from '@weasel-js/text';
 import { pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
 import { strokeTrimKey, type StrokeTrim } from '@weasel-js/paint';
-import { createEmitter } from '@weasel-js/registry';
-import { bumpNodeMemoGeneration, nodeMemo } from 'core/scene/nodeMemo';
+import { nodeMemo } from 'core/scene/nodeMemo';
 import { setDepOutlineReader } from 'core/scene/booleanOfChildren';
 import type { Node } from 'core/scene/types';
 import { positiveBox } from 'core/geometry/unionBounds';
@@ -32,68 +34,29 @@ import { RECT_FALLBACK_PAINTER } from './nodeShapes/rectFallbackPainter';
 import { SHAPE_PAINTER } from './nodeShapes/shapePainter';
 import { TEXT_PAINTER } from './nodeShapes/textPainter';
 import type { NodeShapeEntry, NodeInk, NodeSilhouetteCtx, NodeInkCtx } from './nodeShapeTypes';
+import {
+  addBuiltInShape, defaultNodeShapes, effectiveShapes, ensureBuiltInShapes, evaluationOrder, nodeShapesChanged, nodeShapesOf,
+  resetNodeShapesForTests, setBuiltInShapes, type NodeShapes,
+} from './nodeShapeRegistry';
+export {
+  createNodeShapes, defaultNodeShapes, nodeShapesOf, subscribeNodeShapes,
+  type NodeShapes, type RegisterNodeShapeOptions,
+} from './nodeShapeRegistry';
+import type { RegisterNodeShapeOptions } from './nodeShapeRegistry';
 export type { NodePaintCtx, SceneViewDrawOne, NodeShapeEntry, NodeInk, NodeSilhouetteCtx, NodeInkCtx } from './nodeShapeTypes';
 export type { InheritedPaint } from 'core/scene/inheritedPaint';
 
 /** What a painter that declares no `ink` is assumed to do. */
 export const DEFAULT_INK: Readonly<NodeInk> = Object.freeze({ filled: true, outset: 0, inset: 0 });
 
-/** Options for `registerNodeShape`. */
-export interface RegisterNodeShapeOptions {
-  /** `'high'` puts the painter ahead of all normally-registered ones (so
-   *  it can win over a kit built-in). `'normal'`, the default, appends after
-   *  the built-ins that claim a node by its data, ahead of the rect fallback. */
-  priority?: 'high' | 'normal';
-}
-
-/** One registration. A painter registered twice is two of these, so each disposer takes out its own. */
-interface Registration { readonly entry: NodeShapeEntry }
-
-const PAINTERS: { high: Registration[]; normal: Registration[]; fallback: Registration[] } = {
-  high: [],
-  normal: [],
-  fallback: [],
-};
-
-const changes = createEmitter();
-
-/** The painter set is ambient state `findNodeShape` reads, and a memo keyed on the node alone cannot see it
- *  change; neither can a canvas that already painted. See `nodeMemo`. */
-function shapesChanged(): void {
-  bumpNodeMemoGeneration();
-  changes.emit();
-}
-
-/** Hear every registration, release and {@link refreshNodeShapes}: what a mounted canvas repaints on. */
-export function subscribeNodeShapes(listener: () => void): () => void {
-  return changes.subscribe(listener);
-}
-
-// The built-ins go in on first use, not at module load: a bundler may drop an
-// import kept only for its side effect, and the registry would come up empty.
-let builtInsRegistered = false;
-function ensureBuiltIns(): void {
-  if (builtInsRegistered) return;
-  builtInsRegistered = true;
-  registerBuiltInShapePainters();
-}
-
-/** Register a shape painter. Returns a disposer that removes this registration, and only it. */
+/** Register a painter in {@link defaultNodeShapes}, for every scene. A painter only some scenes
+ *  should paint with goes in theirs: `nodeShapesOf(scene).register`, or a preset's `shapes`.
+ *  Returns a disposer that removes this registration, and only it. */
 export function registerNodeShape<TData, TPose>(
   painter: NodeShapeEntry<TData, TPose>,
   opts: RegisterNodeShapeOptions = {},
 ): () => void {
-  ensureBuiltIns();
-  const list = opts.priority === 'high' ? PAINTERS.high : PAINTERS.normal;
-  const registration: Registration = { entry: painter as NodeShapeEntry };
-  list.push(registration);
-  shapesChanged();
-  return () => {
-    const i = list.indexOf(registration);
-    if (i < 0) return;
-    list.splice(i, 1);
-    shapesChanged();
-  };
+  return defaultNodeShapes.register(painter, opts);
 }
 
 /**
@@ -102,7 +65,7 @@ export function registerNodeShape<TData, TPose>(
  * and every mounted canvas repaints.
  */
 export function refreshNodeShapes(): void {
-  shapesChanged();
+  nodeShapesChanged();
 }
 
 /**
@@ -123,10 +86,17 @@ const TEXT_SILHOUETTE_SLOT = 'shape:silhouette:text';
 interface TextSilhouette { epoch: number; engines: number; path: Path | null }
 const TRIM_PICK_SLOT = 'shape:trim-pick';
 
-/** The painter that will render `node` — first match in priority order — or undefined if
- *  none accepts it. */
+/** Memo slot names for `shapes`'s lookups; the default registry keeps the bare names. */
+const slotFor = (slot: string, shapes: NodeShapes): string => {
+  const serial = effectiveShapes(shapes).serial;
+  return serial === 0 ? slot : `${slot}#${serial}`;
+};
+
+/** The painter that will render `node` — first match in priority order in `shapes` — or
+ *  undefined if none accepts it. */
 export function findNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
+  shapes: NodeShapes = defaultNodeShapes,
 ): NodeShapeEntry<TData, TPose> | undefined {
   // Built-in painters also gate on pose shape and on whether the node derives
   // its path, neither of which shows in `data`, so the key carries both.
@@ -134,21 +104,17 @@ export function findNodeShape<TData, TPose>(
   const slot = derivesPath(node)
     ? (rect ? PAINTER_SLOT_DERIVED : PAINTER_SLOT_DERIVED_NONRECT)
     : (rect ? PAINTER_SLOT : PAINTER_SLOT_NONRECT);
-  return nodeMemo(node as { data?: unknown }, slot, undefined, () =>
-    matchNodeShape(node),
+  return nodeMemo(node as { data?: unknown }, slotFor(slot, shapes), undefined, () =>
+    matchNodeShape(node, shapes),
   );
 }
 
 function matchNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
+  shapes: NodeShapes,
 ): NodeShapeEntry<TData, TPose> | undefined {
-  ensureBuiltIns();
-  for (const tier of [PAINTERS.high, PAINTERS.normal, PAINTERS.fallback]) {
-    for (const { entry } of tier) {
-      if (entry.matches(node as Node<unknown, string, unknown>)) {
-        return entry as NodeShapeEntry<TData, TPose>;
-      }
-    }
+  for (const { entry } of evaluationOrder(effectiveShapes(shapes))) {
+    if (entry.matches(node as Node<unknown, string, unknown>)) return entry as NodeShapeEntry<TData, TPose>;
   }
   return undefined;
 }
@@ -179,10 +145,11 @@ export function findShapeSilhouette<TData, TPose>(
   // Line boxes follow font metrics and the registered layout engines, and
   // either changes with no change to the node, so the text entry is checked
   // against the glyph epoch and the engines it was laid out with.
-  if (findNodeShape(node) === (TEXT_PAINTER as NodeShapeEntry<unknown, unknown>)) {
+  const shapes = ctx?.shapes ?? defaultNodeShapes;
+  if (findNodeShape(node, shapes) === (TEXT_PAINTER as NodeShapeEntry<unknown, unknown>)) {
     const epoch = glyphGeneration();
     const engines = textEngineGeneration();
-    const held = nodeMemo(node as { data?: unknown }, TEXT_SILHOUETTE_SLOT, pose,
+    const held = nodeMemo(node as { data?: unknown }, slotFor(TEXT_SILHOUETTE_SLOT, shapes), pose,
       (): TextSilhouette => ({ epoch, engines, path: build() }));
     if (held.epoch !== epoch || held.engines !== engines) {
       held.epoch = epoch; held.engines = engines;
@@ -190,16 +157,18 @@ export function findShapeSilhouette<TData, TPose>(
     }
     return held.path;
   }
-  return nodeMemo(node as { data?: unknown }, SILHOUETTE_SLOT, pose, build);
+  return nodeMemo(node as { data?: unknown }, slotFor(SILHOUETTE_SLOT, shapes), pose, build);
 }
 
 /** The silhouette `node`'s painter returns, in the pose's local frame: what its stroke is drawn along. */
 function localSilhouette<TData, TPose>(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeSilhouetteCtx): Path | null {
-  return findNodeShape(node)?.silhouette?.(node, pose, ctx) ?? null;
+  return findNodeShape(node, ctx?.shapes)?.silhouette?.(node, pose, ctx) ?? null;
 }
 
 // A boolean group's operands are its children's outlines.
-setDepOutlineReader((dep) => findShapeSilhouette(dep.node, dep.pose, { derivedPath: dep.path }));
+setDepOutlineReader((dep) => findShapeSilhouette(dep.node, dep.pose, {
+  derivedPath: dep.path, ...(dep.scene ? { shapes: nodeShapesOf(dep.scene) } : {}),
+}));
 
 /** Find the painter for `node` and ask how it inks its silhouette. Returns
  *  the painter's declared {@link NodeInk}, or `null` when no painter matches
@@ -209,7 +178,7 @@ export function findShapeInk<TData, TPose>(
   pose: TPose,
   ctx?: NodeInkCtx,
 ): NodeInk | null {
-  return findNodeShape(node)?.ink?.(node, pose, ctx) ?? null;
+  return findNodeShape(node, ctx?.shapes)?.ink?.(node, pose, ctx) ?? null;
 }
 
 /** Find the painter for `node` and ask for the box its paint fits in. `null`
@@ -220,7 +189,7 @@ export function findShapeBounds<TData, TPose>(
   pose: TPose,
   ctx?: NodeInkCtx,
 ): Bounds | null {
-  return findNodeShape(node)?.bounds?.(node, pose, ctx) ?? null;
+  return findNodeShape(node, ctx?.shapes)?.bounds?.(node, pose, ctx) ?? null;
 }
 
 /** Options for {@link shapeCoversPoint}. */
@@ -241,6 +210,8 @@ export interface ShapeCoversPointOptions {
   /** See {@link NodeInkCtx.inherited}. Without it an `'inherit'` field is
    *  read as none. */
   inherited?: NodeInkCtx['inherited'];
+  /** The painters to ask: the scene's, `nodeShapesOf(scene)`. Default `defaultNodeShapes`. */
+  shapes?: NodeShapes;
 }
 
 /**
@@ -263,55 +234,53 @@ export function shapeCoversPoint<TData, TPose>(
 ): boolean {
   // A group paints nothing, so its interior is its box, which the caller's pre-filter tested.
   if (node.kind === 'group') return true;
-  const sil = findShapeSilhouette(node, pose, { derivedPath: opts.derivedPath });
+  const shapes = opts.shapes;
+  const sil = findShapeSilhouette(node, pose, { derivedPath: opts.derivedPath, shapes });
   if (sil === null) return true;
   const parts = derivedPartsOf(opts.derivedPath);
   if (parts !== undefined) return partsCover(node, parts, pose, x, y, opts);
-  const ink = findShapeInk(node, pose, { scale: opts.scale, inherited: opts.inherited }) ?? DEFAULT_INK;
+  const ink = findShapeInk(node, pose, { scale: opts.scale, inherited: opts.inherited, shapes }) ?? DEFAULT_INK;
   const trim = ink.stroke?.trim;
-  const trimmed = trim === undefined ? undefined : trimmedOutlineOf(node, pose, sil, trim, opts.derivedPath);
+  const trimmed = trim === undefined ? undefined : trimmedOutlineOf(node, pose, sil, trim, opts.derivedPath, shapes ?? defaultNodeShapes);
   return inkCovers(sil, ink, trimmed, x, y, opts);
 }
 
 /** {@link trimmedOutline} for `node`'s silhouette `sil`, memoized as the silhouette is. */
 function trimmedOutlineOf<TData, TPose>(
   node: Node<TData, string, TPose>, pose: TPose, sil: Path, trim: StrokeTrim, derivedPath: Path | null | undefined,
+  shapes: NodeShapes,
 ): TrimmedOutline {
   const build = (): TrimmedOutline => {
-    const local = poseFrameOf(pose) === null ? sil : localSilhouette(node, pose, { derivedPath }) ?? sil;
+    const local = poseFrameOf(pose) === null ? sil : localSilhouette(node, pose, { derivedPath, shapes }) ?? sil;
     return trimmedOutline(local, sil, pose, trim);
   };
   // The trim may be inherited, rebuilt per query, so its value keys the memo beside the node;
   // see `findShapeSilhouette` for the derived path.
-  return derivedPath != null ? build() : nodeMemo(node as { data?: unknown }, TRIM_PICK_SLOT, pose, build, strokeTrimKey(trim));
+  return derivedPath != null ? build() : nodeMemo(node as { data?: unknown }, slotFor(TRIM_PICK_SLOT, shapes), pose, build, strokeTrimKey(trim));
 }
 
-/** The current painters in evaluation order — `'high'` tier first, then `'normal'`, then the rect fallback. */
-export function getNodeShapes(): readonly NodeShapeEntry[] {
-  ensureBuiltIns();
-  return [...PAINTERS.high, ...PAINTERS.normal, ...PAINTERS.fallback].map((r) => r.entry);
+/** The painters `shapes` resolves, in evaluation order — `'high'` tier first, then `'normal'`,
+ *  then the rect fallback. Default `defaultNodeShapes`. */
+export function getNodeShapes(shapes: NodeShapes = defaultNodeShapes): readonly NodeShapeEntry[] {
+  return shapes.entries();
 }
 
-/** Test-only: clear the registry and re-register the built-ins. */
+/** Test-only: clear the default registry and re-register the built-ins. */
 export function _resetShapePaintersForTests(): void {
-  PAINTERS.high.length = 0;
-  PAINTERS.normal.length = 0;
-  PAINTERS.fallback.length = 0;
-  builtInsRegistered = false;
-  ensureBuiltIns();
-  // `registerNodeShape` already announces, but the clearing above happens without one.
-  shapesChanged();
+  resetNodeShapesForTests();
+  ensureBuiltInShapes();
+  nodeShapesChanged();
 }
 
-function registerBuiltInShapePainters(): void {
-  registerNodeShape(TEXT_PAINTER);
-  registerNodeShape(MEASURE_PAINTER);
+setBuiltInShapes(() => {
+  addBuiltInShape(TEXT_PAINTER as NodeShapeEntry, 'builtin');
+  addBuiltInShape(MEASURE_PAINTER as NodeShapeEntry, 'builtin');
   // Ahead of path/shape/image: a derived node whose `data` also carries a
   // `path`, `shape` or `image` means the derived path, and those three match
   // on the presence of the field alone.
-  registerNodeShape(DERIVED_PAINTER);
-  registerNodeShape(PATH_PAINTER);
-  registerNodeShape(SHAPE_PAINTER);
-  registerNodeShape(IMAGE_PAINTER);
-  PAINTERS.fallback.push({ entry: RECT_FALLBACK_PAINTER as NodeShapeEntry });
-}
+  addBuiltInShape(DERIVED_PAINTER as NodeShapeEntry, 'builtin');
+  addBuiltInShape(PATH_PAINTER as NodeShapeEntry, 'builtin');
+  addBuiltInShape(SHAPE_PAINTER as NodeShapeEntry, 'builtin');
+  addBuiltInShape(IMAGE_PAINTER as NodeShapeEntry, 'builtin');
+  addBuiltInShape(RECT_FALLBACK_PAINTER as NodeShapeEntry, 'fallback');
+});

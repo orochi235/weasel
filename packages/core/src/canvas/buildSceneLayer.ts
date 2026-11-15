@@ -1,6 +1,7 @@
 /**
  * The scene slot: an adapter's tree as render layers, one per scene layer.
  */
+import type { NodeShapes } from './nodeShapeRegistry';
 import type { Path } from '@weasel-js/geom';
 import type { Dims, LayerDims, RenderLayer } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -37,6 +38,9 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
    *  node *paints*, this one the clip it *imposes*. A scene-aware caller
    *  supplies it; left out, both are resolved off the adapter. */
   derivedPathOf?: (obj: TNode, pose: TPose) => Path | null;
+  /** The painters a container's `clip: 'outline'` is read through: the scene's, which
+   *  `<SceneCanvas>` fills in. Absent, `defaultNodeShapes`. */
+  shapes?: NodeShapes;
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
   /** Per-id alpha multiplier. A node's emitted `DrawCommand[]` is wrapped in a
@@ -176,6 +180,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           derivedPathOf as Parameters<typeof buildSceneTree>[4],
           culledIn(view, dims) as Parameters<typeof buildSceneTree>[5],
           cfg.drawnPose as Parameters<typeof buildSceneTree>[6],
+          view,
+          cfg.shapes,
         );
         return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
       }

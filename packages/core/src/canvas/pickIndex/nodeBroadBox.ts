@@ -9,7 +9,7 @@
  * by its path alone, as both queries read it.
  */
 import { transformPoint, boundsOfPath, poseFrameOf, type Path } from '@weasel-js/geom';
-import { findShapeInk } from 'canvas/NodeShape';
+import { findShapeInk, type NodeShapes } from 'canvas/NodeShape';
 import { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { regionBoundsOf } from 'core/geometry/regionHit';
@@ -64,8 +64,10 @@ export function nodeBroadBox(
   inherited: InheritedPaint | undefined,
   descriptor: PoseDescriptor<unknown>,
   out: Box2,
+  shapes?: NodeShapes,
 ): number {
-  const ink = findShapeInk(node as never, pose, inherited === undefined ? UNINHERITED : { scale: 1, inherited });
+  const ctx = inherited === undefined && shapes === undefined ? UNINHERITED : { scale: 1, inherited, shapes };
+  const ink = findShapeInk(node as never, pose, ctx);
   const outset = Math.max(0, ink?.outset ?? 0);
   out[0] = out[1] = Infinity;
   out[2] = out[3] = -Infinity;

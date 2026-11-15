@@ -4,7 +4,7 @@
 
 A `FeaturePreset` can carry the routing, insert factories, painters, and properties of a node kind; `nodeKindPreset` builds one.
 
-Each trait goes to its owner while the preset is on: `routing` classifies ahead of the canvas's `routing` (or `inferredNodeRouting`), `insertNodeFactories` builds the inserts its kinds name, `shapes` register as `registerNodeShape` would for as long as the canvas runs the preset, and `properties` is what a `SelectionPanel` given the same presets edits. A name the consumer's own prop gives keeps the consumer's; two presets giving one name different values throw. `nodeTraitsOf(features, base)` returns the merged traits.
+Each trait goes to its owner while the preset is on: `routing` classifies ahead of the canvas's `routing` (or `inferredNodeRouting`), `insertNodeFactories` builds the inserts its kinds name, `shapes` register in the canvas's scene's own painter registry for as long as the canvas runs the preset, so another scene does not paint with them, and `properties` is what a `SelectionPanel` given the same presets edits. A name the consumer's own prop gives keeps the consumer's; two presets giving one name different values throw. `nodeTraitsOf(features, base)` returns the merged traits.
 
 ```tsx
 const gemFeature = nodeKindPreset({

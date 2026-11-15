@@ -6,6 +6,7 @@
  * `derivedPose` — a *pose* can derive from a dependency's path, so
  * `effectivePose` has to be able to reach it.
  */
+import { nodeShapesOf } from './nodeShapeRegistry';
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { multiply, poseFrameInverseOf, poseFrameOf, type Path } from '@weasel-js/geom';
 import { asNodeId } from 'core/scene/types';
@@ -276,6 +277,7 @@ export function drawnBoundsScene<TData, TLayer extends string, TPose>(scene: Sce
     held = {
       get: (id) => shown.get(id) as never,
       childrenOf: (id) => scene.childrenOf(id),
+      shapes: nodeShapesOf(scene),
       derivedPathOf: (id) => {
         const node = scene.get(id);
         return node !== undefined && showsComputedPath(scene, node) ? pathOf(node) : null;

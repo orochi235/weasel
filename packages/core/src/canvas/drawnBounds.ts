@@ -18,7 +18,7 @@ import type { Node, NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { boundsOfPath, meanScale, type Path, type Scale2 } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { findNodeShape, type NodeInkCtx } from './NodeShape';
+import { findNodeShape, type NodeInkCtx, type NodeShapes } from './NodeShape';
 
 /** The scene reads {@link drawnBoundsOf} makes. `childrenOf` absent: every
  *  node is a leaf. `derivedPathOf` absent: every node is measured by its pose,
@@ -28,6 +28,8 @@ export interface DrawnBoundsScene {
   childrenOf?(id: NodeId): readonly NodeId[];
   /** The path a node shows in place of its pose's, or `null` for one that shows its own. */
   derivedPathOf?(id: NodeId): Path | null;
+  /** The painters its nodes are drawn with. Absent, `defaultNodeShapes`. */
+  shapes?: NodeShapes;
 }
 
 /** How {@link drawnBoundsOf} reads a node. */
@@ -143,7 +145,7 @@ export function findShapeDrawnBounds<TData, TPose>(
   pose: TPose,
   ctx?: NodeInkCtx,
 ): Bounds | null {
-  return findNodeShape(node)?.drawnBounds?.(node, pose, ctx) ?? null;
+  return findNodeShape(node, ctx?.shapes)?.drawnBounds?.(node, pose, ctx) ?? null;
 }
 
 function descriptorFor(scene: DrawnBoundsScene, id: NodeId, opts: DrawnBoundsOptions): PoseDescriptor<unknown> {
@@ -168,7 +170,9 @@ function withInherited(
   ctx: NodeInkCtx | undefined,
 ): NodeInkCtx | undefined {
   const inherited = inheritedPaintIn(scene, node);
-  return inherited === undefined ? ctx : { ...ctx, inherited };
+  const shapes = scene.shapes;
+  if (inherited === undefined && shapes === undefined) return ctx;
+  return { ...ctx, ...(inherited === undefined ? {} : { inherited }), ...(shapes === undefined ? {} : { shapes }) };
 }
 
 function normalized(b: Bounds): Bounds {

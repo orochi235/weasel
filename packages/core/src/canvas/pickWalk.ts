@@ -24,6 +24,7 @@ import { ownClipOf, type ClipBearing } from './ownClip';
 import { inheritedPaintOf, inheritsPaint, type InheritedPaint } from 'core/scene/inheritedPaint';
 import { rectToPlane, type PlaneMap } from 'core/viewport/parallax';
 import { clipCarrier } from './planeClips';
+import type { NodeShapes } from './nodeShapeRegistry';
 import { reaches } from './pickReach';
 
 /** The subset of a node the walk itself reads. Deliberately structural: a
@@ -70,6 +71,9 @@ export interface PickSource<TPose> {
   isHidden?(node: PickCandidate<TPose>): boolean;
   /** The path a node computes from its dependencies, or null for none. */
   derivedPathOf?(node: PickCandidate<TPose>): Path | null;
+  /** The painters its nodes are drawn with — a scene's `nodeShapesOf(scene)` — which every shape
+   *  test of the walk asks. Omit for `defaultNodeShapes`. */
+  shapes?: NodeShapes;
   /** How the asking view's world maps into a parallax layer's, or null for a
    *  layer that moves with the camera. Omit for a source with no planes. */
   planeOf?(layer: string): PlaneMap | null;
@@ -126,7 +130,7 @@ export interface PickQuery<TPose> {
    *  wrong box. `inherited` is what its `'inherit'` fields take from its
    *  containers, for the ink it is tested against; absent when it inherits
    *  nothing. */
-  hits(node: PickCandidate<TPose>, pose: TPose, derived?: Path | null, inherited?: InheritedPaint): boolean;
+  hits(node: PickCandidate<TPose>, pose: TPose, derived?: Path | null, inherited?: InheritedPaint, shapes?: NodeShapes): boolean;
   /**
    * Does an ancestor's clip leave anything of `node` for this query to hit?
    *
@@ -177,7 +181,7 @@ export function pickWalk<TPose>(
     const cached = clipPath.get(ancestor.id);
     if (cached !== undefined) return cached;
     const resolved = ownClipOf(
-      ancestor, src.poseOf(ancestor), () => src.derivedPathOf?.(ancestor),
+      ancestor, src.poseOf(ancestor), () => src.derivedPathOf?.(ancestor), src.shapes,
     );
     clipPath.set(ancestor.id, resolved);
     return resolved;
@@ -238,7 +242,7 @@ export function pickWalk<TPose>(
     const pose = src.poseOf(node);
     const derived = src.derivedPathOf?.(node);
     const inherited = inheritsPaint(node) ? inheritedPaintOf(node, src.parentsOf(node)) : undefined;
-    if (!reaches(node, pose, derived, inherited, query, parentsOf, copying, lookups)) continue;
+    if (!reaches(node, pose, derived, inherited, query, parentsOf, copying, lookups, src.shapes)) continue;
     out.push(node.id);
   }
 

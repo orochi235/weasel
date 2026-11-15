@@ -64,6 +64,10 @@ class RecordedDep<TPose> implements DerivedDep<TPose> {
     return this.dep.inherited;
   }
 
+  get scene(): object | undefined {
+    return this.dep.scene;
+  }
+
   get children(): readonly (DerivedDep<TPose> | undefined)[] | undefined {
     const kids = this.dep.children;
     if (kids === undefined) return undefined;

@@ -90,7 +90,8 @@ export interface FeaturePreset {
    * trait's owner while the preset is on. `routing` classifies nodes ahead of
    * the canvas's own `routing` (or `inferredNodeRouting`); `insertNodeFactories`
    * builds the inserts its kinds name; `shapes` paint and pick them, registered
-   * as `registerNodeShape` would for as long as the canvas runs the preset;
+   * in the canvas's scene's own registry (`nodeShapesOf(scene)`) for as long as
+   * the canvas runs the preset, so another scene does not paint with them;
    * `properties` is what a `SelectionPanel` given the same presets edits.
    *
    * Precedence: a name the consumer's own prop gives (`routing`,

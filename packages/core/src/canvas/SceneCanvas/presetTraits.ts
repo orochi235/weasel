@@ -9,7 +9,7 @@ import { useStableByContent } from '@weasel-js/react';
 import { createExtensionRegistry, ExtensionConflictError, sameList } from '@weasel-js/registry';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import { kitBuildsInsert, type InsertNodeFactories, type InsertNodeFactory } from '../deps/insert';
-import { registerNodeShape, type NodeShapeEntry } from '../NodeShape';
+import { nodeShapesOf, type NodeShapeEntry } from '../NodeShape';
 import type { EnabledPresets, FeaturePreset, PresetNodeShape } from './features';
 import { inferredNodeRouting } from './defaultNodeRouting';
 
@@ -104,15 +104,17 @@ export function presetShapes(presets: readonly FeaturePreset[]): PresetNodeShape
   return out;
 }
 
-/** Register the enabled presets' painters while the canvas runs them. Each canvas holds its own
- *  registrations, so another canvas installing the same painter keeps it when this one lets go. */
-export function usePresetShapes(enabled: EnabledPresets): void {
+/** Register the enabled presets' painters in `scene`'s own registry while the canvas runs them, so
+ *  another scene does not paint with them. Each canvas holds its own registrations, so another
+ *  canvas of the same scene installing the same painter keeps it when this one lets go. */
+export function usePresetShapes(enabled: EnabledPresets, scene: object): void {
   const shapes = useStableByContent(presetShapes(enabled.presets), (a, b) =>
     sameList(a, b, (x, y) => x.painter === y.painter && x.priority === y.priority));
   useEffect(() => {
-    const releases = shapes.map((s) => registerNodeShape(s.painter, s.priority ? { priority: s.priority } : {}));
+    const registry = nodeShapesOf(scene);
+    const releases = shapes.map((s) => registry.register(s.painter, s.priority ? { priority: s.priority } : {}));
     return () => { for (const r of releases) r(); };
-  }, [shapes]);
+  }, [shapes, scene]);
 }
 
 /** Whether an `insert` of `kind` builds a node on a canvas with these factories. */

@@ -216,6 +216,10 @@ class RebasedDep<TPose> implements DerivedDep<TPose> {
     this.node = dep.node;
   }
 
+  get scene(): object | undefined {
+    return this.dep.scene;
+  }
+
   get path(): Path | null {
     const path = this.dep.path;
     return path === null ? null : carryDepPath(path, this.dep.pose, this.pose);
@@ -275,6 +279,10 @@ class SceneDep<TPose> implements DerivedDep<TPose> {
   get inherited(): InheritedPaint | undefined {
     const { source, reading } = this;
     return inheritedPaintIn(reading === 'effective' ? shownLookup(source) : source, this.posed);
+  }
+
+  get scene(): object {
+    return this.source;
   }
 
   get children(): readonly (DerivedDep<TPose> | undefined)[] {

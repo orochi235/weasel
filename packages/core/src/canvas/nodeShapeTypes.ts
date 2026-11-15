@@ -7,6 +7,7 @@ import type { Node } from 'core/scene/types';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
+import type { NodeShapes } from './nodeShapeRegistry';
 
 /** Optional per-call paint context, threaded through `defaultDrawOne`'s third argument. Lets
  *  a rendering entry point override ambient environment reads; custom painters may ignore it
@@ -44,6 +45,9 @@ export interface NodePaintCtx {
    *  its containers by the scene's `drawOne` wrapper. **Absent** for a node
    *  that inherits nothing. Hand it to `resolveFill` / `resolveStroke`. */
   inherited?: InheritedPaint;
+  /** The painters the caller resolves through — the scene's, `nodeShapesOf(scene)` — for a
+   *  painter that asks after another node's shape. Absent, `defaultNodeShapes`. */
+  shapes?: NodeShapes;
 }
 
 /**
@@ -155,6 +159,9 @@ export interface NodeSilhouetteCtx {
    *  {@link NodePaintCtx.derivedPath}: absent for a node that derives from
    *  nothing, `null` when it derives but has nothing to draw. */
   derivedPath?: Path | null;
+  /** The painters the caller resolves through — the scene's, `nodeShapesOf(scene)` — for a
+   *  painter that asks after another node's shape. Absent, `defaultNodeShapes`. */
+  shapes?: NodeShapes;
 }
 
 /** Per-call context for {@link NodeShapeEntry.ink}. */
@@ -177,4 +184,7 @@ export interface NodeInkCtx {
   /** As {@link NodePaintCtx.inherited}: a stroke or fill the node inherits
    *  inks it as its own does. */
   inherited?: InheritedPaint;
+  /** The painters the caller resolves through — the scene's, `nodeShapesOf(scene)` — for a
+   *  painter that asks after another node's shape. Absent, `defaultNodeShapes`. */
+  shapes?: NodeShapes;
 }

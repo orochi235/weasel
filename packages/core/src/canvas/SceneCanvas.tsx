@@ -78,7 +78,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   });
   const { viewRef } = viewState;
   const enabled = useEnabledFeatures(props.features, selectToolOpts?.rotate !== false);
-  const traits = usePresetTraits(enabled, props);
+  const traits = usePresetTraits(enabled, scene, props);
   const kinds = useNodeKinds(scene, traits.routing);
   const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf });
   useViewportWithoutView(viewport, enabled);
