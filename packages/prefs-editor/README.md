@@ -25,6 +25,6 @@ const [schema, setSchema] = useState(SETTINGS);
 | `AssetEditor` | a `Workspace` of schemas, layouts over them, action catalogs, and feature-preset bundles, with drafts and an export of every change |
 | `PrefConditionEditor` | one `showIf` or `enableIf` condition over a schema's fields |
 
-The editors draw with `@weasel-js/ui`'s components, so `@weasel-js/ui/style.css` loads too. What they edit through,
+The editors draw with `@weasel-js/ui`'s components, so load `@weasel-js/ui/style.css` too. What they edit through,
 with no React and no DOM (the tree edits, printing and diffing a schema, the workspace codec, and a condition's rows
 and flow), is `@weasel-js/prefs/edit`.
