@@ -11,6 +11,7 @@ the snapshot; the document envelope below carries it beside one.
 
 ```ts
 import { createScene, parseSnapshot, sceneFromJSON, stringifySnapshot } from '@weasel-js/core';
+import type { SavedScene, SnapshotText } from '@weasel-js/core';
 
 // Build a scene however you like, then save it:
 const scene = createScene({
@@ -20,8 +21,9 @@ const scene = createScene({
 
 localStorage.setItem('mySaved', stringifySnapshot(scene.toJSON()));
 
-// Later, in a different session:
-const loaded = sceneFromJSON(parseSnapshot(localStorage.getItem('mySaved')!), {});
+// Later, in a different session. Storage hands back a plain string, so say what it encodes:
+const text = localStorage.getItem('mySaved')! as SnapshotText<SavedScene<MyData, 'default', MyPose>>;
+const loaded = sceneFromJSON(parseSnapshot(text), {});
 ```
 
 ## Encoding: snapshots and their JSON
@@ -140,7 +142,7 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
 | Field | Type | Notes |
 |---|---|---|
 | `version` | `3` | `toJSON` writes 3; `sceneFromJSON` and `loadState` also read 1 and 2 (see Versioning) and throw on any other value. |
-| `systemLayers` | `SystemLayerSpec[]` | Layer ids and optional visibility/locked overrides. |
+| `systemLayers` | `SerializedLayer[]` | Every layer, system and user, in order: its id, and only what differs from the defaults (`visible: false`, `locked: true`, `parallax`, `annotation: true`). A user layer adds `kind: 'user'` and its `name`. |
 | `nodes` | `SerializedNode[]` | All nodes in tree preorder: parents before children, siblings in sibling order. A reader painting straight from `nodes` derives paint order from layers: paint each `systemLayers` entry in turn, taking that layer's nodes in the order they appear here. |
 | `nodes[i].id` | `string` | Node id. Stable across save/load. |
 | `nodes[i].kind` | `'mark' \| 'group'` | A mark draws itself; a group draws nothing of its own. Either may have children. |
@@ -343,10 +345,10 @@ The shape of `data` is the app's, and so is its version. Keep the version as a d
 (`@weasel-js/editor`) hands a copy of each node's data, already decoded, to the migration it is given.
 
 ```ts
-import { parseSnapshot } from '@weasel-js/core';
+import { parseSnapshot, type SavedScene, type SnapshotText } from '@weasel-js/core';
 import { docFromSnapshot, nodeSpecsFromSnapshot } from '@weasel-js/editor';
 
-const json = parseSnapshot(text);                       // the engine's decoding
+const json = parseSnapshot(text as SnapshotText<SavedScene<MyData, MyLayer, MyPose>>); // the engine's decoding
 const schema = Number(docFromSnapshot(json)?.['myapp:schema'] ?? 1);
 const migrate = (data: MyData): MyData => (schema < 2 ? upgradeToV2(data) : data);
 const scene = useScene({ systemLayers, initial: nodeSpecsFromSnapshot(json, registry, migrate), doc: { ...docFromSnapshot(json), 'myapp:schema': 2 } });

@@ -95,9 +95,9 @@ Tag: `path-command`
 | Resample | `resamplePath` | Spreads anchors evenly by arc length, to a count or a spacing, holding corners | — | main | path-tools |
 | Add extremes | `addExtremeAnchors` | Adds anchors at each curve's leftmost, rightmost, top, and bottom, on segments with both ends selected, or the whole path while none is | Alt+X in path edit | main | path-tools |
 | Grow, shrink, and every-Nth selection | `growAnchorSelection`, `shrinkAnchorSelection`, `selectEveryNthAnchor`, `selectCornerAnchors`, `selectSmoothAnchors`, `invertAnchorSelection` | Selects anchors along the path: one further each way, one fewer, every Nth, the corners, the smooth ones, or the rest | ] / [, Alt+N, Alt+C, Alt+M, Alt+I in path edit | main | path-tools |
-| Tween | `tween` | Live steps between two shapes | — | main | path-tools |
-| Bend along a path | `bendAlong` | Lays a shape along a spine | — | main | path-tools |
-| Repeat along a path | `repeatAlong` | Live copies placed along a path | — | main | path-tools |
+| Tween | `tween` | Live steps between two shapes | Alt+Shift+B | main | path-tools |
+| Bend along a path | `bendAlong` | Lays a shape along a spine | Alt+Shift+W | main | path-tools |
+| Repeat along a path | `repeatAlong` | Live copies placed along a path | Alt+Shift+R | main | path-tools |
 | Text along a path | `textAlong` | Lays a text's glyphs along another shape's outline, hiding both sources | Alt+Shift+X | main | path-tools |
 | Roughen | `roughen` | Live random offsets of each selected shape's outline, hiding the shape | Alt+Shift+G | main | path-tools |
 | Zigzag | `zigzag` | Live ridges pushed alternately to either side of each selected shape's outline, hiding the shape | Alt+Shift+Z | main | path-tools |
@@ -118,5 +118,5 @@ explicit:
 - **A click on a stroke** snips or reaches depending on the tool held; Insert and Cut add a
   modifier to the same click.
 - **A brush drag** simplifies or kneads depending on the tool.
-- **Mod+J** joins, Alt+J bridges, and Mod+Alt+Shift+J averages, in both the path and anchor
-  forms.
+- **Mod+J** joins and Alt+J bridges, in both the path and anchor forms; Mod+Alt+Shift+J averages
+  anchors.
