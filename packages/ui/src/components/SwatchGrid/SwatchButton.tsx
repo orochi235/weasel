@@ -1,8 +1,9 @@
-import { useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type ReactElement } from 'react';
+import { useState, type ButtonHTMLAttributes, type CSSProperties, type FocusEvent, type KeyboardEvent, type ReactElement } from 'react';
 import { tileKey, type LastRow } from '@weasel-js/ui-input';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
-import type { ControlHold, FocusHoldAttrs } from '../Disabled/controlHold';
+import type { ControlHold } from '../Disabled/controlHold';
+import { composeHandler, type DataAttributes } from '../../nativeProps';
 import type { SwatchGridOption } from './SwatchGrid';
 import s from './SwatchGrid.module.css';
 
@@ -80,29 +81,27 @@ export function useSwatchStop(current: number, count: number): {
   };
 }
 
-/** Props of {@link SwatchButton}. */
-export interface SwatchButtonProps {
+/** Props of {@link SwatchButton}. Every native `<button>` attribute and handler but the ones it writes itself
+ *  passes through: a palette's roving keys and focus, the data attributes a layout reads off the swatch, and the
+ *  attributes its palette's hold puts on it (`aria-disabled`, `aria-readonly`, `aria-describedby`). */
+export type SwatchButtonProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'aria-label' | 'aria-current' | 'tabIndex' | 'children'
+> & DataAttributes & {
   option: SwatchGridOption;
   /** Whether this swatch is its palette's one tab stop. */
   tabStop: boolean;
   /** Whether to mark this swatch current. */
   current: boolean;
-  /** What a click, a shift-click and a right-click apply to: {@link useSwatchApply}'s. */
+  /** What a click, a shift-click and a right-click apply to: {@link useSwatchApply}'s. A caller's `onClick` or
+   *  `onContextMenu` runs first, and one that calls `preventDefault()` applies nothing. */
   apply: SwatchApply;
-  /** Keys on the swatch: a palette's roving focus. Enter and Space click it without one. */
-  onKeyDown?: (e: KeyboardEvent<HTMLButtonElement>) => void;
-  onFocus?: () => void;
-  className?: string;
-  style?: CSSProperties;
-  /** Data attributes a layout reads off the swatch. */
-  data?: Record<`data-${string}`, string | undefined>;
-  /** How its palette is held: `aria-disabled` or `aria-readonly`, and the reason's description. */
-  held?: FocusHoldAttrs;
-}
+};
 
 /** One swatch: its color over the checker, its glyph centered over that in its ink, named by its label, applying on
  *  click and to the alternate target on shift-click or right-click. */
-export function SwatchButton({ option: o, tabStop, current, apply, onKeyDown, onFocus, className, style, data, held }: SwatchButtonProps): ReactElement {
+export function SwatchButton(
+  { option: o, tabStop, current, apply, className, style, onClick, onContextMenu, ...native }: SwatchButtonProps,
+): ReactElement {
   const name = nameOf(o);
   const paint = {
     ...style,
@@ -111,24 +110,24 @@ export function SwatchButton({ option: o, tabStop, current, apply, onKeyDown, on
   } as CSSProperties;
   return (
     <button
+      title={name}
+      {...native}
       type="button"
       className={className ? `${s.swatch} ${className}` : s.swatch}
       aria-label={name}
-      title={name}
       tabIndex={tabStop ? 0 : -1}
       aria-current={current ? 'true' : undefined}
       data-swatch=""
-      {...held}
-      {...data}
       {...(o.value === null ? { 'data-none': '' } : {})}
       style={paint}
-      onClick={(e) => {
+      onClick={composeHandler(onClick, (e) => {
         if (e.shiftKey && apply.onAltChange) apply.onAltChange(o);
         else apply.onChange(o);
-      }}
-      onContextMenu={apply.onAltChange ? (e) => { e.preventDefault(); apply.onAltChange?.(o); } : undefined}
-      onKeyDown={onKeyDown}
-      onFocus={onFocus}
+      })}
+      onContextMenu={composeHandler(
+        onContextMenu,
+        apply.onAltChange ? (e) => { e.preventDefault(); apply.onAltChange?.(o); } : undefined,
+      )}
     >
       {o.glyph != null && <span className={s.glyph} aria-hidden="true">{o.glyph}</span>}
     </button>

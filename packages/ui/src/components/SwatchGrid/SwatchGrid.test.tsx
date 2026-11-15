@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import { createRecentColorsStore, RecentColorsProvider } from '../RecentColors';
 import { SwatchGrid, type SwatchGridOption } from './SwatchGrid';
+import { SwatchButton } from './SwatchButton';
 
 const OPTIONS: SwatchGridOption[] = [
   { value: null, label: 'None' },
@@ -151,5 +152,29 @@ describe('SwatchGrid', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Cerulean, white text' }));
       expect(store.get()).toEqual([CERULEAN]);
     });
+  });
+});
+
+describe('SwatchButton', () => {
+  const red = OPTIONS[1]!;
+  it("runs a caller's onClick before applying, and a prevented one applies nothing", () => {
+    const onChange = vi.fn();
+    const onClick = vi.fn();
+    const { rerender } = render(<SwatchButton option={red} tabStop current={false} apply={{ onChange, onAltChange: undefined }} onClick={onClick} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Red' }));
+    expect(onClick).toHaveBeenCalledOnce();
+    expect(onChange).toHaveBeenCalledOnce();
+    rerender(<SwatchButton option={red} tabStop current={false} apply={{ onChange, onAltChange: undefined }} onClick={(e) => e.preventDefault()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Red' }));
+    expect(onChange).toHaveBeenCalledOnce();
+  });
+
+  it('passes native and data attributes through, keeping its own tab stop', () => {
+    render(<SwatchButton option={red} tabStop={false} current apply={{ onChange: () => {}, onAltChange: undefined }} data-slot="2" aria-describedby="why" />);
+    const swatch = screen.getByRole('button', { name: 'Red' });
+    expect(swatch).toHaveAttribute('data-slot', '2');
+    expect(swatch).toHaveAttribute('aria-describedby', 'why');
+    expect(swatch).toHaveAttribute('tabindex', '-1');
+    expect(swatch).toHaveAttribute('aria-current', 'true');
   });
 });

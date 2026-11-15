@@ -1,10 +1,12 @@
-import type { DragEvent, MouseEvent, PointerEvent, ReactNode, RefObject } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type DragEvent, type MouseEvent, type PointerEvent, type ReactNode, type Ref, type RefObject } from 'react';
+import { assignRef } from '@weasel-js/react';
 import type { Grade } from '@weasel-js/theme';
 import { ButtonTooltip, type TooltipFields } from '../Tooltip/buttonTooltip';
 import { useDisabled, type DisableableProps } from '../Disabled';
 import { useAppearance } from '../appearance';
 import { useControlForm, type ControlForm } from './controlForm';
 import { usePreviewWhileNear } from './usePreviewWhileNear';
+import { composeHandler, type DataAttributes } from '../../nativeProps';
 import s from './ActionButton.module.css';
 
 /** What an {@link ActionButton} opens: a dialog it shows the state of, or a menu whose trigger it is. */
@@ -19,8 +21,17 @@ export type ActionButtonPopup =
     onPointerDown?(e: PointerEvent): void;
   };
 
-/** Props for {@link ActionButton}. `tooltip` replaces the tooltip outright. */
-export interface ActionButtonProps extends DisableableProps, TooltipFields {
+/** The `<button>` attributes an {@link ActionButton} writes itself: its name from `label`, its state from `active`,
+ *  its hold from `disabled` and `missing`. It is never a form's submitter, and `form` is where it is drawn. A `popup`
+ *  writes `aria-haspopup` and `aria-expanded` over passed ones. */
+type ActionButtonOwnedAttribute =
+  | 'aria-label' | 'aria-pressed' | 'aria-current' | 'aria-disabled'
+  | 'disabled' | 'type' | 'form' | 'children' | 'draggable';
+
+/** Props for {@link ActionButton}. `tooltip` replaces the tooltip outright. Every native `<button>` attribute and
+ *  handler it does not write itself passes through. */
+export type ActionButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, ActionButtonOwnedAttribute>
+  & DataAttributes & DisableableProps & TooltipFields & {
   /** Its name: the accessible name, the words a labeled form reads, and the tooltip's lead. */
   label: string;
   icon?: ReactNode;
@@ -41,43 +52,51 @@ export interface ActionButtonProps extends DisableableProps, TooltipFields {
   popup?: ActionButtonPopup;
   /** Nothing answers to this key. The button is dead, and its tooltip says why. */
   missing?: string;
+  /** The press, after `onClick`; an `onClick` that calls `preventDefault()` skips it. */
   onPress(e: MouseEvent<HTMLButtonElement>): void;
   /** Show what pressing would do, while the button is hovered or focused; returns what takes it down. */
   preview?: () => () => void;
-  /** Pointer press handler. A menu popup's own wins. */
-  onPointerDown?(e: PointerEvent<HTMLButtonElement>): void;
   /** Makes the button a drag source, starting a drag with this. */
   onDragStart?(e: DragEvent<HTMLButtonElement>): void;
-  className?: string;
-  'data-testid'?: string;
-}
+};
 
 /**
  * One action's button, drawn in the form of where it sits (see `ControlForm`): a bar's cell, its icon with the label
  * and shortcut in a tooltip; a menu row of icon, label, and shortcut; a form's or a popover's row of icon and label;
  * or a palette's tool, its label and shortcut under its icon.
+ *
+ * A caller's handler runs before the button's own (the preview's show and hide, a menu popup's press), and one that
+ * calls `preventDefault()` skips it. `ref` forwards to the `<button>`.
  */
-export function ActionButton(props: ActionButtonProps) {
-  const { label, icon, children, description, grade, active, popup, missing, onPress, preview, shortcut, tooltip, className } = props;
-  const form = useControlForm(props.form);
+export const ActionButton = forwardRef(function ActionButton(props: ActionButtonProps, ref: Ref<HTMLButtonElement>) {
+  const {
+    label, icon, children, description, grade, active, popup, missing, onPress, preview, shortcut, tooltip, className,
+    labeled, form: ownForm, disabled: _disabled, disabledReason: _disabledReason,
+    onClick, onPointerDown, onPointerEnter, onPointerLeave, onFocus, onBlur, ...native
+  } = props;
+  const form = useControlForm(ownForm);
   const dead = missing !== undefined;
   const { disabled, reason } = useDisabled(props);
   const { show, hide } = usePreviewWhileNear(disabled || dead ? undefined : preview);
   const appearance = useAppearance({ grade });
   const tip = dead ? { tooltip: `${label}: no action “${missing}”` } : { tooltip, description: description || label, shortcut };
   const palette = form === 'palette';
-  const words = palette || form === 'menu' || icon == null || (props.labeled ?? (form === 'row' || form === 'popover'));
+  const words = palette || form === 'menu' || icon == null || (labeled ?? (form === 'row' || form === 'popover'));
   const cls = palette ? [s.tool, className]
     : [s.action, form === 'bar' && s.cell, words && s.labeled, words && (form === 'row' || form === 'popover') && s.row, form === 'menu' && s.menu, className];
   const shown = children ?? label;
+  const menu = popup?.type === 'menu' ? popup : undefined;
   return (
     // A dead or explained button keeps its tooltip, which is the only thing that says why.
     <ButtonTooltip tip={tip} disabled={disabled && !dead} disabledReason={reason}>
       <button
-        ref={popup?.type === 'menu' ? popup.ref : undefined}
-        id={popup?.type === 'menu' ? popup.id : undefined}
+        {...native}
+        ref={(el) => {
+          assignRef(ref, el);
+          assignRef(menu?.ref, el);
+        }}
+        id={menu?.id ?? native.id}
         type="button"
-        data-testid={props['data-testid']}
         data-form={form}
         aria-label={label}
         aria-disabled={disabled || dead || undefined}
@@ -87,17 +106,16 @@ export function ActionButton(props: ActionButtonProps) {
         {...(popup ? { 'aria-haspopup': popup.type, 'aria-expanded': popup.expanded } : {})}
         className={cls.filter(Boolean).join(' ')}
         {...(dead ? { 'data-missing': missing } : {})}
-        onClick={(e) => {
+        onClick={composeHandler(onClick, (e) => {
           hide();
           if (!disabled && !dead) onPress(e);
-        }}
-        onPointerDown={(popup?.type === 'menu' ? popup.onPointerDown : undefined) ?? props.onPointerDown}
+        })}
+        onPointerDown={composeHandler(onPointerDown, menu?.onPointerDown)}
         draggable={props.onDragStart ? true : undefined}
-        onDragStart={props.onDragStart}
-        onPointerEnter={show}
-        onPointerLeave={hide}
-        onFocus={show}
-        onBlur={hide}
+        onPointerEnter={composeHandler(onPointerEnter, show)}
+        onPointerLeave={composeHandler(onPointerLeave, hide)}
+        onFocus={composeHandler(onFocus, show)}
+        onBlur={composeHandler(onBlur, hide)}
       >
         {palette ? (
           <>
@@ -116,4 +134,4 @@ export function ActionButton(props: ActionButtonProps) {
       </button>
     </ButtonTooltip>
   );
-}
+});

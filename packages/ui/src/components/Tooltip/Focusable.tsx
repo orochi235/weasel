@@ -78,8 +78,11 @@ export const Focusable = forwardRef(function Focusable(
   const childRef = (
     Number.parseInt(version, 10) < 19 ? (child as { ref?: unknown }).ref : (child.props as { ref?: unknown }).ref
   ) as Ref<FocusableElement> | undefined;
+  const own = child.props as { 'aria-describedby'?: string };
+  const describedBy = [focusableProps['aria-describedby'], own['aria-describedby']].filter(Boolean).join(' ');
   return cloneElement(child as ReactElement<Record<string, unknown>>, {
     ...mergeProps(focusableProps, child.props),
+    'aria-describedby': describedBy || undefined,
     ref: mergeRefs(childRef, ref),
   });
 });

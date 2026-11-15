@@ -37,7 +37,8 @@ type ButtonElement = ReactElement<DOMAttributes<HTMLButtonElement> & { disabled?
 const refuse = (e: SyntheticEvent) => e.preventDefault();
 
 /** `button` held by `aria-disabled` or `data-readonly`, since native `disabled` takes it out of hover and focus and
- *  so out of its tooltip's reach. Stylesheets dim `data-disabled`. */
+ *  so out of its tooltip's reach. It drops every press handler and keeps its focus, hover and key handlers, so it
+ *  keeps its place in a composite widget's roving focus. Stylesheets dim `data-disabled`. */
 function stillReachable(button: ButtonElement, access: ControlAccess): ButtonElement {
   return cloneElement(button as ReactElement<Record<string, unknown>>, {
     disabled: false,
@@ -45,7 +46,11 @@ function stillReachable(button: ButtonElement, access: ControlAccess): ButtonEle
     'aria-description': access.reason,
     onClick: refuse,
     onPointerDown: undefined,
+    onPointerUp: undefined,
     onMouseDown: undefined,
+    onMouseUp: undefined,
+    onDoubleClick: undefined,
+    onAuxClick: undefined,
   }) as ButtonElement;
 }
 

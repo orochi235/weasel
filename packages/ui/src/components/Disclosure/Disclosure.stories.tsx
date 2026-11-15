@@ -52,7 +52,7 @@ export const FacetTree: Story = {
               open={!!open[family]}
               onToggle={() => setOpen((o) => ({ ...o, [family]: !o[family] }))}
               label={`${family} categories`}
-              controls={`facet-${family}`}
+              aria-controls={`facet-${family}`}
             >
               <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <input

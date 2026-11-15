@@ -86,6 +86,6 @@ export function foldTwisty(fold: Fold, title: ReactNode, fallback = 'this sectio
     open: !fold.folded,
     onToggle: fold.toggle,
     label: typeof title === 'string' ? title : fallback,
-    controls: fold.body.id,
+    'aria-controls': fold.body.id,
   });
 }

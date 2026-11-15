@@ -10,6 +10,7 @@ import { ButtonTooltip, type TooltipFields } from '../Tooltip/buttonTooltip';
 import type { DisableableProps } from '../Disabled';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import { useDensity } from '../Density';
+import type { DataAttributes } from '../../nativeProps';
 
 /** Visual weight of a button. Defaults to `solid`. `link` drops the
  *  control box entirely and reads as a hyperlink in running text -- for an
@@ -17,8 +18,16 @@ import { useDensity } from '../Density';
  *  confirming button is `stance="confirm"` on a `solid` one. */
 export type ButtonVariant = 'solid' | 'ghost' | 'link';
 
+/** The `<button>` attributes {@link Button} writes itself, from `pressed`, `loading`, `disabled`, and its
+ *  accessible name. */
+type ButtonOwnedAttribute = 'aria-pressed' | 'aria-busy' | 'aria-disabled' | 'aria-label' | 'disabled' | 'children';
+
+/** The native `<button>` attributes and handlers a {@link Button} passes through: every one but those it writes
+ *  itself. A handler runs as given; `className` joins the button's own and `style` merges over its appearance. */
+export type ButtonDomProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, ButtonOwnedAttribute> & DataAttributes;
+
 /** What every {@link Button} takes. */
-export type ButtonBase = {
+export type ButtonBase = ButtonDomProps & {
   variant?: ButtonVariant;
   /** Default: the nearest `Density` scope's, else `'md'`. */
   size?: ControlSize;
@@ -31,14 +40,9 @@ export type ButtonBase = {
   leadingIcon?: ReactNode;
   trailingIcon?: ReactNode;
   fullWidth?: boolean;
+  /** Default `'button'`. */
   type?: 'button' | 'submit' | 'reset';
-  className?: string;
-  style?: ButtonHTMLAttributes<HTMLButtonElement>['style'];
   children?: ReactNode;
-  onClick?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
-  id?: string;
-  /** Passed through to the `<button>`, for test ids and consumer hooks. */
-  [data: `data-${string}`]: string | undefined;
 } & AppearanceProps & TooltipFields & DisableableProps;
 
 /** A button with a visible label, which names it. */
@@ -94,7 +98,9 @@ function Spinner(): ReactNode {
  * `tooltip` replaces that text with any content. A disabled button with a
  * `disabledReason` keeps its tooltip, which reads `Name: reason`.
  *
- * `ref` forwards to the underlying `<button>`.
+ * Every other native `<button>` attribute and handler passes through ({@link ButtonDomProps}): `aria-expanded`
+ * and `aria-controls` for a disclosure trigger, `tabIndex` and key handlers for a composite widget's roving focus,
+ * `form`, `name`, and `value` for a submitter. `ref` forwards to the `<button>`.
  */
 export const Button = forwardRef(function Button(
   props: ButtonProps,
@@ -116,13 +122,14 @@ export const Button = forwardRef(function Button(
     className,
     style,
     children,
-    onClick,
     shortcut,
     tooltip,
     disabledReason,
-    id,
+    size: _size,
+    leadingIcon: _leadingIcon,
+    trailingIcon: _trailingIcon,
+    ...native
   } = props;
-  const dataAttrs = Object.fromEntries(Object.entries(props).filter(([k]) => k.startsWith('data-')));
   const size = useDensity(props.size);
 
   const cls = [
@@ -149,18 +156,16 @@ export const Button = forwardRef(function Button(
       holdsValue={pressed !== undefined}
     >
       <button
+        {...native}
         ref={ref}
-        id={id}
         type={type}
         className={cls}
-        {...dataAttrs}
         {...appearance}
         style={appearance.style || style ? { ...appearance.style, ...style } : undefined}
         disabled={disabled}
         aria-busy={loading ? true : undefined}
         aria-pressed={pressed}
         aria-label={ariaLabel}
-        onClick={onClick}
       >
         {buttonParts(face).map((part) => <ButtonPartSlot key={part} part={part} face={face} label={children} />)}
       </button>

@@ -121,12 +121,13 @@ function RingGroup({ group, rings, align, apply, hold }: { group: SwatchRingGrou
         tabStop={!hold.unreachable && i === tab.stop}
         current={i === current}
         apply={apply}
-        held={hold.focus}
+        {...hold.focus}
         onKeyDown={ringKeyDown(i, columns, swatches, swatchKeyDown(i, options, columns, apply, swatches))}
         onFocus={() => tab.focused(i)}
         className={place.className}
         style={place.style}
-        data={{ 'data-ring-item': String(i), 'data-clipped': place.clipped }}
+        data-ring-item={String(i)}
+        data-clipped={place.clipped}
       />
     ),
   });
