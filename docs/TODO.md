@@ -556,6 +556,13 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P3) [waiting] `typedoc/headerComments.test.mjs` "open no file with a doc comment on an export list" failed
+  under the full suite** on studio at `c38ba3732` (2026-11-15), its retry too, taking 11.9 s against 1.3 s alone.
+  It passed alone here and on studio's tree at the same commit, and passed in the next full run. It reads every
+  `packages/*/src` file, so the likely cause is a file another project writes there mid-run; none was found, and
+  the log omits which files it flagged. Closes on a second sighting with the flagged paths printed (fix the
+  writer) or when 2026-12-15 passes without one.
+
 - **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
   once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second
   sighting under load.
