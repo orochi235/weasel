@@ -14,7 +14,7 @@ export interface SceneTrialState<TData = unknown, TLayer extends string = string
  *
  * `create` builds the scene a fresh trial opens on — its layers, registries and
  * initial nodes — and is called again for its contents whenever `state.scene`
- * goes back to `null`, as it does on Reset, which also selects what it selects. A stored scene loads into a
+ * goes back to `null`, as it does on Reset, which also selects what it selects, if anything. A stored scene loads into a
  * `create`d one, so options the JSON cannot carry still apply. Every edit the
  * scene's history records is written back to the state; edits made elsewhere
  * load into the same `Scene`, so a canvas holding it keeps its reference.
@@ -62,10 +62,12 @@ export function useTrialScene<
       scene.loadState(stored);
       return;
     }
-    // The JSON carries no selection, so a Reset takes the fresh scene's too.
+    // The JSON carries no selection, so a Reset takes the fresh scene's too. One that selects nothing leaves the
+    // selection made outside it (`useSelection`'s `initial`), narrowed to the nodes that came back.
     const fresh = latest.current.create();
     scene.loadState(fresh.toJSON());
-    scene.setSelection(fresh.getSelection());
+    const selected = fresh.getSelection();
+    if (selected.length > 0) scene.setSelection(selected);
   }, [scene, stored, latest]);
 
   return scene;

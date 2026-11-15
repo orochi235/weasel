@@ -1,6 +1,6 @@
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createScene, drawPreset, key, type Scene, type ToolsApi } from '@weasel-js/core';
+import { asNodeId, createScene, drawPreset, key, type Scene, type ToolsApi } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
@@ -175,6 +175,34 @@ describe('<TrialSceneCanvas>', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Reset trial' }));
     expect(live.scene.nodes.size).toBe(1);
     expect(live.scene.getSelection()).toEqual(live.scene.roots);
+  });
+
+  it('keeps a selection the fresh scene does not set, on nodes a Reset brings back', async () => {
+    const fixed = () =>
+      createScene<{ kind: 'rect' }, 'main', Pose>({
+        systemLayers: [{ id: 'main' }],
+        initial: [
+          {
+            id: asNodeId('box'),
+            kind: 'mark',
+            layer: 'main',
+            data: { kind: 'rect' },
+            pose: { x: 0, y: 0, width: 10, height: 10 },
+          },
+        ],
+      });
+    function Fixed({ ctx }: { ctx: RenderContext<State, Record<string, never>> }) {
+      const scene = useTrialScene(ctx, fixed);
+      live.scene = scene;
+      return <TrialSceneCanvas features={[drawPreset]} scene={scene} trial={ctx.trial} />;
+    }
+    await mount({ ...instrument, render: (ctx) => <Fixed ctx={ctx} /> });
+    // Selected from outside the scene, as `useSelection({ initial })` does.
+    act(() => live.scene.setSelection([asNodeId('box')]));
+    addOne();
+    await userEvent.click(screen.getByRole('button', { name: 'Reset trial' }));
+    expect(live.scene.nodes.size).toBe(1);
+    expect(live.scene.getSelection()).toEqual([asNodeId('box')]);
   });
 });
 
