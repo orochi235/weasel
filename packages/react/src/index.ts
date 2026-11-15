@@ -15,6 +15,7 @@ export { DEFAULT_COLOR_SCHEME, systemColorScheme, useSystemColorScheme, watchCol
 export type { ColorScheme } from './colorScheme';
 export { useVisibleRaf } from './useVisibleRaf';
 export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from './useVisibleRaf';
+export { useElapsed, useElapsedRaf } from './useElapsed';
 export { useStableByContent } from './useStableByContent';
 export { sameList } from '@weasel-js/registry';
 export { createKitSettingsStore, NO_KIT_SETTINGS } from './kitSettings';

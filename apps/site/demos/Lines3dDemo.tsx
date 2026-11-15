@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type CanvasSize, SceneCanvas, type SurfaceContribution, useLatest, useScene } from '@weasel-js/core';
-import { useVisibleRaf } from '@weasel-js/react';
+import { useElapsedRaf } from '@weasel-js/react';
 import { quatFromAxisAngle, type Vec3 } from '@weasel-js/geom/3d';
 import {
   POSE3_COMPOSITION, cameraViewProjection, createCamera, createLinePass, dollyAction, packLines,
@@ -51,7 +51,6 @@ export function Lines3dDemo() {
   const size = useRef<CanvasSize>({ width: W, height: H });
   const glCanvas = useRef<HTMLCanvasElement>(null);
   const pass = useRef<{ gl: WebGL2RenderingContext; lines: LinePass } | null>(null);
-  const clock = useRef({ start: 0, at: 0 });
 
   useEffect(() => {
     const gl = glCanvas.current?.getContext('webgl2') ?? null;
@@ -60,19 +59,17 @@ export function Lines3dDemo() {
     return () => { pass.current?.lines.dispose(); pass.current = null; };
   }, []);
 
-  const loop = useVisibleRaf((time, self) => {
+  const loop = useElapsedRaf((elapsed, self) => {
     self.request();
     const target = pass.current;
     const canvas = glCanvas.current;
     if (!target || !canvas) return;
-    if (!clock.current.start) clock.current.start = time;
-    clock.current.at = time;
     const { width, height } = size.current;
     const dpr = window.devicePixelRatio || 1;
     const w = Math.round(width * dpr), h = Math.round(height * dpr);
     if (canvas.width !== w || canvas.height !== h) Object.assign(canvas, { width: w, height: h });
     // 0 → 1 draws the line on from its tail; 1 → 2 drains it into its tip.
-    const p = (((time - clock.current.start) % CYCLE) / CYCLE) * 2;
+    const p = ((elapsed % CYCLE) / CYCLE) * 2;
     const trim = { start: Math.max(0, p - 1), end: Math.min(1, p) };
     const lines: Line3[] = [...GRID, ...scene.renderOrderNodes().filter((n) => n.kind === 'mark').map((n) => ({
       runs: [{ points: n.data.points }], color: n.data.color, width: 4, trim, model: poseMatrix(worldPoseOf(scene, n.id)!),
@@ -82,7 +79,7 @@ export function Lines3dDemo() {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     target.lines.draw(packLines(lines), cameraViewProjection(cameraRef.current, width / height), size.current, { depthTest: false });
-  }, { target: glCanvas, onResume: () => { clock.current.start += performance.now() - clock.current.at; } });
+  }, { target: glCanvas });
   useEffect(() => { loop.request(); }, [loop]);
 
   const cameraRig = useMemo((): SurfaceContribution => {

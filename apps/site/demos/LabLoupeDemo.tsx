@@ -1,4 +1,4 @@
-import { useVisibleRaf } from '@weasel-js/react';
+import { useElapsedRaf } from '@weasel-js/react';
 import { defineInstrument, f, Lab, type ViewTransform } from '@weasel-js/labkit';
 import { type CanvasSource, createCanvasSource, TrialLoupe } from '@weasel-js/labkit/loupe';
 import { useEffect, useRef, useState } from 'react';
@@ -138,17 +138,13 @@ export function ForeignGl() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [source, setSource] = useState<CanvasSource | null>(null);
   const gl = useRef<{ ctx: WebGLRenderingContext; program: WebGLProgram } | null>(null);
-  const clock = useRef({ last: null as number | null, t: 0 });
 
-  const loop = useVisibleRaf(
-    (now, loop) => {
+  const loop = useElapsedRaf(
+    (elapsed, loop) => {
       loop.request();
       const g = gl.current;
       const canvas = canvasRef.current;
       if (!g || !canvas || !source) return;
-      const c = clock.current;
-      if (c.last !== null) c.t += (now - c.last) / 1000;
-      c.last = now;
       const dpr = window.devicePixelRatio || 1;
       const w = Math.round(canvas.clientWidth * dpr);
       const h = Math.round(canvas.clientHeight * dpr);
@@ -159,16 +155,11 @@ export function ForeignGl() {
       const { ctx, program } = g;
       ctx.viewport(0, 0, w, h);
       ctx.uniform2f(ctx.getUniformLocation(program, 'u_size'), w, h);
-      ctx.uniform1f(ctx.getUniformLocation(program, 'u_time'), c.t * 0.5);
+      ctx.uniform1f(ctx.getUniformLocation(program, 'u_time'), (elapsed / 1000) * 0.5);
       ctx.drawArrays(ctx.TRIANGLES, 0, 3);
       source.capture();
     },
-    {
-      target: canvasRef,
-      onResume: () => {
-        clock.current.last = null;
-      },
-    },
+    { target: canvasRef },
   );
 
   useEffect(() => {

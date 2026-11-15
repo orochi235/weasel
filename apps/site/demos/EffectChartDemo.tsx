@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useVisibleRaf } from '@weasel-js/react';
+import { useMemo, useState } from 'react';
+import { useElapsed } from '@weasel-js/react';
 import {
   BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack, shownPorts,
   type BranchChoice, type EffectLook, type EffectPipeline, type EffectRun, type EffectStageRun,
@@ -67,29 +67,6 @@ export function EffectChartDemo() {
 /** Kept steady, so the chart lays out once. */
 const SHOW_VALUES = { showValues: true };
 
-/** Seconds the demo has been on screen, advanced once per animation frame. */
-export function useRunClock(): number {
-  const [t, setT] = useState(0);
-  const clock = useRef<{ start: number | null; at: number }>({ start: null, at: 0 });
-  const loop = useVisibleRaf((now, loop) => {
-    loop.request();
-    const c = clock.current;
-    c.start ??= now;
-    c.at = now;
-    setT((now - c.start) / 1000);
-  }, {
-    onResume: () => {
-      const c = clock.current;
-      if (c.start !== null) c.start += performance.now() - c.at;
-    },
-  });
-  useEffect(() => {
-    loop.request();
-    return () => loop.cancel();
-  }, [loop]);
-  return t;
-}
-
 /** The pipeline's run `t` seconds in: the oscillator swings the blur
  *  radius, and every two seconds the quality check flips, skipping the blur. */
 export function runAt(t: number): EffectRun {
@@ -110,7 +87,7 @@ export function runAt(t: number): EffectRun {
 }
 
 export function EffectChartRunDemo() {
-  const t = useRunClock();
+  const t = useElapsed() / 1000;
   return (
     <DemoStage width={W} height={H}>
       <EffectChart
@@ -149,7 +126,7 @@ function withPreviews(run: EffectRun, canvases: Map<string, OffscreenCanvas>, t:
 
 export function EffectChartPreviewDemo() {
   const [canvases] = useState(() => new Map<string, OffscreenCanvas>());
-  const t = useRunClock();
+  const t = useElapsed() / 1000;
   const run = useMemo(() => withPreviews(runAt(t), canvases, t), [t, canvases]);
   return (
     <DemoStage width={W} height={H}>
