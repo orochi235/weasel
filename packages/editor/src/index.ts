@@ -1,4 +1,4 @@
-export { downloadBlob, pickFile } from './fileIO';
+export { downloadBlob, pickFile } from '@weasel-js/storage';
 export {
   FILE_KEYS, useNewCommand, useOpenCommand, useSaveCommand, type FileCommandOptions, type FileRun,
 } from './fileCommands';

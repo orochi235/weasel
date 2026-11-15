@@ -35,3 +35,7 @@ per page. `fallbackStorage(preferred, fallback, label)` makes the same choice
 between any two adapters, and `createDefaultStorage(preferred, label)` builds a
 `defaultStorage` of your own over a different preferred adapter, such as
 IndexedDB under another database.
+
+`downloadBlob(blob, filename)` saves a blob through the browser as a download,
+and `pickFile(accept)` opens a file picker and resolves with the chosen file, or
+`null` when it is canceled. `@weasel-js/editor` re-exports both.

@@ -10,6 +10,7 @@ import {
   tapeForWidthMm,
   type BrotherPrinter,
 } from '@weasel-js/p-touch';
+import { downloadBlob } from '@weasel-js/storage';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 import s from './PTouchLabelDemo.module.css';
@@ -65,12 +66,7 @@ export function PTouchLabelDemo() {
 
   const download = async () => {
     const { bytes, config } = await sceneToLbx({ scene, length: LENGTH, tape: TAPE });
-    const url = URL.createObjectURL(new Blob([bytes.slice()], { type: 'application/octet-stream' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'label.lbx';
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(new Blob([bytes.slice()], { type: 'application/octet-stream' }), 'label.lbx');
     setStatus(`wrote ${config.objects.map((o) => o.type).join(', ')}`);
   };
 

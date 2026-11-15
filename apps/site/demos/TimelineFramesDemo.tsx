@@ -5,6 +5,7 @@ import {
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { TimelineHandle } from '@weasel-js/animator';
+import { downloadBlob } from '@weasel-js/storage';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
@@ -13,15 +14,6 @@ const W = 480, H = 200, FPS = 12;
 const DOWNLOAD_GAP_MS = 120;
 const BALL = asNodeId('ball');
 const at = (x: number, y: number): RectPose => ({ x, y, width: 40, height: 40 });
-
-function download(blob: Blob, name: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 export function TimelineFramesDemo() {
   const scene = useScene<{ fill: Fill }, 'main', RectPose>({
@@ -66,7 +58,7 @@ export function TimelineFramesDemo() {
       });
       for await (const frame of frames) {
         if (frame.index > 0) await new Promise((resolve) => setTimeout(resolve, DOWNLOAD_GAP_MS));
-        download(await rasterToPng(frame.image), `frame-${String(frame.index).padStart(3, '0')}.png`);
+        downloadBlob(await rasterToPng(frame.image), `frame-${String(frame.index).padStart(3, '0')}.png`);
       }
       setStatus('saved');
     } catch (e) {

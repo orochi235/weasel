@@ -16,3 +16,4 @@ export {
 export type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 export { decodeUrlHash, encodeUrlHash } from './urlHash';
 export { onLeave, type OnLeaveOptions } from './onLeave';
+export { downloadBlob, pickFile } from './fileIO';

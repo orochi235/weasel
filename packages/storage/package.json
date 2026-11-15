@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/storage",
   "version": "1.19.1",
-  "description": "Keyed async storage behind one adapter interface — IndexedDB, localStorage, the URL hash, memory — and an in-memory record cache that writes behind and hears other tabs. No React.",
+  "description": "Keyed async storage behind one adapter interface — IndexedDB, localStorage, the URL hash, memory — an in-memory record cache that writes behind and hears other tabs, and a browser file download and pick. No React.",
   "weasel": {
     "tier": "base"
   },
