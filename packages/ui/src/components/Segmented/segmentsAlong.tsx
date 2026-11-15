@@ -32,7 +32,7 @@ interface Stretch {
  * along it.
  */
 export function SegmentsAlong(props: SegmentsAlongProps): ReactElement {
-  const { roving, role, ariaLabel, className, height, size, variant = 'default', segments, wrap, shape, align } = props;
+  const { roving, role, naming, className, height, size, variant = 'default', segments, wrap, shape, align } = props;
   const root = roving.rootRef;
   const run = useRowRun(root, shape);
   const lengths = useItemLengths(root, segments.map((segment) => segment.key), segmentKeyOf);
@@ -56,7 +56,7 @@ export function SegmentsAlong(props: SegmentsAlongProps): ReactElement {
   const drawn = segments.map((segment, i) => <Fragment key={segment.key}>{segment.draw(place(i))}</Fragment>);
 
   return (
-    <div ref={root as RefObject<HTMLDivElement>} onKeyDown={(e) => roving.onKeyDown(e, screenDirection(run))} {...row.rootProps} className={rootCls} role={role} aria-label={ariaLabel} style={style} data-shape={shape.kind} data-variant={variant} data-size={size}>
+    <div ref={root as RefObject<HTMLDivElement>} onKeyDown={(e) => roving.onKeyDown(e, screenDirection(run))} {...row.rootProps} className={rootCls} role={role} {...naming} style={style} data-shape={shape.kind} data-variant={variant} data-size={size}>
       <RunBand row={row} shape={shape} />
       {well && segments.length > 0 && <Well run={run} pad={pad} cap={cap} states={segments.map((segment) => segment.state)} stretches={stretches} />}
       <RunScope fresh>{wrap ? wrap(drawn) : drawn}</RunScope>

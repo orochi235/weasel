@@ -35,7 +35,7 @@ export type FieldProps = {
  * canonical weasel-ui form-row shape, and names the control from that label.
  *
  * The control inside reads the field through `useFieldControl`, as `Input`,
- * `NumberField`, `UnitField`, `Select`, `Slider`, `Switch` and `Checkbox` do:
+ * `NumberField`, `UnitField`, `Select`, `Slider`, `InlineRange`, `SegmentedBar`, `Switch`, and `Checkbox` do:
  * the label names it, the description and error describe it, and the label is
  * written once.
  *

@@ -21,6 +21,7 @@ import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { ButtonTooltip, useButtonAccess, type TooltipFields } from '../Tooltip/buttonTooltip';
 import { holdScope, type DisableableProps, type ReadOnlyProps } from '../Disabled';
 import type { Orientation } from '../Run';
+import { useFieldControl } from '../Field/fieldSemantics';
 
 /** What a press on a {@link SegmentedBar}'s segment does: choose one value (`'single'`), flip one of a list of
  *  values (`'multiple'`), flip a segment that owns its own state (`'each'`), or fire and select nothing
@@ -48,7 +49,11 @@ export type SegmentedSource<V extends string | number, I> =
 /** What a {@link SegmentedBar} takes in every mode. `disabled` holds every segment; in a mode that shows a value,
  *  `readOnly` and a `ReadOnly` scope hold them too, and a momentary bar's action buttons ignore read-only. */
 export type SegmentedBarCommonProps = SegmentedGridProps & DisableableProps & {
+  /** Names the bar. Without it or `aria-labelledby`, the bar takes the name, description and error of a `Field`
+   *  around it. */
   'aria-label'?: string;
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
   className?: string;
   height?: number;
   /** Size variant. `sm` is ~60% of the default height with reduced padding and font size, for dense surfaces like
@@ -139,7 +144,8 @@ function behaviorOf<V extends string | number>(
  * `ActionBar`.
  */
 export function SegmentedBar<V extends string | number = string>(props: SegmentedBarProps<V>): ReactElement {
-  const { 'aria-label': ariaLabel, className, height, size, variant, orientation } = props;
+  const { className, height, size, variant, orientation } = props;
+  const naming = useFieldControl({ 'aria-label': props['aria-label'], 'aria-labelledby': props['aria-labelledby'], 'aria-describedby': props['aria-describedby'] });
   const items = itemsOf(props);
   const holdsValue = props.mode !== 'momentary';
   const held = useButtonAccess({ ...props, holdsValue }).state !== 'enabled';
@@ -160,7 +166,7 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
     <SegmentedRow
       roving={roving}
       role={behavior.role}
-      ariaLabel={ariaLabel}
+      naming={naming}
       className={className}
       tiling={tiles}
       height={height}

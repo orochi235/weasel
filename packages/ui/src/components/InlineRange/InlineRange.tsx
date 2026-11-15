@@ -2,6 +2,7 @@ import { type CSSProperties, forwardRef, type InputHTMLAttributes, type Keyboard
 import s from './InlineRange.module.css';
 import type { HoldProps } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
+import { useFieldControl } from '../Field/fieldSemantics';
 
 /** Props for {@link InlineRange} — a range input's, with `value` required. */
 export type InlineRangeProps = Omit<
@@ -45,7 +46,8 @@ const REFUSED = {
 /**
  * Compact range input for a property row: one track, no label, no output.
  * It sits inline beside a swatch or a readout, and owns the native range skin
- * every such surface wears.
+ * every such surface wears. With no `aria-label` of its own it takes the name, description and error of a `Field`
+ * around it, so `<Field label output>` draws its label and readout.
  *
  * Straight only; for a control along a curve, or with several thumbs, use `Slider`. Held disabled for a reason, or
  * read-only, it stays focusable and drops every input, since its `value` is controlled.
@@ -55,8 +57,10 @@ export const InlineRange = forwardRef(function InlineRange(
   ref: Ref<HTMLInputElement>,
 ) {
   const { value, min = 0, max = 100, fill = true, marks, className, style, disabled, disabledReason, readOnly, readOnlyReason, ...own } = props;
-  const hold = useNativeHold({ disabled, disabledReason, readOnly, readOnlyReason, 'aria-describedby': own['aria-describedby'] });
-  const rest = hold.refuses ? { ...own, ...REFUSED } : own;
+  const field = useFieldControl({ id: own.id, 'aria-label': own['aria-label'], 'aria-labelledby': own['aria-labelledby'], 'aria-describedby': own['aria-describedby'] });
+  const hold = useNativeHold({ disabled, disabledReason, readOnly, readOnlyReason, 'aria-describedby': field['aria-describedby'] });
+  const named = { ...own, ...field };
+  const rest = hold.refuses ? { ...named, ...REFUSED } : named;
   const span = max - min;
   const filled = span > 0 ? ((Math.min(Math.max(value, min), max) - min) / span) * 100 : 0;
   const marked = marks !== undefined && marks.length > 0;

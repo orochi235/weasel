@@ -7,6 +7,7 @@ import { useControlSize, type ControlSize } from '../ControlSize';
 import s from './segmentedControl.module.css';
 import type { LastRow, SelectState, Tiling } from '@weasel-js/ui-input';
 import { tiling } from '../../tiling';
+import type { FieldControlAttrs } from '../Field/fieldSemantics';
 
 /** Whether a segment is on, off, or mixed: its sources disagree. */
 export type SegmentState = SelectState;
@@ -35,7 +36,8 @@ export interface Segment {
 export interface SegmentedRowProps {
   roving: RovingTabIndex;
   role: string;
-  ariaLabel?: string;
+  /** The row's name and description. */
+  naming?: FieldControlAttrs;
   className?: string;
   height?: number;
   /** Default: the nearest `ControlSizeScope`'s, else `'md'`. */
@@ -88,7 +90,7 @@ export function SegmentedRow(props: SegmentedRowProps): ReactElement {
   const enclosing = useRun();
   const size = useControlSize(props.size);
   if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return <SegmentsAlong {...props} size={size} shape={enclosing.shape} align={enclosing.align ?? 'center'} />;
-  const { roving, role, ariaLabel, className, height, variant, segments, wrap } = props;
+  const { roving, role, naming, className, height, variant, segments, wrap } = props;
   const tiles = props.tiling ? tiling(segments.length, props.tiling) : null;
   const style = {
     ...tiles?.style,
@@ -102,7 +104,7 @@ export function SegmentedRow(props: SegmentedRowProps): ReactElement {
     : undefined;
   const drawn = segments.map((segment, i) => <Fragment key={segment.key}>{segment.draw(placeOf(segment, i))}</Fragment>);
   return (
-    <div ref={roving.rootRef} onKeyDown={roving.onKeyDown} className={rootCls} role={role} aria-label={ariaLabel} data-orientation={orientation} style={style}>
+    <div ref={roving.rootRef} onKeyDown={roving.onKeyDown} className={rootCls} role={role} {...naming} data-orientation={orientation} style={style}>
       {wrap ? wrap(drawn) : drawn}
     </div>
   );

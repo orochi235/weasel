@@ -3,9 +3,11 @@ import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Checkbox } from '../Checkbox/Checkbox';
 import { ComboBox } from '../ComboBox/ComboBox';
+import { InlineRange } from '../InlineRange/InlineRange';
 import { Input } from '../Input/Input';
 import { NumberField } from '../NumberField/NumberField';
 import { UnitField } from '../NumberField/UnitField';
+import { SegmentedBar } from '../Segmented/SegmentedBar';
 import { Select } from '../Select/Select';
 import { Slider } from '../Slider';
 import { Switch } from '../Switch/Switch';
@@ -30,6 +32,8 @@ const controls: Array<[string, () => ReactElement, () => HTMLElement]> = [
   ['Slider', () => <Slider min={0} max={10} thumbs={[{ value: 3 }]} onInput={none} />, () => screen.getByRole('slider')],
   ['Switch', () => <Switch />, () => screen.getByRole('switch')],
   ['Checkbox', () => <Checkbox />, () => screen.getByRole('checkbox')],
+  ['InlineRange', () => <InlineRange value={3} onChange={none} />, () => screen.getByRole('slider')],
+  ['SegmentedBar', () => <SegmentedBar items={OPTIONS} value="a" onChange={none} />, () => screen.getByRole('radiogroup')],
 ];
 
 describe.each(controls)('%s in a Field', (_, make, control) => {
@@ -49,6 +53,11 @@ describe('a control with a name of its own in a Field', () => {
   it('keeps it', () => {
     renderWithIcons(<Field label="Amount"><Input aria-label="Count" /></Field>);
     expect(screen.getByRole('textbox')).toHaveAccessibleName('Count');
+  });
+
+  it('keeps a SegmentedBar named by its own aria-label', () => {
+    renderWithIcons(<Field label="Amount"><SegmentedBar aria-label="Policy" items={OPTIONS} value="a" onChange={none} /></Field>);
+    expect(screen.getByRole('radiogroup')).toHaveAccessibleName('Policy');
   });
 
   it('keeps its own label', () => {
