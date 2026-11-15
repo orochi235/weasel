@@ -153,7 +153,6 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     // `version` stands for `cfg`, whose identity changes on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, version]);
-  const page = scene as unknown as ExportScene;
   return (
     <div className={s.trial}>
       <div className={s.canvas}>
@@ -161,8 +160,8 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       </div>
       <aside className={s.exports} aria-label="Exports">
         <h3 className={s.heading}>Exported SVG</h3>
-        <SvgExport scene={page} version={version} />
-        <PdfExport scene={page} />
+        <SvgExport scene={scene} version={version} />
+        <PdfExport scene={scene} />
       </aside>
     </div>
   );
