@@ -39,12 +39,12 @@ pane was open — the two properties it had been given worked, which is what mad
 like something else. Move the whole set a consumer must beat, not the ones that prompted the fix.
 
 **`--wzl-fg-on-accent` is the text-on-accent token; `--wzl-accent-fg` is the accent used *as*
-text** (it resolves to `--wzl-accent-strong`). Reach for the second to label a selected row in an
+text** (it resolves to `--wzl-accent-strong`, or `--wzl-accent-base` in light mode). Reach for the second to label a selected row in an
 accent-filled rail and it paints the text in its own background color, invisible. The fallback in
 `var(--wzl-accent-fg, #fff)` never fires either, because the token does exist — nothing warns, no
 test sees it, and the row reads as an empty highlight bar in a screenshot.
 
-**`theme/base.less` element defaults live in `:where()` on purpose.** Bare `button` nested under
+**labkit's `theme/base.less` element defaults live in `:where()` on purpose.** Bare `button` nested under
 `.lk-root` is specificity (0,1,1) and outranks every component class. Don't unwrap them. The flip
 side bites too: specificity cannot stop a default from filling in a property a component never
 sets — its `height` crushed a 16px glyph to 2px and forced segmented-bar segments out of their track.
