@@ -9,6 +9,8 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
 const W = 480, H = 200, FPS = 12;
+// Chromium drops downloads started closer together than about 100 ms past the first ten.
+const DOWNLOAD_GAP_MS = 120;
 const BALL = asNodeId('ball');
 const at = (x: number, y: number): RectPose => ({ x, y, width: 40, height: 40 });
 
@@ -63,6 +65,7 @@ export function TimelineFramesDemo() {
         onProgress: ({ index, count }) => setStatus(`frame ${String(index + 1)} of ${String(count)}`),
       });
       for await (const frame of frames) {
+        if (frame.index > 0) await new Promise((resolve) => setTimeout(resolve, DOWNLOAD_GAP_MS));
         download(await rasterToPng(frame.image), `frame-${String(frame.index).padStart(3, '0')}.png`);
       }
       setStatus('saved');
