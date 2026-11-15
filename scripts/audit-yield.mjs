@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Fix commits per audit round and lane, read from the merges of `audit<N>-<lane>` branches.
+// Fix commits per audit round and lane, read from the merges of `audit<N>-<lane>` branches and of
+// any branch into a `batch/<date>-audit<N>` branch.
 // A commit is a proxy for a fix: rounds whose HANDOFF entry gave a fix count ran about 1.1–1.4
 // commits per fix (changesets and test repairs ride along).
 //
@@ -16,10 +17,12 @@ const merges = git('log', '--merges', '--format=%H%x09%ad%x09%s', '--date=short'
 const lanes = new Map();
 for (const line of merges) {
   const [sha, date, subject] = line.split('\t');
-  const m = subject.match(/branch '(audit(\d*)-([^']+))'/);
-  if (!m) continue;
-  const [, branch, n, lane] = m;
-  const round = n ? Number(n) : 1;
+  const named = subject.match(/branch '(audit(\d*)-([^']+))'/);
+  const batched = subject.match(/branch '([^']+)' into '?batch\/[\d-]+-audit(\d+)/);
+  if ((!named && !batched) || /^(origin\/)?main$/.test(batched?.[1] ?? '')) continue;
+  const [branch, round, lane] = named
+    ? [named[1], named[2] ? Number(named[2]) : 1, named[3]]
+    : [batched[1], Number(batched[2]), batched[1].replace(/^arc\/a\d+-/, '').replace(/^worktree-agent-(.{6}).*/, 'agent-$1')];
   const commits = Number(git('rev-list', '--no-merges', '--count', `${sha}^1..${sha}^2`));
   const rec = lanes.get(branch) ?? { round, lane, branch, commits: 0, first: date, last: date };
   rec.commits += commits;
