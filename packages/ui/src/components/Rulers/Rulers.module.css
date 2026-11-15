@@ -4,6 +4,7 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+  user-select: none;
 }
 
 .strip {
