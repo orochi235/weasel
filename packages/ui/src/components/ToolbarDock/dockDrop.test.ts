@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { dropAt, type DockBox } from './dockDrop';
 import type { DockBar } from './layout';
 
-const top: DockBox = { id: 'top', edge: 'top', vertical: false, along: [0, 1000], rows: [{ start: 0, end: 40, bars: [{ id: 't1', at: 100 }] }] };
-const left: DockBox = { id: 'left', edge: 'left', vertical: true, along: [40, 800], rows: [{ start: 0, end: 40, bars: [{ id: 'l1', at: 100 }] }] };
+const top: DockBox = { id: 'top', edge: 'top', vertical: false, along: [0, 1000], rows: [{ start: 0, end: 40, from: 0, to: 1000, bars: [{ id: 't1', at: 100, end: false }] }] };
+const left: DockBox = { id: 'left', edge: 'left', vertical: true, along: [40, 800], rows: [{ start: 0, end: 40, from: 40, to: 800, bars: [{ id: 'l1', at: 100, end: false }] }] };
 const bar: DockBar = { id: 'b', label: 'B', docks: ['top', 'left'], vertical: true, render: () => null };
 
 describe('dropAt', () => {

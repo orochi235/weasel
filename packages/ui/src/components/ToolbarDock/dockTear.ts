@@ -111,7 +111,7 @@ export function tearStep(grab: DockGrab, bar: DockBar, press: DockPoint, p: Dock
   return { drop, float: drop && row ? null : float };
 }
 
-/** Where Alt+Enter docks a floating bar: the end of the last row of the dock it would go to by default. */
+/** Where Alt+Enter docks a floating bar: after the start bars of the last row of the dock it would go to by default. */
 export function homeTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar): BarTarget | null {
   const home = homeDock(docks, bar);
   if (!home) return null;

@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom';
 import type { BarOrientation } from '../Bar';
 import { useBarHosts } from './barHosts';
 import { DockBarContext } from './dockContext';
-import { DOCK_BAR } from './dockDrop';
+import { DOCK_BAR, DOCK_END } from './dockDrop';
 import { FloatingLayer, floatPlaces } from './floatingLayer';
-import { canEnter, dockRows, isVerticalEdge, resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
+import { canEnter, dockRows, isAtEnd, isVerticalEdge, resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 import { useDockDrag, type DockDrag, type DockDragView } from './useDockDrag';
 import s from './ToolbarDock.module.css';
 
@@ -35,7 +35,10 @@ const EDGES: readonly DockEdge[] = ['top', 'left', 'right', 'bottom'];
  * Toolbars laid out in docks round a workspace, which fills the middle. The host decides where bars may go: it
  * declares the docks, and each bar lists the docks it may sit in, so a user can only put a bar somewhere the app
  * offers. Each dock holds rows of bars: a top or bottom dock stacks its rows, and a left or right dock sets them side
- * by side as columns with each bar drawn vertical. Only a bar with `vertical` enters a left or right dock; a layout
+ * by side as columns with each bar drawn vertical. A row packs its bars against its start, and those the layout lists
+ * in `atEnd` against its far end, the right of a row (the left in a right-to-left one) or the bottom of a column: a
+ * bar dragged into the far half of a row's open length joins its far end, and Alt+arrows cross from one end to the
+ * other. Only a bar with `vertical` enters a left or right dock; a layout
  * placing any other there sends it to its home dock, a drag over one shows it unavailable, and Alt+arrows skip it. An
  * edge with no bars takes no room.
  *
@@ -80,14 +83,17 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
                 <div key={dock.id} className={[s.dock, dock.className].filter(Boolean).join(' ')} data-dock={dock.id} data-dock-unavailable={view?.unavailable.has(dock.id) ? '' : undefined}>
                   {rows.map((row, i) => (
                     <DockRow key={i} index={i} dock={dock.id} view={view}>
-                      {row.map((id) => {
+                      {row.map((id, at) => {
                         const lifted = view?.barId === id && view.float !== null;
-                        if (!lifted && !drawn(id, orientation)) return null;
-                        return (
-                          <div key={id} ref={lifted ? undefined : hosts.attach(id)} className={s.slot} style={lifted ? undefined : leastSize(leasts[id])} {...{ [DOCK_BAR]: lifted ? undefined : id }} data-dock-held={lifted ? id : undefined} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
+                        const end = isAtEnd(shown, id);
+                        const spring = end && (at === 0 || !isAtEnd(shown, row[at - 1]!)) ? <div key="spring" className={s.spring} /> : null;
+                        if (!lifted && !drawn(id, orientation)) return spring;
+                        return [
+                          spring,
+                          <div key={id} ref={lifted ? undefined : hosts.attach(id)} className={s.slot} style={lifted ? undefined : leastSize(leasts[id])} {...{ [DOCK_BAR]: lifted ? undefined : id, [DOCK_END]: end ? '' : undefined }} data-dock-held={lifted ? id : undefined} data-dock-dragging={view?.barId === id ? '' : undefined} data-dock-drop={dropSide(view, id)}>
                             {lifted && <div className={s.hold} style={holdSize(view)} />}
-                          </div>
-                        );
+                          </div>,
+                        ];
                       })}
                     </DockRow>
                   ))}
@@ -153,7 +159,7 @@ function DockRow({ index, dock, view, children }: { index: number; dock: string;
   return (
     <>
       {newRowAt(view, dock) === index && <div className={s.newRow} data-dock-drop="row" />}
-      <div className={s.row} data-dock-row={index}>
+      <div className={s.row} data-dock-row={index} data-dock-drop={rowEndAt(view, dock, index)}>
         {children}
       </div>
     </>
@@ -169,5 +175,11 @@ function dropSide(view: DockDragView | null, id: string): 'before' | 'after' | u
 /** The row index in `dock` a drag would make a new row at, if any. */
 function newRowAt(view: DockDragView | null, dock: string): number | undefined {
   const drop = view?.drop;
-  return drop && 'dock' in drop && drop.dock === dock ? drop.row : undefined;
+  return drop && 'dock' in drop && !('at' in drop) && drop.dock === dock ? drop.row : undefined;
+}
+
+/** The end of row `row` of `dock` a drag would drop against, where that end has no bars to drop beside. */
+function rowEndAt(view: DockDragView | null, dock: string, row: number): 'start' | 'end' | undefined {
+  const drop = view?.drop;
+  return drop && 'at' in drop && drop.dock === dock && drop.row === row ? drop.at : undefined;
 }

@@ -39,14 +39,22 @@ export interface FloatPlace {
   orientation: BarOrientation;
 }
 
-/** Bars by dock id, as rows of bar ids, plus the bars that float. */
+/**
+ * Bars by dock id, as rows of bar ids, plus the bars that float. A row packs its bars against its start, except those
+ * listed in `atEnd`, which pack against its far end; a row lists its start bars first, then its end bars.
+ */
 export interface ToolbarLayout {
   docks: Record<string, string[][]>;
   floating: Record<string, FloatPlace>;
+  /** The docked bars that sit at the far end of their row. Absent where none do. */
+  atEnd?: string[];
 }
 
-/** Where a bar goes: a slot in a dock's row, a new row of its own at `row` with `newRow`, or a floating place. */
-export type BarTarget = { dock: string; row: number; index: number; newRow?: boolean } | { float: FloatPlace };
+/**
+ * Where a bar goes: a slot in a dock's row, a new row of its own at `row` with `newRow`, or a floating place. `index`
+ * counts the whole row, start and end bars alike; `end` puts the bar among the row's end bars.
+ */
+export type BarTarget = { dock: string; row: number; index: number; newRow?: boolean; end?: boolean } | { float: FloatPlace };
 
 /** The rows `layout` holds for dock `id`, read as an own key so an id like `constructor` finds none. */
 export const dockRows = (layout: ToolbarLayout, id: string): string[][] | undefined =>
@@ -55,6 +63,28 @@ export const dockRows = (layout: ToolbarLayout, id: string): string[][] | undefi
 /** Where `layout` floats bar `id`, read as an own key. */
 export const floatOf = (layout: ToolbarLayout, id: string): FloatPlace | undefined =>
   Object.hasOwn(layout.floating, id) ? layout.floating[id] : undefined;
+
+/** Whether `layout` sits bar `id` at the far end of its row. */
+export const isAtEnd = (layout: ToolbarLayout, id: string): boolean => layout.atEnd?.includes(id) ?? false;
+
+/** How many of `row`'s bars sit at its start: those ahead of its first end bar. */
+export const startCount = (layout: ToolbarLayout, row: readonly string[]): number => {
+  const first = row.findIndex((id) => isAtEnd(layout, id));
+  return first < 0 ? row.length : first;
+};
+
+/** `layout`'s rows with each one's start bars ahead of its end bars, each group in its order, and `atEnd` kept only
+ *  for docked bars, left out where it is empty. */
+function settleEnds(layout: ToolbarLayout, ends: ReadonlySet<string>): ToolbarLayout {
+  const docked: string[] = [];
+  for (const [dock, rows] of Object.entries(layout.docks)) {
+    setOwn(layout.docks, dock, rows.map((r) => [...r.filter((id) => !ends.has(id)), ...r.filter((id) => ends.has(id))]));
+    for (const r of rows) for (const id of r) if (ends.has(id)) docked.push(id);
+  }
+  if (docked.length) layout.atEnd = docked;
+  else delete layout.atEnd;
+  return layout;
+}
 
 /** Whether a dock on `edge` lays its bars vertically. */
 export const isVerticalEdge = (edge: DockEdge | undefined): boolean => edge === 'left' || edge === 'right';
@@ -67,7 +97,8 @@ export function canEnter(bar: DockBar, dock: { id: string; edge: DockEdge }): bo
 /**
  * Reconciles a stored layout with the docks and bars the app has now. Every bar ends up
  * placed once; unknown ids are dropped, empty rows removed, and a bar that has nowhere
- * valid to sit goes to the end of the last row of its home dock (see {@link homeDock}).
+ * valid to sit goes to the end of the last row of its home dock (see {@link homeDock}), among its start bars.
+ * A bar stays at the far end of its row only where the stored layout docked it there.
  * A stored floating place is coerced: a non-finite `x` or `y` becomes 0, an anchor that is
  * not a corner becomes null, and a bar without `vertical` floats horizontal.
  */
@@ -116,7 +147,7 @@ export function resolveLayout(
       setOwn(out.floating, bar.id, { x: 0, y: 0, anchor: null, orientation: 'horizontal' });
     }
   }
-  return out;
+  return settleEnds(out, new Set(layout?.atEnd ?? []));
 }
 
 /** The dock a bar goes to when nothing else places it: the first of its own `docks` that exists and it may enter. */
@@ -128,7 +159,8 @@ export function homeDock(docks: readonly DockSpec[], bar: DockBar): DockSpec | u
   return undefined;
 }
 
-/** Takes a bar out of wherever it sits and places it at `to`. Does not check permissions. */
+/** Takes a bar out of wherever it sits and places it at `to`, among its row's end bars with `end`. Does not check
+ *  permissions. */
 export function moveBar(layout: ToolbarLayout, barId: string, to: BarTarget): ToolbarLayout {
   const rowsOf = (rows: string[][]) => rows.map((r) => r.filter((id) => id !== barId));
   const out: ToolbarLayout = { docks: {}, floating: {} };
@@ -146,5 +178,8 @@ export function moveBar(layout: ToolbarLayout, barId: string, to: BarTarget): To
     else rows[row].splice(Math.max(0, to.index), 0, barId);
   }
   for (const [dock, rows] of Object.entries(out.docks)) setOwn(out.docks, dock, rows.filter((r) => r.length));
-  return out;
+  const ends = new Set(layout.atEnd ?? []);
+  ends.delete(barId);
+  if (!('float' in to) && to.end) ends.add(barId);
+  return settleEnds(out, ends);
 }

@@ -221,11 +221,13 @@ describe('moving a bar from its handle with Alt+arrows', () => {
     expect(onChange.mock.calls[1]![0].docks.top).toEqual([['file', 'view', 'shape']]);
   });
 
-  it('does nothing past a row’s end', () => {
+  it('does nothing before a row’s start, and sends a row’s last start bar on to its far end', () => {
     const onChange = setup(start([['file', 'view', 'shape']]));
     key(handle('File'), 'ArrowLeft');
-    key(handle('Shape'), 'ArrowRight');
     expect(onChange).not.toHaveBeenCalled();
+    key(handle('Shape'), 'ArrowRight');
+    expect(onChange.mock.calls[0]![0].atEnd).toEqual(['shape']);
+    expect(document.querySelector('[data-dock-announce]')).toHaveTextContent('Shape toolbar, row 1, position 3 of 3, at the end');
   });
 
   it('moves to the next and previous row, at the same index clamped', () => {

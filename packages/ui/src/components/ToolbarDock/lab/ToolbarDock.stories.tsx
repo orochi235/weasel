@@ -8,7 +8,7 @@ import { actionLeaf, LAB_ACTIONS, LabActions } from '../../Along/lab/labActions'
 import lab from '../../Along/lab/lab.stories.module.css';
 import s from './ToolbarDock.stories.module.css';
 
-/** Toolbars in docks round a workspace: drag a handle, Alt+arrows, Alt+Enter, and the layout that settles, read back. */
+/** Toolbars in docks round a workspace: drag a handle, into a row's far half to snap it to the far end, Alt+arrows, Alt+Enter, and the layout that settles, read back. */
 export default meta({ title: 'ui/ToolbarDock', layout: 'fullscreen', tags: ['lab'] });
 
 interface DockLabConfig {

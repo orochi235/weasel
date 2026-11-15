@@ -200,6 +200,40 @@
   box-shadow: 0 2px 0 var(--wzl-accent);
 }
 
+/* The open length between a row's start bars and its end bars, which pushes the end bars to its far end. */
+.spring {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  min-block-size: 0;
+}
+
+/* A row end the lifted bar would land against, where that end has no bars to mark beside. */
+.row[data-dock-drop='start'] {
+  box-shadow: inset 2px 0 0 var(--wzl-accent);
+}
+
+.row[data-dock-drop='end'] {
+  box-shadow: inset -2px 0 0 var(--wzl-accent);
+}
+
+.row:dir(rtl)[data-dock-drop='start'] {
+  box-shadow: inset -2px 0 0 var(--wzl-accent);
+}
+
+.row:dir(rtl)[data-dock-drop='end'] {
+  box-shadow: inset 2px 0 0 var(--wzl-accent);
+}
+
+.left .row[data-dock-drop='start'],
+.right .row[data-dock-drop='start'] {
+  box-shadow: inset 0 2px 0 var(--wzl-accent);
+}
+
+.left .row[data-dock-drop='end'],
+.right .row[data-dock-drop='end'] {
+  box-shadow: inset 0 -2px 0 var(--wzl-accent);
+}
+
 /* A new row the lifted bar would make: a 2px line between rows, taking no room. */
 .newRow {
   flex: none;
