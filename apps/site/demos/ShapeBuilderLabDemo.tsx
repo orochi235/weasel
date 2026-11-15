@@ -1,5 +1,5 @@
 import {
-  asNodeId, createScene, ellipsePath, type Path, type RectPose, solid, useLatest, useSelection, drawPreset,
+  asNodeId, createScene, ellipsePath, type Path, type RectPose, solid, useSelection, drawPreset,
 } from '@weasel-js/core';
 import { useShapeBuilderTool } from '@weasel-js/path-tools';
 import {
@@ -12,7 +12,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -44,21 +44,18 @@ const SEED = [
 ];
 const SEED_IDS = SEED.map((n) => n.id);
 
-const createLabScene = () =>
-  createScene<Data, 'default', RectPose>({ systemLayers: [{ id: 'default' }], initial: SEED });
+/** The three circles, selected: what a fresh or reset trial opens on. */
+function createLabScene() {
+  const scene = createScene<Data, 'default', RectPose>({ systemLayers: [{ id: 'default' }], initial: SEED });
+  scene.setSelection(SEED_IDS);
+  return scene;
+}
 
 function ShapeBuilderTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const selection = useSelection({ scene, mode: 'multi', initial: SEED_IDS });
+  const selection = useSelection({ scene, mode: 'multi' });
   const shapeBuilder = useShapeBuilderTool({ mode: ctx.config.mode });
   const tools = useMemo(() => ({ shapeBuilder }), [shapeBuilder]);
-
-  // A fresh or reset trial opens on the three circles, selected.
-  const fresh = ctx.state.scene === null;
-  const latest = useLatest(selection);
-  useEffect(() => {
-    if (fresh) latest.current.set(SEED_IDS);
-  }, [fresh, latest]);
 
   return (
     <TrialSceneCanvas

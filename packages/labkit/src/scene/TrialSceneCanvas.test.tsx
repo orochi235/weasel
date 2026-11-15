@@ -155,6 +155,27 @@ describe('<TrialSceneCanvas>', () => {
     expect(live.scene).toBe(scene);
     expect(live.scene.nodes.size).toBe(1);
   });
+
+  it('opens a Reset on the selection the fresh scene holds', async () => {
+    const seeded = () => {
+      const scene = create();
+      scene.setSelection([...scene.roots]);
+      return scene;
+    };
+    function Seeded({ ctx }: { ctx: RenderContext<State, Record<string, never>> }) {
+      const scene = useTrialScene(ctx, seeded);
+      live.scene = scene;
+      return <TrialSceneCanvas features={[drawPreset]} scene={scene} trial={ctx.trial} />;
+    }
+    await mount({ ...instrument, render: (ctx) => <Seeded ctx={ctx} /> });
+    const [seed] = live.scene.roots;
+    expect(live.scene.getSelection()).toEqual([seed]);
+    addOne();
+    act(() => live.scene.setSelection(live.scene.roots.slice(1)));
+    await userEvent.click(screen.getByRole('button', { name: 'Reset trial' }));
+    expect(live.scene.nodes.size).toBe(1);
+    expect(live.scene.getSelection()).toEqual(live.scene.roots);
+  });
 });
 
 describe('<TrialSceneCanvas> tool keys', () => {
