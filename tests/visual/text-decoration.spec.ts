@@ -2,7 +2,7 @@
  * Real-GL assertion for underline / strikethrough geometry. Like
  * `text-aa.spec.ts`, deliberately NO committed baseline: `text.spec.ts` runs
  * at a 5% diff tolerance, and the whole decorated `t6` node is well under 5%
- * of a 600×360 canvas.
+ * of a 600×400 canvas.
  *
  * What it measures: a decoration rule is a **gap-free horizontal run** of ink
  * tens of pixels wide. A row of glyphs never is — stems and crossbars are a
@@ -21,7 +21,7 @@ import { test, expect } from './fixture';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-// Node `t6` from apps/site/demos/textDemoScene.ts: x 30, y 130, 540×60,
+// Node `t6` from apps/site/demos/TextDemo.tsx: x 30, y 130, 540×60,
 // fontSize 16, one solid fill (#1c1c1c). Runs: 'Underline' (underline),
 // ', ', 'strikethrough' (strikethrough), ', and ', 'tracking', '.'.
 const BOX = { x0: 30, y0: 130, x1: 570, y1: 190 };
@@ -63,7 +63,7 @@ test("text decoration — rules are gap-free runs at the font's own em offsets",
     const h = c.height;
     const buf = await window.weaselCanvasPixels(c);
     // The read is bottom-up; this takes top-down scene coords. The canvas is
-    // 600×360 at deviceScaleFactor 1, so scene units map 1:1 to pixels.
+    // 600×400 at deviceScaleFactor 1, so scene units map 1:1 to pixels.
     const inkAt = (x: number, y: number): number => {
       const i = ((h - 1 - y) * w + x) * 4;
       return 255 - (0.299 * buf[i] + 0.587 * buf[i + 1] + 0.114 * buf[i + 2]);
@@ -90,7 +90,7 @@ test("text decoration — rules are gap-free runs at the font's own em offsets",
   // Guard the guard: a sample box that missed the node would report zero rule
   // rows, which every assertion below would have to be written to notice.
   expect(rows.canvasW).toBe(600);
-  expect(rows.canvasH).toBe(360);
+  expect(rows.canvasH).toBe(400);
   expect(rows.ruleRows.length).toBeGreaterThan(0);
 
   // Group consecutive rows into bands — a sub-pixel rule antialiases across

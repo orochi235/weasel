@@ -6,7 +6,7 @@
  * measured here. The demo passes no `view`: the overlay has to find the camera
  * on its own.
  *
- * Node `t6` from apps/site/demos/textDemoScene.ts: world box (30, 130) 540 wide,
+ * Node `t6` from apps/site/demos/TextDemo.tsx: world box (30, 130) 540 wide,
  * fontSize 16.
  */
 import { test, expect, type Page } from './fixture';
@@ -143,12 +143,12 @@ test('text-edit overlay — clipped to the canvas, and typing past its edge scro
 });
 
 /**
- * Node 'bottom' from apps/site/demos/TextNodesDemo.tsx: box (20, 160) 200×120
- * in canvas pixels, two 18px lines bottom-aligned, painted by `kit:text` with
+ * Node 'bottom' from apps/site/demos/TextDemo.tsx: box (30, 300) 200×90
+ * in canvas pixels, two 16px lines bottom-aligned, painted by `kit:text` with
  * no declared `wrap`. The typed words have no descenders, so the two lines'
  * ink stays in separate row bands.
  */
-const BOTTOM = { x0: 20, y0: 160, x1: 220, y1: 280 };
+const BOTTOM = { x0: 30, y0: 300, x1: 230, y1: 390 };
 
 /** Row bands of glyph ink inside `box`, read off the canvas's framebuffer,
  *  and how many ink pixels there are in all. */
@@ -202,14 +202,14 @@ async function frames(page: Page) {
 }
 
 test('text-edit overlay — an unwrapped line longer than its box keeps the lines the canvas drew', async ({ page }) => {
-  await page.goto('/#text-nodes');
+  await page.goto('/#text');
   await page.waitForSelector('.ckd-canvas');
   // The MSDF atlas loads async.
   await page.waitForTimeout(500);
   const c = await canvasRect(page);
 
   // Past the end of the first line, 'Bottom of'; lengthen it well past the box.
-  await page.mouse.dblclick(c.left + 150, c.top + 247);
+  await page.mouse.dblclick(c.left + 160, c.top + 361);
   await page.waitForSelector('[contenteditable="true"]');
   await page.keyboard.type(' and then some more words');
   await frames(page);
@@ -223,7 +223,7 @@ test('text-edit overlay — an unwrapped line longer than its box keeps the line
   const pastBox = await canvasInk(page, { ...BOTTOM, x0: BOTTOM.x1 + 2, x1: BOTTOM.x1 + 18 });
 
   // Open an edit on the committed text, from its second line.
-  await page.mouse.dblclick(c.left + 40, c.top + 269);
+  await page.mouse.dblclick(c.left + 50, c.top + 380);
   await page.waitForSelector('[contenteditable="true"]');
   await frames(page);
   const reopened = await overlayLines(page);
@@ -236,7 +236,7 @@ test('text-edit overlay — an unwrapped line longer than its box keeps the line
 });
 
 test('text-edit overlay — a bottom-aligned node keeps its text on the box bottom while typing', async ({ page }) => {
-  await page.goto('/#text-nodes');
+  await page.goto('/#text');
   await page.waitForSelector('.ckd-canvas');
   // The MSDF atlas loads async.
   await page.waitForTimeout(500);
@@ -247,7 +247,7 @@ test('text-edit overlay — a bottom-aligned node keeps its text on the box bott
     return { top: r.top, bottom: r.bottom };
   });
 
-  await page.mouse.dblclick(c.left + 40, c.top + 269);
+  await page.mouse.dblclick(c.left + 50, c.top + 380);
   await page.waitForSelector('[contenteditable="true"]');
   await frames(page);
   const opened = await rect();

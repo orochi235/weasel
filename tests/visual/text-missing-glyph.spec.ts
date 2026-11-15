@@ -1,7 +1,7 @@
 /**
  * Real-GL assertion for per-codepoint font fallback. No committed baseline,
  * for the same reason as `text-aa.spec.ts`: `text.spec.ts` runs at a 5%
- * tolerance, and one wrong character is nowhere near 5% of a 600×360 canvas.
+ * tolerance, and one wrong character is nowhere near 5% of a 600×400 canvas.
  *
  * The `t4` node's text contains an em dash (U+2014). The bundled Inter MSDF
  * atlas has no glyph for it, so drawing it at all depends on the layout pass

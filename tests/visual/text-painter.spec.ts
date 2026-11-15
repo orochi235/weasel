@@ -1,35 +1,25 @@
 /**
- * Visual regression spec: text-nodes demo.
+ * The text demo's nodes, painted by the default node painter (`kit:text`).
  *
- * Paints `data.text` nodes through the default node painter (`kit:text`).
- *
- * The baseline alone cannot guard the painter. MSDF edges differ per GL driver,
- * so it takes `text.spec.ts`'s 5% tolerance, and all of this demo's glyph ink is
- * about 2% of the canvas: the painter drawing nothing passes the baseline. The
- * probes below assert what the painter owns in terms no driver difference can
- * move.
+ * `text.spec.ts`'s baseline cannot guard the painter: MSDF edges differ per GL
+ * driver, so it takes a 5% tolerance, and the demo's glyph ink is a few percent
+ * of the canvas, so the painter drawing nothing would pass. These probes assert
+ * what the painter owns in terms no driver difference can move.
  */
 import { test, expect, type Page } from './fixture';
-import { resolve } from 'node:path';
-import { captureCanvas, assertMatchesBaseline, type DiffOptions } from './diff.js';
+import { captureCanvas } from './diff.js';
 
-const DEMO_ID = 'text-nodes';
-const BASELINE_DIR = resolve(import.meta.dirname, 'baselines');
-
-const OPTS: DiffOptions = { maxDiffRatio: 0.05 };
-
-// Node boxes from apps/site/demos/TextNodesDemo.tsx, in canvas pixels (the view
-// is identity at deviceScaleFactor 1).
-const LARGE = { x0: 20, y0: 16, x1: 460, y1: 48 };
-const BOLD = { x0: 20, y0: 58, x1: 460, y1: 80 };
-const ITALIC = { x0: 20, y0: 86, x1: 460, y1: 108 };
-const RUNS = { x0: 20, y0: 120, x1: 460, y1: 146 };
-const BOTTOM = { x0: 20, y0: 160, x1: 220, y1: 280 };
-// 'rotated' is 210×34 at (250,200), turned -15° about its center (355,217).
-const ROTATED = { x0: 240, y0: 160, x1: 475, y1: 275 };
-// 'center' and 'right' share one 440-wide box shape, one row apart.
-const CENTER = { x0: 20, y0: 296, x1: 460, y1: 326 };
-const RIGHT = { x0: 20, y0: 336, x1: 460, y1: 366 };
+// Node boxes from apps/site/demos/TextDemo.tsx, in canvas pixels (the view is
+// identity at deviceScaleFactor 1).
+const LARGE = { x0: 300, y0: 16, x1: 570, y1: 48 };
+const ITALIC = { x0: 300, y0: 54, x1: 570, y1: 76 };
+const CENTER = { x0: 300, y0: 84, x1: 570, y1: 114 };
+// 'right' carries the runs, with the red word.
+const RIGHT = { x0: 30, y0: 200, x1: 570, y1: 236 };
+const RUNS = RIGHT;
+const BOTTOM = { x0: 30, y0: 300, x1: 230, y1: 390 };
+// 'rotated' is 230×34 at (300,330), turned -15° about its center (415,347).
+const ROTATED = { x0: 290, y0: 300, x1: 540, y1: 398 };
 
 type Box = typeof LARGE;
 
@@ -49,7 +39,7 @@ interface RowSpan {
 }
 
 async function probe(page: Page) {
-  return page.evaluate(async ({ LARGE, BOLD, ITALIC, RUNS, BOTTOM, ROTATED, CENTER, RIGHT }) => {
+  return page.evaluate(async ({ LARGE, ITALIC, RUNS, BOTTOM, ROTATED, CENTER, RIGHT }) => {
     const c = document.querySelector<HTMLCanvasElement>('canvas')!;
     const w = c.width;
     const h = c.height;
@@ -78,15 +68,15 @@ async function probe(page: Page) {
       }
       return { ink, firstRow, meanY: ink ? sumY / ink : -1 };
     };
-    // Scans the whole row band, not just the box, so ink that alignment put
-    // outside the box is counted rather than clipped out of the probe.
-    const span = (box: Box): RowSpan => {
+    // Scans the row band from `scanX0` to the canvas edge, not just the box, so
+    // ink that alignment put outside the box is counted rather than clipped out.
+    const span = (box: Box, scanX0 = 0): RowSpan => {
       let ink = 0;
       let outside = 0;
       let minX = w;
       let maxX = -1;
       for (let y = box.y0; y < box.y1; y++) {
-        for (let x = 0; x < w; x++) {
+        for (let x = scanX0; x < w; x++) {
           if (!isInk(x, y)) continue;
           ink++;
           if (x < box.x0 || x >= box.x1) outside++;
@@ -109,7 +99,6 @@ async function probe(page: Page) {
       canvas: { w, h },
       large: stats(LARGE),
       aboveLarge: stats({ x0: LARGE.x0, y0: 0, x1: LARGE.x1, y1: LARGE.y0 }),
-      bold: stats(BOLD),
       italic: stats(ITALIC),
       runs: stats(RUNS),
       red,
@@ -117,25 +106,20 @@ async function probe(page: Page) {
       bottomLower: stats({ ...BOTTOM, y0: midY }),
       rotatedLeft: stats({ ...ROTATED, x1: midX }),
       rotatedRight: stats({ ...ROTATED, x0: midX }),
-      center: span(CENTER),
+      // 't1' shares these rows left of x 280.
+      center: span(CENTER, 280),
       right: span(RIGHT),
     };
-  }, { LARGE, BOLD, ITALIC, RUNS, BOTTOM, ROTATED, CENTER, RIGHT });
+  }, { LARGE, ITALIC, RUNS, BOTTOM, ROTATED, CENTER, RIGHT });
 }
 
-test(`${DEMO_ID} — visual baseline`, async ({ page }) => {
-  // The MSDF atlas loads async; the default settle can race it.
-  const png = await captureCanvas(page, `/#${DEMO_ID}`, { settleMs: 500 });
-  assertMatchesBaseline(png, resolve(BASELINE_DIR, `${DEMO_ID}.png`), OPTS);
-});
-
-test(`${DEMO_ID} — kit:text paints each node where its data says`, async ({ page }) => {
-  await captureCanvas(page, `/#${DEMO_ID}`, { settleMs: 500 });
+test('text — kit:text paints each node where its data says', async ({ page }) => {
+  await captureCanvas(page, '/#text', { settleMs: 500 });
   const s = await probe(page);
 
-  expect(s.canvas).toEqual({ w: 480, h: 380 });
+  expect(s.canvas).toEqual({ w: 600, h: 400 });
 
-  for (const node of [s.large, s.bold, s.italic, s.runs]) {
+  for (const node of [s.large, s.italic, s.runs]) {
     expect(node.ink).toBeGreaterThan(50);
   }
 

@@ -1,7 +1,7 @@
 /**
  * Real-GL assertion for text antialiasing. Deliberately NO committed baseline:
  * `text.spec.ts` runs at a 5% tolerance, and a whole node's worth of text
- * turning hard-edged stays under 5% of a 600×360 canvas.
+ * turning hard-edged stays under 5% of a 600×400 canvas.
  *
  * What it measures: at 16px, a correctly antialiased glyph spends *more*
  * pixels on partially-covered edges than on fully-covered interior. If the
@@ -15,7 +15,7 @@
  */
 import { test, expect } from './fixture';
 
-// Node `t1` from apps/site/demos/textDemoScene.ts: x 30, y 30, 240×80, a
+// Node `t1` from apps/site/demos/TextDemo.tsx: x 30, y 30, 240×80, a
 // single solid fill (#1c1c1c) at fontSize 16. One node of one known color
 // lets the thresholds below be absolute: the other nodes' mid-luminance ink
 // would land in the "partial" bucket whatever its coverage.
@@ -45,7 +45,7 @@ test('text AA — glyph edges carry a partial-coverage ramp', async ({ page }) =
     const h = c.height;
     const buf = await window.weaselCanvasPixels(c);
     // The read is bottom-up; this takes top-down scene coords. The canvas is
-    // 600×360 at deviceScaleFactor 1, so scene units map 1:1 to pixels.
+    // 600×400 at deviceScaleFactor 1, so scene units map 1:1 to pixels.
     const inkAt = (x: number, y: number) => {
       const i = ((h - 1 - y) * w + x) * 4;
       return 255 - (0.299 * buf[i] + 0.587 * buf[i + 1] + 0.114 * buf[i + 2]);
@@ -66,7 +66,7 @@ test('text AA — glyph edges carry a partial-coverage ramp', async ({ page }) =
   // Guard the guard: if the sample box missed the text entirely, the ratio
   // below would be meaningless (or divide into nothing).
   expect(stats.canvasW).toBe(600);
-  expect(stats.canvasH).toBe(360);
+  expect(stats.canvasH).toBe(400);
   expect(stats.solid).toBeGreaterThan(200);
 
   const ratio = stats.partial / stats.solid;
