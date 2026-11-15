@@ -347,7 +347,7 @@ that can say what it wants in a string should.
 
 `<k>` in the `kind:` forms is a name from the `routing` prop — the same
 vocabulary that names `Hit.kind`, not a second one. Without `routing` the kit
-infers `'text'` / `'path'` / `'image'` from the data shape; `routing={[]}`
+infers `'text'` / `'path'` / `'image'` from the data shape, and `'group'` / `'boolean'` from the node; `routing={[]}`
 opts out and makes every `kind:` target unmatchable.
 
 Rank is the first element of the CSS-style specificity tuple: within one
