@@ -742,12 +742,12 @@ const scene = createScene<object, 'main', RectPose>({
 });
 
 const box = (x: number, y: number) =>
-  scene.add({ kind: 'leaf', layer: 'main', pose: { x, y, width: 40, height: 40 }, data: {} });
+  scene.add({ kind: 'mark', layer: 'main', pose: { x, y, width: 40, height: 40 }, data: {} });
 const a = box(0, 0);
 const b = box(200, 90);
 
 scene.add({
-  kind: 'leaf',
+  kind: 'mark',
   layer: 'main',
   pose: { x: 0, y: 0, width: 0, height: 0 },
   data: { stroke: strokeOf('#1c1c1c', 2) },
