@@ -1,6 +1,7 @@
 /** How a scene tells its readers it changed. */
 import type { Notifier } from './notifier';
 
+/** The members a scene tells its readers it changed through: a subscription and two version counters. */
 export interface SceneChanges {
   /** Hear every change, a change of selection included. Returns the unsubscribe. */
   subscribe(listener: () => void): () => void;

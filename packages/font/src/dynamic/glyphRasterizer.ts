@@ -36,6 +36,7 @@ export interface RasterFaceMetrics {
   descent: number;
 }
 
+/** A glyph baked to an alpha mask, with its offset from the pen and its advance, in px. */
 export interface RasterizedGlyph {
   width: number;
   height: number;
@@ -56,6 +57,7 @@ export interface RasterizedColorGlyph {
   advance: number;
 }
 
+/** What bakes glyphs for the dynamic atlas: a face's metrics, and one glyph at a time. */
 export interface GlyphRasterizer {
   faceMetrics(family: string, weight: number, style: FontStyle): RasterFaceMetrics;
   rasterize(

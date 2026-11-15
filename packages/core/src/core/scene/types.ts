@@ -66,6 +66,7 @@ export type { DerivedDep, Bivariant, DerivePathFn, DerivePoseFn, ClipFromPoseFn,
 /** A clip a node declares by name rather than by function: see `SceneNode.clip`. */
 export type NodeClip = 'outline';
 
+/** The fields every scene node carries, whatever its kind. */
 export interface NodeBase<TData, TLayer extends string, TPose> {
   id: NodeId;
   layer: TLayer;

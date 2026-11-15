@@ -45,6 +45,7 @@ export function heldValuePaths(root: SchemaRoot): Set<string> {
   return out;
 }
 
+/** A value path before and after a move. */
 export type ValueMove = readonly [from: string, to: string];
 
 /** The value paths a node going from tree path `from` to `to` takes along; `null` for a section, whose key is no part of one. */

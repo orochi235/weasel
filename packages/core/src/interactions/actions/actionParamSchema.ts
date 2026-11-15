@@ -23,8 +23,11 @@ export type FlipParams = {
   axis: FlipAxis;
   pivot: FlipPivot;
 };
+/** A `distribute.*` action's params: what it spaces evenly. */
 export type DistributeParams = { mode: DistributeMode };
+/** A reorder action's params: one step, or all the way to the front or back. */
 export type ReorderParams = { distance: 'adjacent' | 'extreme' };
+/** A nudge action's params: the small or the big step. */
 export type NudgeParams = { magnitude: 'small' | 'big' };
 
 declare module '@weasel-js/routing' {

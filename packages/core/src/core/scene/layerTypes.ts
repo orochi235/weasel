@@ -1,5 +1,6 @@
 import type { ParallaxOptions } from '../viewport/parallax';
 
+/** The fields every layer record carries, whatever the scene adds to it. */
 export interface LayerRecordBase<TLayer extends string> {
   id: TLayer;
   visible: boolean;

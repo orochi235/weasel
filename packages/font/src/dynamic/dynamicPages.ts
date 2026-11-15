@@ -11,6 +11,7 @@ import type { GlyphTextureSink } from '../textureSink';
 export const PAGE_SIZE = 1024;
 export const MAX_PAGES = 4;
 
+/** One page of the dynamic glyph atlas: its texels and the writes not yet uploaded. */
 export interface DynamicPage {
   data: Uint8Array;
   /** Bumps on every write; each write appends a patch with seq = version. */

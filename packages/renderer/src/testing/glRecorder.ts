@@ -12,6 +12,7 @@ import { paintTextures } from '../draw/paintBind';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import type { PaintBindContext } from '../paintKinds';
 
+/** One recorded call on the context: its name, its arguments, and what it returned. */
 export interface GLCall {
   readonly name: string;
   readonly args: readonly unknown[];
