@@ -3,6 +3,6 @@
 '@weasel-js/plot': patch
 ---
 
-Diagram sequences, the avoid router's scene input, and plot handles read a node's world pose through core's `worldPoses`, with no change to what they read.
+Diagram sequences, avoid routing, and plot handles read world poses through core's `worldPoses`, reading what they read before.
 
 <!-- entry: internal -->
