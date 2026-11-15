@@ -45,5 +45,6 @@ a node — otherwise a settled simulation stays settled.
 
 ## Related
 
-`@weasel-js/d3` is the packaged integration if you want the d3 ecosystem wired
-up for you rather than assembling forces by hand.
+`@weasel-js/d3` binds data to a scene's nodes and animates them with d3's
+data-join and transitions. It ships no forces: those come from `d3-force`
+itself, passed to this package's simulation.
