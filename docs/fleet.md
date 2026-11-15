@@ -50,7 +50,7 @@ its own and runs only inside a fleet run.
 **On a branch run the gate skips `check:needs`, `check:first-publish`,
 `audit:jsdoc` and `check:test-projects` when the branch changes none of the paths each reads**,
 listed in `scripts/lib/gate-inputs.mjs`; the log shows each as skipped, with a `gate: skipped` line
-saying why. A change to ci.yml, the gate, `scripts/lib/`, a manifest, the lockfile or a tsconfig runs
+saying why. A change to ci.yml, the gate, `scripts/lib/`, the root manifest, the lockfile or a tsconfig runs
 them all. `check:test-projects` asks only whether the branch adds or deletes a test file, since an
 edit to one cannot change which project collects it. A script that starts reading a new path needs
 that path added there, or a branch changing only it will skip the check; CI still runs it on every
