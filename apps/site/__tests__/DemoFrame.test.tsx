@@ -90,6 +90,17 @@ describe('DemoFrame', () => {
     expect([dw(stage(container)), dh(stage(container))]).toEqual(['', '']);
   });
 
+  it('puts the stage back where the drag began when Escape cancels it', () => {
+    const { container } = render(<DemoFrame><DemoStage width={400} height={300}><i /></DemoStage></DemoFrame>);
+    drag(corner(container), 20, 10);
+    fireEvent.pointerDown(corner(container), { pointerId: 1, button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(corner(container), { pointerId: 1, clientX: 150, clientY: 130 });
+    expect(dw(stage(container))).toBe('70px');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.pointerMove(corner(container), { pointerId: 1, clientX: 200, clientY: 200 });
+    expect([dw(stage(container)), dh(stage(container))]).toEqual(['20px', '10px']);
+  });
+
   it('moves only its own axis from an edge', () => {
     const { container } = render(<DemoFrame><DemoStage width={400} height={300}><i /></DemoStage></DemoFrame>);
     drag(container.querySelector<HTMLElement>('.ckd-demo-resize[data-axis="x"]')!, 50, 70);

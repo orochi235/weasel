@@ -1,5 +1,7 @@
+import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { isPrimaryPress } from '@weasel-js/gestures';
 import {
-  createContext, useCallback, useContext, useMemo, useRef,
+  createContext, useCallback, useContext, useEffect, useMemo, useRef,
   type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject,
 } from 'react';
 
@@ -103,25 +105,30 @@ function floorOf(el: HTMLElement | null, start: Delta): Delta {
 }
 
 function ResizeHandle({ axis, el, delta, apply }: ResizeScope & { axis: Axis }) {
-  const drag = useRef<{ x: number; y: number; start: Delta; floor: Delta } | null>(null);
+  const session = useRef<PointerSession | null>(null);
+  useEffect(() => () => session.current?.cancel(), []);
   const moveTo = (start: Delta, floor: Delta, dx: number, dy: number) => apply({
     dw: axis === 'y' ? start.dw : Math.max(floor.dw, start.dw + dx),
     dh: axis === 'x' ? start.dh : Math.max(floor.dh, start.dh + dy),
   });
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
+    if (!isPrimaryPress(e) || session.current) return;
     e.preventDefault();
     e.stopPropagation();
-    e.currentTarget.setPointerCapture?.(e.pointerId);
     const start = { ...delta.current };
-    drag.current = { x: e.clientX, y: e.clientY, start, floor: floorOf(el.current, start) };
+    const floor = floorOf(el.current, start);
+    const { clientX: x, clientY: y } = e;
+    const end = () => { session.current = null; };
+    session.current = openPointerSession(e.currentTarget, e, {
+      onMove: (ev) => moveTo(start, floor, ev.clientX - x, ev.clientY - y),
+      onEnd: end,
+      onCancel: () => {
+        end();
+        apply(start);
+      },
+    }, { escape: true });
   };
-  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    const d = drag.current;
-    if (d) moveTo(d.start, d.floor, e.clientX - d.x, e.clientY - d.y);
-  };
-  const onPointerEnd = () => { drag.current = null; };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const step = ARROWS[e.key];
     if (!step) return;
@@ -142,9 +149,6 @@ function ResizeHandle({ axis, el, delta, apply }: ResizeScope & { axis: Axis }) 
       {...a11y}
       title="Drag to resize · double-click to reset"
       onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerEnd}
-      onPointerCancel={onPointerEnd}
       onDoubleClick={(e) => { e.stopPropagation(); apply(null); }}
       onKeyDown={onKeyDown}
     />
