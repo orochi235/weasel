@@ -84,7 +84,6 @@ export function EffectsDemo() {
           className="ckd-canvas"
           scene={scene}
           layers={{
-            scene: { drawOne: () => [] },
             world: { layer: world, after: 'scene' },
             hud: { layer: hud, after: 'world' },
           }}
