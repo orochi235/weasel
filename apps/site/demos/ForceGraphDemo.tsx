@@ -203,9 +203,6 @@ export function ForceGraphDemo() {
         <Button onClick={() => { setSettled(false); sim.alpha(1).restart(); }}>Reheat</Button>
         <Button onClick={() => regenerate(size)}>Regenerate</Button>
         <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset view</Button>
-        <span className={s.hint}>
-          drag node to pin · drag empty canvas to pan · ctrl/⌘+wheel zoom · wheel pan · ⌘+0 reset
-        </span>
         <span className={s.readout}>
           {size.links.toLocaleString('en-US')} edges · zoom {view.scale.x.toFixed(2)}×{settled ? ' · settled' : ''}
         </span>
