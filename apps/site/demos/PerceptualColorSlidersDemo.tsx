@@ -111,8 +111,6 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
     { L: hi,         C: params.chroma.cTop,  label: 'T', color: oklchDegToHex(hi,         params.chroma.cTop,  params.hue), bounds: bounds.cTop },
   ], [lo, hi, params.midL, params.hue, params.chroma.cBot, params.chroma.cPeak, params.chroma.cTop, bounds.cBot, bounds.cPeak, bounds.cTop]);
 
-  // Custom render layer: a single 3-vertex polygon with per-vertex colors,
-  // interpolated by the kit's `pathFillVColor` shader, emitted in world coords.
   const layer: RenderLayer<unknown> = useMemo(() => ({
     id: 'chroma-curve-fill',
     label: 'Chroma curve (vertex colors)',
@@ -146,10 +144,7 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
         className="ckd-canvas"
         scene={scene}
         onResize={setSize}
-        layers={{
-          scene: { drawOne: () => [] },
-          curve: { layer, after: 'scene' },
-        }}
+        layers={{ curve: { layer, after: 'scene' } }}
       />
       <svg width={size.width} height={size.height} className={s.overlay}>
         {/* Plot frame */}
