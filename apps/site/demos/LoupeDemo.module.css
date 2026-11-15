@@ -1,0 +1,11 @@
+/* Fixed widths, so a changing value does not shift the controls after it. */
+.factor {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  min-width: 3ch;
+  text-align: end;
+}
+
+.color {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  min-width: 30ch;
+}

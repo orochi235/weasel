@@ -8,6 +8,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
+import s from './LoupeDemo.module.css';
 
 const W = 600, H = 400;
 const MODES: SegmentedBarItem<LoupeMode>[] = [{ value: 'vector', label: 'vector' }, { value: 'pixel', label: 'pixel' }];
@@ -155,10 +156,10 @@ function Demo() {
               const f = Number(e.target.value);
               setFactor(f); loupeRef.current?.setFactor(f);
             }} />
-          {factor}×
+          <span className={s.factor}>{factor}×</span>
         </label>
         <Checkbox isSelected={editing} onChange={setEditing}>edit through the lens</Checkbox>
-        <span className="ckd-hint">under the aim point: {color ?? '—'}</span>
+        <span className={`ckd-hint ${s.color}`}>under the aim point: {color ?? '—'}</span>
         <span className="ckd-hint">clicked: {picked ?? '—'}</span>
       </div>
       <DemoStage width={W} height={H}>
