@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { useState } from 'react';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Code } from '@weasel-js/ui/components/Code';
 import { KeySequence } from '@weasel-js/ui/components/Keycaps';
-import { PropertyList, PropertyRow } from '@weasel-js/ui/components/Properties';
+import { PropertyField, PropertyList } from '@weasel-js/ui/components/Properties';
 import { DetailList, DetailRow } from '@weasel-js/ui/components/DetailList';
 import s from './DetailList.stories.module.css';
 
@@ -67,16 +68,20 @@ export const Figures: Story = {
 /** One `--wzl-params-label-width` on an ancestor puts a detail list's labels and a
  *  property list's inline labels on the same rail. */
 export const SharesThePropertyRail: Story = {
-  render: (args) => (
-    <div className={s.rail}>
-      <DetailList {...args} title="Read-only">
-        <DetailRow label="id"><Code>rect-12</Code></DetailRow>
-        <DetailRow label="kind"><Badge size="xs">shape</Badge></DetailRow>
-      </DetailList>
-      <PropertyList>
-        <PropertyRow label="Name" layout="inline"><input type="text" defaultValue="Rectangle" /></PropertyRow>
-        <PropertyRow label="Opacity" layout="inline"><input type="number" defaultValue={100} /></PropertyRow>
-      </PropertyList>
-    </div>
-  ),
+  render: function SharesThePropertyRail(args) {
+    const [name, setName] = useState('Rectangle');
+    const [opacity, setOpacity] = useState(100);
+    return (
+      <div className={s.rail}>
+        <DetailList {...args} title="Read-only">
+          <DetailRow label="id"><Code>rect-12</Code></DetailRow>
+          <DetailRow label="kind"><Badge size="xs">shape</Badge></DetailRow>
+        </DetailList>
+        <PropertyList>
+          <PropertyField kind="string" label="Name" layout="inline" value={name} onChange={setName} />
+          <PropertyField kind="number" label="Opacity" layout="inline" value={opacity} onChange={setOpacity} />
+        </PropertyList>
+      </div>
+    );
+  },
 };
