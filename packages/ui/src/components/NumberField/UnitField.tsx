@@ -1,9 +1,6 @@
-import { type FocusEventHandler, type KeyboardEvent, type ReactNode, type Ref, type RefObject, useEffect, useRef, useState } from 'react';
+import { type FocusEventHandler, type ReactNode, type Ref, type RefObject, useEffect, useRef } from 'react';
 import { useObjectRef } from 'react-aria';
-import { imeKey } from '@weasel-js/ui-input';
-import {
-  canSpin, clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
-} from '@weasel-js/quantity';
+import { decimal, parseAs, parseNumber, qty, type Display, type Endless, type UnitTable } from '@weasel-js/quantity';
 import f from '../Field/Field.module.css';
 import { fieldRootClass, NativeFieldFoot, type FieldSlotProps } from '../Field/fieldSlots';
 import { shows, useFieldControl, useFieldIds, type FieldControlAttrs } from '../Field/fieldSemantics';
@@ -15,7 +12,7 @@ import { useNativeHold, type NativeHold } from '../Disabled/nativeHold';
 import type { ControlSizeProps } from '../ControlSize';
 import { useFieldSizeClass } from '../Field/fieldSize';
 import { Steppers } from './Steppers';
-import { useIdleSettle } from '../../useIdleSettle';
+import { useUnitTyping } from './useUnitTyping';
 import { useFieldLocale } from '../../useFieldLocale';
 
 /** Props for {@link UnitField}. */
@@ -104,28 +101,12 @@ export type StepperSide = 'start' | 'end';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
 
-type Bounds = Parameters<typeof clampToBounds>[1];
-
 /** How typed text reads in `locale`: `accepts` reads units, and the display still reads its own words, like infinity's. */
 function reader(accepts: Readonly<UnitTable> | undefined, display: Display, locale: string): (typed: string) => number {
   return (typed) => {
     const n = accepts ? parseNumber(typed, accepts, locale) : Number.NaN;
     return Number.isNaN(n) ? parseAs(typed, display, { locale }) : n;
   };
-}
-
-/** Whether the field can hold `n`: a finite number, or an infinity an endless end stands for. */
-const holds = (n: number, endless: Endless | undefined): boolean => Number.isFinite(n) || endlessAllows(endless, n);
-
-/** A typed `n` held to `bounds`, or NaN where even that is no value the field can hold: an infinity no bound clamps. */
-function settled(n: number, bounds: Bounds): number {
-  const next = clampToBounds(n, bounds);
-  return holds(next, bounds.endless) ? next : Number.NaN;
-}
-
-/** What a step starts from: the text as typed where it reads as a value the field can hold, else the value. */
-function stepStart(typed: number, value: number, endless: Endless | undefined): number {
-  return holds(typed, endless) ? typed : holds(value, endless) ? value : 0;
 }
 
 /**
@@ -192,48 +173,24 @@ function UnitFieldBody({
   required,
 }: Omit<UnitFieldProps, keyof HoldProps | 'id' | 'aria-label' | 'aria-labelledby' | 'aria-describedby'> & { hold: NativeHold; field: FieldControlAttrs; required?: boolean }) {
   const value = mixed ? Number.NaN : valueProp;
-  const [draft, setDraft] = useState<string | null>(null);
-  const canceled = useRef(false);
-  // The value typing began from, and whether any keystroke reached `onInput`.
-  const typing = useRef<{ from: number; sent: boolean } | null>(null);
   const input = useObjectRef(ref);
   const locale = { locale: useFieldLocale(localeProp) };
-  const known = !Number.isNaN(value);
-  const shown = known ? qty(value, display, locale) : null;
-  const read = reader(accepts, display, locale.locale);
-  const bounds = { step, min: minValue, max: maxValue, endless };
-  const idle = useIdleSettle(() => {
-    const n = idleValue(draft, read, bounds);
-    if (n === null) return;
-    const began = typing.current?.from ?? value;
-    typing.current = { from: n, sent: false };
-    if (n !== began) onChange(n);
-  }, settleWhenIdle);
-
-  const from = (): number => stepStart(draft === null ? value : read(draft), value, endless);
-  const stepTo = (next: number) => {
-    idle.stop();
-    setDraft(null);
-    typing.current = null;
-    onInput?.(next);
-    if (next !== value) onChange(next);
-  };
-  const spin = (key: string): boolean => {
-    const next = disabled ? null : spinKey(key, from(), bounds);
-    if (next === null) return false;
-    stepTo(next);
-    return true;
-  };
-
-  /** Whether `key` has nowhere left to step to. */
-  const spent = (key: string): boolean => !canSpin(key, from(), bounds);
+  const shown = Number.isNaN(value) ? null : qty(value, display, locale);
+  const typing = useUnitTyping({
+    value,
+    read: reader(accepts, display, locale.locale),
+    bounds: { step, min: minValue, max: maxValue, endless },
+    disabled,
+    settleWhenIdle,
+    callbacks: { onChange, onInput, onCancel, onOffset, onClear },
+  });
 
   // The latest `spin` and `spent`, for the listeners below, which outlive a render.
-  const latestSpin = useRef(spin);
-  const latestSpent = useRef(spent);
+  const latestSpin = useRef(typing.spin);
+  const latestSpent = useRef(typing.spent);
   useEffect(() => {
-    latestSpin.current = spin;
-    latestSpent.current = spent;
+    latestSpin.current = typing.spin;
+    latestSpent.current = typing.spent;
   });
 
   useWheelSteps(input, latestSpin);
@@ -259,78 +216,29 @@ function UnitFieldBody({
         aria-valuemax={maxValue}
         placeholder={mixed ? MIXED_HINT : placeholder}
         {...held} readOnly={disabled}
-        value={draft ?? shown?.text ?? ''}
-        onChange={(e) => {
-          const typed = e.target.value;
-          setDraft(typed);
-          idle.typed();
-          typing.current ??= { from: value, sent: false };
-          const n = settled(read(typed), bounds);
-          if (onInput && typed.trim() !== '' && !Number.isNaN(n)) {
-            typing.current.sent = true;
-            onInput(n);
-          }
-        }}
+        value={typing.draft ?? shown?.text ?? ''}
+        onChange={(e) => typing.type(e.target.value)}
         onFocus={(e) => {
-          canceled.current = false;
+          typing.focus();
           onFocus?.(e);
         }}
         onBlur={(e) => {
-          idle.stop();
-          const typedText = canceled.current ? null : draft;
-          const by = typedText === null ? null : offsetIn(typedText, read);
-          if (typedText?.trim() === '' && known && onClear) onClear();
-          else if (by !== null && Number.isFinite(by) && onOffset) onOffset(by);
-          else commitTyped(typedText === null ? Number.NaN : by !== null ? value + by : read(typedText), { bounds, value, typing: typing.current, onChange, onInput, onCancel });
-          typing.current = null;
-          setDraft(null);
+          typing.leave();
           onBlur?.(e);
         }}
-        onKeyDown={(e) => fieldKey(e, canceled, spin)}
+        onKeyDown={typing.key}
       />
       {steppers && (
         <Steppers
           spin={latestSpin}
           spent={latestSpent}
           disabled={disabled}
-          atMax={spent('ArrowUp')}
-          atMin={spent('ArrowDown')}
+          atMax={typing.spent('ArrowUp')}
+          atMin={typing.spent('ArrowDown')}
         />
       )}
     </div>
   );
-}
-
-/** Commit a typed `n`, or give back the value typing began from when `n` is no number. */
-function commitTyped(
-  n: number,
-  { bounds, value, typing, onChange, onInput, onCancel }: {
-    bounds: Bounds;
-    value: number;
-    typing: { from: number; sent: boolean } | null;
-  } & Pick<UnitFieldProps, 'onChange' | 'onInput' | 'onCancel'>,
-): void {
-  const next = settled(n, bounds);
-  if (!Number.isNaN(next)) {
-    // Against where typing began: a caller previewing through `onInput` already holds `next` as its value.
-    if (next !== (typing?.from ?? value)) onChange(next);
-  } else if (typing?.sent) {
-    if (!Number.isNaN(typing.from)) onInput?.(typing.from);
-    onCancel?.();
-  }
-}
-
-/** Enter commits, Escape cancels, and an arrow steps; an input method's keys are its own. */
-function fieldKey(e: KeyboardEvent<HTMLInputElement>, canceled: RefObject<boolean>, spin: (key: string) => boolean): void {
-  if (imeKey(e.nativeEvent)) return;
-  if (e.key === 'Enter') {
-    e.currentTarget.blur();
-  } else if (e.key === 'Escape') {
-    canceled.current = true;
-    e.currentTarget.blur();
-  } else if (spin(e.key)) {
-    e.preventDefault();
-  }
 }
 
 /** The wheel steps only a focused field, so scrolling past one changes nothing.
@@ -350,21 +258,4 @@ function useWheelSteps(
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, [input, spin]);
-}
-
-/** What a pause in typing commits: a value `typed` reads as inside `bounds`, and never an offset, so a pause
- *  neither applies one twice nor clamps or reformats the text under the caret. */
-function idleValue(typed: string | null, read: (text: string) => number, bounds: Bounds): number | null {
-  if (typed === null || typed.trim() === '' || offsetIn(typed, read) !== null) return null;
-  const n = read(typed);
-  return Number.isNaN(n) || settled(n, bounds) !== n ? null : n;
-}
-
-/** What `typed` offsets by when it reads as `+=` or `-=` and a number: NaN
- *  when the number does not read, and null for text that is no offset. */
-function offsetIn(typed: string, read: (text: string) => number): number | null {
-  const m = /^\s*([+-])=\s*(.*)$/.exec(typed);
-  if (!m) return null;
-  const n = read(m[2]);
-  return m[1] === '-' ? -n : n;
 }
