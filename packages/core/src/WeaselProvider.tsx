@@ -3,6 +3,7 @@ import { IconRegistryScope, type IconRegistryProviderProps } from './iconRegistr
 import { DepRegistryProviderIfRoot } from './canvas/SceneCanvas/DepRegistryProviderIfRoot';
 import { ActionsProviderIfRoot } from './canvas/SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot } from './canvas/SceneCanvas/PointerProviderIfRoot';
+import { ToolsScope } from './tools/toolsScope';
 import { ActiveToolContextProvider, ActiveToolContextProviderIfRoot } from '@weasel-js/routing/react';
 import {
   SelectionContextProvider,
@@ -35,8 +36,8 @@ export interface WeaselProviderProps {
 
 /**
  * Mounts every kit-wide provider at once — deps, actions, active tool,
- * selection, and pointer — each only if one is not already in scope, or
- * unconditionally under `isolate`.
+ * selection, pointer, and the canvas's tools `useScopedTools` reads — each only
+ * if one is not already in scope, or unconditionally under `isolate`.
  *
  * `<SceneCanvas>` does this for itself, so this is for the case where kit
  * state has to be shared by things outside a canvas: a toolbar, a property
@@ -61,7 +62,7 @@ export function WeaselProvider({ children, isolate = false, icons, iconVariants 
           <ActiveTool>
             <Selection>
               <Pointer>
-                {children}
+                <ToolsScope isolate={isolate}>{children}</ToolsScope>
               </Pointer>
             </Selection>
           </ActiveTool>

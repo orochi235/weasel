@@ -36,6 +36,7 @@ import { useAddedViews, useSceneCanvasHandle } from './SceneCanvas/useSceneCanva
 import { useSceneCanvasLayers } from './SceneCanvas/useSceneCanvasLayers';
 import { useSceneCanvasPathEdit } from './SceneCanvas/useSceneCanvasPathEdit';
 import { useSceneCanvasTools, type SceneCanvasToolProps } from './SceneCanvas/useSceneCanvasTools';
+import { ToolsScope, usePublishTools } from '../tools/toolsScope';
 import { hiddenChromeOf, useSceneCanvasChrome } from './SceneCanvas/useSceneChrome';
 import { useDevtoolsOverride } from '../devtools/useDevtoolsRoot';
 import { useSceneRedrawSources } from './SceneCanvas/useSceneRedrawSources';
@@ -94,6 +95,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions,
     enabled, groupEntry, insertBuilds: traits.insertBuilds,
   });
+  usePublishTools(tools.tools);
 
   // The wrapper's `<InputScope>` provides it.
   const actionsRegistry = useActionsRegistry();
@@ -188,7 +190,9 @@ function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
     <InputScope yoke={props.yoke}>
       <DeviceProfileProvider value={device}>
         <ViewRegistryProvider>
-          <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} ref={ref} />
+          <ToolsScope>
+            <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} ref={ref} />
+          </ToolsScope>
         </ViewRegistryProvider>
       </DeviceProfileProvider>
     </InputScope>
