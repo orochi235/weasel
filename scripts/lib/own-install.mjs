@@ -24,7 +24,7 @@ export function ownInstallProblem(root) {
   return (
     `${root} has no install of its own` +
     (other ? `, so every tool here would resolve from ${other}/node_modules and test that checkout's packages` : '') +
-    `.\nRun \`npm ci\` in ${root} first.`
+    `.\nRun \`npm ci\` in ${root} first, or \`node scripts/link-workspaces.mjs\` there to link its packages and borrow the rest.`
   );
 }
 
