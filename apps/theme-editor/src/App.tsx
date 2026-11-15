@@ -1,24 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useHashRoute } from '../../shared/hashRoute';
 import { PaletteLab } from './PaletteLab';
 import { ThemeEditor } from './ThemeEditor';
 import { ThemePrefs } from './ThemePrefs';
 
 const ROUTES = ['palette', 'theme', 'prefs'] as const;
-type Route = (typeof ROUTES)[number];
-
-function readHash(): Route {
-  const h = window.location.hash.replace(/^#\/?/, '');
-  return (ROUTES as readonly string[]).includes(h) ? (h as Route) : 'palette';
-}
 
 export function App() {
-  const [route, setRoute] = useState<Route>(readHash);
-
-  useEffect(() => {
-    const onHash = () => setRoute(readHash());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
+  const route = useHashRoute(ROUTES, 'palette');
 
   useEffect(() => {
     if (window.location.hash !== `#/${route}`) {

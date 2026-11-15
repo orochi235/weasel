@@ -1,5 +1,5 @@
 import { Lab } from '@weasel-js/labkit';
-import { useEffect, useState } from 'react';
+import { useHashRoute } from '../../shared/hashRoute';
 import { BADGE_LAB, BADGE_OCTANTS_LAB, BADGE_SHAPES_LAB, LABS } from '../../shared/labs';
 import { ComposeInstrument } from './badge/compose/ComposeInstrument';
 import { OctantsInstrument } from './badge/octants/OctantsInstrument';
@@ -11,20 +11,11 @@ const PAGES = {
   'badge-octants': { page: BADGE_OCTANTS_LAB, instruments: [OctantsInstrument] },
 } as const;
 type Route = keyof typeof PAGES;
-
-function readHash(): Route {
-  const h = window.location.hash.replace(/^#\/?/, '');
-  return h in PAGES ? (h as Route) : 'badge-compose';
-}
+const ROUTES = Object.keys(PAGES) as Route[];
 
 /** Each lab of ui's components, one page per hash route, switched from the title. */
 export function App() {
-  const [route, setRoute] = useState<Route>(readHash);
-  useEffect(() => {
-    const onHash = () => setRoute(readHash());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
+  const route = useHashRoute(ROUTES, 'badge-compose');
   const { page, instruments } = PAGES[route];
   return (
     <Lab
