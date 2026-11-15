@@ -127,6 +127,7 @@ export function ColorField(props: ColorFieldProps) {
             const next = compose(visibleRgb, a01);
             recordApplied(apply(next), next);
           }}
+          onCancel={() => setAlphaDraft(null)}
         />
       ))}
     </span>

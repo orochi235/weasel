@@ -38,6 +38,7 @@ import type { PaintSlot } from '@weasel-js/paint';
 import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
 import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { useActionEdit } from '@weasel-js/ui/components/ActionEdit';
 import { PaintField } from '@weasel-js/ui/components/PaintField';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
@@ -131,9 +132,6 @@ function StrokeAndFill() {
         },
       }),
     ],
-    // A paint drag fires per pointermove; without a window each frame would
-    // be its own undo entry.
-    coalesceWindowMs: 300,
   });
   const selection = useSelection({ scene, initial: [SWATCH] });
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
@@ -219,6 +217,9 @@ function PaintPanel({
     actions?.begin(actionId, params)?.end('commit');
   };
   const paint = (which: PaintSlot, next: Paint | null): void => run(which === 'fill' ? 'setFill' : 'setStroke', { paint: next });
+  // A slider drag runs its action from press to release, so it is one undo step however many moves it has.
+  const widthEdit = useActionEdit('setStrokeWidth', (w: number) => ({ width: w }));
+  const taperEdit = useActionEdit('setStrokeWidth', (t: number) => ({ vertexWidths: taperWidths(t) }));
 
   if (!node) {
     return (
@@ -287,7 +288,9 @@ function PaintPanel({
               min={1}
               max={20}
               step={1}
-              onChange={(e) => run('setStrokeWidth', { width: Number(e.target.value) })}
+              onValueInput={widthEdit.onInput}
+              onValueChange={widthEdit.onChange}
+              onValueCancel={widthEdit.onCancel}
             />
           </Field>
         )}
@@ -299,7 +302,9 @@ function PaintPanel({
               min={1}
               max={40}
               step={1}
-              onChange={(e) => run('setStrokeWidth', { vertexWidths: taperWidths(Number(e.target.value)) })}
+              onValueInput={taperEdit.onInput}
+              onValueChange={taperEdit.onChange}
+              onValueCancel={taperEdit.onCancel}
             />
           </Field>
         )}

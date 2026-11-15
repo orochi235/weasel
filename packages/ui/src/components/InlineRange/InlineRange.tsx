@@ -1,5 +1,7 @@
-import { type CSSProperties, forwardRef, type InputHTMLAttributes, type KeyboardEvent, type MouseEvent, type Ref } from 'react';
+import { type CSSProperties, forwardRef, type InputHTMLAttributes, type KeyboardEvent, type MouseEvent, type Ref, useMemo } from 'react';
+import { mergeRefs } from 'react-aria';
 import s from './InlineRange.module.css';
+import { useRangeEdit, type RangeEditProps } from './useRangeEdit';
 import type { HoldProps } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
 import { useFieldControl } from '../Field/fieldSemantics';
@@ -8,7 +10,7 @@ import { useFieldControl } from '../Field/fieldSemantics';
 export type InlineRangeProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
   'type' | 'value' | 'min' | 'max' | 'disabled' | 'readOnly'
-> & HoldProps & {
+> & HoldProps & RangeEditProps & {
   value: number;
   min?: number;
   max?: number;
@@ -43,6 +45,8 @@ const REFUSED = {
   onMouseDown: (e: MouseEvent<HTMLInputElement>) => e.preventDefault(),
 };
 
+const NOOP = () => {};
+
 /**
  * Compact range input for a property row: one track, no label, no output.
  * It sits inline beside a swatch or a readout, and owns the native range skin
@@ -51,15 +55,25 @@ const REFUSED = {
  *
  * Straight only; for a control along a curve, or with several thumbs, use `Slider`. Held disabled for a reason, or
  * read-only, it stays focusable and drops every input, since its `value` is controlled.
+ *
+ * It takes the native element's handlers, and reports an edit through `onValueInput`, `onValueChange` and
+ * `onValueCancel` as the kit's edit protocol defines them: a drag or a key step is one edit, and Escape cancels a
+ * drag ({@link RangeEditProps}).
  */
 export const InlineRange = forwardRef(function InlineRange(
   props: InlineRangeProps,
   ref: Ref<HTMLInputElement>,
 ) {
-  const { value, min = 0, max = 100, fill = true, marks, className, style, disabled, disabledReason, readOnly, readOnlyReason, ...own } = props;
+  const {
+    value: given, min = 0, max = 100, fill = true, marks, className, style, disabled, disabledReason, readOnly, readOnlyReason,
+    onValueInput, onValueChange, onValueCancel, ...own
+  } = props;
   const field = useFieldControl({ id: own.id, 'aria-label': own['aria-label'], 'aria-labelledby': own['aria-labelledby'], 'aria-describedby': own['aria-describedby'] });
   const hold = useNativeHold({ disabled, disabledReason, readOnly, readOnlyReason, 'aria-describedby': field['aria-describedby'] });
-  const named = { ...own, ...field };
+  const edit = useRangeEdit(given, { onValueInput, onValueChange, onValueCancel }, hold.refuses);
+  const merged = useMemo(() => mergeRefs(edit.ref, ref), [edit.ref, ref]);
+  const value = edit.shown;
+  const named = { ...own, onChange: own.onChange ?? NOOP, ...field };
   const rest = hold.refuses ? { ...named, ...REFUSED } : named;
   const span = max - min;
   const filled = span > 0 ? ((Math.min(Math.max(value, min), max) - min) / span) * 100 : 0;
@@ -72,7 +86,7 @@ export const InlineRange = forwardRef(function InlineRange(
     <input
       {...rest}
       {...hold.attrs}
-      ref={ref}
+      ref={merged}
       type="range"
       value={value}
       min={min}

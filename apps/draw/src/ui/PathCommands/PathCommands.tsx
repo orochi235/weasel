@@ -5,12 +5,13 @@
  */
 import { useState, type ReactElement } from 'react';
 import {
-  DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, setToolOption, SIMPLIFY_PATH_PARAMS, useOngoingAction, useToolOptionParams,
+  DEFAULT_SIMPLIFY_TOLERANCE, OFFSET_PATH_PARAMS, setToolOption, SIMPLIFY_PATH_PARAMS, useToolOptionParams,
 } from '@weasel-js/core';
 import { SAND_TOOL_OPTIONS } from '@weasel-js/path-tools';
 import { decimal } from '@weasel-js/quantity';
 import { drawToolOptionValues } from '../../toolOptions';
-import { Slider } from '@weasel-js/ui/components/Slider';
+import { useActionEdit } from '@weasel-js/ui/components/ActionEdit';
+import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import s from './PathCommands.module.css';
 
 /** Each slider's readout and spoken value. */
@@ -39,7 +40,7 @@ export interface SimplifySliderProps extends PathSliderProps {
 }
 
 export function SimplifySlider({ tolerance, onTolerance, className = s.slider }: SimplifySliderProps): ReactElement {
-  const simplify = useOngoingAction('simplifyPath');
+  const simplify = useActionEdit('simplifyPath', ([t]: Thumb[]) => ({ tolerance: t.value }));
   return (
     <Slider
       className={className}
@@ -48,11 +49,12 @@ export function SimplifySlider({ tolerance, onTolerance, className = s.slider }:
       max={TOLERANCE.max}
       step={TOLERANCE.step}
       thumbs={[{ value: tolerance }]}
-      onInput={([t]) => {
-        onTolerance(t.value);
-        simplify.input({ tolerance: t.value });
+      onInput={(next) => {
+        onTolerance(next[0].value);
+        simplify.onInput(next);
       }}
-      onChange={([t]) => simplify.commit({ tolerance: t.value })}
+      onChange={simplify.onChange}
+      onCancel={simplify.onCancel}
       readoutPlacement="inline-after"
       display={ONE_PLACE}
     />
@@ -60,7 +62,7 @@ export function SimplifySlider({ tolerance, onTolerance, className = s.slider }:
 }
 
 export function OffsetSlider({ className = s.slider }: PathSliderProps): ReactElement {
-  const offset = useOngoingAction('offsetPath');
+  const offset = useActionEdit('offsetPath', ([t]: Thumb[]) => ({ distance: t.value }));
   const [distance, setDistance] = useState(DISTANCE.default);
   return (
     <Slider
@@ -70,12 +72,13 @@ export function OffsetSlider({ className = s.slider }: PathSliderProps): ReactEl
       max={DISTANCE.max}
       step={DISTANCE.step}
       thumbs={[{ value: distance }]}
-      onInput={([t]) => {
-        setDistance(t.value);
-        offset.input({ distance: t.value });
+      onInput={(next) => {
+        setDistance(next[0].value);
+        offset.onInput(next);
       }}
-      onChange={([t]) => {
-        offset.commit({ distance: t.value });
+      onCancel={offset.onCancel}
+      onChange={(next) => {
+        offset.onChange(next);
         // The new outline is selected now; the next offset starts from it.
         setDistance(DISTANCE.default);
       }}

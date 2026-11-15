@@ -1,7 +1,8 @@
-import { useState, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { InlineRange } from '../InlineRange';
 import s from './OpacityRange.module.css';
 import type { HoldProps } from '../Disabled';
+import { useEditDraft } from '../../useEditDraft';
 
 /** Props for {@link OpacityRange}. Alphas are 0..1 at 1% resolution. */
 export interface OpacityRangeProps extends HoldProps {
@@ -9,8 +10,10 @@ export interface OpacityRangeProps extends HoldProps {
   /** Names what the opacity belongs to; the slider is `<label> opacity`. */
   'aria-label'?: string;
   onInput?: (alpha01: number) => void;
-  /** One call per gesture, and none for a gesture that moved nothing. */
+  /** One call per drag or key step, and none for one that moved nothing. */
   onChange: (alpha01: number) => void;
+  /** A drag was abandoned with Escape or an unmount, after `onInput` got its starting alpha back. */
+  onCancel?: () => void;
 }
 
 /**
@@ -19,18 +22,15 @@ export interface OpacityRangeProps extends HoldProps {
  * under a paint with no single color to carry an alpha.
  */
 export function OpacityRange(props: OpacityRangeProps): ReactElement {
-  const { value, disabled, disabledReason, readOnly, readOnlyReason, onInput, onChange } = props;
+  const { value, disabled, disabledReason, readOnly, readOnlyReason, onInput, onChange, onCancel } = props;
   const label = props['aria-label'];
-  // Tracks the thumb during a gesture — the committed prop only updates after
-  // onChange — then resets to follow the prop again.
-  const [draft, setDraft] = useState<number | null>(null);
-  const pct = draft ?? Math.round(value * 100);
-
-  const commit = (): void => {
-    if (draft === null) return;
-    onChange(draft / 100);
-    setDraft(null);
-  };
+  // Drawn here rather than inside the range, so the readout follows a commit-only caller's drag too.
+  const edit = useEditDraft<number>(Math.round(value * 100), {
+    onInput: onInput && ((pct) => onInput(pct / 100)),
+    onChange: (pct) => onChange(pct / 100),
+    onCancel,
+  }, Object.is);
+  const pct = edit.shown;
 
   return (
     <>
@@ -45,15 +45,9 @@ export function OpacityRange(props: OpacityRangeProps): ReactElement {
         readOnly={readOnly}
         readOnlyReason={readOnlyReason}
         aria-label={label ? `${label} opacity` : 'Opacity'}
-        onInput={(e) => {
-          const next = Number((e.target as HTMLInputElement).value);
-          setDraft(next);
-          onInput?.(next / 100);
-        }}
-        onPointerUp={commit}
-        onPointerCancel={commit}
-        onKeyUp={commit}
-        onBlur={commit}
+        onValueInput={edit.onInput}
+        onValueChange={edit.onChange}
+        onValueCancel={edit.onCancel}
       />
       <span className={s.readout} aria-hidden="true">{pct}%</span>
     </>

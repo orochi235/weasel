@@ -3,6 +3,7 @@
 // policy panels (document props) live in their consuming app.
 export * from './components/ActionBar';
 export * from './components/ActionButton';
+export * from './components/ActionEdit';
 export * from './components/ActionSettings';
 export * from './components/Along';
 export { type AppearanceAttrs, type AppearanceProps, EMPHASIS_ICONS, type Emphasis, GRADE_ICONS, type Grade, type Stance, useAppearance } from './components/appearance';

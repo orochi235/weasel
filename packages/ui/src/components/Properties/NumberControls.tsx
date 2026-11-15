@@ -2,8 +2,6 @@ import {
   type ComponentProps,
   type CSSProperties,
   type ReactNode,
-  type RefObject,
-  useEffect,
   useRef,
   useState,
 } from 'react';
@@ -32,7 +30,7 @@ function useSliderDraft(p: PropertyNumberFieldProps): PropertyNumberFieldProps {
     onChange: (next) => p.onChange(next as number),
     onCancel: p.onCancel,
   });
-  return { ...p, value: edit.shown, onInput: edit.onInput, onChange: edit.onChange };
+  return { ...p, value: edit.shown, onInput: edit.onInput, onChange: edit.onChange, onCancel: edit.onCancel };
 }
 
 export function SliderRow({ row, readout, control }: {
@@ -60,33 +58,6 @@ export function SliderCell(props: PropertyNumberFieldProps) {
     </>
   );
 }
-
-/**
- * A ref for an input whose commit half has to come off a real listener.
- *
- * A native `range` input fires `input` through a drag and `change` once at
- * the end, but React's synthetic `onChange` sees only the first: its value
- * tracker drops the unchanged second. So the track reads the live half from
- * React and the committed half from here.
- */
-function useCommitListener(
-  commit: ((raw: string) => void) | undefined,
-): RefObject<HTMLInputElement | null> {
-  const ref = useRef<HTMLInputElement>(null);
-  const latest = useRef(commit);
-  useEffect(() => {
-    latest.current = commit;
-  });
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const onCommit = () => latest.current?.(el.value);
-    el.addEventListener('change', onCommit);
-    return () => el.removeEventListener('change', onCommit);
-  }, []);
-  return ref;
-}
-
 
 export function NumberInput(p: PropertyNumberFieldProps) {
   const known = isKnown(p);
@@ -179,8 +150,6 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
   const held = useControlAccess({ disabled: p.mixed || p.disabled, disabledReason: p.disabledReason }).state !== 'enabled';
   const commit = held ? undefined : p.onChange;
   const place = trackPlace(p.scale, min, max, step, p.stops);
-  // The native `change` comes off a listener of its own, past InlineRange's hold, so a held track drops it here.
-  const range = useCommitListener(commit && ((raw) => commit(settle(place.fromInput(Number(raw))))));
   const stops = useTrackStops(p.stops, min, max, place.fraction);
   const known = isKnown(p);
   const named = useFieldControl({ id: p.id, 'aria-label': p.name });
@@ -190,6 +159,15 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
   const keyed = (next: number) => {
     live(settle(next));
     commit?.(settle(next));
+  };
+  // The value a drag last drew, so its commit lands where the stops pulled it rather than where the pointer let go.
+  const range = useRef<HTMLInputElement>(null);
+  const drawn = useRef<number | null>(null);
+  const onValueInput = (raw: number) => {
+    const v = settle(stops.settle(range.current!, value, place.fromInput(raw)));
+    dlog('property-panel', 'slider', { name: p.name, value: v });
+    drawn.current = v;
+    live(v);
   };
   return (
     // No fill: the property rows' plain track is the one the kit converges on.
@@ -217,10 +195,15 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
         e.preventDefault();
         keyed(next);
       }}
-      onChange={(e) => {
-        const v = settle(stops.settle(e.currentTarget, value, place.fromInput(Number(e.target.value))));
-        dlog('property-panel', 'slider', { name: p.name, value: v });
-        live(v);
+      onValueInput={onValueInput}
+      onValueChange={(raw) => {
+        const v = drawn.current ?? settle(place.fromInput(raw));
+        drawn.current = null;
+        commit?.(v);
+      }}
+      onValueCancel={() => {
+        drawn.current = null;
+        p.onCancel?.();
       }}
     />
   );

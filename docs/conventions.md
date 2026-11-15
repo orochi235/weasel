@@ -329,12 +329,15 @@ one edit there (a drag, a key step, a typed entry) and point here for the rest.
   rounds or declines what it was handed writes back the value it kept and the control shows that. Where
   `onChange` returns a value (`ColorField`, `PaintInput`), it is the one the caller applied.
 - **Other names keep the meanings.** A control whose value has its own name pairs `on<X>Input` with
-  `on<X>Change` (`ZoomControl`'s `onZoomInput`/`onZoomChange`, `BandEditor`'s `onRangeInput`/`onRangeChange`),
+  `on<X>Change` (`ZoomControl`'s `onZoomInput`/`onZoomChange`, `BandEditor`'s `onRangeInput`/`onRangeChange`), and
+  one whose element owns `onInput`, `onChange` and `onCancel` as events says `onValue…` (`InlineRange`),
   and a curve layer's `onChange` also takes the state the edit began from. Callbacks that report a pick or an
   event rather than an edit (`onSelect`, `onSeek`) are outside this protocol.
 
 `useEditDraft` (`packages/ui/src/useEditDraft.ts`) is the draft rule above for a controlled control, and
 `openPointerSession`'s `escape` option (and `useHandleDrag`'s) is the Escape rule for a drag.
+`useActionEdit(actionId, toParams)` (`@weasel-js/ui/components/ActionEdit`) hands back the three callbacks running an
+ongoing action, so a drag is one run and one undo step, and a key step a run of its own (2026-11-15).
 
 ## A primitive over one native element takes that element's props
 

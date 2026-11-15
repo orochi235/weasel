@@ -266,7 +266,7 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
           <OpacityRange
             value={paintAlpha(paint)}
             aria-label={ariaLabel}
-            onInput={(a01) => onInput?.(paintWithAlpha(paint, a01))}
+            onInput={onInput && ((a01) => onInput(paintWithAlpha(paint, a01)))}
             onChange={(a01) => onChange(paintWithAlpha(paint, a01))}
           />
         </div>

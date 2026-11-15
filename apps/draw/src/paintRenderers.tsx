@@ -1,4 +1,5 @@
-import { useOngoingAction } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
+import { useActionEdit } from '@weasel-js/ui/components/ActionEdit';
 import { PaintInput } from '@weasel-js/ui/components/PaintInput';
 import { nestedPaintValue, type LeafContext, type LeafRenderer } from '@weasel-js/ui/components/inspector/SelectionPanel';
 
@@ -16,15 +17,15 @@ export function wdPaintRenderer(actionId: PaintActionId): LeafRenderer {
 
 /** A fill's or a stroke's paint: the paint, None, or Mixed. */
 export function WdPaintLeaf({ ctx, actionId }: { ctx: LeafContext; actionId: PaintActionId }) {
-  const edit = useOngoingAction(actionId);
+  const edit = useActionEdit(actionId, (paint: Paint | null) => ({ paint }));
   return (
     <PaintInput
       subject={ctx.selectionKey}
       value={nestedPaintValue(ctx)}
       mixed={ctx.mixed}
       aria-label={ctx.pref.name}
-      onInput={(paint) => edit.input({ paint })}
-      onChange={(paint) => edit.commit({ paint })}
+      onInput={edit.onInput}
+      onChange={edit.onChange}
     />
   );
 }
