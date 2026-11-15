@@ -339,7 +339,7 @@ stays on the same feature when the picture is rendered at a different size.
 `positionDependsOn` names the config keys that move the picture; labkit
 snapshots their values beside each mark, and a mark whose values have since
 changed draws dashed and reports `isStale`. `meaning.statuses` is the optional
-vocabulary a mark can be labelled with — a status carries its own color, which
+vocabulary a mark can be labeled with — a status carries its own color, which
 the mark on the canvas follows.
 
 `targets` is declared once per instrument and called once per trial, with the
