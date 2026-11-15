@@ -22,6 +22,15 @@ describe('HistoryDemo', () => {
     fireEvent.click(screen.getByText('Add'));
     expect(screen.getByText('Add c5')).toBeTruthy();
     fireEvent.click(screen.getByText('Undo'));
-    expect(screen.getByText('nothing to undo')).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Initial' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('jumps back through the history from its list', () => {
+    render(<HistoryDemo />);
+    fireEvent.click(screen.getByText('Add'));
+    fireEvent.click(screen.getByText('Add'));
+    fireEvent.click(screen.getByRole('option', { name: 'Initial' }));
+    expect(screen.queryByText('c5', { selector: 'button' })).toBeNull();
+    expect(screen.getByRole('option', { name: 'Add c6' })).toHaveAttribute('aria-selected', 'false');
   });
 });

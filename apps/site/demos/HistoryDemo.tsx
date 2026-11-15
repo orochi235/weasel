@@ -1,5 +1,7 @@
 import { useState, useSyncExternalStore, type CSSProperties } from 'react';
-import { createHistory, type HistoryEntry, type Journal, type Op } from '@weasel-js/history';
+import { createHistory, type History, type HistoryEntry, type Journal, type Op } from '@weasel-js/history';
+import { Disabled } from '@weasel-js/ui/components/Disabled';
+import { HistoryList } from '@weasel-js/ui/components/HistoryList';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import s from './HistoryDemo.module.css';
@@ -64,20 +66,29 @@ function create() {
 const noSubscribe = () => () => {};
 const noVersion = () => 0;
 
-function Stack({ title, entries, next, empty }: { title: string; entries: readonly HistoryEntry[]; next?: number; empty: string }) {
+/** One stack's states, oldest first, with the redoable ones after the current. Picking one steps there. */
+function Stack({ label, stack, base }: { label: string; stack: History | Journal; base: string }) {
+  const { undo, redo } = stack.entries();
+  const entries = [
+    { id: 'base', label: base },
+    ...[...undo, ...redo].map((e: HistoryEntry) => ({
+      id: String(e.id),
+      label: (
+        <>
+          <span>{e.label}</span>
+          {e.pushes > 1 && <span className={s.pushes}>×{e.pushes}</span>}
+        </>
+      ),
+    })),
+  ];
+  const jump = (to: number) => {
+    for (let at = undo.length; at > to; at--) stack.undo();
+    for (let at = undo.length; at < to; at++) stack.redo();
+  };
   return (
     <section className={s.stack}>
-      <h3 className={s.stackTitle}>{title}</h3>
-      {entries.length === 0 && <p className={s.empty}>{empty}</p>}
-      <ol className={s.entries}>
-        {entries.map((e) => (
-          <li key={e.id} className={e.id === next ? `${s.entry} ${s.next}` : s.entry}>
-            <span className={s.label}>{e.label}</span>
-            {e.pushes > 1 && <span className={s.pushes}>×{e.pushes}</span>}
-            <span className={s.id}>#{e.id}</span>
-          </li>
-        ))}
-      </ol>
+      <h3 className={s.stackTitle}>{label}</h3>
+      <HistoryList aria-label={label} entries={entries} current={undo.length} onJump={jump} />
     </section>
   );
 }
@@ -121,8 +132,6 @@ export function HistoryDemo() {
   };
 
   const active = journal ?? history;
-  const parent = history.entries();
-  const session = journal?.entries();
 
   return (
     <div className={s.demo}>
@@ -173,14 +182,10 @@ export function HistoryDemo() {
       </div>
 
       <div className={s.stacks}>
-        <Stack title="undo" entries={parent.undo} next={journal ? undefined : parent.undo.at(-1)?.id} empty="nothing to undo" />
-        <Stack title="redo" entries={parent.redo} next={journal ? undefined : parent.redo[0]?.id} empty="nothing to redo" />
-        {session && (
-          <>
-            <Stack title="session undo" entries={session.undo} next={session.undo.at(-1)?.id} empty="no session edits" />
-            <Stack title="session redo" entries={session.redo} next={session.redo[0]?.id} empty="nothing to redo" />
-          </>
-        )}
+        <Disabled when={journal !== null} reason="The session holds undo until it ends">
+          <Stack label="history" stack={history} base="Initial" />
+        </Disabled>
+        {journal && <Stack label="session" stack={journal} base="Session start" />}
       </div>
     </div>
   );
