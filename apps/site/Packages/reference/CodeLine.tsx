@@ -1,4 +1,4 @@
-import type { Code } from '../../../shared/reference';
+import type { Code } from '@shared/reference';
 import s from './Reference.module.css';
 
 /** Code the build wrote out, each name that has a page linked to it. */

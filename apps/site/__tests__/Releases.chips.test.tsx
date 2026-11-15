@@ -1,6 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import type { Release } from '../../shared/releases';
+import type { Release } from '@shared/releases';
 
 const MANY = ['bidi', 'core', 'geom', 'svg', 'text', 'ui'];
 const RELEASES: Release[] = [
@@ -8,7 +8,7 @@ const RELEASES: Release[] = [
 ];
 
 vi.mock('virtual:changelogs', async () => ({
-  default: (await import('../../shared/releases')).indexReleases(RELEASES),
+  default: (await import('@shared/releases')).indexReleases(RELEASES),
 }));
 
 const { Releases } = await import('../Releases');

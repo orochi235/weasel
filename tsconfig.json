@@ -47,7 +47,6 @@
       "@weasel-js/core/resize": ["./packages/core/src/import-shims/resize.ts"],
       "@weasel-js/core/clipboard": ["./packages/core/src/import-shims/clipboard.ts"],
       "@weasel-js/core/clone": ["./packages/core/src/import-shims/clone.ts"],
-      "@weasel-js/core/named-features": ["./packages/core/src/import-shims/named-features.ts"],
       "@weasel-js/core/json": ["./packages/core/src/import-shims/json.ts"],
       "@weasel-js/core/devtools": ["./packages/core/src/import-shims/devtools.ts"],
       "@weasel-js/core/devtools-protocol": ["./packages/core/src/import-shims/devtools-protocol.ts"],
@@ -56,6 +55,7 @@
       "@weasel-js/core/routing": ["./packages/core/src/import-shims/routing.ts"],
       "@weasel-js/core/engine": ["./packages/core/src/import-shims/engine.ts"],
       "@weasel-js/core/render-worker": ["./packages/core/src/import-shims/render-worker.ts"],
+      "@weasel-js/core/named-features": ["./packages/core/src/import-shims/named-features.ts"],
       "@weasel-js/core/test-seams": ["./packages/core/src/import-shims/test-seams.ts"],
       "@weasel-js/core/testing/*": ["./packages/core/src/testing/*"],
       "@weasel-js/cursor": ["./packages/cursor/src/index.ts"],
@@ -216,7 +216,8 @@
       "tools/*": ["./packages/core/src/tools/*"],
       "canvas/*": ["./packages/core/src/canvas/*"],
       "debug/*": ["./packages/core/src/debug/*"],
-      "@draw/*": ["./apps/draw/src/*"]
+      "@draw/*": ["./apps/draw/src/*"],
+      "@shared/*": ["./apps/shared/*"]
     }
   },
   // `tests/perf/bench` is in here and the rest of `tests/` is not: the benches

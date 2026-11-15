@@ -1,6 +1,6 @@
 import { Lab } from '@weasel-js/labkit';
-import { useHashRoute } from '../../shared/hashRoute';
-import { BADGE_LAB, BADGE_OCTANTS_LAB, BADGE_SHAPES_LAB, LABS } from '../../shared/labs';
+import { useHashRoute } from '@shared/hashRoute';
+import { BADGE_LAB, BADGE_OCTANTS_LAB, BADGE_SHAPES_LAB, LABS } from '@shared/labs';
 import { ComposeInstrument } from './badge/compose/ComposeInstrument';
 import { OctantsInstrument } from './badge/octants/OctantsInstrument';
 import { ShapesInstrument } from './badge/shapes/ShapesInstrument';

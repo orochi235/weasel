@@ -1,4 +1,4 @@
-import type { ClassSymbol, MemberKind } from '../../../shared/reference';
+import type { ClassSymbol, MemberKind } from '@shared/reference';
 import { Prose } from '../../Prose';
 import { CodeLine } from './CodeLine';
 import { Members } from './Members';

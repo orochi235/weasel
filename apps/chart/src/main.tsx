@@ -6,7 +6,7 @@ import { IconRegistryProvider } from '@weasel-js/core';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import icons from 'virtual:weasel-icons';
 import { App } from './App';
-import { registerDefaultFont } from '../../shared/defaultFont';
+import { registerDefaultFont } from '@shared/defaultFont';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');

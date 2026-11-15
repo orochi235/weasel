@@ -15,7 +15,7 @@ import { renderWithIcons } from '../testIcons';
 // The real history renders ~46,000 elements, which a `getByRole` then walks; under a loaded
 // fleet run that alone outlasted the 5 s wait. Routing needs only the heading.
 vi.mock('virtual:changelogs', async () => ({
-  default: (await import('../../shared/releases')).indexReleases([
+  default: (await import('@shared/releases')).indexReleases([
     {
       version: '1.0.0',
       date: '2026-08-12T00:00:00Z',

@@ -1,5 +1,5 @@
-import type { PackageEntry } from '../../shared/packageDocs';
-import { packageRoute } from '../../shared/packageRoutes';
+import type { PackageEntry } from '@shared/packageDocs';
+import { packageRoute } from '@shared/packageRoutes';
 import { Prose } from '../Prose';
 import { Loading } from './Loading';
 import { PACKAGES_BY_NAME, loadDoc } from './catalog';

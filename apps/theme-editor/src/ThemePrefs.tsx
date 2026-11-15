@@ -12,7 +12,7 @@ import {
 import { weaselTheme, type Theme } from '@weasel-js/theme';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { useMemo, useState } from 'react';
-import { LABS, THEME_PREFS_LAB } from '../../shared/labs';
+import { LABS, THEME_PREFS_LAB } from '@shared/labs';
 import { HistorySlot } from './HistorySlot';
 import { ThemePreview } from './ThemePreview';
 import { usePrefsHistory } from './usePrefsHistory';

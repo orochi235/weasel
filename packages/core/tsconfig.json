@@ -34,7 +34,6 @@
       "@weasel-js/core/resize": ["./src/import-shims/resize.ts"],
       "@weasel-js/core/clipboard": ["./src/import-shims/clipboard.ts"],
       "@weasel-js/core/clone": ["./src/import-shims/clone.ts"],
-      "@weasel-js/core/named-features": ["./src/import-shims/named-features.ts"],
       "@weasel-js/core/json": ["./src/import-shims/json.ts"],
       "@weasel-js/core/devtools": ["./src/import-shims/devtools.ts"],
       "@weasel-js/core/devtools-protocol": ["./src/import-shims/devtools-protocol.ts"],
@@ -43,6 +42,7 @@
       "@weasel-js/core/routing": ["./src/import-shims/routing.ts"],
       "@weasel-js/core/engine": ["./src/import-shims/engine.ts"],
       "@weasel-js/core/render-worker": ["./src/import-shims/render-worker.ts"],
+      "@weasel-js/core/named-features": ["./src/import-shims/named-features.ts"],
       "@weasel-js/core/test-seams": ["./src/import-shims/test-seams.ts"],
       "@weasel-js/core/testing/*": ["./src/testing/*"],
       "@weasel-js/cursor": ["../cursor/src/index.ts"],
@@ -203,7 +203,8 @@
       "tools/*": ["./src/tools/*"],
       "canvas/*": ["./src/canvas/*"],
       "debug/*": ["./src/debug/*"],
-      "@draw/*": ["../../apps/draw/src/*"]
+      "@draw/*": ["../../apps/draw/src/*"],
+      "@shared/*": ["../../apps/shared/*"]
     }
   },
   "include": ["src"],

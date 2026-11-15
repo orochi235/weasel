@@ -1,5 +1,5 @@
 import { Lab, type LabContribution } from '@weasel-js/labkit';
-import { LABS, THEME_EDITOR_LAB } from '../../shared/labs';
+import { LABS, THEME_EDITOR_LAB } from '@shared/labs';
 import { fullSelection, type Selection, type ThemeDefinition } from '@weasel-js/theme';
 import { deepEqual } from '@weasel-js/registry';
 import type { IssueReport, Lookup, PutResult, StoredTheme } from '@weasel-js/theme/engine';

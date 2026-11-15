@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createMemoryAdapter } from '@weasel-js/storage';
-import { prefsRoundTrip } from '../../shared/prefsRoundTrip';
+import { prefsRoundTrip } from '@shared/prefsRoundTrip';
 import { CHART_PREFS, CHART_PREFS_PREFIX, openChartPrefs } from './prefs';
 
 type Store = ReturnType<typeof openChartPrefs>;

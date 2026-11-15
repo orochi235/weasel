@@ -91,7 +91,7 @@ describe('bundledDirs', () => {
 
   it('leaves out the app itself and the packages served from source', () => {
     const dirs = bundledDirs('/repo', ['/repo/apps/draw/src'], ws, new Set(['@weasel-js/ui', '@weasel-js/labkit']));
-    expect(dirs).toEqual(['/repo/packages/geom', '/repo/packages/core']);
+    expect(dirs).toEqual(['/repo/packages/geom', '/repo/packages/core', '/repo/apps/shared']);
   });
 });
 
@@ -241,6 +241,7 @@ describe('prebundleWorkspace stamp', () => {
   file('stamp/packages/kit/src/index.ts', "export * from './a';");
   file('stamp/packages/kit/src/a.ts', 'export const a = 1;');
   file('stamp/apps/draw/src/main.ts', '');
+  file('stamp/apps/shared/labs.ts', '');
   file('stamp/apps/site/main.ts', `import { a } from '${KIT}';`);
 
   /** The plugin's config and configResolved hooks, as vite runs them: the stamp, and whether the bundles are forced. */

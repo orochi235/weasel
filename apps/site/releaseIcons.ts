@@ -1,5 +1,5 @@
 import type { IconRef } from '@weasel-js/icons';
-import type { Tag } from '../shared/releases';
+import type { Tag } from '@shared/releases';
 import { icon } from './icons.gen';
 
 /** Each published package's badge, by the unscoped name its changelog entries carry. */

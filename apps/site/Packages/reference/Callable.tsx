@@ -1,4 +1,4 @@
-import type { ReferenceSignature } from '../../../shared/reference';
+import type { ReferenceSignature } from '@shared/reference';
 import { Prose } from '../../Prose';
 import { CodeText } from './CodeLine';
 import s from './Reference.module.css';

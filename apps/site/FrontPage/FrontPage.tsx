@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@weasel-js/theme/react';
-import { PACKAGES_ID } from '../../shared/packageRoutes';
+import { PACKAGES_ID } from '@shared/packageRoutes';
 import { DEMOS_ID, GET_STARTED_ID, RELEASES_ID } from '../routes';
 import { projectTheme } from './projectTheme';
 import { TAGLINE } from './tagline';

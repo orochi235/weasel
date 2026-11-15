@@ -10,7 +10,7 @@ import { drawTheme } from './theme';
 import { ColorModeProvider } from './colorMode';
 import { registerDrawExports } from './exportPage';
 import { registerAvailableFonts } from './fonts';
-import { registerDefaultFont } from '../../shared/defaultFont';
+import { registerDefaultFont } from '@shared/defaultFont';
 import { migrateLegacyPanelFlags } from './surfaces/surfaceState';
 import { drawPrefs, importLegacyPrefs } from './prefs';
 import { openSession } from './openSession';

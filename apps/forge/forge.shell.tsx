@@ -1,5 +1,5 @@
 import { defineShellConfig, FOLLOW_APP } from '@weasel-js/forge';
-import { FORGE_LAB, LABS } from '../shared/labs';
+import { FORGE_LAB, LABS } from '@shared/labs';
 import { DEVTOOLS_GLOBALS } from './devtools';
 import { FONT_GLOBALS, fontTheme, loadWebFonts } from './fonts';
 import { LIBRARIES } from './libraries';

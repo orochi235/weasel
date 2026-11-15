@@ -1,4 +1,4 @@
-import type { FunctionSymbol } from '../../../shared/reference';
+import type { FunctionSymbol } from '@shared/reference';
 import { Prose } from '../../Prose';
 import { CallDetails } from './Callable';
 import { CodeLine } from './CodeLine';

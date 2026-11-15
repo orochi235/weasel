@@ -1,6 +1,6 @@
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
-import { type Filter, type Tag, TAGS } from '../shared/releases';
+import { type Filter, type Tag, TAGS } from '@shared/releases';
 import { chipIcon } from './ReleaseChipIcon';
 import { PACKAGE_ICONS, TAG_ICONS } from './releaseIcons';
 

@@ -1,5 +1,5 @@
 import { CodeBlock, type CodeLanguage } from '@weasel-js/ui/components/CodeBlock';
-import type { MarkdownBlock } from '../shared/markdown';
+import type { MarkdownBlock } from '@shared/markdown';
 import s from './Prose.module.css';
 
 /** The fence languages `CodeBlock` can color; anything else, a shell line included, stays plain. */

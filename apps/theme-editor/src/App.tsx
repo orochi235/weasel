@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useHashRoute } from '../../shared/hashRoute';
+import { useHashRoute } from '@shared/hashRoute';
 import { PaletteLab } from './PaletteLab';
 import { ThemeEditor } from './ThemeEditor';
 import { ThemePrefs } from './ThemePrefs';

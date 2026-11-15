@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { prefsRoundTrip } from '../../shared/prefsRoundTrip';
+import { prefsRoundTrip } from '@shared/prefsRoundTrip';
 import { openDrawPrefs, PREFS } from './prefs';
 
 describe("draw's prefs", () => {

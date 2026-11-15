@@ -1,6 +1,6 @@
 import PACKAGES from 'virtual:package-docs';
-import type { PackageEntry } from '../../shared/packageDocs';
-import { PACKAGES_ID, parsePackageRoute } from '../../shared/packageRoutes';
+import type { PackageEntry } from '@shared/packageDocs';
+import { PACKAGES_ID, parsePackageRoute } from '@shared/packageRoutes';
 import { DEMOS, type DemoEntry } from '../registry';
 
 export { PACKAGES };

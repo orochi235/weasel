@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Release } from '../../shared/releases';
+import type { Release } from '@shared/releases';
 
 // A history the size of the real one: dozens of releases, hundreds of
 // entries, most with a body.
@@ -18,7 +18,7 @@ const RELEASES: Release[] = Array.from({ length: 40 }, (_, r) => ({
 }));
 
 vi.mock('virtual:changelogs', async () => ({
-  default: (await import('../../shared/releases')).indexReleases(RELEASES),
+  default: (await import('@shared/releases')).indexReleases(RELEASES),
 }));
 
 const { Releases } = await import('../Releases');

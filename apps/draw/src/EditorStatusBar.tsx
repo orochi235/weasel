@@ -4,7 +4,7 @@ import { Bar } from '@weasel-js/ui/components/Bar';
 import { CycleButton, COLOR_MODE_OPTIONS } from '@weasel-js/ui/components/CycleButton';
 import { solidColorOf } from '@weasel-js/paint';
 import type { ReactElement } from 'react';
-import { buildLabel, buildTitle } from '../../shared/buildInfo';
+import { buildLabel, buildTitle } from '@shared/buildInfo';
 import type { ActivePaint } from './newShapePaint';
 import { useColorModeControl } from './colorMode';
 import type { DrawScene } from './drawDocument';

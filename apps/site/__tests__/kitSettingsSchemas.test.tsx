@@ -10,7 +10,7 @@ import { createMemoryAdapter } from '@weasel-js/storage';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { uiKitSettingsSchema } from '@weasel-js/ui/kit-settings';
 import { afterEach, describe, expect, expectTypeOf, it } from 'vitest';
-import { otherPrefValue as other } from '../../shared/prefsRoundTrip';
+import { otherPrefValue as other } from '@shared/prefsRoundTrip';
 import { renderWithIcons } from '../testIcons';
 
 afterEach(cleanup);

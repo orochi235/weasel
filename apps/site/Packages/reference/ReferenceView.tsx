@@ -1,6 +1,6 @@
 import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
-import { packageRoute, splitReferencePath } from '../../../shared/packageRoutes';
-import type { PackageReference, ReferenceSymbol } from '../../../shared/reference';
+import { packageRoute, splitReferencePath } from '@shared/packageRoutes';
+import type { PackageReference, ReferenceSymbol } from '@shared/reference';
 import { Prose } from '../../Prose';
 import { ClassPage } from './ClassPage';
 import { FunctionPage } from './FunctionPage';

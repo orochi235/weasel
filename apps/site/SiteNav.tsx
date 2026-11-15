@@ -1,4 +1,4 @@
-import { PACKAGES_ID, packageRoute } from '../shared/packageRoutes';
+import { PACKAGES_ID, packageRoute } from '@shared/packageRoutes';
 import { PACKAGES_BY_NAME } from './Packages/catalog';
 import { CATEGORIES, DEMOS, type DemoEntry } from './registry';
 import { FEATURES_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID } from './routes';

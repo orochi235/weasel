@@ -1,5 +1,5 @@
 import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
-import type { PackageEntry } from '../../shared/packageDocs';
+import type { PackageEntry } from '@shared/packageDocs';
 import { placeOf, type DemoEntry } from '../registry';
 import s from './Packages.module.css';
 

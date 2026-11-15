@@ -1,4 +1,4 @@
-import type { ReferenceMember } from '../../../shared/reference';
+import type { ReferenceMember } from '@shared/reference';
 import { Prose } from '../../Prose';
 import { CallDetails } from './Callable';
 import { CodeLine, CodeText } from './CodeLine';

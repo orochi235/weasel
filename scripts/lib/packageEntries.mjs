@@ -24,8 +24,8 @@ const BUILT_FROM = {
   theme: { './tokens.css': 'src/generated/tokens.css' },
 };
 
-/** An app's source, importable from another app as `<alias>/<path>`. */
-export const APP_SOURCES = { '@draw': 'apps/draw/src' };
+/** An app tree, importable from the apps as `<alias>/<path>`. */
+export const APP_SOURCES = { '@draw': 'apps/draw/src', '@shared': 'apps/shared' };
 
 /** In-repo test helpers every package may keep under `src/testing/`, importable here and never published. */
 export const TESTING = 'testing';

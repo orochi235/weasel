@@ -29,20 +29,20 @@ declare module 'virtual:demo-sources' {
 /** Provided by the `changelogs` vite plugin (`scripts/release/vite-plugin.ts`).
  *  Every release, newest first; each one's entries load on demand. */
 declare module 'virtual:changelogs' {
-  const releases: import('../shared/releases').ReleaseIndexEntry[];
+  const releases: import('@shared/releases').ReleaseIndexEntry[];
   export default releases;
 }
 
 /** Provided by the `package-docs` vite plugin (`scripts/vite-package-docs.ts`).
  *  Every published package, by name; each one's README and guides load on demand. */
 declare module 'virtual:package-docs' {
-  const packages: import('../shared/packageDocs').PackageEntry[];
+  const packages: import('@shared/packageDocs').PackageEntry[];
   export default packages;
 }
 
 /** Provided by the `get-started` vite plugin (`scripts/vite-get-started.ts`).
  *  Core's README sections for the "Get started" page: prose as HTML, code as text. */
 declare module 'virtual:get-started' {
-  const blocks: import('../shared/markdown').MarkdownBlock[];
+  const blocks: import('@shared/markdown').MarkdownBlock[];
   export default blocks;
 }

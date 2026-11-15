@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { type ChangelogEntry, type Filter, type Tag, TAGS } from '../shared/releases';
+import { type ChangelogEntry, type Filter, type Tag, TAGS } from '@shared/releases';
 import { Button } from '@weasel-js/ui/components/Button';
 import { chipIcon } from './ReleaseChipIcon';
 import { PACKAGE_ICONS, TAG_ICONS } from './releaseIcons';

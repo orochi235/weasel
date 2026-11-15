@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import RELEASES from 'virtual:changelogs';
 import num from '@weasel-js/theme/numeric.module.css';
-import { type Filter, matches, NO_FILTER, type Tag, TAGS } from '../shared/releases';
+import { type Filter, matches, NO_FILTER, type Tag, TAGS } from '@shared/releases';
 import { describeFilter, ReleaseFilter } from './ReleaseFilter';
 import { ReleaseSection } from './ReleaseSection';
 import './Releases.css';

@@ -1,6 +1,6 @@
 import { ActionsProvider, IconRegistryProvider, SelectionContextProvider } from '@weasel-js/core';
 import icons from 'virtual:weasel-icons';
-import { registerDefaultFont } from '../shared/defaultFont';
+import { registerDefaultFont } from '@shared/defaultFont';
 import { WeaselDemos } from './WeaselDemos';
 
 registerDefaultFont('weasel demo');

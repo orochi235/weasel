@@ -1,5 +1,5 @@
-import type { PackageEntry } from '../../../shared/packageDocs';
-import type { PackageReference } from '../../../shared/reference';
+import type { PackageEntry } from '@shared/packageDocs';
+import type { PackageReference } from '@shared/reference';
 import { Loading } from '../Loading';
 import { useLoaded } from '../useLoaded';
 import { ReferenceView } from './ReferenceView';

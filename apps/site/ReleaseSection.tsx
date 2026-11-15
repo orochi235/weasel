@@ -8,7 +8,7 @@ import {
   matches,
   type ReleaseIndexEntry,
   type Tag,
-} from '../shared/releases';
+} from '@shared/releases';
 import num from '@weasel-js/theme/numeric.module.css';
 import { isoDay } from './isoDay';
 import { ReleaseEntry } from './ReleaseEntry';

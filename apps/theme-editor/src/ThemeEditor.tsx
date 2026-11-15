@@ -1,5 +1,5 @@
 import { Lab } from '@weasel-js/labkit';
-import { LABS, THEME_EDITOR_LAB } from '../../shared/labs';
+import { LABS, THEME_EDITOR_LAB } from '@shared/labs';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './ThemeEditor.module.css';
 import { ThemeWorkbench } from './ThemeWorkbench';
