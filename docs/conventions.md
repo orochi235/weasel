@@ -336,8 +336,9 @@ one edit there (a drag, a key step, a typed entry) and point here for the rest.
 
 `useEditDraft` (`packages/ui/src/useEditDraft.ts`) is the draft rule above for a controlled control, and
 `openPointerSession`'s `escape` option (and `useHandleDrag`'s) is the Escape rule for a drag.
-`useActionEdit(actionId, toParams)` (`@weasel-js/ui/components/ActionEdit`) hands back the three callbacks running an
-ongoing action, so a drag is one run and one undo step, and a key step a run of its own (2026-11-15).
+`useActionEdit(actionId, toParams, value)` (`@weasel-js/ui/components/ActionEdit`) hands back the three callbacks
+running an ongoing action and the value to draw, so a drag is one run and one undo step, and a key step a run of its
+own (2026-11-15).
 
 ## A primitive over one native element takes that element's props
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { ActionsProvider, createDispatcher, dynamicActionId, useActionsRegistry, type Action, type ActionsRegistry } from '@weasel-js/core';
 import { InlineRange } from '../InlineRange';
 import { Slider } from '../Slider';
@@ -40,21 +40,27 @@ function Wire({ runs }: { runs: Runs }) {
 }
 
 function Range() {
-  const [v, setV] = useState(5);
-  const edit = useActionEdit(dynamicActionId('width'), (width: number) => ({ width }));
+  const edit = useActionEdit(dynamicActionId('width'), (width: number) => ({ width }), 5);
   return (
     <InlineRange
-      aria-label="Width" min={0} max={20} value={v}
-      onValueInput={(n) => { setV(n); edit.onInput(n); }}
+      aria-label="Width" min={0} max={20} value={edit.shown}
+      onValueInput={edit.onInput}
       onValueChange={edit.onChange}
       onValueCancel={edit.onCancel}
     />
   );
 }
 
+const FIVE = [{ value: 5 }];
+
 function Thumbs() {
-  const edit = useActionEdit(dynamicActionId('width'), (t: { value: number }[]) => ({ width: t[0].value }));
-  return <Slider aria-label="Width" min={0} max={10} step={1} thumbs={[{ value: 5 }]} {...edit} />;
+  const edit = useActionEdit(dynamicActionId('width'), (t: readonly { value: number }[]) => ({ width: t[0].value }), FIVE);
+  return (
+    <Slider
+      aria-label="Width" min={0} max={10} step={1} thumbs={edit.shown}
+      onInput={edit.onInput} onChange={edit.onChange} onCancel={edit.onCancel}
+    />
+  );
 }
 
 const setup = (ui: React.ReactElement) => {
@@ -73,6 +79,7 @@ describe('useActionEdit', () => {
     expect(runs.start).toEqual([{ width: 7 }]);
     expect(runs.move).toEqual([{ width: 9 }]);
     expect(runs.end).toEqual([]);
+    expect(range).toHaveValue('9');
     act(() => { fireEvent.change(range, { target: { value: '9' } }); });
     expect(runs.end).toEqual(['commit']);
   });
@@ -85,6 +92,7 @@ describe('useActionEdit', () => {
     fireEvent.keyDown(range, { key: 'Escape' });
     expect(runs.end).toEqual(['cancel']);
     expect(runs.start).toHaveLength(1);
+    expect(range).toHaveValue('5');
   });
 
   it('makes each key step a run of its own', () => {

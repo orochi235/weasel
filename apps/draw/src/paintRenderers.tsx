@@ -17,11 +17,11 @@ export function wdPaintRenderer(actionId: PaintActionId): LeafRenderer {
 
 /** A fill's or a stroke's paint: the paint, None, or Mixed. */
 export function WdPaintLeaf({ ctx, actionId }: { ctx: LeafContext; actionId: PaintActionId }) {
-  const edit = useActionEdit(actionId, (paint: Paint | null) => ({ paint }));
+  const edit = useActionEdit(actionId, (paint: Paint | null | undefined) => ({ paint: paint ?? null }), nestedPaintValue(ctx));
   return (
     <PaintInput
       subject={ctx.selectionKey}
-      value={nestedPaintValue(ctx)}
+      value={edit.shown}
       mixed={ctx.mixed}
       aria-label={ctx.pref.name}
       onInput={edit.onInput}

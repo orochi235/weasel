@@ -217,11 +217,18 @@ function PaintPanel({
     actions?.begin(actionId, params)?.end('commit');
   };
   const paint = (which: PaintSlot, next: Paint | null): void => run(which === 'fill' ? 'setFill' : 'setStroke', { paint: next });
+  const data = node?.data;
+  const stroke = data?.stroke;
+  const width = typeof stroke?.width === 'number' ? stroke.width : 1;
+  // The ribbon's taper only: a pencil stroke's widths are its pressure, one per sample.
+  const taperEntry = node?.id === RIBBON ? stroke?.vertexWidths?.[1] : undefined;
+  const taperSides = taperEntry === undefined ? undefined : vertexHalfWidths(taperEntry, width);
+  const taper = taperSides && taperSides.left + taperSides.right;
   // A slider drag runs its action from press to release, so it is one undo step however many moves it has.
-  const widthEdit = useActionEdit('setStrokeWidth', (w: number) => ({ width: w }));
-  const taperEdit = useActionEdit('setStrokeWidth', (t: number) => ({ vertexWidths: taperWidths(t) }));
+  const widthEdit = useActionEdit('setStrokeWidth', (w: number) => ({ width: w }), width);
+  const taperEdit = useActionEdit('setStrokeWidth', (t: number) => ({ vertexWidths: taperWidths(t) }), taper ?? 0);
 
-  if (!node) {
+  if (!node || !data) {
     return (
       <div className="ckd-panel">
         <div className="ckd-panel-title">Paint</div>
@@ -229,13 +236,6 @@ function PaintPanel({
       </div>
     );
   }
-
-  const data = node.data;
-  const width = typeof data.stroke?.width === 'number' ? data.stroke.width : 1;
-  // The ribbon's taper only: a pencil stroke's widths are its pressure, one per sample.
-  const taperEntry = node.id === RIBBON ? data.stroke?.vertexWidths?.[1] : undefined;
-  const taperSides = taperEntry === undefined ? undefined : vertexHalfWidths(taperEntry, width);
-  const taper = taperSides && taperSides.left + taperSides.right;
 
   return (
     <div className="ckd-panel">
@@ -282,9 +282,9 @@ function PaintPanel({
         )}
 
         {data.stroke && (
-          <Field orientation="row" className="ckd-field" label="Width" output={width.toFixed(0)}>
+          <Field orientation="row" className="ckd-field" label="Width" output={widthEdit.shown.toFixed(0)}>
             <InlineRange
-              value={width}
+              value={widthEdit.shown}
               min={1}
               max={20}
               step={1}
@@ -296,9 +296,9 @@ function PaintPanel({
         )}
 
         {taper !== undefined && (
-          <Field orientation="row" className="ckd-field" label="Taper" output={taper.toFixed(0)}>
+          <Field orientation="row" className="ckd-field" label="Taper" output={taperEdit.shown.toFixed(0)}>
             <InlineRange
-              value={taper}
+              value={taperEdit.shown}
               min={1}
               max={40}
               step={1}

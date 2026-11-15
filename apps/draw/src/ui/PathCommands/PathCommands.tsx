@@ -40,7 +40,7 @@ export interface SimplifySliderProps extends PathSliderProps {
 }
 
 export function SimplifySlider({ tolerance, onTolerance, className = s.slider }: SimplifySliderProps): ReactElement {
-  const simplify = useActionEdit('simplifyPath', ([t]: Thumb[]) => ({ tolerance: t.value }));
+  const simplify = useActionEdit('simplifyPath', ([t]: readonly Thumb[]) => ({ tolerance: t.value }), [{ value: tolerance }]);
   return (
     <Slider
       className={className}
@@ -48,7 +48,7 @@ export function SimplifySlider({ tolerance, onTolerance, className = s.slider }:
       min={TOLERANCE.min}
       max={TOLERANCE.max}
       step={TOLERANCE.step}
-      thumbs={[{ value: tolerance }]}
+      thumbs={simplify.shown}
       onInput={(next) => {
         onTolerance(next[0].value);
         simplify.onInput(next);
@@ -62,8 +62,8 @@ export function SimplifySlider({ tolerance, onTolerance, className = s.slider }:
 }
 
 export function OffsetSlider({ className = s.slider }: PathSliderProps): ReactElement {
-  const offset = useActionEdit('offsetPath', ([t]: Thumb[]) => ({ distance: t.value }));
   const [distance, setDistance] = useState(DISTANCE.default);
+  const offset = useActionEdit('offsetPath', ([t]: readonly Thumb[]) => ({ distance: t.value }), [{ value: distance }]);
   return (
     <Slider
       className={className}
@@ -71,7 +71,7 @@ export function OffsetSlider({ className = s.slider }: PathSliderProps): ReactEl
       min={DISTANCE.min}
       max={DISTANCE.max}
       step={DISTANCE.step}
-      thumbs={[{ value: distance }]}
+      thumbs={offset.shown}
       onInput={(next) => {
         setDistance(next[0].value);
         offset.onInput(next);

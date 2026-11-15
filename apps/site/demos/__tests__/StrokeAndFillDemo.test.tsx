@@ -95,6 +95,30 @@ describe('StrokeAndFillDemo', () => {
     expect(data('swatch').stroke!.width).toBe(7);
   });
 
+  it('follows a width drag on the slider, and writes the stroke once, at the release', () => {
+    renderWithIcons(<StrokeAndFillDemo />);
+    const width = screen.getByLabelText<HTMLInputElement>('Width');
+    act(() => { fireEvent.pointerDown(width); });
+    act(() => { fireEvent.input(width, { target: { value: '9' } }); });
+    act(() => { fireEvent.input(width, { target: { value: '12' } }); });
+    expect(width.value).toBe('12');
+    expect(data('swatch').stroke!.width).toBe(6);
+    act(() => { fireEvent.change(width, { target: { value: '12' } }); });
+    act(() => { fireEvent.pointerUp(width); });
+    expect(data('swatch').stroke!.width).toBe(12);
+  });
+
+  it('puts the slider back and writes nothing when Escape cancels a width drag', () => {
+    renderWithIcons(<StrokeAndFillDemo />);
+    const width = screen.getByLabelText<HTMLInputElement>('Width');
+    act(() => { fireEvent.pointerDown(width); });
+    act(() => { fireEvent.input(width, { target: { value: '15' } }); });
+    act(() => { fireEvent.keyDown(width, { key: 'Escape' }); });
+    act(() => { fireEvent.pointerUp(width); });
+    expect(width.value).toBe('6');
+    expect(data('swatch').stroke!.width).toBe(6);
+  });
+
   it('drives the polyline taper from the panel slider', () => {
     const { container } = renderWithIcons(<StrokeAndFillDemo />);
     const canvas = container.querySelector('canvas')!;
