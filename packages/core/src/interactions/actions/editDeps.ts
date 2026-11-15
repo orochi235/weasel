@@ -7,10 +7,7 @@ import type { Point2, WorldPoint } from '@weasel-js/routing';
  * Dep for `enterTextEditAction`. `<SceneCanvas>` answers it with its own
  * editor (its `textEditor` prop), or with the editor of a host's
  * `useSceneTextEdit` whose container holds the canvas. A host whose editor's
- * container does not hold the canvas publishes it from inside `<SceneCanvas>`.
- *
- * Wrap the return value of `useSceneTextEdit` to source this dep. The `isTextNode` predicate is optional — when absent the action fires
- * unconditionally (the binding spec acts as the gate).
+ * container does not hold the canvas publishes it from inside `<SceneCanvas>`:
  *
  * @example
  * ```ts
