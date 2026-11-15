@@ -308,7 +308,10 @@ Owner tags, after the priority (2026-10-26):
   placement in a `flushSync` of its own; it now commits a frame's tiles together, and
   `AnnotationOverlay.many.browser.test.tsx` mounts 100 (2026-11-12). iconfab's Review page
   (`~/src/iconfab/apps/lab/src/review/Review.tsx`, `TARGET_BATCH`) and its README's "Known problems" still work
-  around it, on labkit 1.19.0 from npm. Closes when a labkit release carries the fix and iconfab drops the batching.
+  around it, on labkit 1.19.0 from npm. The fix (7e27df1ba) landed after 1.19.1, so no release has it. iconfab's
+  branch `drop-annotation-batching` (worktree `~/src/iconfab-wt/drop-annotation-batching`, 91f8293) drops the
+  batching and typechecks; at release, bump its labkit pin, run `apps/lab/e2e/review.spec.ts`, and merge it
+  (2026-11-14). Closes when a labkit release carries the fix and iconfab drops the batching.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
