@@ -2810,6 +2810,7 @@
     "useScene": "function",
     "useSceneAdapter": "function",
     "useSceneTextEdit": "function",
+    "useScopedTools": "function",
     "useSelectTool": "function",
     "useSelectToolWith": "function",
     "useSelection": "function",
