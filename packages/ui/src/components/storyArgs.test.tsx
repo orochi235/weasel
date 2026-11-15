@@ -116,6 +116,12 @@ describe('a story drawing one stateful instance passes its args to it', { timeou
     draw(DomeContour as Story, { height: 77 });
     expect(document.querySelector('svg[height="77"]')).not.toBeNull();
   });
+
+  it('Slider Single, named by its meta args', async () => {
+    const mod = await import('./Slider/Slider.stories');
+    draw(mod.Single as Story, mod.default.args as object);
+    expect(screen.getByRole('slider', { name: 'slider' })).toBeInTheDocument();
+  });
 });
 
 describe('a story drawing one plain instance is args only', () => {
