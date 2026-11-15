@@ -2,6 +2,8 @@
 '@weasel-js/ui': patch
 ---
 
-A `ListEditor` entry's typed text is written to that entry when typing moves to another one without a blur, and the new entry's draft compares against its own text.
+A `ListEditor` entry keeps its typed text when typing moves to another entry without a blur.
+
+The text is written to the entry it was typed in, and the next entry's draft compares against that entry's own text.
 
 <!-- entry: fix -->
