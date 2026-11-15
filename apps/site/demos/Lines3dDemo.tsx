@@ -36,14 +36,6 @@ const GRID: Line3[] = Array.from({ length: 11 }, (_, i) => i - 5).flatMap((i) =>
   { runs: [{ points: [{ x: -5, y: 0, z: i }, { x: 5, y: 0, z: i }] }], color: [0.3, 0.25, 0.2, 1] as const, width: 1, head: null },
 ]);
 
-/**
- * Two headed polylines drawn on and drained in a loop under an orbit camera,
- * by kernel3d's line pass. The scene holds them as nodes with 3D poses; each
- * frame reads every node's world pose as the line's model and tweens its trim,
- * so the head rides the front of the window. The pass expands each line after
- * projection, so it and its head stay the same width in pixels at every
- * depth. The orbit tool and dolly are the kernel's own, on a `camera3d` dep.
- */
 export function Lines3dDemo() {
   const scene = useScene<Polyline, 'lines', Pose3>({ composition: POSE3_COMPOSITION, systemLayers: [{ id: 'lines' }], initial: LINES });
   const [camera, setCamera] = useState(() => createCamera({ distance: 9, pitch: 0.5, yaw: 0.5, target: { x: 0, y: 0.8, z: 0 } }));
@@ -80,7 +72,10 @@ export function Lines3dDemo() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     target.lines.draw(packLines(lines), cameraViewProjection(cameraRef.current, width / height), size.current, { depthTest: false });
   }, { target: glCanvas });
-  useEffect(() => { loop.request(); }, [loop]);
+  useEffect(() => {
+    loop.request();
+    return () => loop.cancel();
+  }, [loop]);
 
   const rig = useMemo(() => cameraRig({ get: () => cameraRef.current, set: setCamera, size: () => size.current }), [cameraRef]);
   const orbit = useOrbitTool();
