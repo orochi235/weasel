@@ -67,13 +67,8 @@ export interface OverlayPortalProps {
  *  would override the container {@link useOverlayPortal} provides. */
 export type WithoutPortalTarget<T> = Omit<T, 'UNSTABLE_portalContainer'>;
 
-/** The portal key of a React Aria overlay's props. */
-interface PortalTargeted {
-  UNSTABLE_portalContainer?: Element;
-}
-
 /** Where React Aria will portal an overlay with these props: their own target, else its portal provider's. */
-export function useReactAriaPortalTarget(props?: PortalTargeted): Element | null {
+export function useReactAriaPortalTarget(props?: { UNSTABLE_portalContainer?: Element }): Element | null {
   const { getContainer } = useUNSAFE_PortalContext();
   return props?.UNSTABLE_portalContainer ?? getContainer?.() ?? null;
 }
@@ -84,7 +79,7 @@ export function useReactAriaPortalTarget(props?: PortalTargeted): Element | null
  * from the primitive's own position, so one used bare still lands in the theme it was opened from. Render `anchor`
  * at that position and the overlay once `ready`, as for {@link useOverlayPortal}.
  */
-export function useOverlayTarget(props?: PortalTargeted): {
+export function useOverlayTarget(props?: { UNSTABLE_portalContainer?: Element }): {
   anchor: ReactElement | null;
   container: Element | null;
   ready: boolean;
@@ -96,7 +91,7 @@ export function useOverlayTarget(props?: PortalTargeted): {
 }
 
 /** A React Aria overlay's props with their portal target replaced by `target`, or as given when it is null. */
-export function withPortalTarget<T extends PortalTargeted>(props: T, target: Element | null): T {
+export function withPortalTarget<T extends { UNSTABLE_portalContainer?: Element }>(props: T, target: Element | null): T {
   return target ? { ...props, UNSTABLE_portalContainer: target } : props;
 }
 

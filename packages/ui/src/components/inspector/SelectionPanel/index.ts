@@ -4,6 +4,7 @@ export {
   type LeafRenderer,
   type LeafContext,
 } from './SelectionPanel';
+export type { PanelInherit } from '../../PrefsSource/types';
 export {
   MIXED,
   aggregateValue,

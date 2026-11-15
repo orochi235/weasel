@@ -60,13 +60,13 @@ export type SegmentedBarCommonProps = SegmentedGridProps & DisableableProps & {
   variant?: SegmentedVariant;
 };
 
-/** A drag across the segments sets every one it reaches to what the press set the pressed one to, each change
- *  reported as it happens. Escape or a lost pointer puts them back. `true` sweeps from any segment; a function
- *  decides per press. A segment that runs a drag of its own takes the press instead. */
-type Sweepable<V> = { sweep?: SegmentSweep<NoInfer<V>> };
-
-/** A mode that shows a value, so read-only holds it. */
-type Valued = ReadOnlyProps;
+/** What a {@link SegmentedBar} mode that sets several segments takes. */
+export interface SegmentedSweepProps<V> {
+  /** A drag across the segments sets every one it reaches to what the press set the pressed one to, each change
+   *  reported as it happens. Escape or a lost pointer puts them back. `true` sweeps from any segment; a function
+   *  decides per press. A segment that runs a drag of its own takes the press instead. */
+  sweep?: SegmentSweep<NoInfer<V>>;
+}
 
 /**
  * Props for {@link SegmentedBar}, discriminated on `mode`:
@@ -77,9 +77,9 @@ type Valued = ReadOnlyProps;
  * - `'momentary'`: buttons that fire and stay unselected: each item's `onAction`, else the bar's.
  */
 export type SegmentedBarProps<V extends string | number = string> =
-  | (SegmentedBarCommonProps & SegmentedSource<V, SegmentedBarItem<V>> & SingleSelection<V> & Valued)
-  | (SegmentedBarCommonProps & SegmentedSource<V, SegmentedBarItem<V>> & MultipleSelection<V> & Sweepable<V> & Valued)
-  | (SegmentedBarCommonProps & { mode: 'each'; items: readonly SegmentedEachItem<V>[] } & Sweepable<V> & Valued)
+  | (SegmentedBarCommonProps & SegmentedSource<V, SegmentedBarItem<V>> & SingleSelection<V> & ReadOnlyProps)
+  | (SegmentedBarCommonProps & SegmentedSource<V, SegmentedBarItem<V>> & MultipleSelection<V> & SegmentedSweepProps<V> & ReadOnlyProps)
+  | (SegmentedBarCommonProps & { mode: 'each'; items: readonly SegmentedEachItem<V>[] } & SegmentedSweepProps<V> & ReadOnlyProps)
   | (SegmentedBarCommonProps & SegmentedSource<V, SegmentedMomentaryItem<V>> & {
       mode: 'momentary';
       /** Called with the pressed segment's value, unless the item has an `onAction` of its own. */

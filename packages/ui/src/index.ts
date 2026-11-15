@@ -158,6 +158,7 @@ export type {
   ReorderGhost,
   ReorderDragHandlers,
   PressModifiers,
+  ReorderLine,
 } from './useReorderDragList';
 export { rovingTarget, useRovingTabIndex } from './useRovingTabIndex';
 export type { RovingDirection, RovingOrientation, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';

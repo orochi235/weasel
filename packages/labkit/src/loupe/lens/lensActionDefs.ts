@@ -12,6 +12,7 @@ import {
   createDeleteOp,
   createTransformOp,
   held,
+  type KeySpec,
   key,
   keymapContribution,
   type NodeId,
@@ -88,7 +89,8 @@ export const LENS_ACTION_IDS = {
   zoomOut: 'loupe.factor.out',
 } as const;
 
-type LensActionId = (typeof LENS_ACTION_IDS)[keyof typeof LENS_ACTION_IDS];
+/** A lens action's id: one of {@link LENS_ACTION_IDS}' values. */
+export type LensActionId = (typeof LENS_ACTION_IDS)[keyof typeof LENS_ACTION_IDS];
 
 /** The key, outside the Loupe keymap, that opens a Glass lens at the pointer, carries it while held, and closes it
  *  on a tap. */
@@ -121,7 +123,7 @@ export const LENS_KEYS: Partial<Record<LensActionId, string>> = {
 };
 
 /** Matched by code: Alt changes the character a key produces on macOS. */
-export const LOUPE_LEADER = { ...key('Alt+L'), code: 'KeyL' };
+export const LOUPE_LEADER: KeySpec & { code: string } = { ...key('Alt+L'), code: 'KeyL' };
 
 const DPR_CYCLE: readonly (readonly number[])[] = [[1], [2], [1, 2]];
 /** The least and greatest factor a lens zooms to. */

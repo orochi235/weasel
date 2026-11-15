@@ -1,7 +1,7 @@
 // A pref's `scopes`: the selectors its value is kept separately for, read
 // into what the scope functions take.
 
-import { PREF_ELSE, type OverridesOf, type PrefOverrides, type PrefScope } from './scope';
+import { PREF_ELSE, type PrefOverridesLookup, type PrefOverrides, type PrefScope } from './scope';
 import type { PrefLeaf } from './schema';
 
 /**
@@ -34,10 +34,10 @@ export function scopeSelectorsOf(pref: PrefLeaf): readonly string[] | undefined 
   return pref.scopes?.length ? pref.scopes.map((scope) => scope.selector) : undefined;
 }
 
-const lookups = new WeakMap<PrefLeaf, OverridesOf | undefined>();
+const lookups = new WeakMap<PrefLeaf, PrefOverridesLookup | undefined>();
 
 /** {@link prefOverridesOf} for one pref, as the scope functions take it: none where no selector is closed. */
-export function overridesOfPref(pref: PrefLeaf): OverridesOf | undefined {
+export function overridesOfPref(pref: PrefLeaf): PrefOverridesLookup | undefined {
   if (!lookups.has(pref)) {
     lookups.set(pref, pref.scopes?.some((scope) => scope.overrides !== undefined) ? (selector) => prefOverridesOf(pref, selector) : undefined);
   }

@@ -13,7 +13,7 @@ import { FrameView } from '../FrameView';
 import type { IndexBundle } from '../../story/indexBundle';
 import { IndexTrial } from '../IndexTrial';
 import { connectFrame, flush, installResizeObserver } from '../labHarness';
-import { type Ready, readyKey } from '../readyKey';
+import { type FrameReady, readyKey } from '../readyKey';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { StoryTrial } from '../StoryTrial';
 import { type ForgeComparison, resolveComparison } from './conditions';
@@ -175,7 +175,7 @@ describe('LiveCopies', () => {
   });
 
   it('gives a lens over an isolated story a frame of its own, under the comparison’s globals and args', async () => {
-    const ready: Ready = { type: 'ready', schema: describeSchema(f.schema({ label: f.string('A') })), layout: 'centered', viewport: null };
+    const ready: FrameReady = { type: 'ready', schema: describeSchema(f.schema({ label: f.string('A') })), layout: 'centered', viewport: null };
     const entry = { id: 'test-live--live', title: 'Test/Live', name: 'Live', exportName: 'Live', file: '/x.stories.tsx' };
     const trial = { config: { label: 'A' }, state: null, setConfig: () => {}, setState: () => {} } as unknown as RenderContext<unknown, unknown>;
     renderWithIcons(

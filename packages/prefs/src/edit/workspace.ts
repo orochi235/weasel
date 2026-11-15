@@ -3,7 +3,7 @@ import { isPrefLeaf, isPrefSection } from '../index';
 import { bundleTree } from './bundleTree';
 import type { SchemaRoot } from './schemaEdit';
 
-interface AssetBase {
+export interface AssetBase {
   id: string;
   label: string;
   root: SchemaRoot;

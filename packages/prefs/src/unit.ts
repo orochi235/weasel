@@ -4,7 +4,7 @@
 import { decimal, decimalPlaces, formatUnit, unitScale, unitSymbol, type Display, type Unit, type UnitEntry, type UnitScale, type UnitSystem, type UnitTable } from '@weasel-js/quantity';
 
 /** What both forms of a unit say about the text around the number. */
-interface PrefUnitText {
+export interface PrefUnitText {
   /** The unit shown after the input, as the unit catalog writes it: `'deg'` and `'°'` both show `°`,
    *  and text the catalog does not know shows as given. */
   suffix?: string;

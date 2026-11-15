@@ -105,10 +105,13 @@ export type {
   CaptureSource,
   FracPoint,
   FracRect,
+  MarkOrder,
+  MarkOrderStep,
   MarkPose,
   MarkScene,
   PaintedMark,
   SerializedAnnotations,
+  SerializedMarkHistory,
   WorldRect,
 } from './annotations';
 export {
@@ -319,6 +322,7 @@ export {
   LabStoreProvider,
   TrialIdContext,
   TrialIdProvider,
+  type TrialWriters,
   useLabStore,
   useTrialId,
 } from './state/context';
@@ -326,6 +330,7 @@ export { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './state
 export { indexedDbAdapter } from './state/labStorage';
 export { type OpenedLabStore, type OpenLabStoreOptions, openLabStore } from './state/openLabStore';
 export { Persistence, type PersistenceProps } from './state/Persistence';
+export type { SavedTrialUndo } from './state/savedUndo';
 export type {
   CreateLabStoreOptions,
   LabDensity,

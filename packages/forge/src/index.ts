@@ -5,6 +5,7 @@ export type {
   ArgsOf,
   CsfDecorator,
   CsfPlayContext,
+  CsfShared,
   CsfStep,
   CsfStoryContext,
   Meta,
@@ -36,7 +37,7 @@ export type {
   Layout as StoryLayout,
   Viewport as StoryViewport,
 } from './protocol/messages';
-export { FOLLOW_APP, type GlobalDeclaration, type GlobalDeclarations, type LabChrome } from './shell/globals';
+export { FOLLOW_APP, type GlobalDeclaration, type GlobalDeclarations, type GlobalOption, type LabChrome } from './shell/globals';
 export { meta, story } from './story/define';
 export type { Span as TimelineSpan, SpanOverride, TimelineSpec } from './timeline/types';
 export { type StoryTimeline, usePlayhead, useTimeline } from './timeline/context';

@@ -12,7 +12,7 @@ import type { IndexEntry, LoadedStory } from '../story/types';
 import { type AnswerBook, createAnswerBook } from './answers';
 import { documentInstrument, type Loaded, pendingInstrument } from './documentInstrument';
 import type { GlobalDeclarations } from './globals';
-import { type Ready, readyKey } from './readyKey';
+import { type FrameReady, readyKey } from './readyKey';
 import type { StoryHosts } from './storyHosts';
 import { storyInstrument } from './storyInstrument';
 
@@ -24,7 +24,7 @@ export interface StoryRegistry {
    *  two apart. */
   isReady: (id: string) => boolean;
   /** Called by FrameView. Replaces the story's instrument only when `ready.schema`, layout or viewport differ from what it holds. */
-  onReady: (entry: IndexEntry, ready: Ready) => void;
+  onReady: (entry: IndexEntry, ready: FrameReady) => void;
   /** Drops what was loaded from `file` and loads it again for every entry that had it, as after an edit. */
   reload: (file: string) => void;
 }
@@ -48,7 +48,7 @@ export interface StoryRegistryOptions {
 
 interface Built {
   entryKey: string;
-  ready: Ready | undefined;
+  ready: FrameReady | undefined;
   loaded: Loaded | undefined;
   fault: Error | undefined;
   frameUrl: string;
@@ -98,7 +98,7 @@ function trackedImports(importOf: (file: string) => Promise<Record<string, unkno
  */
 export function useStoryRegistry(index: readonly IndexEntry[], options: StoryRegistryOptions): StoryRegistry {
   const { frameUrl, globals = NO_GLOBALS, importers, setup = NO_SETUP, libraries = TITLE_LIBRARIES, load = loadStories, hosts } = options;
-  const [readies, setReadies] = useState<ReadonlyMap<string, Ready>>(() => new Map());
+  const [readies, setReadies] = useState<ReadonlyMap<string, FrameReady>>(() => new Map());
   const [loaded, setLoaded] = useState<ReadonlyMap<string, Loaded>>(() => new Map());
   const [faults, setFaults] = useState<ReadonlyMap<string, Error>>(() => new Map());
   // Per file, how many reloads it has had: a pending face keyed by it asks again after one.
@@ -107,7 +107,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
   // the trial's config changes, and replacing the instrument is what refills it.
   const [revisions, setRevisions] = useState<ReadonlyMap<string, number>>(() => new Map());
 
-  const onReady = useCallback((entry: IndexEntry, ready: Ready) => {
+  const onReady = useCallback((entry: IndexEntry, ready: FrameReady) => {
     setReadies((prev) => {
       const held = prev.get(entry.id);
       if (held && readyKey(held) === readyKey(ready)) return prev;

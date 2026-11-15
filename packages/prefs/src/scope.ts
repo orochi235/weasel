@@ -33,7 +33,7 @@ export interface PrefScope {
 export type PrefOverrides = readonly string[] | Readonly<Record<string, unknown>>;
 
 /** A pref's override list for each selector, where it gives one. */
-export type OverridesOf = (selector: string) => PrefOverrides | undefined;
+export type PrefOverridesLookup = (selector: string) => PrefOverrides | undefined;
 
 const named = (overrides: PrefOverrides): overrides is readonly string[] => Array.isArray(overrides);
 
@@ -82,7 +82,7 @@ export function selectionWeights(selection: PrefSelection): PrefWeights {
 }
 
 /** Whether `option` of the scope's selector is one a closed list leaves out, which shares the shared value. */
-const shares = (scope: PrefScope, option: string, overridesOf: OverridesOf | undefined): boolean => {
+const shares = (scope: PrefScope, option: string, overridesOf: PrefOverridesLookup | undefined): boolean => {
   const overrides = overridesOf?.(scope.$by);
   return overrides !== undefined && !overrideOptions(overrides).includes(option);
 };
@@ -94,7 +94,7 @@ const shares = (scope: PrefScope, option: string, overridesOf: OverridesOf | und
  * value. No option named reads the shared value too. Whatever is held
  * nothing for reads as `absent`.
  */
-export function scopeOptionValue(scope: PrefScope, option: string | undefined, absent: unknown, overridesOf?: OverridesOf): unknown {
+export function scopeOptionValue(scope: PrefScope, option: string | undefined, absent: unknown, overridesOf?: PrefOverridesLookup): unknown {
   if (option === undefined || shares(scope, option, overridesOf)) return restOr(scope, absent);
   if (Object.hasOwn(scope.$in, option)) return scope.$in[option];
   const overrides = overridesOf?.(scope.$by);
@@ -108,7 +108,7 @@ export function scopeOptionValue(scope: PrefScope, option: string | undefined, a
  * leaves out reads the shared value, or nothing where there is none. Members come in the order `weights`
  * lists each selector's options.
  */
-export function weighScope(stored: unknown, weights: PrefWeights, absent: unknown, overridesOf?: OverridesOf): PrefWeighted[] {
+export function weighScope(stored: unknown, weights: PrefWeights, absent: unknown, overridesOf?: PrefOverridesLookup): PrefWeighted[] {
   const out: PrefWeighted[] = [];
   const walk = (value: unknown, weight: number): void => {
     if (!isPrefScope(value)) {
@@ -129,14 +129,14 @@ export function weighScope(stored: unknown, weights: PrefWeights, absent: unknow
 }
 
 /** The one value `selection` names. A selector it leaves out reads the shared value; an option the scope holds nothing for reads as `absent`. */
-export function memberAt(stored: unknown, selection: PrefSelection, absent: unknown, overridesOf?: OverridesOf): unknown {
+export function memberAt(stored: unknown, selection: PrefSelection, absent: unknown, overridesOf?: PrefOverridesLookup): unknown {
   let value = stored;
   while (isPrefScope(value)) value = scopeOptionValue(value, selection[value.$by], absent, overridesOf);
   return value;
 }
 
 /** `stored` without the values of options a closed list leaves out, which no read reaches, at any depth. The same value when there are none. */
-export function dropUnlisted(stored: unknown, overridesOf: OverridesOf | undefined): unknown {
+export function dropUnlisted(stored: unknown, overridesOf: PrefOverridesLookup | undefined): unknown {
   if (!overridesOf || !isPrefScope(stored)) return stored;
   const overrides = overridesOf(stored.$by);
   const list = overrides && overrideOptions(overrides);
@@ -157,7 +157,7 @@ export function dropUnlisted(stored: unknown, overridesOf: OverridesOf | undefin
  */
 export function writeDeclared(
   stored: unknown, selectors: readonly string[], under: PrefSelection, now: PrefSelection, next: unknown, absent: unknown,
-  overridesOf?: OverridesOf, held = true,
+  overridesOf?: PrefOverridesLookup, held = true,
 ): unknown {
   const [by, ...inner] = selectors;
   if (by === undefined) return next;
@@ -219,7 +219,7 @@ export function repairScope(
   allowed: readonly string[],
   optionsOf: (path: string) => readonly string[] | null | undefined,
   repairMember: (value: unknown) => unknown,
-  overridesOf?: OverridesOf,
+  overridesOf?: PrefOverridesLookup,
 ): unknown {
   const BAD = Symbol('bad');
   const walk = (value: unknown, met: readonly string[]): unknown => {
