@@ -6,6 +6,7 @@ import { icon } from '../../icons.gen';
 import { Icon } from '../Icon/Icon';
 import type { LayerListItem, LayerListProps } from './layerListProps';
 import s from './LayerList.module.css';
+import { soloLayer } from './layerSolo';
 import { LockToggle, RowLabel } from './RowParts';
 
 /** Which row, if any, has its rename field open, and how to open or close one. */
@@ -62,7 +63,7 @@ function Controls({ item, props }: { item: LayerListItem; props: LayerListProps 
         (item.fixed || item.hideable === false ? (
           <span className={s.check} />
         ) : (
-          <VisibilityCheck item={item} onChange={onVisibilityChange} />
+          <VisibilityCheck item={item} items={props.items} onChange={onVisibilityChange} />
         ))}
       <LockToggle item={item} props={props} />
       {onRemove && !item.fixed && !item.locked && item.removable !== false && (
@@ -77,7 +78,11 @@ function Controls({ item, props }: { item: LayerListItem; props: LayerListProps 
   );
 }
 
-function VisibilityCheck({ item, onChange }: { item: LayerListItem; onChange: (id: string, visible: boolean) => void }) {
+function VisibilityCheck({ item, items, onChange }: {
+  item: LayerListItem;
+  items: readonly LayerListItem[];
+  onChange: NonNullable<LayerListProps['onVisibilityChange']>;
+}) {
   const hold = useNativeHold({});
   return hold.wrap(
     <input
@@ -85,7 +90,12 @@ function VisibilityCheck({ item, onChange }: { item: LayerListItem; onChange: (i
       type="checkbox"
       checked={item.visible !== false}
       {...hold.attrs}
-      onChange={(e) => { if (!hold.refuses) onChange(item.id, e.target.checked); }}
+      onChange={(e) => {
+        if (hold.refuses) return;
+        // A checkbox's change comes from its click, so the event carries the click's modifiers.
+        const alt = (e.nativeEvent as MouseEvent).altKey === true;
+        onChange(alt ? soloLayer(items, item.id, 'visible') : { [item.id]: e.target.checked });
+      }}
       aria-label={`Show ${item.label}`}
     />,
   );

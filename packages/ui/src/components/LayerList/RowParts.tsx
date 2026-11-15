@@ -3,6 +3,7 @@ import { imeKey } from '@weasel-js/ui-input';
 import { useControlAccess } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
 import type { LayerListItem, LayerListProps } from './layerListProps';
+import { soloLayer } from './layerSolo';
 import s from './LayerList.module.css';
 import { icon } from '../../icons.gen';
 import { Icon } from '../Icon/Icon';
@@ -90,7 +91,9 @@ export function LockToggle({ item, props }: { item: LayerListItem; props: LayerL
       aria-label={`Lock ${item.label}`}
       aria-pressed={locked}
       {...hold.attrs}
-      onClick={() => { if (!hold.refuses) onLockChange(item.id, !locked); }}
+      onClick={(e) => {
+        if (!hold.refuses) onLockChange(e.altKey ? soloLayer(props.items, item.id, 'locked') : { [item.id]: !locked });
+      }}
     >
       <Icon name={icon(locked ? 'lock' : 'unlock')} size={12} />
     </button>,

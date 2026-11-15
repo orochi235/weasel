@@ -59,10 +59,12 @@ export interface LayerListProps extends HoldProps {
    *  one, and dragging a selected row drags the whole selection. */
   selectedIds?: readonly string[];
   onSelectionChange?: (ids: string[]) => void;
-  /** Adds a visibility checkbox to every layer that is not fixed. */
-  onVisibilityChange?: (id: string, visible: boolean) => void;
-  /** Adds a lock toggle to every layer that is not fixed. */
-  onLockChange?: (id: string, locked: boolean) => void;
+  /** Adds a visibility checkbox to every layer that is not fixed. Receives each layer whose visibility changes:
+   *  one for a click, several for an Alt-click, which shows that layer alone (see `soloLayer`). */
+  onVisibilityChange?: (changes: Readonly<Record<string, boolean>>) => void;
+  /** Adds a lock toggle to every layer that is not fixed. Receives each layer whose lock changes: one for a
+   *  click, several for an Alt-click, which locks that layer alone. */
+  onLockChange?: (changes: Readonly<Record<string, boolean>>) => void;
   /** Lets a row be renamed: a double-click on its label, or F2 on the focused
    *  row, opens a field; Enter or leaving it reports the new name, Escape drops it. */
   onRename?: (id: string, label: string) => void;

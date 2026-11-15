@@ -29,6 +29,7 @@ export type { NudgeKey } from './reorder';
 export { EDGE_SCROLL_MARGIN, edgePush, edgeScroll } from './edgeScroll';
 export { HEADING_DRIFT, headingOf, headingCost, nearestToward } from './spatial';
 export type { Heading } from './spatial';
+export { soloChanges } from './solo';
 export { treeKey } from './tree';
 export type { TreeShape, TreeKeyResult } from './tree';
 export { timerScheduler } from './scheduler';

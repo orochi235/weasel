@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode, Ref } from 'react';
+import { type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type Ref, useRef } from 'react';
 import { Icon } from '../Icon/Icon';
 import { icon } from '../../icons.gen';
 import f from '../Field/Field.module.css';
@@ -23,6 +23,8 @@ interface EffectCardProps {
   onToggleOpen(): void;
   onKeyDown(e: KeyboardEvent): void;
   onPatch(next: Partial<EffectListItem>): void;
+  /** An Alt-click on the card's switch: run this card alone. */
+  onSolo(): void;
   onDuplicate: (() => void) | undefined;
   onRemove: (() => void) | undefined;
   children: ReactNode;
@@ -30,8 +32,10 @@ interface EffectCardProps {
 
 /** One card of a `EffectList`: its header row, and its body when it is open. */
 export function EffectCard({
-  cardRef, item, index, kind, kinds, open, color, dragging, drop, onGripDown, onToggleOpen, onKeyDown, onPatch, onDuplicate, onRemove, children,
+  cardRef, item, index, kind, kinds, open, color, dragging, drop, onGripDown, onToggleOpen, onKeyDown, onPatch, onSolo, onDuplicate, onRemove, children,
 }: EffectCardProps) {
+  // React Aria's switch reports only its new value; the click that changed it still carries the modifiers.
+  const alt = useRef(false);
   return (
     <div
       ref={cardRef}
@@ -44,7 +48,7 @@ export function EffectCard({
       data-drop-after={drop === 'after' || undefined}
       onKeyDown={onKeyDown}
     >
-      <div className={s.head}>
+      <div className={s.head} onClickCapture={(e) => { alt.current = e.altKey; }}>
         <ReorderHandle
           className={s.number}
           label={item.name}
@@ -53,7 +57,7 @@ export function EffectCard({
           onPointerDown={onGripDown}
           onClick={onToggleOpen}
         />
-        <Switch className={s.switch} isSelected={item.on} onChange={(on) => onPatch({ on })} aria-label={`Run ${item.name}`} />
+        <Switch className={s.switch} isSelected={item.on} onChange={(on) => (alt.current ? onSolo() : onPatch({ on }))} aria-label={`Run ${item.name}`} />
         <span className={s.kind}>
           <KindLabel kind={kind} fallback={item.kind} />
           {kinds.map((k, i) => (

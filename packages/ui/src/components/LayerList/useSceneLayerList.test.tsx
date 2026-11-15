@@ -80,8 +80,8 @@ describe('useSceneLayerList', () => {
 describe('useSceneLayerList — hide, lock, rename', () => {
   it('hides and locks any node from its row, each one undo step', () => {
     const { hook, scene } = setup();
-    hook.result.current.onVisibilityChange!('a', false);
-    hook.result.current.onLockChange!('g', true);
+    hook.result.current.onVisibilityChange!({ a: false });
+    hook.result.current.onLockChange!({ g: true });
     hook.rerender();
     const items = hook.result.current.items;
     expect(items.find((it) => it.id === 'a')).toMatchObject({ visible: false });
@@ -151,13 +151,22 @@ describe('useSceneLayerList — annotation layers', () => {
     expect(selection.set).not.toHaveBeenCalled();
   });
 
+  it('applies an Alt-click\'s changes as one undo step', () => {
+    const { scene, selection } = setup();
+    const hook = renderHook(() => useSceneLayerList({ scene, selection, itemFor: (n) => ({ label: n.data.name }) }));
+    hook.result.current.onVisibilityChange({ a: false, b: false });
+    expect(scene.isHidden(asNodeId('a')) && scene.isHidden(asNodeId('b'))).toBe(true);
+    scene.undo();
+    expect(scene.isHidden(asNodeId('a')) || scene.isHidden(asNodeId('b'))).toBe(false);
+  });
+
   it('locks the annotation layer from its row, and hides one note from its own', () => {
     const { hook, scene } = annotated({ picked: null, pick: vi.fn() });
-    hook.result.current.onLockChange!(row, true);
+    hook.result.current.onLockChange!({ [row]: true });
     expect(scene.layers.find((l) => l.id === 'notes')?.locked).toBe(true);
     hook.rerender();
     expect(hook.result.current.items[0]).toMatchObject({ locked: true });
-    hook.result.current.onVisibilityChange!('n1', false);
+    hook.result.current.onVisibilityChange!({ n1: false });
     expect(scene.get(asNodeId('n1'))!.hidden).toBe(true);
     expect(scene.layers.find((l) => l.id === 'notes')?.visible).toBe(true);
   });
@@ -193,7 +202,7 @@ describe('useSceneLayerList — annotation layers', () => {
   it('hides the annotation layer from its row, and removes a node from its row', () => {
     const pick = vi.fn();
     const { hook, scene } = annotated({ picked: 'n1', pick });
-    hook.result.current.onVisibilityChange!(row, false);
+    hook.result.current.onVisibilityChange!({ [row]: false });
     expect(scene.layers.find((l) => l.id === 'notes')?.visible).toBe(false);
     hook.result.current.onRemove!('n1');
     expect(scene.get(asNodeId('n1'))).toBeUndefined();
