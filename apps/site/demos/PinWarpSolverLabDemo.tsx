@@ -58,7 +58,7 @@ function SolverTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const pin = usePinWarpTool();
   const [readout] = useState(createReadout);
   const layers = useMemo(() => {
-    const built = createMeshLayers({ scene: scene as never, nodeId: SHAPE_ID, display: () => ({ step, show: mesh }), onModel: readout.set });
+    const built = createMeshLayers({ scene, nodeId: asNodeId(SHAPE_ID), display: () => ({ step, show: mesh }), onModel: readout.set });
     return { mesh: { layer: built.mesh, before: 'scene' }, backward: { layer: built.backward, after: 'scene' } };
   }, [scene, step, mesh, readout]);
   return (

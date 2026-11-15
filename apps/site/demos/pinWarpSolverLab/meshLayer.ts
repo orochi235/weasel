@@ -5,7 +5,8 @@
  * drag's preview off their draw envelope.
  */
 import {
-  type CanvasViewHelpers, type EditableShape, flattenPreviews, type RenderLayer, resolvePreviews, type Scene, type View,
+  type CanvasViewHelpers, type EditableShape, flattenPreviews, type NodeId, type RectPose, type RenderLayer, resolvePreviews, type Scene,
+  type View,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { ellipsePath, PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
@@ -111,8 +112,8 @@ export function backwardCommands(model: MeshModel, px: number): DrawCommand[] {
 }
 
 export interface MeshLayerSource {
-  scene: Scene<unknown, string, unknown>;
-  nodeId: string;
+  scene: Scene<unknown, 'default', RectPose>;
+  nodeId: NodeId;
   display(): MeshDisplay;
   /** Told the model each paint draws, the drag's included. */
   onModel?(model: MeshModel | null): void;
@@ -123,7 +124,7 @@ function liveNode(src: MeshLayerSource, envelope: unknown): EditableShape | null
   const sources = (envelope as Partial<CanvasViewHelpers<unknown>> | null)?.getPreviewSources?.() ?? [];
   const preview = flattenPreviews(resolvePreviews(sources, src.scene)).find((p) => p.id === src.nodeId);
   if (preview) return { ...preview.node, pose: preview.pose, data: preview.data } as EditableShape;
-  return (src.scene.get(src.nodeId as never) as EditableShape | undefined) ?? null;
+  return (src.scene.get(src.nodeId) as EditableShape | undefined) ?? null;
 }
 
 /**
