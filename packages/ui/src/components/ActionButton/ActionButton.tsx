@@ -24,7 +24,7 @@ export type ActionButtonPopup =
 /** The `<button>` attributes an {@link ActionButton} writes itself: its name from `label`, its state from `active`,
  *  its hold from `disabled` and `missing`. It is never a form's submitter, and `form` is where it is drawn. A `popup`
  *  writes `aria-haspopup` and `aria-expanded` over passed ones. */
-type ActionButtonOwnedAttribute =
+export type ActionButtonOwnedAttribute =
   | 'aria-label' | 'aria-pressed' | 'aria-current' | 'aria-disabled'
   | 'disabled' | 'type' | 'form' | 'children' | 'draggable';
 

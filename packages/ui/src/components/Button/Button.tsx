@@ -20,7 +20,7 @@ export type ButtonVariant = 'solid' | 'ghost' | 'link';
 
 /** The `<button>` attributes {@link Button} writes itself, from `pressed`, `loading`, `disabled`, and its
  *  accessible name. */
-type ButtonOwnedAttribute = 'aria-pressed' | 'aria-busy' | 'aria-disabled' | 'aria-label' | 'disabled' | 'children';
+export type ButtonOwnedAttribute = 'aria-pressed' | 'aria-busy' | 'aria-disabled' | 'aria-label' | 'disabled' | 'children';
 
 /** The native `<button>` attributes and handlers a {@link Button} passes through: every one but those it writes
  *  itself. A handler runs as given; `className` joins the button's own and `style` merges over its appearance. */
