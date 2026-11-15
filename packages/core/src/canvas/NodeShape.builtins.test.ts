@@ -11,8 +11,8 @@ describe('built-in shape painters', () => {
     const dispose = shapes.registerNodeShape(mine);
     const order = shapes.getNodeShapes();
     expect(order.length).toBeGreaterThan(1);
-    expect(order[order.length - 2]).toBe(mine);
-    expect(order[order.length - 1]!.id).toBe('kit:rect-fallback');
+    expect(order[order.length - 3]).toBe(mine);
+    expect(order.slice(-2).map((e) => e.id)).toEqual(['kit:path-pose', 'kit:rect-fallback']);
     dispose();
   }, COLD_IMPORT_MS);
 

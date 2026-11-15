@@ -3,12 +3,12 @@ import {
   asNodeId,
   polygonFromPoints,
   SceneCanvas,
+  solid,
   useScene,
   useSelection, movePreset, pickPreset, transformPreset,
 } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
-import type { Path } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { Fill, Path, Stroke } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
 
 const W = 400, H = 300;
@@ -25,13 +25,13 @@ const INITIAL_PATH: Path = polygonFromPoints([
 
 export function PathPoseDemo() {
   // The trivial `useScene({ items })` form makes each item its own pose, and a Path has no id.
-  const scene = useScene<{ id: string }, 'default', Path>({ composition: IDENTITY_POSE_COMPOSITION,
+  const scene = useScene<{ fill: Fill; stroke: Stroke }, 'default', Path>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [{
       kind: 'mark',
       layer: 'default',
       pose: INITIAL_PATH,
-      data: { id: ID },
+      data: { fill: { paint: solid('#7fb069') }, stroke: { paint: solid('#1a130d'), width: 1.5 } },
       id: asNodeId(ID),
     }],
   });
@@ -45,16 +45,6 @@ export function PathPoseDemo() {
         scene={scene}
         selection={selection}
         snap={SNAP}
-        layers={{
-          scene: {
-            drawOne: (_o, p): DrawCommand[] => [{
-              kind: 'path',
-              path: p,
-              fill: { paint: { color: '#7fb069' } },
-              stroke: { paint: { color: '#1a130d' }, width: 1.5 },
-            }],
-          },
-        }}
       />
     </DemoStage>
   );

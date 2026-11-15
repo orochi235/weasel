@@ -9,17 +9,17 @@ import { IDENTITY_POSE_COMPOSITION,
   polygonFromPoints,
   useScene,
   asNodeId,
+  solid,
   textCommandFromRuns,
   translatePath, movePreset, pickPreset, transformPreset,
 } from '@weasel-js/core';
 import { joinPaths } from '@weasel-js/geom';
 import styles from './CompoundPathsDemo.module.css';
-import type { Path } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { Fill, Path, Stroke } from '@weasel-js/core';
 import { DemoStage } from './DemoStage';
 
-interface Shape { id: string; pose: Path; fill: string; stroke?: string; label?: string }
-interface ShapeData { fill: string; stroke?: string; label?: string }
+interface Shape { id: string; pose: Path; fill: string; stroke: string }
+interface ShapeData { fill: Fill; stroke: Stroke }
 
 const W = 720, H = 480, HANDLE = DEFAULT_HANDLE_SIZE;
 
@@ -142,7 +142,7 @@ export function CompoundPathsDemo() {
       kind: 'mark',
       layer: 'default',
       pose: s.pose,
-      data: { fill: s.fill, stroke: s.stroke, label: s.label },
+      data: { fill: { paint: solid(s.fill) }, stroke: { paint: solid(s.stroke), width: 1.5 } },
       id: asNodeId(s.id),
     })),
   });
@@ -168,14 +168,6 @@ export function CompoundPathsDemo() {
             selectionOptions={{ mode: 'multi' }}
             selectTool={{ handleHitRadius: HANDLE }}
             layers={{
-              scene: {
-                drawOne: (node, p): DrawCommand[] => [{
-                  kind: 'path',
-                  path: p,
-                  fill: { paint: { color: node.data.fill } },
-                  stroke: { paint: { color: node.data.stroke ?? '#1a130d' }, width: 1.5 },
-                }],
-              },
               selectionOverlay: { handles: { size: HANDLE }, outline: { follow: 'shape' } },
               signature: {
                 layer: {

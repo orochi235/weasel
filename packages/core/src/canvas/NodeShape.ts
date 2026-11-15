@@ -5,9 +5,10 @@
  *
  * The first entry whose `matches` predicate returns true paints the node: `'high'` entries
  * first, then the built-ins, then `'normal'` ones, in registration order within a tier, and
- * last `kit:rect-fallback`, which takes any rect-posed node nothing else claimed. Every
- * built-in but `kit:derived` additionally requires a rect-shaped pose — a scene whose poses are
- * some other shape matches none of them, and paints through a consumer painter or not at all.
+ * last `kit:path-pose` and `kit:rect-fallback`, which take any `Path`-posed or rect-posed node
+ * nothing else claimed. Every other built-in but `kit:derived` requires a rect-shaped pose — a
+ * scene whose poses are some other shape matches none of them, and paints through a consumer
+ * painter or not at all.
  *
  * Every lookup asks a registry (`nodeShapeRegistry.ts`): the scene's own, `nodeShapesOf(scene)`,
  * where the caller draws or picks for a scene, and `defaultNodeShapes` where it passes none.
@@ -30,6 +31,7 @@ import { MEASURE_PAINTER } from './nodeShapes/measurePainter';
 import { derivesPath } from './nodeShapes/memo';
 import { PATH_PAINTER } from './nodeShapes/pathPainter';
 import { paintsPose } from './nodeShapes/poseBox';
+import { PATH_POSE_PAINTER } from './nodeShapes/pathPosePainter';
 import { RECT_FALLBACK_PAINTER } from './nodeShapes/rectFallbackPainter';
 import { SHAPE_PAINTER } from './nodeShapes/shapePainter';
 import { TEXT_PAINTER } from './nodeShapes/textPainter';
@@ -282,5 +284,6 @@ setBuiltInShapes(() => {
   addBuiltInShape(PATH_PAINTER as NodeShapeEntry, 'builtin');
   addBuiltInShape(SHAPE_PAINTER as NodeShapeEntry, 'builtin');
   addBuiltInShape(IMAGE_PAINTER as NodeShapeEntry, 'builtin');
+  addBuiltInShape(PATH_POSE_PAINTER as NodeShapeEntry, 'fallback');
   addBuiltInShape(RECT_FALLBACK_PAINTER as NodeShapeEntry, 'fallback');
 });

@@ -50,9 +50,9 @@ beforeEach(() => {
 });
 
 describe('shape painter registry', () => {
-  it('ships seven built-ins in evaluation order: text → measure → derived → path → shape → image → rect-fallback', () => {
+  it('ships eight built-ins in evaluation order: text → measure → derived → path → shape → image → path-pose → rect-fallback', () => {
     const ids = getNodeShapes().map((p) => p.id);
-    expect(ids).toEqual(['kit:text', 'kit:measure', 'kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'kit:rect-fallback']);
+    expect(ids).toEqual(['kit:text', 'kit:measure', 'kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'kit:path-pose', 'kit:rect-fallback']);
   });
 
   it('findNodeShape returns the first matching painter', () => {
@@ -70,7 +70,7 @@ describe('shape painter registry', () => {
     };
     registerNodeShape(custom);
     const ids = getNodeShapes().map((p) => p.id);
-    expect(ids).toEqual(['kit:text', 'kit:measure', 'kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'app:heart', 'kit:rect-fallback']);
+    expect(ids).toEqual(['kit:text', 'kit:measure', 'kit:derived', 'kit:path', 'kit:shape', 'kit:image', 'app:heart', 'kit:path-pose', 'kit:rect-fallback']);
     // The fallback matches every rect-posed node, so a painter behind it would never paint one.
     expect(findNodeShape(node({ heart: 'x' }))?.id).toBe('app:heart');
     // A built-in that matches still wins over a normal-priority painter.
