@@ -2,6 +2,8 @@ import { createRasterSession, rasterToPng, warmRender } from '@weasel-js/core';
 import { PAGE_GLOBAL, type PageApi, type PageRequest, type PageResult } from './protocol';
 import { pageRenderArgs, type PageSceneOptions } from './pageLoad';
 
+export type { PageSceneOptions } from './pageLoad';
+
 /** How a headless page reads and draws the scenes the host sends. Everything here is code, so it
  *  is the page script's to give: a request crosses as JSON. */
 export interface HeadlessPageOptions {
