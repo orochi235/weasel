@@ -247,8 +247,8 @@ line once per shard. A run whose tree another sync moved before it finished ends
 the tree changed during the run (…); this run is void`, after the summary: none of its failures are real. Sharding is not a way to make a run faster: each of its slices starts vitest
 afresh, and on 2026-10-20, with only teitou free, it took 11.4 min and 132 core-minutes where an
 unsharded run took 4.5 and 35. A run starts the `browser` project beside the rest whenever the node's idle
-cores, less 3 kept for it, leave jsdom at least 4 workers (`scripts/vitest-overlap.mjs` prints its
-reading); that saved 16–23% on 10-, 14- and 18-core nodes on 2026-10-21. The reserve came from
+cores, less 3 kept for it, leave jsdom at least 4 workers and its GPU is at most 30% busy
+(`scripts/vitest-overlap.mjs` prints its reading); that saved 16–23% on 10-, 14- and 18-core nodes on 2026-10-21. The reserve came from
 `scripts/bench-overlap-reserve.mjs`, whose runs are in `scripts/bench-overlap-reserve.runs.jsonl`. On
 10 cores or more each of the browser project's tabs gets a Chromium of its own, 12 beside the rest
 and 18 alone (`scripts/lib/browser-shape.mjs`, 2026-11-07): 18 beside the rest took CPU from the jsdom
@@ -267,7 +267,7 @@ What a branch run selects, the gate, `test:fleet:postbuild`, the draw view check
 
 Every test runs under the root vitest config's projects: `npx vitest run --project=core <file>`
 from the root, or `npm test -- <file>` inside a package, which runs its files from the root under
-whichever projects own them (`scripts/package-test.mjs`). `npm test` at the root runs every project.
+whichever projects own them (`scripts/package-test.mjs`). `npm test` at the root runs every project but `gate`.
 `packages/text` and `packages/bidi` run under the `weasel-ui` project, not `core`.
 `npm run check:test-projects` prints which project owns each directory, and fails on a test file no
 project collects.
