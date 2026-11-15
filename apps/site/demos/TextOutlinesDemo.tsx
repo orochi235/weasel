@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { SceneCanvas, useScene, defaultDrawOne, textCommand, solid } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, useScene, textCommand, solid } from '@weasel-js/core';
 import {
   registerCanvasFont, registerFontOutlines, unregisterFontOutlines, outlineStatus,
 } from '@weasel-js/font';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
-import type { SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle, Fill } from '@weasel-js/core';
+import type { RectPose, SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle, Fill } from '@weasel-js/core';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Field } from '@weasel-js/ui/components/Field';
@@ -37,7 +37,6 @@ function loadDemoFace(): Promise<void> {
 
 interface NodeData { text: string; style: TextStyle; fill: Fill }
 type LayerId = 'default';
-interface Pose { x: number; y: number; width: number; height: number }
 
 const style = (fontSize: number): TextStyle => ({ fontSize, fontFamily: FAMILY });
 
@@ -60,7 +59,7 @@ const NODES = [
   { id: 'b', text: 'Handgloves at 28', size: 28, y: 170, h: 44 },
   { id: 'c', text: 'Handgloves at 13', size: 13, y: 228, h: 24 },
 ].map((n) => ({
-  id: n.id as never,
+  id: asNodeId(n.id),
   kind: 'mark' as const,
   layer: 'default' as const,
   pose: { x: 20, y: n.y, width: 560, height: n.h },
@@ -71,10 +70,9 @@ const makeDrawOne = (
   ready: boolean,
   stroked: boolean,
   filled: boolean,
-): SceneViewDrawOne<NodeData, LayerId, Pose> =>
-  (node, pose, view, ctx) => {
+): SceneViewDrawOne<NodeData, LayerId, RectPose> =>
+  (node, pose) => {
     if (!ready) return [];
-    if (!node.data.text) return defaultDrawOne(node, pose, view, ctx);
     // Paint is the node's, not the style's. `null` is an explicit no-fill, the same value
     // every other node kind reads.
     return [textCommand(
@@ -85,7 +83,7 @@ const makeDrawOne = (
   };
 
 export function TextOutlinesDemo() {
-  const scene = useScene<NodeData, LayerId, Pose>({
+  const scene = useScene<NodeData, LayerId, RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: NODES,
   });

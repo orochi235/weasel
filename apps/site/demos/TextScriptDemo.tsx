@@ -3,6 +3,7 @@ import { DrawCanvas, textCommandFromRuns, solid } from '@weasel-js/core';
 import { glyphGeneration, subscribeGlyphReady } from '@weasel-js/font';
 import { DEFAULT_TEXT_STYLE, scriptMetricsFor } from '@weasel-js/text';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import styles from './TextScriptDemo.module.css';
 import { DemoStage } from './DemoStage';
@@ -79,16 +80,6 @@ const drawRow = ({ y, fontSize, runs }: Row) => textCommandFromRuns(
   24, y, runs, { fontSize } as TextStyle, undefined, undefined, undefined, { fill: { paint: INK } },
 );
 
-/**
- * Superscript, subscript, and the two primitives underneath them.
- *
- * `script: 'super' | 'sub'` is a preset, not a mechanism of its own: it supplies a
- * `baselineShift` and a `fontScale`. The sliders override each half on the last row while
- * leaving the other alone.
- *
- * The *other* rows do not move while you drag: a shift displaces its own run and deliberately
- * does not feed back into the line's baseline or its height.
- */
 export function TextScriptDemo() {
   // The preset is the face's own OS/2 metrics once its atlas has loaded, and
   // the kit defaults before then, so read it again when a face lands.
@@ -109,26 +100,24 @@ export function TextScriptDemo() {
   return (
     <div className={styles.demo}>
       <div className={styles.controls}>
-        <label className={styles.control}>
-          Baseline shift
+        <Field orientation="row" label="Baseline shift" output={`${(shift * 100).toFixed(1)}%`}>
           <InlineRange
             min={-0.8} max={0.8} step={0.001} value={shift}
             className={styles.slider}
+            aria-label="Baseline shift"
             data-testid="shift"
             onChange={(e) => setShift(Number(e.target.value))}
           />
-          <span className={styles.readout}>{(shift * 100).toFixed(1)}%</span>
-        </label>
-        <label className={styles.control}>
-          Font scale
+        </Field>
+        <Field orientation="row" label="Font scale" output={`${(scale * 100).toFixed(1)}%`}>
           <InlineRange
             min={0.2} max={1.5} step={0.001} value={scale}
             className={styles.slider}
+            aria-label="Font scale"
             data-testid="scale"
             onChange={(e) => setScale(Number(e.target.value))}
           />
-          <span className={styles.readout}>{(scale * 100).toFixed(1)}%</span>
-        </label>
+        </Field>
       </div>
       <p className={styles.hint}>
         Both start at the <code>script: &apos;super&apos;</code> preset —{' '}

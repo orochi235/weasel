@@ -12,7 +12,7 @@ import {
   useScene, pickPreset,
 } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
-import num from '@weasel-js/theme/numeric.module.css';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
@@ -97,25 +97,21 @@ export function SkinDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <label className="ckd-field">
-          elbow
-          <InlineRange
-            min={0} max={2.3} step={0.01} disabled={playing}
-            value={angle} onChange={(e) => setAngle(Number(e.target.value))}
-          />
-          <span className={`ckd-readout ${num.numeric}`}>{angle.toFixed(2)}</span>
-        </label>
-        <label className="ckd-field">
-          falloff power
-          <InlineRange
-            min={1} max={12} step={0.5}
-            value={power} onChange={(e) => setPower(Number(e.target.value))}
-          />
-          <span className={`ckd-readout ${num.numeric}`}>{power.toFixed(1).padStart(4)}</span>
-        </label>
         <Button onClick={() => setPlaying((p) => !p)}>
           {playing ? 'stop' : 'play'}
         </Button>
+        <Field orientation="row" label="elbow" output={angle.toFixed(2)}>
+          <InlineRange
+            min={0} max={2.3} step={0.01} disabled={playing} aria-label="elbow"
+            value={angle} onChange={(e) => setAngle(Number(e.target.value))}
+          />
+        </Field>
+        <Field orientation="row" label="falloff power" output={power.toFixed(1)}>
+          <InlineRange
+            min={1} max={12} step={0.5} aria-label="falloff power"
+            value={power} onChange={(e) => setPower(Number(e.target.value))}
+          />
+        </Field>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas
