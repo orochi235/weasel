@@ -57,8 +57,8 @@ export interface SnapTarget<TPose = unknown> {
  * relative to the node's direct parent (or world, for root-parented nodes).
  * `getWorldPose`, where an adapter has it, is the composed reading.
  *
- * **Every adapter carries the tree:** `getNode`, `getParent`, and
- * `getChildren`. A list with no nesting is a tree whose nodes are all roots:
+ * **The tree-walking slices carry the tree** (`MoveAdapter`, `InsertAdapter`):
+ * `getNode`, `getParent`, and `getChildren`. A list with no nesting is a tree whose nodes are all roots:
  * `getParent` answers `null` and `getChildren(null)` answers every id,
  * bottom first.
  */

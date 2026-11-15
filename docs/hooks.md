@@ -16,10 +16,11 @@ option fields not covered here are in the source — every export carries JSDoc.
 
 ## Actions and bindings
 
-`<SceneCanvas>` mounts an `<ActionsProvider>` and a `<DepRegistryProvider>`,
-then registers the standard actions its `features` presets carry
+`<SceneCanvas>` mounts an `<InputScope>`, an actions registry and a dep
+registry of its own under whichever are in scope, then registers the standard
+actions its `features` presets carry
 (`FEATURE_ACTION_IDS` in `@weasel-js/core/named-features` lists core's) and the
-kit actions its tools bind — none on
+kit actions its tools bind — only undo and redo on
 a bare canvas, all of core's under `features={[drawPreset]}`. `useStandardActions`
 does the same for a host of your own, taking any action list. A
 descriptor declares *what* it does (`invoker.run`), *what it needs*
@@ -33,6 +34,8 @@ allowed* (`eligible` / `enabled`), and *how it's reached by default*
 {
   id: 'delete',
   label: 'Delete',
+  icon: icon('delete'),
+  group: 'edit',
   defaultBinding: [{
     spec: { kind: 'key', key: ['Delete', 'Backspace'], phase: BETWEEN_GESTURES },
     opts: { id: 'delete.key' },
@@ -63,7 +66,7 @@ bindings: [
 | `useActionsRegistry()` | The registry handle: `register(action)`, `trigger(id, params?)`, enumeration for palettes and toolbars. |
 | `useAction(action)` | Register one `Action` descriptor for the lifetime of the calling component. No-ops when no `<ActionsProvider>` is in scope — with a dev-only warning, so a production build says nothing. |
 | `evaluateEnabled(...)` | Resolve an action's `enabled` predicate against current deps. |
-| `useKeybindings(...)` | Tool-activation and hold-to-engage hotkeys, folded into the parametric `tool.activate` / `tool.offhand` actions. Mounted by `<SceneCanvas>`. |
+| `useKeybindings(...)` | Tool-activation hotkeys, as the parametric `tool.activate` action, and Escape back to the default tool, as `tool.resetToDefault`. Mounted by `<SceneCanvas>`. A tool's hold-to-engage `hotkey` becomes `tool.offhand`, registered with the tool rather than here. |
 | `useGestureDispatcher(...)` | The input router `<SceneCanvas>` mounts. Reach for it only if you're building a custom canvas surface. |
 
 Imperative callers (toolbar button, command palette) go through
@@ -88,17 +91,22 @@ via a tool's `bindings` or a `trigger` call.
 | `duplicate` | Mod+Shift+D |
 | `group` / `ungroup` | Mod+G / Mod+Shift+G |
 | `undo` / `redo` | Mod+Z / Mod+Shift+Z |
+| `clipboard.copy` / `clipboard.cut` | Mod+C / Mod+X; a paste arrives as a DOM `paste` event (`ingest`, `clipboard.pasteEvent` below) |
+| `menu.context` | Shift+F10, ContextMenu |
 | `flip` | Shift+H (`axis: 'x'`), Shift+V (`axis: 'y'`) |
 | `nudge.up` / `.down` / `.left` / `.right` | Arrow key (`magnitude: 'small'`), Shift+Arrow (`'big'`) |
-| `reorder.forward` | Mod+] (`distance: 'adjacent'`), Mod+Alt+] (`'extreme'`) |
-| `reorder.backward` | Mod+[ (`'adjacent'`), Mod+Alt+[ (`'extreme'`) |
+| `reorder.forward` | Mod+] (`distance: 'adjacent'`), Mod+Shift+] and Mod+Alt+] (`'extreme'`) |
+| `reorder.backward` | Mod+[ (`'adjacent'`), Mod+Shift+[ and Mod+Alt+[ (`'extreme'`) |
+| `createOutlines` | Mod+Enter |
+| `joinPaths` | Mod+J; in path edit `joinAnchors` answers it |
+| `averageAnchors` | Mod+Alt+Shift+J (`axis: 'both'`) |
 | `exitPathEdit` | Escape; with a tool on other than the mode's `defaultTool` it returns to that tool instead (`returnToModeDefault`), so a second Escape leaves path edit. A mode shortcut's `exit` and `cancel` do the same |
 | `deleteAnchors` | Delete, Backspace (phase `initial`) |
 | `nudgeAnchors.<dir>` | Arrow / Shift+Arrow, as `nudge` |
 
-Mod+Alt+bracket rather than Mod+Shift+bracket for the extreme reorders: Chrome
-reserves Mod+Shift+bracket for tab switching. On macOS Option+bracket emits a
-curly quote, so both codepoints are listed.
+Mod+Alt+bracket as well as Mod+Shift+bracket for the extreme reorders: some
+browsers take Mod+Shift+bracket for tab switching before the page sees it. On
+macOS Option+bracket emits a curly quote, so both codepoints are listed.
 
 **Pointer / touch**
 
@@ -109,6 +117,8 @@ curly quote, so both codepoints are listed.
 | `bendSegment` | drag whose press hit the edited path's `segment` affordance, between anchors; `move` turns those down too |
 | `marqueeAnchors` | drag on `empty` |
 | `enterPathEdit` | double-click on a body |
+| `editTextAt` | double-click on a body: opens the text node under the pointer (the `textEdit` feature) |
+| `menu.context` | the `contextMenu` gesture |
 | `selectAnchor` | click |
 | `editEffectText` | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
 | `insertPathAnchor` | Alt+click |
@@ -222,9 +232,9 @@ child (`@weasel-js/editor`'s `TextEditDepPublisher`), for a host whose container
 wires its own for character controls, which read the edit's `selection` and
 styling.
 
-### `useClipboardOps(options)`
+### `useClipboardOps(adapter, options)`
 
-Logic-only clipboard: `copy` / `cut` / `paste` over the adapter clipboard seam
+Logic-only clipboard: `copy` / `paste` over the adapter clipboard seam
 (`snapshotSelection` / `commitPaste` / `getPasteOffset`), with a
 `produceFlavors` / `jsonReplacer` outbound seam for OS-clipboard writes.
 A paste leaves out a node that derives from nodes that were not copied with
@@ -241,7 +251,7 @@ hook. On a canvas with `ingest` it runs the `ingest` action and the
 content-handler registry; on one with `edit` and no `ingest` it runs
 `clipboard.pasteEvent`, which accepts only the node payload a copy writes.
 
-### `useAlign(options)` / `useDistribute(options)`
+### `useAlign(adapter, options?)` / `useDistribute(adapter, options?)`
 
 Imperative align/distribute over a narrow adapter, for consumers driving them
 from their own UI rather than through the `align.*` / `distribute.*` actions.
@@ -260,7 +270,7 @@ not routed by the dispatcher — you own the pointer events.
 | `useDragRect(opts)` | `useDragGesture` producing live `bounds` from start→current, with `minBounds` and an `isSubThreshold` flag on the end ctx. `setStart` / `setCurrent` let you override mid-gesture. |
 | `useDragRadial(opts)` | `useDragGesture` producing `{ center, radius, rotation }`, with `minRadius`. |
 | `useHandleDrag(opts)` | Returns `{ onPointerDown }` for a DOM/SVG handle; reports coordinates local to the handle's owning `<svg>` (or a `getRect` override). |
-| `startThresholdDrag(e, opts)` | Not a hook — call it from a `pointerdown` handler. Captures the pointer, activates past `threshold` (default 4px), then `onMove` / `onCommit` / `onCancel`. Returns `{ isDragging() }`. |
+| `startThresholdDrag(e, opts)` | Not a hook — call it from a `pointerdown` handler. Captures the pointer, activates past `threshold` (default 4px), then `onMove` / `onCommit` / `onCancel`. Returns `{ isDragging(), cancel() }`. |
 | `useDragHandle()` / `useDropZone()` | DOM-level cross-surface drag with a typed `DragPayload` (`{ kind, ids, data }`) and a global drop-zone registry — for dragging between panels and the canvas. |
 
 ## Viewport and utility hooks
@@ -277,7 +287,7 @@ not routed by the dispatcher — you own the pointer events.
   `useViewAnimationOn(view, animator)` is the same on an animator you own, and
   builds none of its own. Its `viewTarget` is the view as an animation target:
   a shake run on it with that animator adds to the camera's own animation.
-- `useVelocityTracker()`, `useDecayLoop(config)` — inertial-pan building
+- `useVelocityTracker()`, `useDecayLoop()` — inertial-pan building
   blocks.
 - `useGridCellHover(...)` — pointer→cell mapping (in `@weasel-js/guides`).
 - `usePointerStylus(...)` — pressure/tilt from `PointerEvent`.
@@ -290,11 +300,12 @@ not routed by the dispatcher — you own the pointer events.
 Reusable chrome primitives consumed by tools. See
 [extending.md](./extending.md) for the composition pattern.
 
-- `createCornerResizeAffordance(opts)` — four corner-handle hit zones for the
-  active selection (single member) or union AABB (multi-mode).
+- `createCornerResizeAffordance(opts)` — a resize handle at each corner and,
+  unless `edges: false`, each edge midpoint of the active selection (single
+  member) or its union AABB (multi-mode).
   `packages/core/src/affordances/cornerResize.ts`.
-- `createRotationAffordance(opts)` — circular handle above the bounds
-  top-center. `packages/core/src/affordances/rotationHandle.ts`.
+- `createRotationAffordance(opts)` — an elliptical ring wrapping the
+  selection's bounds; a drag from it rotates. `packages/core/src/affordances/rotationHandle.ts`.
 - `composeAffordanceLayer(id, label, [...affordances])` — bundle multiple
   affordances into a single `RenderLayer` whose `draw` iterates them and whose
   `hitTest` walks them top-down (last → first).
