@@ -9,9 +9,10 @@ export interface NodeRasterHostOptions {
   browser?: Browser;
   /** Launch options for the Chromium the host starts. Ignored with `browser`. */
   launch?: LaunchOptions;
-  /** The page script's source: one classic script that imports `@weasel-js/headless/page`.
-   *  Default: that module bundled alone (`dist/page.global.js`). Bundle your own to register
-   *  fonts, paint kinds or node shapes before the first render. */
+  /** The page script's source: one classic script that calls `serveHeadlessPage` from
+   *  `@weasel-js/headless/page`. Default: `dist/page.global.js`, which calls it with no options.
+   *  Bundle your own to register fonts, paint kinds or node shapes, and to give the page your
+   *  scenes' registry, composition, layout frame and quantize rule. */
   pageScript?: string;
 }
 
@@ -25,9 +26,9 @@ export interface RasterImage {
 
 /** One render: `renderSceneToPixels`'s arguments, the scene as JSON and no function-valued fields. */
 export interface NodeRenderArgs extends SerializableRenderArgs {
-  /** A live `Scene`, or its `toJSON()` snapshot, raw or encoded (`encodeSnapshot`). A scene
-   *  whose nodes name registry functions (`clipFromPose` and the like) cannot be read back in the
-   *  page. */
+  /** A live `Scene`, or its `toJSON()` snapshot, raw or encoded (`encodeSnapshot`). The page reads
+   *  it back with the scene options its page script served; a scene naming a registry function the
+   *  page lacks is refused. */
   scene: object;
   /** Screen space → output pixels, as `renderSceneToPixels`'s `screen` (nine numbers, column-major). */
   screen?: ArrayLike<number>;
@@ -74,7 +75,7 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
     page.on('crash', () => { opened.crashed = true; });
     await page.addScriptTag({ content: script });
     const ready = await page.evaluate((key) => key in globalThis, PAGE_GLOBAL);
-    if (!ready) throw new Error('node raster host: the page script ran but set no render entry');
+    if (!ready) throw new Error('node raster host: the page script ran but never called `serveHeadlessPage`');
     return opened;
   } catch (err) {
     if (!options.browser) await browser.close();

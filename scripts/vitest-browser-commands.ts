@@ -194,25 +194,36 @@ const clickAcrossStall: BrowserCommand<[at: [number, number], stallMs: number]> 
   }
 };
 
-/** What `renderInNode` returns: each render's pixels, base64, and whether the host refused a
- *  render once disposed. */
+/** One render `renderInNode` made: its pixels, base64, or the message it rejected with. */
+export type NodeRender = { width: number; height: number; base64: string } | { error: string };
+
+/** What `renderInNode` returns: each render's result, and whether the host refused a render once
+ *  disposed. */
 export interface NodeRenders {
-  images: Array<{ width: number; height: number; base64: string }>;
+  images: NodeRender[];
   refusedAfterDispose: boolean;
 }
 
 /** Render each of `renders` through one `@weasel-js/headless` host, built from source, in a
  *  Chromium of its own launched from this Node process, on the rasterizer the browser project's is;
- *  then dispose it. */
-const renderInNode: BrowserCommand<[renders: object[]]> = async (_ctx, renders): Promise<NodeRenders> => {
+ *  then dispose it. `page` names the page script's entry under `packages/headless/src`, default
+ *  the package's own. */
+const renderInNode: BrowserCommand<[renders: object[], page?: string]> = async (_ctx, renders, page): Promise<NodeRenders> => {
+  if (page !== undefined && !/^testing\/[\w-]+\.ts$/.test(page)) {
+    throw new Error(`renderInNode: page must name a script in packages/headless/src/testing, got ${page}`);
+  }
   const { headlessHost, headlessPageScript } = await import('./headless-source.ts');
-  const [{ createNodeRasterHost }, pageScript] = await Promise.all([headlessHost(), headlessPageScript()]);
+  const [{ createNodeRasterHost }, pageScript] = await Promise.all([headlessHost(), headlessPageScript(page)]);
   const host = createNodeRasterHost({ pageScript, launch: { args: HOST_GPU_ARGS } });
-  const images: NodeRenders['images'] = [];
+  const images: NodeRender[] = [];
   try {
     for (const args of renders) {
-      const image = await host.render(args as Parameters<typeof host.render>[0]);
-      images.push({ width: image.width, height: image.height, base64: Buffer.from(image.data).toString('base64') });
+      try {
+        const image = await host.render(args as Parameters<typeof host.render>[0]);
+        images.push({ width: image.width, height: image.height, base64: Buffer.from(image.data).toString('base64') });
+      } catch (err) {
+        images.push({ error: err instanceof Error ? err.message : String(err) });
+      }
     }
   } finally {
     await host.dispose();
@@ -239,7 +250,7 @@ declare module 'vitest/browser' {
     watchRequests: () => Promise<void>;
     pointer: (steps: PointerStep[]) => Promise<void>;
     clickAcrossStall: (at: [x: number, y: number], stallMs: number) => Promise<void>;
-    renderInNode: (renders: object[]) => Promise<NodeRenders>;
+    renderInNode: (renders: object[], page?: string) => Promise<NodeRenders>;
     forcedColors: (mode: 'active' | 'none') => Promise<void>;
     reducedMotion: (mode: 'reduce' | 'no-preference') => Promise<void>;
   }

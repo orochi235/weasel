@@ -56,9 +56,32 @@ painters registered in the page, which by default are core's built-ins. A path's
 are tagged on the way over (`tagTypedArrays` from `@weasel-js/geom`), so a snapshot saved that way
 passes as it is.
 
-The default page registers no fonts, so text draws nothing. To render text, or a paint kind or
-node shape of your own, bundle a page script that registers it and then imports
-`@weasel-js/headless/page`, as one classic script, and pass its source as `pageScript`.
+The default page registers no fonts, so text draws nothing, and it reads each scene back with
+no scene options: only the kit's own node functions, under the rigid composition. Whatever else a
+scene is built with is code, so the page script gives it. Bundle a page script that registers your
+fonts, paint kinds and node shapes, then calls `serveHeadlessPage` with what your scenes are read
+back with, as one classic script, and pass its source as `pageScript`:
+
+```ts
+// page.ts, bundled as an IIFE
+import { registerFont } from '@weasel-js/core';
+import { serveHeadlessPage } from '@weasel-js/headless/page';
+import { registry, composition, quantize } from './scene-config';
+
+registerFont(/* … */);
+serveHeadlessPage({ scene: { registry, composition, quantize } });
+```
+
+`scene` takes what `sceneFromJSON` does: the `registry` your nodes' `clipFromPose`, `derivePath`,
+`derivePose`, `copiesFromPose` and `layout` keys resolve against, and the `composition`,
+`layoutFrame` and `quantize` rule your scenes were made with. A snapshot carries none of them, so
+they must match the scenes the host sends. A scene naming a registry key the page lacks is refused
+with an error naming the key. A composition or rule the page lacks is not detectable from the
+snapshot, and draws the scene as the page's own options place it.
+
+The page draws through `renderSceneToPixels`, the 2D view's pipeline, so it renders what that does:
+poses a composition folds into the 2D scene walk and the painters read. A 3D scene
+(`@weasel-js/kernel3d`'s `Pose3`) does not render here.
 
 ## Pixels and the browser's
 
