@@ -25,6 +25,7 @@ import { drawIdFrame } from './draw/idRender';
 import { readPixels, readPixelsSync, type PixelRect } from './readPixels';
 import { createIdComposite } from './draw/idComposite';
 import { DrawBatch } from './drawBatch';
+import { registerRendererParts } from './rendererParts';
 import { QUAD_VERTICES, QUAD_INDICES } from './shaders/customPrelude';
 import type { ShaderProgramHandle } from './shaders/registerProgram';
 import { CustomPrograms } from './shaders/CustomPrograms';
@@ -152,6 +153,11 @@ export class WeaselRenderer {
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(this.gpu, this.batchFill);
     this.whiteTexture = createWhiteTexture(this.gpu);
+    registerRendererParts(this, () => ({
+      drawBatch: this.drawBatch, batchVariants: this.batchVariants, meshCache: this.meshCache,
+      textureCache: this.textureCache, imageCache: this.imageCache, gradRamps: this.gradRamps,
+      groupState: this.groupState,
+    }));
     // Last: a constructor that throws (a lost context fails the compile above) must leave no listener to rebuild it.
     const events: Partial<EventTarget> | null = opts.gpu ? null : this.canvas ?? lossTarget;
     if (events && typeof events.addEventListener === 'function') {
@@ -503,16 +509,9 @@ export class WeaselRenderer {
   /** @internal */ _gpu(): GpuDevice { return this.gpu; }
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill.get(); }
   /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor.get(); }
-  /** @internal */ _drawBatch(): DrawBatch { return this.drawBatch; }
   /** @internal */ _batchFill(): ShaderProgram { return this.batchFill; }
-  /** @internal */ _batchVariants(): BatchVariantPrograms { return this.batchVariants; }
   /** @internal */ _gradFill(): ShaderProgram { return this.gradFill.get(); }
   /** @internal */ _patternFill(): ShaderProgram { return this.patternFill.get(); }
-  /** @internal */ _meshCache(): GLMeshCache { return this.meshCache; }
-  /** @internal */ _textureCache(): GLTextureCache { return this.textureCache; }
-  /** @internal */ _imageCache(): GLImageCache { return this.imageCache; }
-  /** @internal */ _gradRamps(): GradientRampAtlas { return this.gradRamps; }
-  /** @internal */ _groupState(): GroupState { return this.groupState; }
   /** @internal */ _widthCss(): number { return this.widthCss; }
   /** @internal */ _heightCss(): number { return this.heightCss; }
   /** @internal */ _dpr(): number { return this.dpr; }

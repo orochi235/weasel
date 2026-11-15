@@ -29,12 +29,19 @@ export function paintBindContext(ctx: DrawContext): PaintBindContext {
       const row = ctx.gradRamps.upload(stops, space);
       return { texture: ctx.gradRamps.atlas()!, v: ctx.gradRamps.rowV(row) };
     },
+    ...paintTextures(gpu),
+  };
+  BIND_CONTEXTS.set(ctx, made);
+  return made;
+}
+
+/** The texture half of a {@link PaintBindContext}: RGBA8 textures on `gpu`, bilinear and clamped. */
+export function paintTextures(gpu: GpuDevice): Pick<PaintBindContext, 'createTexture' | 'deleteTexture'> {
+  return {
     createTexture: (width, height, pixels) => gpu.createTexture('rgba8', PAINT_TEXTURE_SAMPLING,
       { width, height, data: pixels }),
     deleteTexture: (texture) => gpu.deleteTexture(texture),
   };
-  BIND_CONTEXTS.set(ctx, made);
-  return made;
 }
 
 const PAINT_TEXTURE_SAMPLING = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' } as const;

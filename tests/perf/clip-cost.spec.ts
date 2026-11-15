@@ -189,7 +189,10 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const ssGl = ssCanvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true, antialias: false });
       if (!ssGl) throw new Error('no single-sampled WebGL2 context');
       const ssRenderer = new WeaselRenderer({ gl: ssGl, canvas: ssCanvas, width: W, height: H, dpr: 1 });
-      const variantsOf = ssRenderer._batchVariants();
+      const { rendererParts } = await import(
+        /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/rendererParts.ts`
+      );
+      const variantsOf = rendererParts(ssRenderer).batchVariants;
       const hullsOffered = variantsOf.hulls;
       Object.defineProperty(variantsOf, 'hulls', { value: true, writable: true });
       // With the shader clip off, the CPU cut that stands in for it goes too,

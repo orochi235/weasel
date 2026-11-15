@@ -57,6 +57,9 @@ test('flush noise: which side of the command buffer the spread lives on', async 
     const { WeaselRenderer } = await import(
       /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`
     );
+    const { rendererParts } = await import(
+      /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/rendererParts.ts`
+    );
     // A solid's color matrix is mapped on the CPU and does not break its
     // run; `rect-cmbreak` times the break, so this turns that off.
     const { colorFolding } = await import(
@@ -146,7 +149,7 @@ test('flush noise: which side of the command buffer the spread lives on', async 
         const g = gl as unknown as Record<string, unknown>;
         const saved = new Map<string, unknown>();
         const drop = (m: string) => { saved.set(m, g[m]); g[m] = () => undefined; };
-        const batch = (renderer as unknown as { _drawBatch(): { rings: unknown[][]; nextInRing: number[] } })._drawBatch();
+        const batch = rendererParts(renderer).drawBatch as unknown as { rings: unknown[][]; nextInRing: number[] };
         const ring0 = batch.rings[0];
         if (cond === 'ring4096') { batch.rings[0] = new Array(4096).fill(undefined); batch.nextInRing[0] = 0; }
         if (cond === 'nosubdata' || cond === 'nodraw+nosubdata') drop('bufferSubData');

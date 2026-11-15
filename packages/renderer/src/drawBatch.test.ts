@@ -33,6 +33,7 @@ import {
 import { RAMP_SLOT, PAINT_MODE_IMAGE, paintModeOf } from './shaders/batchFill';
 import { glProgramHandle, glUniformLocation } from './gpu/webgl/GlProgram';
 import type { ShaderProgram } from './shaders/ShaderProgram';
+import { rendererParts } from './rendererParts';
 
 const ARRAY_BUFFER = 0x8892;
 const ELEMENT_ARRAY_BUFFER = 0x8893;
@@ -527,14 +528,14 @@ describe('renderer — consecutive solid-fill batching', () => {
         kind: 'group', clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
         transform: new Float32Array([c, c, 0, -c, c, 0, 20, 0, 1]), children: [rect(0)],
       }, rect(40)] } as unknown as DrawCommand];
-      Object.defineProperty(r._batchVariants(), 'hulls', { value: true });
-      Object.defineProperty(r._batchVariants(), 'cuts', { value: false, configurable: true });
+      Object.defineProperty(rendererParts(r).batchVariants, 'hulls', { value: true });
+      Object.defineProperty(rendererParts(r).batchVariants, 'cuts', { value: false, configurable: true });
       r.render(frame);
       // The premise: drawn into a surface of its own, and without the cut, the
       // clip goes on that surface's stencil.
       expect(recorder.calls.some((c2) => c2.name === 'bindFramebuffer' && c2.args[1] !== null)).toBe(true);
       expect(clipBitWrites().length).toBeGreaterThan(0);
-      Object.defineProperty(r._batchVariants(), 'cuts', { value: true });
+      Object.defineProperty(rendererParts(r).batchVariants, 'cuts', { value: true });
       recorder.reset();
       r.render([{ ...frame[0], retain: 'other' } as DrawCommand]);
       expect(clipBitWrites()).toEqual([]);

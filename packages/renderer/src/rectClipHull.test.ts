@@ -11,6 +11,7 @@ import type { DrawCommand } from './DrawCommand';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { hullOf } from './shaders/batchFill';
 import { glProgramHandle } from './gpu/webgl/GlProgram';
+import { rendererParts } from './rendererParts';
 
 const ARRAY_BUFFER = 0x8892;
 const C = Math.SQRT1_2;
@@ -24,7 +25,7 @@ describe('a rect clip where the shader decides hulls', () => {
     recorder = createGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
     // The recorder reports no sample count; a single-sampled canvas offers hulls.
-    Object.defineProperty(r._batchVariants(), 'hulls', { value: true });
+    Object.defineProperty(rendererParts(r).batchVariants, 'hulls', { value: true });
     recorder.reset();
   });
 
@@ -70,7 +71,7 @@ describe('a rect clip where the shader decides hulls', () => {
     // the CPU or under no clip, name none.
     expect(v.map((p) => p[3])).toEqual([0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0]);
     expect(v[4].slice(0, 2)).toEqual([0, 0]);
-    expect(recorder.calls.some((c) => c.name === 'useProgram' && c.args[0] === glProgramHandle(r._batchVariants().get(false, true))))
+    expect(recorder.calls.some((c) => c.name === 'useProgram' && c.args[0] === glProgramHandle(rendererParts(r).batchVariants.get(false, true))))
       .toBe(true);
   });
 
