@@ -1,5 +1,5 @@
 export { type Auto, auto, isAuto } from './auto';
-export { autoPathsOf, resolveAutoConfig } from './autoConfig';
+export { applyConfigWrite, autoPathsOf, resolveAutoConfig } from './autoConfig';
 export type { AutoReports } from './autoReports';
 export {
   ActionNode,

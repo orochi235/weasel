@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { f, resolveConfigSchema } from '@weasel-js/labkit/config';
+import { applyConfigWrite, f, resolveConfigSchema } from '@weasel-js/labkit/config';
 import { ControlPanel, type ControlPanelProps } from '@weasel-js/labkit/controls';
 import { useState } from 'react';
-import { applyConfigWrite } from '../config/autoConfig';
 import '../frames.stories.less';
 
 /**
