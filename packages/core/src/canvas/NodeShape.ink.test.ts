@@ -164,13 +164,11 @@ describe('shapeCoversPoint — painters with no opinion', () => {
     expect(shapeCoversPoint(blank, POSE, 9999, 9999)).toBe(true);
   });
 
-  it('treats a painter that declares no ink as filled, unchanged from before', () => {
-    // The rect fallback declares a silhouette but no `ink`, so it keeps the
-    // pre-`ink` behavior: the whole interior is grabbable.
+  it('keeps a rect-fallback node grabbable across its whole box', () => {
     const opaque = {
       id: asNodeId('x'), kind: 'mark', layer: 'main', pose: POSE, data: { fill: { paint: solid('#f00') } },
     } as unknown as Node<unknown, string, RectPose>;
-    expect(reachOf(opaque, POSE)).toBeNull();
+    expect(reachOf(opaque, POSE)).toEqual({ filled: true, outset: 0, inset: 0 });
     expect(shapeCoversPoint(opaque, POSE, 50, 50)).toBe(true);
     expect(shapeCoversPoint(opaque, POSE, 200, 200)).toBe(false);
   });

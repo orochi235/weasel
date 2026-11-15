@@ -17,8 +17,9 @@ const paintOf = (node: { data?: unknown }, inherited: Parameters<typeof pathPain
 // ─── Built-in painters ─────────────────────────────────────────────────
 /** Paints a node whose pose is itself a `Path` — the shape `pathPoseDescriptor`
  *  moves and resizes — in its `data.fill` and `data.stroke`, as `kit:path`
- *  paints `data.path`. Behind every other painter, as `kit:rect-fallback` is for
- *  rect poses, so a consumer painter for path-posed nodes wins. */
+ *  paints `data.path`. Like `kit:rect-fallback` for rect poses, it keeps the
+ *  whole outline grabbable, fill or none, and sits behind every other painter,
+ *  so a consumer painter for path-posed nodes wins. */
 export const PATH_POSE_PAINTER: NodeShapeEntry<unknown, Path> = {
   id: 'kit:path-pose',
   matches: (node) => node.kind !== 'group' && isPathLike(node.pose) && !isRectPose(node.pose),
@@ -39,8 +40,8 @@ export const PATH_POSE_PAINTER: NodeShapeEntry<unknown, Path> = {
   }, ctx?.inherited), ctx), ctx),
   silhouette: (_node, pose) => pose,
   ink: (node, _pose, ctx) => {
-    const { fill, stroke } = paintOf(node, ctx?.inherited);
-    return { filled: fill !== null, ...inkReach(stroke ?? null, ctx?.scale), ...inkStroke(stroke ?? null) };
+    const { stroke } = paintOf(node, ctx?.inherited);
+    return { filled: true, ...inkReach(stroke ?? null, ctx?.scale), ...inkStroke(stroke ?? null) };
   },
   bounds: (node, pose, ctx) => poseBoxBounds(boundsOfPath(pose), paintOf(node, ctx?.inherited).stroke ?? null, ctx),
   drawnBounds: (node, pose, ctx) => {
