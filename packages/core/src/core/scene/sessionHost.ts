@@ -38,6 +38,16 @@ export interface SessionHost {
   open(): SessionState;
   /** Call `fn` with every live session, the scene's own first. */
   each(fn: (state: SessionState) => void): void;
+  /** The acting session's selection, as the recorder, the history engine and the revert log read and write it. */
+  readonly actingSelection: Pick<SceneSelection, 'get' | 'set' | 'replace'>;
+  /** Drop `gone`, and what is out of reach, from every session's selection. */
+  narrow(gone?: ReadonlySet<NodeId>): void;
+  /** Forget a removed node's previews and scroll in every session. */
+  forget(id: NodeId): void;
+  /** Clear every session's previews and scroll, for a document about to be replaced. */
+  clearShown(): void;
+  /** Keep every session's selection to what the document now holds. */
+  keepLegal(): void;
   /** Make this the host `sessionHostOf(scene)` answers. */
   serve(scene: object): void;
 }
@@ -63,6 +73,14 @@ export function createSessionHost(env: SessionStateEnv): SessionHost {
   const own = createSessionState(env);
   const opened = new Set<WeakRef<SessionState>>();
   let current: SessionState | null = null;
+  function each(fn: (state: SessionState) => void): void {
+    fn(own);
+    for (const ref of opened) {
+      const state = ref.deref();
+      if (state === undefined) opened.delete(ref);
+      else fn(state);
+    }
+  }
   const host: SessionHost = {
     own,
     acting: () => current ?? own,
@@ -80,14 +98,16 @@ export function createSessionHost(env: SessionStateEnv): SessionHost {
       opened.add(new WeakRef(state));
       return state;
     },
-    each(fn) {
-      fn(own);
-      for (const ref of opened) {
-        const state = ref.deref();
-        if (state === undefined) opened.delete(ref);
-        else fn(state);
-      }
+    each,
+    actingSelection: {
+      get: () => host.acting().selection.get(),
+      set: (ids) => host.acting().selection.set(ids),
+      replace: (ids) => host.acting().selection.replace(ids),
     },
+    narrow: (gone) => each((held) => held.selection.narrow(gone)),
+    forget: (id) => each((held) => { held.overrides.clear(id); held.scroll.set(id, null); }),
+    clearShown: () => each((held) => { held.overrides.clearAll(); held.scroll.clearAll(); }),
+    keepLegal: () => each(({ selection }) => selection.replace(selection.legal(selection.get()))),
     serve(scene) { hosts.set(scene, host); },
   };
   return host;

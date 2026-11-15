@@ -1,7 +1,7 @@
 import { withKitRegistry } from './kitRegistry';
 import { createArrivalWindow } from './arrivalWindow';
 import { documentReads, sceneMutators } from './sceneMutators';
-import { createNotifier } from './notifier';
+import { createNotifier, type Notifier } from './notifier';
 import type { SerializedDoc } from './docValues';
 import { sceneChanges } from './sceneChanges';
 import { createPoseWriteLog } from './poseWrites';
@@ -9,7 +9,7 @@ import { effectivePose } from './effectivePose';
 import { createEditMode } from './editMode';
 import { createSceneEdits } from './sceneEdits';
 import { createSceneRecording } from './sceneRecording';
-import { createSessionHost } from './sessionHost';
+import { createSessionHost, type SessionHost } from './sessionHost';
 import { createSceneState } from './sceneState';
 import { systemLayerRecord } from './layerStack';
 import { layerFromSerialized, specsFromSerialized, type SpecsFromSerializedOptions } from './serialization';
@@ -73,6 +73,28 @@ export function createScene(options: unknown): Scene<unknown, string, unknown> {
   return buildScene(full, (full.systemLayers ?? []).map(systemLayerRecord), () => full.initial, full.doc);
 }
 
+/** The sessions over a scene's document. Session state is deliberately not part of the document's `state`: never
+ *  in `toJSON` or history. The scene's own selection changing is a scene change to every subscriber. */
+function sceneSessions(
+  doc: {
+    state: { nodes: ReadonlyMap<NodeId, { parent: NodeId | null; data?: unknown }> };
+    locks: { reachable(ids: readonly NodeId[]): readonly NodeId[] };
+    store: { invalidateDependents(id: NodeId): void };
+  },
+  notifier: Notifier,
+): SessionHost {
+  const { state, locks, store } = doc;
+  const sessions = createSessionHost({
+    reachable: locks.reachable,
+    parentOf: (id) => state.nodes.get(id)?.parent,
+    getNode: (id) => state.nodes.get(id),
+    invalidateDependents: store.invalidateDependents,
+    whenSettled: notifier.whenSettled,
+  });
+  sessions.own.selection.subscribe(notifier.notify);
+  return sessions;
+}
+
 type SceneConfig<TData, TLayer extends string, TPose> =
   Omit<SceneOptions<TData, TLayer, TPose>, 'systemLayers' | 'initial' | 'doc'>;
 
@@ -108,25 +130,8 @@ function buildScene<TData, TLayer extends string, TPose>(
   });
 
   const generateId = freshIds(options.generateId ?? defaultGenerateId, (id) => state.nodes.has(id));
-  /** Session state, deliberately not part of `state`: not document content, never in `toJSON` or history. */
-  const sessions = createSessionHost({
-    reachable: locks.reachable,
-    parentOf: (id) => state.nodes.get(id)?.parent,
-    getNode: (id) => state.nodes.get(id),
-    invalidateDependents: doc.store.invalidateDependents,
-    whenSettled: notifier.whenSettled,
-  });
+  const sessions = sceneSessions(doc, notifier);
   const { selection } = sessions.own;
-  const overrides = sessions.own.overrides as PoseOverrides<TPose, TData>;
-  const scroll = sessions.own.scroll;
-  // The scene's own selection changing is a scene change to every subscriber.
-  selection.subscribe(notifier.notify);
-  /** Whose selection an edit records, an undo restores, and a refused edit puts back. */
-  const acting = {
-    get: () => sessions.acting().selection.get(),
-    set: (ids: readonly NodeId[]) => sessions.acting().selection.set(ids),
-    replace: (ids: readonly NodeId[]) => sessions.acting().selection.replace(ids),
-  };
 
   const recording = createSceneRecording({
     notifier,
@@ -134,7 +139,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     passAdapter: () => ({ ...sceneMutators(scene), ...documentReads(scene) }),
     stale: doc.stale,
     lifted: locks.lifted,
-    selection: acting,
+    selection: sessions.actingSelection,
     arrivals,
     writePose,
     poseWrites,
@@ -153,8 +158,8 @@ function buildScene<TData, TLayer extends string, TPose>(
     arrivals,
     layoutFrame,
     generateId,
-    narrowSelection: (gone) => sessions.each((held) => held.selection.narrow(gone)),
-    forgetViewState: (id) => sessions.each((held) => { held.overrides.clear(id); held.scroll.set(id, null); }),
+    narrowSelection: sessions.narrow,
+    forgetViewState: sessions.forget,
   });
   for (const [kind, handler] of Object.entries(options.ops ?? {})) recording.ops.register(kind, handler);
 
@@ -178,8 +183,8 @@ function buildScene<TData, TLayer extends string, TPose>(
     onReflow: arrivals.onReflow,
     onPoseWrite: poseWrites.subscribe,
 
-    overrides,
-    scroll,
+    overrides: sessions.own.overrides as PoseOverrides<TPose, TData>,
+    scroll: sessions.own.scroll,
 
     getSelection: selection.get,
     setSelection: (ids) => selection.set([...ids]), selectable: selection.legal,
@@ -192,11 +197,11 @@ function buildScene<TData, TLayer extends string, TPose>(
       }
       buildScene(options, json.systemLayers.map(layerFromSerialized), () => specs, json.doc); // a dry run: a bad snapshot keeps the document
       // Session state, and every id is a new node after this.
-      sessions.each((held) => { held.overrides.clearAll(); held.scroll.clearAll(); });
+      sessions.clearShown();
       doc.reset(json.systemLayers.map(layerFromSerialized), json.doc);
       recording.clearHistory();
       poseWrites.quiet(() => edits.construct(specs));
-      sessions.each((held) => held.selection.replace(held.selection.legal(held.selection.get())));
+      sessions.keepLegal();
       notifier.notify();
     },
 
