@@ -33,7 +33,7 @@ function drawn(commands: readonly DrawCommand[], out: string[] = []): string[] {
   for (const c of commands) {
     if (c.kind === 'group') drawn(c.children, out);
     else if (c.kind === 'image') out.push(`image:${(c.image as unknown as { src: string }).src}`);
-    else if (c.kind === 'path' && c.fill?.paint.kind === 'solid') out.push(c.fill.paint.color);
+    else if (c.kind === 'path' && c.fill?.paint?.kind === 'solid') out.push(c.fill.paint.color);
   }
   return out;
 }
