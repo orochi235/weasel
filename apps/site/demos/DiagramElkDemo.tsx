@@ -61,7 +61,7 @@ export function DiagramElkDemo() {
   );
   const view = useRef<DiagramViewApi>(null);
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <div className="ckd-row">
         {CHOICES.map(([name, layout]) => (
           <Button key={name} onClick={() => view.current?.layout(layout)}>

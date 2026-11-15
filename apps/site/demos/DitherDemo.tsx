@@ -172,7 +172,7 @@ export function DitherDemo() {
   const resolution = printGrid ? `${grid} dpi` : '1 px per point';
 
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <DemoStage width={W} height={H}>
         <SceneCanvas
           key={snap}
@@ -191,7 +191,6 @@ export function DitherDemo() {
           }}
         />
       </DemoStage>
-      <p className="ckd-hint">{notes}</p>
       <div className="ckd-controls">
         <div className="ckd-control">
           Grid
@@ -216,6 +215,7 @@ export function DitherDemo() {
           <output className={`${num.numeric} ${s.readout}`}>{threshold}</output>
         </label>
       </div>
+      <p className="ckd-hint">{notes}</p>
       <figure className={s.export}>
         <div className={s.pane}>
           <canvas ref={out} className={s.print} aria-label="Exported page" />

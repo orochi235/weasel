@@ -31,7 +31,7 @@ export function DiagramDataDemo() {
   const specs = useMemo(() => diagramScene(DATA), []);
   const [picked, setPicked] = useState<string | null>(null);
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <div className="ckd-row">picked: {picked ?? 'none'}</div>
       <DemoStage width={640} height={420}>
         <DiagramView specs={specs} selected={picked} onSelect={setPicked} className="ckd-canvas" />

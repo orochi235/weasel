@@ -50,7 +50,7 @@ function Demo() {
   }, [selection, openRowMenu]);
 
   return (
-    <div className="ckd-shape-tools-demo">
+    <div className="ckd-demo">
       <ContextMenuHost />
       <DemoStage width={400} height={260}>
         <SceneCanvas

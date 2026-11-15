@@ -44,7 +44,7 @@ export function DiagramDrawOnDemo() {
   }, [animator, play]);
 
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <div className="ckd-row">
         <Button onClick={play}>Replay</Button>
       </div>

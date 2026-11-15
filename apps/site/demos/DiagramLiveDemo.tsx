@@ -34,7 +34,7 @@ export function DiagramLiveDemo() {
     onSettle: () => setRunning(false),
   }), []);
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <div className="ckd-row">
         <Button
           onClick={() => {

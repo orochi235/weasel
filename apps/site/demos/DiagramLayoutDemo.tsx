@@ -34,7 +34,7 @@ export function DiagramLayoutDemo() {
   const specs = useMemo(() => diagramScene({ nodes, edges: EDGES }, { layout: 'none', font: FONT }), [nodes]);
   const view = useRef<DiagramViewApi>(null);
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <div className="ckd-row">
         {CHOICES.map((name) => (
           <Button key={name} onClick={() => view.current?.layout(name)}>

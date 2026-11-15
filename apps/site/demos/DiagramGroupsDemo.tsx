@@ -42,7 +42,7 @@ export function DiagramGroupsDemo() {
   const specs = useMemo(() => groupSpecs(nodes, edges), [nodes, edges]);
   const view = useRef<DiagramViewApi>(null);
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <div className="ckd-row">
         {(['layered', 'tree'] as const).map((name) => (
           <Button key={name} onClick={() => view.current?.layout(name)}>
