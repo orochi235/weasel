@@ -175,11 +175,12 @@ it is dropped on the next parameter change rather than overwriting the edit.
 ## Warps
 
 A plane-warped, cloth-warped, or pin-warped path keeps the warp beside its geometry
-in `data.warp` (`pathWarp.ts`): the unwarped source, the warp as data
+in `data.warp`: the unwarped source, the warp as data
 (`PathWarp`, from `@weasel-js/geom`), the refit tolerance, and `frame`, the map
 from the warp's own frame to where the node stores its path. The geometry is
 still what every reader uses. Moving, resizing or rotating the node leaves the
 stored path alone, so the warp stays valid without being rewritten; anything
 that rewrites the path drops the warp, as it drops a generator, and a warp whose
-result no longer matches the path is ignored. The tools are in
-`tools/builtin/warp/`, the actions in `interactions/actions/warp/`.
+result no longer matches the path is ignored (`GEOMETRY_BOUND_DATA` names
+`warp` among the data a path writer drops). The warp tools, actions, and
+`warpPreset` are `@weasel-js/path-tools`' (`src/warp/`).
