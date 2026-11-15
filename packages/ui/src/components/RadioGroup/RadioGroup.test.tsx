@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { Disabled } from '../Disabled';
+import { Disabled, ReadOnly } from '../Disabled';
 import { RadioGroup, Radio } from './RadioGroup';
 
 function Sample(props: { value?: string; onChange?: (v: string) => void; disabled?: boolean }) {
@@ -44,6 +44,43 @@ describe('RadioGroup', () => {
     for (const r of screen.getAllByRole('radio') as HTMLInputElement[]) {
       expect(r.disabled).toBe(true);
     }
+  });
+
+  it('takes a ReadOnly scope around the group: radios stay reachable and refuse changes', () => {
+    const onChange = vi.fn();
+    render(<ReadOnly reason="Shared"><Sample onChange={onChange} /></ReadOnly>);
+    const green = screen.getByLabelText('Green') as HTMLInputElement;
+    expect(green.disabled).toBe(false);
+    fireEvent.click(green);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('takes a Disabled scope around one choice inside the group', () => {
+    const onChange = vi.fn();
+    render(
+      <RadioGroup label="Color" onChange={onChange}>
+        <Radio value="r">Red</Radio>
+        <Disabled reason="Out of stock"><Radio value="g">Green</Radio></Disabled>
+      </RadioGroup>,
+    );
+    const green = screen.getByRole('radio', { name: 'Green' }) as HTMLInputElement;
+    expect(green.disabled).toBe(true);
+    expect(green).toHaveAccessibleDescription('Out of stock');
+    fireEvent.click(screen.getByLabelText('Red'));
+    expect(onChange).toHaveBeenCalledWith('r');
+  });
+
+  it('takes a ReadOnly scope around one choice inside the group', () => {
+    const onChange = vi.fn();
+    render(
+      <RadioGroup label="Color" onChange={onChange}>
+        <Radio value="r">Red</Radio>
+        <ReadOnly><Radio value="g">Green</Radio></ReadOnly>
+      </RadioGroup>,
+    );
+    expect((screen.getByRole('radio', { name: 'Green' }) as HTMLInputElement).disabled).toBe(true);
+    fireEvent.click(screen.getByLabelText('Red'));
+    expect(onChange).toHaveBeenCalledWith('r');
   });
 
   it('takes a Disabled scope around the group, through the group', () => {

@@ -1,8 +1,9 @@
-import { useId, type ReactNode } from 'react';
+import { useContext, useId, type ReactNode } from 'react';
 import {
   RadioGroup as RACRadioGroup,
   Radio as RACRadio,
   Label,
+  RadioGroupStateContext,
   type RadioGroupProps as RACRadioGroupProps,
   type RadioProps as RACRadioProps,
 } from 'react-aria-components';
@@ -11,7 +12,7 @@ import { slotClass, useRunSlot } from '../Along/runSlots';
 import { fieldClasses } from '../Field/Field';
 import { FieldFoot, type FieldSlotProps } from '../Field/fieldSlots';
 import { RadioGroupAlong, RadioSlotsContext } from './RadioGroupAlong';
-import type { HoldProps } from '../Disabled';
+import { useControlAccess, type HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import { useRacField } from '../Field/racField';
 import s from './RadioGroup.module.css';
@@ -57,18 +58,23 @@ export type RadioProps = Omit<RACRadioProps, 'className' | 'children' | 'isDisab
   className?: string;
   /** A note after the label, and the choice's accessible description. */
   description?: string;
-  /** This choice cannot be taken. A choice of its group, like a `Select` option: disable the whole group with the
-   *  group's own `disabled` or a `Disabled` scope. */
+  /** This choice cannot be taken. A `Disabled` or `ReadOnly` scope around the choice alone holds it the same way;
+   *  hold the whole group with the group's own `disabled` or a scope around the group. */
   disabled?: boolean;
   /** Why the choice is disabled, in place of `description` while `disabled`. */
   disabledReason?: string;
 };
 
 /** One choice in a {@link RadioGroup}. The label is passed as children. */
-export function Radio({ children, className, description, disabled, disabledReason, ...rest }: RadioProps) {
+export function Radio({ children, className, description, disabled: own, disabledReason, ...rest }: RadioProps) {
   const slot = useRunSlot(RadioSlotsContext, rest.value);
   const noteId = useId();
-  const note = (disabled && disabledReason) || description;
+  const group = useContext(RadioGroupStateContext);
+  const access = useControlAccess({ disabled: own, disabledReason });
+  // A hold around the whole group already reached it through the group, which keeps a held-for-a-reason group reachable.
+  const held = own === true || (access.state !== 'enabled' && !group?.isDisabled && !group?.isReadOnly);
+  const disabled = held || undefined;
+  const note = (held && access.reason) || description;
   const { className: _, style, ...at } = slot ?? {};
   return (
     <RACRadio
