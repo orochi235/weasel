@@ -9,11 +9,13 @@ import {
   SceneCanvas,
   solid,
   useRigNode,
+  WeaselProvider,
   useScene, pathsPreset, pickPreset,
 } from '@weasel-js/core';
 import type { NodeId, Path, RectPose, Stroke, Fill } from '@weasel-js/core';
 import { createRigEditState, useRigTools } from '@weasel-js/rig';
 import num from '@weasel-js/theme/numeric.module.css';
+import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
@@ -54,6 +56,10 @@ const INITIAL: NodeSpec[] = [
 ];
 
 export function RigToolsDemo() {
+  return <WeaselProvider><RigTools /></WeaselProvider>;
+}
+
+function RigTools() {
   const scene = useScene<Data, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: useMemo(() => INITIAL, []),
@@ -87,7 +93,7 @@ export function RigToolsDemo() {
           <span className={`ckd-readout ${num.numeric}`}>{bend.toFixed(2)}</span>
         </label>
         <Button onClick={reweigh}>weigh from bones</Button>
-        <Button onClick={() => scene.undo()}>undo</Button>
+        <ActionBar group="history" />
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas
