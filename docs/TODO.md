@@ -30,7 +30,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
@@ -39,7 +38,6 @@ Owner tags, after the priority (2026-10-26):
   preview size or shape per MIME) is not built.
   Closes when the maintainer has watched a real OS drag in WeaselDraw and the ghost follows the
   pointer, clears on Esc, on leave and on drop, and looks right.
-
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -304,31 +302,6 @@ Owner tags, after the priority (2026-10-26):
   distinguish complete output from degraded output, and format tests cover image/font/paint failures
   and unsupported commands under the documented strict or best-effort policy.
 
-- **(P2) [agent] Bound worker requests and expose worker failure after startup.**
-  `watchStartup` drains requests only for errors before the first message; later errors only warn
-  (`packages/core/src/canvas/renderWorker/startSceneRenderWorker.ts`). `createRequests` has no
-  timeout/cancellation, and a lost frame acknowledgement leaves `inFlight` true. Reproduced with a
-  worker that first answers, then errors without answering a pending snapshot/frame: the snapshot
-  stays pending and further `sync()` sends no frame. An ordinary error may be recoverable, so define
-  fatal versus recoverable failure and a bounded watchdog rather than assuming every error kills a worker.
-  Expose status/recovery to the host; restarting needs a new transferred canvas, not retransferring
-  the old one. Treat an empty ID buffer as missing data rather than evidence that nothing was hit.
-  Closes when pending snapshot/ID/frame requests terminate predictably on failure or timeout,
-  recoverable errors allow later frames, fatal failures reach callers and release owned work, and
-  tests cover post-start errors, an unresponsive worker, message errors, disposal and restart.
-
-- **(P2) [agent] Roll back render-worker setup when canvas transfer or initialization throws.**
-  `startSceneRenderWorker` subscribes to scene/override/scroll/clock stores before
-  `transferControlToOffscreen` and the init `postMessage`; neither has exception cleanup. The
-  `holdRenderWorker(canvas, start(), inputs)` caller has already created the worker, and a thrown
-  setup returns no handle to dispose (`packages/core/src/canvas/renderWorker/startSceneRenderWorker.ts`,
-  `liveClients.ts`). Reproduced with a throwing transfer: the scene subscription was installed,
-  its unsubscribe was never called, and the supplied worker was never terminated. Use transactional
-  setup that releases all acquired resources on failure, including init-send failures after transfer.
-  Closes when every setup failure point leaves no subscriptions, timers, requests or owned worker
-  alive, the ownership/failure contract is documented, and tests cover failed transfer, failed init
-  cloning/posting, worker construction and StrictMode cleanup without masking the original error.
-
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
@@ -467,12 +440,10 @@ Owner tags, after the priority (2026-10-26):
   Linux Chrome; if it reproduces, the likely fix is for the keydown to suppress the native event.
   Closes when Shift+F10 on a real Windows or Linux Chrome opens the menu once.
 
-
 - **(P3) [waiting] Nothing in an app animates a selector's weights yet.** `prefWeightAxes` gives an
   animator target the axes, and nothing yet asks for a transition.
   Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
   delete it.
-
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -568,7 +539,6 @@ in the workshop page as a lab trial with controls. A story that sets `isolate`
 renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
-
 
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither

@@ -31,9 +31,10 @@ function host(animations: Record<string, WorkerAnimation> = {}, shaders?: readon
     initial: [{ id: asNodeId('a'), kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 5, height: 5 }, data: {} }],
   });
   const writer = createFrameWriter();
+  let frames = 0;
   const frame = (extra: Partial<Extract<ToWorker, { type: 'frame' }>> = {}) => send({
     ...writer.write({ scene: scene as unknown as Scene<unknown, string, unknown>, view: VIEW, width: 20, height: 20, dpr: 1 }),
-    at: { time: 0 }, ...extra,
+    id: ++frames, at: { time: 0 }, ...extra,
   });
   return { send, frame, out, canvas };
 }
@@ -48,7 +49,7 @@ describe('hostSceneRender', () => {
     frame({ animations: [{ op: 'play', id: 1, key: 'nope' }, { op: 'play', id: 2, key: 'glow' }] });
     expect(played).toHaveBeenCalledTimes(1);
     expect(render).toHaveBeenCalledTimes(1);
-    expect(out).toContainEqual({ type: 'drawn' });
+    expect(out).toContainEqual({ type: 'drawn', id: 1 });
     expect(out).toContainEqual({ type: 'error', message: expect.stringMatching(/nope/) });
   });
 
@@ -71,12 +72,28 @@ describe('hostSceneRender', () => {
     expect(out).toContainEqual({ type: 'snapshot', id: 3, bitmap: null });
   });
 
+  it('says it is ready once it holds the canvas, and answers a ping', () => {
+    const { send, out } = host();
+    expect(out[0]).toEqual({ type: 'ready' });
+    send({ type: 'ping', id: 7 });
+    expect(out.at(-1)).toEqual({ type: 'pong', id: 7 });
+  });
+
+  it('reports a canvas it cannot open a context on as fatal, and is never ready', () => {
+    const out: FromWorker[] = [];
+    let listener: (e: MessageEvent) => void = () => {};
+    hostSceneRender({ postMessage: (m) => { out.push(m as FromWorker); }, addEventListener: (_t, fn) => { listener = fn; } });
+    const canvas = Object.assign(new EventTarget(), { width: 0, height: 0, getContext: () => null }) as unknown as OffscreenCanvas;
+    listener({ data: { type: 'init', canvas, width: 20, height: 20, dpr: 1 } } as MessageEvent);
+    expect(out).toEqual([{ type: 'error', message: expect.any(String), fatal: true }]);
+  });
+
   it('answers an id read that threw with no ids', () => {
     vi.spyOn(WeaselRenderer.prototype, 'renderIds').mockImplementation(() => { throw new Error('lost'); });
     const { send, frame, out } = host();
     frame();
     send({ type: 'readIds', id: 4, rect: { x: 0, y: 0, width: 2, height: 2 } });
-    expect(out).toContainEqual({ type: 'ids', id: 4, ids: expect.objectContaining({ width: 0, height: 0 }) });
+    expect(out).toContainEqual({ type: 'ids', id: 4, ids: null });
   });
 
   it('paints without a shader that will not register, as the page does', () => {

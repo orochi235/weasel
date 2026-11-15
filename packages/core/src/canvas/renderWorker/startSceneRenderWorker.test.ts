@@ -2,28 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { createScene } from '../../core/scene/scene';
 import { asNodeId, type RectPose } from '../../core/scene/types';
 import { startSceneRenderWorker } from './startSceneRenderWorker';
-import type { FromWorker, ToWorker } from './protocol';
+import type { ToWorker } from './protocol';
+import { fakeWorker } from './testing/fakeWorker';
 import { answerImage } from './workerImages';
 
 vi.mock('./workerImages', () => ({ answerImage: vi.fn() }));
-
-/** A worker that records what the page posts and answers when told. */
-function fakeWorker() {
-  const posted: ToWorker[] = [];
-  const listeners: ((e: MessageEvent<FromWorker>) => void)[] = [];
-  const errors: ((e: ErrorEvent) => void)[] = [];
-  const worker = {
-    postMessage: (m: ToWorker) => { posted.push(m); },
-    addEventListener: (type: string, fn: (e: unknown) => void) => {
-      if (type === 'message') listeners.push(fn);
-      else if (type === 'error') errors.push(fn);
-    },
-    terminate: vi.fn(),
-  };
-  const answer = (data: FromWorker) => { for (const fn of listeners) fn({ data } as MessageEvent<FromWorker>); };
-  const fail = () => { for (const fn of errors) fn({ message: 'boom' } as ErrorEvent); };
-  return { worker: worker as unknown as Worker, posted, answer, fail, terminate: worker.terminate };
-}
 
 const canvas = () => ({ transferControlToOffscreen: () => ({}) }) as unknown as HTMLCanvasElement;
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -37,10 +20,13 @@ function start() {
   });
   const w = fakeWorker();
   const client = startSceneRenderWorker(w.worker, canvas(), { scene, view: VIEW, width: 10, height: 10, dpr: 1 });
-  return { scene, client, ...w };
+  /** The worker painted the last frame it was sent. */
+  const drawn = () => w.answer({ type: 'drawn', id: frames(w.posted).at(-1)!.id });
+  return { scene, client, drawn, ...w };
 }
 
-const frames = (posted: ToWorker[]) => posted.filter((m) => m.type === 'frame');
+const frames = (posted: ToWorker[]) => posted.filter((m): m is Extract<ToWorker, { type: 'frame' }> => m.type === 'frame');
+const ID = expect.any(Number);
 
 describe('startSceneRenderWorker', () => {
   it('answers what waits on a worker that never started, and what is asked of it after', async () => {
@@ -50,9 +36,9 @@ describe('startSceneRenderWorker', () => {
     const waiting = client.readIds(rect);
     const shot = client.snapshot();
     fail();
-    expect((await waiting).width).toBe(0);
+    expect(await waiting).toBeNull();
     expect(await shot).toBeNull();
-    expect((await client.readIds(rect)).width).toBe(0);
+    expect(await client.readIds(rect)).toBeNull();
     warn.mockRestore();
   });
 
@@ -64,7 +50,7 @@ describe('startSceneRenderWorker', () => {
   });
 
   it('holds a frame while one is in flight, and asks again once it lands', () => {
-    const { scene, client, posted, answer } = start();
+    const { scene, client, posted, drawn } = start();
     const due = vi.fn();
     client.subscribe(due);
     client.sync();
@@ -72,20 +58,20 @@ describe('startSceneRenderWorker', () => {
     due.mockClear();
     client.sync();
     expect(frames(posted)).toHaveLength(1);
-    answer({ type: 'drawn' });
+    drawn();
     expect(due).toHaveBeenCalledTimes(1);
     client.sync();
     const second = frames(posted)[1]!;
-    expect(second).toEqual({ type: 'frame', at: AT, scene: { nodes: [expect.objectContaining({ id: 'a' })] } });
+    expect(second).toEqual({ type: 'frame', id: ID, at: AT, scene: { nodes: [expect.objectContaining({ id: 'a' })] } });
   });
 
   it('sends only the time when only the worker asked for a frame', () => {
-    const { client, posted, answer } = start();
+    const { client, posted, answer, drawn } = start();
     client.sync();
-    answer({ type: 'drawn' });
+    drawn();
     answer({ type: 'dirty' });
     client.sync();
-    expect(frames(posted)[1]).toEqual({ type: 'frame', at: AT });
+    expect(frames(posted)[1]).toEqual({ type: 'frame', id: ID, at: AT });
   });
 
   it('stops the worker on dispose and syncs nothing after', () => {
@@ -99,25 +85,25 @@ describe('startSceneRenderWorker', () => {
 
 describe('startSceneRenderWorker, beside the scene', () => {
   it('sends scroll offsets when they change, and only the alphas that changed', () => {
-    const { scene, client, posted, answer } = start();
+    const { scene, client, posted, drawn } = start();
     let dim = 1;
     client.update({ alphaFor: (id) => (id === 'a' ? dim : 1) });
     client.sync();
     expect(frames(posted)[0]).not.toHaveProperty('alpha');
-    answer({ type: 'drawn' });
+    drawn();
     dim = 0.25;
     scene.scroll.set(asNodeId('a'), { x: 4, y: 0 });
     client.sync();
     expect(frames(posted)[1]).toMatchObject({ alpha: [['a', 0.25]], scroll: [{ id: 'a', x: 4, y: 0 }] });
-    answer({ type: 'drawn' });
+    drawn();
     client.sync();
-    expect(frames(posted)[2]).toEqual({ type: 'frame', at: AT });
+    expect(frames(posted)[2]).toEqual({ type: 'frame', id: ID, at: AT });
   });
 });
 
 describe('startSceneRenderWorker, the worker animator', () => {
   it('sends animator calls and the frame time with the next frame, and a followed clock in its place', () => {
-    const { scene, client, posted, answer } = start();
+    const { scene, client, posted, drawn } = start();
     const due = vi.fn();
     client.subscribe(due);
     const fade = client.animator.play('fade', { to: 1 });
@@ -131,7 +117,7 @@ describe('startSceneRenderWorker, the worker animator', () => {
       resumed: true,
       animations: [{ op: 'play', id: fade.id, key: 'fade', params: { to: 1 } }, { op: 'scale', id: fade.id, scale: 2 }],
     });
-    answer({ type: 'drawn' });
+    drawn();
     const listeners: (() => void)[] = [];
     const clock = {
       clock: { elapsed: 250, rate: 0, subscribe: (fn: () => void) => { listeners.push(fn); return () => {}; } },
@@ -143,16 +129,16 @@ describe('startSceneRenderWorker, the worker animator', () => {
     expect(due).toHaveBeenCalled();
     client.sync();
     // The time the last frame stood at was on the page's timeline, not the clock's.
-    expect(frames(posted)[1]).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 }, resumed: true });
-    answer({ type: 'drawn' });
+    expect(frames(posted)[1]).toEqual({ type: 'frame', id: ID, at: { elapsed: 250, rate: 0 }, resumed: true });
+    drawn();
     // A seek made while the page's frames were away still plays.
     client.resumed();
     client.sync();
-    expect(frames(posted).at(-1)).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 } });
-    answer({ type: 'drawn' });
+    expect(frames(posted).at(-1)).toEqual({ type: 'frame', id: ID, at: { elapsed: 250, rate: 0 } });
+    drawn();
     client.update({ clock: undefined });
     client.sync();
-    expect(frames(posted).at(-1)).toEqual({ type: 'frame', at: AT, resumed: true });
+    expect(frames(posted).at(-1)).toEqual({ type: 'frame', id: ID, at: AT, resumed: true });
     void scene;
   });
 

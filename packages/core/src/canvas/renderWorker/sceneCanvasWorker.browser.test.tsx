@@ -49,7 +49,7 @@ async function until(api: SceneCanvasApi, x: number, y: number, rgb: number[]): 
 async function pickedUntil(api: SceneCanvasApi, scene: object, x: number, y: number, want: string | null) {
   let last: string | null = null;
   for (let i = 0; i < 300; i++) {
-    last = scenePickIds(scene).nodeOf(await api.pickAt(x, y));
+    last = scenePickIds(scene).nodeOf((await api.pickAt(x, y)) ?? 0);
     if (last === want) return last;
     await frame();
   }
@@ -106,7 +106,7 @@ describe('a scene canvas painted partly by a worker', () => {
     expect(node).not.toBe(0);
     expect(await api.pickAt(90, 45)).toBe(0);
     const ids = await api.readIds({ x: 10, y: 10, width: 80, height: 1 });
-    expect(new Set(ids.data)).toEqual(new Set([node, 0]));
+    expect(new Set(ids!.data)).toEqual(new Set([node, 0]));
     expect(api.readIdsSync({ x: 20, y: 20, width: 0, height: 0 })).toBeNull();
   });
 
@@ -121,8 +121,8 @@ describe('a scene canvas painted partly by a worker', () => {
     expect(await pickedUntil(api, scene, 90, 20, 'n2')).toBe('n2');
     scene.remove(asNodeId('n0'));
     expect(await pickedUntil(api, scene, 20, 20, null)).toBeNull();
-    expect(scenePickIds(scene).nodeOf(await api.pickAt(60, 20))).toBe('n1');
-    expect(scenePickIds(scene).nodeOf(await api.pickAt(90, 20))).toBe('n2');
+    expect(scenePickIds(scene).nodeOf((await api.pickAt(60, 20))!)).toBe('n1');
+    expect(scenePickIds(scene).nodeOf((await api.pickAt(90, 20))!)).toBe('n2');
   });
 
   it('gives each part of a scene cut by a page layer a worker of its own', async () => {
@@ -135,5 +135,18 @@ describe('a scene canvas painted partly by a worker', () => {
     // Scene layer a sits under the page's green; scene layer b paints over it.
     expect(await until(api, 20, 20, [0, 255, 0])).toEqual([0, 255, 0, 255]);
     expect(await until(api, 60, 20, [255, 0, 0])).toEqual([255, 0, 0, 255]);
+  });
+
+  it('runs, and after a restart paints again from new canvases and a new worker', async () => {
+    const { ref, canvases, started } = mount({});
+    const api = ref.current!;
+    expect(await until(api, 20, 20, [255, 0, 0])).toEqual([255, 0, 0, 255]);
+    expect(api.worker!.status).toEqual({ state: 'running' });
+    const before = canvases()[0];
+    flushSync(() => api.worker!.restart());
+    expect(started()).toBe(2);
+    expect(canvases()[0]).not.toBe(before);
+    expect(await until(api, 20, 20, [255, 0, 0])).toEqual([255, 0, 0, 255]);
+    expect(api.worker!.status).toEqual({ state: 'running' });
   });
 });

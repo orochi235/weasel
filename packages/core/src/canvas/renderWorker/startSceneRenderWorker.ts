@@ -13,12 +13,13 @@ import { resolveDpr } from '../canvasRenderer';
 import type { SceneViewLayers } from '../sceneViewRender';
 import type { FromWorker, ToWorker } from './protocol';
 import { createFrameWriter } from './frameWriter';
+import { createFrameSync } from './frameSync';
 import { createRequests } from './requests';
-import type { AnimationOp } from './protocol';
+import {
+  DEFAULT_WORKER_TIMEOUT, watchWorkerHealth, type RenderWorkerOptions, type RenderWorkerStatus,
+} from './workerHealth';
 import { workerAnimator, type WorkerAnimator } from './workerAnimator';
 import { answerImage } from './workerImages';
-
-const EMPTY_IDS = (): IdBuffer => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
 
 /** What the worker's animator follows of a page clock: a `ClockHandle` from `@weasel-js/clock`. */
 export interface FollowedClock {
@@ -53,7 +54,8 @@ export interface SceneRenderWorker<TData, TLayer extends string, TPose> {
   update(inputs: Partial<SceneRenderInputs<TData, TLayer, TPose>>): void;
   /** Send the worker what changed and ask it for a frame. Call from a frame loop that stops
    *  while nothing can see the canvas. With a frame still in flight it sends nothing, and the
-   *  worker's answer asks for another. Returns `false` once disposed. */
+   *  worker's answer asks for another; a frame unanswered for the timeout counts as lost, and
+   *  the next one carries everything. Returns `false` once failed or disposed. */
   sync(): boolean;
   /** Hear when a frame is due: the scene or its overrides changed, or the worker's own pixels
    *  did. Returns an unsubscribe. */
@@ -64,11 +66,17 @@ export interface SceneRenderWorker<TData, TLayer extends string, TPose> {
    *  unless it follows a clock, whose position stands whatever the frame loop missed. */
   resumed(): void;
   /** The `pickId`s the worker's last frame painted over `rect`, CSS pixels from the canvas's
-   *  top-left: `WeaselRenderer.renderIds` on that frame, a round trip away. Empty before the
-   *  first frame and after dispose. */
-  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer>;
-  /** What the canvas shows now. `null` when it shows nothing yet. */
+   *  top-left: `WeaselRenderer.renderIds` on that frame, a round trip away. `null` when there is
+   *  no answer: before the first frame, once failed or disposed, after the timeout, or when an
+   *  error in the worker lost it. */
+  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer | null>;
+  /** What the canvas shows now. `null` when it shows nothing yet, or there is no answer, as for
+   *  `readIds`. */
   snapshot(): Promise<ImageBitmap | null>;
+  /** How the worker stands. A failed worker is terminated already, and paints nothing more. */
+  readonly status: RenderWorkerStatus;
+  /** Hear when `status` changes. Returns an unsubscribe. */
+  subscribeStatus(fn: () => void): () => void;
   /** Stop the worker, and with it the canvas's context. */
   dispose(): void;
 }
@@ -101,123 +109,125 @@ function answerFromPage(
   if (!answered) unhook = onDispose(stop);
 }
 
-/** Watch `worker` for an error before its first message, which means its module never ran:
- *  `fail` runs then, and `failed` answers true from then on. A later error is only warned. */
-function watchStartup(worker: Worker, warn: (what: string, detail: unknown) => void, fail: () => void): { failed(): boolean } {
-  let started = false;
-  let failed = false;
-  worker.addEventListener('message', () => { started = true; });
-  worker.addEventListener('error', (event) => {
-    if (started) return warn('the render worker failed:', event.message);
-    failed = true;
-    warn('the render worker did not start:', event.message);
-    fail();
-  });
-  return { failed: () => failed };
-}
-
 /** Start painting `inputs.scene` into `canvas` from `worker`, a worker whose module calls
  *  `serveSceneRender`. The canvas is the worker's from here on: the page can no longer open a
- *  context on it or set its size attributes. */
-export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
-  worker: Worker,
-  canvas: HTMLCanvasElement,
-  initial: SceneRenderInputs<TData, TLayer, TPose>,
-): SceneRenderWorker<TData, TLayer, TPose> {
-  let inputs = initial;
-  const frames = createFrameWriter();
-  const due = createEmitter();
-  let inFlight = false;
-  let owed = false;
-  let disposed = false;
-  /** Each failure warned of, so a worker that fails the same way every frame warns once, and a new failure still warns. */
+ *  context on it or set its size attributes.
+ *
+ *  The client owns `worker` from the call: `dispose` terminates it, and so does a setup that
+ *  throws, which rethrows its own error and leaves nothing watching. A canvas whose transfer went
+ *  through before the throw cannot be handed over again. */
+/** A warning that says each different thing once, so a worker that fails the same way every
+ *  frame warns once, and a new failure still warns. */
+function onceEach(): (what: string, detail: unknown) => void {
   const warned = new Set<string>();
-  const warnOnce = (what: string, detail: unknown) => {
+  return (what, detail) => {
     const key = `${what} ${String(detail)}`;
     if (warned.has(key)) return;
     warned.add(key);
     console.warn(`weasel: ${what}`, detail);
   };
-  const snapshots = createRequests<ImageBitmap | null>();
-  const idReads = createRequests<IdBuffer>();
+}
+
+/** Start painting `inputs.scene` into `canvas` from `worker`, a worker whose module calls
+ *  `serveSceneRender`. The canvas is the worker's from here on: the page can no longer open a
+ *  context on it or set its size attributes.
+ *
+ *  The client owns `worker` from the call: `dispose` terminates it, and so does a setup that
+ *  throws, which rethrows its own error and leaves nothing watching. A canvas whose transfer went
+ *  through before the throw cannot be handed over again.
+ *
+ *  Every request waits at most `options.timeout`. An error the worker raises after it started
+ *  answers what was waiting as missing and lets later frames through; a worker that never
+ *  started, cannot open a context, or stays silent through a ping fails for good: `status` says
+ *  why, and the client releases what it holds. Restart with a new canvas and a new call. */
+export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
+  worker: Worker,
+  canvas: HTMLCanvasElement,
+  initial: SceneRenderInputs<TData, TLayer, TPose>,
+  options: RenderWorkerOptions = {},
+): SceneRenderWorker<TData, TLayer, TPose> {
+  const timeout = options.timeout ?? DEFAULT_WORKER_TIMEOUT;
+  let inputs = initial;
+  const frames = createFrameWriter();
+  const due = createEmitter();
+  let stopped = false;
+  const warnOnce = onceEach();
+  const post = (msg: ToWorker, transfer: Transferable[] = []) => worker.postMessage(msg, transfer);
+  const overdue = () => health.overdue();
+  const frameAcks = createRequests<boolean>({ missing: () => false, timeout, onTimeout: overdue });
+  const snapshots = createRequests<ImageBitmap | null>({ missing: () => null, timeout, onTimeout: overdue });
+  const idReads = createRequests<IdBuffer | null>({ missing: () => null, timeout, onTimeout: overdue });
   /** Each image request still waiting on the page's cache hears this to stop. */
   const disposing = createEmitter();
-  const post = (msg: ToWorker, transfer: Transferable[] = []) => worker.postMessage(msg, transfer);
-
-  const ops: AnimationOp[] = [];
-  let resumed = false;
-  const animator = workerAnimator((op) => {
-    if (disposed) return;
-    ops.push(op);
-    due.emit();
-  });
-
   let unwatch = () => {};
   const watch = () => {
     unwatch();
     unwatch = watchInputs(inputs, due.emit, frames.overridesChanged);
   };
-  watch();
+  const lost = () => { frameAcks.drain(); snapshots.drain(); idReads.drain(); };
+  const release = () => {
+    stopped = true;
+    unwatch();
+    disposing.emit();
+    lost();
+  };
+  const health = watchWorkerHealth(worker, { timeout, post, warn: warnOnce, fatal: release, lost });
 
-  // A worker that never started answers nothing asked of it.
-  const startup = watchStartup(worker, warnOnce, () => { snapshots.drain(null); idReads.drain(EMPTY_IDS()); });
+  const frameSync = createFrameSync({ frames, acks: frameAcks, post, due: due.emit, warn: warnOnce, stopped: () => stopped });
+  const animator = workerAnimator((op) => {
+    if (stopped) return;
+    frameSync.queue(op);
+    due.emit();
+  });
+
   worker.addEventListener('message', (event: MessageEvent<FromWorker>) => {
-    if (disposed) return;
+    if (stopped) return;
     const msg = event.data;
-    if (msg.type === 'drawn') {
-      inFlight = false;
-      if (owed) { owed = false; due.emit(); }
-    } else if (msg.type === 'dirty') due.emit();
+    if (msg.type === 'drawn') frameAcks.settle(msg.id, true);
+    else if (msg.type === 'dirty') due.emit();
     else if (msg.type === 'snapshot') snapshots.settle(msg.id, msg.bitmap);
     else if (msg.type === 'ids') idReads.settle(msg.id, msg.ids);
     else if (msg.type === 'image') answerFromPage(msg, post, disposing.subscribe);
-    else if (msg.type === 'error') warnOnce('the render worker failed:', msg.message);
   });
 
-  const dpr = resolveDpr(initial.dpr);
-  const offscreen = canvas.transferControlToOffscreen();
-  post({ type: 'init', canvas: offscreen, width: initial.width, height: initial.height, dpr }, [offscreen]);
+  try {
+    const dpr = resolveDpr(initial.dpr);
+    const offscreen = canvas.transferControlToOffscreen();
+    post({ type: 'init', canvas: offscreen, width: initial.width, height: initial.height, dpr }, [offscreen]);
+    watch();
+  } catch (e) {
+    stopped = true;
+    unwatch();
+    worker.terminate();
+    throw e;
+  }
 
   return {
     update(next) {
-      if (disposed) return;
+      if (stopped) return;
       const sceneMoved = next.scene !== undefined && next.scene !== inputs.scene;
       const clockMoved = 'clock' in next && next.clock !== inputs.clock;
       inputs = { ...inputs, ...next };
       if (sceneMoved) frames.forgetScene();
       if (sceneMoved || clockMoved) watch();
       // The last frame's time stands on the old clock's timeline, or the page's.
-      if (clockMoved) resumed = true;
+      if (clockMoved) frameSync.resume();
     },
     sync() {
-      if (disposed) return false;
-      if (inFlight) { owed = true; return true; }
-      const msg = frames.write(inputs as unknown as SceneRenderInputs<unknown, string, unknown>);
+      if (stopped) return false;
       const { clock } = inputs;
-      msg.at = clock ? { elapsed: clock.clock.elapsed, rate: clock.clock.rate } : { time: performance.now() };
-      if (resumed) msg.resumed = true;
-      resumed = false;
-      if (ops.length > 0) msg.animations = ops.splice(0);
-      try {
-        post(msg);
-      } catch (e) {
-        // Something in the frame cannot be cloned. Nothing of it arrived, so the next frame
-        // carries everything, and the animator calls go with it.
-        frames.lost();
-        if (msg.animations) ops.unshift(...msg.animations);
-        if (msg.resumed) resumed = true;
-        warnOnce('a frame could not be sent:', e);
-        return true;
-      }
-      inFlight = true;
+      frameSync.sync(
+        () => frames.write(inputs as unknown as SceneRenderInputs<unknown, string, unknown>),
+        clock ? { elapsed: clock.clock.elapsed, rate: clock.clock.rate } : { time: performance.now() },
+      );
       return true;
     },
     subscribe: due.subscribe,
     animator,
     // On a clock the clock's position is the time, hidden or not, as `useAnimator({ clock })` has it.
-    resumed() { if (!inputs.clock) resumed = true; },
+    resumed() { if (!inputs.clock) frameSync.resume(); },
     readIds(rect, options) {
-      if (disposed || startup.failed()) return Promise.resolve(EMPTY_IDS());
+      if (stopped) return Promise.resolve(null);
       return idReads.ask((id) => post({
         type: 'readIds', id, rect,
         ...(options?.minAlpha !== undefined ? { minAlpha: options.minAlpha } : {}),
@@ -225,16 +235,15 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
       }));
     },
     snapshot() {
-      if (disposed || startup.failed()) return Promise.resolve(null);
+      if (stopped) return Promise.resolve(null);
       return snapshots.ask((id) => post({ type: 'snapshot', id }));
     },
+    get status() { return health.status; },
+    subscribeStatus: health.subscribe,
     dispose() {
-      if (disposed) return;
-      disposed = true;
-      unwatch();
-      disposing.emit();
-      snapshots.drain(null);
-      idReads.drain(EMPTY_IDS());
+      if (stopped) return;
+      release();
+      health.dispose();
       worker.terminate();
     },
   };

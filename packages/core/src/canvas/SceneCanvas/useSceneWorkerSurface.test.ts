@@ -35,8 +35,9 @@ describe('what a worker frame reads of a scene canvas', () => {
     const frameWith = (sceneSlot: unknown) => {
       client.update(workerInputs({ scene, alphaFor: undefined, sceneSlot, clock: undefined, previewIds: () => null }));
       client.sync();
-      onMessage({ data: { type: 'drawn' } } as MessageEvent);
-      return posted.filter((m) => m.type === 'frame').at(-1)!;
+      const sent = posted.filter((m) => m.type === 'frame').at(-1)!;
+      onMessage({ data: { type: 'drawn', id: sent.id } } as MessageEvent);
+      return sent;
     };
     expect(frameWith({ cull: true })).toMatchObject({ cull: true });
     expect(frameWith({})).toMatchObject({ cull: false });

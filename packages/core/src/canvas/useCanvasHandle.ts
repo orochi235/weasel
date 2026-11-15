@@ -3,18 +3,15 @@ import type React from 'react';
 import type { View } from 'core/viewport/view';
 import type { Dims } from 'core/layers/render';
 import type { CanvasExtensionApi } from './canvasExtension';
-import type { IdBuffer } from '@weasel-js/renderer';
 import type { CanvasElements } from './useCanvasElements';
 import type { HitTestExtrasIn } from './useExtraLayers';
 import type { SurfaceFrame } from './useViewRegistrySurface';
 import type { WorkerCanvasHandle } from './renderWorker/WorkerSceneView';
 
-const NO_IDS: IdBuffer = Object.freeze({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
-
 /** How the handle reads the ids of the canvas's last frame; the paint publishes them. */
 export type IdReaders = Pick<CanvasExtensionApi, 'readIds' | 'readIdsSync'>;
 
-const NO_READERS: IdReaders = { readIds: () => Promise.resolve(NO_IDS), readIdsSync: () => NO_IDS };
+const NO_READERS: IdReaders = { readIds: () => Promise.resolve(null), readIdsSync: () => null };
 
 /** The handle's members the canvas builds elsewhere. */
 export type CanvasHandleApi = Omit<
@@ -58,7 +55,10 @@ export function useCanvasHandle(
   const readIdsSync = useCallback<CanvasExtensionApi['readIdsSync']>(
     (rect, options) => (worker ? null : readIdsRef.current.readIdsSync(rect, options)), [worker]);
   const pickAt = useCallback<CanvasExtensionApi['pickAt']>(
-    async (x, y, options) => (await readIds({ x, y, width: 0, height: 0 }, options)).data[0] ?? 0, [readIds]);
+    async (x, y, options) => {
+      const ids = await readIds({ x, y, width: 0, height: 0 }, options);
+      return ids ? (ids.data[0] ?? 0) : null;
+    }, [readIds]);
 
   const hitTestExtras = useCallback((worldX: number, worldY: number, at?: { view: View; dims: Dims }) => (
     hitTestExtrasIn(worldX, worldY, at?.view ?? viewRef.current, at?.dims ?? dimsRef.current, helpersRef.current)

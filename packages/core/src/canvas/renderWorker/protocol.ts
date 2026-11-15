@@ -77,8 +77,11 @@ export interface FrameInputs {
 
 export type ToWorker =
   | { type: 'init'; canvas: OffscreenCanvas; width: number; height: number; dpr: number }
-  | ({ type: 'frame'; scene?: SceneDelta; overrides?: WireOverride[] } & FrameInputs)
+  /** `id` comes back on the frame's `drawn`. */
+  | ({ type: 'frame'; id: number; scene?: SceneDelta; overrides?: WireOverride[] } & FrameInputs)
   | { type: 'snapshot'; id: number }
+  /** Answered with a `pong` of the same `id`, to tell a busy worker from a dead one. */
+  | { type: 'ping'; id: number }
   /** The answer to the worker's `image` request of the same `id`. */
   | { type: 'image'; id: number; src: string; bitmap?: ImageBitmap; error?: string }
   /** The ids the last frame painted over `rect`, CSS pixels from the canvas's top-left. */
@@ -93,13 +96,18 @@ export interface IdRect {
 }
 
 export type FromWorker =
-  /** A frame landed. */
-  | { type: 'drawn' }
+  /** The worker took the canvas and can paint. */
+  | { type: 'ready' }
+  /** Frame `id` landed, or failed to paint. */
+  | { type: 'drawn'; id: number }
+  | { type: 'pong'; id: number }
   /** Something the worker owns changed its pixels: an image or glyph landed, or a lost context
    *  came back. The page schedules a frame. */
   | { type: 'dirty' }
   /** The worker cannot load `src` itself. */
   | { type: 'image'; id: number; src: string; size?: ImageRasterSize }
   | { type: 'snapshot'; id: number; bitmap: ImageBitmap | null }
-  | { type: 'ids'; id: number; ids: IdBuffer }
-  | { type: 'error'; message: string };
+  /** `null` when the worker has no frame to read. */
+  | { type: 'ids'; id: number; ids: IdBuffer | null }
+  /** `fatal`: the worker cannot paint at all, as when it could not open a context on the canvas. */
+  | { type: 'error'; message: string; fatal?: true };

@@ -82,6 +82,27 @@ function openRenderer(
   return renderer;
 }
 
+/** What the worker paints with, from the canvas the page handed it: `null`, said to the page as
+ *  fatal, when it cannot open a context on it. */
+function openPainting(
+  msg: Extract<ToWorker, { type: 'init' }>, options: SceneRenderServeOptions,
+  post: (msg: FromWorker) => void, dirty: () => void,
+): Painting | null {
+  let renderer: WeaselRenderer;
+  try {
+    renderer = openRenderer(msg, options);
+  } catch (e) {
+    post({ type: 'error', message: e instanceof Error ? e.message : String(e), fatal: true });
+    return null;
+  }
+  msg.canvas.addEventListener('webglcontextrestored', dirty);
+  post({ type: 'ready' });
+  return {
+    renderer, canvas: msg.canvas, size: { width: msg.width, height: msg.height, dpr: msg.dpr }, view: null, last: null,
+    inputs: { layers: {}, cull: false, extraCommands: undefined },
+  };
+}
+
 /** Paint the scene over `port`. {@link serveSceneRender} is this over the worker's own scope. */
 export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptions = {}): void {
   const drawOne = (options.drawOne ?? defaultDrawOne) as SceneViewDrawOne<unknown, string, unknown>;
@@ -157,19 +178,15 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
 
   const receive = (msg: ToWorker): void => {
     switch (msg.type) {
-      case 'init': {
-        const renderer = openRenderer(msg, options);
-        const size = { width: msg.width, height: msg.height, dpr: msg.dpr };
-        painting = {
-          renderer, canvas: msg.canvas, size, view: null, last: null,
-          inputs: { layers: {}, cull: false, extraCommands: undefined },
-        };
-        msg.canvas.addEventListener('webglcontextrestored', dirty);
+      case 'init':
+        painting = openPainting(msg, options, post, dirty);
         return;
-      }
       case 'frame':
         frame(msg);
-        post({ type: 'drawn' });
+        post({ type: 'drawn', id: msg.id });
+        return;
+      case 'ping':
+        post({ type: 'pong', id: msg.id });
         return;
       case 'snapshot':
         void snapshot(painting?.canvas ?? null).then((bitmap) =>
@@ -180,7 +197,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
         return;
       case 'readIds': {
         const ids = readIds(painting, msg);
-        post({ type: 'ids', id: msg.id, ids }, [ids.data.buffer]);
+        post({ type: 'ids', id: msg.id, ids }, ids ? [ids.data.buffer] : []);
       }
     }
   };
@@ -191,18 +208,16 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       receive(msg);
     } catch (e) {
       // The page waits on these answers.
-      if (msg.type === 'frame') post({ type: 'drawn' });
-      else if (msg.type === 'readIds') post({ type: 'ids', id: msg.id, ids: NO_IDS() });
+      if (msg.type === 'frame') post({ type: 'drawn', id: msg.id });
+      else if (msg.type === 'readIds') post({ type: 'ids', id: msg.id, ids: null });
       report(e);
     }
   });
 }
 
-const NO_IDS = (): IdBuffer => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
-
-function readIds(painting: Painting | null, msg: Extract<ToWorker, { type: 'readIds' }>): IdBuffer {
+function readIds(painting: Painting | null, msg: Extract<ToWorker, { type: 'readIds' }>): IdBuffer | null {
   const last = painting?.last;
-  if (!painting || !last || painting.renderer.isContextLost()) return NO_IDS();
+  if (!painting || !last || painting.renderer.isContextLost()) return null;
   return painting.renderer.renderIds(last.commands, viewToMat3(last.view), {
     rect: msg.rect, minAlpha: msg.minAlpha, ...(msg.exclude ? { exclude: new Set(msg.exclude) } : {}),
   });

@@ -8,6 +8,7 @@ import type { CustomLayerEntry } from '../layerSlots';
 /** The page paints the scene layers. */
 export interface PagePaintedScene {
   worker?: undefined;
+  workerTimeout?: undefined;
   clock?: undefined;
 }
 
@@ -39,8 +40,15 @@ export interface WorkerPaintedScene {
    * The ref's `readIds` and `pickAt` read the worker's ids a round trip away, and `readIdsSync`
    * answers `null`, so `geometry.picking: 'pixels'` walks the shapes. An animation is the worker
    * module's too: play it through the ref's `worker.animator`.
+   *
+   * The ref's `worker.status` says when a worker has failed (its module never ran, it could not
+   * open a context, or it stopped answering), and `worker.restart()` mounts new canvases for new
+   * workers.
    */
   worker: () => Worker;
+  /** Milliseconds a frame, snapshot or id read waits for a worker before it settles as missing; a
+   *  worker silent for twice this fails as `unresponsive`. Default 10 000; `Infinity` waits. */
+  workerTimeout?: number;
   /** A page clock the worker's animator follows: its pause, rate and seeks reach the animations. */
   clock?: FollowedClock;
   /** Not in worker mode: animations run in the worker (`ref.worker.animator`). */

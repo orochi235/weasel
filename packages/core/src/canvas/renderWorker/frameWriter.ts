@@ -9,7 +9,8 @@ import { wireOverrides, wireScroll } from './sceneMirror';
 import type { SceneRenderInputs } from './startSceneRenderWorker';
 import type { AnyScene } from 'core/scene/anyScene';
 
-type FrameMessage = Extract<ToWorker, { type: 'frame' }>;
+/** A frame message but for its `id`, which the client gives it as it sends it. */
+export type FrameMessage = Omit<Extract<ToWorker, { type: 'frame' }>, 'id'>;
 export interface FrameWriter {
   /** The next frame for `inputs`. */
   write(inputs: SceneRenderInputs<unknown, string, unknown>): FrameMessage;

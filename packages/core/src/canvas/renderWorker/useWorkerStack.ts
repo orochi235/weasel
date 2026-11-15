@@ -2,7 +2,7 @@
  * `<Canvas>`'s worker mode: the stack of canvases its layers are cut into, the workers and
  * renderers behind them, and the frame, id read and snapshot that cross all of them.
  */
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { IdBuffer, WeaselRenderer } from '@weasel-js/renderer';
 import type { RenderLayer } from '../../core/layers/render';
@@ -11,6 +11,7 @@ import type { CanvasIdReadOptions } from '../canvasExtension';
 import { leaseCanvasRenderer, type CanvasRendererLease } from '../canvasRenderer';
 import { layerRuns, runsKey, type LayerRun } from './layerRuns';
 import { holdRenderWorker, type AnyRenderWorker } from './liveClients';
+import { createStatusRelay } from './statusRelay';
 import type { WorkerAnimationHandle, WorkerAnimator } from './workerAnimator';
 import {
   paintPageRun, paintWorkerRun, readStackIds, snapshotStack,
@@ -20,10 +21,12 @@ import type { WorkerCanvasHandle } from './WorkerSceneView';
 
 export interface WorkerStack {
   runs: readonly LayerRun[];
+  /** How many times the stack restarted: part of each worker canvas's key, so a restart mounts new ones. */
+  generation: number;
   /** React's ref callback for the canvas of run `index`, below the top one. */
   canvasRef(index: number): (el: HTMLCanvasElement | null) => void;
   paint(frame: StackFrame, top: WeaselRenderer): void;
-  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer>;
+  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer | null>;
   handle: WorkerCanvasHandle;
   /** The page's frames are back after time nobody saw. */
   resumed(): void;
@@ -82,6 +85,8 @@ export function useWorkerStack(
   const surfaceRef = useLatest(surface);
   const runsRef = useLatest(runs);
   const frameRef = useLatest(frame);
+  const [generation, setGeneration] = useState(0);
+  const [relay] = useState(() => createStatusRelay(() => [...clients.current.values()]));
 
   useLayoutEffect(() => {
     const current = surfaceRef.current;
@@ -92,22 +97,27 @@ export function useWorkerStack(
       if (run.by !== 'worker') return;
       const canvas = canvases.current.get(i);
       if (!canvas) return;
-      const hold = holdRenderWorker(canvas, current.start, { ...current.inputs(), view: viewRef.current, ...dims() });
+      const options = current.timeout === undefined ? undefined : { timeout: current.timeout };
+      const hold = holdRenderWorker(canvas, current.start, { ...current.inputs(), view: viewRef.current, ...dims() }, options);
       clients.current.set(i, hold.client);
-      held.push({ release: hold.release, off: hold.client.subscribe(requestRedraw) });
+      const offDue = hold.client.subscribe(requestRedraw);
+      const offStatus = relay.follow(hold.client);
+      held.push({ release: hold.release, off: () => { offDue(); offStatus(); } });
     });
+    relay.changed();
     requestRedraw();
     const clientMap = clients.current, leaseMap = leases.current, frameMap = frames.current, offMap = restoredOff.current;
     return () => {
       for (const h of held) { h.off(); h.release(); }
       clientMap.clear();
+      relay.changed();
       for (const off of offMap.values()) off();
       offMap.clear();
       for (const lease of leaseMap.values()) lease.release();
       leaseMap.clear();
       frameMap.clear();
     };
-  }, [key, surfaceRef, runsRef, frameRef]);
+  }, [key, generation, surfaceRef, runsRef, frameRef, relay]);
 
   const stack = useMemo<WorkerStack>(() => {
     const surfaces = (): StackSurface[] => runsRef.current.map((run, i, all) => {
@@ -117,6 +127,7 @@ export function useWorkerStack(
     });
     return {
       runs: [],
+      generation: 0,
       canvasRef: (index) => (el) => {
         if (el) canvases.current.set(index, el);
         else canvases.current.delete(index);
@@ -150,11 +161,14 @@ export function useWorkerStack(
           const { width, height } = frameRef.current.dims();
           return snapshotStack(surfaces(), width, height);
         },
+        get status() { return relay.status(); },
+        subscribeStatus: relay.subscribe,
+        restart: () => setGeneration((g) => g + 1),
       },
     };
-  }, [runsRef, top.canvas, top.lease, frameRef]);
+  }, [runsRef, top.canvas, top.lease, frameRef, relay]);
   const present = surface !== undefined;
-  return useMemo(() => (present ? { ...stack, runs } : null), [present, stack, runs]);
+  return useMemo(() => (present ? { ...stack, runs, generation } : null), [present, stack, runs, generation]);
 }
 
 /** {@link useWorkerStack}, and the two halves `<Canvas>` hands on: what the paint cuts its frame
