@@ -117,6 +117,25 @@ describe('UnitField settling when idle', () => {
     expect(onChange.mock.calls).toEqual([[7]]);
   });
 
+  it('commits once typing rests for a caller previewing into its own value', () => {
+    const onChange = vi.fn();
+    function Previewing() {
+      const [value, setValue] = useState(5);
+      return <UnitField value={value} onInput={setValue} onChange={onChange} aria-label="Width" />;
+    }
+    render(
+      <KitSettingsProvider value={{ typing: { settleWhenIdle: true } }}>
+        <Previewing />
+      </KitSettingsProvider>,
+    );
+    const field = screen.getByRole('spinbutton', { name: 'Width' });
+    field.focus();
+    type(field, '15');
+    wait(IDLE_SETTLE_MS);
+    fireEvent.blur(field);
+    expect(onChange.mock.calls).toEqual([[15]]);
+  });
+
   it('puts back the value it last committed on Escape', () => {
     const onInput = vi.fn();
     const { onChange, field } = setup({ onInput });

@@ -136,6 +136,36 @@ describe('UnitField', () => {
     });
   });
 
+  // A caller previewing into its own value has already written the typed number back by the time typing ends.
+  it('commits typed text a previewing caller has already written back', () => {
+    const onChange = vi.fn();
+    function Previewing() {
+      const [value, setValue] = useState(5);
+      return <UnitField value={value} onInput={setValue} onChange={onChange} aria-label="Width" />;
+    }
+    render(<Previewing />);
+    const field = screen.getByRole('spinbutton', { name: 'Width' });
+    field.focus();
+    fireEvent.change(field, { target: { value: '9' } });
+    fireEvent.blur(field);
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(9);
+  });
+
+  it('commits nothing when a previewing caller types its way back to where it began', () => {
+    const onChange = vi.fn();
+    function Previewing() {
+      const [value, setValue] = useState(5);
+      return <UnitField value={value} onInput={setValue} onChange={onChange} aria-label="Width" />;
+    }
+    render(<Previewing />);
+    const field = screen.getByRole('spinbutton', { name: 'Width' });
+    field.focus();
+    fireEvent.change(field, { target: { value: '9' } });
+    fireEvent.change(field, { target: { value: '5' } });
+    fireEvent.blur(field);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('sends nothing on an unreadable blur when nothing was sent', () => {
     const onInput = vi.fn();
     const { field } = setup({ onInput });

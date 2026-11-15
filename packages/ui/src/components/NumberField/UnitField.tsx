@@ -204,8 +204,10 @@ function UnitFieldBody({
   const bounds = { step, min: minValue, max: maxValue, endless };
   const idle = useIdleSettle(() => {
     const n = idleValue(draft, read, bounds);
-    if (n !== null) typing.current = { from: n, sent: false };
-    if (n !== null && n !== value) onChange(n);
+    if (n === null) return;
+    const began = typing.current?.from ?? value;
+    typing.current = { from: n, sent: false };
+    if (n !== began) onChange(n);
   }, settleWhenIdle);
 
   const from = (): number => stepStart(draft === null ? value : read(draft), value, endless);
@@ -310,7 +312,8 @@ function commitTyped(
 ): void {
   const next = settled(n, bounds);
   if (!Number.isNaN(next)) {
-    if (next !== value) onChange(next);
+    // Against where typing began: a caller previewing through `onInput` already holds `next` as its value.
+    if (next !== (typing?.from ?? value)) onChange(next);
   } else if (typing?.sent) {
     if (!Number.isNaN(typing.from)) onInput?.(typing.from);
     onCancel?.();
