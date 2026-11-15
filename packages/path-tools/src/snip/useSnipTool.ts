@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Action, ToolKeybinding } from '@weasel-js/routing';
+import { defineAction, type ToolKeybinding } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
 import { type Tool, type AnyScene } from '@weasel-js/core';
 import { planSnip } from './snip';
@@ -23,7 +23,7 @@ const SNIP_UNPREVIEW_ID = 'snip.unpreview';
 export function useSnipTool(options: UseSnipToolOptions = {}): Tool {
   const extras = useMemo<StrokeClickExtras>(() => {
     const preview = createPiecePreview();
-    const action: Action = {
+    const action = defineAction({
       id: SNIP_PREVIEW_ID,
       label: 'Snip: show the piece under the pointer',
       eligible: { capability: 'creates-shapes' },
@@ -36,13 +36,13 @@ export function useSnipTool(options: UseSnipToolOptions = {}): Tool {
           preview.show(plan && scene ? { path: plan.result.removed as PolygonPath, scene } : null);
         },
       },
-    };
-    const clear: Action = {
+    });
+    const clear = defineAction({
       id: SNIP_UNPREVIEW_ID,
       label: 'Snip: stop showing the piece',
       eligible: { capability: 'creates-shapes' },
       invoker: { timing: 'immediate', run: () => preview.show(null) },
-    };
+    });
     return {
       actions: [action, clear],
       bindings: [

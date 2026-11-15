@@ -1,6 +1,9 @@
 import { modeLabel, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
-import { ActionDisabledReason, type Action, type ActionDeps, type Contribution } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, type Action, type ActionDeps, type Contribution } from '@weasel-js/routing';
 import type { ImmediateParams } from '@weasel-js/routing';
+
+/** A mode trigger's params: where the double-click that enters the mode landed. */
+export type ModeTriggerParams = Pick<ImmediateParams, 'world'>;
 
 /** What a mode's double-click trigger does. */
 export interface ModeTriggerHandlers {
@@ -55,7 +58,7 @@ function triggerAction(
     return canEnter?.(mode.id, id) === false ? null : id;
   };
   const id = `mode.${mode.id}.trigger`;
-  return {
+  return defineAction<string, ModeTriggerParams>({
     id,
     label: `Enter ${modeLabel(mode)}`,
     defaultBinding: targets.map((kind) => ({
@@ -67,10 +70,10 @@ function triggerAction(
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const world = (params as ImmediateParams | undefined)?.world;
+        const world = params?.world;
         const id = world ? targetAt(deps, world) : null;
         if (id !== null) enter(mode.id, id);
       },
     },
-  };
+  });
 }

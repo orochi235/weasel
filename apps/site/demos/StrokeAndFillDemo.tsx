@@ -18,6 +18,7 @@ import {
   useScene,
   useSelection,
   type InsertNodeFactories,
+  type InvokeParams,
   type Paint,
   type GradientPaint,
   type Path,
@@ -217,7 +218,7 @@ function PaintPanel({
   // The style actions (`setFill`, `setStroke`, `setStrokeWidth`, `setVertexColor`) paint the selection, so the
   // panel commits through them rather than writing `data` itself: one undo entry each, and the same path a color
   // picker or a keybinding takes.
-  const run = (actionId: string, params: Record<string, unknown>): void => {
+  const run = <Id extends string>(actionId: Id, params: InvokeParams<Id>): void => {
     actions?.begin(actionId, params)?.end('commit');
   };
   const paint = (which: PaintSlot, next: Paint | null): void => run(which === 'fill' ? 'setFill' : 'setStroke', { paint: next });

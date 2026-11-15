@@ -1,6 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { Fill, Paint } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
+import type { PaintParams } from '../actionParamSchema';
 import { paintWithColor, DEFAULT_FILL_COLOR } from '../../../util/paint';
 
 /** `setFill`'s gesture state. A `paint` shadows the color until a later color
@@ -33,21 +34,22 @@ function repaint(prev: Fill | null | undefined, state: SetFillState): Fill {
  * color adopts the alpha of the node's existing paint; an 8-char color states
  * its own. A `paint` is written verbatim.
  */
-export const setFillAction: Action & { requires: string[] } = createPaintAction<
+export const setFillAction: Action = createPaintAction<
   SetFillState,
   Fill,
-  'fill'
+  'fill',
+  PaintParams
 >({
   id: 'setFill',
   label: 'Set fill',
   dataKey: 'fill',
   initialState: (pick) => ({
-    color: pick<string>('color') ?? DEFAULT_FILL_COLOR,
-    paint: pick<Paint | null>('paint'),
+    color: pick('color') ?? DEFAULT_FILL_COLOR,
+    paint: pick('paint'),
   }),
   readParams: (prev, params) => {
-    const color = params?.color as string | undefined;
-    const paint = params?.paint as Paint | null | undefined;
+    const color = params?.color;
+    const paint = params?.paint;
     if (color === undefined && paint === undefined) return null;
     if (color === undefined) return { ...prev, paint };
     // An explicit color supersedes a paint from an earlier tick; otherwise a

@@ -3,7 +3,7 @@
  * they name. The 2D canvas's own entries — booleans, outlines, anchor editing,
  * ingestion, preview paths, notices — are in `depSchema.ts`, which re-exports
  * these. Consumer apps add their own entries by declaration-merging against
- * `'@weasel-js/core'` in their own files.
+ * `'@weasel-js/routing'` in their own files.
  */
 
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -16,6 +16,7 @@ import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { GestureLifecycleOptions } from './gestureLifecycle';
 import type { History } from '@weasel-js/history';
+import type { ActionsRegistry } from '@weasel-js/routing';
 import type { BoundsConstraint } from '../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
@@ -107,7 +108,7 @@ export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
  * `@weasel-js/routing`, which knows that an action names its dependencies but
  * owns only `activeTool` among them; these entries are the kit's, merged in from
  * outside exactly the way a consumer merges its own
- * (`declare module '@weasel-js/core'`).
+ * (`declare module '@weasel-js/routing'`).
  */
 declare module '@weasel-js/routing' {
   interface DepSchema {
@@ -155,7 +156,7 @@ declare module '@weasel-js/routing' {
      *  passes `given`, `<SceneCanvas tune>` included: what a tool's chrome
      *  reads to draw what the action it binds will make. Sourced by
      *  `<SceneCanvas>`. */
-    actionParams?: (id: string, given?: Record<string, unknown>) => Record<string, unknown>;
+    actionParams?: ActionsRegistry['paramsOf'];
     /** The container the `insert` dep puts new nodes into — every shape a
      *  tool draws and every dropped image or text. Absent, or answering
      *  `null`: the top of the tree. */

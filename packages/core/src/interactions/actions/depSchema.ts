@@ -1,7 +1,7 @@
 /**
  * `DepSchema` and every dep value type it names: the entries any host sources
  * (`engineDeps.ts`, re-exported here) and the 2D canvas's own below. Consumer
- * apps add their own entries by declaration-merging against `'@weasel-js/core'`
+ * apps add their own entries by declaration-merging against `'@weasel-js/routing'`
  * in their own files.
  */
 

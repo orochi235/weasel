@@ -56,7 +56,7 @@ export function resolveSpatialReference(
 /** The sources an immediate action resolves a reference from. A click's
  *  `world` param outranks the `pointer` dep. */
 export function actionReferenceSources(
-  params: Record<string, unknown> | undefined,
+  params: Readonly<Pick<ImmediateParams, 'world'>> | undefined,
   pointer: PointerContextValue | undefined,
   scene: Scene<unknown, string, unknown>,
   frame: PoseFrame<unknown>,
@@ -64,7 +64,7 @@ export function actionReferenceSources(
 ): SpatialReferenceSources {
   return {
     pointer: () => {
-      const world = (params as ImmediateParams | undefined)?.world;
+      const world = params?.world;
       if (world) return world;
       const p = pointer?.get();
       return p ? p.world : null;

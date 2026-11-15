@@ -5,15 +5,47 @@
  */
 
 import type { GestureSpec } from '@weasel-js/gestures';
+import type { ActionParamSchema } from '../../index';
 import type { BindingOptions } from './invoker';
+import { dynamicActionId, type DynamicActionId, type InvokeParams, type KnownActionId, type NoParams } from './actionIds';
 
-/** An interaction: a gesture spec composed with the id of the action it
- *  invokes. Tools declare arrays of these; the dispatcher matches an incoming
- *  input event against them and runs the winner's action. */
-export interface GestureBinding {
+/** A binding to the action `Id`, its params typed `P`. */
+export interface BindingOf<Id extends string, P> {
   spec: GestureSpec;
-  actionId: string;
-  opts?: BindingOptions;
+  actionId: Id;
+  opts?: BindingOptions<P>;
+}
+
+/**
+ * An interaction: a gesture spec composed with the id of the action it
+ * invokes. Tools declare arrays of these; the dispatcher matches an incoming
+ * input event against them and runs the winner's action.
+ *
+ * An id `ActionParamSchema` names passes that entry's params, whole; any other
+ * id passes none, unless it is a `dynamicActionId`, whose params go unchecked.
+ */
+export type GestureBinding =
+  | { [K in KnownActionId]: BindingOf<K, ActionParamSchema[K]> }[KnownActionId]
+  | BindingOf<DynamicActionId, Record<string, unknown>>
+  | BindingOf<string, NoParams>;
+
+/**
+ * A binding of `spec` to `actionId`, its params typed as `trigger`'s are: for an id a literal binding cannot name
+ * by itself, such as one of several known ids (`` `${kind}.drag` ``) or one a generic function is handed.
+ */
+export function bindAction<Id extends string>(
+  spec: GestureSpec,
+  actionId: Id,
+  opts?: BindingOptions<InvokeParams<Id>>,
+): GestureBinding {
+  // `InvokeParams` gives each id of `Id` its own entry's params, as a binding of that id alone takes.
+  return { spec, actionId, ...(opts !== undefined ? { opts } : {}) } as GestureBinding;
+}
+
+/** `binding`'s options as routing reads them, whichever action it names: its params an open record. */
+export function routedOpts(binding: GestureBinding): BindingOptions | undefined {
+  // Every schema entry is a record of params; an entry declared as an interface just does not say so.
+  return binding.opts as BindingOptions | undefined;
 }
 
 /**
@@ -24,7 +56,7 @@ export interface GestureBinding {
  * a runtime parameter — the dispatcher extracts `opts.params` and passes
  * them to `ImmediateInvoker.run` as its second argument.
  */
-export type BoundGesture = GestureSpec | { spec: GestureSpec; opts?: BindingOptions };
+export type BoundGesture<P = Record<string, unknown>> = GestureSpec | { spec: GestureSpec; opts?: BindingOptions<P> };
 
 /**
  * The whole of an action `actionBindings` reads. Routing needs this much and
@@ -47,7 +79,7 @@ export interface BindingSource {
  * Flatten an action's `defaultBinding` into `GestureBinding`s. A bare
  * `GestureSpec` has `kind` at top level; the object form has `spec`.
  */
-export function actionBindings(action: BindingSource): GestureBinding[] {
+export function actionBindings(action: BindingSource): BindingOf<DynamicActionId, Record<string, unknown>>[] {
   const gs = action.defaultBinding;
   if (!gs) return [];
   const raw: BoundGesture[] = Array.isArray(gs) ? gs : [gs as BoundGesture];
@@ -55,6 +87,6 @@ export function actionBindings(action: BindingSource): GestureBinding[] {
     const isBoundObj = !('kind' in entry);
     const spec = isBoundObj ? (entry as { spec: GestureSpec }).spec : (entry as GestureSpec);
     const opts = isBoundObj ? (entry as { opts?: BindingOptions }).opts : undefined;
-    return { spec, actionId: action.id, ...(opts !== undefined ? { opts } : {}) };
+    return { spec, actionId: dynamicActionId(action.id), ...(opts !== undefined ? { opts } : {}) };
   });
 }

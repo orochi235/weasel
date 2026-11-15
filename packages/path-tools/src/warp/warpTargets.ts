@@ -38,7 +38,7 @@ export const WARP_LABELS: Record<WarpKind, string> = { plane: 'Plane Warp', clot
 
 /** The settings a warp is made or remade with. Each applies only to the kinds
  *  it names; absent ones leave a held warp as it is. */
-export interface WarpSettings {
+export type WarpSettings = {
   /** A plane warp's map. Default `'free'`. */
   mode?: PlaneMode;
   /** An cloth warp's interpolation. Default `'bicubic'`. */
@@ -49,7 +49,11 @@ export interface WarpSettings {
   /** How far, in world units, the refitted result may stray from the exact
    *  warp. Default {@link DEFAULT_WARP_TOLERANCE}. */
   tolerance?: number;
-}
+};
+
+/** The `configureWarp` action's params: the settings to remake with, and the one kind of warp they reach, when
+ *  named. */
+export type ConfigureWarpParams = WarpSettings & { kind?: WarpKind };
 
 /** The refit tolerance of a warp made without one. */
 export const DEFAULT_WARP_TOLERANCE = 0.5;

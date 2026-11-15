@@ -1,6 +1,6 @@
 import type { RefObject } from 'react';
 import type { Action } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 
 /**
@@ -13,7 +13,7 @@ import type { NodeId } from 'core/scene/types';
 export function createCollapseDeferredAction(
   pressRef: RefObject<{ deferredClickId: string | null }>,
 ): Action {
-  return {
+  return defineAction({
     id: 'select.collapseDeferred',
     label: 'Select — collapse deferred click',
     eligible: { capability: 'creates-selection' },
@@ -27,21 +27,18 @@ export function createCollapseDeferredAction(
         ? true
         : ActionDisabledReason.NotApplicable,
     invoker: {
-      timing: 'immediate' as const,
+      timing: 'immediate',
       run: (deps, params) => {
         const deferred = pressRef.current.deferredClickId;
         pressRef.current = { deferredClickId: null };
         if (deferred === null) return;
         const selection = deps.selection;
         if (!selection) return;
-        const p = params as {
-          mods?: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
-        } | undefined;
         selection.applyClick(
           deferred as NodeId,
-          p?.mods ?? { alt: false, ctrl: false, meta: false, shift: false },
+          params?.mods ?? { alt: false, ctrl: false, meta: false, shift: false },
         );
       },
     },
-  };
+  });
 }

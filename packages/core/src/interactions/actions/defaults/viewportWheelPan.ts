@@ -1,4 +1,4 @@
-import type { Action } from '@weasel-js/routing';
+import { defineAction, type Action, type ActionParamsOf, type BoundGesture } from '@weasel-js/routing';
 import { wheelPan } from 'core/viewport/wheelHandler';
 
 /**
@@ -7,7 +7,7 @@ import { wheelPan } from 'core/viewport/wheelHandler';
  * axis, and outranks `swapAxis`: a shift-wheel routed into a barred axis
  * moves nothing.
  */
-export const viewportWheelPanAction: Action & { requires: string[] } = {
+export const viewportWheelPanAction = defineAction({
   id: 'viewport.wheelPan',
   label: 'Pan (wheel)',
   group: 'viewport',
@@ -26,9 +26,9 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
     run(deps, params) {
       const view = deps.view;
       if (!view) return;
-      const axis = (params?.axis as 'both' | 'x' | 'y' | undefined) ?? 'both';
-      const deltaX = (params?.deltaX as number | undefined) ?? 0;
-      const deltaY = (params?.deltaY as number | undefined) ?? 0;
+      const axis = params?.axis ?? 'both';
+      const deltaX = params?.deltaX ?? 0;
+      const deltaY = params?.deltaY ?? 0;
       const from = view.get();
       const next = wheelPan(from, { deltaX, deltaY }, { axis, swapAxis: params?.swapAxis === true });
       view.set(next);
@@ -36,7 +36,7 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
     },
   },
   enabled: () => true,
-};
+});
 
 /** Tuning for {@link createViewportWheelPanAction}. */
 export interface ViewportWheelPanOptions {
@@ -48,13 +48,11 @@ export interface ViewportWheelPanOptions {
  *  default bindings. `viewportWheelPanAction` is the unconfigured one. */
 export function createViewportWheelPanAction(
   opts: ViewportWheelPanOptions = {},
-): Action & { requires: string[] } {
+): Action {
   const axis = opts.axis ?? 'both';
-  return {
-    ...viewportWheelPanAction,
-    defaultBinding: [
-      { spec: { kind: 'wheel' }, opts: { id: 'viewport.wheelPan.wheel', params: { axis } } },
-      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { id: 'viewport.wheelPan.swapAxis', params: { swapAxis: true, axis } } },
-    ],
-  };
+  const defaultBinding: BoundGesture<ActionParamsOf<'viewport.wheelPan'>>[] = [
+    { spec: { kind: 'wheel' }, opts: { id: 'viewport.wheelPan.wheel', params: { axis } } },
+    { spec: { kind: 'wheel', mods: { shift: true } }, opts: { id: 'viewport.wheelPan.swapAxis', params: { swapAxis: true, axis } } },
+  ];
+  return { ...viewportWheelPanAction, defaultBinding };
 }

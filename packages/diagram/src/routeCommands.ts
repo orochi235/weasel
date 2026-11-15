@@ -2,7 +2,7 @@
  * The route edits that are not drags: a double-click on a route handle, and
  * the Reset route command.
  */
-import { ActionDisabledReason, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/core';
+import { ActionDisabledReason, defineAction, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { createEdgeEnds } from './edgeEndLayer';
 import { diagramEdgeOf } from './edgeTrait';
@@ -10,7 +10,6 @@ import { commitRouteToScene, type RouteEdit, type RouteEditOptions } from './way
 import { WAYPOINT_HIT_PX, routeStateOf, waypointScratchOf, type EdgeRouteState } from './waypointLayer';
 import { avoid } from './edge';
 import { removeSegment, removeWaypoint, unpinSegment, type RouteHandle } from './waypoints';
-import type { ImmediateParams } from '@weasel-js/core';
 
 /** The action that removes a waypoint, straightens a segment, or unpins an
  *  `avoid` connector's segment, on a double-click of its handle. */
@@ -53,7 +52,7 @@ export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>)
     }
     return null;
   };
-  return {
+  return defineAction({
     id: REMOVE_WAYPOINT_ACTION_ID,
     label: 'Remove waypoint',
     group: 'diagram',
@@ -61,10 +60,9 @@ export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>)
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const p = params as ImmediateParams | undefined;
-        const world = p?.world;
+        const world = params?.world;
         if (!world) return;
-        const pressed = waypointScratchOf(p.affordance as { payload?: unknown } | undefined);
+        const pressed = waypointScratchOf(params.affordance);
         const route = pressed === null ? null : routeOf(pressed.edgeId);
         const waypoints = pressed === null || route === null ? null : removalOf(route, pressed.handle);
         const edit = pressed !== null && waypoints !== null ? { edgeId: pressed.edgeId, waypoints } : removalAt(deps, world);
@@ -72,7 +70,7 @@ export function createRemoveWaypointAction<TPose>(opts: RouteEditOptions<TPose>)
       },
     },
     enabled: (deps, at) => (at !== undefined && removalAt(deps, at) !== null ? true : ActionDisabledReason.NotApplicable),
-  };
+  });
 }
 
 /** The selected edges that have waypoints of their own. */

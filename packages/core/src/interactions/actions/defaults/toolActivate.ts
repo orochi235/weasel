@@ -1,6 +1,7 @@
-import { ActionDisabledReason, BETWEEN_GESTURES, TOOL_ACTIVATE_ID, type Action } from '@weasel-js/routing';
-import type { BoundGesture } from '@weasel-js/routing';
-import type { ImmediateInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES, TOOL_ACTIVATE_ID, defineAction, type Action } from '@weasel-js/routing';
+import type { ActionParamsOf, BoundGesture } from '@weasel-js/routing';
+
+type ToolActivateParams = ActionParamsOf<typeof TOOL_ACTIVATE_ID>;
 
 export { TOOL_ACTIVATE_ID };
 
@@ -24,7 +25,7 @@ export interface ToolActivateBindingSpec {
  *  invoker's `run` can pick out which tool to activate. */
 export function buildToolActivateBindings(
   specs: readonly ToolActivateBindingSpec[],
-): BoundGesture[] {
+): BoundGesture<ToolActivateParams>[] {
   const seen = new Set<string>();
   return specs.map(({ toolId, keyOpts }) => {
     const id = seen.has(toolId) ? `${TOOL_ACTIVATE_ID}.${toolId}.${keyOpts.key}` : `${TOOL_ACTIVATE_ID}.${toolId}`;
@@ -43,7 +44,7 @@ export function buildToolActivateBindings(
         phase: BETWEEN_GESTURES,
       },
       opts: { id, params: { toolId } },
-    } as BoundGesture;
+    };
   });
 }
 
@@ -54,20 +55,10 @@ export function buildToolActivateBindings(
  *  `isEligible` gates activation per tool, which the static per-action
  *  `Action.eligible` cannot. Omitted, every id is accepted. */
 export function createToolActivateAction(
-  bindings: BoundGesture[],
+  bindings: BoundGesture<ToolActivateParams>[],
   isEligible?: (toolId: string) => boolean,
 ): Action {
-  const invoker: ImmediateInvoker = {
-    timing: 'immediate',
-    run: (deps, params) => {
-      const activeTool = deps.activeTool;
-      const toolId = params?.toolId as string | undefined;
-      if (!activeTool || !toolId) return;
-      activeTool.setActive(toolId);
-    },
-  };
-
-  return {
+  return defineAction<typeof TOOL_ACTIVATE_ID>({
     id: TOOL_ACTIVATE_ID,
     label: 'Activate tool',
     defaultBinding: bindings,
@@ -75,12 +66,20 @@ export function createToolActivateAction(
     // Grayed out in the palette ⇒ not reachable by shortcut either, and the
     // key goes on to whatever else binds it.
     ...(isEligible ? {
-      enabled: (_deps, _at, _carried, params) => {
+      enabled: (_deps?: unknown, _at?: unknown, _carried?: unknown, params?: Readonly<Partial<ToolActivateParams>>) => {
         const toolId = params?.toolId;
         return typeof toolId !== 'string' || isEligible(toolId) ? true : ActionDisabledReason.NotApplicable;
       },
-    } satisfies Pick<Action, 'enabled'> : {}),
-    invoker,
+    } : {}),
+    invoker: {
+      timing: 'immediate',
+      run: (deps, params) => {
+        const activeTool = deps.activeTool;
+        const toolId = params?.toolId;
+        if (!activeTool || !toolId) return;
+        activeTool.setActive(toolId);
+      },
+    },
     requires: ['activeTool'],
-  } as Action & { requires: string[] };
+  });
 }

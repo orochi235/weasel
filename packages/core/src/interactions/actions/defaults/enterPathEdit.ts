@@ -11,14 +11,11 @@
  * `exitPathEditAction` (Escape) clears edit mode.
  */
 
-import type { Action } from '@weasel-js/routing';
-import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
-import { ActionDisabledReason, isBody } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, isBody } from '@weasel-js/routing';
 import { effectSourceFor } from 'domains/pathEffects/effectSources';
-import type { ImmediateParams } from '@weasel-js/routing';
 
-export const enterPathEditAction: Action & { requires: string[] } = {
+export const enterPathEditAction = defineAction({
   id: 'enterPathEdit',
   label: 'Edit path anchors',
   // Double-click on a polygon body (selected OR unselected) — matches the
@@ -43,7 +40,7 @@ export const enterPathEditAction: Action & { requires: string[] } = {
       if (!editAnchors || !selection) return;
       // The path under the pointer wins: with several selected, the first may not be the one
       // double-clicked.
-      const world = (params as ImmediateParams | undefined)?.world;
+      const world = params?.world;
       const under = world ? deps.nodeAtPoint?.(world) : null;
       if (under && editAnchors.getEditablePath(under)) {
         editAnchors.setEditingId(under);
@@ -64,7 +61,7 @@ export const enterPathEditAction: Action & { requires: string[] } = {
         }
       }
     },
-  } as ImmediateInvoker,
+  },
   // A double-click naming a group above the path under it is the group's, not this action's.
   enabled: (deps, at) => (at && deps?.hitAt?.(at)?.doubleClick ? ActionDisabledReason.NotApplicable : true),
-};
+});

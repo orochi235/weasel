@@ -5,15 +5,16 @@
  * as gesture chrome and, on release, hands one edit of the root's data to the
  * commit, by default one undo entry in the scene.
  */
-import { resolveParams, type Action, type InvocationCtx, type OngoingHandle, type OngoingOverlay, type Vec2, type AnyScene } from '@weasel-js/core';
+import { defineAction, resolveParams, type Action, type InvocationCtx, type OngoingOverlay, type Vec2, type AnyScene } from '@weasel-js/core';
 import { maxOf, minOf } from '@weasel-js/geom';
-import { SEQ_ARROWS, insertMessage, insertNote, wrapSteps, type SeqArrow, type SeqArrowName } from './authorSteps';
+import { SEQ_ARROWS, insertMessage, insertNote, wrapSteps, type SeqArrow } from './authorSteps';
 import { columnNear, sequenceAt, sequenceHitOf, slotNear, type SequenceHit } from './authorPlace';
 import { sameList } from './edit';
 import { noteAt } from './authorActions';
 import { sequenceCommitOf, type SequenceEditOptions } from './commit';
 import { SEQ } from './metrics';
 import type { SeqFragment, SequenceData } from './types';
+import type { DrawMessageParams, WrapFragmentParams } from '../actionParamSchema';
 import { SEQUENCE_FRAGMENT_PARAMS, SEQUENCE_MESSAGE_PARAMS } from './authorParams';
 
 /** The action a Message tool's drag runs. */
@@ -27,29 +28,30 @@ export const WRAP_FRAGMENT_ACTION_ID = 'diagram.sequence.wrapFragment';
 interface Proposal { data: SequenceData; label: string; overlay: OngoingOverlay[] }
 
 /** Builds a drag's proposal from its press, the pointer now, and its params: its binding's, its tool's options over them. */
-type Plan = (press: SequenceHit, now: SequenceHit, params: Record<string, unknown>) => Proposal | null;
+type Plan<P> = (press: SequenceHit, now: SequenceHit, params: Readonly<Partial<P>>) => Proposal | null;
 
 /** An ongoing action over the root a press lands on, proposing `plan` as the pointer moves and committing it on release. */
-function authorDrag(id: string, label: string, opts: SequenceEditOptions, plan: Plan, params?: Action['params']): Action {
+function authorDrag<P>(id: string, label: string, opts: SequenceEditOptions, plan: Plan<P>, params?: Action['params']): Action {
   const commit = sequenceCommitOf(opts);
-  return {
+  return defineAction<string, P>({
     id, label, group: 'diagram', requires: ['scene'], ...(params ? { params } : {}),
     invoker: {
       timing: 'ongoing',
-      start(ctx: InvocationCtx, binding): OngoingHandle {
+      start(ctx, binding) {
         const scene = ctx.deps.scene as AnyScene | undefined;
         const start = ctx.drag?.start ?? { x: ctx.world.x, y: ctx.world.y };
         const press = scene === undefined ? null : sequenceAt(scene, start);
         if (scene === undefined || press === null) return {};
         let proposal: Proposal | null = null;
         let last: Vec2 = start;
-        const planAt = (at: Vec2, given: Record<string, unknown>): Proposal | null => {
+        const planAt = (at: Vec2, given: Readonly<Partial<P>>): Proposal | null => {
           const now = sequenceHitOf(scene, press.root.id, at);
           return now === null ? null : plan(press, now, given);
         };
+        const none: Partial<P> = {};
         const propose = (at: Vec2, live: InvocationCtx) => {
           last = at;
-          proposal = planAt(at, { ...resolveParams(binding?.params), ...live.params });
+          proposal = planAt(at, { ...none, ...resolveParams(binding?.params), ...live.params });
         };
         const land = (done: Proposal | null) => {
           if (done === null || done.data === press.data) return;
@@ -70,16 +72,15 @@ function authorDrag(id: string, label: string, opts: SequenceEditOptions, plan: 
       },
     },
     enabled: () => true as const,
-  };
+  });
 }
 
 /** World point `x`, `y` of `hit`'s frame. */
 const world = (hit: SequenceHit, x: number, y: number): Vec2 => ({ x: hit.root.origin.x + x, y: hit.root.origin.y + y });
 
 /** `params.arrow` as an arrow: a name in `SEQ_ARROWS`, an arrow of its own, else a call. */
-const arrowOf = (params: Record<string, unknown>): SeqArrow =>
-  typeof params.arrow === 'object' && params.arrow !== null ? params.arrow as SeqArrow
-  : SEQ_ARROWS[(params.arrow as SeqArrowName | undefined) ?? 'sync'] ?? SEQ_ARROWS.sync;
+const arrowOf = (params: Readonly<DrawMessageParams>): SeqArrow =>
+  typeof params.arrow === 'object' ? params.arrow : SEQ_ARROWS[params.arrow ?? 'sync'] ?? SEQ_ARROWS.sync;
 
 /**
  * The Message tool's drag: from the lifeline nearest the press to the one
@@ -87,7 +88,7 @@ const arrowOf = (params: Record<string, unknown>): SeqArrow =>
  * `params.arrow`. Released back on its own lifeline, it is a self-message.
  */
 export function createDrawMessageAction(opts: SequenceEditOptions = {}): Action {
-  return authorDrag(DRAW_MESSAGE_ACTION_ID, 'Draw message', opts, (press, now, params) => {
+  return authorDrag<DrawMessageParams>(DRAW_MESSAGE_ACTION_ID, 'Draw message', opts, (press, now, params) => {
     const from = columnNear(press.root, press.local.x);
     const to = columnNear(now.root, now.local.x);
     const slot = slotNear(press.root, press.local.y);
@@ -133,11 +134,11 @@ const FRAGMENT_TYPES: ReadonlySet<string> = new Set<SeqFragment['type']>(['loop'
  * empty fragment to drag rows into.
  */
 export function createWrapFragmentAction(opts: SequenceEditOptions = {}): Action {
-  return authorDrag(WRAP_FRAGMENT_ACTION_ID, 'Wrap in fragment', opts, (press, now, params) => {
+  return authorDrag<WrapFragmentParams>(WRAP_FRAGMENT_ACTION_ID, 'Wrap in fragment', opts, (press, now, params) => {
     const first = slotNear(press.root, press.local.y);
     if (first === null) return null;
     const last = slotNear(press.root, now.local.y, (place) => sameList(place.parent, first.place.parent)) ?? first;
-    const type = FRAGMENT_TYPES.has(params.type as string) ? params.type as SeqFragment['type'] : 'loop';
+    const type = params.type !== undefined && FRAGMENT_TYPES.has(params.type) ? params.type : 'loop';
     const data = wrapSteps(press.data, first.place.parent, first.place.index, last.place.index, { type });
     const xs = press.root.geometry.columns.map((c) => c.x);
     const [x0, x1] = [Math.min(minOf(xs), press.local.x) - SEQ.fragmentPad, Math.max(maxOf(xs), press.local.x) + SEQ.fragmentPad];

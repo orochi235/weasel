@@ -3,6 +3,7 @@ import { deepEqual } from '@weasel-js/registry';
 import {
   actionSettingsParams,
   buildDepsFromRequires,
+  dynamicActionId,
   readActionSettings,
   useActionsRegistry,
   useOptionalDepRegistry,
@@ -50,7 +51,7 @@ export function useActionSettings(item: ActionItem | undefined): ActionSettingsF
   const onChange = useCallback((path: string, value: unknown) => {
     if (!settings || id === undefined) return;
     const made = actionSettingsParams(settings, path, value);
-    if (made) registry?.trigger(id, { ...params, ...made });
+    if (made) registry?.trigger(dynamicActionId(id), { ...params, ...made });
   }, [registry, settings, id, params]);
   return settings && state ? { schema: settings.schema, ...state, onChange } : null;
 }

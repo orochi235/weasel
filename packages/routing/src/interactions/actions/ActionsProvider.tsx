@@ -21,9 +21,10 @@ import {
 } from './depRegistry';
 import { buildDepsFromRequires } from './buildDeps';
 import type { ActionDeps, WorldPoint } from './invoker';
+import { dynamicActionId, type ActionParamsOf, type InvokeParams } from './actionIds';
 import type { ImmediateParams } from '../dispatcher/inputFacts';
 import type { Dispatcher } from '../dispatcher/dispatcher';
-import { validateActionId, validateActionDefaultBinding, type ActionsRegistry } from './registry';
+import { validateActionId, validateActionDefaultBinding, type ActionsRegistry, type UiOngoingControl } from './registry';
 import { createMenuHost, type MenuHost } from '../../menus/menuHost';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
@@ -31,6 +32,7 @@ import { dropKeysOf, holdsKeysNow, takeKeys } from './keyOrder';
 import { tuneAction, tunedParams, underFirst, type ActionTuning } from './tuning';
 import { overrideActionBindings, resolveBindingOverrides, type BindingOverrides, type ResolvedBindingOverrides } from './bindingOverrides';
 import { LastOperationKeeper, type LastOperationHost } from './lastOperation';
+import { showPreview } from './showPreview';
 import type { History } from '@weasel-js/history';
 
 /** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
@@ -188,7 +190,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     return root.host ??= createMenuHost({
       actions: () => root.registry.list(),
       depsFor: (a) => root.depsOf(a),
-      trigger: (id, params) => root.registry.trigger(id, params),
+      trigger: (id, params) => root.registry.trigger(dynamicActionId(id), params),
       activeTool: () => root.start().deps()?.get('activeTool')?.active ?? null,
     });
   }
@@ -269,7 +271,8 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
         this.changed();
       };
     },
-    paramsOf: (id: string, given?: Record<string, unknown>) => tunedParams(this.tuningsOf(id), given),
+    paramsOf: <Id extends string>(id: Id, given?: Partial<ActionParamsOf<Id>>) =>
+      tunedParams(this.tuningsOf(id), given) as Partial<ActionParamsOf<Id>>,
     overrideBindings: (overrides: BindingOverrides) => {
       const release = pushOwner(this.overrides, overrides);
       this.changed();
@@ -283,7 +286,8 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     },
     bindingOverrides: () => this.start().overridesHere(),
     list: () => this.snapshot(),
-    trigger: (id: string, params?: Record<string, unknown>) => {
+    trigger: <Id extends string>(id: Id, given?: InvokeParams<Id>) => {
+      const params = given as Record<string, unknown> | undefined;
       const leaf = this.start();
       const a = leaf.resolve(id);
       if (!a?.invoker || a.invoker.timing !== 'immediate') return false;
@@ -296,39 +300,19 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       }
       return true;
     },
-    preview: (id: string, params?: Record<string, unknown>) => {
+    preview: <Id extends string>(id: Id, given?: InvokeParams<Id>) => {
+      const params = given as Record<string, unknown> | undefined;
       const leaf = this.start();
-      const a = leaf.resolve(id);
-      if (!a?.preview) return NO_PREVIEW;
-      const deps = leaf.depsOf(a);
-      if (!evaluateEnabled(a, deps, pointOf(params), params).enabled) return NO_PREVIEW;
-      let stop: (() => void) | void;
-      try {
-        stop = a.preview(deps, params);
-      } catch (err) {
-        console.error(`weasel ActionsRegistry: preview of "${id}" threw`, err);
-        return NO_PREVIEW;
-      }
-      if (typeof stop !== 'function') return NO_PREVIEW;
-      let down = false;
-      return () => {
-        if (down) return;
-        down = true;
-        try {
-          stop();
-        } catch (err) {
-          console.error(`weasel ActionsRegistry: preview of "${id}" threw as it ended`, err);
-        }
-      };
+      return showPreview(leaf.resolve(id), (a) => leaf.depsOf(a), params, pointOf(params));
     },
     subscribe: (listener: () => void) => this.tree.listeners.subscribe(listener),
     setDispatcher: (d: Dispatcher | null) => pushOwner(this.dispatchers, d),
-    begin: (id: string, params?: Record<string, unknown>) => {
+    begin: <Id extends string>(id: Id, params?: InvokeParams<Id>) => {
       const leaf = this.start();
       const a = leaf.resolve(id);
       const disp = leaf.dispatcher();
       if (!a || !disp) return null;
-      return disp.beginUiOngoing(id, leaf.depsOf(a), params);
+      return disp.beginUiOngoing(id, leaf.depsOf(a), params as Record<string, unknown> | undefined) as UiOngoingControl<InvokeParams<Id>> | null;
     },
     activate: (opts?: { keys?: boolean }) => this.activate(opts),
     isActive: () => this.isActive(),
@@ -336,8 +320,6 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     dropKeys: () => dropKeysOf(this),
   };
 }
-
-const NO_PREVIEW = (): void => {};
 
 /** The world point a trigger's params carry, if any. */
 function pointOf(params: Record<string, unknown> | undefined): WorldPoint | undefined {

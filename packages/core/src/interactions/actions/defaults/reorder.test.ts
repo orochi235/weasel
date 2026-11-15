@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, type Mock } from 'vitest';
 import { stubDeps } from '../testUtils';
 import { reorderForwardAction, reorderBackwardAction } from './reorder';
+import type { Action } from '@weasel-js/routing';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import type { BoundGesture } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
@@ -402,7 +403,7 @@ describe('reorder default bindings', () => {
   } as InputEvent);
 
   /** The distance param a binding carries, or undefined when nothing matches. */
-  function distanceFor(action: typeof reorderForwardAction, e: InputEvent): string | undefined {
+  function distanceFor(action: Action, e: InputEvent): string | undefined {
     const bindings = action.defaultBinding as Array<{
       spec: Parameters<typeof matchSpec>[1];
       opts?: { params?: { distance?: string } };

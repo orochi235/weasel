@@ -1,6 +1,7 @@
 export { createHud, type Hud, type HudFocusOptions } from './hud';
 export { attachHud, type AttachHudOptions } from './attach';
 export { createHudContribution, HUD_AFFORDANCE_KIND, type HudHitPayload } from './tool';
+export type { HudPointParams, HudWheelParams } from './actionParamSchema';
 export type {
   Widget,
   WidgetBounds,

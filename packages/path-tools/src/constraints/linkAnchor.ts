@@ -5,7 +5,7 @@
  * anchor, `onPath` on the segment. The drag itself is `editAnchors`'.
  */
 import {
-  type Action, type ActionDeps, type BindingOptions, type InvocationCtx, isAnchor, type OngoingHandle,
+  type Action, type ActionDeps, defineAction, type InvocationCtx, isAnchor, type OngoingHandle,
   type OngoingInvoker, resolveParams,
 } from '@weasel-js/routing';
 import {
@@ -36,12 +36,12 @@ import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
 
 /** Params for `linkAnchor`. */
-export interface LinkAnchorParams {
+export type LinkAnchorParams = {
   /** The layer link nodes go on. Default: the scene's first annotation layer, else the edited node's. */
   layer?: string;
   /** Screen px within which the released anchor counts as on a target. Default 6. */
   reachPx?: number;
-}
+};
 
 const DEFAULT_REACH_PX = 6;
 const LABEL = 'Link anchor';
@@ -54,7 +54,7 @@ export const LINK_ANCHOR_PARAMS = pref.group(LABEL, {
   }),
 });
 
-const reachOf = (params: LinkAnchorParams | undefined): number =>
+const reachOf = (params: Readonly<LinkAnchorParams> | undefined): number =>
   typeof params?.reachPx === 'number' && params.reachPx > 0 ? params.reachPx : DEFAULT_REACH_PX;
 
 /** What the released anchor lands on: another node, the constraint tying it there in that node's own numbering, and the point. */
@@ -132,14 +132,14 @@ const pressedAnchor = (ctx: InvocationCtx): number => {
   return m ? parseInt(m[1], 10) : -1;
 };
 
-function linkLayer(scene: AnyScene, editedLayer: string, params: LinkAnchorParams | undefined): string {
+function linkLayer(scene: AnyScene, editedLayer: string, params: Readonly<LinkAnchorParams> | undefined): string {
   if (params?.layer) return params.layer;
   const [annotation] = annotationLayerIds(scene.layers);
   return annotation ?? editedLayer;
 }
 
 /** The ops that leave anchor `anchor` of `path`, the edit of the open node, on `target` and tied there. Empty when the dep cannot make them. */
-function linkOps(deps: ActionDeps, path: PolygonPath, anchor: number, target: LinkTarget, params: LinkAnchorParams | undefined) {
+function linkOps(deps: ActionDeps, path: PolygonPath, anchor: number, target: LinkTarget, params: Readonly<LinkAnchorParams> | undefined) {
   const dep = deps.editAnchors!;
   const scene = deps.scene as AnyScene;
   const edited = scene.get(dep.editingId as NodeId);
@@ -168,7 +168,7 @@ function linkOps(deps: ActionDeps, path: PolygonPath, anchor: number, target: Li
  * same undo step as the move. Released anywhere else it is a plain move. The
  * last-operation panel replays the drop with another reach.
  */
-export const linkAnchorAction: Action & { requires: string[] } = {
+export const linkAnchorAction = defineAction({
   id: 'linkAnchor',
   label: LABEL,
   tags: pathOperationTags('drag'),
@@ -182,7 +182,7 @@ export const linkAnchorAction: Action & { requires: string[] } = {
   params: LINK_ANCHOR_PARAMS,
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+    start(ctx, opts): OngoingHandle {
       const dep = ctx.deps.editAnchors;
       const anchor = pressedAnchor(ctx);
       if (!dep?.editingId || !ctx.deps.scene || anchor < 0) return {};
@@ -193,20 +193,20 @@ export const linkAnchorAction: Action & { requires: string[] } = {
       if (!move.onEnd || !move.previewPose) return move;
       /** Where the drag left the path, for a replay to land it again. */
       let dropped: { path: PolygonPath; scale: Point | undefined } | null = null;
-      const targetOf = (path: PolygonPath, params: LinkAnchorParams | undefined, scale: Point | undefined) => {
+      const targetOf = (path: PolygonPath, params: Readonly<LinkAnchorParams> | undefined, scale: Point | undefined) => {
         const p = pathAnchorPoints(path)[anchor];
         return p ? linkTargetAt(deps.scene as AnyScene, dep, p, reachOf(params), scale) : null;
       };
       return {
         ...move,
         kind: 'link-anchor',
-        onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+        onEnd(endCtx, reason): void {
           const shown = reason === 'commit' && [...(move.previewIds?.() ?? [])].includes(id) ? move.previewPose!(id) : null;
           const node = dep.getNodeShape(id);
           const path = shown && node
             ? pathEditPathOf({ pose: shown, data: move.previewData?.(id) ?? node.data }, dep.extensions)
             : null;
-          const params = resolveParams(opts?.params) as LinkAnchorParams | undefined;
+          const params = resolveParams(opts?.params);
           const scale = deps.view?.get().scale;
           const target = path && targetOf(path, params, scale);
           if (path) dropped = { path, scale };
@@ -218,7 +218,7 @@ export const linkAnchorAction: Action & { requires: string[] } = {
           const ops = linkOps(deps, path, anchor, target, params);
           if (ops.length > 0) commitOps(deps, ops, LABEL);
         },
-        replay(params: Record<string, unknown>): void {
+        replay(params): void {
           if (!dropped) return;
           const { path, scale } = dropped;
           const target = targetOf(path, params, scale);
@@ -229,4 +229,4 @@ export const linkAnchorAction: Action & { requires: string[] } = {
       };
     },
   },
-};
+});

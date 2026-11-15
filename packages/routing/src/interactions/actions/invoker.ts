@@ -92,8 +92,8 @@ export interface DragSample extends WorldPoint {
 
 /** Per-invocation runtime context the dispatcher hands to an Invoker.
  *  Gesture-kind-specific fields (`drag`, `wheel`, `multiTouch`, `key`) are
- *  populated only for matching gesture kinds. */
-export interface InvocationCtx {
+ *  populated only for matching gesture kinds. `P` is the params the action reads. */
+export interface InvocationCtx<P = Record<string, unknown>> {
   world: WorldPoint;
   /**
    * The pointer in client/screen pixels, for an action that has to place DOM
@@ -181,7 +181,7 @@ export interface InvocationCtx {
    * dispatcher does not populate this field; gesture-driven actions receive
    * params via `BindingOptions.params` on `start` (the `opts` arg).
    */
-  params?: Record<string, unknown>;
+  params?: Partial<P>;
   /**
    * Which of the action's `modifierRoles` are held for this event, by role
    * id. The dispatcher fills it on every event of a gesture whose action
@@ -207,7 +207,7 @@ export type { OngoingOverlay, OverlayRole } from './overlay';
  *  `onMove` on subsequent input events of the same gesture and calls
  *  `onEnd` exactly once (with `'commit'` on natural completion or `'cancel'`
  *  on pointercancel / blur / escape). */
-export interface OngoingHandle {
+export interface OngoingHandle<P = Record<string, unknown>> {
   /**
    * Optional logical action kind — a stable, human-readable tag the
    * dispatcher exposes via `getActiveAction()`, e.g. `'marquee'`, `'move'`,
@@ -253,7 +253,7 @@ export interface OngoingHandle {
    * them instead of `opts.params`. It may run any number of times. A gesture that cannot be recomputed
    * faithfully leaves it out, and its action gets no panel.
    */
-  replay?(params: Record<string, unknown>): void;
+  replay?(params: Partial<P>): void;
 
   /**
    * Params this gesture's commit took from what it edited rather than from its binding, read once it has ended:
@@ -261,7 +261,7 @@ export interface OngoingHandle {
    * panel shows them over the resolved params, and `replay` is handed them, so a change to one field leaves the
    * rest as the gesture found them.
    */
-  params?(): Readonly<Record<string, unknown>>;
+  params?(): Readonly<Partial<P>>;
 
   /**
    * Optional preview surface: the in-flight state the canvas's preview-ghost
@@ -323,8 +323,10 @@ export interface OngoingHandle {
 }
 
 /** Fire-once invocation. Runs to completion synchronously (or fires off an
- *  async side-effect; the registry doesn't wait). */
-export interface ImmediateInvoker {
+ *  async side-effect; the registry doesn't wait). `P` is the params the
+ *  action reads: each may be absent, since a tuning, a binding and a palette
+ *  each pass what they pass. */
+export interface ImmediateInvoker<P = Record<string, unknown>> {
   timing: 'immediate';
   /** `params` carries the matched binding's opts.params. Invoked from the
    *  command palette, or anywhere else with no per-binding context, `params`
@@ -334,14 +336,14 @@ export interface ImmediateInvoker {
    *  with it — a scroll already at the end of its range — and the dispatcher
    *  walks on to the next matching binding, as for a declined `enabled()`.
    *  Prediction cannot run the invoker, so it still names this action. */
-  run(deps: ActionDeps, params?: Record<string, unknown>): void | 'pass';
+  run(deps: ActionDeps, params?: Partial<P>): void | 'pass';
 }
 
 /** Phase-machine invocation. `start` opens the phase and returns the handle
  *  the dispatcher pumps. */
-export interface OngoingInvoker {
+export interface OngoingInvoker<P = Record<string, unknown>> {
   timing: 'ongoing';
-  start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle;
+  start(ctx: InvocationCtx<P>, opts?: BindingOptions<Partial<P>>): OngoingHandle<P>;
   /**
    * Screen travel, in CSS pixels, a pointer drag makes before the dispatcher calls `start`; a
    * binding's own `dragThresholdPx` wins over it. Until then the gesture is held for this action and
@@ -351,5 +353,5 @@ export interface OngoingInvoker {
   dragThresholdPx?: number;
 }
 
-/** Pluggable invocation strategy for an Action. */
-export type Invoker = ImmediateInvoker | OngoingInvoker;
+/** Pluggable invocation strategy for an Action, reading params `P`. */
+export type Invoker<P = Record<string, unknown>> = ImmediateInvoker<P> | OngoingInvoker<P>;

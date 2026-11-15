@@ -33,6 +33,7 @@ import { boxIndex, boxesMeeting, keyedIndex } from './keyedIndex';
 import { portsOf } from './ports';
 import type { DiagramNodeLike, DiagramNodeReader } from './trait';
 import type { Port } from './types';
+import { payloadOf } from './payload';
 
 /** The layer id this package composes its port regions into. */
 export const PORT_LAYER_ID = 'diagram-ports';
@@ -133,8 +134,8 @@ export const DEFAULT_PORT_FILL: CommandFill = { paint: { color: '#7ba7c7' } };
 export const DEFAULT_PORT_STROKE: CommandStroke = { paint: { color: '#16222c' }, width: 1 };
 
 /** Read a port press's scratch back off the hit an action was handed. */
-export function portScratchOf(hit: { payload?: unknown } | null | undefined): PortScratch | null {
-  const payload = hit?.payload as PortScratch | undefined;
+export function portScratchOf(hit: unknown): PortScratch | null {
+  const payload = payloadOf(hit) as PortScratch | undefined;
   return payload !== undefined && typeof payload.portId === 'string' ? payload : null;
 }
 

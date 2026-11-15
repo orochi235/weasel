@@ -9,7 +9,8 @@
  */
 
 import { useMemo } from 'react';
-import { defineTool, type Action, type InvocationCtx, type Tool } from '@weasel-js/routing';
+import { defineAction, defineTool, type Action, type InvocationCtx, type Tool } from '@weasel-js/routing';
+import type { DollyParams } from './actionParamSchema';
 import { dollyToward, orbitBy, panBy, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 import { icon } from './icons.gen';
@@ -138,10 +139,10 @@ function paneAnchor(
 }
 
 /** The canvas-local point a wheel event carries, if it carries one. */
-function wheelPoint(params: Record<string, unknown> | undefined): { x: number; y: number } | undefined {
+function wheelPoint(params: Readonly<Partial<DollyParams>> | undefined): { x: number; y: number } | undefined {
   const x = params?.clientX;
   const y = params?.clientY;
-  return typeof x === 'number' && typeof y === 'number' ? { x, y } : undefined;
+  return x !== undefined && y !== undefined ? { x, y } : undefined;
 }
 
 /** `camera.dolly`: moves the `camera3d` dep in or out about the point under
@@ -150,7 +151,7 @@ function wheelPoint(params: Record<string, unknown> | undefined): { x: number; y
  *  one rate for both, as a 2D camera zooms by both. Safari's pinch arrives as
  *  a `scale` and divides the distance by it. Bound to all three by default, in
  *  every tool. */
-export const dollyAction: Action = {
+export const dollyAction: Action = defineAction({
   id: 'camera.dolly',
   label: 'Dolly',
   icon: icon('dollyIn'),
@@ -167,10 +168,10 @@ export const dollyAction: Action = {
     run(deps, params) {
       const dep = deps.camera3d;
       if (!dep) return 'pass';
-      const factor = typeof params?.scale === 'number'
+      const factor = params?.scale !== undefined
         ? 1 / params.scale
         : Math.exp(
-          (typeof params?.deltaY === 'number' ? params.deltaY : 0)
+          (params?.deltaY ?? 0)
             * (deps.kitSettings?.get('orbit3d.dollyRate') ?? DOLLY_RATE),
         );
       if (!(factor > 0) || !Number.isFinite(factor) || factor === 1) return 'pass';
@@ -179,7 +180,7 @@ export const dollyAction: Action = {
       return undefined;
     },
   },
-};
+});
 
 /** `camera.pinchDolly`: two fingers spreading dolly the `camera3d` dep in and
  *  closing dolly it out, by the ratio of their spread, about where they began. */

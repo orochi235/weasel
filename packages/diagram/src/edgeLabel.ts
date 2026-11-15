@@ -4,6 +4,7 @@
  */
 import {
   ActionDisabledReason,
+  defineAction,
   bodyPredicate,
   followerHome,
   type Action,
@@ -20,7 +21,7 @@ import { LABEL_DERIVE_POSE } from './label';
 import { labelScratchOf, labelUnder } from './labelDragLayer';
 import { LABEL_PLACEMENT, diagramLabelOf, type DiagramLabel } from './labelTrait';
 import { estimatedWidth } from './rowMeasure';
-import type { ImmediateParams, AnyScene } from '@weasel-js/core';
+import type { AnyScene } from '@weasel-js/core';
 
 /** The face an edge label is set in: the diagram's, two sizes down. */
 export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => ({ ...font, fontSize: font.fontSize - 2 });
@@ -148,7 +149,7 @@ function beginEditing(edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLab
  */
 export function editEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
   const commit = opts.commit ?? ((edgeId: string, ctx: InvocationCtx) => beginEditing(edgeId, ctx, opts));
-  return {
+  return defineAction({
     id: EDIT_EDGE_LABEL_ACTION_ID,
     label: 'Edit edge label',
     group: 'diagram',
@@ -157,10 +158,9 @@ export function editEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const p = params as ImmediateParams | undefined;
-        const world = p?.world;
+        const world = params?.world;
         if (!world) return;
-        const pressed = labelScratchOf(p.affordance as { payload?: unknown } | undefined);
+        const pressed = labelScratchOf(params.affordance);
         const edgeId = pressed?.edgeId ?? edgeUnder(deps, world);
         if (edgeId === null) return;
         const ctx = { world, modifiers: { alt: false, shift: false, meta: false, ctrl: false }, deps } as InvocationCtx;
@@ -168,7 +168,7 @@ export function editEdgeLabelAction(opts: EditEdgeLabelOptions = {}): Action {
       },
     },
     enabled: (deps, at) => (edgeUnder(deps, at) !== null ? true : ActionDisabledReason.NotApplicable),
-  };
+  });
 }
 
 const onBody = bodyPredicate((target) => target === 'selected-body' || target === 'unselected-body');

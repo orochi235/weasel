@@ -1,5 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import { createPaintAction } from './createPaintAction';
+import type { ActionParamsOf } from '@weasel-js/routing';
 
 /** One anchor's color: its index, and its RGBA, each channel 0..1. */
 interface SetVertexColorState {
@@ -15,18 +16,19 @@ interface SetVertexColorState {
  * leaving the other anchors alone. A node with no vertex colors, or fewer
  * anchors than `index` names, is left as it is.
  */
-export const setVertexColorAction: Action & { requires: string[] } = createPaintAction<
+export const setVertexColorAction: Action = createPaintAction<
   SetVertexColorState,
   number[],
-  'vertexColors'
+  'vertexColors',
+  ActionParamsOf<'setVertexColor'>
 >({
   id: 'setVertexColor',
   label: 'Set vertex color',
   dataKey: 'vertexColors',
-  initialState: (pick) => ({ index: pick<number>('index') ?? 0, rgba: pick<SetVertexColorState['rgba']>('rgba') ?? null }),
+  initialState: (pick) => ({ index: pick('index') ?? 0, rgba: pick('rgba') ?? null }),
   readParams: (prev, params) => {
-    const rgba = params?.rgba as SetVertexColorState['rgba'] | undefined;
-    const index = params?.index as number | undefined;
+    const rgba = params?.rgba;
+    const index = params?.index;
     if (rgba === undefined && index === undefined) return null;
     return { index: index ?? prev.index, rgba: rgba ?? prev.rgba };
   },

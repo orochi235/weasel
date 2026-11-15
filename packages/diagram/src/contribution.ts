@@ -13,6 +13,7 @@
 import {
   ANY_MODS,
   ActionDisabledReason,
+  defineAction,
   roleMods,
   SNAP_ROLES,
   type Action,
@@ -114,7 +115,7 @@ export const SELECT_LABEL_EDGE_ACTION_ID = 'diagram.selectLabelEdge';
 const NO_MODIFIERS = { shift: false, meta: false, ctrl: false };
 
 function selectLabelEdgeAction(): Action {
-  return {
+  return defineAction({
     id: SELECT_LABEL_EDGE_ACTION_ID,
     label: 'Select label edge',
     group: 'diagram',
@@ -122,18 +123,17 @@ function selectLabelEdgeAction(): Action {
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const p = params as { affordance?: { payload?: unknown }; mods?: { shift: boolean; meta: boolean; ctrl: boolean } } | undefined;
-        const pressed = labelScratchOf(p?.affordance);
+        const pressed = labelScratchOf(params?.affordance);
         if (pressed === null || !deps.selection) return;
         // A range runs the way the select tool's does, over the canvas's own rule.
         const between = deps.selectRange?.at(deps.enteredGroup?.get() ?? null);
-        const mods = p?.mods ?? NO_MODIFIERS;
+        const mods = params?.mods ?? NO_MODIFIERS;
         if (between) deps.selection.applyClick(pressed.edgeId as NodeId, mods, between);
         else deps.selection.applyClick(pressed.edgeId as NodeId, mods);
       },
     },
     enabled: (deps) => (deps?.selection !== undefined ? true : ActionDisabledReason.NotApplicable),
-  };
+  });
 }
 
 /**

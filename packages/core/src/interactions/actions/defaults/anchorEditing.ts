@@ -25,7 +25,7 @@
  */
 
 import type { Action } from '@weasel-js/routing';
-import { ActionDisabledReason, roleMods, roleReader, type ModifierRoles } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, roleMods, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { EditAnchorsDep } from '../depSchema';
@@ -42,7 +42,6 @@ import { selectionAfterAnchorPress } from '../edit-anchors/action';
 import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
 import { pathOperationTags } from '../pathGestureTags';
-import type { ImmediateParams } from '@weasel-js/routing';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** Screen-pixel radius for "this click landed on an anchor". */
@@ -127,7 +126,7 @@ export function requiresAnchorSelection(deps?: ActionDeps): true | ActionDisable
  * empty canvas clears the node selection instead of selecting the anchor.
  * Anchors over the path body are unaffected.
  */
-export const selectAnchorAction: Action & { requires: string[] } = inPlane({
+export const selectAnchorAction: Action = inPlane(defineAction({
   id: 'selectAnchor',
   label: 'Select anchor',
   tags: pathOperationTags('click'),
@@ -142,7 +141,7 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
     run: (deps, params) => {
       const dep = depOf(deps);
       if (!dep) return;
-      const world = (params as ImmediateParams | undefined)?.world;
+      const world = params?.world;
       if (!world) return;
       const { x: wx, y: wy } = world;
       const worldPath = worldPathOf(dep);
@@ -163,9 +162,9 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
       }
       dep.setSelectedAnchors(selectionAfterAnchorPress(dep.selectedAnchors, hit, additive));
     },
-  } as ImmediateInvoker,
+  },
   enabled: plainAnchorEditing,
-}, editingLayer);
+}), editingLayer);
 
 /**
  * Delete the selected anchors, refitting the surrounding curve through
@@ -223,7 +222,7 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
  *
  * No-ops on an open subpath: there's nothing to cut.
  */
-export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
+export const cutPathAtAnchorAction: Action = inPlane(defineAction({
   id: 'cutPathAtAnchor',
   label: 'Cut path at anchor',
   tags: pathOperationTags('click'),
@@ -235,7 +234,7 @@ export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
     run: (deps, params) => {
       const dep = depOf(deps);
       if (!dep) return;
-      const world = (params as ImmediateParams | undefined)?.world;
+      const world = params?.world;
       if (!world) return;
       const { x: wx, y: wy } = world;
       const worldPath = worldPathOf(dep);
@@ -250,9 +249,9 @@ export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
       // Cutting rotates the subpath's anchor order, so held indices are stale.
       if (changed) dep.setSelectedAnchors([]);
     },
-  } as ImmediateInvoker,
+  },
   enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.SelectionRequired),
-}, editingLayer);
+}), editingLayer);
 
 /** Flat index of the open path's anchor a click at `world` lands on, else -1. */
 export function anchorUnder(deps: ActionDeps | undefined, world: { x: number; y: number }): number {

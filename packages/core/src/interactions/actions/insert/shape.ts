@@ -6,10 +6,11 @@ import { computeBounds, effectiveOriginMode } from './geometry';
 import type { InsertFrame } from './session';
 import { minSizeOf, type MinSize } from 'core/scene/minSize';
 import { insertStyleOf, type InsertStyle } from './style';
+import type { InsertParams } from '../actionParamSchema';
 
 /** The node kind a binding's resolved params ask for. */
-export function insertKind(resolved: Record<string, unknown> | undefined): string {
-  return (resolved?.['kind'] as string | undefined) ?? 'rect';
+export function insertKind(resolved: Readonly<Partial<InsertParams>> | undefined): string {
+  return resolved?.kind ?? 'rect';
 }
 
 /** The effective endpoints: `shaped`, plus — for the `line` kind only — the
@@ -68,7 +69,7 @@ export interface InsertShape {
  *  effective origin mode, so polygon/star center+radius follow the live Alt
  *  toggle and not the binding's nominal `originMode`. */
 export function insertShape(
-  resolved: Record<string, unknown> | undefined,
+  resolved: Readonly<Partial<InsertParams>> | undefined,
   frame: Pick<InsertFrame, 'shaped' | 'altHeld'>,
   points: ReadonlyArray<DragSample> | null,
   userRotation: number,

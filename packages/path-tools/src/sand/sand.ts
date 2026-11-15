@@ -1,6 +1,4 @@
-import {
-  type Action, ActionDisabledReason, type InvocationCtx, type OngoingHandle, resolveParams,
-} from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, type OngoingHandle, resolveParams } from '@weasel-js/routing';
 import { brushRing } from '@weasel-js/cursor';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import {
@@ -72,17 +70,17 @@ function toleranceOf(params: SandParams | undefined): number {
  * brush's samples with another Size or Tolerance. It has no binding of its own: `useSandTool`
  * binds it.
  */
-export const sandAction: Action & { requires: string[] } = inPlane({
+export const sandAction = inPlane(defineAction({
   id: 'sand',
   label: LABEL,
   tags: pathOperationTags('brush'),
-  cursor: (params) => brushRing(radiusOf(params as SandParams | undefined)),
+  cursor: (params) => brushRing(radiusOf(params)),
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view'],
   params: SAND_PARAMS,
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts): OngoingHandle {
+    start(ctx, opts): OngoingHandle<SandParams> {
       const dep = depOf(ctx.deps);
       if (!dep) return {};
       const id = dep.editingId;
@@ -90,7 +88,7 @@ export const sandAction: Action & { requires: string[] } = inPlane({
       if (!origin || origin.kind !== 'polygon') return {};
       const originSet = pathToAnchors(origin) as AnchorSet;
 
-      const params = () => resolveParams(opts?.params) as SandParams | undefined;
+      const params = () => resolveParams(opts?.params);
       const radiusPx = (): number => radiusOf(params());
       // Every sample, with the view's scale as it was taken, for a replay at another size.
       const trail: Sample[] = [];
@@ -121,16 +119,15 @@ export const sandAction: Action & { requires: string[] } = inPlane({
       return {
         kind: 'sand',
         cursor: () => brushRing(radiusPx()),
-        onMove(moveCtx: InvocationCtx): void {
+        onMove(moveCtx): void {
           sweepTo(moveCtx.world);
         },
-        onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+        onEnd(_endCtx, reason): void {
           current = null;
           // The tolerance as it stands at release decides the commit.
           if (reason === 'commit') commit(gathered, toleranceOf(params()));
         },
-        replay(replayed: Record<string, unknown>): void {
-          const p = replayed as SandParams;
+        replay(p): void {
           const again = new Set<number>();
           trail.forEach((sample, i) => gatherSpan(originSet, again, (trail[i - 1] ?? sample).at, sample, radiusOf(p)));
           commit(again, toleranceOf(p));
@@ -143,4 +140,4 @@ export const sandAction: Action & { requires: string[] } = inPlane({
     },
   },
   enabled: (deps) => (depOf(deps) ? true : ActionDisabledReason.NotApplicable),
-}, editingLayer);
+}), editingLayer);

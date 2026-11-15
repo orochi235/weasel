@@ -3,7 +3,7 @@
  * direction its path was heading, on whole paths or on the two anchors
  * selected in path edit.
  */
-import { type Action, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
+import { type Action, ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import {
   anchorEditWouldChange, commitAnchorEdit, depOf, joinPathsCommand, joinSelectedAnchors, pathOperationTags,
 } from '@weasel-js/core';
@@ -22,7 +22,7 @@ export const BRIDGE_PARAMS = pref.group('Bridge', {
 });
 
 /** A bridge's `params.tension`, or the default. Negative reads as `0`. */
-export function bridgeTensionOf(params: Record<string, unknown> | undefined): number {
+export function bridgeTensionOf(params: Readonly<Record<string, unknown>> | undefined): number {
   const t = params?.tension;
   return typeof t === 'number' && Number.isFinite(t) ? Math.max(0, t) : DEFAULT_BRIDGE_TENSION;
 }
@@ -57,7 +57,7 @@ const join = joinSelectedAnchors({});
  * long (`bridgePaths`'s default when absent). The anchor selection is
  * cleared.
  */
-export const bridgeAnchorsAction: Action & { requires: string[] } = {
+export const bridgeAnchorsAction = defineAction({
   id: 'bridgeAnchors',
   label: 'Bridge anchors',
   tags: pathOperationTags('command'),
@@ -76,11 +76,11 @@ export const bridgeAnchorsAction: Action & { requires: string[] } = {
       const bridge = joinSelectedAnchors({ tension: bridgeTensionOf(params) });
       if (commitAnchorEdit(dep, 'Bridge anchors', (set) => bridge(set, selected))) dep.setSelectedAnchors([]);
     },
-  } as ImmediateInvoker,
+  },
   enabled: (deps) => {
     const dep = depOf(deps);
     if (!dep || dep.selectedAnchors.size !== 2) return ActionDisabledReason.SelectionRequired;
     const selected = [...dep.selectedAnchors];
     return anchorEditWouldChange(deps, (set) => join(set, selected)) ? true : ActionDisabledReason.NotApplicable;
   },
-};
+});

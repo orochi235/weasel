@@ -1,9 +1,17 @@
-import { type Action, ActionDisabledReason, ANY_MODS, type ImmediateParams, type WorldPoint } from '@weasel-js/core';
+import { type Action, ActionDisabledReason, ANY_MODS, defineAction, type ImmediateParams, type WorldPoint } from '@weasel-js/core';
 import { OCTANT_SPLINE_MAX_ANCHORS, OCTANT_SPLINE_MIN_ANCHORS } from '@weasel-js/ui/components/Badge/geometry';
 import type { SplineAnchor, SplineMode } from './splineAnchors';
 import {
   dragEnd, dragInterior, insertionAt, normalAxisAt, polarPoint, projectOntoAxis, wheelWeight, type Point,
 } from './splineGeometry';
+
+declare module '@weasel-js/routing' {
+  interface ActionParamSchema {
+    'badge-spline.insert': Pick<ImmediateParams, 'world'>;
+    'badge-spline.remove': Pick<ImmediateParams, 'world'>;
+    'badge-spline.weigh': Pick<ImmediateParams, 'world' | 'deltaY'>;
+  }
+}
 
 /** How near a dot, in editor units, a press has to land to take it. */
 const HIT_RADIUS = 3;
@@ -87,7 +95,7 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
     },
   };
 
-  const insert: Action = {
+  const insert: Action = defineAction({
     id: 'badge-spline.insert',
     label: 'Insert anchor',
     defaultBinding: { kind: 'click', mods: { alt: true } },
@@ -95,16 +103,16 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
-        const { world } = (params ?? {}) as ImmediateParams;
+        const world = params?.world;
         if (!world) return 'pass';
         const at = insertionAt(input.current.mode, world);
         input.current.insert(at.s, at.r);
         return undefined;
       },
     },
-  };
+  });
 
-  const remove: Action = {
+  const remove: Action = defineAction({
     id: 'badge-spline.remove',
     label: 'Remove anchor',
     defaultBinding: { kind: 'contextMenu' },
@@ -116,15 +124,15 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
-        const idx = anchorAt(input.current, (params as ImmediateParams | undefined)?.world);
+        const idx = anchorAt(input.current, params?.world);
         if (idx < 0) return 'pass';
         input.current.remove(idx);
         return undefined;
       },
     },
-  };
+  });
 
-  const weigh: Action = {
+  const weigh: Action = defineAction({
     id: 'badge-spline.weigh',
     label: 'Change anchor weight',
     defaultBinding: { kind: 'wheel' },
@@ -132,7 +140,7 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
-        const { world, deltaY = 0 } = (params ?? {}) as ImmediateParams;
+        const { world, deltaY = 0 } = params ?? {};
         const now = input.current;
         const idx = anchorAt(now, world);
         if (idx < 0) return 'pass';
@@ -141,7 +149,7 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
         return undefined;
       },
     },
-  };
+  });
 
   return [move, insert, remove, weigh];
 }

@@ -1,8 +1,8 @@
 /** Declares the `appCommands` dep the app's own actions read. `appCommandsContribution` publishes its live source. */
-import '@weasel-js/core';
+import '@weasel-js/routing';
 import type { AppCommands } from './actions';
 
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface DepSchema {
     appCommands?: AppCommands;
   }

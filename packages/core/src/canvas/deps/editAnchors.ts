@@ -42,8 +42,7 @@ export type EditAnchorsStateSource = EditAnchorsStateRef & Partial<Pick<PathEdit
 export { resolveEditablePathOf };
 
 function tunedHandleLock(tune: ActionTunings | undefined): EditAnchorsParams['handleLock'] {
-  const params = resolveParams(tune?.editAnchors?.params as Parameters<typeof resolveParams>[0]);
-  return (params as EditAnchorsParams | undefined)?.handleLock;
+  return resolveParams(tune?.editAnchors?.params)?.handleLock;
 }
 
 const EMPTY_ANCHOR_SELECTION: ReadonlySet<number> = new Set<number>();

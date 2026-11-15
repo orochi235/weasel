@@ -9,6 +9,13 @@ export const PAGE_ACTIONS = {
   previous: 'page.previous',
 } as const;
 
+declare module '@weasel-js/routing' {
+  interface ActionParamSchema {
+    /** The page's id; the shown page when absent. */
+    'page.delete': { page?: string };
+  }
+}
+
 export const PAGE_TAB_MENU_ID = 'draw.pageTab';
 
 /** A page tab's context menu. Its items are handed the tab's page as `params.page`. */

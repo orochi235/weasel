@@ -5,6 +5,7 @@ import type { ActionsRegistry } from '../../actions/registry';
 import type { Action } from '../../actions/action';
 import type { DepRegistry } from '../../actions/depRegistry';
 import type { InputEvent } from '../matcher';
+import type { ActionParamsOf } from '../../actions/actionIds';
 
 export function makeRegistry(actions: Action[]): ActionsRegistry {
   const map = new Map(actions.map((a) => [a.id, a]));
@@ -13,7 +14,7 @@ export function makeRegistry(actions: Action[]): ActionsRegistry {
     unregister: vi.fn(),
     mute: vi.fn().mockReturnValue(() => {}),
     tune: vi.fn().mockReturnValue(() => {}),
-    paramsOf: (_id: string, given?: Record<string, unknown>) => ({ ...given }),
+    paramsOf: <Id extends string>(_id: Id, given?: Partial<ActionParamsOf<Id>>) => ({ ...given }) as Partial<ActionParamsOf<Id>>,
     overrideBindings: vi.fn().mockReturnValue(() => {}),
     bindingOverrides: () => new Map(),
     list: () => Array.from(map.values()),

@@ -1,5 +1,4 @@
-import type { Action } from '@weasel-js/routing';
-import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOptions } from '@weasel-js/routing';
+import { defineAction, resolveParams, type InvocationCtx, type OngoingHandle } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 import type { InertiaOptions } from 'core/viewport/useDecayLoop';
@@ -64,7 +63,7 @@ export interface DragPanParams {
  * binds a middle-button drag to it with `middleDragPanContribution`.
  */
 // No `eligible` field → viewport pan is always eligible across all modes.
-export const viewportDragPanAction: Action & { requires: string[] } = {
+export const viewportDragPanAction = defineAction({
   id: 'viewport.dragPan',
   label: 'Drag to pan viewport',
   group: 'viewport',
@@ -73,7 +72,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
   requires: ['view', 'debug'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+    start(ctx, opts): OngoingHandle {
       const view = ctx.deps.view;
       if (!view) return {};
 
@@ -81,7 +80,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
       // The dispatcher hands the binding's unresolved `opts` here and nowhere
       // else, and pumps `onMove` / `onEnd` with an empty deps bag. Everything
       // the gesture needs has to be captured now.
-      const params = (resolveParams(opts?.params) ?? {}) as DragPanParams;
+      const params = resolveParams(opts?.params) ?? {};
       const inertia = params.inertia === true ? {} : params.inertia || undefined;
       const scratch: DragPanScratch = {
         startView,
@@ -159,4 +158,4 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
     },
   },
   enabled: () => true,
-};
+});

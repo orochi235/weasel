@@ -1,9 +1,9 @@
 /** Snip: cut a stroke back to the crossings on either side of a click. */
-import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
+import { type ActionDeps, ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { snipPathAt, type SnipResult } from '@weasel-js/geom';
 import { commitOps, deleteNode, reshapeOps, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
-import { pressOf, scenePathNodes, strokeReachPref, strokesBesides } from '../shared/scenePaths';
+import { pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePressParams } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
 
 const SNIP_LABEL = 'Snip';
@@ -17,7 +17,7 @@ export const SNIP_PATH_PARAMS = pref.group(SNIP_LABEL, { radiusPx: strokeReachPr
  *  as the press, which is how a tool previews the piece. */
 export function planSnip(
   deps: ActionDeps,
-  params: unknown,
+  params: Readonly<StrokePressParams> | undefined,
 ): { target: PathNode; result: SnipResult } | null {
   const press = pressOf(deps, params);
   if (!press) return null;
@@ -39,7 +39,7 @@ export function planSnip(
  * which a click binding supplies, and `radiusPx`, which the last-operation
  * panel changes.
  */
-export const snipPathAction: Action & { requires: string[] } = {
+export const snipPathAction = defineAction({
   id: 'snipPath',
   icon: icon('snip'),
   label: SNIP_LABEL,
@@ -60,8 +60,8 @@ export const snipPathAction: Action & { requires: string[] } = {
         : reshapeOps(target, result.path, SNIP_LABEL);
       commitOps(deps, ops, SNIP_LABEL, gone ? { select: (deps.selection?.get() ?? []).filter((id) => id !== target.id) } : {});
     },
-  } satisfies ImmediateInvoker,
+  },
   // A click's point enables it, as Reach's does, and the run decides; without one, the press in its params does.
-  enabled: (deps?: ActionDeps, at?: { x: number; y: number }, _carried?: unknown, params?: unknown) =>
+  enabled: (deps, at, _carried, params) =>
     (at || (deps?.scene && planSnip(deps, params)) ? true : ActionDisabledReason.NotApplicable),
-};
+});

@@ -1,6 +1,5 @@
-import type { Action, ActionDeps, ModifierState } from '@weasel-js/routing';
+import { defineAction, type Action, type ModifierState } from '@weasel-js/routing';
 import { SNAP_ROLES, snapMods } from 'domains/snap/roles';
-import type { InsertExtras } from '../depSchema';
 import { inPlane, insertLayer } from '../planeInput';
 import { enterInsertedText, restoreSelection } from './commit';
 import { insertParent } from './parent';
@@ -8,7 +7,6 @@ import { insertKind } from './shape';
 import { clearedSelection } from './session';
 import { minSizeOf } from 'core/scene/minSize';
 import { insertStyleOf } from './style';
-import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What the dispatcher lays under an immediate action's params for a click. */
 const CLICK_FIELDS = ['world', 'press', 'affordance', 'mods'] as const;
@@ -29,7 +27,7 @@ const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: fa
  * A binding with no `size` places nothing: the kind's extent is the tool's to
  * name, and a click has none of its own.
  */
-export const placeAction: Action & { requires: string[] } = inPlane({
+export const placeAction: Action = inPlane(defineAction({
   id: 'place',
   label: 'Place',
   group: 'insert',
@@ -38,14 +36,14 @@ export const placeAction: Action & { requires: string[] } = inPlane({
   requires: ['insert', 'insertInto', 'canDropInto', 'selection', 'snap', 'textEdit', 'scene'],
   invoker: {
     timing: 'immediate',
-    run(deps: ActionDeps, params?: Record<string, unknown>): void {
+    run(deps, params) {
       const dep = deps.insert;
-      const asked = params?.['size'] as { width: number; height: number } | undefined;
+      const asked = params?.size;
       const min = minSizeOf(params);
       const size = asked && min
         ? { width: Math.max(asked.width, min.width), height: Math.max(asked.height, min.height) }
         : asked;
-      const world = (params as ImmediateParams | undefined)?.world;
+      const world = params?.world;
       if (!dep || !size || !world) return;
       const { x, y } = world;
       if (!(size.width > 0 && size.height > 0)) return;
@@ -54,11 +52,11 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       deps.selection?.clear();
       const parent = insertParent(deps.scene, deps.insertInto?.get(), deps.canDropInto, { x, y });
       const snap = deps.snap?.begin({ gesture: 'point', press: { x, y }, ...(parent === null ? {} : { parent }) });
-      const mods = snapMods({ modifiers: (params?.['mods'] as ModifierState | undefined) ?? NO_KEYS });
+      const mods = snapMods({ modifiers: params?.mods ?? NO_KEYS });
       const out = snap?.at({ x, y }, mods);
       const at = out ? out.point : { x, y };
       snap?.end();
-      const extras: Record<string, unknown> = { ...params, kind: insertKind(params) };
+      const extras: { kind: string; [extra: string]: unknown } = { ...params, kind: insertKind(params) };
       for (const k of [...CLICK_FIELDS, 'size']) delete extras[k];
       const style = insertStyleOf(params);
       if (style) extras['style'] = style;
@@ -67,14 +65,14 @@ export const placeAction: Action & { requires: string[] } = inPlane({
         start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true,
         ...(out?.landing !== undefined ? { landings: { start: out.landing } } : {}),
       };
-      const id = dep.commit(bounds, extras as InsertExtras, ends, clearedSelection(prior));
+      const id = dep.commit(bounds, extras, ends, clearedSelection(prior));
       if (id === null) {
         restoreSelection({ priorSelection: prior, selection: deps.selection });
         return;
       }
-      enterInsertedText(deps.textEdit, String(id), extras.kind as string);
+      enterInsertedText(deps.textEdit, String(id), extras.kind);
     },
   },
   /** Like `insert`, needs no selection. */
   enabled: () => true as const,
-}, insertLayer);
+}), insertLayer);

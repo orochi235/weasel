@@ -6,9 +6,11 @@
 import type { Action } from './action';
 import { evaluateEnabled } from './actionEnabled';
 import { resolveParams, type OngoingHandle } from './invoker';
+import { dynamicActionId, type DynamicActionId } from './actionIds';
 
-/** The id {@link holdPreview} gives the hold of action `id`. */
-export const holdPreviewId = (id: string): string => `${id}.hold`;
+/** The id {@link holdPreview} gives the hold of action `id`. Its params are the action's, which the schema does
+ *  not name under this id, so it is a dynamic one. */
+export const holdPreviewId = (id: string): DynamicActionId => dynamicActionId(`${id}.hold`);
 
 /**
  * `action` as a hold, under {@link holdPreviewId}. Bind it to a `held(…)` key,

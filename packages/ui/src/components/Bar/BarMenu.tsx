@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import {
   buildDepsFromRequires,
+  dynamicActionId,
   resolveSchemaMenu,
   useLatest,
   useActionsRegistry,
@@ -105,7 +106,7 @@ export function useBarMenuResolver(): (schema: PrefGroup, sources: BarMenuSource
   return (schema, { values, onChange, over }) => resolveSchemaMenu(schema, {
     actions: () => registry?.list() ?? [],
     depsFor: (action) => (depReg ? buildDepsFromRequires(action, depReg) : undefined),
-    trigger: (id, params) => registry?.trigger(id, params) ?? false,
+    trigger: (id, params) => registry?.trigger(dynamicActionId(id), params) ?? false,
     values,
     ...(onChange ? { onChange } : {}),
     ...(over ? { over } : {}),

@@ -4,7 +4,7 @@ import { render } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { useAction, useOngoingAction } from '@weasel-js/routing/react';
-import type { Action } from '@weasel-js/routing';
+import { dynamicActionId, type Action } from '@weasel-js/routing';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { drawPreset } from 'canvas/SceneCanvas/presets';
 
@@ -32,7 +32,7 @@ const paint: Action = {
  *  panel control seeding its value on mount does. */
 function OpensOnMount() {
   useAction(paint);
-  const edit = useOngoingAction(paint.id);
+  const edit = useOngoingAction(dynamicActionId(paint.id));
   useEffect(() => {
     if (starts.length === 0) edit.input({ color: '#f00' });
   });

@@ -17,6 +17,16 @@ export const FILE_ACTIONS = {
   exportSelection: 'file.exportSelection',
 } as const;
 
+declare module '@weasel-js/routing' {
+  interface ActionParamSchema {
+    /** The paper size's key; the shown page's size when absent. */
+    'file.new': { size?: string };
+    /** An export format's id. */
+    'file.exportPage': { format?: string };
+    'file.exportSelection': { format?: string };
+  }
+}
+
 /** New, opening onto one row per paper size, in the File menu. A new document is one page, untitled, on white;
  *  undo takes back the page and the background, not the name. */
 export const FILE_NEW_MENU: PrefGroup = pref.group(

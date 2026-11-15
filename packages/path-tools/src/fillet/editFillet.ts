@@ -7,8 +7,7 @@
  * selected corner the same radius. The release commits one undo step.
  */
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type BindingOptions, type InvocationCtx, isFilletWidget,
-  type OngoingHandle, resolveParams,
+  type ActionDeps, ActionDisabledReason, defineAction, isFilletWidget, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 import {
@@ -39,10 +38,10 @@ const KEYWORD_LABELS: Record<CornerKeyword, string> = {
 export const FILLET_SHAPE_OPTIONS = CORNER_KEYWORDS.map((value) => ({ value, label: KEYWORD_LABELS[value] }));
 
 /** What `editFillet` reads from its params. */
-export interface EditFilletParams {
+export type EditFilletParams = {
   /** The shape a corner with no shape yet takes. Default {@link DEFAULT_FILLET_SHAPE}. */
   shape?: CornerKeyword;
-}
+};
 
 /** A corner drag's params as a form, for the last-operation panel. */
 export const EDIT_FILLET_PARAMS = pref.group(LABEL, {
@@ -51,8 +50,10 @@ export const EDIT_FILLET_PARAMS = pref.group(LABEL, {
   }),
 });
 
-const newShapeOf = (params: Record<string, unknown> | undefined): CornerShape =>
-  (CORNER_KEYWORDS as readonly unknown[]).includes(params?.shape) ? params!.shape as CornerKeyword : DEFAULT_FILLET_SHAPE;
+const newShapeOf = (params: Readonly<EditFilletParams> | undefined): CornerShape => {
+  const shape = params?.shape;
+  return shape !== undefined && CORNER_KEYWORDS.includes(shape) ? shape : DEFAULT_FILLET_SHAPE;
+};
 
 /** Flat anchor index of a `fillet:N` affordance kind, or null. */
 function cornerIndexOf(kind: string): number | null {
@@ -88,7 +89,7 @@ function widgetEnabled(deps: ActionDeps | undefined): true | ActionDisabledReaso
 
 /** Drag a fillet widget to set the corner's radius. A corner with no shape yet takes the `shape` param's
  *  ({@link EditFilletParams}), which the last-operation panel changes by replaying the drag. */
-export const editFilletAction: Action & { requires: string[] } = inPlane({
+export const editFilletAction = inPlane(defineAction({
   id: 'editFillet',
   icon: icon('cornerRadius'),
   label: LABEL,
@@ -101,7 +102,7 @@ export const editFilletAction: Action & { requires: string[] } = inPlane({
   params: EDIT_FILLET_PARAMS,
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+    start(ctx, opts): OngoingHandle<EditFilletParams> {
       const dep = ctx.deps.editAnchors;
       const index = cornerIndexOf(ctx.drag?.affordance?.kind ?? '');
       if (!dep?.editingId || index === null) return {};
@@ -111,7 +112,7 @@ export const editFilletAction: Action & { requires: string[] } = inPlane({
       const pressed = frames.get(index);
       if (!pressed) return {};
       const indices = dep.selectedAnchors.has(index) ? [...dep.selectedAnchors] : [index];
-      const targetsFor = (params: Record<string, unknown> | undefined): CornerTarget[] => {
+      const targetsFor = (params: Readonly<EditFilletParams> | undefined): CornerTarget[] => {
         const fresh = newShapeOf(params);
         const out: CornerTarget[] = [];
         for (const i of indices) {
@@ -129,19 +130,19 @@ export const editFilletAction: Action & { requires: string[] } = inPlane({
       const id = dep.editingId;
       return {
         kind: 'edit-corner',
-        onMove(move: InvocationCtx): void {
+        onMove(move): void {
           const along = (move.world.x - press.x) * pressed.bisector.x
             + (move.world.y - press.y) * pressed.bisector.y;
           trim = Math.max(0, pressed.trim + along / Math.cos(pressed.halfAngle));
           current = withRadius(origin, targetsFor(resolveParams(opts?.params)), trim);
           active = true;
         },
-        onEnd(_end: InvocationCtx, reason: 'commit' | 'cancel'): void {
+        onEnd(_end, reason): void {
           active = false;
           if (reason === 'cancel' || current === origin) return;
           dep.applyEdit(id, current, LABEL);
         },
-        replay(params: Record<string, unknown>): void {
+        replay(params): void {
           const again = withRadius(origin, targetsFor(params), trim);
           if (again !== origin) dep.applyEdit(id, again, LABEL);
         },
@@ -152,4 +153,4 @@ export const editFilletAction: Action & { requires: string[] } = inPlane({
     },
   },
   enabled: widgetEnabled,
-}, editingLayer);
+}), editingLayer);

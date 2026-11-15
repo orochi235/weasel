@@ -1,7 +1,6 @@
-import type { Action, WorldPoint } from '@weasel-js/routing';
+import { defineAction, type Action, type WorldPoint } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { extendPressLocked } from 'core/selection/extendPressLocked';
-import type { ImmediateParams } from '@weasel-js/routing';
 
 export interface SelectDeepOptions {
   /** The node under the point, past every group. Locked nodes are the
@@ -21,15 +20,14 @@ export interface SelectDeepOptions {
  * covering what `rangeAt` gives. Bound to Cmd+Alt-press by `useSelectTool`, ahead of `select.pick`.
  */
 export function createSelectDeepAction(opts: SelectDeepOptions): Action {
-  return {
+  return defineAction({
     id: 'select.deep',
     label: 'Select — pick past groups',
     eligible: { capability: 'creates-selection' },
     requires: ['selection'],
     invoker: {
-      timing: 'immediate' as const,
-      run: (deps, params) => {
-        const p = params as ImmediateParams | undefined;
+      timing: 'immediate',
+      run: (deps, p) => {
         const selection = deps.selection;
         if (!selection || !p?.world) return;
         // The deep chord is Mod+Alt, so only Shift is left to say how the click applies.
@@ -43,5 +41,5 @@ export function createSelectDeepAction(opts: SelectDeepOptions): Action {
         else selection.applyClick(hit as NodeId, mods);
       },
     },
-  };
+  });
 }

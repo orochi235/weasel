@@ -1,5 +1,6 @@
 import {
   commitOps,
+  defineAction,
   snapMods,
   SNAP_ROLES,
   viewWorldToScreen,
@@ -42,25 +43,27 @@ function frameReader(ctx: RulersActionCtx): (scene: AnyScene | undefined, p: Poi
   };
 }
 
+/** The rulers' pointer action's params: where the hover is, and `over: false` once it has left. */
+export type RulersPointerParams = Pick<ImmediateParams, 'world'> & { over?: boolean };
+
 /** The pointer's hover: moves each ruler's marker, and reads the labels in
  *  the frame under it; off the canvas, in the document's. */
 export function rulersPointerAction(ctx: RulersActionCtx): Action {
   const frameAt = frameReader(ctx);
-  return {
+  return defineAction<string, RulersPointerParams>({
     id: `${ctx.id}.pointer`,
     label: 'Follow the pointer on the rulers',
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const p = params as (ImmediateParams & { over?: boolean }) | undefined;
-        if (p?.over === false || p?.world === undefined) {
+        if (params?.over === false || params?.world === undefined) {
           ctx.set({ pointer: null, frame: documentRulerFrame(ctx.root, ctx.origin) });
           return;
         }
-        ctx.set({ pointer: p.world, frame: frameAt(deps.scene as AnyScene | undefined, p.world) });
+        ctx.set({ pointer: params.world, frame: frameAt(deps.scene as AnyScene | undefined, params.world) });
       },
     },
-  };
+  });
 }
 
 const hitOf = (affordance: unknown): RulerHit | null =>

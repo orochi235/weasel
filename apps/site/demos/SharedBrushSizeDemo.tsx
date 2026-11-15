@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import {
-  type Action, type BindingOptions, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineTool, ellipsePath,
+  type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath,
   type InvocationCtx, type RectPose, resolveParams, SceneCanvas, setToolOption, shareToolOptions, solid, type Tool,
   type ToolOptions, type ToolOptionShare, type ToolOptionValues, type ToolsApi, useScene, useSelection,
   useToolOptionParams, useToolOptionValues,
@@ -15,7 +15,9 @@ import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 type Point = { x: number; y: number };
 const DOT = '#5b7bd5';
 
-type Act = (ctx: InvocationCtx, at: Point[], radius: number) => void;
+type Act = (ctx: InvocationCtx<BrushParams>, at: Point[], radius: number) => void;
+/** A brush's params: its radius in screen px. */
+type BrushParams = { radiusPx?: number };
 
 /** A round brush whose drag runs `act` on the release, with the stroke's points and its radius in world units.
  *  `share` is laid over its options: sharing its size makes it every sharing brush's size. */
@@ -25,13 +27,13 @@ function brushTool(id: string, label: string, act: Act, share?: ToolOptionShare)
   });
   const own: ToolOptions = { actionId: id, prefs, size: { option: 'radiusPx', times: 1.25 } };
   const options = shareToolOptions(own, share);
-  const radiusOf = (p: Readonly<Record<string, unknown>> | undefined) => (typeof p?.radiusPx === 'number' ? p.radiusPx : prefs.children.radiusPx.default);
-  const action: Action = {
+  const radiusOf = (p: Readonly<BrushParams> | undefined) => p?.radiusPx ?? prefs.children.radiusPx.default;
+  const action: Action = defineAction<string, BrushParams>({
     id, label, params: prefs, requires: ['scene', 'view', 'applyOps', 'selection'],
     cursor: (params) => brushRing(radiusOf(params)),
     invoker: {
       timing: 'ongoing',
-      start(ctx: InvocationCtx, opts?: BindingOptions) {
+      start(ctx, opts) {
         const radiusPx = radiusOf(resolveParams(opts?.params));
         const trail: Point[] = [ctx.world];
         return {
@@ -44,7 +46,7 @@ function brushTool(id: string, label: string, act: Act, share?: ToolOptionShare)
         };
       },
     },
-  };
+  });
   return defineTool({ id, presentation: { label }, bindings: [{ spec: { kind: 'drag' }, actionId: id }], actions: [action], options });
 }
 

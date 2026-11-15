@@ -18,6 +18,7 @@ import {
 import { keyedIndex } from '../keyedIndex';
 import type { SeqRect } from './layout';
 import { sequenceRootOf, type SequenceGeometry } from './trait';
+import { payloadOf } from '../payload';
 
 /** The layer id the sequence regions are composed into. */
 export const SEQUENCE_LAYER_ID = 'diagram-sequence';
@@ -38,8 +39,8 @@ export interface SequenceScratch {
 }
 
 /** Read a sequence press's scratch back off the hit an action was handed. */
-export function sequenceScratchOf(hit: { payload?: unknown } | null | undefined): SequenceScratch | null {
-  const p = hit?.payload as SequenceScratch | undefined;
+export function sequenceScratchOf(hit: unknown): SequenceScratch | null {
+  const p = payloadOf(hit) as SequenceScratch | undefined;
   return p !== undefined && typeof p.root === 'string' && typeof p.id === 'string' && typeof p.part === 'string' ? p : null;
 }
 

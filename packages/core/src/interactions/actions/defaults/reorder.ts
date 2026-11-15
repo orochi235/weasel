@@ -3,8 +3,9 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import type { Action, ActionDeps } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import type { ActionDeps } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
+import type { ReorderParams } from '../actionParamSchema';
 import { sameList } from '@weasel-js/registry';
 import { bringForward, bringToFront, sendBackward, sendToBack } from 'core/ops/reorder/algorithms';
 import { requiresSelection } from './requiresSelection';
@@ -15,7 +16,7 @@ import { BETWEEN_GESTURES } from '@weasel-js/routing';
 // Shared helper
 // ---------------------------------------------------------------------------
 
-type ReorderDistance = 'adjacent' | 'extreme';
+type ReorderDistance = NonNullable<ReorderParams['distance']>;
 
 /**
  * Execute a directional reorder on the current selection. Translates
@@ -79,12 +80,12 @@ function reorderDirection(direction: 'forward' | 'backward', distance: ReorderDi
 
 /** `enabled` for a reorder: a selection, and one the reorder would move. */
 function reorderEnabled(direction: 'forward' | 'backward') {
-  return (deps?: ActionDeps, _at?: unknown, _carried?: unknown, params?: Readonly<Record<string, unknown>>): true | ActionDisabledReason => {
+  return (deps?: ActionDeps, _at?: unknown, _carried?: unknown, params?: Readonly<Partial<ReorderParams>>): true | ActionDisabledReason => {
     const needs = requiresSelection(deps);
     if (needs !== true) return needs;
     const scene = deps!.scene as Scene<unknown, string, unknown> | undefined;
     if (!scene) return true;
-    const distance = (params?.distance as ReorderDistance | undefined) ?? 'adjacent';
+    const distance = params?.distance ?? 'adjacent';
     const plan = reorderPlan(scene, deps!.selection!.get() as string[], reorderDirection(direction, distance));
     return plan === 'moves' ? true : plan === 'locked' ? ActionDisabledReason.Locked : ActionDisabledReason.NotApplicable;
   };
@@ -102,7 +103,7 @@ function reorderEnabled(direction: 'forward' | 'backward') {
  * param (`'adjacent'` | `'extreme'`) is carried in `opts.params.distance`
  * and forwarded to `invoker.run` by the dispatcher.
  */
-export const reorderForwardAction: Action & { requires: string[] } = {
+export const reorderForwardAction = defineAction({
   id: 'reorder.forward',
   label: 'Bring',
   group: 'reorder',
@@ -141,7 +142,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const distance = (params?.distance as ReorderDistance | undefined) ?? 'adjacent';
+      const distance = params?.distance ?? 'adjacent';
       const selection = deps.selection;
       const scene = deps.scene;
       const applyOps = deps.applyOps;
@@ -150,7 +151,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
     },
   },
   enabled: reorderEnabled('forward'),
-};
+});
 
 /**
  * Parametric descriptor for backward reorder (`reorder.backward`).
@@ -158,7 +159,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
  * Collapses the old `reorder.backward` (adjacent) and `reorder.back`
  * (extreme) actions into one descriptor with two keybindings.
  */
-export const reorderBackwardAction: Action & { requires: string[] } = {
+export const reorderBackwardAction = defineAction({
   id: 'reorder.backward',
   label: 'Send',
   group: 'reorder',
@@ -188,7 +189,7 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const distance = (params?.distance as ReorderDistance | undefined) ?? 'adjacent';
+      const distance = params?.distance ?? 'adjacent';
       const selection = deps.selection;
       const scene = deps.scene;
       const applyOps = deps.applyOps;
@@ -197,5 +198,5 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
     },
   },
   enabled: reorderEnabled('backward'),
-};
+});
 

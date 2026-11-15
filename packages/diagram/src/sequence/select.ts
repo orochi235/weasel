@@ -8,6 +8,7 @@
 import {
   commitDeleteToScene,
   createDeleteAction,
+  defineAction,
   type Action,
   type ActionDeps,
   type NodeId,
@@ -35,23 +36,23 @@ export function sequencePartNodeOf(scene: AnyScene, s: Pick<SequenceScratch, 'ro
 }
 
 /** The sequence part's click: selects the node drawing it, or with Shift adds it to the selection or takes it out. */
-export const selectSequencePartAction: Action = {
+export const selectSequencePartAction: Action = defineAction({
   id: SELECT_SEQUENCE_PART_ACTION_ID, label: 'Select sequence part', group: 'diagram', requires: ['scene', 'selection'],
   invoker: {
     timing: 'immediate',
     run(deps, params) {
       const scene = deps.scene as AnyScene | undefined;
       const selection = deps.selection as SelectionApi | undefined;
-      const scratch = sequenceScratchOf(params?.affordance as { payload?: unknown } | undefined);
+      const scratch = sequenceScratchOf(params?.affordance);
       const id = scene === undefined || scratch === null ? null : sequencePartNodeOf(scene, scratch);
       if (id === null || selection === undefined) return;
       const held = selection.get() as readonly string[];
-      const shift = (params?.mods as { shift?: boolean } | undefined)?.shift === true;
+      const shift = params?.mods?.shift === true;
       selection.set((!shift ? [id] : held.includes(id) ? held.filter((h) => h !== id) : [...held, id]) as NodeId[]);
     },
   },
   enabled: () => true as const,
-};
+});
 
 /** What a selected part removes from its root's data: a head or lifeline its participant, a box itself, a message's, note's, or fragment's part its step. */
 function removing(data: SequenceData, part: { part: string; id: string }): SequenceData {

@@ -21,6 +21,7 @@ import type { Path, Vec2 } from '@weasel-js/core/math';
 import { boxIndex, boxesMeeting, keyedIndex, type BoxIndex } from './keyedIndex';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
 import type { Bounds } from './outline';
+import { payloadOf } from './payload';
 
 /** The layer id the label regions are composed into. */
 export const LABEL_DRAG_LAYER_ID = 'diagram-edge-labels';
@@ -36,8 +37,8 @@ export interface LabelScratch {
 }
 
 /** Read a label press's scratch back off the hit an action was handed. */
-export function labelScratchOf(hit: { payload?: unknown } | null | undefined): LabelScratch | null {
-  const payload = hit?.payload as LabelScratch | undefined;
+export function labelScratchOf(hit: unknown): LabelScratch | null {
+  const payload = payloadOf(hit) as LabelScratch | undefined;
   return payload !== undefined && typeof payload.labelId === 'string' && typeof payload.edgeId === 'string'
     ? payload : null;
 }

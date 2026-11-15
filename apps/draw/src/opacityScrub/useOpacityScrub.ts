@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { ActionDisabledReason, asNodeId, defineTool, paintAlpha, resolveFill, resolveStroke, useLatest } from '@weasel-js/core';
-import type { Action, Stroke, Fill } from '@weasel-js/core';
+import { ActionDisabledReason, asNodeId, defineAction, defineTool, paintAlpha, resolveFill, resolveStroke, useLatest } from '@weasel-js/core';
+import type { Stroke, Fill } from '@weasel-js/core';
 import {
   computeScrubbedPaints,
   type PaintSnapshot,
@@ -18,6 +18,13 @@ const FINE_STEP = 0.01;
 
 /** The wheel's action while O is held. */
 export const OPACITY_SCRUB_NUDGE = 'draw.opacityScrub.nudge';
+
+declare module '@weasel-js/routing' {
+  interface ActionParamSchema {
+    /** How far one notch of the wheel moves the opacity, and the wheel's turn, which the dispatcher hands it. */
+    'draw.opacityScrub.nudge': { step?: number; deltaX?: number; deltaY?: number };
+  }
+}
 
 export interface UseOpacityScrubArgs {
   scene: {
@@ -102,7 +109,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       setPercent(null);
     }
 
-    const nudge: Action = {
+    const nudge = defineAction({
       id: OPACITY_SCRUB_NUDGE,
       label: 'Adjust opacity (wheel)',
       enabled: () => (sessionRef.current ? true : ActionDisabledReason.SelectionRequired),
@@ -111,15 +118,15 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
         run: (_deps, params) => {
           const session = sessionRef.current;
           if (!session) return;
-          const step = params?.step as number;
+          const step = params?.step ?? COARSE_STEP;
           // Held Shift turns a mouse wheel's scroll horizontal in some browsers, macOS's among them.
-          const delta = (params?.deltaY as number | undefined) || ((params?.deltaX as number | undefined) ?? 0);
+          const delta = params?.deltaY || (params?.deltaX ?? 0);
           session.targetAlpha = Math.max(0, Math.min(1, session.targetAlpha - Math.sign(delta) * step));
           setPercent(Math.round(session.targetAlpha * 100));
           applyLive(session);
         },
       },
-    };
+    });
 
     return defineTool({
       id: 'opacityScrub',

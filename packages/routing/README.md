@@ -29,12 +29,15 @@ been merged in. `@weasel-js/core` merges the kit's own deps; a consumer adds its
 own the same way:
 
 ```ts
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface DepSchema {
     color: ColorApi;
   }
 }
 ```
 
-The augmentation merges through core's re-export, so consumers keep naming
-`'@weasel-js/core'` and never have to know this package exists.
+Augment `'@weasel-js/routing'`, where the interface is declared, even where you
+import `DepSchema` from `@weasel-js/core`, and list this package among your
+dependencies so the module resolves. An augmentation of `'@weasel-js/core'`
+merges into a copy of the interface apart from the kit's own entries, and which
+copy a reference sees depends on the order files enter the program.

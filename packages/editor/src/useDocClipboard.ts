@@ -1,6 +1,6 @@
 import {
   ActionDisabledReason, useClipboard, useCommand,
-  type BoundGesture, type ClipboardDep, type CommandOptions, type UseClipboardOptions, type WorldPoint,
+  type ActionParamsOf, type BoundGesture, type ClipboardDep, type CommandOptions, type UseClipboardOptions,
 } from '@weasel-js/core';
 
 /** The ids of the commands `useDocClipboard` registers: the kit's own, so a menu naming them finds these. */
@@ -14,14 +14,18 @@ export const DOC_CLIPBOARD_KEYS = {
 
 /** How one of `useDocClipboard`'s commands registers. Leaving `keys` out binds its `DOC_CLIPBOARD_KEYS` entry;
  *  `null` binds none. */
-export interface DocClipboardCommandOptions extends Pick<CommandOptions, 'icon' | 'group' | 'tags'> {
+export interface DocClipboardCommandOptions<Id extends string = string>
+  extends Pick<CommandOptions<ActionParamsOf<Id>>, 'icon' | 'group' | 'tags'> {
   label?: string;
-  keys?: CommandOptions['keys'] | null;
+  keys?: CommandOptions<ActionParamsOf<Id>>['keys'] | null;
 }
 
 /** Options for `useDocClipboard`: `useClipboard`'s, and how its commands register. */
 export interface DocClipboardOptions<TItem> extends UseClipboardOptions<TItem> {
-  commands?: { copy?: DocClipboardCommandOptions; paste?: DocClipboardCommandOptions };
+  commands?: {
+    copy?: DocClipboardCommandOptions<typeof DOC_CLIPBOARD_ACTIONS.copy>;
+    paste?: DocClipboardCommandOptions<typeof DOC_CLIPBOARD_ACTIONS.paste>;
+  };
 }
 
 /**
@@ -39,18 +43,18 @@ export function useDocClipboard<TItem>(options: DocClipboardOptions<TItem>): Cli
   };
   useDocClipboardCommand('copy', 'Copy', () => clipboard.copy(), canCopy, commands.copy);
   useDocClipboardCommand(
-    'paste', 'Paste', (params) => clipboard.paste(params?.world as WorldPoint | undefined),
+    'paste', 'Paste', (params) => clipboard.paste(params?.world),
     () => !clipboard.isEmpty() || ActionDisabledReason.NotApplicable, commands.paste,
   );
   return clipboard;
 }
 
-function useDocClipboardCommand(
-  slot: keyof typeof DOC_CLIPBOARD_ACTIONS,
+function useDocClipboardCommand<Slot extends keyof typeof DOC_CLIPBOARD_ACTIONS>(
+  slot: Slot,
   defaultLabel: string,
-  run: (params?: Readonly<Record<string, unknown>>) => void,
+  run: (params?: Readonly<Partial<ActionParamsOf<(typeof DOC_CLIPBOARD_ACTIONS)[Slot]>>>) => void,
   enabled: () => true | ActionDisabledReason,
-  options: DocClipboardCommandOptions | undefined,
+  options: DocClipboardCommandOptions<(typeof DOC_CLIPBOARD_ACTIONS)[Slot]> | undefined,
 ): void {
   const { label = defaultLabel, keys, ...rest } = options ?? {};
   const bound = keys === null ? {} : { keys: keys ?? { spec: DOC_CLIPBOARD_KEYS[slot], opts: { id: `${DOC_CLIPBOARD_ACTIONS[slot]}.key` } } };

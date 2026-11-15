@@ -4,7 +4,7 @@
  */
 import { resamplePath, type ResamplePathOptions } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
-import { type Action, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { commitOps, pathOperationTags, reshapeOps, selectedPathNodes } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 
@@ -35,7 +35,7 @@ export const RESAMPLE_PARAMS = pref.group(LABEL, {
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
 
 /** `params` as `resamplePath` options. */
-function resampleOptions(params: Readonly<Record<string, unknown>>): ResamplePathOptions {
+function resampleOptions(params: Readonly<ResamplePathParams>): ResamplePathOptions {
   const count = num(params.count) ?? 0;
   const spacing = num(params.spacing);
   const tolerance = num(params.tolerance);
@@ -53,7 +53,7 @@ function resampleOptions(params: Readonly<Record<string, unknown>>): ResamplePat
  * within `params.tolerance` of the original ({@link ResamplePathParams}).
  * One undo entry.
  */
-export const resamplePathAction: Action & { requires: string[] } = {
+export const resamplePathAction = defineAction({
   id: 'resamplePath',
   label: LABEL,
   icon: icon('resamplePath'),
@@ -68,6 +68,6 @@ export const resamplePathAction: Action & { requires: string[] } = {
       const ops = selectedPathNodes(deps).flatMap((target) => reshapeOps(target, resamplePath(target.path, options), LABEL));
       commitOps(deps, ops, LABEL);
     },
-  } satisfies ImmediateInvoker,
+  },
   enabled: (deps) => (selectedPathNodes(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
-};
+});

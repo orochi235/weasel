@@ -1,5 +1,5 @@
-import type { Action, BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { resolveParams } from '@weasel-js/routing';
+import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import { defineAction, resolveParams } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
 import { unitFrameAt } from 'interactions/actions/magnification';
@@ -13,7 +13,6 @@ import type { Measurements } from './measurements';
 import { measureAt, type MeasureHit } from './measureHit';
 import { addMeasureOp, moveEndOps, moveMeasureOps, translatedMeasure } from './measureEdits';
 import { MEASURE_ACTION_IDS } from './actionIds';
-import type { ImmediateParams } from '@weasel-js/routing';
 import { pxReach } from '@weasel-js/geom';
 import type { AnyScene } from 'core/scene/anyScene';
 
@@ -37,7 +36,7 @@ const framesOf = (scene: AnyScene | undefined): MeasureFrameAt => (scene ? unitF
  * step, and the picked one.
  */
 export function measureCreateAction(ms: Measurements): Action {
-  return {
+  return defineAction({
     id: MEASURE_ACTION_IDS.measure,
     label: 'Measure',
     modifierRoles: SNAP_ROLES,
@@ -45,12 +44,11 @@ export function measureCreateAction(ms: Measurements): Action {
     invoker: {
       timing: 'ongoing',
       // The dispatcher builds deps once, for `start`; later events carry none.
-      start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+      start(ctx, opts) {
         const deps = ctx.deps;
         // Read on every event, so a step changed mid-drag reaches it.
         const snap = spanSnap(deps.snap, () => {
-          const step = resolveParams(opts?.params)?.['angleStep'];
-          return { step: typeof step === 'number' ? step : SNAP_ANGLE_STEP };
+          return { step: resolveParams(opts?.params)?.angleStep ?? SNAP_ANGLE_STEP };
         });
         const scene = deps.scene as AnyScene | undefined;
         const frameAt = framesOf(scene);
@@ -78,27 +76,27 @@ export function measureCreateAction(ms: Measurements): Action {
         };
       },
     },
-  };
+  });
 }
 
 /** The measure tool's click: picks the measurement under it, or drops the
  *  pick on empty canvas. */
 export function measurePickAtAction(ms: Measurements): Action {
-  return {
+  return defineAction({
     id: MEASURE_ACTION_IDS.pickAt,
     label: 'Pick Measurement',
     requires: ['scene', 'view'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const press = (params as ImmediateParams | undefined)?.press;
+        const press = params?.press;
         const scene = deps.scene as AnyScene | undefined;
         if (!scene || !press) return;
         const hit = measureAt(scene, ms, press, pxReach(MEASURE_HIT_PX, deps.view?.get().scale ?? { x: 1, y: 1 }));
         ms.picked.set(hit?.id ?? null);
       },
     },
-  };
+  });
 }
 
 /** What a press on the measurements layer resolved, as its hit-test claims it. */
@@ -108,17 +106,17 @@ export const hitOf = (affordance: unknown): MeasureHit | null =>
 /** A click on a measurement under any tool: picks it, leaving the content
  *  selection as it was. */
 export function measurePickAction(ms: Measurements): Action {
-  return {
+  return defineAction({
     id: MEASURE_ACTION_IDS.pick,
     label: 'Pick Measurement',
     invoker: {
       timing: 'immediate',
       run: (_deps, params) => {
-        const hit = hitOf((params as { affordance?: unknown } | undefined)?.affordance);
+        const hit = hitOf(params?.affordance);
         if (hit) ms.picked.set(hit.id);
       },
     },
-  };
+  });
 }
 
 /** The node `id` on `scene`, as a measurement edit reads it. */

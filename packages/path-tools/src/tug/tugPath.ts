@@ -1,6 +1,5 @@
 import {
-  type Action, ActionDisabledReason, type ActionDeps, type BindingOptions, type InvocationCtx,
-  type OngoingHandle, resolveParams,
+  ActionDisabledReason, type ActionDeps, defineAction, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { pref } from '@weasel-js/prefs';
@@ -13,11 +12,11 @@ import {
 } from '@weasel-js/core';
 
 /** Params `tugPath` reads on every move. */
-export interface TugPathParams {
+export type TugPathParams = {
   /** How an unmodified drag grows the end. Shift picks `'curvature'` over
    *  `'tangent'` and `'tangent'` over either curve. Default `'tangent'`. */
   mode?: TugMode;
-}
+};
 
 const LABEL = 'Tug';
 
@@ -55,8 +54,8 @@ function endUnder(deps: ActionDeps | undefined, x: number, y: number): boolean {
 }
 
 /** The `mode` in `params`, or the other mode while `flip` is held. */
-function modeOf(params: Record<string, unknown> | undefined, flip: boolean): TugMode {
-  const mode = (params as TugPathParams | undefined)?.mode;
+function modeOf(params: Readonly<TugPathParams> | undefined, flip: boolean): TugMode {
+  const mode = params?.mode;
   const base: TugMode = mode === 'curvature' || mode === 'eased' ? mode : 'tangent';
   if (!flip) return base;
   return base === 'tangent' ? 'curvature' : 'tangent';
@@ -79,7 +78,7 @@ function pressedAnchor(ctx: InvocationCtx): number {
  * `mode`. One it turns down, on an anchor that is no open end,
  * falls through to `editAnchors`, which moves the anchor.
  */
-export const tugPathAction: Action & { requires: string[] } = inPlane({
+export const tugPathAction = inPlane(defineAction({
   id: 'tugPath',
   label: LABEL,
   tags: pathOperationTags('drag'),
@@ -89,7 +88,7 @@ export const tugPathAction: Action & { requires: string[] } = inPlane({
   params: TUG_PATH_PARAMS,
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+    start(ctx, opts): OngoingHandle<TugPathParams> {
       const edited = editedPath(ctx.deps);
       if (!edited) return {};
       const { dep, path: originPath } = edited;
@@ -105,7 +104,7 @@ export const tugPathAction: Action & { requires: string[] } = inPlane({
       let current: { path: PolygonPath; origins?: readonly (PointOrigin | null)[] } | null = null;
       const preview = pathEditPreview(dep, id, () => current);
       if (!preview) return {};
-      const step = (params: Record<string, unknown> | undefined, toward: { x: number; y: number }, flip: boolean) => {
+      const step = (params: Readonly<TugPathParams> | undefined, toward: { x: number; y: number }, flip: boolean) => {
         const mode = modeOf(params, flip);
         distance = lengthToward(origin, end, mode, toward, distance);
         return editAnchorSetTracked(originPath, (set) => tugPathEnd(set, end, distance, mode));
@@ -118,7 +117,7 @@ export const tugPathAction: Action & { requires: string[] } = inPlane({
 
       return {
         kind: 'tug',
-        onMove(moveCtx: InvocationCtx): void {
+        onMove(moveCtx): void {
           const toward = {
             x: frame.point.x + moveCtx.world.x - press.x,
             y: frame.point.y + moveCtx.world.y - press.y,
@@ -126,13 +125,13 @@ export const tugPathAction: Action & { requires: string[] } = inPlane({
           moves.push({ toward, flip: moveCtx.modifiers.shift });
           current = step(resolveParams(opts?.params), toward, moveCtx.modifiers.shift);
         },
-        onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+        onEnd(_endCtx, reason): void {
           const done = current;
           current = null;
           if (reason === 'cancel' || !done) return;
           commit(done);
         },
-        replay(params: Record<string, unknown>): void {
+        replay(params): void {
           distance = 0;
           let done: typeof current = null;
           for (const m of moves) done = step(params, m.toward, m.flip);
@@ -149,4 +148,4 @@ export const tugPathAction: Action & { requires: string[] } = inPlane({
     if (at && !endUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
     return true;
   },
-}, editingLayer);
+}), editingLayer);

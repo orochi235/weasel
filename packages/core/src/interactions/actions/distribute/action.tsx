@@ -10,12 +10,12 @@ import { uncarried } from '../selectionSubtree';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { commitTransformOps } from '../transformFinish';
 import type { Action, ActionDeps } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
+import type { DistributeParams } from '../actionParamSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { ImmediateInvoker } from '@weasel-js/routing';
 import { icon } from '../../../icons.gen';
 
-const ID_FOR: Record<DistributeAxis, string> = { x: 'distribute.horizontal', y: 'distribute.vertical' };
+const ID_FOR = { x: 'distribute.horizontal', y: 'distribute.vertical' } as const satisfies Record<DistributeAxis, string>;
 const LABEL_FOR: Record<DistributeAxis, string> = { x: 'Distribute Horizontally', y: 'Distribute Vertically' };
 const ICON_FOR: Record<DistributeAxis, IconRef> = {
   x: icon('distributeHorizontal'),
@@ -60,15 +60,14 @@ function distributeOps(
   return moveEachOps(scene, moves, deps, 'Distribute');
 }
 
-const modeOf = (params: Readonly<Record<string, unknown>> | undefined): DistributeMode =>
-  (params?.mode as DistributeMode | undefined) ?? 'centers';
+const modeOf = (params: Readonly<Partial<DistributeParams>> | undefined): DistributeMode => params?.mode ?? 'centers';
 
 // ---------------------------------------------------------------------------
 // Static descriptors
 // ---------------------------------------------------------------------------
 
 function makeDistributeAction(axis: DistributeAxis): Action {
-  return {
+  return defineAction({
     id: ID_FOR[axis],
     label: LABEL_FOR[axis],
     icon: ICON_FOR[axis],
@@ -84,14 +83,14 @@ function makeDistributeAction(axis: DistributeAxis): Action {
         if (!selection || !scene) return;
         commitTransformOps(deps, distributeOps(deps, selection, scene, axis, modeOf(params)), 'Distribute');
       },
-    } satisfies ImmediateInvoker,
+    },
     enabled: (deps, _at, _carried, params) => {
       const selection = deps?.selection;
       const scene = deps?.scene;
       if (!selection || !scene || selection.get().length < 3) return ActionDisabledReason.SelectionRequired;
       return distributeOps(deps, selection, scene, axis, modeOf(params)).length > 0 ? true : ActionDisabledReason.NotApplicable;
     },
-  };
+  });
 }
 
 /** Static descriptor for distribute-horizontal. */

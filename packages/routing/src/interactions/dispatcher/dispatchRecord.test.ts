@@ -13,6 +13,7 @@ import type { Tool } from '../../tools/types';
 import type { InputEvent } from './matcher';
 import type { RuleCtx } from '../../eligibility';
 import { hitPredicate } from '@weasel-js/gestures';
+import type { ActionParamsOf } from '../actions/actionIds';
 
 function registryOf(actions: Action[]): ActionsRegistry {
   return {
@@ -22,7 +23,7 @@ function registryOf(actions: Action[]): ActionsRegistry {
     tune: vi.fn().mockReturnValue(() => {}),
     overrideBindings: vi.fn().mockReturnValue(() => {}),
     bindingOverrides: () => new Map(),
-    paramsOf: (_id: string, given?: Record<string, unknown>) => ({ ...given }),
+    paramsOf: <Id extends string>(_id: Id, given?: Partial<ActionParamsOf<Id>>) => ({ ...given }) as Partial<ActionParamsOf<Id>>,
     list: () => actions,
     trigger: vi.fn().mockReturnValue(false),
     preview: vi.fn(() => () => {}),

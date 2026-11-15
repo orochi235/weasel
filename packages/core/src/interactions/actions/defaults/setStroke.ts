@@ -1,6 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { Paint, Stroke } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
+import type { PaintParams } from '../actionParamSchema';
 import { paintWithColor, DEFAULT_STROKE_COLOR } from '../../../util/paint';
 
 /** `setStroke`'s gesture state — `setFill`'s, against a stroke. */
@@ -35,21 +36,22 @@ function repaint(prev: Stroke | null | undefined, state: SetStrokeState): Stroke
  * (no-alpha) color adopts the alpha of the node's existing stroke paint; an
  * 8-char color states its own. A `paint` is written verbatim.
  */
-export const setStrokeAction: Action & { requires: string[] } = createPaintAction<
+export const setStrokeAction: Action = createPaintAction<
   SetStrokeState,
   Stroke,
-  'stroke'
+  'stroke',
+  PaintParams
 >({
   id: 'setStroke',
   label: 'Set stroke',
   dataKey: 'stroke',
   initialState: (pick) => ({
-    color: pick<string>('color') ?? DEFAULT_STROKE_COLOR,
-    paint: pick<Paint | null>('paint'),
+    color: pick('color') ?? DEFAULT_STROKE_COLOR,
+    paint: pick('paint'),
   }),
   readParams: (prev, params) => {
-    const color = params?.color as string | undefined;
-    const paint = params?.paint as Paint | null | undefined;
+    const color = params?.color;
+    const paint = params?.paint;
     if (color === undefined && paint === undefined) return null;
     if (color === undefined) return { ...prev, paint };
     // An explicit color supersedes a paint from an earlier tick; otherwise a

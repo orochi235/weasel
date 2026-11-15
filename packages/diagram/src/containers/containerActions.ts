@@ -6,6 +6,7 @@
  */
 import {
   ActionDisabledReason,
+  defineAction,
   carriedDescendants,
   sceneCarrySource,
   type Action,
@@ -22,7 +23,7 @@ import { LANE_AFFORDANCE_KIND, laneLayer, laneScratchOf, poolsOf, type LaneLayer
 import { MIN_LANE_SIZE } from './laneStack';
 import { titleInFrame } from './titlePose';
 import { diagramContainerOf, titleIdOf } from './trait';
-import type { ImmediateParams, AnyScene } from '@weasel-js/core';
+import type { AnyScene } from '@weasel-js/core';
 
 /** The action that drags a lane's boundary. */
 export const LANE_RESIZE_ACTION_ID = 'diagram.resizeLane';
@@ -149,7 +150,7 @@ export function createAddLaneAction(opts: LaneActionOptions): Action {
     const scene = ctx.deps.scene as AnyScene | undefined;
     if (scene !== undefined) addLane(scene, poolId);
   });
-  return {
+  return defineAction({
     id: ADD_LANE_ACTION_ID,
     label: 'Add lane',
     group: 'diagram',
@@ -157,15 +158,14 @@ export function createAddLaneAction(opts: LaneActionOptions): Action {
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const p = params as ImmediateParams | undefined;
-        const pressed = laneScratchOf(p?.affordance as { payload?: unknown } | undefined);
-        const world = p?.world;
+        const pressed = laneScratchOf(params?.affordance);
+        const world = params?.world;
         if (pressed === null || pressed.laneId !== undefined || !world) return;
         commit(pressed.poolId, { world, modifiers: NO_MODIFIERS, deps } as InvocationCtx);
       },
     },
     enabled: () => true as const,
-  };
+  });
 }
 
 /** The selected containers, pools, and lanes. */

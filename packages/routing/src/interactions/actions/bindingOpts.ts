@@ -4,8 +4,9 @@
 import type { RoleRebinds } from './modifierRoles';
 
 /** Per-invocation options the dispatcher reads from a `GestureBinding`'s
- *  `opts` field and passes to `OngoingInvoker.start`. */
-export interface BindingOptions {
+ *  `opts` field and passes to `OngoingInvoker.start`. `P` is the params the
+ *  bound action reads. */
+export interface BindingOptions<P = Record<string, unknown>> {
   /** The id a binding override names this binding by, `<owner>.<role>`:
    *  `undo.key`, `rect.drag`, `nudge.left.big`. Without one it is its owner and
    *  its position (`<entry>#<n>`, `<action>@<n>`), which moves when the defaults
@@ -23,7 +24,7 @@ export interface BindingOptions {
    *  adjusted mid-drag via ArrowUp). An ongoing invoker that wants the latest
    *  values at commit re-calls it inside `onEnd` via
    *  `resolveParams(opts?.params)`. */
-  params?: Record<string, unknown> | (() => Record<string, unknown>);
+  params?: P | (() => P);
   /**
    * The views this binding is live in, by id, where `null` is the surface's
    * own camera. Omitted means every view.
@@ -61,9 +62,9 @@ export interface BindingOptions {
 
 /** Resolve `BindingOptions.params` to a concrete record (calling the thunk if
  *  needed). Returns `undefined` for absent params. */
-export function resolveParams(
-  params: BindingOptions['params'],
-): Record<string, unknown> | undefined {
+export function resolveParams<P = Record<string, unknown>>(
+  params: P | (() => P) | undefined,
+): P | undefined {
   if (params === undefined) return undefined;
-  return typeof params === 'function' ? params() : params;
+  return typeof params === 'function' ? (params as () => P)() : params;
 }

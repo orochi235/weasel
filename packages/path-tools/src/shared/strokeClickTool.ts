@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
-import type { Action, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
+import { dynamicActionId, routedOpts, type Action, type GestureBinding, type ToolKeybinding } from '@weasel-js/routing';
 import { defineTool, type RenderLayer, type Tool } from '@weasel-js/core';
 
 /** Options for a tool that acts on the stroke under a click. */
@@ -58,8 +58,9 @@ export function useStrokeClickTool(
       ...(extras.overlay ? { overlay: extras.overlay } : {}),
       ...(extras.onDeactivate ? { onDeactivate: extras.onDeactivate } : {}),
       bindings: [
-        { spec: { kind: 'click' }, actionId, opts: { id: `${id}.click`, ...params } },
-        ...(extras.bindings ?? []).map((b) => ({ ...b, opts: { ...b.opts, ...params } })),
+        // `actionId` and the extras' are the spec's to name, each reading `radiusPx`.
+        { spec: { kind: 'click' }, actionId: dynamicActionId(actionId), opts: { id: `${id}.click`, ...params } },
+        ...(extras.bindings ?? []).map((b) => ({ ...b, actionId: dynamicActionId(b.actionId), opts: { ...routedOpts(b), ...params } })),
       ],
     });
   }, [id, label, description, icon, hookName, actionId, keybinding, radiusPx, extras.actions, extras.bindings, extras.overlay, extras.onDeactivate]);

@@ -6,6 +6,7 @@ import {
 } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { LastOperationPanel } from './LastOperationPanel';
+import { dynamicActionId } from '@weasel-js/core';
 
 afterEach(cleanup);
 
@@ -67,7 +68,7 @@ describe('LastOperationPanel', () => {
       });
     });
     expect(screen.queryByRole('region')).toBeNull();
-    act(() => { registry!.trigger('widen', { by: 2 }); });
+    act(() => { registry!.trigger(dynamicActionId('widen'), { by: 2 }); });
     expect(screen.getByRole('region', { name: 'Widen' })).toBeInTheDocument();
     act(() => { history.undo(); });
     expect(screen.queryByRole('region')).toBeNull();

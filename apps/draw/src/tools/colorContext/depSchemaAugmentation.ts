@@ -2,10 +2,10 @@
  * Declares the `color` dep the color actions read. `colorContribution`
  * publishes its live source.
  */
-import '@weasel-js/core';
+import '@weasel-js/routing';
 import type { ColorContextValue } from './ColorContextProvider';
 
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface DepSchema {
     color?: ColorContextValue;
   }

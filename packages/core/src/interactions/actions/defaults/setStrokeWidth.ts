@@ -1,6 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { Stroke, VertexWidth } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
+import type { ActionParamsOf } from '@weasel-js/routing';
 import { strokeOf, DEFAULT_STROKE_COLOR } from '../../../util/paint';
 
 /** `setStrokeWidth`'s gesture state: what it writes, each part only when given. */
@@ -18,22 +19,23 @@ interface SetStrokeWidthState {
  * dash alone. A node with no stroke yet gets a hairline one in the kit default
  * color.
  */
-export const setStrokeWidthAction: Action & { requires: string[] } = createPaintAction<
+export const setStrokeWidthAction: Action = createPaintAction<
   SetStrokeWidthState,
   Stroke,
-  'stroke'
+  'stroke',
+  ActionParamsOf<'setStrokeWidth'>
 >({
   id: 'setStrokeWidth',
   label: 'Set stroke width',
   dataKey: 'stroke',
   initialState: (pick) => {
-    const width = pick<number>('width');
-    const vertexWidths = pick<readonly VertexWidth[] | null>('vertexWidths');
+    const width = pick('width');
+    const vertexWidths = pick('vertexWidths');
     return { ...(width !== undefined ? { width } : {}), ...(vertexWidths !== undefined ? { vertexWidths } : {}) };
   },
   readParams: (prev, params) => {
-    const width = params?.width as number | undefined;
-    const vertexWidths = params?.vertexWidths as readonly VertexWidth[] | null | undefined;
+    const width = params?.width;
+    const vertexWidths = params?.vertexWidths;
     if (width === undefined && vertexWidths === undefined) return null;
     return { ...prev, ...(width !== undefined ? { width } : {}), ...(vertexWidths !== undefined ? { vertexWidths } : {}) };
   },

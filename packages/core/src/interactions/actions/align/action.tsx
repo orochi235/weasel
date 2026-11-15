@@ -4,7 +4,6 @@ import {
   alignDeltaFor,
   alignTargetBounds,
   type AlignEdge,
-  type AlignReference,
 } from './align';
 import { actionReferenceSources } from '../spatialReference';
 import { scenePoseFrame } from '../poseFrame';
@@ -15,18 +14,18 @@ import { uncarried } from '../selectionSubtree';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { commitTransformOps } from '../transformFinish';
 import type { Action, ActionDeps } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
+import type { AlignParams } from '../actionParamSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { ImmediateInvoker } from '@weasel-js/routing';
 import { icon } from '../../../icons.gen';
-const ID_FOR: Record<AlignEdge, string> = {
+const ID_FOR = {
   'left': 'align.left',
   'right': 'align.right',
   'top': 'align.top',
   'bottom': 'align.bottom',
   'center-x': 'align.centerX',
   'center-y': 'align.centerY',
-};
+} as const satisfies Record<AlignEdge, string>;
 const LABEL_FOR: Record<AlignEdge, string> = {
   'left': 'Align Left',
   'right': 'Align Right',
@@ -62,7 +61,7 @@ function alignOps(
   selection: Pick<SelectionApi, 'get'>,
   scene: Scene<unknown, string, unknown>,
   edge: AlignEdge,
-  params: Readonly<Record<string, unknown>> | undefined,
+  params: Readonly<Partial<AlignParams>> | undefined,
 ): Op[] {
   const frame = scenePoseFrame(scene);
   const ids = uncarried(frame, withoutPageStructure(scene, selection.get()));
@@ -71,8 +70,8 @@ function alignOps(
   const bounds = poses.map((p, i) => boxes.aabb(ids[i]!, p));
   const target = alignTargetBounds(
     bounds,
-    params?.to as AlignReference | undefined,
-    actionReferenceSources(params as Record<string, unknown> | undefined, deps.pointer, scene, frame, boxes),
+    params?.to,
+    actionReferenceSources(params, deps.pointer, scene, frame, boxes),
   );
   if (target === null) return [];
   const moves = ids.map((id, i) => ({ ids: [id], ...alignDeltaFor(bounds[i], target, edge) }));
@@ -84,7 +83,7 @@ function alignOps(
 // ---------------------------------------------------------------------------
 
 function makeAlignAction(edge: AlignEdge): Action {
-  return {
+  return defineAction({
     id: ID_FOR[edge],
     label: LABEL_FOR[edge],
     icon: ICON_FOR[edge],
@@ -101,14 +100,14 @@ function makeAlignAction(edge: AlignEdge): Action {
         if (!selection || !scene) return;
         commitTransformOps(deps, alignOps(deps, selection, scene, edge, params), 'Align');
       },
-    } satisfies ImmediateInvoker,
+    },
     enabled: (deps, _at, _carried, params) => {
       const selection = deps?.selection;
       const scene = deps?.scene;
       if (!selection || !scene || selection.get().length === 0) return ActionDisabledReason.SelectionRequired;
       return alignOps(deps, selection, scene, edge, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
     },
-  };
+  });
 }
 
 /** Static descriptor for align-left. */

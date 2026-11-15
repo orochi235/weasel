@@ -5,7 +5,7 @@
  * while the eyedropper is on, pick the color under a click. Every painter's
  * lens aims through these, so they agree on when it follows.
  */
-import { ANY_MODS, type Action, heldKeySpec } from '@weasel-js/routing';
+import { ANY_MODS, defineAction, type Action, heldKeySpec } from '@weasel-js/routing';
 
 /** Canonical id of the hold-to-peek action. */
 export const LOUPE_PEEK_ID = 'loupe.peek';
@@ -59,7 +59,7 @@ export interface LoupeInputApi extends LoupeAimInput {
 export function createLoupeAimActions(input: LoupeAimInput): readonly [Action, Action] {
   // `held`: the lens keeps following through a drag, which a plain hover
   // stands down for.
-  const aim: Action = {
+  const aim: Action = defineAction({
     id: LOUPE_AIM_ID,
     label: 'Aim (loupe)',
     group: 'loupe',
@@ -72,10 +72,11 @@ export function createLoupeAimActions(input: LoupeAimInput): readonly [Action, A
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
-        input.aimAt(params?.clientX as number, params?.clientY as number, params?.held === true);
+        if (params?.clientX === undefined || params.clientY === undefined) return;
+        input.aimAt(params.clientX, params.clientY, params.held === true);
       },
     },
-  };
+  });
 
   const leave: Action = {
     id: LOUPE_LEAVE_ID,
@@ -107,7 +108,7 @@ export function createLoupeActions(
   input: LoupeInputApi,
   peekKey: string | null,
 ): readonly Action[] {
-  const magnify: Action = {
+  const magnify: Action = defineAction({
     id: LOUPE_MAGNIFY_ID,
     label: 'Magnify (loupe)',
     group: 'loupe',
@@ -125,10 +126,10 @@ export function createLoupeActions(
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
-        input.magnifyBy((params?.deltaY as number | undefined) ?? 0);
+        input.magnifyBy(params?.deltaY ?? 0);
       },
     },
-  };
+  });
 
   const [aim, leave] = createLoupeAimActions(input);
 

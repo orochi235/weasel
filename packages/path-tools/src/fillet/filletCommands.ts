@@ -2,7 +2,7 @@
  * Commands on the corners of the anchors selected in path edit: set their
  * shape or radius, or step their shape through the `corner-shape` keywords.
  */
-import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
+import { type ActionDeps, ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import {
   cornerFrames,
   cornerSpecAt,
@@ -17,6 +17,7 @@ import { pref } from '@weasel-js/prefs';
 import { depOf, pathOperationTags, requiresAnchorSelection, type EditAnchorsDep } from '@weasel-js/core';
 import { DEFAULT_FILLET_SHAPE, editedPath } from './editFillet';
 import { icon } from '../icons.gen';
+import type { SetFilletsParams } from '../actionParamSchema';
 
 /** The share of a corner's room that a shape given to a sharp corner cuts. */
 export const DEFAULT_FILLET_TRIM_SHARE = 0.25;
@@ -24,10 +25,10 @@ export const DEFAULT_FILLET_TRIM_SHARE = 0.25;
 const CYCLE_LABEL = 'Next fillet shape';
 
 /** What `cycleFillet` reads from its params. */
-export interface CycleFilletParams {
+export type CycleFilletParams = {
   /** The share of a sharp corner's room its new shape cuts. Default {@link DEFAULT_FILLET_TRIM_SHARE}. */
   share?: number;
-}
+};
 
 /** Next fillet shape's params as a form, for the last-operation panel. */
 export const CYCLE_FILLET_PARAMS = pref.group(CYCLE_LABEL, {
@@ -37,7 +38,7 @@ export const CYCLE_FILLET_PARAMS = pref.group(CYCLE_LABEL, {
   }),
 });
 
-const shareOf = (params: Record<string, unknown> | undefined): number => {
+const shareOf = (params: Readonly<CycleFilletParams> | undefined): number => {
   const v = params?.share;
   return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(v, 1) : DEFAULT_FILLET_TRIM_SHARE;
 };
@@ -99,7 +100,7 @@ function cornersSelected(deps: ActionDeps | undefined): true | ActionDisabledRea
  * sharp corner also gives it a radius. A UI control's action: it has no
  * default binding.
  */
-export const setFilletsAction: Action & { requires: string[] } = {
+export const setFilletsAction = defineAction({
   id: 'setFillets',
   icon: icon('cornerRadius'),
   label: 'Set fillets',
@@ -112,7 +113,7 @@ export const setFilletsAction: Action & { requires: string[] } = {
       const edit = setFilletsEdit(deps, params);
       if (edit) edit.dep.applyEdit(edit.dep.editingId, edit.path, 'Set fillets');
     },
-  } as ImmediateInvoker,
+  },
   // An edit that would change nothing is disabled (ruled 2026-11-10): no shape or radius to set, or the ones
   // the corners already have.
   enabled: (deps, _at, _carried, params) => {
@@ -120,11 +121,11 @@ export const setFilletsAction: Action & { requires: string[] } = {
     if (selected !== true) return selected;
     return setFilletsEdit(deps, params) ? true : ActionDisabledReason.NotApplicable;
   },
-};
+});
 
 /** The path `setFillets` would commit for `params`, or null when it would change nothing. */
 function setFilletsEdit(
-  deps: ActionDeps | undefined, params: Readonly<Record<string, unknown>> | undefined,
+  deps: ActionDeps | undefined, params: Readonly<SetFilletsParams> | undefined,
 ): { dep: EditAnchorsDep; path: PolygonPath } | null {
   const shape = isCornerShape(params?.shape) ? params.shape : undefined;
   const radius = typeof params?.radius === 'number' && Number.isFinite(params.radius) ? params.radius : undefined;
@@ -149,7 +150,7 @@ function sameCorner(a: ReturnType<typeof cornerSpecAt>, b: ReturnType<typeof cor
  * gets a radius that shows it: the `share` param of its room
  * ({@link CycleFilletParams}).
  */
-export const cycleFilletAction: Action & { requires: string[] } = {
+export const cycleFilletAction = defineAction({
   id: 'cycleFillet',
   icon: icon('fillet'),
   label: CYCLE_LABEL,
@@ -164,6 +165,6 @@ export const cycleFilletAction: Action & { requires: string[] } = {
       shape: nextCornerShape(cornerSpecAt(path, frames[0].index)?.shape ?? DEFAULT_FILLET_SHAPE),
       share: shareOf(params),
     })),
-  } as ImmediateInvoker,
+  },
   enabled: cornersSelected,
-};
+});

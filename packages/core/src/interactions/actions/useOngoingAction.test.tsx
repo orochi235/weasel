@@ -3,7 +3,7 @@ import { render, renderHook, act } from '@testing-library/react';
 import { StrictMode, useEffect, type ReactNode } from 'react';
 import { ActionsProvider, useAction, useActionsRegistry, useOngoingAction } from '@weasel-js/routing/react';
 import type { Action, ActionsRegistry } from '@weasel-js/routing';
-import { createDispatcher } from '@weasel-js/routing';
+import { createDispatcher, dynamicActionId } from '@weasel-js/routing';
 
 function wrap({ children }: { children: ReactNode }) {
   return <ActionsProvider>{children}</ActionsProvider>;
@@ -38,7 +38,7 @@ function setup(ids: string[], initialId = ids[0]) {
   const calls: Record<string, Calls> = {};
   for (const id of ids) calls[id] = { start: [], move: [], end: [] };
   const hook = renderHook(
-    ({ id }: { id: string }) => ({ reg: useActionsRegistry(), edit: useOngoingAction(id) }),
+    ({ id }: { id: string }) => ({ reg: useActionsRegistry(), edit: useOngoingAction(dynamicActionId(id)) }),
     { wrapper: wrap, initialProps: { id: initialId } },
   );
   const reg = hook.result.current.reg as ActionsRegistry;
@@ -134,7 +134,7 @@ describe('useOngoingAction', () => {
       return null;
     }
     function Opener() {
-      const edit = useOngoingAction('paint');
+      const edit = useOngoingAction(dynamicActionId('paint'));
       useEffect(() => { edit.input({ color: '#f00' }); }, [edit]);
       return null;
     }
@@ -175,7 +175,7 @@ describe('useOngoingAction', () => {
   });
 
   it('is inert with no provider in scope', () => {
-    const { result } = renderHook(() => useOngoingAction('paint'));
+    const { result } = renderHook(() => useOngoingAction(dynamicActionId('paint')));
     expect(() => act(() => {
       result.current.input({ color: '#f00' });
       result.current.commit({ color: '#f00' });

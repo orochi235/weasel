@@ -3,8 +3,8 @@ import { useKitSettings, useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { Action, ToolOptionShare } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
-import type { ActionDeps, ImmediateParams, InvocationCtx } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
+import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
 import { boundsOfPath, type PolygonPath, anchorsToPath, editAnchorSetTracked, pathToAnchors, worldCoords } from '@weasel-js/geom';
 import { createPenPreviewLayer, penReachOf } from 'domains/paths/penPreviewLayer';
@@ -331,15 +331,15 @@ export function usePenTool(
     const s = () => scratchRef.current!;
 
     return [
-      {
+      defineAction({
         id: 'pen.placeAnchor',
         label: 'Pen — place anchor',
         eligible: { capability: 'creates-paths' },
         requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap', 'toolOptionValues'],
         invoker: {
-          timing: 'immediate' as const,
-          run: (deps, params) => {
-            const p = params as ImmediateParams | undefined, press = p?.press;
+          timing: 'immediate',
+          run: (deps, p) => {
+            const press = p?.press;
             if (!press) return;
             // The press point, not the release: a click may drift up to the
             // drag threshold.
@@ -372,9 +372,9 @@ export function usePenTool(
             trail.update(deps);
           },
         },
-      },
+      }),
 
-      {
+      defineAction({
         id: 'pen.finishOpen',
         label: 'Pen — finish open path',
         eligible: { capability: 'creates-paths' },
@@ -383,10 +383,9 @@ export function usePenTool(
         // ⌘-click with fewer than two anchors reach the plain-click binding.
         enabled: () => (anchorCount(s()) >= 2 || s().current?.followsClose ? true : ActionDisabledReason.NotApplicable),
         invoker: {
-          timing: 'immediate' as const,
-          run: (deps, params) => {
+          timing: 'immediate',
+          run: (deps, p) => {
             const scratch = s();
-            const p = params as { viaDoubleClick?: boolean } | undefined;
             if (!p?.viaDoubleClick && anchorCount(scratch) < 2) return 'pass';
 
             // A double click arrives AFTER both of its clicks, so the second one has already
@@ -402,7 +401,7 @@ export function usePenTool(
             return undefined;
           },
         },
-      },
+      }),
 
       {
         id: 'pen.dragHandle',

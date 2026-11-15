@@ -3,24 +3,27 @@ import type { IconSpec } from '@weasel-js/icons';
 import type { MenuGrade } from '@weasel-js/menu';
 import { useLatest, useStableByContent } from '@weasel-js/react';
 import { deepEqual, isPlainObject } from '@weasel-js/registry';
-import type { Action, ActionUnavailable, ActionVariant } from './action';
-import type { ActionSettings, ActionSettingsState } from './actionSettings';
+import type { ActionUnavailable } from './action';
+import type { ActionSettingsState } from './actionSettings';
 import type { BoundGesture } from './binding';
+import type { ActionParamsOf } from './actionIds';
+import { defineAction, type ActionOf, type ActionSettingsOf, type ActionVariantOf } from './defineAction';
 import { useAction } from './ActionsProvider';
 
-/** What a command offers besides its id, label and callback. */
-export interface CommandOptions {
+/** What a command offers besides its id, label and callback, its params typed `P`: its id's `ActionParamSchema`
+ *  entry. */
+export interface CommandOptions<P = Record<string, unknown>> {
   /** True when the command can run, else why not: an `ActionDisabledReason`, or a sentence shown as it is.
    *  Read each time it is asked, with the params the run would get: a variant's, for one variant. */
-  enabled?: (params?: Readonly<Record<string, unknown>>) => true | ActionUnavailable;
+  enabled?: (params?: Readonly<Partial<P>>) => true | ActionUnavailable;
   /** Whether it reads as held down, for the variant `params` names. Read each time it is asked. */
-  active?: (params?: Readonly<Record<string, unknown>>) => boolean;
+  active?: (params?: Readonly<Partial<P>>) => boolean;
   /** Show what running it with `params` would do, and change nothing; returns what takes that down. Read each
    *  time it is asked. See `Action.preview`. */
-  preview?: (params?: Readonly<Record<string, unknown>>) => (() => void) | void;
+  preview?: (params?: Readonly<Partial<P>>) => (() => void) | void;
   /** A form of the settings it changes: `read` gives the values now, and each change runs it with the params
    *  the change makes. `read` and `params` are read each time they are asked. See `Action.settings`. */
-  settings?: CommandSettings;
+  settings?: CommandSettings<P>;
   /** Display text for its shortcut, in place of the one written out from `keys`. */
   shortcut?: string;
   /** What it does, in a sentence: a tooltip or a hint. */
@@ -28,7 +31,7 @@ export interface CommandOptions {
   /** How serious running it is; `'danger'` for one that destroys something. */
   grade?: MenuGrade;
   /** The gestures that run it. The `{ spec, opts: { params } }` form gives one variant its own key. */
-  keys?: BoundGesture | readonly BoundGesture[];
+  keys?: BoundGesture<P> | readonly BoundGesture<P>[];
   /** Shown beside the label. */
   icon?: IconSpec;
   /** The registry group a bar drawing one group gathers it under. */
@@ -36,11 +39,11 @@ export interface CommandOptions {
   /** Words a palette finds it by and a tagged bar or menu gathers it under. */
   tags?: readonly string[];
   /** One entry each in a bar, menu or palette; `run` receives the chosen one's params. */
-  variants?: readonly ActionVariant[];
+  variants?: readonly ActionVariantOf<P>[];
 }
 
 /** A command's settings form: an `ActionSettings` whose `read` takes no deps, since a command has none. */
-export interface CommandSettings extends Omit<ActionSettings, 'read'> {
+export interface CommandSettings<P = Record<string, unknown>> extends Omit<ActionSettingsOf<P>, 'read'> {
   read(): ActionSettingsState;
 }
 
@@ -54,11 +57,11 @@ export interface CommandSettings extends Omit<ActionSettings, 'read'> {
  * `enabled`, `active`, `preview` and `settings` comes or goes. A function in `keys` (thunked params, a target
  * predicate) is read as the latest render passed it, and a new one in its place replaces nothing.
  */
-export function useCommand(
-  id: string,
+export function useCommand<const Id extends string>(
+  id: Id,
   label: string,
-  run: (params?: Readonly<Record<string, unknown>>) => void,
-  options?: CommandOptions,
+  run: (params?: Readonly<Partial<ActionParamsOf<Id>>>) => void,
+  options?: CommandOptions<ActionParamsOf<Id>>,
 ): void {
   const latest = useLatest({ run, options });
   const keys = useStableByContent(options?.keys, sameKeys);
@@ -71,9 +74,9 @@ export function useCommand(
   const hasPreview = options?.preview !== undefined;
   const hasSettingsParams = options?.settings?.params !== undefined;
   const { group, shortcut, description, grade } = options ?? {};
-  const action = useMemo<Action>(() => {
+  const action = useMemo(() => {
     const read = () => latest.current.options;
-    const a: Action = {
+    const a: ActionOf<Id> = {
       id,
       label,
       invoker: { timing: 'immediate', run: (_deps, params) => latest.current.run(params) },
@@ -93,18 +96,19 @@ export function useCommand(
     if (shortcut !== undefined) a.shortcut = shortcut;
     if (description !== undefined) a.description = description;
     if (grade !== undefined) a.grade = grade;
-    return a;
+    return defineAction(a);
   }, [id, label, icon, group, shortcut, description, grade, keys, tags, variants, schema,
     hasEnabled, hasActive, hasPreview, hasSettingsParams, latest]);
   useAction(action);
 }
 
-function bindingOf(keys: BoundGesture | readonly BoundGesture[]): Action['defaultBinding'] {
+function bindingOf<P>(keys: BoundGesture<P> | readonly BoundGesture<P>[]): ActionOf<string, P>['defaultBinding'] {
   if (isList(keys)) return [...keys];
   return 'spec' in keys ? [keys] : keys;
 }
 
-const isList = (keys: BoundGesture | readonly BoundGesture[]): keys is readonly BoundGesture[] => Array.isArray(keys);
+const isList = <P>(keys: BoundGesture<P> | readonly BoundGesture<P>[]): keys is readonly BoundGesture<P>[] =>
+  Array.isArray(keys);
 
 type Fn = (...args: unknown[]) => unknown;
 

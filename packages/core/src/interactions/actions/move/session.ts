@@ -1,5 +1,6 @@
 import type { BindingOptions, InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
 import { isPathEditPart, resolveParams } from '@weasel-js/routing';
+import type { MoveParams } from '../actionParamSchema';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
@@ -109,8 +110,8 @@ function verdictOf(
  *  behavior's `onStart`. `frame` reads the drag's latest frame, for the
  *  behaviors appended to the binding's own. */
 export function beginMove(
-  ctx: InvocationCtx,
-  opts: BindingOptions | undefined,
+  ctx: InvocationCtx<MoveParams>,
+  opts: BindingOptions<Partial<MoveParams>> | undefined,
   frame: () => MoveFrame,
 ): { session: MoveSession; readers: GestureReaders } | null {
   const selection = ctx.deps.selection;
@@ -129,7 +130,7 @@ export function beginMove(
   if (isPathEditPart(ctx.drag?.affordance)) return null;
 
   const params = resolveParams(opts?.params);
-  const expandIds = params?.['expandIds'] as ((ids: string[]) => string[]) | undefined;
+  const expandIds = params?.expandIds;
   const selected = [...selection.get()] as string[];
   const ids = moveSources(scene, expandIds ? expandIds(selected) : selected) as NodeId[];
   if (ids.length === 0) return null;
@@ -184,7 +185,7 @@ export function beginMove(
     verdict,
     admits: (parent) => verdict(parent) === true,
     mayRefuse: ctx.deps.canDropInto !== undefined,
-    reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
+    reparentOnDrop: () => resolveParams(opts?.params)?.reparentOnDrop ?? 'off',
     ...beginDragSnap(ctx, ids),
   };
   return { session, readers };

@@ -1,4 +1,4 @@
-import { ActionDisabledReason, isBody, type Action, type ImmediateInvoker, type ImmediateParams } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, isBody } from '@weasel-js/routing';
 
 /**
  * Opens the top-most text node at the pointer in place, the caret at the glyph
@@ -7,7 +7,7 @@ import { ActionDisabledReason, isBody, type Action, type ImmediateInvoker, type 
  * double-click enters it, as `enterPathEdit` declines there. `enterTextEdit`
  * opens the selection instead.
  */
-export const editTextAtAction: Action & { requires: string[] } = {
+export const editTextAtAction = defineAction({
   id: 'editTextAt',
   label: 'Edit text here',
   defaultBinding: [{
@@ -19,13 +19,13 @@ export const editTextAtAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const world = (params as ImmediateParams | undefined)?.world;
+      const world = params?.world;
       const hit = world ? deps.textEdit?.textAt(world) : null;
       if (hit) deps.textEdit!.startEdit(hit.id, { caret: hit.caret });
     },
-  } as ImmediateInvoker,
+  },
   enabled: (deps, at) => {
     if (!at || deps?.hitAt?.(at)?.doubleClick) return ActionDisabledReason.NotApplicable;
     return deps?.textEdit?.textAt(at) ? true : ActionDisabledReason.NotApplicable;
   },
-};
+});

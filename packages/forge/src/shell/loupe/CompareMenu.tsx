@@ -1,4 +1,4 @@
-import { type Action, type MenuDef, useActionsRegistry, useMenuHost, useMenus } from '@weasel-js/core';
+import { type Action, defineAction, type MenuDef, useActionsRegistry, useMenuHost, useMenus } from '@weasel-js/core';
 import { type ConfigEntry, type ConfigSchema, isConfigBranch } from '@weasel-js/labkit/config';
 import { type LensActionApi, type LoupePoint, setLensOps } from '@weasel-js/labkit/loupe';
 import { type PrefGroup, type PrefLeaf, pref } from '@weasel-js/prefs';
@@ -99,7 +99,7 @@ export interface CompareMenuRequest {
 
 /** The compare menu's two actions, a variant per row, each setting the comparison on the lens `request` opened on. */
 export function compareActions(api: LensActionApi<ForgeComparison>, request: CompareMenuRequest): Action[] {
-  const one = (id: CompareChoice['action'], label: string, enabled: () => true | string): Action => ({
+  const one = (id: CompareChoice['action'], label: string, enabled: () => true | string): Action => defineAction({
     id,
     label,
     group: 'loupe',
@@ -110,8 +110,8 @@ export function compareActions(api: LensActionApi<ForgeComparison>, request: Com
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
-        const lensId = (params?.lensId as string | undefined) ?? api.current();
-        const compare = params?.compare as ForgeComparison | undefined;
+        const lensId = params?.lensId ?? api.current();
+        const compare = params?.compare;
         if (lensId !== null && compare) api.apply(setLensOps(api.scene, lensId, { compare }));
       },
     },

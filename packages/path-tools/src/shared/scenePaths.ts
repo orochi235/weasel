@@ -20,7 +20,11 @@ export const strokeReachPref = () => pref.number('Reach', DEFAULT_STROKE_REACH_P
   min: 1, max: 30, step: 1, control: 'slider', unit: PX_UNIT,
 });
 
-type PressParams = (ImmediateParams & { radiusPx?: number }) | undefined;
+/** What a click command reads to find its press: the click's point, or a hover's, and how far it reaches. */
+export type StrokePressParams = {
+  /** How far, in screen px, a click reaches for the stroke it acts on. Default 6. */
+  radiusPx?: number;
+} & Pick<ImmediateParams, 'press' | 'world'>;
 
 /** A world point, and how far from it a stroke may be in world units. */
 export interface StrokePress {
@@ -30,8 +34,7 @@ export interface StrokePress {
 
 /** The press in `params` — a click's, or else a hover's pointer — and its
  *  reach, `radiusPx` at the view's scale; null with neither point. */
-export function pressOf(deps: ActionDeps, params: unknown): StrokePress | null {
-  const p = params as PressParams;
+export function pressOf(deps: ActionDeps, p: Readonly<StrokePressParams> | undefined): StrokePress | null {
   const at = p?.press ?? p?.world;
   if (!at) return null;
   const scale = deps.view?.get().scale ?? { x: 1, y: 1 };

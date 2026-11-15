@@ -1,14 +1,13 @@
 import { useMemo, useReducer, useRef, useState } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import type { Action, ActionDeps, ModifierState } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { boundsOfPath, isSpiroKind, withinPxRadius, type SpiroKind, type SpiroPoint } from '@weasel-js/geom';
 import { createPointerFollower, defineTool, PEN_CLOSE_HIT_PX, pointSnap, selectCommitted, snapMods, type Tool } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { createSpiroPreviewLayer, type SpiroPreviewState } from './spiroPreviewLayer';
 import { spiroNodeData } from './spiroShape';
-import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Options for {@link useSpiroTool}. */
 export interface UseSpiroToolOptions {
@@ -75,15 +74,14 @@ function spiroActions(host: SpiroActionsHost): Action[] {
   const placing = () => (s().points.length > 0 ? true : ActionDisabledReason.NotApplicable);
 
   return [
-    {
+    defineAction<'spiro.placePoint'>({
       id: 'spiro.placePoint',
       label: 'Spiro — place point',
       eligible: { capability: 'creates-paths' },
       requires: ['view', 'pointer', 'insert', 'selection', 'snap'],
       invoker: {
         timing: 'immediate',
-        run: (deps, params) => {
-          const p = params as (ImmediateParams & { kind?: unknown }) | undefined;
+        run: (deps, p) => {
           const press = p?.press;
           if (!press) return;
           followed = deps;
@@ -96,8 +94,8 @@ function spiroActions(host: SpiroActionsHost): Action[] {
           track();
         },
       },
-    },
-    {
+    }),
+    defineAction<'spiro.finish'>({
       id: 'spiro.finish',
       label: 'Spiro — finish open curve',
       eligible: { capability: 'creates-paths' },
@@ -107,11 +105,11 @@ function spiroActions(host: SpiroActionsHost): Action[] {
         timing: 'immediate',
         run: (deps, params) => {
           // A double click arrives after both its clicks, the second of which placed a point.
-          if ((params as { viaDoubleClick?: boolean } | undefined)?.viaDoubleClick) s().points.pop();
+          if (params?.viaDoubleClick) s().points.pop();
           commit(deps, false);
         },
       },
-    },
+    }),
     {
       id: 'spiro.removeLast',
       label: 'Spiro — take back the last point',

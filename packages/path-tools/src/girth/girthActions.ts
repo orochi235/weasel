@@ -1,5 +1,5 @@
-import type { Action, ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
-import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
+import type { Action, ActionDeps, ImmediateParams, OngoingInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { meanScale, pathToAnchors, pxReach, type PolygonPath, type Point } from '@weasel-js/geom';
 import type { VertexWidth } from '@weasel-js/paint';
@@ -8,7 +8,6 @@ import {
   anchorNormals, draggedWidth, gripAt, isWidthSet, movedSide, storedWith, widthEdgeAt, widthPointNear, widthsOf,
   widthTargetAt, type WidthGrip, type WidthTarget,
 } from './widthEdit';
-import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What the Girth tool's overlay shows, in world space: the anchors of the
  *  stroke last hovered or pressed on, each with its unit normal toward its
@@ -36,13 +35,13 @@ export interface GirthEnv {
 }
 
 /** What `girth.drag` reads from its params. */
-export interface GirthDragParams {
+export type GirthDragParams = {
   /** Screen px around a stroke's edge within which a press takes hold of it, and along the path within which it
    *  takes the anchor there rather than inserting one. Default: the tool's `reachPx`. */
   reachPx?: number;
   /** Move only the grabbed edge, writing a `{ left, right }` pair; Alt flips it. Default `false`. */
   oneSided?: boolean;
-}
+};
 
 /** Default {@link GirthDragParams.reachPx}. */
 export const DEFAULT_GIRTH_REACH_PX = 6;
@@ -104,21 +103,21 @@ const edgeOf = (grip: WidthGrip, moved: number): Point => ({
   y: grip.at.y + grip.normal.y * moved * grip.factor,
 });
 
-function reachOf(params: GirthDragParams | undefined, env: GirthEnv): number {
+function reachOf(params: Readonly<GirthDragParams> | undefined, env: GirthEnv): number {
   if (typeof params?.reachPx !== 'number' || !(params.reachPx > 0)) return env.reachPx();
   env.noteReach?.(params.reachPx);
   return params.reachPx;
 }
 
 /** The grip a press at `press` takes with `params`, read against the scene and view as they are now. */
-function gripFor(deps: ActionDeps, env: GirthEnv, press: Point, params: GirthDragParams | undefined): WidthGrip | null {
+function gripFor(deps: ActionDeps, env: GirthEnv, press: Point, params: Readonly<GirthDragParams> | undefined): WidthGrip | null {
   const at = found(deps, env, reachOf(params, env));
   const hit = at && widthEdgeAt(at.scene, press.x, press.y, at.scale, at.reach);
   return hit ? gripAt(hit) : null;
 }
 
 /** The widths `grip` leaves with the pointer at `p`, one-sided when `params` says so, Alt flipping that. */
-function widthsAt(grip: WidthGrip, press: Point, p: Point, alt: boolean, params: GirthDragParams | undefined) {
+function widthsAt(grip: WidthGrip, press: Point, p: Point, alt: boolean, params: Readonly<GirthDragParams> | undefined) {
   const moved = movedSide(grip, (p.x - press.x) * grip.normal.x + (p.y - press.y) * grip.normal.y);
   const widths = [...grip.widths];
   widths[grip.index] = draggedWidth(grip, moved, (params?.oneSided === true) !== alt);
@@ -126,8 +125,10 @@ function widthsAt(grip: WidthGrip, press: Point, p: Point, alt: boolean, params:
 }
 
 /** The set width point a click at the press in `params` clears: its stroke, the stroke's widths, and its index. */
-function planClear(deps: ActionDeps, env: GirthEnv, params: unknown): { target: WidthTarget; widths: VertexWidth[]; index: number } | null {
-  const press = (params as ImmediateParams | undefined)?.press;
+function planClear(
+  deps: ActionDeps, env: GirthEnv, params: Readonly<Pick<ImmediateParams, 'press'>> | undefined,
+): { target: WidthTarget; widths: VertexWidth[]; index: number } | null {
+  const press = params?.press;
   const at = found(deps, env);
   if (!at || !press) return null;
   const target = widthTargetAt(at.scene, press.x, press.y, at.scale, at.reach);
@@ -137,12 +138,12 @@ function planClear(deps: ActionDeps, env: GirthEnv, params: unknown): { target: 
   return index >= 0 && isWidthSet(widths[index]) ? { target, widths, index } : null;
 }
 
-function dragAction(env: GirthEnv): Action['invoker'] {
+function dragAction(env: GirthEnv): OngoingInvoker<GirthDragParams> {
   return {
     timing: 'ongoing',
-    start: ({ deps, drag, world }: InvocationCtx, opts?: BindingOptions) => {
+    start: ({ deps, drag, world }, opts) => {
       const press = drag?.start ?? world;
-      const read = () => resolveParams(opts?.params) as GirthDragParams | undefined;
+      const read = () => resolveParams(opts?.params);
       const grip = gripFor(deps, env, press, read());
       if (!grip) return {};
       const { fallback } = grip.target;
@@ -152,7 +153,7 @@ function dragAction(env: GirthEnv): Action['invoker'] {
       env.setFocus(focusOf(grip.path, grip.widths, fallback, { edge: edgeOf(grip, grip.start[grip.side]), at: grip.at }));
       return {
         kind: GIRTH_DRAG_ID,
-        onMove: (move: InvocationCtx) => {
+        onMove: (move) => {
           const p = move.drag?.current ?? move.world;
           last = { p, alt: move.modifiers.alt };
           const next = widthsAt(grip, press, p, move.modifiers.alt, read());
@@ -161,7 +162,7 @@ function dragAction(env: GirthEnv): Action['invoker'] {
           env.setFocus(focusOf(grip.path, widths, fallback, { edge: edgeOf(grip, next.moved), at: grip.at }));
         },
         // The dispatcher hands `onEnd` a context with empty deps.
-        onEnd: (_end: InvocationCtx, reason: 'commit' | 'cancel') => {
+        onEnd: (_end, reason) => {
           const done = widths;
           widths = null;
           preview = null;
@@ -172,7 +173,7 @@ function dragAction(env: GirthEnv): Action['invoker'] {
           commit(deps, grip, done);
           env.setFocus(focusOf(grip.path, done, fallback));
         },
-        replay: (params: Record<string, unknown>) => {
+        replay: (params) => {
           const again = last && gripFor(deps, env, press, params);
           if (!last || !again) return;
           const { widths: done } = widthsAt(again, press, last.p, last.alt, params);
@@ -205,13 +206,13 @@ export function createGirthActions(env: GirthEnv): Action[] {
   const hasScene = (deps?: ActionDeps) => (deps?.scene ? true : ActionDisabledReason.NotApplicable);
   const base = { eligible, requires: REQUIRES, enabled: hasScene };
   return [
-    { id: GIRTH_DRAG_ID, label: LABEL, ...base, params: GIRTH_DRAG_PARAMS, invoker: dragAction(env) },
-    {
+    defineAction<typeof GIRTH_DRAG_ID>({ id: GIRTH_DRAG_ID, label: LABEL, ...base, params: GIRTH_DRAG_PARAMS, invoker: dragAction(env) }),
+    defineAction<typeof GIRTH_CLEAR_ID>({
       id: GIRTH_CLEAR_ID,
       label: 'Girth — clear the width point under the pointer',
       ...base,
       // A click's point enables it, and the run decides; without one, the press in its params does.
-      enabled: (deps?: ActionDeps, at?: Point, _carried?: unknown, params?: unknown) =>
+      enabled: (deps, at, _carried, params) =>
         (deps?.scene && (at || planClear(deps, env, params)) ? true : ActionDisabledReason.NotApplicable),
       invoker: {
         timing: 'immediate',
@@ -228,15 +229,15 @@ export function createGirthActions(env: GirthEnv): Action[] {
           env.setFocus(focusOf(target.path, widths, target.fallback));
         },
       },
-    },
-    {
+    }),
+    defineAction<typeof GIRTH_HOVER_ID>({
       id: GIRTH_HOVER_ID,
       label: 'Girth — show the stroke edge under the pointer',
       ...base,
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const world = (params as ImmediateParams | undefined)?.world;
+          const world = params?.world;
           const at = found(deps, env);
           if (!at || !world) return;
           const hit = widthEdgeAt(at.scene, world.x, world.y, at.scale, at.reach);
@@ -252,7 +253,7 @@ export function createGirthActions(env: GirthEnv): Action[] {
           });
         },
       },
-    },
+    }),
     {
       id: GIRTH_UNHOVER_ID,
       label: 'Girth — hide the grab point',

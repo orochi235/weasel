@@ -5,7 +5,9 @@
  */
 import { pref, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import type { HeldPathWarp } from './pathWarp';
-import { DEFAULT_CLOTH_SIZE, DEFAULT_WARP_TOLERANCE, WARP_LABELS, type WarpKind, type WarpSettings } from './warpTargets';
+import {
+  type ConfigureWarpParams, DEFAULT_CLOTH_SIZE, DEFAULT_WARP_TOLERANCE, WARP_LABELS, type WarpKind, type WarpSettings,
+} from './warpTargets';
 
 const count = (name: string, description: string) =>
   pref.number(name, DEFAULT_CLOTH_SIZE, { description, min: 1, max: 16, step: 1, control: 'input' });
@@ -45,7 +47,7 @@ export function warpDragParams(kind: WarpKind): PrefGroup {
 }
 
 /** A `configureWarp` run's form: the settings it changed, and nothing it left alone. */
-export function configureWarpParams(params: Readonly<Record<string, unknown>>): PrefGroup | null {
+export function configureWarpParams(params: Readonly<ConfigureWarpParams>): PrefGroup | null {
   const fields = (Object.keys(WARP_SETTING_FIELDS) as Field[]).filter((f) => params[f] !== undefined);
   return fields.length > 0 ? groupOf('Warp Settings', fields) : null;
 }

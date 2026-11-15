@@ -20,8 +20,9 @@ import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { actionReferenceSources, resolveSpatialReference } from '../spatialReference';
 import type { PointerContextValue } from '@weasel-js/routing/react';
 import type { RectPose } from 'core/scene/types';
-import type { Action, ActionDeps } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import type { ActionDeps } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
+import type { FlipParams } from '../actionParamSchema';
 import { sameValue } from 'core/scene/sameValue';
 import { finiteThroughout } from '../finiteFrame';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -81,7 +82,7 @@ function flipOps(
   pivot: FlipPivot,
   geometryProjection: GeometryProjection | undefined,
   geom: PoseDescriptor<unknown>,
-  params: Record<string, unknown> | undefined,
+  params: Readonly<Partial<FlipParams>> | undefined,
   pointer: PointerContextValue | undefined,
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
 ): Op[] {
@@ -161,15 +162,10 @@ function flipOps(
   return ops;
 }
 
-function flipParams(params: Readonly<Record<string, unknown>> | undefined): { axis: FlipAxis; pivot: FlipPivot } {
-  return { axis: (params?.axis as FlipAxis | undefined) ?? 'x', pivot: (params?.pivot as FlipPivot | undefined) ?? 'each' };
-}
-
-function flipOpsFor(deps: ActionDeps, selection: Pick<SelectionApi, 'get'>, scene: Scene<unknown, string, unknown>, params: Readonly<Record<string, unknown>> | undefined): Op[] {
-  const { axis, pivot } = flipParams(params);
+function flipOpsFor(deps: ActionDeps, selection: Pick<SelectionApi, 'get'>, scene: Scene<unknown, string, unknown>, params: Readonly<Partial<FlipParams>> | undefined): Op[] {
   return flipOps(
-    selection, scene, axis, pivot, deps.geometryProjection, poseDescriptorOf(deps.poseDescriptor),
-    params as Record<string, unknown> | undefined, deps.pointer, (frame) => drawnBoxes(deps, frame),
+    selection, scene, params?.axis ?? 'x', params?.pivot ?? 'each', deps.geometryProjection,
+    poseDescriptorOf(deps.poseDescriptor), params, deps.pointer, (frame) => drawnBoxes(deps, frame),
   );
 }
 
@@ -178,7 +174,7 @@ function flipOpsFor(deps: ActionDeps, selection: Pick<SelectionApi, 'get'>, scen
  * direction, and the optional `params.pivot` (a `FlipPivot`, default `'each'`)
  * picks what it mirrors about.
  */
-export const flipAction: Action & { requires: string[] } = {
+export const flipAction = defineAction({
   id: 'flip',
   label: 'Flip',
   group: 'flip',
@@ -214,4 +210,4 @@ export const flipAction: Action & { requires: string[] } = {
     if (needs !== true) return needs;
     return flipOpsFor(deps!, deps!.selection!, deps!.scene!, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
   },
-};
+});

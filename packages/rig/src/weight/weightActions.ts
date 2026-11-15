@@ -1,5 +1,5 @@
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { worldCoords, type PolygonPath } from '@weasel-js/geom';
 import type { Op } from '@weasel-js/history';
 import { createSetDataOp } from '@weasel-js/core';
@@ -12,7 +12,8 @@ import { dataRestPath } from '@weasel-js/core';
 import { brushWeights, jointShares, setWeights } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from '../bone/placedRig';
 import type { RigEditState } from '../bone/rigEditState';
-import { resolveParams, type BindingOptions, type ImmediateParams } from '@weasel-js/routing';
+import { resolveParams } from '@weasel-js/routing';
+import type { WeightBrushParams } from '../actionParamSchema';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { brushRing } from '@weasel-js/cursor';
 
@@ -78,7 +79,7 @@ export const WEIGHT_TOOL_OPTIONS = {
   size: { option: 'radiusPx', times: 1.25 },
 } as const;
 
-const radiusOf = (params: Readonly<Record<string, unknown>> | undefined): number => {
+const radiusOf = (params: Readonly<WeightBrushParams> | undefined): number => {
   const r = params?.radiusPx;
   return typeof r === 'number' && Number.isFinite(r) && r > 0 ? r : DEFAULT_WEIGHT_RADIUS_PX;
 };
@@ -120,7 +121,7 @@ function commitPainted(env: WeightEnv, deps: ActionDeps): void {
 export function createWeightActions(env: WeightEnv): Action[] {
   const editing = () => (env.placed() ? true : ActionDisabledReason.NotApplicable);
   return [
-    {
+    defineAction({
       id: 'weight.paint',
       label: 'Weight — paint the active joint\'s weights',
       eligible,
@@ -130,7 +131,7 @@ export function createWeightActions(env: WeightEnv): Action[] {
       enabled: () => (activeJoint(env) !== null ? true : ActionDisabledReason.NotApplicable),
       invoker: {
         timing: 'ongoing',
-        start: ({ deps, drag, world, modifiers }: InvocationCtx, opts?: BindingOptions) => {
+        start: ({ deps, drag, world, modifiers }, opts) => {
           const joint = activeJoint(env);
           if (joint === null) return {};
           let radiusPx = radiusOf(resolveParams(opts?.params));
@@ -154,8 +155,8 @@ export function createWeightActions(env: WeightEnv): Action[] {
           };
         },
       },
-    },
-    {
+    }),
+    defineAction({
       id: 'weight.click',
       label: 'Weight — pick a joint, or dab its weight',
       eligible,
@@ -164,8 +165,7 @@ export function createWeightActions(env: WeightEnv): Action[] {
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const p = params as ImmediateParams | undefined;
-          const press = p?.press;
+          const press = params?.press;
           const rig = env.placed();
           if (!rig || !press) return;
           const hit = jointAt(rig.skeleton, press.x, press.y, sceneReach(deps, env.reachPx()));
@@ -174,12 +174,12 @@ export function createWeightActions(env: WeightEnv): Action[] {
             return;
           }
           const joint = activeJoint(env);
-          const next = joint === null ? null : dab(env, deps, joint, press.x, press.y, p?.mods?.alt ? 'remove' : 'add', radiusOf(p as Readonly<Record<string, unknown>> | undefined));
+          const next = joint === null ? null : dab(env, deps, joint, press.x, press.y, params?.mods?.alt ? 'remove' : 'add', radiusOf(params));
           if (!next) return;
           env.paint(next);
           commitPainted(env, deps);
         },
       },
-    },
+    }),
   ];
 }

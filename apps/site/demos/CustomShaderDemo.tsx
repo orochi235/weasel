@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { type ClockHandle, createClock, createClockRegistry } from '@weasel-js/clock';
 import { useClockLoop } from '@weasel-js/clock/react';
 import { clampMove } from '@weasel-js/core/move';
-import { SceneCanvas, asNodeId, effectivePose, ellipsePath, useLatest, useScene, movePreset, pickPreset } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, defineAction, effectivePose, ellipsePath, useLatest, useScene, movePreset, pickPreset } from '@weasel-js/core';
 import type { Action, Dims, FeaturePreset, ImmediateParams, RectPose, RenderLayer, Scene } from '@weasel-js/core';
 import {
   registerTexture,
@@ -12,6 +12,13 @@ import { clamp01 } from '@weasel-js/geom';
 import weaselMarkUrl from '../assets/weasel-mark.png';
 import { PLASMA_PROGRAM, RIPPLE_PROGRAM, RIPPLE_SECONDS, SHADERS, VORONOI_PROGRAM } from './customShaderPrograms';
 import { DemoStage } from './DemoStage';
+
+declare module '@weasel-js/routing' {
+  interface ActionParamSchema {
+    'shader.follow': Pick<ImmediateParams, 'world'>;
+    'shader.press': Pick<ImmediateParams, 'world'>;
+  }
+}
 
 const PANEL_W = 240;
 const PANEL_H = 240;
@@ -91,28 +98,28 @@ function Panel({
   const onPressRef = useLatest(onPress);
   const onPointerMoveRef = useLatest(onPointerMove);
   const ambient = useMemo(() => {
-    const follow: Action = {
+    const follow: Action = defineAction({
       id: 'shader.follow',
       label: 'Follow the pointer over the shader panel',
       invoker: {
         timing: 'immediate',
         run: (_deps, params) => {
-          const world = (params as ImmediateParams | undefined)?.world;
+          const world = params?.world;
           if (world) onPointerMoveRef.current?.(world.x / sizeRef.current.width, world.y / sizeRef.current.height);
         },
       },
-    };
-    const press: Action = {
+    });
+    const press: Action = defineAction({
       id: 'shader.press',
       label: 'Press the shader panel',
       invoker: {
         timing: 'immediate',
         run: (_deps, params) => {
-          const world = (params as ImmediateParams | undefined)?.world;
+          const world = params?.world;
           if (world) onPressRef.current?.(world.x / sizeRef.current.width, world.y / sizeRef.current.height);
         },
       },
-    };
+    });
     return [{
       id: 'press',
       eligibility: {},

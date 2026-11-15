@@ -123,10 +123,10 @@ const tune = useMemo<ActionTunings>(() => ({
 <SceneCanvas scene={scene} features={[pathsPreset, sandPreset, filletPreset]} tune={tune} />
 ```
 
-`ActionParamSchema` types `params` for the kit actions that read them (`flip`, `align.*`, `distribute.*`, `reorder.*`, `nudge.*`, `tool.activate`, `constrainAnchors`, `unconstrainAnchors`, `editAnchors`); any other id takes a plain record. `editAnchors` takes `handleLock` (`'angle'` or `'length'`, held without the Shift or Mod modifier). An action of your own declares its params the way `DepSchema` takes deps:
+`ActionParamSchema` types `params` for the kit actions that read them (`flip`, `align.*`, `insert`, `move`, `viewport.dragPan`, `editAnchors` and the rest), here and in bindings, `trigger` and `defineAction`; an id it does not name takes none except as `dynamicActionId(id)`. `editAnchors` takes `handleLock` (`'angle'` or `'length'`, held without the Shift or Mod modifier). An action of your own declares its params the way `DepSchema` takes deps, against `@weasel-js/routing`, the package that declares both:
 
 ```ts
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface ActionParamSchema { 'app.stamp': { size: number } }
 }
 ```

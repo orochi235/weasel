@@ -8,7 +8,7 @@ import { rectPath } from '@weasel-js/geom';
 import { pendingKindOf, type ActionDeps, type IngestItem } from '@weasel-js/routing';
 import { couldClaim, type ContentHandlerEntry, type IngestCtx } from './contentHandlers';
 import { arrivalBounds } from './placement';
-import type { ImmediateParams } from '@weasel-js/routing';
+import type { IngestParams } from 'interactions/actions/actionParamSchema';
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -46,13 +46,13 @@ export function ghostBounds(
  */
 export function previewIngest(
   deps: ActionDeps,
-  params: Record<string, unknown> | undefined,
+  params: Readonly<Partial<IngestParams>> | undefined,
   handlers?: readonly ContentHandlerEntry[],
 ): (() => void) | undefined {
-  const items = params?.items as IngestItem[] | undefined;
+  const items = params?.items;
   const { ingestion, previewPaths } = deps;
   if (!items || items.length === 0 || !ingestion || !previewPaths) return undefined;
-  const point = (params as ImmediateParams | undefined)?.world ?? null;
+  const point = params?.world ?? null;
   const boxes = ghostBounds(items, { point, viewportWorldRect: () => ingestion.viewportWorldRect() }, handlers);
   if (boxes.length === 0) return undefined;
   return previewPaths.show(boxes.map((b) => ({ path: rectPath(b.x, b.y, b.width, b.height) })));

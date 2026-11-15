@@ -5,6 +5,7 @@
 import type { Action } from '../actions/action';
 import type { ActionDeps, DragSample, InvocationCtx, OngoingHandle } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
+import { routedOpts } from '../actions/binding';
 import { platformRoleKeys, roleKeysOf } from '../actions/modifierRoles';
 import type { DispatcherContext, KeyReach } from './dispatcherApi';
 import type { GestureFactsStore } from './gestureFacts';
@@ -222,7 +223,7 @@ export function invokeAction(
 
   if (action.invoker?.timing === 'immediate') {
     try {
-      const params = withView(immediateParams(event, resolveParams(match.binding.opts?.params)), run.viewId());
+      const params = withView(immediateParams(event, resolveParams(routedOpts(match.binding)?.params)), run.viewId());
       if (action.invoker.run(deps, params) === 'pass') return 'empty-handle';
     } catch (err) {
       console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
@@ -250,7 +251,7 @@ export function invokeAction(
     run.facts.begin(gestureId, event, roleKeys && platformRoleKeys(roleKeys, run.apple()));
     const { invoker } = action;
     const pressCtx = ctxFor(run, event, deps, gestureId);
-    const begin = () => invoker.start(pressCtx, match.binding.opts);
+    const begin = () => invoker.start(pressCtx, routedOpts(match.binding));
     const threshold = match.binding.opts?.dragThresholdPx ?? invoker.dragThresholdPx;
     // As an immediate action's throw: the press is spent, and nothing is left in flight.
     const threw = (err: unknown): void => {

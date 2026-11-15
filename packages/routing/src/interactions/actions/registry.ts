@@ -7,6 +7,8 @@ import type { GestureSpec, PhaseSpec } from '@weasel-js/gestures';
 import type { BoundGesture } from './binding';
 import type { Action } from './action';
 import type { ActionTuning } from './tuning';
+import type { ActionParamsOf, InvokeParams, KnownActionId } from './actionIds';
+import type { ActionParamSchema } from '../../index';
 import type { BindingOverrides, ResolvedBindingOverrides } from './bindingOverrides';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES, type PhaseAtom } from '../../tools/routing/routeGrammar';
 import type { Dispatcher, UiOngoingControl } from '../dispatcher/dispatcher';
@@ -15,6 +17,11 @@ export type { UiOngoingControl } from '../dispatcher/dispatcher';
 
 
 
+
+/** A tuning of the action `Id`, its params typed by `Id`'s `ActionParamSchema` entry. Resolved before its
+ *  `ActionTuning` so a params thunk's literals are read against the entry. */
+export type ActionTuningOf<Id extends string> =
+  Id extends KnownActionId ? ActionTuning<ActionParamSchema[Id]> : ActionTuning;
 
 /**
  * Partial override or full descriptor passed via `<SceneCanvas actions={...}>`.
@@ -47,11 +54,11 @@ export interface ActionsRegistry {
   /** Tune `id` here and in scopes below: its params and added bindings
    *  apply to whichever descriptor is live for it, registered before the
    *  tuning or after. Returns a release. See {@link ActionTuning}. */
-  tune(id: string, tuning: ActionTuning): () => void;
+  tune<Id extends string>(id: Id, tuning: ActionTuningOf<Id>): () => void;
   /** The params an invocation of `id` from this scope starts with when it
    *  passes `given`: every tuning's params, `given` laid over them. What a
    *  tool's chrome reads to show what the action it binds will do. */
-  paramsOf(id: string, given?: Record<string, unknown>): Record<string, unknown>;
+  paramsOf<Id extends string>(id: Id, given?: Partial<ActionParamsOf<Id>>): Partial<ActionParamsOf<Id>>;
   /** Replace or remove bindings by id, here and in scopes below. Holders
    *  merge: an inner scope's beats an outer one's, and a later one beats an
    *  earlier one in the same scope. Returns a release. See {@link BindingOverrides}. */
@@ -62,17 +69,20 @@ export interface ActionsRegistry {
   /** Fire an immediate-invoker action by id. The optional `params` arg is
    *  forwarded to `ImmediateInvoker.run` as its second argument — use it for
    *  parametric actions (e.g. `trigger('tool.activate', { toolId: 'rect' })`).
+   *  They are typed by the id's `ActionParamSchema` entry, whole; an id the
+   *  schema does not name takes none, and one held only at runtime is passed
+   *  as `dynamicActionId(id)` to take any.
    *  Returns whether it ran one: `false` for an unknown id, for an action
    *  whose `enabled` refuses or whose `run` returns `'pass'`, and for an
    *  ongoing-invoker action, which
    *  `trigger` cannot reach (see `begin`). `enabled` is asked at
    *  `params.world`, and with no point when that is absent. */
-  trigger(id: string, params?: Record<string, unknown>): boolean;
+  trigger<Id extends string>(id: Id, params?: InvokeParams<Id>): boolean;
   /** Show what firing `id` with `params` would do, by its `Action.preview`,
    *  and return what takes it down; calling that twice is harmless. Shows
    *  nothing for an unknown id, one with no preview, and one whose `enabled`
    *  refuses, asked as `trigger` asks it. */
-  preview(id: string, params?: Record<string, unknown>): () => void;
+  preview<Id extends string>(id: Id, params?: InvokeParams<Id>): () => void;
   /**
    * Subscribe to registry mutations. The callback fires after any
    * `register`/`unregister` that changes the version. Returns an
@@ -92,7 +102,7 @@ export interface ActionsRegistry {
    * See `Dispatcher.beginUiOngoing` for full semantics including
    * auto-commit when a prior UI handle for the same action is in flight.
    */
-  begin(id: string, params?: Record<string, unknown>): UiOngoingControl | null;
+  begin<Id extends string>(id: Id, params?: InvokeParams<Id>): UiOngoingControl<InvokeParams<Id>> | null;
 
   /** Wire a dispatcher into the registry so `begin()` can delegate to it.
    *  Returns a release that takes out only this dispatcher; a `null` wires

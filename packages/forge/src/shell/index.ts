@@ -23,4 +23,6 @@ export {
 export { Workshop, type WorkshopProps } from './Workshop';
 export type { FrameReady } from './readyKey';
 export type { Revision } from './loupe/captureContext';
+export type { ForgeComparison } from './loupe/conditions';
+export type { ForgeCompareParams } from '../actionParamSchema';
 export type { StoryHosts } from './storyHosts';
