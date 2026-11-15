@@ -15,3 +15,17 @@
   color: var(--wzl-fg-muted);
   cursor: grab;
 }
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-8);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  font-size: var(--wzl-font-size-xs);
+  color: var(--wzl-fg-muted);
+}

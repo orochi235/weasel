@@ -5,6 +5,7 @@ import { endless, unit } from '@weasel-js/quantity';
 import { Along } from '@weasel-js/ui/components/Along';
 import { logScale } from '@weasel-js/plot/scales';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
+import { Button } from '@weasel-js/ui/components/Button';
 import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
 import { oklchDegToHex } from '@weasel-js/paint';
 import st from './Slider.stories.module.css';
@@ -20,7 +21,7 @@ const meta: Meta<typeof Slider> = {
     trackHeight: 8,
     readoutPlacement: 'inline-after',
     allowShiftAll: false,
-    ariaLabel: 'slider',
+    'aria-label': 'slider',
     // Custom (non-Slider) arg consumed by the Playground story.
     thumbCount: 3,
   } as never,
@@ -41,7 +42,7 @@ const meta: Meta<typeof Slider> = {
     spacing: { control: 'inline-radio', options: ['linear', 'even'] },
     stopLabels: { control: 'inline-radio', options: ['all', 'ends', 'none'] },
     thumbFit: { control: 'inline-radio', options: ['inside', 'overhang'] },
-    ariaLabel: { control: 'text' },
+    'aria-label': { control: 'text' },
     stops: { table: { disable: true } },
     thumbs: { table: { disable: true } },
     onInput: { table: { disable: true } },
@@ -219,7 +220,7 @@ export const ThumbFit: Story = {
     const hue = paintGradientTrack({ gradient: (t) => oklchDegToHex(0.7, 0.18, t * 360), samples: 24 });
     const ends: Thumb[] = [{ value: 0 }, { value: 0.5 }, { value: 1 }];
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className={st.stack}>
         <Wrapper {...args} thumbFit="inside" initial={ends} renderTrack={hue} />
         <Wrapper {...args} thumbFit="overhang" initial={ends} renderTrack={hue} />
       </div>
@@ -357,21 +358,12 @@ function PlaygroundView({
   } else if (thumbs.length > thumbCount) {
     setThumbs(thumbs.slice(0, thumbCount));
   }
-  const btnStyle: React.CSSProperties = {
-    fontSize: 11,
-    padding: '3px 10px',
-    cursor: 'pointer',
-    background: 'var(--wzl-surface-raised)',
-    color: 'var(--wzl-fg)',
-    border: '1px solid var(--wzl-border)',
-    borderRadius: 4,
-  };
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className={st.stack}>
       <Slider {...sliderArgs} thumbs={thumbs} onInput={setThumbs} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--wzl-fg-muted)' }}>
-        <button type="button" style={btnStyle} disabled={thumbCount <= 1} onClick={() => setCount(thumbCount - 1)}>− Remove</button>
-        <button type="button" style={btnStyle} disabled={thumbCount >= 8} onClick={() => setCount(thumbCount + 1)}>+ Add</button>
+      <div className={st.controls}>
+        <Button size="sm" disabled={thumbCount <= 1} onClick={() => setCount(thumbCount - 1)}>− Remove</Button>
+        <Button size="sm" disabled={thumbCount >= 8} onClick={() => setCount(thumbCount + 1)}>+ Add</Button>
         <span>{thumbs.length} thumb{thumbs.length === 1 ? '' : 's'}</span>
       </div>
     </div>
