@@ -4,6 +4,7 @@ import {
   CustomLayer, FunctionLayer, KeyframeLayer, LayeredCurveEditor, functionLayerState, keyframeLayerState,
   type ControlPoint, type CurveLayer, type FunctionLayerState, type KeyframeLayerState,
 } from '@weasel-js/ui/components/CurveEditor';
+import s from './LayeredCurveEditor.stories.module.css';
 
 // ─────────────────────────────────────────────────────────────────────
 // Story 1 — function + numerical derivative (read-only derived layer)
@@ -45,9 +46,6 @@ function TwoLayersDemo() {
 
   return (
     <LayeredCurveEditor width={500} height={300} grid={{ divisions: 3 }} axes={{}}>
-      <style>{`
-        [data-layer-id="derivative"] { --curve-line: var(--wzl-fg-subtle, #888); }
-      `}</style>
       <FunctionLayer id="derivative" domain="1d" interactive={false} state={derivState} onInput={setDerivState} />
       <FunctionLayer id="fn" domain="1d" endpoints="pinned-x" constrain="function" state={fnState} onInput={onFnChange} />
     </LayeredCurveEditor>
@@ -62,7 +60,7 @@ function TwoLayersDemo() {
 // width). The bevel layer (goldenrod, filled below) covers x ∈ [0, b];
 // the contour spline (purple) covers [b, halfWidth]. The seam at x=b
 // is held C0 — the two layers' seam anchors share y, kept in sync by
-// the consumer inside each layer's `onChange`. A third draggable handle layer
+// the consumer inside each layer's `onInput`. A third draggable handle layer
 // lets the user adjust b live; a control slider provides the initial
 // value.
 
@@ -96,7 +94,7 @@ function createPartitionLayer(): CurveLayer<PartitionState> {
             height={28}
             rx={2}
             fill={activeStroke}
-            style={{ cursor: 'ew-resize' }}
+            className={s.partition}
             data-anchor-index="partition"
           />
         </g>
@@ -222,15 +220,6 @@ function RimContourDemo(args: RimContourArgs) {
       grid={{ divisions: 4 }}
       axes={{}}
     >
-      <style>{`
-        [data-layer-id="bevel"] {
-          --curve-line: goldenrod;
-          --curve-fill: color-mix(in srgb, goldenrod 35%, transparent);
-        }
-        [data-layer-id="spline"] {
-          --curve-line: rebeccapurple;
-        }
-      `}</style>
       <FunctionLayer
         id="bevel" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
         fill={BEVEL_FILL} xClamp={bevelClamp} minPoints={2} state={bevelState} onInput={onBevelChange}
@@ -249,7 +238,7 @@ function RimContourDemo(args: RimContourArgs) {
 // ─────────────────────────────────────────────────────────────────────
 
 function StoryRoot({ children }: { children: ReactNode }) {
-  return <div style={{ padding: 16 }}>{children}</div>;
+  return <div className={s.root}>{children}</div>;
 }
 
 const meta: Meta = {
@@ -309,4 +298,4 @@ function KeyframesDemo() {
   );
 }
 
-export const Keyframes: StoryObj = { render: () => <KeyframesDemo /> };
+export const Keyframes: StoryObj = { render: () => <StoryRoot><KeyframesDemo /></StoryRoot> };

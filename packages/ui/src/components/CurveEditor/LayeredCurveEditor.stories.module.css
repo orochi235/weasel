@@ -1,0 +1,20 @@
+.root {
+  padding: var(--wzl-space-8);
+}
+
+.root :global([data-layer-id='derivative']) {
+  --curve-line: var(--wzl-fg-subtle);
+}
+
+.root :global([data-layer-id='bevel']) {
+  --curve-line: goldenrod;
+  --curve-fill: color-mix(in srgb, goldenrod 35%, transparent);
+}
+
+.root :global([data-layer-id='spline']) {
+  --curve-line: rebeccapurple;
+}
+
+.partition {
+  cursor: ew-resize;
+}
