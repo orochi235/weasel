@@ -25,13 +25,6 @@ const INK = { paint: solid('#000000') };
 const FRAME: Pose = { x: 4, y: 6, width: 280, height: 56 };
 const DOT: Pose = { x: 16, y: 18, width: 32, height: 32 };
 
-/**
- * A 24mm label drawn on a scene in points. `renderLabel` draws it at the PT-P710BT's dot pitch over
- * the band its printhead reaches, which the preview shows; `printLabel` sends that to a printer over
- * WebUSB, and `sceneToLbx` writes the same scene as a file P-touch Editor opens, the frame and text as
- * objects and the ellipse as an image. The kit's default painter draws all three, on the canvas and
- * in both outputs.
- */
 export function PTouchLabelDemo() {
   const scene = useScene<unknown, 'label', Pose>({
     systemLayers: [{ id: 'label' }],
