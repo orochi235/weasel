@@ -1,15 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   SceneCanvas,
   WeaselProvider,
   solid,
-  useSceneAdapter,
   useScene,
   useSelection,
-  useSelectTool,
-  useHandTool,
-  useTools,
-  type Fill, movePreset, outlinePreset,
+  type Fill, type ToolsApi, movePreset, pickPreset,
 } from '@weasel-js/core';
 import {
   buildRouteRegistry,
@@ -33,13 +29,9 @@ const INITIAL: Rect[] = [
 function ToolReflectionDemoInner() {
   const scene = useScene<Rect>({ items: INITIAL });
   const selection = useSelection({ scene, mode: 'multi' });
-  const adapter = useSceneAdapter(scene, { selection });
+  const [tools, setTools] = useState<ToolsApi | null>(null);
 
-  const select = useSelectTool(adapter, {});
-  const hand = useHandTool();
-  const tools = useTools({ active: 'select', registry: { select, hand } });
-
-  const toolList = useMemo(() => Object.values(tools.registry), [tools.registry]);
+  const toolList = useMemo(() => (tools ? Object.values(tools.registry) : []), [tools]);
   const registry: RegistryEntry[] = useMemo(() => buildRouteRegistry(toolList), [toolList]);
   const conflicts: Conflict[] = useMemo(() => findConflicts(toolList), [toolList]);
 
@@ -47,7 +39,7 @@ function ToolReflectionDemoInner() {
     <div className={styles.demo}>
       <div className={styles.grid}>
         <div className={styles.panel}>
-          <h3 className={styles.panelTitle}>Action registry ({registry.length})</h3>
+          <h3 className={styles.panelTitle}>Route registry ({registry.length})</h3>
           <RegistryTable rows={registry} />
         </div>
         <div className={styles.panel}>
@@ -55,13 +47,15 @@ function ToolReflectionDemoInner() {
           <ConflictsReport conflicts={conflicts} />
         </div>
         <div className={`${styles.panel} ${styles.canvasPanel}`}>
-          <h3 className={styles.panelTitle}>Canvas (select + hand)</h3>
+          <h3 className={styles.panelTitle}>Canvas</h3>
           <DemoStage width={W} height={H}>
-            <SceneCanvas features={[outlinePreset, movePreset]}
+            <SceneCanvas
+              features={[pickPreset, movePreset]}
+              defaultTools={['hand']}
+              onToolsCreated={setTools}
               className="ckd-canvas"
               scene={scene}
               selection={selection}
-              tools={tools}
             />
           </DemoStage>
         </div>
@@ -84,6 +78,7 @@ function RegistryTable({ rows }: { rows: RegistryEntry[] }) {
           <th>gesture</th>
           <th>target</th>
           <th>mods</th>
+          <th>action</th>
         </tr>
       </thead>
       <tbody>
@@ -96,6 +91,7 @@ function RegistryTable({ rows }: { rows: RegistryEntry[] }) {
             <td>{r.gesture}</td>
             <td>{r.target}</td>
             <td>{modKey || 'default'}</td>
+            <td>{r.actionId}</td>
           </tr>
           );
         })}
