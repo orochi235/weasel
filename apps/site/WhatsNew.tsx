@@ -1,101 +1,15 @@
-import { useMemo, useState } from 'react';
+import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
+import { useMemo } from 'react';
 import { isoDay } from './isoDay';
 import { DEMOS, placeOf, type DemoEntry } from './registry';
-
-type SortKey = 'title' | 'place' | 'created' | 'lastModified';
-type SortDir = 'asc' | 'desc';
+import s from './WhatsNew.module.css';
 
 interface Props {
   onSelect: (id: string) => void;
 }
 
-/** "Demo updates" view — a sortable table of every demo with creation +
- *  last-modified dates. Linked from the sidebar at the top of the nav.
- *  Default sort: `lastModified` descending, so the latest changes top
- *  the list. Click any column header to re-sort. */
-export function WhatsNew({ onSelect }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>('lastModified');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
-
-  const sorted = useMemo(() => sortDemos(DEMOS, sortKey, sortDir), [sortKey, sortDir]);
-
-  const cycle = (key: SortKey) => {
-    if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else {
-      setSortKey(key);
-      // Date columns default to desc (newest first); text columns to asc.
-      setSortDir(key === 'created' || key === 'lastModified' ? 'desc' : 'asc');
-    }
-  };
-
-  return (
-    <article className="ckd-demo ckd-whatsnew">
-      <header>
-        <div className="ckd-eyebrow">Index</div>
-        <h2>Demo updates</h2>
-        <p className="ckd-desc">Every demo in this kit, sortable by creation or last-modified date.</p>
-      </header>
-
-      <div className="ckd-whatsnew-tablewrap">
-        <table className="ckd-whatsnew-table">
-          <thead>
-            <tr>
-              <Th label="Demo" colKey="title" sortKey={sortKey} sortDir={sortDir} onClick={cycle} />
-              <Th label="Filed under" colKey="place" sortKey={sortKey} sortDir={sortDir} onClick={cycle} />
-              <Th label="Created" colKey="created" sortKey={sortKey} sortDir={sortDir} onClick={cycle} />
-              <Th label="Last modified" colKey="lastModified" sortKey={sortKey} sortDir={sortDir} onClick={cycle} />
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((d) => (
-              <tr key={d.id}>
-                <td>
-                  <a
-                    href={`#${d.id}`}
-                    className="ckd-whatsnew-link"
-                    onClick={(e) => { e.preventDefault(); onSelect(d.id); }}
-                  >
-                    {d.title}
-                  </a>
-                </td>
-                <td>{placeOf(d)}</td>
-                <td><DateCell iso={d.created} /></td>
-                <td><DateCell iso={d.lastModified} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </article>
-  );
-}
-
-function Th({
-  label, colKey, sortKey, sortDir, onClick,
-}: {
-  label: string;
-  colKey: SortKey;
-  sortKey: SortKey;
-  sortDir: SortDir;
-  onClick: (key: SortKey) => void;
-}) {
-  const active = colKey === sortKey;
-  const arrow = active ? (sortDir === 'asc' ? '▲' : '▼') : '';
-  return (
-    <th>
-      <button
-        type="button"
-        className={`ckd-whatsnew-th${active ? ' is-active' : ''}`}
-        onClick={() => onClick(colKey)}
-      >
-        {label}{arrow ? ` ${arrow}` : ''}
-      </button>
-    </th>
-  );
-}
-
 function DateCell({ iso }: { iso: string | undefined }) {
-  if (!iso) return <span className="ckd-whatsnew-empty">—</span>;
+  if (!iso) return <span className={s.empty}>—</span>;
   return (
     <time dateTime={iso} title={iso}>
       {isoDay(iso)}
@@ -103,25 +17,35 @@ function DateCell({ iso }: { iso: string | undefined }) {
   );
 }
 
-function valueOf(d: DemoEntry, key: SortKey): string {
-  return key === 'place' ? placeOf(d) : (d[key] ?? '');
-}
+/** Newest change first. */
+const BY_LAST_MODIFIED = { columnId: 'lastModified', direction: 'desc' } as const;
 
-function sortDemos(
-  entries: readonly DemoEntry[],
-  key: SortKey,
-  dir: SortDir,
-): DemoEntry[] {
-  const sign = dir === 'asc' ? 1 : -1;
-  return [...entries].sort((a, b) => {
-    const av = valueOf(a, key);
-    const bv = valueOf(b, key);
-    // Empty strings sort as the "smallest" value regardless of direction
-    // so undated entries always trail (which is what consumers expect:
-    // freshly-created, ungit-tracked demos sit at the bottom).
-    if (av === bv) return 0;
-    if (av === '') return 1;
-    if (bv === '') return -1;
-    return av.localeCompare(bv) * sign;
-  });
+/** "Demo updates" view — a sortable table of every demo with creation +
+ *  last-modified dates. Linked from the sidebar at the top of the nav. */
+export function WhatsNew({ onSelect }: Props) {
+  const columns = useMemo((): DataGridColumn<DemoEntry>[] => [
+    {
+      id: 'title',
+      header: 'Demo',
+      render: (d) => (
+        <a href={`#${d.id}`} className={s.link} onClick={(e) => { e.preventDefault(); onSelect(d.id); }}>
+          {d.title}
+        </a>
+      ),
+    },
+    { id: 'place', header: 'Filed under', accessor: placeOf },
+    { id: 'created', header: 'Created', render: (d) => <DateCell iso={d.created} /> },
+    { id: 'lastModified', header: 'Last modified', render: (d) => <DateCell iso={d.lastModified} /> },
+  ], [onSelect]);
+
+  return (
+    <article className="ckd-demo">
+      <header>
+        <div className="ckd-eyebrow">Index</div>
+        <h2>Demo updates</h2>
+        <p className="ckd-desc">Every demo in this kit, sortable by creation or last-modified date.</p>
+      </header>
+      <DataGrid className={s.grid} rows={DEMOS} columns={columns} defaultSort={BY_LAST_MODIFIED} />
+    </article>
+  );
 }

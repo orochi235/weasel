@@ -212,50 +212,6 @@ a:hover { text-decoration: underline; }
   background: color-mix(in srgb, var(--wzl-accent-strong) 30%, transparent);
 }
 
-.ckd-whatsnew-tablewrap { overflow-x: auto; }
-.ckd-whatsnew-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--wzl-font-size-md);
-  margin-top: var(--wzl-space-6);
-}
-.ckd-whatsnew-table th,
-.ckd-whatsnew-table td {
-  text-align: left;
-  padding: var(--wzl-space-4) var(--wzl-space-6);
-  border-bottom: 1px solid color-mix(in srgb, var(--wzl-fg-muted) 18%, transparent);
-}
-.ckd-whatsnew-table th {
-  background: transparent;
-  padding: 0;
-}
-.ckd-whatsnew-th {
-  background: transparent;
-  border: 0;
-  padding: var(--wzl-space-4) var(--wzl-space-6);
-  color: var(--wzl-fg-muted);
-  font-size: var(--wzl-font-size-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-  font-size: var(--wzl-font-size-sm);
-  text-transform: uppercase;
-}
-.ckd-whatsnew-th.is-active { color: var(--wzl-fg); }
-.ckd-whatsnew-table tr:hover td {
-  background: color-mix(in srgb, var(--wzl-fg-muted) 5%, transparent);
-}
-.ckd-whatsnew-link {
-  color: var(--wzl-fg);
-  font-weight: 600;
-  text-decoration: none;
-}
-.ckd-whatsnew-link:hover { text-decoration: underline; }
-.ckd-whatsnew-empty { color: var(--wzl-fg-subtle); }
-
 .ckd-canvas-wrap {
   display: flex;
   flex-direction: column;
