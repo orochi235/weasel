@@ -76,7 +76,7 @@ describe('History.observe', () => {
     t.history.switchBranch(1);
     t.history.redo();
     t.history.prune(Number.POSITIVE_INFINITY);
-    t.history.restore(snap);
+    t.history.restore(snap, { recovery: 'best-effort' });
     t.history.clear();
     expect(t.steps.map((s) => s.kind)).toEqual(['push', 'undo', 'push', 'undo', 'branch', 'redo', 'prune', 'restore', 'clear']);
   });

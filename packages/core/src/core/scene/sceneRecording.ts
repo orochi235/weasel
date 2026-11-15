@@ -5,6 +5,7 @@
 import type { Journal } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { createHistory } from 'core/ops/createHistory';
+import type { OpRegistry } from 'core/ops/registry';
 import { createAppliedLog } from './appliedLog';
 import type { ArrivalWindow } from './arrivalWindow';
 import type { EditMode } from './editMode';
@@ -37,6 +38,7 @@ export interface SceneRecordingEnv {
     coalesceWindowMs?: number | undefined;
     historyLimit?: number | undefined;
   };
+  opRegistry: OpRegistry;
 }
 
 export interface SceneRecording {
@@ -77,6 +79,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
 
   const outer = createOuterOps({
     own: ops.rebuild,
+    opRegistry: env.opRegistry,
     recorder: () => recorder,
     // Deferred rather than muted, so a throwing op cannot strand subscribers
     // after earlier ops in the batch already mutated state.

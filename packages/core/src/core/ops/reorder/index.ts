@@ -1,6 +1,6 @@
 import { sameList } from '@weasel-js/registry';
 import type { Op } from '../types';
-import { registerOpFactory } from '../registry';
+import { registerKitOpFactory } from '../registry';
 import {
   bringForward,
   sendBackward,
@@ -135,7 +135,7 @@ export function createReorderOp(args: ReorderArgs): Op {
   });
 }
 
-registerOpFactory<ReorderArgs>('reorder', (args) => createReorderOp(args));
+registerKitOpFactory<ReorderArgs>('reorder', (args) => createReorderOp(args));
 
 /** Arguments to {@link createMoveToIndexOp}: move `ids` to `index` under `parentId`. */
 export interface MoveToIndexArgs {
@@ -200,7 +200,7 @@ export function createMoveToIndexOp(args: MoveToIndexArgs): Op {
   };
 }
 
-registerOpFactory<MoveToIndexArgs>('moveToIndex', (args) => createMoveToIndexOp(args));
+registerKitOpFactory<MoveToIndexArgs>('moveToIndex', (args) => createMoveToIndexOp(args));
 
 /** `index` as a finite integer `moveToIndex` places alike, since JSON writes `Infinity` and `NaN` as `null`, which
  *  a rebuilt op reads as 0: a move to the top would reload as a move to the bottom. */

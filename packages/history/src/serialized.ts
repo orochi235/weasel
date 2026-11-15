@@ -1,7 +1,6 @@
 /**
  * A history's entries, their wire form, and the trip between the two.
  */
-import { deepEqual } from '@weasel-js/registry';
 import type { Op } from './op';
 
 export interface Entry {
@@ -94,7 +93,7 @@ export interface HistoryLogger {
   warn(message: string): void;
 }
 
-/** The stacks a history holds, as `snapshot` reads them and `rebuilt` answers. */
+/** The stacks a history holds, as `snapshot` reads them and `rebuilt` (`./restore`) answers. */
 export interface Stacks {
   undoStack: Entry[];
   redoStack: Entry[];
@@ -152,27 +151,6 @@ export function snapshot(stacks: Stacks, logger: HistoryLogger): SerializedHisto
     nextEntryId,
     droppedEntries: total - carried,
   };
-}
-
-/** The stacks `snapshot` describes, each op rebuilt through `custom`. */
-export function rebuilt(snapshot: SerializedHistory, custom: CustomRebuild | undefined, logger: HistoryLogger): Stacks {
-  const entry = (se: SerializedHistoryEntry): Entry => serialToEntry(se, custom, logger);
-  const undoStack = snapshot.undoStack.map(entry);
-  const redoStack = snapshot.redoStack.map(entry);
-  const forks = new Map<number, Entry[][]>();
-  for (const b of snapshot.branches ?? []) {
-    const entries = b.entries.map(entry);
-    const kept = forks.get(b.at);
-    if (kept) kept.push(entries);
-    else forks.set(b.at, [entries]);
-  }
-  // Seed nextEntryId from the snapshot, then defensively bump past any
-  // restored id — a malformed snapshot with duplicate or out-of-range
-  // ids should never produce a collision with future entries.
-  let nextEntryId = snapshot.nextEntryId;
-  const seen = [undoStack, redoStack, ...[...forks.values()].flat()];
-  for (const entries of seen) for (const e of entries) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
-  return { undoStack, redoStack, forks, floorId: snapshot.floor ?? 0, nextEntryId };
 }
 
 /** Extract node ids from an op's `args`. Handles the common patterns:
@@ -233,65 +211,5 @@ function entryToSerial(e: Entry, logger: HistoryLogger): SerializedHistoryEntry 
     id: e.id, label: e.label, forwardOps, baseOps, pushes: e.pushes, timestamp: e.timestamp,
     ...(e.selectionBefore ? { selectionBefore: e.selectionBefore } : {}),
     ...(e.selectionAfter ? { selectionAfter: e.selectionAfter } : {}),
-  };
-}
-
-/** Placeholder op used when the registry lacks the requested name. Stable
- *  identity (each placeholder is its own invert) keeps undo/redo plumbing
- *  happy without performing any adapter mutation. */
-function placeholderOp(name: string, args: unknown, label?: string): Op {
-  const op: Op = {
-    name,
-    args,
-    label,
-    apply: () => 'noop' as const,
-    invert: () => op,
-  };
-  return op;
-}
-
-/** Signature of a per-instance op rebuilder (`CreateHistoryOptions.rebuildOp`). */
-type CustomRebuild = (name: string, args: unknown) => Op | null;
-
-/** Rebuild a single serialized op via `custom` (if provided), falling back to
- *  a no-op placeholder.
- *
- *  This engine deliberately knows nothing about any op registry: hydrating a
- *  `(name, args)` pair back into an op is the caller's concern, injected
- *  through `CreateHistoryOptions.rebuildOp`. `@weasel-js/core`'s
- *  `createHistory` wrapper supplies its global op-factory registry as that
- *  hook, so core consumers see unchanged behavior. */
-function rebuildSerialOp(so: SerializedOp, label: string, custom: CustomRebuild | undefined, logger: HistoryLogger): Op {
-  const viaCustom = custom ? custom(so.name, so.args) : null;
-  if (viaCustom !== null) return viaCustom;
-  logger.log(`restore: unknown op name "${so.name}" — substituting no-op placeholder`);
-  return placeholderOp(so.name, so.args, label);
-}
-
-function sameSerialOps(a: readonly SerializedOp[], b: readonly SerializedOp[]): boolean {
-  return a === b || deepEqual(a, b);
-}
-
-/** Rebuild a runtime entry from its serialized form. Unknown op names become
- *  no-op placeholders so the entry still occupies its slot in the stack. */
-function serialToEntry(se: SerializedHistoryEntry, custom: CustomRebuild | undefined, logger: HistoryLogger): Entry {
-  const forwardOps = se.forwardOps.map((so) => rebuildSerialOp(so, se.label, custom, logger));
-  // An entry nothing coalesced into holds one array as both halves, and a
-  // step that throws unwinds differently when they differ.
-  const baseOps = sameSerialOps(se.forwardOps, se.baseOps)
-    ? forwardOps
-    : se.baseOps.map((so) => rebuildSerialOp(so, se.label, custom, logger));
-  return {
-    id: se.id,
-    label: se.label,
-    forwardOps,
-    baseOps,
-    timestamp: se.timestamp ?? 0,
-    pushes: se.pushes ?? 1,
-    // Re-derive touchedIds from the rebuilt ops rather than trying to
-    // round-trip the Set through the serialized form (Sets aren't JSON-safe).
-    touchedIds: touchedIdsFromOps(baseOps === forwardOps ? forwardOps : [...baseOps, ...forwardOps]),
-    ...(se.selectionBefore ? { selectionBefore: [...se.selectionBefore] } : {}),
-    ...(se.selectionAfter ? { selectionAfter: [...se.selectionAfter] } : {}),
   };
 }

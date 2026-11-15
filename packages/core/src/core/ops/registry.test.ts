@@ -1,7 +1,7 @@
 // Per-factory round-trip tests for the op-factory registry.
 //
 // For each built-in factory: build an op the normal way, read its
-// `(name, args)`, hand them back through `rebuildOp`, and verify the
+// `(name, args)`, hand them back through `defaultOpRegistry.rebuild`, and verify the
 // reconstructed op behaves identically (apply mutates the adapter the
 // same way; invert chains in the expected direction).
 
@@ -14,7 +14,7 @@ import { createSetTextOp } from './setText';
 import { createReparentOp } from './reparent';
 import { createMoveToIndexOp } from './reorder';
 import { createSetSelectionOp } from './select';
-import { opFactoryRegistry, rebuildOp, registeredOpNames } from './registry';
+import { createOpRegistry, defaultOpRegistry, registerOpFactory } from './registry';
 import { asNodeId } from '../scene';
 import type { Op } from './types';
 
@@ -61,7 +61,7 @@ function applyBoth(make: () => Op, pick: (a: ReturnType<typeof makeFullAdapter>)
   const b = makeFullAdapter();
   const original = make();
   original.apply(a);
-  const rebuilt = rebuildOp(original.name!, original.args)!;
+  const rebuilt = defaultOpRegistry.rebuild(original.name!, original.args)!;
   rebuilt.apply(b);
   expect(pick(b)).toEqual(pick(a));
 }
@@ -78,7 +78,7 @@ describe('op-factory registry — per-factory round trip', () => {
     const op = createInsertOp<Node>({ node });
     const inverted = op.invert();
     expect(inverted.name).toBe('delete');
-    const rebuiltInverted = rebuildOp(inverted.name!, inverted.args)!;
+    const rebuiltInverted = defaultOpRegistry.rebuild(inverted.name!, inverted.args)!;
     const a = makeFullAdapter();
     rebuiltInverted.apply(a);
     expect(a.removeCalls).toEqual(['r1']);
@@ -96,7 +96,7 @@ describe('op-factory registry — per-factory round trip', () => {
     const op = createDeleteOp<Node>({ node, index: 0 });
     const inverted = op.invert();
     expect(inverted.name).toBe('insert');
-    const rebuiltInverted = rebuildOp(inverted.name!, inverted.args)!;
+    const rebuiltInverted = defaultOpRegistry.rebuild(inverted.name!, inverted.args)!;
     const a = makeFullAdapter();
     rebuiltInverted.apply(a);
     expect(a.insertCalls).toEqual([node]);
@@ -112,7 +112,7 @@ describe('op-factory registry — per-factory round trip', () => {
     const op = createTransformOp(args);
     const inv = op.invert();
     expect(inv.name).toBe('transform');
-    const rebuilt = rebuildOp(inv.name!, inv.args)!;
+    const rebuilt = defaultOpRegistry.rebuild(inv.name!, inv.args)!;
     const a = makeFullAdapter();
     rebuilt.apply(a);
     expect(a.poseCalls).toEqual([['r1', { x: 0, y: 0 }]]);
@@ -159,7 +159,7 @@ describe('op-factory registry — per-factory round trip', () => {
     original.apply(aOrig);
     // `args.prevPositions` is populated post-apply.
     expect((original.args as { prevPositions?: string[] }).prevPositions).toEqual(['r1', 'r2', 'r3']);
-    const rebuilt = rebuildOp(original.name!, original.args)!;
+    const rebuilt = defaultOpRegistry.rebuild(original.name!, original.args)!;
     rebuilt.apply(aReb);
     expect(aReb.orderCalls).toEqual(aOrig.orderCalls);
     // Invert of the rebuilt op restores the prior order (round-trip across
@@ -178,10 +178,46 @@ describe('op-factory registry — per-factory round trip', () => {
   });
 });
 
-describe('opFactoryRegistry', () => {
-  it('reflects the same names registeredOpNames lists, each with its builder', () => {
-    const entries = opFactoryRegistry.entries();
-    expect(entries.map((e) => e.key)).toEqual([...registeredOpNames()]);
+describe('op registries', () => {
+  const op = (tag: string): Op => ({ name: 'regtest:op', args: tag, apply: () => {}, invert: () => op(tag) });
+
+  it('reflects every kit factory through the default registry, each with its builder', () => {
+    const entries = defaultOpRegistry.entries();
+    expect(entries.map((e) => e.key)).toEqual(expect.arrayContaining(['insert', 'delete', 'transform', 'setSelection']));
     expect(entries.every((e) => typeof e.value === 'function')).toBe(true);
+  });
+
+  it('isolated registries rebuild the same name each through its own factory', () => {
+    const a = createOpRegistry();
+    const b = createOpRegistry();
+    a.register('regtest:op', () => op('a'));
+    b.register('regtest:op', () => op('b'));
+    expect(a.rebuild('regtest:op', null)!.args).toBe('a');
+    expect(b.rebuild('regtest:op', null)!.args).toBe('b');
+    expect(defaultOpRegistry.rebuild('regtest:op', null)).toBeNull();
+    // Both still see the kit's factories.
+    expect(a.rebuild('transform', { id: 'x', from: 0, to: 1 })).not.toBeNull();
+  });
+
+  it('a registry made with parent: null resolves none of the kit’s factories', () => {
+    expect(createOpRegistry({ parent: null }).rebuild('transform', { id: 'x', from: 0, to: 1 })).toBeNull();
+  });
+
+  it('hosts sharing a parent resolve its factories, and a conflicting one throws unless replaced', () => {
+    const shared = createOpRegistry();
+    const host = createOpRegistry({ parent: shared });
+    const build = () => op('shared');
+    shared.register('regtest:op', build);
+    expect(host.rebuild('regtest:op', null)!.args).toBe('shared');
+    expect(() => host.register('regtest:op', build)).not.toThrow();
+    expect(() => host.register('regtest:op', () => op('other'))).toThrow(/op factory "regtest:op"/);
+    expect(() => host.register('transform', () => op('mine'))).toThrow(/op factory "transform"/);
+  });
+
+  it('registerOpFactory registers on the default registry and returns its release', () => {
+    const off = registerOpFactory('regtest:default', () => op('d'));
+    expect(defaultOpRegistry.rebuild('regtest:default', null)!.args).toBe('d');
+    off();
+    expect(defaultOpRegistry.rebuild('regtest:default', null)).toBeNull();
   });
 });

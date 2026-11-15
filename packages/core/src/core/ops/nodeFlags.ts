@@ -1,6 +1,6 @@
 import type { Op } from './types';
 import { alreadyHolds } from './alreadyHolds';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 
 interface NodeFlagAdapter {
   setHidden(id: string, hidden: boolean): void;
@@ -46,5 +46,5 @@ export function createSetLockedOp(args: NodeFlagArgs): Op {
   return flagOp('setLocked', args);
 }
 
-registerOpFactory<NodeFlagArgs>('setHidden', (args) => createSetHiddenOp(args));
-registerOpFactory<NodeFlagArgs>('setLocked', (args) => createSetLockedOp(args));
+registerKitOpFactory<NodeFlagArgs>('setHidden', (args) => createSetHiddenOp(args));
+registerKitOpFactory<NodeFlagArgs>('setLocked', (args) => createSetLockedOp(args));

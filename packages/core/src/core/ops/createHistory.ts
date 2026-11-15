@@ -1,10 +1,10 @@
 import {
   createHistory as createHistoryEngine,
   type History,
-  type CreateHistoryOptions,
+  type CreateHistoryOptions as EngineHistoryOptions,
   type HistoryLogger,
 } from '@weasel-js/history';
-import { rebuildOp } from './registry';
+import { defaultOpRegistry, type OpRegistry } from './registry';
 import { dlog, dwarn } from '../../debug/flag';
 
 /** Routes the engine's diagnostics into the kit's `history` debug namespace,
@@ -14,17 +14,24 @@ const kitLogger: HistoryLogger = {
   warn: (message) => dwarn('history', message),
 };
 
+/** `@weasel-js/history`'s options, plus the op registry a restore resolves names through. */
+export interface CreateHistoryOptions extends EngineHistoryOptions {
+  /** Where `restore()` finds the factory for each op name a caller-supplied `rebuildOp` does not
+   *  answer. Defaults to `defaultOpRegistry`. */
+  opRegistry?: OpRegistry;
+}
+
 /**
- * Build an op-batched undo/redo `History`, defaulting restore-time op
- * hydration to core's global op-factory registry and its diagnostics to the
- * kit's debug namespace. A caller-supplied `rebuildOp` wins; return `null`
- * from it to fall through to the registry.
+ * Build an op-batched undo/redo `History` that restores ops through an op
+ * registry (`opRegistry`, else `defaultOpRegistry`) and logs to the kit's
+ * debug namespace. A caller-supplied `rebuildOp` is asked first; return
+ * `null` from it to fall through to the registry.
  */
 export function createHistory(adapter: unknown, options: CreateHistoryOptions = {}): History {
-  const custom = options.rebuildOp;
+  const { opRegistry = defaultOpRegistry, rebuildOp: custom, ...rest } = options;
   return createHistoryEngine(adapter, {
     debug: kitLogger,
-    ...options,
-    rebuildOp: (name, args) => custom?.(name, args) ?? rebuildOp(name, args),
+    ...rest,
+    rebuildOp: (name, args, context) => custom?.(name, args, context) ?? opRegistry.rebuild(name, args),
   });
 }

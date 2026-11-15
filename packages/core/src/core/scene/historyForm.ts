@@ -1,4 +1,5 @@
-import type { SerializedHistory, SerializedOp } from '@weasel-js/history';
+import type { HistoryRestoreReport, RestoreOptions, SerializedHistory, SerializedOp } from '@weasel-js/history';
+import type { OpRegistry } from 'core/ops/registry';
 
 /** The form a scene's undo entries are recorded in. A serialized history
  *  carries it, and one carrying another is not restored. Form 4 records a
@@ -25,25 +26,36 @@ export interface SceneHistoryPersistence {
   /** Replace the undo/redo history from a `serializeHistory()` snapshot.
    *  Call on a scene whose node/layer state already matches the snapshot's
    *  head state (i.e. right after `loadState` from the paired scene
-   *  snapshot); node state is NOT mutated. Ops re-registered via
-   *  `registerOp` before this call round-trip; unknown kinds become no-op
-   *  placeholders; external ops rebuild via the global op-factory registry
-   *  and replay against the `setHistoryAdapter` accessor. Restored entries
-   *  never coalesce with new ones. Notifies once. A snapshot that is not in
-   *  the current recorded form (see `SCENE_HISTORY_FORM`) is dropped:
-   *  the history is left as it was. Do not call mid-`batch`:
-   *  the stacks are replaced underneath the open batch, whose eventual
-   *  flush would graft onto (and evict against) the restored stacks. */
-  restoreHistory(snapshot: SerializedHistory): void;
+   *  snapshot); node state is NOT mutated. Kinds registered via `registerOp`
+   *  rebuild as the scene's own ops. Any other op is an external one, handed
+   *  to `applyBatch`, and rebuilds through {@link opRegistry} bound to the
+   *  `setHistoryAdapter` accessor, which must be set before this call.
+   *
+   *  Strict by default: an op nothing rebuilds, an external op with no
+   *  history adapter set, or a snapshot not in the current recorded form (see
+   *  `SCENE_HISTORY_FORM`) throws `HistoryRestoreError`, whose `report` lists
+   *  them, and leaves the history as it was. A restored external op that then
+   *  fails on undo or redo throws `RestoredOpError`, leaving its entry and the
+   *  state where they were. With `recovery: 'best-effort'`, each op it cannot
+   *  rebuild becomes a placeholder that changes nothing, a wrong-form snapshot
+   *  is dropped, and the report says which; `onSkip` hears each op an undo or
+   *  redo steps past.
+   *
+   *  Restored entries never coalesce with new ones. Notifies once. Do not
+   *  call mid-`batch`: the stacks are replaced underneath the open batch,
+   *  whose eventual flush would graft onto (and evict against) the restored
+   *  stacks. */
+  restoreHistory(snapshot: SerializedHistory, options?: RestoreOptions): HistoryRestoreReport;
   /** Install (or clear with `null`) the accessor for the adapter that
    *  RESTORED external ops apply against on undo/redo: the ops handed to
    *  `applyBatch` that wrote no scene state, such as a selection change,
-   *  rebuilt from a `restoreHistory` snapshot. Resolved lazily at each
-   *  apply, so wiring order relative to `restoreHistory` doesn't matter.
-   *  Live `applyBatch` entries are unaffected (they bind their call-site
-   *  adapter). If unset when a restored op applies, the op is a debug-warned
-   *  no-op. */
+   *  rebuilt from a `restoreHistory` snapshot. Read at each apply. Live
+   *  `applyBatch` entries are unaffected (they bind their call-site
+   *  adapter). */
   setHistoryAdapter(fn: (() => unknown) | null): void;
+  /** Where this scene's restored external ops find their factories. See
+   *  `SceneOptions.opRegistry`. */
+  readonly opRegistry: OpRegistry;
 }
 
 /** The scene's member that applies another scene's edits. */

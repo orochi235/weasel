@@ -129,7 +129,7 @@ describe('onEvict', () => {
     history.applyOps([setX(cell, 0, 1)], 'one');
     const snap = history.serialize();
     history.applyOps([setX(cell, 1, 2)], 'two');
-    history.restore(snap); // wholesale replace — no per-entry eviction
+    history.restore(snap, { recovery: 'best-effort' }); // wholesale replace — no per-entry eviction
     history.applyOps([setX(cell, 1, 5)], 'three');
     history.clear();       // wholesale drop — no per-entry eviction
     expect(onEvict).not.toHaveBeenCalled();

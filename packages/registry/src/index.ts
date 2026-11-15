@@ -1,4 +1,6 @@
 export { createReflectable } from './reflectable';
+export { createExtensionRegistry, ExtensionConflictError } from './extensionRegistry';
+export type { ExtensionRegistry, ExtensionRegistryOptions, ExtensionRegisterOptions } from './extensionRegistry';
 export { createEmitter, type Emitter } from './emitter';
 export { isDev } from './isDev';
 export { isPlainObject, isPlainPrototype } from './isPlainObject';

@@ -7,7 +7,7 @@ import type { NodeId, RectPose } from './types';
 import type { LayoutStrategy } from '../../layout/types';
 import { createTransformOp } from 'core/ops/transform';
 import { createSetLayoutOp } from 'core/ops/setLayout';
-import { rebuildOp } from 'core/ops/registry';
+import { defaultOpRegistry } from 'core/ops/registry';
 
 /** Children side by side left to right in child order, each 10 wide. */
 function row(): LayoutStrategy<RectPose> {
@@ -602,7 +602,7 @@ describe('scene container layout', () => {
     });
 
     it('rebuilds an op that names its layouts by key', () => {
-      const op = rebuildOp('setLayout', { id: 'C', from: 'stack', to: null })!;
+      const op = defaultOpRegistry.rebuild('setLayout', { id: 'C', from: 'stack', to: null })!;
       const calls: unknown[] = [];
       op.apply({ setLayout: (...args: unknown[]) => calls.push(args) });
       op.invert().apply({ setLayout: (...args: unknown[]) => calls.push(args) });

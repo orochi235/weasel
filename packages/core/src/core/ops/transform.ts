@@ -1,7 +1,7 @@
 import type { Op } from './types';
 import { sameValue } from '../scene/sameValue';
 import { alreadyHolds } from './alreadyHolds';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 
 interface TransformAdapter<TPose> {
   setPose(id: string, pose: TPose): void;
@@ -42,7 +42,7 @@ export function createTransformOp<TPose>(args: TransformArgs<TPose>): Op {
   };
 }
 
-registerOpFactory<TransformArgs<unknown>>('transform', (args) => createTransformOp(args));
+registerKitOpFactory<TransformArgs<unknown>>('transform', (args) => createTransformOp(args));
 
 function poseShallowEqual<TPose>(a: TPose, b: TPose): boolean {
   if (a === b) return true;

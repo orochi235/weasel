@@ -4,6 +4,7 @@ import type { PoseComposition } from './composeFrame';
 import type { LayoutFrame } from './layoutTypes';
 import type { SystemLayerSpec } from './layerTypes';
 import type { AddNodeSpec, RectPose, RegisteredOp, SceneRegistry } from './types';
+import type { OpRegistry } from 'core/ops/registry';
 
 /** Options for `useScene` — the layers the scene has, what it starts out
  *  holding, and how its history behaves. A scene whose `TPose` is not a
@@ -32,6 +33,10 @@ export interface SceneOptions<TData, TLayer extends string, TPose = RectPose> {
   /** Per-scene registry for non-serializable function fields (clipFromPose, etc.).
    *  Required only when serializing/deserializing scenes that use function fields. */
   registry?: SceneRegistry<TPose, TData, TLayer>;
+  /** Where `restoreHistory` and `replay` find the factory of an op the scene does not own (one
+   *  handed to `applyBatch`). Defaults to `defaultOpRegistry`, shared by every host that names none;
+   *  a host that should not see another's factories passes its own from `createOpRegistry`. */
+  opRegistry?: OpRegistry;
   /** How a child's pose folds into its container's frame. A stored child pose
    *  is local to the nearest container that defines a frame, and moving a
    *  container writes one pose. Default `RIGID_POSE_COMPOSITION`, which reads

@@ -1,5 +1,5 @@
 import type { Op } from './types';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 
 interface SetTextAdapter {
   setText(id: string, text: string): void;
@@ -34,4 +34,4 @@ export function createSetTextOp(args: SetTextArgs): Op {
   };
 }
 
-registerOpFactory<SetTextArgs>('setText', (args) => createSetTextOp(args));
+registerKitOpFactory<SetTextArgs>('setText', (args) => createSetTextOp(args));

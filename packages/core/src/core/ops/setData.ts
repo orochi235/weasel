@@ -1,7 +1,7 @@
 import type { Op } from './types';
 import { sameValue } from '../scene/sameValue';
 import { alreadyHolds } from './alreadyHolds';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 
 interface SetDataAdapter<TData> {
   setData(id: string, data: TData): void;
@@ -35,4 +35,4 @@ export function createSetDataOp<TData>(args: SetDataArgs<TData>): Op {
   };
 }
 
-registerOpFactory<SetDataArgs<unknown>>('setData', (args) => createSetDataOp(args));
+registerKitOpFactory<SetDataArgs<unknown>>('setData', (args) => createSetDataOp(args));

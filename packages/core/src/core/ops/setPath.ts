@@ -1,5 +1,5 @@
 import type { Op } from './types';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 import { originOf, type PolygonPath } from '@weasel-js/geom';
 
 /** The geometry fields a `setPath` op replaces together — the path itself,
@@ -57,7 +57,7 @@ export function createSetPathOp(args: SetPathArgs): Op {
   };
 }
 
-registerOpFactory<SetPathArgs>('setPath', (args) => createSetPathOp(args));
+registerKitOpFactory<SetPathArgs>('setPath', (args) => createSetPathOp(args));
 
 function fieldsEqual(a: SetPathFields, b: SetPathFields): boolean {
   if (a === b) return true;

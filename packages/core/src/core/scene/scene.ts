@@ -11,6 +11,7 @@ import { effectivePose } from './effectivePose';
 import { createEditMode } from './editMode';
 import { createSceneEdits } from './sceneEdits';
 import { createSceneRecording } from './sceneRecording';
+import { defaultOpRegistry } from 'core/ops/registry';
 import { createSceneSelection } from './sceneSelection';
 import { createSceneState } from './sceneState';
 import { systemLayerRecord } from './layerStack';
@@ -117,6 +118,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   const overrides = createSceneOverrides<TPose, TData>((id) => state.nodes.get(id), doc.store.invalidateDependents, notifier.whenSettled);
   const scroll = createScrollOffsets();
 
+  const opRegistry = options.opRegistry ?? defaultOpRegistry;
   const recording = createSceneRecording({
     notifier,
     mode,
@@ -128,6 +130,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     writePose,
     poseWrites,
     config: options,
+    opRegistry,
   });
 
   const edits = createSceneEdits<TData, TLayer, TPose>({
@@ -152,6 +155,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     get roots() { return state.roots; },
     get layers() { return state.layers; },
     registry,
+    opRegistry,
 
     ...reads,
 
@@ -205,7 +209,7 @@ function buildScene<TData, TLayer extends string, TPose>(
  *  carry, and how its nodes are read back. */
 export type SceneFromJSONOptions<TData, TLayer extends string, TPose> = Pick<
   SceneOptions<TData, TLayer, TPose>,
-  'registry' | 'historyLimit' | 'coalesceWindowMs' | 'generateId' | 'ops' | 'composition' | 'layoutFrame' | 'quantize'
+  'registry' | 'opRegistry' | 'historyLimit' | 'coalesceWindowMs' | 'generateId' | 'ops' | 'composition' | 'layoutFrame' | 'quantize'
 > & SpecsFromSerializedOptions<TData, TLayer, TPose>;
 
 /** Reconstruct a Scene from a JSON snapshot produced by `scene.toJSON()`.

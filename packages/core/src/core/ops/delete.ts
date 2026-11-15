@@ -1,6 +1,6 @@
 import type { Op } from './types';
 import { createInsertOp } from './create';
-import { registerOpFactory } from './registry';
+import { registerKitOpFactory } from './registry';
 import { captureSlot, parentOf, slotFromIndex, type OrderedReader, type SiblingSlot } from './slot';
 
 interface DeleteAdapter<TNode> extends OrderedReader {
@@ -135,4 +135,4 @@ export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TN
   };
 }
 
-registerOpFactory<DeleteArgs<{ id: string }>>('delete', (args) => createDeleteOp(args));
+registerKitOpFactory<DeleteArgs<{ id: string }>>('delete', (args) => createDeleteOp(args));
