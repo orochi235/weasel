@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { SceneCanvas, asNodeId, createScene, RIGID_POSE_COMPOSITION, solid, movePreset, pickPreset } from '@weasel-js/core';
-import type { Fill, RectPose, Stroke } from '@weasel-js/core';
+import type { Fill, GroupBoxData, RectPose, Stroke } from '@weasel-js/core';
 import { tileGrid } from '@weasel-js/guides';
 import { DemoStage } from './DemoStage';
 
-type Data = { fill?: Fill; stroke?: Stroke };
+type Data = GroupBoxData & { fill?: Fill; stroke?: Stroke };
 
 const GRID = asNodeId('grid');
 const COLORS = ['#f5e3a3', '#e3a3f5', '#a3e3f5', '#a3f5c4', '#f5b8a3'];
-const FRAME = { x: 40, y: 30, width: 330, height: 200 };
 
 // A 3 × 2 grid holding 14 tiles: with `overflow: 'scroll'` the extras take cells
 // past its last row, and `clip: 'outline'` hides them until the wheel scrolls
@@ -17,17 +16,13 @@ function buildScene() {
   const scene = createScene<Data, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     composition: RIGID_POSE_COMPOSITION,
-    initial: [
-      // A group never paints, so the grid's backing is a mark under it, outside the layout.
-      {
-        kind: 'mark', layer: 'default', pickable: false, pose: FRAME,
-        data: { fill: { paint: solid('#fbf7ee') }, stroke: { paint: solid('#d4c4a8'), width: 1 } },
-      },
-      {
-        id: GRID, kind: 'group', layer: 'default', clip: 'outline', pose: FRAME, data: {},
-        layout: tileGrid<RectPose>({ cols: 3, rows: 2, gap: 10, overflow: 'scroll' }),
-      },
-    ],
+    initial: [{
+      id: GRID, kind: 'group', layer: 'default', clip: 'outline',
+      pose: { x: 40, y: 30, width: 330, height: 200 },
+      // The backing is the group's box, so it stays put while the tiles scroll.
+      data: { background: { paint: solid('#fbf7ee') }, border: { paint: solid('#d4c4a8'), width: 1 } },
+      layout: tileGrid<RectPose>({ cols: 3, rows: 2, gap: 10, overflow: 'scroll' }),
+    }],
   });
   for (let i = 0; i < 14; i++) {
     scene.add({

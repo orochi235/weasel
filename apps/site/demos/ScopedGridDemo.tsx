@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, solid, useScene, type Fill, type RectPose, type Stroke, type UnitScope, movePreset, selectPreset, viewPreset } from '@weasel-js/core';
+import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, solid, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope, movePreset, selectPreset, viewPreset } from '@weasel-js/core';
 import { createGridLayer, gridSnapSource, sceneGridRegions, type GridScopes } from '@weasel-js/guides';
 import { DemoStage } from './DemoStage';
 
-interface Data { fill?: Fill; stroke?: Stroke }
+interface Data extends GroupBoxData { fill?: Fill; stroke?: Stroke }
 
 const W = 480, H = 320;
 const ROOT: UnitScope = { system: { base: 'px', units: { px: 1 } } };
@@ -16,9 +16,7 @@ const box = (x: number, y: number, width: number, height: number, rotation = 0):
 /** The sub-assembly is turned 20°; its children are placed in its frame. */
 const ASSEMBLY = asNodeId('assembly');
 const NODES = [
-  { id: ASSEMBLY, kind: 'group' as const, layer: 'default' as const, parent: null, units: MM, pose: box(210, 70, 200, 180, Math.PI / 9), data: {} },
-  // A group never paints, so the sub-assembly's outline is a mark of its own.
-  { id: asNodeId('outline'), kind: 'mark' as const, layer: 'default' as const, parent: ASSEMBLY, pickable: false, pose: box(0, 0, 200, 180), data: { stroke: { paint: solid('#8aa0c0'), width: 1 } } },
+  { id: ASSEMBLY, kind: 'group' as const, layer: 'default' as const, parent: null, units: MM, pose: box(210, 70, 200, 180, Math.PI / 9), data: { border: { paint: solid('#8aa0c0'), width: 1 } } },
   { id: asNodeId('inside'), kind: 'mark' as const, layer: 'default' as const, parent: ASSEMBLY, pose: box(40, 40, 48, 32), data: { fill: { paint: solid('#7fb069') } } },
   { id: asNodeId('outside'), kind: 'mark' as const, layer: 'default' as const, parent: null, pose: box(60, 120, 60, 40), data: { fill: { paint: solid('#e0a458') } } },
 ];

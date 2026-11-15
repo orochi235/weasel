@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, solid, useScene, type Fill, type RectPose, type Stroke, type UnitScope, movePreset, selectPreset, viewPreset } from '@weasel-js/core';
+import { asNodeId, RIGID_POSE_COMPOSITION, SceneCanvas, solid, useScene, type Fill, type GroupBoxData, type RectPose, type Stroke, type UnitScope, movePreset, selectPreset, viewPreset } from '@weasel-js/core';
 import { createGuidesLayer, createRulers, guideSnapSource, useGuides } from '@weasel-js/guides';
 import { METRIC_MM } from '@weasel-js/quantity';
 import { Rulers } from '@weasel-js/ui/components/Rulers';
 import { DemoStage } from './DemoStage';
 
-interface Data { fill?: Fill; stroke?: Stroke }
+interface Data extends GroupBoxData { fill?: Fill; stroke?: Stroke }
 
 const W = 520, H = 340;
 /** The document is measured in points, 72 to the inch. */
@@ -18,9 +18,7 @@ const START = { x: -40, y: -40, scale: { x: 1, y: 1 } };
 const box = (x: number, y: number, width: number, height: number): RectPose => ({ x, y, width, height, rotation: 0 });
 const PART_ID = asNodeId('part');
 const NODES = [
-  { id: PART_ID, kind: 'group' as const, layer: 'default' as const, parent: null, units: PART, pose: { ...box(260, 90, 200, 160), transform: [0.5, 0, 0, 0.5] as const }, data: {} },
-  // A group never paints, so the part's outline is a mark of its own.
-  { id: asNodeId('outline'), kind: 'mark' as const, layer: 'default' as const, parent: PART_ID, pickable: false, pose: box(0, 0, 200, 160), data: { stroke: { paint: solid('#8aa0c0'), width: 2 } } },
+  { id: PART_ID, kind: 'group' as const, layer: 'default' as const, parent: null, units: PART, pose: { ...box(260, 90, 200, 160), transform: [0.5, 0, 0, 0.5] as const }, data: { border: { paint: solid('#8aa0c0'), width: 2 } } },
   { id: asNodeId('bolt'), kind: 'mark' as const, layer: 'default' as const, parent: PART_ID, pose: box(60, 60, 80, 40), data: { fill: { paint: solid('#7fb069') } } },
   { id: asNodeId('plate'), kind: 'mark' as const, layer: 'default' as const, parent: null, pose: box(70, 110, 120, 80), data: { fill: { paint: solid('#e0a458') } } },
 ];
