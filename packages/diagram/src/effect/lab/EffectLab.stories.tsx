@@ -1,6 +1,7 @@
+import { useElementSize } from '@weasel-js/core';
 import { registerCanvasFont } from '@weasel-js/font';
 import { f, meta, story } from '@weasel-js/forge';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { EffectProblem, NodeGraphOptions, RackOptions, CompactOptions, LanesOptions } from '@weasel-js/diagram/effect';
 import { EffectChart, EFFECT_LOOKS, BRANCH_SYMBOLS, type BranchChoice } from '@weasel-js/diagram/effect';
 import { SAMPLES } from './samples';
@@ -24,29 +25,6 @@ interface LabConfig {
   collapseSkips: boolean;
 }
 
-interface Size {
-  width: number;
-  height: number;
-}
-
-/** The element's box in whole pixels, or null until it has one. */
-function useBoxSize<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-  const [size, setSize] = useState<Size | null>(null);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new ResizeObserver(() => {
-      const width = Math.round(el.clientWidth);
-      const height = Math.round(el.clientHeight);
-      setSize((prev) => (prev?.width === width && prev.height === height ? prev : { width, height }));
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-  return [ref, size] as const;
-}
-
 function LabView({ config }: { config: LabConfig }) {
   const [problems, setProblems] = useState<readonly EffectProblem[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
@@ -60,19 +38,22 @@ function LabView({ config }: { config: LabConfig }) {
     side: config.side,
     collapseSkips: config.collapseSkips,
   }), [config.branch, config.showParams, config.nodeGap, config.rankGap, config.router, config.side, config.collapseSkips]);
-  const [boxRef, size] = useBoxSize<HTMLDivElement>();
+  const boxRef = useRef<HTMLDivElement>(null);
+  const box = useElementSize(boxRef);
+  const width = Math.round(box.width);
+  const height = Math.round(box.height);
   const look = EFFECT_LOOKS[config.look];
   return (
     <div className={s.lab}>
       <div ref={boxRef} className={s.chart}>
-        {size !== null && size.width > 0 && size.height > 0 && (
+        {width > 0 && height > 0 && (
           <div className={s.canvas}>
             <EffectChart
               pipeline={SAMPLES[config.sample]!}
               look={look}
               options={options}
-              width={size.width}
-              height={size.height}
+              width={width}
+              height={height}
               background={GROUND}
               selected={picked}
               onSelect={setPicked}
