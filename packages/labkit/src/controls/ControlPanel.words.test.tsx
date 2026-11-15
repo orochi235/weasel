@@ -30,9 +30,10 @@ describe('<ControlPanel> label and separator', () => {
     expect(screen.getByText('Zoom does not change them.')).toBeInTheDocument();
     expect(screen.getByRole('separator').tagName).toBe('HR');
     expect(container.textContent).not.toMatch(/no renderer|unknown/i);
-    const order = [...container.querySelectorAll('input, hr')].map(
-      (el) => el.getAttribute('aria-label') ?? el.tagName,
-    );
-    expect(order).toEqual(['Size', 'HR', 'Turn']);
+    expect([...container.querySelectorAll('input, hr')]).toEqual([
+      screen.getByLabelText('Size'),
+      screen.getByRole('separator'),
+      screen.getByLabelText('Turn'),
+    ]);
   });
 });

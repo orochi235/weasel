@@ -56,7 +56,7 @@ function heights() {
     button: heightOf(screen.getByRole('button', { name: 'Go' })),
     select: heightOf(screen.getByRole('button', { name: /Pick/ })),
     text: heightOf(screen.getByRole('textbox', { name: 'Name' }).parentElement!),
-    number: heightOf(screen.getByRole('spinbutton', { name: 'Count' }).parentElement!),
+    number: heightOf(screen.getByLabelText('Count').parentElement!),
     unit: heightOf(screen.getByRole('spinbutton', { name: 'Width' }).parentElement!),
   };
 }

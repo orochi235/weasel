@@ -131,7 +131,7 @@ test('a label that wraps keeps its help glyph on its first line', async () => {
     </KitSettingsProvider>,
   );
   await frames();
-  const label = screen.getByText('Silhouette outline width', { selector: '[class*="rowLabel"]' });
+  const label = screen.getByText('Silhouette outline width').closest<HTMLElement>('[class*="rowLabel"]')!;
   const help = label.querySelector('[class*="help"]')!;
   const line = Number.parseFloat(getComputedStyle(label).lineHeight);
   expect(box(label).height).toBeGreaterThan(line * 1.5);

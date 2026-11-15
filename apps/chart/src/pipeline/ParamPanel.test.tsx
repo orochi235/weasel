@@ -21,9 +21,10 @@ describe('ParamPanel', () => {
     const change = vi.fn();
     render(<ParamPanel doc={withBlur} selected="blur" change={change} />);
     fireEvent.change(screen.getByRole('slider', { name: 'radius' }), { target: { value: '12' } });
-    expect(change).toHaveBeenCalledTimes(1);
-    const [next, label] = change.mock.calls[0]!;
-    expect(label).toBe('Set radius');
+    // The slider previews through onInput and commits through onChange: both write, under one coalesce key,
+    // so they land as one undo step.
+    expect(new Set(change.mock.calls.map(([, label, key]) => `${label}|${key}`))).toEqual(new Set(['Set radius|blur:radius']));
+    const [next] = change.mock.calls.at(-1)!;
     const radius = (next as EffectDoc).pipeline.stages[0]!.params![0]!;
     expect(radius.value).toBe('12 px');
     expect(radius.control).toMatchObject({ kind: 'number', value: 12, min: 0, max: 50 });

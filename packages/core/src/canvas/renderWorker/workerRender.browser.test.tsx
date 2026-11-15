@@ -91,7 +91,7 @@ function mount({ alphaFor, clock, a = solid('#ff0000'), b = solid('#00ff00') }: 
 }
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const FRAME_KEYS = new Set(['type', 'scene', 'overrides', 'view', 'size', 'layers', 'cull', 'extraCommands', 'scroll', 'alpha', 'at', 'resumed', 'animations']);
+const FRAME_KEYS = new Set(['type', 'id', 'scene', 'overrides', 'view', 'size', 'layers', 'cull', 'extraCommands', 'scroll', 'alpha', 'at', 'resumed', 'animations']);
 
 describe('a scene view painted by a worker', () => {
   it('draws into the transferred canvas, and the page sends only what changed', async () => {
