@@ -21,7 +21,7 @@ function origin(id: string) {
 }
 
 describe('MultiSelectDemo', () => {
-  it('adds to the selection on a shift-click and drags the selection as one', () => {
+  it('selects from the last-clicked rect to a shift-clicked one and drags the selection as one', () => {
     const { container } = render(<MultiSelectDemo />);
     const canvas = container.querySelector('canvas')!;
     canvas.getBoundingClientRect = () => ({
