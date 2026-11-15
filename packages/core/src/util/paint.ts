@@ -29,8 +29,8 @@ export const DEFAULT_STROKE_COLOR = '#000000ff';
 
 const srgb = (hex: string): ColorLiteral => hexToColorLiteral(hex) as ColorLiteral;
 
-/** Default fill palette cycled through for auto-generated shape nodes
- *  (the kit's built-in shape tools and the `insert` action). */
+/** The kit's fill palette. The `insert` dep cycles it for an insert carrying no style; the built-in shape
+ *  tools draw with their shared `fill` option instead, which defaults to its first entry. */
 export const DEFAULT_PALETTE: Palette = {
   entries: [
     { name: 'sage', color: srgb('#7fb069') },
