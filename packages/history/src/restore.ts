@@ -125,10 +125,10 @@ export function rebuilt(
     if (kept) kept.push(entries);
     else forks.set(b.at, [entries]);
   }
+  if (unresolved.length > 0 && recovery === 'strict') throw new HistoryRestoreError({ restored: false, unresolved });
   // Seed nextEntryId from the snapshot, then defensively bump past any
   // restored id — a malformed snapshot with duplicate or out-of-range
   // ids should never produce a collision with future entries.
-  if (unresolved.length > 0 && recovery === 'strict') throw new HistoryRestoreError({ restored: false, unresolved });
   let nextEntryId = snapshot.nextEntryId;
   const seen = [undoStack, redoStack, ...[...forks.values()].flat()];
   for (const entries of seen) for (const e of entries) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
