@@ -298,6 +298,12 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P3) [agent] labkit's 3D lab keeps its scene's undo outside the lab's.** `SolidInstrument`'s moves and inserts go
+  to `scene.history`, which the trial steps with its own "undo" and "redo" text buttons beside the palette, while
+  the lab's Undo and Redo above it step only the settings (seen 2026-11-14). Hand the history over with
+  `useTrialHistory(trialHistoryOf(scene.history))` and drop the text buttons, keeping one Mod+Z step per press:
+  the viewport already binds the kit's own undo action to it. Closes when the lab's Undo steps a solid's move.
+
 - **(P3) [maintainer] A labkit tile drag shows its node's UUID as the ghost.** `<Workspace reorderable>` mounts
   windease's `DragProvider` with its default overlay, which labels the chip with the node's `meta.title` and falls
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
