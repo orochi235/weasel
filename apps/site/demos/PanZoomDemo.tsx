@@ -1,42 +1,32 @@
 import { useState } from 'react';
-import {
-  SceneCanvas,
-  useScene,
-  useSelection, viewPreset,
-} from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { View } from '@weasel-js/core';
+import { SceneCanvas, solid, useScene, useSelection, viewPreset } from '@weasel-js/core';
+import type { Fill, Stroke, View } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
-interface NodeData { color: string; pin: 'screen' | 'world' | 'none' }
+interface NodeData { shape?: 'rect'; fill: Fill; stroke?: Stroke }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 400, H = 300;
+const EDGE = solid('#d4c4a8');
 
-/**
- * Viewport navigation in one place: pan via the hand tool (H = sticky, hold
- * space = momentary) and the wheel-pan tool, zoom via ctrl/⌘+wheel and the
- * keyboard (⌘+= / ⌘+- / ⌘+0). The rects spread across a coordinate range far
- * larger than the 400×300 viewport so panning has somewhere to go. The two
- * center rects show the stroke trade-off under zoom: the green one strokes a
- * `{ px }` width (screen-pinned — constant pixel width at every zoom), the
- * purple one a plain world-unit width (grows and shrinks with the zoom).
- */
 export function PanZoomDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
+      // A `{ px }` width stays the same on screen at every zoom; a plain number is world units.
       { id: 'screen-pin' as never, kind: 'mark', layer: 'default',
-        pose: { x: 130, y: 110, width: 120, height: 90 }, data: { color: '#7fb069', pin: 'screen' } },
+        pose: { x: 130, y: 110, width: 120, height: 90 },
+        data: { shape: 'rect', fill: { paint: solid('#7fb069') }, stroke: { paint: EDGE, width: { px: 2 } } } },
       { id: 'world-pin' as never, kind: 'mark', layer: 'default',
-        pose: { x: 290, y: 110, width: 120, height: 90 }, data: { color: '#a48bd4', pin: 'world' } },
+        pose: { x: 290, y: 110, width: 120, height: 90 },
+        data: { shape: 'rect', fill: { paint: solid('#a48bd4') }, stroke: { paint: EDGE, width: 2 } } },
       { id: 'far-a' as never, kind: 'mark', layer: 'default',
-        pose: { x: -180, y: -120, width: 80, height: 60 }, data: { color: '#d4a574', pin: 'none' } },
+        pose: { x: -180, y: -120, width: 80, height: 60 }, data: { fill: { paint: solid('#d4a574') } } },
       { id: 'far-b' as never, kind: 'mark', layer: 'default',
-        pose: { x: 560, y: 360, width: 80, height: 60 }, data: { color: '#f0e0a8', pin: 'none' } },
+        pose: { x: 560, y: 360, width: 80, height: 60 }, data: { fill: { paint: solid('#f0e0a8') } } },
     ],
   });
   const selection = useSelection({ scene });
@@ -46,12 +36,9 @@ export function PanZoomDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
+        <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset view</Button>
         <span className={`ckd-readout ${num.numeric}`}>
           view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) · scale: ({view.scale.x.toFixed(2)}, {view.scale.y.toFixed(2)})
-        </span>
-        <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset view</Button>
-        <span className="ckd-toolbar-note">
-          H = hand · hold space = momentary · ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0
         </span>
       </div>
       <DemoStage width={W} height={H}>
@@ -62,21 +49,6 @@ export function PanZoomDemo() {
           defaultActiveTool="hand"
           view={view}
           onViewChange={setView}
-          layers={{
-            scene: {
-              drawOne: (n, p): DrawCommand[] => {
-                const lineWidth = n.data.pin === 'screen' ? { px: 2 } : 2;
-                return [{
-                  kind: 'path',
-                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { paint: { color: n.data.color } },
-                  ...(n.data.pin === 'none'
-                    ? {}
-                    : { stroke: { paint: { color: '#d4c4a8' }, width: lineWidth } }),
-                }];
-              },
-            },
-          }}
         />
       </DemoStage>
     </div>

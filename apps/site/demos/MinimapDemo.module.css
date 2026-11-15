@@ -14,10 +14,6 @@
   composes: numeric from '@weasel-js/theme/numeric.module.css';
 }
 
-.hint {
-  color: var(--wzl-fg-muted);
-}
-
 .row {
   display: flex;
   gap: var(--wzl-space-6);

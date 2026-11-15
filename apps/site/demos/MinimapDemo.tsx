@@ -52,25 +52,17 @@ export function MinimapDemo() {
   const selection = useSelection({ scene });
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [mainSize, setMainSize] = useState<CanvasSize>({ width: MAIN_W, height: MAIN_H });
-  // One entry installs the whole inset minimap: its view, its pan, the
-  // visible-rect indicator and the linked crosshair. Built once — the entry
-  // holds the state its layers read.
+  // Built once: the entry holds the state its layers read.
   const inset = useMemo(() => createMinimapContribution({ rect: INSET }), []);
   const ambient = useMemo(() => [inset, dragPanContribution()], [inset]);
 
-
   return (
-    // One pointer store across both canvases, so each draws where the
-    // pointer is on the other.
     <PointerContextProvider>
       <div className={styles.demo}>
         <div className={styles.header}>
+          <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</Button>
           <span className={styles.viewLabel}>
             view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) ×{view.scale.x.toFixed(2)}
-          </span>
-          <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</Button>
-          <span className={styles.hint}>
-            press or drag either minimap to move the view · wheel over the detached one to zoom · the crosshair follows the pointer across all three
           </span>
         </div>
         <div className={styles.row}>
