@@ -1,5 +1,6 @@
 import {
   type ActionsRegistry,
+  canvasToClient,
   commitDeleteToScene,
   createDeleteAction,
   editPreset,
@@ -167,7 +168,7 @@ function LensInterior<C>({
   );
 }
 
-/** A lens's reticle center in client px: its pose through the view, from the layer's own origin. */
+/** A lens's reticle center in client px: its pose through the view, from the layer's own origin and at its scale. */
 function reticleClient<C>(
   scene: LensScene<C>,
   lens: LensIds,
@@ -177,9 +178,9 @@ function reticleClient<C>(
   const node = scene.get(lens.reticle);
   if (!node || !layer) return { x: 0, y: 0 };
   const p = effectivePose(scene, node);
-  const origin = layer.getBoundingClientRect();
   const at = viewWorldToScreen(view, { x: p.x + p.width / 2, y: p.y + p.height / 2 });
-  return { x: origin.left + at.x, y: origin.top + at.y };
+  const [x, y] = canvasToClient(layer, at.x, at.y);
+  return { x, y };
 }
 
 /** Registers the lens tile on the layer and keeps the layer's size, which is

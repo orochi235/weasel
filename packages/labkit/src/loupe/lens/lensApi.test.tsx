@@ -1,10 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
+import { asNodeId, effectivePose } from '@weasel-js/core';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { LabContext, type LabContextValue } from '../../lab/LabContext';
 import { MAX_LENSES } from './lensActionDefs';
-import { createLensApi, useLensFocus } from './lensApi';
+import { createLensApi, lensClient, useLensFocus } from './lensApi';
 import { createLensScene, lensesOf, setAimOps } from './lensScene';
+import { BODY_SIZE } from './lensTypes';
 import { type Remeasurable, useLensRemeasure } from './useLensRemeasure';
 
 function setup() {
@@ -47,6 +49,64 @@ describe('a host’s lens API', () => {
     for (let i = 0; i < MAX_LENSES; i++) api.add();
     expect(api.add()).toBeNull();
     expect(lensesOf(scene)).toHaveLength(MAX_LENSES);
+  });
+});
+
+describe('a host’s lens API under a scaled lab body', () => {
+  /** A 400×300 lab body shown at twice its size, as a zoomed stage or a `scale(2)` ancestor shows it. */
+  function scaledBody() {
+    const body = document.createElement('div');
+    Object.defineProperty(body, 'offsetWidth', { value: 400 });
+    Object.defineProperty(body, 'offsetHeight', { value: 300 });
+    body.getBoundingClientRect = () => new DOMRect(100, 50, 800, 600);
+    return body;
+  }
+
+  it('puts a lens where the client point lands on the body, and reads it back there', () => {
+    const scene = createLensScene<null>();
+    const { result } = renderHook(() => useLensFocus());
+    const body = scaledBody();
+    const api = createLensApi(scene, {
+      body: { current: body },
+      pointer: { current: null },
+      focus: result.current.focus,
+      sources: { current: {} },
+    });
+    // 20 CSS px in from the body's right edge.
+    const lensId = api.add({ x: 860, y: 250 });
+    const at = lensId === null ? null : lensClient(scene, lensId, body);
+    expect(at?.reticle).toEqual({ x: 860, y: 250 });
+    // In the body's own CSS px, which the lens canvas draws in: the reticle 20 in from the right,
+    // and the body kept inside the 400.
+    const center = (id: string) => {
+      const pose = scene.get(asNodeId(id))?.pose;
+      return pose && { x: pose.x + pose.width / 2, y: pose.y + pose.height / 2 };
+    };
+    expect(center(`${lensId}:reticle`)).toEqual({ x: 380, y: 100 });
+    expect(center(`${lensId}:body`)?.x).toBeLessThanOrEqual(400 - BODY_SIZE / 2);
+  });
+
+  it('aims a Follow reticle at the client point', () => {
+    const scene = createLensScene<null>();
+    const { result } = renderHook(() => useLensFocus());
+    const body = scaledBody();
+    const api = createLensApi(scene, {
+      body: { current: body },
+      pointer: { current: null },
+      focus: result.current.focus,
+      sources: { current: {} },
+    });
+    const lensId = api.add({ x: 300, y: 250 });
+    if (lensId === null) throw new Error('no lens added');
+    act(() => api.apply(setAimOps(scene, lensId, 'follow')));
+    act(() => api.follow({ x: 500, y: 450 }));
+    expect(lensClient(scene, lensId, body)?.reticle).toEqual({ x: 500, y: 450 });
+    const reticle = scene.get(asNodeId(`${lensId}:reticle`));
+    const pose = reticle && effectivePose(scene, reticle);
+    expect(pose && { x: pose.x + pose.width / 2, y: pose.y + pose.height / 2 }).toEqual({
+      x: 200,
+      y: 200,
+    });
   });
 });
 

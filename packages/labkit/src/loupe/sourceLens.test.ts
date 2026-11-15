@@ -62,4 +62,30 @@ describe('sourceBoxIn', () => {
     });
     host.remove();
   });
+
+  it("measures in the host's own CSS px when an ancestor transform scales it", () => {
+    const host = document.createElement('div');
+    const c = canvas();
+    host.append(c);
+    document.body.append(host);
+    // A 300×150 host shown at twice its size.
+    Object.defineProperty(host, 'offsetWidth', { value: 300 });
+    Object.defineProperty(host, 'offsetHeight', { value: 150 });
+    host.getBoundingClientRect = () => ({ left: 100, top: 50, width: 600, height: 300 }) as DOMRect;
+    c.getBoundingClientRect = () => ({ left: 140, top: 70, width: 200, height: 100 }) as DOMRect;
+    expect(sourceBoxIn(createCanvasSource(c), host)).toEqual({
+      x: 20,
+      y: 10,
+      width: 100,
+      height: 50,
+    });
+    // Without a laid-out canvas, the whole host, in its own px.
+    expect(sourceBoxIn(createCanvasSource(canvas()), host)).toEqual({
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 150,
+    });
+    host.remove();
+  });
 });

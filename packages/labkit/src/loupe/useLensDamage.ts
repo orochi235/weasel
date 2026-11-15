@@ -1,4 +1,4 @@
-import { useLatest } from '@weasel-js/core';
+import { layoutBoxOf, useLatest } from '@weasel-js/core';
 import { type RefObject, useCallback, useRef } from 'react';
 import type { Box } from '../surface/rect';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
@@ -22,14 +22,16 @@ export function useLensDamage(
     (lens: LoupeLens | null) => {
       onLensLatest.current?.(lens);
       if (!damage) return;
-      const at = host.current.current?.getBoundingClientRect();
+      const el = host.current.current;
+      // The lens is in the host's own px; the damage is in client px, at whatever scale the host is shown.
+      const at = el ? layoutBoxOf(el) : null;
       const now =
         lens && at
           ? {
-              left: at.left + lens.center.x - lens.width / 2,
-              top: at.top + lens.center.y - lens.height / 2,
-              width: lens.width,
-              height: lens.height,
+              left: at.left + (lens.center.x - lens.width / 2) * at.scale.x,
+              top: at.top + (lens.center.y - lens.height / 2) * at.scale.y,
+              width: lens.width * at.scale.x,
+              height: lens.height * at.scale.y,
             }
           : null;
       if (was.current) damage.invalidateBox(was.current);

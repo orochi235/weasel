@@ -1,3 +1,4 @@
+import { layoutBoxOf } from '@weasel-js/core';
 import {
   type CanvasSource,
   createCanvasSource,
@@ -47,20 +48,22 @@ export function resolveLoupeSource(source: LoupeSource | undefined): CanvasSourc
 export function sourceBoxIn(source: CanvasSource, host: HTMLElement | null): SourceBox {
   const own = source.box?.();
   if (own) return own;
-  const hostRect = host?.getBoundingClientRect();
+  // Client px over the host's own scale: a zoomed stage or a scaled ancestor shows it larger than it lays out.
+  const box = host ? layoutBoxOf(host) : null;
   const c = source.canvas;
   if (typeof HTMLCanvasElement !== 'undefined' && c instanceof HTMLCanvasElement && c.isConnected) {
     const r = c.getBoundingClientRect();
     if (r.width > 0 && r.height > 0) {
+      const scale = box?.scale ?? { x: 1, y: 1 };
       return {
-        x: r.left - (hostRect?.left ?? 0),
-        y: r.top - (hostRect?.top ?? 0),
-        width: r.width,
-        height: r.height,
+        x: (r.left - (box?.left ?? 0)) / scale.x,
+        y: (r.top - (box?.top ?? 0)) / scale.y,
+        width: r.width / scale.x,
+        height: r.height / scale.y,
       };
     }
   }
-  return { x: 0, y: 0, width: hostRect?.width ?? c.width, height: hostRect?.height ?? c.height };
+  return { x: 0, y: 0, width: box?.width ?? c.width, height: box?.height ?? c.height };
 }
 
 /** Enlarge the pixels of `source` around `aim` into a lens' own canvas, with
