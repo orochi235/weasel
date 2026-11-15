@@ -210,13 +210,70 @@ export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
  * the whole "declaring a capability provides the chrome" rule — it replaces
  * the presence checks that used to be spread across the runtime.
  */
+// Zoom acts on the view of the trial, so it is a viewport control. A trial
+// holding a non-2D view reports zoom as null and gets none of this.
+function zoomContributions(instrument: Instrument, ctx: TrialChromeContext): TrialContribution[] {
+  const zoom = ctx.zoom;
+  if ((instrument.canvas == null && instrument.stage == null) || zoom === null) return [];
+  const out: TrialContribution[] = [];
+  out.push({
+    id: 'zoom-out',
+    region: 'viewport',
+    group: 'zoom',
+    item: {
+      icon: icon('ui:zoomOut'),
+      label: 'Zoom out',
+      onActivate: () => ctx.setZoom(zoom / ZOOM_STEP),
+    },
+  });
+  out.push({
+    id: 'zoom-in',
+    region: 'viewport',
+    group: 'zoom',
+    item: {
+      icon: icon('ui:zoomIn'),
+      label: 'Zoom in',
+      onActivate: () => ctx.setZoom(zoom * ZOOM_STEP),
+    },
+  });
+  out.push({
+    id: 'actual-size',
+    region: 'viewport',
+    group: 'zoom',
+    item: { icon: icon('ui:fit'), label: 'Actual size', onActivate: () => ctx.setZoom(1) },
+  });
+  out.push({
+    id: 'zoom-control',
+    region: 'viewport',
+    group: 'zoom',
+    render: (c) => (
+      <ZoomControl zoom={c.zoom ?? 1} onZoomInput={c.setZoom} onZoomChange={c.setZoom} />
+    ),
+  });
+  out.push({
+    id: 'scale',
+    region: 'status',
+    group: 'view',
+    render: (c) => <ScaleBar zoom={c.zoom ?? 1} className="lk-scale-bar" />,
+  });
+  if (instrument.canvas != null) {
+    out.push({
+      id: 'fps',
+      region: 'status',
+      group: 'view',
+      end: true,
+      render: () => <FpsMeter />,
+    });
+  }
+  return out;
+}
+
 export function builtinContributions(
   instrument: Instrument,
   ctx: TrialChromeContext,
   renderers?: Record<string, LeafRenderer>,
 ): TrialContribution[] {
   const out: TrialContribution[] = [];
-  const zoom = ctx.zoom;
 
   // Weasel history is the undo authority for marks, so declaring `annotations`
   // gets the buttons even with `undo: false`.
@@ -267,59 +324,7 @@ export function builtinContributions(
 
   if (ctx.hasLoupe) out.push(...loupeContributions(ctx));
 
-  // Zoom acts on the view of the trial, so it is a viewport control. A trial
-  // holding a non-2D view reports zoom as null and gets none of this.
-  if ((instrument.canvas != null || instrument.stage != null) && zoom !== null) {
-    out.push({
-      id: 'zoom-out',
-      region: 'viewport',
-      group: 'zoom',
-      item: {
-        icon: icon('ui:zoomOut'),
-        label: 'Zoom out',
-        onActivate: () => ctx.setZoom(zoom / ZOOM_STEP),
-      },
-    });
-    out.push({
-      id: 'zoom-in',
-      region: 'viewport',
-      group: 'zoom',
-      item: {
-        icon: icon('ui:zoomIn'),
-        label: 'Zoom in',
-        onActivate: () => ctx.setZoom(zoom * ZOOM_STEP),
-      },
-    });
-    out.push({
-      id: 'actual-size',
-      region: 'viewport',
-      group: 'zoom',
-      item: { icon: icon('ui:fit'), label: 'Actual size', onActivate: () => ctx.setZoom(1) },
-    });
-    out.push({
-      id: 'zoom-control',
-      region: 'viewport',
-      group: 'zoom',
-      render: (c) => (
-        <ZoomControl zoom={c.zoom ?? 1} onZoomInput={c.setZoom} onZoomChange={c.setZoom} />
-      ),
-    });
-    out.push({
-      id: 'scale',
-      region: 'status',
-      group: 'view',
-      render: (c) => <ScaleBar zoom={c.zoom ?? 1} className="lk-scale-bar" />,
-    });
-    if (instrument.canvas != null) {
-      out.push({
-        id: 'fps',
-        region: 'status',
-        group: 'view',
-        end: true,
-        render: () => <FpsMeter />,
-      });
-    }
-  }
+  out.push(...zoomContributions(instrument, ctx));
 
   if (instrument.annotations != null) {
     // A panel rather than a menu, so it takes the `render` escape: it reads the

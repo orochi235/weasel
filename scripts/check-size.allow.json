@@ -107,9 +107,6 @@
   "packages/labkit/src/annotations/store.ts": {
     "longestFunction": 293
   },
-  "packages/labkit/src/chrome/builtins.tsx": {
-    "longestFunction": 155
-  },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
     "longestFunction": 136
   },
