@@ -26,7 +26,8 @@ describe('<LayerRail>', () => {
       'Components, 0 tokens',
       'Pins, 89 tokens, 23 pinned',
     ]);
-    expect(buttons[1]).toHaveAttribute('aria-current', 'true');
+    expect(buttons[1]).toHaveAttribute('aria-current', 'page');
+    expect(buttons.filter((b) => b.hasAttribute('aria-current'))).toHaveLength(1);
   });
 
   it('selects a layer', async () => {

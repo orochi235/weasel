@@ -1,3 +1,4 @@
+import { RailItem, RailList } from '@weasel-js/ui/components/RailList';
 import styles from './ThemeEditor.module.css';
 import { LAYERS, type Counts, type LayerId } from './theme/model';
 
@@ -10,26 +11,23 @@ export interface LayerRailProps {
 export function LayerRail({ counts, selected, onSelect }: LayerRailProps) {
   return (
     <nav className={styles.rail} aria-label="Layers">
-      <ul className={styles.railList}>
+      <RailList className={styles.railList}>
         {LAYERS.map(({ id, label }) => {
           const { count, pinned } = counts[id];
           return (
-            <li key={id}>
-              <button
-                type="button"
-                className={styles.railItem}
-                aria-label={pinned > 0 ? `${label}, ${count} tokens, ${pinned} pinned` : `${label}, ${count} tokens`}
-                aria-current={id === selected ? 'true' : undefined}
-                onClick={() => onSelect(id)}
-              >
-                <span className={styles.railLabel}>{label}</span>
-                <span className={styles.railCount}>{count}</span>
-                {pinned > 0 && <span className={styles.railPinned}>{pinned} pinned</span>}
-              </button>
-            </li>
+            <RailItem
+              key={id}
+              aria-label={pinned > 0 ? `${label}, ${count} tokens, ${pinned} pinned` : `${label}, ${count} tokens`}
+              current={id === selected}
+              onClick={() => onSelect(id)}
+            >
+              <span className={styles.railLabel}>{label}</span>
+              <span className={styles.railCount}>{count}</span>
+              {pinned > 0 && <span className={styles.railPinned}>{pinned} pinned</span>}
+            </RailItem>
           );
         })}
-      </ul>
+      </RailList>
     </nav>
   );
 }
