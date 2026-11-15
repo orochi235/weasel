@@ -46,7 +46,8 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> extends
    *  `"scene"` frames **document** poses, not `scene.overrides` — a node
    *  moved by an override paints where the override puts it, outside the
    *  frame if it goes there, rather than making the whole minimap rescale on
-   *  every frame of a drag or a settle. `"live"` frames the overrides too. */
+   *  every frame of a drag or a settle. `"live"` frames the overrides, and
+   *  scrolled containers' content where the scroll shows it, too. */
   fit?: MinimapFit<TData, TLayer, TPose>;
   /** How to read poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;

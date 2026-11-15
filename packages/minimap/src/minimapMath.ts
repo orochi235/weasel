@@ -1,9 +1,6 @@
 /** Pure math helpers for `<MinimapCanvas>`: no GL, DOM, or renderer. */
-import {
-  composeWorldPose, documentPose, effectivePose, fitViewToBounds, sceneContentBounds, scenePoseAdapter, unionAABB,
-  viewportWorldRect,
-} from '@weasel-js/core';
-import type { NodeId, PoseAdapter, Scene } from '@weasel-js/core';
+import { fitViewToBounds, sceneContentBounds, unionAABB, viewportWorldRect, worldPoses } from '@weasel-js/core';
+import type { NodeId, PoseReading, Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { Bounds, ViewportDims } from '@weasel-js/core';
 import { FALLBACK_ACCENT, poseDescriptorForNode, type PoseDescriptor } from '@weasel-js/core';
@@ -21,9 +18,10 @@ export const FALLBACK_FIT_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
  * - `"scene"` — union of the shown leaf-node pose AABBs (via the pose
  *   descriptor) and every copy a group draws of them, read from the document:
  *   a pose override moves what is painted and not the frame.
- * - `"live"` — the same union over the poses being shown, overrides included,
- *   so the frame follows a drag, a settle, or a simulation writing overrides.
- *   Refit on every override publish, which is a sweep of every leaf and
+ * - `"live"` — the same union over the poses being shown, overrides and
+ *   scrolled containers' offsets included, so the frame follows a drag, a
+ *   settle, a simulation writing overrides, or a container scrolling its
+ *   content. Refit on every override publish and scroll, each a sweep of every leaf and
  *   rescales the whole minimap while one moves past the edge.
  * - `{ kind: "world", rect }` — caller-supplied world rect.
  * - `(scene, dims) => View` — caller derives the view directly.
@@ -65,22 +63,17 @@ function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
 /**
  * The world box a scene's content covers, as `sceneContentBounds` frames it
  * for zoom to fit: every shown node, and every copy a group draws of it. A
- * node is boxed by the union of the marks under it, each its pose folded up
- * its containers' frames and read through `descriptor`; containers add no box
+ * node is boxed by the union of the marks under it, each its world pose as
+ * `reading` says, read through `descriptor`; containers add no box
  * of their own, and a mark whose bounds are not finite is skipped, which would
  * otherwise make the whole union non-finite. `null` when nothing has bounds.
  */
 function sceneLeafBounds<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   descriptor: PoseDescriptor<TPose>,
-  poseOf: typeof documentPose,
+  reading: PoseReading,
 ): Bounds | null {
-  const frames = {
-    ...(scenePoseAdapter(scene as Scene<unknown, string, unknown>) as PoseAdapter<TPose>),
-    getPose: (id: string) => poseOf(scene, scene.get(id as NodeId)!),
-  };
-  const compose = scene.composition.compose.bind(scene.composition);
-  const worldPose = (id: NodeId): TPose => composeWorldPose(frames, id, compose);
+  const worldPose = worldPoses(scene, reading);
   const boxOf = (id: NodeId): Bounds | null => {
     const node = scene.get(id);
     if (!node) return null;
@@ -124,7 +117,7 @@ export function computeFitView<TData, TLayer extends string, TPose>(
     return fit(scene, dims);
   }
   if (fit === 'scene' || fit === 'live') {
-    const rect = sceneLeafBounds(scene, descriptor, fit === 'live' ? effectivePose : documentPose);
+    const rect = sceneLeafBounds(scene, descriptor, fit === 'live' ? 'shown' : 'document');
     if (rect === null) return FALLBACK_FIT_VIEW;
     return fitRectInto(rect, dims, padding);
   }

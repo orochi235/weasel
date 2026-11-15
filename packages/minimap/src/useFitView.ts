@@ -6,8 +6,8 @@ const NEVER = (): (() => void) => () => {};
 
 /**
  * The minimap's fit view, recomputed when what it frames changes: the scene's
- * version always, and the overrides only under a `"live"` fit, the one policy
- * that reads them.
+ * version always, and the overrides and scroll offsets only under a `"live"`
+ * fit, the one policy that reads them.
  */
 export function useFitView<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -22,10 +22,15 @@ export function useFitView<TData, TLayer extends string, TPose>(
     scene.overrides.getGeneration,
     scene.overrides.getGeneration,
   );
+  const scrollGeneration = useSyncExternalStore(
+    fit === 'live' ? scene.scroll.subscribe : NEVER,
+    scene.scroll.getGeneration,
+    scene.scroll.getGeneration,
+  );
   return useMemo<View>(() => {
     // A `fit` function's result is the caller's; pointer math divides by its scale.
     return normalizeView(computeFitView(scene, { width, height }, fit, descriptor));
-    // The two counters are what say the scene's contents moved.
+    // The counters are what say the scene's contents moved.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, sceneVersion, overrideGeneration, width, height, fit, descriptor]);
+  }, [scene, sceneVersion, overrideGeneration, scrollGeneration, width, height, fit, descriptor]);
 }
