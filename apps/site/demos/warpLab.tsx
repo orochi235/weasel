@@ -5,21 +5,19 @@
  */
 import { asNodeId, boundsOfPath, type PolygonPath, type RectPose, solid, useActionsRegistry } from '@weasel-js/core';
 import { type WarpKind, type WarpSettings } from '@weasel-js/path-tools';
-import type { TrialContribution } from '@weasel-js/labkit';
-import { useEffect } from 'react';
+import { type TrialContribution, useTrialConfigChange } from '@weasel-js/labkit';
 import { icon } from '../icons.gen';
 
 /**
- * Remake the selection's held warp whenever `settings` change: the tool's
- * settings only shape a warp it makes, so a change to them reaches one already
- * made through `configureWarp`.
+ * Remakes the selection's held warp when the panel changes, through `configureWarp`, inside the
+ * settings change's undo step: the tool's settings only shape a warp it makes, and one Undo takes
+ * back the panel and the warp together. Each warp lab's config is exactly its warp's settings.
  */
-export function useHeldWarpSettings(kind: WarpKind, settings: WarpSettings): void {
+export function useHeldWarpSettings(kind: WarpKind): void {
   const registry = useActionsRegistry();
-  const key = JSON.stringify(settings);
-  useEffect(() => {
-    registry?.trigger('configureWarp', { kind, ...(JSON.parse(key) as WarpSettings) });
-  }, [registry, kind, key]);
+  useTrialConfigChange<WarpSettings>((config) => {
+    registry?.trigger('configureWarp', { kind, ...config });
+  });
 }
 
 /** A palette command dropping the selection's warp and keeping its geometry. */

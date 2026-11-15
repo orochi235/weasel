@@ -51,7 +51,7 @@ function PinWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { tolerance } = ctx.config;
   const settings = useMemo(() => ({ tolerance }), [tolerance]);
-  useHeldWarpSettings('pin', settings);
+  useHeldWarpSettings('pin');
   const pin = usePinWarpTool(settings);
   return (
     <TrialSceneCanvas

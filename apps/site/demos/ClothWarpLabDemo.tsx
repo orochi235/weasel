@@ -57,7 +57,7 @@ function ClothWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { rows, cols, mapping, tolerance } = ctx.config;
   const settings = useMemo(() => ({ rows, cols, mapping, tolerance }), [rows, cols, mapping, tolerance]);
-  useHeldWarpSettings('cloth', settings);
+  useHeldWarpSettings('cloth');
   const cloth = useClothWarpTool(settings);
   return (
     <TrialSceneCanvas

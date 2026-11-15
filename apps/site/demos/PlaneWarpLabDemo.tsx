@@ -58,7 +58,7 @@ function PlaneWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { mode, tolerance } = ctx.config;
   const settings = useMemo(() => ({ mode, tolerance }), [mode, tolerance]);
-  useHeldWarpSettings('plane', settings);
+  useHeldWarpSettings('plane');
   const plane = usePlaneWarpTool(settings);
   return (
     <TrialSceneCanvas
