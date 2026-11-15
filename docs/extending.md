@@ -223,7 +223,7 @@ its input routing and an `attach` that binds its registered layer.
 ## Custom layers
 
 The `layers` prop on `<SceneCanvas>` is a map of named slots. Standard slot
-keys (`grid`, `scene`, `selectionOverlay`, `cellHighlight`) take a slot config;
+keys (`grid`, `scene`, `selectionOverlay`, `cellHighlight`, `pathEditingOverlay`) take a slot config;
 **any other key** is a custom layer, and its value carries a `.layer` field:
 
 ```tsx
@@ -252,7 +252,7 @@ A layer's `draw` returns `DrawCommand`s; nothing in the kit hands a layer a 2D
 context. A layer with no `space` is in world space and must not apply the view
 transform itself.
 
-`after` and `before` reference a `StandardSlotName`. Omit both and the
+`after` and `before` reference a `StandardSlotName` or another custom entry's key. Omit both and the
 layer goes after every standard slot (the top of the stack). Multiple
 custom entries can share an anchor; insertion order within an anchor is
 the iteration order of the `layers` map.
