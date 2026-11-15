@@ -1,6 +1,1 @@
 .slider { width: 140px; }
-
-.duration {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  min-width: 48px;
-}

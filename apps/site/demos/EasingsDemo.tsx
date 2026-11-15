@@ -12,6 +12,7 @@ import type { Fill, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Slider } from '@weasel-js/ui/components/Slider';
 import { Button } from '@weasel-js/ui/components/Button';
+import { Field } from '@weasel-js/ui/components/Field';
 import styles from './EasingsDemo.module.css';
 import { DemoStage } from './DemoStage';
 
@@ -129,19 +130,15 @@ export function EasingsDemo() {
     <div className="ckd-demo">
       <div className="ckd-toolbar">
         <Button onClick={play}>play all</Button>
-        <label className="ckd-field">
-          duration
-          <div className={styles.slider}>
-            <Slider
-              min={300} max={4000} step={100}
-              thumbs={[{ value: duration }]}
-              onInput={ts => setDuration(ts[0].value)}
-              aria-label="Duration"
-              readoutPlacement="none"
-            />
-          </div>
-          <span className={styles.duration}>{duration} ms</span>
-        </label>
+        <Field label="duration" orientation="row" output={`${duration} ms`}>
+          <Slider
+            className={styles.slider}
+            min={300} max={4000} step={100}
+            thumbs={[{ value: duration }]}
+            onInput={ts => setDuration(ts[0].value)}
+            readoutPlacement="none"
+          />
+        </Field>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas
