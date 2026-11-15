@@ -858,14 +858,16 @@ it feeds bounds, hit-testing, selection chrome, snapping and layout.
 `dependsOn: 'children'` is the second form of the dependency list: "my own
 children, in child order", which a fixed id list cannot express because
 reparenting would have to maintain it. It is what a container hugging its
-contents wants, and `groupAction` uses it — a group's bounds track its members
-instead of freezing at the moment it was made. The kit registers the union
-function it needs under `kit:unionOfChildren`, so a grouped document round-trips
-through `toJSON` in any scene.
+contents wants, and a boolean group (`booleanGroupFields`) uses it — its path
+and its bounds track its members instead of freezing at the moment it was made.
+A plain group made by `groupAction` does not: it is a frame its members' poses
+are stored in, so its pose is authored. The kit registers the union function
+a boolean group needs under `kit:unionOfChildren`, so a document holding one
+round-trips through `toJSON` in any scene.
 
 The two forms differ in lifetime as well as in membership. Deleting a node
 deletes everything that names it in `dependsOn`; a container outlives the
-children it derives from, because an emptied group is still a group. A container
+children it derives from, because an emptied container is still a container. A container
 with nothing left falls back to its authored pose rather than collapsing to a
 zero box.
 
