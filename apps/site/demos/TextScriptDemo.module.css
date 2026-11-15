@@ -27,7 +27,9 @@
 .readout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   color: var(--wzl-fg-muted);
-  min-width: 5ch;
+  /* Wide enough for "-80.0%", so a sign or a third digit moves nothing after it. */
+  min-width: 6ch;
+  text-align: end;
 }
 
 .hint {
