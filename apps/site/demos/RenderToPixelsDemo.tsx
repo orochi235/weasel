@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  asNodeId,
   SceneCanvas, useScene, renderSceneToPixels,
   registerCanvasFont, warmRender,
   solid,
@@ -27,22 +28,22 @@ export function RenderToPixelsDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      { id: 'a' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('a'), kind: 'mark', layer: 'default',
         pose: { x: 40, y: 40, width: 120, height: 160 }, data: { fill: { paint: solid('#7fb069') } } },
-      { id: 'b' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('b'), kind: 'mark', layer: 'default',
         pose: { x: 180, y: 70, width: 120, height: 100 }, data: { fill: { paint: solid('#4a7fb0') } } },
-      { id: 'c' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('c'), kind: 'mark', layer: 'default',
         pose: { x: 330, y: 50, width: 110, height: 140 }, data: { fill: { paint: solid('#d4a574') } } },
-      { id: 'd' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('d'), kind: 'mark', layer: 'default',
         pose: { x: 10, y: 202, width: 460, height: 36 },
         data: { text: 'WWWWWWWWWWWWWWWW', style: { fontSize: 16 }, verticalAlign: 'bottom', fill: { paint: solid('#000') } } },
-      { id: 'e' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('e'), kind: 'mark', layer: 'default',
         pose: { x: 10, y: 4, width: 460, height: 32 },
         data: { text: 'Dynamic SDF 123', style: { fontFamily: 'Arial', fontSize: 22 }, fill: { paint: solid('#000') } } },
-      { id: 'spun' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('spun'), kind: 'mark', layer: 'default',
         pose: { x: 40, y: 260, width: 60, height: 60, rotation: Math.PI / 4 },
         data: { fill: { paint: solid('#b04a7f') } } },
-      { id: 'dimmed' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('dimmed'), kind: 'mark', layer: 'default',
         pose: { x: 200, y: 260, width: 160, height: 60 }, data: { fill: { paint: solid('#000000') } } },
     ],
   });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SceneCanvas, solid, useScene, useSelection, viewPreset } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, solid, useScene, useSelection, viewPreset } from '@weasel-js/core';
 import type { Fill, Stroke, View } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -17,15 +17,15 @@ export function PanZoomDemo() {
     systemLayers: [{ id: 'default' }],
     initial: [
       // A `{ px }` width stays the same on screen at every zoom; a plain number is world units.
-      { id: 'screen-pin' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('screen-pin'), kind: 'mark', layer: 'default',
         pose: { x: 130, y: 110, width: 120, height: 90 },
         data: { fill: { paint: solid('#7fb069') }, stroke: { paint: EDGE, width: { px: 2 } } } },
-      { id: 'world-pin' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('world-pin'), kind: 'mark', layer: 'default',
         pose: { x: 290, y: 110, width: 120, height: 90 },
         data: { fill: { paint: solid('#a48bd4') }, stroke: { paint: EDGE, width: 2 } } },
-      { id: 'far-a' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('far-a'), kind: 'mark', layer: 'default',
         pose: { x: -180, y: -120, width: 80, height: 60 }, data: { fill: { paint: solid('#d4a574') } } },
-      { id: 'far-b' as never, kind: 'mark', layer: 'default',
+      { id: asNodeId('far-b'), kind: 'mark', layer: 'default',
         pose: { x: 560, y: 360, width: 80, height: 60 }, data: { fill: { paint: solid('#f0e0a8') } } },
     ],
   });

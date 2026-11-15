@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  asNodeId,
   PointerContextProvider,
   SceneCanvas,
   dragPanContribution,
@@ -28,7 +29,7 @@ function makeRandomScene() {
   const items = [];
   for (let i = 0; i < 12; i++) {
     items.push({
-      id: `n${i}` as never,
+      id: asNodeId(`n${i}`),
       kind: 'mark' as const,
       layer: 'default' as LayerId,
       pose: {

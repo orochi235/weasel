@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
+  asNodeId,
   SceneCanvas,
   useScene,
   textCommandFromRuns,
@@ -107,7 +108,7 @@ export function ModesDemo() {
 
   const decorations = useMemo(() => {
     const d = createModeDecorations({ registry });
-    const boundsOf = (id: string) => scene.get(id as never)?.pose as Rect | undefined;
+    const boundsOf = (id: string) => scene.get(asNodeId(id))?.pose as Rect | undefined;
     d.register('focus', () => [...target.current].flatMap((id) => {
       const r = boundsOf(id);
       if (!r) return [];

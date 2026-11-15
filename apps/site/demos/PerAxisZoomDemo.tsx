@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SceneCanvas, useScene, HOME_VIEW, fitViewToBounds, solid, viewPreset } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, useScene, HOME_VIEW, fitViewToBounds, solid, viewPreset } from '@weasel-js/core';
 import type { Fill, Stroke, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Field } from '@weasel-js/ui/components/Field';
@@ -36,7 +36,7 @@ export function PerAxisZoomDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      { id: 'image' as never, kind: 'mark', layer: 'default', pose: IMAGE_BOUNDS,
+      { id: asNodeId('image'), kind: 'mark', layer: 'default', pose: IMAGE_BOUNDS,
         data: { fill: { paint: solid('#7fb069') }, stroke: { paint: solid('#d4c4a8'), width: 2 } } },
     ],
   });

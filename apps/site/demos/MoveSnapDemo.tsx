@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { SceneCanvas, solid, useDepSource, useScene, useSelection, type Fill, movePreset, pickPreset } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, solid, useDepSource, useScene, useSelection, type Fill, movePreset, pickPreset } from '@weasel-js/core';
 import { snapToContainer, snapBackOrDelete } from '@weasel-js/core/move';
 import { DemoStage } from './DemoStage';
 
@@ -25,9 +25,9 @@ export function MoveSnapDemo() {
     systemLayers: [{ id: 'default' }],
     initial: [
       // The bins take drops at fixed rectangles, so they stay put: a dragged bin would plant itself.
-      { id: 'binA' as never, kind: 'mark', layer: 'default', pose: BIN_A, pickable: false, data: { fill: { paint: solid('#e8efe4') } } },
-      { id: 'binB' as never, kind: 'mark', layer: 'default', pose: BIN_B, pickable: false, data: { fill: { paint: solid('#efe9e4') } } },
-      { id: 'token' as never, kind: 'mark', layer: 'default', pose: { x: 210, y: 40, width: 40, height: 40 }, data: { fill: { paint: solid('#7fb069') } } },
+      { id: asNodeId('binA'), kind: 'mark', layer: 'default', pose: BIN_A, pickable: false, data: { fill: { paint: solid('#e8efe4') } } },
+      { id: asNodeId('binB'), kind: 'mark', layer: 'default', pose: BIN_B, pickable: false, data: { fill: { paint: solid('#efe9e4') } } },
+      { id: asNodeId('token'), kind: 'mark', layer: 'default', pose: { x: 210, y: 40, width: 40, height: 40 }, data: { fill: { paint: solid('#7fb069') } } },
     ],
   });
   const selection = useSelection({ scene });
