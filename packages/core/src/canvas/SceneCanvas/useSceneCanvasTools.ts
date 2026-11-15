@@ -23,6 +23,8 @@ export function useSceneCanvasTools(args: {
   enabled: EnabledPresets;
   /** Entering and leaving groups, installed with the `select` preset. */
   groupEntry: Contribution;
+  /** Whether an insert of a kind builds a node on this canvas. */
+  insertBuilds?: (kind: string) => boolean;
 }) {
   const { props, select, enabled } = args;
   const { tools, internal, takeover, surface } = useCanvasTools({
@@ -39,6 +41,7 @@ export function useSceneCanvasTools(args: {
     defaultActiveTool: props.defaultActiveTool,
     modes: props.modes,
     onToolsCreated: props.onToolsCreated,
+    insertBuilds: args.insertBuilds,
   });
   const { contributions, standardActions } = useFeatureBindings({
     enabled, pool: builtinToolActions, baseline: BASELINE_ACTIONS,

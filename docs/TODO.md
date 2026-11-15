@@ -261,18 +261,6 @@ Owner tags, after the priority (2026-10-26):
   own params without casts, and declaration tests cover augmentation from an external extension package,
   dynamic ids and params thunks through published entries.
 
-- **(P2) [agent] Let a custom-node feature package its complete installation contract.** A custom kind
-  needs a shape painter, routing classifier, insert factory and property schema; these currently install
-  through separate ambient registries and host props. `FeaturePreset` carries actions/tools/layers but
-  no routing or insert factories, while `SelectionPanel` separately takes routing and properties
-  (`packages/core/src/canvas/SceneCanvas/features.ts`, `surfaceContribution.ts`,
-  `packages/ui/src/components/inspector/SelectionPanel/SelectionPanel.tsx`). Keep traits independent,
-  but provide a composable feature descriptor/install path that hands each trait to its owner, makes
-  precedence explicit, and has complete teardown; do not require a host to repeat a package's private wiring.
-  Closes when one external custom-node feature supplies insertion, drawing, picking, routing and a property
-  editor through public APIs, works on two canvases with explicit scope, and removing it releases its roles
-  without removing another installation or leaving a selectable tool that cannot insert.
-
 - **(P2) [agent] Compile and exercise a complete public-only extension example.** The custom-kind test
   uses internal `useInsertDepSource`/`sceneToAdapter` and `as never` to drive an invoker directly
   (`packages/core/src/canvas/customNodeKind.test.tsx`), so it does not verify mounting the documented

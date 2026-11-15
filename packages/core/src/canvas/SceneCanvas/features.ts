@@ -27,6 +27,16 @@ import type { SnapSource } from 'domains/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CustomLayerEntry } from '../layerSlots';
 import type { BuiltinToolId } from './props';
+import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
+import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
+import type { InsertNodeFactories } from '../deps/insert';
+import type { NodeShapeEntry, RegisterNodeShapeOptions } from '../NodeShape';
+
+/** A shape painter a preset installs, with the tier it registers in. */
+export interface PresetNodeShape {
+  readonly painter: NodeShapeEntry<never, never>;
+  readonly priority?: RegisterNodeShapeOptions['priority'];
+}
 
 /** What a preset's ambient bindings are built from: the `selectTool` options
  *  that configure them. */
@@ -75,6 +85,23 @@ export interface FeaturePreset {
   /** What it adds to path edit: marks, grabbable parts, what an edit keeps
    *  true. Consulted in preset order. */
   readonly pathEdit?: readonly PathEditExtension[];
+  /**
+   * Node kinds it teaches the canvas, one trait per field, each handed to the
+   * trait's owner while the preset is on. `routing` classifies nodes ahead of
+   * the canvas's own `routing` (or `inferredNodeRouting`); `insertNodeFactories`
+   * builds the inserts its kinds name; `shapes` paint and pick them, registered
+   * as `registerNodeShape` would for as long as the canvas runs the preset;
+   * `properties` is what a `SelectionPanel` given the same presets edits.
+   *
+   * Precedence: a name the consumer's own prop gives (`routing`,
+   * `insertNodeFactories`, `SelectionPanel`'s `properties`) keeps the
+   * consumer's. Between presets, the same value under one name is one entry,
+   * and a different value throws. See `nodeTraitsOf`.
+   */
+  readonly routing?: readonly NodeRoutingEntry[];
+  readonly insertNodeFactories?: InsertNodeFactories;
+  readonly shapes?: readonly (NodeShapeEntry<never, never> | PresetNodeShape)[];
+  readonly properties?: readonly NodePropertiesEntry[];
   /** Entries installed beside `<SceneCanvas ambient>`, with every role they
    *  declare: deps, overlays, `attach`, views, frame hooks. A `tools` takeover
    *  brings its own ambient and leaves them out. */

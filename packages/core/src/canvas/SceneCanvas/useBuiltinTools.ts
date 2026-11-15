@@ -18,12 +18,13 @@ export interface UseBuiltinToolsArgs {
   toolOptions?: BuiltinToolOptions;
   /** `viewport.inertia`, which is the hand tool's. */
   inertia?: boolean | InertiaOptions;
+  insertBuilds?: (kind: string) => boolean;
 }
 
 /** The registry of tools `<SceneCanvas>` mounts for itself. Every built-in's
  *  hook runs on every render; `resolveToolRegistry` decides which are in. */
 export function useBuiltinTools(args: UseBuiltinToolsArgs): Record<string, Tool> {
-  const { select, enabled, defaultTools, patch, toolOptions, inertia } = args;
+  const { select, enabled, defaultTools, patch, toolOptions, inertia, insertBuilds } = args;
   const hand = useHandTool({ inertia });
   const shapes = useBuiltinShapeTools({ options: toolOptions });
   const slice = useSliceTool(toolOptions?.slice);
@@ -32,5 +33,6 @@ export function useBuiltinTools(args: UseBuiltinToolsArgs): Record<string, Tool>
     defaultTools,
     enabled,
     patch,
+    insertBuilds,
   });
 }

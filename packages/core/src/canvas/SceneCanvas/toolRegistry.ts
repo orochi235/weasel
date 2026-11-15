@@ -1,8 +1,10 @@
 import type { Tool } from 'tools/overlayBinding';
 import { presetBuiltinTools, presetOwnTools, type EnabledPresets } from './features';
 import { isDev } from '@weasel-js/react';
-import { toolIdsOf, type ToolEntry } from '@weasel-js/routing';
+import { toolIdsOf, type GestureBinding, type ToolEntry } from '@weasel-js/routing';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
+
+const warnedUnbuildable = new WeakSet<Tool>();
 
 /** The patch form of `<SceneCanvas tools>`: per id, `true` mounts that
  *  built-in, `false` leaves it out, and a tool adds or replaces one. */
@@ -18,6 +20,9 @@ export interface ResolveToolRegistryArgs {
   /** The presets the canvas runs with, each bringing the tools it names. */
   enabled: EnabledPresets;
   patch: ToolsPatch | null;
+  /** Whether an insert of a kind builds a node on the canvas. Given, a preset's own tool whose
+   *  every `insert` binding names a kind nothing builds is left out, so it cannot be chosen. */
+  insertBuilds?: (kind: string) => boolean;
   /** Whether to warn about a patch entry that is probably a mistake. */
   dev?: boolean;
 }
@@ -45,7 +50,15 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
     if (asked) registry[id] = builtins[id];
   }
   for (const [id, tool] of Object.entries(presetOwnTools(enabled))) {
-    if (patch?.[id] !== false) registry[id] = tool;
+    if (patch?.[id] === false) continue;
+    if (args.insertBuilds && insertsNothing(tool, args.insertBuilds)) {
+      if (dev && !warnedUnbuildable.has(tool)) {
+        warnedUnbuildable.add(tool);
+        console.warn(`[SceneCanvas] tool "${id}" is left out: no insert factory on this canvas builds the kind it inserts`);
+      }
+      continue;
+    }
+    registry[id] = tool;
   }
   for (const [id, value] of Object.entries(patch ?? {})) {
     if (value === false) continue;
@@ -61,4 +74,19 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
     registry[id] = value;
   }
   return registry;
+}
+
+/**
+ * Whether `tool` binds `insert` only to kinds nothing on the canvas builds, so choosing it
+ * could insert nothing. A binding whose params are a thunk, or name no kind, could build
+ * anything and keeps the tool.
+ */
+export function insertsNothing(tool: Tool, builds: (kind: string) => boolean): boolean {
+  const inserts = (tool.bindings ?? []).filter((b: GestureBinding) => b.actionId === 'insert');
+  if (inserts.length === 0) return false;
+  return inserts.every((b) => {
+    const params = b.opts?.params;
+    const kind = typeof params === 'object' && params !== null ? (params as { kind?: unknown }).kind : undefined;
+    return typeof kind === 'string' && !builds(kind);
+  });
 }

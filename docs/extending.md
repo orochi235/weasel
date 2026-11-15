@@ -60,6 +60,10 @@ interface FeaturePreset {
   snapSources?: SnapSource[];          // asked by every snap session on the canvas
   layers?: Record<string, CustomLayerEntry>; // render-stack slots, under `<SceneCanvas layers>`
   pathEdit?: PathEditExtension[];      // what it adds to path edit
+  routing?: NodeRoutingEntry[];        // classifies nodes, ahead of `<SceneCanvas routing>`
+  insertNodeFactories?: InsertNodeFactories; // builds the inserts its kinds name
+  shapes?: (NodeShapeEntry | PresetNodeShape)[]; // painters, registered while it is on
+  properties?: NodePropertiesEntry[];  // what a SelectionPanel given the same presets edits
   contributions?: SurfaceContribution[]; // installed beside `ambient`
   refines?: string[];                  // preset ids whose actions its own go ahead of
   includes?: FeaturePreset[];          // presets it turns on with itself
@@ -459,9 +463,32 @@ on the release, it is the last move's.
 
 ## Custom node kinds
 
-A node kind of your own takes three pieces: a painter that draws it and says
-what part of it is grabbable, a factory the `insert` action builds it with, and
-a tool binding a drag to that action.
+A node kind of your own takes a painter that draws it and says what part of
+it is grabbable, a factory the `insert` action builds it with, a tool binding a
+drag to that action, and, for routing and a properties panel, a classifier and
+a schema. `nodeKindPreset` packages them as one preset, each trait handed to its
+owner while the preset is on and released when it goes:
+
+```tsx
+const gemFeature = nodeKindPreset({
+  id: 'app:gem',
+  kind: 'gem',                      // routing kind, properties name, insert kind
+  matches: isGem,
+  shape: gemPainter,                // the `registerNodeShape` entry below
+  insert: gemFactory,
+  properties: { schema: gemSchema },
+  tools: [gemTool],
+});
+
+<SceneCanvas scene={scene} features={[drawPreset, gemFeature]} />;
+<SelectionPanel scene={scene} selection={selection} features={[drawPreset, gemFeature]} />;
+```
+
+A canvas's own `routing` and `insertNodeFactories`, and a panel's `properties`,
+keep any name they give over a preset's; `nodeTraitsOf(features)` reads the
+merged traits. Two presets giving one kind different values throw. A preset's
+tool whose `insert` kind nothing on the canvas builds is left out of the canvas's
+tools. The same pieces can still be installed one by one:
 
 ```tsx
 import {
