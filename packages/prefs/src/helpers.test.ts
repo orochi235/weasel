@@ -4,6 +4,7 @@ import {
   assignPrefValueAtPath,
   filterPrefSubtree,
   flattenPrefValues,
+  nestPrefValues,
   prefDisplayBounds,
   prefLeaves,
   prefValueAtPath,
@@ -295,5 +296,16 @@ describe('paths through names every object inherits', () => {
     expect(Object.getPrototypeOf(tree)).toBe(Object.prototype);
     expect(prefValueAtPath(tree, 'constructor.probe')).toBe(1);
     expect(prefValueAtPath(tree, '__proto__.probe')).toBe(2);
+  });
+
+  it('nests dotted values into a tree of their own, through any key', () => {
+    const tree = nestPrefValues({ 'a.b': 1, 'a.c': 2, '__proto__.probe': 3, 'constructor.prototype.probe': 4 });
+    expect((Object as unknown as Record<string, unknown>).probe).toBeUndefined();
+    expect(({} as Record<string, unknown>).probe).toBeUndefined();
+    expect(Object.getPrototypeOf(tree)).toBe(Object.prototype);
+    expect(prefValueAtPath(tree, 'a.b')).toBe(1);
+    expect(prefValueAtPath(tree, 'a.c')).toBe(2);
+    expect(prefValueAtPath(tree, '__proto__.probe')).toBe(3);
+    expect(prefValueAtPath(tree, 'constructor.prototype.probe')).toBe(4);
   });
 });

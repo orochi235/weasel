@@ -9,6 +9,7 @@ export {
   flattenPrefValues,
   isPrefLeaf,
   isPrefSection,
+  nestPrefValues,
   prefDisplayBounds,
   prefHoldsValue,
   prefLeafAt,

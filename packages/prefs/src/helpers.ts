@@ -186,6 +186,14 @@ export function assignPrefValueAtPath(root: Record<string, unknown>, path: strin
   setOwnPrefValue(cursor, parts[parts.length - 1]!, value);
 }
 
+/** Values keyed by dotted path, as `PrefsBar` and `BarMenu` take them, as the
+ *  nested tree `PrefsForm` reads: the inverse of {@link flattenPrefValues}. */
+export function nestPrefValues(values: Readonly<Record<string, unknown>> | undefined): Record<string, unknown> {
+  const tree: Record<string, unknown> = {};
+  for (const [path, value] of Object.entries(values ?? {})) assignPrefValueAtPath(tree, path, value);
+  return tree;
+}
+
 /** Each of `schema`'s leaves that `tree` holds a value for, as a path and
  *  that value — the inverse of building a tree from per-leaf records. */
 export function flattenPrefValues(schema: PrefGroup, tree: unknown): [string, unknown][] {

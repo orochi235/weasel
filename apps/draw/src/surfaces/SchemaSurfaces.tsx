@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { orderPrefGroup, type PrefGroup, type PrefOrder } from '@weasel-js/prefs';
+import { nestPrefValues, orderPrefGroup, type PrefGroup, type PrefOrder } from '@weasel-js/prefs';
 import { BarMenu } from '@weasel-js/ui/components/Bar';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { useContextMenu } from '@weasel-js/ui/components/Menu';
@@ -25,22 +25,10 @@ export function useAssetBinding(asset: SurfaceAsset): SchemaBinding {
 /** Where the menu surface puts its switch among the asset's own children: a key no asset uses. */
 const SWITCH_KEY = '$surface';
 
-/** Dotted-path values as the nested tree a form reads. */
-function nest(values: Readonly<Record<string, unknown>> | undefined): Record<string, unknown> {
-  const root: Record<string, unknown> = {};
-  for (const [path, value] of Object.entries(values ?? {})) {
-    const keys = path.split('.');
-    let at = root;
-    for (const key of keys.slice(0, -1)) at = (at[key] ??= {}) as Record<string, unknown>;
-    at[keys.at(-1)!] = value;
-  }
-  return root;
-}
-
 /** A schema asset drawn as a right-sidebar panel, its header offering the other surfaces. */
 export function SchemaPanel({ asset, chrome, order }: { asset: SurfaceAsset; chrome: PanelChrome; order?: PrefOrder }) {
   const { values, onChange, title } = useAssetBinding(asset);
-  const tree = useMemo(() => nest(values), [values]);
+  const tree = useMemo(() => nestPrefValues(values), [values]);
   const schema = useMemo(() => orderPrefGroup(asset.schema, order), [asset.schema, order]);
   return (
     <SidebarPanel
