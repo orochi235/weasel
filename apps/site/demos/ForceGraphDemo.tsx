@@ -48,12 +48,8 @@ const leafOf = (n: GraphNode, radius: number) => ({
   data: { group: n.group },
 });
 
-/**
- * Edge layer: reads positions directly from the sim's nodes array (which the
- * forces mutate in place). Nodes themselves are rendered as scene leaves via
- * SceneCanvas's `scene` slot — so each sim tick that commits pose overrides
- * triggers the canvas to redraw, which re-runs this layer's `draw`.
- */
+/** Edges read the sim's nodes, which the forces mutate in place; the redraw a
+ *  tick's pose overrides cause is what re-runs this. */
 function paintEdges(
   linksRef: { current: GraphLink[] },
 ): RenderLayer<unknown> {
@@ -78,16 +74,8 @@ function paintEdges(
   };
 }
 
-/**
- * Drag-to-pin tool. A tool is a declarative shell: this one binds a body-drag
- * to `forceGraph.pin` and does nothing else — the dispatcher owns the gesture,
- * the action owns the effect.
- *
- * The hit comes from the `nodeAtPoint` dep, which `<SceneCanvas>` sources from
- * the same picker the select tool uses. Pinning writes `fx`/`fy` on the sim
- * node rather than the scene pose, because the sim owns positions here — the
- * tick loop is what syncs them back into the scene.
- */
+/** Drag-to-pin. Pinning writes the sim node's `fx`/`fy`, not the scene pose:
+ *  the sim owns positions, and its tick syncs them into the scene. */
 function usePinTool(
   nodesRef: { current: GraphNode[] },
   sim: Simulation<GraphNode>,
@@ -156,9 +144,6 @@ export function ForceGraphDemo() {
   const [settled, setSettled] = useState(false);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
-  // Scene mirrors the sim's nodes: one leaf per graph node, pose = AABB around
-  // the node center. The sim writes per-frame positions as ephemeral pose
-  // overrides and bakes the settled layout into the document once.
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'graph' }],
     initial: initial.nodes.map((n) => leafOf(n, GRAPH_SIZES[0].radius)),
@@ -171,8 +156,6 @@ export function ForceGraphDemo() {
     nodes: nodesRef.current,
     forces,
     onTick: () => {
-      // Per-frame positions are presentation, not a document edit: they go in
-      // as ephemeral overrides, so a settle records nothing.
       syncGraphPoses(scene, nodesRef.current, sizeRef.current.radius);
     },
     onEnd: () => {
