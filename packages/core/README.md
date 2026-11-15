@@ -256,6 +256,7 @@ Core's main entry carries the everyday surface. A few narrower ones have their o
 | `@weasel-js/core/renderer` | the renderer, `registerProgram`, `registerTexture`, draw commands |
 | `@weasel-js/core/move`, `/resize`, `/clone`, `/clipboard` | helpers for building on those actions, e.g. `snapBackOrDelete`, `clampMinSize` |
 | `@weasel-js/core/patterns-builtin` | the built-in fill patterns |
+| `@weasel-js/core/named-features` | core's presets by name: `namedFeatures('pick', 'move')`, `FEATURE_NAMES`, `FEATURE_PRESETS`, `FEATURE_ACTION_IDS`; loads every core preset |
 | `@weasel-js/core/routing` | route grammar and introspection: parsing, the route registry, conflict checks |
 
 ## Packages
