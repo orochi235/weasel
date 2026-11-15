@@ -1,42 +1,32 @@
-import { useMemo, useState, useEffect } from 'react';
-import {
-  bezierCubic,
-  bezierQuadratic,
-  nurbs,
-  spiro,
-  type SharedAnchor,
-} from '@weasel-js/geom/curves';
+import { useEffect, useState } from 'react';
+import { useScene } from '@weasel-js/core';
+import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Select } from '@weasel-js/ui/components/Select';
 import { CURVE_PRESETS } from './curveLab/presets';
+import { anchorsOf, applyPreset, curveSceneOptions, presetIdOf, REPS } from './curveLab/curveScene';
 import { RepresentationPanel, type OverlayFlags } from './curveLab/RepresentationPanel';
 import { DemoStageGroup } from './DemoStage';
 
 const PANEL_W = 360;
 const PANEL_H = 360;
 
-const REPS = [bezierCubic, bezierQuadratic, nurbs, spiro] as const;
-
 export function CurveLabDemo() {
-  const [presetId, setPresetId] = useState(CURVE_PRESETS[0].id);
-  const [anchors, setAnchors] = useState<SharedAnchor[]>(() =>
-    CURVE_PRESETS[0].anchors.map((a) => ({ ...a })),
-  );
+  const [options] = useState(curveSceneOptions);
+  const scene = useScene(options);
+  const anchors = anchorsOf(scene);
+  const presetId = presetIdOf(scene);
   const [overlays, setOverlays] = useState<OverlayFlags>({
     anchors: true,
     comb: false,
     inflections: false,
   });
 
-  const preset = useMemo(
-    () => CURVE_PRESETS.find((p) => p.id === presetId) ?? CURVE_PRESETS[0],
-    [presetId],
-  );
+  const preset = CURVE_PRESETS.find((p) => p.id === presetId) ?? CURVE_PRESETS[0];
 
   const onPresetChange = (id: string) => {
-    setPresetId(id);
     const next = CURVE_PRESETS.find((p) => p.id === id);
-    if (next) setAnchors(next.anchors.map((a) => ({ ...a })));
+    if (next && id !== presetId) applyPreset(scene, next);
   };
 
   // E2e probe: expose live anchor state. Re-register whenever anchors change
@@ -61,6 +51,8 @@ export function CurveLabDemo() {
           selectedKey={presetId}
           onSelectionChange={onPresetChange}
         />
+        <Button size="sm" disabled={!scene.canUndo()} onClick={() => scene.undo()}>Undo</Button>
+        <Button size="sm" disabled={!scene.canRedo()} onClick={() => scene.redo()}>Redo</Button>
         <Checkbox isSelected={overlays.anchors} onChange={(v) => setOverlays((o) => ({ ...o, anchors: v }))}>
           anchors
         </Checkbox>
@@ -78,8 +70,8 @@ export function CurveLabDemo() {
             <RepresentationPanel
               key={rep.kind}
               rep={rep}
+              scene={scene}
               anchors={anchors}
-              onAnchorsChange={setAnchors}
               overlays={overlays}
               width={PANEL_W}
               height={PANEL_H}

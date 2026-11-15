@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { IDENTITY_POSE_COMPOSITION,
+import {
   ANCHOR_HIT_BASE_PX,
-  asNodeId,
   composeAffordanceLayer,
   SceneCanvas,
-  useLatest,
-  useScene,
-  useSelection,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type {
@@ -20,6 +16,7 @@ import type {
   SceneCanvasApi,
 } from '@weasel-js/core';
 import type { CurveRepresentation, SharedAnchor } from '@weasel-js/geom/curves';
+import { anchorsOf, renderLayerOf, REPS, setAnchors, type CurvePose, type CurveScene } from './curveScene';
 import {
   createAnchorsLayer,
   createCurvatureCombLayer,
@@ -36,8 +33,9 @@ export interface OverlayFlags {
 
 export interface RepresentationPanelProps {
   rep: CurveRepresentation;
+  /** The scene every panel shows, this one through its own curve's layer. */
+  scene: CurveScene;
   anchors: SharedAnchor[];
-  onAnchorsChange: (next: SharedAnchor[]) => void;
   overlays: OverlayFlags;
   width: number;
   height: number;
@@ -54,37 +52,17 @@ function anchorIndexOf(hit: { payload?: unknown } | undefined): number | null {
 
 export function RepresentationPanel({
   rep,
+  scene,
   anchors,
-  onAnchorsChange,
   overlays,
   width,
   height,
 }: RepresentationPanelProps) {
-  const nodeId = useMemo(() => asNodeId(`curve-${rep.kind}`), [rep.kind]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const initialPath = useMemo(() => rep.toPath(anchors), []);
-  const scene = useScene<{ kind: 'curve' }, 'default', ReturnType<CurveRepresentation['toPath']>>({ composition: IDENTITY_POSE_COMPOSITION,
-    systemLayers: [{ id: 'default' }],
-    initial: [{
-      id: nodeId,
-      kind: 'mark',
-      layer: 'default',
-      pose: initialPath,
-      data: { kind: 'curve' },
-    }],
-  });
-
-  // The path is drawn from the shared anchors, which hold the history: undo here would part the two.
-  useEffect(() => {
-    scene.untracked(() => scene.setPose(nodeId, rep.toPath(anchors)));
-  }, [scene, nodeId, rep, anchors]);
-
-  const selection = useSelection({ scene, initial: [nodeId], lock: true });
-
-  const anchorsRef = useLatest(anchors);
-  const onAnchorsChangeRef = useLatest(onAnchorsChange);
-  const getAnchors = useCallback(() => anchorsRef.current, [anchorsRef]);
+  const layerVisibility = useMemo(
+    () => Object.fromEntries(REPS.map((r) => [renderLayerOf(r.kind), r.kind === rep.kind])),
+    [rep.kind],
+  );
+  const getAnchors = useCallback(() => anchorsOf(scene), [scene]);
 
   const anchorsLayer = useMemo(() => createAnchorsLayer(rep, getAnchors), [rep, getAnchors]);
   const combLayer = useMemo(() => createCurvatureCombLayer(rep, getAnchors), [rep, getAnchors]);
@@ -92,7 +70,7 @@ export function RepresentationPanel({
 
   const layers = {
     scene: {
-      drawOne: (_n: unknown, p: ReturnType<CurveRepresentation['toPath']>): DrawCommand[] => [{
+      drawOne: (_n: unknown, p: CurvePose): DrawCommand[] => [{
         kind: 'path',
         path: p,
         stroke: { paint: { color: '#7fb069' }, width: 2 },
@@ -113,7 +91,7 @@ export function RepresentationPanel({
 
   const anchorHandles = useMemo<Affordance>(() => ({
     id: layerId,
-    regions: (): AffordanceRegion[] => anchorsRef.current.map((a, i) => ({
+    regions: (): AffordanceRegion[] => anchorsOf(scene).map((a, i) => ({
       id: `anchor-${i}`,
       targetId: null,
       shape: { kind: 'point', x: a.x, y: a.y, hitRadiusPx: ANCHOR_HIT_BASE_PX },
@@ -122,7 +100,7 @@ export function RepresentationPanel({
       claimedKinds: ['pointer'],
       bind: () => ({ initialScratch: { anchorIndex: i } satisfies AnchorScratch }),
     })),
-  }), [anchorsRef, layerId]);
+  }), [scene, layerId]);
 
   // `composeAffordanceLayer` types its data slot as `ChromeState`; the layer
   // registry takes `RenderLayer<unknown>`. Both receive the same live
@@ -144,11 +122,13 @@ export function RepresentationPanel({
       timing: 'ongoing',
       start(ctx: InvocationCtx): OngoingHandle {
         const index = anchorIndexOf(ctx.drag?.affordance);
-        const origin = index === null ? undefined : anchorsRef.current[index];
+        const origin = index === null ? undefined : anchorsOf(scene)[index];
         if (index === null || !origin) return {};
         const from = ctx.drag!.start;
+        // Every move goes to the journal, and its commit leaves one entry: the drag is one undo step.
+        const journal = scene.history.beginJournal({ label: 'Move anchor' });
         const to = (at: InvocationCtx) => {
-          onAnchorsChangeRef.current(anchorsRef.current.map((a, i) => (
+          setAnchors(scene, anchorsOf(scene).map((a, i) => (
             i === index
               ? { ...a, x: origin.x + (at.world.x - from.x), y: origin.y + (at.world.y - from.y) }
               : a
@@ -158,13 +138,14 @@ export function RepresentationPanel({
           kind: 'move-curve-anchor',
           onMove: to,
           onEnd: (at, reason) => {
-            if (reason === 'commit') to(at);
-            else onAnchorsChangeRef.current(anchorsRef.current.map((a, i) => (i === index ? origin : a)));
+            if (reason !== 'commit') return journal.cancel();
+            to(at);
+            journal.commit();
           },
         };
       },
     },
-  }), [actionId, anchorsRef, layerId, onAnchorsChangeRef]);
+  }), [actionId, scene, layerId]);
 
   const actions = useMemo<ActionsProp>(() => ({
     [actionId]: dragAnchor,
@@ -178,7 +159,7 @@ export function RepresentationPanel({
           ref={canvasRef}
           className="ckd-canvas"
           scene={scene}
-          selection={selection}
+          layerVisibility={layerVisibility}
           actions={actions}
           layers={layers as never}
         />
