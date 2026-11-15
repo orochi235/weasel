@@ -301,10 +301,17 @@ describe('<SceneCanvas features>', () => {
 
   it('a viewport config implies nothing: no hand tool, no wheel, pinch, or zoom keys, and a warning', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { tools, seen } = mount({ viewport: {} });
+    const { tools, seen } = mount({ viewport: { pan: true } });
     expect(Object.keys(tools().registry)).toEqual([]);
     for (const id of ['viewport.wheelPan', 'viewport.zoom', 'viewport.pinchZoom', 'viewport.dragPan']) expect(seen.actionIds).not.toContain(id);
     expect(warn).toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures viewPreset/));
+    warn.mockRestore();
+  });
+
+  it('a viewport holding only recenter does not warn: the view dep carries it without viewPreset', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mount({ viewport: { recenter: () => undefined } });
+    expect(warn).not.toHaveBeenCalledWith(expect.stringMatching(/`viewport` configures viewPreset/));
     warn.mockRestore();
   });
 

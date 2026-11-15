@@ -5,7 +5,9 @@ import type { SceneCanvasViewport } from './viewportProp';
 
 /** Warns, in development, when `viewport` configures navigation no preset turns on. */
 export function useViewportWithoutView(viewport: SceneCanvasViewport | undefined, enabled: EnabledPresets): void {
-  const unread = viewport !== undefined && !enabled.has('view');
+  // `recenter` reaches the view dep with or without viewPreset, so it alone is never unread.
+  const unread = viewport !== undefined && !enabled.has('view')
+    && Object.entries(viewport).some(([key, value]) => key !== 'recenter' && value !== undefined);
   useEffect(() => {
     if (unread && isDev()) {
       console.warn('[SceneCanvas] `viewport` configures viewPreset, which is not in `features`: wheel, pinch, and the zoom keys do nothing.');
