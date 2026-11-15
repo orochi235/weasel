@@ -988,8 +988,8 @@ code path.
   ghosts (marquee displaces nothing).
 - `clone/action.ts` — opts out of the shared pose pipeline and sets
   `previewHidesSource: false` so the original stays put.
-- `edit-anchors/action.ts` — emits `previewData` rather than `previewPose`, for edits
-  that live in `node.data` instead of the pose.
+- `edit-anchors/action.ts` — emits `previewData` beside `previewPose`, for edits
+  that change `node.data` as well as the pose.
 - `defaults/delete.ts` — a minimal `timing: 'immediate'` one-shot.
 - `@weasel-js/hud`'s `src/tool.ts` — a package outside core owning its own
   input, gating each of its bindings on a hit from its `layer:<id>` affordance
