@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useVisibleRaf } from '@weasel-js/core';
+import { useVisibleRaf } from '@weasel-js/react';
 import {
   BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack, shownPorts,
   type BranchChoice, type EffectLook, type EffectPipeline, type EffectRun, type EffectStageRun,

@@ -1,4 +1,4 @@
-import { useVisibleRaf } from '@weasel-js/core';
+import { useVisibleRaf } from '@weasel-js/react';
 import { defineInstrument, f, Lab, type ViewTransform } from '@weasel-js/labkit';
 import { type CanvasSource, createCanvasSource, TrialLoupe } from '@weasel-js/labkit/loupe';
 import { useEffect, useRef, useState } from 'react';
