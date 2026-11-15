@@ -54,6 +54,23 @@ describe('Scene ownership of poses and data', () => {
     expect(before.nodes[0].data.label).toBe('a');
   });
 
+  it('detaches a toJSON snapshot from typed arrays the scene still holds', () => {
+    const scene = setup({ label: 'a', tags: [], bytes: new Float32Array([1, 2]) });
+    const before = scene.toJSON();
+    scene.get(A)!.data.bytes![0] = 9;
+    expect(before.nodes[0].data.bytes![0]).toBe(1);
+    before.nodes[0].data.tags.push('mine');
+    expect(scene.get(A)!.data.tags).toEqual([]);
+  });
+
+  it('loads a save without freezing it', () => {
+    const json = setup().toJSON();
+    const scene = setup();
+    scene.loadState(json);
+    json.nodes[0].data.tags.push('later');
+    expect(scene.get(A)!.data.tags).toEqual(['t']);
+  });
+
   it('hands out a live view: a held node shows later edits', () => {
     const scene = setup();
     const held = scene.get(A)!;

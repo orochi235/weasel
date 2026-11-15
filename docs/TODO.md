@@ -250,18 +250,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P1) [agent] Define and enforce scene read and snapshot ownership before 2.0.** The `Scene` contract
-  says reads are snapshots (`packages/core/src/core/scene/types.ts`), but `treeReads.ts` returns mutable
-  internal nodes, `scene.ts` exposes internal collections, and `serialization.ts` carries pose/data
-  references into `toJSON()`. Reproduced during the architecture review: mutating a returned pose changes
-  both the scene and a captured snapshot without bumping the scene version; `setPose` changes a held node
-  in place. Expose readonly live reads with an explicit lifetime and detached persistence snapshots.
-  Define ownership of incoming data, poses and typed arrays too, so retained aliases cannot bypass history,
-  notifications or invalidation.
-  Closes when public types and docs agree on live reads versus snapshots, public reads and retained inputs
-  cannot silently mutate scene state, and tests prove captured snapshots survive later edits and alias
-  mutations, including typed-array geometry.
-
 - **(P1) [agent] Make failed restored-history replay observable and preserve the failed entry.**
   `packages/core/src/core/scene/boundOps.ts` converts missing history adapters and throwing external ops
   into debug-warned no-ops. `scene.applyBatch.test.ts` expects undo to advance to redo even when the op

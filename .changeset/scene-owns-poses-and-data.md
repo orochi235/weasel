@@ -15,6 +15,6 @@ pose.x = 5; // silently moved the node and rewrote its undo entry
 scene.setPose(id, { ...pose, x: 5 });
 ```
 
-Only plain objects and arrays are frozen; typed arrays and class instances are left writable, and the same rule holds for them unguarded. A production build freezes nothing. Because nothing the scene owns changes in place, a `toJSON()` snapshot stays as it was through later edits.
+Only plain objects and arrays are frozen; typed arrays and class instances are left writable, and the same rule holds for them unguarded. A production build freezes nothing. `toJSON()` returns a copy of these values, typed arrays included, so a snapshot stays as it was through later edits and is yours to edit; `loadState` and `sceneFromJSON` copy a save in, so a save you load is never frozen.
 
 <!-- entry: rank=10 breaking behavior -->

@@ -77,8 +77,9 @@ export type { AddNodeSpec, GroupNode, MarkNode, Node, NodeBase, NodeClip };
  * node and its undo history keep it by reference, and it changes only by being
  * replaced through another edit. A development build freezes its plain objects
  * and arrays so a write into one throws; typed arrays and class instances it
- * cannot guard. `toJSON` returns fresh records that share those values, so a
- * snapshot taken now stays as it was through later edits.
+ * cannot guard, and they are held to the same rule unchecked. `toJSON` copies
+ * plain values and typed arrays, so a snapshot is the caller's to edit and stays
+ * as it was through later edits; loading one copies it in the same way.
  *
  * Three type parameters keep it domain-agnostic: `TData` is the app's payload,
  * which the kit never inspects; `TPose` is the transform shape, `RectPose` by

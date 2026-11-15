@@ -12,6 +12,7 @@ import { RIGID_POSE_COMPOSITION } from './composePose';
 import { localizeWorldPoses } from './worldSave';
 import { withKitRegistry } from './kitRegistry';
 import { assertSnapshotShape, SnapshotKeyError } from './snapshotShape';
+import { detach } from './owned';
 import { statedFields } from './statedFields';
 import type {
   AddNodeSpec, LayerRecord, Node, NodeId, SavedScene, SceneRegistry, SerializedLayer, SerializedNode, SerializedNodeV1,
@@ -67,8 +68,8 @@ export function serializeScene<TData, TLayer extends string, TPose>(
       id,
       kind: n.kind,
       layer: n.layer,
-      pose: n.pose,
-      data: n.data,
+      pose: detach(n.pose),
+      data: detach(n.data),
     };
     if (n.parent != null) out.parent = n.parent;
     if (n.dependsOn === 'children') out.dependsOn = 'children';
@@ -159,8 +160,8 @@ function currentSpecs<TData, TLayer extends string, TPose>(
       id: n.id as NodeId,
       kind,
       layer: n.layer,
-      pose: n.pose,
-      data: n.data,
+      pose: detach(n.pose),
+      data: detach(n.data),
     };
     if (n.parent !== undefined) spec.parent = n.parent as NodeId;
     Object.assign(spec, statedFields(n));

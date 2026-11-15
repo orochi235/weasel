@@ -19,6 +19,29 @@ export function own<T>(value: T): T {
   return value;
 }
 
+/**
+ * A copy of an owned value for a snapshot: its plain objects, arrays and typed
+ * arrays copied, so the snapshot is the caller's to edit and nothing written to
+ * the scene's values afterward reaches it. Class instances are shared.
+ */
+export function detach<T>(value: T): T {
+  if (typeof value !== 'object' || value === null) return value;
+  if (ArrayBuffer.isView(value)) {
+    if (value instanceof DataView) return new DataView(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength)) as T;
+    return (value as unknown as Uint8Array).slice() as T;
+  }
+  if (Array.isArray(value)) return value.map(detach) as T;
+  if (!isPlain(value)) return value;
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(value)) out[key] = detach((value as Record<string, unknown>)[key]);
+  return out as T;
+}
+
+function isPlain(value: object): boolean {
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
 function freezePlain(value: unknown): void {
   if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return;
   if (Array.isArray(value)) {
@@ -26,8 +49,7 @@ function freezePlain(value: unknown): void {
     for (const item of value) freezePlain(item);
     return;
   }
-  const proto = Object.getPrototypeOf(value);
-  if (proto !== Object.prototype && proto !== null) return;
+  if (!isPlain(value)) return;
   Object.freeze(value);
   for (const key of Object.keys(value)) freezePlain((value as Record<string, unknown>)[key]);
 }
