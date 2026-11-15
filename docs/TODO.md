@@ -250,14 +250,69 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+- **(P1) [agent] Define and enforce scene read and snapshot ownership before 2.0.** The `Scene` contract
+  says reads are snapshots (`packages/core/src/core/scene/types.ts`), but `treeReads.ts` returns mutable
+  internal nodes, `scene.ts` exposes internal collections, and `serialization.ts` carries pose/data
+  references into `toJSON()`. Reproduced during the architecture review: mutating a returned pose changes
+  both the scene and a captured snapshot without bumping the scene version; `setPose` changes a held node
+  in place. Expose readonly live reads with an explicit lifetime and detached persistence snapshots.
+  Define ownership of incoming data, poses and typed arrays too, so retained aliases cannot bypass history,
+  notifications or invalidation.
+  Closes when public types and docs agree on live reads versus snapshots, public reads and retained inputs
+  cannot silently mutate scene state, and tests prove captured snapshots survive later edits and alias
+  mutations, including typed-array geometry.
 
-- **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids
-  stops painting.** `scenePickIds` numbers each node on its first paint and keeps the number for the
-  scene's life, so an id learned from an id frame stays good. Nodes removed keep theirs, and once a scene
-  has painted `MAX_PICK_ID` (2^24 - 1) distinct ids, `idOf` throws in the paint: a particle emitter
-  minting 100 ids a frame reaches it in about 45 minutes at 60 fps. Reusing a removed node's number
-  breaks the "stays good" promise for ids read before the removal, so it needs a ruling. Closes when
-  removed nodes' numbers are reclaimed or the promise is kept some other bounded way (filed 2026-11-11).
+- **(P1) [agent] Make failed restored-history replay observable and preserve the failed entry.**
+  `packages/core/src/core/scene/boundOps.ts` converts missing history adapters and throwing external ops
+  into debug-warned no-ops. `scene.applyBatch.test.ts` expects undo to advance to redo even when the op
+  fails and state stays unchanged. Swallowing exceptions also hides partial external writes from transaction
+  handling. Make strict replay the default, validate factories and adapter requirements during restoration,
+  and report unresolved operations. Best-effort recovery must be explicit with structured diagnostics.
+  Closes when missing factories/adapters and throwing restored ops have tested failure semantics, failed
+  strict undo/redo preserves its stack entry and state under a documented external-op rollback contract,
+  and callers can inspect restoration and replay failures in production.
+
+- **(P1) [agent] Give document and editing-session state explicit ownership before 2.0.** `Scene` combines
+  content, history, selection, previews and scrolling (`packages/core/src/core/scene/scene.ts`,
+  `sceneSelection.ts`, `scrollOffsets.ts`), while `CanvasView` permits independent selections
+  (`packages/core/src/canvas/canvasViewProps.ts`). Introduce an editing session over a document, owning
+  selection, previews, scrolling and action context. Views can share a session or use independent ones;
+  retain a convenient default. Define history ownership and which session's selection undo restores rather
+  than implicitly creating history per view. Preserve document sharing across 2D and kernel3d hosts.
+  Closes when two sessions edit one document with independent selection, scrolling and previews, views
+  sharing a session share those states, history/selection restoration has an explicit tested policy, and
+  the public API, demos and migration docs use that ownership model.
+
+- **(P2) [agent] Scope extension registries and standardize registration semantics.** Scene function
+  registries and scene ops are local, but external op factories silently overwrite in a module singleton
+  (`packages/core/src/core/ops/registry.ts`), and shader sources replace in development but reject
+  duplicates in production (`packages/renderer/src/shaders/registerProgram.ts`). Provide an explicit
+  registry context hosts can isolate or share, retaining a default for convenience. Define idempotent
+  registration, explicit replacement and disposal consistently. Prioritize executable op factories because
+  collisions change restored behavior; GPU compilation and resources remain renderer-local.
+  Closes when isolated hosts can use the same extension ids without interference, shared hosts resolve
+  shared definitions intentionally, registration/replacement/disposal rules are documented and tested, and
+  restored external ops resolve through their host's registry context.
+
+- **(P2) [agent] Put the canonical scene persistence codec below the editor package.** JSON persistence
+  currently needs `serializeReplacer` and `reviveTypedArrays` from `@weasel-js/editor`
+  (`docs/scene-serialization.md`); plain JSON serialization corrupts built-in typed-array geometry. Expose
+  canonical encoding/decoding from the engine or a lower-level serialization package, distinguish in-memory
+  snapshots from encoded JSON, and provide a paired document/history envelope with validation against
+  restoring history over unrelated content. Keep application-data migration separate from engine migration.
+  Closes when core-only consumers can save and restore built-in geometry and paired history through the
+  documented codec without editor, typed arrays round-trip, mismatched document/history pairs are rejected,
+  and examples document format versions and application migration boundaries.
+
+- **(P2) [agent] Make explicit feature presets the standard canvas composition API in 2.0.** `SceneCanvas`
+  accepts named features and implies navigation from `viewport`; `LeanSceneCanvas` accepts preset objects
+  and does not imply navigation (`packages/core/src/canvas/LeanSceneCanvas.tsx`). Make the explicit-preset
+  implementation the standard `SceneCanvas`, retain complete configurations such as `drawPreset`, and
+  isolate named-feature convenience behind an optional entry or wrapper with documented semantics.
+  Closes when the standard canvas uses explicit presets, named convenience is isolated, navigation semantics
+  are documented and tested, unused presets stay out of the standard consumer bundle, and demos and
+  migration docs use the consolidated API.
+
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
