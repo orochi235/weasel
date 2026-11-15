@@ -1,6 +1,5 @@
-import type { Action } from '@weasel-js/routing';
-import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
-import type { BindingOptions, InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
+import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import { pathOperationTags } from '../pathGestureTags';
 
 /**
@@ -13,7 +12,7 @@ import { pathOperationTags } from '../pathGestureTags';
  * The cut is a straight line from drag start to the pointer by default. With
  * the binding param `cut: 'freehand'` it is the whole drag trail instead.
  */
-export const sliceAction: Action & { requires: string[] } = {
+export const sliceAction = defineAction({
   id: 'slice',
   label: 'Slice',
   tags: pathOperationTags('click'),
@@ -22,14 +21,14 @@ export const sliceAction: Action & { requires: string[] } = {
   requires: ['slice'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+    start(ctx, opts): OngoingHandle {
       const dep = ctx.deps.slice;
       const a: Point2 = ctx.drag?.start ?? ctx.world;
       let current: Point2 = ctx.drag?.current ?? ctx.world;
       let trail: ReadonlyArray<Point2> | undefined;
       let open = true;
 
-      const freehand = () => resolveParams(opts?.params)?.['cut'] === 'freehand';
+      const freehand = () => resolveParams(opts?.params)?.cut === 'freehand';
       const cut = (): Point2[] =>
         freehand() && trail && trail.length >= 2
           ? trail.map((p) => ({ x: p.x, y: p.y }))
@@ -59,4 +58,4 @@ export const sliceAction: Action & { requires: string[] } = {
   // otherwise), so reflect dep presence for any UI reading action-enabled
   // state. The dispatcher still self-guards via the empty-handle path.
   enabled: (deps) => (deps?.['slice'] ? true : ActionDisabledReason.NotApplicable),
-};
+});

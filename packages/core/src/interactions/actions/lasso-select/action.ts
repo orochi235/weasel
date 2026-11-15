@@ -18,7 +18,7 @@
  */
 
 import { gestureViewReader } from '../../gestures/shared/screenTolerance';
-import { resolveParams, setScratch, type Action } from '@weasel-js/routing';
+import { defineAction, resolveParams, setScratch } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
 import type { LassoSelectDep, ViewApi } from '../depSchema';
@@ -98,20 +98,19 @@ interface LassoScratch {
 /**
  * Static descriptor for the `lassoSelect` Action.
  */
-export const lassoSelectAction: Action & { requires: string[] } = {
+export const lassoSelectAction = defineAction({
   id: 'lassoSelect',
   label: 'Lasso Select',
   eligible: { capability: 'creates-selection' },
   requires: ['lassoSelect', 'view'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts): OngoingHandle {
+    start(ctx, opts): OngoingHandle {
       const dep = ctx.deps.lassoSelect;
       // A press that is no finite number lands nowhere, as a move that is not does below.
       if (!dep || !finiteThroughout(ctx.world)) return {};
 
-      const params = resolveParams(opts?.params) as
-        { mode?: LassoHitMode; minVertexSpacing?: number } | undefined;
+      const params = resolveParams(opts?.params);
       const view = ctx.deps.view;
       const vertices: Point2[] = [{ x: ctx.world.x, y: ctx.world.y }];
       const behaviors = (opts?.behaviors ?? []) as LassoSelectBehavior[];
@@ -196,7 +195,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
     },
   },
   enabled: () => true,
-};
+});
 
 /** Close the lasso. Returns whether it committed: a behavior's ops were
  *  applied, or the lasso set the selection. */
