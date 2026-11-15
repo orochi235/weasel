@@ -16,7 +16,7 @@ const SALES: XyChartData = {
 export function PlotXyChartDemo() {
   const [data, setData] = useState(SALES);
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <div className="ckd-row">bars: {data.series[0]!.values.join(', ')}</div>
       <DemoStage width={640} height={400}>
         <PlotView data={data} onChange={(next) => setData(next as XyChartData)} width={640} height={400} className="ckd-canvas" />

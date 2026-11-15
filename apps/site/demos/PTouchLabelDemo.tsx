@@ -108,7 +108,7 @@ export function PTouchLabelDemo() {
   };
 
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <DemoStage width={LENGTH} height={TAPE.widthPt}>
         <SceneCanvas features={[pickPreset, movePreset, transformPreset]} className="ckd-canvas" backgroundFill={{ color: '#ffffff' }} scene={scene} selection={selection} layers={{ scene: { drawOne } }} />
       </DemoStage>

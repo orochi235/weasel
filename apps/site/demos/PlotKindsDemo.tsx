@@ -31,8 +31,8 @@ export function PlotKindsDemo() {
     return () => { live = false; };
   }, [kind, data]);
   return (
-    <div className="ckd-stack">
-      <SegmentedBar items={KINDS} value={kind} onChange={(k) => k && setKind(k)} aria-label="Chart kind" size="sm" />
+    <div className="ckd-demo">
+      <div className="ckd-row"><SegmentedBar items={KINDS} value={kind} onChange={(k) => k && setKind(k)} aria-label="Chart kind" size="sm" /></div>
       <DemoStage width={640} height={400}>
         {data && (
           <PlotView
