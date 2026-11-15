@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { useState } from 'react';
+import { act } from '@testing-library/react';
+import { percent, tag, type Tagged } from '@weasel-js/quantity';
 import { Slider } from './Slider';
 import { stubRect } from './testing/stubRect';
 import type { Thumb } from './types';
@@ -33,6 +35,21 @@ describe('Slider edit protocol', () => {
     expect(onChange.mock.calls[0][0][0].value).toBeCloseTo(0.75, 2);
     // The draft is gone: the slider draws the prop, which this consumer never wrote.
     expect(thumb().getAttribute('aria-valuenow')).toBe('0.5');
+  });
+
+  it("keeps a commit-only drag's draft over tagged thumbs the consumer rebuilds as it re-renders", () => {
+    let rerender = () => {};
+    function Host() {
+      const [, setTick] = useState(0);
+      rerender = () => setTick((t) => t + 1);
+      return <Slider<Thumb<Tagged>> min={0} max={1} step={0.01} thumbs={[{ value: tag(0.5, percent()) }]} onChange={() => {}} />;
+    }
+    const { thumb, press, move } = setup(<Host />);
+    press();
+    move(150);
+    expect(thumb().getAttribute('aria-valuenow')).toBe('0.75');
+    act(() => rerender());
+    expect(thumb().getAttribute('aria-valuenow')).toBe('0.75');
   });
 
   it('commits once per drag however many moves it has, and never for a press that changed nothing', () => {

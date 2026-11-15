@@ -8,20 +8,20 @@ import { resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 import type { useScale, useSpan } from './useSpan';
 import { useLatestHandlers } from './useLatestHandlers';
+import { sameThumbValues } from './tagged';
 
 /** A custom `ThumbShape.render` may put interactive content inside the thumb,
  *  and capture would retarget pointerup and kill the click on it. */
 const NO_CAPTURE = { capture: false, escape: true } as const;
 
 const copy = <T extends Thumb>(thumbs: readonly T[]): T[] => thumbs.map(t => ({ ...t }));
-const sameValues = (a: readonly Thumb[], b: readonly Thumb[]) => a.length === b.length && a.every((t, i) => t.value === b[i].value);
 
 type Handlers<T extends Thumb> = ReturnType<typeof useLatestHandlers<T>>;
 
 /** End a drag that began at `start`: commit what it moved, or on a cancel put the preview back and say so. A drag
  *  that moved nothing does neither. */
 function finish<T extends Thumb>(buffer: T[] | null, start: readonly T[], commit: boolean, h: Handlers<T>): void {
-  if (!buffer || sameValues(buffer, start)) return;
+  if (!buffer || sameThumbValues(buffer, start)) return;
   if (commit) { h.onChange(copy(buffer)); return; }
   h.onInput(copy(start));
   h.onCancel();

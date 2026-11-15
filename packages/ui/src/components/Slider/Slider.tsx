@@ -4,13 +4,10 @@ import { QuantityText } from '../QuantityText';
 import { useFieldLocale } from '../../useFieldLocale';
 import { SliderBody } from './SliderBody';
 import { READOUT } from './stops';
-import { retagThumb, thumbDisplay, untagThumb, type PlainThumb } from './tagged';
+import { retagThumb, sameThumbValues, thumbDisplay, untagThumb, type PlainThumb } from './tagged';
 import type { SliderProps, Thumb } from './types';
 import { useSpan } from './useSpan';
 import { useEditDraft } from '../../useEditDraft';
-
-const sameThumbValues = (a: readonly Thumb<Quantity>[], b: readonly Thumb<Quantity>[]) =>
-  a.length === b.length && a.every((t, i) => Object.is(t.value, b[i].value));
 
 export type { BoundsCtx, SliderProps, SliderRegionCtx, SliderStop, Thumb, ThumbRenderCtx, ThumbShape, TrackCtx } from './types';
 

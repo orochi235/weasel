@@ -21,3 +21,9 @@ export function thumbDisplay(thumb: PlainThumb): Display | undefined {
   const given = thumb[GIVEN];
   return given === undefined ? undefined : displayOf(given);
 }
+
+/** Whether two thumb lists hold the same values, a tagged one by its amount: a consumer rebuilding its tagged values
+ *  each render still holds what it held. */
+export function sameThumbValues(a: readonly Thumb<Quantity>[], b: readonly Thumb<Quantity>[]): boolean {
+  return a.length === b.length && a.every((t, i) => Object.is(amount(t.value), amount(b[i]!.value)));
+}
