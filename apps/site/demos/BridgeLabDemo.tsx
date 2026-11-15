@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/labkit';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useMemo } from 'react';
-import s from './BridgeLabDemo.module.css';
+import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -36,7 +36,7 @@ function openPath(id: string, path: PolygonPath, color: string) {
 }
 
 /** The two paths the lab opens on, both selected, their facing ends apart. */
-export const BRIDGE_SEED = ['arc', 'hook'] as const;
+const BRIDGE_SEED = ['arc', 'hook'] as const;
 
 const createLabScene = () =>
   createScene<unknown, 'default', RectPose>({
@@ -58,7 +58,7 @@ function BridgeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selectionOptions = useMemo(() => ({ mode: 'multi' as const, initial: BRIDGE_SEED.map((id) => asNodeId(id)) }), []);
 
   return (
-    <div className={s.trial}>
+    <PathLabStage bar={<><ActionBar group="path" /><ActionBar group="anchors" /></>}>
       <TrialSceneCanvas
         features={FEATURES}
         defaultTools={['pen']}
@@ -67,11 +67,7 @@ function BridgeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         tune={tune}
         selectionOptions={selectionOptions}
       />
-      <div className={s.actions}>
-        <ActionBar group="path" />
-        <ActionBar group="anchors" />
-      </div>
-    </div>
+    </PathLabStage>
   );
 }
 
