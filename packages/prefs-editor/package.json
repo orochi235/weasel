@@ -40,7 +40,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "vite build && tsc -p tsconfig.build.json && node ../../scripts/dts-extensions.mjs dist",
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {

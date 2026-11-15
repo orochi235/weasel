@@ -15,11 +15,12 @@
 // Strategy: `npm pack` every published package, extract them into a
 // node_modules tree in a temp dir OUTSIDE the repo, then (a) bundle a consumer
 // with esbuild, (b) build an app with vite and weaselIcons (smoke-consumer-icons.mjs),
-// and (c) typecheck one with tsc. Outside the repo, neither the
+// (c) typecheck one with tsc, and (d) typecheck every public declaration on NodeNext and Bundler
+// resolution (smoke-consumer-types.mjs). Outside the repo, neither the
 // repo tsconfig paths nor the workspace symlinks are discoverable.
 
 import { build } from 'esbuild';
-import { mkdtemp, writeFile, readFile, mkdir, readdir } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +29,8 @@ import { existsSync } from 'node:fs';
 import { isShipped } from './check-declared-imports.mjs';
 import { SOURCE, importSpecifiers, importedNames, namedSpecifiers, packageOf } from './lib/imports.mjs';
 import { smokeIcons } from './smoke-consumer-icons.mjs';
+import { smokeDeclarations } from './smoke-consumer-types.mjs';
+import { packInto } from './lib/pack-tree.mjs';
 import { exitUnlessOwnInstall } from './lib/own-install.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -242,8 +245,6 @@ console.log(
 const workDir = await mkdtemp(join(tmpdir(), 'weasel-smoke-'));
 const tarballDir = join(workDir, 'tarballs');
 const nodeModules = join(workDir, 'node_modules');
-await mkdir(tarballDir, { recursive: true });
-await mkdir(nodeModules, { recursive: true });
 
 /**
  * Third-party runtime dependencies and peers **declared** by the packages being packed.
@@ -255,21 +256,8 @@ await mkdir(nodeModules, { recursive: true });
  */
 const thirdPartyDeps = new Set();
 
-for (const name of PACKAGES) {
-  const pkgDir = join(repoRoot, 'packages', name);
-  const out = execFileSync(
-    'npm',
-    ['pack', '--silent', '--pack-destination', tarballDir],
-    { cwd: pkgDir, encoding: 'utf8' },
-  );
-  const tarball = out.trim().split('\n').pop();
-  // Install under the package's REAL name, not its directory name.
-  const realName = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8')).name;
-  const dest = join(nodeModules, ...realName.split('/'));
-  await mkdir(dest, { recursive: true });
-  // --strip-components=1 drops npm's `package/` wrapper directory.
-  execFileSync('tar', ['-xzf', join(tarballDir, tarball), '-C', dest, '--strip-components=1']);
-  const manifest = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8'));
+const manifests = await packInto(repoRoot, PACKAGES, nodeModules, tarballDir);
+for (const manifest of manifests) {
   for (const dep of Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies })) {
     if (!dep.startsWith('@weasel-js/')) thirdPartyDeps.add(dep);
   }
@@ -564,3 +552,6 @@ try {
   );
 }
 console.log('[smoke] consumer typecheck OK — .d.ts cross-package types resolve and are identical.');
+
+// ── Phase 5: every public declaration on NodeNext and Bundler, library checking on ──
+await smokeDeclarations({ repoRoot, workDir, nodeModules, manifests, fail });
