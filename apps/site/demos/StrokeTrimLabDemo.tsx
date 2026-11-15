@@ -20,13 +20,14 @@ import {
   type RenderContext,
   type SceneTrialState,
   TrialSceneCanvas,
+  useTrialConfigChange,
   useTrialScene,
 } from '@weasel-js/labkit';
 import { dashForStrokeStyle } from '@weasel-js/paint';
 import { exportRegionsPdf } from '@weasel-js/pdf/export';
 import { exportRegionSvg } from '@weasel-js/svg';
 import { Button } from '@weasel-js/ui/components/Button';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import s from './StrokeTrimLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -141,18 +142,14 @@ function PdfExport({ scene }: { scene: ExportScene }) {
 }
 
 function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
-  const cfg = ctx.config;
-  const scene = useTrialScene(ctx, createLabScene(cfg));
-  const version = JSON.stringify(cfg);
-  // A layout effect, so the scene holds the new trims before the export pane's own effect reads it.
-  useLayoutEffect(() => {
-    // The trims follow from the config, which keeps its own undo; recording them too splits one change into six.
-    scene.untracked(() => {
+  const scene = useTrialScene(ctx, createLabScene(ctx.config));
+  // The strokes follow the panel, written inside its change's undo step.
+  useTrialConfigChange<Config>((cfg) => {
+    scene.batch('Stroke trim', () => {
       for (const shape of SHAPES) scene.update(asNodeId(shape.id), { data: dataOf(shape, cfg) });
     });
-    // `version` stands for `cfg`, whose identity changes on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, version]);
+  });
+  const version = JSON.stringify(ctx.config);
   return (
     <div className={s.trial}>
       <div className={s.canvas}>

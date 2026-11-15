@@ -5,7 +5,7 @@ import { renderWithIcons } from '../../testIcons';
 let finish!: () => void;
 vi.mock('@weasel-js/pdf/export', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@weasel-js/pdf/export')>()),
-  exportRegionsPdf: () => new Promise((resolve) => { finish = () => resolve({ blob: new Blob(['%PDF']) }); }),
+  exportRegionsPdf: () => new Promise((resolve) => { finish = () => resolve(new Blob(['%PDF'])); }),
 }));
 
 const { StrokeTrimLabDemo } = await import('../StrokeTrimLabDemo');
