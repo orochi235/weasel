@@ -167,7 +167,9 @@ export interface CanvasExtensionApi {
   /**
    * The `pickId` (`GroupDrawCommand.pickId`) of what the canvas last painted
    * at a point, CSS pixels from its surface's top-left; 0 where nothing that
-   * carries one painted, or before the first paint. It draws that frame again
+   * carries one painted. `null` when there is no frame to read: before the
+   * first paint, while the context is lost, or where a render worker gave no
+   * answer. It draws that frame again
    * as an id frame (`WeaselRenderer.renderIdsAsync`) culled to the one device
    * pixel, so it sees what custom shaders and effects paint, not their bounds.
    * `<SceneCanvas>` gives each node's paint `scenePickIds(scene).idOf(id)`.
@@ -175,20 +177,22 @@ export interface CanvasExtensionApi {
    * A 3D host (`@weasel-js/kernel3d`) draws with its consumer's renderer rather
    * than this one, so this sees none of what it draws; it picks by ray.
    */
-  pickAt(x: number, y: number, options?: CanvasIdReadOptions): Promise<number>;
+  pickAt(x: number, y: number, options?: CanvasIdReadOptions): Promise<number | null>;
   /**
    * The ids the canvas last painted over `rect`, CSS pixels from its surface's
-   * top-left, one per device pixel it touches: {@link pickAt} for an area. An
-   * empty buffer before the first paint or while the context is lost. Where a
-   * worker paints part of the canvas, it reads every canvas of the stack, and a
-   * pixel takes the id of the highest one that painted there.
+   * top-left, one per device pixel it touches: {@link pickAt} for an area.
+   * `null` when there is no frame to read, as for `pickAt`. Where a worker
+   * paints part of the canvas, it reads every canvas of the stack, and a pixel
+   * takes the id of the highest one that painted there; `null` when any of
+   * them has no ids to give, timed out or failed included.
    */
-  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer>;
+  readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer | null>;
   /**
    * {@link readIds} answered at once, for a pick that must answer inside the
-   * event that asked. `null` where the canvas reads an id frame back only
-   * asynchronously: where it paints with WebGPU, and where a worker paints part
-   * of it (`<SceneCanvas worker>`), whose ids are a round trip away.
+   * event that asked. `null` when there is no frame to read, and where the
+   * canvas reads an id frame back only asynchronously: where it paints with
+   * WebGPU, and where a worker paints part of it (`<SceneCanvas worker>`),
+   * whose ids are a round trip away.
    */
   readIdsSync(
     rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions,

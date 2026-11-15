@@ -34,6 +34,7 @@ export function workerInputs(args: {
 /** The props of `<SceneCanvas>` this reads. */
 interface WorkerSurfaceProps {
   worker?: (() => Worker) | undefined;
+  workerTimeout?: number | undefined;
   clock?: FollowedClock | undefined;
   alphaFor?: ((id: string) => number) | undefined;
   layers?: { scene?: unknown } | undefined;
@@ -50,9 +51,11 @@ export function useSceneWorkerSurface(
   const on = args.worker !== undefined;
   // A pre-built scene layer is the page's, and an empty slot has nothing to paint.
   const pageBuilt = args.sceneSlot === null || isCustomEntry(args.sceneSlot);
+  const timeout = props.workerTimeout;
   return useMemo<CanvasWorkerSurface | undefined>(() => (on && !pageBuilt ? {
     start: () => latest.current.worker!(),
     paints: isSceneLayer,
     inputs: () => workerInputs(latest.current),
-  } : undefined), [on, pageBuilt, latest]);
+    ...(timeout !== undefined ? { timeout } : {}),
+  } : undefined), [on, pageBuilt, latest, timeout]);
 }

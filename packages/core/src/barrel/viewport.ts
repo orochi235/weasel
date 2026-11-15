@@ -141,6 +141,7 @@ export { startSceneRenderWorker } from '../canvas/renderWorker/startSceneRenderW
 export type { FollowedClock, SceneRenderInputs, SceneRenderWorker } from '../canvas/renderWorker/startSceneRenderWorker';
 export type { WorkerAnimationHandle, WorkerAnimator } from '../canvas/renderWorker/workerAnimator';
 export type { WorkerCanvasHandle } from '../canvas/renderWorker/WorkerSceneView';
+export type { RenderWorkerFailure, RenderWorkerOptions, RenderWorkerStatus } from '../canvas/renderWorker/workerHealth';
 export type { SurfaceSizeProps } from '../canvas/useSurfaceSize';
 // `<DrawCanvas>` is the same detached surface with no scene behind it: a
 // command list painted onto a canvas of its own.

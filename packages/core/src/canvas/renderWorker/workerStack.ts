@@ -18,6 +18,8 @@ export interface CanvasWorkerSurface {
   start: () => Worker;
   /** Whether the worker paints layer `id`. */
   paints(id: string): boolean;
+  /** Milliseconds each worker's requests wait; see `RenderWorkerOptions`. Read when a worker starts. */
+  timeout?: number;
   /** Read once a frame. */
   inputs(): Omit<SceneRenderInputs<unknown, string, unknown>, 'view' | 'width' | 'height' | 'dpr' | 'layerOrder' | 'layerVisibility'>;
 }
@@ -99,14 +101,16 @@ export function paintWorkerRun(client: AnyRenderWorker, run: LayerRun, frame: St
 /**
  * The ids every canvas of the stack last painted over `rect`, topmost first: a pixel takes the
  * id of the highest canvas that painted one there. Worker canvases answer a round trip later.
+ * `null` when any canvas has no ids to give, since a pixel it would have named cannot be told
+ * from one where nothing was hit.
  */
 export async function readStackIds(
   surfaces: readonly StackSurface[],
   frames: PageFrames,
   rect: { x: number; y: number; width: number; height: number },
   options: CanvasIdReadOptions | undefined,
-): Promise<IdBuffer> {
-  const reads = surfaces.map((s, i): IdBuffer | Promise<IdBuffer> | null => {
+): Promise<IdBuffer | null> {
+  const reads = surfaces.map((s, i): IdBuffer | Promise<IdBuffer | null> | null => {
     if (s.by === 'worker') return s.client ? s.client.readIds(rect, options) : null;
     const last = frames.get(i);
     if (!last || last.renderer.isContextLost()) return null;
@@ -114,9 +118,9 @@ export async function readStackIds(
       rect, minAlpha: options?.minAlpha, exclude: options?.exclude,
     });
   });
-  const buffers = (await Promise.all(reads)).filter((b): b is IdBuffer => b !== null && b.width > 0 && b.height > 0);
-  const top = buffers.at(-1);
-  if (!top) return { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) };
+  const buffers = await Promise.all(reads);
+  if (buffers.length === 0 || buffers.some((b) => b === null)) return null;
+  const top = buffers.at(-1)!;
   const data = top.data.slice();
   for (let b = buffers.length - 2; b >= 0; b--) {
     const under = buffers[b]!;

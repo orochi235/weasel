@@ -1,9 +1,20 @@
-import { vi } from 'vitest';
+import { vi, type Mock } from 'vitest';
 import type { Scene } from '../../../core/scene/types';
 import type { FromWorker, ToWorker } from '../protocol';
 
+export interface FakeWorker {
+  worker: Worker;
+  posted: ToWorker[];
+  answer(data: FromWorker): void;
+  /** An uncaught error in the worker. */
+  fail(message?: string): void;
+  /** A message from the worker that could not be deserialized. */
+  garble(): void;
+  terminate: Mock<() => void>;
+}
+
 /** A worker that records what the page posts and answers when told. */
-export function fakeWorker() {
+export function fakeWorker(): FakeWorker {
   const posted: ToWorker[] = [];
   const listeners = new Map<string, ((e: unknown) => void)[]>();
   const worker = {
@@ -11,13 +22,11 @@ export function fakeWorker() {
     addEventListener: (type: string, fn: (e: unknown) => void) => {
       listeners.set(type, [...(listeners.get(type) ?? []), fn]);
     },
-    terminate: vi.fn(),
+    terminate: vi.fn<() => void>(),
   };
   const emit = (type: string, event: unknown) => { for (const fn of listeners.get(type) ?? []) fn(event); };
   const answer = (data: FromWorker) => emit('message', { data } as MessageEvent<FromWorker>);
-  /** An uncaught error in the worker. */
   const fail = (message = 'boom') => emit('error', { message } as ErrorEvent);
-  /** A message from the worker that could not be deserialized. */
   const garble = () => emit('messageerror', {} as MessageEvent);
   return { worker: worker as unknown as Worker, posted, answer, fail, garble, terminate: worker.terminate };
 }

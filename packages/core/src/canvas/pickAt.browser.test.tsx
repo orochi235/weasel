@@ -67,7 +67,7 @@ describe('pickAt on a real canvas', () => {
       scene, width: 100, height: 100, dpr: 1, ref: api, layers: { scene: { drawOne } },
     } as never)));
     await settle();
-    const node = async (x: number, y: number) => scenePickIds(scene).nodeOf(await api.current!.pickAt(x, y));
+    const node = async (x: number, y: number) => scenePickIds(scene).nodeOf((await api.current!.pickAt(x, y)) ?? 0);
     expect(await node(60, 40)).toBe(disc);
     expect(await node(10, 80)).toBe(under);
     // Inside the disc's bounds, outside its circle: the node under it.
@@ -105,7 +105,7 @@ describe("geometry.picking: 'pixels' on a real canvas", () => {
     const without = await api.current!.readIds({ x: 45, y: 40, width: 0, height: 0 }, {
       exclude: new Set([scenePickIds(scene).idOf(disc)]),
     });
-    expect(scenePickIds(scene).nodeOf(without.data[0])).toBe(under);
+    expect(scenePickIds(scene).nodeOf(without!.data[0]!)).toBe(under);
   });
 });
 

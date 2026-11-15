@@ -41,7 +41,7 @@ export function WorkerCanvasStack({ stack, width, height, className, style, top 
   return (
     <div ref={adopt} className={className} style={sized as CSSProperties} data-wzl-surface={fills ? 'fill' : ''} data-wzl-stack="">
       {stack.runs.slice(0, -1).map((run, i) => (
-        <canvas key={`${key}-${i}`} ref={stack.canvasRef(i)} data-wzl-run={run.by} />
+        <canvas key={`${key}-${stack.generation}-${i}`} ref={stack.canvasRef(i)} data-wzl-run={run.by} />
       ))}
       {top}
     </div>

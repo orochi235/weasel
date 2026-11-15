@@ -61,10 +61,13 @@ A host that is not React calls `startSceneRenderWorker(worker, canvas, inputs)` 
 | The frame's time: the page's frame time, or the `clock`'s position and rate | every frame |
 | That the page's frames are back after time nobody saw | the first frame after |
 | A copy of an SVG raster, or of a `bitmapSrc` bitmap, the worker asked for, transferred | on request |
+| A ping | when a request has gone unanswered for the timeout |
 
 | Crosses worker → page | |
 |---|---|
-| `drawn` | after each frame; the page sends no frame while one is in flight |
+| `ready` | once it holds the canvas and a context on it |
+| `drawn` | after each frame, naming it; the page sends no frame while one is in flight |
+| `pong` | for each ping |
 | `dirty` | an image or glyph landed in the worker, its context came back, or its animator has something running |
 | an image request | for an SVG source or a `bitmapSrc` name |
 | a snapshot | on request |
@@ -145,6 +148,31 @@ posted) terminates it, stops watching the scene and rethrows its own error, so a
 error boundary sees what went wrong. A canvas whose transfer went through cannot be handed over again. A canvas can be transferred once, so a
 StrictMode remount, which runs cleanup and setup back to back on one element, keeps the client:
 cleanup releases it a task later and the setup in between takes it back.
+
+## Failure and recovery
+
+Every request the page makes of the worker — a frame, a snapshot, an id read — waits at most the
+timeout (`workerTimeout`, `startSceneRenderWorker`'s `options.timeout`; 10 s by default), then
+settles as missing: a snapshot as `null`, an id read as `null`, a frame as lost, so the next one
+carries everything. A timeout also sends a ping, which a busy worker answers once it is free.
+
+| What happens | Fatal | What waits | `status` |
+|---|---|---|---|
+| An error before the worker's first message: its module never ran | yes | answered as missing | `failed`, `startup` |
+| The worker cannot open a context on the canvas | yes | answered as missing | `failed`, `init` |
+| A ping goes unanswered for the timeout too | yes | answered as missing | `failed`, `unresponsive` |
+| An uncaught error after it started, or a message the page cannot read | no | answered as missing, since the error may have eaten an answer; later frames go | `running` |
+| An error the worker caught and reported (a paint, an animation that is not registered) | no | answered by the worker | `running` |
+
+A fatal failure terminates the worker and stops watching the scene, and the client answers
+everything after it as missing. A canvas can be handed to a worker only once, so recovery means a
+new canvas: `workerRef.current.restart()` (and `ref.worker.restart()` on `<SceneCanvas>`) mounts
+a new one and calls `worker` again; a host that is not React makes a new canvas and calls
+`startSceneRenderWorker` again. The handle's `status` and `subscribeStatus` follow the workers
+across restarts.
+
+An id read with no answer is `null`, never an empty buffer: `pickAt` answers `null` rather than
+0, so "nothing was hit" and "nothing could be read" stay apart.
 
 ## `<SceneCanvas worker>`
 

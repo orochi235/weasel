@@ -85,6 +85,7 @@ export interface PagePaintedView<TData, TLayer extends string, TPose> {
   backend?: CanvasBackend;
   worker?: undefined;
   workerRef?: undefined;
+  workerTimeout?: undefined;
   clock?: undefined;
 }
 
@@ -99,8 +100,12 @@ export interface WorkerPaintedView {
    *  and the page plays its programs through `workerRef`, so `animator` does not apply. */
   worker: () => Worker;
   /** Reads what the worker's canvas shows, in place of `toBlob` on the canvas, and reaches the
-   *  worker's animator, which plays the programs the worker module registered by key. */
+   *  worker's animator, which plays the programs the worker module registered by key. Its
+   *  `status` says when the worker has failed, and `restart` starts a new one. */
   workerRef?: Ref<WorkerCanvasHandle>;
+  /** Milliseconds a frame, snapshot or id read waits for the worker before it settles as missing;
+   *  a worker silent for twice this fails as `unresponsive`. Default 10 000; `Infinity` waits. */
+  workerTimeout?: number;
   /** A page clock the worker's animator follows: its pause, rate and seeks reach the
    *  animations. Without one they run on the page's frame times. */
   clock?: FollowedClock;

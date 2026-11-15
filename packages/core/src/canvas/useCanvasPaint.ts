@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { viewToMat3, type DrawCommand, type IdBuffer, type WeaselRenderer } from '@weasel-js/renderer';
+import { viewToMat3, type DrawCommand, type WeaselRenderer } from '@weasel-js/renderer';
 import type { IdReaders } from './useCanvasHandle';
 import type { View } from 'core/viewport/view';
 import {
@@ -65,8 +65,6 @@ export interface PaintStack {
   inputs: CanvasWorkerSurface['inputs'];
 }
 const NO_STACK = { current: null };
-
-const NO_IDS: IdBuffer = Object.freeze({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
 
 type IdRect = { x: number; y: number; width: number; height: number };
 
@@ -178,11 +176,11 @@ export function useCanvasPaint(
     return {
       readIds: (rect, options) => {
         const last = live();
-        return last ? last.renderer.renderIdsAsync(...args(last, rect, options)) : Promise.resolve(NO_IDS);
+        return last ? last.renderer.renderIdsAsync(...args(last, rect, options)) : Promise.resolve(null);
       },
       readIdsSync: (rect, options) => {
         const last = live();
-        if (!last) return NO_IDS;
+        if (!last) return null;
         return last.renderer.backend === 'webgpu' ? null : last.renderer.renderIds(...args(last, rect, options));
       },
     };

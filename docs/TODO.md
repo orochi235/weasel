@@ -329,19 +329,6 @@ Owner tags, after the priority (2026-10-26):
   private protocol, and browser tests compare direct/headless output for registered clips/derivations,
   nondefault supported composition and quantization, with clear errors for unsupported scenes.
 
-- **(P2) [agent] Bound worker requests and expose worker failure after startup.**
-  `watchStartup` drains requests only for errors before the first message; later errors only warn
-  (`packages/core/src/canvas/renderWorker/startSceneRenderWorker.ts`). `createRequests` has no
-  timeout/cancellation, and a lost frame acknowledgement leaves `inFlight` true. Reproduced with a
-  worker that first answers, then errors without answering a pending snapshot/frame: the snapshot
-  stays pending and further `sync()` sends no frame. An ordinary error may be recoverable, so define
-  fatal versus recoverable failure and a bounded watchdog rather than assuming every error kills a worker.
-  Expose status/recovery to the host; restarting needs a new transferred canvas, not retransferring
-  the old one. Treat an empty ID buffer as missing data rather than evidence that nothing was hit.
-  Closes when pending snapshot/ID/frame requests terminate predictably on failure or timeout,
-  recoverable errors allow later frames, fatal failures reach callers and release owned work, and
-  tests cover post-start errors, an unresponsive worker, message errors, disposal and restart.
-
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor

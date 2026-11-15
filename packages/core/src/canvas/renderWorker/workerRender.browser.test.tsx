@@ -197,7 +197,7 @@ describe('a scene painted by a worker a host drives itself', () => {
       for (let i = 0; i < 300; i++) {
         client.sync();
         const read = await client.readIds({ x, y, width: 0, height: 0 });
-        last = ids.nodeOf(read.data[0] ?? 0);
+        last = read ? ids.nodeOf(read.data[0] ?? 0) : null;
         if (last === want) return last;
         await frame();
       }
