@@ -13,11 +13,9 @@ import {
   type Stroke,
   boundsOfPath,
   composesFrames,
-  composeWorldPose,
   definesFrame,
   derivedDepOf,
   documentOf,
-  documentPose,
   embedWeaselMetadataInSvg,
   inheritedPaintIn,
   withInheritedPaint,
@@ -34,6 +32,7 @@ import {
   shapeGeneratorOf,
   unionAABB,
   type ShapeGenerator,
+  worldPoses,
 } from '@weasel-js/core';
 import {
   serializeSvg,
@@ -173,29 +172,12 @@ export interface SceneToSvgOptions {
 type DrawScene<TLayer extends string> = Scene<WeaselDrawData, TLayer, WeaselDrawPose>;
 
 /** The pose every export reader lowers a node at: the document pose (derived
- *  where the node derives one, never a gesture's override), composed to world
- *  when the scene's composition makes it local. */
+ *  where the node derives one, never a gesture's override), composed to world. */
 function poseOfIn<TLayer extends string>(
   scene: DrawScene<TLayer>,
 ): (id: string) => WeaselDrawPose | undefined {
-  const stored = (id: string) => {
-    const node = scene.get(id as never);
-    return node === undefined ? undefined : documentPose(scene, node);
-  };
-  if (!composesFrames(scene.composition)) return stored;
-  const adapter = {
-    getPose: (id: string) => stored(id)!,
-    getParent: (id: string) => {
-      const parent = scene.get(id as never)?.parent;
-      return parent == null ? null : String(parent);
-    },
-    definesFrame: (id: string) => {
-      const node = scene.get(id as never);
-      return node === undefined || definesFrame(node);
-    },
-  };
-  return (id) =>
-    stored(id) === undefined ? undefined : composeWorldPose(adapter, id, scene.composition.compose);
+  const world = worldPoses(scene, 'document');
+  return (id) => (scene.get(id as never) === undefined ? undefined : world(id as never));
 }
 
 /** The `SceneSource` `sceneToSvgNodes` walks. Its roots are the scene's, the
