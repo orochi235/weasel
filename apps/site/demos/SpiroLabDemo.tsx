@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, type RectPose, solid, drawPreset } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, createScene, type RectPose, solid, drawPreset, pathNode } from '@weasel-js/core';
 import { SPIRO_KINDS, type SpiroContour, type SpiroKind } from '@weasel-js/geom';
 import { spiroNodeData, spiroPreset, useSpiroTool } from '@weasel-js/path-tools';
 import {
@@ -32,19 +32,11 @@ const OPENING = { id: SEEDED_SPIRO };
 
 function spiroNode(id: string, contour: SpiroContour, color: string) {
   const { path, representation } = spiroNodeData([contour]);
-  const { x, y, width, height } = boundsOfPath(path);
-  return {
-    id: asNodeId(id),
-    kind: 'mark' as const,
-    layer: 'default' as const,
-    pose: { x, y, width, height },
-    data: {
-      path,
-      representation,
-      fill: contour.closed ? { paint: solid(color) } : null,
-      stroke: { paint: solid(color), width: 2 },
-    },
-  };
+  return pathNode(id, path, {
+    representation,
+    fill: contour.closed ? { paint: solid(color) } : null,
+    stroke: { paint: solid(color), width: 2 },
+  });
 }
 
 const createLabScene = () =>

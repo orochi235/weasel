@@ -138,6 +138,7 @@ export {
   PATH_SNAP_LABELS,
 } from '../domains/paths';
 export { hasEditablePath } from '../domains/paths/editablePath';
+export { pathNode, type PathNodePlacement, type PathNodeSpec } from '../domains/paths/pathNode';
 export type {
   Path,
   PolygonPath,

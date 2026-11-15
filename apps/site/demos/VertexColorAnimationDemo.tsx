@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  asNodeId,
-  boundsOfPath,
-  pathFromD,
-  SceneCanvas,
-  strokeOf,
-  useScene,
-  type Path,
-  type Stroke,
+  asNodeId, SceneCanvas, strokeOf, useScene, type Path, type Stroke, pathNode,
 } from '@weasel-js/core';
 import {
   cycleVertexColors,
@@ -33,15 +26,7 @@ type WaveData = { path: Path; stroke: Stroke & { vertexColors: number[] } };
 function wave(id: string, y: number) {
   let d = `M40 ${y}`;
   for (let i = 1; i < ANCHORS; i++) d += ` Q${10 + 60 * i} ${y + (i % 2 ? -40 : 40)} ${40 + 60 * i} ${y}`;
-  const path = pathFromD(d);
-  const { x, y: top, width, height } = boundsOfPath(path);
-  return {
-    kind: 'mark' as const,
-    id: asNodeId(id),
-    layer: 'default' as const,
-    pose: { x, y: top, width, height },
-    data: { path, stroke: { ...strokeOf('#ffffff', 10), vertexColors: RAINBOW } },
-  };
+  return pathNode(id, d, { stroke: { ...strokeOf('#ffffff', 10), vertexColors: RAINBOW } });
 }
 
 export function VertexColorAnimationDemo() {

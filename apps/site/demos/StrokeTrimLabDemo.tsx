@@ -1,8 +1,8 @@
 import {
   asNodeId,
-  boundsOfPath,
   createScene,
   pathFromD,
+  pathNode,
   rectPath,
   solid,
   type ExportScene,
@@ -98,13 +98,7 @@ const dataOf = (shape: Shape, cfg: Config): Data => ({
 const createLabScene = (cfg: Config) => () =>
   createScene<Data, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
-    initial: SHAPES.map((shape) => ({
-      id: asNodeId(shape.id),
-      kind: 'mark' as const,
-      layer: 'default' as const,
-      pose: shape.pose ?? boundsOfPath(shape.path),
-      data: dataOf(shape, cfg),
-    })),
+    initial: SHAPES.map((shape) => pathNode(shape.id, shape.path, dataOf(shape, cfg), shape.pose ? { pose: shape.pose } : {})),
   });
 
 /** The scene as the SVG export writes it, drawn by the browser's own SVG renderer. */

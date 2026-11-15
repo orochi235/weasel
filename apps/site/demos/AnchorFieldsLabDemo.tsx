@@ -1,11 +1,5 @@
 import {
-  asNodeId,
-  boundsOfPath,
-  createScene,
-  pathFromD,
-  type RectPose,
-  solid,
-  useSelection, movePreset, pathsPreset, pickPreset,
+  asNodeId, createScene, type RectPose, solid, useSelection, movePreset, pathsPreset, pickPreset, pathNode,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
@@ -38,17 +32,10 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 /** A leaf: two anchors, joined by a curve either side. */
 const LEAF = 'M100 200 C140 110 260 90 340 120 C300 190 200 240 100 200 Z';
 
-const createLabScene = () => {
-  const path = pathFromD(LEAF);
-  const { x, y, width, height } = boundsOfPath(path);
-  return createScene<unknown, 'default', RectPose>({
-    systemLayers: [{ id: 'default' }],
-    initial: [{
-      kind: 'mark', id: asNodeId('leaf'), layer: 'default', pose: { x, y, width, height },
-      data: { path, fill: { paint: solid('#a8d5a2') }, stroke: { paint: solid('#3f7a3a'), width: 2 } },
-    }],
-  });
-};
+const createLabScene = () => createScene<unknown, 'default', RectPose>({
+  systemLayers: [{ id: 'default' }],
+  initial: [pathNode('leaf', LEAF, { fill: { paint: solid('#a8d5a2') }, stroke: { paint: solid('#3f7a3a'), width: 2 } })],
+});
 
 /** Opens in path edit with both anchors selected, so X and Y differ between them and read Mixed. */
 const OPENING = { id: 'leaf', anchors: [0, 1] };

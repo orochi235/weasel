@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, pathFromD, type RectPose, solid, useLatest, drawPreset } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, createScene, type RectPose, solid, useLatest, drawPreset, pathNode } from '@weasel-js/core';
 import { usePathEditMode, sandPreset, useSandTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
@@ -56,27 +56,17 @@ function cogD(cx: number, cy: number): string {
 
 export const SEEDED_PATH_ID = 'scribble';
 
-const pathNode = (id: string, d: string, fill: string | null, stroke = { color: '#1a130d', width: 2 }) => {
-  const path = pathFromD(d);
-  return {
-    id: asNodeId(id),
-    kind: 'mark' as const,
-    layer: 'default' as const,
-    pose: boundsOfPath(path),
-    data: {
-      path,
-      ...(fill ? { fill: { paint: solid(fill) } } : {}),
-      stroke: { paint: solid(stroke.color), width: stroke.width },
-    },
-  };
-};
+const sandNode = (id: string, d: string, fill: string | null, stroke = { color: '#1a130d', width: 2 }) => pathNode(id, d, {
+  ...(fill ? { fill: { paint: solid(fill) } } : {}),
+  stroke: { paint: solid(stroke.color), width: stroke.width },
+});
 
 const createLabScene = () =>
   createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      pathNode(SEEDED_PATH_ID, scribbleD(), null, { color: '#d9480f', width: 3 }),
-      pathNode('cog', cogD(520, 340), '#e0a458'),
+      sandNode(SEEDED_PATH_ID, scribbleD(), null, { color: '#d9480f', width: 3 }),
+      sandNode('cog', cogD(520, 340), '#e0a458'),
     ],
   });
 

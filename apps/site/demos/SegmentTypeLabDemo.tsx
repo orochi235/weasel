@@ -1,13 +1,5 @@
 import {
-  ANCHORS_GROUP,
-  type ActionTunings,
-  asNodeId,
-  boundsOfPath,
-  createScene,
-  pathFromD,
-  type RectPose,
-  solid,
-  useSelection, movePreset, pathsPreset, pickPreset,
+  ANCHORS_GROUP, type ActionTunings, asNodeId, createScene, type RectPose, solid, useSelection, movePreset, pathsPreset, pickPreset, pathNode,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
@@ -40,17 +32,10 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 /** Two straight sides, a curved shoulder, and a straight closing base. */
 const TAB = 'M80 240 L80 100 L220 100 C290 100 330 160 330 240 Z';
 
-const createLabScene = () => {
-  const path = pathFromD(TAB);
-  const { x, y, width, height } = boundsOfPath(path);
-  return createScene<unknown, 'default', RectPose>({
-    systemLayers: [{ id: 'default' }],
-    initial: [{
-      kind: 'mark', id: asNodeId('tab'), layer: 'default', pose: { x, y, width, height },
-      data: { path, fill: { paint: solid('#9cc5e8') }, stroke: { paint: solid('#2d5f8a'), width: 2 } },
-    }],
-  });
-};
+const createLabScene = () => createScene<unknown, 'default', RectPose>({
+  systemLayers: [{ id: 'default' }],
+  initial: [pathNode('tab', TAB, { fill: { paint: solid('#9cc5e8') }, stroke: { paint: solid('#2d5f8a'), width: 2 } })],
+});
 
 const FEATURES = [pickPreset, movePreset, pathsPreset, segmentTypePreset] as const;
 

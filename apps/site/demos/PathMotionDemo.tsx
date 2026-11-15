@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  SceneCanvas, asNodeId, boundsOfPath, easeInOutCubic, pathFromD, pathMotion, solid, tweenPose, useScene,
-  useSceneAdapter, type RectPose,
+  SceneCanvas, asNodeId, easeInOutCubic, pathFromD, pathMotion, solid, tweenPose, useScene, useSceneAdapter, type RectPose, pathNode,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Fill, Path, Stroke } from '@weasel-js/core';
@@ -19,7 +18,7 @@ export function PathMotionDemo() {
   const scene = useScene<Data, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: useMemo(() => [
-      { id: asNodeId('track'), kind: 'mark' as const, layer: 'main' as const, pose: boundsOfPath(TRACK), data: { path: TRACK, stroke: { paint: solid('#9aa7b4'), width: 2 } } },
+      pathNode('track', TRACK, { stroke: { paint: solid('#9aa7b4'), width: 2 } }, { layer: 'main' }),
       { id: RIDER, kind: 'mark' as const, layer: 'main' as const, pose: { x: 30, y: 230, width: 40, height: 20, rotation: 0 }, data: { shape: 'rect', fill: { paint: solid('#d4774f') } } },
     ], []),
   });

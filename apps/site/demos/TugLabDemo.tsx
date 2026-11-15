@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, pathFromD, type RectPose, solid, useLatest, drawPreset } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, createScene, type RectPose, solid, useLatest, drawPreset, pathNode } from '@weasel-js/core';
 import { usePathEditMode, tugPreset, useTugTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
@@ -31,21 +31,12 @@ const config = f.schema({
 type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
 
-const pathNode = (id: PathId) => {
-  const path = pathFromD(PATHS[id].d);
-  return {
-    id: asNodeId(id),
-    kind: 'mark' as const,
-    layer: 'default' as const,
-    pose: boundsOfPath(path),
-    data: { path, stroke: { paint: solid(PATHS[id].color), width: 3 } },
-  };
-};
+const tugNode = (id: PathId) => pathNode(id, PATHS[id].d, { stroke: { paint: solid(PATHS[id].color), width: 3 } });
 
 const createLabScene = () =>
   createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
-    initial: (Object.keys(PATHS) as PathId[]).map(pathNode),
+    initial: (Object.keys(PATHS) as PathId[]).map(tugNode),
   });
 
 function TugTrial({ ctx }: { ctx: RenderContext<State, Config> }) {

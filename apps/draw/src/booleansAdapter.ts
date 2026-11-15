@@ -1,11 +1,10 @@
 import {
   asNodeId,
   type BooleansAdapter,
-  boundsOfPath,
   defaultCommitAdapter,
-  type NodeId,
   type Path,
   pathInWorld,
+  pathNode,
   type PathPaint,
   pathPaintOf,
   type SelectionApi,
@@ -14,7 +13,7 @@ import {
   textBoxOf,
   withInheritedPaint,
 } from '@weasel-js/core';
-import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer } from './drawDocument';
 
 /** A text leaf as the kit's outline extraction reads it, in the box its padding insets, where it is painted. */
 export function textSourceOf(scene: DrawScene, id: string): TextNodeSource | undefined {
@@ -56,29 +55,18 @@ export function drawBooleansAdapter(
       return order.indexOf(asNodeId(x)) - order.indexOf(asNodeId(y));
     },
     createPathNode: (path, _op, sourceId, paint) => {
-      // Mint convention: pose = boundsOfPath(path); geometry lives in data.path.
       // The result continues the source it stands in for: that node's paint, and
       // whatever else it carried.
       const source = scene.get(sourceId);
       const template = source?.data;
-      const b = boundsOfPath(path);
-      const id = scene.mintId();
-      const node: { id: string; kind: 'mark'; layer: WeaselDrawLayer; pose: WeaselDrawPose; data: WeaselDrawData; parent: NodeId | null } = {
-        id,
-        kind: 'mark',
-        layer: 'default',
-        pose: { x: b.x, y: b.y, width: b.width, height: b.height },
-        data: {
-          ...carriedData(template),
-          path,
-          ...(paint ?? {
-            ...(template?.fill !== undefined ? { fill: template.fill } : {}),
-            ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
-          }),
-        },
-        parent: source?.parent ?? null,
+      const data: WeaselDrawData = {
+        ...carriedData(template),
+        ...(paint ?? {
+          ...(template?.fill !== undefined ? { fill: template.fill } : {}),
+          ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
+        }),
       };
-      return node;
+      return pathNode<WeaselDrawData, WeaselDrawLayer>(scene.mintId(), path, data, { parent: source?.parent ?? null });
     },
     applyOps: (ops, label) => {
       scene.applyBatch(ops, label ?? 'Booleans', a);

@@ -1,32 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  SceneCanvas,
-  WeaselProvider,
-  asNodeId,
-  boundsOfPath,
-  hexToRgba,
-  pathFromD,
-  polygonFromPoints,
-  polylineFromPoints,
-  pressureToWidth,
-  regularPolygonPath,
-  rgbaToHex,
-  solid,
-  strokeOf,
-  useActionsRegistry,
-  vertexHalfWidths,
-  useScene,
-  useSelection,
-  type InsertNodeFactories,
-  type InvokeParams,
-  type Paint,
-  type GradientPaint,
-  type Path,
-  type Scene,
-  type Stroke,
-  type ToolsApi,
-  type View,
-  type Fill, editPreset, pathsPreset, pickPreset,
+  SceneCanvas, WeaselProvider, asNodeId, boundsOfPath, hexToRgba, pathFromD, polygonFromPoints, polylineFromPoints, pressureToWidth, regularPolygonPath, rgbaToHex, solid, strokeOf, useActionsRegistry, vertexHalfWidths, useScene, useSelection, type InsertNodeFactories, type InvokeParams, type Paint, type GradientPaint, type Path, type Scene, type Stroke, type ToolsApi, type View, type Fill, editPreset, pathsPreset, pickPreset, pathNode,
 } from '@weasel-js/core';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
@@ -93,14 +67,7 @@ const taperWidths = (center: number): number[] => [4, center, center, center, 4]
 /** A leaf whose pose is its path's bounds — the shape the kit's own tools
  *  produce, so the default painter draws it and `editAnchors` edits it. */
 function leaf(id: ReturnType<typeof asNodeId>, path: Path, data: Omit<PaintedData, 'path'>) {
-  const { x, y, width, height } = boundsOfPath(path);
-  return {
-    kind: 'mark' as const,
-    id,
-    layer: 'default' as LayerId,
-    pose: { x, y, width, height },
-    data: { path, ...data },
-  };
+  return pathNode<Omit<PaintedData, 'path'>, LayerId>(id, path, data, { layer: 'default' });
 }
 
 export function StrokeAndFillDemo() {

@@ -1,19 +1,6 @@
 import { useCallback } from 'react';
 import {
-  asNodeId,
-  boundsOfPath,
-  circlePath,
-  pathDivide,
-  pathExclude,
-  pathIntersect,
-  pathSubtract,
-  pathUnion,
-  polygonFromPoints,
-  SceneCanvas,
-  solid,
-  useScene,
-  useSelection,
-  WeaselProvider, pathfinderPreset, pickPreset,
+  circlePath, pathDivide, pathExclude, pathIntersect, pathSubtract, pathUnion, polygonFromPoints, SceneCanvas, solid, useScene, useSelection, WeaselProvider, pathfinderPreset, pickPreset, pathNode,
 } from '@weasel-js/core';
 import type { Fill, PolygonPath, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
@@ -42,13 +29,7 @@ type Data = { path: PolygonPath; fill: Fill };
 
 /** A path leaf as the shape tools mint one: the path in `data.path`, drawn through the box its pose
  *  describes, so the kit paints it and the booleans adapter `<SceneCanvas>` publishes works on it. */
-const pathLeaf = ({ id, path, color }: PanelItem) => ({
-  kind: 'mark' as const,
-  layer: 'default' as const,
-  id: asNodeId(id),
-  pose: boundsOfPath(path) as RectPose,
-  data: { path, fill: { paint: solid(color) } },
-});
+const pathLeaf = ({ id, path, color }: PanelItem) => pathNode(id, path, { fill: { paint: solid(color) } });
 
 const INPUTS = [
   { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },

@@ -1,4 +1,4 @@
-import { ANCHORS_GROUP, PATH_GROUP, type ActionTunings, asNodeId, boundsOfPath, createScene, PathBuilder, type PolygonPath, type RectPose, solid, drawPreset } from '@weasel-js/core';
+import { ANCHORS_GROUP, PATH_GROUP, type ActionTunings, asNodeId, createScene, PathBuilder, type PolygonPath, type RectPose, solid, drawPreset, pathNode } from '@weasel-js/core';
 import { bridgePreset, DEFAULT_BRIDGE_TENSION } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -26,13 +26,7 @@ type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
 
 function openPath(id: string, path: PolygonPath, color: string) {
-  return {
-    id: asNodeId(id),
-    kind: 'mark' as const,
-    layer: 'default' as const,
-    pose: boundsOfPath(path),
-    data: { path, stroke: { paint: solid(color), width: 3 } },
-  };
+  return pathNode(id, path, { stroke: { paint: solid(color), width: 3 } });
 }
 
 /** The two paths the lab opens on, both selected, their facing ends apart. */

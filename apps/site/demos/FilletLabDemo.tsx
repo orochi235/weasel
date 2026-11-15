@@ -1,13 +1,5 @@
 import {
-  type ActionTunings,
-  asNodeId,
-  boundsOfPath,
-  createScene,
-  pathFromD,
-  type PolygonPath,
-  type RectPose,
-  solid,
-  withCorner, drawPreset,
+  type ActionTunings, asNodeId, createScene, pathFromD, type PolygonPath, type RectPose, solid, withCorner, drawPreset, pathNode,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
@@ -38,16 +30,8 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 const FIRST = 'tile';
 const FIRST_ANCHORS: ReadonlySet<number> = new Set([2]);
 
-function pathNode(id: string, path: PolygonPath, color: string, vertexColors?: number[]) {
-  const { x, y, width, height } = boundsOfPath(path);
-  return {
-    kind: 'mark' as const,
-    id: asNodeId(id),
-    layer: 'default' as const,
-    pose: { x, y, width, height },
-    data: { path, fill: { paint: solid(color) }, ...(vertexColors ? { vertexColors } : {}) },
-  };
-}
+const filledNode = (id: string, path: PolygonPath, color: string, vertexColors?: number[]) =>
+  pathNode(id, path, { fill: { paint: solid(color) }, ...(vertexColors ? { vertexColors } : {}) });
 
 const tile = [
   [1, { shape: 'round', radius: 24 }],
@@ -59,15 +43,15 @@ const createLabScene = () =>
   createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      pathNode(FIRST, tile.reduce<PolygonPath>(
+      filledNode(FIRST, tile.reduce<PolygonPath>(
         (p, [i, spec]) => withCorner(p, i, spec),
         pathFromD('M60 60 L220 60 L220 140 L160 200 L60 200 Z'),
       ), '#7fb069'),
-      pathNode('petal', withCorner(
+      filledNode('petal', withCorner(
         pathFromD('M280 60 C340 40 400 80 420 120 L400 220 C340 230 300 200 280 160 Z'),
         1, { shape: 'squircle', radius: 26 },
       ), '#d4a574'),
-      pathNode('prism', withCorner(
+      filledNode('prism', withCorner(
         pathFromD('M120 260 L260 260 L190 380 Z'),
         2, { shape: 'round', radius: 30 },
       ), '#ffffff', [1, 0.3, 0.3, 1, 0.3, 0.6, 1, 1, 0.4, 0.9, 0.4, 1]),

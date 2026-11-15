@@ -3,7 +3,7 @@
  * selection's warp, the control panel's settings reaching a warp already
  * held, and the shapes they open on.
  */
-import { asNodeId, boundsOfPath, type PolygonPath, type RectPose, solid, useActionsRegistry } from '@weasel-js/core';
+import { type PolygonPath, solid, useActionsRegistry, pathNode } from '@weasel-js/core';
 import { type WarpKind, type WarpSettings } from '@weasel-js/path-tools';
 import { type TrialContribution, useTrialConfigChange } from '@weasel-js/labkit';
 import { icon } from '../icons.gen';
@@ -33,12 +33,5 @@ export const expandWarpCommand: TrialContribution = {
 
 /** A leaf storing `path` on `data.path`, posed at the path's own box. */
 export function pathLeaf(id: string, path: PolygonPath, color: string, extra: Record<string, unknown> = {}) {
-  const b = boundsOfPath(path);
-  return {
-    id: asNodeId(id),
-    kind: 'mark' as const,
-    layer: 'default' as const,
-    pose: { x: b.x, y: b.y, width: b.width, height: b.height } as RectPose,
-    data: { path, fill: { paint: solid(color) }, ...extra },
-  };
+  return pathNode(id, path, { fill: { paint: solid(color) }, ...extra });
 }

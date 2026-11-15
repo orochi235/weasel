@@ -1,6 +1,5 @@
 import {
-  asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, solid, type NodeId, type RectPose,
-  drawPreset,
+  asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, solid, type NodeId, type RectPose, drawPreset, pathNode,
 } from '@weasel-js/core';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas,
@@ -71,10 +70,7 @@ const inGroup = (box: RectPose): RectPose => ({ ...box, x: box.x - CENTER.x, y: 
 
 function pathLeaf(id: string, d: string, color: string) {
   const path = pathFromD(d);
-  return {
-    id: asNodeId(id), kind: 'mark' as const, layer: 'default' as const, parent: asNodeId(GROUP_ID),
-    pose: inGroup(boundsOfPath(path)), data: { path, fill: { paint: solid(color) } },
-  };
+  return pathNode(id, path, { fill: { paint: solid(color) } }, { parent: GROUP_ID, pose: inGroup(boundsOfPath(path)) });
 }
 
 function createLabScene() {

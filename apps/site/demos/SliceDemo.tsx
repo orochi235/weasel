@@ -1,16 +1,6 @@
 import { useState } from 'react';
 import {
-  asNodeId,
-  boundsOfPath,
-  ellipsePath,
-  rectPath,
-  SceneCanvas,
-  solid,
-  starPath,
-  useScene,
-  useSelection,
-  type Path,
-  type ToolsApi, editPreset, movePreset, pickPreset,
+  ellipsePath, rectPath, SceneCanvas, solid, starPath, useScene, useSelection, type Path, type ToolsApi, editPreset, movePreset, pickPreset, pathNode,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';
@@ -18,16 +8,8 @@ import { DemoStage } from './DemoStage';
 const W = 480, H = 320;
 
 const leaf = (id: string, path: Path, color: string) => {
-  const { x, y, width, height } = boundsOfPath(path);
-  return {
-    id: asNodeId(id),
-    kind: 'mark' as const,
-    layer: 'default' as const,
-    parent: null,
-    pose: { x, y, width, height },
-    // Stroked, so the edge a cut leaves shows between two pieces of one color.
-    data: { path, fill: { paint: solid(color) }, stroke: { paint: solid('#1a130d'), width: 1.5 } },
-  };
+  // Stroked, so the edge a cut leaves shows between two pieces of one color.
+  return pathNode(id, path, { fill: { paint: solid(color) }, stroke: { paint: solid('#1a130d'), width: 1.5 } });
 };
 
 const INITIAL = [

@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, ellipsePath, polygonFromPoints, type PolygonPath, type RectPose, solid, useLatest, drawPreset } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, createScene, ellipsePath, polygonFromPoints, type PolygonPath, type RectPose, solid, useLatest, drawPreset, pathNode } from '@weasel-js/core';
 import { kneadPreset, useKneadTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -24,20 +24,15 @@ const config = f.schema({
 type Config = ConfigOf<typeof config>;
 type State = SceneTrialState<unknown, 'default', RectPose>;
 
-const pathNode = (id: string, path: PolygonPath, color: string) => ({
-  id: asNodeId(id),
-  kind: 'mark' as const,
-  layer: 'default' as const,
-  pose: boundsOfPath(path),
-  data: { path, fill: { paint: solid(color) }, stroke: { paint: solid('#2b2f36'), width: 2 } },
-});
+const kneadNode = (id: string, path: PolygonPath, color: string) =>
+  pathNode(id, path, { fill: { paint: solid(color) }, stroke: { paint: solid('#2b2f36'), width: 2 } });
 
 const createLabScene = () => {
   const scene = createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      pathNode('square', polygonFromPoints([{ x: 80, y: 80 }, { x: 260, y: 80 }, { x: 260, y: 260 }, { x: 80, y: 260 }]), '#d4a574'),
-      pathNode('circle', ellipsePath({ x: 330, y: 90, width: 170, height: 170 }), '#7fb069'),
+      kneadNode('square', polygonFromPoints([{ x: 80, y: 80 }, { x: 260, y: 80 }, { x: 260, y: 260 }, { x: 80, y: 260 }]), '#d4a574'),
+      kneadNode('circle', ellipsePath({ x: 330, y: 90, width: 170, height: 170 }), '#7fb069'),
     ],
   });
   scene.setSelection([asNodeId('square'), asNodeId('circle')]);

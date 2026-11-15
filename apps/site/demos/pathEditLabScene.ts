@@ -1,8 +1,8 @@
 import {
   asNodeId,
-  boundsOfPath,
   createScene,
   pathFromD,
+  pathNode,
   solid,
   useSelection,
   type NodeId,
@@ -32,25 +32,18 @@ export interface LabPathStyle {
 
 /** A path leaf in the node shape the kit's shape tools produce, so
  *  `editAnchors` edits `data.path` in place under a rect pose. */
-export function strokeNode(id: string, path: Path, { color = '#3b4252', fill }: LabPathStyle = {}) {
-  return {
-    kind: 'mark' as const,
-    id: asNodeId(id),
-    layer: 'default' as const,
-    pose: boundsOfPath(path),
-    data: {
-      path,
-      ...(fill ? { fill: { paint: solid(fill) } } : {}),
-      stroke: { paint: solid(color), width: 2 },
-    },
-  };
+export function strokeNode(id: string, path: Path | string, { color = '#3b4252', fill }: LabPathStyle = {}) {
+  return pathNode(id, typeof path === 'string' ? pathFromD(path) : path, {
+    ...(fill ? { fill: { paint: solid(fill) } } : {}),
+    stroke: { paint: solid(color), width: 2 },
+  });
 }
 
 /** A scene holding {@link LAB_PATH_ID}: the path `d`, or a built one. */
 export function createPathLabScene(d: string | Path, style?: LabPathStyle) {
   return createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
-    initial: [strokeNode(LAB_PATH_ID, typeof d === 'string' ? pathFromD(d) : d, style)],
+    initial: [strokeNode(LAB_PATH_ID, d, style)],
   });
 }
 
