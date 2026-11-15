@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react';
+import { useState } from 'react';
 import { SceneCanvas, WeaselProvider, sceneFromJSON, useSelection, editPreset, movePreset, pickPreset } from '@weasel-js/core';
 import type { SerializedScene, Fill } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
@@ -16,8 +16,6 @@ function SceneFromJson() {
   const [scene] = useState(() =>
     sceneFromJSON(sceneJson as unknown as SerializedScene<NodeData, string, Pose>, {}),
   );
-  // An action's `enabled` reads history through a thunk nothing watches, so the bar re-reads on each edit.
-  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
   const selection = useSelection({ scene });
 
   return (

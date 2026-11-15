@@ -30,8 +30,10 @@ export interface StandardDeps {
 /**
  * Publish each of `deps` as a live source in the nearest dep registry under
  * its canonical name; the source reads the latest value at invocation time.
- * `activeTool` falls back to the active-tool context. A no-op with no
- * registry in scope.
+ * `activeTool` falls back to the active-tool context. Whenever the scene or
+ * the history changes, or the selection does, it tells the registry, so chrome
+ * showing an action's `enabled` or `active` state reads it again. A no-op with
+ * no registry in scope.
  */
 export function useStandardDeps(deps: StandardDeps): void {
   const depsRef = useLatest(deps);
@@ -55,6 +57,12 @@ export function useStandardDeps(deps: StandardDeps): void {
     );
     return () => { for (const u of unregisters) u(); };
   }, [depReg, depsRef, activeToolCtxRef]);
+
+  const { scene, history } = deps;
+  useEffect(() => scene?.subscribe(() => depReg?.changed?.()), [scene, depReg]);
+  useEffect(() => history?.subscribe(() => depReg?.changed?.()), [history, depReg]);
+  const selected = deps.selection?.current;
+  useEffect(() => { depReg?.changed?.(); }, [selected, depReg]);
 }
 
 /**

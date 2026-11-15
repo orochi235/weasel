@@ -220,7 +220,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   );
   useDebugDepSource(canvasApiRef);
   usePreviewPathsDepSource(canvasApiRef);
-  useDepChangeNotices(scene, selection.current, editAnchorsExternalState);
+  useDepChangeNotices(editAnchorsExternalState);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestion?.resolveSrc, ingestion?.svg, ingestionClipboard, ingestionHandlers);
   useLassoSelectDepSource(scene, selection, poseDescriptor, alphaOf, reachable, regionTargetOf);
   useTextEditDepSource(scene);
