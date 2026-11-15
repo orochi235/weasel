@@ -290,6 +290,61 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P1) [agent] Unify live, committed and canceled UI edits before 2.0.** `Slider` and `CurveEditor`
+  use `onInput` for live edits and `onChange` for commits, while curve layers use `onChange`/`onCommit`
+  (`packages/ui/src/components/CurveEditor/CustomLayer.tsx`). A property slider's `onChange` is live
+  without `onInput`, but committed with it; commit-only callers must supply a no-op `onInput`
+  (`packages/ui/src/components/Properties/fieldTypes.ts`, `NumberControls.tsx`). These are existing
+  intentional contracts, but make reusable undo, preview and autosave wiring depend on each control.
+  Make `onInput` preview and `onChange` commit consistently; callback presence must not change another
+  callback's meaning. Define cancellation and rollback without forcing every control to hold drafts alike.
+  Closes when continuous controls, property fields and curve layers share the documented edit protocol,
+  commit-only consumers need no dummy callback, and tests cover pointer/keyboard edits, cancellation,
+  consumer-normalized values and exactly one commit per finished edit, with migration docs and examples.
+
+- **(P2) [agent] Preserve native DOM composition through UI primitives.** `ButtonBase` enumerates a
+  narrow prop list and `Button` forwards only selected attributes (`packages/ui/src/components/Button/Button.tsx`).
+  Standard trigger/form integrations cannot pass through `aria-expanded`, `aria-controls`,
+  `aria-describedby`, focus/key handlers, `tabIndex`, or form association reliably. Derive primitive props
+  from their native element, omit intentional conflicts, forward remaining attributes, and compose caller
+  handlers with internal behavior. Retain the icon-only accessible-name requirement and disabled policy.
+  Closes when a kit button composes as a custom disclosure trigger, a composite-widget member and a
+  form submitter using standard DOM props, with type/runtime tests for forwarding, handler composition,
+  prevented defaults and disabled controls; apply the same contract to other native primitives.
+
+- **(P2) [agent] Standardize focus refs and numeric-field integration.** `Input`/`NumberField` refs reach
+  inputs, `Checkbox`/`Switch` refs reach labels, `MenuButton` takes `buttonRef`, and `UnitField`/`Select`
+  expose no equivalent focus ref (`packages/ui/src/components/`). `NumberField` has label, description
+  and error slots; `UnitField` lacks those and ordinary input integration such as `name`, `onBlur` and
+  `aria-describedby` (`NumberField/UnitField.tsx`). Make the standard control ref reach its focusable
+  element, with a separate root ref where needed, and share field semantics/form integration while
+  preserving the numeric controls' different parsers.
+  Closes when the common controls have documented, tested focus-ref targets, unit-aware fields support
+  the same labeling, descriptions, errors and form integration as plain numeric fields, and consumer
+  migration examples no longer need DOM queries or wrapper-specific focus wiring.
+
+- **(P2) [agent] Let a visible field label name its control through composition.** `Field` deliberately
+  names a group rather than its child, so its example repeats `Opacity` in `label` and the slider's
+  `aria-label` (`packages/ui/src/components/Field/Field.tsx`). Property controls have separate `name`
+  and generated-id wiring. Provide a field context or render-prop API supplying control/label ids and
+  description/error associations; single-control fields declare the visible name once, while compound
+  fields retain explicit group semantics.
+  Closes when a custom single-control field gets its accessible name, description and error association
+  from one declaration, compound fields remain correctly named, and standalone and property-field
+  compositions have accessibility tests and documented examples without duplicated label strings.
+
+- **(P2) [agent] Clarify theme density versus control-size scope and cover mixed control rows.** Theme
+  density is `compact`/`comfortable`/`roomy`, but `<Density size="sm|md">` is a React control-size scope
+  (`packages/ui/src/components/Density/Density.tsx`). Buttons, segmented bars and selected containers
+  read it; ordinary input, select and numeric fields do not. `PropertyPanel` adds a third word set,
+  `PropertyDensity` `tight`/`normal`/`roomy` (`packages/ui/src/components/Properties/metrics.ts`), reusing
+  `roomy` with another meaning. Give each axis distinct public vocabulary
+  and define how common controls participate, so a compact form or toolbar does not require separate
+  component-specific sizing workarounds. Preserve the theme's token sizing and intentional artwork sizes.
+  Closes when every axis and its precedence are documented, common fields participate in the agreed size
+  contract, and browser tests verify mixed button/select/text/numeric rows across theme densities and
+  control sizes, including nested scopes and explicit overrides, with migration guidance.
+
 - **(P3) [agent] labkit's 3D lab keeps its scene's undo outside the lab's.** `SolidInstrument`'s moves and inserts go
   to `scene.history`, which the trial steps with its own "undo" and "redo" text buttons beside the palette, while
   the lab's Undo and Redo above it step only the settings (seen 2026-11-14). Hand the history over with
