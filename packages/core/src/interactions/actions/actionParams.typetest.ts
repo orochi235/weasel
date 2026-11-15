@@ -142,3 +142,24 @@ export function Stamper(): null {
 void registered; void id; void tuned; void tunedWrong; void bound; void boundWrong; void boundMissing; void boundThunk;
 void boundUnnamed; void boundRuntime; void boundHelper; void tool; void toolWrong; void ran; void resolved;
 void immediate; void ongoing; void wrongVariant; void unnamed;
+
+// An id chosen at runtime states its params; variants and bindings are read against them, not inferred.
+const ruled = defineAction<string, { over: boolean }>({
+  id: runtimeId,
+  label: 'Ruler',
+  variants: [{ key: 'over', label: 'Over', params: { over: true } }],
+  invoker: { timing: 'immediate', run: (_deps, params) => { const read: boolean | undefined = params?.over; void read; } },
+});
+const ruledWrong = defineAction<string, { over: boolean }>({
+  id: runtimeId,
+  label: 'Ruler',
+  // @ts-expect-error `over` is a boolean
+  variants: [{ key: 'over', label: 'Over', params: { over: 1 } }],
+});
+const noInfer = defineAction({
+  id: 'typetest.stamp',
+  label: 'Stamp',
+  // @ts-expect-error a variant cannot widen the entry it is checked against
+  variants: [{ key: 'other', label: 'Other', params: { other: 1 } }],
+});
+void ruled; void ruledWrong; void noInfer;

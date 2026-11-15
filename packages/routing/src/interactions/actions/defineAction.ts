@@ -61,8 +61,13 @@ export interface ActionOf<Id extends string, P = ActionParamsOf<Id>> extends Omi
  *   invoker: { timing: 'immediate', run: (deps, params) => stampAt(deps, params?.size ?? 1) },
  * });
  * ```
+ *
+ * An action whose id is chosen at runtime, which no schema entry can name, states its params as `P`:
+ * `defineAction<string, RulerParams>({ id, … })`.
  */
-export function defineAction<const Id extends string>(action: ActionOf<Id>): Action & { id: Id } {
+export function defineAction<const Id extends string, P = ActionParamsOf<Id>>(
+  action: ActionOf<Id, NoInfer<P>>,
+): Action & { id: Id } {
   // Each member reads a narrower record than `Action`'s, which only the schema entry for `id` vouches for.
   return action as unknown as Action & { id: Id };
 }
