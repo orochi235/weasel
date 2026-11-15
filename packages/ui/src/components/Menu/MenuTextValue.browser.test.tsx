@@ -37,7 +37,7 @@ it('takes typed text, the menu’s typeahead included, and commits it on Enter w
   const { set, close, menu } = open();
   const field = screen.getByRole('textbox', { name: 'Name' });
   await userEvent.click(field);
-  await userEvent.keyboard('{Control>}a{/Control}{Meta>}a{/Meta}');
+  await userEvent.keyboard('{ControlOrMeta>}a{/ControlOrMeta}');
   // `n` would move the highlight to Nudge if the menu read it.
   await userEvent.keyboard('Nested');
   expect(field).toHaveValue('Nested');

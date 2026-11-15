@@ -340,6 +340,9 @@ export default [
       }, {
         selector: "CallExpression[callee.property.name='getContext'][arguments.0.value='webgl2'] > ObjectExpression:nth-child(2):not(:has(Property[key.name='stencil'][value.value=true])):not(:has(SpreadElement))",
         message: "Open a canvas through canvasGl (@weasel-js/core/testing/canvasPixels), or pass CANVAS_CONTEXT_ATTRIBUTES: attributes without stencil: true can open the context without the stencil buffer the renderer needs.",
+      }, {
+        selector: 'Literal[value=/\\{Meta>/], TemplateElement[value.raw=/\\{Meta>/]',
+        message: "Press {ControlOrMeta>}: Chromium raises beforeinput's historyUndo and other editing commands only for the platform's own chord, so a {Meta>} chord passes on a Mac and does nothing in Linux CI.",
       }],
     },
   },
