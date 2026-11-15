@@ -57,8 +57,8 @@ lives in, so a popout window and a shadow tree are themed like any other.
 
 `extends` defaults to the built-in theme, so a partial theme can never be
 accidentally incomplete. Overriding a primitive rebases every alias that
-references it — set `accent-base` and `--wzl-accent`, `--wzl-accent-hover`,
-`--wzl-focus-ring` and `--wzl-glass-tint` all follow.
+references it — set `accent-base` and `--wzl-accent` and `--wzl-glass-tint`
+both follow.
 
 Themes exported from a design tool load through `loadDTCG(json)`.
 `interstellarTheme` in `@weasel-js/labkit` is a worked example of the other
@@ -252,7 +252,7 @@ alone takes the fallback:
 .dense-panel { --wzl-swatch-size: 20px; --wzl-number-field-width: 6ch; }
 ```
 
-They are declared in `src/hooks.ts` and land in `TOKEN_MANIFEST` with
+They are declared by family in `src/hooks/` and land in `TOKEN_MANIFEST` with
 `hook: true`, which is where to find the current list, each one's fallback and
 what it sizes:
 
@@ -271,7 +271,7 @@ face. A pin's value is fixed where the theme is applied, so one written with
 They stay out of `tokens.css` on purpose. A `:root` value would outrank the
 fallback written beside every read, so the two would have to agree forever, and
 `npm run check:token-reads` would stop requiring that the fallback be there at
-all. Adding a hook means adding it to `src/hooks.ts` and regenerating.
+all. Adding a hook means adding it to its family in `src/hooks/` and regenerating.
 
 ## Licenses
 
