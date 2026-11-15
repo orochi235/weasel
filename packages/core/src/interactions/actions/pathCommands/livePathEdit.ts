@@ -1,5 +1,5 @@
-import type { Action, BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
+import type { Action, InvocationCtx } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import type { PolygonPath } from '@weasel-js/geom';
 import type { PrefGroup, PrefNumber } from '@weasel-js/prefs';
 import type { Op } from 'core/ops/types';
@@ -7,19 +7,19 @@ import { selectedPathNodes, withPath, type PathNode } from './pathNodes';
 import { commitOps } from '../defaultCommitAdapter';
 import { pathOperationTags } from '../pathGestureTags';
 
-/** What one live path command does with its parameter. */
-export interface LivePathEditSpec {
+/** What one live path command does with its parameter, reading params `P`. */
+export interface LivePathEditSpec<P = Record<string, unknown>> {
   id: string;
   label: string;
   icon?: Action['icon'];
   /** The param the UI drives: a number leaf of `params`, whose default is its value when none is given. */
-  param: string;
+  param: keyof P & string;
   /** Every param the command reads, as the form the last-operation panel shows after a commit. */
   params: PrefGroup;
   /** The geometry `node` takes at `value`, or null for none. `params` is
    *  every param the edit was last given, for a command that reads more than
    *  `param`. */
-  edit(node: PathNode, value: number, params: Readonly<Record<string, unknown>>): PolygonPath | null;
+  edit(node: PathNode, value: number, params: Readonly<Partial<P>>): PolygonPath | null;
   /** The ops committing `next`, made at `value`, for the edited nodes. */
   commit(deps: InvocationCtx['deps'], next: ReadonlyMap<string, { node: PathNode; path: PolygonPath }>, value: number): Op[];
   /** Ids to select after the commit; the selection stands when absent. */
@@ -28,9 +28,9 @@ export interface LivePathEditSpec {
   overlaysSource?: boolean;
 }
 
-function sameParams(a: Readonly<Record<string, unknown>>, b: Readonly<Record<string, unknown>>): boolean {
+function sameParams(a: object, b: object): boolean {
   const keys = Object.keys(a);
-  return keys.length === Object.keys(b).length && keys.every((k) => Object.is(a[k], b[k]));
+  return keys.length === Object.keys(b).length && keys.every((k) => Object.is(Reflect.get(a, k), Reflect.get(b, k)));
 }
 
 /**
@@ -41,13 +41,13 @@ function sameParams(a: Readonly<Record<string, unknown>>, b: Readonly<Record<str
  * entry, and canceling leaves the scene untouched. A commit is the last
  * operation, which its handle replays from the paths as they were at the start.
  */
-export function livePathEdit(spec: LivePathEditSpec): Action & { requires: string[] } {
+export function livePathEdit<P = Record<string, unknown>>(spec: LivePathEditSpec<P>): Action {
   const leaf = spec.params.children[spec.param] as PrefNumber | undefined;
   if (leaf?.kind !== 'number' || typeof leaf.default !== 'number') {
     throw new Error(`livePathEdit: "${spec.id}" has no number leaf "${spec.param}" with a default in its params`);
   }
   const initial = leaf.default;
-  return {
+  return defineAction<string, P>({
     id: spec.id,
     label: spec.label,
     icon: spec.icon,
@@ -57,15 +57,16 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
     params: spec.params,
     invoker: {
       timing: 'ongoing',
-      start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+      start(ctx, opts) {
         const nodes = selectedPathNodes(ctx.deps);
         if (nodes.length === 0) return {};
-        const read = (params: Record<string, unknown> | undefined): number | null => {
+        const read = (params: Readonly<Partial<P>> | undefined): number | null => {
           const v = params?.[spec.param];
           return typeof v === 'number' && Number.isFinite(v) ? v : null;
         };
         const given = resolveParams(opts?.params);
-        let params: Readonly<Record<string, unknown>> = { ...given, ...ctx.params };
+        const none: Partial<P> = {};
+        let params: Readonly<Partial<P>> = { ...none, ...given, ...ctx.params };
         let value = read(ctx.params) ?? read(given) ?? initial;
         let current = new Map<string, { node: PathNode; path: PolygonPath }>();
         const recompute = () => {
@@ -90,7 +91,7 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
         };
         return {
           kind: spec.id,
-          onMove(moveCtx: InvocationCtx): void {
+          onMove(moveCtx: InvocationCtx<P>): void {
             const moved = moveCtx.params;
             if (!moved) return;
             const next = read(moved) ?? value;
@@ -105,7 +106,7 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
             else commit();
           },
           params: () => ({ ...params, [spec.param]: value }),
-          replay(next: Record<string, unknown>): void {
+          replay(next) {
             value = read(next) ?? value;
             params = { ...params, ...next };
             recompute();
@@ -119,5 +120,5 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
       },
     },
     enabled: (deps) => (selectedPathNodes(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired),
-  };
+  });
 }

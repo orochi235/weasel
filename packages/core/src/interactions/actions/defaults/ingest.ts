@@ -21,8 +21,7 @@
  * coords → `point: null`; handlers pick their own placement policy.
  */
 import { ANY_MODS } from '@weasel-js/gestures';
-import type { Action } from '@weasel-js/routing';
-import { ActionDisabledReason, type ActionDeps } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, type ActionDeps } from '@weasel-js/routing';
 import {
   couldClaim, handlersFor, runIngest, type ContentHandlerEntry, type IngestCtx, type RunIngestOptions,
 } from 'domains/ingestion/contentHandlers';
@@ -30,7 +29,7 @@ import type { IngestItem } from '@weasel-js/routing';
 import { previewIngest } from 'domains/ingestion/ghost';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { MOVE_NODES_REQUIRES } from '../moveNodes';
-import type { ImmediateParams } from '@weasel-js/routing';
+import type { IngestParams } from '../actionParamSchema';
 
 /** The deps {@link ingestFromEvent} reads, and the ones `IngestCtx.deps` carries for a handler
  *  that moves what it inserts with `moveNodes`; an action calling it declares these. */
@@ -50,10 +49,10 @@ export function canvasHandlers(deps: ActionDeps | undefined): ContentHandlerEntr
  */
 export function ingestFromEvent(
   deps: ActionDeps,
-  params: Record<string, unknown> | undefined,
+  params: Readonly<Partial<IngestParams>> | undefined,
   opts?: RunIngestOptions,
 ): void {
-  const items = params?.items as IngestItem[] | undefined;
+  const items = params?.items;
   if (!items || items.length === 0) return;
   const ingestion = deps.ingestion;
   const insert = deps.insert;
@@ -62,7 +61,7 @@ export function ingestFromEvent(
   if (!ingestion || !insert || !scene || !selection) return;
   const applyOps = deps.applyOps;
 
-  const point = (params as ImmediateParams | undefined)?.world ?? null;
+  const point = params?.world ?? null;
 
   const ctx: IngestCtx = {
     point,
@@ -100,7 +99,7 @@ export function claimable(
   return !carried || couldClaim(carried.items, handlers) ? true : ActionDisabledReason.NotApplicable;
 }
 
-export const ingestAction: Action & { requires: string[] } = {
+export const ingestAction = defineAction({
   id: 'ingest',
   label: 'Insert external content',
   defaultBinding: [
@@ -118,4 +117,4 @@ export const ingestAction: Action & { requires: string[] } = {
   // listener-level editable-target guard already keeps text-editing pastes
   // away from the scene.
   enabled: (deps, _at, carried) => claimable(carried, canvasHandlers(deps)),
-};
+});

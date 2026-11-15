@@ -214,7 +214,7 @@ export function couldClaim(
  * Unmatched items are ignored with a debug-gated `dwarn('ingest', ...)`.
  */
 export async function runIngest(
-  items: IngestItem[],
+  items: readonly IngestItem[],
   ctx: IngestCtx,
   opts: RunIngestOptions = {},
 ): Promise<void> {

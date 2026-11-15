@@ -13,18 +13,17 @@
  * would insert.
  */
 
-import type { Action, ImmediateInvoker } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { editAnchorSetTracked, insertAnchorOnSegment } from '@weasel-js/geom';
 import { inPlane, editingLayer } from '../planeInput';
 import { segmentUnder } from './segmentUnder';
 import { pathOperationTags } from '../pathGestureTags';
-import type { ImmediateParams } from '@weasel-js/routing';
 
 const INSERT_CURSOR: CursorSpec = { glyph: 'pen', mark: 'add', fallback: 'crosshair' };
 
-export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
+export const insertPathAnchorAction: Action = inPlane(defineAction({
   id: 'insertPathAnchor',
   label: 'Insert anchor',
   tags: pathOperationTags('click'),
@@ -35,7 +34,7 @@ export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'immediate',
     run(deps, params) {
-      const world = (params as ImmediateParams | undefined)?.world;
+      const world = params?.world;
       if (!world) return;
       const { x: wx, y: wy } = world;
       const under = segmentUnder(deps, wx, wy);
@@ -50,11 +49,11 @@ export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
       dep.applyEdit(dep.editingId, next.path, 'Insert anchor', next.origins);
       dep.setSelectedAnchors([inserted]);
     },
-  } as ImmediateInvoker,
+  },
   enabled: (deps, at) => {
     const dep = deps?.editAnchors;
     if (!dep?.editingId) return ActionDisabledReason.NotApplicable;
     if (at && !segmentUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
     return true;
   },
-}, editingLayer);
+}), editingLayer);

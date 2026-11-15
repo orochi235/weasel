@@ -2,8 +2,8 @@
  * In path edit on a path an effect hides, the effect is lit and a click on it
  * opens its text, since the effect is what draws that text.
  */
-import type { Action, ActionDeps, ImmediateInvoker, ImmediateParams } from '@weasel-js/routing';
-import { ActionDisabledReason, isBody } from '@weasel-js/routing';
+import type { ActionDeps } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, isBody } from '@weasel-js/routing';
 import { isTextData } from '@weasel-js/text';
 import type { NodeId } from 'core/scene/types';
 import { effectSourceFor } from 'domains/pathEffects/effectSources';
@@ -21,7 +21,7 @@ function textUnder(deps: ActionDeps | undefined, world: { x: number; y: number }
   return { id: String(text), length: isTextData(data) ? data.text.length : 0 };
 }
 
-export const editEffectTextAction: Action & { requires: string[] } = {
+export const editEffectTextAction = defineAction({
   id: 'editEffectText',
   label: 'Edit text along the path',
   // On the effect's body, so it outranks the untargeted anchor click; an anchor under the pointer gives the click back.
@@ -31,9 +31,9 @@ export const editEffectTextAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run(deps, params) {
-      const hit = textUnder(deps, (params as ImmediateParams | undefined)?.world);
+      const hit = textUnder(deps, params?.world);
       if (hit) deps.textEdit?.startEdit(hit.id, { caret: hit.length });
     },
-  } as ImmediateInvoker,
+  },
   enabled: (deps, at) => (textUnder(deps, at) ? true : ActionDisabledReason.NotApplicable),
-};
+});

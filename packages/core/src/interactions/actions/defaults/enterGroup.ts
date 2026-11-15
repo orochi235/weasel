@@ -1,10 +1,9 @@
 import { rectContainsPoint, type Rect } from '@weasel-js/geom';
 import type { Action, ActionDeps, WorldPoint } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { isEnterable, type EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { NodeId } from 'core/scene/types';
 import { pressTarget, type PressTargetTree } from '../../../tools/builtin/pressTarget';
-import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What `group.enter` reads: the node under a point and the tree above it. */
 export interface EnterGroupOptions {
@@ -50,7 +49,7 @@ export function createEnterGroupAction(opts: EnterGroupOptions): Action {
     const target = pressTarget(opts.tree, hit, entered.get());
     return isEnterable(opts.tree.getNode(target) as Parameters<typeof isEnterable>[0]) ? target : null;
   };
-  return {
+  return defineAction({
     id: 'group.enter',
     label: 'Enter group',
     eligible: { capability: 'creates-selection' },
@@ -58,14 +57,13 @@ export function createEnterGroupAction(opts: EnterGroupOptions): Action {
     enabled: (deps, at, _carried, _params, viewId) =>
       (targetAt(deps, at, viewId) !== null ? true : ActionDisabledReason.NotApplicable),
     invoker: {
-      timing: 'immediate' as const,
-      run: (deps, params) => {
-        const p = params as ImmediateParams | undefined;
+      timing: 'immediate',
+      run: (deps, p) => {
         const target = p?.world ? targetAt(deps, p.world, p.viewId) : null;
         if (target !== null) deps.enteredGroup?.enter(target as NodeId);
       },
     },
-  };
+  });
 }
 
 /**
@@ -75,7 +73,7 @@ export function createEnterGroupAction(opts: EnterGroupOptions): Action {
  * being edited, so that Escape exits the edit first.
  */
 export function createLeaveGroupAction(opts: LeaveGroupOptions): Action {
-  return {
+  return defineAction({
     id: 'group.leave',
     label: 'Leave group',
     eligible: { capability: 'creates-selection' },
@@ -88,14 +86,14 @@ export function createLeaveGroupAction(opts: LeaveGroupOptions): Action {
       return box !== null && !rectContainsPoint(box, at.x, at.y) ? true : ActionDisabledReason.NotApplicable;
     },
     invoker: {
-      timing: 'immediate' as const,
+      timing: 'immediate',
       run: (deps, params) => {
         const entered = deps.enteredGroup;
         if (!entered) return;
-        const world = (params as ImmediateParams | undefined)?.world;
+        const world = params?.world;
         if (world) leaveGroupsOutside(entered, opts.boxOf, world);
         else entered.leave();
       },
     },
-  };
+  });
 }

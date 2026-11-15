@@ -8,9 +8,11 @@ import { offsetPath, type OffsetPathOptions } from '@weasel-js/stroke';
 import { DEFAULT_MITER_LIMIT } from '@weasel-js/paint';
 import { pref, type PrefNumber } from '@weasel-js/prefs';
 import type { Op } from 'core/ops/types';
+import type { ActionParamsOf } from '@weasel-js/routing';
 import { livePathEdit } from './livePathEdit';
 import { insertAt, pathCopy, reshapeOps, slotOf } from './pathNodes';
 import { icon } from '../../../icons.gen';
+import type { OffsetPathParams } from '../actionParamSchema';
 
 /** Simplify's tolerance when none is given: world units off the original. */
 export const DEFAULT_SIMPLIFY_TOLERANCE = 1;
@@ -41,10 +43,10 @@ export const OFFSET_PATH_PARAMS = pref.group('Offset Path', {
 const JOINS = new Set<unknown>(['miter', 'round', 'bevel']);
 
 /** The corners `params` asks Offset Path for. */
-function offsetOptions(params: Readonly<Record<string, unknown>>): OffsetPathOptions {
+function offsetOptions(params: Readonly<Partial<OffsetPathParams>>): OffsetPathOptions {
   const { join, miterLimit } = params;
   return {
-    ...(JOINS.has(join) ? { join: join as OffsetPathOptions['join'] } : {}),
+    ...(join !== undefined && JOINS.has(join) ? { join } : {}),
     ...(typeof miterLimit === 'number' && miterLimit >= 1 ? { miterLimit } : {}),
   };
 }
@@ -53,7 +55,7 @@ function offsetOptions(params: Readonly<Record<string, unknown>>): OffsetPathOpt
  * Refit each selected path with as few anchors as keep it
  * within `params.tolerance` of where it was (`simplifyPath`).
  */
-export const simplifyPathAction = livePathEdit({
+export const simplifyPathAction = livePathEdit<ActionParamsOf<'simplifyPath'>>({
   id: 'simplifyPath',
   label: 'Simplify',
   icon: icon('simplify'),
@@ -70,7 +72,7 @@ export const simplifyPathAction = livePathEdit({
  * source and a shrunk one in front, so neither hides the other; the new
  * paths are selected.
  */
-export const offsetPathAction = livePathEdit({
+export const offsetPathAction = livePathEdit<OffsetPathParams>({
   id: 'offsetPath',
   label: 'Offset Path',
   icon: icon('offsetPath'),

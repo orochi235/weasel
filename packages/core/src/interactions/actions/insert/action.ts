@@ -1,6 +1,6 @@
 import type { Action } from '@weasel-js/routing';
-import type { DragSample, InvocationCtx, OngoingHandle, BindingOptions, OngoingOverlay } from '@weasel-js/routing';
-import { resolveParams } from '@weasel-js/routing';
+import type { DragSample, InvocationCtx, OngoingOverlay } from '@weasel-js/routing';
+import { defineAction, resolveParams } from '@weasel-js/routing';
 import type { ModSpec } from '@weasel-js/gestures';
 import { shapeKindInfo } from 'core/shapeKinds';
 import { SNAP_ROLE_MODS, SNAP_ROLES } from 'domains/snap/roles';
@@ -44,7 +44,7 @@ export const INSERT_DRAG_MODS: ModSpec = { ...SNAP_ROLE_MODS, alt: 'optional' };
  * panel can change its sides, or its points and inner radius, by replaying the
  * drag (`insertParams`); a drag that behaviors answered does not replay.
  */
-export const insertAction: Action & { requires: string[] } = inPlane({
+export const insertAction: Action = inPlane(defineAction({
   id: 'insert',
   label: 'Insert',
   group: 'insert',
@@ -55,7 +55,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     dragThresholdPx: INSERT_DRAG_THRESHOLD_PX,
-    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+    start(ctx, opts) {
       const begun = beginInsert(ctx, opts);
       if (!begun) return {};
       const { session, readers } = begun;
@@ -118,7 +118,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
         },
         // A behavior's answer is its own to make once, so only a plain insert replays.
         ...(session.behaviors.length === 0 ? {
-          replay(params: Record<string, unknown>): void {
+          replay(params) {
             commitInsert({ ...session, opts: { ...session.opts, params } }, frame, trail, gesture.userRotation);
           },
         } : {}),
@@ -127,4 +127,4 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   },
   /** Insert needs no selection; anything but `true` blocks dispatcher-routed inserts. */
   enabled: () => true as const,
-}, insertLayer);
+}), insertLayer);

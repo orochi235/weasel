@@ -1,18 +1,19 @@
 import type { DragSample } from '@weasel-js/routing';
 import type { InsertExtras } from '../depSchema';
+import type { InsertParams } from '../actionParamSchema';
 
 /** Build a typed `InsertExtras` from the static params + gesture context.
  *  Kit-built-in kinds (line / polygon / star / pencil) read kind-specific
  *  fields; unknown kinds pass the raw params through as `{ kind, ... }`. */
 export function buildExtras(
-  params: Record<string, unknown> | undefined,
+  params: Readonly<Partial<InsertParams>> | undefined,
   startX: number,
   startY: number,
   currentX: number,
   currentY: number,
   points: ReadonlyArray<DragSample> | null,
 ): InsertExtras {
-  const kind = ((params?.['kind'] as string | undefined) ?? 'rect');
+  const kind = params?.kind ?? 'rect';
   switch (kind) {
     case 'rect':
     case 'ellipse':
@@ -76,7 +77,7 @@ export function buildExtras(
       // dispatcher's accumulated pointer trail.
       return {
         kind: 'pencil',
-        samples: (params?.['samples'] as ReadonlyArray<DragSample> | undefined)
+        samples: params?.samples
           ?? points
           ?? [],
       };

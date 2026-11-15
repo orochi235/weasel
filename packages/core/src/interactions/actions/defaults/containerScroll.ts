@@ -5,7 +5,7 @@
  * shows and leaves the document where it is.
  */
 import { clamp } from '@weasel-js/geom';
-import type { Action, ActionDeps } from '@weasel-js/routing';
+import { defineAction, type ActionDeps } from '@weasel-js/routing';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
 import { composeWorldPose } from 'core/scene/composePose';
@@ -14,7 +14,6 @@ import { scenePoseAdapter, sceneViewPoseAdapter } from 'core/scene/scenePoseAdap
 import type { NodeId } from 'core/scene/types';
 import { wheelPan } from 'core/viewport/wheelHandler';
 import { poseDescriptorOf } from '../poseDescriptorDep';
-import type { ImmediateParams } from '@weasel-js/routing';
 import type { AnyScene } from 'core/scene/anyScene';
 
 /** How far a container's content can scroll on each axis, in its own units:
@@ -129,7 +128,7 @@ function sceneOf(deps: ActionDeps | undefined): AnyScene | undefined {
  * container holding it, and past the outermost one the action passes, so the
  * wheel pans the viewport. Anywhere else it declines.
  */
-export const containerScrollAction: Action & { requires: string[] } = {
+export const containerScrollAction = defineAction({
   id: 'container.scroll',
   label: 'Scroll container (wheel)',
   group: 'viewport',
@@ -151,9 +150,9 @@ export const containerScrollAction: Action & { requires: string[] } = {
     run(deps, params) {
       const scene = sceneOf(deps);
       const view = deps.view?.get();
-      const world = (params as ImmediateParams | undefined)?.world;
+      const world = params?.world;
       if (!scene || !view || !world) return 'pass';
-      const delta = { deltaX: (params?.deltaX as number | undefined) ?? 0, deltaY: (params?.deltaY as number | undefined) ?? 0 };
+      const delta = { deltaX: params?.deltaX ?? 0, deltaY: params?.deltaY ?? 0 };
       // The pan's own conversion, from a view at the origin: how far the wheel moves in world units.
       const by = wheelPan({ x: 0, y: 0, scale: view.scale }, delta, { swapAxis: params?.swapAxis === true });
       for (const hit of scrollablesAt(scene, world, poseDescriptorOf(deps.poseDescriptor))) {
@@ -166,4 +165,4 @@ export const containerScrollAction: Action & { requires: string[] } = {
       return 'pass';
     },
   },
-};
+});

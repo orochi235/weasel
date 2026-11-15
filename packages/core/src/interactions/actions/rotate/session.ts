@@ -3,6 +3,7 @@ import { pointerStateOf } from '../pointerState';
 import { transformFinisher, type TransformFinisher } from '../transformFinish';
 import { sceneGestureFrames } from '../gestureFrames';
 import { resolveParams } from '@weasel-js/routing';
+import type { RotateParams } from '../actionParamSchema';
 import { unionAABB } from 'core/geometry/unionBounds';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -178,8 +179,8 @@ function beginSnap(ctx: InvocationCtx, ids: readonly string[], pivot: { x: numbe
 /** Capture a rotate at press. Null when nothing selected can turn. Runs each
  *  behavior's `onStart`. */
 export function beginRotate(
-  ctx: InvocationCtx,
-  opts: BindingOptions | undefined,
+  ctx: InvocationCtx<RotateParams>,
+  opts: BindingOptions<Partial<RotateParams>> | undefined,
 ): { session: RotateSession; readers: GestureReaders } | null {
   const selection = ctx.deps.selection;
   const scene = ctx.deps.scene;
@@ -192,7 +193,7 @@ export function beginRotate(
   const ids = shapeSources(scene, selection.get()) as NodeId[];
   if (ids.length === 0) return null;
 
-  const captured = captureTurn(scene, ids, ctx.deps, params?.['pivot'] === 'each' ? 'each' : 'union');
+  const captured = captureTurn(scene, ids, ctx.deps, params?.pivot === 'each' ? 'each' : 'union');
   if (!captured) return null;
   const { turn, originPoses, poseFrame } = captured;
   const { origins, pivot } = turn;

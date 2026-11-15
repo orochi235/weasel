@@ -100,10 +100,10 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
       requires,
       invoker: {
         timing: 'immediate',
-        run(deps: ActionDeps, params?: Record<string, unknown>): void | 'pass' {
+        run(deps: ActionDeps, params?: Readonly<Pick<ImmediateParams, 'world' | 'press'>> & Record<string, unknown>): void | 'pass' {
           const plane = livePlane(deps, layerOf(deps), declared, null);
           if (plane === null) return inner.run(deps, params);
-          const { world, press } = (params ?? {}) as ImmediateParams;
+          const { world, press } = params ?? {};
           if (!world && !press) return inner.run(plane.deps, params);
           const m = plane.map();
           return inner.run(plane.deps, {

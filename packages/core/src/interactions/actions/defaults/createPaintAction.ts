@@ -1,6 +1,6 @@
 import type { Action } from '@weasel-js/routing';
-import type { InvocationCtx, OngoingHandle, BindingOptions } from '@weasel-js/routing';
-import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
+import type { InvocationCtx } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
@@ -10,10 +10,8 @@ import { paintInheritors } from 'core/scene/inheritedPaint';
 /** The node data one paint action reads and writes: its own key, nothing else. */
 type PaintData<K extends string, TValue> = { [P in K]?: TValue | null };
 
-type Params = Record<string, unknown> | undefined;
-
 /** Read a param from the invocation, falling back to the binding's. */
-export type PickParam = <T>(key: string) => T | undefined;
+export type PickParam<P> = <Key extends keyof P>(key: Key) => P[Key] | undefined;
 
 /**
  * What distinguishes one paint action from another.
@@ -22,16 +20,16 @@ export type PickParam = <T>(key: string) => T | undefined;
  * `setFill` and `setStroke` supersede a paint with a later color, which no
  * per-field merge of the params can express.
  */
-export interface PaintActionSpec<TState, TValue, K extends string> {
+export interface PaintActionSpec<TState, TValue, K extends string, P> {
   id: string;
   label: string;
   /** The `data` key this action owns. */
   dataKey: K;
   /** Gesture state at start. */
-  initialState(pick: PickParam): TState;
+  initialState(pick: PickParam<P>): TState;
   /** The state one onMove tick moves to, or `null` when its params carry
    *  nothing this action reads — the preview then stands. */
-  readParams(prev: TState, params: Params): TState | null;
+  readParams(prev: TState, params: Readonly<Partial<P>> | undefined): TState | null;
   /** The value to write for one node, from that node's value at gesture start.
    *  `null` writes the absence of paint, which is a value like any other —
    *  a node with `fill: null` paints no fill. Handing back `prev` itself leaves
@@ -61,9 +59,9 @@ interface Scratch<TState, TValue, K extends string> {
  * snapshot, so a concurrent edit to a field this action does not own is not
  * clobbered.
  */
-export function createPaintAction<TState, TValue, K extends string>(
-  spec: PaintActionSpec<TState, TValue, K>,
-): Action & { requires: string[] } {
+export function createPaintAction<TState, TValue, K extends string, P>(
+  spec: PaintActionSpec<TState, TValue, K, P>,
+): Action {
   type Data = PaintData<K, TValue>;
 
   const refreshPreviews = (scratch: Scratch<TState, TValue, K>): void => {
@@ -75,14 +73,14 @@ export function createPaintAction<TState, TValue, K extends string>(
     }
   };
 
-  return {
+  return defineAction<string, P>({
     id: spec.id,
     label: spec.label,
     eligible: { capability: 'applies-fill' },
     requires: ['selection', 'scene', 'applyOps'],
     invoker: {
       timing: 'ongoing',
-      start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+      start(ctx, opts) {
         const selection = ctx.deps.selection;
         const scene = ctx.deps.scene as Scene<Data, string, unknown> | undefined;
 
@@ -93,8 +91,7 @@ export function createPaintAction<TState, TValue, K extends string>(
 
         const fallback = resolveParams(opts?.params);
         // `??` would lose a `paint: null`, which is None, not "no paint given".
-        const pick = (<T>(key: string) =>
-          (ctx.params?.[key] !== undefined ? ctx.params[key] : fallback?.[key]) as T | undefined) as PickParam;
+        const pick: PickParam<P> = (key) => (ctx.params?.[key] !== undefined ? ctx.params[key] : fallback?.[key]);
 
         const startData = new Map<NodeId, Data>();
         for (const id of ids) {
@@ -117,7 +114,7 @@ export function createPaintAction<TState, TValue, K extends string>(
           : [];
 
         return {
-          onMove(moveCtx: InvocationCtx): void {
+          onMove(moveCtx: InvocationCtx<P>): void {
             const next = spec.readParams(scratch.state, moveCtx.params);
             if (next === null) return;
             scratch.state = next;
@@ -153,5 +150,5 @@ export function createPaintAction<TState, TValue, K extends string>(
       }
       return true;
     },
-  };
+  });
 }

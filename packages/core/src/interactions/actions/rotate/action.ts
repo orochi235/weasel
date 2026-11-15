@@ -1,5 +1,5 @@
-import type { Action } from '@weasel-js/routing';
-import type { BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import { defineAction, type Action } from '@weasel-js/routing';
+import type { InvocationCtx } from '@weasel-js/routing';
 import { transformPreview } from '../transformFinish';
 import { finiteFrame } from '../finiteFrame';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
@@ -22,7 +22,7 @@ import { SNAP_ROLES } from 'domains/snap/roles';
  * (`opts.behaviors`) then see that node's turned pose; a pose one returns
  * from `onMove` sets the rotation for the whole selection.
  */
-export const rotateAction: Action & { requires: string[] } = inPlane({
+export const rotateAction: Action = inPlane(defineAction({
   id: 'rotate',
   label: 'Rotate',
   // No default binding: a bare `{ kind: 'drag' }` makes any drag no active
@@ -33,7 +33,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
   requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+    start(ctx, opts) {
       const begun = beginRotate(ctx, opts);
       if (!begun) return {};
       const { session, readers } = begun;
@@ -75,4 +75,4 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
     },
   },
   enabled: () => true,
-}, selectionLayer);
+}), selectionLayer);

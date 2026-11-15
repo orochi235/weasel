@@ -1,4 +1,4 @@
-import type { Action, BoundGesture } from '@weasel-js/routing';
+import { defineAction, type Action, type ActionParamsOf, type BoundGesture } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import { axisZoomFactor, zoomAt, type ZoomAxis } from 'core/viewport/zoomAt';
 import { wheelZoomFactor } from 'core/viewport/wheelHandler';
@@ -57,7 +57,7 @@ export interface ViewportZoomOptions {
 
 /** The gestures `viewport.zoom` answers: the configurable wheel trigger, then
  *  the fixed pinch and key bindings. */
-function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture[] {
+function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture<ActionParamsOf<'viewport.zoom'>>[] {
   // 'plain': bare wheel (omitting `mods` forbids any modifier — see the
   // matcher's strict modifier check). 'mod': Cmd/Ctrl+wheel.
   const wheelSpec =
@@ -112,7 +112,7 @@ function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture[] {
  */
 export function createViewportZoomAction(
   opts: ViewportZoomOptions = {},
-): Action & { requires: string[] } {
+): Action {
   const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
   const axis = opts.axis ?? 'both';
 
@@ -121,7 +121,7 @@ export function createViewportZoomAction(
   const { resetMs, ...animateRest } = rawAnimate ?? {};
   const tweenOpts: ViewAnimationOptions | null = rawAnimate ? animateRest : null;
 
-  return {
+  return defineAction({
     id: 'viewport.zoom',
     label: 'Zoom',
     group: 'viewport',
@@ -146,7 +146,7 @@ export function createViewportZoomAction(
           const [wx, wy] = screenToWorld(anchor.x, anchor.y, viewToTransform(from));
           debug.recordViewport('zoom', from, to, { x: wx, y: wy });
         };
-        const kind = params?.kind as string | undefined;
+        const kind = params?.kind;
 
         const canAnimate = tweenOpts !== null && typeof view.animate === 'function';
         const stepTo = (target: View, ms?: number) => {
@@ -165,8 +165,8 @@ export function createViewportZoomAction(
         };
 
         const focal = () => ({
-          x: (params?.clientX as number | undefined) ?? 0,
-          y: (params?.clientY as number | undefined) ?? 0,
+          x: params?.clientX ?? 0,
+          y: params?.clientY ?? 0,
         });
         const scaleBy = (factor: number) => {
           if (!(factor > 0) || !Number.isFinite(factor)) return;
@@ -177,10 +177,10 @@ export function createViewportZoomAction(
 
         switch (kind) {
           case 'wheel':
-            scaleBy(wheelZoomFactor((params?.deltaY as number | undefined) ?? 0));
+            scaleBy(wheelZoomFactor(params?.deltaY ?? 0));
             break;
           case 'pinch':
-            scaleBy((params?.scale as number | undefined) ?? Number.NaN);
+            scaleBy(params?.scale ?? Number.NaN);
             break;
           case 'in':
           case 'out': {
@@ -216,11 +216,11 @@ export function createViewportZoomAction(
       },
     },
     enabled: () => true,
-  };
+  });
 }
 
 /**
  * Default `viewport.zoom` descriptor: Cmd/Ctrl+wheel zoom with the kit's
  * default 0.1–8 scale clamp. Equivalent to `createViewportZoomAction()`.
  */
-export const viewportZoomAction: Action & { requires: string[] } = createViewportZoomAction();
+export const viewportZoomAction: Action = createViewportZoomAction();

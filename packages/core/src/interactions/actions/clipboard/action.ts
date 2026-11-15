@@ -1,4 +1,4 @@
-import { ActionDisabledReason, type Action } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction, type Action } from '@weasel-js/routing';
 import { commitDeleteToScene, deleteEnabled } from '../defaults/delete';
 import type { NodeId } from 'core/scene/types';
 import { requiresSelection } from '../defaults/requiresSelection';
@@ -6,7 +6,6 @@ import { kitWeaselJsonHandler } from 'domains/ingestion/weaselJsonHandler';
 import { claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
 import { ANY_MODS } from '@weasel-js/gestures';
 import { icon } from '../../../icons.gen';
-import type { ImmediateParams } from '@weasel-js/routing';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /**
@@ -71,7 +70,7 @@ export const clipboardCutAction: Action & { requires: string[] } = {
  * dispatcher routes to `clipboard.pasteEvent` or `ingest`, and a binding here
  * would fire alongside it and paste twice.
  */
-export const clipboardPasteAction: Action & { requires: string[] } = {
+export const clipboardPasteAction = defineAction({
   id: 'clipboard.paste',
   label: 'Paste',
   icon: icon('paste'),
@@ -81,15 +80,14 @@ export const clipboardPasteAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const world = (params as ImmediateParams | undefined)?.world;
-      deps.clipboard?.paste(world);
+      deps.clipboard?.paste(params?.world);
     },
   },
   enabled: (deps) => {
     const clipboard = deps?.clipboard;
     return clipboard && !clipboard.isEmpty() ? true : ActionDisabledReason.NotApplicable;
   },
-};
+});
 
 const PASTE_EVENT_HANDLERS = [kitWeaselJsonHandler];
 
@@ -105,7 +103,7 @@ const PASTE_EVENT_HANDLERS = [kitWeaselJsonHandler];
  * Bound to `text/plain` because that is the only flavor of a copy a paste
  * event carries; a paste without text stays the page's.
  */
-export const clipboardPasteEventAction: Action & { requires: string[] } = {
+export const clipboardPasteEventAction = defineAction({
   id: 'clipboard.pasteEvent',
   label: 'Paste copied nodes',
   defaultBinding: [{ spec: { kind: 'paste', types: ['text/plain'], mods: ANY_MODS }, opts: { id: 'clipboard.pasteEvent.paste' } }],
@@ -115,4 +113,4 @@ export const clipboardPasteEventAction: Action & { requires: string[] } = {
     run: (deps, params) => ingestFromEvent(deps, params, { handlers: PASTE_EVENT_HANDLERS }),
   },
   enabled: (_deps, _at, carried) => claimable(carried, PASTE_EVENT_HANDLERS),
-};
+});

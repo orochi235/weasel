@@ -1,5 +1,5 @@
-import type { Action } from '@weasel-js/routing';
-import type { InvocationCtx, OngoingHandle, BindingOptions } from '@weasel-js/routing';
+import { defineAction, type Action } from '@weasel-js/routing';
+import type { InvocationCtx } from '@weasel-js/routing';
 import { transformPreview } from '../transformFinish';
 import { finiteFrame } from '../finiteFrame';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
@@ -25,7 +25,7 @@ export type { ReparentOnDrop };
  * aborts). `beginMove` appends the action's own: a layout drop, a page drop
  * in a paged scene, and reparent-on-drop.
  */
-export const moveAction: Action & { requires: string[] } = inPlane({
+export const moveAction: Action = inPlane(defineAction({
   id: 'move',
   label: 'Move',
   // No hover `cursor`: pointing at a node shouldn't preemptively promise a move.
@@ -40,7 +40,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   requires: ['selection', 'scene', 'poseDescriptor', 'layout', 'applyOps', 'geometryProjection', 'nodeAtPoint', 'canDropInto', 'view', 'boundsIncludeStroke', 'drawnBoxes', 'kitSettings', 'snap', 'transformFollowers'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, opts?: BindingOptions): OngoingHandle {
+    start(ctx, opts) {
       let frame: MoveFrame = { delta: { dx: 0, dy: 0 }, previews: new Map(), opaque: new Set(), overlays: [] };
       const begun = beginMove(ctx, opts, () => frame);
       if (!begun) return {};
@@ -94,4 +94,4 @@ export const moveAction: Action & { requires: string[] } = inPlane({
    * insert drag).
    */
   enabled: () => true,
-}, selectionLayer);
+}), selectionLayer);

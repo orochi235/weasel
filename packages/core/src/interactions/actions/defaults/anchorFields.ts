@@ -3,7 +3,7 @@
  * field commits through, so each entry is one undo step.
  */
 
-import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import { defineAction, type ActionDeps } from '@weasel-js/routing';
 import {
   ANCHOR_FIELDS, pathToAnchors, readAnchorFields, writeAnchorField,
   type AnchorField, type AnchorFieldValues, type NumberEntry, type PolygonPath,
@@ -19,8 +19,8 @@ export interface SetAnchorFieldParams {
   by?: number;
 }
 
-function entryOf(params: Record<string, unknown> | undefined): { field: AnchorField; entry: NumberEntry } | null {
-  const field = params?.field as AnchorField | undefined;
+function entryOf(params: Readonly<Partial<SetAnchorFieldParams>> | undefined): { field: AnchorField; entry: NumberEntry } | null {
+  const field = params?.field;
   if (!field || !ANCHOR_FIELDS.includes(field)) return null;
   if (typeof params?.to === 'number') return { field, entry: { to: params.to } };
   if (typeof params?.by === 'number') return { field, entry: { by: params.by } };
@@ -32,7 +32,7 @@ function entryOf(params: Record<string, unknown> | undefined): { field: AnchorFi
  * or a lone anchor's handle X, Y, angle, or length. `params` is
  * {@link SetAnchorFieldParams}.
  */
-export const setAnchorFieldAction: Action & { requires: string[] } = {
+export const setAnchorFieldAction = defineAction({
   id: 'setAnchorField',
   label: 'Set anchor position',
   tags: pathOperationTags('command'),
@@ -47,9 +47,9 @@ export const setAnchorFieldAction: Action & { requires: string[] } = {
       const selected = [...dep.selectedAnchors];
       commitAnchorEdit(dep, 'Set anchor position', (set) => writeAnchorField(set, selected, asked.field, asked.entry));
     },
-  } as ImmediateInvoker,
+  },
   enabled: requiresAnchorSelection,
-};
+});
 
 /** What the anchor fields show for the path being edited in `deps`: `{}`
  *  outside path edit or with no anchor selected. */

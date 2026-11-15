@@ -43,6 +43,7 @@ export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel
 export type {
   ActionParamSchema, ActionTunings, AlignParams, DistributeParams, FlipParams, NudgeParams, ReorderParams,
   FinishPathParams, IngestParams, InsertParams, MoveParams, OffsetPathParams, PaintParams, RotateParams,
+  PlaceParams, CountStepParams, OpacityParams, ViewportZoomParams, WheelScrollParams, PickParams,
 } from '../interactions/actions/actionParamSchema';
 export { bindAction, defineAction, dynamicActionId, routedOpts } from '@weasel-js/routing';
 export type {
