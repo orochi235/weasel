@@ -79,7 +79,8 @@ z-index: unset is 0, higher sorts first, negative sinks. Rough anchors: 0 for an
 ordinary change, 10 for one a reader of the release should notice, 20 or more
 for one that could headline it, below 0 for one nobody would miss. Ranks from different
 authors are not comparable and do not need to be; the release pick settles what
-leads. The tags and the parser are in `scripts/release/entry-marker.ts`.
+leads. The parser is in `scripts/release/entry-marker.ts`, and the tags and groups in
+`apps/shared/releases.ts`.
 
 ## Picking highlights
 
@@ -92,8 +93,8 @@ know about this release if they read nothing else: usually two to four, rarely
 a fix.
 
 The Releases page shows a release's picks above its groups. A release with no
-picks shows its three highest-ranked entries there instead, marked as not
-curated. Entries published before markers existed take their tags and rank from
+picks and at least eight entries shows its three highest-ranked entries outside
+Internal there instead, marked as not curated. Entries published before markers existed take their tags and rank from
 `scripts/release/history-meta.json`, keyed by changeset hash; none of them is
 picked.
 
