@@ -3,9 +3,9 @@ import {
 } from '@weasel-js/core';
 import { formatShortcutParts } from '@weasel-js/gestures';
 import type { Action } from '@weasel-js/routing';
+import { FEATURE_PRESETS } from '@weasel-js/core/named-features';
 import { KeySequence } from '@weasel-js/ui/components/Keycaps';
 import s from './Features.module.css';
-import { FEATURE_PRESETS } from '@weasel-js/core/named-features';
 
 type ToolEntry = NonNullable<FeaturePreset['tools']>[number];
 
@@ -48,7 +48,7 @@ function PresetRow({ name, actions, tools = [], chrome = [], includes = [] }: {
   );
 }
 
-/** What each name `<SceneCanvas features>` takes turns on, read from the presets themselves. */
+/** What each of core's presets turns on, read from the presets themselves. */
 export function Features() {
   return (
     <article className={s.page}>
@@ -56,8 +56,10 @@ export function Features() {
         <div className="ckd-eyebrow">Guide</div>
         <h2 className={s.heading}>Canvas features</h2>
         <p className="ckd-desc">
-          What each name in <code>{'<SceneCanvas features>'}</code> turns on. A canvas registers the actions, tools, and
-          selection chrome of every preset it names and every preset those include, and the actions its tools bind.
+          What each of core's presets turns on. <code>{'<SceneCanvas features>'}</code> takes the preset objects
+          (<code>pickPreset</code>, <code>drawPreset</code>, …), and <code>namedFeatures</code> from{' '}
+          <code>@weasel-js/core/named-features</code> maps the names below to them. A canvas registers the actions, tools,
+          and selection chrome of every preset it is given and every preset those include, and the actions its tools bind.
         </p>
       </header>
 
