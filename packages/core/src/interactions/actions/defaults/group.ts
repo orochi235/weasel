@@ -23,18 +23,6 @@ import { icon } from '../../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import type { AnyScene } from 'core/scene/anyScene';
 
-/**
- * Creates a structural `GroupNode` and reparents the current selection
- * under it as a single undoable batch, in the container `groupingSite` names,
- * in the frontmost member's place, the members keeping their stacking.
- *
- * Grouping never moves a member on screen, unless with the pasteboard off
- * the members lie wholly off every page and move onto one. The container takes the world
- * envelope of its members' ink, and each member is re-expressed in that
- * container's frame. The container is a frame, so its pose is authored rather
- * than derived from its members, whose poses are expressed in it. A node
- * following a member that changes page goes where `followerMoves` says.
- */
 /** Where grouping the selection puts its container and members, or null when it cannot: no content, members on
  *  more than one layer, a container too large for the double range, a container that lands in a singular frame
  *  or whose own frame is singular, so a member could not keep its place. `enabled` and `run` both read this. */
@@ -79,6 +67,18 @@ function groupPlan(deps: ActionDeps) {
   return { scene, nodes, locals, parent, pose, followers };
 }
 
+/**
+ * Creates a structural `GroupNode` and reparents the current selection
+ * under it as a single undoable batch, in the container `groupingSite` names,
+ * in the frontmost member's place, the members keeping their stacking.
+ *
+ * Grouping never moves a member on screen, unless with the pasteboard off
+ * the members lie wholly off every page and move onto one. The container takes the world
+ * envelope of its members' ink, and each member is re-expressed in that
+ * container's frame. The container is a frame, so its pose is authored rather
+ * than derived from its members, whose poses are expressed in it. A node
+ * following a member that changes page goes where `followerMoves` says.
+ */
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
   label: 'Group',
