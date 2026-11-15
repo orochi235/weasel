@@ -86,14 +86,12 @@ function Demo() {
   }, [hud]);
 
   return (
-    <>
-      <DemoStage width={W} height={H}>
-        <SceneCanvas features={[pickPreset]}
-          className="ckd-canvas"
-          scene={scene}
-          ambient={[hudEntry]}
-        />
-      </DemoStage>
-    </>
+    <DemoStage width={W} height={H}>
+      <SceneCanvas features={[pickPreset]}
+        className="ckd-canvas"
+        scene={scene}
+        ambient={[hudEntry]}
+      />
+    </DemoStage>
   );
 }

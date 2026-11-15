@@ -19,7 +19,6 @@ export function HudDemo() {
   const [count, setCount] = useState(0);
   const btnRef = useRef<ButtonWidget | null>(null);
 
-  // Empty scene — this demo's content is the HUD layer, not scene nodes.
   const scene = useScene<Empty>({ items: [] });
 
   // Widgets can be created before the HUD attaches; they paint once it does.
@@ -38,21 +37,13 @@ export function HudDemo() {
     };
   }, [hud]);
 
-  // Sync the label on count changes.
   useEffect(() => {
     if (!btnRef.current) return;
     btnRef.current.setLabel(count === 0 ? 'Click me' : `Clicks: ${count}`);
   }, [count]);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>HUD Demo</h1>
-      <p>
-        Click the button rendered in the WebGL canvas. The counter increments
-        each click. The button is a HUD widget drawn in screen space via
-        <code> @weasel-js/hud</code>. Focus the canvas and press Tab to move
-        between the buttons, and Enter or Space to press the focused one.
-      </p>
+    <div className="ckd-demo">
       <DemoStage width={W} height={H}>
         <SceneCanvas features={[pickPreset]}
           className="ckd-canvas"
@@ -61,7 +52,7 @@ export function HudDemo() {
         />
       </DemoStage>
       <p className="ckd-toolbar-note">
-        React state counter: <strong>{count}</strong>
+        React state: <strong>{count}</strong>
       </p>
     </div>
   );
