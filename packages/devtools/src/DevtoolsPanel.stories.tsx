@@ -1,19 +1,17 @@
 import { useMemo } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { SceneCanvas, useScene, type NodeId } from '@weasel-js/core';
+import { asNodeId, SceneCanvas, useScene, type RectPose } from '@weasel-js/core';
 import { DevtoolsPanel, createInPagePanelTransport } from '@weasel-js/devtools';
 import s from './DevtoolsPanel.stories.module.css';
 
-type Pose = { x: number; y: number; width: number; height: number };
-
 function Board() {
-  const scene = useScene<{ name: string }, 'main', Pose>({
+  const scene = useScene<{ name: string }, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: [
-      { id: 'frame' as NodeId, kind: 'group', layer: 'main', pose: { x: 20, y: 20, width: 160, height: 120 }, data: { name: 'frame' } },
-      { id: 'card' as NodeId, kind: 'mark', layer: 'main', parent: 'frame' as NodeId, pose: { x: 40, y: 40, width: 60, height: 40 }, data: { name: 'card' } },
-      { id: 'badge' as NodeId, kind: 'mark', layer: 'main', parent: 'frame' as NodeId, locked: true, pose: { x: 110, y: 50, width: 40, height: 40 }, data: { name: 'badge' } },
-      { id: 'note' as NodeId, kind: 'mark', layer: 'main', pose: { x: 220, y: 60, width: 80, height: 50 }, data: { name: 'note' } },
+      { id: asNodeId('frame'), kind: 'group', layer: 'main', pose: { x: 20, y: 20, width: 160, height: 120 }, data: { name: 'frame' } },
+      { id: asNodeId('card'), kind: 'mark', layer: 'main', parent: asNodeId('frame'), pose: { x: 40, y: 40, width: 60, height: 40 }, data: { name: 'card' } },
+      { id: asNodeId('badge'), kind: 'mark', layer: 'main', parent: asNodeId('frame'), locked: true, pose: { x: 110, y: 50, width: 40, height: 40 }, data: { name: 'badge' } },
+      { id: asNodeId('note'), kind: 'mark', layer: 'main', pose: { x: 220, y: 60, width: 80, height: 50 }, data: { name: 'note' } },
     ],
   });
   return <SceneCanvas scene={scene} width={340} height={260} tools={{ hand: true, rect: true }} aria-label="Story board" />;
