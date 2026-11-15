@@ -20,3 +20,4 @@ export {
   type IndicatorStyle,
   type MinimapFit,
 } from './minimapMath';
+export type { MinimapZoomParams } from './actionParamSchema';

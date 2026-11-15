@@ -4,11 +4,10 @@
  * `rootView`, the main camera; `view` is the minimap's own camera, which only
  * the touch pinch reads, to find the world point between its fingers.
  */
-import type { Action, InvocationCtx, OngoingHandle, Tool } from '@weasel-js/routing';
+import { defineAction, type Action, type InvocationCtx, type OngoingHandle, type Tool } from '@weasel-js/routing';
 import {
   viewScreenToWorld, viewWorldToScreen, wheelZoomFactor, zoomAt, type View, type ViewApi, type ZoomClampOptions,
 } from '@weasel-js/core';
-import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Action id for `minimapCenterAction`. */
 export const MINIMAP_CENTER = 'minimap.center';
@@ -52,20 +51,20 @@ function rootOf(deps: InvocationCtx['deps']): ViewApi | undefined {
 
 /** Recenter the main camera on the pressed world point. */
 export function minimapCenterAction(): Action {
-  return {
+  return defineAction({
     id: MINIMAP_CENTER,
     label: 'Minimap — center the view here',
     requires: ['rootView'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const world = (params as ImmediateParams | undefined)?.world;
+        const world = params?.world;
         const root = rootOf(deps);
         if (!root || !world) return;
         centerRootOn(root, world.x, world.y);
       },
     },
-  };
+  });
 }
 
 /** Keep the main camera centered on the pointer's world point while dragging.
@@ -123,24 +122,23 @@ function centerOf(root: ViewApi): { x: number; y: number } | null {
  *  main view's zoom limits, or a getter read on each sample; omitted, the kit
  *  defaults `viewport.zoom` also uses. */
 export function minimapZoomAction(clamp?: MinimapZoomClamp): Action {
-  return {
+  return defineAction({
     id: MINIMAP_ZOOM,
     label: 'Minimap — zoom the view',
     requires: ['rootView'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const p = params as ImmediateParams | undefined;
         const root = rootOf(deps);
-        if (!root || !p?.world) return;
+        if (!root || !params?.world) return;
         // An extreme wheel delta still zooms, to the clamp; a pinch scale that is not a positive step does nothing.
-        const pinch = p.scale !== undefined;
-        if (pinch ? !(p.scale! > 0 && Number.isFinite(p.scale) && p.scale !== 1) : !p.deltaY) return;
-        const factor = pinch ? p.scale! : wheelZoomFactor(p.deltaY!);
-        root.set(zoomedAbout(root.get(), p.world, factor, clamp));
+        const pinch = params.scale !== undefined;
+        if (pinch ? !(params.scale! > 0 && Number.isFinite(params.scale) && params.scale !== 1) : !params.deltaY) return;
+        const factor = pinch ? params.scale! : wheelZoomFactor(params.deltaY!);
+        root.set(zoomedAbout(root.get(), params.world, factor, clamp));
       },
     },
-  };
+  });
 }
 
 /** Zoom the main camera with a two-finger touch pinch, by the ratio of the fingers' spread, about the world point

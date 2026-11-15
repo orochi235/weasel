@@ -62,3 +62,4 @@ export { kernel3dKitSettingsSchema, type Orbit3dKitSettings } from './kitSetting
 // `DepSchema`. Type-only: the module has no runtime side effect, and a bare
 // import would be emitted and then dropped under `sideEffects: false`.
 import type {} from './cameraDep';
+export type { DollyParams } from './actionParamSchema';

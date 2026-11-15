@@ -4,10 +4,9 @@ import type {
 import { attachHud, type AttachHudOptions } from './attach';
 import { loupeAimActions, surfaceKey } from './loupe/loupeRoutes';
 import type { Hud } from './hud';
-import { ANY_MODS, hitPredicate, viewToTransform, worldToScreen, type TargetPredicate } from '@weasel-js/core';
+import { ANY_MODS, defineAction, hitPredicate, viewToTransform, worldToScreen, type TargetPredicate } from '@weasel-js/core';
 import { claimsOf, type Widget, type HudPointerEvent } from './widget';
 import { createOpenPresses, type OpenPresses } from './openPresses';
-import type { ImmediateParams } from '@weasel-js/core';
 
 /** What the HUD layer's `hitTest` resolves and hands to the actions below. */
 export interface HudHitPayload {
@@ -52,41 +51,39 @@ function toScreen(deps: ActionDeps, x: number, y: number): [number, number] {
 // the normalized `x` / `y` and the event `type`.
 
 function pressAction(presses: OpenPresses): Action {
-  return {
+  return defineAction({
     id: 'hud.press',
     label: 'HUD — press widget',
     requires: ['view'],
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
-        const p = params as ImmediateParams | undefined;
-        const widget = widgetIn(p?.affordance);
-        if (!widget || !p?.world) return;
-        const [x, y] = toScreen(deps, p.world.x, p.world.y);
+        const widget = widgetIn(params?.affordance);
+        if (!widget || !params?.world) return;
+        const [x, y] = toScreen(deps, params.world.x, params.world.y);
         presses.opened(widget);
         widget.onPointer({ type: 'down', x, y, native: null } satisfies HudPointerEvent);
       },
     },
-  };
+  });
 }
 
 function releaseAction(presses: OpenPresses): Action {
-  return {
+  return defineAction({
     id: 'hud.release',
     label: 'HUD — release widget',
     requires: ['view'],
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
-        const p = params as ImmediateParams | undefined;
-        const widget = widgetIn(p?.affordance);
-        if (!widget || !p?.world) return;
-        const [x, y] = toScreen(deps, p.world.x, p.world.y);
+        const widget = widgetIn(params?.affordance);
+        if (!widget || !params?.world) return;
+        const [x, y] = toScreen(deps, params.world.x, params.world.y);
         presses.closed(widget);
         widget.onPointer({ type: 'up', x, y, native: null } satisfies HudPointerEvent);
       },
     },
-  };
+  });
 }
 
 function dragAction(presses: OpenPresses): Action {
@@ -128,51 +125,46 @@ function dragAction(presses: OpenPresses): Action {
 /** The three point gestures share a shape: resolve the widget, convert the
  *  world point to screen, deliver one event. */
 function pointAction(
-  id: string,
+  id: 'hud.doubleClick' | 'hud.contextMenu' | 'hud.longPress',
   label: string,
   type: 'doubleclick' | 'contextmenu' | 'longpress',
 ): Action {
-  return {
+  return defineAction({
     id,
     label,
     requires: ['view'],
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
-        const p = params as ImmediateParams | undefined;
-        const widget = widgetIn(p?.affordance);
-        if (!widget || !p?.world) return;
-        const [x, y] = toScreen(deps, p.world.x, p.world.y);
+        const widget = widgetIn(params?.affordance);
+        if (!widget || !params?.world) return;
+        const [x, y] = toScreen(deps, params.world.x, params.world.y);
         widget.onPointer({ type, x, y, native: null } satisfies HudPointerEvent);
       },
     },
-  };
+  });
 }
 
 function wheelAction(): Action {
-  return {
+  return defineAction({
     id: 'hud.wheel',
     label: 'HUD — wheel over widget',
     invoker: {
       timing: 'immediate' as const,
       run: (_deps, params) => {
-        const p = params as {
-          clientX?: number; clientY?: number;
-          deltaX?: number; deltaY?: number; affordance?: unknown;
-        } | undefined;
-        const widget = widgetIn(p?.affordance);
-        if (!widget || p?.clientX === undefined || p.clientY === undefined) return;
+        const widget = widgetIn(params?.affordance);
+        if (!widget || params?.clientX === undefined || params.clientY === undefined) return;
         // A wheel's client coords are already canvas-local, the space widgets
         // lay out in — no view conversion, unlike the point gestures.
         widget.onPointer({
           type: 'wheel',
-          x: p.clientX, y: p.clientY,
-          deltaX: p.deltaX ?? 0, deltaY: p.deltaY ?? 0,
+          x: params.clientX, y: params.clientY,
+          deltaX: params.deltaX ?? 0, deltaY: params.deltaY ?? 0,
           native: null,
         } satisfies HudPointerEvent);
       },
     },
-  };
+  });
 }
 
 /**

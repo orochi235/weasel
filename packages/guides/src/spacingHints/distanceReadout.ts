@@ -1,4 +1,4 @@
-import { dynamicActionId, sceneMagnification, type Action, type GestureBinding, type ModSpec, type NodeId, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
+import { defineAction, dynamicActionId, sceneMagnification, type Action, type GestureBinding, type ModSpec, type NodeId, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
 import { measureDistances, type DistanceReadout } from './distance';
 import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
 import type { ImmediateParams, AnyScene } from '@weasel-js/core';
@@ -41,6 +41,9 @@ export interface DistanceReadoutContribution extends SurfaceContribution {
   read(): DistanceReadout;
 }
 
+/** The readout action's params: where the hover is, and `show` while the modifier is held. */
+export type DistanceReadoutParams = Pick<ImmediateParams, 'world'> & { show?: boolean };
+
 const EMPTY: DistanceReadout = { gaps: [], leaders: [] };
 const MODIFIERS: readonly NonNullable<DistanceReadoutOptions['modifier']>[] = ['alt', 'ctrl', 'meta', 'shift'];
 
@@ -76,30 +79,29 @@ export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceRead
     store?.set(marksOf(next, opts.color, magnification));
   };
 
-  const action: Action = {
+  const action: Action = defineAction<string, DistanceReadoutParams>({
     id: `${id}.measure`,
     label: 'Measure distance to the shape under the pointer',
     requires: ['selection', 'scene', 'nodeAtPoint', 'poseDescriptor', 'snapReadout'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const p = params as (ImmediateParams & { show?: boolean }) | undefined;
         const { selection, scene, nodeAtPoint, poseDescriptor, snapReadout } = deps;
         if (snapReadout !== undefined) store = snapReadout.store;
         const ids = selection?.get() ?? [];
-        if (p?.show !== true || p.world === undefined
+        if (params?.show !== true || params.world === undefined
           || scene === undefined || nodeAtPoint === undefined || ids.length === 0) {
           show(EMPTY);
           return;
         }
-        const hit = nodeAtPoint(p.world, subtreeOf(scene, ids));
+        const hit = nodeAtPoint(params.world, subtreeOf(scene, ids));
         const from = worldUnionOf(scene, ids, { poseDescriptor });
         const [to] = hit === null ? [] : worldBoundsOf(scene, [hit], { poseDescriptor });
         if (from === null || to === undefined) show(EMPTY);
         else show(measureDistances(from, to), sceneMagnification(scene, [...ids, hit!]));
       },
     },
-  };
+  });
 
   const mods = (held: boolean): ModSpec => Object.fromEntries(
     MODIFIERS.map((m) => [m, m === modifier ? held : 'optional']),

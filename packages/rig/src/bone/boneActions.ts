@@ -1,5 +1,5 @@
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/history';
 import { createSetDataOp } from '@weasel-js/core';
 import type { NodeId, Scene } from '@weasel-js/core';
@@ -9,7 +9,6 @@ import { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoi
 import type { Skeleton } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from './placedRig';
 import type { RigEditState } from './rigEditState';
-import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What the bone tool's actions read and write, all of it the tool's own. */
 export interface BoneEnv {
@@ -115,7 +114,7 @@ export function createBoneActions(env: BoneEnv): Action[] {
   };
   return [
     dragAction(env, editing),
-    {
+    defineAction({
       id: 'bone.pick',
       label: 'Bone — pick the active joint',
       eligible,
@@ -124,13 +123,13 @@ export function createBoneActions(env: BoneEnv): Action[] {
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const press = (params as ImmediateParams | undefined)?.press;
+          const press = params?.press;
           const at = env.placed();
           if (!at || !press) return;
           env.state.setActive(jointAt(at.skeleton, press.x, press.y, reachOf(env, deps)));
         },
       },
-    },
+    }),
     {
       id: 'bone.remove',
       label: 'Bone — remove the active joint',

@@ -18,3 +18,4 @@ export {
   DEFAULT_WEIGHT_RADIUS_PX, WEIGHT_TOOL_OPTIONS, WEIGHT_BRUSH_PARAMS, weighedPaths, type WeighedPath, type WeightEnv,
 } from './weight/weightActions';
 export { rigKitSettingsSchema, type RigKitTargetSettings } from './kitSettings';
+export type { WeightBrushParams } from './actionParamSchema';
