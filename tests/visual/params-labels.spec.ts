@@ -80,12 +80,13 @@ test.describe('params labels', () => {
     }
   });
 
-  test('the override crosses into labkit, whose labels live outside the CSS module', async ({ page }) => {
+  test("the override reaches labkit's paired-row captions, which wear the row label's face", async ({ page }) => {
     const { css } = await less.render(read('packages/labkit/src/controls/ControlPanel.less'));
+    // labkit renders the caption as ui's PropertyCaption, so its face comes from the Properties module's `.caption`.
     const pair = `<div class="lk-control-panel">
-      <span class="lk-pair-cell" data-k="pair"><span class="lk-pair-label">Wrap</span><input type="number" value="80"></span>
+      <span class="lk-pair-cell" data-k="pair"><span class="caption lk-pair-label">Wrap</span><input type="number" value="80"></span>
     </div>`;
-    await mount(page, css, `<div class="def">${pair}</div><div class="ovr">${pair}</div>`);
+    await mount(page, PROPERTIES + css, `<div class="def">${pair}</div><div class="ovr">${pair}</div>`);
     const [def] = await measure(page, '.def');
     const [ovr] = await measure(page, '.ovr');
     expect(def.transform).toBe('uppercase');
