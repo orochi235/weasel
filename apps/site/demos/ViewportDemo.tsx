@@ -1,16 +1,14 @@
 import { useMemo, useState } from 'react';
-import { SceneCanvas, asNodeId, useScene, textCommandFromRuns, meanScale, viewPreset } from '@weasel-js/core';
-import type { RectPose } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import { SceneCanvas, asNodeId, useScene, solid, viewPreset } from '@weasel-js/core';
+import type { RectPose, TextNodeData } from '@weasel-js/core';
 import { useColorHex } from '@weasel-js/theme/react';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
 type Layer = 'scene';
-interface Data { color: string; label: string }
 
-const NODES: Array<{ id: string; pose: RectPose; data: Data }> = [
+const NODES: Array<{ id: string; pose: RectPose; data: { color: string; label: string } }> = [
   { id: 'a', pose: { x:  40, y:  40, width: 100, height: 70 }, data: { color: '#7fb069', label: 'A' } },
   { id: 'b', pose: { x: 220, y:  80, width: 100, height: 70 }, data: { color: '#a48bd4', label: 'B' } },
   { id: 'c', pose: { x: 420, y:  30, width: 100, height: 70 }, data: { color: '#e8a87c', label: 'C' } },
@@ -20,6 +18,16 @@ const NODES: Array<{ id: string; pose: RectPose; data: Data }> = [
   { id: 'g', pose: { x: 160, y: 380, width: 100, height: 70 }, data: { color: '#f0d080', label: 'G' } },
   { id: 'h', pose: { x: 480, y: 380, width: 100, height: 70 }, data: { color: '#7fb069', label: 'H' } },
 ];
+// The label is sized in screen pixels, so it reads the same at every zoom.
+const boxData = ({ color, label }: { color: string; label: string }): TextNodeData => ({
+  text: label,
+  style: { fontFamily: 'sans-serif', fontSize: { px: 14 }, align: 'center' },
+  verticalAlign: 'center',
+  fill: { paint: solid('#1a130d') },
+  background: { paint: solid(color) },
+  edge: { width: 1.5, shade: 0.15 },
+});
+
 type Boundary = 'none' | 'stop' | 'bounce';
 const BOUNDARY_ITEMS = (['none', 'stop', 'bounce'] as const).map((b) => ({ value: b, label: b }));
 const BOUNDS = { minX: -20, maxX: 300, minY: -20, maxY: 200 };
@@ -31,9 +39,9 @@ export function ViewportDemo() {
   const background = colorHex({ ref: 'workspace-surface' });
   const backgroundFill = useMemo(() => (background ? { color: background } : undefined), [background]);
 
-  const scene = useScene<Data, Layer, RectPose>({
+  const scene = useScene<TextNodeData, Layer, RectPose>({
     systemLayers: [{ id: 'scene' }],
-    initial: NODES.map((n) => ({ ...n, id: asNodeId(n.id), kind: 'mark' as const, layer: 'scene' })),
+    initial: NODES.map((n) => ({ id: asNodeId(n.id), pose: n.pose, kind: 'mark' as const, layer: 'scene', data: boxData(n.data) })),
   });
 
   const inertiaConfig = inertiaOn
@@ -72,31 +80,6 @@ export function ViewportDemo() {
             inertia: inertiaConfig,
             pinchZoom: true,
             animatedZoom: true,
-          }}
-          layers={{
-            scene: {
-              drawOne: (node, p, view): DrawCommand[] => {
-                const fontSize = 14 / meanScale(view.scale);
-                return [
-                  {
-                    kind: 'path',
-                    path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                    fill: { paint: { color: node.data.color } },
-                  },
-                  {
-                    kind: 'path',
-                    path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                    stroke: { paint: { color: 'rgba(255,255,255,0.25)' }, width: { px: 1.5 } },
-                  },
-                  textCommandFromRuns(
-                    p.x, p.y,
-                    [{ text: node.data.label, fill: { paint: { kind: 'solid', color: '#1a130d' } } }],
-                    { fontFamily: 'sans-serif', fontSize, align: 'center' },
-                    undefined, p.height, 'center', undefined, p.width,
-                  ),
-                ];
-              },
-            },
           }}
         />
       </DemoStage>

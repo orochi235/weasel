@@ -27,12 +27,15 @@ export interface TextLineBoxesOptions {
    *  covers no area, so for hit-testing and silhouettes it is noise. Pass
    *  `true` when the indices have to line up with the laid-out lines. */
   includeEmpty?: boolean;
+  /** The view scale a `{ px }` `fontSize` or `letterSpacing` resolves
+   *  against, as `layoutTextPose` takes it. Default 1. */
+  scale?: number;
 }
 
 /** Per-line rectangles for a text pose, in world units, in layout order. */
 export function textLineBoxes(pose: TextPose, opts: TextLineBoxesOptions = {}): Rect[] {
   const padding = opts.padding ?? 0;
-  const { laid, x: dx, y: dy } = layoutTextPose(pose);
+  const { laid, x: dx, y: dy } = layoutTextPose(pose, opts.scale);
 
   const out: Rect[] = [];
   for (const line of laid.lines) {

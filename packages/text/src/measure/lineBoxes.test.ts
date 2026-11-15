@@ -140,4 +140,11 @@ describe('textLineBoxes', () => {
     const rtl = textLineBoxes(pose({ style: { fontSize: 20, align: 'start', direction: 'rtl' } }))[0];
     expect(rtl.x + rtl.width).toBeCloseTo(500);
   });
+
+  it('lays a { px } size out at the view scale it is given', () => {
+    const world = textLineBoxes(pose({ style: { fontSize: 10 } }))[0];
+    const px = textLineBoxes(pose({ style: { fontSize: { px: 20 } } }), { scale: 2 })[0];
+    expect(px.width).toBeCloseTo(world.width);
+    expect(px.height).toBeCloseTo(world.height);
+  });
 });

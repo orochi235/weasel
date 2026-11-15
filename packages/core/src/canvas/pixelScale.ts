@@ -1,3 +1,4 @@
+import { meanScale } from '@weasel-js/geom';
 import type { View } from 'core/viewport/view';
 import type { NodePaintCtx } from './nodeShapeTypes';
 
@@ -10,12 +11,12 @@ export function pixelScaleAt(view: View, dpr: number): number {
 let lastView: View | undefined;
 let lastCtx: NodePaintCtx = {};
 
-/** The paint ctx carrying only `pixelScale` for `view` at `dpr`, reused while neither changes. */
+/** The paint ctx carrying only `pixelScale` and `scale` for `view` at `dpr`, reused while neither changes. */
 export function pixelScaleCtx(view: View, dpr: number): NodePaintCtx {
   const pixelScale = pixelScaleAt(view, dpr);
   if (view !== lastView || lastCtx.pixelScale !== pixelScale) {
     lastView = view;
-    lastCtx = { pixelScale };
+    lastCtx = { pixelScale, scale: meanScale(view.scale) };
   }
   return lastCtx;
 }

@@ -34,7 +34,7 @@ import { paintsPose } from './nodeShapes/poseBox';
 import { PATH_POSE_PAINTER } from './nodeShapes/pathPosePainter';
 import { RECT_FALLBACK_PAINTER } from './nodeShapes/rectFallbackPainter';
 import { SHAPE_PAINTER } from './nodeShapes/shapePainter';
-import { TEXT_PAINTER } from './nodeShapes/textPainter';
+import { TEXT_PAINTER, textLayoutScale, type TextNodeData } from './nodeShapes/textPainter';
 import type { NodeShapeEntry, NodeInk, NodeSilhouetteCtx, NodeInkCtx } from './nodeShapeTypes';
 import {
   addBuiltInShape, defaultNodeShapes, effectiveShapes, ensureBuiltInShapes, evaluationOrder, nodeShapesChanged, nodeShapesOf,
@@ -85,7 +85,7 @@ const PAINTER_SLOT_DERIVED_NONRECT = 'shape:painter:derived:nonrect';
 const SILHOUETTE_SLOT = 'shape:silhouette';
 const TEXT_SILHOUETTE_SLOT = 'shape:silhouette:text';
 
-interface TextSilhouette { epoch: number; engines: number; path: Path | null }
+interface TextSilhouette { epoch: number; engines: number; scale: number; path: Path | null }
 const TRIM_PICK_SLOT = 'shape:trim-pick';
 
 /** Memo slot names for `shapes`'s lookups; the default registry keeps the bare names. */
@@ -144,17 +144,18 @@ export function findShapeSilhouette<TData, TPose>(
   // source answers `null` for every ordinary node, and treating that as a
   // reason to bypass would retire the memo for the whole scene.
   if (ctx?.derivedPath != null) return build();
-  // Line boxes follow font metrics and the registered layout engines, and
-  // either changes with no change to the node, so the text entry is checked
-  // against the glyph epoch and the engines it was laid out with.
+  // Line boxes follow font metrics, the registered layout engines, and for
+  // `{ px }` text the view scale, none of which shows in the node, so the text
+  // entry is checked against each as it was laid out.
   const shapes = ctx?.shapes ?? defaultNodeShapes;
   if (findNodeShape(node, shapes) === (TEXT_PAINTER as NodeShapeEntry<unknown, unknown>)) {
     const epoch = glyphGeneration();
     const engines = textEngineGeneration();
+    const scale = textLayoutScale(node.data as TextNodeData, ctx?.scale);
     const held = nodeMemo(node as { data?: unknown }, slotFor(TEXT_SILHOUETTE_SLOT, shapes), pose,
-      (): TextSilhouette => ({ epoch, engines, path: build() }));
-    if (held.epoch !== epoch || held.engines !== engines) {
-      held.epoch = epoch; held.engines = engines;
+      (): TextSilhouette => ({ epoch, engines, scale, path: build() }));
+    if (held.epoch !== epoch || held.engines !== engines || held.scale !== scale) {
+      held.epoch = epoch; held.engines = engines; held.scale = scale;
       held.path = build();
     }
     return held.path;
@@ -237,7 +238,7 @@ export function shapeCoversPoint<TData, TPose>(
   // A group paints nothing, so its interior is its box, which the caller's pre-filter tested.
   if (node.kind === 'group') return true;
   const shapes = opts.shapes;
-  const sil = findShapeSilhouette(node, pose, { derivedPath: opts.derivedPath, shapes });
+  const sil = findShapeSilhouette(node, pose, { derivedPath: opts.derivedPath, scale: opts.scale, shapes });
   if (sil === null) return true;
   const parts = derivedPartsOf(opts.derivedPath);
   if (parts !== undefined) return partsCover(node, parts, pose, x, y, opts);

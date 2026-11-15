@@ -23,6 +23,10 @@ export interface NodePaintCtx {
    *  view when absent. Lets a painter size resolution-dependent work, such as
    *  re-rasterizing an SVG image; one that has no such work ignores it. */
   pixelScale?: number;
+  /** The view scale, `meanScale(view.scale)`, that a `{ px }` length the
+   *  painter lays out resolves against, such as a text node's `{ px }`
+   *  `fontSize`. Absent is 1. */
+  scale?: number;
   /** The node's derived path, resolved before painting by the `drawOne`
    *  wrapper of whichever scene or adapter is drawn: `paint` has no handle on
    *  either, and deriving needs the dependencies' poses. **Absent** for a node that derives from nothing —
@@ -159,6 +163,9 @@ export interface NodeSilhouetteCtx {
    *  {@link NodePaintCtx.derivedPath}: absent for a node that derives from
    *  nothing, `null` when it derives but has nothing to draw. */
   derivedPath?: Path | null;
+  /** As {@link NodePaintCtx.scale}: a text node's lines sized in `{ px }`
+   *  are boxed where they are drawn at this scale. Absent is 1. */
+  scale?: number;
   /** The painters the caller resolves through — the scene's, `nodeShapesOf(scene)` — for a
    *  painter that asks after another node's shape. Absent, `defaultNodeShapes`. */
   shapes?: NodeShapes;

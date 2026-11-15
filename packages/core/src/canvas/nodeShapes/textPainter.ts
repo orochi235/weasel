@@ -100,27 +100,21 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Memoized because the renderer's layout cache keys on the `ResolvedRun[]` array
   // identity: a fresh runs array per frame would leave that cache missing on every
   // draw. Both resolvers are pure style merging — no font reads — so `(data, pose)` is
-  // the whole key. See PAINT_SLOT.
-  //
-  // `y` is the top of the first line box, not a baseline — see `TextDrawCommand.y`.
-  paint: (node, pose, ctx) => nodeMemo(node, PAINT_SLOT, pose, (): DrawCommand[] => {
+  // the whole key, with the view scale beside it for `{ px }` text. See PAINT_SLOT.
+  paint: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
-    const laid = textCommandFromPose(textPoseOf(d, pose, ctx?.inherited));
-    const text = d.overflow === 'clip' ? clippedToBox(laid, pose) : laid;
-    const bg = resolveFill(d.background);
-    if (!bg) return [text];
-    const fill = commandFill(bg, pose);
-    const { shadow, edge } = textFrameOf(d, pose);
-    const out: DrawCommand[] = [];
-    if (shadow) {
-      const paint = { paint: { kind: 'solid' as const, color: shadow.color } };
-      out.push({ kind: 'group', alpha: shadow.opacity, children: shadow.paths.map((path) => ({ kind: 'path' as const, path, fill: paint })) });
+    const inherited = ctx?.inherited;
+    const scale = textLayoutScale(d, ctx?.scale);
+    if (scale === 1) return nodeMemo(node, PAINT_SLOT, pose, () => paintText(d, pose, inherited, 1), inherited);
+    const held = nodeMemo(node, SCREEN_PAINT_SLOT, pose,
+      (): ScreenPaint => ({ scale, inherited, cmds: paintText(d, pose, inherited, scale) }));
+    if (held.scale !== scale || held.inherited !== inherited) {
+      held.scale = scale;
+      held.inherited = inherited;
+      held.cmds = paintText(d, pose, inherited, scale);
     }
-    out.push({ kind: 'path', path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, ...(fill ? { fill } : {}) });
-    if (edge) out.push({ kind: 'path', path: edge.path, stroke: { paint: { kind: 'solid', color: edge.color }, width: edge.width } });
-    out.push(text);
-    return out;
-  }, ctx?.inherited),
+    return held.cmds;
+  },
   // The pose is a layout box, not a bounding box: the union of the line boxes is what
   // the node actually covers, so picking, lasso, and clipping stop grabbing blank space.
   //
@@ -130,12 +124,12 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   //
   // A background is ink across the whole box, so a node with one is its box.
   // A clipped node's lines are cut to the box, as they are drawn.
-  silhouette: (node, pose) => {
+  silhouette: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
     if (resolveFill(d.background)) {
       return { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
     }
-    const lines = textLineBoxes(textPoseOf(d, pose));
+    const lines = textLineBoxes(textPoseOf(d, pose), { scale: textLayoutScale(d, ctx?.scale) });
     const boxes = d.overflow === 'clip' ? cutRects(lines, pose) : lines;
     if (boxes.length === 0) return null;
     return rectsToPath(boxes);
@@ -150,11 +144,46 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   drawnBounds: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
     const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
-    const lines = stroke ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose, ctx?.inherited)), strokeOutsetPerAxis(stroke, ctx)) : null;
+    const lines = stroke
+      ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose, ctx?.inherited), { scale: textLayoutScale(d, ctx?.scale) }), strokeOutsetPerAxis(stroke, ctx))
+      : null;
     const shadow = textShadowBox(d, pose);
     return shadow ? unionRects([lines ?? pose, shadow]) : lines;
   },
 };
+
+/** The view scale `d` lays out at: `scale` when its style or a run sizes
+ *  something in `{ px }`, else 1, so world-sized text keeps its memo through a zoom. */
+export function textLayoutScale(d: Pick<TextNodeData, 'style' | 'runs'>, scale: number | undefined): number {
+  if (scale === undefined || scale === 1) return 1;
+  const sized = (s: Pick<TextStyle, 'fontSize' | 'letterSpacing'> | undefined): boolean =>
+    typeof s?.fontSize === 'object' || typeof s?.letterSpacing === 'object';
+  return sized(d.style) || (d.runs?.some(sized) ?? false) ? scale : 1;
+}
+
+/** A `{ px }` text node's commands and the scale and inherited paint they were laid out under. */
+interface ScreenPaint { scale: number; inherited: InheritedPaint | undefined; cmds: DrawCommand[] }
+
+const SCREEN_PAINT_SLOT = 'shape:paint:text-screen';
+
+/** `y` is the top of the first line box, not a baseline — see `TextDrawCommand.y`. */
+function paintText(d: TextNodeData, pose: RectPose, inherited: InheritedPaint | undefined, scale: number): DrawCommand[] {
+  const laid = textCommandFromPose(textPoseOf(d, pose, inherited), scale);
+  const text = d.overflow === 'clip' ? clippedToBox(laid, pose) : laid;
+  const bg = resolveFill(d.background);
+  if (!bg) return [text];
+  const fill = commandFill(bg, pose);
+  const { shadow, edge } = textFrameOf(d, pose);
+  const out: DrawCommand[] = [];
+  if (shadow) {
+    const paint = { paint: { kind: 'solid' as const, color: shadow.color } };
+    out.push({ kind: 'group', alpha: shadow.opacity, children: shadow.paths.map((path) => ({ kind: 'path' as const, path, fill: paint })) });
+  }
+  out.push({ kind: 'path', path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, ...(fill ? { fill } : {}) });
+  if (edge) out.push({ kind: 'path', path: edge.path, stroke: { paint: { kind: 'solid', color: edge.color }, width: edge.width } });
+  out.push(text);
+  return out;
+}
 
 /** Each of `rects` cut to `box`, leaving out any it does not overlap. */
 function cutRects(rects: readonly Rect[], box: Rect): Rect[] {
