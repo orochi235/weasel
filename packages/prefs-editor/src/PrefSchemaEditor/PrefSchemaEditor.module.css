@@ -106,11 +106,11 @@
 /* A bar is as wide or as tall as what it holds, magnified as the reader sets it. */
 .previewBar { flex: none; zoom: var(--preview-zoom, 1); }
 .zoom { display: flex; align-items: center; gap: var(--wzl-space-2); inline-size: 160px; }
-/* Sized for its widest figure, 200%, so the range beside it holds still as the figure changes. */
+/* Sized for its widest figure, 200%, whose % is wider than a digit, so the range beside it holds still. */
 .zoomReadout {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   flex: none;
-  min-inline-size: 4ch;
+  min-inline-size: 5ch;
   text-align: end;
   font-size: var(--wzl-font-size-sm);
 }
