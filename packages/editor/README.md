@@ -47,8 +47,9 @@ It runs beside `@weasel-js/core`, `@weasel-js/geom`, `@weasel-js/guides`,
 `EditorShell` mounts the kit's providers where none is in scope, and a
 dispatcher that runs the keys of the commands registered on its registry while
 no canvas holds the keys; once a canvas on that registry does, the canvas runs
-them. It registers `editor.preferences` (Mod+,) to open the preferences dialog,
-and draws the menu bar from `menus` on its own row, or, with `menuBar="inline"`,
+them. Given `prefs`, it registers `editor.preferences` (Mod+,) to open the
+preferences dialog; it registers `shortcuts.show` (Shift+/) to open the keyboard
+shortcut sheet unless `shortcuts={null}`; and it draws the menu bar from `menus` on its own row, or, with `menuBar="inline"`,
 hands it to a `topbar` function to place.
 
 Every `<SceneCanvas>` in the shell gets the editor's context menus:
