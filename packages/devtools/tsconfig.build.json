@@ -22,6 +22,8 @@
     "**/*.test.tsx",
     "**/*.stories.ts",
     "**/*.stories.tsx",
+    "**/*.story.ts",
+    "**/*.story.tsx",
     "**/*.fixture.ts",
     "**/*.fixture.tsx",
     "**/*.fixtures.ts",

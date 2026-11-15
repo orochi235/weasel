@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import type { PrefMap } from '@weasel-js/prefs';
 import { MapEditor } from '@weasel-js/ui/components/Prefs';
-import { prefStoryLeaf } from './prefStoryLeaf';
+import { prefStoryLeaf } from './prefLeaf.story';
 
 const PREF: PrefMap = {
   kind: 'map',

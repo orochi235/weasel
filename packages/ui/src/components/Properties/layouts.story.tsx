@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import s from './storyLayouts.module.css';
+import s from './layouts.story.module.css';
 
 /**
  * Side-by-side comparison used by row stories to show block + inline layouts

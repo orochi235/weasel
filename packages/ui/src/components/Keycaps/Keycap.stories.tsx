@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { ReactElement } from 'react';
 import { KeyCap, type KeyCapVariant, type KeyCapProps, KEYCAP_VARIANT_ICONS } from '@weasel-js/ui/components/Keycaps';
 import type { LegendStyle, Platform } from '@weasel-js/gestures';
-import { FONT_OPTIONS, resolveFont } from './keycapStoryFonts';
-import { relabel } from './keycapStoryLegends';
+import { FONT_OPTIONS, resolveFont } from './keycapFonts.story';
+import { relabel } from './keycapLegends.story';
 import s from './Keycaps.stories.module.css';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'inverse'];

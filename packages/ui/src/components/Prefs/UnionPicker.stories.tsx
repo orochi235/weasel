@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Fragment, useState } from 'react';
 import { isPrefLeaf, type PrefUnion } from '@weasel-js/prefs';
 import { UnionPicker } from '@weasel-js/ui/components/Prefs';
-import { prefStoryLeaf } from './prefStoryLeaf';
+import { prefStoryLeaf } from './prefLeaf.story';
 
 const PREF: PrefUnion = {
   kind: 'union',

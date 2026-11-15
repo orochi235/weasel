@@ -63,7 +63,7 @@ const sources = (dir) =>
   readdirSync(dir).flatMap((f) => {
     const p = join(dir, f);
     if (statSync(p).isDirectory()) return f === '__tests__' || f === 'testing' ? [] : sources(p);
-    return /\.tsx?$/.test(f) && !/\.(test|spec|stories)\./.test(f) ? [p] : [];
+    return /\.tsx?$/.test(f) && !/\.(test|spec|stories|story)\./.test(f) ? [p] : [];
   });
 for (const [name, t] of traits) {
   for (const file of sources(join(repoRoot, 'packages', name, 'src'))) {

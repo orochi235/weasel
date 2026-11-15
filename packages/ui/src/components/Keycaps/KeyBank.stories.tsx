@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { CSSProperties, ReactElement } from 'react';
 import { KeyBank, type KeyBankProps, KeyCap, KEY_MIN_SCALE } from '@weasel-js/ui/components/Keycaps';
-import { FONT_OPTIONS, resolveFont } from './keycapStoryFonts';
+import { FONT_OPTIONS, resolveFont } from './keycapFonts.story';
 import s from './Keycaps.stories.module.css';
 
 interface StoryArgs extends KeyBankProps {

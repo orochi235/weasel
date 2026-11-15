@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { LegendStyle, Platform } from '@weasel-js/gestures';
 import { KeyDiagram, KEYBOARD_LAYOUTS } from '@weasel-js/ui/components/Keycaps';
-import { FONT_OPTIONS, resolveFont } from './keycapStoryFonts';
+import { FONT_OPTIONS, resolveFont } from './keycapFonts.story';
 import s from './Keycaps.stories.module.css';
 
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
