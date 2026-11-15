@@ -64,8 +64,10 @@ export interface SvgKitLeafData {
   verticalAlign?: TextVerticalAlign;
   /** `'shrink'` sets a text node's text at the size that fits its box. */
   fit?: TextFit;
-  /** A text node's paint over its whole box, under the glyphs. */
+  /** A text node's paint over its whole box, under the glyphs; a group's, under its children. */
   background?: Fill | null;
+  /** A group's stroke along its box. */
+  border?: Stroke | null;
   /** A text node's inset from its box to its text, on every side. */
   padding?: number;
   /** `'clip'` cuts a text node's text at its box. */
@@ -169,6 +171,15 @@ export function svgLeafFromKit(
 
 /** A text leaf's text, in its box inset by `padding` about the same center,
  *  which a rotation turns about. */
+/** The box a group paints from its `background` and `border`, as a path, or `null` when it paints none. */
+function groupBoxLeaf(data: SvgKitLeafData | null, pose: SvgKitPose): SvgPathNode | null {
+  const fill = resolveFill(data?.background);
+  const stroke = resolveStroke(data?.border);
+  if (!fill && !stroke) return null;
+  const path: Path = { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
+  return svgLeafFromKit({ path, fill, stroke }, pose) as SvgPathNode;
+}
+
 function svgTextFromKit(data: SvgKitLeafData & { text: string }, pose: SvgKitPose): SvgTextNode {
   const pad = Math.max(0, Math.min(data.padding ?? 0, pose.width / 2, pose.height / 2));
   const node: SvgTextNode = {
@@ -343,7 +354,9 @@ export function svgNodesFromKit<TId extends string>(
     const copied = (): SvgGroupNode[] => copies.map((transform) => ({ kind: 'group', transform, children: [content()] }));
     const withCopies = (g: SvgGroupNode): SvgGroupNode => (copies.length === 0 ? g : { kind: 'group', children: [g, ...copied()] });
     if (isGroup) {
-      const g = withCopies({ ...content(), ...paint });
+      const box = groupBoxLeaf(own, node.pose);
+      const g: SvgGroupNode = box ? { kind: 'group', children: [box, withCopies(content())], ...paint, groupBox: true }
+        : withCopies({ ...content(), ...paint });
       return group ? group(id, g) : g;
     }
     if (mark && self && self.kind !== 'group') {

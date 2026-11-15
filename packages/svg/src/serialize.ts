@@ -33,6 +33,7 @@ import { alignedTextXml, hasAlignedTextStroke } from './alignedTextStroke';
 import { prettyXml } from './prettyXml';
 import { BOOLEAN_ATTR } from './booleanGroup';
 import { TEXT_FRAME_ATTR } from './framedText';
+import { GROUP_BOX_ATTR } from './groupBox';
 import { RAD_TO_DEG, pathToD } from '@weasel-js/geom';
 
 /**
@@ -247,6 +248,7 @@ function groupXml(
   }
   if (node.boolean) attrs.push(`${BOOLEAN_ATTR}="${node.boolean}"`);
   if (node.textFrame) attrs.push(`${TEXT_FRAME_ATTR}="true"`);
+  if (node.groupBox) attrs.push(`${GROUP_BOX_ATTR}="true"`);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const head = attrs.length > 0
     ? `<g ${attrs.join(' ')}${metaAttrs}>`

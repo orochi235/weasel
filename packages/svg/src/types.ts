@@ -179,6 +179,10 @@ export interface SvgGroupNode {
   /** Set on the group a text node with a background is written as (`svgLeafFromKit`), which
    *  `svgNodesToKitDrafts` reads back as that one text node. Written as `data-weasel-text-frame`. */
   textFrame?: true;
+  /** Set on the group a kit group that paints its box is written as (`svgNodesFromKit`): the box,
+   *  then a group of its content. `svgNodesToKitDrafts` reads it back as that one group. Written as
+   *  `data-weasel-group-box`. */
+  groupBox?: true;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }

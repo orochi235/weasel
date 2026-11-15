@@ -10,13 +10,14 @@
  * Stroke widths, dashes, font sizes, and letter spacing live in data, so
  * they take the clamp separately.
  */
-import type { ParseResult, SvgGroupNode, SvgNode, SvgPaint, SvgStroke } from './types';
+import type { ParseResult, SvgGroupNode, SvgNode, SvgPaint, SvgPathNode, SvgStroke } from './types';
 import { mapFillPaint } from './fillPaint';
 import { withTransformsBaked } from './bakeTransforms';
 import type { SvgKitLeafData } from './fromKit';
 import { fadeFill, fadeRun, fadeStroke } from './fadePaint';
 import { groupTakes, NO_TAKES, takesOf, type Takes } from './draftTakes';
 import { framedTextDraft, framedTextParts, type FramedTextParts } from './framedText';
+import { groupBoxParts } from './groupBox';
 import {
   boundsOfPath,
   DEFAULT_TEXT_FILL,
@@ -199,7 +200,9 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
   // its children's axis-aligned boxes; null for empty groups. `inherited` is
   // the product of the enclosing groups' opacities, and `from` what a child
   // that sets no paint can take from its container as `'inherit'`.
-  const visit = (n: SvgNode, parentId: string | null, inherited: number, from: Takes): SvgDraftPose | null => {
+  const visit = (source: SvgNode, parentId: string | null, inherited: number, from: Takes): SvgDraftPose | null => {
+    const boxed = source.kind === 'group' ? groupBoxParts(source) : null;
+    const n = boxed?.group ?? source;
     const k = inherited * (n.opacity ?? 1);
     const takes = takesOf(n, from, k);
     if (n.kind === 'group') {
@@ -229,16 +232,18 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
       drafts.push(draft);
       const at = drafts.length - 1;
       const acc = unionAABB(n.children.map((c) => visit(c, draft.id, k, groupTakes(n, takes, k))));
-      if (!acc) {
+      const box = boxed && boxOfPath(boxed.box.path);
+      const pose = box ?? (n.clip && acc ? boxOfPath(n.clip) : acc);
+      if (!pose) {
         // Nothing beneath has a box, so any draft beneath is a kept empty group.
         const kept = drafts.length > at + 1 || (options.keepEmpty?.(n) ?? false);
         if (!kept) drafts.splice(at, 1);
         else if (n.clip) draft.pose = boxOfPath(n.clip);
         return null;
       }
-      draft.pose = n.clip ? boxOfPath(n.clip) : acc;
-      Object.assign(draft.data, containerPaint(n, takes, draft.pose, k));
-      return draft.pose;
+      draft.pose = pose;
+      Object.assign(draft.data, containerPaint(n, takes, draft.pose, k), boxed ? boxPaint(boxed.box, draft.pose, k) : {});
+      return box && !n.clip ? unionAABB([box, acc]) : draft.pose;
     }
 
     const { pose, data } = leafDraft(n, takes, k);
@@ -360,6 +365,13 @@ function containerPaint(
     ...(takes.fill ? { fill: INHERIT } : fill ? { fill: { paint: fadeFill(fill, k) } } : {}),
     ...(takes.stroke ? { stroke: INHERIT } : stroke ? { stroke: fadeStroke(stroke, k) } : {}),
   };
+}
+
+/** A painted group's box as its `background` and `border`. */
+function boxPaint(box: SvgPathNode, at: SvgDraftBounds, k: number): SvgKitLeafData {
+  const fill = fillDataFromSvg(box.fill, at);
+  const stroke = strokeDataFromSvg(box.stroke, at);
+  return { ...(fill ? { background: { paint: fadeFill(fill, k) } } : {}), ...(stroke ? { border: fadeStroke(stroke, k) } : {}) };
 }
 
 /** The leaf a boolean group `n` draws when its result is empty: no outline, in `n`'s paint. */
