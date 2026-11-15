@@ -53,10 +53,11 @@ export function useExportCommands(scene: ChartScene, pages: ChartPages): void {
 }
 
 function usePngCommand(scene: ChartScene, pages: ChartPages, scale: 1 | 2 | 4): void {
-  useCommand(EXPORT_ACTIONS[`png${scale}`], `Page as PNG (${scale}×)`, () => exportPage(pages, async (page, name) => ({
-    blob: await exportPagePng(scene, pageRegionOf(page), { scale }),
-    name: scale === 1 ? `${name}.png` : `${name}@${scale}x.png`,
-  })));
+  useCommand(EXPORT_ACTIONS[`png${scale}`], `Page as PNG (${scale}×)`, () => exportPage(pages, async (page, name) => {
+    const said: string[] = [];
+    const blob = await exportPagePng(scene, pageRegionOf(page), { scale, onDiagnostic: (d) => said.push(d.message) });
+    return { blob, name: scale === 1 ? `${name}.png` : `${name}@${scale}x.png`, warnings: { toast: 'chart-export-png', said } };
+  }));
 }
 
 function usePdfCommand(scene: ChartScene, pages: ChartPages): void {

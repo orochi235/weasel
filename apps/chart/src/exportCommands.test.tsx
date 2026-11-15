@@ -7,9 +7,9 @@ import { chartPrefs } from './prefs';
 import { withIcons } from './testIcons';
 
 const saved = vi.hoisted(() => [] as { blob: Blob; name: string }[]);
-const png = vi.hoisted(() => vi.fn(async (_scene: unknown, _page: unknown, opts: { scale: number }) =>
-  new Blob([`png@${opts.scale}`], { type: 'image/png' })));
 type Heard = { onDiagnostic?: (d: { kind: string; subject: string; message: string }) => void };
+const png = vi.hoisted(() => vi.fn(async (_scene: unknown, _page: unknown, opts: { scale: number } & Heard) =>
+  new Blob([`png@${opts.scale}`], { type: 'image/png' })));
 const pdf = vi.hoisted(() => vi.fn(async (_scene: unknown, _pages: readonly unknown[], _opts?: Heard) =>
   new Blob(['%PDF'], { type: 'application/pdf' })));
 const warned = vi.hoisted(() => vi.fn());
@@ -124,6 +124,16 @@ describe('File › Export', () => {
     exportAs('Page as SVG');
     await vi.waitFor(() => expect(saved).toHaveLength(1));
     expect(warned).toHaveBeenCalledWith('Exported', ['a font this export uses failed to load'], 'chart-export-svg');
+  });
+
+  it('reports what the PNG could not carry, as the SVG and the PDF do', async () => {
+    png.mockImplementationOnce(async (_scene, _page, opts) => {
+      opts.onDiagnostic?.({ kind: 'font', subject: 'serif', message: 'a font this export uses failed to load' });
+      return new Blob(['png'], { type: 'image/png' });
+    });
+    exportAs('Page as PNG (1×)');
+    await vi.waitFor(() => expect(saved).toHaveLength(1));
+    expect(warned).toHaveBeenCalledWith('Exported', ['a font this export uses failed to load'], 'chart-export-png');
   });
 
   it('draws the page last shown while the view is between pages', async () => {
