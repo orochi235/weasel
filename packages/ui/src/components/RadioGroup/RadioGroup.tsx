@@ -13,6 +13,7 @@ import { FieldFoot, type FieldSlotProps } from '../Field/fieldSlots';
 import { RadioGroupAlong, RadioSlotsContext } from './RadioGroupAlong';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
+import { useRacField } from '../Field/racField';
 import s from './RadioGroup.module.css';
 
 /** Props for {@link RadioGroup}, on top of React Aria's `RadioGroup` props. */
@@ -26,16 +27,21 @@ export type RadioGroupProps = Omit<RACRadioGroupProps, 'children' | 'className' 
  * supplying the same label / description / errorMessage slots as `Input`.
  * Holds {@link Radio} children. Inside an `Along` with a curved shape the label and radios lie along the shape, the
  * description and error one row further in, and `orientation` has nothing to choose.
+ *
+ * Inside a `Field`, and with no `label` or `aria-label` of its own, it takes the field's label, description and
+ * error.
  */
 export function RadioGroup(props: RadioGroupProps) {
   const enclosing = useRun();
   const { rest: own, rac, wrap } = useRacHold(props);
-  if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return wrap(<RadioGroupAlong {...own} {...rac} shape={enclosing.shape} align={enclosing.align ?? 'center'} />);
+  const field = useRacField({ id: own.id, 'aria-label': own['aria-label'], 'aria-labelledby': own['aria-labelledby'], 'aria-describedby': rac['aria-describedby'], isInvalid: own.isInvalid, labeled: own.label !== undefined });
+  if (enclosing.shape !== undefined && enclosing.shape.kind !== 'line') return wrap(<RadioGroupAlong {...own} {...rac} {...field} shape={enclosing.shape} align={enclosing.align ?? 'center'} />);
   const { label, description, errorMessage, children, className, ...rest } = own;
   return wrap(
     <RACRadioGroup
       {...rest}
       {...rac}
+      {...field}
       className={[s.group, fieldClasses.root, className].filter(Boolean).join(' ')}
     >
       {label !== undefined && <Label className={s.legend}>{label}</Label>}

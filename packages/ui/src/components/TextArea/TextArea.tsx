@@ -4,6 +4,7 @@ import { MIXED_HINT } from '../Field/mixedHint';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
+import { useRacField } from '../Field/racField';
 import f from '../Field/Field.module.css';
 import s from './TextArea.module.css';
 
@@ -22,13 +23,17 @@ export type TextAreaProps = Omit<RACTextFieldProps, 'children' | 'className' | '
  * Multi-line text input wrapping React Aria's TextField, in the same frame and
  * label / description / errorMessage slots as {@link Input}.
  *
+ * Inside a `Field`, and with no `label` or `aria-label` of its own, it takes the
+ * field's label, description and error.
+ *
  * `ref` forwards to the underlying `<textarea>`.
  */
 export const TextArea = forwardRef(function TextArea(props: TextAreaProps, ref: Ref<HTMLTextAreaElement>) {
   const hold = useRacHold(props);
   const { label, orientation, description, errorMessage, placeholder, mixed, rows = 4, className, ...textFieldProps } = hold.rest;
+  const field = useRacField({ id: textFieldProps.id, 'aria-label': textFieldProps['aria-label'], 'aria-labelledby': textFieldProps['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], isInvalid: textFieldProps.isInvalid, labeled: label !== undefined });
   return hold.wrap(
-    <TextField {...textFieldProps} {...hold.rac} className={fieldRootClass({ orientation, className })}>
+    <TextField {...textFieldProps} {...hold.rac} {...field} className={fieldRootClass({ orientation, className })}>
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>
         <RACTextArea ref={ref} placeholder={mixed ? MIXED_HINT : placeholder} rows={rows} />

@@ -68,8 +68,8 @@ export function useHoldReason(held: string | undefined): HoldReasonParts {
   };
 }
 
-/** Joins `aria-describedby` ids, leaving out the missing ones. */
+/** Joins `aria-describedby` id lists, leaving out the missing ones and any id named twice. */
 export function describedBy(...ids: (string | undefined)[]): string | undefined {
-  const joined = ids.filter(Boolean).join(' ');
+  const joined = [...new Set(ids.flatMap((list) => list?.split(/\s+/) ?? []).filter(Boolean))].join(' ');
   return joined || undefined;
 }

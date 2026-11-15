@@ -190,7 +190,7 @@ export function ListEditor<T>({
           disabled={disabled || value.length >= maxItems}
           disabledReason={access.reason}
           onAdd={(make) => insert(value.length, make)}
-          buttonRef={focus.add}
+          addRef={focus.add}
         />
       </div>
     </div>

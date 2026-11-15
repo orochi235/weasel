@@ -1,4 +1,5 @@
-import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, type ReactNode, type Ref } from 'react';
+import { useObjectRef } from 'react-aria';
 import {
   Select as RACSelect,
   Label,
@@ -16,6 +17,7 @@ import { Popover } from '../Popover';
 import { AlignOverTrigger, NO_NUDGE, type Press } from './alignOverTrigger';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import { useRacField } from '../Field/racField';
 import f from '../Field/Field.module.css';
 import listbox from './listbox.module.css';
 import s from './Select.module.css';
@@ -86,12 +88,10 @@ export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<obje
    * already chosen moves nothing; `'below'` hangs it under the trigger.
    */
   popup?: SelectPopup;
-  /**
-   * Id for the trigger button. React Aria puts a plain `id` on the wrapper,
-   * which is not labelable, so an outer `<label for>` needs this to reach a
-   * control the label can actually own.
-   */
-  triggerId?: string;
+  /** Id for the trigger button, the select's focusable element, for a `<label htmlFor>` outside it. */
+  id?: string;
+  /** Receives the trigger `<button>`, to move focus to it. */
+  ref?: Ref<HTMLButtonElement>;
   className?: string;
 } & TooltipFields & OverlayPortalProps;
 
@@ -108,6 +108,9 @@ export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<obje
  * `aria-label` or a string `label`, as `Button` does; `tooltip` replaces that
  * text. Held disabled for a reason, or read-only, its trigger stays focusable and shows the reason, and its list
  * does not open.
+ *
+ * Inside a `Field`, and with no `label` or `aria-label` of its own, it takes the field's label, description and
+ * error. `id` and `ref` reach the trigger `<button>`.
  */
 export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const hold = useRacHold(props);
@@ -129,7 +132,8 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
     variant = 'field',
     indicator = variant === 'bare' ? 'underline' : 'chevron',
     popup = 'over',
-    triggerId,
+    id,
+    ref,
     className,
     portalContainer,
     shortcut,
@@ -139,33 +143,21 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   const placeholder = mixed ? MIXED_HINT : placeholderProp;
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useObjectRef(ref);
   const pressRef = useRef<Press | null>(null);
   const [nudge, setNudge] = useState(NO_NUDGE);
+  const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], isInvalid: rest.isInvalid, labeled: label !== undefined });
 
   return hold.wrap(
     <RACSelect
       {...rest}
       {...racHeld}
+      {...field}
       {...(held ? { isOpen: false, onOpenChange: undefined } : {})}
       selectedKey={mixed ? null : selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange && !held ? (k) => onSelectionChange(k as T) : undefined}
-      className={fieldRootClass({
-        orientation,
-        width,
-        fit: s.fit,
-        className: [
-          s.select,
-          variant === 'bare' && s.bare,
-          indicator === 'underline' && s.underlined,
-          indicator === 'none' && s.plain,
-          orientation === 'row' && s.row,
-          className,
-        ]
-          .filter(Boolean)
-          .join(' '),
-      })}
+      className={selectClass({ orientation, width, variant, indicator, className })}
     >
       {anchor}
       {label !== undefined && <Label className={f.label}>{label}</Label>}
@@ -226,6 +218,25 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       )}
     </RACSelect>,
   );
+}
+
+/** The classes on a select's root, for its layout, variant and indicator. */
+function selectClass({ orientation, width, variant, indicator, className }: Pick<SelectProps, 'orientation' | 'width' | 'variant' | 'indicator' | 'className'>): string {
+  return fieldRootClass({
+    orientation,
+    width,
+    fit: s.fit,
+    className: [
+      s.select,
+      variant === 'bare' && s.bare,
+      indicator === 'underline' && s.underlined,
+      indicator === 'none' && s.plain,
+      orientation === 'row' && s.row,
+      className,
+    ]
+      .filter(Boolean)
+      .join(' '),
+  });
 }
 
 /** A select's list: its `options`, or else its `children`. */

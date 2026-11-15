@@ -75,6 +75,31 @@ keeps a locale the fields never see. `UnitField`'s `locale` prop sets one field 
 returns the locale a field settles on, for a field of your own. A locale whose numbers would not read back as shown
 falls back to Latin digits, then to `en-US`.
 
+## Fields, names and focus
+
+`Field` lays a label, an optional value readout, a description and an error around a control, and the control takes
+its accessible name, description and error from them, so the label is written once:
+
+```tsx
+<Field label="Opacity" description="Of the whole layer." output={`${v}%`}>
+  <Slider min={0} max={100} thumbs={[{ value: v }]} onInput={([t]) => setV(t.value)} />
+</Field>
+```
+
+A field of several controls takes `group`: it becomes a group named by its label, and each control names itself.
+A `PropertyRow` is a field the same way. A control of your own joins in by spreading `useFieldControl()` onto its
+focusable element; one that names itself (`aria-label`, `aria-labelledby`, or a label of its own) takes nothing
+from the field.
+
+Every control's `ref` reaches the element focus goes to:
+
+| Control | `ref` reaches | Root |
+|---|---|---|
+| `Input`, `NumberField`, `UnitField`, `ComboBox` | the `<input>` | |
+| `TextArea` | the `<textarea>` | |
+| `Select`, `MenuButton` | the trigger `<button>` (`Select`'s `id` too) | |
+| `Checkbox`, `Switch` | the `<input>` | `rootRef`: the `<label>` |
+
 ## License
 
 MIT
