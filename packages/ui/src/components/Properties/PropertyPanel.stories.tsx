@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { decimal } from '@weasel-js/quantity';
 import { EMPHASES, GRADES, STANCES } from '@weasel-js/theme';
 import { EffectList, type EffectKind, type EffectListItem } from '@weasel-js/ui/components/EffectList';
 import { Subpanel, PropertyField, PropertyList, type PropertyListPack, PropertySpan, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
 import { Switch } from '@weasel-js/ui/components/Switch';
+import { Sequence, values } from '@weasel-js/ui/components/Sequence';
+import s from './PropertyPanel.stories.module.css';
 
 // Args common to most stories — exposed as controls so the
 // title, pack mode, and container width can be tweaked live.
@@ -202,49 +204,37 @@ function StanceRows() {
   );
 }
 
+type PanelLook = Pick<ComponentProps<typeof PropertyPanel>, 'stance' | 'grade' | 'emphasis' | 'tint'>;
+
+/** One cell of `Stances`: a panel in `look`, or nested in `nestIn`. */
+interface StanceCell {
+  title: string;
+  look: PanelLook;
+  nestIn?: PanelLook & { title: string };
+}
+
+const STANCE_CELLS: readonly StanceCell[] = [
+  { title: 'no stance', look: {} },
+  ...STANCES.map((stance) => ({ title: stance, look: { stance } })),
+  ...GRADES.map((grade) => ({ title: `grade ${grade}`, look: { grade } })),
+  ...EMPHASES.map((emphasis) => ({ title: `emphasis ${emphasis}`, look: { emphasis } })),
+  ...[0, 1, 2, 3].map((tint) => ({ title: `clarify, tint ${tint}`, look: { stance: 'clarify' as const, tint } })),
+  { title: 'tint 2, no stance', look: { tint: 2 } },
+  { title: 'danger', look: { grade: 'danger' }, nestIn: { stance: 'clarify', tint: 4, title: 'danger nested in clarify' } },
+  ...STANCES.map((stance) => ({ title: stance, look: { stance }, nestIn: { stance: 'clarify' as const, tint: 4, title: `${stance} nested in clarify` } })),
+];
+
 /** No stance and every stance, each grade, high and low emphasis, tints 0–3 on `clarify`, then a panel nested in each stance and a danger one in `clarify`. */
 export const Stances: Story = {
   render: () => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 260px)', gap: 16 }}>
-      <PropertyPanel title="no stance">
-        <StanceRows />
-      </PropertyPanel>
-      {STANCES.map((stance) => (
-        <PropertyPanel key={stance} stance={stance} title={stance}>
-          <StanceRows />
-        </PropertyPanel>
-      ))}
-      {GRADES.map((grade) => (
-        <PropertyPanel key={`grade-${grade}`} grade={grade} title={`grade ${grade}`}>
-          <StanceRows />
-        </PropertyPanel>
-      ))}
-      {EMPHASES.map((emphasis) => (
-        <PropertyPanel key={`emphasis-${emphasis}`} emphasis={emphasis} title={`emphasis ${emphasis}`}>
-          <StanceRows />
-        </PropertyPanel>
-      ))}
-      {[0, 1, 2, 3].map((tint) => (
-        <PropertyPanel key={`tint-${tint}`} stance="clarify" tint={tint} title={`clarify, tint ${tint}`}>
-          <StanceRows />
-        </PropertyPanel>
-      ))}
-      <PropertyPanel tint={2} title="tint 2, no stance">
-        <StanceRows />
-      </PropertyPanel>
-      <PropertyPanel stance="clarify" tint={4} title="danger nested in clarify">
-        <PropertyPanel grade="danger" title="danger">
-          <StanceRows />
-        </PropertyPanel>
-      </PropertyPanel>
-      {STANCES.map((stance) => (
-        <PropertyPanel key={`nested-${stance}`} stance="clarify" tint={4} title={`${stance} nested in clarify`}>
-          <PropertyPanel stance={stance} title={stance}>
-            <StanceRows />
-          </PropertyPanel>
-        </PropertyPanel>
-      ))}
-    </div>
+    <Sequence label="Panel stances" sweep={values(STANCE_CELLS, (c) => c.nestIn?.title ?? c.title)} caption={false}>
+      {({ title, look, nestIn }) => {
+        const panel = <PropertyPanel {...look} title={title}><StanceRows /></PropertyPanel>;
+        if (!nestIn) return <div className={s.cell}>{panel}</div>;
+        const { title: outer, ...around } = nestIn;
+        return <div className={s.cell}><PropertyPanel {...around} title={outer}>{panel}</PropertyPanel></div>;
+      }}
+    </Sequence>
   ),
 };
 
@@ -254,7 +244,7 @@ export const HeaderActionsAndSelection: Story = {
   render: function Render() {
     const [unhandled, setUnhandled] = useState(false);
     return (
-      <div style={{ width: 320 }}>
+      <div className={s.column}>
         <PropertyPanel
           stance="debug"
           title="Dispatch · 3"
@@ -554,7 +544,7 @@ function ShadowPanel() {
  *  alpha, `pack="pairs"` bodies, and a checkbox spanning a paired grid. */
 export const Sidebar: Story = {
   render: () => (
-    <div style={{ width: 360, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className={s.sidebar}>
       <BodyPanel />
       <StrokePanel />
       <ShadowPanel />
@@ -599,7 +589,7 @@ export const TintList: Story = {
       );
     }
     return (
-      <div style={{ width: 360 }}>
+      <div className={s.wide}>
         <Tails />
       </div>
     );
