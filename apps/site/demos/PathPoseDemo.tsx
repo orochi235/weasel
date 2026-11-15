@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { IDENTITY_POSE_COMPOSITION,
+import {
+  IDENTITY_POSE_COMPOSITION,
   asNodeId,
   polygonFromPoints,
   SceneCanvas,
@@ -7,22 +7,9 @@ import { IDENTITY_POSE_COMPOSITION,
   useSelection, movePreset, pickPreset, transformPreset,
 } from '@weasel-js/core';
 import { gridSnapSource } from '@weasel-js/guides';
-import type {
-  Path,
-  DebugFlags,
-} from '@weasel-js/core';
+import type { Path } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
-
-const DEBUG_STATES: Array<{ label: string; config: DebugFlags | false }> = [
-  { label: 'off',          config: false },
-  { label: 'bounds',       config: { bounds: true } },
-  { label: '+origins',     config: { bounds: true, origins: true } },
-  { label: '+hitboxes',    config: { bounds: true, origins: true, hitboxes: true } },
-  { label: '+handles',     config: { bounds: true, origins: true, hitboxes: true, handles: true } },
-  { label: 'all',          config: { bounds: true, origins: true, hitboxes: true, handles: true, snap: true, layers: true } },
-];
 
 const W = 400, H = 300;
 const SNAP = { sources: [gridSnapSource({ spacing: 20 })] };
@@ -37,12 +24,7 @@ const INITIAL_PATH: Path = polygonFromPoints([
 ]);
 
 export function PathPoseDemo() {
-  const [debugIdx, setDebugIdx] = useState(0);
-  const debug = DEBUG_STATES[debugIdx].config;
-
-  // Path TPose needs the full useScene shape (the trivial form aliases
-  // pose === data === item, so item would have to BE a Path — but Path
-  // carries no id field).
+  // The trivial `useScene({ items })` form makes each item its own pose, and a Path has no id.
   const scene = useScene<{ id: string }, 'default', Path>({ composition: IDENTITY_POSE_COMPOSITION,
     systemLayers: [{ id: 'default' }],
     initial: [{
@@ -56,34 +38,24 @@ export function PathPoseDemo() {
   const selection = useSelection({ scene, initial: [asNodeId(ID)] });
 
   return (
-    <div className="ckd-demo">
-      <div className="ckd-toolbar">
-        <Button
-          onClick={() => setDebugIdx((i) => (i + 1) % DEBUG_STATES.length)}
-        >
-          Debug overlay: {DEBUG_STATES[debugIdx].label}
-        </Button>
-      </div>
-      <DemoStage width={W} height={H}>
-        <SceneCanvas
-          features={[pickPreset, movePreset, transformPreset]}
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          snap={SNAP}
-          debug={debug}
-          layers={{
-            scene: {
-              drawOne: (_o, p): DrawCommand[] => [{
-                kind: 'path',
-                path: p,
-                fill: { paint: { color: '#7fb069' } },
-                stroke: { paint: { color: '#1a130d' }, width: 1.5 },
-              }],
-            },
-          }}
-        />
-      </DemoStage>
-    </div>
+    <DemoStage width={W} height={H}>
+      <SceneCanvas
+        features={[pickPreset, movePreset, transformPreset]}
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
+        snap={SNAP}
+        layers={{
+          scene: {
+            drawOne: (_o, p): DrawCommand[] => [{
+              kind: 'path',
+              path: p,
+              fill: { paint: { color: '#7fb069' } },
+              stroke: { paint: { color: '#1a130d' }, width: 1.5 },
+            }],
+          },
+        }}
+      />
+    </DemoStage>
   );
 }
