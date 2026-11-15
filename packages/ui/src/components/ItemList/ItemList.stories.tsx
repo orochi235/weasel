@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useReorderDragList, type PressModifiers, type ReorderItem } from '@weasel-js/ui';
 import { Button } from '@weasel-js/ui/components/Button';
 import { ItemList } from '@weasel-js/ui/components/ItemList';
+import s from './ItemList.stories.module.css';
 
 const meta: Meta<typeof ItemList> = {
   title: 'ui/ItemList',
@@ -28,7 +29,7 @@ export const Selectable: Story = {
   render: function Render(args) {
     const [current, setCurrent] = useState('b');
     return (
-      <div style={{ width: 220 }}>
+      <div className={s.list}>
         <ItemList {...args}
           selection="single"
           containerProps={{ 'aria-label': 'History' }}
@@ -78,7 +79,7 @@ export const Reorder: Story = {
       },
     });
     return (
-      <div style={{ width: 220 }}>
+      <div className={s.list}>
         <ItemList {...args}
           ref={drag.containerProps.ref}
           selection="multi"
@@ -111,7 +112,7 @@ export const WithControls: Story = {
     const flip = (list: string[], id: string) =>
       list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
     return (
-      <div style={{ width: 260 }}>
+      <div className={s.wide}>
         <ItemList {...args}
           selection="single"
           containerProps={{ 'aria-label': 'Layers' }}

@@ -28,7 +28,7 @@ function useLive(args: JogProps, scrub?: boolean): JogProps {
 
 function Live({ args, scrub }: { args: JogProps; scrub?: boolean }) {
   return (
-    <div style={{ width: 460 }}>
+    <div className={s.strip}>
       <Jog {...useLive(args, scrub)} />
     </div>
   );

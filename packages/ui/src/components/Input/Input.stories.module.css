@@ -1,0 +1,6 @@
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-8);
+  width: 320px;
+}

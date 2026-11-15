@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { DragGrip } from '@weasel-js/ui/components/DragGrip';
+import s from './DragGrip.stories.module.css';
 
 const meta: Meta<typeof DragGrip> = {
   title: 'ui/DragGrip',
@@ -15,7 +16,7 @@ export const Default: Story = {
 /** Proofed large, where a dot off the grid shows; the right-hand one is the size it ships at. */
 export const Sizes: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+    <div className={s.proof}>
       {[128, 64, 32, 16].map((size) => (
         <DragGrip {...args} key={size} size={size} />
       ))}

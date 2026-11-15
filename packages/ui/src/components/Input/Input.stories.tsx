@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { Input } from '@weasel-js/ui/components/Input';
+import s from './Input.stories.module.css';
 
 const meta: Meta<typeof Input> = {
   title: 'ui/Input',
@@ -22,7 +23,7 @@ export const WithDescription: Story = {
  *  the row; a description drops to a line of its own. */
 export const LabelBeside: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
+    <div className={s.column}>
       <Input {...args} label="Name" orientation="row" placeholder="Untitled" />
       <Input {...args} label="Name" orientation="row" description="Shown in the layer list." placeholder="Untitled" />
     </div>

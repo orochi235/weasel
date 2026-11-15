@@ -1,3 +1,7 @@
+.strip {
+  width: 460px;
+}
+
 /* A dial: the Jog lies along its rim. */
 .dial {
   position: relative;

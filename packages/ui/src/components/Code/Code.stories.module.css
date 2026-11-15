@@ -1,0 +1,11 @@
+.looks {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
+  gap: var(--wzl-space-4);
+}
+
+.prose {
+  max-width: 320px;
+  line-height: 1.6;
+}

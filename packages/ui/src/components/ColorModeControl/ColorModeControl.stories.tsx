@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useColorModePreference } from '@weasel-js/theme/react';
 import { ColorModeControl } from '@weasel-js/ui/components/ColorModeControl';
+import s from './ColorModeControl.stories.module.css';
 
 const meta: Meta<typeof ColorModeControl> = {
   title: 'ui/ColorModeControl',
@@ -14,7 +15,7 @@ export const WithPreferenceHook: Story = {
   render: function Render(args) {
     const { preference, setPreference, mode } = useColorModePreference();
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className={s.row}>
         <ColorModeControl {...args} value={preference} onChange={setPreference} />
         <span>
           {preference} → {mode}
@@ -29,7 +30,7 @@ export const SizesAndVariants: Story = {
   render: function Render(args) {
     const { preference, setPreference } = useColorModePreference();
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'start' }}>
+      <div className={s.column}>
         <ColorModeControl {...args} value={preference} onChange={setPreference} />
         <ColorModeControl {...args} value={preference} onChange={setPreference} size="sm" />
         <ColorModeControl {...args} value={preference} onChange={setPreference} variant="flat" />

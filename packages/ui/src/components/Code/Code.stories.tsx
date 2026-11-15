@@ -3,6 +3,7 @@ import { Code, CODE_VARIANT_ICONS } from '@weasel-js/ui/components/Code';
 import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';
 import { BADGE_LOOKS, lookProps } from '../Badge/looks';
+import s from './Code.stories.module.css';
 
 const meta: Meta<typeof Code> = {
   title: 'ui/Code',
@@ -22,7 +23,7 @@ export const Default: Story = {};
 
 export const Looks: Story = {
   render: (args) => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 8, justifyContent: 'start' }}>
+    <div className={s.looks}>
       {BADGE_LOOKS.flatMap((t) => [
         <Code {...args} key={`${t}-s`} {...lookProps(t)}>{t}</Code>,
         <Code {...args} key={`${t}-p`} {...lookProps(t)} variant="plain">{t}</Code>,
@@ -58,7 +59,7 @@ export const Diff: Story = {
  *  inside the chip, which repeats its padding on every line. */
 export const InRunningText: Story = {
   render: (args) => (
-    <p style={{ maxWidth: 320, lineHeight: 1.6 }}>
+    <p className={s.prose}>
       The dep commits through <Code {...args}>(bounds: {'{'} x: number; y: number; width: number; height: number {'}'}, extras: InsertExtras) =&gt; NodeId | null</Code>{' '}
       and is overridden with <Code {...args} emphasis="high">useDepSource('insert', …)</Code>.
     </p>

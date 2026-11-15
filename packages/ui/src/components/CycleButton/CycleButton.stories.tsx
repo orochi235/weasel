@@ -4,6 +4,7 @@ import { useColorModePreference } from '@weasel-js/theme/react';
 import { CycleButton, COLOR_MODE_OPTIONS, type CycleButtonOption } from '@weasel-js/ui/components/CycleButton';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon } from '../../icons.gen';
+import s from './CycleButton.stories.module.css';
 
 const meta: Meta<typeof CycleButton> = {
   title: 'ui/CycleButton',
@@ -18,7 +19,7 @@ export const ColorMode: Story = {
   render: function Render({ size, variant }) {
     const { preference, setPreference, mode } = useColorModePreference();
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className={s.row}>
         <CycleButton
           value={preference}
           onChange={setPreference}
@@ -47,7 +48,7 @@ export const CustomOptions: Story = {
   render: function Render({ size, variant }) {
     const [shape, setShape] = useState<'rect' | 'ellipse' | 'star'>('rect');
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className={s.row}>
         <CycleButton value={shape} onChange={setShape} options={SHAPES} aria-label="Shape" size={size} variant={variant} />
         <CycleButton value={shape} onChange={setShape} options={SHAPES} aria-label="Shape" size="md" />
         <CycleButton value={shape} onChange={setShape} options={SHAPES} aria-label="Shape" variant="solid" />
