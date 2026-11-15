@@ -1,4 +1,4 @@
-import { asNodeId, createScene, parseSnapshot, stringifySnapshot, type UnitScope } from '@weasel-js/core';
+import { asNodeId, createScene, parseSnapshot, stringifySnapshot, type SerializedScene, type UnitScope } from '@weasel-js/core';
 import { symmetryCopies, symmetryGroupSpec, symmetryRegistry } from '@weasel-js/symmetry';
 import { describe, expect, it } from 'vitest';
 import { nodeSpecsFromSnapshot } from './snapshot';

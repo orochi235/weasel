@@ -80,7 +80,7 @@ describe('snapshot — scene snapshot to node specs', () => {
       version: 2,
       systemLayers: [{ id: 'default' }],
       nodes: [{ id: 'im', kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { image } }],
-    })) as SerializedScene<{ image: typeof image }, Layer, Pose>;
+    })) as unknown as SerializedScene<{ image: typeof image }, Layer, Pose>;
 
     expect(nodeSpecsFromSnapshot(json)[0].data).toEqual({ image });
   });
