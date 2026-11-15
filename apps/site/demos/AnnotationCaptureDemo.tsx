@@ -17,12 +17,9 @@ import { Button } from '@weasel-js/ui/components/Button';
 const CONTENT = { w: 240, h: 160 };
 const paneRef = createRef<HTMLDivElement>();
 
-/** The last export, wherever it came from.
- *
- *  `onCapture` fires for labkit's own toolbar Export as well as for the
- *  buttons below, which is the whole reason the hook exists: a host cannot
- *  otherwise see an export it did not start. Module scope because the
- *  capability is declared outside React, same as the target refs. */
+/** The last export, from labkit's toolbar Export or the buttons below: `onCapture`
+ *  is how a host sees an export it did not start. Module scope because the
+ *  capability is declared outside React. */
 let latest: { url: string; w: number; h: number } | null = null;
 const captured = createEmitter();
 function publish(next: typeof latest): void {
@@ -31,10 +28,9 @@ function publish(next: typeof latest): void {
   captured.emit();
 }
 
-/** Four flat quadrants and a black dot dead centre. A capture landing at the
- *  wrong scale or the wrong origin puts a mark over the wrong quadrant, which
- *  a pixel probe can say out loud — the default hue keeps all four away from
- *  the mark colour, so nothing can mistake the base for a mark. */
+/** Four flat quadrants and a black dot dead center, so a capture at the wrong
+ *  scale or origin puts a mark over the wrong quadrant. The default hue keeps
+ *  all four away from the mark color, so a pixel probe never reads the base as a mark. */
 function Target({ hue }: { hue: number }) {
   return (
     <svg
@@ -55,9 +51,7 @@ function Target({ hue }: { hue: number }) {
   );
 }
 
-/** A host calling the API for itself: capture, then show what came back. This
- *  is the whole consumer contract — labkit hands over a Blob and takes no view
- *  on where it goes. */
+/** A host calling `capture()` itself; labkit hands over a Blob and takes no view on where it goes. */
 function CapturePanel() {
   const marks = useAnnotations();
   const shot = useSyncExternalStore(
@@ -66,8 +60,7 @@ function CapturePanel() {
     () => null,
   );
 
-  // Nothing here handles the result: `onCapture` does, and it does the same
-  // for an export started from the toolbar.
+  // `onCapture` handles the result, as it does for the toolbar's export.
   const run = (format: 'png' | 'svg') => {
     marks.capture('pane', { format, scale: 4 }).catch((err: unknown) => {
       publish(null);
@@ -77,12 +70,8 @@ function CapturePanel() {
 
   return (
     <div className="ckd-capture-panel">
-      <Button onClick={() => run('png')}>
-        Capture PNG ×4
-      </Button>
-      <Button onClick={() => run('svg')}>
-        Capture SVG
-      </Button>
+      <Button onClick={() => run('png')}>Capture PNG ×4</Button>
+      <Button onClick={() => run('svg')}>Capture SVG</Button>
       {shot ? (
         <img
           src={shot.url}
