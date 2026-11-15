@@ -3,6 +3,8 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { useState } from 'react';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { Button } from '@weasel-js/ui/components/Button';
+import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
+import s from './ToolOptionsBar.stories.module.css';
 import { icon } from '../../icons.gen';
 
 const meta: Meta<typeof ToolOptionsBar> = {
@@ -14,35 +16,17 @@ export default meta;
 type Story = StoryObj<typeof ToolOptionsBar>;
 
 const STYLE_TOGGLES = [
-  { key: 'bold', label: 'B', ariaLabel: 'Bold' },
-  { key: 'italic', label: 'I', ariaLabel: 'Italic' },
-  { key: 'underline', label: 'U', ariaLabel: 'Underline' },
-] as const;
+  { value: 'bold', label: 'B', ariaLabel: 'Bold' },
+  { value: 'italic', label: 'I', ariaLabel: 'Italic' },
+  { value: 'underline', label: 'U', ariaLabel: 'Underline' },
+];
 
 export const OneControlGroup: Story = {
   render: (args) => {
-    const [on, setOn] = useState<ReadonlySet<string>>(new Set());
-    const toggle = (key: string) =>
-      setOn((prev) => {
-        const next = new Set(prev);
-        if (!next.delete(key)) next.add(key);
-        return next;
-      });
+    const [on, setOn] = useState<string[]>([]);
     return (
       <ToolOptionsBar {...args} label="Text">
-        {STYLE_TOGGLES.map(({ key, label, ariaLabel }) => (
-          <Button
-            key={key}
-            size="sm"
-            variant="ghost"
-            iconOnly
-            aria-label={ariaLabel}
-            pressed={on.has(key)}
-            onClick={() => toggle(key)}
-          >
-            {label}
-          </Button>
-        ))}
+        <SegmentedBar mode="multiple" size="sm" aria-label="Text style" items={STYLE_TOGGLES} value={on} onChange={setOn} />
       </ToolOptionsBar>
     );
   },
@@ -54,7 +38,7 @@ export const OneControlGroup: Story = {
 // no way to reach them).
 export const ManyControlsOverflow: Story = {
   render: (args) => (
-    <div style={{ width: 360, border: '1px dashed var(--wzl-border)' }}>
+    <div className={s.narrow}>
       <ToolOptionsBar {...args} label="Text">
         {Array.from({ length: 16 }, (_, i) => (
           <Button key={i} size="sm" variant="ghost">
@@ -125,7 +109,7 @@ export const FromASchema: Story = {
       color: '#3b82f6',
     });
     return (
-      <div style={{ width: 640 }}>
+      <div className={s.wide}>
         <ToolOptionsBar
           {...args}
           schema={TEXT_OPTIONS}
@@ -142,7 +126,7 @@ export const FromASchema: Story = {
 export const MixedValues: Story = {
   args: { label: 'Text' },
   render: (args) => (
-    <div style={{ width: 640 }}>
+    <div className={s.wide}>
       <ToolOptionsBar
         {...args}
         schema={TEXT_OPTIONS}
