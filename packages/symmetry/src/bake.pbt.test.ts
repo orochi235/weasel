@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { boxFrameOf, multiply, rotate, translate, type Affine } from '@weasel-js/geom';
-import { asNodeId, createScene, type NodeId, type RectPose, type SceneRegistry } from '@weasel-js/core';
+import { asNodeId, createScene, type NodeId, type RectPose } from '@weasel-js/core';
 import { carryPose, bakeSymmetry, type BoxPose } from './bake';
 import { createSymmetry } from './controller';
 import { worldPoseOf } from './frames';
@@ -56,7 +56,7 @@ function frames(scene: ReturnType<typeof setupScene>, ids: readonly NodeId[]): A
 }
 
 function setupScene() {
-  return createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: symmetryRegistry as SceneRegistry<RectPose> });
+  return createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: symmetryRegistry });
 }
 
 function leavesUnder(scene: ReturnType<typeof setupScene>, id: NodeId): NodeId[] {

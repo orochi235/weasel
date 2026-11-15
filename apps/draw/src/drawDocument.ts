@@ -78,7 +78,7 @@ export interface WeaselDrawData extends TextFrameData {
  *  holding one saves and reopens. */
 export const DRAW_REGISTRY: SceneRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer> =
   withPathEffectsRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer>({
-    ...(symmetryRegistry as SceneRegistry<WeaselDrawPose, WeaselDrawData, WeaselDrawLayer>),
+    ...symmetryRegistry,
     derivePose: { [UNION_OF_CHILDREN]: unionOfChildren as never },
   });
 

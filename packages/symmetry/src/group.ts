@@ -76,7 +76,7 @@ export const SYMMETRY_CLIP_KEY = 'weasel-symmetry:no-clip';
  * `createScene({ registry })`, merged with any of your own. Without it a
  * group still draws its copies, but `toJSON` refuses the scene.
  */
-export const symmetryRegistry: SceneRegistry<unknown> = {
+export const symmetryRegistry: Required<Pick<SceneRegistry<unknown>, 'copiesFromPose' | 'clipFromPose'>> = {
   copiesFromPose: { [SYMMETRY_COPIES_KEY]: symmetryCopies },
   clipFromPose: { [SYMMETRY_CLIP_KEY]: clipNothing },
 };

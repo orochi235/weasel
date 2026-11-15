@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { boxFrameOf, type Point } from '@weasel-js/geom';
 import {
-  asNodeId, createScene, type InvocationCtx, type NodeId, type OngoingInvoker, type RectPose, type SceneRegistry, type View,
+  asNodeId, createScene, type InvocationCtx, type NodeId, type OngoingInvoker, type RectPose, type View,
 } from '@weasel-js/core';
 import { createSymmetry } from './controller';
 import { worldPoseOf } from './frames';
@@ -56,7 +56,7 @@ const op: fc.Arbitrary<Op> = fc.oneof(
 const clean = <T extends object>(o: T): T => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
 
 function rig(host: Point | null, s: SymmetrySpec, center: Point) {
-  const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: symmetryRegistry as SceneRegistry<RectPose> });
+  const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: symmetryRegistry });
   const sym = createSymmetry(scene as never);
   const parent = host === null ? null : scene.add({ kind: 'group', layer: 'main', pose: { x: host.x, y: host.y, width: 0, height: 0 }, data: {} });
   const group = sym.create({ center, symmetry: s, parent });

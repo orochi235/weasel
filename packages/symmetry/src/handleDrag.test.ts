@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   asNodeId, createScene, createSnapOutcomeStore, pathSnapSource, rotationSnapSource,
-  type InvocationCtx, type OngoingInvoker, type RectPose, type SceneRegistry, type SnapDep,
+  type InvocationCtx, type OngoingInvoker, type RectPose, type SnapDep,
 } from '@weasel-js/core';
 import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
 import { rectPath } from '@weasel-js/geom';
@@ -21,7 +21,7 @@ const CENTER = { x: 100, y: 0 };
 function rig() {
   const scene = createScene<unknown, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
-    registry: symmetryRegistry as SceneRegistry<RectPose>,
+    registry: symmetryRegistry,
   });
   const sym = createSymmetry(scene as never);
   const group = sym.create({ center: CENTER, symmetry: { kind: 'mirror', angle: VERTICAL_AXIS } });

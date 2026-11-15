@@ -1,6 +1,6 @@
 import {
   asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, solid, type NodeId, type RectPose,
-  type SceneRegistry, drawPreset,
+  drawPreset,
 } from '@weasel-js/core';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas, useTrialScene,
@@ -80,9 +80,9 @@ function createLabScene() {
   const dot = { x: CENTER.x + 110 * Math.cos(15 * DEG_TO_RAD) - 12, y: CENTER.y + 110 * Math.sin(15 * DEG_TO_RAD) - 12, width: 24, height: 24 };
   const scene = createScene<unknown, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
-    registry: symmetryRegistry as SceneRegistry<RectPose>,
+    registry: symmetryRegistry,
     initial: [
-      { ...symmetryGroupSpec({ id: asNodeId(GROUP_ID), layer: 'default', center: CENTER, symmetry: INITIAL }) } as never,
+      symmetryGroupSpec({ id: asNodeId(GROUP_ID), layer: 'default', center: CENTER, symmetry: INITIAL }),
       pathLeaf(PETAL_ID, 'M350 240 C385 205 435 205 470 240 C435 275 385 275 350 240 Z', '#7fb069'),
       {
         id: asNodeId('dot'), kind: 'mark', layer: 'default', parent: asNodeId(GROUP_ID),
@@ -124,7 +124,7 @@ const near = (a: unknown, b: unknown) =>
 
 function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const sym = useMemo(() => createSymmetry(scene as never), [scene]);
+  const sym = useMemo(() => createSymmetry(scene), [scene]);
   const ambient = useMemo(() => [sym.contribution], [sym]);
   const group = asNodeId(GROUP_ID) as NodeId;
   const { config, setConfig } = ctx;

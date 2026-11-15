@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { asNodeId, createScene, type NodeId, type RectPose, type SceneRegistry } from '@weasel-js/core';
+import { asNodeId, createScene, type NodeId, type RectPose } from '@weasel-js/core';
 import { createSymmetry } from './controller';
 import { editSymmetries, isSymmetryGroup, readGroup, symmetryGroupOf, symmetryRegistry } from './group';
 import { symmetryTransforms, type SymmetrySpec } from './kinds';
@@ -59,7 +59,7 @@ describe('live symmetry over long runs', () => {
   it('keeps every group drawable and every leaf in its group, and undoes and redoes the whole run exactly', () => {
     const t = tally();
     fc.assert(fc.property(fc.array(op, { minLength: 10, maxLength: 60 }), (ops) => {
-      const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: symmetryRegistry as SceneRegistry<RectPose> });
+      const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: symmetryRegistry });
       const sym = createSymmetry(scene as never);
       const empty = JSON.stringify(scene.toJSON());
       let leaves = 0;

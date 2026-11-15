@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   asNodeId, composeWorldPose, createScene, findShapeSilhouette, RECT_POSE_COMPOSITION, scenePoseAdapter, sceneFromJSON, type NodeId, type RectPose, type RenderLayer,
-  type SceneRegistry,
 } from '@weasel-js/core';
 import { transformPoint, boundsOfPath, rectPath } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
@@ -11,7 +10,7 @@ import { VERTICAL_AXIS } from './kinds';
 function setup() {
   const scene = createScene<unknown, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
-    registry: symmetryRegistry as SceneRegistry<RectPose>,
+    registry: symmetryRegistry,
   });
   const sym = createSymmetry(scene as never);
   const group = sym.create({ center: { x: 100, y: 0 }, symmetry: { kind: 'mirror', angle: VERTICAL_AXIS } });
@@ -73,7 +72,7 @@ describe('createSymmetry', () => {
 
   it('round-trips a group through JSON with its registry', () => {
     const { scene, group } = setup();
-    const back = sceneFromJSON(scene.toJSON(), { registry: symmetryRegistry as SceneRegistry<RectPose> });
+    const back = sceneFromJSON(scene.toJSON(), { registry: symmetryRegistry });
     const node = back.get(group)!;
     expect(node.kind === 'group' && node.copiesFromPose).toBe(symmetryCopies);
     expect(isSymmetryGroup(back as never, group)).toBe(true);
@@ -216,7 +215,7 @@ describe('in a scene that composes frames', () => {
   function composed() {
     const scene = createScene<unknown, 'main', RectPose>({
       systemLayers: [{ id: 'main' }],
-      registry: symmetryRegistry as SceneRegistry<RectPose>,
+      registry: symmetryRegistry,
       composition: RECT_POSE_COMPOSITION,
     });
     const sym = createSymmetry(scene as never);
@@ -259,7 +258,7 @@ describe('a group inside a frame', () => {
   function framed() {
     const scene = createScene<unknown, 'main', RectPose>({
       systemLayers: [{ id: 'main' }],
-      registry: symmetryRegistry as SceneRegistry<RectPose>,
+      registry: symmetryRegistry,
     });
     const frame = scene.add({ kind: 'group', layer: 'main', id: asNodeId('frame'), pose: { x: 200, y: 50, width: 0, height: 0 }, data: {} });
     const sym = createSymmetry(scene as never);
