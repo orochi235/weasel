@@ -13,6 +13,7 @@ function drag(pref: PrefNumber, value: number, to: string) {
   if (props?.kind !== 'number') throw new Error('not a number field');
   render(<PropertyField {...props} label="Segments" />);
   fireEvent.input(screen.getByRole('slider'), { target: { value: to } });
+  fireEvent.change(screen.getByRole('slider'));
   return setValue;
 }
 

@@ -36,6 +36,7 @@ function SplineRow({ path, value, values, setValue, drafts, disabled }: RowConte
         step={1}
         disabled={disabled}
         onChange={(count) => write(withAnchorCount(bag, count))}
+        onInput={(count) => write(withAnchorCount(bag, count))}
       />
       <OctantSplineEditor
         anchors={anchors}

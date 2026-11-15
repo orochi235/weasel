@@ -10,11 +10,11 @@ export interface KeyframeLayerProps extends KeyframeLayerOptions, LayerStateProp
  * keys and segments, step with the arrows. Built by {@link createKeyframeLayer}; `keyframeLayerState(keys)` starts its
  * state.
  */
-export function KeyframeLayer({ state, onChange, onCommit, ...cfg }: KeyframeLayerProps): ReactElement {
+export function KeyframeLayer({ state, onInput, onChange, onCancel, ...cfg }: KeyframeLayerProps): ReactElement {
   const { id, label, formatX, snapX, snapRadiusPx, xClamp, yClamp, step } = cfg;
   const layer = useMemo(
     () => createKeyframeLayer({ id, label, formatX, snapX, snapRadiusPx, xClamp, yClamp, step }),
     [id, label, formatX, snapX, snapRadiusPx, xClamp, yClamp, step],
   );
-  return <CustomLayer layer={layer} state={state} onChange={onChange} onCommit={onCommit} />;
+  return <CustomLayer layer={layer} state={state} onInput={onInput} onChange={onChange} onCancel={onCancel} />;
 }

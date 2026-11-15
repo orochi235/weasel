@@ -748,7 +748,7 @@ function LabChrome() {
       </Cell>
       <Cell label="ScaleBar, ZoomControl">
         <ScaleBar zoom={zoom} />
-        <ZoomControl zoom={zoom} onZoomChange={setZoom} min={0.1} max={8} />
+        <ZoomControl zoom={zoom} onZoomInput={setZoom} onZoomChange={setZoom} min={0.1} max={8} />
       </Cell>
       <Cell label="FloatingPanel">
         <div className="lk-specimen__floating-host">

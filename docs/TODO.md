@@ -290,18 +290,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P1) [agent] Unify live, committed and canceled UI edits before 2.0.** `Slider` and `CurveEditor`
-  use `onInput` for live edits and `onChange` for commits, while curve layers use `onChange`/`onCommit`
-  (`packages/ui/src/components/CurveEditor/CustomLayer.tsx`). A property slider's `onChange` is live
-  without `onInput`, but committed with it; commit-only callers must supply a no-op `onInput`
-  (`packages/ui/src/components/Properties/fieldTypes.ts`, `NumberControls.tsx`). These are existing
-  intentional contracts, but make reusable undo, preview and autosave wiring depend on each control.
-  Make `onInput` preview and `onChange` commit consistently; callback presence must not change another
-  callback's meaning. Define cancellation and rollback without forcing every control to hold drafts alike.
-  Closes when continuous controls, property fields and curve layers share the documented edit protocol,
-  commit-only consumers need no dummy callback, and tests cover pointer/keyboard edits, cancellation,
-  consumer-normalized values and exactly one commit per finished edit, with migration docs and examples.
-
 - **(P2) [agent] Standardize focus refs and numeric-field integration.** `Input`/`NumberField` refs reach
   inputs, `Checkbox`/`Switch` refs reach labels, `MenuButton` takes `buttonRef`, and `UnitField`/`Select`
   expose no equivalent focus ref (`packages/ui/src/components/`). `NumberField` has label, description

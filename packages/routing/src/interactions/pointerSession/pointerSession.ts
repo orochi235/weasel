@@ -40,7 +40,9 @@ export type PointerSessionCancelReason =
   /** `cancel()` — an unmount, a window blur, Escape, a consumer's own rule. */
   | 'aborted'
   /** A new press arrived on this pointer, so the tracked one had ended. */
-  | 'superseded';
+  | 'superseded'
+  /** Escape was pressed, in a session opened with `escape: true`. */
+  | 'escape';
 
 /** What {@link openPointerSession} reports. Exactly one of `onEnd` / `onCancel` fires when the session ends. */
 export interface PointerSessionCallbacks {
@@ -58,6 +60,9 @@ export interface PointerSessionOptions {
    *  keeps hover and click off everything the drag passes over; the session
    *  does not depend on it to keep receiving events. */
   capture?: boolean;
+  /** Escape ends the session as canceled, reporting `'escape'`, and goes no further than the session. Default
+   *  `false`: a session whose owner reads Escape some other way (the dispatcher's) leaves it alone. */
+  escape?: boolean;
 }
 
 /** A live drag opened by {@link openPointerSession}. */
@@ -118,6 +123,7 @@ export function openPointerSession(
     doc.removeEventListener('pointerup', onUp, true);
     doc.removeEventListener('pointercancel', onPointerCancel, true);
     doc.removeEventListener('pointerdown', onRepress, true);
+    if (opts.escape) doc.removeEventListener('keydown', onKey, true);
     origin.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture);
     doc.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture, true);
     if (captured) {
@@ -156,6 +162,12 @@ export function openPointerSession(
   function onRepress(e: PointerEvent) {
     if (mine(e)) abort('superseded');
   }
+  function onKey(e: KeyboardEvent) {
+    if (e.key !== 'Escape' || e.isComposing) return;
+    e.preventDefault();
+    e.stopPropagation();
+    abort('escape');
+  }
   // Losing capture only ends the gesture when the origin is gone, because
   // then nothing more is coming. While it is still in the document the
   // session keeps tracking: it listens there, not on the origin, so it needs
@@ -179,6 +191,7 @@ export function openPointerSession(
   doc.addEventListener('pointerup', onUp, true);
   doc.addEventListener('pointercancel', onPointerCancel, true);
   doc.addEventListener('pointerdown', onRepress, true);
+  if (opts.escape) doc.addEventListener('keydown', onKey, true);
   // Chrome sends it to the document, not the origin, once the origin has left it.
   origin.addEventListener(LOST_CAPTURE_EVENT, onLostCapture);
   doc.addEventListener(LOST_CAPTURE_EVENT, onLostCapture, true);

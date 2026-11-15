@@ -116,7 +116,9 @@ describe('Slider on a curve', () => {
     drag(thumbs[0]!, point, { x: point.x + normal.x * off, y: point.y + normal.y * off });
     fireEvent.pointerUp(document, { pointerId: 1 });
     expect(onRemoveThumb).toHaveBeenCalledTimes(removed ? 1 : 0);
-    expect(values(onChange)).toHaveLength(removed ? 0 : 1);
+    // Straight out from the arc moves no value: kept, the thumb was not edited, so nothing commits.
+    if (removed) expect(values(onChange)).toHaveLength(0);
+    else expect(onChange).not.toHaveBeenCalled();
   });
 
   test('a thumb on a curve has no aria-orientation; a straight one keeps horizontal', () => {

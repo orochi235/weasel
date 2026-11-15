@@ -23,22 +23,17 @@ const SPACES: readonly SegmentedBarItem<ColorSpace>[] = [
 ];
 
 /**
- * Props for {@link GradientEditor}. `onInput` fires throughout a gesture and
- * `onChange` once at its end.
+ * Props for {@link GradientEditor}. `onInput`, `onChange` and `onCancel` are the kit's edit protocol
+ * (`docs/conventions.md`, "Edit callbacks"): a stop drag, a color pick, and a switch are each one edit.
  */
 export interface GradientEditorProps extends DisableableProps {
   /** The gradient being edited: a paint of any gradient kind — one that
    *  `listGradientKinds` returns. */
   value: Paint;
-  /**
-   * Live value during a gesture — a stop drag, a color-picker scrub. Wire
-   * it for preview; it fires many times per gesture and must not be
-   * written to history.
-   */
   onInput?: (next: Paint) => void;
-  /** Committed value: one call per completed gesture. Pair with an
-   *  undoable write. */
   onChange: (next: Paint) => void;
+  /** A stop drag was canceled, by Escape or a lost pointer. */
+  onCancel?: () => void;
   /** Show the kind switch — every registered gradient kind. Default true;
    *  turn it off when the surrounding UI already owns the kind. */
   kindSwitch?: boolean;
@@ -92,7 +87,7 @@ const inertWhen = (off: boolean) => (el: HTMLElement | null): void => {
  * the pointer.
  */
 export function GradientEditor(props: GradientEditorProps): ReactElement {
-  const { value, onInput, onChange, kindSwitch = true, spaceSwitch = true, svg = false, className } = props;
+  const { value, onInput, onChange, onCancel, kindSwitch = true, spaceSwitch = true, svg = false, className } = props;
   // Inert whatever the reason: the reason is read off the group, as its description and tooltip.
   const { disabled, reason } = useDisabled(props);
   const why = useHoldReason(reason);
@@ -158,6 +153,7 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
           disabled={disabled}
           onInput={onInput}
           onChange={onChange}
+          onCancel={onCancel}
         />
       );
     }

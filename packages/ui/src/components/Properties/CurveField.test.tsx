@@ -141,11 +141,11 @@ describe('CurveField', () => {
     expect(container.querySelector(`.${s.marks}`)).toBeNull();
   });
 
-  it('reports every move of a drag through onChange when given no onInput', () => {
+  it('commits a drag once through onChange when given no onInput', () => {
     const onChange = vi.fn();
     render(<CurveField values={[0, 0, 1, 1]} min={0} max={1} step={0.5} width={200} onChange={onChange} />);
     drag([[{ x: 0, y: 0.2 }, { x: 1, y: 1 }], [{ x: 0, y: 0.4 }, { x: 1, y: 1 }]], [{ x: 0, y: 0.4 }, { x: 1, y: 1 }]);
-    expect(onChange.mock.calls.map((c) => c[0])).toEqual([[0, 0, 1, 1], [0, 0.5, 1, 1]]);
+    expect(onChange.mock.calls).toEqual([[[0, 0.5, 1, 1]]]);
   });
 
   it('sends the moves to onInput and the settled curve to onChange, once, when given onInput', () => {

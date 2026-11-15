@@ -69,8 +69,8 @@ export function SliderBody<T extends Thumb = Thumb>(
   const drags = useThumbDrags<T>({ props, span, scale, geometry });
   const hold = useSliderHold(props);
   const regionAt = useSliderRegions<T>({ props: hold.refuses ? { ...props, regionDrag: false } : props, min, max, scale, geometry, direction });
-  const pointer = hold.pointer(useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: props.onInput, drags }));
-  const keyDown = hold.keys(onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: props.onInput, onChange: props.onChange, direction: run ? screenDirection(run) : direction }));
+  const pointer = hold.pointer(useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: drags.onInput, onChange: drags.onChange, drags }));
+  const keyDown = hold.keys(onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: drags.onInput, onChange: drags.onChange, direction: run ? screenDirection(run) : direction }));
 
   const placement = props.readoutPlacement ?? 'none';
   const { renderReadout, display } = props;

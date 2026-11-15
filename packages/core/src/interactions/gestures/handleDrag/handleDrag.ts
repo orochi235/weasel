@@ -32,6 +32,8 @@ export interface UseHandleDragOptions<T extends HTMLElement | SVGElement> {
   /** The drag ended without a release: the pointer was cancelled, capture was
    *  lost, or the component unmounted mid-gesture. */
   onCancel?: (reason: PointerSessionCancelReason) => void;
+  /** Escape cancels the drag, reported as `onCancel('escape')`. Default `false`. */
+  escape?: boolean;
   /**
    * Element whose `getBoundingClientRect()` defines the local coordinate
    * space. Defaults to the handle target's owning `<svg>` if it has one,
@@ -102,7 +104,7 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
           live.current = null;
           optsRef.current.onCancel?.(reason);
         },
-      });
+      }, { escape: optsRef.current.escape === true });
 
       onStart?.(localOf(e.clientX, e.clientY), e);
     },

@@ -300,7 +300,7 @@ export function builtinContributions(
       id: 'zoom-control',
       region: 'viewport',
       group: 'zoom',
-      render: (c) => <ZoomControl zoom={c.zoom ?? 1} onZoomChange={c.setZoom} />,
+      render: (c) => <ZoomControl zoom={c.zoom ?? 1} onZoomInput={c.setZoom} onZoomChange={c.setZoom} />,
     });
     out.push({
       id: 'scale',

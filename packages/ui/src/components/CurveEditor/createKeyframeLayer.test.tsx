@@ -33,8 +33,8 @@ function Harness({ config, initial, onChange, onCommit }: HarnessProps): ReactEl
         label="x"
         {...config}
         state={state}
-        onChange={(next) => { setState(next); onChange?.(next); }}
-        onCommit={onCommit}
+        onInput={(next) => { setState(next); onChange?.(next); }}
+        onChange={onCommit}
       />
     </LayeredCurveEditor>
   );

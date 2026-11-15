@@ -48,8 +48,8 @@ function TwoLayersDemo() {
       <style>{`
         [data-layer-id="derivative"] { --curve-line: var(--wzl-fg-subtle, #888); }
       `}</style>
-      <FunctionLayer id="derivative" domain="1d" interactive={false} state={derivState} onChange={setDerivState} />
-      <FunctionLayer id="fn" domain="1d" endpoints="pinned-x" constrain="function" state={fnState} onChange={onFnChange} />
+      <FunctionLayer id="derivative" domain="1d" interactive={false} state={derivState} onInput={setDerivState} />
+      <FunctionLayer id="fn" domain="1d" endpoints="pinned-x" constrain="function" state={fnState} onInput={onFnChange} />
     </LayeredCurveEditor>
   );
 }
@@ -233,13 +233,13 @@ function RimContourDemo(args: RimContourArgs) {
       `}</style>
       <FunctionLayer
         id="bevel" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
-        fill={BEVEL_FILL} xClamp={bevelClamp} minPoints={2} state={bevelState} onChange={onBevelChange}
+        fill={BEVEL_FILL} xClamp={bevelClamp} minPoints={2} state={bevelState} onInput={onBevelChange}
       />
       <FunctionLayer
         id="spline" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
-        xClamp={splineClamp} minPoints={2} state={splineState} onChange={onSplineChange}
+        xClamp={splineClamp} minPoints={2} state={splineState} onInput={onSplineChange}
       />
-      <CustomLayer layer={partitionLayer} state={partitionState} onChange={onPartitionChange} />
+      <CustomLayer layer={partitionLayer} state={partitionState} onInput={onPartitionChange} />
     </LayeredCurveEditor>
   );
 }
@@ -304,7 +304,7 @@ function KeyframesDemo() {
       yRange={[0, 100]}
       grid={{ divisions: 3 }}
     >
-      <KeyframeLayer label="Opacity" xClamp={OPACITY_TIME} yClamp={OPACITY_RANGE} state={state} onChange={setState} />
+      <KeyframeLayer label="Opacity" xClamp={OPACITY_TIME} yClamp={OPACITY_RANGE} state={state} onInput={setState} />
     </LayeredCurveEditor>
   );
 }

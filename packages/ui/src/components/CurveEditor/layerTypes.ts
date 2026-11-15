@@ -68,12 +68,12 @@ export interface LayerHit {
  *
  *  `onMove` is pure: it takes the layer's *current* state (which may
  *  have been updated by upstream re-renders since the gesture started)
- *  and returns the next state. The editor publishes that next state via
- *  the layer's `onChange`. */
+ *  and returns the next state. The editor publishes that next state as a
+ *  preview: the layer's `onInput`, or its draft. */
 export interface LayerGesture<S> {
   onMove(state: S, model: ModelPoint, e: PointerEvent, ctx: LayerCtx): S;
   /** Pointerup. Return the final state. The editor uses this as the
-   *  `next` value passed to the layer's `onCommit`. Default: return state
+   *  `next` value passed to the layer's `onChange`. Default: return state
    *  unchanged. */
   onCommit?(state: S, ctx: LayerCtx): S;
   /** The gesture ended without a release. Return the state to restore.

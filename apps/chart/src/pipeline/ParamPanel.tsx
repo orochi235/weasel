@@ -26,6 +26,7 @@ function ParamField({ param, set }: { param: EffectParam; set: (c: EffectParamCo
           {...(c.step !== undefined ? { step: c.step } : {})}
           {...(c.unit !== undefined ? { unit: c.unit } : {})}
           onChange={(value) => set({ ...c, value })}
+          onInput={(value) => set({ ...c, value })}
         />
       );
     case 'enum':

@@ -55,10 +55,8 @@ export type DistributiveOmit<U, K extends PropertyKey> = U extends unknown ? Omi
  * The row is a {@link PropertyRow}; the control is the one
  * {@link PropertyControl} draws for the same props.
  *
- * Callbacks follow the field's shape: a discrete control (a box, a choice)
- * reports each pick; a continuous or typed one reports every change through
- * `onChange` alone, or splits them into live `onInput` and settled
- * `onChange` when given both. `mixed` and `unset` show a field whose sources
+ * A discrete control (a box, a choice) reports each pick through `onChange`; a continuous or typed one follows the
+ * kit's edit protocol (`docs/conventions.md`, "Edit callbacks"). `mixed` and `unset` show a field whose sources
  * disagree, or agree on holding nothing.
  */
 export function PropertyField<T extends string = string>(props: PropertyFieldProps<T>) {

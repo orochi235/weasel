@@ -9,7 +9,7 @@ export interface FunctionLayerProps extends FunctionLayerOptions, LayerStateProp
  * A curve through control points, as a child of a `LayeredCurveEditor` or `CurveEditor`: drag anchors, click to
  * insert, right-click to delete. Built by {@link createFunctionLayer}; `functionLayerState(points)` starts its state.
  */
-export function FunctionLayer({ state, onChange, onCommit, ...cfg }: FunctionLayerProps): ReactElement {
+export function FunctionLayer({ state, onInput, onChange, onCancel, ...cfg }: FunctionLayerProps): ReactElement {
   const {
     id, domain, endpoints, interpolation, constrain, addPointMode, minPoints, maxPoints,
     curve, fill, hideNonInteractive, renderAnchor, interactive, xClamp, label,
@@ -21,5 +21,5 @@ export function FunctionLayer({ state, onChange, onCommit, ...cfg }: FunctionLay
     id, domain, endpoints, interpolation, constrain, addPointMode, minPoints, maxPoints,
     curve, fill, hideNonInteractive, renderAnchor, interactive, xClamp, label,
   ]);
-  return <CustomLayer layer={layer} state={state} onChange={onChange} onCommit={onCommit} />;
+  return <CustomLayer layer={layer} state={state} onInput={onInput} onChange={onChange} onCancel={onCancel} />;
 }

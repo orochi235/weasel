@@ -9,11 +9,10 @@ const text = { kind: 'string', value: '', onChange } as PropertyControlProps;
 const color = { kind: 'color', value: '#000000', onChange } as PropertyControlProps;
 const flag = { kind: 'boolean', value: true, onChange } as PropertyControlProps;
 
-/** Whether the field writes only once an edit settles: it was handed an `onInput` to swallow what comes before,
- *  and kept its own `onChange` for the value the edit settles on. */
+/** Whether the field writes only once an edit settles: it has no `onInput`, and kept its own `onChange`. */
 const settles = (field: PropertyControlProps, surface: ParamsSurface): boolean => {
   const made = withCommitPolicy(field, surface);
-  return 'onInput' in made && made.onChange === field.onChange;
+  return (made as { onInput?: unknown }).onInput === undefined && made.onChange === field.onChange;
 };
 
 describe('withDrafts', () => {
@@ -60,14 +59,16 @@ describe('withCommitPolicy', () => {
     expect([number, slider, text, color].map((field) => settles(field, 'lab'))).toEqual([false, false, false, false]);
   });
 
-  it('writes a live typed number or text through onInput, which a typed field calls per keystroke', () => {
-    for (const field of [number, text]) {
+  it('writes a live control through onInput as well, and commits through its own onChange', () => {
+    for (const field of [number, slider, text, color]) {
       const made = withCommitPolicy(field, 'lab');
-      expect(made).toHaveProperty('onInput', onChange);
-      expect(made.onChange).not.toBe(onChange);
+      expect(made).toMatchObject({ onInput: onChange, onChange });
     }
-    expect(withCommitPolicy(slider, 'lab')).toBe(slider);
-    expect(withCommitPolicy(color, 'lab')).toBe(color);
+  });
+
+  it('keeps a live control\'s own onInput', () => {
+    const onInput = (): void => {};
+    expect(withCommitPolicy({ ...slider, onInput } as PropertyControlProps, 'lab')).toMatchObject({ onInput, onChange });
   });
 
   it('leaves a control with one write per edit as it is, on every surface', () => {

@@ -93,6 +93,7 @@ function LightnessParams({ name, entry, draft, lookup, onChange, readOnly }: Edi
               step={p.step}
               format={(v) => v.toFixed(p.digits)}
               onChange={(v) => onChange(setRamp(draft, lookup, name, (e) => writeParam(e as LightnessRampDef, p.key, v)), `ramps.${name}.${p.key}`)}
+              onInput={(v) => onChange(setRamp(draft, lookup, name, (e) => writeParam(e as LightnessRampDef, p.key, v)), `ramps.${name}.${p.key}`)}
             />
           );
         })}

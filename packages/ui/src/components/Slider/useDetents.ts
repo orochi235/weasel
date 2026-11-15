@@ -18,23 +18,21 @@ export type DetentItem<V extends DetentValue = number> = {
  * Options for {@link useDetents}. `items` takes bare values or `DetentItem`s
  * interchangeably — a bare value is a detent with no label of its own.
  *
- * `onInput` fires on every detent the control passes through, including
- * mid-drag: each one is a complete, legal choice, so there is no in-flight
- * value to withhold. `onChange` fires once the gesture that changed things
- * ends, and is the one to write to history, as with `Slider`.
+ * The callbacks are `Slider`'s, by value: `onInput` hears each detent a drag passes through, once, and `onChange`
+ * the detent an edit lands on (`docs/conventions.md`, "Edit callbacks").
  */
 export type DetentsOptions<V extends DetentValue = number> = {
   items: readonly (V | DetentItem<V>)[];
   value: V;
-  onInput: (value: V, index: number) => void;
+  onInput?: (value: V, index: number) => void;
   onChange?: (value: V, index: number) => void;
+  onCancel?: () => void;
   formatLabel?: (value: V, index: number) => ReactNode;
 };
 
 /** The {@link Slider} props {@link useDetents} supplies; spread them onto one. */
-export type DetentSliderProps = Required<
-  Pick<SliderProps, 'thumbs' | 'min' | 'max' | 'stops' | 'snap' | 'trackClick' | 'onInput' | 'onChange'>
->;
+export type DetentSliderProps = Required<Pick<SliderProps, 'thumbs' | 'min' | 'max' | 'stops' | 'snap' | 'trackClick' | 'onChange'>>
+  & Pick<SliderProps, 'onInput' | 'onCancel'>;
 
 function normalize<V extends DetentValue>(items: readonly (V | DetentItem<V>)[]): DetentItem<V>[] {
   return items.map(it => (typeof it === 'object' && it !== null ? it : ({ value: it } as DetentItem<V>)));
@@ -80,22 +78,19 @@ function plainText(label: ReactNode, fallback: DetentValue): string {
  * `aria-label`, an `Along` — is the slider's own:
  *
  * ```tsx
- * <Slider aria-label="Rate" stopLabels="ends" {...useDetents({ items, value, onInput })} />
+ * <Slider aria-label="Rate" stopLabels="ends" {...useDetents({ items, value, onChange })} />
  * ```
  *
  * For numbers that may also rest between the detents, give `Slider` magnetic
  * stops and `spacing="even"` instead.
  */
 export function useDetents<V extends DetentValue = number>(options: DetentsOptions<V>): DetentSliderProps {
-  const { value, onInput, onChange, formatLabel } = options;
+  const { value, onInput, onChange, onCancel, formatLabel } = options;
   const items = normalize(options.items);
   const index = detentIndex(items, value);
 
-  // Deduped separately: `live` suppresses the repeat reports a drag produces
-  // while the pointer crosses one detent, `changed` keeps a press that chose
-  // nothing from landing a no-op entry in the consumer's history.
+  // A drag reports each move, and crosses each detent over several of them.
   const liveRef = useRef(index);
-  const changedRef = useRef(false);
   useEffect(() => {
     liveRef.current = index;
   }, [index]);
@@ -113,20 +108,21 @@ export function useDetents<V extends DetentValue = number>(options: DetentsOptio
     thumbs: current
       ? [{ value: index, valueText: current.ariaLabel ?? plainText(labelOf(current, index), current.value) }]
       : [],
-    onInput: (next: Thumb[]) => {
+    onInput: onInput && ((next: Thumb[]) => {
       const i = next[0].value;
       if (i === liveRef.current) return;
       liveRef.current = i;
-      changedRef.current = true;
       onInput(items[i].value, i);
-    },
+    }),
     onChange: (next: Thumb[]) => {
-      // The next gesture starts from where the value is, which a consumer that declined the detent left unchanged.
+      // The next edit starts from where the value is, which a consumer that declined the detent left unchanged.
       liveRef.current = index;
-      if (!changedRef.current) return;
-      changedRef.current = false;
       const i = next[0].value;
       onChange?.(items[i].value, i);
+    },
+    onCancel: () => {
+      liveRef.current = index;
+      onCancel?.();
     },
   };
 }

@@ -19,7 +19,7 @@ import type { ModelRange } from '../Plot2D/geometry';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
 import { dispatchContextMenu } from './contextMenuDispatch';
-import { LayerHostContext, useLayerRegistry, type LayerEntry, type LayerHost } from './layerHost';
+import { LayerHostContext, publishLayer, settleLayer, stateOf, useLayerRegistry, type LayerEntry, type LayerHost } from './layerHost';
 import { layerCtxOver, NO_MODIFIERS, readModifiers } from './layerCtx';
 import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
@@ -51,11 +51,10 @@ export interface LayeredCurveEditorProps extends HoldProps {
 
   /** Built-in undo/redo via Cmd/Ctrl+Z (Shift+Z or Y for redo) on the
    *  focused SVG. Snapshots every layer's state on each commit, keeping
-   *  the last 100. An undo or redo reports each layer whose state changed
-   *  the way a finished edit is reported: the layer's `onChange(restored)`,
-   *  then its `onCommit(restored, current)`. Default `true`; turn it off
-   *  when the consumer keeps its own undo or builds ops from `onCommit`,
-   *  or each step is recorded twice. */
+   *  the last 100. An undo or redo is an edit to each layer whose state it
+   *  changes, reported as one. Default `true`; turn it off when the consumer
+   *  keeps its own undo or builds ops from `onChange`, or each step is
+   *  recorded twice. */
   history?: boolean;
 
   /** Accessible name for the plot, which is exposed as a group so the
@@ -77,10 +76,10 @@ interface ActiveGesture {
  * children. It owns the pointer gestures and the coordinate mapping; each
  * layer supplies its own drawing, hit testing and gesture behavior.
  *
- * Layer state stays with the consumer: each layer reports changes through its
- * `onChange` during a gesture and its `onCommit` at the end, and the editor
- * reads the state back from the layer's props each frame. That is what lets
- * one layer's drag update another layer's state mid-gesture.
+ * Layer state stays with the consumer: each layer reports an edit through its
+ * `onInput` while it runs and its `onChange` at the end, and the editor reads
+ * the state back from the layer's props each frame. That is what lets one
+ * layer's drag update another layer's state mid-gesture. Escape cancels a drag.
  */
 export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   const {
@@ -135,7 +134,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     setActiveEntry(null);
   }, []);
 
-  const findLayerState = useCallback((entry: LayerEntry) => (layers().includes(entry) ? entry.state : undefined), [layers]);
+  const findLayerState = useCallback((entry: LayerEntry) => (layers().includes(entry) ? stateOf(entry) : undefined), [layers]);
 
   const onGestureMoveRef = useLatest((e: PointerEvent) => {
     const a = activeRef.current;
@@ -147,7 +146,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     if (current === undefined) return;
     const ctx = makeCtx(readModifiers(e));
     const next = a.gesture.onMove(current, model, e, ctx);
-    if (next !== current) a.entry.onChange(next);
+    if (next !== current) publishLayer(a.entry, next);
   });
 
   const onGestureEndRef = useLatest((e: PointerEvent) => {
@@ -157,11 +156,10 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     if (current === undefined) { cleanupGesture(); return; }
     const ctx = makeCtx(readModifiers(e));
     const finalState = a.gesture.onCommit ? a.gesture.onCommit(current, ctx) : current;
-    if (finalState !== current) a.entry.onChange(finalState);
-    if (historyEnabled && !sameFields(finalState, a.startSelfState)) {
-      record(a.startStates);
-    }
-    a.entry.onCommit?.(finalState, a.startSelfState);
+    if (finalState !== current) publishLayer(a.entry, finalState);
+    const changed = !sameFields(finalState, a.startSelfState);
+    if (historyEnabled && changed) record(a.startStates);
+    settleLayer(a.entry, changed ? { commit: finalState, prev: a.startSelfState } : 'unchanged');
     cleanupGesture();
   });
 
@@ -172,7 +170,8 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     if (current === undefined) { cleanupGesture(); return; }
     const ctx = makeCtx(NO_MODIFIERS);
     const restored = a.gesture.onCancel ? a.gesture.onCancel(current, ctx) : a.startSelfState;
-    if (restored !== current) a.entry.onChange(restored);
+    if (restored !== current) publishLayer(a.entry, restored);
+    settleLayer(a.entry, 'cancel');
     cleanupGesture();
   });
 
@@ -195,7 +194,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       onMove: (e) => onGestureMoveRef.current(e),
       onEnd: (e) => onGestureEndRef.current(e),
       onCancel: () => onGestureCancelRef.current(),
-    }, { capture: false });
+    }, { capture: false, escape: true });
   }, [snapshot, onGestureCancelRef, onGestureEndRef, onGestureMoveRef]);
 
   // ── pointerdown dispatch ───────────────────────────────────────────
@@ -229,7 +228,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
         {
           plot: coords.plot,
           model: coords.model,
-          commit(next) { committed = next; b.onChange(next); },
+          commit(next) { committed = next; publishLayer(b, next); },
         },
       );
       e.stopPropagation();
@@ -239,7 +238,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       }
       if (committed !== undefined) {
         if (historyEnabled) record(preEventSnapshot);
-        b.onCommit?.(committed, prevState);
+        settleLayer(b, { commit: committed, prev: prevState });
       }
       return;
     }
@@ -258,7 +257,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
           model: coords.model,
           commit(next) {
             committed = next;
-            b.onChange(next);
+            publishLayer(b, next);
           },
         },
       );
@@ -283,7 +282,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     }
     if (pendingCommit) {
       if (historyEnabled) record(preEventSnapshot);
-      pendingCommit.entry.onCommit?.(pendingCommit.next, pendingCommit.prev);
+      settleLayer(pendingCommit.entry, { commit: pendingCommit.next, prev: pendingCommit.prev });
     }
   }, [makeCtx, installGesture, historyEnabled, snapshot, record, layers]);
 
@@ -308,11 +307,11 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       let committed: unknown = undefined;
       const prevState = b.state;
       b.layer.onKeyDown(prevState, e.nativeEvent, ctx, {
-        commit(next) { committed = next; b.onChange(next); },
+        commit(next) { committed = next; publishLayer(b, next); },
       });
       if (committed !== undefined) {
         if (historyEnabled) record(preEventSnapshot);
-        b.onCommit?.(committed, prevState);
+        settleLayer(b, { commit: committed, prev: prevState });
       }
       // The layer prevents default on the native event, which the synthetic
       // event's `isDefaultPrevented` does not observe.
@@ -329,7 +328,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     const edit = dispatchContextMenu(layers(), coords, e.nativeEvent, makeCtx(readModifiers(e)));
     if (!edit) return;
     if (historyEnabled) record(before);
-    edit.entry.onCommit?.(edit.next, edit.prev);
+    settleLayer(edit.entry, { commit: edit.next, prev: edit.prev });
   }, [historyEnabled, makeCtx, snapshot, record, layers]);
 
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);

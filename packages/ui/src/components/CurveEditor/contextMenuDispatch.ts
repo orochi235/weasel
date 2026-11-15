@@ -1,4 +1,4 @@
-import type { LayerEntry } from './layerHost';
+import { publishLayer, type LayerEntry } from './layerHost';
 import type { LayerCtx, ModelPoint, PlotPoint } from './layerTypes';
 
 /** One layer's committed edit: what it published, and the state it began from. */
@@ -10,8 +10,7 @@ export interface LayerEdit {
 
 /**
  * Offer a context-menu gesture to the topmost layer claiming the point, and
- * return the edit it committed, if any. The layer's `onChange` receives that
- * edit's state as it is committed, as it does for a pointer edit.
+ * return the edit it committed, if any. The edit's state is published as it is committed, as a pointer edit's is.
  */
 export function dispatchContextMenu(
   layers: readonly LayerEntry[],
@@ -30,7 +29,7 @@ export function dispatchContextMenu(
       model: at.model,
       commit(next) {
         edit = { entry, next, prev: state };
-        entry.onChange(next);
+        publishLayer(entry, next);
       },
     });
     return edit;

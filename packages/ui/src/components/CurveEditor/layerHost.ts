@@ -5,10 +5,34 @@ import type { CurveLayer, LayerCtx } from './layerTypes';
 export interface LayerEntry {
   layer: CurveLayer<unknown>;
   state: unknown;
-  onChange(next: unknown): void;
-  onCommit?(next: unknown, prev: unknown): void;
+  onInput?(next: unknown): void;
+  onChange?(next: unknown, prev: unknown): void;
+  onCancel?(): void;
+  /** What the layer draws while an edit runs for a consumer that passed no `onInput`. */
+  draft?: { state: unknown };
+  /** Draws the layer again, for a new draft. */
+  redraw(): void;
   /** The group the layer draws into, whose place in the plot is its place in the stack. */
   el: SVGGElement | null;
+}
+
+/** The state a layer is at: its draft while it has one, else its consumer's. */
+export function stateOf(entry: LayerEntry): unknown {
+  return entry.draft ? entry.draft.state : entry.state;
+}
+
+/** Report a step of an edit: to the consumer's `onInput`, or into the draft the layer draws without one. */
+export function publishLayer(entry: LayerEntry, next: unknown): void {
+  if (entry.onInput) { entry.onInput(next); return; }
+  entry.draft = { state: next };
+  entry.redraw();
+}
+
+/** End an edit: the draft goes, and the edit is committed if it changed anything. */
+export function settleLayer(entry: LayerEntry, outcome: { commit: unknown; prev: unknown } | 'cancel' | 'unchanged'): void {
+  if (entry.draft) { entry.draft = undefined; entry.redraw(); }
+  if (outcome === 'cancel') entry.onCancel?.();
+  else if (outcome !== 'unchanged') entry.onChange?.(outcome.commit, outcome.prev);
 }
 
 /** What the editor hands each layer child: where to register, and what its render sees. */

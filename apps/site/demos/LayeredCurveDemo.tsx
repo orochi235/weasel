@@ -171,13 +171,13 @@ export function LayeredCurveDemo() {
         `}</style>
         <FunctionLayer
           id="bevel" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
-          fill={BEVEL_FILL} xClamp={bevelClamp} minPoints={2} state={bevelState} onChange={onBevelChange}
+          fill={BEVEL_FILL} xClamp={bevelClamp} minPoints={2} state={bevelState} onInput={onBevelChange}
         />
         <FunctionLayer
           id="spline" domain="1d" endpoints="pinned-x" constrain="function" addPointMode="click-curve"
-          xClamp={splineClamp} minPoints={2} state={splineState} onChange={onSplineChange}
+          xClamp={splineClamp} minPoints={2} state={splineState} onInput={onSplineChange}
         />
-        <CustomLayer layer={partitionLayer} state={partitionState} onChange={onPartitionChange} />
+        <CustomLayer layer={partitionLayer} state={partitionState} onInput={onPartitionChange} />
       </LayeredCurveEditor>
     </div>
   );

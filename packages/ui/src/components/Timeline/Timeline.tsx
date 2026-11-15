@@ -42,10 +42,11 @@ export interface TimelineProps extends HoldProps {
   mode?: 'dope' | 'graph';
   onModeChange?: (mode: 'dope' | 'graph') => void;
 
-  /** Live during a drag — wire for preview, do not write to history. */
+  /** The kit's edit protocol (`docs/conventions.md`, "Edit callbacks"): a key dragged, stepped or inserted, and a
+   *  value or easing set, are each one edit. Escape cancels a drag. */
   onInput?: (next: Track[]) => void;
-  /** Committed at gesture end: one call per gesture. */
   onChange: (next: Track[]) => void;
+  onCancel?: () => void;
   onScrub: (t: number) => void;
 
   /** The playback controls. Omitted, the row holds the time readout and the
@@ -194,7 +195,7 @@ export function Timeline(props: TimelineProps): ReactElement {
                 selectKey(r.selection);
               }}
               onKeysInput={(keys) => onInput?.(setKeys(tracks, trackPath, keys))}
-              onKeysCommit={(keys) => onChange(setKeys(tracks, trackPath, keys))}
+              onKeysCommit={(keys) => onChange(setKeys(tracks, trackPath, keys))} onCancel={props.onCancel}
               onInsert={(atMs) => {
                 const r = insertKey(tracks, trackPath, atMs);
                 onChange(r.tracks);

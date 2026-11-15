@@ -7,16 +7,17 @@ import { READOUT } from './stops';
 import { retagThumb, thumbDisplay, untagThumb, type PlainThumb } from './tagged';
 import type { SliderProps, Thumb } from './types';
 import { useSpan } from './useSpan';
+import { useEditDraft } from '../../useEditDraft';
+
+const sameThumbValues = (a: readonly Thumb<Quantity>[], b: readonly Thumb<Quantity>[]) =>
+  a.length === b.length && a.every((t, i) => Object.is(t.value, b[i].value));
 
 export type { BoundsCtx, SliderProps, SliderRegionCtx, SliderStop, Thumb, ThumbRenderCtx, ThumbShape, TrackCtx } from './types';
 
 /**
- * Multi-thumb slider over a shared track. The thumb list is fully controlled:
- * every change, live or committed, arrives as a whole new array.
- *
- * Thumbs are draggable, and arrow/Home/End move the focused thumb — those
- * keystrokes fire `onInput` and `onChange` together, since there is no
- * in-flight state to buffer.
+ * Multi-thumb slider over a shared track. The thumb list is controlled, and every change arrives as a whole new
+ * array through the edit protocol (`docs/conventions.md`, "Edit callbacks"). Thumbs are draggable, and
+ * arrow/Home/End move the focused thumb.
  *
  * It lies along a curve when given a `shape` or placed inside an `Along`: thumbs, ticks, stop labels and
  * readouts follow the shape, and values run along it, min at its start, so a counterclockwise arc reads as a
@@ -33,7 +34,9 @@ export function Slider<T extends Thumb<Quantity>>(props: SliderProps<T>): ReactE
 // Last, so `Parameters<typeof Slider>` and `ComponentProps` read the props of a slider of bare numbers.
 export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement;
 export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>): ReactElement {
-  const { endless, display, renderReadout, renderRegion, onInput, onChange, keyStep, onAddThumb } = props;
+  const { endless, display, renderReadout, renderRegion, keyStep, onAddThumb } = props;
+  const edit = useEditDraft<T[]>(props.thumbs as T[], props, sameThumbValues);
+  const { onInput, onChange, onCancel } = edit;
   const span = useSpan(props);
   const locale = useFieldLocale();
   const { stopList } = span;
@@ -45,10 +48,10 @@ export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>)
   const upper = endlessTrack(span.min, span.max, gap(last, Math.max(0, last - 1)), endless);
   const track = { min: lower.min, max: upper.max };
   const fromTrack = (v: number) => (v > span.max ? upper.fromTrack(v) : lower.fromTrack(v));
-  const tagged = props.thumbs.some(t => typeof t.value !== 'number');
+  const tagged = edit.shown.some(t => typeof t.value !== 'number');
   const thumbs = useMemo(
-    () => props.thumbs.map(untagThumb).map(t => (t.value === Infinity ? { ...t, value: track.max } : t.value === -Infinity ? { ...t, value: track.min } : t)),
-    [props.thumbs, track.min, track.max],
+    () => edit.shown.map(untagThumb).map(t => (t.value === Infinity ? { ...t, value: track.max } : t.value === -Infinity ? { ...t, value: track.min } : t)),
+    [edit.shown, track.min, track.max],
   );
   // The infinity stops join whatever stops there are, so arrow keys and a
   // strict drag can land on them; they are labeled only among labeled stops.
@@ -63,16 +66,18 @@ export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>)
     ];
   }, [span.even, stopList, props.stops, track.min, track.max, span.min, span.max, display, locale]);
   const plain = props as unknown as SliderProps<PlainThumb>;
-  if (endless === undefined && !tagged) return <SliderBody {...plain} thumbs={thumbs} />;
+  const handlers = { onInput, onChange, onCancel } as unknown as Pick<SliderProps<PlainThumb>, 'onInput' | 'onChange' | 'onCancel'>;
+  if (endless === undefined && !tagged) return <SliderBody {...plain} {...handlers} thumbs={thumbs} />;
   const shown = (t: PlainThumb): T => retagThumb<T>(endless === undefined ? t : { ...t, value: fromTrack(t.value) });
   const outward = (next: PlainThumb[]) => next.map(shown);
   return (
     <SliderBody<PlainThumb>
       {...plain}
+      onCancel={onCancel}
       {...(endless === undefined ? {} : { min: track.min, max: track.max, stops, range: [span.min, span.max] as const })}
       thumbs={thumbs}
       onInput={next => onInput(outward(next))}
-      onChange={onChange && (next => onChange(outward(next)))}
+      onChange={next => onChange(outward(next))}
       keyStep={keyStep && ((t, steps, i) => keyStep(retagThumb<T>(t), steps, i))}
       onAddThumb={onAddThumb && (at => { const made = onAddThumb(at); return made && untagThumb(made); })}
       renderRegion={renderRegion && endless !== undefined ? (r => renderRegion({ ...r, from: fromTrack(r.from), to: fromTrack(r.to) })) : renderRegion}

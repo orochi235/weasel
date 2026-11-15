@@ -38,7 +38,7 @@ describeHold('LayeredCurveEditor', (mount, own) => {
   const onChange = vi.fn();
   mount(
     <LayeredCurveEditor width={200} height={100} aria-label="Falloff" {...own}>
-      <FunctionLayer state={functionLayerState(POINTS)} onChange={onChange} onCommit={onChange} />
+      <FunctionLayer state={functionLayerState(POINTS)} onInput={onChange} onChange={onChange} />
     </LayeredCurveEditor>,
   );
   return {

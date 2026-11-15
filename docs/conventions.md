@@ -289,9 +289,45 @@ A kit component's props use the DOM's and React Aria's names where one exists
   is called. `onSelect` is left for a pick that is not a held selection, such
   as a row clicked with how it was clicked. A modal surface is held by
   `isOpen`/`onOpenChange`, as `Dialog` is.
-- **Live and committed**: a value that moves through a gesture reports each
-  step through `onInput` and the finished gesture through `onChange`
-  (`Slider`, `Timeline`, `useDetents`).
+- **Live and committed**: a value edited continuously reports through
+  `onInput`, `onChange` and `onCancel`, as "Edit callbacks" below defines them.
+
+## Edit callbacks
+
+Every kit control that edits a value continuously — a slider, a curve editor and its layers, a gradient, mesh or
+band editor, a timeline, a color or paint field, a typed number or text field — reports an edit through the same
+three callbacks, with the same meaning whatever else is passed (2026-11-14). A control's docs say what counts as
+one edit there (a drag, a key step, a typed entry) and point here for the rest.
+
+| Callback | Means | Fires |
+|---|---|---|
+| `onInput(next)` | a value to preview | any number of times while an edit runs; never an undo step |
+| `onChange(next)` | the edit is finished | once per edit, with its final value; never for a canceled edit, nor for one that changed nothing |
+| `onCancel()` | the edit was abandoned | once, after the preview is put back; no `onChange` follows |
+
+- **One edit, one commit.** A drag commits once at its release; a key step, a click that inserts or deletes, and an
+  undo or redo inside the control are each an edit of their own and commit once. A press released without
+  changing anything commits nothing.
+- **Commit-only callers pass `onChange` alone.** Given no `onInput`, the control draws the edit in progress
+  itself and drops that draft when the edit ends. Given `onInput`, the caller owns the preview: the control
+  draws `value`, so a caller that wants the drag to show writes `onInput`'s value back. A caller that only
+  follows live values passes `onInput` and, where it wants the last one too, the same handler as `onChange`.
+- **Cancellation**: Escape during a pointer drag, a canceled or lost pointer, an unmount mid-drag, and Escape
+  or unreadable text in a typed field. Before `onCancel`, a control that sent anything to `onInput` sends it
+  the value the edit began from, so a caller previewing into its own state is already back where it was;
+  `onCancel` is for a caller that opened something on `onInput` (a transaction, an overlay) to close it. A
+  control with no single value to go back to (a mixed field) sends `onCancel` alone. No control has to hold a
+  draft to cancel: the value it began from is its `value` prop at the edit's start.
+- **The caller's value wins.** Outside an edit the control draws `value` as given, so a caller that clamps,
+  rounds or declines what it was handed writes back the value it kept and the control shows that. Where
+  `onChange` returns a value (`ColorField`, `PaintInput`), it is the one the caller applied.
+- **Other names keep the meanings.** A control whose value has its own name pairs `on<X>Input` with
+  `on<X>Change` (`ZoomControl`'s `onZoomInput`/`onZoomChange`, `BandEditor`'s `onRangeInput`/`onRangeChange`),
+  and a curve layer's `onChange` also takes the state the edit began from. Callbacks that report a pick or an
+  event rather than an edit (`onSelect`, `onSeek`) are outside this protocol.
+
+`useEditDraft` (`packages/ui/src/useEditDraft.ts`) is the draft rule above for a controlled control, and
+`openPointerSession`'s `escape` option (and `useHandleDrag`'s) is the Escape rule for a drag.
 
 ## A primitive over one native element takes that element's props
 

@@ -15,7 +15,7 @@ type Story = StoryObj<typeof ZoomControl>;
 export const Default: Story = {
   render: (args) => {
     const [zoom, setZoom] = useState(args.zoom);
-    return <ZoomControl {...args} zoom={zoom} onZoomChange={setZoom} />;
+    return <ZoomControl {...args} zoom={zoom} onZoomInput={setZoom} onZoomChange={setZoom} />;
   },
 };
 

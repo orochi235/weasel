@@ -28,7 +28,7 @@ export function useStoryFields(): { id: string; field: PropertyControlProps }[] 
     { id: 'number', field: { kind: 'number', name: 'Size', value: size, min: 1, onChange: setSize } },
     {
       id: 'number slider',
-      field: { kind: 'number', control: 'slider', name: 'Opacity', value: opacity, min: 0, max: 100, onChange: setOpacity },
+      field: { kind: 'number', control: 'slider', name: 'Opacity', value: opacity, min: 0, max: 100, onInput: setOpacity, onChange: setOpacity },
     },
     { id: 'string', field: { kind: 'string', name: 'Title', value: title, onChange: setTitle } },
     { id: 'string textarea', field: { kind: 'string', control: 'textarea', name: 'Notes', value: notes, onChange: setNotes } },
@@ -39,7 +39,7 @@ export function useStoryFields(): { id: string; field: PropertyControlProps }[] 
     { id: 'enum toggle', field: { kind: 'enum', control: 'toggle', name: 'Align', value: align, options: ALIGN, onChange: setAlign } },
     { id: 'enum radio', field: { kind: 'enum', control: 'radio', name: 'Align', value: align, options: ALIGN, onChange: setAlign } },
     { id: 'enum menu', field: { kind: 'enum', control: 'menu', name: 'Align', value: align, options: ALIGN, onChange: setAlign } },
-    { id: 'color', field: { kind: 'color', name: 'Stroke', value: color, onChange: setColor } },
+    { id: 'color', field: { kind: 'color', name: 'Stroke', value: color, onInput: setColor, onChange: setColor } },
     { id: 'paint', field: { kind: 'paint', name: 'Fill', value: paint, onChange: setPaint } },
     { id: 'font-family', field: { kind: 'font-family', name: 'Font', value: family, onChange: setFamily } },
     { id: 'font-weight', field: { kind: 'font-weight', name: 'Weight', value: weight, family, onChange: setWeight } },

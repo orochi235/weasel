@@ -233,7 +233,7 @@ describe('PropertyField color alpha', () => {
 
   it('keeps an alpha held in the hex through both the swatch and the track', () => {
     const onChange = vi.fn();
-    render(<PropertyField kind="color" label="Tint" value="#336699cc" alpha onChange={onChange} />);
+    render(<PropertyField kind="color" label="Tint" value="#336699cc" alpha onInput={onChange} onChange={onChange} />);
     expect(swatch()).toHaveValue('#336699');
     fireEvent.input(swatch(), { target: { value: '#00ff00' } });
     expect(onChange).toHaveBeenLastCalledWith('#00ff00cc');
@@ -406,9 +406,9 @@ describe('PropertyControl', () => {
   it.each([
     ['PropertyControl', (p: SliderProps) => <PropertyControl {...p} name="Size" />],
     ['PropertyField', (p: SliderProps) => <PropertyField {...p} label="Size" />],
-  ])('lets a settled-only %s slider move, then commits where it stopped', (_, draw) => {
+  ])('lets a commit-only %s slider move, then commits where it stopped', (_, draw) => {
     const onChange = vi.fn();
-    render(draw({ kind: 'number', control: 'slider', value: 40, min: 0, max: 100, onInput: () => {}, onChange }));
+    render(draw({ kind: 'number', control: 'slider', value: 40, min: 0, max: 100, onChange }));
     const track = screen.getByRole('slider', { name: 'Size' }) as HTMLInputElement;
     fireEvent.input(track, { target: { value: '60' } });
     expect(track.value).toBe('60');
@@ -515,7 +515,7 @@ describe('an endless slider end', () => {
 
   it('reports Infinity for the stop one step past the range, from the track and from the keyboard', () => {
     const onChange = vi.fn();
-    render(<PropertyControl kind="number" control="slider" name="Cut" value={5000} min={0} max={5000} step={50} endless="max" onChange={onChange} />);
+    render(<PropertyControl kind="number" control="slider" name="Cut" value={5000} min={0} max={5000} step={50} endless="max" onInput={onChange} onChange={onChange} />);
     fireEvent.input(screen.getByRole('slider', { name: 'Cut' }), { target: { value: '5050' } });
     expect(onChange).toHaveBeenLastCalledWith(Infinity);
     fireEvent.keyDown(screen.getByRole('spinbutton', { name: 'Cut' }), { key: 'ArrowUp' });
@@ -524,7 +524,7 @@ describe('an endless slider end', () => {
 
   it('keeps the top of the range as a value of its own', () => {
     const onChange = vi.fn();
-    render(<PropertyControl kind="number" control="slider" name="Cut" value={4950} min={0} max={5000} step={50} endless="max" onChange={onChange} />);
+    render(<PropertyControl kind="number" control="slider" name="Cut" value={4950} min={0} max={5000} step={50} endless="max" onInput={onChange} onChange={onChange} />);
     fireEvent.input(screen.getByRole('slider', { name: 'Cut' }), { target: { value: '5000' } });
     expect(onChange).toHaveBeenLastCalledWith(5000);
     fireEvent.keyDown(screen.getByRole('spinbutton', { name: 'Cut' }), { key: 'ArrowUp' });
@@ -571,10 +571,13 @@ describe('an endless slider end', () => {
     render(<Harness />);
     expect(screen.getByRole('spinbutton', { name: 'Cap' })).toHaveValue('uncapped');
     fireEvent.input(screen.getByRole('slider', { name: 'Cap' }), { target: { value: '24' } });
+    fireEvent.change(screen.getByRole('slider', { name: 'Cap' }));
     expect(write).toHaveBeenLastCalledWith(24);
     fireEvent.input(screen.getByRole('slider', { name: 'Cap' }), { target: { value: '64' } });
+    fireEvent.change(screen.getByRole('slider', { name: 'Cap' }));
     expect(write).toHaveBeenLastCalledWith(64);
     fireEvent.input(screen.getByRole('slider', { name: 'Cap' }), { target: { value: '72' } });
+    fireEvent.change(screen.getByRole('slider', { name: 'Cap' }));
     expect(write).toHaveBeenLastCalledWith(Infinity);
   });
 });

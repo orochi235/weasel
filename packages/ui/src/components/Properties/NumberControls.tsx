@@ -11,6 +11,7 @@ import { imeKey } from '@weasel-js/ui-input';
 import { decimal, decimalPlaces, endlessTrack, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import { useFieldLocale } from '../../useFieldLocale';
+import { useEditDraft } from '../../useEditDraft';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { UnitField } from '../NumberField';
 import { InlineRange } from '../InlineRange';
@@ -23,29 +24,14 @@ import { trackPlace } from './sliderScale';
 import { catchStop, useTrackStops } from './sliderStops';
 import { attachesUnit, UnitSuffix } from './unitSuffix';
 
-/**
- * A slider's props with its drag held locally. A caller taking settled values
- * only ignores `onInput`, so `value` stands still through the drag; without the
- * draft the controlled track snaps back on every move and commits from there.
- */
+/** A slider's props with a commit-only caller's drag drawn locally, so the controlled track follows the pointer. */
 function useSliderDraft(p: PropertyNumberFieldProps): PropertyNumberFieldProps {
-  // Held with the value it was dragged from: a drag that ends where it began
-  // fires no `change`, and a draft left behind must not mask the next value.
-  const [draft, setDraft] = useState<{ from: number | null | undefined; at: number }>();
-  const { onInput, onChange } = p;
-  if (!onInput) return p;
-  return {
-    ...p,
-    value: draft !== undefined && Object.is(draft.from, p.value) ? draft.at : p.value,
-    onInput: (next) => {
-      setDraft({ from: p.value, at: next });
-      onInput(next);
-    },
-    onChange: (next) => {
-      setDraft(undefined);
-      onChange(next);
-    },
-  };
+  const edit = useEditDraft<number | null | undefined>(p.value, {
+    onInput: p.onInput && ((next) => p.onInput!(next as number)),
+    onChange: (next) => p.onChange(next as number),
+    onCancel: p.onCancel,
+  });
+  return { ...p, value: edit.shown, onInput: edit.onInput, onChange: edit.onChange };
 }
 
 export function SliderRow({ row, readout, control }: {
@@ -79,10 +65,8 @@ export function SliderCell(props: PropertyNumberFieldProps) {
  *
  * A native `range` input fires `input` through a drag and `change` once at
  * the end, but React's synthetic `onChange` sees only the first: its value
- * tracker drops the unchanged second. So a track offering the live/committed
- * split reads the live half from React and the committed half from here.
- * `commit` is `undefined` when the track has one callback, which then fires
- * continuously.
+ * tracker drops the unchanged second. So the track reads the live half from
+ * React and the committed half from here.
  */
 function useCommitListener(
   commit: ((raw: string) => void) | undefined,
@@ -102,7 +86,6 @@ function useCommitListener(
   return ref;
 }
 
-export const ignore = (): void => {};
 
 export function NumberInput(p: PropertyNumberFieldProps) {
   const known = isKnown(p);
@@ -191,9 +174,9 @@ function sliderBounds(p: PropertyNumberFieldProps): {
 /** `keyed`: the track is the keyboard's way in, where the row's readout is not an editable one. */
 function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps & { keyed?: boolean }) {
   const { min, max, step, settle, onTrack } = sliderBounds(p);
-  const live = p.onInput ?? p.onChange;
+  const live = (next: number) => p.onInput?.(next);
   const held = useControlAccess({ disabled: p.mixed || p.disabled, disabledReason: p.disabledReason }).state !== 'enabled';
-  const commit = p.onInput && !held ? p.onChange : undefined;
+  const commit = held ? undefined : p.onChange;
   const place = trackPlace(p.scale, min, max, step, p.stops);
   // The native `change` comes off a listener of its own, past InlineRange's hold, so a held track drops it here.
   const range = useCommitListener(commit && ((raw) => commit(settle(place.fromInput(Number(raw))))));

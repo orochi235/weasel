@@ -115,6 +115,30 @@ describe('GradientHandles', () => {
     expect(calls).not.toContain('change');
   });
 
+  it('cancels a drag on Escape, after putting the preview back', () => {
+    const calls: string[] = [];
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onInput={() => calls.push('input')} onChange={() => calls.push('change')} onCancel={() => calls.push('cancel')} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient start');
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 20, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 90, clientY: 120, pointerId: 1 });
+    fireEvent.keyDown(handle, { key: 'Escape' });
+    fireEvent.pointerUp(handle, { clientX: 90, clientY: 120, pointerId: 1 });
+    expect(calls.slice(-2)).toEqual(['input', 'cancel']);
+    expect(calls).not.toContain('change');
+  });
+
+  it('draws a commit-only caller\'s drag, and commits it once', () => {
+    const onChange = vi.fn();
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient start');
+    const at = handle.getAttribute('cx');
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 20, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 90, clientY: 120, pointerId: 1 });
+    expect(screen.getByLabelText('Gradient start').getAttribute('cx')).not.toBe(at);
+    fireEvent.pointerUp(handle, { clientX: 90, clientY: 120, pointerId: 1 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it('moves a focused handle with the arrow keys', () => {
     const onChange = vi.fn();
     render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
