@@ -1,6 +1,18 @@
 import { useState } from 'react';
 import {
-  ellipsePath, rectPath, SceneCanvas, solid, starPath, useScene, useSelection, type Path, type ToolsApi, editPreset, movePreset, pickPreset, pathNode,
+  ellipsePath,
+  rectPath,
+  SceneCanvas,
+  solid,
+  starPath,
+  useScene,
+  useSelection,
+  type Path,
+  type ToolsApi,
+  editPreset,
+  movePreset,
+  pickPreset,
+  pathNode,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { DemoStage } from './DemoStage';

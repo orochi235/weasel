@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react';
 import {
-  SceneCanvas, asNodeId, easeInOutCubic, pathFromD, pathMotion, solid, tweenPose, useScene, useSceneAdapter, type RectPose, pathNode,
+  SceneCanvas,
+  asNodeId,
+  easeInOutCubic,
+  pathFromD,
+  pathMotion,
+  solid,
+  tweenPose,
+  useScene,
+  useSceneAdapter,
+  type RectPose,
+  pathNode,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import type { Fill, Path, Stroke } from '@weasel-js/core';

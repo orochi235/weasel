@@ -1,5 +1,14 @@
 import {
-  asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, solid, type NodeId, type RectPose, drawPreset, pathNode,
+  asNodeId,
+  boundsOfPath,
+  createScene,
+  ellipsePath,
+  pathFromD,
+  solid,
+  type NodeId,
+  type RectPose,
+  drawPreset,
+  pathNode,
 } from '@weasel-js/core';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas,

@@ -1,5 +1,13 @@
 import {
-  asNodeId, createScene, type RectPose, solid, useSelection, movePreset, pathsPreset, pickPreset, pathNode,
+  asNodeId,
+  createScene,
+  type RectPose,
+  solid,
+  useSelection,
+  movePreset,
+  pathsPreset,
+  pickPreset,
+  pathNode,
 } from '@weasel-js/core';
 import {
   type ConfigOf,

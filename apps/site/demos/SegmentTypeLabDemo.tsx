@@ -1,5 +1,15 @@
 import {
-  ANCHORS_GROUP, type ActionTunings, asNodeId, createScene, type RectPose, solid, useSelection, movePreset, pathsPreset, pickPreset, pathNode,
+  ANCHORS_GROUP,
+  type ActionTunings,
+  asNodeId,
+  createScene,
+  type RectPose,
+  solid,
+  useSelection,
+  movePreset,
+  pathsPreset,
+  pickPreset,
+  pathNode,
 } from '@weasel-js/core';
 import {
   type ConfigOf,
