@@ -18,8 +18,9 @@ option fields not covered here are in the source — every export carries JSDoc.
 
 `<SceneCanvas>` mounts an `<ActionsProvider>` and a `<DepRegistryProvider>`,
 then registers the standard actions its `features` presets carry
-(`FEATURE_ACTION_IDS` for core's) and the kit actions its tools bind — none on
-a bare canvas, all of core's under `features={['draw']}`. `useStandardActions`
+(`FEATURE_ACTION_IDS` in `@weasel-js/core/named-features` lists core's) and the
+kit actions its tools bind — none on
+a bare canvas, all of core's under `features={[drawPreset]}`. `useStandardActions`
 does the same for a host of your own, taking any action list. A
 descriptor declares *what* it does (`invoker.run`), *what it needs*
 (`requires`, resolved from the dep registry at dispatch time), *when it's

@@ -16,10 +16,10 @@ Average, Cut at crossings, Simplify, and Offset. This package adds the rest,
 on core's public surface:
 
 ```tsx
-import { SceneCanvas } from '@weasel-js/core';
+import { drawPreset, SceneCanvas } from '@weasel-js/core';
 import { pathTools } from '@weasel-js/path-tools';
 
-<SceneCanvas scene={scene} features={['draw', pathTools]} />;
+<SceneCanvas scene={scene} features={[drawPreset, pathTools]} />;
 ```
 
 `pathTools` turns every family on but Drape and handle snapping, which

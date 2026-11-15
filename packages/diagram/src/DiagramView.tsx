@@ -166,7 +166,7 @@ function Inner({
   const sequences = onEditSequence !== undefined;
   const edits = moves || resizes || sequences || edgeEdits || onDelete !== undefined || onConnect !== undefined || onReorder !== undefined;
   const features = useMemo((): FeaturePreset[] => [
-    viewPreset, pickPreset, ...(moves ? [movePreset as const] : []), ...(resizes ? [resizePreset as const] : []), ...(sequences ? [editPreset as const] : []),
+    viewPreset, pickPreset, ...(moves ? [movePreset] : []), ...(resizes ? [resizePreset] : []), ...(sequences ? [editPreset] : []),
     ...editing.presets,
   ], [moves, resizes, sequences, editing.presets]);
   const textEditor = useSequenceTextEdit(scene, onEditSequence);

@@ -33,7 +33,6 @@ import {
 } from 'domains/ingestion/svgHandler';
 import { buildWeaselClipboardText } from 'interactions/actions/clipboard/wireFormat';
 import { drawPreset, editPreset, ingestPreset } from 'canvas/SceneCanvas/presets';
-import { editPreset, ingestPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { image?: { src: string } };
 type L = 'main';

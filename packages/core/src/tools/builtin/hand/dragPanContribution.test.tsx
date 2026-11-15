@@ -7,6 +7,7 @@ import type { View } from 'core/viewport/view';
 import { dragPanContribution } from './dragPanContribution';
 import type { Contribution } from '../../overlayBinding';
 import { viewPreset } from 'canvas/SceneCanvas/presets';
+import type { FeaturePreset } from 'canvas/SceneCanvas/features';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -22,7 +23,7 @@ beforeAll(() => {
 const START: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 interface DragOptions {
-  features?: 'view'[];
+  features?: readonly FeaturePreset[];
   /** `PointerEvent.button` of the press. */
   button?: number;
 }

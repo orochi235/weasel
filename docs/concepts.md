@@ -77,39 +77,52 @@ clipboard, no drop or paste, and no selection chrome. The gesture dispatcher is
 mounted, so a binding a consumer adds — an `ambient` entry, a tool, an action
 with a `defaultBinding` — routes as usual, with no base tool ahead of it.
 
-Behavior is turned on by naming presets in `features`. A preset can include
-others, and naming it turns those on too; any of them can also be named alone:
+Behavior is turned on by passing `FeaturePreset` objects in `features`, which
+`@weasel-js/core` exports. A preset can include others, and passing it turns
+those on too; any of them can also be passed alone:
 
 | Preset | Registers |
 |---|---|
-| `view` | wheel pan and zoom, pinch, the zoom keys; a middle-button drag pans under any tool; the hand tool (`tools:view`), held on Space |
-| `select` | the select and lasso tools (`tools:select`), the select tool as the initial active tool and Escape's return target |
-| `outline` | the selection outline, whichever tool sets the selection |
-| `pick` | `select` and `outline` |
-| `move` | ambient drag-to-move and Alt-drag-to-clone bindings |
-| `resize` | the resize handles, drawn and bound |
-| `rotate` | the rotation handle, drawn and bound |
-| `transform` | `resize` and `rotate` |
-| `edit` | `escape` (Escape, cancel-gesture), `contextMenu`, `selectAll`, `duplicate` (with transform-again), `delete`, `group`, `nudge`, `style` (fill and stroke), `clipboard`, `textEdit` (a double-click on text opens it in place); Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
-| `arrange` | `flip`, `reorder`, `align`, `distribute` |
-| `paths` | `anchorKeys` (anchor nudge and delete, Escape out of path edit, each tried ahead of its node-level twin), `pathfinder`, `outlines`, `pathEdit`, `pathCommands` |
-| `ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
-| `draw` | every preset above but `pick` and `transform`, whose parts it names itself |
-| `whiteboard` | the pencil, text and the sticky note (`WHITEBOARD_TOOLS`), with `view`, `pick`, `move`, `resize` and `edit` |
-| `tools:shape`, `tools:draw`, `tools:type`, `tools:page` | the tools that make things: shapes, the pen and pencil, text and the sticky note, the page slicer |
+| `viewPreset` | wheel pan and zoom, pinch, the zoom keys, edge pan; a middle-button drag pans under any tool; the hand tool (`viewToolsPreset`), held on Space |
+| `selectPreset` | the select and lasso tools (`selectToolsPreset`), the select tool as the initial active tool and Escape's return target |
+| `outlinePreset` | the selection outline, whichever tool sets the selection |
+| `pickPreset` | `selectPreset` and `outlinePreset` |
+| `movePreset` | ambient drag-to-move and Alt-drag-to-clone bindings |
+| `resizePreset` | the resize handles, drawn and bound |
+| `rotatePreset` | the rotation handle, drawn and bound |
+| `transformPreset` | `resizePreset` and `rotatePreset` |
+| `editPreset` | `escapePreset` (Escape, cancel-gesture), `contextMenuPreset`, `selectAllPreset`, `duplicatePreset` (with transform-again), `deletePreset`, `groupPreset`, `nudgePreset`, `stylePreset` (fill and stroke), `clipboardPreset`, `textEditPreset` (a double-click on text opens it in place); Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
+| `arrangePreset` | `flipPreset`, `reorderPreset`, `alignPreset`, `distributePreset` |
+| `pathsPreset` | `anchorKeysPreset` (anchor nudge and delete, Escape out of path edit, each tried ahead of its node-level twin), `pathfinderPreset`, `outlinesPreset`, `pathEditPreset`, `pathCommandsPreset` |
+| `ingestPreset` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
+| `drawPreset` | every preset above but `pickPreset` and `transformPreset`, whose parts it includes itself |
+| `whiteboardPreset` | the pencil, text and the sticky note (`WHITEBOARD_TOOLS`), with view, pick, move, resize, and edit |
+| `shapeToolsPreset`, `drawToolsPreset`, `typeToolsPreset`, `pageToolsPreset` | the tools that make things: shapes, the pen and pencil, text and the sticky note, the page slicer |
 
 A preset holding only actions, tools, and includes is a bundle; one with any
 other role (an ambient binding, chrome, an ordering rule) is an atom, whose
-parts only work together. `FEATURE_ACTION_IDS` is the table of which kit
-action each preset registers itself, and `describePresets` gives every preset
-as data. Each name stands for a `FeaturePreset` object (`selectPreset`,
-`pathsPreset`, …), and `features` takes those objects, or a package's own,
-beside the names; `docs/extending.md` ("Presets") has the shape. A
-canvas supplying its own select tool names `outline` rather than `pick`, so the
-built-in one is not mounted beside it.
-Passing `viewport` implies `view`; the prop only configures it. A tool brings
-the kit actions it binds, so `defaultTools={['rect']}` registers `insert`
-under any preset, and `actions` adds, overrides or removes on top of all of it.
+parts only work together. `describePresets` gives every preset as data. A
+package's preset goes beside core's the same way; `docs/extending.md`
+("Presets") has the shape. A canvas supplying its own select tool passes
+`outlinePreset` rather than `pickPreset`, so the built-in one is not mounted
+beside it. Only the presets an app imports reach its bundle.
+
+**Navigation comes from `viewPreset` and nothing else.** Without it (or a
+preset including it: `drawPreset`, `whiteboardPreset`) the canvas does not
+wheel, pinch, edge-pan, or answer the zoom keys. `viewport` configures what
+`viewPreset` turns on and implies nothing; a development build warns when it is
+passed alone. A tool brings the kit actions it binds, so
+`defaultTools={['rect']}` registers `insert` and `defaultTools={['hand']}`
+drags the view under any preset, and `actions` adds, overrides or removes on
+top of all of it.
+
+**Names are an optional entry.** `@weasel-js/core/named-features` maps core's
+preset names to the objects: `namedFeatures('pick', 'move')` is
+`[pickPreset, movePreset]` and means exactly that, with nothing implied.
+`FEATURE_NAMES` lists every name, `FEATURE_PRESETS` keys each object by it, and
+`FEATURE_ACTION_IDS` is the table of which kit action each preset registers
+itself. For a page that picks presets by name (a URL, a settings file); importing
+it puts every core preset in the bundle.
 
 `move`, `resize` and `rotate` belong to the selection, not to the select tool:
 they are always-live entries (`selectionMoveContribution`,
@@ -915,7 +928,7 @@ and run on ambient bindings alone.
 ## Putting it together
 
 ```tsx
-import { SceneCanvas, useScene } from '@weasel-js/core';
+import { drawPreset, SceneCanvas, useScene } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
 
 type Swatch = { color: string };
@@ -936,7 +949,7 @@ function Editor() {
     <SceneCanvas
       width={W} height={H}
       scene={scene}
-      features={['draw']}
+      features={[drawPreset]}
       selectionOptions={{ mode: 'multi' }}
       layers={{
         scene: {

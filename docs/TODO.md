@@ -304,15 +304,6 @@ Owner tags, after the priority (2026-10-26):
   documented codec without editor, typed arrays round-trip, mismatched document/history pairs are rejected,
   and examples document format versions and application migration boundaries.
 
-- **(P2) [agent] Make explicit feature presets the standard canvas composition API in 2.0.** `SceneCanvas`
-  accepts named features and implies navigation from `viewport`; `LeanSceneCanvas` accepts preset objects
-  and does not imply navigation (`packages/core/src/canvas/LeanSceneCanvas.tsx`). Make the explicit-preset
-  implementation the standard `SceneCanvas`, retain complete configurations such as `drawPreset`, and
-  isolate named-feature convenience behind an optional entry or wrapper with documented semantics.
-  Closes when the standard canvas uses explicit presets, named convenience is isolated, navigation semantics
-  are documented and tested, unused presets stay out of the standard consumer bundle, and demos and
-  migration docs use the consolidated API.
-
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor

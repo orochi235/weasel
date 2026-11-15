@@ -37,30 +37,30 @@ import '@weasel-js/core/style.css';
 
 `useScene` holds the scene: a tree of leaf and container nodes, each carrying your data and a pose. Every change to it is an **op**, which is what makes it undoable. `<SceneCanvas>` renders a scene and routes input to it.
 
-A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from input, routes any bindings you add, and undoes and redoes whatever changed its scene (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z), but it has no tools, no other standard actions and no selection chrome. Behavior comes from presets named in `features`, each independent of the others:
+A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from input, routes any bindings you add, and undoes and redoes whatever changed its scene (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z), but it has no tools, no other standard actions and no selection chrome. Behavior comes from the preset objects passed in `features`, each independent of the others, and only the presets you import reach your bundle:
 
 | Preset | Turns on |
 |---|---|
-| `view` | wheel pan and zoom, pinch, the zoom keys, the hand tool (H, or hold Space). Passing `viewport` implies it. |
-| `select` | the select tool, active from the start: click to pick, drag on empty to marquee, click on empty to clear |
-| `outline` | the selection outline, whichever tool sets the selection |
-| `pick` | `select` and `outline` |
-| `move` | drag a body to move it, Alt-drag to clone — under any tool that leaves the drag unclaimed |
-| `resize` | resize handles |
-| `rotate` | the rotation handle |
-| `transform` | `resize` and `rotate` |
-| `edit` | delete, duplicate, group/ungroup, nudge, select-all, Escape, cut/copy/paste, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
-| `arrange` | align, distribute, reorder, flip |
-| `paths` | pathfinder operations, path editing and anchor editing |
-| `ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
-| `draw` | every preset above |
+| `viewPreset` | wheel pan and zoom, pinch, the zoom keys, edge pan, the hand tool (H, or hold Space). The only way to navigate: `viewport` configures it and turns nothing on. |
+| `selectPreset` | the select tool, active from the start: click to pick, drag on empty to marquee, click on empty to clear |
+| `outlinePreset` | the selection outline, whichever tool sets the selection |
+| `pickPreset` | `selectPreset` and `outlinePreset` |
+| `movePreset` | drag a body to move it, Alt-drag to clone — under any tool that leaves the drag unclaimed |
+| `resizePreset` | resize handles |
+| `rotatePreset` | the rotation handle |
+| `transformPreset` | `resizePreset` and `rotatePreset` |
+| `editPreset` | delete, duplicate, group/ungroup, nudge, select-all, Escape, cut/copy/paste, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
+| `arrangePreset` | align, distribute, reorder, flip |
+| `pathsPreset` | pathfinder operations, path editing and anchor editing |
+| `ingestPreset` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
+| `drawPreset` | every preset above |
 
-`defaultTools` adds built-in tools on top, and each brings the actions it binds: `defaultTools={['rect']}` brings `insert`.
+`defaultTools` adds built-in tools on top, and each brings the actions it binds: `defaultTools={['rect']}` brings `insert`, and `defaultTools={['hand']}` drags the view without `viewPreset`.
 
 Interactions are **actions** — descriptors registered into an actions registry — reached by **gesture bindings**. A tool is a list of `{ spec, actionId }` pairs and nothing more; the kit's own select, shape and viewport tools are built that way.
 
 ```tsx
-import { SceneCanvas, BUILTIN_TOOL_IDS, useScene, useSelection } from '@weasel-js/core';
+import { SceneCanvas, BUILTIN_TOOL_IDS, drawPreset, useScene, useSelection } from '@weasel-js/core';
 import { createGridPreset } from '@weasel-js/guides';
 
 const grid = createGridPreset({ spacing: 20 });
@@ -78,7 +78,7 @@ export function Editor() {
       height={600}
       scene={scene}
       selection={selection}
-      features={['draw', grid]}
+      features={[drawPreset, grid]}
       defaultTools={BUILTIN_TOOL_IDS}
     />
   );
@@ -97,7 +97,7 @@ Lower-level surfaces take a narrow **adapter** instead of a scene — a few meth
 
 An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `viewport.dragPan` — paired with the input that triggers it. `<ActionsProvider>` holds the registered descriptors, and the gesture dispatcher matches live input against each one's `defaultBinding` and the active tool's bindings. Keystrokes and pointer gestures take the same path, so a keyboard shortcut and a drag are two bindings on one action rather than two mechanisms.
 
-`<SceneCanvas>` mounts a provider when none is above it and registers undo and redo, and the kit-standard actions its `features` presets name — under `draw`, all of them: escape, select-all, delete, duplicate, group and ungroup, flip, nudge, reorder, align, distribute, the pathfinder booleans, path-anchor editing, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `BASELINE_ACTION_IDS` lists the ones every canvas registers, and `FEATURE_ACTION_IDS` which preset registers which. A preset can include others: `edit` is `clipboard`, `nudge`, `group`, and the rest, each of which can be named alone, and `pick`, `transform`, and `draw` are presets of that kind. `insert` comes with the shape tools that bind it, which the `tools:shape`, `tools:draw`, `tools:type`, and `tools:page` presets mount. Each name stands for an exported `FeaturePreset` (`selectPreset`, `editPreset`, …), and `features` also takes a package's preset object; `<LeanSceneCanvas>` takes objects only, so an app's bundle holds only the presets it imports.
+`<SceneCanvas>` mounts a provider when none is above it and registers undo and redo, and the kit-standard actions its `features` presets carry — under `drawPreset`, all of them: escape, select-all, delete, duplicate, group and ungroup, flip, nudge, reorder, align, distribute, the pathfinder booleans, path-anchor editing, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `BASELINE_ACTION_IDS` lists the ones every canvas registers. A preset can include others: `editPreset` is `clipboardPreset`, `nudgePreset`, `groupPreset`, and the rest, each of which can be passed alone, and `pickPreset`, `transformPreset`, and `drawPreset` are presets of that kind. `insert` comes with the shape tools that bind it, which `shapeToolsPreset`, `drawToolsPreset`, `typeToolsPreset`, and `pageToolsPreset` mount. `features` takes a package's preset object the same way. Where presets are picked by name, `namedFeatures('pick', 'move')` from `@weasel-js/core/named-features` returns the objects, `FEATURE_NAMES` lists the names, and `FEATURE_ACTION_IDS` says which preset registers which action; that entry loads every core preset.
 
 ### Tuning an action
 
@@ -111,6 +111,7 @@ An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `
 A tuning applies to whichever descriptor holds the id, whether a preset or a tool registered it, and whether it registered before the tuning or after. Changing `params` never requires knowing what gesture reaches the action.
 
 ```tsx
+import { pathsPreset } from '@weasel-js/core';
 import { filletPreset, sandPreset } from '@weasel-js/path-tools';
 
 const radius = useRef(8);
@@ -119,7 +120,7 @@ const tune = useMemo<ActionTunings>(() => ({
   cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] },
 }), []);
 
-<SceneCanvas scene={scene} features={['paths', sandPreset, filletPreset]} tune={tune} />
+<SceneCanvas scene={scene} features={[pathsPreset, sandPreset, filletPreset]} tune={tune} />
 ```
 
 `ActionParamSchema` types `params` for the kit actions that read them (`flip`, `align.*`, `distribute.*`, `reorder.*`, `nudge.*`, `tool.activate`, `constrainAnchors`, `unconstrainAnchors`, `editAnchors`); any other id takes a plain record. `editAnchors` takes `handleLock` (`'angle'` or `'length'`, held without the Shift or Mod modifier). An action of your own declares its params the way `DepSchema` takes deps:
@@ -140,7 +141,7 @@ Pass `tune` a stable object — a module constant or a `useMemo` — since a new
   height={H}
   scene={scene}
   selection={selection}
-  features={['draw']}
+  features={[drawPreset]}
   actions={{
     duplicate: null,                  // drop the default
     'app.publish': {                  // add your own

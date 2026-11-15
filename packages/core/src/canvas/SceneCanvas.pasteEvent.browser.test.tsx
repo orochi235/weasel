@@ -15,7 +15,6 @@ import type { FeaturePreset } from './SceneCanvas/features';
 import type { Scene } from '../core/scene/types';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { editPreset } from 'canvas/SceneCanvas/presets';
-import { editPreset } from 'canvas/SceneCanvas/presets';
 
 type P = { x: number; y: number; width: number; height: number };
 type S = Scene<object, 'main', P>;
