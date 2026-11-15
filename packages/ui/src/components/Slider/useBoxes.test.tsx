@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { useRef } from 'react';
-import { useBoxes, type Box } from './useBoxes';
+import { useBoxes, type BoxSize } from './useBoxes';
 
 // A box tipped by a transform: its laid-out size is 10 by 20, its bounding rect 18 by 18.
 function tipped(el: HTMLElement | null) {
@@ -11,8 +11,8 @@ function tipped(el: HTMLElement | null) {
   el.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0, right: 18, bottom: 18, width: 18, height: 18, toJSON: () => {} }) as DOMRect;
 }
 
-function measured(untransformed: boolean): readonly Box[] {
-  let seen: readonly Box[] = [];
+function measured(untransformed: boolean): readonly BoxSize[] {
+  let seen: readonly BoxSize[] = [];
   function Probe() {
     const ref = useRef<HTMLDivElement | null>(null);
     seen = useBoxes(() => [ref.current], 1, { untransformed });

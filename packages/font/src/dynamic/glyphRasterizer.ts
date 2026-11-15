@@ -30,7 +30,8 @@ import { cssFamilyName } from '../cssFamily';
 export const BAKE_SIZE = 48;
 export const PAD = 8;
 
-export interface FaceMetrics {
+/** A face's ascent and descent at the size a rasterizer bakes at, in px. */
+export interface RasterFaceMetrics {
   ascent: number;
   descent: number;
 }
@@ -56,7 +57,7 @@ export interface RasterizedColorGlyph {
 }
 
 export interface GlyphRasterizer {
-  faceMetrics(family: string, weight: number, style: FontStyle): FaceMetrics;
+  faceMetrics(family: string, weight: number, style: FontStyle): RasterFaceMetrics;
   rasterize(
     family: string, weight: number, style: FontStyle, codepoint: number,
   ): RasterizedGlyph;

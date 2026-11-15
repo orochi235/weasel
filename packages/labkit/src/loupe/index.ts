@@ -30,7 +30,7 @@ export { LensActions } from './lens/LensActions';
 export type { LensAttachment, LensOverlayProps, LensReadoutProps } from './lens/LensOverlay';
 export { LensOverlay, VIEWPORT_ATTACHMENT } from './lens/LensOverlay';
 export { useShownSource } from './lens/LensSlot';
-export type { LensActionApi } from './lens/lensActionDefs';
+export type { LensActionApi, LensActionId } from './lens/lensActionDefs';
 export {
   createLensActions,
   createLoupeKeymap,

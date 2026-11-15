@@ -7,6 +7,8 @@
 
 import type { ShapeIconNames } from './icons.gen';
 
+export type { ShapeIconNames };
+
 /**
  * Every qualified icon name, as keys. Each package's generated `icons.gen.ts`
  * adds its own by declaration merging. Declared here, in the barrel, because an

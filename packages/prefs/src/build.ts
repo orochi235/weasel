@@ -7,7 +7,7 @@ import type { PrefLabel, PrefSeparator } from './label';
 import type { PrefBoolean, PrefColor, PrefEnumBase, PrefLeaf, PrefNumber, PrefString } from './schema';
 
 /** What a builder takes after the leaf's name and default: any of the leaf's other fields. */
-type Rest<L> = Partial<Omit<L, 'kind' | 'name' | 'default'>>;
+export type PrefLeafRest<L> = Partial<Omit<L, 'kind' | 'name' | 'default'>>;
 
 /** One option of an enum, or its value alone, which is labeled with the value's first letter raised. */
 
@@ -41,18 +41,18 @@ export const pref = {
     return { name, ...options, members };
   },
 
-  number: (name: string, def: number, rest?: Rest<PrefNumber>): PrefNumber & { default: number } =>
+  number: (name: string, def: number, rest?: PrefLeafRest<PrefNumber>): PrefNumber & { default: number } =>
     leaf('number', name, def, rest) as PrefNumber & { default: number },
-  boolean: (name: string, def: boolean, rest?: Rest<PrefBoolean>): PrefBoolean => leaf('boolean', name, def, rest),
-  string: (name: string, def: string, rest?: Rest<PrefString>): PrefString => leaf('string', name, def, rest),
-  color: (name: string, def: string, rest?: Rest<PrefColor>): PrefColor => leaf('color', name, def, rest),
+  boolean: (name: string, def: boolean, rest?: PrefLeafRest<PrefBoolean>): PrefBoolean => leaf('boolean', name, def, rest),
+  string: (name: string, def: string, rest?: PrefLeafRest<PrefString>): PrefString => leaf('string', name, def, rest),
+  color: (name: string, def: string, rest?: PrefLeafRest<PrefColor>): PrefColor => leaf('color', name, def, rest),
 
   /** A fixed set of choices. An option given as its value alone is labeled with that value, its first letter raised. */
   enum<const T extends string>(
     name: string,
     def: NoInfer<T>,
     options: readonly (T | PrefEnumBase<T>['options'][number])[],
-    rest?: Omit<Rest<PrefEnumBase<T>>, 'options'>,
+    rest?: Omit<PrefLeafRest<PrefEnumBase<T>>, 'options'>,
   ): PrefEnumBase<T> & { default: T; clearable?: false } {
     const full = options.map((option) => (typeof option === 'string' ? { value: option, label: labeled(option) } : option));
     return { kind: 'enum', name, description: '', default: def, ...rest, options: full };
@@ -64,6 +64,6 @@ export const pref = {
   /** Every action registered in the action group `group`. */
   actions: (group: string, rest?: Partial<Omit<PrefActions, 'kind' | 'default' | 'group'>>): PrefActions =>
     leaf('actions', '', undefined, { group, ...rest }),
-  label: (name: string, rest?: Rest<PrefLabel>): PrefLabel => leaf('label', name, undefined, rest),
+  label: (name: string, rest?: PrefLeafRest<PrefLabel>): PrefLabel => leaf('label', name, undefined, rest),
   separator: (): PrefSeparator => leaf('separator', '', undefined, undefined),
 };

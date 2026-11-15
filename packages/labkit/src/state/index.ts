@@ -18,6 +18,7 @@ export {
   LabStoreProvider,
   TrialIdContext,
   TrialIdProvider,
+  type TrialWriters,
   useLabStore,
   useTrialId,
 } from './context';
@@ -38,6 +39,8 @@ export {
   SingletonExperimentProvider,
   type SingletonExperimentProviderProps,
 } from './SingletonExperiment';
+export type { SavedTrialUndo } from './savedUndo';
+export type { SnapshotActions } from './snapshotActions';
 export type { LabStore, LabStoreActions } from './store';
 export { createLabStore } from './store';
 export type {

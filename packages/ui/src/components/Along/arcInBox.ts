@@ -1,9 +1,9 @@
 import { RAD_TO_DEG, wrapPositive, type ArcTrackSpec } from '@weasel-js/geom';
-import type { Box } from '../Slider/useBoxes';
+import type { BoxSize } from '../Slider/useBoxes';
 import type { AlongArc, ArcSpan } from './alongContext';
 
 /** The arc spec for `arc` laid in `box`: inscribed circle less `inset`, centered, unless overridden. */
-export function arcInBox(arc: AlongArc, box: Box): ArcTrackSpec {
+export function arcInBox(arc: AlongArc, box: BoxSize): ArcTrackSpec {
   const inscribed = Math.min(box.width, box.height) / 2 - (arc.inset ?? 0);
   const radius = arc.radius ?? Math.max(0, inscribed);
   const spec = { center: arc.center ?? { x: box.width / 2, y: box.height / 2 }, radius, direction: arc.direction };

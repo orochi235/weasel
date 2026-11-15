@@ -9,7 +9,7 @@ import type { AnimationHandle, Interpolate, InterpolatorFactory } from './types'
 export type CompositorMode = 'auto' | 'off' | 'require';
 
 /** What every animation on a {@link Target} takes. */
-interface OnTarget<T> {
+export interface OnTarget<T> {
   /** The value to move. */
   target: Target<T>;
   /** Told this animation's own value each frame: its destination plus what it has left to travel. */

@@ -15,7 +15,7 @@ import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
 import { isForgePath, storyConfig } from './globals';
 import { reportFrameScroll } from './loupe/frameScroll';
-import { type Ready, readyKey } from './readyKey';
+import { type FrameReady, readyKey } from './readyKey';
 import { type A11yOutcome, type TrialFrames } from './trialFrames';
 import { setRoute } from './useRoute';
 
@@ -94,7 +94,7 @@ export interface FrameLinkLatest {
   entry: IndexEntry;
   ctx: RenderContext<unknown, unknown>;
   answers: AnswerBook;
-  onReady: (entry: IndexEntry, ready: Ready) => void;
+  onReady: (entry: IndexEntry, ready: FrameReady) => void;
   descriptionKey: string | null;
   globals: Globals;
   overrides: Readonly<Record<string, string>>;

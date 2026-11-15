@@ -2,7 +2,8 @@ import type { DragEvent, PointerEvent, ReactNode } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
 import type { MenuShortcut } from '@weasel-js/menu';
 
-interface RailPlaced {
+/** What every item on a {@link ToolRail} has: its id and the run it sits in. */
+export interface ToolRailPlaced {
   /** Unique on the rail. */
   id: string;
   /** The run the item sits in. A group gathers its items where its first one sits; ungrouped items between
@@ -11,7 +12,7 @@ interface RailPlaced {
 }
 
 /** A button on a {@link ToolRail}. */
-export interface ToolRailButton extends RailPlaced {
+export interface ToolRailButton extends ToolRailPlaced {
   icon: IconSpec;
   label: string;
   /** What it does: the tooltip reads it in place of `label`. */
@@ -33,12 +34,12 @@ export interface ToolRailButton extends RailPlaced {
 
 /** Buttons sharing one: it shows the active member, else the one last pressed, and a click opens a menu of all
  *  of them. Only the members' presses are used; their pointer, drag and class fields are not. */
-export interface ToolRailStack extends RailPlaced {
+export interface ToolRailStack extends ToolRailPlaced {
   members: readonly ToolRailButton[];
 }
 
 /** Anything else on the rail, drawn in place. Its controls keep tab stops of their own. */
-export interface ToolRailSlot extends RailPlaced {
+export interface ToolRailSlot extends ToolRailPlaced {
   render(): ReactNode;
 }
 
@@ -52,7 +53,7 @@ export interface RailRun {
   items: ToolRailItem[];
 }
 
-/** The rail's runs, in the order {@link RailPlaced.group} gives them. */
+/** The rail's runs, in the order {@link ToolRailPlaced.group} gives them. */
 export function railRuns(items: readonly ToolRailItem[]): RailRun[] {
   const runs: RailRun[] = [];
   const byGroup = new Map<string, RailRun>();

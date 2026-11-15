@@ -2,16 +2,16 @@ import { useLayoutEffect, useState } from 'react';
 import { useLatest } from '@weasel-js/core';
 
 /** An element's laid-out size in CSS px. */
-export interface Box {
+export interface BoxSize {
   width: number;
   height: number;
 }
 
-const NONE: Box = { width: 0, height: 0 };
+const NONE: BoxSize = { width: 0, height: 0 };
 
 /** An element's laid-out size, which a CSS transform on it or an ancestor leaves alone. */
-export const layoutBox = (el: HTMLElement): Box => ({ width: el.offsetWidth, height: el.offsetHeight });
-const same = (a: readonly Box[], b: readonly Box[]): boolean =>
+export const layoutBox = (el: HTMLElement): BoxSize => ({ width: el.offsetWidth, height: el.offsetHeight });
+const same = (a: readonly BoxSize[], b: readonly BoxSize[]): boolean =>
   a.length === b.length && a.every((box, i) => box.width === b[i]!.width && box.height === b[i]!.height);
 
 /**
@@ -24,8 +24,8 @@ export function useBoxes(
   elements: () => readonly (Element | null)[],
   count: number,
   opts?: { untransformed?: boolean },
-): readonly Box[] {
-  const [boxes, setBoxes] = useState<readonly Box[]>([]);
+): readonly BoxSize[] {
+  const [boxes, setBoxes] = useState<readonly BoxSize[]>([]);
   const read = useLatest(elements);
   const untransformed = opts?.untransformed ?? false;
   useLayoutEffect(() => {

@@ -1,13 +1,13 @@
 import { useMemo, type RefObject } from 'react';
 import { arcShape, type TrackShape } from '@weasel-js/geom';
-import { useBoxes, type Box } from '../Slider/useBoxes';
+import { useBoxes, type BoxSize } from '../Slider/useBoxes';
 import type { AlongArc } from './alongContext';
 import { arcInBox } from './arcInBox';
 
 /** A track shape, or one built from the box it is laid in. */
-export type BoxShape = TrackShape | ((box: Box) => TrackShape);
+export type BoxShape = TrackShape | ((box: BoxSize) => TrackShape);
 
-const NONE: Box = { width: 0, height: 0 };
+const NONE: BoxSize = { width: 0, height: 0 };
 
 /** The track shape for `ref`'s laid-out box: `shape` when given, else `arc` laid in the box. Rebuilt when the box resizes
  *  or a field of `arc` changes, not when `arc` is a fresh object with the same fields. */

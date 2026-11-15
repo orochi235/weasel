@@ -5,7 +5,7 @@ export { createMarkDrawOne, resolveMarkStyle } from './drawOne';
 export { ExportMenu } from './ExportMenu';
 export type { WorldRect } from './frac';
 export { fracContains, fracEncloses, fracToWorld, roundFrac, worldToFrac } from './frac';
-export type { HistoryScene } from './history';
+export type { HistoryScene, MarkOrder, MarkOrderStep, SerializedMarkHistory } from './history';
 export { MarkHistory } from './history';
 export type { MarkListProps } from './MarkList';
 export { MarkList } from './MarkList';

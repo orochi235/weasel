@@ -1,11 +1,4 @@
 {
-  "@weasel-js/animator": [
-    "OnTarget",
-    "StaggerOnTarget"
-  ],
-  "@weasel-js/audio": [
-    "Timers"
-  ],
   "@weasel-js/core": [
     "AlignParams",
     "AnyScene",
@@ -57,9 +50,6 @@
     "SkinScene",
     "WorkerPaintedView"
   ],
-  "@weasel-js/devtools": [
-    "DistributiveOmit"
-  ],
   "@weasel-js/diagram": [
     "AnyScene",
     "Bounds",
@@ -89,20 +79,6 @@
     "Types",
     "Values"
   ],
-  "@weasel-js/editor": [
-    "FileRun"
-  ],
-  "@weasel-js/font": [
-    "DynamicPage",
-    "GlyphRasterizer"
-  ],
-  "@weasel-js/forge": [
-    "GlobalOption",
-    "Ready",
-    "Revision",
-    "Shared",
-    "StoryHosts"
-  ],
   "@weasel-js/geom": [
     "Comps"
   ],
@@ -115,24 +91,11 @@
     "Point",
     "Rect"
   ],
-  "@weasel-js/icons": [
-    "ShapeIconNames"
-  ],
   "@weasel-js/kernel3d": [
     "InsertCommon",
     "InsertMake",
     "Point",
     "Quad"
-  ],
-  "@weasel-js/labkit": [
-    "LensActionId",
-    "ModSpec",
-    "PhaseSpec",
-    "SavedTrialUndo",
-    "SerializedMarkHistory",
-    "SnapshotActions",
-    "TrialWriters",
-    "Write"
   ],
   "@weasel-js/paint": [
     "Rgba",
@@ -152,24 +115,6 @@
   "@weasel-js/plot": [
     "AnyScene",
     "Unit"
-  ],
-  "@weasel-js/prefs": [
-    "AssetBase",
-    "AttributeAggregate",
-    "AttributeSchema",
-    "ConditionMark",
-    "Folds",
-    "Join",
-    "NodeOrigins",
-    "Operator",
-    "OriginOf",
-    "OverridesOf",
-    "PrefAtom",
-    "PrefFieldsOf",
-    "PrefUnitText",
-    "RegisteredAction",
-    "Rest",
-    "ValueMove"
   ],
   "@weasel-js/renderer": [
     "BatchCut",
@@ -198,18 +143,5 @@
     "SvgInherits",
     "SvgKitInherited",
     "WarmOptions"
-  ],
-  "@weasel-js/ui": [
-    "AppliedColor",
-    "Box",
-    "FieldBase",
-    "FocusHoldAttrs",
-    "PanelInherit",
-    "PortalTargeted",
-    "RailPlaced",
-    "ReorderLine",
-    "SegmentedGridProps",
-    "Sweepable",
-    "Valued"
   ]
 }

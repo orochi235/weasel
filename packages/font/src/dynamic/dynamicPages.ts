@@ -11,7 +11,7 @@ import type { GlyphTextureSink } from '../textureSink';
 export const PAGE_SIZE = 1024;
 export const MAX_PAGES = 4;
 
-interface DynamicPage {
+export interface DynamicPage {
   data: Uint8Array;
   /** Bumps on every write; each write appends a patch with seq = version. */
   version: number;

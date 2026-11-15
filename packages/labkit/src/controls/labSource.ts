@@ -32,8 +32,6 @@ export function shownAt(config: Record<string, unknown>, path: string, leaf: Pre
   return prefShownValue(leaf, valueAtPath(config, path), isRecord(within) ? within : undefined);
 }
 
-type Write = (path: string, value: unknown) => void;
-
 /** What a lab's config source reads and writes. */
 export interface LabConfigInput {
   resolved: ResolvedConfig;
@@ -41,9 +39,9 @@ export interface LabConfigInput {
   /** `config` with every auto path resolved: what an unpinned leaf shows. */
   shown: Record<string, unknown>;
   /** Writes one value, the `auto` sentinel included. */
-  setConfig: Write;
+  setConfig: (path: string, value: unknown) => void;
   /** Where the values an edit passes through go. Absent, a draft is written as `setConfig` writes. */
-  draftConfig?: Write;
+  draftConfig?: (path: string, value: unknown) => void;
   /** The paths now unpinned. */
   auto?: ReadonlySet<string>;
   /** Unpins a leaf or pins it at `value`. Without it no leaf is auto here. */

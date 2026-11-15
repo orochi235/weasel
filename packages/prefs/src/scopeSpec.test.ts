@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PREF_ELSE, dropUnlisted, scopeSelectors, memberAt, repairScope, weighScope, writeDeclared, type OverridesOf, type PrefOverrides } from './scope';
+import { PREF_ELSE, dropUnlisted, scopeSelectors, memberAt, repairScope, weighScope, writeDeclared, type PrefOverridesLookup, type PrefOverrides } from './scope';
 import { prefOverridesOf, prefScopedDefault, prefScopesOf } from './scopeSpec';
 import type { PrefLeaf } from './schema';
 
@@ -8,9 +8,9 @@ const LAYOUT = 'layout';
 const scope = (by: string, own: Record<string, unknown>, shared?: unknown) =>
   (shared === undefined ? { $by: by, $in: own } : { $by: by, $in: own, [PREF_ELSE]: shared });
 /** A write along the selectors `stored` is already split by. */
-const write = (stored: unknown, under: Record<string, string>, next: unknown, overridesOf?: OverridesOf) =>
+const write = (stored: unknown, under: Record<string, string>, next: unknown, overridesOf?: PrefOverridesLookup) =>
   writeDeclared(stored, [...scopeSelectors(stored)], under, under, next, -1, overridesOf);
-const closed = (...lists: [string, PrefOverrides][]): OverridesOf => (selector) => Object.fromEntries(lists)[selector];
+const closed = (...lists: [string, PrefOverrides][]): PrefOverridesLookup => (selector) => Object.fromEntries(lists)[selector];
 
 describe('a closed selector', () => {
   const list = closed([MODE, ['types']]);
