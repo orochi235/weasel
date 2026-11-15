@@ -43,7 +43,7 @@ export function SliceDemo() {
   const selection = useSelection({ scene, mode: 'multi' });
   const [tools, setTools] = useState<ToolsApi | null>(null);
   return (
-    <div className="ckd-shape-tools-demo">
+    <div className="ckd-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
       <DemoStage width={W} height={H}>
         <SceneCanvas

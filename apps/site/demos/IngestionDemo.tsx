@@ -34,7 +34,7 @@ export function IngestionDemo() {
   }]);
 
   return (
-    <div className="ckd-shape-tools-demo">
+    <div className="ckd-demo">
       <div className="ckd-toolbar">
         <Button onClick={async () => {
           const files = await openFilePicker({ accept: 'image/*', multiple: true });

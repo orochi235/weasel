@@ -25,7 +25,7 @@ export function StickyNotesDemo() {
   const selection = useSelection({ scene, mode: 'multi' });
   const [tools, setTools] = useState<ToolsApi | null>(null);
   return (
-    <div className="ckd-shape-tools-demo">
+    <div className="ckd-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
       <div className="ckd-canvas-frame">
         <SceneCanvas

@@ -174,7 +174,7 @@ function StrokeAndFill() {
 
   return (
     <div className="ckd-row">
-      <div className="ckd-stack">
+      <div className="ckd-demo">
         {tools && <ToolPalette tools={tools} orientation="horizontal" />}
         <div className="ckd-canvas-frame" ref={hostRef}>
           <DemoStage width={W} height={H}>

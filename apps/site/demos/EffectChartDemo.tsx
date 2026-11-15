@@ -44,7 +44,7 @@ export const PIPELINE: EffectPipeline = {
 function Demo<TOptions>({ look }: { look?: EffectLook<TOptions> }) {
   const [picked, setPicked] = useState<string | null>(null);
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <div className="ckd-row">picked: {picked ?? 'none'}</div>
       <DemoStage width={W} height={H}>
         <EffectChart
@@ -210,7 +210,7 @@ export function EffectChartBranchDemo() {
   const [branch, setBranch] = useState<BranchChoice>('crossover');
   const options = useMemo(() => ({ branch }), [branch]);
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <Select
         label="branch symbol"
         orientation="row"

@@ -57,7 +57,7 @@ export function SmallCapsDemo() {
   const scene = useScene<NodeData, 'default'>({ systemLayers: [{ id: 'default' }], initial: NODES });
 
   return (
-    <div className="ckd-stack">
+    <div className="ckd-demo">
       <p className="ckd-hint">
         Small capitals are set at {(scale * 100).toFixed(1)}% — the face&apos;s x-height over its
         cap height, from its <code>OS/2</code> table.

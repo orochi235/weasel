@@ -80,7 +80,7 @@ function Demo() {
 
 export function HudContextMenuDemo() {
   return (
-    <div className="ckd-shape-tools-demo">
+    <div className="ckd-demo">
       <ActionsProvider><Demo /></ActionsProvider>
     </div>
   );

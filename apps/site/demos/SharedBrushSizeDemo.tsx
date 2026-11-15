@@ -112,7 +112,7 @@ export function SharedBrushSizeDemo() {
   const [shared, setShared] = useState(false);
   const registry = useMemo(() => brushes(shared), [shared]);
   return (
-    <div className="ckd-shape-tools-demo">
+    <div className="ckd-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
       <Checkbox isSelected={shared} onChange={setShared}>Share brush size</Checkbox>
       {tools && <ActiveOptions tools={tools} values={values} />}
