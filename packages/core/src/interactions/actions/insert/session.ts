@@ -10,6 +10,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
 import type { InsertDep, CommitSelection, TextEditDep } from '../depSchema';
+import { moveGestureAdapter } from '../move/gestureAdapter';
 import { insertParent } from './parent';
 import { insertKind } from './shape';
 
@@ -75,6 +76,7 @@ export function beginInsert(
 ): { session: InsertSession; readers: GestureReaders; frame: InsertFrame } | null {
   const dep = ctx.deps.insert;
   if (!dep) return null;
+  const scene = ctx.deps.scene;
 
   // Starting a draw retires any prior selection — the lingering halo
   // around an unrelated node while the user is drawing a new shape is
@@ -104,8 +106,10 @@ export function beginInsert(
     view: readers.view(),
     plane: readers.plane(),
     kitSettings: readers.kitSettings,
-    // No node exists to adapt until commit; insert behaviors read points.
-    adapter: undefined as unknown as GestureContext<unknown>['adapter'],
+    // With no scene the `insert` dep mints the node itself, and no adapter exists to hand over.
+    adapter: (scene
+      ? moveGestureAdapter(scene, undefined, selection?.adapterMethods)
+      : undefined) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };
   for (const b of behaviors) b.onStart?.(gestureCtx);

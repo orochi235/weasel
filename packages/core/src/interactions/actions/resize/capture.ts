@@ -3,6 +3,7 @@ import type { InvocationCtx } from '@weasel-js/routing';
 import { localToWorld } from 'core/geometry/targetFrame';
 import { pointerStateOf } from '../pointerState';
 import { sceneGestureFrames } from '../gestureFrames';
+import { moveGestureAdapter } from '../move/gestureAdapter';
 import { unionAABB, unionBounds } from 'core/geometry/unionBounds';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -163,6 +164,7 @@ export function captureBox(
  *  ids written, and the one pose it tracks is keyed by the first selected id. */
 export function buildGestureContext(
   ctx: InvocationCtx,
+  scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
   ruleOrigin: Bounds,
   startWorld: { x: number; y: number },
@@ -178,11 +180,8 @@ export function buildGestureContext(
     view: readers.view(),
     plane: readers.plane(),
     kitSettings: readers.kitSettings,
-    ...(ctx.deps.scene
-      ? { frames: sceneGestureFrames(ctx.deps.scene, ctx.deps) as GestureContext<Bounds>['frames'] }
-      : {}),
-    // `adapter` is unused by the kit's behaviors; cast to satisfy the type.
-    adapter: undefined as unknown as GestureContext<Bounds>['adapter'],
+    frames: sceneGestureFrames(scene, ctx.deps) as GestureContext<Bounds>['frames'],
+    adapter: moveGestureAdapter(scene, undefined, ctx.deps.selection?.adapterMethods) as unknown as GestureContext<Bounds>['adapter'],
     scratch: {},
   };
 }

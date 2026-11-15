@@ -6,7 +6,7 @@ import type { NodeId } from 'core/scene/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
-function setup() {
+function setup(constraints: unknown[] = []) {
   const scene = createScene<{ kind: string }, 'main', Pose>({ systemLayers: [{ id: 'main', visible: true, locked: false }] });
   const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { kind: 'rect' } });
   const onGestureEnd = vi.fn();
@@ -17,7 +17,7 @@ function setup() {
     deps: {
       selection: { get: () => [a] as NodeId[] },
       scene,
-      resizePolicy: { constraints: [], expandIds: (ids: string[]) => ids, onGestureEnd },
+      resizePolicy: { constraints, expandIds: (ids: string[]) => ids, onGestureEnd },
     },
     drag: {
       start: { x: 100, y: 100 }, current: { x: 100, y: 100 }, delta: { x: 0, y: 0 },
@@ -56,5 +56,14 @@ describe('createResizeAction({ commit })', () => {
     const commit = vi.fn();
     drag(createResizeAction({ commit }), s, 'cancel');
     expect(commit).not.toHaveBeenCalled();
+  });
+});
+
+describe('a resize constraint', () => {
+  it('reads the scene through ctx.adapter', () => {
+    const seen: unknown[] = [];
+    const s = setup([{ onStart: (ctx: { adapter: { getNode(id: string): unknown }; draggedIds: string[] }) => seen.push(ctx.adapter.getNode(ctx.draggedIds[0]!)) }]);
+    drag(createResizeAction(), s, 'commit');
+    expect(seen).toEqual([s.scene.get(s.a)]);
   });
 });

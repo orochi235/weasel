@@ -192,7 +192,7 @@ export function beginResize(
   const { place, ruleOrigin, policy, constraints } = captured;
   const startWorld = { x: ctx.drag?.start.x ?? 0, y: ctx.drag?.start.y ?? 0 };
   const readers = gestureReaders(ctx.deps);
-  const gestureCtx = buildGestureContext(ctx, ids, ruleOrigin, startWorld, readers);
+  const gestureCtx = buildGestureContext(ctx, scene, ids, ruleOrigin, startWorld, readers);
   for (const b of constraints) b.onStart?.(gestureCtx);
 
   const session: ResizeSession = {
