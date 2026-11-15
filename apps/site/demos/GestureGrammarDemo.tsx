@@ -21,6 +21,7 @@ import {
   type PhaseContext,
 } from '@weasel-js/gestures';
 import { Button } from '@weasel-js/ui/components/Button';
+import { Input } from '@weasel-js/ui/components/Input';
 import s from './GestureGrammarDemo.module.css';
 
 const PRESETS = [
@@ -152,23 +153,21 @@ export function GestureGrammarDemo() {
     <div className={s.demo}>
       <section className={s.section}>
         <h3 className={s.heading}>A route string, parsed</h3>
-        <input
-          className={`${s.route} ${'error' in result ? s.invalid : ''}`}
+        <Input
+          className={s.route}
           value={route}
-          onChange={(e) => setRoute(e.target.value)}
+          onChange={setRoute}
           spellCheck={false}
           aria-label="Route"
+          isInvalid={'error' in result}
+          errorMessage={'error' in result ? result.error : undefined}
         />
         <div className={s.presets}>
           {PRESETS.map((p) => (
             <Button key={p} onClick={() => setRoute(p)}><code>{p}</code></Button>
           ))}
         </div>
-        {'error' in result ? (
-          <p className={s.error}>{result.error}</p>
-        ) : (
-          <ParsedView parsed={result.ok} />
-        )}
+        {'ok' in result && <ParsedView parsed={result.ok} />}
         {typed && ('ok' in typed
           ? <p className={s.prose}>As a spec, first in the table below: <code>{specText(typed.ok)}</code></p>
           : <p className={s.error}>{typed.error}</p>)}

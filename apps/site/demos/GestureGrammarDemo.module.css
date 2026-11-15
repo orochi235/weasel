@@ -17,18 +17,8 @@
   font-weight: 500;
 }
 
-.route {
-  font: 14px ui-monospace, SFMono-Regular, monospace;
-  padding: var(--wzl-space-3) var(--wzl-space-4);
-  color: var(--wzl-fg);
-  background: var(--wzl-surface-raised);
-  border: 1px solid var(--wzl-accent-strong);
-  border-radius: 4px;
-}
-
-.invalid {
-  border-color: var(--wzl-fg-muted);
-  border-style: dashed;
+.route input {
+  font-family: var(--wzl-font-mono);
 }
 
 .presets {
