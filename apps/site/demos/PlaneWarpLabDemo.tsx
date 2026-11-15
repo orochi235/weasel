@@ -11,7 +11,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { useMemo } from 'react';
-import { expandWarpCommand, pathLeaf, useWarpLabActions } from './warpLab';
+import { expandWarpCommand, pathLeaf, useHeldWarpSettings } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -58,7 +58,7 @@ function PlaneWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { mode, tolerance } = ctx.config;
   const settings = useMemo(() => ({ mode, tolerance }), [mode, tolerance]);
-  useWarpLabActions(ctx.trial.id, 'plane', settings);
+  useHeldWarpSettings('plane', settings);
   const plane = usePlaneWarpTool(settings);
   return (
     <TrialSceneCanvas

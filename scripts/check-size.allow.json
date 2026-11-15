@@ -142,7 +142,7 @@
     "longestFunction": 240
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "longestFunction": 299
+    "longestFunction": 297
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
     "longestFunction": 195

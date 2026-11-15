@@ -11,7 +11,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { useMemo } from 'react';
-import { expandWarpCommand, pathLeaf, useWarpLabActions } from './warpLab';
+import { expandWarpCommand, pathLeaf, useHeldWarpSettings } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -51,7 +51,7 @@ function PinWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { tolerance } = ctx.config;
   const settings = useMemo(() => ({ tolerance }), [tolerance]);
-  useWarpLabActions(ctx.trial.id, 'pin', settings);
+  useHeldWarpSettings('pin', settings);
   const pin = usePinWarpTool(settings);
   return (
     <TrialSceneCanvas

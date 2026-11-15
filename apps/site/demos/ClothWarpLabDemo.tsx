@@ -11,7 +11,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { useMemo } from 'react';
-import { expandWarpCommand, pathLeaf, useWarpLabActions } from './warpLab';
+import { expandWarpCommand, pathLeaf, useHeldWarpSettings } from './warpLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -57,7 +57,7 @@ function ClothWarpTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selection = useSelection({ scene, mode: 'multi', initial: SELECTED });
   const { rows, cols, mapping, tolerance } = ctx.config;
   const settings = useMemo(() => ({ rows, cols, mapping, tolerance }), [rows, cols, mapping, tolerance]);
-  useWarpLabActions(ctx.trial.id, 'cloth', settings);
+  useHeldWarpSettings('cloth', settings);
   const cloth = useClothWarpTool(settings);
   return (
     <TrialSceneCanvas

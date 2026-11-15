@@ -33,6 +33,7 @@ import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { FloatSidebarContext } from './FloatSidebar';
 import { TrialBody } from './TrialBody';
+import type { TrialActions } from './TrialScope';
 import { TrialTitleBar } from './TrialTitleBar';
 import { TrialTitleContext } from './trialTitle';
 import { UndockedSections } from './UndockedSections';
@@ -108,10 +109,22 @@ export interface TrialChromeProps extends TrialChromeOptions {
   /** The trial's resolved tool slot, the setter that writes whichever slot it resolved to, and the live keys its
    *  instrument reported (`RenderContext.trial.setToolShortcuts`). `Trial` owns the resolution. */
   toolSlot?: ToolSlotContext;
+  /** The trial's action registry, which `ctx.runAction` runs on. Omitted, `runAction` runs nothing. */
+  actions?: TrialActions;
   children: ReactNode;
 }
 
 const NO_OP = (): void => {};
+const NO_RUN = (): boolean => false;
+
+/** The trial's Undo and Redo as its chrome offers them: inert without bindings. */
+const undoChrome = (b: UndoBindings | undefined) =>
+  ({
+    canUndo: b?.canUndo ?? false,
+    canRedo: b?.canRedo ?? false,
+    undo: b?.undo ?? NO_OP,
+    redo: b?.redo ?? NO_OP,
+  }) satisfies Partial<TrialChromeContext>;
 const NO_SLOT: ToolSlotContext = { activeToolId: null, setActiveTool: NO_OP };
 
 /** One frozen empty map, so a trial that has folded nothing keeps a stable
@@ -169,6 +182,7 @@ export function TrialChrome({
   hide,
   sidebar = 'dock',
   toolSlot = NO_SLOT,
+  actions,
   children,
 }: TrialChromeProps) {
   const lab = useLabCommands();
@@ -220,10 +234,8 @@ export function TrialChrome({
       isLastTrial,
       zoom: camera ? camera.zoomOf(record.view) : (view2d?.zoom ?? null),
       setZoom,
-      canUndo: undoBindings?.canUndo ?? false,
-      canRedo: undoBindings?.canRedo ?? false,
-      undo: undoBindings?.undo ?? NO_OP,
-      redo: undoBindings?.redo ?? NO_OP,
+      ...undoChrome(undoBindings),
+      runAction: actions?.run ?? NO_RUN,
       ...loupeChrome(loupe),
       canExpand: lightbox != null,
       expanded: lightbox?.expanded ?? false,
@@ -257,6 +269,7 @@ export function TrialChrome({
     lightbox,
     view2d,
     toolSlot,
+    actions,
     configSchema,
     auto,
     reported,

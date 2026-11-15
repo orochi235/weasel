@@ -23,6 +23,7 @@ const ctx: TrialChromeContext = {
   canRedo: false,
   undo: () => {},
   redo: () => {},
+  runAction: () => false,
   hasLoupe: false,
   loupeOn: false,
   toggleLoupe: () => {},

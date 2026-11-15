@@ -202,6 +202,10 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
   canRedo: boolean;
   undo: () => void;
   redo: () => void;
+  /** Runs the action `id` registered in this trial, with `params`, as the canvas's own bindings would: a palette
+   *  command firing one of a scene canvas's actions. Whether it ran: false for an id nothing in the trial registers,
+   *  or an action that passed. */
+  runAction: (id: string, params?: unknown) => boolean;
 
   /** Whether a `<TrialLoupe>` following the trial's toggle is mounted in it.
    *  The loupe toggle is offered only while one is. */

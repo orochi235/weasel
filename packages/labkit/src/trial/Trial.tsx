@@ -1,4 +1,4 @@
-import { createPointerStore, PointerContextProvider, WeaselProvider } from '@weasel-js/core';
+import { createPointerStore } from '@weasel-js/core';
 import { memo, type ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
@@ -30,6 +30,7 @@ import { LoupeSwitchContext, useLoupeSwitch } from './loupeSwitch';
 import { MissingTrial } from './MissingTrial';
 import { TrialChrome, type TrialChromeOptions } from './TrialChrome';
 import { TrialLayerList, useTrialLayerState } from './TrialLayerList';
+import { createTrialActions, TrialScope } from './TrialScope';
 import { TrialHistoryContext, useHistoryVersion, useMountedHistory } from './trialHistory';
 import { useKeptMarks } from './useKeptMarks';
 import { TrialOrbitProvider } from './useOrbitView';
@@ -100,6 +101,7 @@ function TrialRuntime({
     [cameras, trialId],
   );
   const [pointer] = useState(createPointerStore);
+  const [actions] = useState(createTrialActions);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
@@ -334,19 +336,15 @@ function TrialRuntime({
     />
   ) : null;
 
-  // The trial's root registries, isolated from the trial beside it. Each
-  // camera inside mounts an input scope under them; chrome here reaches the
-  // one last used. The pointer store is the trial's, shared by all of them.
+  // Chrome here reaches the camera last used. The pointer store is the trial's, shared by every camera.
   const scopedBody = (
-    <WeaselProvider isolate>
-      <PointerContextProvider store={pointer}>
-        <CameraPublishContext.Provider value={publishCamera}>
-          <LoupeSwitchContext.Provider value={loupeSwitch}>
-            <TrialHistoryContext.Provider value={mountHistory}>{body}</TrialHistoryContext.Provider>
-          </LoupeSwitchContext.Provider>
-        </CameraPublishContext.Provider>
-      </PointerContextProvider>
-    </WeaselProvider>
+    <TrialScope pointer={pointer} actions={actions}>
+      <CameraPublishContext.Provider value={publishCamera}>
+        <LoupeSwitchContext.Provider value={loupeSwitch}>
+          <TrialHistoryContext.Provider value={mountHistory}>{body}</TrialHistoryContext.Provider>
+        </LoupeSwitchContext.Provider>
+      </CameraPublishContext.Provider>
+    </TrialScope>
   );
 
   return (
@@ -369,6 +367,7 @@ function TrialRuntime({
                   trialChrome={extraChrome}
                   {...options}
                   toolSlot={toolSlot.chrome}
+                  actions={actions}
                 >
                   {scopedBody}
                   {annotationOverlays}
