@@ -64,7 +64,7 @@ describe('<ThemeEditor>', () => {
 
   it('brings back a new theme that was never saved, from its draft', async () => {
     stubStorage();
-    persistDraft({ definition: starterDefinition('harbor'), baseHash: null });
+    await persistDraft({ definition: starterDefinition('harbor'), baseHash: null });
     persistLastTheme('harbor');
     const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
     const put = vi.fn(async () => ({ status: 'conflict', hash: null }) as PutResult);
@@ -77,7 +77,7 @@ describe('<ThemeEditor>', () => {
   it('keeps the draft when reloading from disk fails', async () => {
     stubStorage();
     const edited = { ...weasel, description: 'edited' };
-    persistDraft({ definition: edited, baseHash: 'h1' });
+    await persistDraft({ definition: edited, baseHash: 'h1' });
     const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
     const api: ThemeApi = {
       list: async () => [stored],
@@ -95,7 +95,7 @@ describe('<ThemeEditor>', () => {
   it('lets a never-saved theme whose draft does not derive be discarded, its undo history too, with no file to reload', async () => {
     stubStorage();
     const broken = { ...starterDefinition('harbor'), pins: { fg: '{nope}' } };
-    persistDraft({ definition: broken, baseHash: null });
+    await persistDraft({ definition: broken, baseHash: null });
     draftHistory('harbor').save({ state: broken, history: { version: 1, undoStack: [], redoStack: [], nextEntryId: 1, droppedEntries: 0 } });
     persistLastTheme('harbor');
     const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
@@ -111,7 +111,7 @@ describe('<ThemeEditor>', () => {
 
   it('offers the other themes beside a draft that does not derive', async () => {
     stubStorage();
-    persistDraft({ definition: { ...weasel, pins: { ...weasel.pins, fg: '{nope}' } }, baseHash: 'h1' });
+    await persistDraft({ definition: { ...weasel, pins: { ...weasel.pins, fg: '{nope}' } }, baseHash: 'h1' });
     const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
     const other: StoredTheme = { name: 'harbor', hash: 'h2', emits: true, definition: starterDefinition('harbor') };
     renderWithIcons(<ThemeEditor api={{ list: async () => [stored, other], get: vi.fn(), put: vi.fn() }} />);

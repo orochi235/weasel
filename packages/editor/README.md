@@ -126,7 +126,12 @@ When the scene's write fails, the scene and stack are put back as they were.
 `onSaved` hears each save once its entries have landed or failed.
 
 An entry `readStored` cannot read is kept aside under `<key>:unreadable`, in
-the same records, rather than lost to the next save.
+the same records, rather than lost to the next save. Until that copy has
+landed, `writeSession` and `useAutosave` neither write over nor remove `<key>`:
+each save tries the copy again first and answers false while it will not save,
+so `onSaved` hears the failure. Once it lands, saves go through as usual.
+`writeSession` removes a document given `undefined` for its value, under the
+same rule.
 
 ## Pages
 

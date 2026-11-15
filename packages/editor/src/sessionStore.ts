@@ -25,6 +25,7 @@ export function sessionSlots(records?: RecordCache): SessionSlots {
       let local = opened.get(key);
       if (!local) {
         local = openRecordsSync({ storage: localStorageAdapter, prefix: key, retryMs: false });
+        localCaches.add(local);
         opened.set(key, local);
       }
       return { records: local, name: '' };
@@ -49,7 +50,8 @@ function withSlot<T>(key: string, records: RecordCache | undefined, run: (slot: 
 /**
  * The entry under `key` read through `read`, or `fallback()` when there is none, when its records could not be read,
  * or when `read` throws on what is there. `read` is handed a copy, free to change. An entry `read` throws on is copied
- * to `<key>:unreadable` first, with a `console.error`, since the next save writes over `key`: like a failed
+ * to `<key>:unreadable`, with a `console.error`, and until that copy has landed {@link writeSession} and `useAutosave`
+ * refuse to write over or remove `key`, answering false and trying the copy again on each save: like a failed
  * {@link writeSession}, a failed read does not cost the stored document. `records` is where the entries are kept, a
  * cache opened before the read; without it, `localStorage`, under `key` itself.
  */
@@ -87,22 +89,64 @@ function sameValue(a: unknown, b: unknown): boolean {
   }
 }
 
-/** Whether `value`, the record in `slot`, is what {@link readStored} last kept aside as unreadable: a load of it fell
- *  back. */
-export function keptUnreadable(slot: SessionSlot, value: unknown): boolean {
-  const aside = asideOf(slot);
-  return sameValue(aside.records.get(aside.name), value);
+// The unreadable entries not yet known to be kept aside, each by the cache it was read from and its name there, and
+// its value. One read through `sessionSlots`' own `localStorage` caches is held by its key, since every call opens
+// caches of its own.
+const localCaches = new WeakSet<RecordCache>();
+const localHeld = new Map<string, unknown>();
+const recordsHeld = new WeakMap<RecordCache, Map<string, unknown>>();
+const heldOf = (slot: SessionSlot): { held: Map<string, unknown>; at: string } =>
+  localCaches.has(slot.records)
+    ? { held: localHeld, at: keyOf(slot) }
+    : { held: recordsHeld.get(slot.records) ?? new Map(), at: slot.name };
+
+function hold(slot: SessionSlot, value: unknown): void {
+  const { held, at } = heldOf(slot);
+  held.set(at, value);
+  if (!localCaches.has(slot.records)) recordsHeld.set(slot.records, held);
 }
+
+const keptAside = (aside: SessionSlot, value: unknown): boolean =>
+  !aside.records.pending(aside.name) && sameValue(aside.records.get(aside.name), value);
 
 function keepUnreadable(slot: SessionSlot, value: unknown, err: unknown): void {
   const aside = asideOf(slot);
+  if (keptAside(aside, value)) return;
+  hold(slot, value);
   if (!aside.records.writable) {
     console.error(`weasel: the entry under "${keyOf(slot)}" could not be read, and could not be kept aside`, err);
     return;
   }
   if (sameValue(aside.records.get(aside.name), value)) return;
   aside.records.set(aside.name, value);
-  console.error(`weasel: the entry under "${keyOf(slot)}" could not be read; it is kept under "${keyOf(aside)}"`, err);
+  console.error(
+    `weasel: the entry under "${keyOf(slot)}" could not be read; it is being kept under "${keyOf(aside)}", and nothing is saved over it until it is`,
+    err,
+  );
+}
+
+/** Whether `doc` may be written: true unless it holds an entry {@link readStored} could not read whose copy aside has
+ *  not landed, which is tried again here first. Answers at once, not as a promise, when nothing is held, so the save
+ *  starts its write in the same tick, as one on `pagehide` must. */
+function secureUnreadable(doc: SessionSlot): Promise<boolean> | true {
+  const { held, at } = heldOf(doc);
+  if (!held.has(at)) return true;
+  const value = held.get(at);
+  const aside = asideOf(doc);
+  const release = (): true => {
+    if (held.get(at) === value) held.delete(at);
+    return true;
+  };
+  // Written over by someone else since: there is nothing left here to keep.
+  if (!sameValue(doc.records.has(doc.name) ? doc.records.get(doc.name) : undefined, value)) return release();
+  if (keptAside(aside, value)) return release();
+  return (async () => {
+    if (aside.records.writable && !sameValue(aside.records.get(aside.name), value)) aside.records.set(aside.name, value);
+    if (aside.records.pending(aside.name)) await aside.records.flush();
+    if (aside.records.writable && keptAside(aside, value)) return release();
+    console.error(`weasel: the unreadable entry under "${keyOf(doc)}" could not be kept under "${keyOf(aside)}"; it is not saved over`);
+    return false;
+  })();
 }
 
 /** Flush the caches holding `slots`, and answer whether each slot's write landed: a write of another record in one
@@ -136,15 +180,18 @@ export async function writeSlots(
 ): Promise<boolean> {
   const doc = slotOf(primary[0]);
   if (!doc.records.writable) return false;
+  const secured = secureUnreadable(doc);
+  if (secured !== true && !(await secured)) return false;
   const deps = dependents.map(([key, value]) => [slotOf(key), value] as const);
   const depSlots = deps.map(([slot]) => slot);
   const before = [doc, ...depSlots].map((slot) => [slot, stateOf(slot)] as const);
   for (const slot of depSlots) slot.records.delete(slot.name);
   if (depSlots.some((slot) => slot.records.pending(slot.name))) await flushAll(depSlots);
-  doc.records.set(doc.name, primary[1]);
+  const next = primary[1] === undefined ? ABSENT : primary[1];
+  replace(doc, stateOf(doc), next);
   if (!(await flushAll([doc]))) {
     // Put back what was there, so a retry of the write that failed never lands the document without its dependents.
-    for (const [slot, was] of before) replace(slot, slot === doc ? primary[1] : ABSENT, was);
+    for (const [slot, was] of before) replace(slot, slot === doc ? next : ABSENT, was);
     await flushAll([doc, ...depSlots]);
     return false;
   }
@@ -158,7 +205,9 @@ export async function writeSlots(
 }
 
 /**
- * Write a document and the entries that depend on it, such as its undo stacks, best-effort. A dependent that fails to
+ * Write a document and the entries that depend on it, such as its undo stacks, best-effort. A document value of
+ * `undefined` removes the document. One {@link readStored} could not read is neither written over nor removed until
+ * its copy aside has landed. A dependent that fails to
  * save after its document did is removed along with the other dependents, because an older undo stack would replay
  * against the wrong document. When the document itself fails, the previous document and its dependents are put back
  * as they were. Resolves whether the document was saved. `records` is where the entries are kept; without it,

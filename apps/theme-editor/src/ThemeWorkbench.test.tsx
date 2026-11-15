@@ -51,14 +51,16 @@ describe('<ThemeWorkbench>', () => {
     expect([...items.keys()]).toEqual([]);
   });
 
-  it('says a draft is not being kept when the browser refuses to store it', () => {
+  it('says a draft is not being kept when the browser refuses to store it', async () => {
     vi.stubGlobal('localStorage', {
+      length: 0,
+      key: () => null,
       getItem: () => null,
       setItem: () => { throw new DOMException('full', 'QuotaExceededError'); },
       removeItem: () => {},
     });
     renderBench({ start: { definition: edited, baseHash: 'h1' } });
-    expect(screen.getByText(/This draft is not being kept in the browser/)).toBeInTheDocument();
+    expect(await screen.findByText(/This draft is not being kept in the browser/)).toBeInTheDocument();
   });
 
   describe('a draft that does not derive', () => {

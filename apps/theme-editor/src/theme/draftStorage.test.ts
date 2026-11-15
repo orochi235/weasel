@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { draftNames, loadDraft, parseDraft, persistDraft } from './draftStorage';
+import { clearDraft, draftNames, loadDraft, parseDraft, persistDraft } from './draftStorage';
 
 describe('parseDraft', () => {
   const draft = { definition: { name: 'weasel', description: 'x' }, baseHash: 'h1' };
@@ -30,17 +30,19 @@ describe('draftNames', () => {
         return items.size;
       },
       key: (i: number) => [...items.keys()][i] ?? null,
-      setItem: (k: string, v: string) => void items.set(k, v),
     });
-    persistDraft({ definition: { name: 'harbor' }, baseHash: null });
+    items.set('weasel.theme-editor.draft.harbor', '{}');
     expect(draftNames()).toEqual(['harbor']);
   });
 });
 
 describe('loadDraft', () => {
-  afterEach(() => localStorage.clear());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
 
-  it('keeps a draft it cannot read aside, so the next save cannot cost it, and does not list the copy', () => {
+  it('keeps a draft it cannot read aside, so the next save cannot cost it, and does not list the copy', async () => {
     const key = 'weasel.theme-editor.draft.harbor';
     localStorage.setItem(key, '{"definition":');
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -48,8 +50,23 @@ describe('loadDraft', () => {
     // Kept as the value it read: text that is not JSON, written as a JSON string.
     const aside = () => JSON.parse(localStorage.getItem(`${key}:unreadable`)!) as unknown;
     expect(aside()).toBe('{"definition":');
-    persistDraft({ definition: { name: 'harbor' }, baseHash: null });
+    expect(await persistDraft({ definition: { name: 'harbor' }, baseHash: null })).toBe(true);
     expect(aside()).toBe('{"definition":');
     expect(draftNames()).toEqual(['harbor']);
+  });
+
+  it('neither saves over nor clears a draft it cannot read while the copy aside will not save', async () => {
+    const key = 'weasel.theme-editor.draft.harbor';
+    localStorage.setItem(key, '{"definition":');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const setItem = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k, v) {
+      if (k === `${key}:unreadable`) throw new DOMException('full', 'QuotaExceededError');
+      setItem.call(this, k, v);
+    });
+    expect(loadDraft('harbor')).toBeNull();
+    expect(await persistDraft({ definition: { name: 'harbor' }, baseHash: null })).toBe(false);
+    expect(await clearDraft('harbor')).toBe(false);
+    expect(localStorage.getItem(key)).toBe('{"definition":');
   });
 });
