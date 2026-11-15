@@ -31,6 +31,7 @@ import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { createGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { viewPreset } from 'canvas/SceneCanvas/presets';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -141,7 +142,7 @@ describe('SceneCanvas camera handle', () => {
     let commits = 0;
     render(
       <Profiler id="canvas" onRender={() => { commits++; }}>
-        <SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />
+        <SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} features={[viewPreset]} viewport={ANIMATED} />
       </Profiler>,
     );
     await act(async () => { await frame(); });
@@ -246,7 +247,7 @@ const fireWheel = (el: HTMLElement, opts: { ctrlKey?: boolean; metaKey?: boolean
 describe('wheel zoom on the mac platform branch', () => {
   it('zooms on Cmd+wheel and on the ctrl+wheel a trackpad pinch arrives as', async () => {
     const ref = { current: null as SceneCanvasApi | null };
-    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={PLAIN} />);
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} features={[viewPreset]} viewport={PLAIN} />);
     await act(async () => { await frame(); });
     const el = ref.current!.element!;
 
@@ -265,7 +266,7 @@ describe('wheel zoom on the mac platform branch', () => {
 describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
   it('Cmd+= jumps when animatedZoom is off', async () => {
     const ref = { current: null as SceneCanvasApi | null };
-    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={PLAIN} />);
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} features={[viewPreset]} viewport={PLAIN} />);
     await act(async () => { await frame(); });
 
     act(() => { fireKey('=', { metaKey: true }); });
@@ -274,7 +275,7 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
 
   it('Cmd+= glides when animatedZoom is on, and lands on the same scale', async () => {
     const ref = { current: null as SceneCanvasApi | null };
-    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />);
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} features={[viewPreset]} viewport={ANIMATED} />);
     await act(async () => { await frame(); });
 
     act(() => { fireKey('=', { metaKey: true }); });
@@ -298,7 +299,7 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
       },
     }));
     const viewport = { animatedZoom: { ms: 40, interpolator, onDone } };
-    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={viewport} />);
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} features={[viewPreset]} viewport={viewport} />);
     await act(async () => { await frame(); });
 
     act(() => { fireKey('=', { metaKey: true }); });
@@ -315,10 +316,10 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
     const second = vi.fn();
     const scene = makeScene();
     const { rerender } = render(
-      <SceneCanvas<D, L, P> ref={ref} scene={scene} width={400} height={200} viewport={{ animatedZoom: { ms: 40, onDone: first } }} />,
+      <SceneCanvas<D, L, P> ref={ref} scene={scene} width={400} height={200} features={[viewPreset]} viewport={{ animatedZoom: { ms: 40, onDone: first } }} />,
     );
     await act(async () => { await frame(); });
-    rerender(<SceneCanvas<D, L, P> ref={ref} scene={scene} width={400} height={200} viewport={{ animatedZoom: { ms: 40, onDone: second } }} />);
+    rerender(<SceneCanvas<D, L, P> ref={ref} scene={scene} width={400} height={200} features={[viewPreset]} viewport={{ animatedZoom: { ms: 40, onDone: second } }} />);
     await act(async () => { await frame(); });
 
     act(() => { fireKey('=', { metaKey: true }); });
@@ -329,7 +330,7 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
 
   it('three fast presses compound to 1.25 cubed', async () => {
     const ref = { current: null as SceneCanvasApi | null };
-    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />);
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} features={[viewPreset]} viewport={ANIMATED} />);
     await act(async () => { await frame(); });
 
     act(() => { fireKey('=', { metaKey: true }); fireKey('=', { metaKey: true }); fireKey('=', { metaKey: true }); });
@@ -340,7 +341,7 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
 
   it('Cmd+0 glides back to identity', async () => {
     const ref = { current: null as SceneCanvasApi | null };
-    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />);
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} features={[viewPreset]} viewport={ANIMATED} />);
     await act(async () => { await frame(); });
 
     act(() => { ref.current!.setView({ x: 40, y: 40, scale: { x: 3, y: 3 } }); });
@@ -357,7 +358,7 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
 
   it('keeps the host center under the same world point for the whole glide', async () => {
     const ref = { current: null as SceneCanvasApi | null };
-    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />);
+    render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} features={[viewPreset]} viewport={ANIMATED} />);
     await act(async () => { await frame(); });
 
     // The host center, from the clientWidth/clientHeight stubbed in `beforeAll`.

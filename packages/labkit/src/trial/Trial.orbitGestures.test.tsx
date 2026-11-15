@@ -78,7 +78,13 @@ function Body({ withCanvas }: { withCanvas: boolean }) {
       <div className="lk-test-pane" ref={orbit?.viewportRef} />
       {withCanvas ? (
         <div className="lk-test-diagram">
-          <SceneCanvas scene={diagram} features={[viewPreset]} viewport={{}} width={200} height={100} />
+          <SceneCanvas
+            scene={diagram}
+            features={[viewPreset]}
+            viewport={{}}
+            width={200}
+            height={100}
+          />
         </div>
       ) : null}
     </>
