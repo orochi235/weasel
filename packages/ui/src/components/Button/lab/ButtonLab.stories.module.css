@@ -1,0 +1,64 @@
+.lab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+  padding: var(--wzl-space-8);
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  padding: 24px;
+  overflow: hidden;
+  border-radius: var(--wzl-radius-md);
+}
+
+.zoom {
+  transform: scale(var(--zoom));
+}
+
+.wrap {
+  display: inline-block;
+}
+
+.states {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-8);
+  padding: var(--wzl-space-6);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-raised);
+}
+
+/* Hover held still, so it can be judged beside rest. */
+.hovered {
+  filter: brightness(1.08) saturate(1.06);
+}
+
+.panel {
+  background: var(--wzl-surface);
+}
+
+.glass {
+  background: var(--wzl-surface-raised);
+}
+
+.gradient {
+  background: conic-gradient(from 180deg at 30% 40%, #2a4cff, #ff3da5, #ffb800, #14d97e, #2a4cff);
+}
+
+.photo {
+  background:
+    linear-gradient(140deg, #1a2a6c, #b21f1f 60%, #fdbb2d),
+    radial-gradient(circle at 30% 30%, rgb(255 255 255 / 0.2), transparent 50%);
+  background-blend-mode: overlay;
+}
+
+.grid {
+  background:
+    repeating-linear-gradient(0deg, var(--wzl-surface-raised) 0 12px, var(--wzl-surface) 12px 24px),
+    repeating-linear-gradient(90deg, transparent 0 12px, rgb(255 255 255 / 0.04) 12px 24px);
+}

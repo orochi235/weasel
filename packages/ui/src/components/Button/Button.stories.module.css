@@ -2,3 +2,31 @@
   display: flex;
   gap: var(--wzl-space-4);
 }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-6);
+}
+
+.wraps {
+  flex-wrap: wrap;
+}
+
+/* The glass a theme opts into; the default theme sets 0. */
+.glossy {
+  --wzl-gloss: 1;
+}
+
+.prose {
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+.loose {
+  line-height: 1.8;
+}
+
+.column {
+  width: 320px;
+}
