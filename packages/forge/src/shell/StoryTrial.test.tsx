@@ -227,4 +227,33 @@ describe('StoryTrial', () => {
       spy.mockRestore();
     }
   });
+
+  it("undoes a drag of a config story's slider in one step, and redoes it", async () => {
+    const [sized] = loadNativeModule(
+      {
+        default: meta({ title: 'Test/Sized' }),
+        Sized: story({
+          config: f.schema({ size: f.number(10).range(0, 100).label('Size') }),
+          render: ({ config }) => <output aria-label="size">{config.size}</output>,
+        }),
+      },
+      'Test/Sized',
+    );
+    const entry = { id: 'test-sized--sized', title: 'Test/Sized', name: 'Sized', exportName: 'Sized', file: '/sized.stories.tsx' };
+    const instrument = documentInstrument({ entry, loaded: { kind: 'story', story: sized! }, setup: {} });
+    renderWithIcons(
+      <StoryGlobalsContext.Provider value={{}}>
+        <Lab instruments={[instrument]} />
+      </StoryGlobalsContext.Provider>,
+    );
+    const slider = await screen.findByRole('slider', { name: 'Size' });
+    for (const n of [20, 30, 40]) fireEvent.input(slider, { target: { value: String(n) } });
+    fireEvent.change(slider, { target: { value: '40' } });
+    expect(screen.getByLabelText('size').textContent).toBe('40');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(screen.getByLabelText('size').textContent).toBe('10');
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(screen.getByLabelText('size').textContent).toBe('40');
+  });
 });
