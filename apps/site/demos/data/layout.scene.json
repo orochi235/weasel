@@ -8,7 +8,7 @@
       "layer": "default",
       "layoutKey": "freeform",
       "pose": { "x": 10, "y": 40, "width": 180, "height": 180 },
-      "data": { "color": "#a89878", "isContainer": true }
+      "data": { "fill": { "paint": { "color": "#a89878" } }, "stroke": { "paint": { "color": "#d4c4a8" }, "width": 1 }, "isContainer": true }
     },
     {
       "id": "G",
@@ -16,7 +16,7 @@
       "layer": "default",
       "layoutKey": "tileGrid",
       "pose": { "x": 210, "y": 40, "width": 180, "height": 180 },
-      "data": { "color": "#88a878", "isContainer": true }
+      "data": { "fill": { "paint": { "color": "#88a878" } }, "stroke": { "paint": { "color": "#d4c4a8" }, "width": 1 }, "isContainer": true }
     },
     {
       "id": "S",
@@ -24,7 +24,7 @@
       "layer": "default",
       "layoutKey": "snapPoint",
       "pose": { "x": 410, "y": 40, "width": 180, "height": 180 },
-      "data": { "color": "#7888a8", "isContainer": true }
+      "data": { "fill": { "paint": { "color": "#7888a8" } }, "stroke": { "paint": { "color": "#d4c4a8" }, "width": 1 }, "isContainer": true }
     },
     {
       "id": "f1",
@@ -32,7 +32,7 @@
       "kind": "mark",
       "layer": "default",
       "pose": { "x": 40, "y": 40, "width": 30, "height": 30 },
-      "data": { "color": "#f5b7a3", "isContainer": false }
+      "data": { "fill": { "paint": { "color": "#f5b7a3" } }, "isContainer": false }
     },
     {
       "id": "g1",
@@ -40,7 +40,7 @@
       "kind": "mark",
       "layer": "default",
       "pose": { "x": 0, "y": 0, "width": 90, "height": 90 },
-      "data": { "color": "#a3f5b7", "isContainer": false }
+      "data": { "fill": { "paint": { "color": "#a3f5b7" } }, "isContainer": false }
     },
     {
       "id": "s1",
@@ -48,7 +48,7 @@
       "kind": "mark",
       "layer": "default",
       "pose": { "x": 10, "y": 10, "width": 30, "height": 30 },
-      "data": { "color": "#a3b7f5", "isContainer": false }
+      "data": { "fill": { "paint": { "color": "#a3b7f5" } }, "isContainer": false }
     }
   ]
 }

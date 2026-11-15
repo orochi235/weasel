@@ -10,27 +10,15 @@ import {
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
 import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
-import type { Scene, SerializedScene } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { Fill, Scene, SerializedScene, Stroke } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import sceneJson from './data/layout.scene.json';
 import { DemoStage } from './DemoStage';
 import s from './LayoutDemo.module.css';
 
-// --- Scene model ---
-//
-// Three side-by-side container nodes (F = freeform, G = tileGrid, S = snapPoint),
-// each holding a single child rect. Each container declares its layout in the
-// scene (the JSON's `layoutKey`, resolved through the registry), so the scene
-// keeps it arranged: a tile added to G lands in the nearest free cell. Dragging
-// a child into a different container runs the layout-aware move pass: the
-// destination strategy places it, the source strategy reflows its leftovers,
-// and the commit reparents the dragged child in one undo step. Dropped outside
-// every container, a child leaves its own and lands at the top level.
-
 type P = { x: number; y: number; width: number; height: number };
-type Data = { color: string; isContainer: boolean };
+type Data = { fill: Fill; stroke?: Stroke; isContainer: boolean };
 
 const G = asNodeId('G');
 
@@ -72,7 +60,7 @@ export function LayoutDemo() {
       parent: G,
       // In G's frame: G's bottom-right corner.
       pose: { x: 75, y: 185, width: 30, height: 30 },
-      data: { color: TILE_COLORS[tiles % TILE_COLORS.length], isContainer: false },
+      data: { fill: { paint: { color: TILE_COLORS[tiles % TILE_COLORS.length] } }, isContainer: false },
     });
   };
 
@@ -96,25 +84,6 @@ export function LayoutDemo() {
         <SceneCanvas features={[pickPreset, movePreset]}
           scene={scene}
           reflowTransition={reflow}
-          layers={{
-            scene: {
-              drawOne: (node, p): DrawCommand[] => {
-                const cmds: DrawCommand[] = [{
-                  kind: 'path',
-                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { paint: { color: node.data.color } },
-                }];
-                if (node.data.isContainer) {
-                  cmds.push({
-                    kind: 'path',
-                    path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
-                    stroke: { paint: { color: '#d4c4a8' }, width: 1 },
-                  });
-                }
-                return cmds;
-              },
-            },
-          }}
         >
           <LayoutsTakeDrops scene={scene} />
         </SceneCanvas>
