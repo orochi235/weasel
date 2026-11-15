@@ -56,20 +56,22 @@ What the adapter answers:
 ## The contract, in slices
 
 Each reader names only what it asks of an adapter, as a narrow interface in
-`packages/core/src/core/adapters/types.ts`. `SceneCanvasAdapter` satisfies all
+`packages/core/src/core/adapters/types.ts` (`SelectAdapter` beside the select
+tool, `PoseAnimationAdapter` in `animation/poseHelpers.ts`). `SceneCanvasAdapter` satisfies all
 of them.
 
 | Reader | Slice |
 |---|---|
-| `move` | `MoveAdapter<TNode, TPose>` |
-| `resize` | `ResizeAdapter<TNode, TPose>` |
-| `rotate` | `RotateAdapter<TNode, TPose>` |
-| `insert`, `clone`, `useClipboardOps` | `InsertAdapter<TNode>` |
-| `areaSelect` | `AreaSelectAdapter` |
-| `lassoSelect` | `LassoSelectAdapter` |
-| `useSelectTool` | `SelectAdapter<TNode, TPose>` |
+| a gesture behavior, as `ctx.adapter` | `MoveAdapter<TNode, TPose>` |
+| `lassoSelect`'s behaviors | `LassoSelectAdapter` |
+| `useClipboardOps`, a paste through ingestion | `InsertAdapter<TNode>` |
+| `useSelectTool` | `SelectAdapter<TNode, TPose>` (`MoveAdapter` & `AreaSelectAdapter` & `LayerEnumerableAdapter`) |
 | `tweenPose`, `springPose` | `PoseAnimationAdapter<TPose>` |
-| reorder ops | `OrderedAdapter` |
+| reorder ops, `createChildrenLayer` | `OrderedAdapter` |
+
+The `move`, `resize`, `rotate`, `insert`, `clone` and `areaSelect` actions take
+no adapter of yours: they read the `scene` dep and their own deps, below, and
+build what their behaviors read over the scene.
 
 `OrderedAdapter` is `getChildren(parentId)` and `setChildOrder(parentId, ids)`,
 with `null` naming the root. Array order **is** z-order: index 0 is the bottom.
@@ -85,8 +87,9 @@ Write an adapter when the kit does not own the store — a Redux or CRDT
 document, say. There is no base class. Implement the slice the reader takes and pass the
 object in.
 
-Every adapter carries the tree: `getNode`, `getParent`, and `getChildren`. A
-store with no nesting answers as a tree whose nodes are all roots, and a node
+An adapter a reader walks the tree through — `MoveAdapter`, `InsertAdapter`,
+and so `SelectAdapter` — carries it: `getNode`, `getParent`, and
+`getChildren`. A store with no nesting answers as a tree whose nodes are all roots, and a node
 with no children answers `[]`:
 
 ```ts
