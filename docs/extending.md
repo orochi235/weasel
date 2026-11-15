@@ -277,7 +277,7 @@ would build from a config.
 
 ## Custom affordances
 
-Affordances are reusable chrome primitives. Each affordance is a small object: `{ id, render, hitTest? }`. Tools that want chrome (selection handles, anchor dots, snap-target highlights, etc.) compose affordances into their overlay rather than reimplementing the hit-test logic inline.
+Affordances are reusable chrome primitives. Each affordance is a small object: `{ id, regions, regionsAt?, decorate? }`, its regions each carrying their own paint and hit radius. Tools that want chrome (selection handles, anchor dots, snap-target highlights, etc.) compose affordances into their overlay rather than reimplementing the hit-test logic inline.
 
 ```ts
 import {
