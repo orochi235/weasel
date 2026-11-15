@@ -13,6 +13,8 @@ export const LIBRARIES: readonly Library[] = [
   { path: '/packages/labkit/', label: 'labkit', tint: tint('teal') },
   { path: '/packages/forge/', label: 'forge', tint: tint('blue') },
   { path: '/packages/diagram/', label: 'diagram', tint: tint('teal') },
+  { path: '/packages/prefs-editor/', label: 'prefs-editor' },
+  { path: '/packages/devtools/', label: 'devtools' },
+  { path: '/packages/hud/', label: 'hud' },
   { path: '/apps/draw/', label: 'draw', tint: tint('rose') },
-  { path: '/apps/forge/', label: 'forge', tint: tint('blue') },
 ];
