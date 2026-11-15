@@ -6,7 +6,7 @@ import { PrefsSource } from '@weasel-js/ui/components/PrefsSource';
 import {
   type CollapseProps,
   type PropertyAlign,
-  type PropertyDensity,
+  type PropertySpacing,
   PropertyList,
   type PropertyListPack,
   PropertyPanel,
@@ -76,7 +76,7 @@ export interface ControlPanelProps<TC extends Record<string, unknown>>
    *  where it names none of its own. Unset, they keep the default card. */
   motif?: Motif;
   /** Room the rows get. Passed straight to the property list. */
-  density?: PropertyDensity;
+  spacing?: PropertySpacing;
   /** Cross-axis alignment of an inline row's label and control. */
   align?: PropertyAlign;
   /**
@@ -262,7 +262,7 @@ function PanelBody<TC extends Record<string, unknown>>({
   pack = 'pairs',
   layout = 'inline',
   motif,
-  density,
+  spacing,
   align,
   collapse,
   collapsed,
@@ -309,7 +309,7 @@ function PanelBody<TC extends Record<string, unknown>>({
     renderers,
     over,
     showHidden,
-    density,
+    spacing,
     align,
     auto,
     setRowAuto,
@@ -326,7 +326,7 @@ function PanelBody<TC extends Record<string, unknown>>({
   const list = (
     <PropertyList
       pack={gridPack}
-      density={density}
+      spacing={spacing}
       align={align}
       className={className ? `lk-control-panel ${className}` : 'lk-control-panel'}
     >
@@ -345,7 +345,7 @@ function PanelBody<TC extends Record<string, unknown>>({
         title={title}
         actions={titled.control}
         {...appearance}
-        density={density}
+        spacing={spacing}
         {...(panelFolds
           ? {
               collapsible: true,

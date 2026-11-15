@@ -12,7 +12,7 @@ import { GroupTabs } from '@weasel-js/ui/components/Prefs';
 import {
   type CollapseProps,
   type PropertyAlign,
-  type PropertyDensity,
+  type PropertySpacing,
   PropertyGroup,
   PropertyList,
   type PropertyListPack,
@@ -57,7 +57,7 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   /** The schema the panel's aliases point into, where that is not `resolved`'s. */
   over: PrefGroup | PrefSection | undefined;
   showHidden: boolean;
-  density: PropertyDensity | undefined;
+  spacing: PropertySpacing | undefined;
   align: PropertyAlign | undefined;
   auto: ReadonlySet<string>;
   setRowAuto: (path: string, next: boolean, value: unknown) => void;
@@ -101,7 +101,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     errors,
     renderers,
     over,
-    density,
+    spacing,
     align,
     auto,
     setRowAuto,
@@ -112,7 +112,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
   const { enabled, visible, active } = conditionsAt(source);
 
   const listOf = (rows: Rows, children: ReactNode): ReactNode => (
-    <PropertyList pack={rows.grid} density={density} align={align}>
+    <PropertyList pack={rows.grid} spacing={spacing} align={align}>
       {children}
     </PropertyList>
   );

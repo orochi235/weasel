@@ -14,7 +14,7 @@ afterEach(cleanup);
 const schema = f.schema({ bloom: f.number(0.9).range(0, 3).step(0.05).auto().label('Bloom') });
 
 /** Uncontrolled, so the panel keeps the auto set and every row starts pinned. */
-function Panel({ density }: { density?: 'tight' }) {
+function Panel({ spacing }: { spacing?: 'tight' }) {
   const [config, setConfig] = useState<Record<string, unknown>>({ bloom: 0.9 });
   return (
     <div className="lk-root">
@@ -22,7 +22,7 @@ function Panel({ density }: { density?: 'tight' }) {
         schema={resolveConfigSchema(schema)}
         config={config}
         setConfig={(path, value) => setConfig((was) => ({ ...was, [path]: value }))}
-        {...(density ? { density } : {})}
+        {...(spacing ? { spacing } : {})}
       />
     </div>
   );
@@ -34,9 +34,9 @@ function hitAtCenter(el: Element): Element | null {
   return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
 }
 
-describe.each([undefined, 'tight' as const])('a pinned slider row, density %s', (density) => {
+describe.each([undefined, 'tight' as const])('a pinned slider row, spacing %s', (spacing) => {
   test('keeps its label on top, so a click on it can return the row to auto', () => {
-    render(<Panel density={density} />);
+    render(<Panel spacing={spacing} />);
     const toggle = screen.getByRole('button', { name: 'Pin Bloom' });
     expect(toggle.getAttribute('aria-pressed')).toBe('true');
     const hit = hitAtCenter(toggle);
