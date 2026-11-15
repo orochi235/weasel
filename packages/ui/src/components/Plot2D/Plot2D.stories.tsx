@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useRef } from 'react';
-import { Plot2D, type Plot2DHandle } from '@weasel-js/ui/components/Plot2D';
+import { modelToPlot, Plot2D } from '@weasel-js/ui/components/Plot2D';
 
 interface DemoProps {
   width: number;
@@ -43,33 +42,23 @@ export const EmptyPlot: Story = {
   },
 };
 
-/**
- * Caller-rendered marks composed inside Plot2D. We use the ref handle's
- * `modelToPlot` to position circles at known model-space points.
- */
+const UNIT_RANGE = { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+
+/** Caller-rendered marks composed inside Plot2D, placed at model-space points by `modelToPlot`, the mapping the
+ *  plot draws with. */
 function WithChildren(props: DemoProps & { points: { x: number; y: number }[] }) {
-  const plotRef = useRef<Plot2DHandle>(null);
-  // Pre-compute the points in plot space on first render. Plot2D's
-  // transforms are stable for fixed width/height/range, so a one-shot
-  // lookup is fine for a static-data story.
-  const pts = props.points.map((p) => ({
-    model: p,
-    plot: plotRef.current?.modelToPlot(p) ?? {
-      x: p.x * props.width,
-      y: (1 - p.y) * props.height,
-    },
-  }));
+  const size = { width: props.width, height: props.height };
   return (
     <Plot2D
-      ref={plotRef}
       width={props.width}
       height={props.height}
       grid={props.showGrid ? { divisions: props.gridDivisions } : false}
       axes={props.showAxes ? {} : false}
     >
-      {pts.map((pt, i) => (
-        <circle key={i} cx={pt.plot.x} cy={pt.plot.y} r={5} fill="currentColor" />
-      ))}
+      {props.points.map((p, i) => {
+        const at = modelToPlot(p, UNIT_RANGE, size);
+        return <circle key={i} cx={at.x} cy={at.y} r={5} fill="currentColor" />;
+      })}
     </Plot2D>
   );
 }
