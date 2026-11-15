@@ -1,4 +1,4 @@
-import { createHistory, type History, type Op } from '@weasel-js/history';
+import { createHistory, swapOp, type History } from '@weasel-js/history';
 import { prefLeaves, type PrefGroup, type PrefPath, type PrefSelection, type PrefsStore } from '@weasel-js/prefs';
 import { deepEqual } from '@weasel-js/registry';
 import { useMemo } from 'react';
@@ -36,17 +36,6 @@ function restoreHeld(store: PrefsStore<PrefGroup>, paths: readonly string[], tar
   }
 }
 
-function heldOp(store: PrefsStore<PrefGroup>, paths: readonly string[], prev: Held, next: Held, coalesceKey: string): Op {
-  return {
-    name: 'theme-prefs:held',
-    args: { coalesceKey },
-    // The first apply finds the write already made, and writes nothing.
-    apply: () => restoreHeld(store, paths, next),
-    invert: () => heldOp(store, paths, next, prev, coalesceKey),
-    coalesceKey,
-  };
-}
-
 /** The writes `PrefsForm` makes, each an undo step on `history`; a burst on one path is one step. */
 export interface PrefsHistory {
   history: History;
@@ -67,7 +56,10 @@ export function usePrefsHistory(store: PrefsStore<PrefGroup>): PrefsHistory {
       run();
       const next = heldOf(store, paths);
       if (deepEqual(Object.fromEntries(prev), Object.fromEntries(next))) return;
-      history.apply(heldOp(store, paths, prev, next, key), label);
+      // The apply finds the write already made, and writes nothing.
+      history.apply(swapOp({
+        name: 'theme-prefs:held', label, before: prev, after: next, coalesceKey: key, emit: (held) => restoreHeld(store, paths, held),
+      }), label);
     };
     return {
       history,
