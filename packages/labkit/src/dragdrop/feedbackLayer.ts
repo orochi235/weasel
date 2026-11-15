@@ -1,3 +1,4 @@
+import { clientToCanvas } from '@weasel-js/core';
 import type { RefObject } from 'react';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import type { DragState } from './DragDropRuntime';
@@ -20,12 +21,12 @@ export function withDragFeedback(
       render: (ctx) => {
         const el = host.current;
         if (!el) return;
-        const r = el.getBoundingClientRect();
+        const [x, y] = clientToCanvas(el, screen.x, screen.y);
         ctx.save();
         ctx.strokeStyle = fb.ok ? '#3a7' : '#c44';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(screen.x - r.left, screen.y - r.top, 16, 0, Math.PI * 2);
+        ctx.arc(x, y, 16, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       },
