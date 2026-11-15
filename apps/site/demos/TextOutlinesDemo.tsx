@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { SceneCanvas, asNodeId, useScene, textCommand, solid } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, useScene, solid } from '@weasel-js/core';
 import {
   registerCanvasFont, registerFontOutlines, unregisterFontOutlines, outlineStatus,
 } from '@weasel-js/font';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
-import type { RectPose, SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle, Fill } from '@weasel-js/core';
+import type { RectPose, SceneCanvasApi, Stroke, TextNodeData, TextStyle } from '@weasel-js/core';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Field } from '@weasel-js/ui/components/Field';
@@ -25,7 +25,8 @@ const FAMILY = 'Weasel Outline Demo';
 const VARIANT = { weight: 400, style: 'normal' } as const;
 
 /** Load the face into the document so canvas 2D — and therefore the dynamic
- *  SDF tier — can rasterize it. Idempotent across HMR re-evaluations. */
+ *  SDF tier — can rasterize it, and only then enroll the family in that tier, so
+ *  nothing is baked from a stand-in face. Idempotent across HMR re-evaluations. */
 let facePromise: Promise<void> | null = null;
 function loadDemoFace(): Promise<void> {
   facePromise ??= new FontFace(FAMILY, `url(${INTER_TTF})`).load().then((face) => {
@@ -35,7 +36,6 @@ function loadDemoFace(): Promise<void> {
   return facePromise;
 }
 
-interface NodeData { text: string; style: TextStyle; fill: Fill }
 type LayerId = 'default';
 
 const style = (fontSize: number): TextStyle => ({ fontSize, fontFamily: FAMILY });
@@ -66,24 +66,8 @@ const NODES = [
   data: { text: n.text, style: style(n.size), fill: { paint: TEXT_FILL } },
 }));
 
-const makeDrawOne = (
-  ready: boolean,
-  stroked: boolean,
-  filled: boolean,
-): SceneViewDrawOne<NodeData, LayerId, RectPose> =>
-  (node, pose) => {
-    if (!ready) return [];
-    // Paint is the node's, not the style's. `null` is an explicit no-fill, the same value
-    // every other node kind reads.
-    return [textCommand(
-      pose.x, pose.y, node.data.text, node.data.style,
-      undefined, undefined, undefined,
-      { fill: filled ? node.data.fill : null, stroke: stroked ? DEMO_STROKE : undefined },
-    )];
-  };
-
 export function TextOutlinesDemo() {
-  const scene = useScene<NodeData, LayerId, RectPose>({
+  const scene = useScene<TextNodeData, LayerId, RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: NODES,
   });
@@ -93,21 +77,18 @@ export function TextOutlinesDemo() {
   const [filled, setFilled] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [status, setStatus] = useState('loading');
-  // Nothing is drawn until the face is in the document. Not cosmetic: the
-  // canvas-SDF tier bakes from `fillText`, so a glyph requested before the
-  // face resolves would be rasterized from whatever the browser substituted
-  // and then cached under this family's name for the rest of the session.
-  const [faceReady, setFaceReady] = useState(false);
 
+  useEffect(() => { void loadDemoFace(); }, []);
+
+  // Paint is the node's, not the style's. `null` is an explicit no-fill, the
+  // same value every other node kind reads.
   useEffect(() => {
-    let live = true;
-    void loadDemoFace().then(() => {
-      if (!live) return;
-      setFaceReady(true);
-      canvasRef.current?.requestRedraw();
+    scene.untracked(() => {
+      for (const n of NODES) {
+        scene.update(n.id, { data: { ...n.data, fill: filled ? n.data.fill : null, stroke: stroked ? DEMO_STROKE : undefined } });
+      }
     });
-    return () => { live = false; };
-  }, []);
+  }, [scene, stroked, filled]);
 
   useEffect(() => {
     if (outlines) registerFontOutlines(FAMILY, VARIANT, INTER_TTF);
@@ -146,7 +127,6 @@ export function TextOutlinesDemo() {
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}
           view={{ x: 0, y: 0, scale: { x: zoom, y: zoom } }}
-          layers={{ scene: { drawOne: makeDrawOne(faceReady, stroked, filled) } }}
         />
       </DemoStage>
     </div>
