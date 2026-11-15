@@ -76,20 +76,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--wzl-space-1) var(--wzl-space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--wzl-fg-muted);
-}
-
-.legend li {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-1);
-}
-
-.swatch {
-  border-radius: 2px;
 }
 
 .caption {

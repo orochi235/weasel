@@ -5,6 +5,8 @@
  */
 import type { ArapStage } from '@weasel-js/geom/warp';
 import { createEmitter } from '@weasel-js/registry';
+import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { Legend } from '@weasel-js/ui/components/Legend';
 import { useSyncExternalStore } from 'react';
 import { LEGEND } from './meshLayer';
 import type { MeshModel, StepPick } from './meshModel';
@@ -81,8 +83,8 @@ export function SolverPanel({ readout, caption, onPick }: { readout: Readout; ca
           <span>{step ? STAGES[step.stage].name(step.round) : 'Solve'}</span>
           <span className={s.count} data-testid="step">{shown ? `${shown.index + 1}/${shown.steps.length}` : '–'}</span>
         </span>
-        <input
-          type="range" min={0} max={last} step={1} value={shown?.index ?? 0} disabled={!shown}
+        <InlineRange
+          min={0} max={last} step={1} value={shown?.index ?? 0} disabled={!shown}
           aria-label="Step of the solve"
           onChange={(e) => { const i = Number(e.currentTarget.value); onPick(i >= last ? null : i); }}
         />
@@ -93,14 +95,7 @@ export function SolverPanel({ readout, caption, onPick }: { readout: Readout; ca
         <div className={s.row}><dt>Turned over</dt><dd data-testid="inverted">{shown?.inverted ?? '–'}</dd></div>
         <div className={s.row}><dt>Turned over on the outline</dt><dd data-testid="inverted-outline">{shown?.invertedOnOutline ?? '–'}</dd></div>
       </dl>
-      <ul className={s.legend}>
-        {LEGEND.map(({ label, color }) => (
-          <li key={label}>
-            <svg className={s.swatch} width="10" height="10" aria-hidden="true"><rect width="10" height="10" fill={color} /></svg>
-            {label}
-          </li>
-        ))}
-      </ul>
+      <Legend className={s.legend} entries={LEGEND.map(({ label, color }) => ({ key: label, label, color, mark: 'band' }))} />
       <p className={s.caption}>{caption}</p>
     </section>
   );
