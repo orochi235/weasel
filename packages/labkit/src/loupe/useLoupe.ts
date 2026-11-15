@@ -1,4 +1,4 @@
-import { useLatest } from '@weasel-js/core';
+import { clientToCanvas, useLatest } from '@weasel-js/core';
 import {
   createEyedropperModel,
   createLoupeModel,
@@ -202,8 +202,8 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
     const host = hostRefRef.current.current;
     const p = pointerRef.current;
     if (!host || !p) return null;
-    const rect = host.getBoundingClientRect();
-    return { x: p.clientX - rect.left, y: p.clientY - rect.top };
+    const [x, y] = clientToCanvas(host, p.clientX, p.clientY);
+    return { x, y };
   }, [hostRefRef]);
   const aimAtPointer = useCallback((): void => {
     const at = pointerOnHost();

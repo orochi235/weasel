@@ -94,6 +94,16 @@ describe('useLoupe', () => {
     expect(read('aim')).toBe('40,25');
   });
 
+  it('aims in the host CSS pixels when an ancestor transform scales it', () => {
+    render(<Harness />);
+    const host = screen.getByTestId('host');
+    host.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 200 }) as DOMRect;
+    Object.defineProperty(host, 'offsetWidth', { value: 200 });
+    Object.defineProperty(host, 'offsetHeight', { value: 100 });
+    move(40, 25);
+    expect(read('aim')).toBe('20,12.5');
+  });
+
   it('hides again when the pointer leaves', () => {
     render(<Harness />);
     move(40, 25);
