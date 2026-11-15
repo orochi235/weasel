@@ -248,7 +248,77 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-### Export, worker and headless contracts
+### Extension authoring and published consumers
+
+- **(P2) [agent] Carry action parameter types through bindings, invokers and programmatic triggers.**
+  `ActionParamSchema` types tuning, but `GestureBinding.opts.params`, `ActionsRegistry.trigger` and
+  invoker params remain arbitrary records (`packages/routing/src/interactions/actions/registry.ts`,
+  `bindingOpts.ts`, `invoker.ts`). A clean consumer declaring `review.stamp: { size: number }`
+  rejects `size: 'wrong'` in `ActionTunings` but accepts it in a binding and in `trigger` (reproduced
+  against built declarations). Add a typed action/binding/invocation authoring path connecting ids to
+  their schemas, preserving an explicit dynamic escape hatch and optional dep availability.
+  Closes when schema-known bindings and triggers reject wrong/missing params, invokers infer their
+  own params without casts, and declaration tests cover augmentation from an external extension package,
+  dynamic ids and params thunks through published entries.
+
+- **(P2) [agent] Let a custom-node feature package its complete installation contract.** A custom kind
+  needs a shape painter, routing classifier, insert factory and property schema; these currently install
+  through separate ambient registries and host props. `FeaturePreset` carries actions/tools/layers but
+  no routing or insert factories, while `SelectionPanel` separately takes routing and properties
+  (`packages/core/src/canvas/SceneCanvas/features.ts`, `surfaceContribution.ts`,
+  `packages/ui/src/components/inspector/SelectionPanel/SelectionPanel.tsx`). Keep traits independent,
+  but provide a composable feature descriptor/install path that hands each trait to its owner, makes
+  precedence explicit, and has complete teardown; do not require a host to repeat a package's private wiring.
+  Closes when one external custom-node feature supplies insertion, drawing, picking, routing and a property
+  editor through public APIs, works on two canvases with explicit scope, and removing it releases its roles
+  without removing another installation or leaving a selectable tool that cannot insert.
+
+- **(P2) [agent] Rebind stable contribution roles when their host API or dep registry changes.**
+  `useContributionRoles` keys installation only by role-object identity, although installation closes
+  over `api` and `depRegistry` (`packages/core/src/canvas/SceneCanvas/useContributionRoles.ts`).
+  Reproduced in a focused hook probe: keep one `attach` function, change API A to API B on rerender;
+  it remains attached to A, with no teardown or attachment to B until unmount. Stable author functions
+  should avoid churn on the same host, not pin the first host forever. Include the owning target in
+  installation identity and handle registry transitions consistently for deps/watch/layers.
+  Closes when unchanged roles install once on one target, a target/registry replacement tears down the
+  old installation and installs on the new one, and tests cover API null transitions, provider swaps,
+  StrictMode and final cleanup without duplicate role registration.
+
+- **(P2) [agent] Compile and exercise a complete public-only extension example.** The custom-kind test
+  uses internal `useInsertDepSource`/`sceneToAdapter` and `as never` to drive an invoker directly
+  (`packages/core/src/canvas/customNodeKind.test.tsx`), so it does not verify mounting the documented
+  feature in a consumer. `docs/extending.md`'s gem snippet uses `drawPreset` without importing it;
+  its custom-action snippet commits only through optional `deps.applyOps`, whereas the standard commit
+  helper falls back to the scene (`interactions/actions/defaultCommitAdapter.ts`). `check:doc-imports`
+  passed 392 imported names during this review but does not compile snippet bodies or exercise behavior.
+  Add a runnable custom node/action/tool/property-editor example using public imports only and the
+  actual dispatcher, with the standard commit seam and explicit registration cleanup.
+  Closes when the copied example compiles outside repo aliases, inserts and edits its node, undoes/redoes,
+  survives save/load, and unregisters cleanly; documentation is generated from or checked against that
+  fixture, including operation with no consumer `applyOps` hook.
+
+- **(P2) [agent] Publish declarations that retain their types under NodeNext resolution.** UI's
+  declaration-only tsc build preserves extensionless ESM re-exports such as `./Button`
+  (`packages/ui/tsconfig.build.json`, `src/components/Button/index.ts`). In an external temporary consumer,
+  importing `@weasel-js/ui/components/Button` with `moduleResolution: NodeNext`, `skipLibCheck: false`
+  reports three TS2834 errors in its built index declaration. With `skipLibCheck: true`, an invalid
+  `ButtonProps = { reviewedInvalidProp: true }` passes; bundler resolution correctly rejects it with
+  TS2353. Emit resolution-compatible declarations and check the other packages using the same pipeline.
+  Closes when NodeNext and bundler consumers resolve public/subpath declarations with library checking
+  enabled, the same negative type assertions fail correctly in both, and freshly built packed artifacts
+  rather than workspace source satisfy those checks.
+
+- **(P2) [agent] Add an installed, runnable consumer contract beyond the externalized bundle smoke.**
+  `scripts/smoke-consumer-bundle.mjs` packs workspaces but externalizes all third-party dependencies,
+  bundles without executing, and typechecks only bundler resolution with `skipLibCheck: true`.
+  `smoke-registry-install.mjs` installs all packages together and checks versions, not runtime behavior;
+  a full set can supply a dependency a minimal consumer lacks. Keep those checks and add small fresh
+  consumers with real declared React/runtime dependencies, including a public-only extension fixture.
+  Expand wildcard entry checks to concrete JS/declaration pairs: `check-publish-manifests.mjs` currently
+  accepts a wildcard if any file matches, so one intact component can mask another missing declaration.
+  Closes when representative minimal browser and Node installs execute public APIs, supported TypeScript
+  resolution modes check their real declarations, wildcard JS/type pairs are covered, and deliberate missing
+  dependencies, missing component declarations and runtime-only initialization failures fail the gate.
 
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
