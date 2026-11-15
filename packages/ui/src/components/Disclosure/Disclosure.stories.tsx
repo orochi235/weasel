@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Disclosure, DisclosureRow } from '@weasel-js/ui/components/Disclosure';
+import s from './Disclosure.stories.module.css';
 
 const meta: Meta<typeof Disclosure> = {
   title: 'ui/Disclosure',
@@ -21,7 +23,7 @@ export const Open: Story = {
  *  obviously wrong at 104. The right-hand column is the size it actually ships. */
 export const Sizes: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+    <div className={`${s.row} ${s.proof}`}>
       {[104, 52, 26, 13].map((size) => (
         <Disclosure {...args} key={size} open={false} onToggle={() => {}} label={`${size}px`} size={size} />
       ))}
@@ -37,15 +39,15 @@ const FACETS: ReadonlyArray<readonly [string, string[]]> = [
 
 /**
  * The case this was built for: a facet tree whose rows each hold a checkbox.
- * The twisty is a sibling of the `<label>`, not a child, so expanding a family
- * does not tick its box.
+ * The twisty is a sibling of the checkbox's label, not a child, so expanding a
+ * family does not tick its box.
  */
 export const FacetTree: Story = {
   render: () => {
     const [open, setOpen] = useState<Record<string, boolean>>({ Brackets: true });
     const [checked, setChecked] = useState<Record<string, boolean>>({});
     return (
-      <div style={{ width: 260, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div className={s.tree}>
         {FACETS.map(([family, members]) => (
           <div key={family}>
             <DisclosureRow
@@ -54,21 +56,17 @@ export const FacetTree: Story = {
               label={`${family} categories`}
               aria-controls={`facet-${family}`}
             >
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input
-                  type="checkbox"
-                  checked={!!checked[family]}
-                  onChange={() => setChecked((c) => ({ ...c, [family]: !c[family] }))}
-                />
-                <span>{family}</span>
-              </label>
+              <Checkbox
+                isSelected={!!checked[family]}
+                onChange={(on) => setChecked((c) => ({ ...c, [family]: on }))}
+              >
+                {family}
+              </Checkbox>
             </DisclosureRow>
             {open[family] && (
-              <div id={`facet-${family}`} style={{ paddingLeft: 30 }}>
+              <div id={`facet-${family}`} className={s.members}>
                 {members.map((m) => (
-                  <div key={m} style={{ opacity: 0.7 }}>
-                    {m}
-                  </div>
+                  <div key={m}>{m}</div>
                 ))}
               </div>
             )}
@@ -82,7 +80,7 @@ export const FacetTree: Story = {
 /** Every state side by side: shut, open, and disabled. */
 export const States: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', gap: 16 }}>
+    <div className={s.row}>
       <Disclosure {...args} open={false} onToggle={() => {}} label="Shut" />
       <Disclosure {...args} open onToggle={() => {}} label="Open" />
       <Disclosure {...args} open={false} onToggle={() => {}} label="Disabled" disabled />

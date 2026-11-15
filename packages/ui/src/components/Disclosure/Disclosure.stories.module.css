@@ -1,0 +1,21 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-8);
+}
+
+.proof {
+  gap: 24px;
+}
+
+.tree {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+  width: 260px;
+}
+
+.members {
+  padding-left: 30px;
+  color: var(--wzl-fg-muted);
+}
