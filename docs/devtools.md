@@ -100,7 +100,7 @@ A canvas keeps a rolling buffer of its scene's history steps, 200 long, fed by
 only while a panel is connected. Each record is `{ ts, step, entries, position }`:
 
 - `step` — `push`, `coalesce` (a push merged into the entry on top), `undo`, `redo`, `goto`,
-  `branch`, `prune`, `clear` or `restore`.
+  `branch`, `prune`, `drop` (the redo entries `dropRedo` took), `clear` or `restore`.
 - `entries` — what the step pushed, merged into or walked across, in the order it touched them,
   up to 50: each `{ id, label, opCount, ops }`, where `ops` holds up to 50 of the entry's ops as
   `{ kind, targets, summary }`. `kind` is the op's registered name (`kit:setPose`, a consumer's
