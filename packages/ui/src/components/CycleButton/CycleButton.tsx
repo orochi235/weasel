@@ -2,7 +2,7 @@ import { forwardRef, type ReactElement, type ReactNode, type Ref } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
 import { Button, type ButtonBase, type ButtonVariant } from '../Button/Button';
 import { composeHandler } from '../../nativeProps';
-import { useDensity, type ControlSize } from '../Density';
+import { useControlSize, type ControlSize } from '../ControlSize';
 import { COLOR_MODES } from '../ColorModeControl/colorModes';
 import { Icon } from '../Icon/Icon';
 
@@ -34,7 +34,7 @@ export type CycleButtonProps<T extends string = string> = Omit<
   /** What is being switched, leading the accessible name and tooltip
    *  (`Theme: Auto — click for Light`). */
   'aria-label': string;
-  /** Default: the nearest `Density` scope's, else `sm`, the size of a header's icon buttons. */
+  /** Default: the nearest `ControlSizeScope`'s, else `sm`, the size of a header's icon buttons. */
   size?: ControlSize;
   /** Defaults to `ghost`. */
   variant?: ButtonVariant;
@@ -44,7 +44,7 @@ function CycleButtonInner<T extends string = string>(
   { value, onChange, options, 'aria-label': ariaLabel, size, variant = 'ghost', onClick, ...rest }: CycleButtonProps<T>,
   ref: Ref<HTMLButtonElement>,
 ): ReactElement {
-  const resolved = useDensity(size, 'sm');
+  const resolved = useControlSize(size, 'sm');
   const count = options.length;
   const index = Math.max(0, options.findIndex((o) => o.value === value));
   const current = options[index];

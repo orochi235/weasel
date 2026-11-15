@@ -9,11 +9,13 @@ import { MIXED_HINT } from '../Field/mixedHint';
 import { FieldFoot, fieldRootClass, type FieldSlotProps } from '../Field/fieldSlots';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
+import type { ControlSizeProps } from '../ControlSize';
+import { useFieldSizeClass } from '../Field/fieldSize';
 import f from '../Field/Field.module.css';
 import s from './Input.module.css';
 
 /** Props for {@link Input}, on top of React Aria's `TextField` props. */
-export type InputProps = Omit<RACTextFieldProps, 'children' | 'className' | 'spellCheck' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & {
+export type InputProps = Omit<RACTextFieldProps, 'children' | 'className' | 'spellCheck' | 'isDisabled' | 'isReadOnly'> & FieldSlotProps & HoldProps & ControlSizeProps & {
   /** Whether the browser checks the text's spelling, as on a native `<input>`. */
   spellCheck?: boolean | 'true' | 'false';
   /** The label on a virtual keyboard's enter key, as on a native `<input>`. */
@@ -54,15 +56,17 @@ export const Input = forwardRef(function Input(
     spellCheck,
     enterKeyHint,
     autoCapitalize,
+    size,
     ...textFieldProps
   } = hold.rest;
+  const sized = useFieldSizeClass(size, className);
 
   return hold.wrap(
     <TextField
       {...textFieldProps}
       {...hold.rac}
       spellCheck={spellCheck === undefined ? undefined : String(spellCheck)}
-      className={fieldRootClass({ orientation, className })}
+      className={fieldRootClass({ orientation, className: sized })}
     >
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <div className={`${f.frame} ${s.frame}`}>

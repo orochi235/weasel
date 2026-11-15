@@ -22,10 +22,10 @@ export type { ButtonProps, ButtonVariant } from '@weasel-js/ui/components/Button
 export { Button } from '@weasel-js/ui/components/Button';
 export type {
   ControlSize,
-  DensityProps,
-  DensityScopeProps,
-} from '@weasel-js/ui/components/Density';
-export { Density, useDensity } from '@weasel-js/ui/components/Density';
+  ControlSizeProps,
+  ControlSizeScopeProps,
+} from '@weasel-js/ui/components/ControlSize';
+export { ControlSizeScope, useControlSize } from '@weasel-js/ui/components/ControlSize';
 export type {
   DetailListLayout,
   DetailListProps,

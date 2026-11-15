@@ -327,7 +327,7 @@ export const UnitsChoicesAlpha: Story = {
  *  toggles the state. */
 export const Auto: Story = {
   args: { label: 'Gap' },
-  render: ({ label, description, layout, span, density, align, disabled }) => {
+  render: ({ label, description, layout, span, spacing, align, disabled }) => {
     const [auto, setAuto] = useState(true);
     const [gap, setGap] = useState(12);
     return (
@@ -340,7 +340,7 @@ export const Auto: Story = {
             description={description}
             layout={layout}
             span={span}
-            density={density}
+            spacing={spacing}
             align={align}
             disabled={disabled}
             value={gap}

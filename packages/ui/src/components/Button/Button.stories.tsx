@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useEffect, useState, type CSSProperties, type ReactElement } from 'react';
 import { Button, type ButtonBase, type ButtonVariant, BUTTON_VARIANT_ICONS } from '@weasel-js/ui/components/Button';
-import type { ControlSize } from '@weasel-js/ui/components/Density';
+import type { ControlSize } from '@weasel-js/ui/components/ControlSize';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { EMPHASIS_ICONS, GRADE_ICONS } from '../appearanceIcons';
 import { EMPHASES, GRADES } from '@weasel-js/theme';

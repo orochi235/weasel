@@ -1,7 +1,7 @@
 import { useState, type CSSProperties, type ReactElement } from 'react';
 import { Along } from '@weasel-js/ui/components/Along';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
-import type { ControlSize } from '@weasel-js/ui/components/Density';
+import type { ControlSize } from '@weasel-js/ui/components/ControlSize';
 import s from './SegmentsArc.stories.module.css';
 
 /** The knobs the segmented-controls-on-an-arc lab reads. */

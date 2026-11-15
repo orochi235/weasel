@@ -3,7 +3,7 @@ import {
   centeredBaseline, envNumber, envPx,
   type Constraints, type FontSpec, type MeasureEnv, type Measured, type TextExtent,
 } from './measure';
-import type { ControlSize } from './density';
+import type { ControlSize } from './controlSize';
 
 /**
  * What a button shows, as every target reads it. `I` is how a target names an icon (a React node, a glyph name);

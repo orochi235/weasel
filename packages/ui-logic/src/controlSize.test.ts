@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveSize } from './density';
+import { resolveSize } from './controlSize';
 
 describe('resolveSize', () => {
   it("takes the control's own size over the scope", () => {

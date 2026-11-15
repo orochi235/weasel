@@ -9,12 +9,14 @@ import { MIXED_HINT } from '../Field/mixedHint';
 import s from './NumberField.module.css';
 import type { HoldProps } from '../Disabled';
 import { useNativeHold, type NativeHold } from '../Disabled/nativeHold';
+import type { ControlSizeProps } from '../ControlSize';
+import { useFieldSizeClass } from '../Field/fieldSize';
 import { Steppers } from './Steppers';
 import { useIdleSettle } from '../../useIdleSettle';
 import { useFieldLocale } from '../../useFieldLocale';
 
 /** Props for {@link UnitField}. */
-export interface UnitFieldProps extends HoldProps {
+export interface UnitFieldProps extends HoldProps, ControlSizeProps {
   /** The value in the unit the field shows. NaN shows an empty field. */
   value: number;
   /** The committed value, read and clamped, in the unit the field shows: on
@@ -116,9 +118,10 @@ function stepStart(typed: number, value: number, endless: Endless | undefined): 
  * and optional steppers. React Aria's `NumberField` refuses letters as they
  * are typed, which is why this is not that.
  */
-export function UnitField({ disabled, disabledReason, readOnly, readOnlyReason, ...props }: UnitFieldProps) {
+export function UnitField({ disabled, disabledReason, readOnly, readOnlyReason, size, ...props }: UnitFieldProps) {
+  const className = useFieldSizeClass(size, props.className);
   const hold = useNativeHold({ disabled, disabledReason, readOnly, readOnlyReason });
-  return hold.wrap(<UnitFieldBody {...props} hold={hold} />);
+  return hold.wrap(<UnitFieldBody {...props} className={className} hold={hold} />);
 }
 
 function UnitFieldBody({

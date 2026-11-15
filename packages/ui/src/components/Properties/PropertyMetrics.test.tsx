@@ -13,7 +13,7 @@ import { PropertyPanel } from './PropertyPanel';
 import { PropertyRow } from './PropertyRow';
 import { type PropertyMetricProps } from './metrics';
 
-// The CSS-module proxy answers to any key, so `s.densityTight` resolves whether
+// The CSS-module proxy answers to any key, so `s.spacingTight` resolves whether
 // or not a rule defines it — a class assertion alone proves only that the
 // component asked for the key. Read from disk instead, so the other tests here
 // stand on a rule that exists. `?raw` does not get past the proxy; vitest runs
@@ -27,12 +27,12 @@ const frameSheets = ['MotifFrame/MotifFrame.module.css', 'MotifFrame/motifs/rule
   .map((file) => readFileSync(resolve(process.cwd(), 'packages/ui/src/components', file), 'utf8'))
   .join('');
 
-describe('density and align classes', () => {
+describe('spacing and align classes', () => {
   it('defines a rule for every class the components ask for', () => {
     for (const name of [
-      'densityTight',
-      'densityNormal',
-      'densityRoomy',
+      'spacingTight',
+      'spacingNormal',
+      'spacingLoose',
       'alignStart',
       'alignCenter',
       'alignEnd',
@@ -78,25 +78,25 @@ describe('container metric props', () => {
   ];
 
   for (const [name, renderContainer, baseClass] of containers) {
-    it(`${name} takes density and align`, () => {
-      const { container } = render(renderContainer({ density: 'tight', align: 'start' }));
+    it(`${name} takes spacing and align`, () => {
+      const { container } = render(renderContainer({ spacing: 'tight', align: 'start' }));
       const el = container.querySelector(`.${baseClass}`);
       expect(el).not.toBeNull();
-      expect(el?.className).toContain(s.densityTight);
+      expect(el?.className).toContain(s.spacingTight);
       expect(el?.className).toContain(s.alignStart);
     });
 
     it(`${name} keeps a consumer className alongside them`, () => {
-      const { container } = render(renderContainer({ density: 'roomy', className: 'mine' }));
+      const { container } = render(renderContainer({ spacing: 'loose', className: 'mine' }));
       const el = container.querySelector(`.${baseClass}`);
       expect(el?.className).toContain('mine');
-      expect(el?.className).toContain(s.densityRoomy);
+      expect(el?.className).toContain(s.spacingLoose);
     });
 
     it(`${name} carries neither class when neither prop is passed`, () => {
       const { container } = render(renderContainer({}));
       const el = container.querySelector(`.${baseClass}`);
-      expect(el?.className).not.toContain(s.densityNormal);
+      expect(el?.className).not.toContain(s.spacingNormal);
       expect(el?.className).not.toContain(s.alignCenter);
     });
   }

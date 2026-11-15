@@ -27,12 +27,12 @@ export interface PropertyListProps extends PropertyMetricProps {
  * nest inside <PropertyPanel/> for the standard glass card.
  */
 export const PropertyList = forwardRef(function PropertyList(
-  { children, className, pack = 'auto-color', density, align }: PropertyListProps,
+  { children, className, pack = 'auto-color', spacing, align }: PropertyListProps,
   ref: Ref<HTMLDivElement>,
 ) {
   const base = `${s.list}${pack === 'pairs' ? ` ${s.listPairs}` : pack === 'one-up' ? ` ${s.listOneUp}` : ''}`;
   return (
-    <div ref={ref} className={propertyMetricClass(base, { density, align }, className)}>
+    <div ref={ref} className={propertyMetricClass(base, { spacing, align }, className)}>
       {children}
     </div>
   );

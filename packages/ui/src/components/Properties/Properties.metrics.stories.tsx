@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { PropertyField, PropertyList, PropertyPanel, type PropertyAlign, type PropertyDensity } from '@weasel-js/ui/components/Properties';
+import { PropertyField, PropertyList, PropertyPanel, type PropertyAlign, type PropertySpacing } from '@weasel-js/ui/components/Properties';
 
 const meta: Meta = {
   title: 'ui/Properties',
@@ -61,14 +61,14 @@ export const Align: Story = {
   ),
 };
 
-function Sample({ density }: { density?: PropertyDensity }) {
+function Sample({ spacing }: { spacing?: PropertySpacing }) {
   const [opacity, setOpacity] = useState(0.65);
   const [count, setCount] = useState(8);
   const [name, setName] = useState('Untitled');
   const [locked, setLocked] = useState(true);
   const [color, setColor] = useState('#4f8ef7');
   return (
-    <PropertyPanel title={density ? `density="${density}"` : 'unset'} density={density}>
+    <PropertyPanel title={spacing ? `spacing="${spacing}"` : 'unset'} spacing={spacing}>
       <PropertyList>
         <PropertyField
           kind="number"
@@ -90,12 +90,12 @@ function Sample({ density }: { density?: PropertyDensity }) {
 }
 
 /** Gaps, padding and field height move together, from one prop on the panel. */
-export const Density: Story = {
+export const Spacing: Story = {
   render: () => (
     <Row>
-      <Sample density="tight" />
+      <Sample spacing="tight" />
       <Sample />
-      <Sample density="roomy" />
+      <Sample spacing="loose" />
     </Row>
   ),
 };

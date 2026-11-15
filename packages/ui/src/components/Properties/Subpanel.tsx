@@ -30,7 +30,7 @@ export function Subpanel(props: SubpanelProps) {
     actions,
     children,
     className,
-    density,
+    spacing,
     align,
     stance,
     grade,
@@ -53,7 +53,7 @@ export function Subpanel(props: SubpanelProps) {
       leading={leading}
       actions={actions}
       twisty={foldTwisty(fold, title)}
-      className={propertyMetricClass(s.subpanel, { density, align }, className)}
+      className={propertyMetricClass(s.subpanel, { spacing, align }, className)}
       disabled={disabled}
       stance={stance}
       grade={grade}

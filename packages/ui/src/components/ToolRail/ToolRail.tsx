@@ -7,12 +7,12 @@ import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Icon } from '../Icon/Icon';
 import { isActive, isSlot, isStack, railRuns, type ToolRailButton, type ToolRailItem } from './items';
 import { RailStack, type StackCycleModifier } from './RailStack';
-import type { DensityProps } from '../Density';
+import type { ControlSizeProps } from '../ControlSize';
 import s from './ToolRail.module.css';
 import { holdScope, type DisableableProps } from '../Disabled';
 
 /** Props for {@link ToolRail}. */
-export interface ToolRailProps extends DensityProps, DisableableProps {
+export interface ToolRailProps extends ControlSizeProps, DisableableProps {
   items: readonly ToolRailItem[];
   orientation?: Orientation;
   /** Lays each run out as a grid this many buttons across, the runs stacked; `orientation` then says nothing. */

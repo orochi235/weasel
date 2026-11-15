@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
 import { SegmentedBar, type SegmentedBarItem, type SegmentedVariant } from '../Segmented';
-import { useDensity, type ControlSize } from '../Density';
+import { useControlSize, type ControlSize } from '../ControlSize';
 import { COLOR_MODES } from './colorModes';
 import { Icon } from '../Icon/Icon';
 
@@ -11,7 +11,7 @@ export interface ColorModeControlProps {
   onChange: (next: ColorModePreference) => void;
   /** Accessible name of the group. Defaults to `'Color mode'`. */
   'aria-label'?: string;
-  /** Default: the nearest `Density` scope's, else `md`. */
+  /** Default: the nearest `ControlSizeScope`'s, else `md`. */
   size?: ControlSize;
   variant?: SegmentedVariant;
   className?: string;
@@ -42,7 +42,7 @@ export function ColorModeControl({
   variant,
   className,
 }: ColorModeControlProps): ReactElement {
-  const resolved = useDensity(size);
+  const resolved = useControlSize(size);
   return (
     <SegmentedBar
       items={ITEMS[resolved]}

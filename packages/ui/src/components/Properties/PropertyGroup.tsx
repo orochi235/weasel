@@ -61,7 +61,7 @@ export function PropertyGroup(props: PropertyGroupProps) {
     className,
     span,
     pack = 'auto-color',
-    density,
+    spacing,
     align,
     stance,
     grade,
@@ -75,7 +75,7 @@ export function PropertyGroup(props: PropertyGroupProps) {
   if (hidden) return null;
 
   const base = `${s.group}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
-  const cls = propertyMetricClass(span ? `${base} ${s.span}` : base, { density, align }, className);
+  const cls = propertyMetricClass(span ? `${base} ${s.span}` : base, { spacing, align }, className);
   return (
     <MotifFrame
       title={foldTitle(title, fold)}

@@ -45,7 +45,7 @@ export function PropertyPanel(props: PropertyPanelProps) {
     selectable,
     children,
     className,
-    density,
+    spacing,
     align,
     stance,
     grade,
@@ -70,7 +70,7 @@ export function PropertyPanel(props: PropertyPanelProps) {
       actions={actions}
       twistyAt={trailing ? 'end' : 'start'}
       twisty={foldTwisty(fold, title, 'this panel', trailing ? s.foldTwistyTrailing : undefined)}
-      className={propertyMetricClass(s.panel, { density, align }, className)}
+      className={propertyMetricClass(s.panel, { spacing, align }, className)}
       attrs={{
         'data-nested': nested ? 'true' : undefined,
         'data-selectable': (selectable ?? stance === 'debug') ? 'true' : undefined,

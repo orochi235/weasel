@@ -7,8 +7,8 @@
 export type { FocusScope, FocusScopeOptions } from './focus';
 export { UNBOUNDED, exactly, fixedWidth, envPx, envNumber, centeredBaseline, offsetRect } from './measure';
 export type { Constraints, FontSpec, TextExtent, MeasureEnv, Measured, HeadlessComponent } from './measure';
-export { resolveSize } from './density';
-export type { ControlSize } from './density';
+export { resolveSize } from './controlSize';
+export type { ControlSize } from './controlSize';
 export { buttonParts, buttonMetrics, measureButton, BUTTON_SPINNER_SIZE } from './button';
 export type { ButtonFace, ButtonPart, ButtonMetrics, ButtonLayout } from './button';
 export { listMode, LIST_ROLES, ROW_GAP, rowListMetrics, measureRowList, rowAtY } from './rowList';

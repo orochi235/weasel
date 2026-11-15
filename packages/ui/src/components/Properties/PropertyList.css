@@ -6,7 +6,7 @@
   column-gap: var(--wzl-prop-column-gap, 16px);
   row-gap: var(--wzl-prop-row-gap, 4px);
   align-items: stretch;
-  /* Read from the container-level name so a density set further up is not
+  /* Read from the container-level name so a spacing set further up is not
      shadowed by this declaration. */
   --wzl-field-h: var(--wzl-prop-field-h, var(--wzl-control-h-sm));
   --wzl-field-pad-x: var(--wzl-prop-field-pad-x, 6px);
@@ -43,11 +43,11 @@
   grid-column: 1 / -1;
 }
 
-/* ── density ────────────────────────────────────────────────────────
+/* ── spacing ────────────────────────────────────────────────────────
    `normal` states its values rather than omitting them, so a group can go back
    to the default inside a tighter panel. */
 
-.densityTight {
+.spacingTight {
   --wzl-prop-row-gap: 2px;
   --wzl-prop-subpanel-row-gap: 2px;
   --wzl-prop-column-gap: 8px;
@@ -59,7 +59,7 @@
   --wzl-prop-field-pad-x: 5px;
 }
 
-.densityNormal {
+.spacingNormal {
   --wzl-prop-row-gap: 4px;
   --wzl-prop-subpanel-row-gap: 3px;
   --wzl-prop-column-gap: 16px;
@@ -71,7 +71,7 @@
   --wzl-prop-field-pad-x: 6px;
 }
 
-.densityRoomy {
+.spacingLoose {
   --wzl-prop-row-gap: 8px;
   --wzl-prop-subpanel-row-gap: 7px;
   --wzl-prop-column-gap: 20px;

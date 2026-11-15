@@ -393,7 +393,7 @@ may load no theme, writes the rung with its px as the fallback; it is the one
 package `check:token-reads` lets do that.
 
 Control heights are four ranks, `control-h-xs` / `-sm` / `control-h` /
-`tb-height` — 18/20/24/28 at `comfortable`. A control box sizes itself from one
+`tb-height` — 22/24/28/32 at `comfortable`. A control box sizes itself from one
 of them, never from a literal: a literal is what left `Button` at 24px in every
 density while its label grew. `npm run check:controls` fails on a
 `height`/`min-height`/`block-size` literal in `packages/ui/src` that equals a
@@ -403,6 +403,33 @@ What deliberately does *not* follow density: icons and drawn glyphs (a chevron,
 a checkmark, a switch track), slider tracks and thumbs, and handles — those have
 their own tokens or are artwork. Scaling them with the type ramp makes them
 blurry rather than bigger.
+
+#### Three sizing axes
+
+Each axis has its own words, and none of them borrows another's (2026-11-14):
+
+| Axis | Set with | Values | What it moves |
+|---|---|---|---|
+| Theme density | `applyTheme(el, theme, { density })` | `compact` / `comfortable` / `roomy` | the pixels behind every token: the type ramp and each control-height rank |
+| Control size | a control's `size`, `<ControlSizeScope size>`, or a container's `size` | `sm` / `md` | which rank a control stands at: `sm` is `control-h-sm` and `font-size-sm`, `md` is `control-h` and `font-size` |
+| Property spacing | `spacing` on any `Properties` container | `tight` / `normal` / `loose` | a property panel's gaps and padding, and the height of the fields in its rows |
+
+Property spacing is its own axis rather than either of the others: it lays out
+one panel and can differ between an outer panel and a group inside it, which a
+theme-wide axis cannot, and it moves gaps and padding, which a control's size
+does not.
+
+A control's height is settled in this order, first answer wins:
+
+1. its own `size`;
+2. the nearest `ControlSizeScope`, which a container's `size` sets over what it holds (`Bar`, `ToolGroup`, `ToolOptionsBar`, `ToolRail`, `ActionBar`);
+3. for `Input`, `TextArea`, `Select`, `NumberField` and `UnitField`, the height the container gives fields (`--wzl-field-h`: a `PropertyList`'s spacing, a `Bar`'s line), else `control-h`; for a button or segmented bar, its own default size (`md`, or `sm` for `CycleButton`).
+
+Theme density sits under all three: it never picks a size, it sets how many
+pixels each size is. So `size="sm"` buttons, selects, text and numeric fields
+in one row stand at one height in every density, and a compact toolbar is
+`<Bar size="sm">` with no per-control sizing. A `TextArea`'s height is its
+`rows`; its size sets only its type.
 
 ### Gloss
 

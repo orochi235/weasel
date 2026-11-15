@@ -15,7 +15,7 @@ import { SegmentedRow, segmentClassName, segmentPlaceProps, useSegmentedTiling, 
 import type { SegmentedVariant } from './segmentedVariant';
 import { tilingRoving } from '../../tiling';
 import { selectionRoving } from '../../selectionRoving';
-import type { ControlSize } from '../Density';
+import type { ControlSize } from '../ControlSize';
 import { useRovingTabIndex, type UseRovingTabIndexOptions } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { ButtonTooltip, useButtonAccess, type TooltipFields } from '../Tooltip/buttonTooltip';
@@ -52,7 +52,7 @@ export type SegmentedBarCommonProps = SegmentedGridProps & DisableableProps & {
   className?: string;
   height?: number;
   /** Size variant. `sm` is ~60% of the default height with reduced padding and font size, for dense surfaces like
-   *  lab control panels. Default: the nearest `Density` scope's, else `md`. */
+   *  lab control panels. Default: the nearest `ControlSizeScope`'s, else `md`. */
   size?: ControlSize;
   /** Which way the segments run. Defaults to the way the row the bar sits in runs; a vertical bar keeps its labels upright. */
   orientation?: Orientation;

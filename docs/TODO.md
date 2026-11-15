@@ -323,18 +323,6 @@ Owner tags, after the priority (2026-10-26):
   from one declaration, compound fields remain correctly named, and standalone and property-field
   compositions have accessibility tests and documented examples without duplicated label strings.
 
-- **(P2) [agent] Clarify theme density versus control-size scope and cover mixed control rows.** Theme
-  density is `compact`/`comfortable`/`roomy`, but `<Density size="sm|md">` is a React control-size scope
-  (`packages/ui/src/components/Density/Density.tsx`). Buttons, segmented bars and selected containers
-  read it; ordinary input, select and numeric fields do not. `PropertyPanel` adds a third word set,
-  `PropertyDensity` `tight`/`normal`/`roomy` (`packages/ui/src/components/Properties/metrics.ts`), reusing
-  `roomy` with another meaning. Give each axis distinct public vocabulary
-  and define how common controls participate, so a compact form or toolbar does not require separate
-  component-specific sizing workarounds. Preserve the theme's token sizing and intentional artwork sizes.
-  Closes when every axis and its precedence are documented, common fields participate in the agreed size
-  contract, and browser tests verify mixed button/select/text/numeric rows across theme densities and
-  control sizes, including nested scopes and explicit overrides, with migration guidance.
-
 - **(P3) [agent] labkit's 3D lab keeps its scene's undo outside the lab's.** `SolidInstrument`'s moves and inserts go
   to `scene.history`, which the trial steps with its own "undo" and "redo" text buttons beside the palette, while
   the lab's Undo and Redo above it step only the settings (seen 2026-11-14). Hand the history over with
