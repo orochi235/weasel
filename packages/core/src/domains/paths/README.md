@@ -130,18 +130,19 @@ commands that edit corners in path edit are `@weasel-js/path-tools`'
 ## Constraints
 
 A node's `data.constraints` is a list of `PathConstraint`s (`@weasel-js/geom`),
-numbered by flat anchor index. The `editAnchors` dep makes them hold through
-every path edit: `editOps` runs `constrainPathEdit` before it stores the path,
-and renumbers the list through the edit's origins, so a delete or an insert
-keeps each constraint on the anchors it named. The anchor drag calls the dep's
-`constrainEdit` each frame, so the preview is what the commit will store; a
-frame the constraints cannot hold in is dropped. A constraint that does not
-hold when an edit starts conflicts with the rest: it is left out of the solve,
-and the overlay draws its mark (`constraintGlyphs.ts`) in the conflict color.
-`constrainAnchors` and `unconstrainAnchors` add and remove constraints on the
-selected anchors through the dep's `setConstraints`; `constrainAnchors` has a
-variant per kind, so a bar, menu or palette lists each. Horizontal and vertical
-read a `data.path` node's rotation as their frame (`pathConstraints.ts`).
+numbered by flat anchor index. Core stores them and holds no rule about them:
+`@weasel-js/path-tools`' `constraintsPreset` makes them hold, through a path
+edit extension whose `finishEdit` runs `constrainPathEdit` on every edit and
+renumbers the list through the edit's origins, so a delete or an insert keeps
+each constraint on the anchors it named. The `editAnchors` dep finishes every
+frame of an anchor drag the same way (`EditAnchorsDep.finishEdit`), so the
+preview is what the commit will store; a frame the constraints cannot hold in
+is dropped. A constraint that does not hold when an edit starts conflicts with
+the rest: it is left out of the solve, and its mark is drawn in the conflict
+color. The preset's `constrainAnchors` and `unconstrainAnchors` add and remove
+constraints on the selected anchors; `constrainAnchors` has a variant per kind,
+so a bar, menu or palette lists each. Horizontal and vertical read a
+`data.path` node's rotation as their frame.
 
 A click on a mark selects that constraint (the anchor selection and the
 constraint selection exclude each other), and Delete removes it
