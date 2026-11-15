@@ -423,3 +423,20 @@ describe('Tree — keyboard moves', () => {
     expect(document.activeElement).toBe(screen.getByRole('treeitem', { name: 'Zed' }));
   });
 });
+
+describe('Tree — a Mac secondary click', () => {
+  it('leaves a Ctrl-press on a Mac to the context menu: no capture, no drag', () => {
+    vi.stubGlobal('navigator', { platform: 'MacIntel', userAgent: '' });
+    try {
+      const { onMove, tree, row } = setup();
+      fireEvent.pointerDown(row('Zed'), { pointerId: 1, button: 0, ctrlKey: true, clientX: 100, clientY: 80 });
+      move(20);
+      expect(tree.setPointerCapture).not.toHaveBeenCalled();
+      expect(screen.getAllByText('Zed')).toHaveLength(1);
+      release(20);
+      expect(onMove).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});

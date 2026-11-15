@@ -25,3 +25,9 @@ export function modKey(apple: boolean = isApplePlatform()): 'meta' | 'ctrl' {
 export function modHeld(e: { metaKey: boolean; ctrlKey: boolean }, apple: boolean = isApplePlatform()): boolean {
   return apple ? e.metaKey : e.ctrlKey;
 }
+
+/** Whether a press opens the context menu: the secondary button, or Ctrl with the primary one on an Apple platform,
+ *  where that is the secondary click. A drag that takes such a press hides the `contextmenu` that follows it. */
+export function isContextPress(e: { button?: number; ctrlKey: boolean }, apple: boolean = isApplePlatform()): boolean {
+  return e.button === 2 || (apple && e.ctrlKey && (e.button ?? 0) === 0);
+}

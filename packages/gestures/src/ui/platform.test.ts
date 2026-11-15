@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isApplePlatform, modHeld, modKey } from './platform';
+import { isApplePlatform, isContextPress, modHeld, modKey } from './platform';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -49,5 +49,15 @@ describe('modHeld and modKey', () => {
     expect(modHeld({ metaKey: true, ctrlKey: false }, false)).toBe(false);
     expect(modKey(true)).toBe('meta');
     expect(modKey(false)).toBe('ctrl');
+  });
+});
+
+describe('isContextPress', () => {
+  it('is the secondary button anywhere, and Ctrl with the primary one only on an Apple platform', () => {
+    expect(isContextPress({ button: 2, ctrlKey: false }, false)).toBe(true);
+    expect(isContextPress({ button: 0, ctrlKey: true }, true)).toBe(true);
+    expect(isContextPress({ button: 0, ctrlKey: true }, false)).toBe(false);
+    expect(isContextPress({ button: 0, ctrlKey: false }, true)).toBe(false);
+    expect(isContextPress({ button: 1, ctrlKey: true }, true)).toBe(false);
   });
 });
