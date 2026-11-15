@@ -1,32 +1,9 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { RenderLayer, View } from '@weasel-js/core';
-import { combTeeth, polylineFromPoints, viewWorldToScreen } from '@weasel-js/geom';
+import { circlePath, combTeeth, polylineFromPoints, viewWorldToScreen } from '@weasel-js/geom';
 import { curvatureSourceOf, type CurveRepresentation, type SharedAnchor } from '@weasel-js/geom/curves';
 
-function circlePath(cx: number, cy: number, r: number) {
-  const k = 0.5522847498;
-  return {
-    kind: 'polygon' as const,
-    commands: new Uint8Array([0, 2, 2, 2, 2]),
-    coords: new Float32Array([
-      cx + r, cy,
-      cx + r, cy + k * r,  cx + k * r, cy + r,  cx, cy + r,
-      cx - k * r, cy + r,  cx - r, cy + k * r,  cx - r, cy,
-      cx - r, cy - k * r,  cx - k * r, cy - r,  cx, cy - r,
-      cx + k * r, cy - r,  cx + r, cy - k * r,  cx + r, cy,
-    ]),
-    fillRule: 'nonzero' as const,
-  };
-}
-
-function linePath(ax: number, ay: number, bx: number, by: number) {
-  return {
-    kind: 'polygon' as const,
-    commands: new Uint8Array([0, 1]),
-    coords: new Float32Array([ax, ay, bx, by]),
-    fillRule: 'nonzero' as const,
-  };
-}
+const linePath = (ax: number, ay: number, bx: number, by: number) => polylineFromPoints([{ x: ax, y: ay }, { x: bx, y: by }]);
 
 export function createAnchorsLayer(
   rep: CurveRepresentation,
