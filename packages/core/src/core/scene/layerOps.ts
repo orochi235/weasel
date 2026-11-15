@@ -5,6 +5,7 @@
 import type { ParallaxOptions } from 'core/viewport/parallax';
 import type { KitOpsEnv } from './kitOps';
 import type { LayerRecord, RegisteredOp, UserLayerRecord } from './types';
+import type { MutableLayerRecord } from './layerTypes';
 
 function setParallax(record: { parallax?: ParallaxOptions }, to: ParallaxOptions | undefined): void {
   if (to === undefined) delete record.parallax;
@@ -42,12 +43,12 @@ export function registerLayerOps<TData, TLayer extends string, TPose>(
 
   registerKitOp<{ record: LayerRecord<TLayer>; index: number }>('kit:removeLayer', {
     apply: (p) => { state.layers.splice(p.index, 1); rebuildLayerIndex(); },
-    revert: (p) => { state.layers.splice(p.index, 0, { ...p.record } as LayerRecord<TLayer>); rebuildLayerIndex(); },
+    revert: (p) => { state.layers.splice(p.index, 0, { ...p.record } as MutableLayerRecord<TLayer>); rebuildLayerIndex(); },
   });
 
   registerKitOp<{ layer: TLayer; from: string; to: string }>('kit:renameLayer', {
-    apply: (p) => { (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.to; },
-    revert: (p) => { (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.from; },
+    apply: (p) => { (state.layers[requireLayerIndex(p.layer)] as Extract<MutableLayerRecord<TLayer>, { kind: 'user' }>).name = p.to; },
+    revert: (p) => { (state.layers[requireLayerIndex(p.layer)] as Extract<MutableLayerRecord<TLayer>, { kind: 'user' }>).name = p.from; },
   });
 
   /** Finds the layer by id, not by where the payload last left it: moves of

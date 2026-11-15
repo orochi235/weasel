@@ -11,7 +11,9 @@ import { createRenderOrder } from './renderOrder';
 import { serializeScene } from './serialization';
 import { createStaleReplay } from './staleReplay';
 import { createTreeReads } from './treeReads';
-import type { LayerRecord, Node, NodeId, Scene, SceneRegistry } from './types';
+import type { LayerRecord, NodeId, Scene, SceneRegistry } from './types';
+import type { MutableNode } from './nodeTypes';
+import type { MutableLayerRecord } from './layerTypes';
 
 export function createSceneState<TData, TLayer extends string, TPose>(
   registry: SceneRegistry<TPose, TData, TLayer>,
@@ -21,9 +23,9 @@ export function createSceneState<TData, TLayer extends string, TPose>(
   initialDoc?: SerializedDoc,
 ) {
   const state = {
-    nodes: new Map<NodeId, Node<TData, TLayer, TPose>>(),
+    nodes: new Map<NodeId, MutableNode<TData, TLayer, TPose>>(),
     roots: [] as NodeId[],
-    layers: [] as LayerRecord<TLayer>[],
+    layers: [] as MutableLayerRecord<TLayer>[],
     layerIndex: new Map<TLayer, number>(),
     docValues: new Map<string, unknown>(),
   };

@@ -10,10 +10,13 @@ import { dwarn } from 'debug/flag';
 import type { LayoutStrategy } from '../../layout/types';
 import { registerLayerOps } from './layerOps';
 import { restoreFn, type FnBearingNode, type NodeFnField } from './nodeFnFields';
+import { own } from './owned';
 import { statedFields } from './statedFields';
 import type { createNodeStore } from './nodeStore';
+import type { MutableNode } from './nodeTypes';
+import type { MutableLayerRecord } from './layerTypes';
 import type {
-  LayerRecord, Node, NodeClip, NodeId, RegisteredOp,
+  Node, NodeClip, NodeId, RegisteredOp,
 } from './types';
 
 /**
@@ -42,8 +45,8 @@ export interface SetLayoutPayload { id: NodeId; fromKey?: string; toKey?: string
 /** What the op table needs from the scene it mutates. */
 export interface KitOpsEnv<TData, TLayer extends string, TPose> {
   state: {
-    nodes: Map<NodeId, Node<TData, TLayer, TPose>>;
-    layers: LayerRecord<TLayer>[];
+    nodes: Map<NodeId, MutableNode<TData, TLayer, TPose>>;
+    layers: MutableLayerRecord<TLayer>[];
   };
   register(kind: string, handler: RegisteredOp<unknown>): void;
   store: ReturnType<typeof createNodeStore<TData, TLayer, TPose>>;
@@ -81,7 +84,7 @@ function movesNode<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, TL
 function registerSetLayer<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, TLayer, TPose>): void {
   const { requireNode, invalidateDependents } = env.store;
   const place = (id: NodeId, layer: TLayer): void => {
-    (requireNode(id) as { layer: TLayer }).layer = layer;
+    requireNode(id).layer = layer;
     env.invalidateOrder();
     invalidateDependents(id);
   };
@@ -129,11 +132,11 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
         throw new Error(`Scene: id collision on "${p.id}"`);
       }
       const node = {
-        kind: p.kind, id: p.id, layer: p.layer, pose: p.pose, data: p.data, parent: p.parent,
-      } as Node<TData, TLayer, TPose>;
+        kind: p.kind, id: p.id, layer: p.layer, pose: own(p.pose), data: own(p.data), parent: p.parent,
+      } as MutableNode<TData, TLayer, TPose>;
       state.nodes.set(p.id, node);
       attach(p.id, p.parent, p.index);
-      if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
+      if (p.dependsOn !== undefined) node.dependsOn = own(p.dependsOn);
       Object.assign(node, statedFields(p));
       env.noteWritten(node);
       dependents.add(p.id, p.dependsOn === 'children' ? [] : p.dependsOn ?? []);
@@ -184,9 +187,11 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       const keys = new Map((p.fnKeys ?? []).map((k) => [k.id, k]));
       // Order-independent: every clone carries its own parent and children.
       for (const n of p.nodes) {
-        const clone: Node<TData, TLayer, TPose> = n.children
+        const clone: MutableNode<TData, TLayer, TPose> = n.children
           ? { ...n, children: [...n.children] }
-          : { ...n };
+          : { ...n } as MutableNode<TData, TLayer, TPose>;
+        own(clone.pose);
+        own(clone.data);
         restoreNodeFunctions(clone, keys.get(n.id));
         state.nodes.set(n.id, clone);
         env.noteWritten(clone);
@@ -200,11 +205,11 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
 
   registerKitOp<{ id: NodeId; from: TPose; to: TPose }>('kit:setPose', {
     apply: (p) => {
-      (requireNode(p.id) as { pose: TPose }).pose = p.to;
+      requireNode(p.id).pose = own(p.to);
       invalidateDependents(p.id);
     },
     revert: (p) => {
-      (requireNode(p.id) as { pose: TPose }).pose = p.from;
+      requireNode(p.id).pose = own(p.from);
       invalidateDependents(p.id);
     },
   });
@@ -214,11 +219,11 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
   // does on a move.
   registerKitOp<{ id: NodeId; from: TData; to: TData }>('kit:setData', {
     apply: (p) => {
-      (requireNode(p.id) as { data: TData }).data = p.to;
+      requireNode(p.id).data = own(p.to);
       invalidateDependents(p.id);
     },
     revert: (p) => {
-      (requireNode(p.id) as { data: TData }).data = p.from;
+      requireNode(p.id).data = own(p.from);
       invalidateDependents(p.id);
     },
   });

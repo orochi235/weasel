@@ -16,12 +16,14 @@ import type { createNodeStore } from './nodeStore';
 import type { OpTable } from './opTable';
 import type { Recorder } from './recorder';
 import { createTreeEdits, type TreeEdits } from './treeEdits';
-import type { LayerRecord, Node, NodeId } from './types';
+import type { NodeId } from './types';
+import type { MutableNode } from './nodeTypes';
+import type { MutableLayerRecord } from './layerTypes';
 
 export interface SceneEditsEnv<TData, TLayer extends string, TPose> {
   state: {
-    nodes: Map<NodeId, Node<TData, TLayer, TPose>>;
-    layers: LayerRecord<TLayer>[];
+    nodes: Map<NodeId, MutableNode<TData, TLayer, TPose>>;
+    layers: MutableLayerRecord<TLayer>[];
     layerIndex: Map<TLayer, number>;
     /** The scene's document values, which `doc` reads and records. */
     docValues: Map<string, unknown>;

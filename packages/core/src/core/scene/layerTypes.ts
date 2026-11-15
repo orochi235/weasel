@@ -2,32 +2,32 @@ import type { ParallaxOptions } from '../viewport/parallax';
 
 /** The fields every layer record carries, whatever the scene adds to it. */
 export interface LayerRecordBase<TLayer extends string> {
-  id: TLayer;
-  visible: boolean;
-  locked: boolean;
+  readonly id: TLayer;
+  readonly visible: boolean;
+  readonly locked: boolean;
   /** Draw this layer as a parallax plane: through a view derived from the
    *  camera's (see `deriveParallaxView`), and picked through the same one.
    *  Absent means the layer moves with the camera. */
-  parallax?: ParallaxOptions;
+  readonly parallax?: ParallaxOptions;
   /** A non-printing layer of aids — measurements, notes — rather than content.
    *  Its nodes draw on the canvas and save with the scene, but export leaves
    *  them out and content picking passes through them. Read it through
    *  `isAnnotationLayer`. Absent means content. */
-  annotation?: boolean;
+  readonly annotation?: boolean;
 }
 
 /** A layer declared when the scene was created. Fixed set, no display name —
  *  these are the kit's own render bands, not something a user manages. */
 export interface SystemLayerRecord<TLayer extends string>
   extends LayerRecordBase<TLayer> {
-  kind: 'system';
+  readonly kind: 'system';
 }
 
 /** A layer the user created and can rename, reorder or delete. */
 export interface UserLayerRecord<TLayer extends string>
   extends LayerRecordBase<TLayer> {
-  kind: 'user';
-  name: string;
+  readonly kind: 'user';
+  readonly name: string;
 }
 
 /** Per-layer metadata held by the scene: whether it is visible and locked,
@@ -91,3 +91,10 @@ export interface SceneLayerMembers<TLayer extends string> {
    *  undoable step. Throws when that would paint a child below its parent. */
   moveLayer(layer: TLayer, index: number): void;
 }
+
+type Writable<T> = { -readonly [K in keyof T]: T[K] };
+
+/** A layer record as the scene stores it, writable. Kit-internal. */
+export type MutableLayerRecord<TLayer extends string> =
+  | Writable<SystemLayerRecord<TLayer>>
+  | Writable<UserLayerRecord<TLayer>>;

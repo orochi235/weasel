@@ -68,8 +68,17 @@ export type { AddNodeSpec, GroupNode, MarkNode, Node, NodeBase, NodeClip };
  *
  * A scene is logical, not visual — it says what exists and where, and nothing
  * about how it is painted. Every mutating method is undoable, and reads are
- * snapshots rather than live views. Nodes are addressed by `NodeId`; hold ids
- * across mutations, not node objects.
+ * live, readonly views: a node object `get` returns, like `roots`, `layers` and
+ * `childrenOf`, shows every later edit, and stops being the node once it leaves
+ * the scene (`incarnation` tells the two apart). Hold ids across mutations, not
+ * node objects, and copy what has to stay as it was.
+ *
+ * A pose or `data` value handed to the scene is the scene's from then on: the
+ * node and its undo history keep it by reference, and it changes only by being
+ * replaced through another edit. A development build freezes its plain objects
+ * and arrays so a write into one throws; typed arrays and class instances it
+ * cannot guard. `toJSON` returns fresh records that share those values, so a
+ * snapshot taken now stays as it was through later edits.
  *
  * Three type parameters keep it domain-agnostic: `TData` is the app's payload,
  * which the kit never inspects; `TPose` is the transform shape, `RectPose` by

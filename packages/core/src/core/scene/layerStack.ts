@@ -5,10 +5,11 @@
  */
 import { sameValue } from './sameValue';
 import type { LayerRecord, Node, NodeId, Scene, UseSceneOptions, UserLayerRecord } from './types';
+import type { MutableLayerRecord } from './layerTypes';
 
 /** What the stack keeps of a scene's state. */
 export interface LayerStackState<TLayer extends string> {
-  layers: LayerRecord<TLayer>[];
+  layers: MutableLayerRecord<TLayer>[];
   layerIndex: Map<TLayer, number>;
 }
 

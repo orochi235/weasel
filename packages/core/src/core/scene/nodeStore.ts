@@ -12,10 +12,11 @@ import { restoreFn, type FnBearingNode, type NodeFn, type NodeFnField } from './
 import { SceneMembershipError } from './staleReplay';
 import { slotIndex } from './treeOrder';
 import type { AddNodeSpec, Node, NodeId } from './types';
+import type { MutableNode } from './nodeTypes';
 
 /** What the store keeps of a scene's state. */
 export interface NodeStoreState<TData, TLayer extends string, TPose> {
-  nodes: Map<NodeId, Node<TData, TLayer, TPose>>;
+  nodes: Map<NodeId, MutableNode<TData, TLayer, TPose>>;
   roots: NodeId[];
 }
 
@@ -97,7 +98,7 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     invalidateDependents(id);
   }
 
-  function requireNode(id: NodeId): Node<TData, TLayer, TPose> {
+  function requireNode(id: NodeId): MutableNode<TData, TLayer, TPose> {
     const n = state.nodes.get(id);
     if (!n) throw new SceneMembershipError(`Scene: unknown node id "${id}"`);
     return n;
@@ -123,7 +124,7 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     const sibs = siblingsOf(parent);
     sibs.splice(slotIndex(index, sibs.length), 0, id);
     const node = requireNode(id);
-    (node as { parent: NodeId | null }).parent = parent;
+    node.parent = parent;
     invalidateOrder();
   }
 
