@@ -1,5 +1,7 @@
+import type { CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { oklchDegToHex, chromaAt, type ChromaCurve, colorRamp, type ColorInterpolationSpace, type ColorRampOptions } from '@weasel-js/paint';
+import st from './ColorRamp.stories.module.css';
 
 const meta: Meta = {
   title: 'ui/color',
@@ -11,11 +13,11 @@ type Story = StoryObj;
 
 function Strip({ colors, label }: { colors: string[]; label: string }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 12, marginBottom: 4 }}>{label}</div>
-      <div style={{ display: 'flex', height: 32, borderRadius: 4, overflow: 'hidden' }}>
+    <div className={st.strip}>
+      <div className={st.label}>{label}</div>
+      <div className={st.ramp}>
         {colors.map((c, i) => (
-          <div key={i} style={{ flex: 1, background: c }} />
+          <div key={i} className={st.step} style={{ '--step': c } as CSSProperties} />
         ))}
       </div>
     </div>
@@ -71,7 +73,7 @@ export const ChromaCurveAlongL: Story = {
           label="L=0..1 with chromaAt(L) — peaks mid-range"
           colors={ramp((t) => oklchDegToHex(t, chromaAt(t, curve), hue), samples)}
         />
-        <div style={{ fontSize: 12, color: '#666' }}>
+        <div className={st.note}>
           curve = {JSON.stringify(curve)}
         </div>
       </>
@@ -83,8 +85,8 @@ const SPACES: ColorInterpolationSpace[] = ['oklch', 'oklab', 'hsl', 'srgb', 'srg
 
 function EachSpace({ from, to, options }: { from: string; to: string; options?: ColorRampOptions }) {
   return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+    <div className={st.space}>
+      <div className={st.heading}>
         {from} → {to}
         {options?.hue ? ` (hue: ${options.hue})` : ''}
         {options?.chroma ? ' with a chroma curve' : ''}

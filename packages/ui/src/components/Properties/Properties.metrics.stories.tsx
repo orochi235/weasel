@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { PropertyField, PropertyList, PropertyPanel, type PropertyAlign, type PropertySpacing } from '@weasel-js/ui/components/Properties';
+import st from './Properties.metrics.stories.module.css';
 
 const meta: Meta = {
   title: 'ui/Properties',
@@ -16,7 +17,7 @@ const SWATCHES: ReadonlyArray<readonly [string, string]> = [
 ];
 
 function Row({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>{children}</div>;
+  return <div className={st.row}>{children}</div>;
 }
 
 function Palette({ align }: { align?: PropertyAlign }) {

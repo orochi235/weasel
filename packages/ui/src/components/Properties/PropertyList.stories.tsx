@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { decimal } from '@weasel-js/quantity';
 import { PropertyField, PropertyList, PropertyRow } from '@weasel-js/ui/components/Properties';
+import st from './PropertyList.stories.module.css';
 
 const meta: Meta<typeof PropertyList> = {
   title: 'ui/Properties/PropertyList',
@@ -18,7 +19,7 @@ export const Standalone: Story = {
     const [stroke, setStroke] = useState('#1a1428');
     const [visible, setVisible] = useState(true);
     return (
-      <div style={{ width: 320 }}>
+      <div className={st.column}>
         <PropertyList {...args}>
           <PropertyField
             kind="number"
@@ -43,7 +44,7 @@ export const Standalone: Story = {
 /** Four ColorRows pack into two rows of two via the 2-col grid. */
 export const FourColors: Story = {
   render: (args) => (
-    <div style={{ width: 320 }}>
+    <div className={st.column}>
       <PropertyList {...args}>
         <PropertyField kind="color" label="A" value="#b08adb" onChange={() => {}} />
         <PropertyField kind="color" label="B" value="#7fb069" onChange={() => {}} />
@@ -57,7 +58,7 @@ export const FourColors: Story = {
 /** An odd number of ColorRows leaves the trailing cell empty. */
 export const ThreeColors: Story = {
   render: (args) => (
-    <div style={{ width: 320 }}>
+    <div className={st.column}>
       <PropertyList {...args}>
         <PropertyField kind="color" label="A" value="#b08adb" onChange={() => {}} />
         <PropertyField kind="color" label="B" value="#7fb069" onChange={() => {}} />
@@ -70,7 +71,7 @@ export const ThreeColors: Story = {
 /** A non-color row in the middle breaks color pairing — A pairs with the empty cell. */
 export const ColorPairingBrokenBySlider: Story = {
   render: (args) => (
-    <div style={{ width: 320 }}>
+    <div className={st.column}>
       <PropertyList {...args}>
         <PropertyField kind="color" label="A" value="#b08adb" onChange={() => {}} />
         <PropertyRow label="Divider">
@@ -98,7 +99,7 @@ export const PairsLongLabels: Story = {
     const [mode, setMode] = useState('px');
     const [ends, setEnds] = useState('round');
     return (
-      <div style={{ width: 320 }}>
+      <div className={st.column}>
         <PropertyList pack="pairs" {...args}>
           <PropertyField kind="number" control="slider" layout="inline" label="Spacing" value={spacing} min={5} max={80} step={5} onChange={setSpacing} />
           <PropertyField kind="number" control="slider" layout="inline" label="Shift angle step" value={angle} min={5} max={90} step={5} onChange={setAngle} />

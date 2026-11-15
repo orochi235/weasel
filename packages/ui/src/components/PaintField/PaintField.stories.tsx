@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { Paint } from '@weasel-js/core';
 import { PaintField } from '@weasel-js/ui/components/PaintField';
+import st from './PaintField.stories.module.css';
 
 const meta: Meta<typeof PaintField> = {
   title: 'ui/PaintField',
@@ -40,9 +41,9 @@ const CONIC: Paint = {
 function Row({ args, label, initial }: { args: Story['args']; label: string; initial: Paint | null }) {
   const [paint, setPaint] = useState<Paint | null>(initial);
   return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 8, width: 260 }}>
-      <span style={{ flex: '0 0 90px', fontSize: 12 }}>{label}</span>
-      <span style={{ flex: '0 0 110px' }}>
+    <label className={st.row}>
+      <span className={st.label}>{label}</span>
+      <span className={st.field}>
         <PaintField {...args} value={paint} onChange={setPaint} aria-label={label} />
       </span>
     </label>
@@ -51,7 +52,7 @@ function Row({ args, label, initial }: { args: Story['args']; label: string; ini
 
 export const InAPropertyRow: Story = {
   render: (args) => (
-    <div style={{ display: 'grid', gap: 8, padding: 16 }}>
+    <div className={st.grid}>
       <Row args={args} label="Solid" initial={{ kind: 'solid', color: '#7a5af5ff' }} />
       <Row args={args} label="Linear (OKLCh)" initial={LINEAR} />
       <Row args={args} label="Conic" initial={CONIC} />

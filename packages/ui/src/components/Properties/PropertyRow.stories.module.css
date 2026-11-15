@@ -1,0 +1,18 @@
+.stackBelowTips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-5);
+  width: 280px;
+  padding-top: 80px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-5);
+  width: 280px;
+}
+
+.column {
+  width: 280px;
+}

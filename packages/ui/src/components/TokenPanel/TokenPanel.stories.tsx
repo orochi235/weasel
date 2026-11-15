@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useCallback, useState } from 'react';
 import { TokenPanel, type TokenPanelProps } from '@weasel-js/ui/components/TokenPanel';
 import type { TokenEntry } from '@weasel-js/ui/components/TokenPanel';
+import st from './TokenPanel.stories.module.css';
 
 const meta: Meta<typeof TokenPanel> = {
   title: 'ui/TokenPanel',
@@ -52,7 +53,7 @@ function Editable(args: Partial<TokenPanelProps>) {
     t.name in values ? { ...t, value: values[t.name] as string, overridden: true } : t,
   );
   return (
-    <div style={{ width: 300 }}>
+    <div className={st.column}>
       <TokenPanel {...args} tokens={tokens} onChange={onChange} />
     </div>
   );

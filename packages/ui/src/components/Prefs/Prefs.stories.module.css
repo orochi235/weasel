@@ -1,0 +1,6 @@
+.frame {
+  height: 520px;
+  overflow: hidden;
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+}

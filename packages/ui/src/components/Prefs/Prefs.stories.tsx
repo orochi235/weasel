@@ -5,6 +5,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm, type LeafContext, PrefsDialog } from '@weasel-js/ui/components/Prefs';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Select } from '@weasel-js/ui/components/Select';
+import st from './Prefs.stories.module.css';
 
 const meta: Meta<typeof PrefsForm> = {
   title: 'ui/Prefs',
@@ -289,7 +290,7 @@ export const Rail: Story = {
   render: function RailStory(args) {
     const { values, onChange } = useStoryValues();
     return (
-      <div style={{ height: 520, border: '1px solid var(--wzl-border)', borderRadius: 6, overflow: 'hidden' }}>
+      <div className={st.frame}>
         <PrefsForm {...args}
           layout="rail"
           schema={DEEP_SCHEMA}
@@ -306,7 +307,7 @@ export const RailFilterable: Story = {
   render: function RailFilterableStory(args) {
     const { values, onChange } = useStoryValues();
     return (
-      <div style={{ height: 520, border: '1px solid var(--wzl-border)', borderRadius: 6, overflow: 'hidden' }}>
+      <div className={st.frame}>
         <PrefsForm {...args}
           layout="rail"
           filterable

@@ -1,0 +1,12 @@
+.code {
+  padding: var(--wzl-space-1) var(--wzl-space-3);
+  border-radius: var(--wzl-radius-sm);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--wzl-space-8);
+  max-width: 1100px;
+}

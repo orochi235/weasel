@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
 import { useState } from 'react';
 import { Select, SelectItem, SelectSection, type SelectProps } from '@weasel-js/ui/components/Select';
+import st from './Select.stories.module.css';
 
 const meta: Meta<typeof Select> = {
   title: 'ui/Select',
@@ -46,8 +47,8 @@ export const ExplicitChildren: Story = {
  *  default `fill` swallows the slack and squeezes them to min-content. */
 export const FitWidth: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 480 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className={st.stackWide}>
+      <div className={st.row}>
         <button type="button">Add trial</button>
         <Select {...args}
           aria-label="Fits its options"
@@ -57,7 +58,7 @@ export const FitWidth: Story = {
         />
         <span>tail</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className={st.row}>
         <button type="button">Add trial</button>
         <Select {...args}
           aria-label="Fills the row"
@@ -77,7 +78,7 @@ export const FitWidth: Story = {
  */
 export const LabelBeside: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
+    <div className={st.column320}>
       <Select {...args} label="Bundle" orientation="row" defaultSelectedKey="g" options={COLORS} />
       <Select {...args} label="Bundle" orientation="row" width="fit" defaultSelectedKey="g" options={COLORS} />
       <Select {...args}
@@ -95,7 +96,7 @@ export const LabelBeside: Story = {
  *  `options`, or from `<SelectSection>` in the children form. */
 export const Sections: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 240 }}>
+    <div className={st.column240}>
       <Select {...args}
         label="Font"
         defaultSelectedKey="inter"
@@ -146,13 +147,13 @@ export const Controlled: Story = {
  */
 export const InARow: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 260 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className={st.stackNarrow}>
+      <div className={st.row}>
         <span>Wave</span>
         <Select {...args} aria-label="Wave" variant="bare" defaultSelectedKey="g" options={COLORS} />
       </div>
       <div
-        style={{ display: 'flex', alignItems: 'center', gap: 8, ['--wzl-select-align' as string]: 'right' }}
+        className={st.rowEnd}
       >
         <span>Wave</span>
         <Select {...args} aria-label="Wave, right-aligned" variant="bare" defaultSelectedKey="g" options={COLORS} />
@@ -168,7 +169,7 @@ export const InARow: Story = {
  */
 export const PopupPlacement: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', gap: 24 }}>
+    <div className={st.pair}>
       <Select {...args} label="Over (default)" options={COLORS} defaultSelectedKey="g" />
       <Select {...args} label="Below" popup="below" options={COLORS} defaultSelectedKey="g" />
     </div>
@@ -179,7 +180,7 @@ export const PopupPlacement: Story = {
  *  longer hint for a trigger whose value alone doesn't say what it sets. */
 export const Tooltips: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', gap: 24 }}>
+    <div className={st.pair}>
       <Select {...args} aria-label="Color" shortcut="⌘K" width="fit" options={COLORS} defaultSelectedKey="g" />
       <Select {...args}
         aria-label="Color"
@@ -204,7 +205,7 @@ export const AtTheTopEdge: Story = {
   // The premise is the window's edge: in the workshop document the list clamps to the page, not the trial.
   parameters: { forge: { isolate: 'asserts placement against the window edge' } },
   render: (args) => (
-    <div style={{ position: 'fixed', top: 4, left: 4 }}>
+    <div className={st.topEdge}>
       <Select {...args} aria-label="Month" width="fit" options={MONTHS} defaultSelectedKey="Nov" />
     </div>
   ),

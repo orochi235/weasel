@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { decimal } from '@weasel-js/quantity';
 import { PropertyField, PropertyList, PropertyPanel, PropertyRow } from '@weasel-js/ui/components/Properties';
+import st from './Properties.gallery.stories.module.css';
 
 // Titled "Gallery" so it sorts above PropertyPanel/PropertyList/Rows in the
 // sidebar alphabetically (G < P < R). Acts as the visual root of the section.
@@ -152,7 +153,7 @@ function CustomRows() {
           <button type="button">Tap to set</button>
         </PropertyRow>
         <PropertyRow label="Free-form" layout="inline">
-          <code style={{ background: 'rgba(0,0,0,0.35)', padding: '2px 6px', borderRadius: 3 }}>
+          <code className={st.code}>
             arbitrary children
           </code>
         </PropertyRow>
@@ -164,12 +165,7 @@ function CustomRows() {
 export const All: Story = {
   render: () => (
     <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: 16,
-        maxWidth: 1100,
-      }}
+      className={st.gallery}
     >
       <BlockRows />
       <InlineRows />

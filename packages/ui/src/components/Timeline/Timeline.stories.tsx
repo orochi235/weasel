@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { type Track, type TimelineHandle } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
 import { Timeline, type TimelineProps, AnimatedTimeline } from '@weasel-js/ui/components/Timeline';
+import st from './Timeline.stories.module.css';
 
 const meta: Meta<typeof Timeline> = {
   title: 'ui/Timeline',
@@ -18,7 +19,7 @@ function Harness({ args, initial }: { args: TimelineProps; initial: Track[] }): 
   return (
     // Fixed height is load-bearing: <Timeline> is a flex column with a
     // scrolling `.lanes`, so a container with no height renders as a strip.
-    <div style={{ height: 240, width: 640 }}>
+    <div className={st.frame}>
       <Timeline
         {...args}
         tracks={tracks}
@@ -81,7 +82,7 @@ function LiveHarness(): ReactElement {
     return () => tl.cancel();
   }, [animator]);
   return (
-    <div style={{ height: 240, width: 640 }}>
+    <div className={st.frame}>
       {handle ? (
         <AnimatedTimeline
           handle={handle}

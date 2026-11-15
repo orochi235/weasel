@@ -1,6 +1,7 @@
 import { useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Transport, type TransportProps } from '@weasel-js/ui/components/Transport';
+import st from './Transport.stories.module.css';
 
 const meta: Meta<typeof Transport> = {
   title: 'ui/Transport',
@@ -21,7 +22,7 @@ function Harness(
   const [backward, setBackward] = useState(args.reverse ?? false);
   const [playhead, setPlayhead] = useState(args.playhead);
   return (
-    <div style={{ width: 640 }}>
+    <div className={st.frame}>
       <Transport
         {...args}
         paused={paused}

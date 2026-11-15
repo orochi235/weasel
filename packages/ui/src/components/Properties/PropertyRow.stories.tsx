@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { PropertyRow, RowScope } from '@weasel-js/ui/components/Properties';
 import { SideBySide } from './storyLayouts';
+import st from './PropertyRow.stories.module.css';
 
 const meta: Meta<typeof PropertyRow> = {
   title: 'ui/Properties/PropertyRow',
@@ -33,7 +34,7 @@ export const WithReadout: Story = {
     children: <button type="button">Tap</button>,
   },
   render: (args) => (
-    <div style={{ width: 280 }}>
+    <div className={st.column}>
       <PropertyRow {...args} />
     </div>
   ),
@@ -64,7 +65,7 @@ export const WithError: Story = {
 export const Variants: Story = {
   tags: ['gallery'],
   render: (args) => (
-    <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div className={st.stack}>
       <PropertyRow {...args} label="Default" readout="42">
         <input type="text" defaultValue="hello" />
       </PropertyRow>
@@ -84,7 +85,7 @@ export const Variants: Story = {
 export const AutoValue: Story = {
   render: (args) => (
     // Headroom for the tooltip, which opens above its row.
-    <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 80 }}>
+    <div className={st.stackBelowTips}>
       <RowScope autoValue="13.3333" onAutoChange={() => {}}>
         <PropertyRow {...args}
           label="Gap"

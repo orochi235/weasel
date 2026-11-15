@@ -1,0 +1,35 @@
+.strip {
+  margin-bottom: var(--wzl-space-8);
+}
+
+.label {
+  margin-bottom: var(--wzl-space-2);
+  font-size: var(--wzl-font-size-xs);
+}
+
+.ramp {
+  display: flex;
+  height: 32px;
+  overflow: hidden;
+  border-radius: var(--wzl-radius-sm);
+}
+
+.note {
+  font-size: var(--wzl-font-size-xs);
+  color: var(--wzl-fg-muted);
+}
+
+.space {
+  margin-bottom: 24px;
+}
+
+.heading {
+  margin-bottom: var(--wzl-space-4);
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
+}
+
+.step {
+  flex: 1;
+  background: var(--step);
+}

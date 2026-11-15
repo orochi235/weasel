@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
+import st from './MenuButton.stories.module.css';
 
 const meta: Meta<typeof MenuButton> = {
   title: 'ui/MenuButton',
@@ -51,7 +52,7 @@ export const ReadsItsValue: Story = {
  *  longer hint for a label too terse to say what the menu holds. */
 export const Tooltips: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', gap: 12 }}>
+    <div className={st.row}>
       <MenuButton {...args} label="New" shortcut="⌘N" items={INSTRUMENTS} onAction={() => {}} />
       <MenuButton {...args} label="Debug" tooltip="Debug surfaces" items={INSTRUMENTS} onAction={() => {}} />
       <MenuButton {...args} label="Export" disabled disabledReason="Nothing to export" items={INSTRUMENTS} onAction={() => {}} />

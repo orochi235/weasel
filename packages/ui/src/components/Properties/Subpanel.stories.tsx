@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { stereo } from '@weasel-js/ui/components/MotifFrame';
 import { PropertyField, PropertyList, PropertyPanel, Subpanel } from '@weasel-js/ui/components/Properties';
+import st from './Subpanel.stories.module.css';
 
 const meta: Meta<typeof Subpanel> = {
   title: 'ui/Properties/Subpanel',
@@ -13,7 +14,7 @@ type Story = StoryObj<typeof Subpanel>;
 export const Basic: Story = {
   args: { title: 'Bubbles' },
   render: (args) => (
-    <div style={{ width: 320 }}>
+    <div className={st.column}>
       <PropertyPanel title="Tail">
         <PropertyList>
           <PropertyField kind="number" control="slider" label="Length" value={60} min={8} max={220} unit="px" onChange={() => {}} />
@@ -31,7 +32,7 @@ export const Basic: Story = {
 export const InPairs: Story = {
   args: { title: 'Bubbles' },
   render: (args) => (
-    <div style={{ width: 320 }}>
+    <div className={st.column}>
       <PropertyPanel title="Tail">
         <PropertyList pack="pairs">
           <PropertyField kind="number" control="slider" label="Angle" value={115} min={0} max={359} unit="°" onChange={() => {}} />
@@ -49,7 +50,7 @@ export const InPairs: Story = {
 /** A stance, grade or tint colors the title and the rule. */
 export const Tinted: Story = {
   render: (args) => (
-    <div style={{ width: 320 }}>
+    <div className={st.column}>
       <PropertyPanel title="Stances">
         <PropertyList>
           <Subpanel {...args} title="Tint 0" tint={0}>
@@ -69,7 +70,7 @@ export const Tinted: Story = {
 export const Collapsible: Story = {
   args: { title: 'Bubbles', collapsible: true },
   render: (args) => (
-    <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div className={st.stack}>
       <PropertyPanel title="Tail" stance="clarify" tint={0} collapsible>
         <PropertyList pack="pairs">
           <PropertyField kind="number" control="slider" label="Angle" value={115} min={0} max={359} unit="°" onChange={() => {}} />

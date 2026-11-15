@@ -1,0 +1,21 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  width: 260px;
+}
+
+.label {
+  flex: 0 0 90px;
+  font-size: var(--wzl-font-size-xs);
+}
+
+.field {
+  flex: 0 0 110px;
+}
+
+.grid {
+  display: grid;
+  gap: var(--wzl-space-4);
+  padding: var(--wzl-space-8);
+}

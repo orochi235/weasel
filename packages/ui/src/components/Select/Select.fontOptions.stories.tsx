@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { Select } from '@weasel-js/ui/components/Select';
 import { useFontFamilyOptions, useFontWeightOptions } from '@weasel-js/ui/components/FontOptions';
+import st from './Select.fontOptions.stories.module.css';
 
 function FontPickers({ initialFamily }: { initialFamily?: string }) {
   const [family, setFamily] = useState<string | undefined>(initialFamily);
@@ -9,7 +10,7 @@ function FontPickers({ initialFamily }: { initialFamily?: string }) {
   const familyOptions = useFontFamilyOptions({ value: family, weight });
   const weightOptions = useFontWeightOptions({ family, value: weight });
   return (
-    <div style={{ display: 'flex', gap: 8 }}>
+    <div className={st.row}>
       <Select<string> aria-label="Font" options={familyOptions} selectedKey={family ?? null} onSelectionChange={setFamily} />
       <Select<string>
         aria-label="Weight"

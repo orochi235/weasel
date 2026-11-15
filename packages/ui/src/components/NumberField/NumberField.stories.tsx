@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { NumberField } from '@weasel-js/ui/components/NumberField';
+import st from './NumberField.stories.module.css';
 
 const meta: Meta<typeof NumberField> = {
   title: 'ui/NumberField',
@@ -20,19 +21,19 @@ export const Disabled: Story = { args: { label: 'Locked', disabled: true, defaul
  *  `--wzl-number-field-width`. The third is the default `fill`. */
 export const FitWidth: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 480 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className={st.stackWide}>
+      <div className={st.row}>
         <NumberField {...args} aria-label="Fit" width="fit" defaultValue={120} />
         <NumberField {...args}
           aria-label="Narrow fit"
           width="fit"
           hideSteppers
           defaultValue={72}
-          style={{ '--wzl-number-field-width': '5ch' } as CSSProperties}
+          className={st.fiveCh}
         />
         <span>tail</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className={st.row}>
         <NumberField {...args} aria-label="Fills the row" defaultValue={120} />
         <span>tail</span>
       </div>
@@ -44,7 +45,7 @@ export const FitWidth: Story = {
  *  takes the rest of the row; fitted, it keeps its own width. */
 export const LabelBeside: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: 320 }}>
+    <div className={st.column}>
       <NumberField {...args} label="Width" orientation="row" defaultValue={120} />
       <NumberField {...args} label="Width" orientation="row" width="fit" defaultValue={120} />
       <NumberField {...args} label="Width" orientation="row" description="In document pixels." defaultValue={120} />

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { Header } from 'react-aria-components';
 import { RailItem, RailList, RailListBox, RailName, RailOption, RailSection } from '@weasel-js/ui/components/RailList';
+import st from './RailList.stories.module.css';
 
 const meta: Meta<typeof RailList> = {
   title: 'ui/RailList',
@@ -17,7 +18,7 @@ export const Pages: Story = {
   render: function Render() {
     const [open, setOpen] = useState(PAGES[0]);
     return (
-      <div style={{ width: 180 }}>
+      <div className={st.rail}>
         <RailList aria-label="Pages">
           {PAGES.map((page) => (
             <RailItem key={page} current={page === open} onClick={() => setOpen(page)}>
@@ -40,7 +41,7 @@ export const Sections: Story = {
   render: function Render() {
     const [selected, setSelected] = useState('Export');
     return (
-      <div style={{ width: 180 }}>
+      <div className={st.rail}>
         <RailListBox aria-label="Assets" selectionMode="single" disallowEmptySelection selectedKeys={[selected]}
           onSelectionChange={(keys) => { if (keys !== 'all') setSelected(String([...keys][0])); }}>
           {SECTIONS.map(([title, ids]) => (

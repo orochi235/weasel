@@ -1,0 +1,23 @@
+.stackWide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-6);
+  width: 480px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+}
+
+.fiveCh {
+  --wzl-number-field-width: 5ch;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-8);
+  width: 320px;
+}

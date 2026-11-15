@@ -4,6 +4,7 @@ import { declaredToolShortcuts, DRAW_TOOLS, SHAPE_TOOLS, withoutTools, type Tool
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { ToolPalette, type ToolPaletteProps } from '@weasel-js/ui/components/ToolPalette';
 import { icon } from '../../icons.gen';
+import st from './ToolPalette.stories.module.css';
 
 const meta: Meta<typeof ToolPalette> = {
   title: 'ui/ToolPalette',
@@ -81,7 +82,7 @@ function SplitDemo({ args }: { args: Story['args'] }) {
   const [active, setActive] = useState<string>('select');
   const tools = makeFakeToolsApi(fullList(), active, setActive);
   return (
-    <div style={{ display: 'flex', gap: 16 }}>
+    <div className={st.split}>
       <ToolPalette {...args} tools={tools} include={(t) => !DRAWING.has(t.id)} />
       <ToolPalette {...args} tools={tools} include={(t) => DRAWING.has(t.id)} aria-label="Drawing tools" />
     </div>
