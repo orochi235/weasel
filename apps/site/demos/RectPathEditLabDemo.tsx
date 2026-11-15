@@ -18,7 +18,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { createEmitter } from '@weasel-js/registry';
+import { createPathEditHost } from '@weasel-js/path-tools';
 import { Button } from '@weasel-js/ui/components/Button';
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import s from './RectPathEditLabDemo.module.css';
@@ -52,21 +52,6 @@ const createLabScene = () => {
   scene.setSelection([FIRST]);
   return scene;
 };
-
-/** Which path is open in path edit, held here so the panel can open and close it. */
-function createHost(initial: string | null): PathEditHost & { subscribe(l: () => void): () => void } {
-  let id = initial;
-  const changed = createEmitter();
-  return {
-    editingId: () => id,
-    setEditingId(next) {
-      if (next === id) return;
-      id = next;
-      changed.emit();
-    },
-    subscribe: changed.subscribe,
-  };
-}
 
 /** Re-renders on every scene change, selection included. */
 function useSceneTick(scene: LabScene, host: { subscribe(l: () => void): () => void }) {
@@ -107,7 +92,8 @@ function Panel({ scene, host }: { scene: LabScene; host: PathEditHost }) {
 
 function RectPathEditTrial({ ctx }: { ctx: RenderContext<State, unknown> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const [host] = useState(() => createHost(FIRST));
+  // Held beside the trial so the panel can read which path is open.
+  const [host] = useState(() => createPathEditHost({ id: FIRST }));
   useSceneTick(scene, host);
   const redrawOn = useMemo(() => [host], [host]);
   return (
