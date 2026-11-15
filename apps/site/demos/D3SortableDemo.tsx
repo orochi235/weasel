@@ -25,9 +25,6 @@ type LayerId = 'bars';
 interface Pose { x: number; y: number; width: number; height: number }
 interface BarData { color: string; value: number }
 
-// 12-step rainbow palette spanning the hue wheel. `parseColor` accepts
-// `hsl(...)` strings directly, so the palette is one formula rather than a
-// dozen precomputed hex values.
 const INITIAL: Item[] = Array.from({ length: 12 }, (_, i) => ({
   id: `bar-${i}`,
   value: i + 1,
@@ -81,13 +78,11 @@ function D3SortableDemoInner() {
   const animator = useAnimator();
   const firstRunRef = useRef(true);
 
-  // Drive the scene from `items` via d3Bind. First run: no transition (snap in).
-  // Subsequent runs: transition the diff with a per-item delay for stagger.
+  // The first join snaps in; each later one transitions with a per-item stagger.
   useEffect(() => {
     const binding = d3Bind(scene, items, {
       key: (d) => d.id,
       animator,
-      // RECT_POSE_DESCRIPTOR is the default; no geometry override needed.
     })
       .pose(poseFor)
       .data((d) => ({ color: d.color, value: d.value }));
