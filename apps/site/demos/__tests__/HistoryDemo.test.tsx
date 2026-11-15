@@ -7,7 +7,7 @@ afterEach(cleanup);
 describe('HistoryDemo', () => {
   it('shows a merged recolor as one entry with its push count, in the main stack and in a session', () => {
     render(<HistoryDemo />);
-    const slider = screen.getByRole('slider');
+    const slider = screen.getByRole('slider', { name: 'hue' });
     for (const hue of [40, 60, 80]) fireEvent.change(slider, { target: { value: String(hue) } });
     expect(screen.getAllByText('Recolor c1')).toHaveLength(1);
     expect(screen.getByText('×3')).toBeTruthy();

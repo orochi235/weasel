@@ -15,7 +15,7 @@ describe('LayeredCurveDemo', () => {
       </Profiler>,
     );
     expect(commits).toBe(1);
-    fireEvent.change(screen.getByRole('slider'), { target: { value: '0.4' } });
+    fireEvent.change(screen.getByRole('slider', { name: 'bevel width (b):' }), { target: { value: '0.4' } });
     expect(commits).toBe(2);
     expect(anchors(container, 'bevel').at(-1)).toBe('Point 3 at 0.4, 0.78');
     expect(anchors(container, 'spline')[0]).toBe('Point 1 at 0.4, 0.78');

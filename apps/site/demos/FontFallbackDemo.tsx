@@ -8,6 +8,7 @@ import {
   resolveFontVariant, subscribeGlyphReady, glyphGeneration,
   type FontFallbackPolicy, type ResolveResult,
 } from '@weasel-js/font';
+import { Field } from '@weasel-js/ui/components/Field';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import s from './FontFallbackDemo.module.css';
 import { DemoStage } from './DemoStage';
@@ -76,16 +77,14 @@ export function FontFallbackDemo() {
 
   return (
     <div className={s.demo}>
-      <div className={s.controls}>
-        <span className={s.label}>Unregistered families</span>
+      <Field orientation="row" className={s.controls} label="Unregistered families">
         <SegmentedBar
           items={POLICIES}
           value={policy}
           onChange={(v) => v && setPolicy(v)}
-          aria-label="Fallback policy"
           size="sm"
         />
-      </div>
+      </Field>
       <DemoStage width={W} height={H}>
         <SceneCanvas className="ckd-canvas" scene={scene} />
       </DemoStage>

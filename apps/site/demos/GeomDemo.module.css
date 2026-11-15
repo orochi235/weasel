@@ -16,11 +16,6 @@
   width: 200px;
 }
 
-.readout {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  color: var(--wzl-fg-muted);
-}
-
 .table {
   border-collapse: collapse;
 }

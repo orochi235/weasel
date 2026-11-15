@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   CustomLayer, FunctionLayer, LayeredCurveEditor, type ControlPoint, type CurveLayer, type FunctionLayerState,
 } from '@weasel-js/ui/components/CurveEditor';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './LayeredCurveDemo.module.css';
 
@@ -134,8 +135,7 @@ export function LayeredCurveDemo() {
 
   return (
     <div className={s.demo}>
-      <label className={s.control}>
-        bevel width (b):
+      <Field orientation="row" className={s.control} label="bevel width (b):" output={<span className={s.readout}>{b.toFixed(2)}</span>}>
         <InlineRange
           min={0.05}
           max={0.95}
@@ -144,8 +144,7 @@ export function LayeredCurveDemo() {
           onChange={(e) => moveSeam(Number(e.currentTarget.value))}
           className={s.slider}
         />
-        <output className={s.readout}>{b.toFixed(2)}</output>
-      </label>
+      </Field>
       <LayeredCurveEditor
         width={PLOT_W}
         height={PLOT_H}

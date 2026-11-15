@@ -11,10 +11,6 @@
   gap: var(--wzl-space-4);
 }
 
-.label {
-  color: var(--wzl-fg-muted);
-}
-
 .readout {
   border-collapse: collapse;
   width: 100%;

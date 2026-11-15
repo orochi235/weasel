@@ -2,6 +2,7 @@ import { useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { createHistory, type History, type HistoryEntry, type Journal, type Op } from '@weasel-js/history';
 import { Disabled } from '@weasel-js/ui/components/Disabled';
 import { HistoryList } from '@weasel-js/ui/components/HistoryList';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import s from './HistoryDemo.module.css';
@@ -152,8 +153,7 @@ export function HistoryDemo() {
       <div className={s.controls}>
         <Button onClick={add}>Add</Button>
         <Button onClick={remove} disabled={!chip}>Remove</Button>
-        <label className="ckd-field">
-          hue
+        <Field orientation="row" className="ckd-field" label="hue" output={<span className={s.readout}>{chip ? chip.hue : ''}</span>}>
           <InlineRange
             min={0}
             max={359}
@@ -162,8 +162,7 @@ export function HistoryDemo() {
             onChange={(e) => recolor(Number(e.currentTarget.value))}
             onPointerUp={() => active.seal()}
           />
-          <span className={s.readout}>{chip ? chip.hue : ''}</span>
-        </label>
+        </Field>
         <span className={s.sep} />
         <Button onClick={() => step('undo')} disabled={!active.canUndo()}>Undo</Button>
         <Button onClick={() => step('redo')} disabled={!active.canRedo()}>Redo</Button>

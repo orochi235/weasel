@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import { blur, vignette, type DrawCommand, type Effect } from '@weasel-js/renderer';
-import num from '@weasel-js/theme/numeric.module.css';
+import { Field } from '@weasel-js/ui/components/Field';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
@@ -90,8 +90,7 @@ export function EffectsDemo() {
         />
       </DemoStage>
       <div className="ckd-controls">
-        <label className="ckd-control">
-          Blur radius
+        <Field orientation="row" className="ckd-control" label="Blur radius" output={radius}>
           <InlineRange
             min={0}
             max={24}
@@ -99,8 +98,7 @@ export function EffectsDemo() {
             value={radius}
             onChange={(e) => setRadius(Number(e.target.value))}
           />
-          <output className={num.numeric}>{radius}</output>
-        </label>
+        </Field>
         <Checkbox isSelected={vignetted} onChange={setVignetted}>Vignette</Checkbox>
       </div>
     </div>
