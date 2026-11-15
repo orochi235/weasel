@@ -77,12 +77,6 @@ type Rect = { x: number; y: number; width: number; height: number };
 const ACCENT = '#8b5cf6';
 const INK = '#5a4632';
 
-/**
- * Three app-defined modes over one canvas. The registry is the only mode
- * state: the buttons, the number keys and Escape all call `setMode`, and every
- * consequence — which tools work, which chrome shows, what dims, what the
- * decoration layer paints — is read back from `registry.current()`.
- */
 export function ModesDemo() {
   const scene = useScene({ items: SHAPES });
   const [tools, setTools] = useState<ToolsApi | null>(null);
