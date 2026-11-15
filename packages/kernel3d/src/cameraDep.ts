@@ -30,7 +30,7 @@ export interface Camera3dDep {
   home?(): Camera3d;
 }
 
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface DepSchema {
     camera3d?: Camera3dDep;
   }

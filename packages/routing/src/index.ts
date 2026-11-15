@@ -35,8 +35,9 @@ import type { ActionTuning } from './interactions/actions/tuning';
  * }
  * ```
  *
- * `@weasel-js/core` merges the kit's own deps this way and re-exports
- * `DepSchema`, so a consumer adds its own against `'@weasel-js/core'`.
+ * `@weasel-js/core` merges the kit's own deps this way, and a consumer adds
+ * its own the same way, against `'@weasel-js/routing'` even where it imports
+ * `DepSchema` from core's re-export.
  */
 export interface DepSchema {
   /** Currently active tool id + hotkey-hold stack. */
@@ -60,13 +61,12 @@ export interface DepSchema {
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */
 export type DepName = keyof DepSchema;
 
-// Declared HERE, in the barrel, rather than in a module the barrel re-exports.
-// A `declare module` augmentation aimed at a module that only *re-exports* an
-// interface declares a fresh one in that module's scope instead of merging, and
-// the shadowed alias then poisons every `DepSchema[K]` back down the chain
-// (TS2536, reported against routing's own source). Consumers augment
-// `'@weasel-js/core'`, core re-exports from here, and that is one hop too many
-// unless the declaration sits at the export site.
+// Declared HERE, in the barrel, so `declare module '@weasel-js/routing'` reaches
+// the declaration itself. An augmentation aimed at a module that re-exports one
+// of these (`'@weasel-js/core'`) merges into a copy of it, apart from the copy the
+// kit's own augmentations of routing build; which one a reference sees depends on
+// the order files enter the program, so entries go missing in one program and not
+// another (2026-11-15). Every augmentation targets `'@weasel-js/routing'`.
 
 
 // ─── action param schema ──────────────────────────────────────────────────
@@ -80,7 +80,7 @@ export type DepName = keyof DepSchema;
  * {@link DepSchema}:
  *
  * ```ts
- * declare module '@weasel-js/core' {
+ * declare module '@weasel-js/routing' {
  *   interface ActionParamSchema { sand: { radiusPx: number } }
  * }
  * ```

@@ -9,7 +9,7 @@ export const PAGE_ACTIONS = {
   previous: 'page.previous',
 } as const;
 
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface ActionParamSchema {
     /** The page's id; the shown page when absent. */
     'page.delete': { page?: string };

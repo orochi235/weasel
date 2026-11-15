@@ -4,7 +4,7 @@
  */
 import { defineAction } from '@weasel-js/core';
 
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface ActionParamSchema {
     'typetest.stamp': { size: number };
   }

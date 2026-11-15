@@ -316,6 +316,19 @@ export default [
   },
   {
     /**
+     * Routing declares these schemas and core re-exports them. An augmentation of the re-export merges
+     * into a copy apart from the kit's own entries, and which copy a reference sees depends on file order.
+     */
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: "TSModuleDeclaration[id.value='@weasel-js/core'] TSInterfaceDeclaration[id.name=/^(DepSchema|ActionParamSchema|OverlaySchema)$/]",
+        message: "Augment '@weasel-js/routing', which declares this interface: an augmentation of core's re-export merges into a separate copy.",
+      }],
+    },
+  },
+  {
+    /**
      * A context keeps the attributes of whoever opens it first, and the renderer refuses one without a
      * stencil buffer, so a pixel read that comes before the app's first paint breaks the canvas for good.
      */

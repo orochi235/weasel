@@ -29,7 +29,7 @@ To add a consumer-specific dep, you need three small pieces:
 // myapp/src/colorContext/depSchemaAugmentation.ts
 import type { ColorContextValue } from './ColorContext';
 
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface DepSchema {
     color: ColorContextValue;
   }

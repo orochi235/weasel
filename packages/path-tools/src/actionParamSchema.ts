@@ -26,7 +26,7 @@ export type EditPathEffectParams = TweenParams & PathEffectParams<BendAlongEffec
   & PathEffectParams<RoughenEffect> & PathEffectParams<ZigzagEffect> & PathEffectParams<PuckerBloatEffect>
   & { ids?: readonly string[]; kind?: PathEffect['kind'] };
 
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface ActionParamSchema {
     tween: TweenParams;
     bendAlong: PathEffectParams<BendAlongEffect>;
@@ -61,4 +61,4 @@ declare module '@weasel-js/core' {
   }
 }
 
-export type { ActionParamSchema } from '@weasel-js/core';
+export type { ActionParamSchema } from '@weasel-js/routing';

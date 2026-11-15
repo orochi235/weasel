@@ -52,7 +52,7 @@ export interface ActionOf<Id extends string, P = ActionParamsOf<Id>> extends Omi
  * `action` as an {@link Action}, its members typed by the params `ActionParamSchema` gives its id:
  *
  * ```ts
- * declare module '@weasel-js/core' {
+ * declare module '@weasel-js/routing' {
  *   interface ActionParamSchema { 'review.stamp': { size: number } }
  * }
  * const stamp = defineAction({

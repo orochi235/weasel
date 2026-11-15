@@ -3,7 +3,7 @@
  * they name. The 2D canvas's own entries — booleans, outlines, anchor editing,
  * ingestion, preview paths, notices — are in `depSchema.ts`, which re-exports
  * these. Consumer apps add their own entries by declaration-merging against
- * `'@weasel-js/core'` in their own files.
+ * `'@weasel-js/routing'` in their own files.
  */
 
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -108,7 +108,7 @@ export interface ResizePolicy<TPose> extends GestureLifecycleOptions {
  * `@weasel-js/routing`, which knows that an action names its dependencies but
  * owns only `activeTool` among them; these entries are the kit's, merged in from
  * outside exactly the way a consumer merges its own
- * (`declare module '@weasel-js/core'`).
+ * (`declare module '@weasel-js/routing'`).
  */
 declare module '@weasel-js/routing' {
   interface DepSchema {

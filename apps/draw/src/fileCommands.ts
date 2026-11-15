@@ -17,7 +17,7 @@ export const FILE_ACTIONS = {
   exportSelection: 'file.exportSelection',
 } as const;
 
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface ActionParamSchema {
     /** The paper size's key; the shown page's size when absent. */
     'file.new': { size?: string };

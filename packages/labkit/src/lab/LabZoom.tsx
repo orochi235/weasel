@@ -25,7 +25,7 @@ import { useLabCommands } from './LabContext';
 
 const ZOOM_ID = 'lab.zoom';
 
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface ActionParamSchema {
     'lab.zoom': { kind?: 'in' | 'out' | 'reset' };
   }

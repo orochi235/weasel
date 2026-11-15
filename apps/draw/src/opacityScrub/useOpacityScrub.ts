@@ -19,7 +19,7 @@ const FINE_STEP = 0.01;
 /** The wheel's action while O is held. */
 export const OPACITY_SCRUB_NUDGE = 'draw.opacityScrub.nudge';
 
-declare module '@weasel-js/core' {
+declare module '@weasel-js/routing' {
   interface ActionParamSchema {
     /** How far one notch of the wheel moves the opacity, and the wheel's turn, which the dispatcher hands it. */
     'draw.opacityScrub.nudge': { step?: number; deltaX?: number; deltaY?: number };
