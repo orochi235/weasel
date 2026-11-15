@@ -11,6 +11,7 @@
 import { useMemo } from 'react';
 import { defineAction, defineTool, type Action, type InvocationCtx, type Tool } from '@weasel-js/routing';
 import type { DollyParams } from './actionParamSchema';
+import { DOLLY_PINCH, DOLLY_TRACKPAD_PINCH, DOLLY_WHEEL, HOME_DOUBLE_CLICK, PINCH_DOLLY_TOUCH } from './cameraBindings';
 import { dollyToward, orbitBy, panBy, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 import { icon } from './icons.gen';
@@ -156,12 +157,7 @@ export const dollyAction: Action = defineAction({
   label: 'Dolly',
   icon: icon('dollyIn'),
   group: 'viewport',
-  defaultBinding: [
-    { spec: { kind: 'wheel' }, opts: { id: 'camera.dolly.wheel' } },
-    // Unbound, a trackpad pinch zooms the page instead.
-    { spec: { kind: 'wheel', mods: { ctrl: true } }, opts: { id: 'camera.dolly.trackpadPinch' } },
-    { spec: { kind: 'pinch' }, opts: { id: 'camera.dolly.pinch' } },
-  ],
+  defaultBinding: [DOLLY_WHEEL, DOLLY_TRACKPAD_PINCH, DOLLY_PINCH],
   requires: ['camera3d', 'kitSettings'],
   invoker: {
     timing: 'immediate',
@@ -188,7 +184,7 @@ export const pinchDollyAction: Action = {
   id: 'camera.pinchDolly',
   label: 'Pinch Dolly',
   group: 'viewport',
-  defaultBinding: [{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'camera.pinchDolly.multiTouch' } }],
+  defaultBinding: [PINCH_DOLLY_TOUCH],
   requires: ['camera3d'],
   invoker: {
     timing: 'ongoing',
@@ -220,7 +216,7 @@ export const homeAction: Action = {
   label: 'Reset Camera',
   icon: icon('home'),
   group: 'viewport',
-  defaultBinding: [{ spec: { kind: 'doubleClick' }, opts: { id: 'camera.home.doubleClick' } }],
+  defaultBinding: [HOME_DOUBLE_CLICK],
   requires: ['camera3d'],
   invoker: {
     timing: 'immediate',

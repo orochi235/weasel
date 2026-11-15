@@ -1,5 +1,4 @@
 import {
-  type Action,
   type ActionsRegistry,
   contextMenuAction,
   type Tool,
@@ -13,13 +12,9 @@ import type { Vec3 } from '@weasel-js/geom/3d';
 import {
   type Camera3d,
   type Camera3dDep,
+  cameraRigActions,
   clampCamera,
-  dollyAction,
-  homeAction,
   type OrbitLimits,
-  orbitAction,
-  panAction,
-  pinchDollyAction,
 } from '@weasel-js/kernel3d';
 import { useKitSettings } from '@weasel-js/react';
 import {
@@ -37,12 +32,7 @@ import { LabContextMenusContext } from '../lab/labContextMenus';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { CameraScope } from './CameraInput';
 import { useCameraWheelSlot } from './CameraWheelContext';
-import {
-  type CameraGestures,
-  type ResolvedCameraGestures,
-  resolveGestures,
-  touchMode,
-} from './cameraGestures';
+import { type CameraGestures, resolveGestures, touchMode } from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
 import { clientSize } from './hostBox';
 import { orbitZoomView } from './orbitZoom';
@@ -190,56 +180,6 @@ const NO_LIMITS: Partial<OrbitLimits> = {};
 /** A 3D host's world is its client space; kernel3d's deps cast rays from it. */
 const IDENTITY = (x: number, y: number) => ({ x, y });
 
-/** kernel3d's camera actions, bound to the gestures the orbit takes. */
-function orbitActions({
-  drag,
-  wheel,
-  trackpadPinch,
-  touchPinch,
-  homes,
-  menu,
-}: Omit<ResolvedCameraGestures, 'tap' | 'home'> & { homes: boolean; menu: boolean }): Action[] {
-  const wheelSpec =
-    wheel === 'plain'
-      ? [{ spec: { kind: 'wheel' }, opts: { id: 'camera.dolly.wheel' } }]
-      : wheel === 'mod'
-        ? [{ spec: { kind: 'wheel', mods: { mod: true } }, opts: { id: 'camera.dolly.modWheel' } }]
-        : [];
-  // The trackpad's pinch: ctrl+wheel, and WebKit's gesture events.
-  const padPinch = trackpadPinch
-    ? [
-        {
-          spec: { kind: 'wheel', mods: { ctrl: true } },
-          opts: { id: 'camera.dolly.trackpadPinch' },
-        },
-        { spec: { kind: 'pinch' }, opts: { id: 'camera.dolly.pinch' } },
-      ]
-    : [];
-  const dollyBindings = [...wheelSpec, ...padPinch];
-  return [
-    ...(menu ? [contextMenuAction] : []),
-    ...(drag
-      ? [
-          {
-            ...orbitAction,
-            defaultBinding: [{ spec: { kind: 'drag' }, opts: { id: 'camera.orbit.drag' } }],
-          } as Action,
-          {
-            ...panAction,
-            defaultBinding: [
-              { spec: { kind: 'drag', mods: { shift: true } }, opts: { id: 'camera.pan.drag' } },
-            ],
-          } as Action,
-        ]
-      : []),
-    ...(dollyBindings.length > 0
-      ? [{ ...dollyAction, defaultBinding: dollyBindings as Action['defaultBinding'] }]
-      : []),
-    ...(touchPinch ? [pinchDollyAction] : []),
-    ...(homes ? [homeAction] : []),
-  ];
-}
-
 function OrbitDispatch({
   hostRef,
   view,
@@ -308,7 +248,10 @@ function OrbitDispatch({
   useDepSource('menuHost', () => labMenu ?? undefined);
 
   const actions = useMemo(
-    () => orbitActions({ drag, wheel, trackpadPinch, touchPinch, homes, menu: labMenu !== null }),
+    () => [
+      ...(labMenu !== null ? [contextMenuAction] : []),
+      ...cameraRigActions({ drag, wheel, trackpadPinch, touchPinch, home: homes }),
+    ],
     [drag, wheel, trackpadPinch, touchPinch, homes, labMenu],
   );
 
