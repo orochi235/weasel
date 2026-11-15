@@ -13,6 +13,7 @@ import type { Action } from '../actions/action';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { Tool } from '../../tools/types';
 import type { InputEvent } from './matcher';
+import type { ActionParamsOf } from '../actions/actionIds';
 
 function makeRegistry(actions: Action[]): ActionsRegistry {
   const map = new Map(actions.map((a) => [a.id, a]));
@@ -23,7 +24,7 @@ function makeRegistry(actions: Action[]): ActionsRegistry {
     tune: vi.fn().mockReturnValue(() => {}),
     overrideBindings: vi.fn().mockReturnValue(() => {}),
     bindingOverrides: () => new Map(),
-    paramsOf: (_id: string, given?: Record<string, unknown>) => ({ ...given }),
+    paramsOf: <Id extends string>(_id: Id, given?: Partial<ActionParamsOf<Id>>) => ({ ...given }) as Partial<ActionParamsOf<Id>>,
     list: () => Array.from(map.values()),
     trigger: vi.fn().mockReturnValue(false),
     preview: vi.fn(() => () => {}),

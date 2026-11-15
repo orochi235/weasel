@@ -93,10 +93,10 @@ export interface KeyReach {
  *    by the dispatcher (`cancelAll`, or a later `beginUiOngoing` for the same
  *    action). `update` and `end` do nothing from then on.
  */
-export interface UiOngoingControl {
+export interface UiOngoingControl<P = Record<string, unknown>> {
   readonly gestureId: string;
   readonly active: boolean;
-  update(params?: Record<string, unknown>): void;
+  update(params?: P): void;
   end(reason: 'commit' | 'cancel'): void;
 }
 

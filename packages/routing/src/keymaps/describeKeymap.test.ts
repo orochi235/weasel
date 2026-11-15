@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { formatShortcut, held, key } from '@weasel-js/gestures';
 import type { Action } from '../interactions/actions/action';
 import { resolveBindingOverrides } from '../interactions/actions/bindingOverrides';
+import { dynamicActionId } from '../interactions/actions/actionIds';
 import { describeKeymap, keymapShortcuts } from './describeKeymap';
 import type { KeymapDef } from './keymapContribution';
 import type { OpenKeymap } from './keymapStack';
@@ -49,8 +50,8 @@ describe('describeKeymap', () => {
       { key: 'y', label: 'Flip Vertical', params: { axis: 'y' } },
     ] };
     const d = describeKeymap({ ...level, bindings: [
-      { spec: key('H'), actionId: 'flip', opts: { params: { axis: 'x' } } },
-      { spec: key('V'), actionId: 'flip', opts: { params: { axis: 'y', pivot: 'pointer' } } },
+      { spec: key('H'), actionId: dynamicActionId('flip'), opts: { params: { axis: 'x' } } },
+      { spec: key('V'), actionId: dynamicActionId('flip'), opts: { params: { axis: 'y', pivot: 'pointer' } } },
     ] }, [flip]);
     expect(d.rows.map((r) => r.label)).toEqual(['Close', 'Flip Horizontal', 'Flip Vertical']);
   });

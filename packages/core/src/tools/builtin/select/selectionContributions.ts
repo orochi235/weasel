@@ -6,6 +6,7 @@
  * `resize` and `rotate` presets.
  */
 import type { BindingOptions, GestureBinding } from '@weasel-js/routing';
+import type { MoveParams, RotateParams } from '../../../interactions/actions/actionParamSchema';
 import { isResizeHandle, isRotateHandle, isPathEditPart } from '@weasel-js/routing';
 import { hitPredicate } from '@weasel-js/gestures';
 import { SNAP_ROLE_MODS } from 'domains/snap/roles';
@@ -42,9 +43,9 @@ export function selectionMoveBindings<TPose>(
   // Shared move-binding opts (params + behaviors). Applied to
   // both the selected-body and unselected-body move bindings so a
   // first-touch drag and a re-drag commit identically.
-  const moveOpts: BindingOptions = (() => {
+  const moveOpts: BindingOptions<MoveParams> = (() => {
     const move = options.move ?? {};
-    const params: Record<string, unknown> = gestureLifecycleParams({ ...move, label: move.moveLabel });
+    const params: MoveParams = gestureLifecycleParams({ ...move, label: move.moveLabel });
     if (options.reparentOnDrop && options.reparentOnDrop !== 'off') params.reparentOnDrop = options.reparentOnDrop;
     if (move.expandIds) params.expandIds = move.expandIds;
     return {
@@ -54,7 +55,7 @@ export function selectionMoveBindings<TPose>(
     };
   })();
   const cloneBehaviors = (options.move?.behaviors ?? []).flatMap((b) => (b.clone ? [b.clone] : []));
-  const cloneOpts = (id: string): BindingOptions => ({
+  const cloneOpts = (id: string): Omit<BindingOptions, 'params'> => ({
     id,
     ...(cloneBehaviors.length ? { behaviors: cloneBehaviors as BindingOptions['behaviors'] } : {}),
   });
@@ -128,9 +129,9 @@ export function selectionRotateBindings<TPose>(
   options: SelectionRotateOptions<TPose> = {},
 ): GestureBinding[] {
   const rotate = options.rotate ?? {};
-  const params: Record<string, unknown> = gestureLifecycleParams({ ...rotate, label: rotate.rotateLabel });
+  const params: RotateParams = gestureLifecycleParams({ ...rotate, label: rotate.rotateLabel });
   if (rotate.pivot) params.pivot = rotate.pivot;
-  const opts: BindingOptions = {
+  const opts: BindingOptions<RotateParams> = {
     id: 'selection.rotate.handle',
     ...(Object.keys(params).length > 0 ? { params } : {}),
     ...(rotate.behaviors?.length ? { behaviors: rotate.behaviors as BindingOptions['behaviors'] } : {}),

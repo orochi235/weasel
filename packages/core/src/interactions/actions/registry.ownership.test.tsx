@@ -5,6 +5,7 @@ import type { UiOngoingControl } from '@weasel-js/routing';
 import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { createDispatcher } from '@weasel-js/routing';
+import { dynamicActionId } from '@weasel-js/routing';
 
 function wrap({ children }: { children: ReactNode }) {
   return <ActionsProvider>{children}</ActionsProvider>;
@@ -28,7 +29,7 @@ function setup() {
   /** `begin` only delegates when a dispatcher owns the slot. */
   const slotIsWired = () => {
     let ctrl: UiOngoingControl | null = null;
-    act(() => { ctrl = reg.begin('foo', {}); });
+    act(() => { ctrl = reg.begin(dynamicActionId('foo'), {}); });
     if (ctrl) act(() => { (ctrl as UiOngoingControl).end('cancel'); });
     return ctrl !== null;
   };

@@ -2,17 +2,20 @@ import { useOngoingAction } from '@weasel-js/core';
 import { PaintInput } from '@weasel-js/ui/components/PaintInput';
 import { nestedPaintValue, type LeafContext, type LeafRenderer } from '@weasel-js/ui/components/inspector/SelectionPanel';
 
+/** The actions a paint leaf writes through. */
+type PaintActionId = 'setFill' | 'setStroke';
+
 /**
  * A paint leaf routed through an action, so a scrub coalesces into one undo
  * entry instead of one per tick. The control itself is the kit's `PaintInput`
  * — the app supplies only which action the writes land on.
  */
-export function wdPaintRenderer(actionId: string): LeafRenderer {
+export function wdPaintRenderer(actionId: PaintActionId): LeafRenderer {
   return (ctx) => <WdPaintLeaf ctx={ctx} actionId={actionId} />;
 }
 
 /** A fill's or a stroke's paint: the paint, None, or Mixed. */
-export function WdPaintLeaf({ ctx, actionId }: { ctx: LeafContext; actionId: string }) {
+export function WdPaintLeaf({ ctx, actionId }: { ctx: LeafContext; actionId: PaintActionId }) {
   const edit = useOngoingAction(actionId);
   return (
     <PaintInput

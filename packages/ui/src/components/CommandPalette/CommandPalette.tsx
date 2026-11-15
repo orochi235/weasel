@@ -9,6 +9,7 @@ import { imeKey, stepStop } from '@weasel-js/ui-input';
 import {
   actionItemShortcuts,
   actionItemTitle,
+  dynamicActionId,
   useSelectionContext,
   type ActionItem,
 } from '@weasel-js/core';
@@ -192,7 +193,7 @@ export function CommandPalette({ isOpen: open, onOpenChange, reasonLabels }: Com
       return;
     }
     queueMicrotask(() => {
-      registry?.trigger(item.action.id, item.params);
+      registry?.trigger(dynamicActionId(item.action.id), item.params);
     });
   };
 

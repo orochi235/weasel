@@ -250,17 +250,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Extension authoring and published consumers
 
-- **(P2) [agent] Carry action parameter types through bindings, invokers and programmatic triggers.**
-  `ActionParamSchema` types tuning, but `GestureBinding.opts.params`, `ActionsRegistry.trigger` and
-  invoker params remain arbitrary records (`packages/routing/src/interactions/actions/registry.ts`,
-  `bindingOpts.ts`, `invoker.ts`). A clean consumer declaring `review.stamp: { size: number }`
-  rejects `size: 'wrong'` in `ActionTunings` but accepts it in a binding and in `trigger` (reproduced
-  against built declarations). Add a typed action/binding/invocation authoring path connecting ids to
-  their schemas, preserving an explicit dynamic escape hatch and optional dep availability.
-  Closes when schema-known bindings and triggers reject wrong/missing params, invokers infer their
-  own params without casts, and declaration tests cover augmentation from an external extension package,
-  dynamic ids and params thunks through published entries.
-
 - **(P2) [agent] Let a custom-node feature package its complete installation contract.** A custom kind
   needs a shape painter, routing classifier, insert factory and property schema; these currently install
   through separate ambient registries and host props. `FeaturePreset` carries actions/tools/layers but

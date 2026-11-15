@@ -53,11 +53,11 @@ export function resolveBindingOverrides(maps: readonly BindingOverrides[]): Reso
 }
 
 /** `b` under its override: the same binding, one with another spec, or `null` when unbound. */
-export function overridden(
-  b: GestureBinding,
+export function overridden<B extends GestureBinding>(
+  b: B,
   id: string,
   overrides: ResolvedBindingOverrides,
-): GestureBinding | null {
+): B | null {
   if (!overrides.has(id)) return b;
   const spec = overrides.get(id)!;
   return spec === null ? null : { ...b, spec };
@@ -65,12 +65,12 @@ export function overridden(
 
 /** The bindings `ownerId` declares, each under its override, the unbound ones
  *  left out: what dispatch routes by. A `null` owner is an action's own. */
-export function overriddenBindings(
-  bindings: readonly GestureBinding[],
+export function overriddenBindings<B extends GestureBinding>(
+  bindings: readonly B[],
   ownerId: string | null,
   overrides: ResolvedBindingOverrides = NO_OVERRIDES,
-): GestureBinding[] {
-  const out: GestureBinding[] = [];
+): B[] {
+  const out: B[] = [];
   bindings.forEach((b, i) => {
     const next = overridden(b, bindingId(b, ownerId, i), overrides);
     if (next) out.push(next);

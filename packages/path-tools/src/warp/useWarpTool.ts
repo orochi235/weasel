@@ -1,9 +1,9 @@
-import { ANY_MODS } from '@weasel-js/routing';
+import { ANY_MODS, bindAction } from '@weasel-js/routing';
 import { useMemo } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import { useLatest } from '@weasel-js/react';
 import type { PlaneMode, ClothMapping } from '@weasel-js/geom/warp';
-import type { Action, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
+import type { Action, ActionParamsOf, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
 import {
   type CanvasExtensionApi, type ContributionDepReader, defineTool, type SurfaceContribution, type Tool,
 } from '@weasel-js/core';
@@ -50,7 +50,7 @@ export interface UseClothWarpToolOptions extends WarpToolOptions {
 /** Options for {@link usePinWarpTool}. */
 export type UsePinWarpToolOptions = WarpToolOptions;
 
-function bindingsFor(kind: WarpKind, settings: () => Record<string, unknown>): GestureBinding[] {
+function bindingsFor(kind: WarpKind, settings: () => WarpSettings): GestureBinding[] {
   const target = `affordance:layer:${warpLayerId(kind)}` as const;
   const out: GestureBinding[] = [];
   if (kind === 'pin') {
@@ -58,7 +58,7 @@ function bindingsFor(kind: WarpKind, settings: () => Record<string, unknown>): G
     out.push({ spec: { kind: 'click', target: 'selected-body' }, actionId: 'pin.addPin', opts: { id: 'pin.addPin', params: settings } });
   }
   out.push(
-    { spec: { kind: 'drag', target }, actionId: `${kind}.drag`, opts: { id: `${kind}.drag`, params: settings } },
+    bindAction({ kind: 'drag', target }, `${kind}.drag` as const, { id: `${kind}.drag`, params: settings }),
     { spec: { kind: 'pointerDown', target, mods: ANY_MODS }, actionId: `${kind}.grab`, opts: { id: `${kind}.grab` } },
     { spec: { kind: 'click', target }, actionId: `${kind}.grab`, opts: { id: `${kind}.grabClick` } },
   );
@@ -66,8 +66,8 @@ function bindingsFor(kind: WarpKind, settings: () => Record<string, unknown>): G
 }
 
 /** `settings` without its unset keys, so `<SceneCanvas tune>` params fill them in. */
-function definedOf(settings: WarpSettings): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(settings).filter(([, v]) => v !== undefined));
+function definedOf(settings: WarpSettings): WarpSettings {
+  return Object.fromEntries(Object.entries(settings).filter(([, v]) => v !== undefined)) as WarpSettings;
 }
 
 const KEYS: Record<WarpKind, ToolKeybinding> = { plane: { key: 'F' }, cloth: { key: 'F', shift: true }, pin: { key: 'B' } };
@@ -86,7 +86,8 @@ function createWarpToolState() {
     outlines: () => deps?.get('createOutlinesAdapter'),
     /** What an invocation of `actionId` passing `given` starts with here,
      *  its tunings included. */
-    paramsOf: (actionId: string, given: Record<string, unknown>) => deps?.get('actionParams')?.(actionId, given) ?? given,
+    paramsOf: <Id extends string>(actionId: Id, given: Partial<ActionParamsOf<Id>>) =>
+      deps?.get('actionParams')?.(actionId, given) ?? given,
     setActive(next: boolean): void {
       active = next;
       api?.requestRedraw();
@@ -107,7 +108,7 @@ function useWarpTool(kind: WarpKind, options: WarpToolOptions, settings: WarpSet
     const layer = createWarpHandleLayer({
       kind,
       active: state.active,
-      settings: () => state.paramsOf(`${kind}.drag`, definedOf(settingsRef.current)) as WarpSettings,
+      settings: () => state.paramsOf(`${kind}.drag` as const, definedOf(settingsRef.current)),
       scene: state.scene,
       outlines: state.outlines,
       live: state.live,

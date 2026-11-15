@@ -42,7 +42,13 @@ export { roleReader, roleMods, keysHeld, modifierStateOf } from '@weasel-js/rout
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel-js/routing';
 export type {
   ActionParamSchema, ActionTunings, AlignParams, DistributeParams, FlipParams, NudgeParams, ReorderParams,
+  FinishPathParams, IngestParams, InsertParams, MoveParams, OffsetPathParams, PaintParams, RotateParams,
 } from '../interactions/actions/actionParamSchema';
+export { bindAction, defineAction, dynamicActionId, routedOpts } from '@weasel-js/routing';
+export type {
+  ActionOf, ActionParamsOf, ActionSettingsOf, ActionVariantOf, BindingOf, DynamicActionId, InvokeParams,
+  KnownActionId, NoParams,
+} from '@weasel-js/routing';
 export { evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
 export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionItemShortcuts, actionShortcuts, keySpecShortcut } from '@weasel-js/routing';

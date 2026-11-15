@@ -1,5 +1,5 @@
 /** Reach: carry an open end on until it meets a stroke. */
-import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
+import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker, type ImmediateParams } from '@weasel-js/routing';
 import {
   anchorAt, anchorsToPath, DEG_TO_RAD, distance, editAnchorSetTracked, reachToMeet, tugPathEnd, openEndAt, openEndRay,
   openPathEnds, pathDistanceToPoint, pathEndAnchorIndex, pathToAnchors,
@@ -21,7 +21,7 @@ export type ReachToMeetParams = {
   easeTurn?: number;
   /** How far, in screen px, a click reaches for the stroke it extends. Default 6. */
   radiusPx?: number;
-};
+} & Pick<ImmediateParams, 'world' | 'press'>;
 
 /** Reach's params as a form, for the last-operation panel. */
 export const REACH_TO_MEET_PARAMS = pref.group(REACH_LABEL, {

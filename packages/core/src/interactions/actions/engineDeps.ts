@@ -16,6 +16,7 @@ import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { GestureLifecycleOptions } from './gestureLifecycle';
 import type { History } from '@weasel-js/history';
+import type { ActionsRegistry } from '@weasel-js/routing';
 import type { BoundsConstraint } from '../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { PoseDescriptor } from './resize/geometry';
@@ -155,7 +156,7 @@ declare module '@weasel-js/routing' {
      *  passes `given`, `<SceneCanvas tune>` included: what a tool's chrome
      *  reads to draw what the action it binds will make. Sourced by
      *  `<SceneCanvas>`. */
-    actionParams?: (id: string, given?: Record<string, unknown>) => Record<string, unknown>;
+    actionParams?: ActionsRegistry['paramsOf'];
     /** The container the `insert` dep puts new nodes into — every shape a
      *  tool draws and every dropped image or text. Absent, or answering
      *  `null`: the top of the tree. */

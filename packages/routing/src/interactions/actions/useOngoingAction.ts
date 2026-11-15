@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useActionsRegistry } from './ActionsProvider';
 import type { ActionsRegistry, UiOngoingControl } from './registry';
+import type { InvokeParams } from './actionIds';
 import { useLatest } from '@weasel-js/react';
 
 /**
@@ -22,9 +23,9 @@ import { useLatest } from '@weasel-js/react';
  * All three are no-ops when no action is reachable, so a control renders the
  * same with or without a canvas in scope.
  */
-export interface OngoingAction {
-  input(params: Record<string, unknown>): void;
-  commit(params?: Record<string, unknown>): void;
+export interface OngoingAction<P = Record<string, unknown>> {
+  input(params: P): void;
+  commit(params?: P): void;
   cancel(): void;
 }
 
@@ -34,15 +35,16 @@ export interface OngoingAction {
  * An edit left open when the control unmounts, or when `actionId` changes, is
  * committed — it is what the user was looking at when the control went away.
  * On unmount that happens a microtask later.
- * The returned object is stable for the life of the component.
+ * The returned object is stable for the life of the component. Its params are
+ * typed by `actionId` as `ActionsRegistry.begin`'s are.
  */
-export function useOngoingAction(actionId: string): OngoingAction {
+export function useOngoingAction<Id extends string>(actionId: Id): OngoingAction<InvokeParams<Id>> {
   const reg = useActionsRegistry();
   const regRef = useLatest<ActionsRegistry | null>(reg);
   const idRef = useLatest(actionId);
-  const ctrlRef = useRef<UiOngoingControl | null>(null);
+  const ctrlRef = useRef<UiOngoingControl<InvokeParams<Id>> | null>(null);
 
-  const edit = useMemo<OngoingAction>(() => {
+  const edit = useMemo<OngoingAction<InvokeParams<Id>>>(() => {
     const end = (reason: 'commit' | 'cancel'): void => {
       const ctrl = ctrlRef.current;
       ctrlRef.current = null;
@@ -50,7 +52,7 @@ export function useOngoingAction(actionId: string): OngoingAction {
     };
     /** Move the open edit to `params`, or open one there: the dispatcher may
      *  have ended the one this control held. */
-    const drive = (params: Record<string, unknown>): void => {
+    const drive = (params: InvokeParams<Id>): void => {
       if (ctrlRef.current?.active) ctrlRef.current.update(params);
       else ctrlRef.current = regRef.current?.begin(idRef.current, params) ?? null;
     };

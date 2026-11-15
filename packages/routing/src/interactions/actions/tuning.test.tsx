@@ -8,6 +8,7 @@ import { invokedParams, tuneAction } from './tuning';
 import { actionShortcuts } from './actionShortcuts';
 import { pref } from '@weasel-js/prefs';
 import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
+import { dynamicActionId } from './actionIds';
 
 const ctx = {} as InvocationCtx;
 
@@ -121,12 +122,12 @@ describe('ActionsRegistry.tune', () => {
       release = reg.tune('flip', { params: { pivot: 'union' }, bindings: [{ kind: 'key', key: 'k' }] });
     });
     expect(actionBindings(reg.list()[0]!)).toHaveLength(2);
-    reg.trigger('flip', { axis: 'y' });
+    reg.trigger(dynamicActionId('flip'), { axis: 'y' });
     expect(run).toHaveBeenLastCalledWith(expect.anything(), { axis: 'y', pivot: 'union' });
 
     act(() => { release(); });
     expect(actionBindings(reg.list()[0]!)).toHaveLength(1);
-    reg.trigger('flip', { axis: 'y' });
+    reg.trigger(dynamicActionId('flip'), { axis: 'y' });
     expect(run).toHaveBeenLastCalledWith(expect.anything(), { axis: 'y' });
   });
 
@@ -166,7 +167,7 @@ describe('ActionsRegistry.tune', () => {
       reg.tune('flip', { params: { axis: 'y', pivot: 'union' } });
       reg.tune('flip', { params: () => ({ pivot: 'each' }) });
     });
-    reg.trigger('flip', { axis: 'x' });
+    reg.trigger(dynamicActionId('flip'), { axis: 'x' });
     expect(reg.paramsOf('flip', { axis: 'x' })).toEqual(run.mock.calls[0][1]);
     expect(reg.paramsOf('flip')).toEqual({ axis: 'y', pivot: 'each' });
     expect(reg.paramsOf('untuned', { a: 1 })).toEqual({ a: 1 });

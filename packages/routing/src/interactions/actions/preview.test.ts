@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ActionDisabledReason, type Action } from './action';
 import { ActionsNode } from './ActionsProvider';
+import { dynamicActionId } from './actionIds';
 
 function setup(action: Action) {
   const { registry } = new ActionsNode(null, true, () => null);
@@ -13,7 +14,7 @@ describe('ActionsRegistry.preview', () => {
     const stop = vi.fn();
     const preview = vi.fn(() => stop);
     const registry = setup({ id: 'test.p', label: 'P', preview });
-    const end = registry.preview('test.p', { op: 'union' });
+    const end = registry.preview(dynamicActionId('test.p'), { op: 'union' });
     expect(preview).toHaveBeenCalledWith({}, { op: 'union' });
     end();
     end();
@@ -34,7 +35,7 @@ describe('ActionsRegistry.preview', () => {
     const preview = vi.fn();
     const registry = setup({ id: 'test.t', label: 'T', preview });
     registry.tune('test.t', { params: { strokes: 'filled', op: 'divide' } });
-    registry.preview('test.t', { op: 'union' });
+    registry.preview(dynamicActionId('test.t'), { op: 'union' });
     expect(preview).toHaveBeenCalledWith({}, { strokes: 'filled', op: 'union' });
   });
 

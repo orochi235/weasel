@@ -5,7 +5,7 @@
  */
 import type { Action, ActionSource } from '../actions/action';
 import { gateEnabled } from '../actions/actionEnabled';
-import { actionBindings, type GestureBinding } from '../actions/binding';
+import { actionBindings, routedOpts, type GestureBinding } from '../actions/binding';
 import { NO_OVERRIDES } from '../actions/bindingOverrides';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import { resolveParams } from '../actions/bindingOpts';
@@ -158,7 +158,7 @@ export function walk(
     const deps = buildDepsFromRequires(action, ctx.depRegistry);
     const gate = action.enabled;
     const enabled = gate
-      ? gateEnabled(action, () => gate(deps, worldPointOf(event), carriedBy(event), resolveParams(match.binding.opts?.params), ctx.viewId))
+      ? gateEnabled(action, () => gate(deps, worldPointOf(event), carriedBy(event), resolveParams(routedOpts(match.binding)?.params), ctx.viewId))
       : true;
     if (enabled !== true) { push({ kind: 'declined', reason: String(enabled) }); continue; }
     if (stop !== 'exhausted') { push({ kind: 'outranked' }); continue; }

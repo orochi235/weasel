@@ -9,6 +9,7 @@ import { evaluateActive, evaluateEnabled } from './actionEnabled';
 import type { ActionUnavailable, ActionVariant } from './action';
 import { useCommand, type CommandOptions } from './useCommand';
 import { toIconRef } from '@weasel-js/icons';
+import { dynamicActionId } from './actionIds';
 
 function wrap({ children }: { children: ReactNode }) {
   return <ActionsProvider>{children}</ActionsProvider>;
@@ -146,7 +147,7 @@ describe('useCommand', () => {
   it('runs with the params it was triggered with', () => {
     const run = vi.fn();
     const { registry } = mount({ label: 'X', run, options: { variants: variants() } });
-    registry.trigger('cmd.a', { n: 2 });
+    registry.trigger(dynamicActionId('cmd.a'), { n: 2 });
     expect(run).toHaveBeenLastCalledWith({ n: 2 });
     registry.trigger('cmd.a');
     expect(run).toHaveBeenLastCalledWith(undefined);
@@ -184,7 +185,7 @@ describe('useCommand', () => {
     expect(evaluateEnabled(a!.action, undefined, undefined, a!.params)).toEqual({ enabled: true });
     expect(evaluateEnabled(b!.action, undefined, undefined, b!.params)).toEqual({ enabled: false, reason: 'Not for two' });
     expect([evaluateActive(a!.action, undefined, a!.params), evaluateActive(b!.action, undefined, b!.params)]).toEqual([true, false]);
-    expect(registry.trigger('cmd.a', { n: 2 })).toBe(false);
+    expect(registry.trigger(dynamicActionId('cmd.a'), { n: 2 })).toBe(false);
     expect(run).not.toHaveBeenCalled();
   });
 
@@ -201,7 +202,7 @@ describe('useCommand', () => {
     const second = vi.fn(() => stop);
     const { registry, rerender } = mount({ label: 'A', run: vi.fn(), options: { preview: first } });
     rerender({ label: 'A', run: vi.fn(), options: { preview: second } });
-    registry.preview('cmd.a', { n: 1 })();
+    registry.preview(dynamicActionId('cmd.a'), { n: 1 })();
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledWith({ n: 1 });
     expect(stop).toHaveBeenCalledTimes(1);

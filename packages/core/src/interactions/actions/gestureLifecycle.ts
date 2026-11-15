@@ -33,8 +33,8 @@ export interface GestureLifecycleOptions {
 
 /** The params entries for {@link GestureLifecycleOptions}, with the unset
  *  keys left out. */
-export function gestureLifecycleParams(o: GestureLifecycleOptions): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
+export function gestureLifecycleParams(o: GestureLifecycleOptions): GestureLifecycleOptions {
+  const out: GestureLifecycleOptions = {};
   if (o.label !== undefined) out.label = o.label;
   if (o.transient !== undefined) out.transient = o.transient;
   if (o.onGestureStart) out.onGestureStart = o.onGestureStart;

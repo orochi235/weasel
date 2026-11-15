@@ -7,6 +7,7 @@ import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
 import { DepRegistryProvider, useDepRegistry, type DepName, type DepRegistry } from './depRegistry';
 import type { ActionsRegistry } from './registry';
 import { lastOperationOf } from './useLastOperation';
+import { dynamicActionId } from './actionIds';
 
 /** The document the test action edits: a width, the selection, and the selection each run started from. */
 interface Doc { width: number; selected: string[]; ranOn: string[][] }
@@ -66,7 +67,7 @@ describe('the last operation', () => {
   it('holds a run of an action with params that committed one entry, at the values it used', () => {
     const { registry, store } = setup();
     expect(store.get()).toBeNull();
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     expect(store.get()).toMatchObject({ id: 'widen', label: 'Widen', schema: WIDEN_PARAMS, values: { by: 3 } });
   });
 
@@ -86,13 +87,13 @@ describe('the last operation', () => {
 
   it('holds nothing for a run that committed no entry', () => {
     const { registry, store } = setup();
-    act(() => { registry.trigger('widen', { by: 0 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 0 }); });
     expect(store.get()).toBeNull();
   });
 
   it('adjusts in place, leaving one undo entry, rerun on the selection it started from', () => {
     const { doc, history, registry, store } = setup();
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     expect(doc.width).toBe(13);
     expect(doc.selected).toEqual(['result']);
     act(() => { expect(store.adjust({ by: 5 })).toBe(true); });
@@ -112,7 +113,7 @@ describe('the last operation', () => {
 
   it('keeps the operation through an adjustment that commits nothing, and the next one reruns it', () => {
     const { doc, history, registry, store } = setup();
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     act(() => { store.adjust({ by: 0 }); });
     expect(doc.width).toBe(10);
     expect(history.undoDepth()).toBe(0);
@@ -139,7 +140,7 @@ describe('the last operation', () => {
       },
     };
     act(() => { registry.register(twice); });
-    act(() => { registry.trigger('widenTwice', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widenTwice'), { by: 3 }); });
     act(() => { store.adjust({ by: 5 }); });
     expect(doc.width).toBe(20);
     expect(store.get()).toBeNull();
@@ -149,7 +150,7 @@ describe('the last operation', () => {
 
   it('makes the values used the action\'s params for its next run', () => {
     const { doc, registry, store } = setup();
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     act(() => { store.adjust({ by: 4 }); });
     act(() => { store.dismiss(); });
     act(() => { registry.trigger('widen'); });
@@ -159,7 +160,7 @@ describe('the last operation', () => {
 
   it('lets a tuning win over the session params', () => {
     const { registry } = setup();
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     act(() => { registry.tune('widen', { params: { by: 7 } }); });
     expect(registry.paramsOf('widen')).toEqual({ by: 7 });
   });
@@ -169,7 +170,7 @@ describe('the last operation', () => {
     ['an undo', (h: History) => h.undo()],
   ])('clears on %s', (_, step) => {
     const { doc, history, registry, store } = setup();
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     act(() => { step(history, doc); });
     expect(store.get()).toBeNull();
     expect(store.adjust({ by: 1 })).toBe(false);
@@ -177,9 +178,9 @@ describe('the last operation', () => {
 
   it('clears on a redo', () => {
     const { history, registry, store } = setup();
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     act(() => { history.undo(); });
-    act(() => { registry.trigger('widen', { by: 2 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 2 }); });
     act(() => { history.undo(); history.redo(); });
     expect(store.get()).toBeNull();
   });
@@ -192,9 +193,9 @@ describe('the last operation', () => {
       params: (p) => (p.kind === 'shown' ? WIDEN_PARAMS : null),
     };
     act(() => { registry.register(byKind); });
-    act(() => { registry.trigger('widenBy', { kind: 'hidden', by: 2 }); });
+    act(() => { registry.trigger(dynamicActionId('widenBy'), { kind: 'hidden', by: 2 }); });
     expect(store.get()).toBeNull();
-    act(() => { registry.trigger('widenBy', { kind: 'shown', by: 2 }); });
+    act(() => { registry.trigger(dynamicActionId('widenBy'), { kind: 'shown', by: 2 }); });
     expect(store.get()).toMatchObject({ id: 'widenBy', schema: WIDEN_PARAMS, values: { by: 2 } });
     act(() => { store.adjust({ by: 4 }); });
     expect(doc.width).toBe(16);
@@ -208,7 +209,7 @@ describe('the last operation', () => {
     act(() => {
       registry.tune('widen', { under: true, params: () => ({ tint: 2 }), form: () => (live ? tint : null), keep: (p) => { kept.push(p); } });
     });
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     const op = store.get()!;
     expect(op.label).toBe('Widen');
     expect(op.schema.as).toBeUndefined();
@@ -219,7 +220,7 @@ describe('the last operation', () => {
     expect(kept.at(-1)).toEqual({ tint: 5, by: 3 });
     expect(doc.width).toBe(13);
     live = false;
-    act(() => { store.dismiss(); registry.trigger('widen', { by: 1 }); });
+    act(() => { store.dismiss(); registry.trigger(dynamicActionId('widen'), { by: 1 }); });
     expect(Object.keys(store.get()!.schema.children)).toEqual(['by']);
   });
 
@@ -230,13 +231,13 @@ describe('the last operation', () => {
       registry.register({ ...bare, id: 'bare' });
       registry.tune('bare', { form: WIDEN_PARAMS });
     });
-    act(() => { registry.trigger('bare', { by: 2 }); });
+    act(() => { registry.trigger(dynamicActionId('bare'), { by: 2 }); });
     expect(store.get()).toMatchObject({ id: 'bare', label: 'Widen', values: { by: 2 } });
   });
 
   it('leaves the operation in place, and lets go of it, when its action can no longer run', () => {
     const { doc, history, registry, store } = setup();
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     act(() => { registry.unregister('widen'); });
     act(() => { expect(store.adjust({ by: 5 })).toBe(false); });
     expect(doc.width).toBe(13);
@@ -250,7 +251,7 @@ describe('the last operation', () => {
     const { doc, history, registry, store } = setup();
     let open = true;
     act(() => { registry.register({ ...widen(doc, history), enabled: () => (open ? true : 'not now') }); });
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     open = false;
     act(() => { expect(store.adjust({ by: 5 })).toBe(false); });
     expect(doc.width).toBe(13);
@@ -263,7 +264,7 @@ describe('the last operation', () => {
     const { registry, store } = setup();
     const heard = vi.fn();
     store.subscribe(heard);
-    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.trigger(dynamicActionId('widen'), { by: 3 }); });
     act(() => { store.dismiss(); });
     expect(store.get()).toBeNull();
     expect(heard).toHaveBeenCalledTimes(2);

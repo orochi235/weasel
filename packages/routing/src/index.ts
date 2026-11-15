@@ -71,9 +71,13 @@ export type DepName = keyof DepSchema;
 
 // ─── action param schema ──────────────────────────────────────────────────
 /**
- * The params each action reads, by action id — what types a tuning's
- * `params` and the params on the bindings it adds. Whoever ships an action
- * merges its entry in, as with {@link DepSchema}:
+ * The params each action reads, by action id — what types a tuning's `params`,
+ * a binding's `opts.params`, `ActionsRegistry.trigger`'s, `begin`'s and
+ * `preview`'s, and what `defineAction` and `useCommand` hand the action's own
+ * invoker and gates. An invocation passing params passes the whole entry, its
+ * required keys included; an id with no entry takes none, except as a
+ * `dynamicActionId`. Whoever ships an action merges its entry in, as with
+ * {@link DepSchema}:
  *
  * ```ts
  * declare module '@weasel-js/core' {
@@ -84,8 +88,10 @@ export type DepName = keyof DepSchema;
  * Declare an entry as a type literal, not an interface: an interface has no
  * index signature, so it is not a `Record<string, unknown>`.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ActionParamSchema {}
+export interface ActionParamSchema {
+  /** A keymap's leader: `hold` keeps the keymap open until the key comes up. */
+  [id: `keymap.${string}`]: { hold?: boolean };
+}
 
 /** Tunings keyed by action id: typed by {@link ActionParamSchema} for an id it
  *  declares, `Record<string, unknown>` params for any other. */
@@ -129,15 +135,21 @@ export { actionsTagged, taggedActionItems, matchActionItem } from './interaction
 // Both a const table and the union of its values, under one name.
 export { actionCursor, ActionDisabledReason } from './interactions/actions/action';
 export type { ActionUnavailable } from './interactions/actions/action';
-export { actionBindings } from './interactions/actions/binding';
-export type { GestureBinding, BoundGesture, BindingSource } from './interactions/actions/binding';
+export { actionBindings, bindAction, routedOpts } from './interactions/actions/binding';
+export type { GestureBinding, BindingOf, BoundGesture, BindingSource } from './interactions/actions/binding';
+export { dynamicActionId } from './interactions/actions/actionIds';
+export type {
+  ActionParamsOf, DynamicActionId, InvokeParams, KnownActionId, NoParams,
+} from './interactions/actions/actionIds';
+export { defineAction } from './interactions/actions/defineAction';
+export type { ActionOf, ActionSettingsOf, ActionVariantOf } from './interactions/actions/defineAction';
 export { evaluateActive, evaluateEnabled } from './interactions/actions/actionEnabled';
 export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
 export { buildDepsFromRequires } from './interactions/actions/buildDeps';
 export { createDepRegistry } from './interactions/actions/depNode';
 export type { DepRegistry, DepListing, DepSource } from './interactions/actions/depNode';
 export { validateActionId, validateActionDefaultBinding } from './interactions/actions/registry';
-export type { ActionsRegistry, ActionEntry, ActionsProp } from './interactions/actions/registry';
+export type { ActionsRegistry, ActionEntry, ActionsProp, ActionTuningOf } from './interactions/actions/registry';
 export { resolveParams } from './interactions/actions/invoker';
 export { holdPreview, holdPreviewId } from './interactions/actions/holdPreview';
 export { overlaysOf } from './interactions/actions/overlay';

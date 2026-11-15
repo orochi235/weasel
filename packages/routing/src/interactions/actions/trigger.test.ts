@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ActionDisabledReason, type Action } from './action';
 import { ActionsNode } from './ActionsProvider';
+import { dynamicActionId } from './actionIds';
 
 describe('ActionsRegistry.trigger', () => {
   it('asks enabled at the world point its params carry', () => {
@@ -17,9 +18,9 @@ describe('ActionsRegistry.trigger', () => {
     };
     const { registry } = new ActionsNode(null, true, () => null);
     registry.register(rightHalf);
-    expect(registry.trigger('test.right-half', { world: { x: 5, y: 7 } })).toBe(true);
-    expect(registry.trigger('test.right-half', { world: { x: -5, y: 7 } })).toBe(false);
-    expect(registry.trigger('test.right-half', {})).toBe(false);
+    expect(registry.trigger(dynamicActionId('test.right-half'), { world: { x: 5, y: 7 } })).toBe(true);
+    expect(registry.trigger(dynamicActionId('test.right-half'), { world: { x: -5, y: 7 } })).toBe(false);
+    expect(registry.trigger(dynamicActionId('test.right-half'), {})).toBe(false);
     expect(seen).toEqual([{ x: 5, y: 7 }, { x: -5, y: 7 }, undefined]);
     expect(run).toHaveBeenCalledTimes(1);
   });

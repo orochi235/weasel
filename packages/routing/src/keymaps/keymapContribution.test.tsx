@@ -61,7 +61,7 @@ function mount(overrides?: BindingOverrides) {
     act(() => { window.dispatchEvent(new KeyboardEvent(type, { key: k, code: `Key${k.toUpperCase()}`, ...init })); });
   };
   const tap = (k: string) => { send('keydown', k); send('keyup', k); };
-  const trigger = (params?: Record<string, unknown>) => { act(() => { registry!.trigger('keymap.loupe', params); }); };
+  const trigger = (params?: { hold?: boolean }) => { act(() => { registry!.trigger('keymap.loupe', params); }); };
   return { inside, outside, send, tap, trigger };
 }
 

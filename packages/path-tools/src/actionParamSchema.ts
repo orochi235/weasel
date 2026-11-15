@@ -20,13 +20,13 @@ export type PathEffectParams<E> = { [K in Exclude<keyof E, 'kind'>]?: E[K] };
 /** The `tween` action's params; its `reverse` also takes `'auto'`, handing the direction back to `autoAlign`. */
 export type TweenParams = Omit<PathEffectParams<TweenEffect>, 'reverse'> & { reverse?: boolean | 'auto' };
 /** The `setFillets` action's params. Either field left out keeps that part of each selected corner. */
-export type SetFilletsParams = { shape: CornerShape; radius: number };
+export type SetFilletsParams = { shape?: CornerShape; radius?: number };
 /** The `editPathEffect` action's params: the effects' settings, and which nodes and effect kind they edit. */
 export type EditPathEffectParams = TweenParams & PathEffectParams<BendAlongEffect> & PathEffectParams<RepeatAlongEffect>
   & PathEffectParams<RoughenEffect> & PathEffectParams<ZigzagEffect> & PathEffectParams<PuckerBloatEffect>
   & { ids?: readonly string[]; kind?: PathEffect['kind'] };
 
-declare module '@weasel-js/routing' {
+declare module '@weasel-js/core' {
   interface ActionParamSchema {
     tween: TweenParams;
     bendAlong: PathEffectParams<BendAlongEffect>;
@@ -56,7 +56,9 @@ declare module '@weasel-js/routing' {
     addExtremeAnchors: AddExtremesParams;
     reachToMeet: ReachToMeetParams;
     setFillets: SetFilletsParams;
+    'spiro.finish': { viaDoubleClick?: boolean };
+    'girth.drag': { reachPx?: number };
   }
 }
 
-export type { ActionParamSchema } from '@weasel-js/routing';
+export type { ActionParamSchema } from '@weasel-js/core';

@@ -1,4 +1,4 @@
-import { sceneMagnification, type Action, type GestureBinding, type ModSpec, type NodeId, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
+import { dynamicActionId, sceneMagnification, type Action, type GestureBinding, type ModSpec, type NodeId, type SnapMark, type SnapOutcomeStore, type SurfaceContribution } from '@weasel-js/core';
 import { measureDistances, type DistanceReadout } from './distance';
 import { worldBoundsOf, worldUnionOf } from '../guides/alignment/sceneBounds';
 import type { ImmediateParams, AnyScene } from '@weasel-js/core';
@@ -105,9 +105,9 @@ export function distanceReadout(opts: DistanceReadoutOptions = {}): DistanceRead
     MODIFIERS.map((m) => [m, m === modifier ? held : 'optional']),
   );
   const bindings: GestureBinding[] = [
-    { spec: { kind: 'hover', mods: mods(true) }, actionId: action.id, opts: { id: `${id}.show`, params: { show: true } } },
-    { spec: { kind: 'hover', mods: mods(false) }, actionId: action.id, opts: { id: `${id}.hide`, params: { show: false } } },
-    { spec: { kind: 'hover', motion: 'leave' }, actionId: action.id, opts: { id: `${id}.leave`, params: { show: false } } },
+    { spec: { kind: 'hover', mods: mods(true) }, actionId: dynamicActionId(action.id), opts: { id: `${id}.show`, params: { show: true } } },
+    { spec: { kind: 'hover', mods: mods(false) }, actionId: dynamicActionId(action.id), opts: { id: `${id}.hide`, params: { show: false } } },
+    { spec: { kind: 'hover', motion: 'leave' }, actionId: dynamicActionId(action.id), opts: { id: `${id}.leave`, params: { show: false } } },
   ];
 
   return {

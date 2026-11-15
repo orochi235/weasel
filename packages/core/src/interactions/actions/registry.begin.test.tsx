@@ -7,6 +7,7 @@ import {
 } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { createDispatcher } from '@weasel-js/routing';
+import { dynamicActionId } from '@weasel-js/routing';
 
 function wrap({ children }: { children: ReactNode }) {
   return <ActionsProvider>{children}</ActionsProvider>;
@@ -33,7 +34,7 @@ describe('ActionsRegistry.begin', () => {
     const reg = result.current!;
     act(() => { reg.register(ongoing('foo')); });
     let ctrl: UiOngoingControl | null = null;
-    act(() => { ctrl = reg.begin('foo', {}); });
+    act(() => { ctrl = reg.begin(dynamicActionId('foo'), {}); });
     expect(ctrl).toBeNull();
   });
 
@@ -43,7 +44,7 @@ describe('ActionsRegistry.begin', () => {
     const d = createDispatcher({ getAction: (id) => reg.list().find((a) => a.id === id) });
     act(() => { reg.setDispatcher(d); });
     let ctrl: UiOngoingControl | null = null;
-    act(() => { ctrl = reg.begin('missing', {}); });
+    act(() => { ctrl = reg.begin(dynamicActionId('missing'), {}); });
     expect(ctrl).toBeNull();
   });
 
@@ -54,7 +55,7 @@ describe('ActionsRegistry.begin', () => {
     const d = createDispatcher({ getAction: (id) => reg.list().find((a) => a.id === id) });
     act(() => { reg.setDispatcher(d); });
     let ctrl: UiOngoingControl | null = null;
-    act(() => { ctrl = reg.begin('imm', {}); });
+    act(() => { ctrl = reg.begin(dynamicActionId('imm'), {}); });
     expect(ctrl).toBeNull();
   });
 
@@ -91,7 +92,7 @@ describe('ActionsRegistry.begin', () => {
     });
 
     let ctrl: UiOngoingControl | null = null;
-    act(() => { ctrl = reg.begin('paint', {}); });
+    act(() => { ctrl = reg.begin(dynamicActionId('paint'), {}); });
     expect(ctrl).not.toBeNull();
     // The legacy fixed bag has no `applyOps` at all.
     expect(seen[0].applyOps).toBe(applyOps);
@@ -109,7 +110,7 @@ describe('ActionsRegistry.begin', () => {
     const d = createDispatcher({ getAction: (id) => reg.list().find((a) => a.id === id) });
     act(() => { reg.setDispatcher(d); });
     let ctrl: UiOngoingControl | null = null;
-    act(() => { ctrl = reg.begin('drag', { foo: 'bar' }); });
+    act(() => { ctrl = reg.begin(dynamicActionId('drag'), { foo: 'bar' }); });
     expect(ctrl).not.toBeNull();
     act(() => { ctrl!.update({ foo: 'baz' }); });
     expect(onMove).toHaveBeenCalledTimes(1);

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { actionItems, useActionsRegistry, type ActionItem } from '@weasel-js/core';
+import { actionItems, dynamicActionId, useActionsRegistry, type ActionItem } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
 import type { Grade } from '@weasel-js/theme';
 import { resolveIcon } from '../Icon/resolveIcon';
@@ -77,7 +77,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false, 
   if (key !== undefined) {
     return {
       press: () => {
-        if (item) registry?.trigger(item.action.id, item.params);
+        if (item) registry?.trigger(dynamicActionId(item.action.id), item.params);
       },
       label,
       description,
@@ -90,7 +90,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false, 
       missing: item ? undefined : key,
       settings,
       ...(item?.action.preview && registry
-        ? { preview: () => registry.preview(item.action.id, item.params) }
+        ? { preview: () => registry.preview(dynamicActionId(item.action.id), item.params) }
         : {}),
     };
   }
