@@ -27,10 +27,15 @@ interface SurfaceContribution {
   eligibility: Eligibility;           // when its bindings are live
   bindings?: GestureBinding[];
   actions?: Action[];
+  menus?: MenuDef[];                  // always for an ambient entry, while active for a tool
   deps?: { [name]: () => value };     // live while the entry is installed
+  watch?: (changed) => () => void;    // says when a dep source may answer differently
   overlay?: RenderLayer | RenderLayer[];
+  overlayPosition?: 'top' | 'before-selection' | 'after-selection';
+  presentation?: ToolPresentation;    // how a palette shows it
   layers?: RenderLayer[];             // registered and hit-tested, in entry order
   views?: CanvasViewProps[];
+  markers?: ViewMarkerProps[];        // as `<ViewMarker>` elements would draw
   attach?: (api, deps) => () => void; // anything the roles cannot say
   beforePaint?: (ctx) => void;        // every frame, before it paints
   afterPaint?: (ctx) => void;         // every frame, once its pixels land
@@ -39,7 +44,7 @@ interface SurfaceContribution {
 ```
 
 `mergeContributions(...bundles)` concatenates several features' entries and
-throws on a duplicate entry id, dep name or view id.
+throws on a duplicate entry id, dep name, view id or marker id.
 
 ### Presets
 
@@ -169,6 +174,9 @@ Those declare a different condition:
 - `offhand` — also live while a key is held.
 - `always` — live whatever is focused.
 - `claimed` — live only for input this entry's own affordances produced.
+- `keymap` — live only while it is the innermost open keymap, at the hotkey
+  tier (open one with a leader, `keymapContribution`).
+- `capabilities` — a modality filter over whichever of the above holds.
 
 The conditions are a set, not a choice: the hand tool is palette-selectable
 *and* held-key engaged. A `claimed` entry must give its bindings a target that
@@ -249,8 +257,9 @@ layer goes after every standard slot (the top of the stack). Multiple
 custom entries can share an anchor; insertion order within an anchor is
 the iteration order of the `layers` map.
 
-A `RenderLayer<TData>` is just `{ id, label, draw(data, view, dims),
-defaultVisible?, alwaysOn?, deps? }`. Build them with the helpers the kit
+A `RenderLayer<TData>` is `{ id, label, draw(data, view, dims) }` plus
+optional `space`, `deps`, `subscribe`, `defaultVisible`, `alwaysOn`, `effects`,
+`retain` and `hitTest`. Build them with the helpers the kit
 exports: `createTextLayer`, `createPathLayer`, `createChildrenLayer`,
 `createSelectionOverlayLayer`, `createTilePattern` — and, from
 `@weasel-js/guides`, `createGridLayer`, `createCellHighlightLayer` and
@@ -280,7 +289,7 @@ import {
 
 // 1. Build an affordance instance via a kit-shipped factory.
 const corners = createCornerResizeAffordance({
-  handleHitRadius: 8,    // world-px hit zone (divided by view.scale at runtime)
+  handleHitRadius: 8,    // screen-px hit radius
   handleSize: 8,         // screen-px visual size
 });
 
@@ -960,19 +969,20 @@ start the same gesture with `registry.begin('gem.tint')` without a second
 code path.
 
 **Reference implementations** — all under
-`packages/core/src/interactions/actions/defaults/`:
+`packages/core/src/interactions/actions/`:
 
-- `../move/action.ts` — the fullest: threshold, multi-id, behavior chain, layout
+- `move/action.ts` — the fullest: threshold, multi-id, behavior chain, layout
   reflow, reparent-on-commit.
-- `areaSelect.ts` — the simplest ongoing action, with `overlay()` rather than
+- `defaults/areaSelect.ts` — the simplest ongoing action, with `overlay()` rather than
   ghosts (marquee displaces nothing).
-- `clone.ts` — opts out of the shared pose pipeline and sets
+- `clone/action.ts` — opts out of the shared pose pipeline and sets
   `previewHidesSource: false` so the original stays put.
-- `editAnchors.ts` — emits `previewData` rather than `previewPose`, for edits
+- `edit-anchors/action.ts` — emits `previewData` rather than `previewPose`, for edits
   that live in `node.data` instead of the pose.
-- `delete.ts` — a minimal `timing: 'immediate'` one-shot.
+- `defaults/delete.ts` — a minimal `timing: 'immediate'` one-shot.
 - `@weasel-js/hud`'s `src/tool.ts` — a package outside core owning its own
-  input, gating three bindings on a `layer:<id>` affordance kind.
+  input, gating each of its bindings on a hit from its `layer:<id>` affordance
+  that the widget under it consumes.
 
 ## Mounting tools outside `<SceneCanvas>`
 
