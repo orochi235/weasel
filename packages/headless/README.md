@@ -50,8 +50,8 @@ launched yourself; the host then closes only its own page.
 
 ## What crosses into the page
 
-The scene and the arguments go as JSON. What `renderSceneToPixels` takes as a function stays
-behind: `drawOne`, `resolveImage`, `alphaFor` and `colorOverrides`. Nodes draw through the
+The scene and the arguments go as JSON. What `renderSceneToPixels` takes as code stays
+behind: `drawOne`, `resolveImage`, `alphaFor`, `colorOverrides` and `trimOverrides`. Nodes draw through the
 painters registered in the page, which by default are core's built-ins. A path's typed arrays
 are tagged on the way over (`tagTypedArrays` from `@weasel-js/geom`), so a snapshot saved that way
 passes as it is.

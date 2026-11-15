@@ -252,9 +252,9 @@ that relied on letterboxing imports stretched.
 ## Writing XML by hand
 
 `escapeAttr(s)` and `escapeText(s)` are the escaping this package writes XML
-with, for a caller writing its own. Both drop the characters XML 1.0 cannot
-hold, even as references, and turn a vertical tab or form feed into a line
-break. `escapeAttr` also writes tabs and line breaks as references, since a
+with, for a caller writing its own. Both write the characters XML 1.0 cannot
+hold, even as references, as U+FFFD, and turn a vertical tab or form feed into
+a line break. `escapeAttr` also writes tabs and line breaks as references, since a
 parser reads a literal one in an attribute as a space.
 
 ## License

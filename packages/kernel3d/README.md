@@ -213,12 +213,14 @@ it changes. A three.js host calls it after `renderer.render`, with
 
 Vectors, quaternions, 4×4 matrices and ray intersection live in
 `@weasel-js/geom/3d` — the same dependency-free geometry package the 2D kit is
-built on. They are immutable tuples, not classes: `History.serialize()` promises
+built on. They are immutable plain data, not classes — a vector is `{ x, y, z }`, a quaternion and a
+matrix are number tuples: `History.serialize()` promises
 a structured-clone-safe form, and `structuredClone` keeps a class instance's
 data while dropping its prototype, so a `Vector3` in a pose would return from a
 reload as a bare object whose first method call throws far from the cause.
 
-Interop with three.js is close to free anyway — `Vector3`, `Quaternion` and
-`Matrix4` all carry `fromArray`/`toArray` and agree with this layout.
+Interop with three.js is close to free anyway — `Vector3.copy` reads a `{ x, y, z }`, and
+`Quaternion` and `Matrix4` carry `fromArray`/`toArray` and agree with this layout (`[x, y, z, w]`,
+column-major).
 
 Direction: `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.

@@ -29,7 +29,9 @@ The panel fills its container, so give the container a size.
 |---|---|---|
 | Scene | the node tree, loaded a level at a time; a node's parent, pose and data | `select` the picked node; hovering a row outlines it on the canvas |
 | State | selection, view, active tool, overlay flags, probes | the active tool; each debug overlay flag |
+| Registry | the canvas's registered tools, actions and deps, filtered by name, beside the entry picked | — |
 | Dispatch | every resolved input and mode switch, newest first, under what a press at the pointer would do; coord records behind a toggle | — |
+| History | each step the scene's history took, newest first, and where it stands; every entry on its stacks behind a toggle | — |
 | Frame | the last paint's CPU time and draw calls, per render layer, while the `fps` overlay is on | the `fps` overlay |
 
 `tabs={['dispatch']}` shows only the tabs named, and drops the tab bar when

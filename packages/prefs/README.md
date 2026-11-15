@@ -201,8 +201,9 @@ and of one naming a path the schema does not admit, when it opens.
 }
 ```
 
-Every leaf is set on the root. A block follows for each choice of options a
-split value tells apart, and only those: a value that is one thing under
+Every leaf is set on the root. A block follows for each of a selector's
+options, and for each choice of options a split value tells apart, and only
+those: a value that is one thing under
 `light` at every density gets one block for `light`. Every block is inside
 `:where()`, so a rule of the page's own wins, and blocks naming more selectors
 come later. A number is written in its display unit where the unit's suffix is
