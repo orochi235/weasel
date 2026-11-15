@@ -1,4 +1,4 @@
-import { clientToCanvas } from '@weasel-js/core';
+import { chromeColorOf, clientToCanvas } from '@weasel-js/core';
 import type { RefObject } from 'react';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import type { DragState } from './DragDropRuntime';
@@ -23,7 +23,9 @@ export function withDragFeedback(
         if (!el) return;
         const [x, y] = clientToCanvas(el, screen.x, screen.y);
         ctx.save();
-        ctx.strokeStyle = fb.ok ? '#3a7' : '#c44';
+        ctx.strokeStyle = fb.ok
+          ? chromeColorOf(el, '--wzl-success', '#3a7')
+          : chromeColorOf(el, '--wzl-danger', '#c44');
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(x, y, 16, 0, Math.PI * 2);
