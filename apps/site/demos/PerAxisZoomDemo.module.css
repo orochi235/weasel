@@ -1,7 +1,16 @@
-.axis {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
 }
 
-.axis > input {
-  width: 130px;
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-5);
+}
+
+.axis {
+  width: 220px;
 }

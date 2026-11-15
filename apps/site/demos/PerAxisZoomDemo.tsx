@@ -1,79 +1,65 @@
 import { useState } from 'react';
-import {
-  SceneCanvas,
-  useScene,
-  HOME_VIEW,
-  fitViewToBounds, viewPreset,
-} from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { View } from '@weasel-js/core';
-import { InlineRange } from '@weasel-js/ui/components/InlineRange';
+import { SceneCanvas, useScene, HOME_VIEW, fitViewToBounds, solid, viewPreset } from '@weasel-js/core';
+import type { Fill, Stroke, View } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
+import { Field } from '@weasel-js/ui/components/Field';
 import { Select } from '@weasel-js/ui/components/Select';
+import { Slider } from '@weasel-js/ui/components/Slider';
 import s from './PerAxisZoomDemo.module.css';
 import { DemoStage } from './DemoStage';
 
-interface NodeData { color: string }
+interface NodeData { shape: 'rect'; fill: Fill; stroke: Stroke }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 400;
 // Non-square bounds so 'contain' / 'fill' / 'stretch' look visibly different.
 const IMAGE_BOUNDS = { x: 0, y: 0, width: 400, height: 200 };
+const START: View = { x: -100, y: -100, scale: { x: 1, y: 1 } };
 type FitMode = 'contain' | 'fill' | 'stretch';
-const FIT_MODES: FitMode[] = ['contain', 'fill', 'stretch'];
+const FIT_MODES = (['contain', 'fill', 'stretch'] as const).map((m) => ({ value: m, label: m }));
+
+function AxisScale({ axis, view, onChange }: { axis: 'x' | 'y'; view: View; onChange: (v: View) => void }) {
+  const value = view.scale[axis];
+  return (
+    <Field orientation="row" label={`scale.${axis}`} output={value.toFixed(2)} className={s.axis}>
+      <Slider
+        min={0.25} max={4} step={0.05}
+        thumbs={[{ value }]}
+        onInput={(ts) => onChange({ ...view, scale: { ...view.scale, [axis]: ts[0].value } })}
+      />
+    </Field>
+  );
+}
 
 export function PerAxisZoomDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      { id: 'image' as never, kind: 'mark', layer: 'default',
-        pose: { x: 0, y: 0, width: 400, height: 200 },
-        data: { color: '#7fb069' } },
+      { id: 'image' as never, kind: 'mark', layer: 'default', pose: IMAGE_BOUNDS,
+        data: { shape: 'rect', fill: { paint: solid('#7fb069') }, stroke: { paint: solid('#d4c4a8'), width: 2 } } },
     ],
   });
-  const [view, setView] = useState<View>({ x: -100, y: -100, scale: { x: 1, y: 1 } });
+  const [view, setView] = useState<View>(START);
   const [mode, setMode] = useState<FitMode>('contain');
   const [size, setSize] = useState({ width: W, height: H });
 
-  const setScaleX = (sx: number) => setView({ ...view, scale: { ...view.scale, x: sx } });
-  const setScaleY = (sy: number) => setView({ ...view, scale: { ...view.scale, y: sy } });
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <label className={s.axis}>
-          scale.x:{' '}
-          <InlineRange
-            min={0.25} max={4} step={0.05}
-            value={view.scale.x}
-            onChange={(e) => setScaleX(parseFloat(e.target.value))}
-          />{' '}
-          {view.scale.x.toFixed(2)}
-        </label>
-        <label className={s.axis}>
-          scale.y:{' '}
-          <InlineRange
-            min={0.25} max={4} step={0.05}
-            value={view.scale.y}
-            onChange={(e) => setScaleY(parseFloat(e.target.value))}
-          />{' '}
-          {view.scale.y.toFixed(2)}
-        </label>
+    <div className={s.demo}>
+      <div className={s.controls}>
+        <AxisScale axis="x" view={view} onChange={setView} />
+        <AxisScale axis="y" view={view} onChange={setView} />
         <Select
           label="mode"
           orientation="row"
           width="fit"
-          options={FIT_MODES.map((m) => ({ value: m, label: m }))}
+          options={FIT_MODES}
           selectedKey={mode}
           onSelectionChange={setMode}
         />
         <Button onClick={() => setView(fitViewToBounds(IMAGE_BOUNDS, size, view, { mode }) ?? HOME_VIEW)}>Fit</Button>
-        <Button onClick={() => setView({ x: -100, y: -100, scale: { x: 1, y: 1 } })}>Reset</Button>
+        <Button onClick={() => setView(START)}>Reset</Button>
       </div>
-      <span style={{ fontSize: 12, color: '#888' }}>
-        Cmd/Ctrl+wheel zooms uniformly · plain wheel pans · Cmd/Ctrl+= / - / 0 for zoom steps.
-      </span>
       <DemoStage width={W} height={H}>
         <SceneCanvas
           features={[viewPreset]}
@@ -82,16 +68,6 @@ export function PerAxisZoomDemo() {
           view={view}
           onViewChange={setView}
           onResize={setSize}
-          layers={{
-            scene: {
-              drawOne: (n, p): DrawCommand[] => [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { paint: { color: n.data.color } },
-                stroke: { paint: { color: '#d4c4a8' }, width: 2 },
-              }],
-            },
-          }}
         />
       </DemoStage>
     </div>
