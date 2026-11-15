@@ -262,20 +262,6 @@ Owner tags, after the priority (2026-10-26):
   value intact, autosave cannot bypass that protection, successful recovery allows normal saves again,
   and tests cover both localStorage and async record adapters without treating a queued backup as saved.
 
-- **(P2) [agent] Define inverse failure for world-preserving edits into singular frames.**
-  `decomposeRigidPose` falls back to undoing translation/rotation when a parent's linear transform has
-  no inverse (`packages/core/src/core/scene/composePose.ts`); kernel3d's `overAxis` substitutes values
-  on collapsed axes (`packages/kernel3d/src/composePose3.ts`). These keep results finite but cannot
-  satisfy the public rebase promise that recomposition preserves world position. Reproduced in 2D:
-  parent `{ x: 0, y: 0, width: 100, height: 100, transform: [0,0,0,1] }`, requested world rect
-  `{ x: 100, y: 0, width: 10, height: 10 }`; decomposing and recomposing returns `x: 45` with a
-  collapsed transform. Give composition an explicit fallible inverse or equivalent capability, and
-  make world-preserving commands refuse or report impossible edits atomically. Authored collapsed
-  frames may remain valid; distinguish storing one from promising an inverse it does not have.
-  Closes when 2D and kernel3d expose documented singular-frame behavior, reparent/group/ungroup and
-  other world-to-local writes do not silently commit a false world-preserving result, and tests cover
-  zero scales, singular affines, near-singular inverses and unchanged state/history on refusal.
-
 ### Export, worker and headless contracts
 
 - **(P2) [agent] Make region exports use a consistent coordinate space for parallax layers.**

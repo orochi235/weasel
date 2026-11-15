@@ -83,7 +83,10 @@ export function snapToContainer<TPose>(args: {
     const startWorld = start === undefined || originInWorld ? start : ctx.frames?.toWorld(id, start) ?? start;
     const toSlot = startWorld !== undefined ? ctx.offset?.(startWorld, snap.slotPose) : undefined;
     const poses = new Map<string, TPose>();
-    for (const [at, slot] of slotsFor(ctx, snap)) poses.set(at, ctx.frames?.toLocal(at, slot) ?? slot);
+    for (const [at, slot] of slotsFor(ctx, snap)) {
+      const shown = ctx.frames ? ctx.frames.toLocal(at, slot) : slot;
+      if (shown !== null) poses.set(at, shown);
+    }
     return {
       ...(toSlot ? { transform: { kind: 'translate' as const, ...toSlot } } : {}),
       poses,
@@ -159,7 +162,8 @@ function released<TPose>(ctx: GestureContext<TPose>): SnapTarget<TPose> | null {
 }
 
 /** A move's commit into `snap`: each node with a slot goes there, the rest
- *  land where the drag left them, and every one is reparented under it. */
+ *  land where the drag left them, and every one is reparented under it.
+ *  `null`, refusing the commit, when `snap`'s frame is singular. */
 function plantOps<TPose>(
   ctx: GestureContext<TPose>,
   end: MoveEnd,
@@ -167,7 +171,7 @@ function plantOps<TPose>(
   slots: ReadonlyMap<string, TPose>,
   moveLabel: string,
   reparentLabel: string,
-): Op[] {
+): Op[] | null {
   const ops: Op[] = [];
   const landed = new Map<string, string | null>();
   const reparent = (id: string): void => {
@@ -183,7 +187,8 @@ function plantOps<TPose>(
     }
   };
   for (const [id, slot] of slots) {
-    const to = ctx.frames?.toLocalUnder(snap.parentId, slot) ?? slot;
+    const to = ctx.frames ? ctx.frames.toLocalUnder(snap.parentId, slot) : slot;
+    if (to === null) return null;
     ops.push(createTransformOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
     reparent(id);
   }
@@ -194,16 +199,23 @@ function plantOps<TPose>(
   for (const id of rest) {
     const was = ctx.adapter.getParent(id);
     reparent(id);
-    if (was !== snap.parentId) ops.push(...keptInPlace(ctx, snap.parentId, id, moved, reparentLabel));
+    if (was === snap.parentId) continue;
+    const kept = keptInPlace(ctx, snap.parentId, id, moved, reparentLabel);
+    if (kept === null) return null;
+    ops.push(...kept);
   }
-  if (landed.size > 0 && ctx.followerOps) ops.push(...ctx.followerOps(landed, reparentLabel));
+  if (landed.size > 0 && ctx.followerOps) {
+    const followers = ctx.followerOps(landed, reparentLabel);
+    if (followers === null) return null;
+    ops.push(...followers);
+  }
   return ops;
 }
 
 /**
  * The ops that keep `id`, reparented into `parentId`, where `moved` left it:
  * its pose made local to the new frame, and through an envelope, the poses of
- * what shares its frame.
+ * what shares its frame. `null` when `parentId`'s frame is singular.
  */
 function keptInPlace<TPose>(
   ctx: GestureContext<TPose>,
@@ -211,21 +223,23 @@ function keptInPlace<TPose>(
   id: string,
   moved: readonly Op[],
   label: string,
-): Op[] {
+): Op[] | null {
   const frames = ctx.frames;
   if (frames === undefined) return [];
   const translated = new Map(moved.filter((op) => op.name === 'transform')
     .map((op) => [(op.args as { id: string }).id, (op.args as { to: TPose }).to]));
   const ops: Op[] = [];
-  const keep = (at: string): void => {
+  const keep = (at: string): boolean => {
     const from = translated.get(at) ?? ctx.adapter.getPose(at);
-    ops.push(createTransformOp<TPose>({ id: at, from, to: frames.toLocalUnder(parentId, frames.toWorld(at, from)), label }));
+    const to = frames.toLocalUnder(parentId, frames.toWorld(at, from));
+    if (to === null) return false;
+    ops.push(createTransformOp<TPose>({ id: at, from, to, label }));
     const node = ctx.adapter.getNode(at) as { dependsOn?: unknown; derivePose?: unknown } | undefined;
-    if (node === undefined || definesFrame(node)) return;
+    if (node === undefined || definesFrame(node)) return true;
     for (const child of ctx.adapter.getNodes()) {
-      if ((child as { parent?: string | null }).parent === at) keep(child.id);
+      if ((child as { parent?: string | null }).parent === at && !keep(child.id)) return false;
     }
+    return true;
   };
-  keep(id);
-  return ops;
+  return keep(id) ? ops : null;
 }

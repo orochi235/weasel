@@ -66,7 +66,7 @@ export function createFramedTestScene(): { scene: TestScene; framed: NodeId; fra
   const framePose = pose3({ x: 1, y: 0.25, z: 0.5 }, undefined, quatFromAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI / 2));
   const frame = scene.add({ kind: 'group', layer: 'solids', pose: framePose, data: {} });
   const framed = scene.add({
-    kind: 'mark', layer: 'solids', parent: frame, pose: POSE3_COMPOSITION.decompose(framePose, c!.pose), data: c!.data,
+    kind: 'mark', layer: 'solids', parent: frame, pose: POSE3_COMPOSITION.decompose(framePose, c!.pose)!, data: c!.data,
   });
   return { scene, framed, frame };
 }

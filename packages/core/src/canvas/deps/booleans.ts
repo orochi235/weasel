@@ -19,6 +19,7 @@ import { asNodeId, type Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
+import { storesEdits } from 'domains/paths/nodeFrame';
 import type { BooleansAdapter } from 'interactions/actions/booleans/booleans';
 import { pathPaintOf, type PathPaint } from '../nodeShapes/nodePaint';
 import { drawnPose, leafPath, storePiece } from './pathLeaf';
@@ -46,7 +47,8 @@ export function useBooleansAdapterSource(
       const sc = sceneRef.current;
       const node = sc.get(asNodeId(id));
       const path = node ? leafPath(sc, node) : null;
-      if (!node || !path) return null;
+      // A leaf in a singular frame draws flat, and no result could be stored in its place.
+      if (!node || !path || !storesEdits(sc, node)) return null;
       const frame = scenePoseFrame(sc);
       const g = poseDescriptorForNode(descriptorRef.current ?? AUTO_POSE_DESCRIPTOR, node);
       const drawn = drawnPose(g, frame.world(node.id));

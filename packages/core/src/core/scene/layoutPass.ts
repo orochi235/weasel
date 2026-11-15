@@ -108,7 +108,9 @@ export function runLayoutPass<TPose>(
 
   const queue: NodeId[] = [...new Set<NodeId>([...arrivals.keys(), ...changed])];
   const passes = new Map<NodeId, number>();
-  const write = (id: NodeId, pose: TPose): void => {
+  // A pose that cannot be stored, under a singular frame, is not written: the node stays where it is.
+  const write = (id: NodeId, pose: TPose | null): void => {
+    if (pose === null) return;
     const before = poseOf(id);
     if (samePoseValue(before, pose)) return;
     out.set(id, pose);

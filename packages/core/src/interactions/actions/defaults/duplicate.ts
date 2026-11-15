@@ -54,7 +54,7 @@ export function duplicateSelection(
       // A child's pose is relative to its frame, which the root's offset carries.
       if (!isRoot) return node.pose;
       const l = storedDelta(frame, descriptorOf(id), id, dx, dy);
-      return translatePoseViaDescriptor(node.pose, l.dx, l.dy, descriptorOf(id));
+      return l === null ? node.pose : translatePoseViaDescriptor(node.pose, l.dx, l.dy, descriptorOf(id));
     },
     label,
   );

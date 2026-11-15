@@ -122,12 +122,13 @@ function belowRoots(session: MoveSession, roots: ReadonlySet<NodeId>): Map<NodeI
 }
 
 /** The commit for `drops`: each dragged root translated by the drag plus its shift, and moved into its new
- *  container at the world place that gives, its descendants with it. */
+ *  container at the world place that gives, its descendants with it. `null` when one would land in a
+ *  singular frame, so the drop refuses whole. */
 export function pageDropOps(
   session: MoveSession,
   drops: ReadonlyMap<NodeId, RootDrop>,
   delta: { dx: number; dy: number },
-): Op[] {
+): Op[] | null {
   const { scene } = session;
   const label = session.lifecycle.label;
   const ops: Op[] = [];
@@ -138,7 +139,10 @@ export function pageDropOps(
     return children.get(parent)!;
   };
   for (const [id, drop] of drops) {
-    if (!dragged.has(id) && drop.into !== undefined) ops.push(...followerMoveOps([followerMove(scene, id, drop.into)], label));
+    if (dragged.has(id) || drop.into === undefined) continue;
+    const move = followerMove(scene, id, drop.into);
+    if (move === null) return null;
+    ops.push(...followerMoveOps([move], label));
   }
   const below = belowRoots(session, new Set([...drops.keys()].filter((id) => dragged.has(id))));
   const ridden = new Set([...below.values()].flat());
@@ -153,11 +157,12 @@ export function pageDropOps(
     const node = scene.get(id)!;
     const layer = drop.layer ?? node.layer;
     const toIndex = landAbove(childrenOf(drop.into), id, drop.above ?? null);
+    const to = landedLocalPose(session, id, drop.into, layer, d);
+    const cascade = landedCascadeOps(session, below.get(id) ?? [], drop.into, d, layer);
+    if (to === null || cascade === null) return null;
     ops.push(...landOps(session, id, drop.into, toIndex, layer));
-    ops.push(createTransformOp<unknown>({
-      id: id as string, from: node.pose, to: landedLocalPose(session, id, drop.into, layer, d), label,
-    }));
-    ops.push(...landedCascadeOps(session, below.get(id) ?? [], drop.into, d, layer));
+    ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label }));
+    ops.push(...cascade);
   }
   return ops;
 }

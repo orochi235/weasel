@@ -14,6 +14,7 @@ import type { Point } from '@weasel-js/geom';
 /** What changes on a group: its spec, its center, or both. */
 export interface SymmetryChange {
   spec?: Partial<SymmetrySpec>;
+  /** The world center, left as it is for a group in a singular frame, where no stored center draws there. */
   center?: Point;
 }
 
@@ -29,7 +30,9 @@ export interface SymmetryController {
   subscribe(listener: () => void): () => void;
   /** Add an empty group, one undo step, and make it the active one. Its layer
    *  defaults to the scene's first. `center` is in the world, as every
-   *  center the controller reads and takes is, wherever `parent` puts it. */
+   *  center the controller reads and takes is, wherever `parent` puts it.
+   *  Under a singular frame, where every stored center draws flat, it stores
+   *  `center` as given. */
   create(opts: { center: Point; symmetry?: Partial<SymmetrySpec>; layer?: string; parent?: NodeId | null }): NodeId;
   /** Group `id`'s spec and center, or null when it is not a symmetry group. */
   read(id: NodeId | null): { spec: SymmetrySpec; center: Point } | null;
@@ -77,6 +80,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     const center = change.center;
     if (!center) return;
     const at = centerUnder(scene, center, node.parent);
+    if (at === null) return;
     keepContentsPut(scene, id, () => scene.setPose(id, { ...(node.pose as object), ...poseAtCenter(at) }));
   };
 
@@ -90,7 +94,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     subscribe: listeners.subscribe,
     create({ center, symmetry, layer, parent }) {
       const id = scene.add(symmetryGroupSpec({
-        layer: layer ?? scene.layers[0]?.id ?? 'default', center: centerUnder(scene, center, parent ?? null),
+        layer: layer ?? scene.layers[0]?.id ?? 'default', center: centerUnder(scene, center, parent ?? null) ?? center,
         ...(symmetry ? { symmetry } : {}),
         ...(parent !== undefined ? { parent } : {}),
       }) as never);

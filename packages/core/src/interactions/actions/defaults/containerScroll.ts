@@ -30,7 +30,7 @@ export interface ScrollRange {
  * arranges it in. Measured in the container's own frame, the axes a scroll
  * offset runs along, so a turned container scrolls by its own length rather
  * than its box's. `null` for a node whose layout reports no extent, one whose
- * pose is not a frame, and under a composition that cannot scroll.
+ * pose is not a frame or is a singular one, and under a composition that cannot scroll.
  */
 export function scrollRange(scene: AnyScene, id: NodeId, descriptor: PoseDescriptor<unknown>): ScrollRange | null {
   const layout = scene.layoutOf(id);
@@ -40,12 +40,15 @@ export function scrollRange(scene: AnyScene, id: NodeId, descriptor: PoseDescrip
   const doc = scenePoseAdapter(scene);
   if (doc.definesFrame?.(id) === false) return null;
   const world = composeWorldPose(doc, id, compose);
-  const b = poseDescriptorForNode(descriptor, node).getBounds(decompose(world, world));
-  const children = scene.childrenOf(id).map((cid) => ({
-    id: cid as string,
-    pose: decompose(world, composeWorldPose(doc, cid, compose)),
-    node: scene.get(cid),
-  }));
+  const own = decompose(world, world);
+  if (own === null) return null;
+  const b = poseDescriptorForNode(descriptor, node).getBounds(own);
+  const children: { id: string; pose: unknown; node: ReturnType<AnyScene['get']> }[] = [];
+  for (const cid of scene.childrenOf(id)) {
+    const pose = decompose(world, composeWorldPose(doc, cid, compose));
+    if (pose === null) return null;
+    children.push({ id: cid as string, pose, node: scene.get(cid) });
+  }
   const e = layout.contentExtent({ id: id as string, bounds: b, node }, children);
   return {
     x: [Math.min(0, e.x - b.x), Math.max(0, e.x + e.width - (b.x + b.width))],

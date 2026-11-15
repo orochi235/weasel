@@ -118,7 +118,8 @@ export function alignBoxReader<TPose>(
  *  union AABB, or of another reference. Single batch — one undo step.
  *
  *  The edge is a world edge: bounds are measured and translated in world, and
- *  each result is stored back in its own parent's frame. */
+ *  each result is stored back in its own parent's frame. A node in a singular
+ *  frame, where no stored pose reaches the edge, stays where it is. */
 export function useAlign<TPose>(
   adapter: AlignAdapter<TPose>,
   options: UseAlignOptions<TPose> = {},
@@ -157,12 +158,10 @@ export function useAlign<TPose>(
     for (let i = 0; i < sel.length; i++) {
       const { dx, dy } = alignDeltaFor(bounds[i], target, edge);
       if (dx === 0 && dy === 0) continue;
-      const to = translatePoseViaDescriptor(poses[i], dx, dy, geom);
-      ops.push(createTransformOp<TPose>({
-        id: sel[i],
-        from: a.getPose(sel[i]),
-        to: frame.local(sel[i], to),
-      }));
+      const to = frame.local(sel[i], translatePoseViaDescriptor(poses[i], dx, dy, geom));
+      // No stored pose in a singular frame reaches the edge, so the node stays where it is.
+      if (to === null) continue;
+      ops.push(createTransformOp<TPose>({ id: sel[i], from: a.getPose(sel[i]), to }));
     }
     if (ops.length === 0) return;
     dispatchApplyBatch(a, ops, o.label ?? 'Align');

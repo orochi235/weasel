@@ -82,7 +82,8 @@ function destinations(
  * an opened file, goes onto its pages this way, and a root whose page the
  * format kept goes on that page (`options.pageOf`). Each root is measured by
  * `options.descriptor`, default `AUTO_POSE_DESCRIPTOR`, as an insert is. A
- * locked root, or one on a locked layer, is moved all the same.
+ * locked root, or one on a locked layer, is moved all the same. A root whose
+ * page is a singular frame, where it could not keep its place, stays where it is.
  * Call inside the caller's batch; a scene without pages is left alone.
  */
 export function placeOnPages<TData, TLayer extends string, TPose>(
@@ -129,7 +130,7 @@ export function addOnPages<TData, TLayer extends string, TPose>(
 }
 
 /** Move each root into its page, or into `run` when it has none, keeping where its subtree is in the world
- *  but for its destination's shift. */
+ *  but for its destination's shift. A root whose destination is a singular frame is not moved. */
 function moveIn(
   s: AnyScene,
   going: ReadonlyMap<NodeId, Destination>,
@@ -145,10 +146,13 @@ function moveIn(
       const d = poseDescriptorForNode(descriptor, s.get(id)!);
       return [id, shift.dx === 0 && shift.dy === 0 ? at : translatePoseViaDescriptor(at, shift.dx, shift.dy, d)];
     }));
-    s.move(root, page === null ? run : pageNodeOf(s, page)!);
+    const into = page === null ? run : pageNodeOf(s, page)!;
+    if (rebaseLocalPose(poses, world.get(root), into, compose, decompose) === null) continue;
+    s.move(root, into);
     for (const id of subtree) {
+      // Under a singular frame of its own subtree, a node's stored pose still composes where it was.
       const local = rebaseLocalPose(poses, world.get(id), s.get(id)!.parent, compose, decompose);
-      if (!sameValue(local, s.get(id)!.pose)) s.setPose(id, local);
+      if (local !== null && !sameValue(local, s.get(id)!.pose)) s.setPose(id, local);
     }
   }
 }

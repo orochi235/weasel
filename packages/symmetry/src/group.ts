@@ -29,9 +29,12 @@ export function poseAtCenter(c: Point): SymmetryPose {
   return { x: c.x, y: c.y, width: 0, height: 0 };
 }
 
-/** World point `center` as the center of a group stored under `parent`. */
-export function centerUnder(scene: Scene<unknown, string, unknown>, center: Point, parent: NodeId | null): Point {
-  return parent === null ? center : centerOfPose(localPoseUnder(scene, poseAtCenter(center), parent));
+/** World point `center` as the center of a group stored under `parent`, or `null` when `parent`'s frame is
+ *  singular and no stored center draws there. */
+export function centerUnder(scene: Scene<unknown, string, unknown>, center: Point, parent: NodeId | null): Point | null {
+  if (parent === null) return center;
+  const local = localPoseUnder(scene, poseAtCenter(center), parent);
+  return local === null ? null : centerOfPose(local);
 }
 
 const CELL_KINDS: readonly string[] = ['none', 'mirror', 'both', 'point', 'radial', 'kaleidoscope'] satisfies WallpaperCell[];

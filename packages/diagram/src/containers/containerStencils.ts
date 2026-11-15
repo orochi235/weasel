@@ -134,6 +134,8 @@ function releasedFrom(scene: AnyScene, id: NodeId): NodeId {
  * Remove container `id` and keep its members, which take its place in its
  * parent, as one history entry. A pool's members are its lanes' members, and
  * a lane's go past its pool. Connectors on what is removed go with it.
+ * Nothing changes when that parent's frame is singular, where the members
+ * could not keep their places.
  */
 export function releaseMembers(scene: AnyScene, id: string): void {
   const node = scene.get(id as NodeId);
@@ -146,11 +148,13 @@ export function releaseMembers(scene: AnyScene, id: string): void {
   const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(beside);
   // Read where each draws before the first move: it is stored in a frame that is about to go.
   const frame = scenePoseFrame(scene);
-  const worlds = members.map((m) => frame.world(m));
+  const locals = members.map((m) => frame.localUnder(parent, frame.world(m)));
+  // A member landing in a singular frame could not keep its place, so none is released.
+  if (locals.some((p) => p === null)) return;
   scene.batch('Release members', () => {
     members.forEach((m, k) => {
       scene.move(m, parent, index + k);
-      scene.setPose(m, frame.localUnder(parent, worlds[k]));
+      scene.setPose(m, locals[k]);
     });
     scene.remove(node.id);
   });

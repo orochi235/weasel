@@ -41,7 +41,8 @@ export function selectedPathNodes(deps: ActionDeps | undefined): PathNode[] {
   return scene ? pathNodesOf(scene, deps?.selection?.get() ?? []) : [];
 }
 
-/** The leaves among `ids` that hold an editable polygon, in the order given.
+/** The leaves among `ids` that hold an editable polygon, in the order given,
+ *  but for one in a singular frame, where no edit can be stored back.
  *  `shapeOf` stands in a node's pose and data, as an in-flight gesture would
  *  leave them, for its own. */
 export function pathNodesOf(
@@ -56,6 +57,7 @@ export function pathNodesOf(
     const shape = shapeOf?.(id);
     const node = shape ? ({ ...found, pose: shape.pose, data: shape.data } as Node<unknown, string, unknown>) : found;
     const frame = nodeFrameOf(scene, node);
+    if (frame?.inverts === false) continue;
     const shown = shownIn(frame, node);
     const path = resolveEditablePathOf(shown);
     if (path) out.push({ id: id as NodeId, node, shown, path, local: frame ? frame.local : asStored });

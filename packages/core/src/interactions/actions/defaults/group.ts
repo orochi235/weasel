@@ -7,7 +7,7 @@ import { createSetDependsOnOp } from 'core/ops/setDependsOn';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { groupingSite } from 'core/pages/pagePlacement';
 import { pageOfNode } from 'core/pages/pageNodes';
-import { followerMoveOps, followerMoves } from '../followerMoves';
+import { followerOpsFor } from '../followerMoves';
 import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import { unionBounds } from 'core/geometry/unionBounds';
 import { poseDescriptorOf } from '../poseDescriptorDep';
@@ -36,7 +36,8 @@ import type { AnyScene } from 'core/scene/anyScene';
  * following a member that changes page goes where `followerMoves` says.
  */
 /** Where grouping the selection puts its container and members, or null when it cannot: no content, members on
- *  more than one layer, or a container too large for the double range. `enabled` and `run` both read this. */
+ *  more than one layer, a container too large for the double range, a container that lands in a singular frame
+ *  or whose own frame is singular, so a member could not keep its place. `enabled` and `run` both read this. */
 function groupPlan(deps: ActionDeps) {
   const scene = deps.scene;
   if (!deps.selection || !scene) return null;
@@ -65,8 +66,17 @@ function groupPlan(deps: ActionDeps) {
     ? nodes[0]!.pose
     : d.fromBounds(union, nodes[0]!.pose);
   const pose = frame.localUnder(parent, containerWorldPose);
-  if (!finiteThroughout(pose)) return null;
-  return { scene, nodes, worlds, frame, parent, containerWorldPose, pose };
+  if (pose === null || !finiteThroughout(pose)) return null;
+  const locals = new Map<NodeId, unknown>();
+  for (const [id, world] of worlds) {
+    const local = frame.pc.decompose(containerWorldPose, world);
+    if (local === null) return null;
+    locals.set(id, local);
+  }
+  const page = parent === null ? null : pageOfNode(scene, parent);
+  const followers = followerOpsFor(scene, new Map(nodes.map((n) => [n.id as string, page])), 'Group');
+  if (followers === null) return null;
+  return { scene, nodes, locals, parent, pose, followers };
 }
 
 export const groupAction: Action & { requires: string[] } = {
@@ -82,7 +92,7 @@ export const groupAction: Action & { requires: string[] } = {
     run: (deps) => {
       const plan = groupPlan(deps);
       if (!plan) return;
-      const { scene, nodes, worlds, frame, parent, containerWorldPose, pose } = plan;
+      const { scene, nodes, locals, parent, pose, followers } = plan;
 
       // The container must exist before any child reparents into it, so the
       // insert op is emitted first.
@@ -110,16 +120,9 @@ export const groupAction: Action & { requires: string[] } = {
           toIndex: i,
           label: 'Group',
         }));
-        ops.push(createTransformOp<unknown>({
-          id: node.id as string,
-          from: node.pose,
-          to: frame.pc.decompose(containerWorldPose, worlds.get(node.id)!),
-          label: 'Group',
-        }));
+        ops.push(createTransformOp<unknown>({ id: node.id as string, from: node.pose, to: locals.get(node.id), label: 'Group' }));
       });
-
-      const page = parent === null ? null : pageOfNode(scene, parent);
-      ops.push(...followerMoveOps(followerMoves(scene, new Map(nodes.map((n) => [n.id as string, page]))), 'Group'));
+      ops.push(...followers);
 
       commitOps(deps, ops, 'Group', { select: [containerId] });
     },
@@ -175,8 +178,9 @@ function ungroupPlan(scene: AnyScene | undefined, ids: readonly NodeId[]): Ungro
 }
 
 /** The batch dissolving `plan`'s containers, outermost first: each child moved up and re-expressed in its new
- *  frame, every derivation from a container dropped, then the containers removed. */
-function ungroupOps(scene: AnyScene, plan: UngroupPlan): Op[] {
+ *  frame, every derivation from a container dropped, then the containers removed. `null` when a child would
+ *  land in a singular frame, where it could not keep its place. */
+function ungroupOps(scene: AnyScene, plan: UngroupPlan): Op[] | null {
   const { containers } = plan;
   const frame = scenePoseFrame(scene);
   const dissolving = new Set<string>(containers);
@@ -196,6 +200,8 @@ function ungroupOps(scene: AnyScene, plan: UngroupPlan): Op[] {
     const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(containerId);
     // Each child lands just under the container, in order, wherever the container then sits.
     for (const childId of scene.childrenOf(containerId)) {
+      const to = frame.localUnder(parent, frame.world(childId));
+      if (to === null) return null;
       moves.push(createReparentOp({
         id: childId as string,
         fromParentId: containerId as string,
@@ -206,7 +212,7 @@ function ungroupOps(scene: AnyScene, plan: UngroupPlan): Op[] {
       moves.push(createTransformOp<unknown>({
         id: childId as string,
         from: scene.get(childId)!.pose,
-        to: frame.localUnder(parent, frame.world(childId)),
+        to,
         label: 'Ungroup',
       }));
     }
@@ -224,7 +230,8 @@ function ungroupOps(scene: AnyScene, plan: UngroupPlan): Op[] {
  * ignored. The freed children become the new selection, and nothing moves on
  * screen. Every node deriving from a dissolved container, a freed child or not, drops that container from its
  * `dependsOn`, so the batch removes the containers and nothing else. Disabled while any node it would move,
- * rewrite, or remove is locked.
+ * rewrite, or remove is locked, and while a child would land in a singular frame, where it could not stay
+ * where it is shown. A child of a singular container keeps the flat place it is shown at.
  */
 export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
@@ -241,12 +248,14 @@ export const ungroupAction: Action & { requires: string[] } = {
       if (!deps.selection || !scene) return;
       const plan = ungroupPlan(scene, selectedContent(deps));
       if (!plan || plan.locked) return;
-      commitOps(deps, ungroupOps(scene, plan), 'Ungroup', { select: plan.freed });
+      const ops = ungroupOps(scene, plan);
+      if (ops !== null) commitOps(deps, ops, 'Ungroup', { select: plan.freed });
     },
   },
   enabled: (deps) => {
     const plan = ungroupPlan(deps?.scene, selectedContent(deps));
     if (!plan) return ActionDisabledReason.NotApplicable;
-    return plan.locked ? ActionDisabledReason.Locked : true;
+    if (plan.locked) return ActionDisabledReason.Locked;
+    return ungroupOps(deps!.scene!, plan) === null ? ActionDisabledReason.NotApplicable : true;
   },
 };

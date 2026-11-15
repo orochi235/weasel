@@ -22,7 +22,8 @@ export interface PlacedSpec<TPose> {
  * it is stored in under `composition`: an old save as it loads, or a tree an
  * importer measured in world. A child of a container whose pose derives from
  * its children shares that container's frame, so it is rebased against the
- * frame above it.
+ * frame above it. A spec under a singular frame keeps the pose it has: no
+ * stored pose there draws where a world one does, and a load cannot refuse.
  */
 export function localizeWorldPoses<TPose, TSpec extends PlacedSpec<TPose>>(
   specs: readonly TSpec[],
@@ -42,7 +43,8 @@ export function localizeWorldPoses<TPose, TSpec extends PlacedSpec<TPose>>(
   };
   return specs.map((spec) => {
     const frame = frameOf(spec);
-    return frame === null ? spec : { ...spec, pose: composition.decompose(frame.pose, spec.pose) };
+    const local = frame === null ? null : composition.decompose(frame.pose, spec.pose);
+    return local === null ? spec : { ...spec, pose: local };
   });
 }
 

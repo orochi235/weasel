@@ -53,7 +53,7 @@ export { RestoredOpError } from '../core/scene/boundOps';
 export { carriedDescendants, heldInFrame, sceneCarrySource } from '../core/scene/carryDescendants';
 export type { CarrySource } from '../core/scene/carryDescendants';
 export { CLIP_NOTHING, clipNothing } from '../core/scene/clipNothing';
-export { IDENTITY_POSE_COMPOSITION, childFrameAt, composeChildFrame, composeWorldPose, composesFrames, rebaseLocalPose } from '../core/scene/composeFrame';
+export { IDENTITY_POSE_COMPOSITION, childFrameAt, composeChildFrame, composeWorldPose, composesFrames, frameInverts, rebaseLocalPose } from '../core/scene/composeFrame';
 export type { PoseAdapter, PoseClosure, PoseComposition, ScrollOffset } from '../core/scene/composeFrame';
 export { RECT_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, composeRectPose, composeRigidPose, decomposeRectPose, decomposeRigidPose, scrollRectPose, scrollRigidPose, translateRectPose, worldPoseLookup } from '../core/scene/composePose';
 export type { SceneDeclaredFieldSetters } from '../core/scene/declaredFieldSetters';

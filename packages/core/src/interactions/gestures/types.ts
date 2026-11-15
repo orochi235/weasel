@@ -66,8 +66,10 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
    * The ops that move the followers (nodes whose `dependsOn` places them) whose
    * page changes when each id in `landed` is reparented under its value, read
    * before the edit applies. Set by move; a behavior that reparents appends them.
+   * `null` when a follower would land in a singular frame, where it cannot
+   * keep its place: the behavior refuses its commit then.
    */
-  followerOps?: (landed: ReadonlyMap<string, string | null>, label?: string) => Op[];
+  followerOps?: (landed: ReadonlyMap<string, string | null>, label?: string) => Op[] | null;
   adapter: MoveAdapter<TNode, TPose>;
   /**
    * Per-gesture mutable store. Keys should be namespaced by behavior name to avoid
@@ -362,6 +364,7 @@ export interface CloneEnd<TPose = unknown> extends BehaviorEnd {
   /** The ops that make the copies, select them, and put each copied root under
    *  `parentId`: at its pose in `poses`, in world, or where the drag left it
    *  when it has none there. Keyed by the original's id. For a behavior that
-   *  claims the commit to drop the copies into a container. */
-  copyOps(placement: { parentId: string | null; poses: ReadonlyMap<string, TPose> }): Op[];
+   *  claims the commit to drop the copies into a container. `null` when a copy
+   *  would land in a singular frame, where it cannot keep its place. */
+  copyOps(placement: { parentId: string | null; poses: ReadonlyMap<string, TPose> }): Op[] | null;
 }

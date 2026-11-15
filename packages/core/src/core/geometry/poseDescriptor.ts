@@ -19,14 +19,17 @@ export interface TranslateLead<TPose> {
 }
 
 /** A world `lead` expressed in the frame whose world pose is `frameWorld`, for a
- *  pose stored there; `null` is the root frame, where it is unchanged. */
+ *  pose stored there; `null` is the root frame, where it is unchanged.
+ *  `undefined` in a singular frame, which no lead can be expressed in. */
 export function leadUnder<TPose>(
   pc: Pick<PoseComposition<TPose>, 'decompose'>,
   frameWorld: TPose | null,
   lead: TranslateLead<TPose>,
-): TranslateLead<TPose> {
+): TranslateLead<TPose> | undefined {
   if (frameWorld === null) return lead;
-  return { from: pc.decompose(frameWorld, lead.from), to: pc.decompose(frameWorld, lead.to) };
+  const from = pc.decompose(frameWorld, lead.from);
+  const to = pc.decompose(frameWorld, lead.to);
+  return from === null || to === null ? undefined : { from, to };
 }
 
 /**

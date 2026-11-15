@@ -48,8 +48,8 @@ describe('POSE3_COMPOSITION', () => {
   it('undoes compose with decompose, under a non-uniform frame too', () => {
     const stretched = { ...parent, scale: { x: 1, y: 3, z: 0.25 } };
     for (const frame of [parent, stretched]) {
-      expectPoseClose(POSE3_COMPOSITION.decompose(frame, POSE3_COMPOSITION.compose(frame, child)), child);
-      expectPoseClose(POSE3_COMPOSITION.compose(frame, POSE3_COMPOSITION.decompose(frame, child)), child);
+      expectPoseClose(POSE3_COMPOSITION.decompose(frame, POSE3_COMPOSITION.compose(frame, child))!, child);
+      expectPoseClose(POSE3_COMPOSITION.compose(frame, POSE3_COMPOSITION.decompose(frame, child)!), child);
     }
   });
 

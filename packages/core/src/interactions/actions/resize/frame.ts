@@ -90,7 +90,7 @@ function pinFixedCorner(
   );
 }
 
-/** A world result for `id`, as stored. */
+/** A world result for `id`, as stored: `null` in a singular frame, where the node is left as it is. */
 function storedPose(
   place: Pick<ResizeSession, 'scene' | 'poseFrame' | 'view' | 'geometryOf'>,
   id: NodeId,
@@ -124,7 +124,8 @@ export function posesInBox(
     for (const id of place.writeIds) {
       const next = worldOf(id);
       if (next === undefined) continue;
-      previews.set(id, storedPose(place, id, next));
+      const stored = storedPose(place, id, next);
+      if (stored !== null) previews.set(id, stored);
     }
     return { previews, proposed };
   }
@@ -134,7 +135,9 @@ export function posesInBox(
   const remapped = worldOf(id);
   if (remapped === undefined) return { previews, proposed };
   const world = pinFixedCorner(g, remapped, box, proposed);
-  previews.set(id, storedPose(place, id, world));
+  const stored = storedPose(place, id, world);
+  if (stored === null) return { previews, proposed };
+  previews.set(id, stored);
   return { previews, proposed, lone: { id, g, world } };
 }
 

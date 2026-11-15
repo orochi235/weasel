@@ -16,7 +16,7 @@ import { translateTargets } from '../selectionSubtree';
 import type { MoveGestureAdapter } from './gestureAdapter';
 import { catchGliding } from './layout/glide';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
-import { followerMoveOps, followerMoves } from '../followerMoves';
+import { followerOpsFor } from '../followerMoves';
 
 /** Start pose of each root and descendant, the descendants in walk order, and
  *  the offsets of any caught mid-glide. */
@@ -138,7 +138,7 @@ export function buildGestureContext(
     kitSettings: readers.kitSettings,
     frames: sceneGestureFrames(scene, ctx.deps),
     offset: boundsOffset(projection),
-    followerOps: (landed, label) => followerMoveOps(followerMoves(scene, landed), label),
+    followerOps: (landed, label) => followerOpsFor(scene, landed, label),
     adapter: adapter as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };

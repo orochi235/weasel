@@ -32,7 +32,7 @@ function fixture(view?: unknown) {
       seen.push({
         origin: frames.toWorld(s, ctx.origin.get(s)!),
         current,
-        back: frames.toLocal(s, current),
+        back: frames.toLocal(s, current)!,
         live: frames.world(s),
         plane: frames.planeOf('main'),
       });

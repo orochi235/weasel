@@ -30,7 +30,8 @@ export function sceneCarrySource(scene: Scene<unknown, string, unknown>): CarryS
  * world pose put through `translate`, rebased into the frame it is stored in.
  * A descendant stored in the frame of `root` or of a node under it is left
  * out, since that frame carries it, and so is one `translate` answers null
- * for. A descendant `moving` names is moving on its own: it and everything
+ * for and one stored in a singular frame, where no stored pose follows it,
+ * as a translate leaves one (`localDelta`). A descendant `moving` names is moving on its own: it and everything
  * under it are left to whoever moves it.
  */
 export function carriedDescendants<TPose>(
@@ -50,7 +51,8 @@ export function carriedDescendants<TPose>(
       const frame = frameAtOrAbove(poses, parent);
       if (frame === null || !under.has(frame as NodeId)) {
         const world = translate(composeWorldPose(poses, id, composition.compose), id);
-        if (world !== null) out.set(id, rebaseLocalPose(poses, world, parent, composition.compose, composition.decompose));
+        const stored = world === null ? null : rebaseLocalPose(poses, world, parent, composition.compose, composition.decompose);
+        if (stored !== null) out.set(id, stored);
       }
       walk(id);
     }

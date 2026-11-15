@@ -93,7 +93,7 @@ describe('composeRigidPose', () => {
 describe('decomposeRigidPose', () => {
   it('inverts compose exactly', () => {
     const world = composeRigidPose(PARENT, CHILD);
-    const back = decomposeRigidPose(PARENT, world);
+    const back = decomposeRigidPose(PARENT, world)!;
     expect(back.x).toBeCloseTo(CHILD.x, 9);
     expect(back.y).toBeCloseTo(CHILD.y, 9);
     expect(back.rotation!).toBeCloseTo(CHILD.rotation!, 12);
@@ -111,7 +111,7 @@ describe('decomposeRigidPose', () => {
     for (let i = 0; i < 2000; i++) {
       const p: RectPose = { x: rnd(300), y: rnd(300), width: 10 + Math.abs(rnd(200)), height: 10 + Math.abs(rnd(200)), rotation: rnd(Math.PI) };
       const c: RectPose = { x: rnd(150), y: rnd(150), width: 5 + Math.abs(rnd(80)), height: 5 + Math.abs(rnd(80)), rotation: rnd(Math.PI) };
-      const back = decomposeRigidPose(p, composeRigidPose(p, c));
+      const back = decomposeRigidPose(p, composeRigidPose(p, c))!;
       worst = Math.max(worst, Math.hypot(back.x - c.x, back.y - c.y));
       // Corner agreement is the property that matters; rotation may differ by 2pi.
       worst = Math.max(worst, maxCornerError(corners(composeRigidPose(p, c)), cornersUnderParent(p, c)));

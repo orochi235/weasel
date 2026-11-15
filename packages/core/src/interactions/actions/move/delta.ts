@@ -9,22 +9,25 @@ import { snapLanding } from './dragSnap';
 /**
  * The world drag `(dx, dy)` as a translation of `id`'s stored pose. A pose is
  * stored in its frame, so under a turned frame the two point different ways.
+ * `null` in a singular frame: no stored move follows the drag there, so the
+ * node stays where it is.
  */
 export function localDelta(
   session: MoveSession,
   id: NodeId,
   dx0: number,
   dy0: number,
-): { dx: number; dy: number } {
+): { dx: number; dy: number } | null {
   const { dx, dy } = planeDelta(session, id, dx0, dy0);
   const f = session.frames.get(id);
   if (f === undefined) return { dx, dy };
   const { pc } = session;
   const d = session.descriptorOf(id);
-  const from = d.getBounds(pc.decompose(f.frameWorld, f.world));
-  const to = d.getBounds(
-    pc.decompose(f.frameWorld, translatePoseViaDescriptor(f.world, dx, dy, d, leadFor(session, id, dx0, dy0))),
-  );
+  const fromPose = pc.decompose(f.frameWorld, f.world);
+  const toPose = pc.decompose(f.frameWorld, translatePoseViaDescriptor(f.world, dx, dy, d, leadFor(session, id, dx0, dy0)));
+  if (fromPose === null || toPose === null) return null;
+  const from = d.getBounds(fromPose);
+  const to = d.getBounds(toPose);
   return { dx: to.x - from.x, dy: to.y - from.y };
 }
 
@@ -81,6 +84,7 @@ export function storedLeadFor(session: MoveSession, id: NodeId, dx0: number, dy0
 export function draggedStoredPose(session: MoveSession, id: NodeId, start: unknown, dx: number, dy: number): unknown {
   if (session.carried.has(id)) return start;
   const l = localDelta(session, id, dx, dy);
+  if (l === null) return start;
   return translatePoseViaDescriptor(start, l.dx, l.dy, session.descriptorOf(id), storedLeadFor(session, id, dx, dy));
 }
 

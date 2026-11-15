@@ -173,14 +173,18 @@ export function runDropPass(
   const reflowIds = new Set<NodeId>();
   for (const [cid, pose] of placed.destReflow) {
     const parent = scene.get(cid)?.parent ?? null;
-    reflow.set(cid, rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
+    const shown = rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose);
+    if (shown === null) continue;
+    reflow.set(cid, shown);
     reflowIds.add(cid);
   }
 
   const leftovers = sourceReflow(session, dragged, container.id);
   for (const [cid, pose] of leftovers) {
     const parent = scene.get(asNodeId(cid))?.parent ?? null;
-    reflow.set(asNodeId(cid), rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
+    const shown = rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose);
+    if (shown === null) continue;
+    reflow.set(asNodeId(cid), shown);
     reflowIds.add(asNodeId(cid));
   }
   const draggedIds = new Set<NodeId>(dragged.map((c) => c.id));

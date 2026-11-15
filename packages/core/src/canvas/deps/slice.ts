@@ -17,6 +17,7 @@ import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDe
 import { boundsOfCoords, pathInWorld } from '@weasel-js/geom';
 import { drawnPose, leafPath, storePiece, type DrawnPose } from './pathLeaf';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
+import { storesEdits } from 'domains/paths/nodeFrame';
 import { documentOf } from 'core/scene/documentOf';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';
 import { indexedCandidates } from 'canvas/pickIndex/scenePickIndex';
@@ -31,8 +32,9 @@ export interface OpsApplier {
  * pieces in one undoable batch.
  *
  * A leaf is cut when its `data.path` is a `Path` and `poseDescriptor` can read
- * its world pose as a box and a rotation; a leaf on a locked layer, or one
- * whose geometry derives from other nodes, is passed over. A piece keeps the
+ * its world pose as a box and a rotation; a leaf on a locked layer, one
+ * whose geometry derives from other nodes, or one in a singular frame, where
+ * no piece could be stored, is passed over. A piece keeps the
  * source's rotation in its pose when the descriptor can write one
  * (`withRotation`), and has the rotation baked into its path otherwise. The
  * pieces of a selected leaf take its place in the selection.
@@ -60,7 +62,7 @@ export function useSliceDepSource(
       for (const node of nodes) {
         if (sc.isHidden(node.id)) continue;
         const path = leafPath(sc, node);
-        if (!path) continue;
+        if (!path || !storesEdits(sc, node)) continue;
         const drawn = drawnPose(poseDescriptorForNode(descriptor, node), frame.world(node.id));
         if (!drawn) continue;
         drawnAt.set(node.id, drawn);

@@ -61,7 +61,8 @@ export interface UseDistributeReturn {
  *  remaining items are repositioned. Single batch — one undo step.
  *
  *  The span being divided is a world span: bounds are measured and translated
- *  in world, and each result is stored back in its own parent's frame. */
+ *  in world, and each result is stored back in its own parent's frame. A node
+ *  in a singular frame stays where it is. */
 export function useDistribute<TPose>(
   adapter: DistributeAdapter<TPose>,
   options: UseDistributeOptions<TPose> = {},
@@ -100,12 +101,10 @@ export function useDistribute<TPose>(
       if (delta === 0) continue;
       const dx = axis === 'x' ? delta : 0;
       const dy = axis === 'y' ? delta : 0;
-      const to = translatePoseViaDescriptor(it.pose, dx, dy, geom);
-      ops.push(createTransformOp<TPose>({
-        id: it.id,
-        from: a.getPose(it.id),
-        to: frame.local(it.id, to),
-      }));
+      const to = frame.local(it.id, translatePoseViaDescriptor(it.pose, dx, dy, geom));
+      // No stored pose in a singular frame reaches the spacing, so the node stays where it is.
+      if (to === null) continue;
+      ops.push(createTransformOp<TPose>({ id: it.id, from: a.getPose(it.id), to }));
     }
     if (ops.length === 0) return;
     dispatchApplyBatch(a, ops, o.label ?? 'Distribute');
