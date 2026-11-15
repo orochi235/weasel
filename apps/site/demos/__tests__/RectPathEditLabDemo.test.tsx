@@ -72,4 +72,27 @@ describe('RectPathEditLabDemo', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Edit path' }));
     expect(readout().getByText('rect-1 (editing)')).toBeTruthy();
   });
+
+  it('opens the selected rectangle with Edit path after another was being edited', async () => {
+    const { container } = await renderSettled(<RectPathEditLabDemo />, { wrapper: withIcons });
+    const canvas = container.querySelector('.lk-trial-scene canvas');
+    if (!canvas) throw new Error('no scene canvas in the trial');
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }));
+    click(canvas, [470, 130]);
+    expect(window.__weaselTest!.getSelection()).toEqual(['rect-3']);
+    await userEvent.click(screen.getByRole('button', { name: 'Edit path' }));
+    expect(readout().getByText('rect-3 (editing)')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(readout().getByText('rect-3')).toBeTruthy();
+    expect(readout().queryByText('rect-3 (editing)')).toBeNull();
+  });
 });
+
+function click(canvas: Element, [x, y]: number[]) {
+  const at = (type: string) =>
+    canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: type === 'pointerup' ? 0 : 1 }));
+  act(() => {
+    at('pointerdown');
+    at('pointerup');
+  });
+}

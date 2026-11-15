@@ -7,7 +7,7 @@ import {
   rectPath,
   type RectPose,
   type Scene,
-  solid, drawPreset,
+  solid, drawPreset, useActionsRegistry,
 } from '@weasel-js/core';
 import {
   defineInstrument,
@@ -80,13 +80,15 @@ function Panel({ scene, host }: { scene: LabScene; host: PathEditHost }) {
   const open = host.editingId();
   const editing = open && selected.includes(asNodeId(open)) ? open : null;
   const target = selected.find((id) => hasEditablePath(scene.get(id)));
+  // The buttons run what a double-click and Escape run. With no point, `enterPathEdit` opens the selection's path.
+  const actions = useActionsRegistry();
   return (
     <div className={s.panel}>
       <div className={s.buttons}>
-        <Button disabled={!target || target === editing} onClick={() => target && host.setEditingId(target)}>
+        <Button disabled={!target || target === editing} onClick={() => actions?.trigger('enterPathEdit')}>
           Edit path
         </Button>
-        <Button disabled={!editing} onClick={() => host.setEditingId(null)}>
+        <Button disabled={!editing} onClick={() => actions?.trigger('exitPathEdit')}>
           Done
         </Button>
       </div>
