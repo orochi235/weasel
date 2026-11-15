@@ -1,5 +1,5 @@
 import {
-  asNodeId, boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene,
+  boundsOfPath, createScene, type Path, PathBuilder, pathInWorld, type RectPose, type RenderLayer, type Scene,
   solid, type Stroke, drawPreset,
 } from '@weasel-js/core';
 import { useGirthTool } from '@weasel-js/path-tools';
@@ -70,7 +70,7 @@ function seed(): Scene<Data, 'default', RectPose> {
   });
   // The handwriting is what the style controls start on, and their defaults are its style.
   const last = scene.roots.at(-1);
-  if (last) scene.setSelection([asNodeId(String(last))]);
+  if (last) scene.setSelection([last]);
   return scene;
 }
 
