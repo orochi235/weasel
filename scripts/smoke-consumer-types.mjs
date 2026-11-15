@@ -3,7 +3,8 @@
 // `Bundler` resolution with library checking on. Phase 4 of smoke-consumer-bundle.mjs runs bundler
 // resolution under `skipLibCheck`, which reads a declaration that names an unresolvable module as
 // `any` and passes; this reports the TS2834 in the declaration itself, and each assertion below
-// fails if the type it names has gone `any`.
+// fails if the type it names has gone `any`. Errors inside a third-party package's declarations are
+// counted and not gated on: they are that package's to fix, and a consumer meets them either way.
 //
 //   node scripts/smoke-consumer-types.mjs              # every package, packed into a temp tree
 //   node scripts/smoke-consumer-types.mjs ui hud       # these and their @weasel-js dependencies
@@ -15,6 +16,7 @@ import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import ts from 'typescript';
 import { packInto } from './lib/pack-tree.mjs';
 
 /**
@@ -37,7 +39,8 @@ const MODES = [
   { name: 'Bundler', module: 'ESNext', moduleResolution: 'Bundler' },
 ];
 
-/** Each subpath `manifest` exports with types, a wildcard expanded against the extracted package. */
+/** Each subpath `manifest` exports with types, a wildcard expanded against the extracted package,
+ *  as `[specifier, declaration file]`. */
 export function typedSubpaths(manifest, pkgDir) {
   const out = [];
   for (const [key, target] of Object.entries(manifest.exports ?? { '.': { types: manifest.types } })) {
@@ -45,7 +48,7 @@ export function typedSubpaths(manifest, pkgDir) {
     if (!types) continue;
     const subpath = (rest) => `${manifest.name}${rest.slice(1)}`;
     if (!key.includes('*')) {
-      out.push(subpath(key));
+      out.push([subpath(key), join(pkgDir, types)]);
       continue;
     }
     const [head, tail] = types.split('*');
@@ -56,7 +59,8 @@ export function typedSubpaths(manifest, pkgDir) {
       if (!name.startsWith(lead)) continue;
       const rest = name.slice(lead.length);
       const star = rest.endsWith(tail) ? rest.slice(0, -tail.length) : rest;
-      if (existsSync(join(pkgDir, `${head}${star}${tail}`))) out.push(subpath(key.replace('*', star)));
+      const file = join(pkgDir, `${head}${star}${tail}`);
+      if (existsSync(file)) out.push([subpath(key.replace('*', star)), file]);
     }
   }
   return out;
@@ -94,7 +98,13 @@ export async function smokeDeclarations({ repoRoot, workDir, nodeModules, manife
   await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'declarations-consumer', private: true, type: 'module' }));
   await writeFile(
     join(dir, 'consumer.ts'),
-    subpaths.map((spec, i) => `export type _P${i} = typeof import('${spec}');\n`).join('') +
+    (await Promise.all(subpaths.map(async ([spec, file], i) =>
+      // A subpath of ambient declarations (icons-plugin's `virtual`) is referenced, not imported.
+      ts.isExternalModule(ts.createSourceFile(file, await readFile(file, 'utf8'), ts.ScriptTarget.Latest))
+        ? `export type _P${i} = typeof import('${spec}');\n`
+        : `/// <reference types="${spec}" />\n`)))
+      .sort((a, b) => Number(b.startsWith('///')) - Number(a.startsWith('///')))
+      .join('') +
       rejects
         .map(([spec, type], i) =>
           `import type { ${type.replace(/<.*/, '')} as _R${i} } from '${spec}';\n` +
@@ -116,26 +126,48 @@ export async function smokeDeclarations({ repoRoot, workDir, nodeModules, manife
           module: mode.module,
           moduleResolution: mode.moduleResolution,
           target: 'es2022',
-          lib: ['es2022', 'dom', 'dom.iterable'],
+          lib: ['esnext', 'dom', 'dom.iterable'],
           jsx: 'react-jsx',
           types: [],
         },
         files: ['consumer.ts'],
       }),
     );
-    try {
-      execFileSync(tsc, ['-p', config], { cwd: dir, stdio: 'pipe' });
-    } catch (err) {
+    const { ours, theirs } = diagnostics(tsc, config, dir);
+    if (ours.length) {
       fail(
         `consumer declarations FAILED under ${mode.name} resolution with library checking on:`,
-        String(err.stdout ?? '') + String(err.stderr ?? '') +
+        ours.join('\n') +
           '\n[smoke] An error inside a package\'s .d.ts is a declaration a consumer on this resolution\n' +
           'cannot read (TS2834: a relative specifier with no extension; see scripts/dts-extensions.mjs).\n' +
           'TS2578 on an assertion in consumer.ts means the type it names has resolved to `any`.',
       );
     }
-    console.log(`[smoke] declarations OK under ${mode.name}: ${subpaths.length} subpaths, ${rejects.length} rejecting assertions.`);
+    console.log(
+      `[smoke] declarations OK under ${mode.name}: ${subpaths.length} subpaths, ${rejects.length} rejecting assertions` +
+        (theirs.length ? `; ${theirs.length} error(s) in third-party declarations, not gated:\n  ${theirs.map((d) => d.split('\n')[0]).join('\n  ')}` : '.'),
+    );
   }
+}
+
+/** tsc's errors for `config`, split into the consumer's and weasel's own (`ours`) and the rest. */
+function diagnostics(tsc, config, cwd) {
+  let output = '';
+  try {
+    execFileSync(tsc, ['-p', config, '--pretty', 'false'], { cwd, stdio: 'pipe' });
+  } catch (err) {
+    output = String(err.stdout ?? '') + String(err.stderr ?? '');
+  }
+  const all = [];
+  for (const line of output.split('\n')) {
+    if (/^\s/.test(line) && all.length) all[all.length - 1] += `\n${line}`;
+    else if (line.trim()) all.push(line);
+  }
+  const ownFile = (d) => {
+    const file = /^(.+?)\(\d+,\d+\): /.exec(d)?.[1];
+    return !file || file === 'consumer.ts' || file.startsWith('../node_modules/@weasel-js/');
+  };
+  return { ours: all.filter(ownFile), theirs: all.filter((d) => !ownFile(d)) };
 }
 
 /** `dirs` and every workspace package their manifests reach, as directory names under `packages/`. */

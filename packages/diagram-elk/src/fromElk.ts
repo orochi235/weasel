@@ -5,7 +5,7 @@
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import type { Bounds } from '@weasel-js/diagram/layout';
-import type { ElkExtendedEdge, ElkNode } from 'elkjs/lib/elk-api';
+import type { ElkExtendedEdge, ElkNode } from 'elkjs/lib/elk-api.js';
 import type { ElkIndex } from './toElk';
 
 /** Everything ELK placed, keyed by the graph's ids, in ELK's frame. */

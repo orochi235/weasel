@@ -24,7 +24,7 @@ import {
   type LayoutResult,
 } from '@weasel-js/diagram/layout';
 import { nearestOnLine } from '@weasel-js/geom';
-import type { ELK } from 'elkjs/lib/elk-api';
+import type { ELK } from 'elkjs/lib/elk-api.js';
 import { fromElk, type ElkPlacement } from './fromElk';
 import { drawnEdges, portPoints, toElk, type DrawnEdge } from './toElk';
 

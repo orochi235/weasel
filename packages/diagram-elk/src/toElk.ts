@@ -17,7 +17,7 @@ import {
   type GraphNode,
   type Port,
 } from '@weasel-js/diagram/layout';
-import type { ElkExtendedEdge, ElkNode, ElkPort } from 'elkjs/lib/elk-api';
+import type { ElkExtendedEdge, ElkNode, ElkPort } from 'elkjs/lib/elk-api.js';
 
 /** One drawn edge: a stand-in `expandGroupEdges` made folds back into this. */
 export interface DrawnEdge {
