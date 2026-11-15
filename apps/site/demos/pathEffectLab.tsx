@@ -36,7 +36,8 @@ export function usePathEffectSettings<TC, K extends LabEffectKind>(
   });
   // Thunked, so a change reaches an action already bound.
   const latest = useLatest(settingsOf(config));
-  return useMemo((): ActionTunings => ({ [kind]: { params: () => latest.current } }), [kind, latest]);
+  // A computed key of a generic `K` widens to a string index, so the literal needs the cast to read as K's tuning.
+  return useMemo(() => ({ [kind]: { params: () => latest.current } }) as ActionTunings, [kind, latest]);
 }
 
 /** The bounds of each part a path effect in `scene` paints, by node id. */

@@ -3,4 +3,9 @@
  * `CalloutTrigger`'s, by handing it the trigger's press handlers. The child must forward its ref and DOM props, as
  * the kit `Button` does. `Focusable` does the same for a `TooltipTrigger`.
  */
-export { Pressable, type PressableProps } from 'react-aria-components';
+import type { ComponentProps } from 'react';
+import { Pressable } from 'react-aria-components';
+
+export { Pressable };
+// react-aria-components re-exports the component but not its props type.
+export type PressableProps = ComponentProps<typeof Pressable>;

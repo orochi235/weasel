@@ -111,6 +111,7 @@ describe('a painted group in the scene walk', () => {
       scene.add({ id: asNodeId('g'), kind: 'group', layer: 'main', pose: BOX, data });
       return pickWalk<RectPose>(scenePickSource(scene), {
         hits: (_n, p) => 50 >= p.x && 50 <= p.x + p.width && 40 >= p.y && 40 <= p.y + p.height,
+        clipAdmits: () => true,
       });
     };
     expect(pick({ background: BG, border: BORDER })).toEqual(pick({}));

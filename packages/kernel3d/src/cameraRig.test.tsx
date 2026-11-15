@@ -10,7 +10,10 @@ import type { Action } from '@weasel-js/routing';
 
 /** Each action's id, with the specs its default bindings take. */
 function bound(actions: readonly Action[]) {
-  return actions.map((a) => [a.id, (a.defaultBinding ?? []).map((b) => b.spec)]);
+  return actions.map((a) => {
+    const d = a.defaultBinding;
+    return [a.id, Array.isArray(d) ? d.map((b) => ('spec' in b ? b.spec : b)) : d ? [d] : []];
+  });
 }
 
 beforeAll(() => {

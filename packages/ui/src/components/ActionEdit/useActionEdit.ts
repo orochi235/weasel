@@ -24,7 +24,7 @@ export type ActionEdit<V> = Required<EditCallbacks<V>> & {
 export function useActionEdit<Id extends string, V>(
   actionId: Id,
   toParams: (value: V) => InvokeParams<Id>,
-  value: V,
+  value: NoInfer<V>,
 ): ActionEdit<V> {
   const edit = useOngoingAction(actionId);
   const map = useLatest(toParams);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { boundsOfPath, rectPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import {
-  createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, resolveFill, type Scene, sceneFromJSON, withPathEffectsRegistry,
+  asNodeId, createScene, derivedDepOf, derivedPartsOf, effectivePose, moveAction, RIGID_POSE_COMPOSITION, type NodeId, PATH_EFFECT_DERIVATIONS, pathEffectOf, pathEffectParts, type RectPose, resolveFill, type Scene, sceneFromJSON, withPathEffectsRegistry,
 } from '@weasel-js/core';
 import { tweenAction, bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction } from './actions';
 import { pathEffectSettingsParams, readPathEffectSettings } from './settingsForm';
@@ -103,7 +103,7 @@ describe('tween', () => {
     run(tweenAction, deps, { steps: 2 });
     const id = selected()[0]!;
     // Named by id, an effect is editable while something else is selected.
-    deps.selection!.set(['a']);
+    deps.selection!.set([asNodeId('a')]);
     expect(editPathEffectAction.enabled!(deps, undefined, undefined, { ids: [id] })).toBe(true);
     expect(editPathEffectAction.enabled!(deps, undefined, undefined, { ids: [id], kind: 'bendAlong' })).not.toBe(true);
     run(editPathEffectAction, deps, { ids: [id], steps: 5 });

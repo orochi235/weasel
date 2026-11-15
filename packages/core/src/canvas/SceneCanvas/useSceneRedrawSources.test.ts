@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { RedrawSource } from '../../core/layers/render';
 import { useSceneRedrawSources } from './useSceneRedrawSources';
+import type { PathEditHost } from './pathEditHost';
 
 const source = (): RedrawSource => ({ subscribe: () => () => {} });
 
-function sourcesFor(pathEdit: { subscribe?: RedrawSource['subscribe'] } | undefined) {
+function sourcesFor(pathEdit: PathEditHost) {
   const scene = { ...source(), overrides: source() };
   const { result } = renderHook(() => useSceneRedrawSources({
     props: { pathEdit },
@@ -23,7 +24,7 @@ describe('useSceneRedrawSources', () => {
   });
 
   it('leaves out a host with nothing to subscribe to', () => {
-    const host = { editingId: () => null, setEditingId: () => {} };
+    const host: PathEditHost = { editingId: () => null, setEditingId: () => {} };
     expect(sourcesFor(host)).not.toContain(host);
   });
 });
