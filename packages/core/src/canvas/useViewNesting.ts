@@ -19,9 +19,7 @@ export interface OuterFrame { view: View; dims: Dims; origin: { x: number; y: nu
 
 /** The props the nesting reads, as of the last committed render. */
 export type ViewNestingInputs = Pick<CanvasViewProps, 'parent' | 'follows' | 'bounds' | 'layers' | 'layerVisibility' | 'layerOrder'> & {
-  /** The selection the view owns, when it owns one. */
-  viewSelection?: SelectionApi | undefined;
-  /** The surface's selection, which the view acts on while it neither owns one nor follows a view that does. */
+  /** The surface's selection: its session's, which every view on it acts on. */
   shared: SelectionApi;
 };
 
@@ -109,12 +107,7 @@ export function useViewNesting(
     return parentReg()?.layerIsPainted(layerId) ?? false;
   }, [registry, sceneLayerGate, live, parentReg, ofFollowed]);
 
-  /** The selection this view owns, or else the one the view it follows owns:
-   *  `undefined` while it shares the surface's. */
-  const ownedSelection = useCallback((): SelectionApi | undefined => (
-    live.current.viewSelection ?? ofFollowed((reg) => reg.selection())?.value
-  ), [live, ofFollowed]);
-  /** The selection this view acts on, as of now: a followed view's changes with the aim. */
-  const selectionNow = useCallback(() => ownedSelection() ?? live.current.shared, [ownedSelection, live]);
-  return { frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted, ownedSelection, selectionNow };
+  /** The selection this view acts on: its surface's. */
+  const selectionNow = useCallback(() => live.current.shared, [live]);
+  return { frameIn, rectAt, derivedAt, drawnLayers, layerIsPainted, selectionNow };
 }

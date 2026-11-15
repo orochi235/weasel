@@ -31,9 +31,10 @@ export interface ScrollOffsets {
 
 /** The scroll store a `Scene` carries. */
 export interface SceneScroll {
-  /** How far each container's content is scrolled. Like the selection, view
-   *  state shared by every view over the scene: never document content, never
-   *  recorded or serialized, and it does not bump the scene's version. */
+  /** How far each container's content is scrolled. Like the selection,
+   *  editing-session state: the scene's own session's, or an `EditingSession`'s
+   *  own. Never document content, never recorded or serialized, and it does not
+   *  bump the scene's version. */
   readonly scroll: ScrollOffsets;
 }
 

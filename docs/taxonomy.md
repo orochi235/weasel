@@ -723,12 +723,14 @@ reads before a press rather than assuming a key. The
 spread directly into adapters.
 
 Where the ids live is a separate question from this API. `useSelection({ scene })`
-keeps them on the scene (`scene.getSelection()` / `setSelection()`), which is what
-`<SceneCanvas>` does: one selection shared by every view over that scene, recorded
-on each history entry so undo and redo restore it. Without a `scene` the hook owns
-the ids itself and nothing else sees them — what a `<CanvasView>` opts into via its
-`selection` / `selectionOptions` props. Either way the selection is not document
-content: it is not a node, and `scene.toJSON()` does not carry it.
+keeps them in the scene's editing session (`scene.getSelection()` / `setSelection()`),
+which is what `<SceneCanvas>` does: one selection shared by every view on that canvas,
+recorded on each history entry so undo and redo restore it. A scene is its own default
+session; an `EditingSession` over it (`createEditingSession`) holds a selection, previews
+and scroll offsets apart, over the same document and history — see
+`docs/editing-sessions.md`. Without a `scene` the hook owns the ids itself and nothing
+else sees them. Either way the selection is not document content: it is not a node, and
+`scene.toJSON()` does not carry it.
 
 Selection participates in the
 [`SelectionContext`](#selectioncontext) for non-canvas UI. See
@@ -900,7 +902,7 @@ Shape is generic (`TPose`). Common shapes: rect (`{x, y, width, height}`),
 (world-frame for root objects). A scene's `composition` folds them to world,
 which `getWorldPose` reads; the default, `RIGID_POSE_COMPOSITION`, makes a rect
 container's pose a frame, and a scene of another pose names its own.
-A container's **scroll offset** (`scene.scroll`) is view state, part of the
+A container's **scroll offset** (`scene.scroll`) is editing-session state, part of the
 frame it gives its children (ruled 2026-10-11): the view-side fold — painting,
 picking, chrome, previews, gestures — shows its children moved by minus it and
 writes back through it, while the layout pass and other document writers fold

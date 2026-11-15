@@ -34,7 +34,7 @@ reorders it. There is no separate adapter for arrays.
 
 | Option | What it wires |
 |---|---|
-| `selection` | `useSelection()` or its `adapterMethods`. Left out, `getSelection` answers `[]` and `setSelection` does nothing. |
+| `selection` | `useSelection()` or its `adapterMethods`. Left out, the adapter reads and writes the selection of the scene or editing session it was built over. |
 | `commitInsert` | The factory an insert drag calls with its bounds. Return `{ pose, data, id? }`, or `null` to abort. |
 | `insertLayer` | The layer inserted nodes land on. Default `'default'`. |
 | `poseDescriptor` | How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. |

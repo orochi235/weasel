@@ -1,0 +1,22 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-4);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+}
+
+.pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-4);
+}
+
+.readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  color: var(--wzl-fg-muted);
+}

@@ -250,26 +250,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P1) [agent] Give document and editing-session state explicit ownership before 2.0.** `Scene` combines
-  content, history, selection, previews and scrolling (`packages/core/src/core/scene/scene.ts`,
-  `sceneSelection.ts`, `scrollOffsets.ts`), while `CanvasView` permits independent selections
-  (`packages/core/src/canvas/canvasViewProps.ts`). Introduce an editing session over a document, owning
-  selection, previews, scrolling and action context. Views can share a session or use independent ones;
-  retain a convenient default. Define history ownership and which session's selection undo restores rather
-  than implicitly creating history per view. Preserve document sharing across 2D and kernel3d hosts.
-  Closes when two sessions edit one document with independent selection, scrolling and previews, views
-  sharing a session share those states, history/selection restoration has an explicit tested policy, and
-  the public API, demos and migration docs use that ownership model.
-
-- **(P2) [agent] Make explicit feature presets the standard canvas composition API in 2.0.** `SceneCanvas`
-  accepts named features and implies navigation from `viewport`; `LeanSceneCanvas` accepts preset objects
-  and does not imply navigation (`packages/core/src/canvas/LeanSceneCanvas.tsx`). Make the explicit-preset
-  implementation the standard `SceneCanvas`, retain complete configurations such as `drawPreset`, and
-  isolate named-feature convenience behind an optional entry or wrapper with documented semantics.
-  Closes when the standard canvas uses explicit presets, named convenience is isolated, navigation semantics
-  are documented and tested, unused presets stay out of the standard consumer bundle, and demos and
-  migration docs use the consolidated API.
-
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
