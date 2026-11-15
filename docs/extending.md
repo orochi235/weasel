@@ -666,13 +666,17 @@ rect-driven internally. To make them work for arbitrary `TPose` (path,
 polygon, custom blob), supply a `PoseDescriptor<TPose>`:
 
 ```ts
-export interface PoseDescriptor<TPose> {
+export interface PoseDescriptor<TPose, TNode = unknown> {
   getBounds(pose: TPose): Bounds;
   remapBounds(pose: TPose, src: Bounds, dst: Bounds): TPose;
   fromBounds(bounds: Bounds, template: TPose): TPose;
-  translate?(pose: TPose, dx: number, dy: number): TPose;
+  translate?(pose: TPose, dx: number, dy: number, lead?: TranslateLead<TPose>, landing?: unknown): TPose;
+  lerp?(a: TPose, b: TPose, t: number): TPose;          // animation; rect lerp when absent
+  axes?(like: TPose): TargetAxes<TPose> | null;         // what an animation moves
   getRotation?(pose: TPose): number;
+  supportsRotation?(pose: TPose): boolean;              // false hides the rotation handle
   withRotation?(pose: TPose, rotation: number): TPose;
+  forNode?(node: TNode): PoseDescriptor<TPose, TNode>;  // specialized to one node's data
 }
 ```
 
