@@ -11,6 +11,7 @@ import { brushRing } from '@weasel-js/cursor';
 import { shareBrushSize } from '@weasel-js/brush';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 
 type Point = { x: number; y: number };
 const DOT = '#5b7bd5';
@@ -41,7 +42,7 @@ function brushTool(id: string, label: string, act: Act, share?: ToolOptionShare)
           overlay: () => ({ kind: 'brush', points: trail, radiusPx }),
           onMove: (move: InvocationCtx) => { trail.push(move.world); },
           onEnd: (_end: InvocationCtx, reason: 'commit' | 'cancel') => {
-                if (reason === 'commit') act(ctx, trail, pxReach(radiusPx, ctx.deps.view?.get().scale ?? { x: 1, y: 1 }));
+            if (reason === 'commit') act(ctx, trail, pxReach(radiusPx, ctx.deps.view?.get().scale ?? { x: 1, y: 1 }));
           },
         };
       },
@@ -113,9 +114,7 @@ export function SharedBrushSizeDemo() {
   return (
     <div className="ckd-shape-tools-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <label>
-        <input type="checkbox" checked={shared} onChange={(e) => setShared(e.target.checked)} /> Share brush size
-      </label>
+      <Checkbox isSelected={shared} onChange={setShared}>Share brush size</Checkbox>
       {tools && <ActiveOptions tools={tools} values={values} />}
       <div className="ckd-canvas-frame">
         <SceneCanvas
