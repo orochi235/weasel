@@ -1,7 +1,8 @@
 /** The 3D world every dep is built from: core's scene with a `Pose3`, the
  *  viewport it is seen through, and how wide each node is. */
 
-import { composeWorldPose, scenePoseAdapter, scenePoseFrame, type Scene, type SceneNode } from '@weasel-js/core/engine';
+import type { Scene, SceneNode } from '@weasel-js/core/engine';
+import { worldPoses, type PoseReading } from '@weasel-js/core';
 import { type NodeId } from '@weasel-js/routing';
 import type { Aabb, Vec3 } from '@weasel-js/geom/3d';
 import { aabbOfPose, type Pose3 } from './pose3';
@@ -58,36 +59,8 @@ export function viewportOf<TData, TLayer extends string>(
   return inWorld(world, world.viewport(viewId));
 }
 
-/**
- * Where `id` is in world, as it is shown: folded up through every container
- * frame above it under the scene's composition, at the pose an in-flight
- * gesture published where there is one. What a renderer draws the node at.
- */
-export function worldPoseOf<TData, TLayer extends string>(
-  scene: Scene3d<TData, TLayer>,
-  id: NodeId,
-): Pose3 | undefined {
-  return scene.get(id) === undefined ? undefined : worldPoses(scene, 'shown')(id);
-}
-
-/** Which world a read sees: as shown, or as the document holds it with no
- *  gesture's override anywhere up the chain. */
-export type Reading = 'shown' | 'document';
-
-/** A world-pose lookup over `scene`, to build once per pass and ask per node. */
-export function worldPoses<TData, TLayer extends string>(
-  scene: Scene3d<TData, TLayer>,
-  reading: Reading,
-): (id: NodeId) => Pose3 {
-  const untyped = scene as unknown as Scene<unknown, string, unknown>;
-  if (reading === 'shown') {
-    const frame = scenePoseFrame(untyped);
-    return (id) => frame.world(id) as Pose3;
-  }
-  const adapter = scenePoseAdapter(untyped);
-  const compose = scene.composition.compose as (p: unknown, c: unknown) => unknown;
-  return (id) => composeWorldPose(adapter, id as string, compose) as Pose3;
-}
+// One world-pose reading for 2D and 3D alike: core's, typed by the scene's pose.
+export { worldPoseOf, worldPoses } from '@weasel-js/core';
 
 /** The box `node` occupies at the world pose `pose`, or `null` for none. */
 export function boxAt<TData, TLayer extends string>(
@@ -112,7 +85,7 @@ export function measuredBoxAt<TData, TLayer extends string>(
 /** A world-box lookup over `world`, to build once per pass and ask per node. */
 export function worldBoxes<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
-  reading: Reading,
+  reading: PoseReading,
 ): (node: Node3d<TData, TLayer>) => Aabb | null {
   const poseOf = worldPoses(world.scene, reading);
   return (node) => boxAt(world, node, poseOf(node.id));
