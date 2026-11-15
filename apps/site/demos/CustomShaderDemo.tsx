@@ -12,6 +12,7 @@ import { clamp01 } from '@weasel-js/geom';
 import weaselMarkUrl from '../assets/weasel-mark.png';
 import { PLASMA_PROGRAM, RIPPLE_PROGRAM, RIPPLE_SECONDS, SHADERS, VORONOI_PROGRAM } from './customShaderPrograms';
 import { DemoStage } from './DemoStage';
+import s from './CustomShaderDemo.module.css';
 
 declare module '@weasel-js/routing' {
   interface ActionParamSchema {
@@ -23,17 +24,12 @@ declare module '@weasel-js/routing' {
 const PANEL_W = 240;
 const PANEL_H = 240;
 
-
 interface Ripple { x: number; y: number; t: number; }
 
 /** The ripples still spreading at `time`, newest last; the shader takes eight. */
 function liveRipples(ripples: Ripple[], time: number): Ripple[] {
   return ripples.filter((r) => time - r.t < RIPPLE_SECONDS).slice(-8);
 }
-
-// ---------------------------------------------------------------------------
-// Texture: load once, cache at module scope
-// ---------------------------------------------------------------------------
 
 let cachedImageTexture: TextureHandle | null = null;
 
@@ -50,10 +46,6 @@ function useWeaselMarkTexture(): TextureHandle | null {
   }, []);
   return tex;
 }
-
-// ---------------------------------------------------------------------------
-// Panel component
-// ---------------------------------------------------------------------------
 
 type ShaderUniforms = Record<string, ShaderUniform>;
 
@@ -139,12 +131,12 @@ function Panel({
   const scene: SeedScene = seeds ?? empty;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <strong style={{ color: '#ddd', marginBottom: 4 }}>{title}</strong>
+    <div className={s.panel}>
+      <strong className={s.title}>{title}</strong>
       <DemoStage width={PANEL_W} height={PANEL_H}>
         <SceneCanvas
           className="ckd-canvas"
-          onResize={(s) => { sizeRef.current = s; }}
+          onResize={(size) => { sizeRef.current = size; }}
           scene={scene}
           shaders={SHADERS}
           features={seeds ? SEED_FEATURES : undefined}
@@ -160,10 +152,6 @@ function Panel({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Voronoi seeds: scene nodes over the shader, dragged by the `move` action
-// ---------------------------------------------------------------------------
 
 type SeedScene = Scene<unknown, 'default', RectPose>;
 const SEED_R = 6;
@@ -184,13 +172,7 @@ function seedUniform(scene: SeedScene, size: Dims): number[] {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Main demo
-// ---------------------------------------------------------------------------
-
-/** Read `?frozenTime=N` from the URL once at mount; if present, return that
- *  fixed seconds-since-start instead of a live RAF loop. Used by the visual-
- *  regression spec to pin every panel to a deterministic frame. */
+/** `?frozenTime=N` from the URL, in seconds, or null. */
 function readFrozenTime(): number | null {
   if (typeof window === 'undefined') return null;
   const raw = new URLSearchParams(window.location.search).get('frozenTime');
@@ -231,46 +213,44 @@ export function CustomShaderDemo() {
   const tex = useWeaselMarkTexture();
 
   return (
-    <div className="ckd-stack" ref={root}>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <Panel
-          title="Plasma"
-          program={PLASMA_PROGRAM}
-          clock={clock}
-          uniforms={(time) => ({ u_time: time, u_mouse: mouse })}
-          onPointerMove={(x, y) => setMouse([x, y])}
-        />
-        <Panel
-          title="Ripple"
-          program={RIPPLE_PROGRAM}
-          clock={clock}
-          uniforms={(time) => {
-            const live = liveRipples(ripples, time);
-            return {
-              u_time: time,
-              ...(tex ? { u_image: tex } : {}),
-              u_ripples: live.flatMap((r) => [r.x, r.y, r.t]),
-              u_rippleCount: live.length,
-            };
-          }}
-          onPress={(x, y) => {
-            const t = secondsOf(clock);
-            setRipples((r) => [...liveRipples(r, t), { x, y, t }].slice(-8));
-          }}
-          disabled={!tex}
-        />
-        <Panel
-          title="Voronoi"
-          program={VORONOI_PROGRAM}
-          clock={clock}
-          uniforms={(time, size) => ({
+    <div className={s.panels} ref={root}>
+      <Panel
+        title="Plasma"
+        program={PLASMA_PROGRAM}
+        clock={clock}
+        uniforms={(time) => ({ u_time: time, u_mouse: mouse })}
+        onPointerMove={(x, y) => setMouse([x, y])}
+      />
+      <Panel
+        title="Ripple"
+        program={RIPPLE_PROGRAM}
+        clock={clock}
+        uniforms={(time) => {
+          const live = liveRipples(ripples, time);
+          return {
             u_time: time,
-            u_seeds: seedUniform(seeds, size),
-            u_seedCount: seeds.nodes.size,
-          })}
-          seeds={seeds}
-        />
-      </div>
+            ...(tex ? { u_image: tex } : {}),
+            u_ripples: live.flatMap((r) => [r.x, r.y, r.t]),
+            u_rippleCount: live.length,
+          };
+        }}
+        onPress={(x, y) => {
+          const t = secondsOf(clock);
+          setRipples((r) => [...liveRipples(r, t), { x, y, t }].slice(-8));
+        }}
+        disabled={!tex}
+      />
+      <Panel
+        title="Voronoi"
+        program={VORONOI_PROGRAM}
+        clock={clock}
+        uniforms={(time, size) => ({
+          u_time: time,
+          u_seeds: seedUniform(seeds, size),
+          u_seedCount: seeds.nodes.size,
+        })}
+        seeds={seeds}
+      />
     </div>
   );
 }

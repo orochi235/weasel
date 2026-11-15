@@ -1,0 +1,15 @@
+.panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-4);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+}
+
+.title {
+  color: var(--wzl-fg);
+}
