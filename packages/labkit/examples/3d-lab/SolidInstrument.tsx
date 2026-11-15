@@ -17,6 +17,8 @@ import type { RenderContext } from '../../src/instrument/types';
 import { useSurface, useSurfaceCanvas, useSurfaceTile, useTileId } from '../../src/surface';
 import { toDeviceRect } from '../../src/surface/deviceRect';
 import { useOrbitView } from '../../src/trial/useOrbitView';
+import { useTrialHistory } from '../../src/trial/trialHistory';
+import { trialHistoryOf } from '../../src/trial/trialHistoryOf';
 import type { Vec3 } from '@weasel-js/geom/3d';
 import {
   alignPlaneSource,
@@ -269,8 +271,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
     [cameraRef, setCameraRef],
   );
 
-  // `scene.history` is the same handle `<SceneCanvas>` registers, so Cmd+Z
-  // runs the kit's own undo action here rather than a lab-local button.
+  // The trial's Undo and Redo step the scene, and settings changes land on its stack.
+  useTrialHistory(useMemo(() => trialHistoryOf(scene.history), [scene]));
   useStandardDeps({ selection: selectionApi, scene: scene as never, history: scene.history });
   useActionSet(ENGINE_STANDARD_ACTIONS);
   useDepSource('camera3d', () => camera3d);
@@ -432,12 +434,6 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
         <span className="td-count">
           {scene.renderOrderNodes().length} solids · {selection.length} selected
         </span>
-        <button type="button" className="td-tool" onClick={() => scene.history.undo()}>
-          undo
-        </button>
-        <button type="button" className="td-tool" onClick={() => scene.history.redo()}>
-          redo
-        </button>
       </div>
       <div className="td-pane" ref={attachPane} />
     </div>
