@@ -150,7 +150,8 @@ test('a map or union leaf\'s editor runs under its label in the rail layout, at 
   );
   for (const [path, name] of [['limits', 'Limits'], ['ramp', 'Ramp'], ['stops', 'Stops']] as const) {
     const slot = document.querySelector(`[data-pref-path="${path}"]`)!;
-    const label = within(slot as HTMLElement).getAllByText(name)[0]!.getBoundingClientRect();
+    // The row's label block, not the inline span naming the control: an inline box spans the font's full height.
+    const label = within(slot as HTMLElement).getAllByText(name)[0]!.closest('[class*="rowLabel"]')!.getBoundingClientRect();
     const control = slot.querySelector('[role="group"], select, button')!.getBoundingClientRect();
     expect(control.top, name).toBeGreaterThanOrEqual(label.bottom - 1);
     expect(Math.abs(control.left - label.left), name).toBeLessThan(4);

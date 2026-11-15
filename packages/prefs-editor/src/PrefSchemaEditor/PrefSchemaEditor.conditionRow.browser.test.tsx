@@ -27,7 +27,8 @@ test('a condition runs the width of the attributes pane under its label, and a k
   const pane = screen.getByRole('region', { name: 'Attributes' });
   for (const name of ['Shown if', 'Enabled if']) {
     const editor = box(within(pane).getByRole('group', { name }));
-    const label = box(within(pane).getByText(name));
+    // The row's label block, not the inline span naming the control: an inline box spans the font's full height.
+    const label = box(within(pane).getByText(name).closest('[class*="rowLabel"]')!);
     expect(label.bottom, name).toBeLessThanOrEqual(editor.top + 0.5);
     expect(editor.width, name).toBeGreaterThan(pane.clientWidth * 0.8);
     expect(editor.left).toBeGreaterThanOrEqual(box(pane).left);
