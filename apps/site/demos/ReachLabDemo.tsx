@@ -38,7 +38,7 @@ const createLabScene = () =>
 
 const TUNE: ActionTunings = { reachToMeet: { bindings: [{ kind: 'key', key: 'e' }] } };
 
-function ExtendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
+function ReachTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const reach = useReachTool({ radiusPx: ctx.config.reach });
   const tools = useMemo(() => ({ reach }), [reach]);
@@ -64,7 +64,7 @@ const reachInstrument = defineInstrument<State, Config>({
       { id: 'select', label: 'Select (then E extends the selection)', icon: icon('core:select') },
     ],
   },
-  render: (ctx) => <ExtendTrial ctx={ctx} />,
+  render: (ctx) => <ReachTrial ctx={ctx} />,
 });
 
 export function ReachLabDemo() {
