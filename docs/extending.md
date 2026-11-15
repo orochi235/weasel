@@ -383,8 +383,8 @@ interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends BehaviorEnd
 ```
 
 Each action pins the proposed/result shape; pick the matching alias
-(`MoveBehavior<TPose>`, `BoundsConstraint<TPose>` for resize, `InsertBehavior<TPose>`,
-`LassoSelectBehavior`, `CloneBehavior<TPose>`).
+(`MoveBehavior<TPose>`, `BoundsConstraint<TPose>` for resize, `RotateBehavior<TPose>`,
+`InsertBehavior<TPose>`, `LassoSelectBehavior`, `CloneBehavior<TPose>`).
 
 **Rules of thumb:**
 
