@@ -90,7 +90,7 @@ maps core's names to the objects, at the cost of loading every core preset.
 
 A `ToolSet` names a group of tool ids, and other sets, as one unit: `defaultTools`,
 a preset's `tools`, and `ToolPalette`'s `include` each take one. Core ships one per
-family (`SELECT_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`, `DRAW_TOOLS`, `TYPE_TOOLS`,
+family (`SELECT_TOOLS`, `ANCHOR_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`, `DRAW_TOOLS`, `TYPE_TOOLS`,
 `PAGE_TOOLS`) and `BUILTIN_TOOLS` over them all; `withoutTools(set,
 ...omit)` leaves some out, so an app takes "everything but the knife" without
 listing ids that a new built-in would then miss. A set made with
@@ -192,8 +192,8 @@ role:
 | Role | What it holds |
 |---|---|
 | `views` | The minimap: a view at `rect`, its camera a fit over the scene |
-| `actions` | `minimap.center` and `minimap.pan`, which move the main camera |
-| `bindings` | `pointerDown` → center and `drag` → pan, with `views: ['minimap']` |
+| `actions` | `minimap.center`, `minimap.pan`, `minimap.zoom` and `minimap.pinch`, which move the main camera (the last two unless `zoom: false`) |
+| `bindings` | `pointerDown` → center, `drag` → pan, wheel, trackpad pinch and Safari's pinch → zoom, and a two-finger touch → pinch, all with `views: ['minimap']` |
 | `overlay` | The visible-rect indicator, and a crosshair where the pointer is in the other view |
 | `attach` | Subscribes to the pointer store and repaints while the crosshair shows |
 
@@ -223,7 +223,7 @@ its input routing and an `attach` that binds its registered layer.
 ## Custom layers
 
 The `layers` prop on `<SceneCanvas>` is a map of named slots. Standard slot
-keys (`grid`, `scene`, `selectionOverlay`, `cellHighlight`) take a slot config;
+keys (`grid`, `scene`, `selectionOverlay`, `cellHighlight`, `pathEditingOverlay`) take a slot config;
 **any other key** is a custom layer, and its value carries a `.layer` field:
 
 ```tsx
@@ -252,7 +252,7 @@ A layer's `draw` returns `DrawCommand`s; nothing in the kit hands a layer a 2D
 context. A layer with no `space` is in world space and must not apply the view
 transform itself.
 
-`after` and `before` reference a `StandardSlotName`. Omit both and the
+`after` and `before` reference a `StandardSlotName` or another custom entry's key. Omit both and the
 layer goes after every standard slot (the top of the stack). Multiple
 custom entries can share an anchor; insertion order within an anchor is
 the iteration order of the `layers` map.
@@ -277,7 +277,7 @@ would build from a config.
 
 ## Custom affordances
 
-Affordances are reusable chrome primitives. Each affordance is a small object: `{ id, render, hitTest? }`. Tools that want chrome (selection handles, anchor dots, snap-target highlights, etc.) compose affordances into their overlay rather than reimplementing the hit-test logic inline.
+Affordances are reusable chrome primitives. Each affordance is a small object: `{ id, regions, regionsAt?, decorate? }`, its regions each carrying their own paint and hit radius. Tools that want chrome (selection handles, anchor dots, snap-target highlights, etc.) compose affordances into their overlay rather than reimplementing the hit-test logic inline.
 
 ```ts
 import {
@@ -347,7 +347,7 @@ that can say what it wants in a string should.
 
 `<k>` in the `kind:` forms is a name from the `routing` prop — the same
 vocabulary that names `Hit.kind`, not a second one. Without `routing` the kit
-infers `'text'` / `'path'` / `'image'` from the data shape; `routing={[]}`
+infers `'text'` / `'path'` / `'image'` from the data shape, and `'group'` / `'boolean'` from the node; `routing={[]}`
 opts out and makes every `kind:` target unmatchable.
 
 Rank is the first element of the CSS-style specificity tuple: within one
@@ -383,8 +383,8 @@ interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends BehaviorEnd
 ```
 
 Each action pins the proposed/result shape; pick the matching alias
-(`MoveBehavior<TPose>`, `BoundsConstraint<TPose>` for resize, `InsertBehavior<TPose>`,
-`LassoSelectBehavior`, `CloneBehavior<TPose>`).
+(`MoveBehavior<TPose>`, `BoundsConstraint<TPose>` for resize, `RotateBehavior<TPose>`,
+`InsertBehavior<TPose>`, `LassoSelectBehavior`, `CloneBehavior<TPose>`).
 
 **Rules of thumb:**
 
@@ -436,7 +436,7 @@ action itself captures the drag at press, runs the chain on each pointer move
 and on release, and commits a plain translate when no behavior claims the
 commit.
 
-The chain is the binding's behaviors in array order, then the two the action
+The chain is the binding's behaviors in array order, then the ones the action
 adds itself:
 
 | Behavior | From | What it does | Turned on by |
@@ -445,6 +445,7 @@ adds itself:
 | `snapBackOrDelete(...)` | `@weasel-js/core/move` | Released near where it started, the selection returns home; released far away, it returns or is deleted. | in `behaviors` |
 | `momentum(...)` | `@weasel-js/core` | Keeps a flicked node coasting after release, and records the whole flick as one undo step. | in `behaviors` |
 | layout drop | the move action | Drops the selection into the layout container under it: previews the slot and the siblings that make room, and commits the container's `commitDrop`. Released outside every layout container, each source container's `releaseDrop` decides, and a node let go outside its container leaves it. | a layout on a container (`SceneNode.layout`) |
+| page drop | the move action | Keeps a paged scene's content on its pages: a page's child released on another page moves into it, and one released off every page goes to the top of the tree with the pasteboard on, or stays in its page with the pasteboard off. | a paged scene |
 | reparent on drop | the move action | Reparents the selection under the node the pointer is released over, keeping where it was dropped. | the move binding's `reparentOnDrop: 'top' \| 'above'` param |
 
 Order decides two things:
@@ -453,19 +454,19 @@ Order decides two things:
   left it, so the layout drop, which runs last, places the selection where a
   snap already put it.
 - **Who commits.** On release the first behavior to return ops owns the commit.
-  A binding's behavior that claims it preempts a layout drop, and a layout drop
-  preempts a reparent. `end.answered` tells a later behavior that this has
+  A binding's behavior that claims it preempts a layout drop, a layout drop
+  preempts a page drop, and a page drop preempts a reparent. `end.answered` tells a later behavior that this has
   happened.
 
-The two the action adds are built from its deps for each drag, and are not
-exported: a layout is configured on its container, and reparenting by the
-binding's param. They use the same hooks as any other behavior:
+The ones the action adds are built from its deps for each drag, and are not
+exported: a layout is configured on its container, a page drop by the scene
+having pages, and reparenting by the binding's param. They use the same hooks as any other behavior:
 
-| Hook | Layout drop | Reparent on drop |
-|---|---|---|
-| `onMove` | Picks the container, places each dragged node, and returns the displaced siblings as `poses` and `opaque`; with a reflow transition it glides them there | — |
-| `onEnd` | Returns the drop's ops, or the release and exit ops with the default translate for what no container claimed; aborts the commit when a drop or release it took has nothing to write | Returns reparent, layer, and transform ops for the node under `end.pointer` |
-| `onSettled` | Settles each glide onto the pose the document now holds | — |
+| Hook | Layout drop | Page drop | Reparent on drop |
+|---|---|---|---|
+| `onMove` | Picks the container, places each dragged node, and returns the displaced siblings as `poses` and `opaque`; with a reflow transition it glides them there | — | — |
+| `onEnd` | Returns the drop's ops, or the release and exit ops with the default translate for what no container claimed; aborts the commit when a drop or release it took has nothing to write | Returns the moves onto, off, or between pages for a drag that crosses one; aborts when one is refused | Returns reparent, layer, and transform ops for the node under `end.pointer` |
+| `onSettled` | Settles each glide onto the pose the document now holds | — | — |
 
 `end.pointer` is where the pointer was let go, in world coordinates; without one
 on the release, it is the last move's.
@@ -665,13 +666,17 @@ rect-driven internally. To make them work for arbitrary `TPose` (path,
 polygon, custom blob), supply a `PoseDescriptor<TPose>`:
 
 ```ts
-export interface PoseDescriptor<TPose> {
+export interface PoseDescriptor<TPose, TNode = unknown> {
   getBounds(pose: TPose): Bounds;
   remapBounds(pose: TPose, src: Bounds, dst: Bounds): TPose;
   fromBounds(bounds: Bounds, template: TPose): TPose;
-  translate?(pose: TPose, dx: number, dy: number): TPose;
+  translate?(pose: TPose, dx: number, dy: number, lead?: TranslateLead<TPose>, landing?: unknown): TPose;
+  lerp?(a: TPose, b: TPose, t: number): TPose;          // animation; rect lerp when absent
+  axes?(like: TPose): TargetAxes<TPose> | null;         // what an animation moves
   getRotation?(pose: TPose): number;
+  supportsRotation?(pose: TPose): boolean;              // false hides the rotation handle
   withRotation?(pose: TPose, rotation: number): TPose;
+  forNode?(node: TNode): PoseDescriptor<TPose, TNode>;  // specialized to one node's data
 }
 ```
 
@@ -758,7 +763,8 @@ scene.add({
 
 The built-in `kit:derived` painter draws whatever `derivePath` returns, reading
 `data.fill` and `data.stroke` the way `kit:path` does. The returned path is in
-**world** coordinates, not the pose frame: the pose above is a zero-sized
+the coordinates the node's pose is stored in — world for a root, as here, or
+its container's frame — not the pose's own box: the pose above is a zero-sized
 placeholder, and all it still contributes is rotation. A bounds-relative fill
 resolves against the derived path's own box.
 
@@ -777,7 +783,9 @@ disabled, and a document holding one does not load.
 `derivePath` receives each dependency in `dependsOn` order as
 `{ node, pose }` — the node itself, and its **effective** pose: its ephemeral
 override when it has one, else its own derived pose, else the pose the scene
-stores, which is exactly what the render walks paint. The node comes along
+stores, which is exactly what the render walks paint — expressed in the frame
+the deriving node's own pose is stored in, so a dependency inside another
+container arrives where it draws. The node comes along
 because a connector legitimately reads more than a box: one that thickens with
 its endpoint's weight, or routes only to nodes on a given layer, is answering
 off `data` and `layer`, and the scene already invalidates on both. A dependency
@@ -835,28 +843,31 @@ switching a container between an id list and `'children'`. Order is significant
 and declaring what a node already declares records nothing.
 
 Reparenting a node out from under its dependents is legal and intended: the
-geometry keeps recomputing across the new frame, because `derivePath` reads world
-poses and `Scene` stores them absolutely.
+geometry keeps recomputing across the new frame, because each dependency's pose
+reaches `derivePath` carried into the deriving node's frame, wherever the two
+sit in the tree.
 
 ### Deriving a pose
 
 `derivePose` is the same machinery driving a node's **pose** rather than its
-path — same `dependsOn`, same registry-keyed serialization, pushed
-invalidation only. The difference is reach: a derived path is resolved at paint time
+path — same `dependsOn`, same registry-keyed serialization, the
+same pushed and pulled invalidation. The difference is reach: a derived path is resolved at paint time
 and reaches only the painter, while a derived pose is what the node *is* at, so
 it feeds bounds, hit-testing, selection chrome, snapping and layout.
 
 `dependsOn: 'children'` is the second form of the dependency list: "my own
 children, in child order", which a fixed id list cannot express because
 reparenting would have to maintain it. It is what a container hugging its
-contents wants, and `groupAction` uses it — a group's bounds track its members
-instead of freezing at the moment it was made. The kit registers the union
-function it needs under `kit:unionOfChildren`, so a grouped document round-trips
-through `toJSON` in any scene.
+contents wants, and a boolean group (`booleanGroupFields`) uses it — its path
+and its bounds track its members instead of freezing at the moment it was made.
+A plain group made by `groupAction` does not: it is a frame its members' poses
+are stored in, so its pose is authored. The kit registers the union function
+a boolean group needs under `kit:unionOfChildren`, so a document holding one
+round-trips through `toJSON` in any scene.
 
 The two forms differ in lifetime as well as in membership. Deleting a node
 deletes everything that names it in `dependsOn`; a container outlives the
-children it derives from, because an emptied group is still a group. A container
+children it derives from, because an emptied container is still a container. A container
 with nothing left falls back to its authored pose rather than collapsing to a
 zero box.
 
@@ -977,8 +988,8 @@ code path.
   ghosts (marquee displaces nothing).
 - `clone/action.ts` — opts out of the shared pose pipeline and sets
   `previewHidesSource: false` so the original stays put.
-- `edit-anchors/action.ts` — emits `previewData` rather than `previewPose`, for edits
-  that live in `node.data` instead of the pose.
+- `edit-anchors/action.ts` — emits `previewData` beside `previewPose`, for edits
+  that change `node.data` as well as the pose.
 - `defaults/delete.ts` — a minimal `timing: 'immediate'` one-shot.
 - `@weasel-js/hud`'s `src/tool.ts` — a package outside core owning its own
   input, gating each of its bindings on a hit from its `layer:<id>` affordance
