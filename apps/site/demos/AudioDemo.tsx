@@ -271,10 +271,10 @@ export function AudioDemo() {
     <div className="ckd-demo">
       <div className="ckd-toolbar">
         <Button onClick={enable} disabled={!kit || state === 'running'}>enable audio</Button>
-        <span className="ckd-readout is-code">engine.state() = {state}</span>
         <Button onClick={toggleSource} disabled={!kit}>{sourcePlaying ? 'stop source' : 'play source'}</Button>
         <Button onClick={burst} disabled={!kit}>fire 50 one-shots</Button>
         <span className={`ckd-readout ${num.numeric}`}>activeVoices {voices} / 8 per bus</span>
+        <span className="ckd-readout is-code">engine.state() = {state}</span>
       </div>
       <div className="ckd-row">
         <DemoStage width={W} height={H}>
@@ -341,7 +341,7 @@ export function AudioDemo() {
         pool steals rather than piling up. The <strong>pattern</strong> is
         <code> createPatternPlayer</code> booking <code>playNote</code> synth voices a step at a
         time on <code>music</code>; a tempo change lands on the next step. The
-        <strong> music inserts</strong> are a filter, a delay and a convolution reverb in the bus's
+        <strong> music inserts</strong> are a filter, a delay, and a convolution reverb in the bus's
         <code> inserts</code> chain; each checkbox is <code>bypass()</code>, a crossfade rather
         than a rewire.
       </div>
