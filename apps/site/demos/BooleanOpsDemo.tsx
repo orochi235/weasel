@@ -5,20 +5,18 @@ import {
   circlePath,
   pathDivide,
   pathExclude,
-  pathInPoseFrame,
   pathIntersect,
   pathSubtract,
   pathUnion,
   polygonFromPoints,
   SceneCanvas,
+  solid,
   useScene,
   useSelection,
-  useStandardActions,
-  WeaselProvider, pickPreset,
+  WeaselProvider, pathfinderPreset, pickPreset,
 } from '@weasel-js/core';
-import type { PolygonPath, RectPose } from '@weasel-js/core';
+import type { Fill, PolygonPath, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
-import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Sequence, values } from '@weasel-js/ui/components/Sequence';
 import { DemoStage, DemoStageGroup } from './DemoStage';
@@ -40,24 +38,30 @@ interface PanelItem {
   color: string;
 }
 
-/** The interactive panel's inputs, by id; a node with any other id is a result. */
-const INPUT_COLORS: Record<string, string> = { rect: RECT_COLOR, circle: CIRCLE_COLOR };
+type Data = { path: PolygonPath; fill: Fill };
 
-// Path leaves as the kit reads them: the path in `data.path`, drawn through the box its pose describes, so
-// the booleansAdapter <SceneCanvas> publishes works on them.
-const INITIAL_NODES = [
-  { id: 'rect', path: RECT_INPUT },
-  { id: 'circle', path: CIRCLE_INPUT },
-].map(({ id, path }) => ({
+/** A path leaf as the shape tools mint one: the path in `data.path`, drawn through the box its pose
+ *  describes, so the kit paints it and the booleans adapter `<SceneCanvas>` publishes works on it. */
+const pathLeaf = ({ id, path, color }: PanelItem) => ({
   kind: 'mark' as const,
   layer: 'default' as const,
   id: asNodeId(id),
   pose: boundsOfPath(path) as RectPose,
-  data: { path },
-}));
+  data: { path, fill: { paint: solid(color) } },
+});
+
+const INPUTS = [
+  { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
+  { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR },
+];
+const INITIAL_NODES = INPUTS.map(pathLeaf);
+const INPUT_IDS = INITIAL_NODES.map((n) => n.id);
 
 function Panel({ paths }: { paths: PanelItem[] }) {
-  const scene = useScene<PanelItem>({ items: paths });
+  const scene = useScene<Data, 'default', RectPose>({
+    systemLayers: [{ id: 'default' }],
+    initial: paths.map(pathLeaf),
+  });
   return (
     <WeaselProvider isolate>
       <DemoStage width={W} height={H}>
@@ -65,16 +69,7 @@ function Panel({ paths }: { paths: PanelItem[] }) {
           className="ckd-canvas"
           scene={scene}
           selectionOptions={{ mode: 'multi' }}
-          layers={{
-            scene: {
-              drawOne: (node): DrawCommand[] => [{
-                kind: 'path',
-                path: node.data.path,
-                fill: { paint: { color: node.data.color } },
-              }],
-            },
-            selectionOverlay: { outline: { follow: 'shape' } },
-          }}
+          layers={{ selectionOverlay: { outline: { follow: 'shape' } } }}
         />
       </DemoStage>
     </WeaselProvider>
@@ -82,25 +77,18 @@ function Panel({ paths }: { paths: PanelItem[] }) {
 }
 
 function InteractivePanel() {
-  const scene = useScene<{ path: PolygonPath }, 'default', RectPose>({
+  const scene = useScene<Data, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: INITIAL_NODES,
   });
-
-  const selection = useSelection({
-    scene,
-    mode: 'multi',
-    initial: [asNodeId('rect'), asNodeId('circle')],
-  });
-
-  useStandardActions({ selection });
+  const selection = useSelection({ scene, mode: 'multi', initial: INPUT_IDS });
 
   const reset = useCallback(() => {
     scene.batch('Reset', () => {
       scene.removeMany([...scene.roots]);
       for (const node of INITIAL_NODES) scene.add(node);
     });
-    selection.set([asNodeId('rect'), asNodeId('circle')]);
+    selection.set(INPUT_IDS);
   }, [scene, selection]);
 
   return (
@@ -111,20 +99,11 @@ function InteractivePanel() {
         <Button className="ckd-boolops-reset" onClick={reset}>Reset</Button>
       </div>
       <DemoStage width={W} height={H}>
-        <SceneCanvas features={[pickPreset]}
+        <SceneCanvas features={[pickPreset, pathfinderPreset]}
           className="ckd-canvas"
           scene={scene}
           selection={selection}
-          layers={{
-            scene: {
-              drawOne: (node, pose): DrawCommand[] => [{
-                kind: 'path',
-                path: pathInPoseFrame(node.data.path, pose),
-                fill: { paint: { color: INPUT_COLORS[node.id] ?? RESULT_COLOR } },
-              }],
-            },
-            selectionOverlay: { outline: { follow: 'shape' } },
-          }}
+          layers={{ selectionOverlay: { outline: { follow: 'shape' } } }}
         />
       </DemoStage>
     </div>
@@ -133,7 +112,7 @@ function InteractivePanel() {
 
 /** Each op applied to the same two inputs, one static canvas apiece. */
 const STATIC: { label: string; paths: PanelItem[] }[] = [
-  { label: 'Inputs', paths: [{ id: 'rect', path: RECT_INPUT, color: RECT_COLOR }, { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR }] },
+  { label: 'Inputs', paths: INPUTS },
   { label: 'Union', paths: [{ id: 'u', path: pathUnion(RECT_INPUT, CIRCLE_INPUT), color: RESULT_COLOR }] },
   { label: 'Intersect', paths: [{ id: 'i', path: pathIntersect(RECT_INPUT, CIRCLE_INPUT), color: RESULT_COLOR }] },
   { label: 'Subtract', paths: [{ id: 's', path: pathSubtract(RECT_INPUT, CIRCLE_INPUT), color: RESULT_COLOR }] },
@@ -148,9 +127,8 @@ export function BooleanOpsDemo() {
   return (
     <DemoStageGroup>
       <div className="ckd-demo">
-        {/* The scope sits above InteractivePanel because its useStandardActions
-            registers before its SceneCanvas mounts. Isolated so this canvas's
-            initial selection does not fight the static panels' empty ones. */}
+        {/* Isolated so the pathfinder bar reaches this canvas's actions, and its initial selection does
+            not fight the static panels' empty ones. */}
         <WeaselProvider isolate>
           <InteractivePanel />
         </WeaselProvider>
