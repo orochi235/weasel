@@ -2442,6 +2442,7 @@
     "releaseCanvasRenderer": "function",
     "releaseImage": "function",
     "remapPerAnchor": "function",
+    "remapSkin": "function",
     "removePage": "function",
     "renamePage": "function",
     "renderDebugSnapshot": "function",

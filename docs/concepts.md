@@ -45,8 +45,8 @@ differs is what it takes to bring the DOM along:
   Chrome that must be in lockstep compares `getPaintedVersion()` — the content
   version the pixels were painted from — against the version it is about to
   render, and defers a frame when they differ. It reads `0` until the first
-  paint lands, which is not a version any scene has; treat it as "nothing
-  painted yet" rather than comparing it.
+  paint lands, and a new scene no write has touched is at version `0` too, so
+  `0` cannot tell "nothing painted yet" from "an empty scene painted".
 
   So under `useScene(…, { subscribe: false })` a host driving poses from a
   frame loop pays no render per write.
@@ -601,10 +601,10 @@ Constructors live under `packages/core/src/core/ops/`: `createTransformOp`,
 `createInsertOp`, `createDeleteOp`, `createSetSelectionOp`,
 `createReorderOp`, etc. Every gesture and action hook produces ops on
 commit; `dispatchApplyBatch(adapter, ops, label)` calls
-`adapter.applyBatch?.(ops, label)` if available, otherwise applies each op
+`adapter.applyOps?.(ops, label)` if available, otherwise applies each op
 directly against the adapter.
 
-**Transient** ops apply via `adapter.applyOps(ops)` — no history entry.
+**Transient** ops apply via `adapter.applyOps(ops)` with no label — no history entry.
 Selection-only changes (e.g. marquee result) are transient by default.
 
 A **scene edit pass** (`scene.addEditPass(pass, { order })`) hears what each
@@ -785,7 +785,7 @@ export const deleteAction: Action & { requires: string[] } = {
 ```
 
 `useStandardActions` registers the kit-standard set into the surrounding
-`<ActionsProvider>`; `<SceneCanvas>` calls it for you, leaving out whatever
+`<ActionsProvider>`; `<SceneCanvas>` registers the same set for you, leaving out whatever
 its `features` presets and tools do not name. Actions reached by a
 pointer gesture (`move`, `resize`, `insert`, …) are the same kind of object —
 an `ongoing` invoker whose `start` returns an [ongoing handle](#ongoing-handle)
@@ -800,8 +800,9 @@ would, so there is one commit path and undo/coalescing behave identically. See
 
 Tool-switch shortcuts (`V` → Select) and held-key activations (Space → Hand)
 are registered as actions in the actions registry, not as fields on
-`ToolDef`. The factories in `packages/core/src/interactions/actions/defaults/` produce
-them:
+`ToolDef`. Two factories produce them, `toolActivate.ts` in
+`packages/core/src/interactions/actions/defaults/` and `toolOffhand.ts` in
+`packages/routing/src/interactions/actions/`:
 
 - `createToolActivateAction(bindings)` — single parametric action registered
   under id `tool.activate`. Its `defaultBinding` is a `BoundGesture[]` with
@@ -840,7 +841,8 @@ While no gesture is in flight, the dispatcher's hover-cursor pump (in
 pointermove and writes a cursor override to the canvas. Precedence:
 
 1. **Affordance hits** — `buildAffordanceAt` stamps `AffordanceHit.cursor`
-   on its hits (resize corners → `nwse/nesw-resize`, rotate ring → `grab`);
+   on its hits (resize corners → a `resize` glyph turned to the corner, rotate
+   ring → a `rotate` glyph, with `nwse`/`nesw-resize` and `grab` as fallbacks);
    a declared cursor wins outright.
 2. **Predicted action** — otherwise the pump asks
    `Dispatcher.resolveOnly(...)` which action a drag starting here would
@@ -987,12 +989,12 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 | **Scene function fields** | Registry key string | Scene lifetime | Constructor-fixed | `SceneRegistry` option on `createScene` / `sceneFromJSON` | No | `scene.toJSON()`, `sceneFromJSON()` serialization round-trip |
 | **Actions** | Action id string | Provider lifetime | Runtime-mutable; registrants stack per id, per scope | Input-scope tree in `packages/routing/src/interactions/actions/ActionsProvider.tsx` | `registry.list()` + `subscribe()` | Command palette, keybinding dispatch |
 | **Modes** | Mode id string | Registry lifetime | Constructor-fixed set; the active mode changes | `createModeRegistry` in `packages/modes/src/registry.ts` | `ModeRegistry.reflection` | Mode gating, `ToolPalette` |
-| **Easings** | Easing name string | Module lifetime | Frozen (compile-time constant) | Named export `EASINGS` in `easings.ts` | Implicitly — plain object, enumerable by key | `useAnimator`, animation hooks |
+| **Easings** | Easing name string | Module lifetime | Read-only (compile-time constant) | Named export `EASINGS` in `easings.ts` | Implicitly — plain object, enumerable by key | `useAnimator`, animation hooks |
 | **Shader programs (source)** | Program id string | Module lifetime | Extension rules (below); `registerProgram` keeps its registration, `programSourceRegistry.register` returns the release | Module-global `ExtensionRegistry` in `registerProgram.ts` | `programSourceRegistry` | `WeaselRenderer.registerProgram()` |
 | **Shader programs (compiled)** | Program id string | Renderer lifetime | Runtime-mutable; rebuilt on GL context restore | `Map` on each `WeaselRenderer` instance | No | `draw.ts` dispatch, `kind: 'shader'` draw commands |
 | **Paint kinds** | `Paint` discriminant | App (module) lifetime | Runtime-mutable; `registerPaintKind` returns a disposer; overrides stack; a kind with a loader registers on first lookup | Module-global reflectable in `core/paint/paintKinds.ts` | `paintKindRegistry`; `listPaintKinds()`, `listGradientKinds()`; `usePaintKinds()`, `useGradientKinds()`, `usePaintKind(id)` in React | `draw.ts` fill dispatch, `fillInPoseFrame`, `<defs>` emit, `PaintInput`'s and `GradientEditor`'s kind bars, `switchGradientKind` |
 | **Stroke markers** | Marker id string | App (module) lifetime | Runtime-mutable; `registerMarker` returns a disposer; overrides stack | Module-global reflectable in `@weasel-js/stroke` | `markerRegistry`; `listMarkers()` | Stroke end-cap drawing, `markerCommandCache` |
-| **Textures** | Auto-assigned `tex_N` id | App (module) lifetime | Runtime-mutable; append-only, no unregister in v1 | Module-global reflectable in `registerTexture.ts` | `textureRegistry` | `GLTextureCache`, `kind: 'shader'` uniform binding |
+| **Textures** | Auto-assigned `tex_N` id | App (module) lifetime | Runtime-mutable; `unregisterTexture` drops one | Module-global reflectable in `registerTexture.ts` | `textureRegistry` | `GLTextureCache`, `kind: 'shader'` uniform binding |
 | **Canvas layers** | Slot name string | Component lifetime, fixed at render | Constructor-fixed (prop value at render time) | `LayersMap` prop on `<SceneCanvas>`, built into `<Canvas>`'s `CanvasLayers` | Implicitly — `Object.entries` over the prop | `<Canvas>` layer compositor |
 | **Object-kind classifier** | Target kind string | — | — | — | — | Shipped as the routing trait: `createNodeRouting` and `NodeRoutingEntry` |
 
@@ -1004,13 +1006,13 @@ The ladder's ordering rule: **each tier answers only "can I paint this glyph, ri
 
 **Tools** (`packages/routing/src/tools/useTools.ts`) — the `registry` prop passed to `useTools` is held in a ref so new object references re-read cleanly each render. Tools not in `registry` can still appear in the `ambient` array (always-on tools); `ToolsApi.has(id)` checks both.
 
-**Ops** (`packages/core/src/core/scene/scene.ts`) — the internal `registered` Map is seeded with the kit's own `kit:*` ops at construction time, then consumer ops from `UseSceneOptions.ops`, then any later `scene.registerOp()` calls. `kit:*` kind strings are reserved; consumer ops that try to use the prefix throw at registration time.
+**Ops** (`packages/core/src/core/scene/opTable.ts`) — the internal `handlers` Map is seeded with the kit's own `kit:*` ops at construction time, then consumer ops from `UseSceneOptions.ops`, then any later `scene.registerOp()` calls. `kit:*` kind strings are reserved; consumer ops that try to use the prefix throw at registration time.
 
-**Scene function fields** (`SceneRegistry` in `packages/core/src/core/scene/types.ts`) — a separate registry from ops. Its sole purpose is serialization: `clipFromPose` is a function and can't travel through JSON, so `scene.toJSON()` replaces it with a string key and `sceneFromJSON()` restores the function from the registry. Reserved for future non-serializable node fields.
+**Scene function fields** (`SceneRegistry` in `packages/core/src/core/scene/sceneRegistry.ts`) — a separate registry from ops. Its sole purpose is serialization: `clipFromPose`, `copiesFromPose`, `derivePath`, `derivePose`, and `layout` are functions and can't travel through JSON, so `scene.toJSON()` replaces each with a string key and `sceneFromJSON()` restores the function from the registry. A new function field is a row in `NODE_FN_FIELDS` (`nodeFnFields.ts`) plus its entry in `SceneRegistry`.
 
 **Actions** (`packages/routing/src/interactions/actions/ActionsProvider.tsx`) — the only registry backed by React context. Entries are owned by components (registered in `useEffect`, cleaned up on unmount). `register()` returns its own release; registrants for one id stack, newest live, so hot-module replacement doesn't orphan stale entries.
 
-**Easings** (`packages/geom/src/easings.ts`, re-exported by core) — not a registry in the dynamic sense; `EASINGS` is a frozen `as const` object. `SPRING_PRESETS` follows the same shape for the four named spring curves.
+**Easings** (`packages/geom/src/easings.ts`, re-exported by core) — not a registry in the dynamic sense; `EASINGS` is an `as const` object, read-only to the type checker though not frozen. `SPRING_PRESETS` follows the same shape for the four named spring curves.
 
 **Shader programs** split across two levels. The module-level source registry (`registerProgram.ts`) is GL-context-agnostic, shared across all renderers, and follows the extension rules above. Each `WeaselRenderer` instance maintains its own compiled-program registry (`programRegistry`), rebuilt from source on GL context restore. This mirrors the font registry pattern: fonts store `ImageBitmap` at module scope; each renderer's `GLTextureCache` handles the per-context upload.
 
@@ -1020,7 +1022,7 @@ A kind can also load on demand. `registerPaintKindLoader(id, load)` declares one
 
 `Paint` itself stays a closed union — opening its discriminant would widen every built-in member and break the narrowing the kit's own branches depend on — so a registered kind declares its own interface and passes it through `asPaint`. The render slot is `bind` rather than `draw` because a caller owning its own stencil state (an inner/outer-aligned stroke, an even-odd fill) has to issue its own draw call. A kind's shader goes through the ordinary `registerProgram` source registry — declared on the entry as `programs`, which registering the kind registers — and compiles into each renderer on first use, so a kind registered after a renderer exists still paints.
 
-**Textures** (`packages/renderer/src/textures/registerTexture.ts`) — entries are keyed by auto-assigned opaque ids (`tex_N`), not caller-chosen names, so collision is impossible. The `TextureHandle` returned by `registerTexture()` is what callers pass as a `ShaderUniform` value. No unregister in v1; texture lifetime is the app lifetime.
+**Textures** (`packages/renderer/src/textures/registerTexture.ts`) — entries are keyed by auto-assigned opaque ids (`tex_N`), not caller-chosen names, so collision is impossible. The `TextureHandle` returned by `registerTexture()` is what callers pass as a `ShaderUniform` value. A texture lives until `unregisterTexture(handle)`, after which every renderer frees its GL copy on its next frame; the image itself is the caller's to release.
 
 **Canvas layers** — the `LayersMap` prop is not a traditional registry but fits the pattern: it maps string slot names to layer configs, the compositor enumerates them at render time, and custom entries declare ordering via `before?` / `after?` anchors. Scope is per-`<Canvas>` instance; the map is treated as immutable for a given render pass.
 
@@ -1045,7 +1047,7 @@ Registries that don't embed it, and why:
 - **Ops**, **Scene function fields** — per-scene options objects with no runtime enumeration need beyond the scene itself.
 - **Actions** — a scope tree: one id resolves differently per scope, and `mute` hides an entry without removing it, so "the entries" has no single answer.
 - **Shader programs (compiled)** — a per-renderer cache of GL objects, rebuilt from the source registry, which is the one reflected.
-- **Easings** — a frozen constant.
+- **Easings** — a read-only constant.
 - **Canvas fonts** (`listCanvasFonts`) — whether a family is served depends on the fallback policy in force, so the list is computed, not stored.
 - **Node shapes**, **content handlers** — priority-ordered predicate lists, not keyed lookups; two painters matching one node is ordering, not a conflict.
 - **Quantity display kinds** — kept a static built-in table so `@weasel-js/quantity` stays free of module side effects.

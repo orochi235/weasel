@@ -7,7 +7,7 @@ describe('rig public surface', () => {
     expect(typeof kit.bindRig).toBe('function');
     expect(typeof kit.useRig).toBe('function');
     expect(typeof kit.rigidRigApply).toBe('function');
-    for (const name of ['dataRestPath', 'placeSkeleton', 'rigFromNode', 'unplaceSkeleton', 'useRigNode'] as const) {
+    for (const name of ['dataRestPath', 'placeSkeleton', 'remapSkin', 'rigFromNode', 'unplaceSkeleton', 'useRigNode'] as const) {
       expect(typeof kit[name]).toBe('function');
     }
   });
