@@ -237,3 +237,18 @@ test('in a squeezed row, a bar drawn as a menu keeps its whole button', async ()
   await expect.poll(() => button.getBoundingClientRect().right - document.querySelector('[data-dock-bar="constraints"]')!.getBoundingClientRect().right).toBeLessThanOrEqual(0.5);
   expect(button.scrollWidth).toBeLessThanOrEqual(button.clientWidth);
 });
+
+test('a bar dragged into the far half of a row snaps to its far end, flush with the row', async () => {
+  render(<Host />);
+  const row = document.querySelector('[data-dock-row="1"]')!.getBoundingClientRect();
+  const path = line(mid(handle('File')), { x: row.right - 40, y: row.top + row.height / 2 });
+  await commands.pointer([to(path[0]!), { down: true }, ...path.slice(1).map(to)]);
+  expect(document.querySelector('[data-dock-row="1"]')).toHaveAttribute('data-dock-drop', 'end');
+  await commands.pointer([{ up: true }]);
+  expect(layouts.at(-1)).toMatchObject({ docks: { top: [['view'], ['shape', 'file']] }, atEnd: ['file'] });
+  const file = document.querySelector('[data-dock-bar="file"]')!.getBoundingClientRect();
+  const shape = document.querySelector('[data-dock-bar="shape"]')!.getBoundingClientRect();
+  const after = document.querySelector('[data-dock-row="1"]')!.getBoundingClientRect();
+  expect(Math.abs(after.right - file.right)).toBeLessThanOrEqual(0.5);
+  expect(file.left - shape.right).toBeGreaterThan(100);
+});
