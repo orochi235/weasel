@@ -1,3 +1,44 @@
+.demo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: calc(var(--wzl-space-8) * 1.5);
+  padding: var(--wzl-space-8);
+  align-items: start;
+}
+
+.sliders {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--wzl-space-8) * 1.5);
+}
+
+.swatches {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+}
+
+.side {
+  position: sticky;
+  top: var(--wzl-space-8);
+}
+
+.sideTitle {
+  margin: 0 0 var(--wzl-space-4);
+  font-size: 11px;
+  color: var(--wzl-fg-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.note {
+  margin-top: var(--wzl-space-4);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--wzl-fg-subtle);
+}
+
 .swatch {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   aspect-ratio: 1 / 1.4;
@@ -6,12 +47,6 @@
   justify-content: flex-end;
   padding: var(--wzl-space-2) var(--wzl-space-3);
   font-size: 10px;
-}
-
-.indices {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  font-size: 12px;
-  margin-top: var(--wzl-space-4);
 }
 
 .diagram {

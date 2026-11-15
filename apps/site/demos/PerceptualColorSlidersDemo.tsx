@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { chromaAt, oklchDegToHex, type ChromaCurve } from '@weasel-js/paint';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
+import { Field } from '@weasel-js/ui/components/Field';
 import { paintGradientTrack } from '@weasel-js/ui/paint-gradient-track';
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
 import type { Dims, RenderLayer } from '@weasel-js/core';
@@ -65,17 +66,13 @@ function colorAtIndex(idx: number, p: RampParams): string {
 /** Output swatch: row of color tiles, one per index. */
 function OutputSwatchRow({ indices, params }: { indices: number[]; params: RampParams }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${indices.length}, 1fr)`, gap: 2 }}>
+    <div className={s.swatches}>
       {indices.map((idx, i) => {
         const color = colorAtIndex(idx, params);
         const L = lAtIndex(idx, params.lRange);
         const labelColor = L > 0.55 ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.85)';
         return (
-          <div
-            key={i}
-            className={s.swatch}
-            style={{ background: color, color: labelColor }}
-          >
+          <div key={i} className={s.swatch} style={{ background: color, color: labelColor }}>
             {idx}
           </div>
         );
@@ -123,9 +120,7 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
       const { xAt, yAt } = plotIn(dims);
       const path = polygonFromPoints(points.map(p => ({ x: xAt(p.L), y: yAt(p.C) })));
       const colors = points.flatMap(p => hexToRgba(p.color));
-      // The vertex-color render path is gated by `cmd.fill` being truthy
-      // (see src/renderer/draw.ts:231). Pass a placeholder solid fill;
-      // the per-vertex colors override it via the `pathFillVColor` shader.
+      // Vertex colors paint only under a fill; this one is a placeholder they override.
       const cmd: DrawCommand = {
         kind: 'path',
         path,
@@ -134,7 +129,6 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
       };
       return [cmd];
     },
-    // Re-evaluate whenever the curve points move.
   }), [points]);
 
   const scene = useScene<never, 'default'>({
@@ -238,28 +232,22 @@ export function PerceptualColorSlidersDemo() {
   const params: RampParams = { hue, midL, lRange, chroma };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 24, padding: 16, alignItems: 'start' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <section>
-          <h3 style={{ margin: '0 0 8px' }}>Output swatch</h3>
-          <OutputSwatchRow indices={indices} params={params} />
-        </section>
+    <div className={s.demo}>
+      <div className={s.sliders}>
+        <OutputSwatchRow indices={indices} params={params} />
 
-        <section>
-          <h3 style={{ margin: '0 0 8px' }}>Hue (single thumb)</h3>
+        <Field label="Hue (single thumb)">
           <Slider
             min={0} max={360} step={1}
             thumbs={[{ value: hue }]}
             onInput={ts => setHue(ts[0].value)}
-            aria-label="Hue"
             readoutPlacement="inline-after"
             renderReadout={t => `${t.value}°`}
             renderTrack={paintGradientTrack({ gradient: t => oklchDegToHex(midL, peakC, t * 360) })}
           />
-        </section>
+        </Field>
 
-        <section>
-          <h3 style={{ margin: '0 0 8px' }}>L range (2-thumb, ordered)</h3>
+        <Field label="L range (2-thumb, ordered)">
           <Slider
             min={0} max={1} step={0.005}
             constraint="ordered"
@@ -275,10 +263,9 @@ export function PerceptualColorSlidersDemo() {
               hatch: { angleDeg: 135, stripe: 2, gap: 4, dim: 75 },
             })}
           />
-        </section>
+        </Field>
 
-        <section>
-          <h3 style={{ margin: '0 0 8px' }}>Chroma (3-thumb, free, per-thumb bounds)</h3>
+        <Field label="Chroma (3-thumb, free, per-thumb bounds)">
           <Slider<CThumb>
             min={0} max={0.22} step={0.005}
             constraint="free"
@@ -297,10 +284,9 @@ export function PerceptualColorSlidersDemo() {
               gradient: t => oklchDegToHex(midL, t * 0.22, hue),
             })}
           />
-        </section>
+        </Field>
 
-        <section>
-          <h3 style={{ margin: '0 0 8px' }}>Indices band (dynamic, allowShiftAll)</h3>
+        <Field label="Indices band (dynamic, allowShiftAll)" output={indices.join(', ')}>
           <Slider
             min={0} max={1000} step={1}
             thumbs={indices.map(value => ({ value }))}
@@ -315,12 +301,11 @@ export function PerceptualColorSlidersDemo() {
               },
             })}
           />
-          <div className={s.indices}>{indices.join(', ')}</div>
-        </section>
+        </Field>
       </div>
 
-      <div style={{ position: 'sticky', top: 16 }}>
-        <h3 style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--wzl-fg-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>C as function of L</h3>
+      <div className={s.side}>
+        <h3 className={s.sideTitle}>C as function of L</h3>
         <SegmentedBar
           className={s.boundsMode}
           items={BOUNDS_MODES}
@@ -330,7 +315,7 @@ export function PerceptualColorSlidersDemo() {
           size="sm"
         />
         <ChromaCurveDiagram params={params} bounds={chromaBounds} />
-        <div style={{ fontSize: 10, color: 'var(--wzl-fg-subtle)', marginTop: 8, lineHeight: 1.4 }}>
+        <div className={s.note}>
           Triangle interior rendered via <code>PathDrawCommand.vertexColors</code> — each corner carries its OKLCH color, the kit's <code>pathFillVColor</code> shader interpolates across. Dashed range tracks show each thumb's allowed slide range; the toggle above adjusts the L and chroma slider bounds together.
         </div>
       </div>
