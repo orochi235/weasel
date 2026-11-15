@@ -1,11 +1,12 @@
-import { setToolOption, useToolOptionParams, type Tool, type ToolOptionValues, type ToolsApi } from '@weasel-js/core';
+import { setToolOption, useScopedTools, useToolOptionParams, type Tool, type ToolOptionValues, type ToolsApi } from '@weasel-js/core';
 import { ToolOptionsBar, type ToolOptionsBarProps } from './ToolOptionsBar';
 
 /** Props for {@link ActiveToolOptionsBar}. */
 export interface ActiveToolOptionsBarProps extends Omit<ToolOptionsBarProps, 'label' | 'schema' | 'values' | 'onChange' | 'mixed' | 'over'> {
   /** The tool whose options to draw. Omitted, the active tool of `tools`. */
   tool?: Pick<Tool, 'id' | 'options' | 'presentation'>;
-  /** The canvas's tools, as `onToolsCreated` hands them over; the bar follows the active one. */
+  /** The canvas's tools; the bar follows the active one. Omitted, the tools of the canvas the bar sits in, or beside
+   *  under a shared `WeaselProvider` (`useScopedTools`). */
   tools?: Pick<ToolsApi, 'active' | 'registry'> | null;
   /** Where the host keeps its tools' option values: the store it passes as `<SceneCanvas toolOptionValues>`. */
   values: ToolOptionValues;
@@ -18,7 +19,9 @@ export interface ActiveToolOptionsBarProps extends Omit<ToolOptionsBarProps, 'la
  * for no tool, or one with no options and no children.
  */
 export function ActiveToolOptionsBar({ tool, tools, values, children, ...bar }: ActiveToolOptionsBarProps) {
-  const shown = tool ?? (tools?.active ? tools.registry[tools.active] : undefined);
+  const scoped = useScopedTools();
+  const followed = tools ?? scoped;
+  const shown = tool ?? (followed?.active ? followed.registry[followed.active] : undefined);
   const params = useToolOptionParams(shown, values);
   const options = shown?.options;
   if (!shown || !options || !params) return <ToolOptionsBar {...bar}>{children}</ToolOptionsBar>;

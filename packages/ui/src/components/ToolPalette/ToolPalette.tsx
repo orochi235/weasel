@@ -1,6 +1,6 @@
 import type { DragEvent, ReactNode } from 'react';
 import {
-  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolIdsOf, toolSetHas, toolStacksOf, type CarryPayload, type Tool, type ToolSet, type ToolsApi,
+  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolIdsOf, toolSetHas, toolStacksOf, useScopedTools, type CarryPayload, type Tool, type ToolSet, type ToolsApi,
 } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import type { Orientation } from '../Run';
@@ -14,7 +14,9 @@ import { useToolCarry } from './useToolCarry';
 
 /** Props for {@link ToolPalette}. */
 export interface ToolPaletteProps extends DisableableProps {
-  tools: ToolsApi;
+  /** The tools to draw. Omitted, the tools of the canvas the palette sits in, or beside under a shared
+   *  `WeaselProvider` (`useScopedTools`); the palette draws nothing until that canvas mounts. */
+  tools?: ToolsApi;
   orientation?: Orientation;
   className?: string;
   /**
@@ -89,6 +91,12 @@ function paletteStacks(stacks: ToolPaletteProps['stacks'], include: ToolPaletteP
  * allow render greyed out and inert, or with `ineligible="hide"` not at all.
  */
 export function ToolPalette(props: ToolPaletteProps) {
+  const scoped = useScopedTools();
+  const tools = props.tools ?? scoped;
+  return tools ? <ToolPaletteRail {...props} tools={tools} /> : null;
+}
+
+function ToolPaletteRail(props: ToolPaletteProps & { tools: ToolsApi }) {
   const {
     tools, orientation = 'vertical', className, modeRegistry, ineligible = 'dim',
     groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, 'aria-label': ariaLabel = 'Tools', stacks, stackCycle = 'alt',
