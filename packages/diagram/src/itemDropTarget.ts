@@ -3,14 +3,14 @@
  * container under the pointer, the container that would hold it, and its
  * place among that container's members.
  */
-import { nodeOutline, type Bounds, type NodeId, type OngoingOverlay, type RectPose, type Scene, type Vec2 } from '@weasel-js/core';
+import { nodeOutline, worldPoseOf, type Bounds, type NodeId, type OngoingOverlay, type RectPose, type Scene, type Vec2 } from '@weasel-js/core';
 import { asPolygonPath, flatSubpaths } from '@weasel-js/geom';
 import { nearestGap } from '@weasel-js/ui-input';
 import { bodyAt } from './connectTargets';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { diagramContainerOf } from './containers/trait';
 import type { DiagramSceneData } from './dataTypes';
-import { worldPoseOf, worldRectOf } from './overlays';
+import { worldRectOf } from './overlays';
 import type { ParticipantSource } from './portAffordance';
 import { sequenceSlots, type ReorderGap } from './reorder';
 import { membersOf } from './reorderModel';
@@ -68,7 +68,7 @@ const OUTLINE_TOLERANCE = 0.5;
 /** The outline of `id` as closed runs: its shape's, or a container's box. */
 export function outlineOf(scene: DiagramScene, id: string, role: string): OngoingOverlay[] {
   const node = scene.get(id as NodeId);
-  const shape = node === undefined || diagramContainerOf(node) !== null ? null : nodeOutline(node as never, worldPoseOf(scene, id));
+  const shape = node === undefined || diagramContainerOf(node) !== null ? null : nodeOutline(node as never, worldPoseOf(scene, id as NodeId)!);
   if (shape !== null) {
     return flatSubpaths(asPolygonPath(shape), OUTLINE_TOLERANCE).closed.map((run) => {
       const points: Vec2[] = [];
