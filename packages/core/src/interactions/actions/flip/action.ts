@@ -47,7 +47,7 @@ function localMirror(
   frame: PoseFrame<unknown>,
   id: Parameters<PoseFrame<unknown>['local']>[0],
   pivotWorld: { x: number; y: number; width: number; height: number },
-): Affine {
+): Affine | null {
   const at = frame.local(id, {
     x: pivotWorld.x + pivotWorld.width / 2,
     y: pivotWorld.y + pivotWorld.height / 2,
@@ -55,7 +55,8 @@ function localMirror(
     height: 0,
     rotation: 0,
   }) as RectPose | null;
-  const theta = at?.rotation ?? 0;
+  if (at === null) return null;
+  const theta = at.rotation ?? 0;
   const mirror: Affine = axis === 'x' ? [-1, 0, 0, 1, 0, 0] : [1, 0, 0, -1, 0, 0];
   const turned = multiply(multiply(rotate(theta), mirror), rotate(-theta));
   return multiply(translate(at.x, at.y), multiply(turned, translate(-at.x, -at.y)));
@@ -138,16 +139,17 @@ function flipOps(
     if (to === null) continue;
     // A mirror image past the double range cannot be drawn, so the flip cannot land.
     if (!finiteThroughout(to)) return [];
+    const mirror = localMirror(axis, frame, id, about ?? geom.getBounds(world));
+    if (mirror === null) continue;
     const moved = !sameValue(node.pose, to);
     if (moved) ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label: 'Flip' }));
     // Mirror the data-held geometry about the SAME pivot the pose flip uses.
     // A pose-only flip of a bare-AABB pose is identity, so this data op is
     // the only way an asymmetric shape actually mirrors.
-    const g = about ?? geom.getBounds(world);
     const dataOp = geometryDataOp(
       geometryProjection,
       { id: id as string, data: node.data, pose: node.pose },
-      localMirror(axis, frame, id, g),
+      mirror,
       to,
       'Flip',
     );

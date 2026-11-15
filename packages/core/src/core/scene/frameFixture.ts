@@ -82,8 +82,10 @@ export function makeFrameFixture(
   return scene;
 }
 
-/** Assert two poses describe the same box, to within float noise. */
-export function expectSamePose(actual: RectPose, expected: RectPose, tolerance = 1e-9): void {
+/** Assert two poses describe the same box, to within float noise. A `null` actual (a decompose that found no
+ *  inverse) fails. */
+export function expectSamePose(actual: RectPose | null, expected: RectPose, tolerance = 1e-9): void {
+  if (actual === null) throw new Error(`pose mismatch\n  actual:   null\n  expected: ${JSON.stringify(expected)}`);
   const near = (a: number, b: number) => Math.abs(a - b) < tolerance;
   const ok =
     near(actual.x, expected.x) &&
