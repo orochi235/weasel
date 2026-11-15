@@ -1,10 +1,13 @@
-import { type KeyboardEvent, type RefObject, useEffect, useRef, useState } from 'react';
+import { type FocusEventHandler, type KeyboardEvent, type ReactNode, type Ref, type RefObject, useEffect, useRef, useState } from 'react';
+import { useObjectRef } from 'react-aria';
 import { imeKey } from '@weasel-js/ui-input';
 import {
   canSpin, clampToBounds, decimal, endlessAllows, parseAs, parseNumber, qty, spinKey, type Display, type Endless, type UnitTable,
 } from '@weasel-js/quantity';
 import f from '../Field/Field.module.css';
-import { fieldRootClass } from '../Field/fieldSlots';
+import { fieldRootClass, NativeFieldFoot, type FieldSlotProps } from '../Field/fieldSlots';
+import { shows, useFieldControl, useFieldIds, type FieldControlAttrs } from '../Field/fieldSemantics';
+import { describedBy } from '../Disabled/HoldReason';
 import { MIXED_HINT } from '../Field/mixedHint';
 import s from './NumberField.module.css';
 import type { HoldProps } from '../Disabled';
@@ -14,7 +17,7 @@ import { useIdleSettle } from '../../useIdleSettle';
 import { useFieldLocale } from '../../useFieldLocale';
 
 /** Props for {@link UnitField}. */
-export interface UnitFieldProps extends HoldProps {
+export interface UnitFieldProps extends HoldProps, Omit<FieldSlotProps, 'errorMessage'> {
   /** The value in the unit the field shows. NaN shows an empty field. */
   value: number;
   /** The committed value, read and clamped, in the unit the field shows: on
@@ -74,9 +77,24 @@ export interface UnitFieldProps extends HoldProps {
   /** As {@link NumberField}'s `width`. */
   width?: 'fill' | 'fit';
   className?: string;
+  /** Shown under the field while `isInvalid`, and its accessible description then. */
+  errorMessage?: ReactNode;
+  /** The value is wrong: the field is drawn and announced as invalid, and shows `errorMessage`. */
+  isInvalid?: boolean;
+  isRequired?: boolean;
+  /** Submits the value, as a plain number in the unit the field shows, with a form under this name. */
+  name?: string;
+  autoFocus?: boolean;
+  onFocus?: FocusEventHandler<HTMLInputElement>;
+  /** Called after the field has committed what was typed. */
+  onBlur?: FocusEventHandler<HTMLInputElement>;
   /** Id for the input, for a `<label htmlFor>` outside it. */
   id?: string;
   'aria-label'?: string;
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
+  /** Receives the `<input>`, to move focus to it. */
+  ref?: Ref<HTMLInputElement>;
 }
 
 /** Which end of a `UnitField` its steppers sit at. */
@@ -115,10 +133,31 @@ function stepStart(typed: number, value: number, endless: Endless | undefined): 
  * arrows, Page Up and Down, Home and End to a bound, the wheel while focused,
  * and optional steppers. React Aria's `NumberField` refuses letters as they
  * are typed, which is why this is not that.
+ *
+ * It takes the same `label`, `description` and `errorMessage` slots as
+ * `NumberField`; with no label or `aria-label` of its own, it takes the name,
+ * description and error of a `Field` around it. `ref` reaches the `<input>`.
  */
-export function UnitField({ disabled, disabledReason, readOnly, readOnlyReason, ...props }: UnitFieldProps) {
-  const hold = useNativeHold({ disabled, disabledReason, readOnly, readOnlyReason });
-  return hold.wrap(<UnitFieldBody {...props} hold={hold} />);
+export function UnitField(props: UnitFieldProps) {
+  const { disabled, disabledReason, readOnly, readOnlyReason, label, orientation, description, errorMessage, isInvalid, isRequired, name, width = 'fill', className, ...body } = props;
+  const own = useFieldIds({ id: props.id, label: label !== undefined, description: description !== undefined, error: !!isInvalid && shows(errorMessage) });
+  const field = useFieldControl({
+    id: label === undefined ? props.id : own.id,
+    'aria-label': props['aria-label'],
+    'aria-labelledby': props['aria-labelledby'] ?? own.labelId,
+    'aria-describedby': describedBy(own.describedBy, props['aria-describedby']),
+  });
+  const hold = useNativeHold({ disabled, disabledReason, readOnly, readOnlyReason, 'aria-describedby': field['aria-describedby'] });
+  const invalid = isInvalid || field['aria-invalid'];
+  const shown = props.mixed ? Number.NaN : props.value;
+  return hold.wrap(
+    <div className={fieldRootClass({ orientation, width, fit: s.fit, className })} {...(invalid ? { 'data-invalid': '' } : {})}>
+      {label !== undefined && <label id={own.labelId} htmlFor={field.id} className={f.label}>{label}</label>}
+      <UnitFieldBody {...body} field={{ ...field, 'aria-invalid': invalid || undefined }} required={isRequired} hold={hold} />
+      {name !== undefined && <input type="hidden" name={name} value={Number.isNaN(shown) ? '' : String(shown)} />}
+      <NativeFieldFoot ids={own} description={description} error={errorMessage} />
+    </div>,
+  );
 }
 
 function UnitFieldBody({
@@ -142,17 +181,19 @@ function UnitFieldBody({
   settleWhenIdle,
   stepperSide = 'start',
   ghost,
-  width = 'fill',
-  className,
-  id,
-  'aria-label': ariaLabel,
-}: Omit<UnitFieldProps, keyof HoldProps> & { hold: NativeHold }) {
+  autoFocus,
+  onFocus,
+  onBlur,
+  ref,
+  field,
+  required,
+}: Omit<UnitFieldProps, keyof HoldProps | 'id' | 'aria-label' | 'aria-labelledby' | 'aria-describedby'> & { hold: NativeHold; field: FieldControlAttrs; required?: boolean }) {
   const value = mixed ? Number.NaN : valueProp;
   const [draft, setDraft] = useState<string | null>(null);
   const canceled = useRef(false);
   // The value typing began from, and whether any keystroke reached `onInput`.
   const typing = useRef<{ from: number; sent: boolean } | null>(null);
-  const input = useRef<HTMLInputElement>(null);
+  const input = useObjectRef(ref);
   const locale = { locale: useFieldLocale(localeProp) };
   const known = !Number.isNaN(value);
   const shown = known ? qty(value, display, locale) : null;
@@ -179,17 +220,6 @@ function UnitFieldBody({
     return true;
   };
 
-  /** Commit a typed `n`, or give back the value typing began from when `n` is no number. */
-  const commit = (n: number) => {
-    const next = settled(n, bounds);
-    if (!Number.isNaN(next)) {
-      if (next !== value) onChange(next);
-    } else if (typing.current?.sent) {
-      if (!Number.isNaN(typing.current.from)) onInput?.(typing.current.from);
-      onCancel?.();
-    }
-  };
-
   /** Whether `key` has nowhere left to step to. */
   const spent = (key: string): boolean => !canSpin(key, from(), bounds);
 
@@ -205,66 +235,83 @@ function UnitFieldBody({
 
   return (
     <div
-      className={fieldRootClass({ width, fit: s.fit, className })}
+      className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}
+      data-stepper-side={stepperSide}
+      {...(access.state === 'disabled' ? { 'data-disabled': '' } : {})}
     >
-      <div
-        className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}
-        data-stepper-side={stepperSide}
-        {...(access.state === 'disabled' ? { 'data-disabled': '' } : {})}
-      >
-        <input
-          ref={input}
-          id={id}
-          type="text"
-          role="spinbutton"
-          inputMode="decimal"
-          autoComplete="off"
-          aria-label={ariaLabel}
-          aria-valuenow={Number.isFinite(value) ? value : undefined}
-          aria-valuetext={shown?.spoken}
-          aria-valuemin={minValue}
-          aria-valuemax={maxValue}
-          placeholder={mixed ? MIXED_HINT : placeholder}
-          {...held} readOnly={disabled}
-          value={draft ?? shown?.text ?? ''}
-          onChange={(e) => {
-            const typed = e.target.value;
-            setDraft(typed);
-            idle.typed();
-            typing.current ??= { from: value, sent: false };
-            const n = settled(read(typed), bounds);
-            if (onInput && typed.trim() !== '' && !Number.isNaN(n)) {
-              typing.current.sent = true;
-              onInput(n);
-            }
-          }}
-          onFocus={() => {
-            canceled.current = false;
-          }}
-          onBlur={() => {
-            idle.stop();
-            const typedText = canceled.current ? null : draft;
-            const by = typedText === null ? null : offsetIn(typedText, read);
-            if (typedText?.trim() === '' && known && onClear) onClear();
-            else if (by !== null && Number.isFinite(by) && onOffset) onOffset(by);
-            else commit(typedText === null ? Number.NaN : by !== null ? value + by : read(typedText));
-            typing.current = null;
-            setDraft(null);
-          }}
-          onKeyDown={(e) => fieldKey(e, canceled, spin)}
+      <input
+        ref={input}
+        {...field}
+        type="text"
+        role="spinbutton"
+        inputMode="decimal"
+        autoComplete="off"
+        autoFocus={autoFocus}
+        aria-required={required || undefined}
+        aria-valuenow={Number.isFinite(value) ? value : undefined}
+        aria-valuetext={shown?.spoken}
+        aria-valuemin={minValue}
+        aria-valuemax={maxValue}
+        placeholder={mixed ? MIXED_HINT : placeholder}
+        {...held} readOnly={disabled}
+        value={draft ?? shown?.text ?? ''}
+        onChange={(e) => {
+          const typed = e.target.value;
+          setDraft(typed);
+          idle.typed();
+          typing.current ??= { from: value, sent: false };
+          const n = settled(read(typed), bounds);
+          if (onInput && typed.trim() !== '' && !Number.isNaN(n)) {
+            typing.current.sent = true;
+            onInput(n);
+          }
+        }}
+        onFocus={(e) => {
+          canceled.current = false;
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          idle.stop();
+          const typedText = canceled.current ? null : draft;
+          const by = typedText === null ? null : offsetIn(typedText, read);
+          if (typedText?.trim() === '' && known && onClear) onClear();
+          else if (by !== null && Number.isFinite(by) && onOffset) onOffset(by);
+          else commitTyped(typedText === null ? Number.NaN : by !== null ? value + by : read(typedText), { bounds, value, typing: typing.current, onChange, onInput, onCancel });
+          typing.current = null;
+          setDraft(null);
+          onBlur?.(e);
+        }}
+        onKeyDown={(e) => fieldKey(e, canceled, spin)}
+      />
+      {steppers && (
+        <Steppers
+          spin={latestSpin}
+          spent={latestSpent}
+          disabled={disabled}
+          atMax={spent('ArrowUp')}
+          atMin={spent('ArrowDown')}
         />
-        {steppers && (
-          <Steppers
-            spin={latestSpin}
-            spent={latestSpent}
-            disabled={disabled}
-            atMax={spent('ArrowUp')}
-            atMin={spent('ArrowDown')}
-          />
-        )}
-      </div>
+      )}
     </div>
   );
+}
+
+/** Commit a typed `n`, or give back the value typing began from when `n` is no number. */
+function commitTyped(
+  n: number,
+  { bounds, value, typing, onChange, onInput, onCancel }: {
+    bounds: Bounds;
+    value: number;
+    typing: { from: number; sent: boolean } | null;
+  } & Pick<UnitFieldProps, 'onChange' | 'onInput' | 'onCancel'>,
+): void {
+  const next = settled(n, bounds);
+  if (!Number.isNaN(next)) {
+    if (next !== value) onChange(next);
+  } else if (typing?.sent) {
+    if (!Number.isNaN(typing.from)) onInput?.(typing.from);
+    onCancel?.();
+  }
 }
 
 /** Enter commits, Escape cancels, and an arrow steps; an input method's keys are its own. */

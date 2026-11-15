@@ -42,3 +42,23 @@ export const AcceptsUnits: Story = {
 export const Mixed: Story = {
   args: { mixed: true, value: Number.NaN, onChange: () => {}, 'aria-label': 'Size' },
 };
+
+/** The same label, description and error slots as `NumberField`; the error shows past 50 cm. */
+export const Labeled: Story = {
+  render: (args) => {
+    const [v, setV] = useState(20);
+    return (
+      <UnitField
+        {...args}
+        label="Width"
+        description="Type 5mm or 2in; it reads as centimeters."
+        errorMessage="Wider than the page."
+        isInvalid={v > 50}
+        name="width"
+        value={v}
+        onChange={setV}
+        accepts={{ mm: 0.1, cm: 1, in: 2.54 }}
+      />
+    );
+  },
+};
