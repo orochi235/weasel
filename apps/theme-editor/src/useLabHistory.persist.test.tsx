@@ -90,6 +90,24 @@ describe('useLabHistory with a store', () => {
     expect(again.result.current.canUndo).toBe(false);
   });
 
+  it('opens with no history, rather than failing, on a saved one it cannot rebuild', () => {
+    const store = memoryStore<S>();
+    const op = { name: 'some-other-app:op', args: {} };
+    store.held = {
+      state: { n: 0 },
+      history: {
+        version: 1,
+        undoStack: [{ id: 1, label: 'n', forwardOps: [op], baseOps: [op], timestamp: 1 }],
+        redoStack: [],
+        nextEntryId: 2,
+        droppedEntries: 0,
+      },
+    };
+    const { result } = renderHook(() => useLabHistory<S>({ n: 0 }, store));
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.state.n).toBe(0);
+  });
+
   it('cuts the oldest steps from a history too big to save', () => {
     const entry = (id: number) => ({ id, label: 'n', forwardOps: [], baseOps: [], timestamp: id });
     const big: SerializedHistory = {

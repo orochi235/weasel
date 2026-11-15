@@ -1,4 +1,4 @@
-import { createHistory, type History, type Op } from '@weasel-js/history';
+import { createHistory, swapOp, type History, type SwapArgs } from '@weasel-js/history';
 import { deepEqual } from '@weasel-js/registry';
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import { type LabHistoryStore, useSavedLabHistory } from './historyStorage';
@@ -8,42 +8,14 @@ interface Holder<T> {
   value: T;
 }
 
-/** The name a snapshot goes by in a saved history. */
-const SNAPSHOT_OP = 'theme-editor:snapshot';
+/** The name a step goes by in a saved history. */
+const SWAP_OP = 'theme-editor:swap';
 
-interface SnapshotArgs<T> {
-  prev: T;
-  next: T;
-  coalesceKey: string;
+/** A whole-state step: the editor's state is small enough to replace wholesale, so every control gets undo
+ *  without an op per field. `coalesceKey` merges a drag's ticks into one step. */
+function stateSwap<T>(holder: Holder<T>, { before, after }: SwapArgs<T>, label: string, coalesceKey?: string) {
+  return swapOp({ name: SWAP_OP, label, before, after, coalesceKey, emit: (value) => { holder.value = value; } });
 }
-
-/**
- * A whole-state snapshot as an invertible op.
- *
- * The editor's state is a handful of numbers, so replacing it wholesale costs
- * nothing and every control gets undo without writing an op per field. What
- * earns its keep is `coalesceKey`: a slider drag pushes one entry per tick,
- * and the history engine merges them while keeping the first entry's `baseOps`,
- * so one undo steps back over the whole drag rather than forty.
- */
-function snapshotOp<T>(args: SnapshotArgs<T>): Op {
-  const { prev, next, coalesceKey } = args;
-  return {
-    name: SNAPSHOT_OP,
-    args,
-    apply(adapter: unknown) {
-      const holder = adapter as Holder<T>;
-      if (Object.is(holder.value, next)) return 'noop';
-      holder.value = next;
-      return undefined;
-    },
-    invert: () => snapshotOp({ prev: next, next: prev, coalesceKey }),
-    coalesceKey,
-  };
-}
-
-const rebuildSnapshot = (name: string, args: unknown): Op | null =>
-  name === SNAPSHOT_OP ? snapshotOp(args as SnapshotArgs<unknown>) : null;
 
 const sameJson = (a: unknown, b: unknown) => deepEqual(a, b, { undefinedAsAbsent: true });
 
@@ -76,11 +48,16 @@ export function useLabHistory<T>(initial: T, store?: LabHistoryStore<T>): LabHis
       // deliberate edits stay separate.
       coalesceWindowMs: 500,
       historyLimit: HISTORY_LIMIT,
-      rebuildOp: rebuildSnapshot,
+      rebuildOp: (name, args, { entry }) => (name === SWAP_OP ? stateSwap(holder.current, args as SwapArgs<T>, entry.label) : null),
     });
     // One saved against other state would step from values that are not on screen.
     const saved = kept.current?.load();
-    if (saved && sameJson(saved.state, holder.current.value)) created.restore(saved.history);
+    if (saved && sameJson(saved.state, holder.current.value)) {
+      // A strict restore that cannot rebuild a step leaves the history empty, as no save would.
+      try {
+        created.restore(saved.history);
+      } catch {}
+    }
     return created;
   }, []);
   const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -90,7 +67,8 @@ export function useLabHistory<T>(initial: T, store?: LabHistoryStore<T>): LabHis
 
   const update = useCallback(
     (next: T, key: string, label = key) => {
-      history.apply(snapshotOp({ prev: holder.current.value, next, coalesceKey: key }), label);
+      if (Object.is(holder.current.value, next)) return;
+      history.apply(stateSwap(holder.current, { before: holder.current.value, after: next }, label, key), label);
     },
     [history],
   );
