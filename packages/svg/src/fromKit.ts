@@ -31,6 +31,8 @@ import {
   textFrameOf,
   type TextEdge,
   type TextShadow,
+  nodeShapesOf,
+  type NodeShapes,
 } from '@weasel-js/core';
 import { groupPaintFromKit, markInherits, NO_UP_PAINT, resolvedData, type SvgKitInherited } from './kitInherits';
 import { painterLeafFromKit, warnOncePerCall } from './painterLeaf';
@@ -250,6 +252,9 @@ export interface SvgNodesFromKitOptions<TId extends string = string> {
    *  image or shader command, a group's effects — once per kind per call.
    *  Without it each kind is said once with `console.warn`. */
   onWarn?(message: string): void;
+  /** The painters a node of the app's own is drawn with. Default `nodeShapesOf(tree)`: a scene's
+   *  own, which `<SceneCanvas>` installs its presets' painters in, ahead of `defaultNodeShapes`. */
+  shapes?: NodeShapes;
 }
 
 /**
@@ -267,6 +272,7 @@ export function svgNodesFromKit<TId extends string>(
 ): SvgNode[] {
   const { include, leaf, group, mark } = options;
   const warn = warnOncePerCall(options.onWarn);
+  const shapes = options.shapes ?? nodeShapesOf(tree);
   const compose = tree.composition?.compose as ((parent: SvgKitPose, child: SvgKitPose) => SvgKitPose) | undefined;
   // `frame`: the world pose of the frame `id` is stored in, null at the top.
   const emit = (id: TId, up: SvgKitInherited, frame: SvgKitPose | null): SvgNode | null => {
@@ -304,7 +310,7 @@ export function svgNodesFromKit<TId extends string>(
     const own = node.data as SvgKitLeafData | null;
     const isGroup = node.kind === 'group';
     const custom = isGroup ? null : leaf?.(id, node, up);
-    const painted = isGroup || custom !== undefined ? undefined : painterLeafFromKit(node, up, warn);
+    const painted = isGroup || custom !== undefined ? undefined : painterLeafFromKit(node, up, warn, shapes);
     const self = isGroup ? null : painted !== undefined ? painted : markInherits(
       custom !== undefined ? custom : svgLeafFromKit(resolvedData(own ?? {}, up), node.pose), own ?? {}, up,
     );
@@ -325,7 +331,7 @@ export function svgNodesFromKit<TId extends string>(
     };
     const clip = (node.clipFromPose
       ? node.clipFromPose(node.pose)
-      : node.clip === 'outline' ? clipOutline(node as never, node.pose) : null) ?? undefined;
+      : node.clip === 'outline' ? clipOutline(node as never, node.pose, undefined, shapes) : null) ?? undefined;
     const copies = node.copiesFromPose?.(node.pose, node as never) ?? [];
     const content = (): SvgGroupNode => ({ kind: 'group', children: emitChildren(), ...(clip ? { clip } : {}) });
     const paint = groupPaintFromKit(own, below, node.pose);

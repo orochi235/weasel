@@ -43,6 +43,7 @@ import { useSceneWorkerSurface } from './SceneCanvas/useSceneWorkerSurface';
 import { useScenePicking } from './SceneCanvas/useScenePicking';
 import { useGroupEntryContribution } from 'tools/builtin/select/groupEntry';
 import { useNodeKinds } from './SceneCanvas/useNodeKinds';
+import { usePresetTraits } from './SceneCanvas/usePresetTraits';
 import { useMagnificationCheck } from './SceneCanvas/useMagnificationCheck';
 import { DefaultTextEditDep, useCanvasTextEditor } from './SceneCanvas/defaultTextEditor';
 import { useSurfaceViewInputs } from './SceneCanvas/useSurfaceViewInputs';
@@ -76,9 +77,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     requestRedraw: () => { canvasApiRef.current?.requestRedraw(); },
   });
   const { viewRef } = viewState;
-  const kinds = useNodeKinds(scene, props.routing);
-  const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf });
   const enabled = useEnabledFeatures(props.features, selectToolOpts?.rotate !== false);
+  const traits = usePresetTraits(enabled, scene, props);
+  const kinds = useNodeKinds(scene, traits.routing);
+  const selection = useCanvasSelection({ scene, props, selectable, kindOf: kinds.kindOf });
   useViewportWithoutView(viewport, enabled);
   const { pathEditState, selectToolWithDefaults } = useSceneCanvasPathEdit({
     host: props.pathEdit, opening: props.defaultPathEdit, getActiveMode, scene, selection,
@@ -90,7 +92,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const groupEntry = useGroupEntryContribution({ pickHit: picking.pickBestIn, tree: adapter, boxOf: boundsOf });
   const tools = useSceneCanvasTools({
     props: props as SceneCanvasToolProps, select: picking.selectTool, move: picking.moveOptions,
-    enabled, groupEntry,
+    enabled, groupEntry, insertBuilds: traits.insertBuilds,
   });
 
   // The wrapper's `<InputScope>` provides it.
@@ -159,7 +161,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       />
       <GestureReason dispatcher={dispatcher} canvasRef={internalCanvasRef} viewRef={viewRef} />
       <SceneCanvasInput
-        props={props as SceneCanvasInputOptions} scene={scene as Scene<unknown, string, unknown>}
+        props={{ ...props, ...traits.props } as SceneCanvasInputOptions} scene={scene as Scene<unknown, string, unknown>}
         selection={selection} descriptor={descriptor as PoseDescriptor<unknown>}
         picking={{ ...picking, adapter: adapter as unknown as BridgeAdapter }} nodeAtPointRef={getNodeAtPointRef}
         tools={tools} viewOn={enabled.has('view')} camera={{ viewState, viewAnimation }}

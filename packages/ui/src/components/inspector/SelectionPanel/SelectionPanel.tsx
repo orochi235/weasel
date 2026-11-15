@@ -1,7 +1,9 @@
 import { useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import {
   asNodeId,
+  nodeTraitsOf,
   paintAbove,
+  type FeaturePreset,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
   type Scene,
@@ -36,12 +38,18 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> extend
   scene: Scene<TData, TLayer, TPose>;
   /** Selection handle (`useSelection`): the nodes the panel edits. Only `current` is read. */
   selection: Pick<SelectionApi, 'current'>;
+  /** The presets the canvas runs (`<SceneCanvas features>`): the routing and
+   *  properties their node kinds bring are read from them, ahead of
+   *  `routing` and `properties`, as `nodeTraitsOf` merges them. */
+  features?: readonly FeaturePreset[];
   /** Properties-trait entries, e.g. core's `defaultNodeProperties` /
-   *  `inferredNodeProperties` (+ consumer extras). Memoize or hoist. */
-  properties: readonly NodePropertiesEntry[];
+   *  `inferredNodeProperties` (+ consumer extras). Default
+   *  `inferredNodeProperties`. Memoize or hoist. */
+  properties?: readonly NodePropertiesEntry[];
   /** Routing-trait classifiers used to derive each node's kind — pass
-   *  the same list the canvas uses. Memoize or hoist. */
-  routing: readonly NodeRoutingEntry[];
+   *  the same list the canvas's `routing` prop takes. Default
+   *  `inferredNodeRouting`, as on the canvas. Memoize or hoist. */
+  routing?: readonly NodeRoutingEntry[];
   /** Control overrides / app-defined kinds (PrefsForm-style). Keys are
    *  leaf paths (`data.fill`, checked first) or leaf kinds (`color`).
    *  A renderer returning `null` collapses its leaf (and the row, when
@@ -104,8 +112,6 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const {
     scene,
     selection,
-    properties,
-    routing,
     renderers,
     kindLabel = defaultKindLabel,
     emptyState = null,
@@ -113,6 +119,10 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   } = props;
 
   useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
+  const { properties, routing } = useMemo(
+    () => nodeTraitsOf(props.features, { routing: props.routing, properties: props.properties }),
+    [props.features, props.routing, props.properties],
+  );
   const traits = useLatest({ properties, routing });
   const writes = useMemo(
     () => leafWrites(scene, (node) =>

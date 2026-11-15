@@ -147,7 +147,10 @@ export type {
 } from '../canvas/layerSlots';
 export type { SceneSlotConfig } from '../canvas/buildSceneLayer';
 export type { BuiltinToolId } from '../canvas/SceneCanvas';
-export type { FeatureBindingOptions, FeaturePreset } from '../canvas/SceneCanvas/features';
+export type { FeatureBindingOptions, FeaturePreset, PresetNodeShape } from '../canvas/SceneCanvas/features';
+export {
+  nodeKindPreset, nodeTraitsOf, type NodeKindPresetSpec, type NodeTraitBase, type NodeTraits,
+} from '../canvas/SceneCanvas/nodeTraits';
 export { describePresets, isAtom, type PresetDescription } from '../canvas/SceneCanvas/describePresets';
 export { BUILTIN_TOOL_IDS, rotateAroundAABBCenter } from '../canvas/SceneCanvas';
 export {

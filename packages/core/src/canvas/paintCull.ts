@@ -9,7 +9,7 @@ import type { NodePaintCtx } from './nodeShapeTypes';
  *  slot's `paintBounds`. `null` means unknown, and the node is painted.
  *  `ctx.inherited` is what its `'inherit'` fill and stroke take, as `drawOne` gets it. */
 export type PaintBoundsFn<TNode, TPose> = (
-  node: TNode, pose: TPose, view: View, ctx?: Pick<NodePaintCtx, 'inherited'>,
+  node: TNode, pose: TPose, view: View, ctx?: Pick<NodePaintCtx, 'inherited' | 'shapes'>,
 ) => Bounds | null;
 
 /**

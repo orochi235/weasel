@@ -8,6 +8,8 @@
  * This replaces the per-tool `drawGhost` fold-in — a single SceneCanvas
  * concern instead of every consumer wiring it.
  */
+import { sceneShapesCtx } from '../sceneShapes';
+import { nodeShapesOf } from '../nodeShapeRegistry';
 import { useEffect, useMemo, useReducer } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { type DrawCommand, type GroupDrawCommand } from '@weasel-js/renderer';
@@ -94,7 +96,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         const plane = mapOf(entry.node.layer);
         const v = viewOf(entry.node.layer);
         const scaled = pixelScaleCtx(v, dims.dpr);
-        const ctx = inheritsPaint(effNode) ? { ...scaled, inherited: inheritedPaintOf(effNode, above()) } : scaled;
+        const ctx = sceneShapesCtx(sc, inheritsPaint(effNode) ? { ...scaled, inherited: inheritedPaintOf(effNode, above()) } : scaled);
         const self = drawOne(effNode, entry.pose, v, ctx);
         const kids: DrawCommand[] = [];
         for (const child of entry.children) {
@@ -102,7 +104,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         }
         // The node's clip is its children's, not its own paint's.
         const clip = kids.length > 0
-          ? ownClipOf(effNode, entry.pose, () => slot.derivedPathOf?.(effNode, entry.pose)) : null;
+          ? ownClipOf(effNode, entry.pose, () => slot.derivedPathOf?.(effNode, entry.pose), nodeShapesOf(sc)) : null;
         const children: DrawCommand[] = [
           ...wrapWithPoseRotation(self, entry.pose as unknown),
           ...(clip ? [{ kind: 'group', clip, children: kids } as GroupDrawCommand] : kids),

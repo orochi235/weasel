@@ -11,6 +11,8 @@
 import type { SceneSlotConfig } from './buildSceneLayer';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
+import { withSceneShapes } from './sceneShapes';
+import { nodeShapesOf } from './nodeShapeRegistry';
 import { withDerivedPaths, sceneDerivedPathOf, sceneShownToPose } from './derivedPath';
 import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
 import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
@@ -40,7 +42,7 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   overrides?: PaintOverrides,
 ): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
   const shown = shownLookup(scene);
-  const derived = withDerivedPaths(scene, withInheritedPaints(shown, slot.drawOne), slot.toPose);
+  const derived = withDerivedPaths(scene, withSceneShapes(scene, withInheritedPaints(shown, slot.drawOne)), slot.toPose);
   const painted = withPaintOverrides(overrides, derived);
   const derivedPathOf = sceneDerivedPathOf(scene, slot.toPose);
   const drawnAt = drawnPoseOf(scene);
@@ -48,11 +50,12 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
     ...slot,
     ...(slot.toPose ? { toPose: sceneShownToPose(scene, slot.toPose) } : {}),
     ...(slot.paintBounds
-      ? { paintBounds: withShownNode(scene.overrides, withInheritedPaintBounds(shown, slot.paintBounds)) }
+      ? { paintBounds: withShownNode(scene.overrides, withSceneShapes(scene, withInheritedPaintBounds(shown, slot.paintBounds))) }
       : {}),
     drawOne: withShownNode(scene.overrides, painted),
     ...(drawnAt ? { drawnPose: (node: Node<TData, TLayer, TPose>, pose: TPose) => drawnAt(nodeAsShown(scene.overrides, node), pose) } : {}),
     derivedPathOf: (node) => derivedPathOf(nodeAsShown(scene.overrides, node)),
     alphaFor: composeAlphaFor(scene, alphaFor),
+    shapes: nodeShapesOf(scene),
   };
 }

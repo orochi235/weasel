@@ -1,5 +1,5 @@
 import type { Path } from '@weasel-js/geom';
-import { findShapeSilhouette } from 'canvas/NodeShape';
+import { findShapeSilhouette, type NodeShapes } from 'canvas/NodeShape';
 import type { ClipFromPoseFn, Node, NodeClip } from 'core/scene/types';
 
 /** What {@link ownClipOf} reads of a node. */
@@ -18,8 +18,9 @@ export function clipOutline<TPose>(
   node: Node<unknown, string, TPose>,
   pose: TPose,
   derived?: () => Path | null | undefined,
+  shapes?: NodeShapes,
 ): Path | null {
-  return findShapeSilhouette(node, pose, { derivedPath: derived?.() ?? null });
+  return findShapeSilhouette(node, pose, { derivedPath: derived?.() ?? null, shapes });
 }
 
 /** The clip a node imposes on its children, or null when it imposes none:
@@ -29,8 +30,9 @@ export function ownClipOf<TPose>(
   node: ClipBearing<TPose>,
   pose: TPose,
   derived?: () => Path | null | undefined,
+  shapes?: NodeShapes,
 ): Path | null {
   if (typeof node.clipFromPose === 'function') return node.clipFromPose(pose);
   if (node.clip !== 'outline') return null;
-  return clipOutline(node as unknown as Node<unknown, string, TPose>, pose, derived);
+  return clipOutline(node as unknown as Node<unknown, string, TPose>, pose, derived, shapes);
 }

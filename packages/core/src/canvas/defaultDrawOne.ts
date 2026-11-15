@@ -30,7 +30,7 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   ctx?: NodePaintCtx,
 ): DrawCommand[] {
   // A group is structure: it never paints, whatever its data holds.
-  const painter = node.kind === 'group' ? undefined : findNodeShape(node);
+  const painter = node.kind === 'group' ? undefined : findNodeShape(node, ctx?.shapes);
   // A frame builder that knows the density it paints at fills `pixelScale`; the window's is the fallback.
   const paintCtx = !view || ctx?.pixelScale !== undefined
     ? ctx
@@ -71,13 +71,13 @@ export function defaultPaintBounds<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,
   view: View,
-  ctx?: Pick<NodePaintCtx, 'inherited'>,
+  ctx?: Pick<NodePaintCtx, 'inherited' | 'shapes'>,
 ): Bounds | null {
   const data = node.data as { label?: string; text?: string; stroke?: unknown } | null;
   if (data?.label && data.text == null) return null;
   const inherited = ctx?.inherited;
   if (data?.stroke === INHERIT && inherited === undefined) return null;
-  return findShapeBounds(node, pose, { ...screenScalesOf(view, pose), inherited });
+  return findShapeBounds(node, pose, { ...screenScalesOf(view, pose), inherited, shapes: ctx?.shapes });
 }
 
 /** How the view, after the pose's own frame, scales the frame the painter draws in: the geometric mean of its

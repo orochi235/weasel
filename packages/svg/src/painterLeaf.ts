@@ -11,6 +11,7 @@ import {
   type GroupDrawCommand,
   type InheritedPaint,
   type NodeShapeEntry,
+  type NodeShapes,
   type Paint,
   type PathDrawCommand,
   type Stroke,
@@ -32,8 +33,10 @@ interface PaintedNode { kind: string; data: unknown; pose: SvgKitPose }
  * `undefined` for those and for a node no painter claims; `null` when the
  * painter draws nothing SVG can hold.
  */
-export function painterLeafFromKit(node: PaintedNode, inherited: SvgKitInherited, warn: PainterWarn): SvgNode | null | undefined {
-  const painter = findNodeShape(node as never);
+export function painterLeafFromKit(
+  node: PaintedNode, inherited: SvgKitInherited, warn: PainterWarn, shapes?: NodeShapes,
+): SvgNode | null | undefined {
+  const painter = findNodeShape(node as never, shapes);
   if (!painter || painter.id.startsWith('kit:')) return undefined;
   return svgFromPainter(painter as NodeShapeEntry, node, node.pose, inherited, warn);
 }

@@ -16,6 +16,8 @@ import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { scenePickIds } from './scenePickIds';
 import { sceneToAdapter } from './sceneAdapter';
 import { withInheritedPaintBounds, withInheritedPaints } from './inheritedPaints';
+import { withSceneShapes } from './sceneShapes';
+import { nodeShapesOf } from './nodeShapeRegistry';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withPaintOverrides, type PaintOverrides } from './paintOverrides';
 import type { SceneViewDrawOne } from './NodeShape';
@@ -155,7 +157,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   camera: View | null = view,
 ): DrawCommand[] {
   const shown = shownLookup(scene);
-  const derivedOnly = withDerivedPaths(scene, withInheritedPaints(shown, drawOne));
+  const derivedOnly = withDerivedPaths(scene, withSceneShapes(scene, withInheritedPaints(shown, drawOne)));
   const derived = withPaintOverrides(overrides, derivedOnly);
   const derivedPathAt = sceneDerivedPathOf(scene);
   const drawnAt = drawnPoseOf(scene);
@@ -177,7 +179,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
 
   const cullRect = cull ? { x: 0, y: 0, width: cull.width, height: cull.height } : undefined;
   const culled = cullRect && cull?.paintBounds
-    ? paintMissesView(withShownNode(scene.overrides, withInheritedPaintBounds(shown, cull.paintBounds)), view, cullRect)
+    ? paintMissesView(withShownNode(scene.overrides, withSceneShapes(scene, withInheritedPaintBounds(shown, cull.paintBounds))), view, cullRect)
     : undefined;
   const tree: DrawCommand[] = buildSceneTree(
     hierarchy as Parameters<typeof buildSceneTree>[0],
@@ -190,6 +192,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
       ? ((node: Node<TData, TLayer, TPose>, pose: TPose) => drawnAt(nodeAsShown(scene.overrides, node), pose)) as Parameters<typeof buildSceneTree>[6]
       : undefined,
     camera,
+    nodeShapesOf(scene),
   );
   const children = cull && cullRect ? cullDrawCommands(tree, viewToMat3(view), cullRect, cull.dpr) : tree;
   if (extraCommands && extraCommands.length > 0) {

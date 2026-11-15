@@ -1,5 +1,6 @@
 /** The pick source over a `Scene`: its render order, painted poses and gates,
  *  and, given a descriptor, the pick index that narrows the walk. */
+import { nodeShapesOf } from './nodeShapeRegistry';
 import type { Path } from '@weasel-js/geom';
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -102,6 +103,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     return {
       node: dep as Node<unknown, string, TPose>,
       pose: paintedOf(dep as never),
+      scene,
       get path(): Path | null {
         return resolveDerivedPath(dep as never, depOf, childrenOf);
       },
@@ -137,6 +139,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     derivedPathOf,
     poseOf,
     parentsOf: sceneParentsOf(scene),
+    shapes: nodeShapesOf(scene),
     // Absent entirely when nothing is faded, so the walk skips the gate.
     ...(readAlpha ? { alphaOf: readAlpha } : {}),
     isLocked: gates.locked as (node: PickCandidate<TPose>) => boolean,

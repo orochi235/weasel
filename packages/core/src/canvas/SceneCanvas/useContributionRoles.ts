@@ -58,29 +58,34 @@ export function contributionEntries(tools: Pick<ToolsApi, 'registry' | 'ambient'
   return [...Object.values(tools.registry), ...tools.ambient] as SurfaceContribution[];
 }
 
+/** One role's installation: the hosts it binds to, and how to install it. */
+interface KeyedInstall {
+  readonly targets: readonly unknown[];
+  readonly install: () => () => void;
+}
+
 /**
  * Keep one installation per key alive: install keys that appeared, tear down
- * keys that went. Keys are role objects the consumer owns, so an entry the
- * host re-wraps every render — `useTools` restates eligibility on a copy —
- * still installs once.
+ * keys that went, and reinstall a key whose targets changed. Keys are role
+ * objects the consumer owns, so an entry the host re-wraps every render —
+ * `useTools` restates eligibility on a copy — still installs once per host.
  */
-function useKeyedInstall(
-  items: ReadonlyMap<object, () => () => void>,
-): void {
-  const live = useRef(new Map<object, () => void>());
+function useKeyedInstall(items: ReadonlyMap<object, KeyedInstall>): void {
+  const live = useRef(new Map<object, { targets: readonly unknown[]; teardown: () => void }>());
   useEffect(() => {
-    for (const [key, teardown] of live.current) {
-      if (items.has(key)) continue;
-      teardown();
+    for (const [key, installed] of live.current) {
+      const next = items.get(key);
+      if (next && sameList(next.targets, installed.targets)) continue;
+      installed.teardown();
       live.current.delete(key);
     }
-    for (const [key, install] of items) {
+    for (const [key, { targets, install }] of items) {
       if (live.current.has(key)) continue;
-      live.current.set(key, install());
+      live.current.set(key, { targets, teardown: install() });
     }
   });
   useEffect(() => () => {
-    for (const teardown of live.current.values()) teardown();
+    for (const installed of live.current.values()) installed.teardown();
     live.current.clear();
   }, []);
 }
@@ -142,19 +147,25 @@ export function useContributionRoles(
   }
 
   const reader = depRegistry ?? NO_DEPS;
-  const installs = new Map<object, () => () => void>();
+  const installs = new Map<object, KeyedInstall>();
   for (const entry of entries) {
     const deps = entry.deps;
-    if (deps && depRegistry) installs.set(deps, () => registerDeps(depRegistry, deps));
+    if (deps && depRegistry) {
+      installs.set(deps, { targets: [depRegistry], install: () => registerDeps(depRegistry, deps) });
+    }
     const watch = entry.watch;
-    if (watch && depRegistry) installs.set(watch, () => watch(() => depRegistry.changed?.()));
+    if (watch && depRegistry) {
+      installs.set(watch, { targets: [depRegistry], install: () => watch(() => depRegistry.changed?.()) });
+    }
     const attach = entry.attach;
-    if (attach && api) installs.set(attach, () => attach(api, reader));
+    if (attach && api) installs.set(attach, { targets: [api, depRegistry], install: () => attach(api, reader) });
   }
   for (const entry of surface) {
     const overlay = entry.overlay;
     if (!overlay || !api) continue;
-    for (const layer of Array.isArray(overlay) ? overlay : [overlay]) installs.set(layer, () => api.registerLayer(layer));
+    for (const layer of Array.isArray(overlay) ? overlay : [overlay]) {
+      installs.set(layer, { targets: [api], install: () => api.registerLayer(layer) });
+    }
   }
   useKeyedInstall(installs);
   useOrderedLayers(entries, api);

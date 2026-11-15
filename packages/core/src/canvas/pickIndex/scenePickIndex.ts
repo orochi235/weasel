@@ -6,6 +6,7 @@
  * builds, so a scene edited before every pick never pays for a build. Nodes it
  * cannot box conservatively are on `always` and are tested by every walk.
  */
+import { nodeShapesOf } from 'canvas/nodeShapeRegistry';
 import { createBvh, createSettledCache, type Bvh, type SettledCache } from '@weasel-js/geom/nd';
 import { markerGeneration } from '@weasel-js/stroke';
 import { getNodeShapes } from 'canvas/NodeShape';
@@ -140,6 +141,7 @@ function build(scene: AnyScene, descriptor: PoseDescriptor<unknown>, order: Orde
   const poseOf = scenePaintedPoseOf(scene);
   const pathOf = sceneShownPathOf(scene);
   const parentsOf = sceneParentsOf(scene);
+  const shapes = nodeShapesOf(scene);
   const entries = new Map<string | undefined, [number, Box2][]>();
   const always: number[] = [];
   let maxOutsetPx = 0;
@@ -155,7 +157,7 @@ function build(scene: AnyScene, descriptor: PoseDescriptor<unknown>, order: Orde
     let outsetPx: number;
     try {
       const inherited = inheritsPaint(node) ? inheritedPaintOf(node, parents) : undefined;
-      outsetPx = nodeBroadBox(node, poseOf(node as never), pathOf(node), inherited, descriptor, box);
+      outsetPx = nodeBroadBox(node, poseOf(node as never), pathOf(node), inherited, descriptor, box, shapes);
     } catch {
       always.push(i);
       continue;
@@ -188,7 +190,7 @@ export function scenePickIndex(scene: AnyScene, descriptor: PoseDescriptor<unkno
 
 function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltIndex | null {
   // Registers the built-in painters first, which bumps the memo generation.
-  getNodeShapes();
+  getNodeShapes(nodeShapesOf(scene));
   const version = scene.getVersion();
   const overrides = scene.overrides.getGeneration();
   // Boxed where each node is painted, which a container's scroll moves.

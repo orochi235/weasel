@@ -1,3 +1,4 @@
+import type { NodeShapes } from './nodeShapeRegistry';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 import { ownClipOf, type ClipBearing } from './ownClip';
@@ -105,6 +106,8 @@ export function buildSceneTree<
   /** The camera parallax planes are placed from. Default `view`, as on screen; a render that
    *  resamples a camera's frame at another scale passes that camera, and null draws no planes. */
   camera: View | null = view,
+  /** The painters a `clip: 'outline'` container is outlined by. Default `defaultNodeShapes`. */
+  shapes?: NodeShapes,
 ): DrawCommand[] {
   const layers = adapter.getLayers();
   // A hidden layer gets no bucket, and a node with no bucket is not painted.
@@ -151,7 +154,7 @@ export function buildSceneTree<
     const maybeContainer = node as ClipBearing<TPose> & {
       copiesFromPose?: (pose: TPose, node: unknown) => readonly Affine[] | null;
     };
-    const clip = ownClipOf(maybeContainer, pose, () => derivedPathOf?.(node, pose));
+    const clip = ownClipOf(maybeContainer, pose, () => derivedPathOf?.(node, pose), shapes);
     if (clip) {
       ownClip = { path: clip, layer: node.layer };
       ownClips = [...ancestorClips, ownClip];

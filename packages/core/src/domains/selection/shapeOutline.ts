@@ -74,10 +74,11 @@ function edgeOf(id: string, reads: ShapeOutlineReads, scale: number, edges: Map<
   if (!node || node.kind === 'group' || holdsMembers(scene, id as NodeId)) return null;
   const pose = reads.poseOf(id);
   const derivedPath = scene.derivedPathOf?.(id as NodeId) ?? null;
-  const silhouette = nodeOutline(node, pose, derivedPath ? { derivedPath } : undefined);
+  const shapes = scene.shapes;
+  const silhouette = nodeOutline(node, pose, derivedPath || shapes ? { derivedPath, shapes } : undefined);
   if (!silhouette) return null;
   const inherited = inheritedPaintIn(scene, node);
-  const ink = findShapeInk(node, pose, { scale, ...(inherited === undefined ? {} : { inherited }) });
+  const ink = findShapeInk(node, pose, { scale, shapes, ...(inherited === undefined ? {} : { inherited }) });
   const distance = (ink?.outset ?? 0) + (ink?.outsetPx ?? 0) / scale;
   const open = isOpen(silhouette);
   if (open && distance <= 0) return null;

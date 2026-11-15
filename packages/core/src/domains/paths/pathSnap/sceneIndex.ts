@@ -1,3 +1,4 @@
+import { nodeShapesOf } from 'canvas/nodeShapeRegistry';
 import {
   createPathSnapIndex, type Path, type PathSnapIndex, type PathSnapTarget,
 } from '@weasel-js/geom';
@@ -50,7 +51,7 @@ export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) 
     const extra: PathSnapTarget[] = [];
     for (const node of scene.nodes.values()) {
       if (node.kind !== 'mark' || notes.has(node.layer) || gates.hidden(node.id)) continue;
-      const g = nodeSnapGeometry(node, shownIn(nodeFrameOf(scene as Scene<unknown, string, unknown>, node), node).pose);
+      const g = nodeSnapGeometry(node, shownIn(nodeFrameOf(scene as Scene<unknown, string, unknown>, node), node).pose, nodeShapesOf(scene));
       if (!g) continue;
       for (const p of g.points) extra.push({ ...p, paths: [paths.length] });
       ids.push(node.id);

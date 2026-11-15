@@ -49,6 +49,9 @@ export {
   DEFAULT_INK,
   shapeCoversPoint,
   getNodeShapes,
+  createNodeShapes,
+  defaultNodeShapes,
+  nodeShapesOf,
 } from '../canvas/NodeShape';
 export type {
   NodeShapeEntry,
@@ -56,6 +59,7 @@ export type {
   NodeInkCtx,
   NodeSilhouetteCtx,
   RegisterNodeShapeOptions,
+  NodeShapes,
   NodePaintCtx,
   InheritedPaint,
   ShapeCoversPointOptions,

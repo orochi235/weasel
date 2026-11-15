@@ -100,6 +100,16 @@ function withFillRule(data: unknown, rule: PathFillRule | undefined): unknown {
   return { ...(data as object), path: { ...path, fillRule: rule } };
 }
 
+/** The kinds {@link kitData} builds a node for with no factory. */
+const KIT_INSERT_KINDS: ReadonlySet<string> = new Set([
+  'rect', 'ellipse', 'line', 'polygon', 'star', 'path', 'pencil', 'text', 'sticky', 'image',
+]);
+
+/** Whether the kit's `insert` dep builds a node of `kind` with no factory for it. */
+export function kitBuildsInsert(kind: string): boolean {
+  return KIT_INSERT_KINDS.has(kind);
+}
+
 /** The kit's default data for a kind drawn as a box, or `null` for a kind it has none for. */
 function boxKindData(
   kind: string,

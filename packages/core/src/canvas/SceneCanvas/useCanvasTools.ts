@@ -75,6 +75,8 @@ export function useCanvasTools(args: {
   defaultActiveTool: Props['defaultActiveTool'];
   modes: Props['modes'];
   onToolsCreated: Props['onToolsCreated'];
+  /** Whether an insert of a kind builds a node here: a preset's tool that could insert nothing is left out. */
+  insertBuilds?: (kind: string) => boolean;
 }): {
   /** What the canvas routes input through: the takeover, or `internal`. */
   tools: ToolsApi;
@@ -95,6 +97,7 @@ export function useCanvasTools(args: {
     patch: toolsProp && !isToolsApi(toolsProp) ? toolsProp : null,
     toolOptions,
     inertia,
+    insertBuilds: args.insertBuilds,
   });
 
   const defaultPressFeedback = useMemo(() => createLongPressFeedbackContribution(), []);

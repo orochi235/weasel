@@ -25,7 +25,7 @@ export function adapterPointQuery<TPose>(
   preciseLeaves: boolean,
 ): (px: number, py: number, t: number) => PickQuery<TPose> {
   const pointQuery = (px: number, py: number, t: number): PickQuery<TPose> => ({
-    hits: (node, pose, derived, inherited) => {
+    hits: (node, pose, derived, inherited, shapes) => {
       const b = derived ? boundsOfPath(derived) : poseDescriptorForNode(d, node).getBounds(pose);
       if (node.kind !== 'group') {
         const slop = preciseLeaves || derived ? t : 0;
@@ -35,7 +35,7 @@ export function adapterPointQuery<TPose>(
         }
         if (!preciseLeaves) return true;
         return shapeCoversPoint(
-          node as Node<unknown, string, TPose>, pose, px, py, { tolerance: t, derivedPath: derived, inherited },
+          node as Node<unknown, string, TPose>, pose, px, py, { tolerance: t, derivedPath: derived, inherited, shapes },
         );
       }
       // A group paints nothing and is hit across its box, within its own clip
@@ -44,7 +44,7 @@ export function adapterPointQuery<TPose>(
       const inAabb = px >= b.x && px <= b.x + b.width
         && py >= b.y && py <= b.y + b.height;
       if (!inAabb) return false;
-      const own = ownClipOf(node, pose, () => derived);
+      const own = ownClipOf(node, pose, () => derived, shapes);
       return own === null || pathContainsPoint(own, px, py);
     },
     clipAdmits: (clip) => pathContainsPoint(clip, px, py),

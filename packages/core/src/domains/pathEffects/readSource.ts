@@ -5,7 +5,7 @@
 import { pathThroughPoseFrame, poseLinearOf, type PathInWorldPose } from '@weasel-js/geom';
 import type { Fill, Stroke } from '@weasel-js/paint';
 import { isTextData, type TextOutlineSource } from '@weasel-js/text';
-import { findNodeShape } from 'canvas/NodeShape';
+import { findNodeShape, nodeShapesOf } from 'canvas/NodeShape';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { noteFontRead } from 'core/scene/fontReads';
 import type { EffectSource } from 'core/scene/pathEffects/source';
@@ -33,7 +33,8 @@ function readShape(dep: DerivedDep<unknown>): EffectSource | null {
   const paint = { fill, stroke: stroke ?? null };
   const shown = dep.path;
   if (shown !== null) return { world: shown, ...paint };
-  const local = findNodeShape(dep.node)?.silhouette?.(dep.node, dep.pose) ?? null;
+  const shapes = dep.scene ? nodeShapesOf(dep.scene) : undefined;
+  const local = findNodeShape(dep.node, shapes)?.silhouette?.(dep.node, dep.pose, shapes ? { shapes } : undefined) ?? null;
   if (local === null) return null;
   const world = pathThroughPoseFrame(local, dep.pose);
   const pose = dep.pose;

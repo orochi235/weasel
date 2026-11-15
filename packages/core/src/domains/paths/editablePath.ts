@@ -6,6 +6,7 @@
  * pose alone reads as a rect `data.path` the size of its pose, and gains one
  * on the first edit.
  */
+import { scopedShapeClaims } from 'canvas/nodeShapeRegistry';
 import { asPolygonPath, pathInWorld, rectPath, worldEditToStorage, type Path, type PolygonPath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewDataIn, previewPoseIn } from 'canvas/drawEnvelope';
@@ -27,10 +28,11 @@ export interface EditableShape {
 }
 
 /** Whether `node` is a leaf whose only geometry is its rect pose, drawn by
- *  the kit's rect fallback. */
+ *  the kit's rect fallback. Asked with no scene, a node some scene's own
+ *  painter claims is not, so path edit never flattens a custom kind to a box. */
 function drawsPoseAlone(node: EditableShape): boolean {
   if (node.kind !== 'mark' || (node.data as { path?: unknown } | null)?.path != null) return false;
-  return findNodeShape(node as never) === RECT_FALLBACK_PAINTER;
+  return findNodeShape(node as never) === RECT_FALLBACK_PAINTER && !scopedShapeClaims(node as never);
 }
 
 /** Resolve where a node's editable polygon lives. Returns null when the

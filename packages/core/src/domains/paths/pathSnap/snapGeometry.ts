@@ -2,7 +2,7 @@ import { worldCoords, type Path, type PathSnapTarget } from '@weasel-js/geom';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { poseOutline } from 'core/geometry/regionHit';
 import type { Node } from 'core/scene/types';
-import { findNodeShape } from 'canvas/NodeShape';
+import { findNodeShape, type NodeShapes } from 'canvas/NodeShape';
 import { nodeOutline } from '../strokeOutline';
 
 /** What a node offers path snapping: the outline it is drawn with, in world
@@ -19,13 +19,17 @@ export interface NodeSnapGeometry {
  * frame, and the box's center. Any other node gives its `nodeOutline`. Null
  * for a node with neither.
  */
-export function nodeSnapGeometry(node: Node<unknown, string, unknown>, pose: unknown = node.pose): NodeSnapGeometry | null {
-  if (findNodeShape(node)?.snapsToBox && isRectPose(pose)) {
+export function nodeSnapGeometry(
+  node: Node<unknown, string, unknown>,
+  pose: unknown = node.pose,
+  shapes?: NodeShapes,
+): NodeSnapGeometry | null {
+  if (findNodeShape(node, shapes)?.snapsToBox && isRectPose(pose)) {
     const path = poseOutline(pose, pose);
     const c = boxCenter(path);
     return { path, points: c ? [{ kind: 'center', ...c }] : [] };
   }
-  const path = nodeOutline(node, pose);
+  const path = nodeOutline(node, pose, shapes ? { shapes } : undefined);
   return path ? { path, points: [] } : null;
 }
 

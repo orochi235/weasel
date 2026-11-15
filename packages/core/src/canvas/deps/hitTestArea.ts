@@ -153,7 +153,7 @@ export function regionPickQuery(
       return pathIntersectsRect(clip, derived ? boundsOfPath(derived) : visualBoundsViaDescriptor(pose, g))
         && pathIntersectsRect(clip, r.bounds);
     },
-    hits: (node, pose, derived, inherited) => {
+    hits: (node, pose, derived, inherited, shapes) => {
       // The descriptor sees the node here, so a pose shape whose extent
       // depends on `node.data` bounds itself rather than its pose's default.
       const g = poseDescriptorForNode(descriptor, node);
@@ -162,9 +162,9 @@ export function regionPickQuery(
       const decided = regionTakesByBounds(r, mode, b);
       if (decided !== undefined) return decided;
       let ink: boolean | undefined;
-      const filled = (): boolean => ink ??= findShapeInk(node as never, pose, { inherited })?.filled !== false;
+      const filled = (): boolean => ink ??= findShapeInk(node as never, pose, { inherited, shapes })?.filled !== false;
       return regionTakes(r, mode, asInked(filled, pose), b, () =>
-        asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived }) ?? derived ?? poseOutline(pose, b)), filled);
+        asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived, shapes }) ?? derived ?? poseOutline(pose, b)), filled);
     },
     inPlane: (m) => regionPickQuery(regionInPlane(r, m), mode, descriptor, query),
     // A copy is tested by every walk, so the query carried into one asks no index.
