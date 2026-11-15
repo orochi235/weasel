@@ -28,19 +28,20 @@ allowed* (`eligible` / `enabled`), and *how it's reached by default*
 (`defaultBinding`).
 
 ```ts
-// packages/core/src/interactions/actions/defaults/delete.ts
-export const deleteAction: Action & { requires: string[] } = {
+// packages/core/src/interactions/actions/defaults/delete.ts: what
+// createDeleteAction() returns, and `deleteAction` is
+{
   id: 'delete',
   label: 'Delete',
-  defaultBinding: {
-    kind: 'key',
-    key: ['Delete', 'Backspace'],
-    phase: [{ channel: '*', phase: 'initial' }],
-  },
+  defaultBinding: [{
+    spec: { kind: 'key', key: ['Delete', 'Backspace'], phase: BETWEEN_GESTURES },
+    opts: { id: 'delete.key' },
+  }],
   eligible: { capability: 'edits-page' },
   requires: ['scene', 'selection', 'applyOps'],
   invoker: { timing: 'immediate', run: (deps) => { /* … */ } },
-};
+  enabled: deleteEnabled,
+}
 ```
 
 A tool reaches an action by binding a gesture spec to its id — that is all a
@@ -157,9 +158,13 @@ opts. See [extending.md](./extending.md) for the behavior contract.
 ### `useSelection(options)`
 
 Selection-state primitive. Returns `SelectionApi`: `{ current, get, set, add,
-remove, toggle, clear, contains, applyClick, adapterMethods }`. Options:
-`mode` (`single` | `multi`), `extend` (`shift` | `meta` | `ctrl`, default
-`shift`), `initial`.
+remove, toggle, clear, contains, applyClick, intentOf, adapterMethods }`.
+Options: `mode` (`single` | `multi`, default `single`); `extend`, the key that
+adds or removes the pressed id (default Cmd on Apple platforms, Ctrl
+elsewhere); `range`, the key that selects a run from the last pressed id
+(default Shift), along `order` (default the scene's paint order); `initial`;
+`scene`, a store to keep the selection on so every consumer of the scene shares
+it and undo restores it; and `lock`, which makes every mutator a no-op.
 `packages/core/src/core/selection/useSelection.ts`.
 
 Spread `selection.adapterMethods` into your adapter so actions read the same
@@ -213,7 +218,7 @@ double-click enters it. Its `textEditor` prop takes the same options, or `false`
 for none. It stands down for a host's own: a `useSceneTextEdit` whose container
 holds the canvas, whose editor the canvas's `textEdit` dep then answers with,
 so the host binds no handler of its own; or a `textEdit` dep registered by a
-child (`TextEditDepPublisher`), for a host whose container is elsewhere. A host
+child (`@weasel-js/editor`'s `TextEditDepPublisher`), for a host whose container is elsewhere. A host
 wires its own for character controls, which read the edit's `selection` and
 styling.
 
