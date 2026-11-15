@@ -297,6 +297,15 @@ Owner tags, after the priority (2026-10-26):
   them up, but it changes every unsized labkit toolbar. Closes when the maintainer picks which height an unsized bar
   draws its controls at and the bar draws them all there.
 
+- **(P3) [agent] A labkit panel that shows scene data records the showing as undo steps.** `useTrialConfigChange`
+  puts a panel write's scene edits in its undo step, but the other direction has no surface: when a canvas edit
+  changes what the panel shows, the instrument can only `setConfig` it, which records a settings entry after the
+  scene's. In the symmetry lab (`apps/site/demos/SymmetryLabDemo.tsx`, `show`) dragging the group's center is two
+  steps, and picking a wallpaper group records each preset field it follows as a step of its own; the stroke-width
+  lab dropped its panel following the selection (2026-11-15) for the same reason. Wants a config write that follows
+  the scene, recording nothing and running no handler, or joining the scene edit's entry. Closes when the symmetry
+  lab's center drag is one Undo, panel and group together.
+
 - **(P3) [maintainer] A labkit tile drag shows its node's UUID as the ghost.** `<Workspace reorderable>` mounts
   windease's `DragProvider` with its default overlay, which labels the chip with the node's `meta.title` and falls
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
