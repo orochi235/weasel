@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { SidebarPanel, type SidebarPanelProps } from '@weasel-js/ui/components/SidebarPanel';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { MenuButton } from '@weasel-js/ui/components/MenuButton';
+import { Button } from '@weasel-js/ui/components/Button';
+import s from './SidebarPanel.stories.module.css';
 
 const meta: Meta<typeof SidebarPanel> = {
   title: 'ui/SidebarPanel',
@@ -10,7 +12,7 @@ const meta: Meta<typeof SidebarPanel> = {
   args: {
     title: 'Properties',
     children: (
-      <div style={{ padding: '4px 6px', fontSize: 12 }}>
+      <div className={s.body}>
         Panel body — host any content here. Property grids, lists, custom widgets.
       </div>
     ),
@@ -42,9 +44,9 @@ function InteractiveSidebarPanel(args: SidebarPanelProps) {
   const [hidden, setHidden] = useState(false);
   if (hidden) {
     return (
-      <div style={{ padding: 12, fontSize: 12 }}>
+      <div className={s.hidden}>
         Panel hidden.{' '}
-        <button type="button" onClick={() => setHidden(false)}>Show again</button>
+        <Button size="sm" onClick={() => setHidden(false)}>Show again</Button>
       </div>
     );
   }
@@ -64,7 +66,7 @@ export const Interactive: Story = {
   args: {
     title: 'Selection',
     children: (
-      <div style={{ padding: '4px 6px', fontSize: 12 }}>
+      <div className={s.body}>
         Click the title to collapse. Click ×  to hide entirely.
       </div>
     ),

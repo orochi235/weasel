@@ -1,0 +1,15 @@
+.body {
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  font-size: var(--wzl-font-size-xs);
+}
+
+.frame {
+  display: flex;
+  height: 320px;
+}
+
+.stage {
+  flex: 1;
+  padding: var(--wzl-space-8);
+  font-size: var(--wzl-font-size-xs);
+}

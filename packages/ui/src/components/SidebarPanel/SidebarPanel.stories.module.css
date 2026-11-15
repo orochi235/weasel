@@ -1,0 +1,9 @@
+.body {
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  font-size: var(--wzl-font-size-xs);
+}
+
+.hidden {
+  padding: var(--wzl-space-6);
+  font-size: var(--wzl-font-size-xs);
+}

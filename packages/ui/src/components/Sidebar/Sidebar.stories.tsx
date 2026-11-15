@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
+import s from './Sidebar.stories.module.css';
 
 const meta: Meta<typeof Sidebar> = {
   title: 'ui/Sidebar',
@@ -14,13 +15,13 @@ type Story = StoryObj<typeof Sidebar>;
 const PanelStack = () => (
   <>
     <SidebarPanel title="Selection">
-      <div style={{ padding: '4px 6px', fontSize: 12 }}>2 items selected</div>
+      <div className={s.body}>2 items selected</div>
     </SidebarPanel>
     <SidebarPanel title="Colors">
-      <div style={{ padding: '4px 6px', fontSize: 12 }}>Fill / Stroke swatches</div>
+      <div className={s.body}>Fill / Stroke swatches</div>
     </SidebarPanel>
     <SidebarPanel title="Layers">
-      <div style={{ padding: '4px 6px', fontSize: 12 }}>Layer list goes here</div>
+      <div className={s.body}>Layer list goes here</div>
     </SidebarPanel>
   </>
 );
@@ -28,9 +29,9 @@ const PanelStack = () => (
 export const LeftDock: Story = {
   args: { side: 'left', 'aria-label': 'Left sidebar', children: <PanelStack /> },
   render: (args) => (
-    <div style={{ display: 'flex', height: 320 }}>
+    <div className={s.frame}>
       <Sidebar {...args} />
-      <div style={{ flex: 1, padding: 16, fontSize: 12 }}>Stage area</div>
+      <div className={s.stage}>Stage area</div>
     </div>
   ),
 };
@@ -38,8 +39,8 @@ export const LeftDock: Story = {
 export const RightDock: Story = {
   args: { side: 'right', 'aria-label': 'Right sidebar', children: <PanelStack /> },
   render: (args) => (
-    <div style={{ display: 'flex', height: 320 }}>
-      <div style={{ flex: 1, padding: 16, fontSize: 12 }}>Stage area</div>
+    <div className={s.frame}>
+      <div className={s.stage}>Stage area</div>
       <Sidebar {...args} />
     </div>
   ),

@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { SidebarPanel } from '@weasel-js/ui/components/SidebarPanel';
+import s from './ResizeHandle.stories.module.css';
 
 const meta: Meta<typeof ResizeHandle> = {
   title: 'ui/ResizeHandle',
@@ -21,15 +22,15 @@ export const RightSidebar: Story = {
   render: (args) => {
     const [width, setWidth] = useState(args.value);
     return (
-      <div style={{ display: 'flex', height: 240, border: '1px solid var(--wzl-border)' }}>
-        <div style={{ flex: 1, minWidth: 0, padding: 12, fontSize: 12 }}>
+      <div className={s.row}>
+        <div className={s.content}>
           Content area. Drag the divider, or focus it and use the arrow keys
           (Shift for a coarse step, Home/End for the bounds). Width: {width}px
         </div>
         <ResizeHandle {...args} value={width} onInput={setWidth} />
         <Sidebar side="right" aria-label="Demo sidebar" style={{ width }}>
           <SidebarPanel title="Properties">
-            <div style={{ padding: '4px 6px', fontSize: 12 }}>{width}px</div>
+            <div className={s.body}>{width}px</div>
           </SidebarPanel>
         </Sidebar>
       </div>
@@ -46,17 +47,12 @@ export const BottomDrawer: Story = {
   render: (args) => {
     const [height, setHeight] = useState(args.value);
     return (
-      <div style={{
-        display: 'flex', flexDirection: 'column', height: 240,
-        border: '1px solid var(--wzl-border)',
-      }}>
-        <div style={{ flex: 1, minHeight: 0, padding: 12, fontSize: 12 }}>
+      <div className={s.column}>
+        <div className={s.content}>
           Content area. Height below: {height}px
         </div>
         <ResizeHandle {...args} value={height} onInput={setHeight} />
-        <div style={{
-          height, background: 'var(--wzl-surface)', padding: 12, fontSize: 12,
-        }}>
+        <div className={s.drawer} style={{ height }}>
           Drawer
         </div>
       </div>

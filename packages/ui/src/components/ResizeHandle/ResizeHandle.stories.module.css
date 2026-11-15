@@ -1,0 +1,29 @@
+.row,
+.column {
+  display: flex;
+  height: 240px;
+  border: 1px solid var(--wzl-border);
+}
+
+.column {
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--wzl-space-6);
+  font-size: var(--wzl-font-size-xs);
+}
+
+.body {
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  font-size: var(--wzl-font-size-xs);
+}
+
+.drawer {
+  padding: var(--wzl-space-6);
+  font-size: var(--wzl-font-size-xs);
+  background: var(--wzl-surface);
+}
