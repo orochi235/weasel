@@ -20,8 +20,6 @@ export interface PathNodePlacement<TLayer extends string> extends StatedNodeFiel
 export type PathNodeSpec<TData, TLayer extends string, TPath extends Path = Path> =
   AddNodeSpec<{ path: TPath } & TData, TLayer, RectPose> & { kind: 'mark'; id: NodeId };
 
-type Empty = Record<never, never>;
-
 /**
  * A mark holding its geometry in `data.path`, as the kit's shape tools store
  * one: posed at the path's bounds, so the default painter draws it and
@@ -29,10 +27,10 @@ type Empty = Record<never, never>;
  * `data` sits beside the path (`fill`, `stroke`, or anything else), and a
  * `path` it carries is replaced by `d`'s.
  */
-export function pathNode<TData extends object = Empty, TLayer extends string = 'default', TPath extends Path = Path>(
+export function pathNode<TData extends object = Record<never, never>, TLayer extends string = 'default', TPath extends Path = Path>(
   id: string, d: TPath, data?: TData, place?: PathNodePlacement<TLayer>,
 ): PathNodeSpec<TData, TLayer, TPath>;
-export function pathNode<TData extends object = Empty, TLayer extends string = 'default'>(
+export function pathNode<TData extends object = Record<never, never>, TLayer extends string = 'default'>(
   id: string, d: string, data?: TData, place?: PathNodePlacement<TLayer>,
 ): PathNodeSpec<TData, TLayer>;
 export function pathNode<TData extends object, TLayer extends string>(
