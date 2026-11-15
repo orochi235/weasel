@@ -24,7 +24,6 @@ import {
   type Path,
   type Scene,
   type Stroke,
-  type ToolsApi,
   type View,
   type Fill,
   editPreset,
@@ -136,7 +135,6 @@ function StrokeAndFill() {
   const selection = useSelection({ scene, initial: [SWATCH] });
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [slot, setSlot] = useState<PaintSlot>('fill');
-  const [tools, setTools] = useState<ToolsApi | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
 
   const selectedId = selection.get()[0] ?? null;
@@ -170,7 +168,7 @@ function StrokeAndFill() {
   return (
     <div className="ckd-row">
       <div className="ckd-demo">
-        {tools && <ToolPalette tools={tools} orientation="horizontal" />}
+        <ToolPalette orientation="horizontal" />
         <div className="ckd-canvas-frame" ref={hostRef}>
           <DemoStage width={W} height={H}>
             <SceneCanvas
@@ -181,7 +179,6 @@ function StrokeAndFill() {
               view={view}
               onViewChange={setView}
               defaultTools={['pencil']}
-              onToolsCreated={setTools}
               insertNodeFactories={insertNodeFactories}
             />
           </DemoStage>

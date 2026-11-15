@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   ellipsePath,
   rectPath,
@@ -7,8 +6,8 @@ import {
   starPath,
   useScene,
   useSelection,
+  WeaselProvider,
   type Path,
-  type ToolsApi,
   editPreset,
   movePreset,
   pickPreset,
@@ -35,21 +34,21 @@ export function SliceDemo() {
   // the tool is all this needs: every cut swaps the paths it crosses for their pieces.
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const selection = useSelection({ scene, mode: 'multi' });
-  const [tools, setTools] = useState<ToolsApi | null>(null);
   return (
-    <div className="ckd-demo">
-      {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <DemoStage width={W} height={H}>
-        <SceneCanvas
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          features={[pickPreset, movePreset, editPreset]}
-          defaultTools={['slice']}
-          defaultActiveTool="slice"
-          onToolsCreated={setTools}
-        />
-      </DemoStage>
-    </div>
+    <WeaselProvider>
+      <div className="ckd-demo">
+        <ToolPalette orientation="horizontal" />
+        <DemoStage width={W} height={H}>
+          <SceneCanvas
+            className="ckd-canvas"
+            scene={scene}
+            selection={selection}
+            features={[pickPreset, movePreset, editPreset]}
+            defaultTools={['slice']}
+            defaultActiveTool="slice"
+          />
+        </DemoStage>
+      </div>
+    </WeaselProvider>
   );
 }
