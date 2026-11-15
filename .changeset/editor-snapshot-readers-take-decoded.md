@@ -2,9 +2,9 @@
 '@weasel-js/editor': major
 ---
 
-`nodeSpecsFromSnapshot` and `docFromSnapshot` read a decoded snapshot, and `nodeSpecsFromSnapshot`'s third argument is the application's own data migration, none by default.
+`nodeSpecsFromSnapshot` and `docFromSnapshot` read a decoded snapshot, and decode nothing themselves.
 
-This is a breaking change. Decode a stored value with core's `decodeSnapshot` before reading it; a migration no longer decodes typed arrays itself.
+This is a breaking change. `nodeSpecsFromSnapshot`'s third argument is that migration, none by default. Decode a stored value with core's `decodeSnapshot` before reading it; a migration no longer decodes typed arrays itself.
 
 ```ts
 // before

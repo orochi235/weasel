@@ -39,7 +39,8 @@ that JSON as text; neither can be handed to a loader by mistake, nor a snapshot 
 Encoding tags each typed array (`{ "__ta": "f32", "data": [...] }`) and writes any value of yours that decoding
 would read as something else inside a `{ "__raw": … }` wrapper, so any JSON-safe data round-trips. Decoding also
 reads a path's `commands` and `coords` as saves from before tagging wrote them, as plain arrays of numbers. The codec
-is also published as `@weasel-js/core/json`, which loads without React, for a Node process.
+is also published as `@weasel-js/core/json`, which loads without React, for a Node process; the document envelope
+below is in the main entry only, since it is typed against the scene.
 
 The codec lives in core, not a package of its own: it is written against core's snapshot and history types, and
 code that needs core and is not a functional area of its own stays there (decided 2026-11-14). The typed-array
