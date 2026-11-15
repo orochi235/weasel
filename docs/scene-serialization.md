@@ -2,16 +2,15 @@
 
 `scene.toJSON()` and `sceneFromJSON()` let you snapshot and restore a scene's
 current state — nodes, hierarchy, layer visibility/locked state, and function
-fields like `clipFromPose`. The snapshot is plain data that a structured clone (IndexedDB, `postMessage`) carries
-as it is. A kit path keeps its commands and coords in typed arrays, which `JSON.stringify` writes as plain objects,
-so text goes through `@weasel-js/editor`'s `serializeReplacer` and comes back through its `reviveTypedArrays`.
-History (undo/redo stacks) is not captured; a restored scene starts with empty history.
+fields like `clipFromPose`. The snapshot is in-memory data that a structured clone (IndexedDB, `postMessage`)
+carries as it is. As JSON it goes through core's snapshot codec: a kit path keeps its commands and coords in
+typed arrays, which plain `JSON.stringify` writes as objects of numbered keys. History (undo/redo stacks) is not in
+the snapshot; the document envelope below carries it beside one.
 
 ## Quick example
 
 ```ts
-import { createScene, sceneFromJSON } from '@weasel-js/core';
-import { reviveTypedArrays, serializeReplacer } from '@weasel-js/editor';
+import { createScene, parseSnapshot, sceneFromJSON, stringifySnapshot } from '@weasel-js/core';
 
 // Build a scene however you like, then save it:
 const scene = createScene({
@@ -19,11 +18,68 @@ const scene = createScene({
   initial: [/* ... */],
 });
 
-localStorage.setItem('mySaved', JSON.stringify(scene.toJSON(), serializeReplacer));
+localStorage.setItem('mySaved', stringifySnapshot(scene.toJSON()));
 
 // Later, in a different session:
-const loaded = sceneFromJSON(reviveTypedArrays(JSON.parse(localStorage.getItem('mySaved')!)), {});
+const loaded = sceneFromJSON(parseSnapshot(localStorage.getItem('mySaved')!), {});
 ```
+
+## Encoding: snapshots and their JSON
+
+A snapshot and its encoded form are different types. `Encoded<T>` is `T` as plain JSON, and `SnapshotText<T>` is
+that JSON as text; neither can be handed to a loader by mistake, nor a snapshot stored as JSON.
+
+| Call | Takes | Gives |
+|---|---|---|
+| `encodeSnapshot(value)` | a snapshot | `Encoded<T>`: JSON any storage adapter keeps exactly |
+| `decodeSnapshot(encoded)` | an encoded value, as stored | a copy of the snapshot; the stored value is left as it is |
+| `stringifySnapshot(value)` / `parseSnapshot(text)` | the same, through text | |
+| `snapshotReplacer` | | the `JSON.stringify` replacer, for a larger payload holding snapshots (a clipboard's) |
+
+Encoding tags each typed array (`{ "__ta": "f32", "data": [...] }`) and writes any value of yours that decoding
+would read as something else inside a `{ "__raw": … }` wrapper, so any JSON-safe data round-trips. Decoding also
+reads a path's `commands` and `coords` as saves from before tagging wrote them, as plain arrays of numbers. The codec
+is also published as `@weasel-js/core/json`, which loads without React, for a Node process; the document envelope
+below is in the main entry only, since it is typed against the scene.
+
+The codec lives in core, not a package of its own: it is written against core's snapshot and history types, and
+code that needs core and is not a functional area of its own stays there (decided 2026-11-14). The typed-array
+tagging under it is `@weasel-js/geom`'s, which needs nothing else.
+
+## The document envelope: a scene and its history
+
+An undo history is recorded against one tree, and replayed over any other it writes the wrong content. The envelope
+carries both, the history paired with a fingerprint of the scene it was saved beside:
+
+```ts
+import { decodeSceneDocument, encodeSceneDocument, restorePairedHistory, sceneFromJSON } from '@weasel-js/core';
+
+const file = JSON.stringify(encodeSceneDocument(scene));
+// { "format": "weasel/scene-document", "version": 1, "scene": { …encoded… }, "history": { "scene": "<fingerprint>", "history": { … } } }
+
+const doc = decodeSceneDocument(JSON.parse(file));   // throws SnapshotShapeError on anything else
+const loaded = sceneFromJSON(doc.scene, { registry });
+restorePairedHistory(loaded, doc.history);           // 'restored' | 'unpaired' | 'mismatched' | 'stale'
+```
+
+`restorePairedHistory` compares the fingerprint against the scene it restores onto, so it refuses a history saved
+beside other content (`'mismatched'`), whether that is another document, a tree the load rebuilt (pages adopted
+from a `core:pages` value), or content an application migration rewrote. Call it after any migration of the loaded
+data. A history kept apart from its scene, as `useSessionPersistence` (`@weasel-js/editor`) keeps them under two
+keys, is paired the same way with `pairHistory(scene)`. `encodeSceneDocument(scene, { history: false })` leaves the
+history out.
+
+### Versions, and whose migration is whose
+
+| Version | Of | Migrated by |
+|---|---|---|
+| envelope `version` (1) | the envelope's own shape | `decodeSceneDocument`, which reads version 1 only |
+| scene `version` (1, 2, 3) | the scene's tree and poses | `sceneFromJSON`, `loadState` (below) |
+| history `form` (`SCENE_HISTORY_FORM`) | how undo entries are recorded | nothing: a history in another form is `'stale'` and not restored |
+| your data's schema | `data`, `pose`, document values | the application, after decoding and before restoring history |
+
+The engine migrates its own formats and never reads into `data`. An application keeps its schema version as a
+document value and migrates its data once the snapshot is decoded (see "Your own data's versions").
 
 ## JSON shape
 
@@ -114,7 +170,7 @@ A `set` is a scene edit like any other: it is undoable, joins an enclosing `scen
 skipped when the new value is deep-equal to the current one, and notifies `subscribe`. Values are JSON and are not
 to be mutated once set. `toJSON()` writes them under `doc`; `sceneFromJSON` and `loadState` read them back, and
 `createScene` or `useScene` take `doc` for the values a scene starts with, outside history. An app that loads node
-specs itself reads a snapshot's values with `docFromSnapshot` (`@weasel-js/editor`).
+specs itself reads a decoded snapshot's values with `docFromSnapshot` (`@weasel-js/editor`).
 
 ## Function fields and the registry
 
@@ -167,9 +223,9 @@ that outlived the code that registered it; `onSkip` hears each key left out, as 
 
 ## What is NOT serialized
 
-- **History.** A restored scene starts with empty history. To keep undo across a reload, save
-  `scene.serializeHistory()` beside the snapshot and hand it to `scene.restoreHistory()` once the
-  snapshot has loaded; `useSessionPersistence` (`@weasel-js/editor`) does both.
+- **History.** A restored scene starts with empty history. To keep undo across a reload, save the
+  history paired with the scene (the document envelope above) and restore it with `restorePairedHistory`
+  once the snapshot has loaded; `useSessionPersistence` (`@weasel-js/editor`) does both.
 - **Selection.** Selection lives in `useSelection`, outside the `Scene`
   primitive; restoring it is the caller's job.
 - **Pose overrides** (`scene.overrides`) — ephemeral per-node pose/alpha for a
@@ -180,9 +236,8 @@ that outlived the code that registered it; `onSkip` hears each key left out, as 
   not part of `Scene`.
 - **View / viewport.** Camera position and zoom are not captured.
 - **`TData` / `TPose` JSON-safety.** The kit serializes whatever is in `data`
-  and `pose` as-is. `JSON.stringify` silently drops or corrupts values JSON
-  cannot carry (functions, class instances, `undefined`), and writes a typed
-  array as an object unless `serializeReplacer` tags it.
+  and `pose` as-is. The codec carries typed arrays; JSON still drops or corrupts
+  what it cannot carry (functions, class instances, `undefined`).
 
 ## Error cases
 
@@ -241,12 +296,16 @@ mark gets no clip: the loader cannot know which painter will claim it, so a cons
 
 The shape of `data` is the app's, and so is its version. Keep the version as a document value
 (`scene.doc.set('myapp:schema', 2)`), and migrate older data as the nodes load: `nodeSpecsFromSnapshot`
-(`@weasel-js/editor`) hands each node's data to the reviver it is given.
+(`@weasel-js/editor`) hands a copy of each node's data, already decoded, to the migration it is given.
 
 ```ts
-import { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays } from '@weasel-js/editor';
+import { parseSnapshot } from '@weasel-js/core';
+import { docFromSnapshot, nodeSpecsFromSnapshot } from '@weasel-js/editor';
 
+const json = parseSnapshot(text);                       // the engine's decoding
 const schema = Number(docFromSnapshot(json)?.['myapp:schema'] ?? 1);
-const migrate = (data: MyData): MyData => (schema < 2 ? upgradeToV2(reviveTypedArrays(data)) : reviveTypedArrays(data));
+const migrate = (data: MyData): MyData => (schema < 2 ? upgradeToV2(data) : data);
 const scene = useScene({ systemLayers, initial: nodeSpecsFromSnapshot(json, registry, migrate), doc: { ...docFromSnapshot(json), 'myapp:schema': 2 } });
 ```
+
+A history saved beside the old data does not restore over the migrated scene: its fingerprint no longer matches.

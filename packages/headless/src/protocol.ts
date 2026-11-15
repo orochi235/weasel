@@ -1,6 +1,6 @@
 // What crosses between Node and the page: JSON only, so pixels travel as base64. Typed here rather
 // than from core, whose types reach React and the DOM, neither of which a Node caller has.
-import { reviveTypedArrays, tagTypedArrays } from '@weasel-js/geom';
+import { decodeSnapshot, encodeSnapshot } from '@weasel-js/core/json';
 import { checkPixelRenderRect } from '@weasel-js/core/math';
 
 /** The page script's global, set once the script has run. */
@@ -40,18 +40,18 @@ export interface PageApi {
   render(req: PageRequest): Promise<PageResult>;
 }
 
-/** A live scene or its snapshot, as JSON carries it: a path's typed arrays tagged, as
- *  `tagTypedArrays` writes them. A snapshot already saved that way passes through unchanged. */
+/** A live scene or its snapshot, as JSON carries it: encoded by core's snapshot codec. A snapshot already
+ *  encoded passes through unchanged. */
 export function sceneToWire(scene: object): object {
   if (!isRecord(scene)) refuse('scene', 'an object', scene);
   const toJSON = (scene as { toJSON?: unknown }).toJSON;
   // Read back first, so arrays the snapshot holds already tagged are tagged once rather than escaped as data.
-  return tagTypedArrays(reviveTypedArrays(typeof toJSON === 'function' ? toJSON.call(scene) : scene)) as object;
+  return encodeSnapshot(decodeSnapshot(typeof toJSON === 'function' ? toJSON.call(scene) : scene)) as object;
 }
 
 /** The snapshot `sceneToWire` sent, its typed arrays restored. */
 export function sceneFromWire(wire: object): object {
-  return reviveTypedArrays(wire) as object;
+  return decodeSnapshot(wire) as object;
 }
 
 type Rect = { x: unknown; y: unknown; width: unknown; height: unknown };

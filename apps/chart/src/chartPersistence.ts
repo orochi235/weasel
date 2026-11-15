@@ -1,11 +1,10 @@
 import {
-  isSerializedScene, replaceDoc, type AddNodeSpec, type SavedScene, type SerializedDoc,
+  decodeSnapshot, isSerializedScene, parseSnapshot, replaceDoc, stringifySnapshot, type AddNodeSpec, type SavedScene,
+  type SerializedDoc,
 } from '@weasel-js/core';
 import { DIAGRAM_THEME_KEY, DIAGRAM_TYPE_DOC_KEY, FLOWCHART_TYPE, diagramTypeDocValue, themeDocValue } from '@weasel-js/diagram';
 import { addDocumentScene, type DocumentScene } from '@weasel-js/diagram-formats';
-import {
-  docFromSnapshot, nodeSpecsFromSnapshot, readStored, reviveTypedArrays, serializeReplacer,
-} from '@weasel-js/editor';
+import { docFromSnapshot, nodeSpecsFromSnapshot, readStored } from '@weasel-js/editor';
 import {
   CHART_LAYERS, CHART_PAGES, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose, type ChartScene,
 } from './chartDocument';
@@ -32,7 +31,7 @@ export interface ChartFile {
 function chartOf(json: ChartSnapshot): ChartFile {
   const systemLayers = (json.systemLayers as ChartSnapshot['systemLayers'] | undefined) ?? CHART_LAYERS;
   const specs = nodeSpecsFromSnapshot(
-    { ...json, systemLayers } as ChartSnapshot, CHART_REGISTRY, reviveTypedArrays,
+    { ...json, systemLayers } as ChartSnapshot, CHART_REGISTRY, undefined,
     { pages: CHART_PAGES, systemLayers: CHART_LAYERS },
   );
   return { specs, doc: { [DIAGRAM_THEME_KEY]: themeDocValue(CHART_DEFAULT_THEME), ...docFromSnapshot(json) } };
@@ -44,27 +43,30 @@ export const emptyChart = (type: string = FLOWCHART_TYPE.id): ChartFile =>
 
 /** The chart as the text a `.weaselchart.json` file and the session store hold. */
 export function chartToJson(scene: ChartScene): string {
-  return JSON.stringify(scene.toJSON(), serializeReplacer);
+  return stringifySnapshot(scene.toJSON());
 }
 
-/** The chart a saved scene holds, as `JSON.parse` reads its text. Throws on a value that is not one, or on one chart's
- *  scene cannot hold. */
-export function chartFromSaved(json: unknown): ChartFile {
+/** The chart a decoded saved scene holds. Throws on a value that is not one, or on one chart's scene cannot hold. */
+function chartFromSnapshot(json: unknown): ChartFile {
   if (!isSerializedScene<ChartData, ChartLayer, ChartPose>(json)) throw new Error('Not a saved chart');
   return chartOf(json);
 }
 
+/** The chart a saved scene holds, as `JSON.parse` reads its text. Throws on a value that is not one, or on one chart's
+ *  scene cannot hold. */
+export const chartFromSaved = (value: unknown): ChartFile => chartFromSnapshot(decodeSnapshot(value));
+
 /** The chart a saved file holds. Throws on text that is not one, or on one chart's scene cannot hold. */
-export const chartFromJson = (text: string): ChartFile => chartFromSaved(JSON.parse(text));
+export const chartFromJson = (text: string): ChartFile => chartFromSnapshot(parseSnapshot(text));
 
 /** The chart the last session left, or an empty one. */
 export function loadChartSession(): ChartFile {
   return readStored(CHART_SCENE_KEY, chartFromSaved, () => emptyChart());
 }
 
-/** Where `useSessionPersistence` keeps the chart and its undo stack. Its default drops a stack saved beside a
- *  chart that loads with its tree rebuilt, or that cannot be read. */
-export const CHART_SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY, pages: CHART_PAGES } as const;
+/** Where `useSessionPersistence` keeps the chart and its undo stack. A stack is restored only onto the chart it was
+ *  saved beside, so one beside a chart that loads rebuilt, or that cannot be read, is dropped. */
+export const CHART_SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY } as const;
 
 /** Replaces everything in the chart, nodes, pages and document values, with `file`, as one undo entry. */
 export function replaceChart(scene: ChartScene, file: ChartFile, label: string): void {

@@ -27,7 +27,7 @@ It runs beside `@weasel-js/core`, `@weasel-js/geom`, `@weasel-js/guides`,
 | Preferences | `useEditorPrefs`, `useOpenPreferences`, `EditorPrefsDialog` |
 | Menu bar | `editorMenuBar`, `menu`, `menuRun`, `EDITOR_MENU_TITLES` |
 | Session | `useSessionPersistence`, `useAutosave`, `readStored`, `writeSession`, `isUnreadableKey`, `sessionSaveReporter` |
-| Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `adoptSnapshotPages`, `snapshotRebuildsTree`, `serializeReplacer`, `snapshotValue`, `reviveTypedArrays` |
+| Snapshots | `docFromSnapshot`, `nodeSpecsFromSnapshot`, `adoptSnapshotPages`, `snapshotRebuildsTree` |
 | Clipboard | `useDocClipboard`, `DOC_CLIPBOARD_ACTIONS`, `DOC_CLIPBOARD_KEYS` |
 | Files | `downloadBlob`, `pickFile`, `describeFileWarnings`, `reportFileWarnings` |
 | File commands | `useNewCommand`, `useOpenCommand`, `useSaveCommand`, `FILE_KEYS` |
@@ -79,7 +79,8 @@ and handed to `useScene`:
 
 ```tsx
 function loadSaved() {
-  return readStored('myapp:scene', (json) => {
+  return readStored('myapp:scene', (value) => {
+    const json = decodeSnapshot(value);
     if (!isSerializedScene<Data, Layer, RectPose>(json)) throw new Error('not a saved document');
     return { initial: nodeSpecsFromSnapshot(json), doc: docFromSnapshot(json) };
   }, () => ({ initial: [], doc: undefined }));
@@ -94,11 +95,13 @@ function useDocument() {
 ```
 
 An entry is a value JSON reads back as itself, so every adapter keeps it
-exactly: `readStored` hands its reader the value, not text, and a snapshot is
-written through `snapshotValue`, which tags a path's typed arrays
-(`serializeReplacer`); loading reads the tags back with `reviveTypedArrays`,
-along with the untagged shapes older saves wrote. Entries already in
-`localStorage` read as they always have.
+exactly: `readStored` hands its reader the value, not text. The scene and its
+undo stack are written through core's `encodeSceneDocument`, the stack paired
+with the scene, and the snapshot readers here take a snapshot core's
+`decodeSnapshot` has decoded (`docs/scene-serialization.md`). On mount the stack
+is restored only onto the scene it was saved beside (`restorePairedHistory`):
+one beside a scene that loaded otherwise, rebuilt, migrated, unreadable or
+replaced, is dropped.
 
 To keep the session in IndexedDB, which holds far more than `localStorage`'s
 few megabytes (a document with a few embedded photos passes that), open the
@@ -149,5 +152,5 @@ the view setter and going to a page, and the settle, animate.
 A snapshot saved while a scene's pages were its `core:pages` document value
 loads with them as page nodes: `nodeSpecsFromSnapshot` converts it through
 core's `adoptLegacyPages` (pass the scene's `descriptor` and, off the rigid
-composition, its `composition`), `docFromSnapshot` leaves the value out, and `useSessionPersistence`
-drops the undo stack saved beside it.
+composition, its `composition`), `docFromSnapshot` leaves the value out, and the undo stack saved beside it
+no longer pairs with the scene, so `useSessionPersistence` drops it.

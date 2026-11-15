@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
+import { act, renderHook } from '@testing-library/react';
+import {
+  IDENTITY_POSE_COMPOSITION, createScene, parseSnapshot, type AddNodeSpec, type SavedScene,
+} from '@weasel-js/core';
+import { nodeSpecsFromSnapshot } from './snapshot';
 import { savedAtOf, useSessionPersistence } from './useSessionPersistence';
 
 afterEach(() => {
@@ -59,6 +62,31 @@ describe('useSessionPersistence', () => {
       expect(localStorage.getItem('test:history')).toBeNull();
       unmount();
     }
+  });
+
+  it('restores a saved undo stack onto the scene it was saved beside, and drops it from any other', async () => {
+    vi.useFakeTimers();
+    const box = { x: 0, y: 0, width: 1, height: 1 };
+    const make = (specs = [] as AddNodeSpec<unknown, 'main', unknown>[]) =>
+      createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }], initial: specs });
+    const scene = make();
+    const first = renderHook(() => useSessionPersistence(scene, { sceneKey: 'test:scene', historyKey: 'test:history' }));
+    act(() => { scene.add({ kind: 'mark', layer: 'main', pose: box, data: {} }); });
+    first.rerender();
+    await vi.advanceTimersByTimeAsync(300);
+    first.unmount();
+    const saved = parseSnapshot(localStorage.getItem('test:scene')!) as SavedScene<unknown, 'main', unknown>;
+    const history = localStorage.getItem('test:history');
+
+    const reloaded = make(nodeSpecsFromSnapshot(saved));
+    renderHook(() => useSessionPersistence(reloaded, { sceneKey: 'test:scene', historyKey: 'test:history' })).unmount();
+    expect(reloaded.canUndo()).toBe(true);
+
+    localStorage.setItem('test:history', history!);
+    const other = make();
+    renderHook(() => useSessionPersistence(other, { sceneKey: 'test:scene', historyKey: 'test:history' }));
+    expect(other.canUndo()).toBe(false);
+    expect(localStorage.getItem('test:history')).toBeNull();
   });
 
   it('drops a saved undo stack beside a scene its load kept aside as unreadable', () => {

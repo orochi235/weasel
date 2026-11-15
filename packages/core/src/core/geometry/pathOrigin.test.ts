@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
-  PathBuilder, boundsOfPath, reviveTypedArrays, typedArrayReplacer, worldCoords, type PolygonPath,
+  PathBuilder, boundsOfPath, worldCoords, type PolygonPath,
 } from '@weasel-js/geom';
+import { parseSnapshot, stringifySnapshot } from 'core/persistence/codec';
 import { regionTakes, polygonRegion, rectRegion } from './regionHit';
 import { pathPoseDescriptor } from './pathPoseDescriptor';
 import { pathFromParts } from 'core/scene/derivedParts';
@@ -53,8 +54,7 @@ describe('core readers of a path measured from an origin', () => {
   it('saves and loads a path pose with its origin', () => {
     const scene = createScene<unknown, 'main', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const id = scene.add({ kind: 'mark', layer: 'main', pose: square(), data: null });
-    const text = JSON.stringify(scene.toJSON(), typedArrayReplacer);
-    const saved = reviveTypedArrays(JSON.parse(text)) as SavedScene<unknown, 'main', PolygonPath>;
+    const saved: SavedScene<unknown, 'main', PolygonPath> = parseSnapshot(stringifySnapshot(scene.toJSON()));
     const loaded = sceneFromJSON(saved);
     const node = loaded.get(id)!;
     expect(node.pose.origin).toEqual({ x: FAR, y: 0 });

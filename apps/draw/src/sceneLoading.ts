@@ -2,23 +2,22 @@ import {
   type AddNodeSpec,
   asNodeId,
   createScene,
+  decodeSnapshot,
   isSerializedScene,
   type PagesDoc,
   rectPath,
   type SavedScene,
-  SCENE_HISTORY_FORM,
   type SerializedDoc,
-  type SerializedSceneHistory,
   solid,
   strokeOf
 } from '@weasel-js/core';
-import { docFromSnapshot, readStored, snapshotRebuildsTree } from '@weasel-js/editor';
+import { docFromSnapshot, readStored } from '@weasel-js/editor';
 import { BACKGROUND_KEY } from './docBackground';
 import { DEFAULT_BG_COLOR, loadDoc, PAPER_PRESETS } from './docPersistence';
 import { DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { onePage } from './pages/drawPages';
-import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
-import { removeSessionEntry, sessionRecords } from './sessionRecords';
+import { nodeSpecsFromSnapshot } from './persistence';
+import { sessionRecords } from './sessionRecords';
 
 export const LS_KEY = 'weaseldraw:scene-v1';
 
@@ -37,14 +36,7 @@ type DrawSpec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
  *  parse error, or a drawing draw's scene cannot hold, yields a fresh starter scene, one page with one example
  *  rectangle on it, so the canvas isn't empty on first run. */
 export function loadInitial(): DrawSpec[] {
-  return readStored(LS_KEY, (value) => {
-    const json = savedScene(value);
-    rebuilt = snapshotRebuildsTree(json, { pages: fallbackPages() });
-    return specsOf(json);
-  }, () => {
-    rebuilt = true;
-    return starterScene();
-  }, sessionRecords());
+  return readStored(LS_KEY, (value) => specsOf(savedScene(value)), starterScene, sessionRecords());
 }
 
 /** The persisted scene's document values, or `undefined` for none. Its pages are nodes, not among them. A
@@ -57,15 +49,12 @@ export function loadInitialDoc(): SerializedDoc | undefined {
   return { ...saved, [BACKGROUND_KEY]: legacy };
 }
 
-/** Whether the last {@link loadInitial} rebuilt a drawing saved without its pages as nodes, or found none it
- *  could open and started the starter scene, so an undo stack saved beside it would replay against a tree that
- *  is gone. `null` before one has run. */
-let rebuilt: boolean | null = null;
-
 /** The pages a drawing saved before draw had pages gets: one of the paper size its document settings kept. */
 export const fallbackPages = (): PagesDoc => onePage(PAPER_PRESETS[loadDoc().paperSize]);
 
-function savedScene(json: unknown): DrawSnapshot {
+/** The drawing a scene entry holds, decoded. */
+function savedScene(value: unknown): DrawSnapshot {
+  const json = decodeSnapshot(value);
   if (!isSerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>(json)) throw new Error('Not a saved drawing');
   return json;
 }
@@ -98,20 +87,3 @@ function starterScene(): DrawSpec[] {
 }
 
 export const SCENE_HISTORY_KEY = 'weaseldraw:scene-history-v1';
-
-/** Read the persisted undo/redo snapshot. Best-effort; on
- *  absent/corrupt/mismatched data, a snapshot in an older recorded form, or
- *  one saved beside a drawing whose pages were not yet nodes or that cannot be opened, returns null
- *  AND removes the key so a broken snapshot can't wedge every boot. */
-export function loadSceneHistory(): SerializedSceneHistory | null {
-  const stale = rebuilt ?? readStored(LS_KEY, (value) => snapshotRebuildsTree(savedScene(value), { pages: fallbackPages() }), () => true,
-    sessionRecords());
-  const snap = stale ? null : readStored(SCENE_HISTORY_KEY, parseSceneHistory, () => null, sessionRecords());
-  if (snap === null) removeSessionEntry(SCENE_HISTORY_KEY);
-  return snap;
-}
-
-function parseSceneHistory(value: unknown): SerializedSceneHistory | null {
-  const snap = value as SerializedSceneHistory | null;
-  return snap?.version === 1 && snap.form === SCENE_HISTORY_FORM ? reviveSnapshot(snap) : null;
-}

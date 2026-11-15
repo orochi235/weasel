@@ -10,6 +10,7 @@ import {
   useOptionalDepRegistry,
   useSceneAdapter,
   type SelectionApi,
+  snapshotReplacer,
   WEASEL_CLIPBOARD_MIME
 } from '@weasel-js/core';
 import {
@@ -25,7 +26,6 @@ import { useDebugCommands } from './dev/devRoutes';
 import { useFileCommands } from './fileCommands';
 import type { PaperSizeKey } from './paperSizes';
 import { reportPasteOmissions } from './pasteOmissions';
-import { serializeReplacer } from '@weasel-js/editor';
 import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgExport';
 
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
@@ -68,7 +68,7 @@ export function Toolbar({
   // "not found" — rather than throwing, so no id-existence filter is needed
   // even in the shouldn't-happen case.)
   const produceFlavors = useCallback((snapshot: ClipboardSnapshot) => {
-    const json = buildWeaselClipboardText(snapshot.items, serializeReplacer);
+    const json = buildWeaselClipboardText(snapshot.items, snapshotReplacer);
     const roots = clipboardSnapshotRootIds(
       snapshot.items as Array<{ id: string; parent: string | null }>,
     );
@@ -90,7 +90,7 @@ export function Toolbar({
     onPaste: (ids) => selection.set(ids.map(asNodeId)),
     onPasteOmitted: reportPasteOmissions,
     produceFlavors,
-    jsonReplacer: serializeReplacer,
+    jsonReplacer: snapshotReplacer,
   });
   // Published as the `clipboard` dep so Cmd+C / Cmd+X reach the same object
   // the buttons do — `copy` is wrapped rather than passed raw so the Paste

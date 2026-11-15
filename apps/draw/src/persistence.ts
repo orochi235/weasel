@@ -1,10 +1,10 @@
 // WeaselDraw's persistence: the legacy-paint migration layered over the shared snapshot helpers.
 
-import { nodeSpecsFromSnapshot as sharedNodeSpecs, reviveTypedArrays } from '@weasel-js/editor';
+import { nodeSpecsFromSnapshot as sharedNodeSpecs } from '@weasel-js/editor';
 import type {
   AddNodeSpec, PagesDoc, SceneRegistry, SavedScene, SpecsFromSerializedOptions, SystemLayerSpec,
 } from '@weasel-js/core';
-import { solid } from '@weasel-js/core';
+import { decodeSnapshot, solid } from '@weasel-js/core';
 
 
 /** The `Paint` discriminant values as they were written before 2026-10-12,
@@ -35,12 +35,11 @@ function isBarePaint(value: unknown): value is Record<string, unknown> {
  * `stroke: '#abc'` with a sibling `strokeWidth` — into the `Fill` and
  * `Stroke` objects every reader now expects, a paint's tag from `fill` to
  * `kind`, a pattern's tile up into the paint, and a paint held directly under
- * `fill` into a `Fill`. Walks in place and returns the same node, like
- * `reviveTypedArrays`.
+ * `fill` into a `Fill`. Walks in place and returns the same node.
  *
- * Applied to node data and to the node data copied inside a history
- * snapshot's op payloads, so an undo after a reload cannot write a string
- * back into a migrated scene.
+ * Draw's application migration, run on decoded data. An undo stack saved
+ * beside a drawing it changes is not restored (`restorePairedHistory`), so an
+ * undo after a reload cannot write a string back into a migrated scene.
  */
 export function migrateLegacyPaint<T>(node: T): T {
   if (node == null || typeof node !== 'object') return node;
@@ -93,22 +92,18 @@ function liftLegacyPattern(obj: Record<string, unknown>): void {
 }
 
 /**
- * The one way to read anything that came out of localStorage: revive the
- * typed arrays, then migrate the legacy string paints. Both the scene and the
- * two history snapshots go through it, so neither pass can be forgotten at a
- * load site.
+ * Read encoded data the way draw reads a saved drawing: core's `decodeSnapshot`, the engine's
+ * decoding, then draw's own migration of legacy string paints.
  */
-export function reviveSnapshot<T>(node: T): T {
-  return migrateLegacyPaint(reviveTypedArrays(node));
+export function reviveSnapshot<T>(node: unknown): T {
+  return migrateLegacyPaint(decodeSnapshot(node) as T);
 }
 
 /** `JSON.parse`-style reviver for clipboard payloads (the shape
- *  `IngestCtx.clipboard.reviver` expects): one `reviveTypedArrays` pass over
+ *  `IngestCtx.clipboard.reviver` expects): one {@link reviveSnapshot} pass over
  *  the fully-parsed tree, applied at the reviver's final root call
- *  (`key === ''`). NOT interchangeable with `reviveTypedArrays` itself —
- *  a JSON reviver is `(key, value) => value`, and wiring the one-arg walker
- *  in directly makes it receive each KEY (a string) and return it, collapsing
- *  the whole parse to `''`. */
+ *  (`key === ''`). A JSON reviver is `(key, value) => value`, called once per
+ *  key, so a one-argument walker wired in directly would collapse the parse. */
 export function clipboardJsonReviver(key: string, value: unknown): unknown {
   return key === '' ? reviveSnapshot(value) : value;
 }
@@ -122,7 +117,7 @@ export const DRAW_LOAD_OPTIONS = {
   },
 } as const satisfies Pick<SpecsFromSerializedOptions<unknown, string, unknown>, 'unknownKeys' | 'onSkip'>;
 
-/** The shared `nodeSpecsFromSnapshot` with the legacy-paint migration applied to each node's data, and
+/** The shared `nodeSpecsFromSnapshot`, over a decoded snapshot, with the legacy-paint migration applied to each node's data, and
  *  a snapshot's roots placed on their pages: its `core:pages`
  *  value's, or `pages` for one saved without any. With `systemLayers`, throws on a snapshot a scene of them
  *  cannot hold. */
@@ -132,7 +127,7 @@ export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   pages?: PagesDoc,
   systemLayers?: readonly SystemLayerSpec<TLayer>[],
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  return sharedNodeSpecs(json, registry, reviveSnapshot, {
+  return sharedNodeSpecs(json, registry, migrateLegacyPaint, {
     ...DRAW_LOAD_OPTIONS, ...(pages ? { pages } : {}), ...(systemLayers ? { systemLayers } : {}),
   });
 }

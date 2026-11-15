@@ -1,15 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { serializeReplacer, useSessionPersistence } from '@weasel-js/editor';
-import { PAGES_DOC_KEY, commitOps, createScene, isPageStructure, pageRunOf, pagesOf, setPages, type ActionDeps, type NodeId } from '@weasel-js/core';
+import { useSessionPersistence } from '@weasel-js/editor';
+import {
+  PAGES_DOC_KEY, commitOps, createScene, encodeSceneDocument, isPageStructure, pageRunOf, pagesOf, setPages, stringifySnapshot, type ActionDeps, type NodeId,
+} from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_THEMES, DIAGRAM_TYPE_DOC_KEY, EDGE_DERIVE_PATH, FLOWCHART_STENCILS, applyDiagramTheme, diagramThemeOf, diagramTypeDocOf,
   stencilBuild,
 } from '@weasel-js/diagram';
 import { CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import {
-  CHART_HISTORY_KEY, CHART_SCENE_KEY, CHART_SESSION, chartFromJson, chartToJson, emptyChart, replaceChart,
-  replaceChartWithDocument, type ChartFile,
+  CHART_HISTORY_KEY, CHART_SCENE_KEY, CHART_SESSION, chartFromJson, chartToJson, emptyChart, loadChartSession,
+  replaceChart, replaceChartWithDocument, type ChartFile,
 } from './chartPersistence';
 
 const newScene = () => createScene<ChartData, ChartLayer, ChartPose>({ systemLayers: CHART_LAYERS, registry: CHART_REGISTRY });
@@ -123,19 +125,23 @@ describe('chart persistence', () => {
     expect(scene.nodes.size).toBeGreaterThan(2);
   });
 
-  it('drops the undo stack saved beside a chart whose pages were not yet nodes, and keeps it beside one whose were', () => {
-    const { scene } = twoBodiesAndAnEdge();
-    /** The stack the session handed `restoreHistory`, or null for none. */
-    const restored = (saved: string): unknown => {
-      localStorage.setItem(CHART_SCENE_KEY, saved);
-      localStorage.setItem(CHART_HISTORY_KEY, '{"version":1}');
-      const target = newScene();
+  it('restores the undo stack only onto the chart it was saved beside', () => {
+    const { scene: unpaged } = twoBodiesAndAnEdge();
+    /** Whether a session booting `boot` restores the stack saved beside `saved`. */
+    const restores = (saved: ReturnType<typeof newScene>, boot: () => ReturnType<typeof newScene>): boolean => {
+      const doc = encodeSceneDocument(saved);
+      localStorage.setItem(CHART_SCENE_KEY, JSON.stringify(doc.scene));
+      localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(doc.history));
+      const target = boot();
       const restore = vi.spyOn(target, 'restoreHistory').mockImplementation(() => {});
       renderHook(() => useSessionPersistence(target, CHART_SESSION)).unmount();
-      return restore.mock.calls[0]?.[0] ?? null;
+      return restore.mock.calls.length > 0;
     };
-    expect(restored(chartToJson(scene))).toBeNull();
-    expect(restored(chartToJson(reopened(scene)))).toEqual({ version: 1 });
+    // A chart saved before its pages were nodes loads with them made, so its stack no longer fits.
+    expect(restores(unpaged, () => sceneOf(loadChartSession()))).toBe(false);
+    const paged = reopened(unpaged);
+    expect(restores(paged, () => sceneOf(loadChartSession()))).toBe(true);
+    expect(restores(paged, newScene)).toBe(false);
     localStorage.clear();
   });
 
@@ -168,7 +174,7 @@ describe('chart persistence', () => {
     scene.add({ kind: 'mark', layer: 'shapes', parent: pagesOf(scene)!.pages[0]!.id as NodeId, pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
     const json = scene.toJSON();
     const later = { ...json, nodes: json.nodes.map((n) => (n.layer === 'shapes' ? { ...n, layer: 'later' } : n)) };
-    expect(() => chartFromJson(JSON.stringify(later, serializeReplacer))).toThrow(/layer/);
+    expect(() => chartFromJson(stringifySnapshot(later))).toThrow(/layer/);
   });
 
   it('reads a chart saved without a diagram type as a flowchart with its groups', () => {

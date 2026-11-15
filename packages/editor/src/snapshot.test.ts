@@ -1,7 +1,7 @@
-import { RECT_POSE_DESCRIPTOR, asNodeId, type PoseDescriptor, type RectPose, type SerializedScene, type SerializedSceneV1 } from '@weasel-js/core';
+import { RECT_POSE_DESCRIPTOR, asNodeId, parseSnapshot, stringifySnapshot, type PoseDescriptor, type RectPose, type SerializedScene, type SerializedSceneV1 } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import {
-  adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer, snapshotRebuildsTree,
+  adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, snapshotRebuildsTree,
 } from './snapshot';
 
 // Regression for the reload bug where a loader filtered `kind === 'mark'` and dropped `parent`,
@@ -11,7 +11,7 @@ describe('snapshot — scene snapshot to node specs', () => {
   type Layer = 'default';
   type Pose = { x: number; y: number; width: number; height: number };
 
-  it('takes a reviver that migrates an older shape of data, typed as the scene data', () => {
+  it('takes a migration of an older shape of data, typed as the scene data', () => {
     type Saved = { fill?: string; color?: string };
     const json: SerializedScene<Saved, Layer, Pose> = {
       version: 3,
@@ -74,37 +74,13 @@ describe('snapshot — scene snapshot to node specs', () => {
     expect(seen).toEqual(['c']);
   });
 
-  it('revives typed arrays inside node data', () => {
-    const json: SerializedScene<Data, Layer, Pose> = {
-      version: 3,
-      systemLayers: [{ id: 'default' }],
-      nodes: [
-        { id: 'a', kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { coords: [1.5, 2.5, 3.5] } },
-      ],
-    };
-
-    const specs = nodeSpecsFromSnapshot(json);
-    const coords = (specs[0].data as { coords: unknown }).coords;
-    expect(coords).toBeInstanceOf(Float32Array);
-  });
-  it('revives a typed array under any key, not only a path\'s', () => {
-    const data = { weights: new Float32Array([0.25, 0.75]), nested: [{ ids: new Uint8Array([3, 4]) }] };
-    const revived = reviveTypedArrays(JSON.parse(JSON.stringify(data, serializeReplacer)) as typeof data);
-    expect(revived.weights).toBeInstanceOf(Float32Array);
-    expect(revived).toEqual(data);
-  });
-  it('leaves a commands or coords field that holds no numbers as it is', () => {
-    const data = { commands: ['undo', 'redo'], coords: { lat: 51.5, lng: -0.1 }, nested: { coords: [[1, 2], [3, 4]] } };
-    const revived = reviveTypedArrays(JSON.parse(JSON.stringify(data, serializeReplacer)) as typeof data);
-    expect(revived).toEqual(data);
-  });
   it('keeps an image node\'s data through the JSON hop', () => {
     const image = { src: 'data:image/png;base64,iVBORw0KGgo=', opacity: 0.5, source: { x: 0, y: 0, width: 0.5, height: 1 }, flipY: true };
-    const json = JSON.parse(JSON.stringify({
+    const json = parseSnapshot(stringifySnapshot({
       version: 2,
       systemLayers: [{ id: 'default' }],
       nodes: [{ id: 'im', kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { image } }],
-    }, serializeReplacer)) as SerializedScene<{ image: typeof image }, Layer, Pose>;
+    })) as unknown as SerializedScene<{ image: typeof image }, Layer, Pose>;
 
     expect(nodeSpecsFromSnapshot(json)[0].data).toEqual({ image });
   });

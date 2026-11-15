@@ -282,16 +282,6 @@ Owner tags, after the priority (2026-10-26):
   shared definitions intentionally, registration/replacement/disposal rules are documented and tested, and
   restored external ops resolve through their host's registry context.
 
-- **(P2) [agent] Put the canonical scene persistence codec below the editor package.** JSON persistence
-  currently needs `serializeReplacer` and `reviveTypedArrays` from `@weasel-js/editor`
-  (`docs/scene-serialization.md`); plain JSON serialization corrupts built-in typed-array geometry. Expose
-  canonical encoding/decoding from the engine or a lower-level serialization package, distinguish in-memory
-  snapshots from encoded JSON, and provide a paired document/history envelope with validation against
-  restoring history over unrelated content. Keep application-data migration separate from engine migration.
-  Closes when core-only consumers can save and restore built-in geometry and paired history through the
-  documented codec without editor, typed arrays round-trip, mismatched document/history pairs are rejected,
-  and examples document format versions and application migration boundaries.
-
 - **(P2) [agent] Make explicit feature presets the standard canvas composition API in 2.0.** `SceneCanvas`
   accepts named features and implies navigation from `viewport`; `LeanSceneCanvas` accepts preset objects
   and does not imply navigation (`packages/core/src/canvas/LeanSceneCanvas.tsx`). Make the explicit-preset

@@ -1,7 +1,7 @@
 import { localStorageAdapter, openRecordsSync, type OwnedRecordCache, type RecordCache } from '@weasel-js/storage';
 
 /** One stored entry: its key and the value it holds. A value JSON reads back as itself, so that every storage
- *  adapter keeps it exactly; `snapshotValue` makes one of a snapshot holding typed arrays. */
+ *  adapter keeps it exactly; core's `encodeSnapshot` makes one of a snapshot holding typed arrays. */
 export type SessionEntry = readonly [key: string, value: unknown];
 
 /** One record: the cache holding it and its name there. */

@@ -25,7 +25,7 @@ export interface RasterImage {
 
 /** One render: `renderSceneToPixels`'s arguments, the scene as JSON and no function-valued fields. */
 export interface NodeRenderArgs extends SerializableRenderArgs {
-  /** A live `Scene`, or its `toJSON()` snapshot, raw or saved through `tagTypedArrays`. A scene
+  /** A live `Scene`, or its `toJSON()` snapshot, raw or encoded (`encodeSnapshot`). A scene
    *  whose nodes name registry functions (`clipFromPose` and the like) cannot be read back in the
    *  page. */
   scene: object;

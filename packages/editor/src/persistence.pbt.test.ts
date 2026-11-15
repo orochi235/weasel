@@ -1,14 +1,17 @@
 /**
  * Stateful property test of an editor session saved and reloaded at any point: two scenes take the same edits, undos,
  * redos, and history jumps, and one of them is now and then written out the way `useSessionPersistence` writes it
- * (`snapshotValue`) and rebuilt the way an editor boots (`nodeSpecsFromSnapshot`, `docFromSnapshot`, and the undo
- * stack revived and restored). After every step the two hold the same nodes, document values, and history, so an
+ * (core's `encodeSceneDocument`) and rebuilt the way an editor boots (`nodeSpecsFromSnapshot`, `docFromSnapshot`, and
+ * the undo stack restored through `restorePairedHistory`, which must find it paired with the rebuilt scene). After every step the two hold the same nodes, document values, and history, so an
  * undo after a reload puts back what it would have without one.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { asNodeId, createScene, defaultCommitAdapter, type NodeId, type Scene, type SerializedScene } from '@weasel-js/core';
-import { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, snapshotValue } from './snapshot';
+import {
+  asNodeId, createScene, decodeSceneDocument, defaultCommitAdapter, encodeSceneDocument, restorePairedHistory, type NodeId,
+  type Scene,
+} from '@weasel-js/core';
+import { docFromSnapshot, nodeSpecsFromSnapshot } from './snapshot';
 import { dataKey, dataValue, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 120;
@@ -58,12 +61,12 @@ function historyOf(scene: S): unknown {
 }
 
 function boot(scene: S): S {
-  const json = snapshotValue(scene.toJSON()) as SerializedScene<Data, 'main', Pose>;
+  const { scene: json, history } = decodeSceneDocument<Data, 'main', Pose>(structuredClone(encodeSceneDocument(scene)));
   const doc = docFromSnapshot(json);
   const next = createScene<Data, 'main', Pose>({ systemLayers: LAYERS, initial: nodeSpecsFromSnapshot(json), ...(doc ? { doc } : {}) });
   const adapter = defaultCommitAdapter(next);
   next.setHistoryAdapter(() => adapter);
-  next.restoreHistory(reviveTypedArrays(snapshotValue(scene.serializeHistory())) as Parameters<S['restoreHistory']>[0]);
+  expect(restorePairedHistory(next, history)).toBe('restored');
   return next;
 }
 
