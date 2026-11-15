@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { ReactElement } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import { KeyBank, type KeyBankProps, KeyCap, KEY_MIN_SCALE } from '@weasel-js/ui/components/Keycaps';
 import { FONT_OPTIONS, resolveFont } from './keycapStoryFonts';
+import s from './Keycaps.stories.module.css';
 
 interface StoryArgs extends KeyBankProps {
   /** Story-only: each key's width, in key heights. */
@@ -44,7 +45,7 @@ export const Wrapped: Story = {
 /** The bank beside the same keys outside any bank, which are never fitted. */
 export const BankedAndLoose: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', gap: 24 }}>
+    <div className={s.row}>
       <Cluster {...args} />
       <Cluster {...args} loose />
     </div>
@@ -52,11 +53,12 @@ export const BankedAndLoose: Story = {
 };
 
 function Cluster({ keyWidth = 1, font, loose, ...bank }: StoryArgs & { loose?: boolean }): ReactElement {
-  const width = `calc(${keyWidth} * var(--wzl-control-h-xs))`;
+  // A custom property rather than a class: the width is a control's value.
+  const width = { '--key-w': `calc(${keyWidth} * var(--wzl-control-h-xs))` } as CSSProperties;
   const keys = (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(3, ${width})`, gap: 3 }}>
+    <div className={s.cluster} style={width}>
       {NAV.map((k) => (
-        <KeyCap key={k} label={k} font={resolveFont(font)} style={{ width, minWidth: 0, padding: '0 2px' }} />
+        <KeyCap key={k} label={k} font={resolveFont(font)} className={s.key} fixed />
       ))}
     </div>
   );

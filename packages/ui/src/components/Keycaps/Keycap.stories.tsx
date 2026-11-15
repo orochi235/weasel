@@ -1,38 +1,14 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { CSSProperties, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { KeyCap, type KeyCapVariant, type KeyCapProps, KEYCAP_VARIANT_ICONS } from '@weasel-js/ui/components/Keycaps';
+import type { LegendStyle, Platform } from '@weasel-js/gestures';
 import { FONT_OPTIONS, resolveFont } from './keycapStoryFonts';
-import {
-  keyLegendFromKey,
-  keyLegendsFromMods,
-  type LegendStyle,
-  type LogicalMod,
-  type Platform,
-} from '@weasel-js/gestures';
+import { relabel } from './keycapStoryLegends';
+import s from './Keycaps.stories.module.css';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'inverse'];
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
 const LEGENDS: LegendStyle[] = ['auto', 'symbol', 'text'];
-
-/** A story-only translator that picks the right label for the input glyph
- *  given the platform + legend pair. Delegates to the production helpers
- *  for everything they cover; passes other glyphs through unchanged. */
-function relabel(label: string, platform: Platform, legend: LegendStyle): string {
-  const modByGlyph: Record<string, LogicalMod | undefined> = {
-    '⌘': 'mod', '⇧': 'shift', '⌥': 'alt', '⌃': 'ctrl', '⇪': 'meta',
-  };
-  const mod = modByGlyph[label];
-  if (mod) {
-    const [spec] = keyLegendsFromMods([{ name: mod }], { platform, legend });
-    return spec.label;
-  }
-  const namedByGlyph: Record<string, string | undefined> = {
-    '⎋': 'Escape', '↵': 'Enter', '⇥': 'Tab', '␣': 'Space', '⌫': 'Backspace', '⌦': 'Delete',
-  };
-  const named = namedByGlyph[label];
-  if (named) return keyLegendFromKey(named, { platform, legend }).label;
-  return label;
-}
 
 interface StoryArgs extends KeyCapProps {
   /** Story-only — substitutes the input modifier or named-key glyph
@@ -129,7 +105,7 @@ export const InverseOptional: Story = {
 export const InColoredText: Story = {
   args: { label: '⌘' },
   render: ({ platform = 'macos', legend = 'auto', label, font, ...rest }) => (
-    <span style={{ color: '#7fb069' }}>
+    <span className={s.colored}>
       Press <KeyCap {...rest} label={relabel(label, platform, legend)} font={resolveFont(font)} /> to confirm.
     </span>
   ),
@@ -169,22 +145,16 @@ function KeyCapGallery({ platform, legend, font }: { platform: Platform; legend:
     { label: '␣', kind: 'wide' },
     { label: '⎋', kind: 'wide' },
   ];
-  const cell: CSSProperties = {
-    padding: '6px 12px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
-    textAlign: 'left',
-    verticalAlign: 'middle',
-  };
   return (
-    <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+    <table className={s.gallery}>
       <thead>
         <tr>
-          <th style={cell}>input label</th>
-          <th style={cell}>kind</th>
-          <th style={cell}>default</th>
-          <th style={cell}>optional</th>
-          <th style={cell}>inverse</th>
-          <th style={cell}>inverse + optional</th>
+          <th>input label</th>
+          <th>kind</th>
+          <th>default</th>
+          <th>optional</th>
+          <th>inverse</th>
+          <th>inverse + optional</th>
         </tr>
       </thead>
       <tbody>
@@ -192,12 +162,12 @@ function KeyCapGallery({ platform, legend, font }: { platform: Platform; legend:
           const rendered = relabel(r.label, platform, legend);
           return (
             <tr key={r.label}>
-              <td style={cell}><code>{r.label}</code></td>
-              <td style={cell}>{r.kind}</td>
-              <td style={cell}><KeyCap label={rendered} font={font} /></td>
-              <td style={cell}><KeyCap label={rendered} inverted font={font} /></td>
-              <td style={cell}><KeyCap label={rendered} variant="inverse" font={font} /></td>
-              <td style={cell}><KeyCap label={rendered} variant="inverse" inverted font={font} /></td>
+              <td><code>{r.label}</code></td>
+              <td>{r.kind}</td>
+              <td><KeyCap label={rendered} font={font} /></td>
+              <td><KeyCap label={rendered} inverted font={font} /></td>
+              <td><KeyCap label={rendered} variant="inverse" font={font} /></td>
+              <td><KeyCap label={rendered} variant="inverse" inverted font={font} /></td>
             </tr>
           );
         })}

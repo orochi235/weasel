@@ -1,0 +1,48 @@
+.gallery {
+  border-collapse: collapse;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.gallery th,
+.gallery td {
+  padding: var(--wzl-space-3) var(--wzl-space-6);
+  border-bottom: 1px solid var(--wzl-line-subtle);
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* A container's color, which the default variant takes as its own. */
+.colored {
+  color: var(--wzl-success);
+}
+
+.row {
+  display: flex;
+  gap: 24px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.platform {
+  margin-bottom: var(--wzl-space-3);
+  font-size: var(--wzl-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--wzl-fg-muted);
+}
+
+.cluster {
+  display: grid;
+  grid-template-columns: repeat(3, var(--key-w));
+  gap: 3px;
+}
+
+.key {
+  width: var(--key-w);
+  min-width: 0;
+  padding: 0 2px;
+}

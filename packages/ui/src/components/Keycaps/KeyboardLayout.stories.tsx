@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { LegendStyle, Platform } from '@weasel-js/gestures';
 import { KeyDiagram, KEYBOARD_LAYOUTS } from '@weasel-js/ui/components/Keycaps';
 import { FONT_OPTIONS, resolveFont } from './keycapStoryFonts';
+import s from './Keycaps.stories.module.css';
 
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
 const LEGENDS: LegendStyle[] = ['auto', 'symbol', 'text'];
@@ -35,10 +36,10 @@ type Story = StoryObj<StoryArgs>;
  *  legend in a bank prints at one size. */
 export const KeyboardLayouts: Story = {
   render: ({ legend = 'auto', font, wrap = true }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className={s.column}>
       {PLATFORMS.map((p) => (
         <section key={p}>
-          <header style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.65, marginBottom: 6 }}>
+          <header className={s.platform}>
             {p}
           </header>
           <KeyDiagram layout={KEYBOARD_LAYOUTS[p]} legend={legend} font={resolveFont(font)} wrap={wrap} />

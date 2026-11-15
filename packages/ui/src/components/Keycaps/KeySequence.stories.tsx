@@ -1,30 +1,14 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { CSSProperties, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { KeySequence, type KeyLegend, type KeySequenceProps, type KeyCapVariant, KEYCAP_VARIANT_ICONS } from '@weasel-js/ui/components/Keycaps';
-import { keyLegendFromKey, keyLegendsFromMods, keyLegendsFromShortcut, type LegendStyle, type LogicalMod, type Platform } from '@weasel-js/gestures';
+import { keyLegendsFromShortcut, type LegendStyle, type Platform } from '@weasel-js/gestures';
+import { FONT_OPTIONS, resolveFont } from './keycapStoryFonts';
+import { relabelKeys } from './keycapStoryLegends';
+import s from './Keycaps.stories.module.css';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'inverse'];
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
 const LEGEND_STYLES: LegendStyle[] = ['auto', 'symbol', 'text'];
-
-const MOD_BY_GLYPH: Record<string, LogicalMod | undefined> = {
-  '⌘': 'mod', '⇧': 'shift', '⌥': 'alt', '⌃': 'ctrl', '⇪': 'meta',
-};
-const NAMED_BY_GLYPH: Record<string, string | undefined> = {
-  '⎋': 'Escape', '↵': 'Enter', '⇥': 'Tab', '␣': 'Space', '⌫': 'Backspace', '⌦': 'Delete',
-};
-
-function relabel(label: string, platform: Platform, legend: LegendStyle): string {
-  const mod = MOD_BY_GLYPH[label];
-  if (mod) return keyLegendsFromMods([{ name: mod }], { platform, legend })[0].label;
-  const named = NAMED_BY_GLYPH[label];
-  if (named) return keyLegendFromKey(named, { platform, legend }).label;
-  return label;
-}
-
-function relabelKeys(keys: readonly KeyLegend[] | undefined, platform: Platform, legend: LegendStyle): readonly KeyLegend[] | undefined {
-  return keys?.map((k) => ({ ...k, label: relabel(k.label, platform, legend) }));
-}
 
 interface StoryArgs extends KeySequenceProps {
   /** Story-only — substitutes every key's modifier glyph for the
@@ -33,19 +17,6 @@ interface StoryArgs extends KeySequenceProps {
   /** Story-only — symbol form (⌘ / ⌥ / ↵) vs text form
    *  (Cmd / Option / Enter). */
   legend?: LegendStyle;
-}
-
-const FONT_PRESETS: Record<string, string> = {
-  'system sans': 'ui-sans-serif, system-ui, sans-serif',
-  'system mono': 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  'serif':       'ui-serif, Georgia, serif',
-  'inter':       'Inter, system-ui, sans-serif',
-  'oswald':      "'Oswald', sans-serif",
-};
-const FONT_OPTIONS = Object.keys(FONT_PRESETS);
-function resolveFont(value: string | undefined): string | undefined {
-  if (!value) return undefined;
-  return FONT_PRESETS[value] ?? value;
 }
 
 const meta: Meta<StoryArgs> = {
@@ -198,7 +169,7 @@ export const InColoredText: Story = {
     keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'P' }],
   },
   render: ({ platform = 'macos', legend = 'auto', keys, font, ...rest }) => (
-    <span style={{ color: '#d4a574', fontSize: 14 }}>
+    <span className={s.colored}>
       Quick action: <KeySequence {...rest} keys={relabelKeys(keys, platform, legend)} font={resolveFont(font)} />
     </span>
   ),
@@ -228,29 +199,23 @@ function KeySequenceGallery({ platform, legend, font }: { platform: Platform; le
     { label: 'Cmd+Enter', keys: [{ label: '⌘' }, { label: '↵' }] },
     { label: 'Esc', keys: [{ label: '⎋' }] },
   ];
-  const cell: CSSProperties = {
-    padding: '6px 12px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
-    textAlign: 'left',
-    verticalAlign: 'middle',
-  };
   return (
-    <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+    <table className={s.gallery}>
       <thead>
         <tr>
-          <th style={cell}>case</th>
-          <th style={cell}>inverse</th>
-          <th style={cell}>default (in colored text)</th>
+          <th>case</th>
+          <th>inverse</th>
+          <th>default (in colored text)</th>
         </tr>
       </thead>
       <tbody>
         {cases.map((c) => {
-          const keys = relabelKeys(c.keys, platform, legend) as KeyLegend[] | undefined;
+          const keys = relabelKeys(c.keys, platform, legend);
           return (
             <tr key={c.label}>
-              <td style={cell}>{c.label}</td>
-              <td style={cell}><KeySequence keys={keys} variant="inverse" font={font} /></td>
-              <td style={{ ...cell, color: '#7fb069' }}><KeySequence keys={keys} font={font} /></td>
+              <td>{c.label}</td>
+              <td><KeySequence keys={keys} variant="inverse" font={font} /></td>
+              <td className={s.colored}><KeySequence keys={keys} font={font} /></td>
             </tr>
           );
         })}
