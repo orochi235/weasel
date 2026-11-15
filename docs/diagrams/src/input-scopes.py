@@ -41,7 +41,7 @@ scA = Card('Scope A', [
     '`<InputScope yoke={yoke}>`: canvas A\'s view, pointer and the actions it binds. Uses the yoke\'s tool.',
 ], 290, 'green').draw(doc, 250, SY)
 scB = Card('Scope B', [
-    'Same shape as A, for canvas B. The active scope: last to take a pointerdown or wheel.',
+    'Same shape as A, for canvas B. The active scope: last to take a pointerdown, wheel or contextmenu.',
 ], 290, 'green').draw(doc, 590, SY, sw=3, stroke=AMBER)
 scC = Card('Scope C', [
     'A canvas with no yoke: sits right under the root and keeps a tool of its own.',
@@ -91,11 +91,11 @@ BY = SY + max(scA.h, scB.h, scC.h) + 70
 reg = Card('A component inside canvas A', [
     'calls `useAction` or `useDepSource`. The registration lands in the innermost tier around it: scope A.',
 ], 290, 'blue').draw(doc, scA.x, BY)
-act = Card('pointerdown or wheel on canvas B', [
+act = Card('pointerdown, wheel or contextmenu on canvas B', [
     '`activate()` points every ancestor\'s active child toward B; B\'s dep and tool nodes move with it.',
 ], 290, 'blue').draw(doc, scB.x, BY)
 key = Card('keydown with canvas C', [
-    'Dropped: `isActive()` is false, because C is not on the active path. Keys act only in the active scope.',
+    'Dropped: C does not hold the keys (`holdsKeys()`). They go to the canvas last pressed or scrolled in, here B.',
 ], 290, 'red').draw(doc, scC.x, BY)
 for c, s in ((reg, scA), (act, scB)):
     doc.arrow([(c.x + c.w / 2, c.y), (s.x + s.w / 2, s.y + s.h)], color=BLUE, sw=2)
@@ -131,4 +131,4 @@ open(sys.argv[1], 'w').write(doc.render(
     'Input scopes and yokes',
     'The tier tree: root registries, an optional yoke, and per-canvas input scopes. Registrations land in the '
     'innermost tier, lookups walk scope to yoke to root, and chrome at the root reads through the active scope, '
-    'which a pointerdown or wheel moves.'))
+    'which a pointerdown, wheel or contextmenu moves.'))

@@ -41,7 +41,7 @@ items = [
         '• target: 3 for a kind that must be selected, 2 for one kind or affordance, 1 for a body class or predicate, 0 for none',
         '• required modifiers: how many',
         '• phase: 2 when channel and phase are both named, 1 when one is a wildcard, 0 for none',
-        '• drop or paste with a MIME filter: 2, anything else 1',
+        '• drop, carry or paste with a MIME filter: 2, anything else 1',
         '▸ target: `[*:*] drag => unselected-body` (`move`) beats `[*:*] drag` (`viewport.dragPan`, from `dragPanContribution`).',
         '▸ modifiers: `[*:*] drag +shift` beats `[*:*] drag ?shift` (`lassoSelect`); an optional modifier counts for nothing.',
         '▸ phase: `[*:engaged] keyDown(Escape)` (`cancelGesture`) beats `[*:*] keyDown(Escape)` (`tool.resetToDefault`).',

@@ -565,7 +565,7 @@ alone first (`routeThroughKeymap`). Then:
 
 | Input | What happens |
 |---|---|
-| Escape | Closes the innermost keymap. A keymap cannot bind it. |
+| Escape | Closes the innermost keymap, unless a gesture in flight takes it to cancel. A keymap cannot bind it. |
 | One of its bindings | Runs; a tapped keymap closes, a held one stays open |
 | A key it does not bind | `'modal'` (default): swallowed, keymap stays open. `'cascade'`: closes it and routes as usual |
 | A click or other pointer gesture it does not bind | Routes as usual and closes a tapped keymap; a held one stays open |

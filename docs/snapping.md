@@ -19,8 +19,8 @@ A gesture never talks to a source. It hands the session the point the dispatcher
 back the point it should use. Points are ctx coordinates: world in 2D, screen in a 3D host.
 
 Gestures that snap: move and alt-drag clone, resize, rotate, insert (drag and click-place), pen and spiro placement,
-pen handles, anchor and handle drags in path edit, measure, the symmetry center and axis, and
-diagram's route handles.
+pen handles, anchor and handle drags in path edit, measure, ruler guide drags, the symmetry center and axis,
+and diagram's route handles.
 
 ## The model
 
@@ -34,7 +34,8 @@ is only ever offered probes of the roles it names:
 | `origin` | each moved root's pose origin, read through an `OriginProjection` | grid, on a turned container's lattice |
 | `box` | the subject's drawn box (stroke included): its min, center and max corners; on a resize, the moving edges | grid, ruler guides, alignment, equal spacing |
 | `geometry` | the point of the subject's own outline nearest the press, on a move | path targets, 3D boxes |
-| `pointer` | the pointer, for point gestures; the dragged corner, for a resize | every source |
+| `pointer` | the pointer, for point gestures; the dragged corner, for a resize | path targets, measurement ends, grid, ruler guides, alignment, 3D sources |
+| `anchor` | points a node declares in its own box frame (`snap={{ anchors }}`), on a move | grid, which then lands them in place of the box |
 
 **Loci** are where a target allows a probe to be: a point plus zero, one or two directions — a
 point, a line, or a plane. A locus may carry a span (a segment, a bounded face); a result outside
@@ -77,7 +78,7 @@ within reach at the combined `δ` — and ranks the combinations by these keys, 
 2. **Target-tier codimension.** A source is a `target` (default) or a `fallback`. The grid is a
    fallback with unlimited reach: it fills any axis no target claims and never displaces one.
 3. **Screen displacement**, smaller first: the largest distance any member's probe moves from
-   where `δ₀` put it. Distances within `1e-9` px count as equal.
+   where `δ₀`, held to `H`, put it. Distances within `1e-9` px count as equal.
 4. **Order.** Candidates are numbered in source order, then in the order each source yields them,
    and the combination whose lowest numbers come first wins.
 
@@ -99,7 +100,7 @@ in `@weasel-js/editor`).
 | `pathSnapSource(opts)` | core | target | path targets: anchors, box centers, crossings, tangent and perpendicular points from the gesture's `origin`, midpoints, extremes, quadrant points, the nearest point on a stroke; `only` and `kinds` pick them |
 | `measureEndSource(opts)` | core | target | measurement ends |
 | `rotationSnapSource()` | core | target | quarter turns and other nodes' angles, for a rotate |
-| `gridSnapSource({ spacing, origin?, unitSystem?, scopes? })` | guides | fallback | the grid line either side of each box or pointer probe, on each axis (the origin probe, on a turned container's lattice); with `scopes`, on the pitch of the unit scope the subject sits in, or for an insert the scope of its `parent` |
+| `gridSnapSource({ spacing, origin?, unitSystem?, scopes? })` | guides | fallback | the grid line either side of each box or pointer probe, on each axis (the origin probe, on a turned container's lattice; a subject's anchor probes, when it declares any); with `scopes`, on the pitch of the unit scope the subject sits in, or for an insert the scope of its `parent` |
 | `guideSnapSource({ getGuides })` | guides | target | ruler guides |
 | `alignmentSnapSource(opts)` | guides | target | siblings' edges and centers, and an optional page box |
 | `spacingSnapSource(opts)` | guides | target | positions that repeat a gap already between siblings, or center between two |
@@ -114,7 +115,7 @@ Sources reach a canvas three ways, asked in this order. Two of them sharing an i
 gesture begins, since one would silently replace the other:
 
 - `<SceneCanvas snap={{ sources }}>`;
-- a feature preset's `snapSources` — `createSpacingHintsPreset` is alignment and spacing sources;
+- a feature preset's `snapSources` — `createSpacingHintsPreset` is a spacing source, and an alignment one with `align`;
 - `useSnapSource(source)` from a component under the canvas, while it is mounted.
 
 `gestures` limits which gestures ask a source; the default is every gesture but `rotate` and
