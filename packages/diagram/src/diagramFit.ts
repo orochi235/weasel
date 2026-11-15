@@ -28,10 +28,8 @@ export interface DiagramFit {
 /** The space a fit keeps clear around a diagram, in CSS pixels, and a bounded view's margin in world units. */
 export const DEFAULT_FIT_PADDING = 16;
 
-type Boxes = readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[];
-
 /** The world rect every node box, group box and route point takes, and `extra`, or `null` for none. */
-function diagramBounds(specs: Boxes, extra?: Bounds): Bounds | null {
+function diagramBounds(specs: readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[], extra?: Bounds): Bounds | null {
   const world = worldPosesOf(specs as never, RIGID_POSE_COMPOSITION);
   const boxes: Bounds[] = specs.filter((s) => isBodyOrRegion(s) || diagramGroupOf(s) !== null)
     .map((s) => (world.get((s as { id?: string }).id ?? '') ?? s.pose) as RectPose);
@@ -47,7 +45,7 @@ function diagramBounds(specs: Boxes, extra?: Bounds): Bounds | null {
  *  `maxScale` (default 1) and never below `minScale`. `extra` is further bounds to take in, such as the
  *  pages'. Takes specs, or a scene's nodes at the poses they are drawn at. */
 export function fitDiagram(
-  specs: Boxes,
+  specs: readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[],
   size: { width: number; height: number },
   fit: DiagramFit = {},
   extra?: Bounds,
@@ -68,7 +66,7 @@ export function fitDiagram(
 
 /** The world rect a bounded diagram's view stays inside: every node box, group box and route
  *  point, and `extra`, with `padding` world units around them; `undefined` for an empty diagram. */
-export function diagramViewBounds(specs: Boxes, padding: number, extra?: Bounds): Bounds | undefined {
+export function diagramViewBounds(specs: readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[], padding: number, extra?: Bounds): Bounds | undefined {
   const b = diagramBounds(specs, extra);
   return b === null ? undefined : { x: b.x - padding, y: b.y - padding, width: b.width + 2 * padding, height: b.height + 2 * padding };
 }
@@ -95,9 +93,9 @@ export interface DiagramFitting {
 
 export function useDiagramFit(args: {
   canvasRef: RefObject<SceneCanvasApi | null>;
-  specs: Boxes;
+  specs: readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[];
   /** The nodes as they stand now, at the poses they are drawn at. */
-  current: () => Boxes;
+  current: () => readonly { id?: string; kind: string; pose: unknown; data: unknown; parent?: string | null }[];
   controlled: boolean;
   size: { width: number; height: number };
   fit: DiagramFit;

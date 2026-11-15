@@ -8,6 +8,7 @@
  */
 import type { Outline } from '../outline';
 import { DIAGRAM_TRAIT_KEY } from '../trait';
+import type { Rect } from '@weasel-js/geom';
 
 /** Which kind of region a container is. */
 export type ContainerRole = 'container' | 'pool' | 'lane';
@@ -29,8 +30,6 @@ export interface DiagramContainer {
   /** A container whose members are reordered along this axis (`DataContainer.reorder`). */
   reorder?: 'x' | 'y';
 }
-
-type Box = { x: number; y: number; width: number; height: number };
 
 function traitOf(node: { data: unknown }): Record<string, unknown> | null {
   const data = node.data;
@@ -58,7 +57,7 @@ export function laneOutlineOf(node: { data: unknown }): Outline | undefined {
 export const titleIdOf = (containerId: string): string => `${containerId}/title`;
 
 /** The header strip of a container at `bounds`; null with no header. */
-export function headerBox(bounds: Box, header: ContainerHeader | undefined): Box | null {
+export function headerBox(bounds: Rect, header: ContainerHeader | undefined): Rect | null {
   if (header === undefined) return null;
   return header.side === 'top'
     ? { x: bounds.x, y: bounds.y, width: bounds.width, height: Math.min(header.size, bounds.height) }
@@ -66,7 +65,7 @@ export function headerBox(bounds: Box, header: ContainerHeader | undefined): Box
 }
 
 /** What a container at `bounds` holds members in: everything past its header. */
-export function bodyBox(bounds: Box, header: ContainerHeader | undefined): Box {
+export function bodyBox(bounds: Rect, header: ContainerHeader | undefined): Rect {
   const h = headerBox(bounds, header);
   if (h === null) return { ...bounds };
   return header!.side === 'top'

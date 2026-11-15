@@ -2,7 +2,7 @@
  * `diagramScene`'s groups: which nodes each one holds, and the box and label
  * it draws around them.
  */
-import { maxOf, minOf } from '@weasel-js/geom';
+import { maxOf, minOf, type Rect } from '@weasel-js/geom';
 import type { GroupInset } from './cluster';
 import type { DataGroup, DiagramSceneData, DiagramSpec, NodeStyle } from './dataTypes';
 import { ANCHOR_DERIVE_POSE, GROUP_DERIVE_POSE, boxAround, type DiagramAnchor } from './group';
@@ -66,8 +66,6 @@ export function resolveGroups(
     };
   });
 }
-
-type Rect = { x: number; y: number; width: number; height: number };
 
 /** The node id of a group's title. */
 export const groupLabelIdOf = (id: string): string => `${id}/label`;

@@ -12,8 +12,6 @@ import { plotMarkOf, plotRootOf } from '../plotScene';
 import type { PlotEdit } from './dragAction';
 import { plotEditorOf } from './editors';
 
-type AnyScene = Scene<unknown, string, unknown>;
-
 /** The datum of a text mark an edit can set: one naming what it edits under `edit`, or `null` for any other node. */
 export function plotTextOf(node: { data: unknown } | undefined): PlotDatum | null {
   const mark = plotMarkOf(node);
@@ -21,7 +19,7 @@ export function plotTextOf(node: { data: unknown } | undefined): PlotDatum | nul
 }
 
 /** The text the spec gives mark `markId`, as compiled: what it showed before an edit. */
-function compiledText(scene: AnyScene, rootId: string, markId: string): string | undefined {
+function compiledText(scene: Scene<unknown, string, unknown>, rootId: string, markId: string): string | undefined {
   const root = scene.get(rootId as NodeId)!;
   const trait = plotRootOf(root)!;
   const { width, height } = root.pose as RectPose;
@@ -40,7 +38,7 @@ export const isPlotText = (data: unknown): boolean => isTextData(data) && plotTe
  * nothing. Text that does not read (a value that is not a number) is undone,
  * so the mark shows the spec again.
  */
-export function foldPlotText(scene: AnyScene, textId: string, commit: (edit: PlotEdit & { label: string }) => void): void {
+export function foldPlotText(scene: Scene<unknown, string, unknown>, textId: string, commit: (edit: PlotEdit & { label: string }) => void): void {
   const node = scene.get(textId as NodeId);
   const datum = plotTextOf(node);
   const rootId = datum === null ? null : node!.parent;
@@ -62,7 +60,7 @@ export function foldPlotText(scene: AnyScene, textId: string, commit: (edit: Plo
  * the edit closes, fold it into one edit of the spec for `commit`.
  */
 export function usePlotTextEdit(
-  scene: AnyScene, commit: (edit: PlotEdit & { label: string }) => void,
+  scene: Scene<unknown, string, unknown>, commit: (edit: PlotEdit & { label: string }) => void,
 ): Exclude<SceneCanvasTextEditor<unknown>, false> {
   const latest = useLatest(commit);
   return useMemo(() => ({

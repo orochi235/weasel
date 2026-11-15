@@ -4,7 +4,7 @@
  * length. The drag runs a `'handle'` snap session about the anchor, and
  * {@link handleSnapSource} offers it the angles.
  */
-import { anchorAt, DEG_TO_RAD } from '@weasel-js/geom';
+import { anchorAt, DEG_TO_RAD, type Point } from '@weasel-js/geom';
 import { stepAngles, type AngleCandidate, type PathEditExtension, type SnapMark, type SnapSession, type SnapSource } from '@weasel-js/core';
 
 /** Angle snapping for a control-handle drag. */
@@ -22,8 +22,6 @@ export interface HandleSnapOptions {
 /** Options, or a thunk read on every move: null or undefined from it leaves
  *  the handle unsnapped. */
 export type HandleSnapOptionsInput = HandleSnapOptions | (() => HandleSnapOptions | null | undefined);
-
-type Point = { x: number; y: number };
 
 const DEFAULT_ANGLE_STEP = 45 * DEG_TO_RAD;
 const DEFAULT_REACH_RAD = 6 * DEG_TO_RAD;

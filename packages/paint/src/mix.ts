@@ -1,8 +1,6 @@
 import { interpolateSrgbSplit, type ColorInterpolationSpace } from './colorSpaces';
 import type { HueInterpolation } from './hue';
 
-type Rgba = readonly [number, number, number, number];
-
 /**
  * `color-mix(in <space>, a p%, b)` for two 0..1 sRGBA colors, `p` as 0..1. The
  * channels mix premultiplied by alpha, as CSS does, so a transparent side lends
@@ -10,8 +8,8 @@ type Rgba = readonly [number, number, number, number];
  * premultiplied, as in CSS. Out-of-gamut results come back chroma-clipped.
  */
 export function mixRgba(
-  a: Rgba,
-  b: Rgba,
+  a: readonly [number, number, number, number],
+  b: readonly [number, number, number, number],
   p: number,
   space: ColorInterpolationSpace = 'oklch',
   hue: HueInterpolation = 'shorter',
@@ -25,7 +23,7 @@ export function mixRgba(
 }
 
 /** {@link mixRgba} in OKLab. */
-export function mixOklab(a: Rgba, b: Rgba, p: number): [number, number, number, number] {
+export function mixOklab(a: readonly [number, number, number, number], b: readonly [number, number, number, number], p: number): [number, number, number, number] {
   return mixRgba(a, b, p, 'oklab');
 }
 
@@ -35,7 +33,7 @@ export function mixOklab(a: Rgba, b: Rgba, p: number): [number, number, number, 
  * nothing contributes nothing. Throws on an empty list.
  */
 export function mixRgbaWeighted(
-  members: readonly { readonly color: Rgba; readonly weight: number }[],
+  members: readonly { readonly color: readonly [number, number, number, number]; readonly weight: number }[],
   space: ColorInterpolationSpace = 'oklch',
   hue: HueInterpolation = 'shorter',
 ): [number, number, number, number] {

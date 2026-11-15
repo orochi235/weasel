@@ -6,8 +6,6 @@ import { pruneLookRoutes } from './lookRoutes';
 import { formatParam } from './stageTypes';
 import type { EffectDoc, EffectParam, EffectParamControl, EffectPipeline, EffectStage, EffectWire } from './types';
 
-type Ref = { stage: string; port: string };
-
 const withPipeline = (doc: EffectDoc, pipeline: Partial<EffectPipeline>): EffectDoc => ({
   ...doc,
   pipeline: { ...doc.pipeline, ...pipeline },
@@ -97,7 +95,7 @@ export function removeWires(doc: EffectDoc, ids: readonly string[]): EffectDoc {
 }
 
 /** An id-less wire is never matched: run `ensureWireIds` first. */
-export function reconnectWire(doc: EffectDoc, id: string, end: 'from' | 'to', to: Ref): EffectDoc {
+export function reconnectWire(doc: EffectDoc, id: string, end: 'from' | 'to', to: { stage: string; port: string }): EffectDoc {
   return withPipeline(doc, {
     wires: doc.pipeline.wires.map((w) => (w.id === id ? { ...w, [end]: { stage: to.stage, port: to.port } } : w)),
   });
@@ -142,7 +140,7 @@ export function ensureWireIds(doc: EffectDoc): EffectDoc {
 }
 
 /** An output into an input of the same type, both existing, on different stages. */
-export function canWire(p: EffectPipeline, from: Ref, to: Ref): boolean {
+export function canWire(p: EffectPipeline, from: { stage: string; port: string }, to: { stage: string; port: string }): boolean {
   if (from.stage === to.stage) return false;
   const out = p.stages.find((s) => s.id === from.stage)?.outputs?.find((x) => x.id === from.port);
   const inn = p.stages.find((s) => s.id === to.stage)?.inputs?.find((x) => x.id === to.port);

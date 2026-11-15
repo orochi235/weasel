@@ -4,14 +4,12 @@
  * whatever the camera's distance.
  */
 
-import { pointInPolygon, pointSegmentDist } from '@weasel-js/geom';
+import { pointInPolygon, pointSegmentDist, type Point } from '@weasel-js/geom';
 import { add, dot, normalize, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { cameraBasis } from '../camera';
 import { projectPoint, type Viewport3d } from '../project';
 import { subjectOf } from '../snap/probes3d';
 import { DEFAULT_UP, inWorld, type World3d } from '../world';
-
-type Point = { x: number; y: number };
 
 /** A world axis an axis move runs along. */
 export type WorldAxis = 'x' | 'y' | 'z';

@@ -61,17 +61,17 @@ export interface InsertNode3d<TData, TLayer extends string> {
   parent?: NodeId | null;
 }
 
-/** Options for `createInsert`: where it casts from, as a world or as its parts, and what it makes there. */
-export type InsertOptions<TData = unknown, TLayer extends string = string> = InsertCommon & {
+/** Options for `createInsert`: where it casts from, as a world or as its parts, and what it makes there: a node
+ *  for the dep to commit, or a `mint` that commits one itself. */
+export type InsertOptions<TData = unknown, TLayer extends string = string> = {
+  /** The view whose camera a drag is cast through, for a `<CanvasView deps>` of its own. Default the surface's. */
+  viewId?: string | null;
+  /** Smallest footprint a click-sized drag produces. Default 0.25. */
+  minExtent?: number;
   /** The world the other deps were built from: its viewport, the up its snap and camera turn about, and the
    *  scene a `node` factory's node goes into. */
   world: Pick<World3d<TData, TLayer>, 'viewport' | 'up'> & { scene?: Scene3d<TData, TLayer> };
-} & InsertMake<TData, TLayer>;
-
-type MintFn = (footprint: Footprint, extras: InsertExtras, select?: CommitSelection) => NodeId | null;
-
-/** What the insert makes: a node for the dep to commit, or a `mint` that commits one itself. */
-type InsertMake<TData, TLayer extends string> =
+} & (
   | {
     /**
      * The node a footprint makes, or `null` to decline. The dep gives it an id and commits it to `world.scene`
@@ -87,22 +87,18 @@ type InsertMake<TData, TLayer extends string> =
   | {
     /** Makes the node and commits it. Given `select`, it commits that selection change with the node, in the
      *  same batch when it applies ops (`commitSelectionOps`). `node` does all of this for you. */
-    mint: MintFn;
+    mint: (footprint: Footprint, extras: InsertExtras, select?: CommitSelection) => NodeId | null;
     node?: never;
     selection?: never;
-  };
+  }
+);
+
+type MintFn = Exclude<InsertOptions['mint'], undefined>;
 
 /** A selection a `node` insert commits its change to, as the `selection` dep reads and writes one. */
 export interface InsertSelection {
   get(): readonly NodeId[];
   set(ids: NodeId[]): void;
-}
-
-interface InsertCommon {
-  /** The view whose camera a drag is cast through, for a `<CanvasView deps>` of its own. Default the surface's. */
-  viewId?: string | null;
-  /** Smallest footprint a click-sized drag produces. Default 0.25. */
-  minExtent?: number;
 }
 
 type Built = { id: NodeId; ops: ReturnType<typeof createInsertOp>[] };

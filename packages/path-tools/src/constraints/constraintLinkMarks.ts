@@ -7,12 +7,10 @@
  * both in the conflict color.
  */
 import type { DrawCommand } from '@weasel-js/renderer';
-import { nearestOnCubic, PathBuilder, viewWorldToScreen, type ConstraintPoint, type View } from '@weasel-js/geom';
+import { nearestOnCubic, PathBuilder, viewWorldToScreen, type ConstraintPoint, type View, type Point } from '@weasel-js/geom';
 import type { CanvasExtensionApi, ContributionDepReader, RenderLayer, Scene, SurfaceContribution } from '@weasel-js/core';
 import { constraintGlyphs, type ConstraintGlyphStyle } from './constraintGlyphs';
 import { brokenConstraintLinks, type BrokenConstraintLink } from './constraintLinks';
-
-type Pt = { x: number; y: number };
 
 /** Id of the broken-link marks' layer and contribution. */
 export const CONSTRAINT_LINK_MARKS_ID = 'path-tools:constraint-link-marks';
@@ -20,7 +18,7 @@ export const CONSTRAINT_LINK_MARKS_ID = 'path-tools:constraint-link-marks';
 const DASH = [4, 3];
 
 /** Where `link` wants its first anchor: its partner anchor, or the point of its segment nearest it. */
-function wanted(link: BrokenConstraintLink, points: readonly ConstraintPoint[]): { from: number; to: Pt } | null {
+function wanted(link: BrokenConstraintLink, points: readonly ConstraintPoint[]): { from: number; to: Point } | null {
   const c = link.constraint;
   if (c.kind === 'coincident') {
     const [a, b] = c.anchors;
@@ -43,7 +41,7 @@ function wanted(link: BrokenConstraintLink, points: readonly ConstraintPoint[]):
  */
 export function constraintLinkMarks(
   links: readonly BrokenConstraintLink[],
-  toScreen: (p: Pt) => Pt,
+  toScreen: (p: Point) => Point,
   style: ConstraintGlyphStyle,
 ): DrawCommand[] {
   const conflict = new Set([0]);
@@ -66,7 +64,7 @@ export function constraintLinkMarks(
   });
 }
 
-const toScreenIn = (view: View) => (p: Pt): Pt => viewWorldToScreen(view, p);
+const toScreenIn = (view: View) => (p: Point): Point => viewWorldToScreen(view, p);
 
 /** The layer drawing the broken links of `scene`, with a cache of its own. */
 function linkMarksLayer(scene: Scene<unknown, string, unknown>, style: ConstraintGlyphStyle): RenderLayer<unknown> {

@@ -12,6 +12,7 @@ import { pathFromD, polygonFromPoints, type Path, type PolygonPath } from '@weas
 import { WeaselRenderer } from '@weasel-js/renderer';
 import type { DrawCommand } from './DrawCommand';
 import { stencilledEvenOdd } from '@weasel-js/renderer/testing/stencilledEvenOdd';
+import { rendererParts } from './rendererParts';
 
 const W = 96;
 const H = 80;
@@ -33,7 +34,7 @@ function paint(commands: DrawCommand[], cuts = true): Frame {
   const gl = canvas.getContext('webgl2', { stencil: true, preserveDrawingBuffer: true, antialias: true })!;
   const r = new WeaselRenderer({ gl, width: W, height: H, dpr: 1 });
   renderers.push(r);
-  if (!cuts) Object.defineProperty(r._batchVariants(), 'cuts', { value: false });
+  if (!cuts) Object.defineProperty(rendererParts(r).batchVariants, 'cuts', { value: false });
   r.render(commands);
   const px = new Uint8Array(W * H * 4);
   gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, px);

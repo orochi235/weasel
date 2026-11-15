@@ -12,8 +12,8 @@ import {
   type SnapSource,
 } from '@weasel-js/core';
 import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
+import type { Point } from '@weasel-js/geom';
 
-type Point = { x: number; y: number };
 type AnyScene = Scene<unknown, string, unknown>;
 
 export const FREE: SnapMods = { suspend: false, constrain: false };

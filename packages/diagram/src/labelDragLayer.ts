@@ -90,12 +90,10 @@ export function* draggableLabels(scene: Scene<unknown, string, unknown>): Iterab
 
 const holds = (b: Bounds, at: Vec2) => at.x >= b.x && at.x <= b.x + b.width && at.y >= b.y && at.y <= b.y + b.height;
 
-type AnyScene = Scene<unknown, string, unknown>;
-
 /** Each scene's draggable labels, boxed. Read at document poses, so the scene's version is the whole key. */
-const INDEXES = new WeakMap<AnyScene, () => { labels: DraggableLabel[]; boxes: BoxIndex } | null>();
+const INDEXES = new WeakMap<Scene<unknown, string, unknown>, () => { labels: DraggableLabel[]; boxes: BoxIndex } | null>();
 
-function labelIndexOf(scene: AnyScene) {
+function labelIndexOf(scene: Scene<unknown, string, unknown>) {
   let index = INDEXES.get(scene);
   if (index === undefined) {
     index = keyedIndex(
@@ -117,7 +115,7 @@ function labelIndexOf(scene: AnyScene) {
 }
 
 /** The draggable labels whose box can hold `at`, in render order: every one, without an index. */
-function labelsAt(scene: AnyScene, at: Vec2): Iterable<DraggableLabel> {
+function labelsAt(scene: Scene<unknown, string, unknown>, at: Vec2): Iterable<DraggableLabel> {
   const built = labelIndexOf(scene)();
   const near = built && boxesMeeting(built.boxes, at.x, at.y, at.x, at.y);
   if (!built || !near) return draggableLabels(scene);
@@ -125,7 +123,7 @@ function labelsAt(scene: AnyScene, at: Vec2): Iterable<DraggableLabel> {
 }
 
 /** The topmost draggable label whose box holds `at`, as its press scratch. */
-export function labelUnder(scene: AnyScene, at: Vec2): LabelScratch | null {
+export function labelUnder(scene: Scene<unknown, string, unknown>, at: Vec2): LabelScratch | null {
   let found: LabelScratch | null = null;
   for (const { labelId, edgeId, box } of labelsAt(scene, at)) {
     if (holds(box, at)) found = { targetId: labelId, labelId, edgeId };
@@ -133,7 +131,7 @@ export function labelUnder(scene: AnyScene, at: Vec2): LabelScratch | null {
   return found;
 }
 
-function createLabelDragAffordance(scene: AnyScene, cursor: CursorSpec): Affordance {
+function createLabelDragAffordance(scene: Scene<unknown, string, unknown>, cursor: CursorSpec): Affordance {
   const regionsOf = (labels: Iterable<DraggableLabel>): readonly AffordanceRegion[] => {
     const out: AffordanceRegion[] = [];
     for (const { labelId, edgeId, box } of labels) {

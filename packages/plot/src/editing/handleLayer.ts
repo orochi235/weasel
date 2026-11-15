@@ -33,16 +33,14 @@ export function plotHandleScratchOf(hit: { payload?: unknown } | null | undefine
   return p !== undefined && typeof p.rootId === 'string' && typeof p.markId === 'string' ? p : null;
 }
 
-type AnyScene = Scene<unknown, string, unknown>;
-
 /** Where the plot root `rootId`'s corner stands in world coordinates. */
-export function plotOrigin(scene: AnyScene, rootId: string): PlotPoint {
+export function plotOrigin(scene: Scene<unknown, string, unknown>, rootId: string): PlotPoint {
   const pose = composeWorldPose(scenePoseAdapter(scene as never), rootId, scene.composition.compose as never) as RectPose;
   return { x: pose.x, y: pose.y };
 }
 
 /** Every handle in `scene` an edit may take, in world coordinates, in render order. */
-export function* plotHandles(scene: AnyScene): Iterable<PlotHandleScratch & PlotHandle> {
+export function* plotHandles(scene: Scene<unknown, string, unknown>): Iterable<PlotHandleScratch & PlotHandle> {
   for (const rootId of plotRootsIn(scene)) {
     const root = scene.get(rootId);
     const trait = plotRootOf(root);
@@ -67,7 +65,7 @@ export function* plotHandles(scene: AnyScene): Iterable<PlotHandleScratch & Plot
 
 const HIT_RADIUS_PX = 6;
 
-function handleAffordance(scene: AnyScene): Affordance {
+function handleAffordance(scene: Scene<unknown, string, unknown>): Affordance {
   // Boxes first, so a point handle inside one wins a press at an equal distance.
   const regions = (): AffordanceRegion[] => [...plotHandles(scene)]
     .sort((a, b) => Number(b.box !== undefined) - Number(a.box !== undefined))

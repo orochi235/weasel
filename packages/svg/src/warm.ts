@@ -7,8 +7,6 @@ import { registerPaintServers } from './serialize';
 import { scriptSizeFace } from './serializeText';
 import { requestedFaces } from './textModes';
 
-type WarmOptions = Pick<SerializeOptions, 'textLayout' | 'text'>;
-
 /**
  * What `serializeSvg(nodes)` reads that loads on demand: the paint kind of
  * every fill and stroke it writes as a paint server, and the face of every
@@ -19,7 +17,7 @@ type WarmOptions = Pick<SerializeOptions, 'textLayout' | 'text'>;
  * `text` mode other than `'live'`, which outlines or embeds those faces, and
  * for a node that shrinks to fit, which is measured to find its size.
  */
-export function svgNeeds(nodes: readonly SvgNode[], opts: WarmOptions = {}): RenderNeeds {
+export function svgNeeds(nodes: readonly SvgNode[], opts: Pick<SerializeOptions, 'textLayout' | 'text'> = {}): RenderNeeds {
   const registry = new PaintServerRegistry();
   registerPaintServers(nodes, registry);
   const fonts = new Map<string, FontRequest>();
@@ -40,7 +38,7 @@ export function svgNeeds(nodes: readonly SvgNode[], opts: WarmOptions = {}): Ren
   return { fonts: [...fonts.values()], paintKinds: registry.paintKinds() };
 }
 
-const readsOutlines = (opts: WarmOptions): boolean => (opts.text ?? 'live') !== 'live';
+const readsOutlines = (opts: Pick<SerializeOptions, 'textLayout' | 'text'>): boolean => (opts.text ?? 'live') !== 'live';
 
 /** Every text node in `nodes`, through groups. */
 function textNodes(nodes: readonly SvgNode[], out: SvgTextNode[] = []): SvgTextNode[] {
@@ -59,7 +57,7 @@ function textNodes(nodes: readonly SvgNode[], out: SvgTextNode[] = []): SvgTextN
  * nodes do not use is never fetched, and cannot fail the export. A kind
  * nothing registered is passed over; the export warns about it instead.
  */
-export function warmSvg(nodes: readonly SvgNode[], opts: WarmOptions = {}): Promise<void> {
+export function warmSvg(nodes: readonly SvgNode[], opts: Pick<SerializeOptions, 'textLayout' | 'text'> = {}): Promise<void> {
   const needs = svgNeeds(nodes, opts);
   return Promise.all([
     warmFonts(needs.fonts),

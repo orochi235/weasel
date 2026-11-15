@@ -39,7 +39,9 @@ export {
   snipPreset,
   warpPreset,
 } from './presets';
-export type { ActionParamSchema } from './actionParamSchema';
+export type {
+  ActionParamSchema, EditPathEffectParams, PathEffectParams, SetFilletsParams, TweenParams,
+} from './actionParamSchema';
 
 // ─── Actions ───────────────────────────────────────────────────────────────
 export {

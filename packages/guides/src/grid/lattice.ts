@@ -1,10 +1,6 @@
 import { resolveStrokeWidth, type CommandStroke, type DrawCommand, type View } from '@weasel-js/core';
-import { PATH_L, PATH_M, pxExtent, pxExtentInFrame, type Affine, type PolygonPath, maxOf, minOf } from '@weasel-js/geom';
+import { PATH_L, PATH_M, pxExtent, pxExtentInFrame, type Affine, type PolygonPath, maxOf, minOf, type Point, type Rect } from '@weasel-js/geom';
 import { linesIn, type AxisLines, type GridLines } from './axes';
-
-/** An axis-aligned rectangle, in whatever coordinates a lattice is drawn in. */
-export type Rect = { x: number; y: number; width: number; height: number };
-type Point = { x: number; y: number };
 
 /** The strokes of a lattice's three line families. */
 export type LatticeStyles = { line: CommandStroke; accent: CommandStroke; sub: CommandStroke };

@@ -4,8 +4,14 @@ import {
 import { brushRing } from '@weasel-js/cursor';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import {
-  anchorsUnderBrush, editAnchorSetTracked, pathToAnchors, simplifyAnchorsAt,
-  type AnchorSet, type PointOrigin, type PolygonPath,
+  anchorsUnderBrush,
+  editAnchorSetTracked,
+  pathToAnchors,
+  simplifyAnchorsAt,
+  type AnchorSet,
+  type PointOrigin,
+  type PolygonPath,
+  type Point,
 } from '@weasel-js/geom';
 import {
   DEFAULT_SIMPLIFY_TOLERANCE, depOf, editingLayer, inPlane, pathEditPreview, pathOperationTags, SIMPLIFY_PATH_PARAMS,
@@ -33,8 +39,6 @@ export interface SandParams {
    *  the Simplify command. */
   tolerance?: number;
 }
-
-type Point = { x: number; y: number };
 
 /** A point the brush passed, and the view's scale when it did. */
 interface Sample {

@@ -1,11 +1,9 @@
-import { rectContainsPointHalfOpen } from '@weasel-js/geom';
+import { rectContainsPointHalfOpen, type Rect } from '@weasel-js/geom';
 import { diagramEdgeOf } from '../edgeTrait';
 import { diagramLabelOf } from '../labelTrait';
 import { dataKeyReader } from '../trait';
 import type { DropVerdict } from '@weasel-js/core';
 import { bodyBox, diagramContainerOf, type ContainerRole } from './trait';
-
-type SceneLike = { get(id: never): { id: string; kind: 'mark' | 'group'; data: unknown; parent?: string | null } | undefined };
 
 /** Whether the nodes `ids` may move into the container or lane `container`. */
 export type CanReparent = (ids: readonly string[], container: string) => DropVerdict;
@@ -20,7 +18,7 @@ export type CanReparent = (ids: readonly string[], container: string) => DropVer
  * into a container the nodes are not already in, and has the last word.
  */
 export function diagramCanDropInto(
-  scene: SceneLike,
+  scene: { get(id: never): { id: string; kind: 'mark' | 'group'; data: unknown; parent?: string | null } | undefined },
   canReparent?: CanReparent,
 ): (parent: string, ids: readonly string[]) => DropVerdict {
   const nodeOf = (id: string) => scene.get(id as never);
@@ -56,8 +54,6 @@ export interface DropParentScene {
   /** How a child's stored pose joins its parent's. Absent, poses are world poses. */
   readonly composition?: { compose(parent: never, child: never): unknown };
 }
-
-type Rect = { x: number; y: number; width: number; height: number };
 
 /**
  * The innermost container or lane whose body holds `point`, that would admit

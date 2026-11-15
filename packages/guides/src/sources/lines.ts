@@ -1,6 +1,6 @@
 import type { Bounds, Locus, SnapCollect, SnapFrame } from '@weasel-js/core';
+import type { Point } from '@weasel-js/geom';
 
-type Point = { x: number; y: number };
 type Axis = 'x' | 'y';
 
 /** The line `axis = offset` as a locus, through `near` on the other axis. */

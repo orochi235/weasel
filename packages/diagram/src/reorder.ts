@@ -20,9 +20,9 @@ import {
   type TargetPredicate,
   type Vec2,
 } from '@weasel-js/core';
-import { rectContainsPoint, maxOf, minOf } from '@weasel-js/geom';
+import { rectContainsPoint, maxOf, minOf, type Rect } from '@weasel-js/geom';
 import { isNoopDrop, moveItems, nearestGap } from '@weasel-js/ui-input';
-import { carriedBy, slideOthers, type Box } from './reorderSlide';
+import { carriedBy, slideOthers } from './reorderSlide';
 
 /** The action that drags an item of a sequence to another place in it. */
 export const REORDER_ACTION_ID = 'diagram.reorder';
@@ -31,9 +31,9 @@ export const REORDER_ACTION_ID = 'diagram.reorder';
 export interface ReorderItem {
   /** The scene node drawn for it. */
   id: string;
-  bounds: Box;
+  bounds: Rect;
   /** Where a press picks it up. Default `bounds`; `null` never picks it up, though it keeps its gaps. */
-  grip?: Box | null;
+  grip?: Rect | null;
   /** The scene nodes that move with it, in either `show` mode. Default `[id]`. */
   carries?: readonly string[];
 }
@@ -81,7 +81,7 @@ export interface ReorderOptions {
   /** Where a drag of `item` stays a reorder, in world units. A move outside it hands the drag off (`'pass'` from
    *  `OngoingHandle.onMove`) to whatever else would have taken the press, a move for one, and drops this
    *  drag's preview. `null`, or the default, keeps every move a reorder. */
-  region?: (deps: ActionDeps, item: ReorderItem) => Box | null;
+  region?: (deps: ActionDeps, item: ReorderItem) => Rect | null;
   /** Whether a drop may land. The bar draws refused, or nothing slides, where not. Default: every drop. */
   canDrop?: (move: ReorderMove) => boolean;
   /** Called once, on release over a gap that is not the item's own and that `canDrop` allows. */
@@ -97,9 +97,9 @@ const END_GAP = 24;
  */
 export function sequenceSlots(axis: 'x' | 'y', items: readonly ReorderItem[]): ReorderSlots {
   const [along, across, size, depth] = axis === 'x' ? ['x', 'y', 'width', 'height'] as const : ['y', 'x', 'height', 'width'] as const;
-  const lo = (b: Box) => b[along];
-  const hi = (b: Box) => b[along] + b[size];
-  const bar = (at: number, boxes: readonly Box[]): Pick<ReorderGap, 'a' | 'b'> => {
+  const lo = (b: Rect) => b[along];
+  const hi = (b: Rect) => b[along] + b[size];
+  const bar = (at: number, boxes: readonly Rect[]): Pick<ReorderGap, 'a' | 'b'> => {
     const from = minOf(boxes, (b) => b[across]);
     const to = maxOf(boxes, (b) => b[across] + b[depth]);
     const point = (c: number) => (axis === 'x' ? { x: at, y: c } : { x: c, y: at });
@@ -205,9 +205,9 @@ export function createReorderAction(opts: ReorderOptions): Action {
         }
 
         const carried = carriedBy(held.item);
-        const poses = new Map<string, Box>();
+        const poses = new Map<string, Rect>();
         for (const id of carried) {
-          const pose = ctx.deps.scene?.get(id as never)?.pose as Box | undefined;
+          const pose = ctx.deps.scene?.get(id as never)?.pose as Rect | undefined;
           if (pose !== undefined) poses.set(id, pose);
         }
         return {

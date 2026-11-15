@@ -27,6 +27,7 @@ const squareClip = (size: number): PolygonPath => ({
 });
 import { SPRITE_STRIDE } from './DrawCommand';
 import { glProgramHandle, glUniformLocation } from './gpu/webgl/GlProgram';
+import { rendererParts } from './rendererParts';
 
 /** `drawBatch.ts`'s vertex: vec2 position, vec4 color, vec2 uv, float post,
  *  float texSlot. */
@@ -83,7 +84,7 @@ describe('renderer — consecutive image batching', () => {
   }
 
   const handleOf = (image: object): unknown =>
-    (r._imageCache().texture(image) as unknown as { handle: unknown }).handle;
+    (rendererParts(r).imageCache.texture(image) as unknown as { handle: unknown }).handle;
 
   /** Index count of every `drawElements`, in order. */
   const draws = () =>
@@ -216,7 +217,7 @@ describe('renderer — consecutive image batching', () => {
     it('binds the atlas at its slot, with the bitmaps below it', () => {
       r.render([linear(0), img(20)]);
       const [units] = unitsAtDraws();
-      const ramp = (r._gradRamps().atlas() as unknown as { handle: unknown }).handle;
+      const ramp = (rendererParts(r).gradRamps.atlas() as unknown as { handle: unknown }).handle;
       expect(units[1]).toBe(handleOf(atlas));
       expect(units[RAMP_SLOT]).toBe(ramp);
       expect(units.slice(2, RAMP_SLOT)).toEqual(new Array(RAMP_SLOT - 2).fill(null));

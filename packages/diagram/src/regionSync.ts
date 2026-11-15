@@ -6,8 +6,7 @@ import { worldWith } from './worldWith';
 import type { RectPose, Scene } from '@weasel-js/core';
 import { lanesOf, poolAxisOf } from './containers/containerStencils';
 import { diagramContainerOf } from './containers/trait';
-
-type Box = { x: number; y: number; width: number; height: number };
+import type { Rect } from '@weasel-js/geom';
 
 /**
  * A region edit, which `DiagramView` reports and does not keep: `box`, a
@@ -18,12 +17,12 @@ type Box = { x: number; y: number; width: number; height: number };
  * a region; `title`, a double-click on a region's header.
  */
 export type ContainerEdit =
-  | { kind: 'box'; id: string; box: Box; parent?: string | null }
+  | { kind: 'box'; id: string; box: Rect; parent?: string | null }
   | { kind: 'lanes'; pool: string; lanes: readonly { id: string; size: number }[] }
   | { kind: 'release'; id: string }
   | { kind: 'title'; id: string };
 
-interface RegionAt { box: Box; parent: string | null; fitted: boolean }
+interface RegionAt { box: Rect; parent: string | null; fitted: boolean }
 
 /** Where every region stands, and each pool's lanes in order. */
 export interface RegionStanding {
@@ -60,7 +59,7 @@ export function readRegions(scene: AnyScene): RegionStanding {
   return { regions, pools };
 }
 
-const sameBox = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+const sameBox = (a: Rect, b: Rect) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 const sameLanes = (a: readonly { id: string; size: number }[], b: readonly { id: string; size: number }[]) =>
   a.length === b.length && a.every((l, i) => l.id === b[i]!.id && l.size === b[i]!.size);
 

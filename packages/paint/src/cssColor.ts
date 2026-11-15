@@ -26,9 +26,7 @@ const KEYWORDS = new Set([
 
 const CSS_WIDE = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer']);
 
-type Supports = ((value: string) => boolean) | null;
-
-function browserSupports(): Supports {
+function browserSupports(): ((value: string) => boolean) | null {
   // Read off globalThis: naming `CSS` would make paint need lib.dom.
   const css = (globalThis as { CSS?: { supports?: (property: string, value: string) => boolean } }).CSS;
   const supports = css?.supports;
@@ -36,7 +34,7 @@ function browserSupports(): Supports {
 }
 
 /** Whether `value` is a CSS color — the browser's answer where it has `CSS.supports`, a small parser's otherwise. */
-export function parsesAsColor(value: string, supports: Supports = browserSupports()): boolean {
+export function parsesAsColor(value: string, supports: ((value: string) => boolean) | null = browserSupports()): boolean {
   const v = value.trim();
   // `CSS.supports` accepts any `var()`, and any CSS-wide keyword, for any property.
   if (!v || v.includes('var(') || CSS_WIDE.has(v.toLowerCase())) return false;

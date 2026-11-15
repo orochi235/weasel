@@ -7,8 +7,8 @@ import type { Guide } from '../guides/types';
 import { guideAxisOf, rulerPartAt, type RulerHit, type RulerPart } from './hit';
 import { documentRulerFrame, rulerFrameAt, type RulerFrame } from './reading';
 import type { RulersState } from './layout';
+import type { Point } from '@weasel-js/geom';
 
-type Point = { x: number; y: number };
 type AnyScene = Scene<unknown, string, unknown>;
 
 /** What the rulers' actions read and write. */

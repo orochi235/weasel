@@ -21,8 +21,9 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
 /** A tick interval: a fixed span, or a count of calendar months. */
-type Interval = { ms: number; months?: never; unit: Unit } | { months: number; ms?: never; unit: Unit };
-type Unit = 'second' | 'minute' | 'hour' | 'day' | 'month' | 'year';
+type Interval = { ms: number; months?: never; unit: TimeUnit } | { months: number; ms?: never; unit: TimeUnit };
+/** A calendar step a time scale ticks by, and the precision {@link formatInstant} writes to. */
+export type TimeUnit = 'second' | 'minute' | 'hour' | 'day' | 'month' | 'year';
 
 const INTERVALS: readonly Interval[] = [
   { ms: SECOND, unit: 'second' }, { ms: 5 * SECOND, unit: 'second' }, { ms: 15 * SECOND, unit: 'second' }, { ms: 30 * SECOND, unit: 'second' },
@@ -84,7 +85,7 @@ function gridTicks(lo: number, hi: number, interval: Interval): number[] {
 const pad = (n: number) => String(n).padStart(2, '0');
 
 /** `t` written to the precision of `unit`. */
-export function formatInstant(t: number, unit: Unit): string {
+export function formatInstant(t: number, unit: TimeUnit): string {
   const d = new Date(t);
   const month = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`;
   const date = `${month}-${pad(d.getUTCDate())}`;

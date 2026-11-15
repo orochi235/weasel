@@ -1,5 +1,5 @@
 import { pathFromD, transformPath } from '@weasel-js/geom';
-import type { Bounds, OutlineDef, Size } from './types';
+import type { Bounds, OutlineDef } from './types';
 
 const unitMatrix = (b: Bounds): [number, number, number, number, number, number] =>
   [b.width, 0, 0, b.height, b.x, b.y];
@@ -20,6 +20,6 @@ export function outlineFromD(d: string, opts: { detail?: string; content?: Bound
       width: unit.width * b.width,
       height: unit.height * b.height,
     }),
-    boxForContent: (c: Size) => ({ width: c.width / unit.width, height: c.height / unit.height }),
+    boxForContent: (c: Pick<Bounds, 'width' | 'height'>) => ({ width: c.width / unit.width, height: c.height / unit.height }),
   };
 }

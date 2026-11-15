@@ -12,10 +12,8 @@ import { stencilKind, type DiagramStencil } from './stencil';
 import { stencilTool } from './stencilTool';
 import { SEQUENCE_TOOLS, useSequenceTools, type SequenceToolsOptions } from './sequence/tools';
 
-type Stencil = Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>;
-
 /** Each stencil's tool, keyed by its id (the stencil's insert kind). */
-export function stencilTools(stencils: readonly Stencil[]): Record<string, Tool> {
+export function stencilTools(stencils: readonly Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>[]): Record<string, Tool> {
   return Object.fromEntries(stencils.map((s) => [stencilKind(s.id), stencilTool(s)]));
 }
 
@@ -35,12 +33,12 @@ export interface UseDiagramToolsOptions<TPose> {
   /** What the connector joins and how: `useConnectorTool`'s options. */
   connector: ConnectActionOptions<TPose>;
   /** The stencils to give tools to. Default every shipped group's. Keep it stable across renders. */
-  stencils?: readonly Stencil[];
+  stencils?: readonly Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>[];
   /** `useSequenceTools`'s options. */
   sequence?: SequenceToolsOptions;
 }
 
-const SHIPPED_STENCILS: readonly Stencil[] = Object.values(STENCIL_GROUPS).flatMap((g) => g.stencils);
+const SHIPPED_STENCILS: readonly Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>[] = Object.values(STENCIL_GROUPS).flatMap((g) => g.stencils);
 
 /**
  * Every tool in {@link DIAGRAM_TOOLS}, keyed by id, for `<SceneCanvas tools>`: the connector, a tool per stencil, and

@@ -1,11 +1,10 @@
 import type { RectPose } from '@weasel-js/core';
 import { headerBox, type ContainerHeader } from './trait';
-
-type Box = { x: number; y: number; width: number; height: number };
+import type { Rect } from '@weasel-js/geom';
 
 /** Where a container's title sits: its header strip, turned a quarter to run
  *  up a left header. */
-export function titlePose(bounds: Box, header: ContainerHeader | undefined): RectPose {
+export function titlePose(bounds: Rect, header: ContainerHeader | undefined): RectPose {
   const h = headerBox(bounds, header) ?? { ...bounds, height: 0 };
   if (header?.side !== 'left') return { x: h.x, y: h.y, width: h.width, height: h.height };
   const cx = h.x + h.width / 2;

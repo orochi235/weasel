@@ -12,7 +12,7 @@ import { glProgramHandle, createGLRecorder } from '@weasel-js/renderer/testing/g
 import { WeaselRenderer } from '@weasel-js/renderer';
 import { MAX_EVENODD_RESOLVE_WORK } from '@weasel-js/geom/tessellate';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { _resetStrokeMeshCacheForTests } from '@weasel-js/renderer/test-seams';
+import { _resetStrokeMeshCacheForTests, _setBatchCutsForTests } from '@weasel-js/renderer/test-seams';
 
 const M = 0, L = 1, Z = 4;
 
@@ -94,7 +94,7 @@ describe('renderer — non-solid stroke paint', () => {
    *  then paints at double width, centred, and nothing throws. */
   it('keeps the alignment stencil test for a gradient ribbon', () => {
     // Off, an aligned stroke is cut on the CPU rather than stencilled.
-    Object.defineProperty(r._batchVariants(), 'cuts', { value: false });
+    _setBatchCutsForTests(r, false);
     for (const [align, keepRef] of [['inner', 0x01], ['outer', 0x00]] as const) {
       render({ width: 10, align, paint: GRADIENT });
       const draws = statesAtDraws(recorder);

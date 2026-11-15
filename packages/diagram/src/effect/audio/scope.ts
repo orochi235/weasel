@@ -9,9 +9,7 @@ const INK = '#8a8f98';
 const BANDS = 32;
 const LINE = 1.5;
 
-type Size = { width: number; height: number };
-
-function canvasOf(size: Size) {
+function canvasOf(size: { width: number; height: number }) {
   const canvas = new OffscreenCanvas(
     Math.max(1, Math.round(size.width * PREVIEW_DENSITY)),
     Math.max(1, Math.round(size.height * PREVIEW_DENSITY)),
@@ -20,7 +18,7 @@ function canvasOf(size: Size) {
 }
 
 /** The waveform as a line across the bitmap, silence at mid-height. */
-export function drawScope(tap: AnalyserTap, size: Size): ImageBitmap {
+export function drawScope(tap: AnalyserTap, size: { width: number; height: number }): ImageBitmap {
   const { canvas, g, w, h } = canvasOf(size);
   const wave = tap.waveform();
   g.strokeStyle = INK;
@@ -38,7 +36,7 @@ export function drawScope(tap: AnalyserTap, size: Size): ImageBitmap {
 }
 
 /** The spectrum as filled bars rising from the bottom, low frequencies on the left. */
-export function drawSpectrum(tap: AnalyserTap, size: Size): ImageBitmap {
+export function drawSpectrum(tap: AnalyserTap, size: { width: number; height: number }): ImageBitmap {
   const { canvas, g, w, h } = canvasOf(size);
   const bands = tap.bands(BANDS);
   const slot = w / BANDS;

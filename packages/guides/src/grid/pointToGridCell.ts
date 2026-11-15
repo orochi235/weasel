@@ -1,7 +1,7 @@
 import type { PlaneUnits } from '@weasel-js/core';
-import { transformPoint, invert, type Affine } from '@weasel-js/geom';
+import { transformPoint, invert, type Affine, type Rect } from '@weasel-js/geom';
 import { cellOf, type GridLines, type GridSpacing } from './axes';
-import { outlineBox, type Rect } from './lattice';
+import { outlineBox } from './lattice';
 import { containerLines, gridLines, type GridScopes } from './reading';
 import { regionAt, type GridRegion } from './regions';
 

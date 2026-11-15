@@ -13,6 +13,7 @@ import { FLOATS_PER_VERTEX, TEX_SLOT_OFFSET } from '../drawBatch';
 import { paintModeOf } from '../shaders/batchFill';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import { glProgramHandle } from '../gpu/webgl/GlProgram';
+import { rendererParts } from '../rendererParts';
 
 /**
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
@@ -26,13 +27,13 @@ export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeo
     pathFill: r._pathFill(),
     pathFillVColor: r._pathFillVColor(),
     batchFill: r._batchFill(),
-    batchVariants: r._batchVariants(),
+    batchVariants: rendererParts(r).batchVariants,
     gradFill: r._gradFill(),
     patternFill: r._patternFill(),
   };
-  r._batchVariants().get(true, false);
+  rendererParts(r).batchVariants.get(true, false);
   // The build a run holding small glyphs draws with, which takes the same vertices.
-  const areaBuild = glProgramHandle(r._batchVariants().get(false, false, true));
+  const areaBuild = glProgramHandle(rendererParts(r).batchVariants.get(false, false, true));
   recorder.reset();
   const gpu = webglDevice(recorder.gl);
   // A frame's start, as `render` begins one: what the device believes it holds.
@@ -41,15 +42,15 @@ export function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeo
   const ctx: DrawContext = {
     gpu,
     ...programs,
-    meshCache: r._meshCache(),
-    textureCache: r._textureCache(),
-    imageCache: r._imageCache(),
-    gradRamps: r._gradRamps(),
+    meshCache: rendererParts(r).meshCache,
+    textureCache: rendererParts(r).textureCache,
+    imageCache: rendererParts(r).imageCache,
+    gradRamps: rendererParts(r).gradRamps,
     programRegistry: new Map(),
     quad: null,
-    drawBatch: r._drawBatch(),
+    drawBatch: rendererParts(r).drawBatch,
     whiteTexture: null,
-    state: r._groupState(),
+    state: rendererParts(r).groupState,
     widthCss: r._widthCss(),
     heightCss: r._heightCss(),
     clipDepth: 0,

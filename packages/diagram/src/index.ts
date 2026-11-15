@@ -94,6 +94,7 @@ export { waypointFollower } from './waypointFollower';
 export { AVOID_DEFAULTS, createAvoidRouter, routeHolds } from './avoid';
 export type {
   AvoidEdge, AvoidEnd, AvoidInput, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort, AvoidRouter, AvoidRoutes, AvoidUpdateOptions,
+  HeldEnd, ResolvedAvoidOptions,
 } from './avoid';
 export { avoidSceneInput, headerIdOf } from './avoid/sceneInput';
 export type { AvoidSceneOptions } from './avoid/sceneInput';
@@ -120,7 +121,7 @@ export {
   edgeEndLayer,
   edgeEndScratchOf,
 } from './edgeEndLayer';
-export type { EdgeEndAffordanceOptions, EdgeEndScratch } from './edgeEndLayer';
+export type { EdgeEndAffordanceOptions, EdgeEndOptions, EdgeEnds, EdgeEndScratch } from './edgeEndLayer';
 export {
   GRAB_EDGE_END_ACTION_ID,
   RECONNECT_ACTION_ID,
