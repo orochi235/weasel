@@ -163,3 +163,25 @@ const noInfer = defineAction({
   variants: [{ key: 'other', label: 'Other', params: { other: 1 } }],
 });
 void ruled; void ruledWrong; void noInfer;
+
+// A result typed `Action` where it lands still reads its params by the descriptor's id.
+const annotated: Action = defineAction({
+  id: 'typetest.stamp',
+  label: 'Stamp',
+  invoker: { timing: 'immediate', run: (_deps, params) => { const read: Equal<typeof params, Partial<Stamp> | undefined> = true; void read; void params; } },
+});
+function stampFactory(): Action {
+  return defineAction({
+    id: 'typetest.stamp',
+    label: 'Stamp',
+    // @ts-expect-error a variant's params are the entry's, whatever the factory returns
+    variants: [{ key: 'big', label: 'Big stamp', params: { size: 'wrong' } }],
+    invoker: { timing: 'immediate', run: (_deps, params) => { const read: Equal<typeof params, Partial<Stamp> | undefined> = true; void read; void params; } },
+  });
+}
+const intersected: Action & { id: string; label: string } = defineAction({
+  id: 'typetest.stamp',
+  label: 'Stamp',
+  enabled: (_deps, _at, _carried, params) => { const read: Equal<typeof params, Readonly<Partial<Stamp>> | undefined> = true; void read; void params; return true; },
+});
+void annotated; void stampFactory; void intersected;

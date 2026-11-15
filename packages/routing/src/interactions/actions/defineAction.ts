@@ -67,7 +67,8 @@ export interface ActionOf<Id extends string, P = ActionParamsOf<Id>> extends Omi
  */
 export function defineAction<const Id extends string, P = ActionParamsOf<Id>>(
   action: ActionOf<Id, NoInfer<P>>,
-): Action & { id: Id } {
-  // Each member reads a narrower record than `Action`'s, which only the schema entry for `id` vouches for.
+): Action & { id: NoInfer<Id> } {
+  // Each member reads a narrower record than `Action`'s, which only the schema entry for `id` vouches for. The
+  // return type does not infer `Id`, or a result typed `Action` where it lands would make the id `string`.
   return action as unknown as Action & { id: Id };
 }
