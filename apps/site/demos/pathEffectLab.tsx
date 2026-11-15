@@ -3,31 +3,12 @@
  * of effect actions over the canvas, and the wiring that carries the control
  * panel's settings to the lab's live effects.
  */
-import { type ActionParamSchema, type ActionTunings, asNodeId, boundsOfPath, derivedDepOf, type NodeId, pathEffectOf, pathEffectParts, pathFromD, type Fill, type RectPose, type Scene, type Stroke, useActionsRegistry, useLatest } from '@weasel-js/core';
+import { type ActionParamSchema, type ActionTunings, boundsOfPath, derivedDepOf, type NodeId, pathEffectOf, pathEffectParts, type RectPose, type Scene, useActionsRegistry, useLatest } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useTrialConfigChange } from '@weasel-js/labkit';
 import { type ReactNode, useEffect, useMemo } from 'react';
 import s from './pathEffectLab.module.css';
-
-/** A shape node as the kit's own shape tools store one: the path in `data`,
- *  the pose its bounds, turned `rotation` radians about their middle. */
-export function pathNode(
-  id: string,
-  d: string,
-  paint: { fill?: Fill | null; stroke?: Stroke | null },
-  rotation = 0,
-) {
-  const path = pathFromD(d);
-  const { x, y, width, height } = boundsOfPath(path);
-  return {
-    kind: 'mark' as const,
-    id: asNodeId(id),
-    layer: 'default' as const,
-    pose: { x, y, width, height, ...(rotation === 0 ? {} : { rotation }) },
-    data: { path, ...paint },
-  };
-}
 
 type LabScene = Scene<unknown, 'default', RectPose>;
 

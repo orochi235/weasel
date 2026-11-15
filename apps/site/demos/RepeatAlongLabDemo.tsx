@@ -3,6 +3,7 @@ import {
   createScene,
   PATH_EFFECT_DERIVATIONS,
   pathEffectNode,
+  pathNode,
   type RectPose,
   solid,
   strokeOf,
@@ -22,7 +23,7 @@ import {
 } from '@weasel-js/labkit';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
+import { PathEffectFrame, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
 import { icon } from '../icons.gen';
 
 const FEATURES = [drawPreset, pathEffectsPreset] as const;

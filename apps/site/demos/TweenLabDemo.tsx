@@ -3,6 +3,7 @@ import {
   createScene,
   PATH_EFFECT_DERIVATIONS,
   pathEffectNode,
+  pathNode,
   type RectPose,
   solid,
   strokeOf,
@@ -22,7 +23,7 @@ import {
 } from '@weasel-js/labkit';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
+import { PathEffectFrame, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
 import { icon } from '../icons.gen';
 
 const FEATURES = [drawPreset, pathEffectsPreset] as const;
@@ -62,7 +63,7 @@ function createLabScene() {
   const to = pathNode('to', 'M440 110 L540 110 L540 250 L440 250 Z', {
     fill: { paint: solid('#2e86ab') },
     stroke: strokeOf('#123f52', 6),
-  }, Math.PI / 4);
+  }, { rotation: Math.PI / 4 });
   const { spaceBy, steps, distance, autoAlign, startOffset, rotate, orient } = config.defaults();
   const tween = {
     ...pathEffectNode({ kind: 'tween', spaceBy, steps, distance, autoAlign, startOffset, rotate, orient }, [from.id, to.id], 'default', PATH_EFFECT_DERIVATIONS),
