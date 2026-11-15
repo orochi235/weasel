@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { startThresholdDrag } from '@weasel-js/core';
 import { Badge } from '@weasel-js/ui/components/Badge';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Input } from '@weasel-js/ui/components/Input';
 import type { TreeDropHandle } from '@weasel-js/ui/components/Tree';
 import { Tree, type TreeNode, filterTree, treeBranchIds } from '@weasel-js/ui/components/Tree';
@@ -53,7 +54,7 @@ export const Selectable: Story = {
   render: function Render(args) {
     const [selected, setSelected] = useState<ReadonlySet<string>>(new Set(['Tree.tsx']));
     return (
-      <div style={{ width: 240 }}>
+      <div className={css.column}>
         <Tree {...args}
           aria-label="Files"
           nodes={FILES}
@@ -88,7 +89,7 @@ const REGISTRY: readonly TreeNode[] = [
 export const WithCounts: Story = {
   args: { 'aria-label': 'Registry', nodes: REGISTRY, defaultExpandedIds: ['Gestures'], selectionMode: 'single' },
   render: (args) => (
-    <div style={{ width: 240 }}>
+    <div className={css.column}>
       <Tree {...args} />
     </div>
   ),
@@ -107,7 +108,7 @@ export const Filtered: Story = {
       [q],
     );
     return (
-      <div style={{ width: 240 }}>
+      <div className={css.column}>
         <Input aria-label="Filter" placeholder="Filter…" value={query} onChange={setQuery} />
         <Tree {...args}
           aria-label="Registry"
@@ -128,7 +129,7 @@ export const Keyboard: Story = {
   render: function Render(args) {
     const [last, setLast] = useState<string | null>(null);
     return (
-      <div style={{ width: 240 }}>
+      <div className={css.column}>
         <Tree {...args} aria-label="Files" nodes={FILES} selectionMode="single" onAction={setLast} />
         <p>Last activated: {last ?? 'nothing'}</p>
       </div>
@@ -143,7 +144,7 @@ export const Reorderable: Story = {
   render: function Render(args) {
     const [nodes, setNodes] = useState<readonly TreeNode[]>(FILES);
     return (
-      <div style={{ width: 240 }}>
+      <div className={css.column}>
         <Tree {...args}
           aria-label="Files"
           nodes={nodes}
@@ -164,11 +165,11 @@ export const WithControls: Story = {
     const withStar = (list: readonly TreeNode[]): TreeNode[] => list.map((n) => ({
       ...n,
       controls: (
-        <input
-          type="checkbox" aria-label={`Star ${n.id}`} checked={starred.has(n.id)}
-          onChange={(e) => setStarred((prev) => {
+        <Checkbox
+          aria-label={`Star ${n.id}`} isSelected={starred.has(n.id)}
+          onChange={(on) => setStarred((prev) => {
             const next = new Set(prev);
-            if (e.target.checked) next.add(n.id);
+            if (on) next.add(n.id);
             else next.delete(n.id);
             return next;
           })}
@@ -177,7 +178,7 @@ export const WithControls: Story = {
       ...(n.children ? { children: withStar(n.children) } : {}),
     }));
     return (
-      <div style={{ width: 240 }}>
+      <div className={css.column}>
         <Tree {...args} aria-label="Files" nodes={withStar(FILES)} defaultExpandedIds={['src']} selectionMode="single" />
       </div>
     );
@@ -191,7 +192,7 @@ export const Copyable: Story = {
     const [nodes, setNodes] = useState<readonly TreeNode[]>(FILES);
     const made = useRef(0);
     return (
-      <div style={{ width: 240 }}>
+      <div className={css.column}>
         <Tree {...args}
           aria-label="Files"
           nodes={nodes}
