@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import {
   asNodeId,
+  createToolOptionValues,
   rectPath,
   SceneCanvas,
   useScene,
   useSelection,
   solid,
-  type LassoHitMode, pickPreset,
+  type ToolsApi, pickPreset,
 } from '@weasel-js/core';
-import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
+import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { DemoStage } from './DemoStage';
 import s from './LassoDemo.module.css';
 
@@ -38,22 +39,16 @@ const INITIAL = (() => {
   return out;
 })();
 
-const MODE_ITEMS: SegmentedBarItem<LassoHitMode>[] = [
-  { value: 'centers', label: 'centers (snappy)' },
-  { value: 'intersect', label: 'intersect (any overlap)' },
-  { value: 'enclosed', label: 'enclosed (strict)' },
-];
-
 export function LassoDemo() {
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const selection = useSelection({ scene, mode: 'multi' });
-  const [mode, setMode] = useState<LassoHitMode>('intersect');
+  const [tools, setTools] = useState<ToolsApi | null>(null);
+  const [values] = useState(createToolOptionValues);
 
   return (
     <div className={s.demo}>
       <div className={s.controls}>
-        <span>Hit mode:</span>
-        <SegmentedBar items={MODE_ITEMS} value={mode} onChange={(m) => m && setMode(m)} aria-label="Hit mode" size="sm" />
+        <ActiveToolOptionsBar tool={tools?.registry.lasso} values={values} />
         <span className={s.keys}><kbd>V</kbd> select · <kbd>L</kbd> lasso</span>
       </div>
       <DemoStage width={W} height={H}>
@@ -64,7 +59,8 @@ export function LassoDemo() {
           features={[pickPreset]}
           defaultTools={['lasso']}
           defaultActiveTool="lasso"
-          toolOptions={{ lasso: { mode } }}
+          toolOptionValues={values}
+          onToolsCreated={setTools}
         />
       </DemoStage>
     </div>
