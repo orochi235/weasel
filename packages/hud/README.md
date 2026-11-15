@@ -50,6 +50,9 @@ resizable frame whose interior is painted by an opt-in `content` callback. See
 with the frame, and `createLoupe` in [`src/loupe`](src/loupe/createLoupe.ts) for a
 consumer.
 
+`attachMenuHost(hud, host)` draws a `MenuHost`'s open menu (`@weasel-js/menu`) as a widget, placed in the
+canvas the HUD is attached to unless `toCanvas` and `canvasSize` say otherwise.
+
 Widgets draw from a data-free context (`{ dims, defaultFont, tokens, color }`), which
 is what lets a HUD render headlessly and identically. A window's `content`
 painter is the single, explicit exception.
