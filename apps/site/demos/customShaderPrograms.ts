@@ -117,8 +117,10 @@ fn fragment(in: Varyings) -> vec4f {
   return vec4f(col, 1.0);
 }`;
 
-// Module-scope registration, once per page load: each backend draws the language it speaks.
-export const PLASMA_PROGRAM: ShaderProgramHandle = registerProgram('demo-plasma', { glsl: { frag: PLASMA_FRAG }, wgsl: { frag: PLASMA_WGSL } });
-export const RIPPLE_PROGRAM: ShaderProgramHandle = registerProgram('demo-ripple', { glsl: { frag: RIPPLE_FRAG }, wgsl: { frag: RIPPLE_WGSL } });
-export const VORONOI_PROGRAM: ShaderProgramHandle = registerProgram('demo-voronoi', { glsl: { frag: VORONOI_FRAG }, wgsl: { frag: VORONOI_WGSL } });
+// Module-scope registration: each backend draws the language it speaks. The module owns these ids,
+// so a hot reload running it again with edited source replaces them.
+const OWN = { replace: true };
+export const PLASMA_PROGRAM: ShaderProgramHandle = registerProgram('demo-plasma', { glsl: { frag: PLASMA_FRAG }, wgsl: { frag: PLASMA_WGSL } }, OWN);
+export const RIPPLE_PROGRAM: ShaderProgramHandle = registerProgram('demo-ripple', { glsl: { frag: RIPPLE_FRAG }, wgsl: { frag: RIPPLE_WGSL } }, OWN);
+export const VORONOI_PROGRAM: ShaderProgramHandle = registerProgram('demo-voronoi', { glsl: { frag: VORONOI_FRAG }, wgsl: { frag: VORONOI_WGSL } }, OWN);
 export const SHADERS = [PLASMA_PROGRAM, RIPPLE_PROGRAM, VORONOI_PROGRAM];

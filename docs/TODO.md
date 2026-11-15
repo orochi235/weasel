@@ -262,16 +262,6 @@ Owner tags, after the priority (2026-10-26):
   cannot silently mutate scene state, and tests prove captured snapshots survive later edits and alias
   mutations, including typed-array geometry.
 
-- **(P1) [agent] Make failed restored-history replay observable and preserve the failed entry.**
-  `packages/core/src/core/scene/boundOps.ts` converts missing history adapters and throwing external ops
-  into debug-warned no-ops. `scene.applyBatch.test.ts` expects undo to advance to redo even when the op
-  fails and state stays unchanged. Swallowing exceptions also hides partial external writes from transaction
-  handling. Make strict replay the default, validate factories and adapter requirements during restoration,
-  and report unresolved operations. Best-effort recovery must be explicit with structured diagnostics.
-  Closes when missing factories/adapters and throwing restored ops have tested failure semantics, failed
-  strict undo/redo preserves its stack entry and state under a documented external-op rollback contract,
-  and callers can inspect restoration and replay failures in production.
-
 - **(P1) [agent] Give document and editing-session state explicit ownership before 2.0.** `Scene` combines
   content, history, selection, previews and scrolling (`packages/core/src/core/scene/scene.ts`,
   `sceneSelection.ts`, `scrollOffsets.ts`), while `CanvasView` permits independent selections
@@ -282,17 +272,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when two sessions edit one document with independent selection, scrolling and previews, views
   sharing a session share those states, history/selection restoration has an explicit tested policy, and
   the public API, demos and migration docs use that ownership model.
-
-- **(P2) [agent] Scope extension registries and standardize registration semantics.** Scene function
-  registries and scene ops are local, but external op factories silently overwrite in a module singleton
-  (`packages/core/src/core/ops/registry.ts`), and shader sources replace in development but reject
-  duplicates in production (`packages/renderer/src/shaders/registerProgram.ts`). Provide an explicit
-  registry context hosts can isolate or share, retaining a default for convenience. Define idempotent
-  registration, explicit replacement and disposal consistently. Prioritize executable op factories because
-  collisions change restored behavior; GPU compilation and resources remain renderer-local.
-  Closes when isolated hosts can use the same extension ids without interference, shared hosts resolve
-  shared definitions intentionally, registration/replacement/disposal rules are documented and tested, and
-  restored external ops resolve through their host's registry context.
 
 - **(P2) [agent] Put the canonical scene persistence codec below the editor package.** JSON persistence
   currently needs `serializeReplacer` and `reviveTypedArrays` from `@weasel-js/editor`
