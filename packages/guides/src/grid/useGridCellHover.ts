@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import {
+  clientToCanvas,
   useLatest,
   screenToWorld,
   type ViewTransform,
@@ -87,9 +88,7 @@ export function useGridCellHover(opts: UseGridCellHoverOptions): UseGridCellHove
 
     const onMove = (e: PointerEvent) => {
       const o = optsRef.current;
-      const rect = el.getBoundingClientRect();
-      const sx = e.clientX - rect.left;
-      const sy = e.clientY - rect.top;
+      const [sx, sy] = clientToCanvas(el, e.clientX, e.clientY);
       const [wx, wy] = screenToWorld(sx, sy, o.view());
       const scoped = { ...(o.scopes ? { scopes: o.scopes } : {}), ...(o.regions ? { regions: o.regions() } : {}) };
       update(pointToGridCell({ x: wx, y: wy }, o.spacing, o.unitSystem, o.origin, scoped));

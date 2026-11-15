@@ -42,6 +42,19 @@ describe('useGridCellHover', () => {
     expect(result.current.getCell()).toMatchObject({ col: 2, row: 0 });
   });
 
+  it('divides out the scale an ancestor transform shows the surface at', () => {
+    const el = makeEl(makeRect(0, 0, 1000, 1000));
+    Object.defineProperty(el, 'offsetWidth', { value: 500 });
+    Object.defineProperty(el, 'offsetHeight', { value: 500 });
+    const ref = createRef<HTMLElement>();
+    (ref as { current: HTMLElement }).current = el;
+    const { result } = renderHook(() =>
+      useGridCellHover({ ref, view: () => identityView, spacing: 10 }),
+    );
+    act(() => { fire(el, 'pointermove', { clientX: 50, clientY: 14 }); });
+    expect(result.current.cell).toMatchObject({ col: 2, row: 0 });
+  });
+
   it('only updates state when the cell actually changes', () => {
     const el = makeEl();
     const ref = createRef<HTMLElement>();
