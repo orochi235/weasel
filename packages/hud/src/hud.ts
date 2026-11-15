@@ -39,6 +39,12 @@ export interface Hud extends FocusScope<Widget> {
   subscribeFrame(fn: () => void): () => void;
   /** True after bind() and before unbind(). */
   readonly attached: boolean;
+  /** A client point in the space the widgets are laid out in, as the host it is bound to measures it: the point
+   *  as given while unbound, or bound to a host that does not say. */
+  toCanvas(client: { x: number; y: number }): { x: number; y: number };
+  /** The size of the space the widgets are laid out in, from the host; zero while unbound, or bound to a host
+   *  that does not say. */
+  canvasSize(): { width: number; height: number };
   /** The widget holding keyboard focus, or null. One per HUD. */
   readonly focused: Widget | null;
   /** Focus `widget`, or blur with `null`. Returns whether `widget` now holds
@@ -146,6 +152,8 @@ export function createHud(): Hud {
 
   return {
     get attached() { return host !== null; },
+    toCanvas: (client) => host?.toCanvas?.(client) ?? { x: client.x, y: client.y },
+    canvasSize: () => host?.size?.() ?? { width: 0, height: 0 },
     add(widget) { push(widget); },
     remove(widget) {
       if (!drop(widget)) return;

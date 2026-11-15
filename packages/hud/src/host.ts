@@ -11,4 +11,9 @@ export interface HudHost {
    *  back pixels has to sample here: anywhere else the drawing buffer still
    *  holds the previous frame. Returns an unsubscribe. */
   subscribeFrame(fn: () => void): () => void;
+  /** A client point (a DOM event's `clientX`/`clientY`) in the space the HUD draws in. Omitted, the two are taken
+   *  as one. */
+  toCanvas?(client: { x: number; y: number }): { x: number; y: number };
+  /** The size of the space the HUD draws in, in its own units. */
+  size?(): { width: number; height: number };
 }

@@ -320,4 +320,21 @@ describe('attachMenuHost with a hud drawing in another font', () => {
     off();
     unhud();
   });
+
+  it("places the menu in the hud's host space when given no toCanvas", () => {
+    host.open({ menu: 'row', client: { x: 10, y: 10 } });
+    const { x, y } = hud.widgets()[0]!.bounds;
+    host.close();
+    detach();
+    const placed = createHud();
+    placed.bind({
+      requestRedraw: () => {}, registerLayer: () => () => {}, subscribeFrame: () => () => {},
+      toCanvas: ({ x, y }) => ({ x: x - 100, y: y - 50 }),
+      size: () => ({ width: 800, height: 600 }),
+    });
+    detach = attachMenuHost(placed, host, { measure: () => 40 });
+    host.open({ menu: 'row', client: { x: 110, y: 60 } });
+    const w = placed.widgets()[0]!;
+    expect({ x: w.bounds.x, y: w.bounds.y }).toEqual({ x, y });
+  });
 });

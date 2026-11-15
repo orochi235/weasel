@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import {
   ActionsProvider, SceneCanvas, rectPath, solid, useIconRegistry, useMenuHost, useMenus, useScene, useSelection, arrangePreset, editPreset, movePreset, pickPreset,
 } from '@weasel-js/core';
-import type { Fill, MenuDef, NodeId, Path, SceneCanvasApi } from '@weasel-js/core';
+import type { Fill, MenuDef, NodeId, Path } from '@weasel-js/core';
 import { attachMenuHost } from '@weasel-js/hud';
 import { pref } from '@weasel-js/prefs';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
@@ -44,35 +44,24 @@ function Demo() {
   const selection = useSelection({ scene, mode: 'single' });
   useMenus(MENUS);
 
-  const canvasRef = useRef<SceneCanvasApi>(null);
-  const size = useRef({ width: W, height: H });
   const hud = useHud();
   const hudEntry = useHudContribution(hud, { font: 'sans-serif' });
   const host = useMenuHost();
   const icons = useIconRegistry();
   useEffect(() => {
     if (!host) return;
-    return attachMenuHost(hud, host, {
-      ...(icons ? { icons } : {}),
-      toCanvas: ({ x, y }) => {
-        const r = canvasRef.current?.element?.getBoundingClientRect();
-        return r ? { x: x - r.left, y: y - r.top } : { x, y };
-      },
-      canvasSize: () => size.current,
-    });
+    return attachMenuHost(hud, host, icons ? { icons } : {});
   }, [hud, host, icons]);
 
   return (
     <DemoStage width={W} height={H}>
       <SceneCanvas
-        ref={canvasRef}
         features={[pickPreset, movePreset, editPreset, arrangePreset]}
         claimKeys
         className="ckd-canvas"
         scene={scene}
         selection={selection}
         ambient={[hudEntry]}
-        onResize={(s) => { size.current = s; }}
       />
     </DemoStage>
   );

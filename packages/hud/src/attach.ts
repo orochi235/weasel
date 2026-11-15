@@ -1,4 +1,5 @@
 import type { Hud } from './hud';
+import type { HudHost } from './host';
 import { recordHudOn } from './loupe/loupeRoutes';
 import type { CanvasExtensionApi, RenderLayer, LayerHit, View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -188,13 +189,8 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
   const detachLayer = api.registerLayer(layer);
   const detachFocus = api.element ? wireFocus(api.element, hud, findTopmostHit) : () => {};
 
-  // Bind the HUD to a host shim. registerLayer is a no-op because the HUD has
-  // already registered its single layer via api.registerLayer above.
-  hud.bind({
-    requestRedraw: api.requestRedraw,
-    registerLayer: () => () => {},
-    subscribeFrame: api.subscribeFrame,
-  });
+  // registerLayer is a no-op: the HUD's one layer is registered on `api` above.
+  hud.bind(canvasHost(api));
 
   return () => {
     attached = false;
@@ -208,6 +204,25 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
     detachFocus();
     detachLayer();
     hud.unbind();
+  };
+}
+
+/** The host a canvas gives its HUD: its redraw and frames, and its element's CSS pixels as the HUD's space. */
+function canvasHost(api: CanvasExtensionApi): HudHost {
+  return {
+    requestRedraw: api.requestRedraw,
+    registerLayer: () => () => {},
+    subscribeFrame: api.subscribeFrame,
+    toCanvas: (client) => {
+      const element = api.element;
+      if (!element) return { x: client.x, y: client.y };
+      const [x, y] = clientToCanvas(element, client.x, client.y);
+      return { x, y };
+    },
+    size: () => {
+      const { width, height } = api.getSurfaceRect();
+      return { width, height };
+    },
   };
 }
 

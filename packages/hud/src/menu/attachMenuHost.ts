@@ -4,15 +4,18 @@ import type { Hud } from '../hud';
 import type { Widget } from '../widget';
 import { createMenuWidget, type MenuWidgetOptions } from './menuWidget';
 
-/** What {@link attachMenuHost} needs beyond the hud and host. */
+/** What {@link attachMenuHost} needs beyond the hud and host. `toCanvas` and `canvasSize` default to the hud's
+ *  (`Hud.toCanvas`, `Hud.canvasSize`): the canvas `attachHud` bound it to. */
 export type AttachMenuHostOptions =
-  Pick<MenuWidgetOptions, 'toCanvas' | 'canvasSize' | 'measure' | 'icons' | 'palette' | 'repeat' | 'locale'>;
+  Pick<MenuWidgetOptions, 'measure' | 'icons' | 'palette' | 'repeat' | 'locale'>
+  & Partial<Pick<MenuWidgetOptions, 'toCanvas' | 'canvasSize'>>;
 
 /** Draw `host`'s open menu as a widget on `hud`, focused while open. A press
  *  anywhere else takes focus from it, which closes the menu, as do a wheel
  *  outside it, the window losing focus and a resize. Closing any other way
  *  gives focus back to the widget that held it when the menu opened, and so does the detach this returns. */
-export function attachMenuHost(hud: Hud, host: MenuHost, opts: AttachMenuHostOptions): () => void {
+export function attachMenuHost(hud: Hud, host: MenuHost, options: AttachMenuHostOptions = {}): () => void {
+  const opts = { toCanvas: hud.toCanvas, canvasSize: hud.canvasSize, ...options };
   let widget: Widget | null = null;
   let returnTo: { widget: Widget | null; visible: boolean } = { widget: null, visible: false };
 
