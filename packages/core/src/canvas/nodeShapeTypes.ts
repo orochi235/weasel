@@ -1,4 +1,4 @@
-/** The types a node painter is written against; `NodeShape.ts` holds the registry. */
+/** The types a node painter is written against; `nodeShapeRegistry.ts` holds the registries and `NodeShape.ts` the lookups. */
 import type { Path } from '@weasel-js/geom';
 import type { VertexColorChannel } from '@weasel-js/animator';
 import type { Stroke, StrokeTrim } from '@weasel-js/paint';
