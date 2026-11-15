@@ -1,6 +1,7 @@
 import { shareToolOptions, toolOptionParams, withToolOptionDefault, type ActionDeps, type ToolOptions, type ToolOptionShare } from '@weasel-js/routing';
 import { insertStyleOf, type InsertStyle } from 'interactions/actions/insert/style';
 import { DEFAULT_SHAPE_PAINT, shapeToolOptions } from '../shared/styleOptions';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** The pen's options: the style it draws with, shared with every shape tool, and whether closing a subpath commits
  *  it. The pen's own actions read them where they commit, so no action is tuned with them. */
