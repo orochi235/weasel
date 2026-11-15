@@ -100,7 +100,8 @@ fn fragment(in: Varyings) -> vec4f {
 
 `textCommand`, `textCommandFromRuns`, and `textCommandFromPose` build a text
 command from laid-out runs. Fonts are registered through `@weasel-js/font`,
-which this package re-exports.
+whose registration functions (`registerFont`, `registerCanvasFont`,
+`registerFontOutlines`, …) this package re-exports.
 
 `getImageBitmap` decodes and caches an image by its `src`, and
 `subscribeImageReady` reports when one a frame asked for has arrived.
