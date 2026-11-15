@@ -51,12 +51,17 @@ async function bundle(entry: string, options: BuildOptions): Promise<string> {
   return js.text;
 }
 
-let page: Promise<string> | undefined;
+const pages = new Map<string, Promise<string>>();
 let host: Promise<typeof import('../packages/headless/src/index.ts')> | undefined;
 
-/** The page script, as `dist/page.global.js` holds it. */
-export function headlessPageScript(): Promise<string> {
-  page ??= bundle('page.ts', { format: 'iife', platform: 'browser', outfile: 'page.global.js' });
+/** A page script, bundled as `dist/page.global.js` is: by default that one, else `entry`, a path
+ *  under `packages/headless/src`. */
+export function headlessPageScript(entry = 'defaultPage.ts'): Promise<string> {
+  let page = pages.get(entry);
+  if (!page) {
+    page = bundle(entry, { format: 'iife', platform: 'browser', outfile: 'page.global.js' });
+    pages.set(entry, page);
+  }
   return page;
 }
 

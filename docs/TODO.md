@@ -304,19 +304,6 @@ Owner tags, after the priority (2026-10-26):
   distinguish complete output from degraded output, and format tests cover image/font/paint failures
   and unsupported commands under the documented strict or best-effort policy.
 
-- **(P2) [agent] Let the headless page reconstruct a scene's registered behavior and composition.**
-  `@weasel-js/headless` accepts generic live scenes and lets a custom `pageScript` register painters
-  and fonts, but its bundled page always calls `sceneFromJSON` without options
-  (`packages/headless/src/page.ts`, `host.ts`). There is no bootstrap seam to supply the scene's
-  function registry, composition, layout frame or quantize rule as the render-worker host can.
-  Reproduced through the exact wire/load path: a scene with registered `clipFromPose: customClip`
-  serializes successfully and then throws `SnapshotKeyError` in the page load. Registering a painter
-  before importing `headless/page` does not supply these scene options. Add a page-side bootstrap
-  API for code that stays in that realm; keep requests data-only and document the supported pose/render scope.
-  Closes when a custom page script can configure scene reconstruction without replacing the host's
-  private protocol, and browser tests compare direct/headless output for registered clips/derivations,
-  nondefault supported composition and quantization, with clear errors for unsupported scenes.
-
 - **(P2) [agent] Bound worker requests and expose worker failure after startup.**
   `watchStartup` drains requests only for errors before the first message; later errors only warn
   (`packages/core/src/canvas/renderWorker/startSceneRenderWorker.ts`). `createRequests` has no

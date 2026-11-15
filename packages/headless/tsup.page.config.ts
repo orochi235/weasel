@@ -5,7 +5,7 @@ import { weaselIcons } from '../icons-plugin/src/index';
 // and everything it needs, built from the siblings' `dist` after `tsup.config.ts` has emptied this
 // package's.
 export default defineConfig({
-  entry: { page: 'src/page.ts' },
+  entry: { page: 'src/defaultPage.ts' },
   format: ['iife'],
   platform: 'browser',
   target: 'es2022',
