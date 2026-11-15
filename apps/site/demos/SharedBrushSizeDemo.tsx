@@ -1,16 +1,16 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import {
   type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath,
-  type InvocationCtx, type RectPose, resolveParams, SceneCanvas, setToolOption, shareToolOptions, solid, type Tool,
+  type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, solid, type Tool,
   type ToolOptions, type ToolOptionShare, type ToolOptionValues, type ToolsApi, useScene, useSelection,
-  useToolOptionParams, useToolOptionValues,
+  useToolOptionValues,
 } from '@weasel-js/core';
 import { pxReach } from '@weasel-js/geom';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { brushRing } from '@weasel-js/cursor';
 import { shareBrushSize } from '@weasel-js/brush';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
-import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
+import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 
 type Point = { x: number; y: number };
@@ -89,21 +89,6 @@ function OptionValues({ values }: { values: ToolOptionValues }): ReactNode {
   return null;
 }
 
-function ActiveOptions({ tools, values }: { tools: ToolsApi; values: ToolOptionValues }) {
-  const tool = tools.active ? tools.registry[tools.active] : undefined;
-  const options = tool?.options;
-  const params = useToolOptionParams(tool, values);
-  if (!tool || !options || !params) return null;
-  return (
-    <ToolOptionsBar
-      label={tool.presentation?.label}
-      schema={options.prefs}
-      values={params}
-      onChange={(key, v) => setToolOption(tool.id, options, values, key, v)}
-    />
-  );
-}
-
 export function SharedBrushSizeDemo() {
   const scene = useScene({ systemLayers: [{ id: 'default' }] });
   const selection = useSelection({ scene, mode: 'multi' });
@@ -115,7 +100,7 @@ export function SharedBrushSizeDemo() {
     <div className="ckd-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
       <Checkbox isSelected={shared} onChange={setShared}>Share brush size</Checkbox>
-      {tools && <ActiveOptions tools={tools} values={values} />}
+      <ActiveToolOptionsBar tools={tools} values={values} />
       <div className="ckd-canvas-frame">
         <SceneCanvas
           width={520}

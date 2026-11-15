@@ -15,7 +15,7 @@ import type { ModeRegistry } from '@weasel-js/modes';
 import { PATH_EDIT_TOOLS, PATH_OVERLAYS_GROUP, PATH_TOOLS_TOOLS, RESHAPE_TOOLS, WARP_TOOLS } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { CharacterOptions } from '@weasel-js/ui/components/inspector/CharacterOptions';
-import { ActiveToolOptions } from './ui/ToolOptions';
+import { ActiveToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { drawToolOptionValues } from './toolOptions';
 import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import { ResizeHandle } from '@weasel-js/ui/components/ResizeHandle';
@@ -153,7 +153,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                 <div className="wd-dock-main">
                   <div ref={optionsRef}>
                     <CharacterOptions style={textEdit.effectiveStyle} onPatch={textEdit.applyStyleToSelection} />
-                    <ActiveToolOptions tool={activeTool} values={toolOptions} />
+                    <ActiveToolOptionsBar tool={activeTool} values={toolOptions} />
                   </div>
                   <div className="wd-body">
                     <ShowChrome id={FIXED_CHROME.tools.id}>
