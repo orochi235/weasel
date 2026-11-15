@@ -14,7 +14,7 @@ export { useAutosave, type AutosaveOptions, type SessionWrite } from './useAutos
 export { usePageFit, type PageFitOptions } from './usePageFit';
 export { usePages, type AddPageOptions, type DocPages, type PagePlace, type UsePagesOptions } from './usePages';
 export { PAGE_SETTLE_MS, usePageSettle, type PageSettleOptions, type Paging, type ViewSink } from './usePageSettle';
-export { useSessionPersistence, type SessionPersistenceOptions } from './useSessionPersistence';
+export { savedAtOf, useSessionPersistence, type SessionPersistenceOptions } from './useSessionPersistence';
 export { TextEditDepPublisher } from './TextEditDepPublisher';
 export {
   DOC_CLIPBOARD_ACTIONS, DOC_CLIPBOARD_KEYS, useDocClipboard,

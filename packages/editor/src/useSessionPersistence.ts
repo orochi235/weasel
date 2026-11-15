@@ -31,9 +31,18 @@ const savedStale = (slot: SessionSlot, pages: PagesDoc | undefined): boolean =>
   readSlot(slot, (json) => keptUnreadable(slot, json) || !isSerializedScene(json) || snapshotRebuildsTree(json, { pages }),
     () => true);
 
+/** When the scene entry `value` was saved, in milliseconds since the epoch, as `useSessionPersistence` stamps each
+ *  one under `savedAt`; `undefined` for an entry saved without a stamp, as every one was before 2026-11-14. Two copies
+ *  of a session kept in different storage are told apart by it. */
+export function savedAtOf(value: unknown): number | undefined {
+  if (value === null || typeof value !== 'object') return undefined;
+  const at = (value as { savedAt?: unknown }).savedAt;
+  return typeof at === 'number' && Number.isFinite(at) ? at : undefined;
+}
+
 /**
  * Keeps a scene and its undo stack in storage, `localStorage` unless `opts.records` says otherwise: restores the stack once on mount,
- * then saves them through `useAutosave` after each render. A stack saved beside a scene that loads
+ * then saves them through `useAutosave` after each render, the scene stamped with when it was saved ({@link savedAtOf}). A stack saved beside a scene that loads
  * with its tree rebuilt (`snapshotRebuildsTree`, with `opts.pages`), or beside none that can be read, is
  * dropped, not restored.
  */
@@ -84,7 +93,7 @@ export function useSessionPersistence<D, L extends string, P>(
     if (!restoredRef.current) return null;
     const { sceneKey, historyKey } = optsRef.current;
     return {
-      primary: [sceneKey, snapshotValue(scene.toJSON())],
+      primary: [sceneKey, { ...(snapshotValue(scene.toJSON()) as object), savedAt: Date.now() }],
       dependents: [[historyKey, snapshotValue(scene.serializeHistory())]],
     };
   }, {

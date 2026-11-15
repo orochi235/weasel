@@ -273,14 +273,6 @@ Owner tags, after the priority (2026-10-26):
   a grid cell off the container's painted edge. Children still compose from the stored pose, and
   picking reads it by design. Closes when the maintainer rules whether a clip follows the drawn pose,
   and the walk does what was ruled.
-- **(P3) [agent] draw can strand a newer session in localStorage behind an older one in IndexedDB.**
-  `openSession` (`apps/draw/src/openSession.ts`) moves a localStorage session across only when
-  IndexedDB holds no scene. A visit where IndexedDB would not open keeps editing in localStorage, so
-  the next visit that opens it shows the older IndexedDB drawing and never surfaces the newer one
-  (it stays in localStorage, unread). Preferring localStorage outright is wrong too: a move whose
-  localStorage delete did not land would later overwrite newer IndexedDB edits. Needs each copy to
-  say when it was written. Found by reading, not reproduced (2026-11-14). Closes when the newer of
-  the two copies opens, with a test for each order.
 
 ---
 

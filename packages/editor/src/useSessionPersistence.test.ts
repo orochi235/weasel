@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { IDENTITY_POSE_COMPOSITION, createScene } from '@weasel-js/core';
-import { useSessionPersistence } from './useSessionPersistence';
+import { savedAtOf, useSessionPersistence } from './useSessionPersistence';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -16,6 +16,15 @@ describe('useSessionPersistence', () => {
     await vi.advanceTimersByTimeAsync(300);
     expect(JSON.parse(localStorage.getItem('test:scene')!)).toMatchObject({ version: 3, nodes: [] });
     expect(localStorage.getItem('test:history')).not.toBeNull();
+  });
+
+  it('stamps the saved scene with when it was saved', async () => {
+    vi.useFakeTimers({ now: 1_700_000_000_000 });
+    const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+    renderHook(() => useSessionPersistence(scene, { sceneKey: 'test:scene', historyKey: 'test:history' }));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(savedAtOf(JSON.parse(localStorage.getItem('test:scene')!))).toBe(1_700_000_000_300);
+    expect(savedAtOf({ version: 3, nodes: [] })).toBeUndefined();
   });
 
   it('saves a pending change when it unmounts before the delay', () => {
