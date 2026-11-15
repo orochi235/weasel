@@ -383,3 +383,4 @@ export { C4_GROUP, C4_STENCILS } from './stencils/c4';
 export { ARCHITECTURE_GROUP, ARCHITECTURE_STENCILS } from './stencils/architecture';
 export { KANBAN_GROUP, KANBAN_STENCILS } from './stencils/kanban';
 export * from './sequence';
+export type { DrawMessageParams, WrapFragmentParams } from './actionParamSchema';

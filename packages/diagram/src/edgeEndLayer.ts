@@ -23,6 +23,7 @@ import { diagramEdgeOf, type DiagramEdge } from './edgeTrait';
 import type { GraphNodeLike } from './graph';
 import { offersPorts, type ParticipantPose, type ParticipantSource } from './portAffordance';
 import type { PortsOptions } from './ports';
+import { payloadOf } from './payload';
 
 /** The layer id the edge-end handles are composed into. */
 export const EDGE_END_LAYER_ID = 'diagram-edge-ends';
@@ -39,8 +40,8 @@ export interface EdgeEndScratch {
 }
 
 /** Read an edge-end press's scratch back off the hit an action was handed. */
-export function edgeEndScratchOf(hit: { payload?: unknown } | null | undefined): EdgeEndScratch | null {
-  const payload = hit?.payload as EdgeEndScratch | undefined;
+export function edgeEndScratchOf(hit: unknown): EdgeEndScratch | null {
+  const payload = payloadOf(hit) as EdgeEndScratch | undefined;
   return payload !== undefined && typeof payload.edgeId === 'string'
     && (payload.end === 'from' || payload.end === 'to') ? payload : null;
 }

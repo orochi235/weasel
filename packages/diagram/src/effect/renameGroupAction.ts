@@ -1,9 +1,8 @@
 /** The double-click that opens a group's name field from its title grip, under a look that places stages itself. */
-import { ActionDisabledReason, type Contribution, type Vec2 } from '@weasel-js/core';
+import { ActionDisabledReason, defineAction, type Contribution, type Vec2 } from '@weasel-js/core';
 import { ANYWHERE } from '../reorder';
 import type { ReorderSource } from './editorReorder';
 import { groupAt } from './groupOrder';
-import type { ImmediateParams } from '@weasel-js/core';
 
 /** The action that opens a group's name field. */
 export const RENAME_GROUP_ACTION_ID = 'effect.renameGroup';
@@ -17,7 +16,7 @@ export function renameGroupContribution(now: () => ReorderSource, rename: (group
   return {
     id: `weasel-diagram-effect:${RENAME_GROUP_ACTION_ID}`,
     eligibility: { always: true },
-    actions: [{
+    actions: [defineAction({
       id: RENAME_GROUP_ACTION_ID,
       label: 'Rename group',
       group: 'diagram',
@@ -25,12 +24,12 @@ export function renameGroupContribution(now: () => ReorderSource, rename: (group
       invoker: {
         timing: 'immediate',
         run(_, params) {
-          const world = (params as ImmediateParams | undefined)?.world;
+          const world = params?.world;
           const group = world ? under(world) : undefined;
           if (group !== undefined) rename(group);
         },
       },
-    }],
+    })],
     // Empty space included: an unlabeled group's grip is padding.
     bindings: [{
       spec: { kind: 'doubleClick', target: { kindOf: ANYWHERE } },

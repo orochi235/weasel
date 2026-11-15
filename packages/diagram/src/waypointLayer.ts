@@ -24,6 +24,7 @@ import { createEdgeEnds, type EdgeEndOptions, type EdgeEnds } from './edgeEndLay
 import { offersPorts, type ParticipantSource } from './portAffordance';
 import type { Port } from './types';
 import { routeHandles, type RouteHandle } from './waypoints';
+import { payloadOf } from './payload';
 
 /** The layer id the route handles are composed into. */
 export const WAYPOINT_LAYER_ID = 'diagram-waypoints';
@@ -39,8 +40,8 @@ export interface WaypointScratch {
 }
 
 /** Read a route-handle press's scratch back off the hit an action was handed. */
-export function waypointScratchOf(hit: { payload?: unknown } | null | undefined): WaypointScratch | null {
-  const payload = hit?.payload as WaypointScratch | undefined;
+export function waypointScratchOf(hit: unknown): WaypointScratch | null {
+  const payload = payloadOf(hit) as WaypointScratch | undefined;
   return payload !== undefined && typeof payload.edgeId === 'string' && typeof payload.handle?.kind === 'string'
     ? payload : null;
 }

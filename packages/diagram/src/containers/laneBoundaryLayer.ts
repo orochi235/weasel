@@ -24,6 +24,7 @@ import {
 } from '@weasel-js/core';
 import { lanesOf, poolAxisOf } from './containerStencils';
 import { diagramContainerOf } from './trait';
+import { payloadOf } from '../payload';
 
 /** The layer id the lane affordances are composed into. */
 export const LANE_LAYER_ID = 'diagram-lanes';
@@ -39,8 +40,8 @@ export interface LaneScratch {
 }
 
 /** Read a lane press's scratch back off the hit an action was handed. */
-export function laneScratchOf(hit: { payload?: unknown } | null | undefined): LaneScratch | null {
-  const payload = hit?.payload as LaneScratch | undefined;
+export function laneScratchOf(hit: unknown): LaneScratch | null {
+  const payload = payloadOf(hit) as LaneScratch | undefined;
   return payload !== undefined && typeof payload.poolId === 'string' ? payload : null;
 }
 

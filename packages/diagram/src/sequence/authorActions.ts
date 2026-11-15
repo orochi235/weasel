@@ -4,7 +4,7 @@
  * the row nearest the click. Each hands one edit of the root's data to the
  * commit, by default one undo entry in the scene.
  */
-import type { Action, ActionDeps, Vec2, AnyScene } from '@weasel-js/core';
+import { defineAction, type Action, type ActionDeps, type ImmediateParams, type Vec2, type AnyScene } from '@weasel-js/core';
 import { sequenceLayout } from './layout';
 import { addParticipant, newParticipant, type SeqParticipantKind } from './author';
 import { insertMark, insertNote } from './authorSteps';
@@ -36,13 +36,13 @@ export interface SequenceAuthorOptions extends SequenceEditOptions {
 export const NOTE_OVER_REACH = 20;
 
 /** The world point an immediate action's click params carry. */
-const worldOf = (params: Record<string, unknown> | undefined): Vec2 | null => {
-  const w = params?.world as Vec2 | undefined;
+const worldOf = (params: Readonly<Pick<ImmediateParams, 'world'>> | undefined): Vec2 | null => {
+  const w = params?.world;
   return w !== undefined && typeof w.x === 'number' && typeof w.y === 'number' ? w : null;
 };
 
 /** The scene and the root a click landed on, read from an immediate action's deps and params. */
-function clickOf(deps: ActionDeps, params: Record<string, unknown> | undefined): { scene: AnyScene; at: Vec2; hit: SequenceHit | null } | null {
+function clickOf(deps: ActionDeps, params: Readonly<Pick<ImmediateParams, 'world'>> | undefined): { scene: AnyScene; at: Vec2; hit: SequenceHit | null } | null {
   const scene = deps.scene as AnyScene | undefined;
   const at = worldOf(params);
   return scene === undefined || at === null ? null : { scene, at, hit: sequenceAt(scene, at) };
@@ -64,7 +64,7 @@ export function createAddParticipantAction(opts: SequenceAuthorOptions = {}): Ac
     : (at: Vec2, data: SequenceData, deps: ActionDeps) => {
       if (deps.scene !== undefined) startSequence(deps.scene as AnyScene, at, data, 'Add sequence', opts);
     };
-  return {
+  return defineAction({
     id: ADD_PARTICIPANT_ACTION_ID, label: 'Add participant', group: 'diagram', requires: ['scene'], params: SEQUENCE_PARTICIPANT_PARAMS,
     invoker: {
       timing: 'immediate',
@@ -85,7 +85,7 @@ export function createAddParticipantAction(opts: SequenceAuthorOptions = {}): Ac
       },
     },
     enabled: () => true as const,
-  };
+  });
 }
 
 /**
@@ -105,7 +105,7 @@ export function noteAt(hit: SequenceHit, x: number, y: number): SequenceData {
 /** The Note tool's click: a note on the row nearest the click, over or beside the nearest lifeline. */
 export function createAddNoteAction(opts: SequenceEditOptions = {}): Action {
   const commit = sequenceCommitOf(opts);
-  return {
+  return defineAction({
     id: ADD_NOTE_ACTION_ID, label: 'Add note', group: 'diagram', requires: ['scene'],
     invoker: {
       timing: 'immediate',
@@ -118,7 +118,7 @@ export function createAddNoteAction(opts: SequenceEditOptions = {}): Action {
       },
     },
     enabled: () => true as const,
-  };
+  });
 }
 
 const MARKS: ReadonlySet<string> = new Set<SeqMark['kind']>(['activate', 'deactivate', 'create', 'destroy']);
@@ -130,7 +130,7 @@ const MARKS: ReadonlySet<string> = new Set<SeqMark['kind']>(['activate', 'deacti
  */
 export function createAddMarkAction(opts: SequenceEditOptions = {}): Action {
   const commit = sequenceCommitOf(opts);
-  return {
+  return defineAction({
     id: ADD_MARK_ACTION_ID, label: 'Add lifeline mark', group: 'diagram', requires: ['scene'], params: SEQUENCE_MARK_PARAMS,
     invoker: {
       timing: 'immediate',
@@ -139,12 +139,12 @@ export function createAddMarkAction(opts: SequenceEditOptions = {}): Action {
         const column = hit === null ? null : columnNear(hit.root, hit.local.x);
         const slot = hit === null ? null : slotNear(hit.root, hit.local.y);
         if (hit === null || column === null || slot === null) return 'pass';
-        const kind = MARKS.has(params?.mark as string) ? params!.mark as SeqMark['kind'] : 'activate';
+        const kind = params?.mark !== undefined && MARKS.has(params.mark) ? params.mark : 'activate';
         const data = insertMark(hit.data, { kind, participant: column.id }, slot.place);
         if (data !== hit.data) commit({ id: hit.root.id, data, label: 'Add lifeline mark' }, { deps });
         return undefined;
       },
     },
     enabled: () => true as const,
-  };
+  });
 }

@@ -4,6 +4,7 @@
  */
 import {
   ActionDisabledReason,
+  defineAction,
   bodyPredicate,
   fitViewToPage,
   resetView,
@@ -16,7 +17,6 @@ import {
 } from '@weasel-js/core';
 import { diagramEdgeOf } from '../edgeTrait';
 import { offPageTagOf } from './trait';
-import type { ImmediateParams } from '@weasel-js/core';
 
 /** The action that follows an off-page tag to its far page. */
 export const FOLLOW_OFF_PAGE_ACTION_ID = 'diagram.followOffPage';
@@ -74,7 +74,7 @@ function followDefault(target: OffPageTarget, ctx: InvocationCtx, padding: numbe
 export function createFollowOffPageAction(opts: FollowOffPageOptions = {}): Action {
   const padding = opts.padding ?? 24;
   const follow = opts.follow ?? ((target: OffPageTarget, ctx: InvocationCtx) => followDefault(target, ctx, padding));
-  return {
+  return defineAction({
     id: FOLLOW_OFF_PAGE_ACTION_ID,
     label: 'Go to the other page',
     group: 'diagram',
@@ -83,7 +83,7 @@ export function createFollowOffPageAction(opts: FollowOffPageOptions = {}): Acti
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const world = (params as ImmediateParams | undefined)?.world;
+        const world = params?.world;
         if (!world) return;
         const target = tagUnder(deps, world);
         if (target === null) return;
@@ -91,7 +91,7 @@ export function createFollowOffPageAction(opts: FollowOffPageOptions = {}): Acti
       },
     },
     enabled: (deps, at) => (tagUnder(deps, at) !== null ? true : ActionDisabledReason.NotApplicable),
-  };
+  });
 }
 
 const onBody = bodyPredicate((target) => target === 'selected-body' || target === 'unselected-body');

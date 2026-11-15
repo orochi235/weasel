@@ -5,13 +5,13 @@
 import {
   ActionDisabledReason,
   bodyPredicate,
+  defineAction,
   type Action,
   type ActionDeps,
   type GestureBinding,
   type RectPose,
 } from '@weasel-js/core';
 import { diagramContainerOf, headerBox } from './trait';
-import type { ImmediateParams } from '@weasel-js/core';
 
 /** The action a double-click on a region's header runs. */
 export const EDIT_CONTAINER_TITLE_ACTION_ID = 'diagram.editContainerTitle';
@@ -32,7 +32,7 @@ export function regionHeaderAt(deps: ActionDeps | undefined, at: { x: number; y:
 
 /** The action that hands `commit` the region whose header a double-click landed on. It declines anywhere else. */
 export function editContainerTitleAction(commit: (id: string) => void): Action {
-  return {
+  return defineAction({
     id: EDIT_CONTAINER_TITLE_ACTION_ID,
     label: 'Edit container title',
     group: 'diagram',
@@ -41,13 +41,13 @@ export function editContainerTitleAction(commit: (id: string) => void): Action {
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const world = (params as ImmediateParams | undefined)?.world;
+        const world = params?.world;
         const id = world ? regionHeaderAt(deps, world) : null;
         if (id !== null) commit(id);
       },
     },
     enabled: (deps, at) => (regionHeaderAt(deps, at) !== null ? true : ActionDisabledReason.NotApplicable),
-  };
+  });
 }
 
 const onBody = bodyPredicate((target) => target === 'selected-body' || target === 'unselected-body');
