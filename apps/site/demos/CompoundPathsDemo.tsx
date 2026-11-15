@@ -159,61 +159,59 @@ export function CompoundPathsDemo() {
 
   return (
     <div className={styles.demo}>
-    <div className={styles.stage}>
-      <DemoStage width={W} height={H}>
-        <SceneCanvas features={[pickPreset, movePreset, transformPreset]}
-          className="ckd-canvas"
-          scene={scene}
-          backgroundFill={{ color: '#87ceeb' }}
-          selectionOptions={{ mode: 'multi' }}
-          selectTool={{ handleHitRadius: HANDLE }}
-          layers={{
-            scene: {
-              drawOne: (node, p): DrawCommand[] => [{
-                kind: 'path',
-                path: p,
-                fill: { paint: { color: node.data.fill } },
-                stroke: { paint: { color: node.data.stroke ?? '#1a130d' }, width: 1.5 },
-              }],
-              // drawOne: 'signature' is a custom screen-space RenderLayer
-              // (Comic Sans signature text) and remains 2D-only; defer to v2.
-            },
-            selectionOverlay: { handles: { size: HANDLE }, outline: { follow: 'shape' } },
-            signature: {
-              layer: {
-                id: 'signature',
-                label: 'Signature',
-                draw: (_data, _view, dims) => {
-                  // GL renders MSDF text from registered fonts only.
-                  const text = 'original artwork by claude';
-                  const charW = 7;
-                  return [textCommandFromRuns(
-                    dims.width - 10 - text.length * charW,
-                    dims.height - 8 - 14,
-                    [{ text, fill: { paint: { kind: 'solid', color: '#ff3344' } } }],
-                    { fontFamily: 'sans-serif', fontSize: 14 },
-                  )];
-                },
+      <div className={styles.stage}>
+        <DemoStage width={W} height={H}>
+          <SceneCanvas features={[pickPreset, movePreset, transformPreset]}
+            className="ckd-canvas"
+            scene={scene}
+            backgroundFill={{ color: '#87ceeb' }}
+            selectionOptions={{ mode: 'multi' }}
+            selectTool={{ handleHitRadius: HANDLE }}
+            layers={{
+              scene: {
+                drawOne: (node, p): DrawCommand[] => [{
+                  kind: 'path',
+                  path: p,
+                  fill: { paint: { color: node.data.fill } },
+                  stroke: { paint: { color: node.data.stroke ?? '#1a130d' }, width: 1.5 },
+                }],
               },
-              after: 'selectionOverlay',
-            },
+              selectionOverlay: { handles: { size: HANDLE }, outline: { follow: 'shape' } },
+              signature: {
+                layer: {
+                  id: 'signature',
+                  label: 'Signature',
+                  draw: (_data, _view, dims) => {
+                    // GL renders MSDF text from registered fonts only.
+                    const text = 'original artwork by claude';
+                    const charW = 7;
+                    return [textCommandFromRuns(
+                      dims.width - 10 - text.length * charW,
+                      dims.height - 8 - 14,
+                      [{ text, fill: { paint: { kind: 'solid', color: '#ff3344' } } }],
+                      { fontFamily: 'sans-serif', fontSize: 14 },
+                    )];
+                  },
+                },
+                after: 'selectionOverlay',
+              },
+            }}
+          />
+        </DemoStage>
+        <HonkButton
+          getBounds={honkBounds}
+          onHonk={() => {
+            setToast('HONK');
+            window.clearTimeout(toastTimer.current);
+            toastTimer.current = window.setTimeout(() => setToast(null), 900);
           }}
         />
-      </DemoStage>
-      <HonkButton
-        getBounds={honkBounds}
-        onHonk={() => {
-          setToast('HONK');
-          window.clearTimeout(toastTimer.current);
-          toastTimer.current = window.setTimeout(() => setToast(null), 900);
-        }}
-      />
-      {toast && (
-        <div className={styles.toast}>
-          {toast}
-        </div>
-      )}
-    </div>
+        {toast && (
+          <div className={styles.toast}>
+            {toast}
+          </div>
+        )}
+      </div>
       <aside className={styles.story}>
         <h3 className={styles.title}>
           The Tale of the Ghost, the Duck, the Hamburglar, the Goose, and the Octopus
