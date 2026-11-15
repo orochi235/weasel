@@ -24,8 +24,6 @@ export function PoseBlendDemo() {
   const animator = useAnimator();
   const [spring, setSpring] = useState(false);
 
-  // The scene holds the destination from the first frame; only the block on screen travels.
-  // A second tweenPose mid-move adds to the first, and a springPose takes over at its speed.
   const send = (x: number, y: number) => {
     const to = { ...scene.get(ID)!.pose, x, y };
     if (spring) springPose(animator, adapter, { id: ID, to, preset: 'wobbly' });
