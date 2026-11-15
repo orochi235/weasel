@@ -1,6 +1,6 @@
 /** A diagram scene as a {@link DiagramDocument}: what every format writes from. */
 import {
-  composeWorldPose, isPageStructure, pageOfNode, placedPagesOf, scenePoseAdapter,
+  isPageStructure, pageOfNode, placedPagesOf, worldPoses,
   type NodeId, type PlacedPage, type RectPose, type Scene,
 } from '@weasel-js/core';
 import {
@@ -157,8 +157,8 @@ const isContainerOrPool = (node: ReadNode): boolean => {
 /** `scene` read with every node at the pose it is drawn at in document space. */
 function inWorld<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>): AnyScene {
   const raw = scene as unknown as AnyScene;
-  const poses = scenePoseAdapter(scene as never);
-  const placed = (node: ReadNode): ReadNode => ({ ...node, pose: composeWorldPose(poses, node.id, scene.composition.compose as never) });
+  const world = worldPoses(scene, 'document');
+  const placed = (node: ReadNode): ReadNode => ({ ...node, pose: world(node.id as NodeId) });
   return {
     roots: raw.roots,
     doc: raw.doc,

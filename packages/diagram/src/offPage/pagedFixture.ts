@@ -1,7 +1,7 @@
 /** A paged diagram scene for tests: two 200 by 100 pages, 40 apart (p1 spans x 0..200, p2 x 240..440), with the
  *  pasteboard on, and a drag through the move action. */
 import {
-  composeWorldPose, createPageRun, createScene, moveAction, placeOnPages, scenePoseAdapter,
+  createPageRun, createScene, moveAction, placeOnPages, worldPoses,
   type InvocationCtx, type NodeId, type OngoingHandle, type OngoingInvoker, type RectPose, type Scene,
 } from '@weasel-js/core';
 import { withDiagramRegistry } from '../edge';
@@ -24,7 +24,7 @@ export function pagedScene(initial: readonly unknown[]): PagedScene {
 
 /** Where `id` is drawn in the world, through every ancestor's frame. */
 export function worldBox(scene: PagedScene, id: string): RectPose {
-  return composeWorldPose(scenePoseAdapter(scene as never), id as NodeId, scene.composition.compose as never) as RectPose;
+  return worldPoses(scene, 'document')(id as NodeId);
 }
 
 const MODS = { alt: false, ctrl: false, meta: false, shift: false };
