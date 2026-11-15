@@ -3,6 +3,7 @@ import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 import type { InertiaOptions } from 'core/viewport/useDecayLoop';
 import { createVelocityTracker, type VelocityTracker } from 'core/viewport/createVelocityTracker';
+import type {} from '../actionParamSchema';
 
 interface DragPanScratch {
   startView: View;

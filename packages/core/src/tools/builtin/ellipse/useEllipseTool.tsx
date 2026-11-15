@@ -8,6 +8,7 @@ import { shareToolOptions } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** The ellipse tool's options: the style it draws with, shared with every shape tool. */
 export const ELLIPSE_TOOL_OPTIONS = shapeToolOptions({

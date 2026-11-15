@@ -5,6 +5,7 @@ import { createPathOverlay, defineTool, PATHFINDER_STROKES, type BooleanStrokes,
 import { icon } from '../icons.gen';
 import type { ShapeBuilderMode } from './shapeBuilder';
 import { createShapeBuilderActions } from './shapeBuilderActions';
+import type {} from '../actionParamSchema';
 
 /** Options for `useShapeBuilderTool`. */
 export interface UseShapeBuilderToolOptions {

@@ -14,6 +14,7 @@ import {
 import {
   DEFAULT_SIMPLIFY_TOLERANCE, depOf, editingLayer, inPlane, pathEditPreview, pathOperationTags, SIMPLIFY_PATH_PARAMS,
 } from '@weasel-js/core';
+import type {} from '../actionParamSchema';
 
 /** The brush's radius on screen when no param names one. */
 export const SAND_RADIUS_PX = 12;

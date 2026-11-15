@@ -8,6 +8,7 @@ import { defineAction, type Action, type InvocationCtx, type OngoingHandle, type
 import {
   viewScreenToWorld, viewWorldToScreen, wheelZoomFactor, zoomAt, type View, type ViewApi, type ZoomClampOptions,
 } from '@weasel-js/core';
+import type {} from './actionParamSchema';
 
 /** Action id for `minimapCenterAction`. */
 export const MINIMAP_CENTER = 'minimap.center';

@@ -8,6 +8,7 @@ import { isTextData } from '@weasel-js/text';
 import type { NodeId } from 'core/scene/types';
 import { effectSourceFor } from 'domains/pathEffects/effectSources';
 import { anchorUnder, depOf } from './anchorEditing';
+import type {} from '../actionParamSchema';
 
 /** The text source a click at `world` opens, with its length, or null. */
 function textUnder(deps: ActionDeps | undefined, world: { x: number; y: number } | undefined): { id: string; length: number } | null {

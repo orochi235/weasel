@@ -22,6 +22,7 @@ import { labelScratchOf, labelUnder } from './labelDragLayer';
 import { LABEL_PLACEMENT, diagramLabelOf, type DiagramLabel } from './labelTrait';
 import { estimatedWidth } from './rowMeasure';
 import type { AnyScene } from '@weasel-js/core';
+import type {} from './actionParamSchema';
 
 /** The face an edge label is set in: the diagram's, two sizes down. */
 export const labelStyleOf = (font: { fontFamily: string; fontSize: number }) => ({ ...font, fontSize: font.fontSize - 2 });

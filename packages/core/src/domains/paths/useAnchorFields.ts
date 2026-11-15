@@ -6,6 +6,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 import type { AnchorField, AnchorFieldValues, NumberEntry } from '@weasel-js/geom';
 import { useActionsRegistry, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import { anchorFieldsOf } from 'interactions/actions/defaults/anchorFields';
+import type {} from '../../interactions/actions/actionParamSchema';
 
 /** What {@link useAnchorFields} answers. */
 export interface AnchorFieldsApi {

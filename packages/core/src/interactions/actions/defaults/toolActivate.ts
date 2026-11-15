@@ -1,5 +1,6 @@
 import { ActionDisabledReason, BETWEEN_GESTURES, TOOL_ACTIVATE_ID, defineAction, type Action } from '@weasel-js/routing';
 import type { ActionParamsOf, BoundGesture } from '@weasel-js/routing';
+import type {} from '../actionParamSchema';
 
 type ToolActivateParams = ActionParamsOf<typeof TOOL_ACTIVATE_ID>;
 

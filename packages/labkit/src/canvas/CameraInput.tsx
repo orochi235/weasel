@@ -38,6 +38,7 @@ import {
   useMemo,
   useRef,
 } from 'react';
+import type {} from '../actionParamSchema';
 import type { Point, ViewTransform } from '../instrument/types';
 import { LabContextMenusContext } from '../lab/labContextMenus';
 import { as2DView, normalize2DView } from '../state/view';

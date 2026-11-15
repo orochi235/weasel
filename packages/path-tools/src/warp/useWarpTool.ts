@@ -13,6 +13,7 @@ import {
 import { WARP_LABELS, type WarpKind, type WarpSettings } from './warpTargets';
 import { createWarpHandleLayer, warpLayerId } from './warpHandles';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 const WARP_ICONS = { plane: icon('planeWarp'), cloth: icon('clothWarp'), pin: icon('pinWarp') } satisfies Record<WarpKind, IconRef>;
 

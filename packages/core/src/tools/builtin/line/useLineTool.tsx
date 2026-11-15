@@ -9,6 +9,7 @@ import type { WorldPoint } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** An endpoint of a line, in world coordinates. */
 export type LinePoint = WorldPoint;

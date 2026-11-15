@@ -10,6 +10,7 @@ import { stepCountOption } from '../shared/countOption';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** A point in world coordinates. */
 export type StarPoint = WorldPoint;

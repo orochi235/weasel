@@ -34,6 +34,7 @@ import {
 } from '@weasel-js/core';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { constraintLinkNode, constraintLinkOf } from './constraintLinks';
+import type {} from '../actionParamSchema';
 
 /** Params for `linkAnchor`. */
 export type LinkAnchorParams = {

@@ -9,6 +9,7 @@ import {
   anchorEditWouldChange, commitAnchorEdit, depOf, editingLayer, inPlane, pathOperationTags, segmentUnder,
 } from '@weasel-js/core';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 const LABEL = 'Convert segments';
 

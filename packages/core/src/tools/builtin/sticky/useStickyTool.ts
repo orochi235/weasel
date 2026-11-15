@@ -10,6 +10,7 @@ import { styleOptionLeaves, toolOptionPaint } from '../shared/styleOptions';
 import { shareToolOptions, withToolOptionDefault, type ToolOptions } from '@weasel-js/routing';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 import type { Paint } from '@weasel-js/paint';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** Options for `useStickyTool`: the look of the notes it makes, and the
  *  insert behaviors every drag-to-insert tool takes. Keep object options

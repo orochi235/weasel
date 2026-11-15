@@ -7,6 +7,7 @@ import { dwarn } from '../../debug';
 import { admitHandlerMimes, type ContentHandlerEntry } from './contentHandlers';
 import { kitHandlersFor, type KitHandlersOption } from './kitHandlers';
 import type { ImmediateParams } from '@weasel-js/routing';
+import type {} from '../../interactions/actions/actionParamSchema';
 
 /** What `useCanvasIngestion` reads of `<SceneCanvas ingestion>`. */
 export interface CanvasIngestionOptions {

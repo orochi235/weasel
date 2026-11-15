@@ -9,6 +9,7 @@ import {
 } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 /** How long Bridge makes each handle, as a fraction of the gap, when its
  *  params name no `tension`. */

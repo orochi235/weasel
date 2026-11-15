@@ -7,6 +7,7 @@ import { pref } from '@weasel-js/prefs';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { commitOps, pathOperationTags, reshapeOps, selectedPathNodes } from '@weasel-js/core';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 const LABEL = 'Resample';
 

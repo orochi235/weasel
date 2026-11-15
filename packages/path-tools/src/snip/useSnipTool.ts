@@ -6,6 +6,7 @@ import { planSnip } from './snip';
 import { useStrokeClickTool, type StrokeClickExtras, type StrokeClickToolOptions } from '../shared/strokeClickTool';
 import { createPiecePreview } from './piecePreview';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 /** Options for `useSnipTool`; the default keybinding is `{ key: 'Y' }`. */
 export type UseSnipToolOptions = StrokeClickToolOptions;

@@ -6,6 +6,7 @@ import type { Tool } from '../../overlayBinding';
 import type { InertiaOptions } from 'core/viewport/useDecayLoop';
 import { icon } from '../../../icons.gen';
 import { THROUGH_CHROME } from '../throughChrome';
+import type {} from '../../../interactions/actions/actionParamSchema';
 
 /** Options for `useHandTool`. Both are forwarded to `viewport.dragPan` as
  *  binding params; momentum additionally needs a `view` dep publishing

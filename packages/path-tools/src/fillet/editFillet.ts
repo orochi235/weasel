@@ -24,6 +24,7 @@ import {
   editingLayer, inPlane, pathEditPreview, pathOperationTags, type EditAnchorsDep,
 } from '@weasel-js/core';
 import { icon } from '../icons.gen';
+import type {} from '../actionParamSchema';
 
 /** The shape a corner with no spec yet takes. */
 export const DEFAULT_FILLET_SHAPE: CornerShape = 'round';

@@ -10,6 +10,7 @@ import { commitRouteToScene, type RouteEdit, type RouteEditOptions } from './way
 import { WAYPOINT_HIT_PX, routeStateOf, waypointScratchOf, type EdgeRouteState } from './waypointLayer';
 import { avoid } from './edge';
 import { removeSegment, removeWaypoint, unpinSegment, type RouteHandle } from './waypoints';
+import type {} from './actionParamSchema';
 
 /** The action that removes a waypoint, straightens a segment, or unpins an
  *  `avoid` connector's segment, on a double-click of its handle. */

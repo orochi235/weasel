@@ -8,6 +8,7 @@ import { createPointerFollower, defineTool, PEN_CLOSE_HIT_PX, pointSnap, selectC
 import { icon } from '../icons.gen';
 import { createSpiroPreviewLayer, type SpiroPreviewState } from './spiroPreviewLayer';
 import { spiroNodeData } from './spiroShape';
+import type {} from '../actionParamSchema';
 
 /** Options for {@link useSpiroTool}. */
 export interface UseSpiroToolOptions {

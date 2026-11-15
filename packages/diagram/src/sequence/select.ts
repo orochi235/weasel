@@ -21,6 +21,7 @@ import { sequenceCommitOf, type SequenceEditOptions } from './commit';
 import { sequenceScratchOf, type SequenceScratch } from './layer';
 import { sequencePartOf, sequenceRootOf } from './trait';
 import type { SeqMarkRef, SequenceData } from './types';
+import type {} from '../actionParamSchema';
 
 /** The action a click on a sequence part runs. */
 export const SELECT_SEQUENCE_PART_ACTION_ID = 'diagram.sequence.select';

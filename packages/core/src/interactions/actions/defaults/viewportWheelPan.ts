@@ -1,5 +1,6 @@
 import { defineAction, type Action, type ActionParamsOf, type BoundGesture } from '@weasel-js/routing';
 import { wheelPan } from 'core/viewport/wheelHandler';
+import type {} from '../actionParamSchema';
 
 /**
  * Wheel and trackpad pan. Shift+wheel pans horizontally, by routing deltaY
