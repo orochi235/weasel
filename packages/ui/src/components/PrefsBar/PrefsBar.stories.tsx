@@ -17,14 +17,7 @@ const meta: Meta<typeof PrefsBar> = {
 export default meta;
 type Story = StoryObj<typeof PrefsBar>;
 
-const action = (name: string, key: string, glyph?: IconSpec): PrefGroup['children'][string] => ({
-  kind: 'action',
-  name,
-  description: '',
-  default: undefined,
-  action: key,
-  ...(glyph ? { icon: glyph } : {}),
-});
+const action = (name: string, key: string, glyph?: IconSpec) => pref.action(key, { name, ...(glyph ? { icon: glyph } : {}) });
 
 const TEXT: PrefGroup = {
   name: 'Text',

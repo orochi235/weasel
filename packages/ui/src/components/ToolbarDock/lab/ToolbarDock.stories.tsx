@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactElement } from 'react';
 import type { Action } from '@weasel-js/core';
 import { f, meta, story } from '@weasel-js/forge';
-import type { PrefGroup, PrefLeaf, PrefOrder } from '@weasel-js/prefs';
+import { pref, type PrefGroup, type PrefOrder } from '@weasel-js/prefs';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { resolveLayout, ToolbarDock, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import { actionLeaf, LAB_ACTIONS, LabActions } from '../../Along/lab/labActions';
@@ -18,13 +18,13 @@ interface DockLabConfig {
 const EDGES: readonly DockEdge[] = ['top', 'left', 'right', 'bottom'];
 const ARRANGE = LAB_ACTIONS.filter((a) => ['front', 'back', 'group', 'ungroup'].includes(a.key));
 
-const number = (name: string, value: number): PrefLeaf => ({ kind: 'number', name, description: '', default: value, min: 0, max: 99 }) as PrefLeaf;
+const number = (name: string, value: number) => pref.number(name, value, { min: 0, max: 99 });
 const TEXT: PrefGroup = { name: 'Text', children: { size: number('Size', 12), leading: number('Leading', 16) } };
 const TOOLS: PrefGroup = { name: 'Tools', children: Object.fromEntries(['undo', 'redo', 'flipX', 'flipY'].map((k) => [k, actionLeaf(k)])) };
 const VIEW: PrefGroup = { name: 'View', children: Object.fromEntries(['copy', 'paste'].map((k) => [k, actionLeaf(k)])) };
 const ARRANGE_BAR: PrefGroup = {
   name: 'Arrange',
-  children: { run: { kind: 'actions', name: 'Arrange', description: '', default: undefined, group: 'dock-lab.arrange' } as PrefLeaf },
+  children: { run: pref.actions('dock-lab.arrange', { name: 'Arrange' }) },
 };
 
 /** The actions the Arrange bar's run draws: the lab's arrange actions, in a group of their own. */
