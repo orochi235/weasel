@@ -192,8 +192,8 @@ role:
 | Role | What it holds |
 |---|---|
 | `views` | The minimap: a view at `rect`, its camera a fit over the scene |
-| `actions` | `minimap.center` and `minimap.pan`, which move the main camera |
-| `bindings` | `pointerDown` → center and `drag` → pan, with `views: ['minimap']` |
+| `actions` | `minimap.center`, `minimap.pan`, `minimap.zoom` and `minimap.pinch`, which move the main camera (the last two unless `zoom: false`) |
+| `bindings` | `pointerDown` → center, `drag` → pan, wheel, trackpad pinch and Safari's pinch → zoom, and a two-finger touch → pinch, all with `views: ['minimap']` |
 | `overlay` | The visible-rect indicator, and a crosshair where the pointer is in the other view |
 | `attach` | Subscribes to the pointer store and repaints while the crosshair shows |
 
