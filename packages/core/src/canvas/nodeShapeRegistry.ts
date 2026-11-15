@@ -7,6 +7,7 @@
  */
 import { createEmitter } from '@weasel-js/registry';
 import { bumpNodeMemoGeneration, nodeMemoGeneration } from 'core/scene/nodeMemo';
+import { documentScene } from 'core/scene/editingSession';
 import type { NodeShapeEntry } from './nodeShapeTypes';
 
 /** Options for `registerNodeShape` and {@link NodeShapes.register}. */
@@ -170,10 +171,12 @@ const ofScene = new WeakMap<object, NodeShapes>();
  * The painters `scene` paints with: its own, made on first ask, ahead of
  * {@link defaultNodeShapes}. `<SceneCanvas>` installs its presets' painters
  * here, and every lookup made for the scene — drawing, picking, bounds, chrome,
- * export — passes it.
+ * export — passes it. An editing session and a `documentOf` reading answer
+ * their scene's registry.
  */
 export function nodeShapesOf(scene: object): NodeShapes {
-  let shapes = ofScene.get(scene);
-  if (!shapes) ofScene.set(scene, (shapes = createNodeShapes()));
+  const key = documentScene(scene);
+  let shapes = ofScene.get(key);
+  if (!shapes) ofScene.set(key, (shapes = createNodeShapes()));
   return shapes;
 }

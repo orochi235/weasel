@@ -4,6 +4,7 @@
  */
 import { MAX_PICK_ID } from '@weasel-js/renderer';
 import { asNodeId, type NodeId } from 'core/scene/types';
+import { documentScene } from 'core/scene/editingSession';
 
 /** One scene's node ids and the numbers its paint carries for them. */
 export interface ScenePickIds {
@@ -82,8 +83,9 @@ function liveIn(scene: object): (id: string) => boolean {
 }
 
 function pickIdsOf(scene: object): OwnPickIds {
-  let ids = BY_SCENE.get(scene);
-  if (!ids) BY_SCENE.set(scene, (ids = createScenePickIds(liveIn(scene))));
+  const key = documentScene(scene);
+  let ids = BY_SCENE.get(key);
+  if (!ids) BY_SCENE.set(key, (ids = createScenePickIds(liveIn(key))));
   return ids;
 }
 
@@ -91,7 +93,8 @@ function pickIdsOf(scene: object): OwnPickIds {
  * The pick ids of `scene`'s nodes. Numbers are given as nodes are first painted. A removed
  * node's number goes to another node only once the scene has given every number there is,
  * so one learned from an id frame stays good until then. Numbers are per scene, so two scenes
- * drawn into one frame can give the same number to different nodes.
+ * drawn into one frame can give the same number to different nodes; an editing session and a
+ * `documentOf` reading number as their scene does.
  */
 export function scenePickIds(scene: object): ScenePickIds {
   return pickIdsOf(scene);

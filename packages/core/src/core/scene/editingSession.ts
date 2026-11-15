@@ -37,6 +37,21 @@ export function isEditingSession<TData, TLayer extends string, TPose>(
 
 const sessions = new WeakSet<object>();
 
+/**
+ * The scene `scene` reads: an editing session's scene, the source of a
+ * `documentOf` reading, else `scene` itself. A table kept per document — its
+ * painters, its pick ids — is keyed on this, so every reading of one scene
+ * finds the same entry.
+ */
+export function documentScene(scene: object): object {
+  let s = scene;
+  for (;;) {
+    if ('overrides' in s && isDocument(s as { readonly overrides: unknown })) s = Object.getPrototypeOf(s) as object;
+    else if (sessions.has(s)) s = (s as EditingSession<unknown, string, unknown>).document;
+    else return s;
+  }
+}
+
 /** `target` with each of its methods run while `run` wraps it: the rest read through to `target`. */
 function wrapped<T extends object>(target: T, run: <R>(fn: () => R) => R, own: PropertyDescriptorMap = {}): T {
   const methods: PropertyDescriptorMap = {};

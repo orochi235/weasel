@@ -1,6 +1,8 @@
 /** A scene's painters answer for it alone, ahead of the default's, and leave when released. */
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
+import { documentOf } from 'core/scene/documentOf';
+import { createEditingSession } from 'core/scene/editingSession';
 import { asNodeId } from 'core/scene/types';
 import { findNodeShape, findShapeSilhouette, getNodeShapes, registerNodeShape, shapeCoversPoint } from './NodeShape';
 import { createNodeShapes, defaultNodeShapes, nodeShapesOf, scopedShapeClaims } from './nodeShapeRegistry';
@@ -51,5 +53,15 @@ describe('scene-scoped node shapes', () => {
     expect(ids.at(-1)).toBe('kit:rect-fallback');
     expect(getNodeShapes(defaultNodeShapes).map((e) => e.id)).not.toContain('test:high');
     offHigh(); offGlobal(); offNormal();
+  });
+
+  it("paints the scene's document reading and every editing session over it with its painters", () => {
+    const scene = createScene({ systemLayers: [{ id: 'default' }] });
+    const session = createEditingSession(scene);
+    const release = nodeShapesOf(session).register(gem);
+    expect(nodeShapesOf(scene)).toBe(nodeShapesOf(session));
+    expect(findNodeShape(node, nodeShapesOf(documentOf(scene)))).toBe(gem);
+    expect(findNodeShape(node, nodeShapesOf(documentOf(session)))).toBe(gem);
+    release();
   });
 });

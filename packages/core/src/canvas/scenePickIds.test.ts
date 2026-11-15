@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { createScene } from 'core/scene/scene';
+import { documentOf } from 'core/scene/documentOf';
+import { createEditingSession } from 'core/scene/editingSession';
 import type { View } from 'core/viewport/view';
 import { sceneToAdapter } from './sceneAdapter';
 import { buildSceneTree } from './buildSceneTree';
@@ -82,6 +84,14 @@ describe('createScenePickIds once every number is given', () => {
     live.add('a');
     expect(ids.idOf('a')).toBe(1);
     expect(ids.nodeOf(1)).toBe('a');
+  });
+
+  it('numbers a document reading and an editing session as their scene does', () => {
+    const scene = sceneOf();
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: {} });
+    const n = scenePickIds(createEditingSession(scene)).idOf(id);
+    expect(scenePickIds(scene).idOf(id)).toBe(n);
+    expect(scenePickIds(documentOf(scene)).nodeOf(n)).toBe(id);
   });
 });
 
