@@ -187,9 +187,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       const keys = new Map((p.fnKeys ?? []).map((k) => [k.id, k]));
       // Order-independent: every clone carries its own parent and children.
       for (const n of p.nodes) {
-        const clone: MutableNode<TData, TLayer, TPose> = n.children
-          ? { ...n, children: [...n.children] }
-          : { ...n } as MutableNode<TData, TLayer, TPose>;
+        const clone = (n.children ? { ...n, children: [...n.children] } : { ...n }) as MutableNode<TData, TLayer, TPose>;
         own(clone.pose);
         own(clone.data);
         restoreNodeFunctions(clone, keys.get(n.id));
