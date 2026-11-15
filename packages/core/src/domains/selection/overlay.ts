@@ -77,8 +77,8 @@ export interface SelectionOverlayLayerOptions<TPose>
   extends SelectionLayerCommon<TPose> {
   /**
    * Which ids to draw chrome for. Omit to take them from the `ChromeState` on
-   * the draw envelope, which is what makes one canvas's several views each
-   * outline their own selection — the layer is shared, the envelope is not.
+   * the draw envelope: the selection of the canvas drawing it, whose views
+   * all act on that one selection.
    */
   getSelection?: () => readonly NodeId[];
   /**
