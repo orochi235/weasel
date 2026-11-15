@@ -1,14 +1,14 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathEditHost, pathFromD, type RectPose, solid, useLatest, drawPreset } from '@weasel-js/core';
+import { type ActionTunings, asNodeId, boundsOfPath, createScene, pathFromD, type RectPose, solid, useLatest, drawPreset } from '@weasel-js/core';
 import { sandPreset, useSandTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
 } from '@weasel-js/labkit';
-import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
+import { usePathEditMode } from './usePathEditMode';
 
 const FEATURES = [drawPreset, sandPreset] as const;
 
@@ -81,27 +81,9 @@ const createLabScene = () =>
     ],
   });
 
-/**
- * Path edit as a mode the trial holds, its target the open path. The mode
- * starts on the Anchors tool and leaving it puts back the tool it replaced;
- * the trial palette and the canvas share one active tool.
- */
-function usePathEdit(seeded: string) {
-  const [modes] = useState(() => createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' }));
-  const [target, setTarget] = useState<string | null>(seeded);
-  const pathEdit = useMemo<PathEditHost>(() => ({
-    editingId: () => (modes.current().id === 'path-edit' ? target : null),
-    setEditingId: (id) => {
-      setTarget(id);
-      modes.setMode(id ? 'path-edit' : 'normal');
-    },
-  }), [modes, target]);
-  return { modes, pathEdit };
-}
-
 function BrushTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { modes, pathEdit } = usePathEdit(SEEDED_PATH_ID);
+  const { modes, pathEdit } = usePathEditMode(SEEDED_PATH_ID);
   const sand = useSandTool();
   const tools = useMemo(() => ({ sand }), [sand]);
   const brush = useLatest(ctx.config);
