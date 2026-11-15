@@ -3,7 +3,6 @@ import {
   createScene,
   PATH_EFFECT_DERIVATIONS,
   pathEffectNode,
-  type ActionTunings,
   type RectPose,
   solid,
   strokeOf,
@@ -21,8 +20,6 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { useLatest } from '@weasel-js/react';
-import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
@@ -62,18 +59,14 @@ function createLabScene() {
     systemLayers: [{ id: 'default' }],
     registry: withPathEffectsRegistry(),
     initial: [tile, track, copies],
-    coalesceWindowMs: 600,
   });
 }
 
 function RepeatTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ scene, initial: [TRACK] });
-  const settings = settingsOf(ctx.config);
-  const latest = useLatest(settings);
   // A repeat made from the bar or with Alt+Shift+R takes the panel's settings.
-  const tune = useMemo<ActionTunings>(() => ({ repeatAlong: { params: () => latest.current } }), [latest]);
-  usePathEffectSettings(scene, 'repeatAlong', settingsOf);
+  const tune = usePathEffectSettings(scene, 'repeatAlong', ctx.config, settingsOf);
   usePathEffectProbe(scene);
 
   return (

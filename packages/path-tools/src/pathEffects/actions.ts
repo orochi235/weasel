@@ -63,9 +63,9 @@ export function selectedEffects(deps: ActionDeps | undefined, ids?: readonly str
     });
 }
 
-/** Whether the selection holds a path effect: what editing and expanding work on. */
-function holdsEffect(deps?: ActionDeps): true | ActionDisabledReason {
-  return selectedEffects(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired;
+/** Whether the selection holds a path effect, or `ids` name one of `kind`: what editing and expanding work on. */
+function holdsEffect(deps?: ActionDeps, ids?: readonly string[], kind?: unknown): true | ActionDisabledReason {
+  return selectedEffects(deps, ids, kind).length > 0 ? true : ActionDisabledReason.SelectionRequired;
 }
 
 /** The id of an action making a path effect: its kind's. */
@@ -246,7 +246,7 @@ export const editPathEffectAction = defineAction({
   icon: icon('core:tune'),
   requires: ['selection', 'scene', 'applyOps'],
   settings: pathEffectSettingsForm,
-  enabled: holdsEffect,
+  enabled: (deps, _at, _carried, p) => holdsEffect(deps, p?.ids, p?.kind),
   invoker: {
     timing: 'immediate',
     run: (deps, p) => {
@@ -322,5 +322,5 @@ export const expandPathEffectAction: Action & { requires: string[] } = {
       commitOps(deps, ops, EXPAND_LABEL, { select: made });
     },
   } satisfies ImmediateInvoker,
-  enabled: holdsEffect,
+  enabled: (deps) => holdsEffect(deps),
 };

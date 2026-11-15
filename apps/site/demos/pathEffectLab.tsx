@@ -3,11 +3,11 @@
  * of effect actions over the canvas, and the wiring that carries the control
  * panel's settings to the lab's live effects.
  */
-import { asNodeId, boundsOfPath, derivedDepOf, type NodeId, pathEffectOf, pathEffectParts, pathFromD, type Fill, type PathEffect, type RectPose, type Scene, type Stroke, useActionsRegistry } from '@weasel-js/core';
+import { type ActionParamSchema, type ActionTunings, asNodeId, boundsOfPath, derivedDepOf, type NodeId, pathEffectOf, pathEffectParts, pathFromD, type Fill, type RectPose, type Scene, type Stroke, useActionsRegistry, useLatest } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { useTrialConfigChange } from '@weasel-js/labkit';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useMemo } from 'react';
 import s from './pathEffectLab.module.css';
 
 /** A shape node as the kit's own shape tools store one: the path in `data`,
@@ -31,23 +31,31 @@ export function pathNode(
 
 type LabScene = Scene<unknown, 'default', RectPose>;
 
+/** The path effects a lab's panel sets, each made by the action of the same id. */
+type LabEffectKind = 'repeatAlong' | 'bendAlong' | 'tween';
+
 /**
- * Writes a change of the panel's settings onto every `kind` effect in `scene`, through the
- * `editPathEffect` action, inside the settings change's undo step: one Undo takes back the panel
- * and the effects together.
+ * The panel's settings for every `kind` effect: written onto each one in `scene` as the panel
+ * changes, through the `editPathEffect` action and inside the settings change's undo step, so one
+ * Undo takes back the panel and the effects together; and returned as the tuning that hands them
+ * to a new `kind` effect made from the bar or its key.
  */
-export function usePathEffectSettings<TC>(
+export function usePathEffectSettings<TC, K extends LabEffectKind>(
   scene: LabScene,
-  kind: PathEffect['kind'],
-  settingsOf: (config: TC) => Record<string, unknown>,
-): void {
+  kind: K,
+  config: TC,
+  settingsOf: (config: TC) => ActionParamSchema[K],
+): ActionTunings {
   const registry = useActionsRegistry();
-  useTrialConfigChange<TC>((config, prev) => {
-    const next = settingsOf(config);
-    if (JSON.stringify(next) === JSON.stringify(settingsOf(prev))) return;
+  useTrialConfigChange<TC>((next, prev) => {
+    const settings = settingsOf(next);
+    if (JSON.stringify(settings) === JSON.stringify(settingsOf(prev))) return;
     const ids = [...scene.renderOrder()].filter((id) => pathEffectOf(scene.get(id))?.kind === kind);
-    if (ids.length > 0) registry?.trigger('editPathEffect', { ...next, ids });
+    if (ids.length > 0) registry?.trigger('editPathEffect', { ...settings, ids });
   });
+  // Thunked, so a change reaches an action already bound.
+  const latest = useLatest(settingsOf(config));
+  return useMemo((): ActionTunings => ({ [kind]: { params: () => latest.current } }), [kind, latest]);
 }
 
 /** The bounds of each part a path effect in `scene` paints, by node id. */

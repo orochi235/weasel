@@ -102,6 +102,10 @@ describe('tween', () => {
     const { scene, deps, selected } = setup(['a', 'b']);
     run(tweenAction, deps, { steps: 2 });
     const id = selected()[0]!;
+    // Named by id, an effect is editable while something else is selected.
+    deps.selection!.set(['a']);
+    expect(editPathEffectAction.enabled!(deps, undefined, undefined, { ids: [id] })).toBe(true);
+    expect(editPathEffectAction.enabled!(deps, undefined, undefined, { ids: [id], kind: 'bendAlong' })).not.toBe(true);
     run(editPathEffectAction, deps, { ids: [id], steps: 5 });
     expect(partsOf(scene, id)).toHaveLength(5);
     run(editPathEffectAction, deps, { ids: [id], steps: 5 });

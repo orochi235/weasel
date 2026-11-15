@@ -1,7 +1,7 @@
-import { act, cleanup } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { StrictMode } from 'react';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { RepeatAlongLabDemo } from '../RepeatAlongLabDemo';
 import type { PathEffectProbe } from '../pathEffectLab';
 import { withIcons } from '../../testIcons';
@@ -24,6 +24,7 @@ beforeAll(() => {
   } as unknown as typeof ResizeObserver;
 });
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
   delete window.__weaselTest;
 });
@@ -64,5 +65,23 @@ describe('RepeatAlongLabDemo', () => {
     expect(after[0]).toEqual(before[0]);
     expect(fromEnd(after[8]!, 600, 420)).toBeLessThan(36);
     expect(fromEnd(after[8]!, 660, 320)).toBeGreaterThan(60);
+  });
+
+  it('takes back a slider drag, and the copies it made, in one Undo', async () => {
+    await renderSettled(<StrictMode><RepeatAlongLabDemo /></StrictMode>, { wrapper: withIcons });
+    const slider = () => screen.getByRole('slider', { name: /Copies/ });
+    // Pauses longer than any coalescing window: the drag is one step because it is one drag.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    for (const n of [10, 11, 12]) {
+      fireEvent.input(slider(), { target: { value: String(n) } });
+      vi.advanceTimersByTime(800);
+    }
+    fireEvent.change(slider(), { target: { value: '12' } });
+    expect(copyCenters()).toHaveLength(12);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(slider()).toHaveValue('9');
+    expect(copyCenters()).toHaveLength(9);
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
 });
