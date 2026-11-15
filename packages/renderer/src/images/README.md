@@ -29,7 +29,7 @@ on a node would break persistence and the clipboard.
 
 `src` is any browser-loadable image string — a remote URL, a `blob:` URL, or a
 `data:image/…;base64,…` URI (the embedded-bytes path used by
-[`../ingestion`](../ingestion/README.md) when it inlines a dropped file).
+core's [ingestion](../../../core/src/domains/ingestion/README.md) when it inlines a dropped file).
 
 ## Bitmaps made at runtime
 
