@@ -97,7 +97,7 @@ describe('auto rows', () => {
     );
     const label = container.querySelector('label') as HTMLLabelElement;
     expect(label.control).not.toBe(screen.getByRole('button', { name: 'Pin Gap' }));
-    expect(label.control).toHaveAttribute('aria-label', 'Gap');
+    expect(label.control).toHaveAccessibleName('Gap');
   });
 
   it('slider field forwards auto and onAutoChange', () => {

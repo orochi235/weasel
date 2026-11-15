@@ -7,7 +7,7 @@ import { MIXED_HINT } from '../Field/mixedHint';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { SegmentedBar } from '../Segmented';
 import type { PropertyEnumFieldProps, PropertyOption } from './fieldTypes';
-import { nameOf } from './nameOf';
+import { nameOf, useNameText } from './nameOf';
 import s from './Properties.module.css';
 
 /** A segment's tooltip: the option's description, else its label where a glyph hides that. */
@@ -33,6 +33,7 @@ const choose = (p: PropertyEnumFieldProps) => (value: string): void => {
 export function EnumControl(p: PropertyEnumFieldProps) {
   const chosen = !p.mixed && p.options.some((opt) => opt.value === p.value);
   const current = chosen ? (p.value as string) : null;
+  const text = useNameText(p.name);
 
   if (p.control === 'radio') {
     return (
@@ -49,7 +50,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
     const held = current === null ? undefined : p.options.find((o) => o.value === current);
     const reads = p.mixed ? MIXED_HINT : held ? held.label : (p.placeholder ?? (p.unset ? '—' : 'Choose option…'));
     // The button's text is its value, so its name has to carry both.
-    const named = p.name === undefined ? undefined : typeof reads === 'string' ? `${p.name}: ${reads}` : p.name;
+    const named = text === undefined ? undefined : typeof reads === 'string' ? `${text}: ${reads}` : text;
     return (
       <MenuButton<string>
         className={p.className}
@@ -72,7 +73,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         size="sm"
         variant="flat"
         className={p.className ? `${s.segmentedBar} ${p.className}` : s.segmentedBar}
-        aria-label={p.name}
+        aria-label={text}
         items={p.options.map((o) => ({
           value: o.value,
           label: o.glyph ?? <FitLabel forms={labelForms(o.label, o.short)} />,
@@ -99,7 +100,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
   return (
     <Select<string>
       className={p.className ? `${s.select} ${p.className}` : s.select}
-      triggerId={p.id}
+      id={p.id}
       disabled={p.disabled}
       disabledReason={p.disabledReason}
       aria-label={p.name}

@@ -20,6 +20,8 @@ import { FontFamilyControl, FontWeightControl } from './FontControls';
 import { PropertyReadout } from './PropertyReadout';
 import s from './Properties.module.css';
 import { useNativeHold } from '../Disabled/nativeHold';
+import { useFieldControl } from '../Field/fieldSemantics';
+import { useNameText } from './nameOf';
 
 /** The control a field's `kind` and `control` choose, for every kind but a slider. */
 export function ControlBody(props: PropertyControlProps) {
@@ -66,7 +68,9 @@ function Dimmed({ mixed, unset, children }: { mixed?: boolean; unset?: boolean; 
 function BooleanControl(p: PropertyBooleanFieldProps) {
   const on = !p.mixed && p.value === true;
   const box = useRef<HTMLInputElement>(null);
-  const hold = useNativeHold(p);
+  const named = useFieldControl({ id: p.id, 'aria-label': p.name });
+  const hold = useNativeHold({ ...p, 'aria-describedby': named['aria-describedby'] });
+  const text = useNameText(p.name);
   useEffect(() => {
     if (box.current) box.current.indeterminate = p.mixed === true;
   });
@@ -80,8 +84,8 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
         size="sm"
         variant="flat"
         className={p.className}
-        aria-label={p.name}
-        items={[{ value: key, label: p.glyph ?? <FitLabel forms={labelForms(p.name, p.short)} />, ariaLabel: p.name, disabled: p.disabled, disabledReason: p.disabledReason }]}
+        aria-label={text}
+        items={[{ value: key, label: p.glyph ?? <FitLabel forms={labelForms(text, p.short)} />, ariaLabel: text, disabled: p.disabled, disabledReason: p.disabledReason }]}
         value={on ? [key] : []}
         mixedValues={p.mixed ? [key] : []}
         onChange={(next) => p.onChange(next.includes(key))}
@@ -102,10 +106,9 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
     <Dimmed unset={p.unset}>
       {hold.wrap(<input
         ref={box}
-        id={p.id}
+        {...named}
         type="checkbox"
         className={p.className ? `${sharedCheckbox.checkbox} ${p.className}` : sharedCheckbox.checkbox}
-        aria-label={p.name}
         checked={on}
         {...hold.attrs}
         onChange={(e) => {
@@ -125,7 +128,8 @@ function StringControl(p: PropertyStringFieldProps) {
   const waits = p.onInput !== undefined && (p.inputWaitMs ?? 0) > 0;
   const input = useDebouncedText(value, p.onInput ?? noInput, p.inputWaitMs ?? 0);
   const typed = useTextDraft({ ...p, value, onInput: waits ? input.type : p.onInput });
-  const hold = useNativeHold(p);
+  const named = useFieldControl({ id: p.id, 'aria-label': p.name });
+  const hold = useNativeHold({ ...p, 'aria-describedby': named['aria-describedby'] });
   const edit = waits
     ? {
         ...typed,
@@ -138,9 +142,8 @@ function StringControl(p: PropertyStringFieldProps) {
   if (p.control === 'textarea') {
     return hold.wrap(
       <textarea
-        id={p.id}
+        {...named}
         className={p.className ? `${s.textarea} ${p.className}` : s.textarea}
-        aria-label={p.name}
         value={edit.shown}
         placeholder={p.mixed ? MIXED_HINT : p.placeholder}
         maxLength={p.maxLength}

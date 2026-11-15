@@ -1,4 +1,5 @@
-import { type ReactNode, type RefObject, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { FieldScope } from '../Field/fieldSemantics';
 import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 import { PropertyHelp } from './PropertyHelp';
 import { ResetControl } from './ResetControl';
@@ -45,6 +46,8 @@ export interface PropertyRowProps extends PropertyMetricProps, DisableableProps 
    */
   hug?: boolean;
   children: ReactNode;
+  /** The id of the row's control, which the row's `<label>` points at and hands the control through
+   *  `useFieldControl`. A `group` row hands its control no id. */
   htmlFor?: string;
   /** The control is a group of several (a segmented toggle), not one element.
    *  The row then renders as a `<div>`: a `<label>` hands a click on its text to
@@ -59,7 +62,10 @@ export interface PropertyRowProps extends PropertyMetricProps, DisableableProps 
 }
 
 /** The label-plus-control frame `<PropertyField>` draws its rows in. Use it
- *  directly for a control no field kind covers. */
+ *  directly for a control no field kind covers.
+ *
+ *  The row is a field: a control in it with no name of its own takes the row's label as its name, and its error
+ *  as its description, through `useFieldControl` — as every kit field does. */
 export function PropertyRow(props: PropertyRowProps) {
   const {
     label,
@@ -111,10 +117,13 @@ export function PropertyRow(props: PropertyRowProps) {
   const rowRef = useRef<HTMLElement | null>(null);
   const labelRef = useRef<HTMLSpanElement | null>(null);
   const multiline = useMultiline(rowRef, labelRef, resolved === 'inline');
+  const labelId = useId();
+  const errorId = useId();
+  const named = <span id={labelId}>{label}</span>;
   const own = onAutoChange ? (
-    <AutoToggle auto={auto ?? false} label={label} onChange={onAutoChange} disabled={disabled} />
+    <AutoToggle auto={auto ?? false} label={label} onChange={onAutoChange} disabled={disabled}>{named}</AutoToggle>
   ) : (
-    label
+    named
   );
   // The hint flows on from the name's last word: as a flex item of its own, it went to the column's edge
   // whenever the name wrapped, since a wrapped name's box fills the line. The space lets it drop to a line of
@@ -144,17 +153,27 @@ export function PropertyRow(props: PropertyRowProps) {
   const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
   const invalid = error != null && error !== false && error !== '';
   const message = invalid ? (
-    <span className={s.rowError} role="alert">
+    <span id={errorId} className={s.rowError} role="alert">
       {error}
     </span>
   ) : null;
   const multi = { [ROW_ATTR]: '', ...(multiline ? { 'data-multiline': '' } : {}), ...(changed ? { 'data-changed': '' } : {}), ...(mixed ? { 'data-mixed': '' } : {}), ...(disabled ? { 'data-disabled': '' } : {}), ...(invalid ? { 'data-invalid': '' } : {}) };
-  return group ? (
-    <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
+  const field = useMemo(
+    () => ({ id: group ? undefined : htmlFor, labelId, describedBy: invalid ? errorId : undefined, invalid }),
+    [group, htmlFor, labelId, errorId, invalid],
+  );
+  // The readout in the head is the row's too: a slider's names itself after the label as its track does.
+  const body = (
+    <FieldScope value={field}>
       {head}
       <InsideRow scope={scope}><ReasonTold reason={why}>{holdScope(props, children)}</ReasonTold></InsideRow>
       {tail}
       {message}
+    </FieldScope>
+  );
+  return group ? (
+    <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
+      {body}
     </div>
   ) : (
     <label
@@ -163,10 +182,7 @@ export function PropertyRow(props: PropertyRowProps) {
       ref={rowRef as RefObject<HTMLLabelElement>}
       {...multi}
     >
-      {head}
-      <InsideRow scope={scope}><ReasonTold reason={why}>{holdScope(props, children)}</ReasonTold></InsideRow>
-      {tail}
-      {message}
+      {body}
     </label>
   );
 }
@@ -222,11 +238,14 @@ function AutoToggle({
   label,
   onChange,
   disabled,
+  children,
 }: {
   auto: boolean;
   label: ReactNode;
   onChange: (next: boolean) => void;
   disabled: boolean;
+  /** The label as drawn, under the id the row's control is named by. */
+  children: ReactNode;
 }) {
   const name = typeof label === 'string' ? label : 'this setting';
   const toggle = (e: { preventDefault: () => void; stopPropagation: () => void }) => {
@@ -253,7 +272,7 @@ function AutoToggle({
       }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      {label}
+      {children}
     </span>
   );
 }

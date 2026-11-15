@@ -8,6 +8,7 @@ import type { PropertyControlProps, PropertyNumberFieldProps } from './fieldType
 import family from './Properties.module.css';
 import s from './PropertyReadout.module.css';
 import { attachesUnit, UnitSuffix } from './unitSuffix';
+import { useFieldControl } from '../Field/fieldSemantics';
 
 /**
  * A field shown as its value and nothing to edit it with: what a `readOnly`
@@ -17,8 +18,9 @@ import { attachesUnit, UnitSuffix } from './unitSuffix';
  * someone switched off.
  */
 export function PropertyReadout(p: PropertyControlProps) {
+  const named = useFieldControl({ id: p.id, 'aria-label': p.name });
   return (
-    <output id={p.id} className={p.className ? `${s.readout} ${p.className}` : s.readout} aria-label={p.name} data-readout="">
+    <output {...named} className={p.className ? `${s.readout} ${p.className}` : s.readout} data-readout="">
       {readoutBody(p)}
     </output>
   );
