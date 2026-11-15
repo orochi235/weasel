@@ -13,9 +13,9 @@ import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { ParallaxOptions, Path, View, RenderLayer, Fill } from '@weasel-js/core';
-import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { ZoomControl } from '@weasel-js/ui/components/ZoomControl';
 import { DemoStage } from './DemoStage';
 
 type NodeData = { path: Path; fill: Fill } | { fill: null };
@@ -149,6 +149,7 @@ function ParallaxDemoInner() {
       scene.setLayerParallax('trees', opts('trees', zoom, anchorX));
     });
   };
+  const zoomTo = (z: number) => setView({ ...view, scale: { x: z, y: z } });
   const playIntro = () => animator.tween({
     from: INTRO_FROM, to: 0, ms: 1400, easing: 'easeOutCubic',
     onTick: (x) => apply(zoomParallax, x), cancelKey: 'intro',
@@ -179,16 +180,7 @@ function ParallaxDemoInner() {
         <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>
           reset view
         </Button>
-        <label className="ckd-field">
-          zoom
-          <InlineRange
-            min={0.5} max={3} step={0.05} value={view.scale.x}
-            onChange={(e) => {
-              const z = Number(e.target.value);
-              setView({ ...view, scale: { x: z, y: z } });
-            }}
-          />
-        </label>
+        <ZoomControl zoom={view.scale.x} min={0.5} max={3} onZoomInput={zoomTo} onZoomChange={zoomTo} />
         <Checkbox isSelected={zoomParallax} onChange={(on) => { setZoomParallax(on); apply(on, 0); }}>
           per-plane zoom
         </Checkbox>
