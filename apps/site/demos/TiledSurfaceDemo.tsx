@@ -1,14 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import {
-  PathBuilder, SceneCanvas, WeaselProvider, commandFill, sceneFromJSON, useSelection, movePreset, pickPreset,
+  PathBuilder, SceneCanvas, WeaselProvider, asNodeId, createScene, solid, useSelection, movePreset, pickPreset,
 } from '@weasel-js/core';
-import type { Path, SceneCanvasApi, SerializedScene, View, Fill } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { Path, RectPose, SceneCanvasApi, View, Fill } from '@weasel-js/core';
 import { createLoupe } from '@weasel-js/hud';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 
-interface NodeData { fill: Fill; ring?: boolean }
-interface Pose { x: number; y: number; width: number; height: number }
+interface NodeData { fill: Fill; path?: Path }
 
 const SURFACE_W = 820;
 const SURFACE_H = 400;
@@ -57,7 +55,7 @@ function PaneLoupe({ api, onColor }: {
 /** A rect with a rect-shaped hole, filled even-odd — so it goes through
  *  `drawPathFillStencil`, which uses stencil bit 0. The hole is what the guard
  *  test probes: it is only a hole while this pane's stencil state is its own. */
-function ring(pose: Pose): Path {
+function ring(pose: RectPose): Path {
   const b = new PathBuilder().setFillRule('evenodd');
   const { x, y, width: w, height: h } = pose;
   b.moveTo(x, y); b.lineTo(x + w, y); b.lineTo(x + w, y + h); b.lineTo(x, y + h); b.close();
@@ -67,19 +65,19 @@ function ring(pose: Pose): Path {
   return b.build();
 }
 
-const paneScene = (fill: string): SerializedScene<NodeData, string, Pose> => ({
-  version: 3,
+const RING = { x: 40, y: 180, width: 100, height: 100 };
+
+const paneScene = (fill: string) => createScene<NodeData, 'default', RectPose>({
   systemLayers: [{ id: 'default' }],
-  nodes: [
-    { id: 'box', kind: 'mark', layer: 'default',
-      pose: { x: 40, y: 40, width: 100, height: 80 }, data: { fill: { paint: { color: fill } } } },
-    { id: 'mark', kind: 'mark', layer: 'default',
-      pose: { x: 180, y: 150, width: 60, height: 60 }, data: { fill: { paint: { color: '#c0392b' } } } },
-    { id: 'ring', kind: 'mark', layer: 'default',
-      pose: { x: 40, y: 180, width: 100, height: 100 },
-      data: { fill: { paint: { color: '#6b4c9a' } }, ring: true } },
+  initial: [
+    { id: asNodeId('box'), kind: 'mark', layer: 'default',
+      pose: { x: 40, y: 40, width: 100, height: 80 }, data: { fill: { paint: solid(fill) } } },
+    { id: asNodeId('mark'), kind: 'mark', layer: 'default',
+      pose: { x: 180, y: 150, width: 60, height: 60 }, data: { fill: { paint: solid('#c0392b') } } },
+    { id: asNodeId('ring'), kind: 'mark', layer: 'default',
+      pose: RING, data: { fill: { paint: solid('#6b4c9a') }, path: ring(RING) } },
   ],
-} as unknown as SerializedScene<NodeData, string, Pose>);
+});
 
 function Pane({
   id, x, y, view, fill, bg, loupe, surface, onLoupeColor,
@@ -91,7 +89,7 @@ function Pane({
   const hudTool = useHudContribution();
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [input, setInput] = useState<HTMLDivElement | null>(null);
-  const [scene] = useState(() => sceneFromJSON(paneScene(fill), {}));
+  const [scene] = useState(() => paneScene(fill));
   const selection = useSelection({ scene });
 
   useLayoutEffect(() => { setInput(boxRef.current); }, []);
@@ -119,24 +117,6 @@ function Pane({
             inputElement={input}
             backgroundFill={{ color: bg }}
             {...(loupe ? { ambient: [hudTool] } : {})}
-            layers={{
-              scene: {
-                // Poses are plain rects here, so both branches build their own
-                // path rather than taking the descriptor's — `ring` needs an
-                // even-odd compound path that no pose shape can express.
-                drawOne: (node, drawn): DrawCommand[] => {
-                  const pose = drawn as Pose;
-                  const fill = commandFill(node.data.fill, pose);
-                  return [{
-                    kind: 'path',
-                    path: node.data.ring
-                      ? ring(pose)
-                      : { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-                    ...(fill ? { fill } : {}),
-                  }];
-                },
-              },
-            }}
           />
           {loupe && <PaneLoupe api={apiRef} onColor={onLoupeColor} />}
         </WeaselProvider>
