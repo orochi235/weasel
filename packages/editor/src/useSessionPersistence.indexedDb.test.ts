@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { createScene, isSerializedScene, type SavedScene } from '@weasel-js/core';
+import { createScene, decodeSnapshot, isSerializedScene, type SavedScene } from '@weasel-js/core';
 import { createIndexedDbAdapter, openRecords } from '@weasel-js/storage';
 import { readStored } from './sessionStore';
 import { nodeSpecsFromSnapshot } from './snapshot';
@@ -48,8 +48,9 @@ describe('useSessionPersistence over IndexedDB', () => {
 
     const reopened = await openSession(database);
     const specs = readStored('scene', (json) => {
-      if (!isSerializedScene<Data, 'main', Pose>(json)) throw new Error('not a scene');
-      return nodeSpecsFromSnapshot(json as SavedScene<Data, 'main', Pose>);
+      const saved = decodeSnapshot(json);
+      if (!isSerializedScene<Data, 'main', Pose>(saved)) throw new Error('not a scene');
+      return nodeSpecsFromSnapshot(saved as SavedScene<Data, 'main', Pose>);
     }, () => [], reopened);
     const next = newScene(specs);
     renderHook(() => useSessionPersistence(next, { ...KEYS, records: reopened }));

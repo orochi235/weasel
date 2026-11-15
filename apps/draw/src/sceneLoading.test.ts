@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  RIGID_POSE_COMPOSITION, SCENE_HISTORY_FORM, composeWorldPose, createScene, isPageStructure, pagesOf, type RectPose,
+  RIGID_POSE_COMPOSITION, composeWorldPose, createScene, isPageStructure, pagesOf, type RectPose,
 } from '@weasel-js/core';
 import V2_CONTAINERS from './fixtures/v2-containers.scene.json';
 import { DOC_KEY } from './docPersistence';
-import { loadInitial, loadInitialDoc, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
+import { loadInitial, loadInitialDoc, LS_KEY } from './sceneLoading';
 
 afterEach(() => localStorage.clear());
 
@@ -72,20 +72,6 @@ describe('draw pages', () => {
     expect(tree(loadInitial())).toEqual(tree(scene.toJSON().nodes));
     expect(loaded().get('starter-1' as never)).toMatchObject({ parent: 'page-1', pose: { x: 80 } });
   });
-
-  it('drops the undo stack saved beside a drawing whose pages were not yet nodes, and keeps one beside one whose were', () => {
-    const history = JSON.stringify({ version: 1, form: SCENE_HISTORY_FORM, entries: [] });
-    save({ version: 3, nodes: [] });
-    localStorage.setItem(SCENE_HISTORY_KEY, history);
-    loadInitial();
-    expect(loadSceneHistory()).toBeNull();
-    expect(localStorage.getItem(SCENE_HISTORY_KEY)).toBeNull();
-
-    save(loaded().toJSON());
-    localStorage.setItem(SCENE_HISTORY_KEY, history);
-    loadInitial();
-    expect(loadSceneHistory()).not.toBeNull();
-  });
 });
 
 describe('draw scene loading', () => {
@@ -130,21 +116,7 @@ describe('draw scene loading', () => {
     expect(scene.get('d' as never)!.pose).toMatchObject({ x: 220, y: 420 });
   });
 
-  it('drops the undo stack saved beside a drawing it cannot open, which loads as the starter scene', () => {
-    const history = JSON.stringify({ version: 1, form: SCENE_HISTORY_FORM, entries: [] });
-    localStorage.setItem(LS_KEY, JSON.stringify({ version: 4, nodes: [] }));
-    localStorage.setItem(SCENE_HISTORY_KEY, history);
-    loadInitial();
-    expect(loadSceneHistory()).toBeNull();
-
-    localStorage.removeItem(LS_KEY);
-    localStorage.setItem(SCENE_HISTORY_KEY, history);
-    loadInitial();
-    expect(loadSceneHistory()).toBeNull();
-  });
-
   it('starts with the welcome rectangle, keeping the saved drawing aside, when this build cannot hold what it saved', () => {
-    const history = JSON.stringify({ version: 1, form: SCENE_HISTORY_FORM, entries: [] });
     const starter = loaded().toJSON();
     const unheld = [{ layer: 'later' }, { parent: 'gone' }];
     for (const change of unheld) {
@@ -152,16 +124,8 @@ describe('draw scene loading', () => {
       const nodes = starter.nodes.map((n) => (n.id === 'starter-1' ? { ...n, id: 'mine', ...change } : n));
       const saved = JSON.stringify({ ...starter, nodes });
       localStorage.setItem(LS_KEY, saved);
-      localStorage.setItem(SCENE_HISTORY_KEY, history);
       expect(content().map((s) => s.id)).toEqual(['starter-1']);
       expect(localStorage.getItem(`${LS_KEY}:unreadable`)).toBe(saved);
-      expect(loadSceneHistory()).toBeNull();
     }
-  });
-
-  it('removes an undo snapshot it cannot use', () => {
-    localStorage.setItem(SCENE_HISTORY_KEY, JSON.stringify({ version: 1, form: 'older' }));
-    expect(loadSceneHistory()).toBeNull();
-    expect(localStorage.getItem(SCENE_HISTORY_KEY)).toBeNull();
   });
 });

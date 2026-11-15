@@ -1,11 +1,12 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { asNodeId, createScene, type AddNodeSpec } from '@weasel-js/core';
+import { asNodeId, createScene, encodeSceneDocument, type AddNodeSpec } from '@weasel-js/core';
+import { readStored } from '@weasel-js/editor';
 import { DOC_KEY, loadDoc } from './docPersistence';
 import { DRAW_LAYERS, DRAW_REGISTRY, type DrawScene, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { closeSession, openSession } from './openSession';
-import { loadInitial, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
+import { loadInitial, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 import { sessionRecords } from './sessionRecords';
 import { drawScene } from './testScenes';
 import { useSessionPersistence } from './useSessionPersistence';
@@ -53,6 +54,28 @@ const landedIn = (keys: readonly string[]) => () => {
 };
 const inLocalStorage = (keys: readonly string[]) => () => keys.every((k) => localStorage.getItem(k) !== null);
 
+const savedStack = (): unknown => readStored(SCENE_HISTORY_KEY, (v) => v, () => null, sessionRecords());
+
+/** Whether draw, booting from the session, restores the undo stack saved there. */
+function bootRestores(): boolean {
+  const scene = loadedScene();
+  renderHook(() => useSessionPersistence(scene)).unmount();
+  return scene.canUndo();
+}
+
+/** `scene` and its undo stack saved as draw saves them, `scene` given one edit first. */
+function saveSession(scene: DrawScene, node: AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>): void {
+  scene.add(node);
+  const doc = encodeSceneDocument(scene);
+  localStorage.setItem(LS_KEY, JSON.stringify(doc.scene));
+  localStorage.setItem(SCENE_HISTORY_KEY, JSON.stringify(doc.history));
+}
+
+const box = (data: object): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> => ({
+  id: asNodeId('box'), kind: 'mark', layer: 'default' as WeaselDrawLayer, pose: { x: 0, y: 0, width: 8, height: 8 },
+  data: data as WeaselDrawData,
+});
+
 describe("draw's useSessionPersistence", () => {
   it('lets go of the paper size and background an older drawing kept beside it once the scene holding them is saved', async () => {
     vi.useFakeTimers();
@@ -61,6 +84,28 @@ describe("draw's useSessionPersistence", () => {
     expect(JSON.parse(localStorage.getItem(DOC_KEY)!)).toMatchObject({ paperSize: 'a4' });
     await act(async () => { await vi.advanceTimersByTimeAsync(300); });
     expect(JSON.parse(localStorage.getItem(DOC_KEY)!)).toEqual({ filename: 'a.svg' });
+  });
+});
+
+describe("draw's undo stack across a reload", () => {
+  it('restores the stack saved beside the drawing it reopens', () => {
+    saveSession(loadedScene(), box({}));
+    expect(bootRestores()).toBe(true);
+  });
+
+  it('drops a stack whose drawing reopens otherwise: unopenable, given pages, or rewritten by a migration', () => {
+    const cases: (() => void)[] = [
+      () => { saveSession(loadedScene(), box({})); localStorage.setItem(LS_KEY, JSON.stringify({ version: 4, nodes: [] })); },
+      () => saveSession(createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS, registry: DRAW_REGISTRY }), box({})),
+      () => saveSession(loadedScene(), box({ fill: '#ff0000' })),
+      () => { saveSession(loadedScene(), box({})); localStorage.setItem(SCENE_HISTORY_KEY, JSON.stringify({ version: 1, form: 'older' })); },
+    ];
+    for (const setUp of cases) {
+      localStorage.clear();
+      setUp();
+      expect(bootRestores()).toBe(false);
+      expect(localStorage.getItem(SCENE_HISTORY_KEY)).toBeNull();
+    }
   });
 });
 
@@ -77,7 +122,7 @@ describe("draw's session in IndexedDB", () => {
 
     await openSession(database);
     expect(pictureOf('photo')).toBe(photo);
-    expect(loadSceneHistory()).not.toBeNull();
+    expect(bootRestores()).toBe(true);
   }, 30_000);
 
   it('moves a session from localStorage on its first open, clears it there once moved, and never moves one again', async () => {
@@ -88,7 +133,7 @@ describe("draw's session in IndexedDB", () => {
     await openSession(database);
     expect([LS_KEY, SCENE_HISTORY_KEY, DOC_KEY].map((k) => localStorage.getItem(k))).toEqual([null, null, null]);
     expect(pictureOf('m')).toBe('data:image/png;base64,iVBORw0KGgo=');
-    expect(loadSceneHistory()).not.toBeNull();
+    expect(savedStack()).not.toBeNull();
     expect(loadDoc().filename).toBe('moved.svg');
     await vi.waitFor(() => expect(landedIn([LS_KEY, SCENE_HISTORY_KEY, DOC_KEY])()).toBe(true));
     await closeSession();

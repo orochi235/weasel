@@ -15,10 +15,9 @@ import {
   layoutPages,
 } from '@weasel-js/core';
 import { DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
-import { serializeReplacer } from '@weasel-js/editor';
 import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
 import { importSvgText, openSvgText } from './openSvg';
-import { contentRoots } from '@weasel-js/core';
+import { contentRoots, stringifySnapshot } from '@weasel-js/core';
 import { sceneToSvgString, selectionToSvgString } from './svgExport';
 
 type Spec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
@@ -58,8 +57,8 @@ describe('a draw document with a tween', () => {
     const scene = withTween();
     expect(steps(scene)).toHaveLength(3);
 
-    const saved = JSON.stringify(scene.toJSON(), serializeReplacer);
-    const json = reviveSnapshot(JSON.parse(saved)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const saved = stringifySnapshot(scene.toJSON());
+    const json = reviveSnapshot<SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>(JSON.parse(saved));
     const reopened = drawScene(nodeSpecsFromSnapshot(json, DRAW_REGISTRY));
 
     expect(steps(reopened)).toHaveLength(3);
@@ -69,9 +68,9 @@ describe('a draw document with a tween', () => {
   });
 
   it('reopens a save that holds it under its earlier name, blend, still live', () => {
-    const saved = JSON.stringify(withTween().toJSON(), serializeReplacer).replace('"kind":"tween"', '"kind":"blend"');
+    const saved = stringifySnapshot(withTween().toJSON()).replace('"kind":"tween"', '"kind":"blend"');
     expect(saved).toContain('"kind":"blend"');
-    const json = reviveSnapshot(JSON.parse(saved)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const json = reviveSnapshot<SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>(JSON.parse(saved));
     expect(steps(drawScene(nodeSpecsFromSnapshot(json, DRAW_REGISTRY)))).toHaveLength(3);
   });
 
@@ -271,8 +270,8 @@ describe('a draw document with text along a path', () => {
     const scene = withTextAlong();
     expect(partsOf(scene)).toHaveLength(5);
 
-    const saved = JSON.stringify(scene.toJSON(), serializeReplacer);
-    const json = reviveSnapshot(JSON.parse(saved)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const saved = stringifySnapshot(scene.toJSON());
+    const json = reviveSnapshot<SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>(JSON.parse(saved));
     const reopened = drawScene(nodeSpecsFromSnapshot(json, DRAW_REGISTRY));
 
     expect(reopened.isHidden(asNodeId('t'))).toBe(true);

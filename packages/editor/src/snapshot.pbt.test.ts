@@ -1,13 +1,12 @@
 /**
- * Property tests of the editor's snapshot reading and writing: any data, typed arrays and lookalikes of what the
- * writer tags anywhere in it, reads back equal through `serializeReplacer` and `reviveTypedArrays`; a scene saved
- * and read back through `nodeSpecsFromSnapshot` rebuilds the same tree; and a fuzzed snapshot loads or is refused
- * with an error the reader names, never a `TypeError`.
+ * Property tests of the editor's snapshot reading: a scene saved through core's codec and read back through
+ * `nodeSpecsFromSnapshot` rebuilds the same tree; and a fuzzed snapshot loads or is refused with an error the reader
+ * names, never a `TypeError`.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { asNodeId, createScene, type SerializedScene } from '@weasel-js/core';
-import { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer, snapshotRebuildsTree } from './snapshot';
+import { asNodeId, createScene, parseSnapshot, stringifySnapshot, type SerializedScene } from '@weasel-js/core';
+import { docFromSnapshot, nodeSpecsFromSnapshot, snapshotRebuildsTree } from './snapshot';
 import { dataKey, dataValue, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 300;
@@ -33,30 +32,6 @@ function same(a: unknown, b: unknown, at = '$'): string[] {
   }
   return Object.is(typeof a === 'number' ? a + 0 : a, typeof b === 'number' ? b + 0 : b) ? [] : [`${at}: ${String(a)} / ${String(b)}`];
 }
-
-const hop = (v: unknown): unknown => reviveTypedArrays(JSON.parse(JSON.stringify(v, serializeReplacer)));
-
-describe('serializeReplacer and reviveTypedArrays', () => {
-  it('read back whatever they write, at any depth, under any key', () => {
-    const seen = tally();
-    fc.assert(fc.property(dataValue, (v) => {
-      const text = JSON.stringify(v, serializeReplacer);
-      if (/"__ta"|"commands"|"coords"|"__raw"/.test(text)) seen.count('lookalike or tagged');
-      expect(same(hop(v), v)).toEqual([]);
-    }), runs(RUNS));
-    seen.atLeast('lookalike or tagged', RUNS / 3);
-  }, timeoutFor(RUNS, 5));
-
-  it('still read a path an older save wrote untagged', () => {
-    fc.assert(fc.property(fc.array(fc.integer({ min: 0, max: 255 }), { maxLength: 5 }), fc.array(fc.float({ noNaN: true, noDefaultInfinity: true }), { maxLength: 5 }), fc.boolean(),
-      (cmds, coords, asObject) => {
-        const legacy = (a: number[]) => (asObject ? Object.fromEntries(a.map((n, i) => [String(i), n])) : a);
-        const got = reviveTypedArrays(JSON.parse(JSON.stringify({ path: { commands: legacy(cmds), coords: legacy(coords) } }))) as { path: { commands: Uint8Array; coords: Float32Array } };
-        expect(same(got.path.commands, Uint8Array.from(cmds))).toEqual([]);
-        expect(same(got.path.coords, Float32Array.from(coords))).toEqual([]);
-      }), runs(RUNS));
-  }, timeoutFor(RUNS, 2));
-});
 
 type Pose = { x: number; y: number; width: number; height: number };
 const rect = fc.record({
@@ -86,7 +61,7 @@ describe('a scene saved and read back', () => {
         scene.add({ id, kind: s.kind, layer: 'main', pose: s.pose, data, ...(parent ? { parent: asNodeId(parent) } : {}), ...(s.hidden ? { hidden: true } : {}) });
         if (s.kind === 'group') groups.push(id);
       });
-      const saved = JSON.parse(JSON.stringify(scene.toJSON(), serializeReplacer)) as SerializedScene<Record<string, unknown>, 'main', Pose>;
+      const saved = parseSnapshot(stringifySnapshot(scene.toJSON()));
       const read = nodeSpecsFromSnapshot(saved);
       const again = createScene<Record<string, unknown>, 'main', Pose>({ systemLayers: [{ id: 'main' }], initial: read });
       seen.count(specs.length > 2 ? 'several' : 'few');

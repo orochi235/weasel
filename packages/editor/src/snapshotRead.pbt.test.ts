@@ -1,13 +1,13 @@
 /**
- * Property tests of reading a saved snapshot, beyond the round trip: reading one parsed snapshot leaves it as it was
+ * Property tests of reading a saved snapshot, beyond the round trip: reading one decoded snapshot leaves it as it was
  * and reads the same every time, whether through `nodeSpecsFromSnapshot` or `docFromSnapshot`; adopting pages is
  * idempotent, and a snapshot whose pages it adopted no longer rebuilds; and loading under any pages keeps every
  * saved node, root, and data value.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { asNodeId, createScene, type PagesDoc, type SerializedScene } from '@weasel-js/core';
-import { adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, serializeReplacer, snapshotRebuildsTree } from './snapshot';
+import { asNodeId, createScene, parseSnapshot, stringifySnapshot, type PagesDoc, type SerializedScene } from '@weasel-js/core';
+import { adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, snapshotRebuildsTree } from './snapshot';
 import { dataKey, dataValue, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 200;
@@ -48,7 +48,7 @@ const saved = fc.record({
   });
   for (const [k, v] of doc) scene.doc.set(k, v);
   if (legacy) scene.doc.set('core:pages', legacy);
-  return JSON.stringify(scene.toJSON(), serializeReplacer);
+  return stringifySnapshot(scene.toJSON());
 });
 
 function hasTyped(v: unknown): boolean {
@@ -64,10 +64,10 @@ describe('reading a saved snapshot', () => {
   it('leaves the parsed snapshot as it was, and reads it the same every time', () => {
     const seen = tally();
     fc.assert(fc.property(saved, fc.option(pagesDoc, { nil: undefined, freq: 2 }), (text, pages) => {
-      const json = JSON.parse(text) as Snap;
+      const json = parseSnapshot(text) as Snap;
       const opts = pages ? { pages } : {};
       const first = { specs: shown(nodeSpecsFromSnapshot(json, {}, undefined, opts)), doc: shown(docFromSnapshot(json)) };
-      expect(JSON.stringify(json)).toBe(JSON.stringify(JSON.parse(text)));
+      expect(shown(json)).toBe(shown(parseSnapshot(text)));
       const again = { specs: shown(nodeSpecsFromSnapshot(json, {}, undefined, opts)), doc: shown(docFromSnapshot(json)) };
       expect(again).toEqual(first);
       if (/__raw/.test(text)) seen.count('wrapped');
@@ -80,7 +80,7 @@ describe('reading a saved snapshot', () => {
   it('adopts pages once: an adopted snapshot no longer rebuilds, and adopting it again changes nothing', () => {
     const seen = tally();
     fc.assert(fc.property(saved, fc.option(pagesDoc, { nil: undefined, freq: 2 }), (text, pages) => {
-      const json = JSON.parse(text) as Snap;
+      const json = parseSnapshot(text) as Snap;
       const opts = pages ? { pages } : {};
       const once = adoptSnapshotPages(json, {}, opts);
       if (!snapshotRebuildsTree(json, opts)) {

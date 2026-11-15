@@ -1,7 +1,7 @@
-import { asNodeId, createScene, type SerializedScene, type UnitScope } from '@weasel-js/core';
+import { asNodeId, createScene, parseSnapshot, stringifySnapshot, type UnitScope } from '@weasel-js/core';
 import { symmetryCopies, symmetryGroupSpec, symmetryRegistry } from '@weasel-js/symmetry';
 import { describe, expect, it } from 'vitest';
-import { nodeSpecsFromSnapshot, serializeReplacer } from './snapshot';
+import { nodeSpecsFromSnapshot } from './snapshot';
 
 const MM: UnitScope = { system: { base: 'mm', units: { mm: 1, cm: 10 } }, scale: 1 / 25.4 };
 const BOX = { x: 0, y: 0, width: 10, height: 10 };
@@ -12,7 +12,7 @@ describe('a reloaded snapshot keeps every field it saved', () => {
     scene.add({ ...symmetryGroupSpec({ layer: 'main', center: { x: 0, y: 0 }, id: asNodeId('sym') }) } as never);
     scene.add({ id: asNodeId('clip'), kind: 'group', layer: 'main', pose: BOX, data: {}, clip: 'outline' });
     scene.add({ id: asNodeId('mm'), kind: 'group', layer: 'main', pose: BOX, data: {}, units: MM });
-    const json = JSON.parse(JSON.stringify(scene.toJSON(), serializeReplacer)) as SerializedScene<unknown, 'main', typeof BOX>;
+    const json = parseSnapshot(stringifySnapshot(scene.toJSON()));
 
     const specs = nodeSpecsFromSnapshot(json, symmetryRegistry as never);
     const byId = (id: string) => specs.find((s) => s.id === asNodeId(id));

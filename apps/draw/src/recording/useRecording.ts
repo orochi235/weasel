@@ -1,7 +1,7 @@
-import { useLatest, type SerializedScene, type SurfaceContribution, type View } from '@weasel-js/core';
+import { encodeSnapshot, useLatest, type SurfaceContribution, type View } from '@weasel-js/core';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { useMemo, useReducer } from 'react';
-import { downloadBlob, pickFile, serializeReplacer } from '@weasel-js/editor';
+import { downloadBlob, pickFile } from '@weasel-js/editor';
 import { DRAW_LOAD_OPTIONS, reviveSnapshot } from '../persistence';
 import { drawPrefs } from '../prefs';
 import { recordingContribution } from './contribution';
@@ -19,12 +19,12 @@ export function baselineOf(target: RecordingTarget): Pick<RecordingHost, 'snapsh
   return {
     snapshot: () => ({
       version: 2,
-      // Through the replacer, so typed-array path data survives the recording's own JSON.
-      scene: JSON.parse(JSON.stringify(target.scene.toJSON(), serializeReplacer)),
+      // Encoded, so typed-array path data survives the recording's own JSON.
+      scene: encodeSnapshot(target.scene.toJSON()),
       view: target.view(),
     }),
     restore: (snapshot) => {
-      target.scene.loadState(reviveSnapshot(snapshot.scene as SerializedScene<unknown, string, unknown>) as never, DRAW_LOAD_OPTIONS);
+      target.scene.loadState(reviveSnapshot(snapshot.scene) as never, DRAW_LOAD_OPTIONS);
       target.setView(snapshot.view);
     },
   };

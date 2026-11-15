@@ -3,20 +3,16 @@ import { createHistory } from '@weasel-js/history';
 import type { SerializedHistory } from '@weasel-js/history';
 import type { Op, SerializedScene } from '@weasel-js/core';
 import {
-  asNodeId, buildWeaselClipboardText, createScene, effectivePose, isAnnotationNode, measureNode, measurementOf,
-  parseWeaselClipboardText,
+  asNodeId, buildWeaselClipboardText, createScene, decodeSnapshot, effectivePose, isAnnotationNode, measureNode, measurementOf,
+  parseSnapshot, parseWeaselClipboardText, snapshotReplacer, stringifySnapshot,
 } from '@weasel-js/core';
 import {
   ANNOTATION_LAYER, DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose,
 } from './drawDocument';
-import { reviveTypedArrays, serializeReplacer } from '@weasel-js/editor';
-import { clipboardJsonReviver, nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
+import { clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
 
-// These cover the new bit of App's localStorage autosave: the undo history is
-// now persisted alongside the scene. The risk is that a history snapshot's
-// serialized op payloads carry path poses (Float32Array coords / Uint8Array
-// commands) which JSON mangles unless tagged. `serializeReplacer` +
-// `reviveTypedArrays` are the same helpers App uses on both keys.
+// A history snapshot's serialized op payloads carry path poses (Float32Array
+// coords / Uint8Array commands), which JSON mangles unless core's codec tags them.
 
 describe('persistence — history snapshot round-trip', () => {
   it('revives Float32Array / Uint8Array op payloads through the JSON hop', () => {
@@ -36,8 +32,8 @@ describe('persistence — history snapshot round-trip', () => {
       droppedEntries: 0,
     };
 
-    const wire = JSON.stringify(snap, serializeReplacer);
-    const revived = reviveTypedArrays(JSON.parse(wire) as SerializedHistory);
+    const wire = stringifySnapshot(snap);
+    const revived = parseSnapshot(wire) as SerializedHistory;
 
     const args = revived.undoStack[0].forwardOps[0].args as { coords: unknown; commands: unknown };
     expect(args.coords).toBeInstanceOf(Float32Array);
@@ -70,8 +66,8 @@ describe('persistence — history snapshot round-trip', () => {
 
     // The App-level round-trip: serialize, stringify+parse through localStorage,
     // revive typed arrays, restore into a fresh History.
-    const wire = JSON.stringify(h.serialize(), serializeReplacer);
-    const revived = reviveTypedArrays(JSON.parse(wire) as SerializedHistory);
+    const wire = stringifySnapshot(h.serialize());
+    const revived = parseSnapshot(wire) as SerializedHistory;
 
     const h2 = createHistory({ values: [] as number[] });
     h2.restore(revived);
@@ -82,8 +78,8 @@ describe('persistence — history snapshot round-trip', () => {
 });
 
 // Regression: `IngestCtx.clipboard.reviver` is a `JSON.parse`-style
-// `(key, value)` reviver, but draw originally wired the one-arg tree walker
-// `reviveTypedArrays` straight in. Called as a reviver, the walker receives
+// `(key, value)` reviver, but draw originally wired a one-arg tree walker
+// straight in. Called as a reviver, the walker receives
 // the KEY (a string) and returns it, collapsing every parsed value to its
 // key — the root call yields `''`, `parseWeaselClipboardText` returns null,
 // and the weasel-JSON paste handler silently declines. `clipboardJsonReviver`
@@ -95,7 +91,7 @@ describe('persistence — clipboard JSON reviver', () => {
       id: 'a',
       data: { path: { coords: new Float32Array([1.5, 2.5]), commands: new Uint8Array([0, 1]) } },
     }];
-    const wire = buildWeaselClipboardText(items, serializeReplacer);
+    const wire = buildWeaselClipboardText(items, snapshotReplacer);
 
     const nodes = parseWeaselClipboardText(wire, clipboardJsonReviver);
 
@@ -129,7 +125,7 @@ describe('persistence — saved measurements', () => {
   it('saves measurements with the document and loads them back on the annotation layer', () => {
     const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS });
     scene.add(measureNode(asNodeId('m'), ANNOTATION_LAYER, { x: 0, y: 0 }, { x: 30, y: 40 }) as never);
-    const saved = JSON.parse(JSON.stringify(scene.toJSON(), serializeReplacer)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const saved = parseSnapshot(stringifySnapshot(scene.toJSON()));
     const back = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
       systemLayers: DRAW_LAYERS,
       initial: nodeSpecsFromSnapshot(saved),
@@ -152,7 +148,7 @@ describe('persistence — image pattern fills', () => {
       id: asNodeId('a'), kind: 'mark', layer: 'default' as WeaselDrawLayer,
       pose: { x: 0, y: 0, width: 10, height: 10 }, data: { fill: { paint } },
     });
-    const saved = JSON.parse(JSON.stringify(scene.toJSON(), serializeReplacer)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const saved = parseSnapshot(stringifySnapshot(scene.toJSON()));
     const [node] = nodeSpecsFromSnapshot(saved, DRAW_REGISTRY);
     expect((node!.data as WeaselDrawData).fill).toEqual({ paint });
   });
@@ -258,28 +254,8 @@ describe('persistence — legacy string paint migration', () => {
     expect(data.runs).toEqual([{ text: 'h', fill: { paint: { color: '#f00' } } }, { text: 'i', fill: null }]);
   });
 
-  // The scene is only half of it: the undo stack persists its own copies of
-  // node data inside `setData` op payloads, so an undo after a reload would
-  // otherwise write a legacy string straight back into a migrated scene.
-  it('migrates the node data carried inside a persisted history snapshot', () => {
-    const snap = reviveSnapshot({
-      version: 1,
-      undoStack: [{
-        id: 1, label: 'Nudge',
-        forwardOps: [{ name: 'setData', args: { id: 'a', from: { fill: '#7ab8d4', stroke: '#0a3654', strokeWidth: 2 }, to: { fill: '#ff0000' } } }],
-        inverseOps: [],
-      }],
-      redoStack: [], nextEntryId: 2, droppedEntries: 0,
-    } as unknown as SerializedHistory) as unknown as {
-      undoStack: { forwardOps: { args: { from: Data; to: Data } }[] }[];
-    };
-    const args = snap.undoStack[0].forwardOps[0].args;
-    expect(args.from).toEqual({ fill: { paint: { color: '#7ab8d4' } }, stroke: { paint: { color: '#0a3654' }, width: 2 } });
-    expect(args.to).toEqual({ fill: { paint: { color: '#ff0000' } } });
-  });
-
-  it('still revives typed arrays — both passes run', () => {
-    const data = dataOf({ fill: '#7ab8d4', coords: [1.5, 2.5] });
+  it('migrates data the engine decoded first', () => {
+    const data = nodeSpecsFromSnapshot(decodeSnapshot(sceneOf({ fill: '#7ab8d4', coords: [1.5, 2.5] })) as SerializedScene<Data, Layer, Pose>)[0].data as Data;
     expect(data.coords).toBeInstanceOf(Float32Array);
     expect(data.fill).toEqual({ paint: { color: '#7ab8d4' } });
   });
@@ -294,8 +270,8 @@ describe('persistence — fillet', () => {
       fillRule: 'nonzero',
       corners: [null, { shape: 'bevel', radius: 3 }],
     };
-    const wire = JSON.stringify({ path }, serializeReplacer);
-    const revived = reviveTypedArrays(JSON.parse(wire) as { path: typeof path });
+    const wire = stringifySnapshot({ path });
+    const revived = parseSnapshot(wire) as { path: typeof path };
     expect(revived.path.corners).toEqual([null, { shape: 'bevel', radius: 3 }]);
     expect(revived.path.coords).toBeInstanceOf(Float32Array);
   });
@@ -314,7 +290,7 @@ describe('persistence — a group reopens tracking its members', () => {
     });
     const a = scene.add({ kind: 'mark', layer: 'default', pose: { x: 10, y: 10, width: 20, height: 20 }, data: {}, parent: g });
 
-    const json = JSON.parse(JSON.stringify(scene.toJSON(), serializeReplacer)) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+    const json = parseSnapshot(stringifySnapshot(scene.toJSON()));
     const reopened = make(nodeSpecsFromSnapshot(json, DRAW_REGISTRY));
     reopened.setPose(a, { x: 100, y: 10, width: 20, height: 20 });
 

@@ -1,11 +1,5 @@
-// Typed-array and snapshot helpers shared by every editor app's session persistence.
-//
-// A path keeps its commands and coords in typed arrays, which `JSON.stringify`
-// writes as `{"0":1,"1":2,...}`. Saves tag them with `@weasel-js/geom`'s
-// encoding; loads read the tags back, and also the untagged shapes older saves
-// wrote, which is why the walk here is our own. A value of the consumer's that
-// the load would take for one of those is written inside a `{ "__raw": … }`
-// wrapper, which the load takes off and reads nothing into.
+// Snapshot readers shared by every editor app's session persistence. Each takes a decoded snapshot, as core's
+// `decodeSnapshot` or `parseSnapshot` returns one: encoding is core's codec, and nothing here reads JSON.
 
 import type {
   AddNodeSpec, PagesDoc, PoseDescriptor, SceneRegistry, SavedScene, SpecsFromSerializedOptions, SystemLayerSpec,
@@ -14,55 +8,7 @@ import type {
 import {
   PAGES_DOC_KEY, adoptLegacyPages, asNodeId, createScene, sceneFromJSON, setPages, specsFromSerialized,
 } from '@weasel-js/core';
-import { isRawWrapper, typedArrayReplacerWrapping, untagTypedArray } from '@weasel-js/geom';
 import { freshId } from '@weasel-js/registry';
-
-const isPathKey = (k: string): k is 'commands' | 'coords' => k === 'commands' || k === 'coords';
-
-/** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip, and wrap any other value
- *  {@link reviveTypedArrays} would read as something else, an older save's untagged path arrays included. */
-export const serializeReplacer: (this: unknown, key: string, value: unknown) => unknown =
-  typedArrayReplacerWrapping((key, value) => isPathKey(key) && legacyNumbers(value) !== undefined);
-
-/** `value` as {@link serializeReplacer} writes it, read back as JSON: a value every storage adapter keeps exactly, as
- *  a session entry holds it. {@link reviveTypedArrays} reads it back. */
-export const snapshotValue = (value: unknown): unknown =>
-  JSON.parse(JSON.stringify(value, serializeReplacer) ?? 'null') as unknown;
-
-/** Walk a parsed snapshot and rebuild any tagged / numeric-key typed arrays in
- *  place. Returns the same node for call-site convenience, unless the node itself is one. */
-export function reviveTypedArrays<T>(node: T): T {
-  if (node == null || typeof node !== 'object') return node;
-  if (isRawWrapper(node)) return reviveWithin(node.__raw) as T;
-  const tagged = untagTypedArray(node);
-  if (tagged) return tagged as unknown as T;
-  return reviveWithin(node);
-}
-
-/** {@link reviveTypedArrays} on everything `node` holds, but not `node` itself. */
-function reviveWithin<T>(node: T): T {
-  if (node == null || typeof node !== 'object' || ArrayBuffer.isView(node)) return node;
-  const obj = node as Record<string, unknown>;
-  for (const k of Object.keys(obj)) {
-    const v = obj[k];
-    const legacy = isPathKey(k) && !ArrayBuffer.isView(v) ? legacyNumbers(v) : undefined;
-    obj[k] = legacy ? (k === 'commands' ? Uint8Array.from(legacy) : Float32Array.from(legacy)) : reviveTypedArrays(v);
-  }
-  return node;
-}
-
-const isLegacyNumber = (v: unknown): boolean => typeof v === 'number' || v === null;
-
-/** A path's typed array as an older save wrote it, untagged: a plain array of numbers, or an object of
- *  them under the keys `0`, `1`, .... `null` is how JSON wrote a NaN. Anything else is not one. */
-function legacyNumbers(v: unknown): number[] | undefined {
-  if (Array.isArray(v)) return v.every(isLegacyNumber) ? v.map((n) => Number(n ?? 0)) : undefined;
-  if (v === null || typeof v !== 'object') return undefined;
-  const src = v as Record<string, unknown>;
-  const keys = Object.keys(src);
-  if (!keys.every((key, i) => key === String(i) && isLegacyNumber(src[key]))) return undefined;
-  return keys.map((key) => Number(src[key] ?? 0));
-}
 
 /** How a snapshot is read: `specsFromSerialized`'s options; the pose descriptor that measures each root
  *  when a snapshot's roots are placed on their pages (default core's `placeOnPages` default); and the pages
@@ -131,9 +77,8 @@ function checkPagesDoc(value: unknown): void {
   if (layout !== undefined && (layout === null || typeof layout !== 'object' || Array.isArray(layout))) fail('has a layout that is not an object');
 }
 
-/** The document values a persisted snapshot carries, shaped for `useScene`'s `doc` option, or
- *  `undefined` for a snapshot written before it had any. Each reads back as `serializeReplacer` was handed
- *  it, a value the writer wrapped or tagged included, and `json` is left as it is. A `core:pages` value is
+/** The document values a decoded snapshot carries, shaped for `useScene`'s `doc` option, or
+ *  `undefined` for a snapshot written before it had any. Each is a copy, so `json` is left as it is. A `core:pages` value is
  *  not among them: `nodeSpecsFromSnapshot` loads those pages as nodes (`adoptSnapshotPages`). */
 export function docFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
@@ -143,33 +88,33 @@ export function docFromSnapshot<TData, TLayer extends string, TPose>(
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(doc)) {
     if (key === PAGES_DOC_KEY) continue;
-    const value = reviveTypedArrays(copyPlain((doc as Record<string, unknown>)[key]));
+    const value = copyPlain((doc as Record<string, unknown>)[key]);
     Object.defineProperty(out, key, { value, enumerable: true, writable: true, configurable: true });
   }
   return out;
 }
 
-/** Rebuild the full node list from a persisted scene snapshot, shaped for
+/** Rebuild the full node list from a decoded scene snapshot, shaped for
  *  `useScene`'s `initial` option: core's `specsFromSerialized`, so every field
  *  a save writes comes back. A key `registry` lacks leaves the node without
  *  that function rather than failing the load, unless `opts.unknownKeys` says
  *  `'throw'`; `opts.onSkip` hears each. Pages saved as a `core:pages` value
  *  come back as page nodes, and a snapshot saved without pages gets
  *  `opts.pages` (`adoptSnapshotPages`). With `opts.systemLayers`, a snapshot the scene cannot hold throws here,
- *  where a reader's fallback catches it, and not in the scene's construction. `revive` rewrites a copy of each node's
- *  data on the way in, so `json` is left as it is; the default revives typed arrays only. A reviver that migrates an
- *  older shape of data calls `reviveTypedArrays` itself where that data holds typed arrays. A scene composed other
+ *  where a reader's fallback catches it, and not in the scene's construction. `migrate` is the application's own
+ *  migration: it rewrites a copy of each node's data on the way in, so `json` is left as it is, and defaults to none.
+ *  The engine's migrations, of the snapshot's version and of its encoding, have run before it. A scene composed other
  *  than rigidly passes its own `opts.composition`, since the pages are made in
  *  a scene built on it. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer> = {},
-  revive: (data: TData) => TData = reviveTypedArrays,
+  migrate: (data: TData) => TData = (data) => data,
   opts: SnapshotLoadOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   const { descriptor: _descriptor, pages: _pages, systemLayers, ...read } = opts;
   const specs = specsFromSerialized(adoptSnapshotPages(json, registry, opts), registry, { unknownKeys: 'skip', ...read })
-    .map((spec) => ({ ...spec, data: revive(copyPlain(spec.data)) }));
+    .map((spec) => ({ ...spec, data: migrate(copyPlain(spec.data)) }));
   if (systemLayers) {
     createScene({
       systemLayers, registry, initial: specs, ...(read.composition ? { composition: read.composition } : {}),
@@ -178,7 +123,7 @@ export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   return specs;
 }
 
-/** `v` with every array and plain object in it copied, own `__proto__` keys included, so a reviver that works in
+/** `v` with every array and plain object in it copied, own `__proto__` keys included, so a migration that works in
  *  place leaves the snapshot it was read from as it was. Anything else is shared. */
 function copyPlain<T>(v: T): T {
   if (Array.isArray(v)) return v.map(copyPlain) as T;

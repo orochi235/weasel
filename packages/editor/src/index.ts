@@ -5,7 +5,7 @@ export {
 export { describeFileWarnings, reportFileWarnings, type FileDeed } from './fileWarnings';
 export { usePaperLayer, type PageSize } from './paperLayer';
 export {
-  adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer, snapshotRebuildsTree, snapshotValue,
+  adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, snapshotRebuildsTree,
   type SnapshotLoadOptions,
 } from './snapshot';
 export { isUnreadableKey, readStored, writeSession, type SessionEntry } from './sessionStore';

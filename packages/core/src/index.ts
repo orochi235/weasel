@@ -31,6 +31,7 @@ export * from './barrel/chrome';
 export * from './barrel/text';
 export * from './barrel/paint';
 export * from './barrel/scene';
+export * from './barrel/persistence';
 export * from './barrel/paths';
 export * from './barrel/interactions';
 export * from './barrel/icons';
