@@ -53,7 +53,6 @@ export function AnimationCards({ animator }: { animator: Animator }) {
   };
   const redrawOn = useMemo(() => [{ subscribe: (repaint: () => void) => animator.onTick(repaint) }], [animator]);
 
-  // --- Time-scale + pause ---
   const [timeScale, setTimeScaleState] = useState(1);
   const [paused, setPausedState] = useState(false);
 
@@ -108,16 +107,14 @@ export function AnimationCards({ animator }: { animator: Animator }) {
     insertCard({ id, x: 200 + Math.random() * 100, y: 250, width: 60, height: 60, color: CARD_FILL });
   };
 
-  // --- Breathing handle: pulse alpha on the (single) selected card. ---
-  // Cancels and rebuilds when the selection changes. Loop handles are not
-  // animator-id-registered, so we cancel via the local handle.
+  // Loop handles are not registered by id with the animator, so the effect cancels its own.
   const selectedIds = selection.current;
   const breathingFocus = selectedIds.length === 1 ? (selectedIds[0] as string) : null;
   useEffect(() => {
     if (!breathingFocus) return;
     const id = breathingFocus;
     const effectsMap = effects.current;
-    getEffect(id); // ensure entry exists
+    getEffect(id);
     const handle = animator.tweenLoop<number>({
       from: 1.0,
       to: 1.06,
@@ -128,7 +125,6 @@ export function AnimationCards({ animator }: { animator: Animator }) {
       onTick: (v) => {
         const e = getEffect(id);
         e.scale = v;
-        // alpha pulse alongside scale — subtle glow effect.
         e.alpha = 0.85 + (v - 1.0) * 2.5;
       },
     });
@@ -139,7 +135,6 @@ export function AnimationCards({ animator }: { animator: Animator }) {
     };
   }, [breathingFocus, animator]);
 
-  // --- Stagger fade-in: add a batch of 5 cards, fade them in 50ms apart. ---
   const addBatch = () => {
     const newIds: string[] = [];
     for (let i = 0; i < 5; i++) {

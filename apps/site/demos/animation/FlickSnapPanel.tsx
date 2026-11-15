@@ -6,15 +6,14 @@ import {
   WeaselProvider,
   useScene,
   useSelection,
+  solid,
   useVelocityTracker, movePreset, pickPreset,
 } from '@weasel-js/core';
 import { createGridLayer } from '@weasel-js/guides';
-import type { Dims, MoveBehavior } from '@weasel-js/core';
+import type { Dims, Fill, MoveBehavior, RectPose as Pose } from '@weasel-js/core';
 import type { Animator, PhysicsHandle } from '@weasel-js/animator';
-import type { DrawCommand } from '@weasel-js/core/renderer';
 import { DemoStage } from '../DemoStage';
 
-interface Pose { x: number; y: number; width: number; height: number }
 interface Vec2 { x: number; y: number }
 
 const FLICK_W = 600, FLICK_H = 160;
@@ -110,14 +109,14 @@ function flickToGrid(args: {
 }
 
 export function FlickSnapPanel({ animator }: { animator: Animator }) {
-  const scene = useScene<{ color: string }, 'default', Pose>({
+  const scene = useScene<{ fill: Fill }, 'default', Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [{
       id: asNodeId('block'),
       kind: 'mark',
       layer: 'default',
       pose: { x: 60, y: 60, width: FLICK_BLOCK, height: FLICK_BLOCK },
-      data: { color: '#7fb069' },
+      data: { fill: { paint: solid('#7fb069') } },
     }],
   });
   const selection = useSelection({ scene });
@@ -147,13 +146,6 @@ export function FlickSnapPanel({ animator }: { animator: Animator }) {
           selectTool={{ move: { behaviors } }}
           layers={{
             grid: { layer: FLICK_GRID_LAYER },
-            scene: {
-              drawOne: (n, p): DrawCommand[] => [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { paint: { color: n.data.color } },
-              }],
-            },
             selectionOverlay: { handles: false },
           }}
         />
