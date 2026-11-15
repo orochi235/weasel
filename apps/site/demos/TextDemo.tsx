@@ -19,8 +19,6 @@ const SNAP = { sources: [gridSnapSource({ spacing: CELL })] };
 export function TextDemo() {
   const scene = useScene({ items: INITIAL_TEXT_NODES });
 
-  // Live snapshot of every node's data + current pose, in render order. Used
-  // by the custom text/outline layers.
   const liveNodes = (): TextNode[] =>
     [...scene.renderOrder()].map((id) => {
       const n = scene.get(id)!;
@@ -29,14 +27,9 @@ export function TextDemo() {
     });
 
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
-  // helpersRef gives custom layers overlay-aware pose lookups so the text
-  // and selection ghost follow live drag/resize without us re-implementing
-  // the overlay fold-in.
+  // Overlay-aware poses, so the custom layers follow a drag or resize while it is under way.
   const helpersRef = useRef<CanvasHelpers<TextNode> | null>(null);
 
-  // Scene-aware text edit + double-click-to-edit binding. Wires getText /
-  // getStyle / getScreenPose / setText / getRuns / setRuns + the dblclick
-  // caret-resolver against `scene` automatically.
   const edit = useSceneTextEdit(scene, container);
 
   const resolvePose = (n: TextNode): Pose => {
@@ -44,9 +37,7 @@ export function TextDemo() {
     return overlayPose ?? { x: n.x, y: n.y, width: n.width, height: n.height };
   };
 
-  // Custom text layer — replaces the default scene drawer so we can render
-  // text via createTextLayer and hide the node currently being edited (the
-  // contenteditable overlay handles its own visuals).
+  // Hides the node under edit: the contenteditable overlay draws it meanwhile.
   const textLayer: RenderLayer<unknown> = createTextLayer<TextNode>({
     getTexts: liveNodes,
     getPose: (n) => {
@@ -64,12 +55,10 @@ export function TextDemo() {
       };
     },
     isHidden: (n) => edit.isEditing(n.id),
-    // Glyphs that overflow the declared bounds are clipped — matching the
-    // visible-box affordance the dashed outline implies.
     clipToBounds: true,
   });
 
-  // Faint background outline per node so empty text boxes stay visible.
+  // So an empty text box stays visible.
   const outlineLayer: RenderLayer<unknown> = {
     id: 'text-bounds',
     label: 'Text bounds',
@@ -98,7 +87,6 @@ export function TextDemo() {
           helpersRef={helpersRef}
           snap={SNAP}
           layers={{
-            // No default scene — the custom text layer paints everything.
             scene: null,
             'text-bounds': { layer: outlineLayer, before: 'selectionOverlay' },
             'text': { layer: textLayer, before: 'selectionOverlay' },
