@@ -56,7 +56,7 @@ key asks for (`selectAll`, `move`, `toggle`, `activate`, `type`) and the caller 
 ## Focus
 
 `tabSort(targets, declared)` is Tab order, targets that declare a place first, and `tabStep` is one Tab step
-through it. `@weasel-js/ui-logic`'s `FocusScope` moves focus by them.
+through it. The `FocusScope`s of `@weasel-js/hud` and `@weasel-js/ui` (`domFocusScope`) move focus by them.
 
 Targets placed freely, with no row or grid to walk, take the arrows by where they sit. `nearestToward(from, targets,
 heading)` is the index of the target focus moves to: the cheapest by `headingCost`, which adds the travel along the
