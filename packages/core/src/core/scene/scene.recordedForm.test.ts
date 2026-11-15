@@ -337,7 +337,8 @@ describe('Scene — what an applyBatch entry holds', () => {
     scene.applyBatch([move(A, 0, 5)], 'Move', adapter);
     const { form: _form, ...old } = scene.serializeHistory();
     scene.history.clear();
-    scene.restoreHistory(old);
+    expect(() => scene.restoreHistory(old)).toThrow(/recorded form/);
+    expect(scene.restoreHistory(old, { recovery: 'best-effort' }).restored).toBe(false);
     expect(labels()).toEqual([]);
   });
 });

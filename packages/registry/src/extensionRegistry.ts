@@ -61,6 +61,8 @@ interface Holding {
   count: number;
 }
 
+/** Make an {@link ExtensionRegistry}: one per host that should keep its extensions to itself, or one
+ *  shared by hosts that should not. */
 export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>): ExtensionRegistry<V> {
   const { kind } = options;
   const parent = options.parent ?? null;

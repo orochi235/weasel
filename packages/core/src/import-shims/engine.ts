@@ -49,6 +49,7 @@ export type { AnyScene } from '../core/scene/anyScene';
 export { SceneArrivalRefused } from '../core/scene/arrivals';
 export type { SceneArrivalHandler } from '../core/scene/arrivalTypes';
 export { BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf } from '../core/scene/booleanOfChildren';
+export { RestoredOpError } from '../core/scene/boundOps';
 export { carriedDescendants, heldInFrame, sceneCarrySource } from '../core/scene/carryDescendants';
 export type { CarrySource } from '../core/scene/carryDescendants';
 export { CLIP_NOTHING, clipNothing } from '../core/scene/clipNothing';
@@ -65,7 +66,6 @@ export type { SceneDoc, SceneDocValues, SerializedDoc } from '../core/scene/docV
 export type { SceneEditPass, SceneEditPassOptions, SceneEditPasses, SceneEditSummary } from '../core/scene/editPass';
 export { definesFrame, derivedDepOf, derivedPose, documentDepOf, documentPose, effectivePose } from '../core/scene/effectivePose';
 export type { PoseSource, PosedNode } from '../core/scene/effectivePose';
-export { RestoredOpError } from '../core/scene/boundOps';
 export { SCENE_HISTORY_FORM } from '../core/scene/historyForm';
 export type { SceneHistoryPersistence, SceneReplay, SerializedSceneHistory } from '../core/scene/historyForm';
 export { inheritedPaintIn, inheritedPaintOf, inheritsPaint, withInheritedPaint } from '../core/scene/inheritedPaint';
