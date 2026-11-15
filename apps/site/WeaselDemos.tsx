@@ -13,12 +13,11 @@ import { SiteNav } from './SiteNav';
 import { DemoFrame } from './DemoFrame';
 import { DevtoolsSplit } from './DevtoolsSplit';
 import { ColorModeControl } from '@weasel-js/ui/components/ColorModeControl';
-import { CommandPalette } from '@weasel-js/ui/components/CommandPalette';
 import { InlineMarkdown } from '@weasel-js/ui/components/InlineMarkdown';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { SiteColorModeContext, useSiteColorMode } from './colorMode';
 import { SiteThemeProvider } from './SiteThemeProvider';
-import { useCommandPaletteShortcut } from './CommandPalette/useCommandPaletteShortcut';
+import { SitePalette } from './CommandPalette/SitePalette';
 import logoUrl from './assets/weasel-logo.svg';
 
 // These are lazy so the entry bundle carries only the nav: `Releases`
@@ -54,8 +53,6 @@ function readHash(): string {
 
 export function WeaselDemos() {
   const [activeId, setActiveId] = useState<string>(() => readHash());
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  useCommandPaletteShortcut(paletteOpen, setPaletteOpen);
   const colorMode = useSiteColorMode();
 
   // A page opened from inside the app is a history entry of its own, so Back
@@ -138,7 +135,7 @@ export function WeaselDemos() {
         </PageBoundary>
       </main>
 
-      <CommandPalette isOpen={paletteOpen} onOpenChange={setPaletteOpen} />
+      <SitePalette />
     </div>
   );
 }
