@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import {
   asNodeId,
   boundsOfPath,
@@ -20,6 +20,7 @@ import type { PolygonPath, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Button } from '@weasel-js/ui/components/Button';
+import { Sequence, values } from '@weasel-js/ui/components/Sequence';
 import { DemoStage, DemoStageGroup } from './DemoStage';
 
 const W = 240;
@@ -55,7 +56,7 @@ const INITIAL_NODES = [
   data: { path },
 }));
 
-function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
+function Panel({ paths }: { paths: PanelItem[] }) {
   const scene = useScene<PanelItem>({ items: paths });
   return (
     <WeaselProvider isolate>
@@ -74,7 +75,6 @@ function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
             },
             selectionOverlay: { outline: { follow: 'shape' } },
           }}
-          data-panel={id}
         />
       </DemoStage>
     </WeaselProvider>
@@ -93,9 +93,6 @@ function InteractivePanel() {
     initial: [asNodeId('rect'), asNodeId('circle')],
   });
 
-  // Register the kit-standard action descriptors, pathfinder.* among them, with the ambient ActionsProvider.
-  // Their invokers reach the booleansAdapter <SceneCanvas> publishes over this scene. Together these power
-  // the <ActionBar group="pathfinder"/> below.
   useStandardActions({ selection });
 
   const reset = useCallback(() => {
@@ -128,74 +125,38 @@ function InteractivePanel() {
             },
             selectionOverlay: { outline: { follow: 'shape' } },
           }}
-          data-panel="interactive"
         />
       </DemoStage>
     </div>
   );
 }
 
+/** Each op applied to the same two inputs, one static canvas apiece. */
+const STATIC: { label: string; paths: PanelItem[] }[] = [
+  { label: 'Inputs', paths: [{ id: 'rect', path: RECT_INPUT, color: RECT_COLOR }, { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR }] },
+  { label: 'Union', paths: [{ id: 'u', path: pathUnion(RECT_INPUT, CIRCLE_INPUT), color: RESULT_COLOR }] },
+  { label: 'Intersect', paths: [{ id: 'i', path: pathIntersect(RECT_INPUT, CIRCLE_INPUT), color: RESULT_COLOR }] },
+  { label: 'Subtract', paths: [{ id: 's', path: pathSubtract(RECT_INPUT, CIRCLE_INPUT), color: RESULT_COLOR }] },
+  { label: 'Exclude', paths: [{ id: 'x', path: pathExclude(RECT_INPUT, CIRCLE_INPUT), color: RESULT_COLOR }] },
+  {
+    label: 'Divide',
+    paths: pathDivide(RECT_INPUT, CIRCLE_INPUT).map((path, i) => ({ id: `d${i}`, path, color: DIVIDE_COLORS[i % DIVIDE_COLORS.length] })),
+  },
+];
+
 export function BooleanOpsDemo() {
-  const unionResult = useMemo(() => pathUnion(RECT_INPUT, CIRCLE_INPUT), []);
-  const intersectResult = useMemo(() => pathIntersect(RECT_INPUT, CIRCLE_INPUT), []);
-  const subtractResult = useMemo(() => pathSubtract(RECT_INPUT, CIRCLE_INPUT), []);
-  const excludeResult = useMemo(() => pathExclude(RECT_INPUT, CIRCLE_INPUT), []);
-  const divideResults = useMemo(() => pathDivide(RECT_INPUT, CIRCLE_INPUT), []);
-
-  const dividePaths = useMemo(
-    () => divideResults.map((p, i) => ({
-      id: `d${i}`,
-      path: p,
-      color: DIVIDE_COLORS[i % DIVIDE_COLORS.length],
-    })),
-    [divideResults],
-  );
-
   return (
     <DemoStageGroup>
-      <div className="ckd-boolops-grid">
-        {/* The scope sits above InteractivePanel, not inside it: its
-            useStandardActions hook registers into the actions and dep
-            registries before its SceneCanvas mounts, so they have to be in
-            scope by the time they fire. Isolated because this canvas's non-empty
-            initial selection would otherwise fight the static panels' empty
-            ones. */}
+      <div className="ckd-demo">
+        {/* The scope sits above InteractivePanel because its useStandardActions
+            registers before its SceneCanvas mounts. Isolated so this canvas's
+            initial selection does not fight the static panels' empty ones. */}
         <WeaselProvider isolate>
           <InteractivePanel />
         </WeaselProvider>
-
-        <div className="ckd-boolops-panel">
-          <h3 className="ckd-boolops-label">Inputs</h3>
-          <Panel id="inputs" paths={[
-            { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
-            { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR },
-          ]} />
-        </div>
-
-        <div className="ckd-boolops-panel">
-          <h3 className="ckd-boolops-label">Union</h3>
-          <Panel id="union" paths={[{ id: 'u', path: unionResult, color: RESULT_COLOR }]} />
-        </div>
-
-        <div className="ckd-boolops-panel">
-          <h3 className="ckd-boolops-label">Intersect</h3>
-          <Panel id="intersect" paths={[{ id: 'i', path: intersectResult, color: RESULT_COLOR }]} />
-        </div>
-
-        <div className="ckd-boolops-panel">
-          <h3 className="ckd-boolops-label">Subtract</h3>
-          <Panel id="subtract" paths={[{ id: 's', path: subtractResult, color: RESULT_COLOR }]} />
-        </div>
-
-        <div className="ckd-boolops-panel">
-          <h3 className="ckd-boolops-label">Exclude</h3>
-          <Panel id="exclude" paths={[{ id: 'x', path: excludeResult, color: RESULT_COLOR }]} />
-        </div>
-
-        <div className="ckd-boolops-panel">
-          <h3 className="ckd-boolops-label">Divide</h3>
-          <Panel id="divide" paths={dividePaths} />
-        </div>
+        <Sequence label="Each op on the inputs" sweep={values(STATIC, (op) => op.label)}>
+          {(op) => <Panel paths={op.paths} />}
+        </Sequence>
       </div>
     </DemoStageGroup>
   );

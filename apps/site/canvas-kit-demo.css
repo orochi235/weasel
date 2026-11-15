@@ -498,13 +498,6 @@ a:hover { text-decoration: underline; }
 }
 
 /* ---------- Boolean ops demo ---------- */
-.ckd-boolops-grid {
-  display: grid;
-  grid-template-columns: repeat(3, auto);
-  gap: var(--wzl-space-6);
-  align-items: end;
-}
-
 .ckd-boolops-panel {
   display: flex;
   flex-direction: column;
