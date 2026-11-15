@@ -35,6 +35,11 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> ex
    *  negative axis is flipped: the output is sized from its magnitude, and the
    *  rect's far edge on that axis lands on the output's top or left. */
   scale: { x: number; y: number };
+  /** The camera a parallax layer is placed from, for a capture of what that camera shows: each
+   *  plane lands where the camera draws it, and `scale` changes only the resolution. Default
+   *  none: the render is a region of the document, and every layer, a parallax plane included,
+   *  draws at its document pose. */
+  camera?: View;
   /** Per-node draw callback. Default: `defaultDrawOne` with `resolveImage`
    *  merged into the `NodePaintCtx` the scene walk supplies. Custom `drawOne`
    *  callers that still want resolver injection should call

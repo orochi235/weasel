@@ -278,19 +278,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Export, worker and headless contracts
 
-- **(P2) [agent] Make region exports use a consistent coordinate space for parallax layers.**
-  `selectionRegion` bounds document-world poses, but `regionRenderArgs` feeds the region origin and
-  output scale into a scene walk that still derives parallax views (`packages/core/src/canvas/export/`,
-  `sceneViewRender.ts`, `buildSceneTree.ts`). Reproduced at command level: a node at `x: 100`, width 10,
-  on `{ parallax: { pan: 0.5 } }`, exported as region `{ x: 100, y: 0, width: 10, height: 10 }`,
-  receives net translation -50 rather than -100, placing its left edge at output x=50 outside the
-  10px image. A parallax zoom factor can also make output scale change composition rather than only
-  resolution. Define document-region exports separately from camera-view captures and apply the
-  corresponding coordinate policy consistently across PNG, PDF and SVG.
-  Closes when selection/page/region exports contain their documented bounds across pan/zoom parallax,
-  resolution scaling preserves the chosen composition, and parity tests cover nonzero origins,
-  anchors, mixed layers and flipped/anisotropic views where supported.
-
 - **(P2) [agent] Export one coherent document revision across asynchronous loading and multiple pages.**
   `documentOf` suppresses overrides but remains a live view of the source. PNG warms assets and then
   rebuilds commands; PDF awaits warming inside its region loop and reads each page afterward

@@ -226,6 +226,13 @@ shows it; `viewportWorldRect(view, size)` is the one a view shows;
 `selectionRegion(scene, ids)` is the box the ids draw, strokes included.
 `name` labels a PDF page and titles an SVG.
 
+A region is of the document: every format draws each layer at its document
+pose, a parallax layer's included, so what a page or selection holds lands
+inside it at any `scale`. Parallax is the camera's, and a region export has
+none. To capture what a camera shows, planes and all, render with that camera:
+`renderSceneToPixels({ scene, sourceRect: viewportWorldRect(view, size), scale, camera: view })`
+places each plane as `view` does, and its `scale` changes only the resolution.
+
 `exportRegions(scene, regions, formatId, opts)` writes them in the format
 registered under `formatId` and answers a `Blob`. It throws for an id nothing
 registered, and for several regions handed to a format that is not

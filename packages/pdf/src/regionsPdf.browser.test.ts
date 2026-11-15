@@ -6,6 +6,7 @@ import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-d
 import * as pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { plainScene } from '@weasel-js/core/testing/plainScene';
+import { parallaxScene } from '@weasel-js/core/testing/parallaxScene';
 import { exportRegionsPdf } from './regionsPdf';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
@@ -60,5 +61,16 @@ describe('exportRegionsPdf', () => {
     expect(await doc.getPageLabels()).toEqual(['Front', 'Spread']);
     const vp = (await doc.getPage(2)).getViewport({ scale: 1 });
     expect([vp.width, vp.height]).toEqual([330, 75]);
+  });
+
+  it('draws a parallax plane node over the whole of its own region', async () => {
+    const scene = parallaxScene({ pan: 0.5, zoom: 0.5, anchor: { x: 37, y: -12 } });
+    scene.setHidden('b' as never, true);
+    const region = { x: 90, y: -10, width: 30, height: 30 };
+    const page = await draw(await read((await exportRegionsPdf(scene, [region])).blob), 1);
+    // The node spans (100, 0) to (110, 10): 7.5 to 15 points into the page on both axes.
+    expect(rgb(page, 11, 11)).toEqual([255, 0, 0]);
+    expect(rgb(page, 4, 4)).toEqual([255, 255, 255]);
+    expect(rgb(page, 18, 18)).toEqual([255, 255, 255]);
   });
 });

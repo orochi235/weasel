@@ -12,8 +12,8 @@ import { mat3 } from '@weasel-js/geom';
 /** The canvas to reproduce — its camera, its size, and what its debug overlay
  *  had recorded — plus how to rasterize the scene under it. */
 export interface RenderDebugSnapshotArgs<TData, TLayer extends string, TPose>
-  extends Omit<RenderSceneToPixelsArgs<TData, TLayer, TPose>, 'sourceRect' | 'scale' | 'overlay'> {
-  /** The camera the canvas was looking through. */
+  extends Omit<RenderSceneToPixelsArgs<TData, TLayer, TPose>, 'sourceRect' | 'scale' | 'overlay' | 'camera'> {
+  /** The camera the canvas was looking through. Its parallax planes are placed as it placed them. */
   view: View;
   /** The canvas's size in CSS pixels. */
   size: { width: number; height: number };
@@ -53,6 +53,7 @@ export function debugSnapshotArgs<TData, TLayer extends string, TPose>(
     annotations: true,
     ...rest,
     sourceRect: viewportWorldRect(view, size),
+    camera: view,
     scale: { x: view.scale.x * pixelRatio, y: view.scale.y * pixelRatio },
     overlay: pixelRatio === 1
       ? overlay

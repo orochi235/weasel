@@ -4,10 +4,12 @@ import type { RectPose } from 'core/geometry/rectPose';
 import type { Scene } from 'core/scene/types';
 
 /**
- * A world-space rectangle to export: a page (`exportPages` makes one of each
- * `PlacedPage`), what the viewport shows (`viewportWorldRect`), a selection's
- * bounds, or any other. `name` is what a format that labels its pages or
- * documents calls it: a PDF page's label, an SVG's `<title>`.
+ * A rectangle of the document to export: a page (`exportPages` makes one of
+ * each `PlacedPage`), the world rect a view spans (`viewportWorldRect`), a
+ * selection's bounds, or any other. Every format draws each layer in it at its
+ * document pose: a parallax layer's camera tracking is not applied. `name` is
+ * what a format that labels its pages or documents calls it: a PDF page's
+ * label, an SVG's `<title>`.
  */
 export interface ExportRegion extends Rect {
   readonly name?: string;

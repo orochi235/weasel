@@ -78,7 +78,7 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
   }
   commands.push(...buildSceneViewCommands(
     // `scale` is already output pixels per world unit: one output pixel per "CSS" pixel.
-    args.scene, view, drawOne, undefined, args.alphaFor, drawnLayers(args), args, undefined, 1,
+    args.scene, view, drawOne, undefined, args.alphaFor, drawnLayers(args), args, undefined, 1, args.camera ?? null,
   ));
   if (args.overlay) commands.push(...args.overlay);
   return { width, height, view, commands };
