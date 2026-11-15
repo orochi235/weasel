@@ -7,6 +7,8 @@ import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
 import type { SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle, Fill } from '@weasel-js/core';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { Field } from '@weasel-js/ui/components/Field';
+import css from './TextOutlinesDemo.module.css';
 import { DemoStage } from './DemoStage';
 import { useVisiblePoll } from '../useVisiblePoll';
 
@@ -82,19 +84,6 @@ const makeDrawOne = (
     )];
   };
 
-/**
- * The outline text tier against the distance field it replaces.
- *
- * Both sides of the toggle draw the same face at the same size in the same place. Unchecked,
- * glyphs come from the dynamic canvas-SDF tier: a single-channel field baked at 48px, accurate
- * near the bake size and increasingly not above it. Checked, the same glyphs are real outlines
- * tessellated in em space, which has no size to be near.
- *
- * The line positions do not move while you toggle, because the tier decides how a glyph is
- * painted and never where it sits — advances, kerning, and line breaking still come from the SDF
- * tier either way. That invariant is what lets the threshold depend on zoom without text
- * reflowing under the cursor.
- */
 export function TextOutlinesDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
@@ -131,42 +120,27 @@ export function TextOutlinesDemo() {
   useVisiblePoll(() => setStatus(outlines ? outlineStatus(FAMILY, 400, 'normal') ?? 'none' : 'off (canvas SDF)'), 200);
 
   return (
-    <div style={{ position: 'relative', width: 'min-content' }}>
-      <div style={{ marginBottom: 6 }}>
+    <div>
+      <div className={css.controls}>
         <Checkbox isSelected={outlines} data-testid="outline-toggle" onChange={setOutlines}>Outline tier</Checkbox>
-        <span data-testid="outline-status" style={{ marginLeft: 12, opacity: 0.6 }}>
+        <Checkbox isSelected={stroked} data-testid="stroke-toggle" onChange={setStroked}>Stroke</Checkbox>
+        <Checkbox isSelected={filled} data-testid="fill-toggle" onChange={setFilled}>Fill</Checkbox>
+        <Field orientation="row" label="Zoom" output={`${zoom.toFixed(2)}×`}>
+          <InlineRange
+            className={css.zoom}
+            min={1}
+            max={8}
+            step={0.25}
+            value={zoom}
+            aria-label="Zoom"
+            data-testid="outline-zoom"
+            onChange={(e) => setZoom(Number(e.target.value))}
+          />
+        </Field>
+        <span data-testid="outline-status" className={css.status}>
           {status} · switches at {OUTLINE_MIN_SCREEN_PX}px on screen
         </span>
       </div>
-      <div style={{ marginBottom: 6 }}>
-        <Checkbox isSelected={stroked} data-testid="stroke-toggle" onChange={setStroked}>Stroke</Checkbox>
-        <span style={{ marginLeft: 12, opacity: 0.6 }}>
-          only glyphs on the outline tier can be stroked — a distance field has
-          no geometry to stroke, so the small line stays bare until you zoom it
-          past the threshold
-        </span>
-      </div>
-      <div style={{ marginBottom: 6 }}>
-        <Checkbox isSelected={filled} data-testid="fill-toggle" onChange={setFilled}>Fill</Checkbox>
-        <span style={{ marginLeft: 12, opacity: 0.6 }}>
-          off is `data.fill: null` — the same explicit no-fill every other node
-          kind reads. Turn it off with the stroke on for outline-only display
-          type; with both off the glyphs have no paint at all and nothing draws
-        </span>
-      </div>
-      <label style={{ display: 'block', marginBottom: 8 }}>
-        Zoom{' '}
-        <InlineRange
-          min={1}
-          max={8}
-          step={0.25}
-          value={zoom}
-          data-testid="outline-zoom"
-          onChange={(e) => setZoom(Number(e.target.value))}
-          style={{ verticalAlign: 'middle', width: 200 }}
-        />
-        <span style={{ marginLeft: 8, opacity: 0.6 }}>{zoom.toFixed(2)}×</span>
-      </label>
       <DemoStage width={W} height={H}>
         <SceneCanvas
           ref={canvasRef}

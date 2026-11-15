@@ -1,0 +1,18 @@
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-4) var(--wzl-space-8);
+  margin-bottom: var(--wzl-space-4);
+}
+
+.zoom {
+  width: 160px;
+}
+
+.status {
+  min-width: 34ch;
+  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
