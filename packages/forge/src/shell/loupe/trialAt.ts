@@ -1,3 +1,4 @@
+import { layoutBoxOf } from '@weasel-js/core';
 import type { LoupePoint } from '@weasel-js/labkit/loupe';
 
 /** The trial under a client point: its host, and the point in the host's own px. */
@@ -25,13 +26,12 @@ export function trialAt(client: LoupePoint, doc: Document = document): TrialHit 
   for (const el of stackAt(client, doc)) {
     const host = el.closest<HTMLElement>('[data-fg-host]');
     if (!host || host.hasAttribute('data-fg-copy')) continue;
-    const rect = host.getBoundingClientRect();
-    const scale = host.offsetWidth > 0 ? rect.width / host.offsetWidth : 1;
+    const { left, top, scale } = layoutBoxOf(host);
     return {
       trialId: host.dataset.fgHost ?? '',
       host,
-      local: { x: (client.x - rect.left) / scale, y: (client.y - rect.top) / scale },
-      scale,
+      local: { x: (client.x - left) / scale.x, y: (client.y - top) / scale.y },
+      scale: scale.x,
     };
   }
   return null;

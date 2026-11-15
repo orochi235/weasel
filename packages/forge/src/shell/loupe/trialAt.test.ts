@@ -10,6 +10,7 @@ function host(id: string, opts: { copy?: boolean; rect: DOMRect; offsetWidth: nu
   if (opts.copy) el.setAttribute('data-fg-copy', '');
   el.getBoundingClientRect = () => opts.rect;
   Object.defineProperty(el, 'offsetWidth', { value: opts.offsetWidth });
+  Object.defineProperty(el, 'offsetHeight', { value: (opts.offsetWidth * opts.rect.height) / opts.rect.width });
   document.body.append(el);
   return el;
 }

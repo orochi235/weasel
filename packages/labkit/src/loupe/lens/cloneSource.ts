@@ -1,3 +1,4 @@
+import { layoutBoxOf } from '@weasel-js/core';
 import type { LensSource, LensSourceHandle, LensSourceRequest } from './lensSource';
 import type { LoupePoint } from './lensTypes';
 import { probeUnderLens } from './probeUnderLens';
@@ -103,12 +104,11 @@ class CloneCell {
   private position(): void {
     const root = this.root;
     if (!root) return;
-    const rect = root.getBoundingClientRect();
-    // Client px per root px: a zoomed pane draws its trial scaled.
-    const scale = root.offsetWidth > 0 ? rect.width / root.offsetWidth : 1;
+    // A zoomed pane draws its trial scaled.
+    const { left, top, scale } = layoutBoxOf(root);
     const { reticle, factor, size } = this.request;
-    const local = { x: (reticle.x - rect.left) / scale, y: (reticle.y - rect.top) / scale };
-    const k = factor * scale;
+    const local = { x: (reticle.x - left) / scale.x, y: (reticle.y - top) / scale.y };
+    const k = factor * scale.x;
     const set = (name: string, px: number) => this.box.style.setProperty(name, `${px}px`);
     set('--lk-copy-w', root.offsetWidth);
     set('--lk-copy-h', root.offsetHeight);
