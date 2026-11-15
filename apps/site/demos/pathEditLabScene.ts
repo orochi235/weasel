@@ -6,11 +6,10 @@ import {
   solid,
   useSelection,
   type Path,
-  type PathEditHost,
+  type PathEditOpening,
   type RectPose,
 } from '@weasel-js/core';
 import { type SceneTrialState, useTrialScene, type RenderContext } from '@weasel-js/labkit';
-import { useMemo, useState } from 'react';
 
 /** The node every path-edit lab opens on, already selected and in path edit. */
 export const LAB_PATH_ID = 'path';
@@ -39,9 +38,12 @@ export function strokeNode(id: string, path: Path, color: string, filled = false
   };
 }
 
+/** Opens {@link LAB_PATH_ID} in path edit as the canvas mounts, for `defaultPathEdit`. */
+const OPENING: PathEditOpening = { id: LAB_PATH_ID };
+
 /**
- * The scene, selection and path-edit host of a trial that opens with the path
- * `d` selected and its anchors up for editing.
+ * The scene and selection of a trial that opens with the path `d` selected, and the
+ * `defaultPathEdit` that puts its anchors up for editing.
  */
 export function usePathEditTrial<TC>(ctx: RenderContext<PathLabState, TC>, d: string, color: string) {
   const scene = useTrialScene(ctx, () =>
@@ -51,7 +53,5 @@ export function usePathEditTrial<TC>(ctx: RenderContext<PathLabState, TC>, d: st
     }),
   );
   const selection = useSelection({ scene, initial: [asNodeId(LAB_PATH_ID)] });
-  const [editingId, setEditingId] = useState<string | null>(LAB_PATH_ID);
-  const pathEdit = useMemo<PathEditHost>(() => ({ editingId: () => editingId, setEditingId }), [editingId]);
-  return { scene, selection, pathEdit };
+  return { scene, selection, defaultPathEdit: OPENING };
 }

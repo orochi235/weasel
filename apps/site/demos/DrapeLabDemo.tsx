@@ -24,7 +24,7 @@ const WAVE = (() => {
 })();
 
 function DrapeTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
-  const { scene, selection, pathEdit } = usePathEditTrial(ctx, WAVE, '#3478f6');
+  const { scene, selection, defaultPathEdit } = usePathEditTrial(ctx, WAVE, '#3478f6');
   const live = useLatest(ctx);
   const features = useMemo(() => [pickPreset, movePreset, pathsPreset, createDrapePreset(() => {
     const { drape, radius, falloff } = live.current.config;
@@ -38,7 +38,7 @@ function DrapeTrial({ ctx }: { ctx: RenderContext<PathLabState, Config> }) {
       features={features}
       scene={scene}
       selection={selection}
-      pathEdit={pathEdit}
+      defaultPathEdit={defaultPathEdit}
       trial={ctx.trial}
     />
   );
