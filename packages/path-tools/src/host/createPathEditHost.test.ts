@@ -55,4 +55,32 @@ describe('createPathEditHost', () => {
     expect(modes.current().id).toBe('path-edit');
     expect(host.editingId()).toBe('b');
   });
+
+  it('names the open path from a mode target, and opens and closes through it', () => {
+    const modes = createModeRegistry({ initial: 'normal' });
+    let on: string | null = null;
+    const target = {
+      get: () => on,
+      open: vi.fn((id: string) => { on = id; modes.setMode('path-edit'); }),
+      close: vi.fn(() => { on = null; modes.setMode('normal'); }),
+    };
+    const setMode = vi.spyOn(modes, 'setMode');
+    const host = createPathEditHost({ modes, target });
+    host.setEditingId('a');
+    expect(target.open).toHaveBeenCalledWith('a');
+    expect(host.editingId()).toBe('a');
+    host.setEditingId(null);
+    expect(target.close).toHaveBeenCalledTimes(1);
+    host.setEditingId(null);
+    expect(target.close).toHaveBeenCalledTimes(1);
+    // Only the target moved the registry.
+    expect(setMode).toHaveBeenCalledTimes(2);
+  });
+
+  it('names no path while the open one fails `editable`', () => {
+    const host = createPathEditHost({ id: 'rect', editable: (id) => id !== 'rect' });
+    expect(host.editingId()).toBeNull();
+    host.setEditingId('curve');
+    expect(host.editingId()).toBe('curve');
+  });
 });

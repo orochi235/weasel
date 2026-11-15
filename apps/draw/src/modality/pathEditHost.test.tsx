@@ -13,7 +13,6 @@ import {
 import { useMemo } from 'react';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './machine';
-import { createAnchorSelection } from './anchorSelection';
 import { modePathEdit } from './pathEditHost';
 
 beforeAll(() => {
@@ -144,11 +143,21 @@ describe('modePathEdit', () => {
     expect(host.editingId()).toBe('a');
   });
 
-  it('owns the anchor selection when handed one, for the corner controls to read', () => {
-    const anchors = createAnchorSelection();
-    const host = modePathEdit(machine(), () => true, anchors);
-    host.setSelectedAnchors!(new Set([2]));
-    expect([...anchors.get()]).toEqual([2]);
-    expect(host.selectedAnchors!()).toBe(anchors.get());
+  it('owns the anchor selection, and says when it changes, for the corner controls to read', () => {
+    const host = modePathEdit(machine(), () => true);
+    const heard = vi.fn();
+    host.subscribe(heard);
+    host.setSelectedAnchors(new Set([2]));
+    expect([...host.selectedAnchors()]).toEqual([2]);
+    expect(heard).toHaveBeenCalledTimes(1);
+  });
+
+  it('says when the mode opens or closes a path', () => {
+    const m = machine();
+    const host = modePathEdit(m, () => true);
+    const heard = vi.fn();
+    host.subscribe(heard);
+    host.setEditingId('a');
+    expect(heard).toHaveBeenCalled();
   });
 });

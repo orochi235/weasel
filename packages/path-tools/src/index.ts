@@ -179,5 +179,6 @@ export {
   type PathEditToolId, type PathToolId,
 } from './toolSets';
 export {
-  createPathEditHost, type PathEditHostOptions, type PathEditModes, type PathEditStore,
+  createPathEditHost, type PathEditHostOptions, type PathEditModes, type PathEditStore, type PathEditModeTarget,
 } from './host/createPathEditHost';
+export { usePathEditMode, type PathEditMode, type UsePathEditModeOptions } from './host/usePathEditMode';

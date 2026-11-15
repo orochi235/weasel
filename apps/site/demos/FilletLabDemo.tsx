@@ -81,7 +81,6 @@ function FilletsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   // Held beside the trial so the lab opens on one corner and its panel can read it.
   const [host] = useState(() => createPathEditHost({ id: FIRST, anchors: FIRST_ANCHORS }));
-  const redrawOn = useMemo(() => [host], [host]);
   const selectionOptions = useMemo(() => ({ initial: [asNodeId(FIRST)] }), []);
   return (
     <div className={s.frame}>
@@ -91,7 +90,6 @@ function FilletsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         trial={ctx.trial}
         pathEdit={host}
-        redrawOn={redrawOn}
         selectionOptions={selectionOptions}
         tune={TUNE}
       />

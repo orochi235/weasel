@@ -20,7 +20,7 @@ import {
 } from '@weasel-js/labkit';
 import { createPathEditHost } from '@weasel-js/path-tools';
 import { Button } from '@weasel-js/ui/components/Button';
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import s from './RectPathEditLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -95,7 +95,6 @@ function RectPathEditTrial({ ctx }: { ctx: RenderContext<State, unknown> }) {
   // Held beside the trial so the panel can read which path is open.
   const [host] = useState(() => createPathEditHost({ id: FIRST }));
   useSceneTick(scene, host);
-  const redrawOn = useMemo(() => [host], [host]);
   return (
     <div className={s.trial}>
       <TrialSceneCanvas
@@ -104,7 +103,6 @@ function RectPathEditTrial({ ctx }: { ctx: RenderContext<State, unknown> }) {
         scene={scene}
         trial={ctx.trial}
         pathEdit={host}
-        redrawOn={redrawOn}
       />
       <Panel scene={scene} host={host} />
     </div>

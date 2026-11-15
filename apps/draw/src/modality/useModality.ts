@@ -3,16 +3,15 @@
  * dim for WeaselDraw. Wires them together and exposes the pieces that
  * the app plumbs into <SceneCanvas>.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   asNodeId,
   hasEditablePath,
   createModeDecorationLayer,
-  type PathEditHost,
   type RenderLayer,
   type Scene,
 } from '@weasel-js/core';
-import type { FilletControlsSelection } from '@weasel-js/path-tools';
+import type { PathEditStore } from '@weasel-js/path-tools';
 import type { History } from '@weasel-js/history';
 import {
   createModeDecorations,
@@ -26,7 +25,6 @@ import {
   type ModeMachine,
 } from './index';
 import { drawPrefs } from '../prefs';
-import { createAnchorSelection, type AnchorSelection } from './anchorSelection';
 import { modeScope } from './modeScope';
 import { modePathEdit } from './pathEditHost';
 
@@ -39,12 +37,9 @@ export interface UseModalityReturn {
   decorationLayer: RenderLayer<unknown>;
   /** The scene's history, which the mode machine opens its journals on. */
   history: History;
-  /** The selected anchors of the path open in path edit. */
-  anchors: AnchorSelection;
-  /** The path being anchor-edited is the path-edit mode's target, read from the machine. */
-  pathEdit: PathEditHost;
-  /** The open path and its selected anchors, as the corner controls read them. */
-  filletSelection: FilletControlsSelection;
+  /** The path being anchor-edited is the path-edit mode's target, read from the machine; the
+   *  host holds its selected anchors, and the corner controls read both from it. */
+  pathEdit: PathEditStore;
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -99,21 +94,10 @@ export function useModality(
   // No anchor painter: SceneCanvas's path-editing overlay draws the open path's anchors.
   const decorationLayer = useMemo(() => createModeDecorationLayer(decorations), [decorations]);
 
-  const [anchors] = useState(createAnchorSelection);
-  const pathEdit = useMemo(() => modePathEdit(
-    machine,
-    (id) => hasEditablePath(scene.get(asNodeId(id))),
-    anchors,
-  ), [machine, scene, anchors]);
-  const filletSelection = useMemo<FilletControlsSelection>(() => ({
-    editingId: pathEdit.editingId,
-    selectedAnchors: anchors.get,
-    subscribe: (l) => {
-      const offAnchors = anchors.subscribe(l);
-      const offModes = machine.registry.subscribe(l);
-      return () => { offAnchors(); offModes(); };
-    },
-  }), [pathEdit, anchors, machine]);
+  const pathEdit = useMemo(
+    () => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))),
+    [machine, scene],
+  );
 
-  return { machine, decorations, scopingDim, decorationLayer, history, anchors, pathEdit, filletSelection };
+  return { machine, decorations, scopingDim, decorationLayer, history, pathEdit };
 }

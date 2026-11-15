@@ -109,7 +109,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   }, []);
   const loupeSource = useLoupeSource(scene, pages.placed, doc.backgroundColor);
 
-  const surfaceHost = useEditorSurfaceHost({ scene, selection, measurements, doc, filletSelection: modality.filletSelection });
+  const surfaceHost = useEditorSurfaceHost({ scene, selection, measurements, doc, filletSelection: modality.pathEdit });
 
   const textEdit = useTextEditSession(scene, hostRef.current, modality.machine);
   const inPathEdit = useModeId(modality.machine) === 'path-edit';

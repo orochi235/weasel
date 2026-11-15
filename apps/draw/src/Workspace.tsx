@@ -171,8 +171,8 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     [editingId, scopingAlphaFor, groupScope],
   );
   const redrawOnScoping = useMemo(
-    () => [modality.scopingDim, modality.anchors, groupScope],
-    [modality.scopingDim, modality.anchors, groupScope],
+    () => [modality.scopingDim, groupScope],
+    [modality.scopingDim, groupScope],
   );
 
   // On-canvas gradient handles edit one node's one paint; which paint is the side the swatches

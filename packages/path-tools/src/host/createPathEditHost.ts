@@ -3,7 +3,7 @@ import { createEmitter } from '@weasel-js/registry';
 
 /**
  * A {@link PathEditHost} that holds which path is open and which of its anchors are selected, and
- * says when either changes. One object serves as `<SceneCanvas pathEdit>`, as a `redrawOn` source,
+ * says when either changes. One object serves as `<SceneCanvas pathEdit>`, which repaints on it,
  * and as what a panel over the open path reads (`useFilletControls`'s selection).
  */
 export interface PathEditStore extends PathEditHost {
@@ -19,9 +19,22 @@ export interface PathEditModes {
   subscribe(listener: () => void): () => void;
 }
 
+/**
+ * The open path as a mode machine holds it: the target its path-edit mode is on. Given one, the
+ * host keeps no id of its own, and its changes are heard through `modes`.
+ */
+export interface PathEditModeTarget {
+  /** The path the mode is on, or null. Read only while `modes` is in the path-edit mode. */
+  get(): string | null;
+  /** Put the machine in the path-edit mode on `id`. */
+  open(id: string): void;
+  /** Leave the path-edit mode; called only while in it. */
+  close(): void;
+}
+
 /** Options for {@link createPathEditHost}. */
 export interface PathEditHostOptions {
-  /** The path open at the start. Default none. */
+  /** The path open at the start. Default none. Ignored with `target`. */
   id?: string | null;
   /** Flat indices of the anchors selected in it at the start. */
   anchors?: Iterable<number>;
@@ -35,18 +48,33 @@ export interface PathEditHostOptions {
   mode?: string;
   /** Where closing the open path leaves the registry. Default `'normal'`. */
   exitMode?: string;
+  /** Takes the open path from a mode machine instead of holding it; it then enters and leaves
+   *  the mode itself. */
+  target?: PathEditModeTarget;
+  /** Whether `id` has anchors to edit. The mode can sit on a node that has none, and then no
+   *  path is open. Default every id. */
+  editable?: (id: string) => boolean;
 }
 
 /** A path-edit host that owns its state, optionally as a mode on `opts.modes`. */
 export function createPathEditHost(opts: PathEditHostOptions = {}): PathEditStore {
-  const { modes, mode = 'path-edit', exitMode = 'normal' } = opts;
+  const { modes, mode = 'path-edit', exitMode = 'normal', target, editable } = opts;
   let id = opts.id ?? null;
   let anchors: ReadonlySet<number> = new Set(opts.anchors ?? []);
   const changed = createEmitter();
   const inMode = () => !modes || modes.current().id === mode;
+  const held = () => (target ? target.get() : id);
   return {
-    editingId: () => (inMode() ? id : null),
+    editingId: () => {
+      const open = inMode() ? held() : null;
+      return open !== null && (editable?.(open) ?? true) ? open : null;
+    },
     setEditingId(next) {
+      if (target) {
+        if (next !== null) target.open(next);
+        else if (inMode()) target.close();
+        return;
+      }
       const wasOpen = inMode();
       const was = modes?.current().id;
       id = next;

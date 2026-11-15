@@ -3,9 +3,6 @@
  * the canvas keeps no id of its own: it reads `editingId()` wherever it needs the open path, and
  * the `enterPathEdit` and `exitPathEdit` actions call `setEditingId`. For a host whose own state
  * already says which path is open, such as a mode machine holding a path-edit mode's target.
- *
- * The host asks for a redraw when its answer changes; passing its store in `redrawOn`, or its
- * registry in `modes`, does.
  */
 export interface PathEditHost {
   /** The node whose anchors are editable now, or null for none. */
@@ -21,6 +18,9 @@ export interface PathEditHost {
   /** The canvas changing the anchor selection: a click, a marquee, an edit that
    *  renumbers anchors, or a path opening or closing. */
   setSelectedAnchors?(next: ReadonlySet<number>): void;
+  /** Notified when any answer above changes; the canvas repaints on it. A host without it
+   *  repaints the canvas some other way, such as its mode registry passed as `modes`. */
+  subscribe?(listener: () => void): () => void;
 }
 
 /** A path a canvas opens in anchor edit as it mounts (`defaultPathEdit`), as though it had been
