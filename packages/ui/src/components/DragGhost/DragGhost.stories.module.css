@@ -1,0 +1,12 @@
+.chip {
+  width: 160px;
+  padding: var(--wzl-space-3) var(--wzl-space-5);
+  border: 1px solid currentColor;
+  border-radius: var(--wzl-radius-sm);
+  cursor: grab;
+  touch-action: none;
+}
+
+.face {
+  padding: var(--wzl-space-3) var(--wzl-space-5);
+}

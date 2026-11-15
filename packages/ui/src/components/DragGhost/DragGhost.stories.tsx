@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { type PointerEvent, useState } from 'react';
+import { startThresholdDrag } from '@weasel-js/core';
+import { type PointerEvent as ReactPointerEvent, useState } from 'react';
 import { DragGhost } from '@weasel-js/ui/components/DragGhost';
+import s from './DragGhost.stories.module.css';
 
 const meta: Meta<typeof DragGhost> = {
   title: 'ui/DragGhost',
@@ -16,28 +18,18 @@ export const FollowsThePointer: Story = {
     function Chip() {
       const [ghost, setGhost] = useState<{ left: number; top: number; width: number } | null>(null);
       const [from, setFrom] = useState<HTMLElement | null>(null);
-      const [grab, setGrab] = useState({ x: 0, y: 0 });
-      const down = (e: PointerEvent<HTMLDivElement>) => {
+      const press = (e: ReactPointerEvent<HTMLDivElement>) => {
         const r = e.currentTarget.getBoundingClientRect();
-        e.currentTarget.setPointerCapture(e.pointerId);
-        setGrab({ x: e.clientX - r.left, y: e.clientY - r.top });
-        setGhost({ left: r.left, top: r.top, width: r.width });
-      };
-      const move = (e: PointerEvent<HTMLDivElement>) => {
-        if (ghost) setGhost({ ...ghost, left: e.clientX - grab.x, top: e.clientY - grab.y });
+        const grab = { x: e.clientX - r.left, y: e.clientY - r.top };
+        const follow = (ev: PointerEvent) => setGhost({ left: ev.clientX - grab.x, top: ev.clientY - grab.y, width: r.width });
+        startThresholdDrag(e, { onActivate: follow, onMove: follow, onCommit: () => setGhost(null), onCancel: () => setGhost(null) });
       };
       return (
-        <div
-          ref={setFrom}
-          onPointerDown={down}
-          onPointerMove={move}
-          onPointerUp={() => setGhost(null)}
-          style={{ width: 160, padding: '6px 10px', border: '1px solid currentColor', borderRadius: 4, cursor: 'grab', touchAction: 'none' }}
-        >
+        <div ref={setFrom} className={s.chip} onPointerDown={press}>
           Drag me
           {ghost && from ? (
             <DragGhost {...args} at={ghost} from={from}>
-              <div style={{ padding: '6px 10px' }}>Drag me</div>
+              <div className={s.face}>Drag me</div>
             </DragGhost>
           ) : null}
         </div>
