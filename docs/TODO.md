@@ -250,18 +250,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P1) [agent] Do not overwrite an unreadable document until its recovery copy is durable.**
-  `readSlot`/`keepUnreadable` queue `<key>:unreadable` and immediately return the fallback
-  (`packages/editor/src/sessionStore.ts`). A later `writeSession` checks only the primary's pending
-  write, so a failed backup does not prevent overwriting the original. Reproduced with a memory-backed
-  adapter rejecting only `doc:unreadable`: `readStored` returns an empty fallback, the backup flush fails,
-  and `writeSession` returns true after replacing the original, with no durable backup. The console
-  meanwhile said the original was kept aside. Make recovery preservation a prerequisite for replacing
-  unreadable content, with an observable failure and a retry or explicit recovery path.
-  Closes when backup quota/permission failures and interrupted backup writes leave the original durable
-  value intact, autosave cannot bypass that protection, successful recovery allows normal saves again,
-  and tests cover both localStorage and async record adapters without treating a queued backup as saved.
-
 - **(P2) [agent] Define inverse failure for world-preserving edits into singular frames.**
   `decomposeRigidPose` falls back to undoing translation/rotation when a parent's linear transform has
   no inverse (`packages/core/src/core/scene/composePose.ts`); kernel3d's `overAxis` substitutes values

@@ -9,9 +9,3 @@ export const sessionRecords = (): RecordCache | undefined => held;
 export function holdSessionRecords(records: RecordCache | undefined): void {
   held = records;
 }
-
-/** Remove `key`'s session entry, best-effort. */
-export function removeSessionEntry(key: string): void {
-  if (held) held.delete(key);
-  else try { localStorage.removeItem(key); } catch { /* best-effort */ }
-}

@@ -1,5 +1,5 @@
 import type { ThemeDefinition } from '@weasel-js/theme';
-import { isUnreadableKey, readStored } from '@weasel-js/editor';
+import { isUnreadableKey, readStored, writeSession } from '@weasel-js/editor';
 import { clearSavedHistory, type LabHistoryStore, localHistoryStore } from '../historyStorage';
 
 export interface StoredDraft {
@@ -63,21 +63,13 @@ export function draftNames(): string[] {
   }
 }
 
-/** Store `draft`; answers whether the browser took it, which a private window or a full quota refuses. */
-export function persistDraft(draft: StoredDraft): boolean {
-  try {
-    localStorage.setItem(draftKey(draft.definition.name), JSON.stringify(draft));
-    return true;
-  } catch {
-    return false;
-  }
-}
+/** Store `draft`; resolves whether the browser took it, which a private window or a full quota refuses, as it
+ *  refuses to write over a draft `loadDraft` could not read until that one is kept aside. */
+export const persistDraft = (draft: StoredDraft): Promise<boolean> =>
+  writeSession([draftKey(draft.definition.name), draft]);
 
-export function clearDraft(name: string): void {
-  try {
-    localStorage.removeItem(draftKey(name));
-  } catch {}
-}
+/** Remove theme `name`'s draft; resolves whether it went, under the same refusals as {@link persistDraft}. */
+export const clearDraft = (name: string): Promise<boolean> => writeSession([draftKey(name), undefined]);
 
 export function loadLastTheme(): string | null {
   try {

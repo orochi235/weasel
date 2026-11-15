@@ -1319,6 +1319,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, audit round 16, errors lane): a stored document `readStored` cannot parse is copied to
   `<key>:unreadable` with a `console.error`, then the app starts from its fallback as before, and nothing tells the
   user. Open: whether draw and chart should toast it, and whether anything should offer the copy back.
+  2026-11-14: saves refuse to write over or remove `<key>` until that copy has landed, answering false, so a
+  copy that will not save surfaces as a failed save rather than a lost document.
 
 ## Build
 

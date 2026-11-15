@@ -150,9 +150,12 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   // Only a draft that derives is stored: the stored one is what a reload opens, with no last good one to show.
   const [unkept, setUnkept] = useState(false);
   useEffect(() => {
-    if (!dirty) clearDraft(draft.name);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- whether the browser took the write is known only once it is made
-    else if (error === null) setUnkept(!persistDraft({ definition: draft, baseHash }));
+    let live = true;
+    if (!dirty) void clearDraft(draft.name);
+    else if (error === null) void persistDraft({ definition: draft, baseHash }).then((ok) => live && setUnkept(!ok));
+    return () => {
+      live = false;
+    };
   }, [dirty, draft, baseHash, error]);
 
   const contributions = useMemo<readonly LabContribution[]>(
