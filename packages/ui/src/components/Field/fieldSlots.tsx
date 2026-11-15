@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { FieldError, Text, type ValidationResult } from 'react-aria-components';
 import type { FieldOrientation } from './Field';
+import type { FieldIds } from './fieldSemantics';
 import f from './Field.module.css';
 
 /** The label, layout, description, and error slots every boxed form control takes. */
@@ -55,6 +56,25 @@ export function FieldFoot({
         </Text>
       )}
       <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
+    </>
+  );
+}
+
+/** A description and error drawn without React Aria, each under the id `ids` gives it: the ones a control's
+ *  `aria-describedby` names. The error shows only while `ids` has an id for it. */
+export function NativeFieldFoot({
+  ids,
+  description,
+  error,
+}: {
+  ids: Pick<FieldIds, 'descriptionId' | 'errorId'>;
+  description: ReactNode;
+  error: ReactNode;
+}) {
+  return (
+    <>
+      {ids.descriptionId !== undefined && <span id={ids.descriptionId} className={`${f.hint} ${f.below}`}>{description}</span>}
+      {ids.errorId !== undefined && <span id={ids.errorId} className={`${f.error} ${f.below}`}>{error}</span>}
     </>
   );
 }

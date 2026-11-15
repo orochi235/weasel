@@ -1,6 +1,5 @@
 import { type ReactNode, useId } from 'react';
 import { ControlBody } from './fieldControls';
-import { nameOf } from './nameOf';
 import type { PropertyControlProps } from './fieldTypes';
 import { PropertyRow, type PropertyRowLayout, type PropertyRowVariant } from './PropertyRow';
 import { type PropertyMetricProps } from './metrics';
@@ -76,12 +75,8 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
   const id = useId();
   // Internally a field's option type is erased to `string`: nothing below
   // reads it, and the caller's `onChange` still receives its own `T`.
-  const control = {
-    ...field,
-    name: field.name ?? nameOf(label),
-    className: controlClassName,
-    id,
-  } as unknown as PropertyControlProps;
+  // The control takes its id and name from the row, which is its field.
+  const control = { ...field, className: controlClassName } as unknown as PropertyControlProps;
   const shape = rowShape(control);
 
   const row = {
@@ -97,11 +92,7 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     group: shape.group,
     disabled: control.disabled,
     disabledReason: control.disabledReason,
-    // The font pickers take no id; any other single control is named by the
-    // row's `<label>` through this one.
-    htmlFor: shape.group || control.kind === 'font-family' || control.kind === 'font-weight'
-      ? undefined
-      : id,
+    htmlFor: shape.group ? undefined : id,
   };
 
   if (control.kind === 'number' && control.control === 'slider' && !control.readOnly) {

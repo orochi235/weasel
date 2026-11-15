@@ -38,7 +38,7 @@ export type MenuButtonProps<T extends string = string> = {
   className?: string;
   'aria-label'?: string;
   /** Receives the trigger `<button>`, to move focus to it. */
-  buttonRef?: Ref<HTMLButtonElement>;
+  ref?: Ref<HTMLButtonElement>;
 } & MenuButtonRows<T> & TooltipFields & OverlayPortalProps & DisableableProps;
 
 /** A {@link MenuButton}'s list: flat `items` it acts on through `onAction`, or `entries` in `@weasel-js/menu`'s
@@ -57,6 +57,8 @@ export interface MenuButtonRows<T extends string = string> {
  *
  * `shortcut` adds a kit tooltip reading `Name (⌘N)`, named by `aria-label` or
  * a string `label`, as `Button` does; `tooltip` replaces that text.
+ *
+ * `ref` reaches the trigger `<button>`.
  */
 export function MenuButton<T extends string = string>({
   label,
@@ -72,7 +74,7 @@ export function MenuButton<T extends string = string>({
   shortcut,
   tooltip,
   disabledReason,
-  buttonRef,
+  ref,
 }: MenuButtonProps<T>) {
   const off = useDisabled({ disabled, disabledReason }).disabled;
   const trigger = useMenuTrigger(portalContainer);
@@ -80,9 +82,9 @@ export function MenuButton<T extends string = string>({
   const setButton = useCallback(
     (el: HTMLButtonElement | null) => {
       triggerButtonRef.current = el;
-      assignRef(buttonRef, el);
+      assignRef(ref, el);
     },
-    [triggerButtonRef, buttonRef],
+    [triggerButtonRef, ref],
   );
   const fromItems = useMemo(
     (): MenuEntry[] | null => items ? items.map((item) => ({

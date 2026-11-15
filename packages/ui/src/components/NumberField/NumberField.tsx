@@ -14,6 +14,7 @@ import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import type { ControlSizeProps } from '../ControlSize';
 import { useFieldSizeClass } from '../Field/fieldSize';
+import { useRacField } from '../Field/racField';
 import f from '../Field/Field.module.css';
 import s from './NumberField.module.css';
 
@@ -46,6 +47,9 @@ export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className
  * Arrow keys and scroll step the value; parsing and formatting are React
  * Aria's.
  *
+ * Inside a `Field`, and with no `label` or `aria-label` of its own, it takes the
+ * field's label, description and error.
+ *
  * `ref` forwards to the underlying `<input>`.
  */
 export const NumberField = forwardRef(function NumberField(
@@ -69,10 +73,12 @@ export const NumberField = forwardRef(function NumberField(
     ...rest
   } = hold.rest;
   const sized = useFieldSizeClass(size, className);
+  const field = useRacField({ id: rest.id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], isInvalid: rest.isInvalid, labeled: label !== undefined });
   return hold.wrap(
     <RACNumberField
       {...rest}
       {...hold.rac}
+      {...field}
       value={mixed ? NaN : rest.value}
       className={fieldRootClass({ orientation, width, fit: s.fit, className: sized })}
     >

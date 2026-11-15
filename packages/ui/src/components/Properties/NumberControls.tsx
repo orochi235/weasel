@@ -20,6 +20,7 @@ import { PropertyRow } from './PropertyRow';
 import s from './Properties.module.css';
 import { useControlAccess } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
+import { useFieldControl, type FieldControlAttrs } from '../Field/fieldSemantics';
 import { trackPlace } from './sliderScale';
 import { catchStop, useTrackStops } from './sliderStops';
 import { attachesUnit, UnitSuffix } from './unitSuffix';
@@ -182,6 +183,7 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
   const range = useCommitListener(commit && ((raw) => commit(settle(place.fromInput(Number(raw))))));
   const stops = useTrackStops(p.stops, min, max, place.fraction);
   const known = isKnown(p);
+  const named = useFieldControl({ id: p.id, 'aria-label': p.name });
   // The thumb clamps to the track; the readout beside it does not, so a value
   // past `max` is still reported as what it is.
   const value = known ? onTrack(p.value as number) : min;
@@ -195,9 +197,8 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
       ref={range}
       fill={false}
       marks={stops.marks}
-      id={p.id}
+      {...named}
       className={p.className}
-      aria-label={p.name}
       // The readout is the keyboard's way in, and steps as the track would; a
       // tab stop here too would be two stops for one value. With no value it
       // shows a dash that takes no focus, so the track is the way in.
@@ -227,10 +228,12 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
 
 function SliderReadout(p: PropertyNumberFieldProps) {
   const { min, max, step, settle, held, reach } = sliderBounds(p);
+  // The track takes the row's id; the readout only its name.
+  const { id: _track, ...named } = useFieldControl({ 'aria-label': p.name });
   if (!isKnown(p)) return <>{boxedReadout('—')}</>;
   return (
     <EditableReadout
-      name={p.name}
+      named={named}
       value={p.value}
       min={min}
       max={max}
@@ -271,7 +274,7 @@ function boxedReadout(readout: ReactNode): ReactNode {
 }
 
 interface EditableReadoutProps {
-  name: string | undefined;
+  named: FieldControlAttrs;
   value: number;
   min: number;
   max: number;
@@ -297,11 +300,11 @@ interface EditableReadoutProps {
  * cancels on Escape, and steps like the track beside it. Clicks are stopped so
  * a wrapping <label> doesn't forward focus to the slider thumb.
  */
-function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, stops = [], display, format, unit, disabled, onCommit }: EditableReadoutProps) {
+function EditableReadout({ named, value, min, max, step, reach, settle, onTrack, stops = [], display, format, unit, disabled, onCommit }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
-  const hold = useNativeHold({ disabled });
+  const hold = useNativeHold({ disabled, 'aria-describedby': named['aria-describedby'] });
   const locale = { locale: useFieldLocale() };
   const text = (n: number) => (format ? String(format(n)) : qty(n, display, locale).text);
   const read = (typed: string) => parseAs(typed, display, locale);
@@ -328,7 +331,7 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
       <input
         type="text"
         role="spinbutton"
-        aria-label={name}
+        {...named}
         aria-valuenow={onTrack(value)}
         aria-valuetext={format ? text(value) : qty(value, display, locale).spoken}
         aria-valuemin={reach.min}

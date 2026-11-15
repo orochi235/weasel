@@ -290,27 +290,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P2) [agent] Standardize focus refs and numeric-field integration.** `Input`/`NumberField` refs reach
-  inputs, `Checkbox`/`Switch` refs reach labels, `MenuButton` takes `buttonRef`, and `UnitField`/`Select`
-  expose no equivalent focus ref (`packages/ui/src/components/`). `NumberField` has label, description
-  and error slots; `UnitField` lacks those and ordinary input integration such as `name`, `onBlur` and
-  `aria-describedby` (`NumberField/UnitField.tsx`). Make the standard control ref reach its focusable
-  element, with a separate root ref where needed, and share field semantics/form integration while
-  preserving the numeric controls' different parsers.
-  Closes when the common controls have documented, tested focus-ref targets, unit-aware fields support
-  the same labeling, descriptions, errors and form integration as plain numeric fields, and consumer
-  migration examples no longer need DOM queries or wrapper-specific focus wiring.
-
-- **(P2) [agent] Let a visible field label name its control through composition.** `Field` deliberately
-  names a group rather than its child, so its example repeats `Opacity` in `label` and the slider's
-  `aria-label` (`packages/ui/src/components/Field/Field.tsx`). Property controls have separate `name`
-  and generated-id wiring. Provide a field context or render-prop API supplying control/label ids and
-  description/error associations; single-control fields declare the visible name once, while compound
-  fields retain explicit group semantics.
-  Closes when a custom single-control field gets its accessible name, description and error association
-  from one declaration, compound fields remain correctly named, and standalone and property-field
-  compositions have accessibility tests and documented examples without duplicated label strings.
-
 - **(P3) [agent] labkit's 3D lab keeps its scene's undo outside the lab's.** `SolidInstrument`'s moves and inserts go
   to `scene.history`, which the trial steps with its own "undo" and "redo" text buttons beside the palette, while
   the lab's Undo and Redo above it step only the settings (seen 2026-11-14). Hand the history over with

@@ -27,8 +27,7 @@ export interface PropertyOption<T extends string> {
 
 /** Props every kind of field shares. */
 export interface PropertyFieldBase extends DisableableProps {
-  /** The control's accessible name. A `<PropertyField>` takes it from a string
-   *  `label` when this is omitted. */
+  /** The control's accessible name. Omitted, a control in a row is named by the row's label. */
   name?: string;
   /** The sources the field reads disagree — a multi-selection whose nodes
    *  differ. The control shows no value, in whatever form it has for that. */
@@ -45,7 +44,7 @@ export interface PropertyFieldBase extends DisableableProps {
   /** Class on the control element itself. */
   className?: string;
   /** Id for the control element, for a `<label htmlFor>` outside it. A control no `<label>` may name — a radio
-   *  group, a toggle, a menu, a switch, a paint, a font picker — takes no id, and is named by `name` instead. */
+   *  group, a toggle, a menu, a switch, a paint — takes no id. In a row, the row supplies it. */
   id?: string;
 }
 

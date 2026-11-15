@@ -207,5 +207,8 @@ export type SliderProps<T extends Thumb<Quantity> = Thumb> = HoldProps & {
    *  for infinity — `endless(unit('ms'), 'never')` — else `∞`. */
   endless?: Endless;
   'aria-label'?: string;
+  /** The element naming the slider. Inside a `Field`, with neither this nor `aria-label`, the field's label names it. */
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
   className?: string;
 };

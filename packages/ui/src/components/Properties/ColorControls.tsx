@@ -5,6 +5,8 @@ import { PaintField } from '../PaintField';
 import { PaintInput } from '../PaintInput';
 import type { PropertyColorFieldProps, PropertyPaintFieldProps } from './fieldTypes';
 import s from './Properties.module.css';
+import { useFieldControl } from '../Field/fieldSemantics';
+import { useNameText } from './nameOf';
 
 /** A hex color as the `#rrggbb` it paints and the 0..1 alpha beside it.
  *  Anything unreadable is opaque black, which is what a swatch would show for
@@ -16,6 +18,9 @@ function splitAlpha(value: string | undefined): { rgb: string; alpha: number } {
 }
 
 export function ColorControl(p: PropertyColorFieldProps) {
+  const text = useNameText(p.name);
+  // The chip, which the row's label points at; its name is text, which the opacity slider beside it builds on.
+  const { id } = useFieldControl({ id: p.id });
   const withAlpha = p.alpha !== undefined && p.alpha !== false;
   const apart = typeof p.alpha === 'number';
   const split = splitAlpha(p.value);
@@ -47,7 +52,7 @@ export function ColorControl(p: PropertyColorFieldProps) {
   const settled = route(p.onChange, p.onAlphaChange, true);
   return (
     <ColorField
-      id={p.id}
+      id={id}
       className={p.className ? `${s.colorField} ${p.className}` : s.colorField}
       value={p.mixed || p.unset ? undefined : withAlpha ? withAlpha01(split.rgb, alpha) : (p.value ?? '#000000')}
       mixed={p.mixed}
@@ -58,7 +63,7 @@ export function ColorControl(p: PropertyColorFieldProps) {
       disabledReason={p.disabledReason}
       onInput={live}
       onChange={settled}
-      aria-label={p.name}
+      aria-label={text}
     />
   );
 }
@@ -69,8 +74,9 @@ const makeInert = (el: HTMLElement | null): void => {
 };
 
 export function PaintControl(p: PropertyPaintFieldProps) {
+  const text = useNameText(p.name);
   if (p.disabled && p.control !== 'inline') {
-    return <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} inherit={p.inherit} disabled disabledReason={p.disabledReason} onChange={p.onChange} aria-label={p.name} />;
+    return <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} inherit={p.inherit} disabled disabledReason={p.disabledReason} onChange={p.onChange} aria-label={text} />;
   }
   const Editor = p.control === 'inline' ? PaintInput : PaintField;
   const editor = (
@@ -84,14 +90,14 @@ export function PaintControl(p: PropertyPaintFieldProps) {
       inherit={p.inherit}
       onChange={p.onChange}
       onInput={p.onInput}
-      aria-label={p.name}
+      aria-label={text}
     />
   );
   if (!p.disabled) return editor;
   // The inline editor is a stack of controls, and a kind's editor may be a consumer's: drawn inert, it keeps
   // the height it has enabled, so the rows under it do not move when a condition flips.
   return (
-    <div className={p.className ? `${s.paintDisabled} ${p.className}` : s.paintDisabled} role="group" aria-label={p.name} aria-disabled="true">
+    <div className={p.className ? `${s.paintDisabled} ${p.className}` : s.paintDisabled} role="group" aria-label={text} aria-disabled="true">
       <div ref={makeInert} className={s.paintDisabledBody}>
         {editor}
       </div>

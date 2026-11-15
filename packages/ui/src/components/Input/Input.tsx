@@ -11,6 +11,7 @@ import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import type { ControlSizeProps } from '../ControlSize';
 import { useFieldSizeClass } from '../Field/fieldSize';
+import { useRacField } from '../Field/racField';
 import f from '../Field/Field.module.css';
 import s from './Input.module.css';
 
@@ -36,6 +37,9 @@ export type InputProps = Omit<RACTextFieldProps, 'children' | 'className' | 'spe
  * default skin against the `--wzl-*` token system, and exposes the
  * familiar label / description / errorMessage / adornment slot shape.
  *
+ * Inside a `Field`, and with no `label` or `aria-label` of its own, it takes the
+ * field's label, description and error.
+ *
  * `ref` forwards to the underlying `<input>`.
  */
 export const Input = forwardRef(function Input(
@@ -60,11 +64,13 @@ export const Input = forwardRef(function Input(
     ...textFieldProps
   } = hold.rest;
   const sized = useFieldSizeClass(size, className);
+  const field = useRacField({ id: textFieldProps.id, 'aria-label': textFieldProps['aria-label'], 'aria-labelledby': textFieldProps['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], isInvalid: textFieldProps.isInvalid, labeled: label !== undefined });
 
   return hold.wrap(
     <TextField
       {...textFieldProps}
       {...hold.rac}
+      {...field}
       spellCheck={spellCheck === undefined ? undefined : String(spellCheck)}
       className={fieldRootClass({ orientation, className: sized })}
     >

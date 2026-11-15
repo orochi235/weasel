@@ -1,4 +1,4 @@
-import { useContext, useRef, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
+import { useContext, useRef, type KeyboardEvent, type ReactNode, type Ref, type RefObject } from 'react';
 import {
   ComboBox as RACComboBox,
   ComboBoxStateContext,
@@ -21,6 +21,7 @@ import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import type { ListOption } from '../listOption';
 import type { OptionKey } from '../../optionKey';
+import { useRacField } from '../Field/racField';
 import f from '../Field/Field.module.css';
 import listbox from '../Select/listbox.module.css';
 import s from './ComboBox.module.css';
@@ -75,6 +76,8 @@ export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<
    * Empty text commits nothing.
    */
   onCommit?: (commit: ComboBoxCommit<T>) => void;
+  /** Receives the text `<input>`, to move focus to it. */
+  ref?: Ref<HTMLInputElement>;
   /**
    * `'fill'` (the default) takes the width of whatever row the combo box sits
    * in. `'fit'` sizes the input to its widest option, so it neither swallows a
@@ -88,6 +91,9 @@ export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<
  * Filterable single-select wrapping React Aria's ComboBox. The user can
  * type to filter; selection commits to `onSelectionChange`. When no value
  * is in the input, selection clears (key becomes null).
+ *
+ * Inside a `Field`, and with no `label` or `aria-label` of its own, it takes the
+ * field's label, description and error. `ref` reaches the text `<input>`.
  */
 export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) {
   const hold = useRacHold(props);
@@ -111,16 +117,19 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
     width = 'fill',
     className,
     portalContainer,
+    ref,
     ...rest
   } = hold.rest;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
+  const field = useRacField({ id: rest.id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': hold.rac['aria-describedby'], isInvalid: rest.isInvalid, labeled: label !== undefined });
   const revertingRef = useRef(false);
 
   return hold.wrap(
     <RACComboBox
       {...rest}
       {...hold.rac}
+      {...field}
       // 'contains' leaves this unset so React Aria uses its own locale-aware
       // match rather than a reimplementation of it.
       defaultFilter={filter === 'none' ? admitEverything : filter === 'contains' ? undefined : filter}
@@ -136,6 +145,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       {anchor}
       {label !== undefined && <Label className={f.label}>{label}</Label>}
       <ComboBoxFrame
+        inputRef={ref}
         placeholder={placeholder}
         isLoading={isLoading}
         revertingRef={revertingRef}
@@ -185,12 +195,14 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
  * which only exists below `RACComboBox`.
  */
 function ComboBoxFrame({
+  inputRef,
   placeholder,
   isLoading,
   revertingRef,
   onCommitText,
   children,
 }: {
+  inputRef?: Ref<HTMLInputElement>;
   placeholder?: string;
   isLoading?: boolean;
   /** Set while React Aria puts the selection back on a blur, or on an Enter with no option highlighted: with both
@@ -218,6 +230,7 @@ function ComboBoxFrame({
   return (
     <div className={`${f.frame} ${s.frame}`}>
       <RACInput
+        ref={inputRef}
         placeholder={placeholder}
         aria-busy={isLoading || undefined}
         onKeyDownCapture={onKeyDownCapture}

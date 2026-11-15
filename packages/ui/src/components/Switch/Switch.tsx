@@ -5,6 +5,7 @@ import {
 } from 'react-aria-components';
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
+import { useFieldControl } from '../Field/fieldSemantics';
 import s from './Switch.module.css';
 
 /**
@@ -14,6 +15,8 @@ import s from './Switch.module.css';
 export type SwitchProps = Omit<RACSwitchProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & HoldProps & {
   children?: ReactNode;
   className?: string;
+  /** Receives the `<label>` the switch is drawn in. `ref` reaches the `<input>`. */
+  rootRef?: Ref<HTMLLabelElement>;
 };
 
 /**
@@ -21,18 +24,25 @@ export type SwitchProps = Omit<RACSwitchProps, 'children' | 'className' | 'isDis
  * tokens. Use for a setting that takes effect immediately; use `Checkbox`
  * for one that is submitted with a form.
  *
- * `ref` forwards to the underlying label element.
+ * With no children and no `aria-label`, it takes its name, description and
+ * error from a `Field` around it.
+ *
+ * `ref` forwards to the `<input>`; `rootRef` to the `<label>`.
  */
 export const Switch = forwardRef(function Switch(
   props: SwitchProps,
-  ref: Ref<HTMLLabelElement>,
+  ref: Ref<HTMLInputElement>,
 ) {
-  const { rest: { children, className, ...rest }, rac, wrap } = useRacHold(props);
+  const { rest: { children, className, rootRef, ...rest }, rac, wrap } = useRacHold(props);
+  // A switch has no invalid state to show, so the field's error only describes it.
+  const { 'aria-invalid': _invalid, ...field } = useFieldControl({ ...rest, 'aria-describedby': rac['aria-describedby'], labeled: children !== undefined });
   return wrap(
     <RACSwitch
       {...rest}
       {...rac}
-      ref={ref}
+      {...field}
+      ref={rootRef}
+      inputRef={ref}
       className={[s.switch, className].filter(Boolean).join(' ')}
     >
       <span className={s.track}>

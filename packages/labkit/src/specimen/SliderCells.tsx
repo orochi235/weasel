@@ -23,7 +23,6 @@ export function SliderCells() {
       <Cell label="Field, Slider">
         <Field label="Range" output={span.map((t) => Math.round(t.value)).join(' – ')}>
           <Slider
-            aria-label="Range"
             min={0}
             max={100}
             step={1}
@@ -34,7 +33,6 @@ export function SliderCells() {
         </Field>
         <Field label="Opacity" output={`${Math.round(level[0]?.value ?? 0)}%`}>
           <Slider
-            aria-label="Opacity"
             min={0}
             max={100}
             step={1}
