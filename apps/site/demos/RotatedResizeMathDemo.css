@@ -1,0 +1,12 @@
+.rrmd-panel { position: relative; touch-action: none; }
+.rrmd-ghost { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
+.rrmd-overlay-svg { display: block; pointer-events: none; overflow: visible; }
+.rrmd-caption {
+  position: absolute; left: 6px; bottom: 6px;
+  padding: 4px 6px; font-size: 11px;
+  color: #e8e8e8; background: rgba(0,0,0,0.55);
+  border-radius: 3px; pointer-events: none; line-height: 1.3;
+}
+.rrmd-caption-title { font-weight: 600; }
+.rrmd-caption-body { opacity: 0.85; }
+.rrmd-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }

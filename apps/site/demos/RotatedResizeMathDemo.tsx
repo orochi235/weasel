@@ -1,19 +1,8 @@
 /**
- * RotatedResizeMathDemo — pedagogical "what can go wrong with rotated-resize
- * math" explainer. Four parallel rect panels each apply a different
- * `PoseDescriptor` to the SAME drag input, so one corner-drag drives four
- * diverging poses. A fifth panel stacks them at 60% opacity; a sixth panel
- * shows the per-component median of the three broken poses, which recovers
- * green's size and rotation and not its position.
- *
- * The demo owns the *routing* of one gesture to four scenes; the gesture itself runs on the kit's
- * `useHandleDrag`. Each move computes a proposed pose per scene with that scene's own
- * `PoseDescriptor` and calls that scene's `setPose`.
- *
- * This bypasses `SceneCanvas`'s built-in dispatcher entirely: the four canvases take no
- * `features`, so they are pure renderers. The math is the demo's own (`rotatedResize/math.ts`)
- * because its pedagogy is precisely that math — substituting a broken descriptor for each panel
- * is the whole point.
+ * Four scenes, each with its own `PoseDescriptor`, take the same corner drag: the gesture runs on
+ * `useHandleDrag` and the demo routes it to all four. The canvases take no `features`, since the
+ * broken resize math in `rotatedResize/math.ts` is the point and the kit's resize action only does
+ * the right one.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
@@ -32,6 +21,7 @@ import {
   PANEL_IDS, PROJECTIONS, runResize, type PanelId, type Rect,
 } from './rotatedResize/math';
 import { MedianPanel, Panel, StackedOverlayPanel } from './rotatedResize/panels';
+import './RotatedResizeMathDemo.css';
 
 interface DragState {
   anchor: ResizeAnchor | null;  // null = body-translate
@@ -198,22 +188,7 @@ export function RotatedResizeMathDemo() {
 
   return (
     <div>
-      <style>{`
-        .rrmd-panel { position: relative; touch-action: none; }
-        .rrmd-ghost { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
-        .rrmd-overlay-svg { display: block; pointer-events: none; overflow: visible; }
-        .rrmd-caption {
-          position: absolute; left: 6px; bottom: 6px;
-          padding: 4px 6px; font-size: 11px;
-          color: #e8e8e8; background: rgba(0,0,0,0.55);
-          border-radius: 3px; pointer-events: none; line-height: 1.3;
-        }
-        .rrmd-caption-title { font-weight: 600; }
-        .rrmd-caption-body { opacity: 0.85; }
-        .rrmd-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-      `}</style>
       <header>
-        <h2>Rotated resize: the math, with counterexamples</h2>
         <p>
           Resizing a rotated rect requires three coordinated steps, and a
           fourth discipline: keep the rotation property orthogonal to the
