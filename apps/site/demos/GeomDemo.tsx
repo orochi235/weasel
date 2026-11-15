@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { SceneCanvas, useScene, circlePath, polylineFromPoints, rectPath, movePreset, pickPreset } from '@weasel-js/core';
-import type { CanvasHelpers, RenderLayer } from '@weasel-js/core';
+import { useMemo, useState, useSyncExternalStore } from 'react';
+import { SceneCanvas, useScene, circlePath, polylineFromPoints, rectPath, movePreset, pickPreset, worldPoses } from '@weasel-js/core';
+import type { NodeId, RenderLayer, Scene } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import {
   boundsOfCoords,
@@ -106,10 +106,12 @@ function drawMeasure(m: Measure, probe: { x: number; y: number }): DrawCommand[]
   ];
 }
 
-function centersOf(helpers: CanvasHelpers<Dot> | null, scene: { get(id: never): { data: Dot } | undefined }) {
+/** Each dot's center as shown, a drag's in-flight pose included. */
+function centersOf<L extends string>(scene: Scene<Dot, L, Dot>) {
+  const world = worldPoses(scene);
   const out = new Map<string, { x: number; y: number }>();
   for (const d of INITIAL) {
-    const p = helpers?.getEffectivePose(d.id) ?? scene.get(d.id as never)?.data ?? d;
+    const p = world(d.id as NodeId);
     out.set(d.id, { x: p.x + p.width / 2, y: p.y + p.height / 2 });
   }
   return out;
@@ -117,29 +119,19 @@ function centersOf(helpers: CanvasHelpers<Dot> | null, scene: { get(id: never): 
 
 const fmt = (n: number, w = 6, p = 1) => qty(n, decimal({ places: p, grouping: false })).text.padStart(w, '\u2007');
 
-/**
- * A cubic Bézier and what `@weasel-js/geom` computes about it. The four
- * control points and the probe are ordinary scene nodes the kit's move tool
- * drags; the overlay reads their live poses through `helpersRef`, so every
- * number follows the drag rather than waiting for it to commit.
- */
 export function GeomDemo() {
   const [t, setT] = useState(0.5);
   const scene = useScene<Dot>({ items: INITIAL });
-  const helpersRef = useRef<CanvasHelpers<Dot> | null>(null);
+  // A drag previews through the scene's pose overrides, so the table follows it before it commits.
+  useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration);
 
-  useSyncExternalStore(
-    useCallback((cb: () => void) => helpersRef.current?.subscribeGestures(cb) ?? (() => {}), []),
-    () => helpersRef.current?.getGestureVersion() ?? 0,
-  );
-
-  const m = measure(centersOf(helpersRef.current, scene), t);
+  const m = measure(centersOf(scene), t);
 
   const curveLayer = useMemo<RenderLayer<unknown>>(() => ({
     id: 'curve',
     label: 'Curve',
     draw: () => {
-      const c = centersOf(helpersRef.current, scene);
+      const c = centersOf(scene);
       return drawMeasure(measure(c, t), c.get('probe')!);
     },
   }), [scene, t]);
@@ -152,7 +144,6 @@ export function GeomDemo() {
           className="ckd-canvas"
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}
-          helpersRef={helpersRef}
           layers={{
             scene: {
               drawOne: (n): DrawCommand[] => {
