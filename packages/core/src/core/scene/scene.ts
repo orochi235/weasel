@@ -161,7 +161,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     narrowSelection: sessions.narrow,
     forgetViewState: sessions.forget,
   });
-  for (const [kind, handler] of Object.entries(options.ops ?? {})) recording.ops.register(kind, handler);
+  for (const [kind, handler] of Object.entries(options.ops ?? {})) recording.methods.registerOp(kind, handler);
 
   const scene: Scene<TData, TLayer, TPose> = {
     get nodes() { return state.nodes; },

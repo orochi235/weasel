@@ -219,6 +219,15 @@ describe('custom op seam', () => {
     ).toThrow(/reserved/);
   });
 
+  it('rejects a kit:* kind passed in options.ops, which would replace the kit op', () => {
+    expect(() =>
+      createScene<Data, Layer>({
+        systemLayers: [{ id: 'structures' }],
+        ops: { 'kit:setPose': { apply: () => {}, revert: () => {} } },
+      }),
+    ).toThrow(/reserved/);
+  });
+
   it('options.ops pre-registers ops at construction', () => {
     let v = 0;
     const s = createScene<Data, Layer>({
