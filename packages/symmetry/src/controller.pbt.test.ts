@@ -7,10 +7,9 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { boxFrameOf, type Point } from '@weasel-js/geom';
 import {
-  asNodeId, createScene, type InvocationCtx, type NodeId, type OngoingInvoker, type RectPose, type View,
+  asNodeId, createScene, type InvocationCtx, type NodeId, type OngoingInvoker, type RectPose, type View, worldPoseOf,
 } from '@weasel-js/core';
 import { createSymmetry } from './controller';
-import { worldPoseOf } from './frames';
 import { symmetryRegistry } from './group';
 import { guideHandles, symmetryGuideLayer, type SymmetryHandle } from './guide';
 import { handleChange, handleDragAction } from './handleDrag';
@@ -71,7 +70,7 @@ describe('the controller, against a model of its history', () => {
     const t = tally();
     fc.assert(fc.property(fc.option(exact(300), { nil: null }), spec(), exact(300), fc.array(op, { maxLength: 14 }), (host, s0, c0, ops) => {
       const { scene, sym, group, leaf } = rig(host, s0, c0);
-      const leafAt = boxFrameOf(worldPoseOf(scene as never, leaf))!;
+      const leafAt = boxFrameOf(worldPoseOf(scene, leaf, 'document'))!;
       const read = (): State => sym.read(group)!;
       const done: State[] = [read()];
       let redo: State[] = [];
@@ -142,7 +141,7 @@ describe('the controller, against a model of its history', () => {
           }
         }
         expect(scene.historyIndex()).toBe(base + done.length - 1);
-        expect(near(boxFrameOf(worldPoseOf(scene as never, leaf))!, leafAt, 1e-9)).toBe(true);
+        expect(near(boxFrameOf(worldPoseOf(scene, leaf, 'document'))!, leafAt, 1e-9)).toBe(true);
       }
     }), runs(RUNS));
     for (const k of ['change', 'same', 'undo']) t.atLeast(k, 40);

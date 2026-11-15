@@ -167,7 +167,7 @@ export interface ViewHelpersBundle<TPose> {
 }
 
 /** Where `adapter` draws `id`. */
-export function worldPoseOf<TPose>(adapter: ViewPoseAdapter<TPose>, id: string): TPose {
+export function adapterWorldPoseOf<TPose>(adapter: ViewPoseAdapter<TPose>, id: string): TPose {
   return typeof adapter.getWorldPose === 'function' ? adapter.getWorldPose(id) : adapter.getPose(id);
 }
 
@@ -189,7 +189,7 @@ export function useViewHelpers<TPose>(
     const scale = getScaleRef.current?.();
     return drawnBoundsOf(nodes, id as NodeId, pose, {
       descriptor: geometry as PoseDescriptor<unknown>,
-      ...(adapter ? { worldPoseOf: (m: NodeId) => worldPoseOf(adapter, m) } : {}),
+      ...(adapter ? { worldPoseOf: (m: NodeId) => adapterWorldPoseOf(adapter, m) } : {}),
       ...(scale ? { scale } : {}),
     });
   }, [nodes, geometry, adapter, getScaleRef]);
@@ -206,7 +206,7 @@ export function useViewHelpers<TPose>(
       try {
         // World: chrome is drawn over the picture, so it has to agree with
         // where the renderer put the node, not with where its pose is stored.
-        return poseBoxOf(id, worldPoseOf(adapter, id));
+        return poseBoxOf(id, adapterWorldPoseOf(adapter, id));
       } catch {
         return null;
       }
@@ -216,7 +216,7 @@ export function useViewHelpers<TPose>(
   const committedPoseOf = useCallback((id: string): TPose | null => {
     if (!adapter) return null;
     try {
-      return worldPoseOf(adapter, id);
+      return adapterWorldPoseOf(adapter, id);
     } catch {
       return null;
     }

@@ -5,7 +5,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { sceneContentBounds } from '../contentBounds';
 import type { GestureSource } from '../gestureBounds';
 import { gestureBoundsOf, useInFlightBounds } from '../useInFlightBounds';
-import { worldPoseOf, type ViewPoseAdapter } from '../useViewHelpers';
+import { adapterWorldPoseOf, type ViewPoseAdapter } from '../useViewHelpers';
 
 /**
  * The world rect a scene's content covers: every root it draws, boxed as the
@@ -28,7 +28,7 @@ export function useContentBounds<TPose>(args: {
   const { scene, boundsOf, adapter, gestureSource } = args;
   const committedPoseOf = useCallback((id: string): TPose | null => {
     try {
-      return worldPoseOf(adapter, id);
+      return adapterWorldPoseOf(adapter, id);
     } catch {
       return null;
     }

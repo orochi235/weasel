@@ -1,13 +1,8 @@
 import {
   AUTO_POSE_DESCRIPTOR, composesFrames, heldInFrame, poseDescriptorForNode, rebaseLocalPose, scenePoseAdapter,
-  visualBoundsViaDescriptor, worldPoses, type AnyScene, type NodeId,
+  visualBoundsViaDescriptor, worldPoseOf, type AnyScene, type NodeId,
 } from '@weasel-js/core';
 import type { Point } from '@weasel-js/geom';
-
-/** Where `id` draws as the document holds it: its pose folded through every frame above it. */
-export function worldPoseOf(scene: AnyScene, id: NodeId): unknown {
-  return worldPoses(scene, 'document')(id);
-}
 
 /** `world` as a pose stored under `parent`, so the node draws there, or `null`
  *  when `parent`'s frame is singular and no stored pose does. */
@@ -26,7 +21,7 @@ export function keepContentsPut(scene: AnyScene, id: NodeId, change: () => void)
     change();
     return;
   }
-  const held = heldInFrame(scene, id).map((n) => ({ n, world: worldPoseOf(scene, n) }));
+  const held = heldInFrame(scene, id).map((n) => ({ n, world: worldPoseOf(scene, n, 'document') }));
   change();
   for (const { n, world } of held) {
     const local = localPoseUnder(scene, world, scene.get(n)!.parent);
@@ -46,7 +41,7 @@ export function reachFrom(scene: AnyScene, id: NodeId, center: Point): number {
     for (const c of scene.childrenOf(at)) {
       const node = scene.get(c);
       if (!node) continue;
-      const b = visualBoundsViaDescriptor(worldPoseOf(scene, c), poseDescriptorForNode(AUTO_POSE_DESCRIPTOR, node));
+      const b = visualBoundsViaDescriptor(worldPoseOf(scene, c, 'document'), poseDescriptorForNode(AUTO_POSE_DESCRIPTOR, node));
       const dx = Math.max(Math.abs(b.x - center.x), Math.abs(b.x + b.width - center.x));
       const dy = Math.max(Math.abs(b.y - center.y), Math.abs(b.y + b.height - center.y));
       const r = Math.hypot(dx, dy);

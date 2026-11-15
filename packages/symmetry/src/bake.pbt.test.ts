@@ -6,10 +6,9 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { boxFrameOf, multiply, rotate, translate, type Affine } from '@weasel-js/geom';
-import { asNodeId, createScene, type NodeId, type RectPose } from '@weasel-js/core';
+import { asNodeId, createScene, worldPoseOf, type NodeId, type RectPose } from '@weasel-js/core';
 import { carryPose, bakeSymmetry, type BoxPose } from './bake';
 import { createSymmetry } from './controller';
-import { worldPoseOf } from './frames';
 import { isSymmetryGroup, readGroup, symmetryRegistry } from './group';
 import { symmetryTransforms } from './kinds';
 import { ID, angle, coord, near, point, runs, spec, tally, timeoutFor } from './pbt.fixture';
@@ -52,7 +51,7 @@ describe('carryPose', () => {
 
 /** Each leaf's drawn frame, as a sortable key and its affine. */
 function frames(scene: ReturnType<typeof setupScene>, ids: readonly NodeId[]): Affine[] {
-  return ids.map((id) => boxFrameOf(worldPoseOf(scene as never, id))!);
+  return ids.map((id) => boxFrameOf(worldPoseOf(scene, id, 'document'))!);
 }
 
 function setupScene() {
@@ -120,7 +119,7 @@ describe('bakeSymmetry', () => {
       expect(scene.get(group)).toBeUndefined();
       const after = leavesUnder(scene, out.group);
       expect(sameSet(frames(scene, after), want)).toBe(true);
-      for (const id of before) expect(near(boxFrameOf(worldPoseOf(scene as never, id))!, drawn[before.indexOf(id)]!, 1e-9)).toBe(true);
+      for (const id of before) expect(near(boxFrameOf(worldPoseOf(scene, id, 'document'))!, drawn[before.indexOf(id)]!, 1e-9)).toBe(true);
       t.count(s.kind);
       if (copies.length > 0) t.count('copies');
       if (host !== null) t.count('in a frame');

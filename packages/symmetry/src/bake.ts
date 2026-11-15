@@ -1,7 +1,7 @@
 import { transformPoint, multiply, poseFrameOf, type Affine, type PoseLinear } from '@weasel-js/geom';
-import { UNION_OF_CHILDREN, statedFields, unionOfChildren, type NodeId, type Scene } from '@weasel-js/core';
+import { UNION_OF_CHILDREN, statedFields, unionOfChildren, worldPoseOf, type NodeId, type Scene } from '@weasel-js/core';
 import { isSymmetryGroup } from './group';
-import { keepContentsPut, localPoseUnder, worldPoseOf } from './frames';
+import { keepContentsPut, localPoseUnder } from './frames';
 
 /** What {@link bakeSymmetry} did. */
 export interface BakeResult {
@@ -81,7 +81,7 @@ function bakeInBatch(scene: Scene<unknown, string, unknown>, id: NodeId): BakeRe
   }
   const group = scene.get(id)!;
   const copies = group.kind === 'group' && group.copiesFromPose
-    ? group.copiesFromPose(worldPoseOf(scene, id), group) ?? [] : [];
+    ? group.copiesFromPose(worldPoseOf(scene, id, 'document'), group) ?? [] : [];
   const index = (group.parent === null ? scene.roots : scene.childrenOf(group.parent)).indexOf(id);
   const plain = scene.add({
     kind: 'group',
@@ -126,7 +126,7 @@ function copySubtree(scene: Scene<unknown, string, unknown>, id: NodeId, m: Affi
   const node = scene.get(id);
   if (!node) return;
   const derived = node.dependsOn === 'children' && node.derivePose !== undefined;
-  const world = worldPoseOf(scene, id);
+  const world = worldPoseOf(scene, id, 'document');
   const pose = derived || !isBox(world) ? node.pose : localPoseUnder(scene, carryPose(world as BoxPose, m), parent);
   if (!derived && (!isBox(world) || pose === null)) {
     skipped.push(id);
