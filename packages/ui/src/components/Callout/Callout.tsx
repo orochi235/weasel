@@ -21,8 +21,8 @@ const ANCHOR_NUDGE_PX = 1 / 16;
 /**
  * Composition wrapper for press-to-open callouts:
  * `<CalloutTrigger><Pressable>…</Pressable><Callout>…</Callout></CalloutTrigger>`.
- * Re-exported RAC DialogTrigger — non-RAC trigger elements must be wrapped
- * in `<Pressable>` from react-aria-components.
+ * Re-exported RAC DialogTrigger — a trigger that is not from React Aria, like
+ * the kit `Button`, goes in ui's `<Pressable>`.
  * In composed mode, put `defaultOpen` on `CalloutTrigger`, not `Callout` —
  * RAC detaches to local open state on the trigger, not the popover.
  */

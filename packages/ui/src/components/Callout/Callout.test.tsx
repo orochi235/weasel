@@ -2,7 +2,7 @@ import { cssColorLiteral } from '@weasel-js/paint';
 import { describe, it, expect, vi } from 'vitest';
 import { act, screen, fireEvent } from '@testing-library/react';
 import { useRef, useState } from 'react';
-import { Pressable } from 'react-aria-components';
+import { Pressable } from '../Pressable';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { Callout, CalloutTrigger } from './Callout';
 import { Button } from '../Button';

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Pressable } from 'react-aria-components';
+import { Pressable } from '../Pressable';
 import { ComboBox } from '../ComboBox';
 import { Callout, CalloutTrigger } from './Callout';
 import { renderWithIcons } from '../../testing/withIcons';

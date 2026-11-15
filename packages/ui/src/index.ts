@@ -91,6 +91,7 @@ export * from './components/PlotDataPanel';
 export * from './components/Popover';
 export * from './components/Powerline';
 export * from './components/Prefs';
+export * from './components/Pressable';
 export * from './components/PrefsBar';
 export * from './components/Properties';
 export * from './components/QuantityText';
