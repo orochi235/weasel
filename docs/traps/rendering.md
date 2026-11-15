@@ -3,7 +3,7 @@
 Things in the renderer, shaders and the GL batch that pass every test and are still wrong.
 
 **A visual baseline cannot see a batched run's composition.** The renderer merges
-neighbouring commands into one draw, and what a screenshot shows is the topmost
+neighboring commands into one draw, and what a screenshot shows is the topmost
 thing drawn — so a wall of thumbnails, whose atlas quad covers its own ground
 rect, hides whatever the ground painted. Solid fills spent a day drawing
 multiplied by the atlas texel beside them with all 51 baselines green; an outside
@@ -65,9 +65,9 @@ binds with `bindPathFillByKind` and draws itself. Calling `drawPathFillByKind` f
 one paints the full doubled ribbon, or fills the holes of an even-odd path, with every test
 green. Write the naive version first and watch the guard test fail before fixing it.
 
-**`tryStageSolid(ctx, mesh, undefined)` flushes the staged run and returns `false`.** Pass
-`undefined` for a non-batchable paint rather than hand-rolling a `flushSolids`, or draw
-ordering breaks.
+**`tryStageFill(ctx, mesh, undefined)` flushes the staged run and returns `false`.** Pass
+`undefined` for a non-batchable paint rather than flushing by hand, or draw ordering
+breaks.
 
 **`glRecorder`'s proxy answers to every name.** An ALL-CAPS property the constants table
 does not carry comes back as `0`, so an assertion naming a missing flag compares 0 against
