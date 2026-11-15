@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SceneCanvas, asNodeId, solid, stickyData, useScene, useSelection, type ToolsApi, whiteboardPreset } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
+import { DemoStage } from './DemoStage';
 
 const W = 560, H = 360;
 
@@ -25,10 +26,8 @@ export function WhiteboardDemo() {
   return (
     <div className="ckd-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <div className="ckd-canvas-frame">
+      <DemoStage width={W} height={H}>
         <SceneCanvas
-          width={W}
-          height={H}
           className="ckd-canvas"
           backgroundFill={{ color: '#f4f1ea' }}
           scene={scene}
@@ -36,7 +35,7 @@ export function WhiteboardDemo() {
           features={[whiteboardPreset]}
           onToolsCreated={setTools}
         />
-      </div>
+      </DemoStage>
     </div>
   );
 }

@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { SceneCanvas, WeaselProvider, sceneFromJSON, useSelection, editPreset, movePreset, pickPreset } from '@weasel-js/core';
-import type { SerializedScene, Fill } from '@weasel-js/core';
+import type { SerializedScene, Fill, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import sceneJson from './data/scene.scene.json';
 import { DemoStage } from './DemoStage';
 
 interface NodeData { fill?: Fill; label?: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
 export function SceneDemo() {
   return <WeaselProvider><SceneFromJson /></WeaselProvider>;
@@ -14,7 +13,7 @@ export function SceneDemo() {
 
 function SceneFromJson() {
   const [scene] = useState(() =>
-    sceneFromJSON(sceneJson as unknown as SerializedScene<NodeData, string, Pose>, {}),
+    sceneFromJSON(sceneJson as unknown as SerializedScene<NodeData, string, RectPose>, {}),
   );
   const selection = useSelection({ scene });
 

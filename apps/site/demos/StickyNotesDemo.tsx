@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SceneCanvas, asNodeId, solid, stickyData, useScene, useSelection, type ToolsApi, editPreset, movePreset, pickPreset, resizePreset } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
+import { DemoStage } from './DemoStage';
 
 const W = 520, H = 340;
 
@@ -27,20 +28,17 @@ export function StickyNotesDemo() {
   return (
     <div className="ckd-demo">
       {tools && <ToolPalette tools={tools} orientation="horizontal" />}
-      <div className="ckd-canvas-frame">
+      <DemoStage width={W} height={H}>
         <SceneCanvas
-          width={W}
-          height={H}
           className="ckd-canvas"
           backgroundFill={{ color: '#f4f1ea' }}
           scene={scene}
           selection={selection}
           features={[pickPreset, movePreset, resizePreset, editPreset]}
           defaultTools={['sticky', 'pencil', 'text']}
-          defaultActiveTool="select"
           onToolsCreated={setTools}
         />
-      </div>
+      </DemoStage>
     </div>
   );
 }
