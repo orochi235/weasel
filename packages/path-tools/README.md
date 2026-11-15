@@ -53,6 +53,11 @@ and an app that imports only some never loads the others:
 beside `RESHAPE_TOOLS` and `usePathToolsTools`. Each carries `edits-anchors`, so only path edit allows it, and its
 binding outranks anchor editing's; path edit starts on core's `anchors` tool.
 
+`createPathEditHost()` is a `<SceneCanvas pathEdit>` host that holds the open path and its selected anchors itself
+and says when either changes, so the one object is also a `redrawOn` source and what a panel over the open path
+reads (`useFilletControls`). Given `modes` (`@weasel-js/modes`' registry), path edit is a mode: opening a path enters
+it, and closing the path leaves it for `exitMode`.
+
 ## Text Along Path
 
 Select a text node and a path and run Text Along Path (Alt+Shift+X): the text's glyphs stand on the path, and follow
