@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { type CanvasSize, SceneCanvas, type SurfaceContribution, useLatest, useScene } from '@weasel-js/core';
+import { type CanvasSize, SceneCanvas, useLatest, useScene } from '@weasel-js/core';
 import { useElapsedRaf } from '@weasel-js/react';
 import { quatFromAxisAngle, type Vec3 } from '@weasel-js/geom/3d';
 import {
-  POSE3_COMPOSITION, cameraViewProjection, createCamera, createLinePass, dollyAction, packLines,
+  POSE3_COMPOSITION, cameraRig, cameraViewProjection, createCamera, createLinePass, packLines,
   pose3, poseMatrix, useOrbitTool, worldPoseOf,
-  type Camera3dDep, type Line3, type LinePass, type Pose3,
+  type Line3, type LinePass, type Pose3,
 } from '@weasel-js/kernel3d';
 import styles from './Lines3dDemo.module.css';
 import { DemoStage } from './DemoStage';
@@ -82,15 +82,7 @@ export function Lines3dDemo() {
   }, { target: glCanvas });
   useEffect(() => { loop.request(); }, [loop]);
 
-  const cameraRig = useMemo((): SurfaceContribution => {
-    const camera3d: Camera3dDep = { get: () => cameraRef.current, set: setCamera, size: () => size.current };
-    return {
-      id: 'camera3d',
-      eligibility: { always: true },
-      actions: [dollyAction],
-      deps: { camera3d: () => camera3d },
-    };
-  }, [cameraRef]);
+  const rig = useMemo(() => cameraRig({ get: () => cameraRef.current, set: setCamera, size: () => size.current }), [cameraRef]);
   const orbit = useOrbitTool();
 
   return (
@@ -101,7 +93,7 @@ export function Lines3dDemo() {
         scene={scene}
         tools={{ orbit }}
         defaultActiveTool="orbit"
-        ambient={[cameraRig]}
+        ambient={[rig]}
         onResize={(next) => { size.current = next; }}
         layers={{ scene: { drawOne: () => [] } }}
       />

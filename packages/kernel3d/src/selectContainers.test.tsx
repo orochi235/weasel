@@ -9,7 +9,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, createEnteredGroup, useSelection, type EnteredGroupApi, type SelectionApi, pickPreset } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
-import { homeAction } from './tools';
+import { cameraRig } from './cameraRig';
 import { createNodeAtPoint, createPoseDescriptor, worldPoseOf } from './deps';
 import { aabbOfPose } from './pose3';
 import { projectPoint, type Viewport3d } from './project';
@@ -48,15 +48,13 @@ function setup() {
     size: () => ({ width: W, height: H }),
     home: () => home,
   };
-  const cameraRig = {
-    id: 'camera3d', eligibility: { always: true }, actions: [homeAction], deps: { camera3d: () => camera3d },
-  };
+  const rig = cameraRig(camera3d);
   let sel!: SelectionApi;
   function Canvas() {
     sel = useSelection({ mode: 'multi' });
     return (
       <SceneCanvas scene={scene} layers={{}} width={W} height={H} selection={sel} features={[pickPreset]}
-        enteredGroup={entered} poseDescriptor={poseDescriptor} geometry={{ pickEvery }} ambient={[cameraRig]} />
+        enteredGroup={entered} poseDescriptor={poseDescriptor} geometry={{ pickEvery }} ambient={[rig]} />
     );
   }
   const { container } = render(<Canvas />);

@@ -29,9 +29,9 @@ const poseDescriptor = createPoseDescriptor(world);
 
 ## On a `<SceneCanvas>`
 
-The deps go where the canvas reads them: `poseDescriptor` and `geometry.pickEvery` as props, and the
-camera, the insert and the snap as one ambient entry's deps. `features={[pickPreset, movePreset]}` turns on
-the select tool's click and drag; the layers are yours to draw.
+The deps go where the canvas reads them: `poseDescriptor` and `geometry.pickEvery` as props, the
+camera through `cameraRig`'s ambient entry, and the insert and the snap as another entry's deps.
+`features={[pickPreset, movePreset]}` turns on the select tool's click and drag; the layers are yours to draw.
 
 ```tsx
 const insert = createInsert({
@@ -39,14 +39,13 @@ const insert = createInsert({
   // The dep mints the id and commits the node as one undo step.
   node: ({ center, width, depth }) => ({ data: { color: 'tan' }, pose: pose3({ ...center, y: 0.5 }, { x: width, y: 1, z: depth }) }),
 });
-const rig: SurfaceContribution = {
-  id: 'rig',
+// The orbit tool carries orbit and pan; the rig adds the wheel, the pinch and the double-click home.
+// `createCameraDep` reads the camera, the pane and the up from `world`, as every other dep does.
+const rig = cameraRig(createCameraDep(world, { set: setCamera }));
+const editing: SurfaceContribution = {
+  id: 'editing',
   eligibility: { always: true },
-  // The orbit tool carries orbit and pan; these are the wheel, the pinch and the double-click.
-  actions: [dollyAction, pinchDollyAction, homeAction],
   deps: {
-    // Reads the camera, the pane and the up from `world`, as every other dep does.
-    camera3d: () => createCameraDep(world, { set: setCamera }),
     insert: () => insert,
     snap: () => createSnap(world, { sources: [groundGridSource({ world, step: 1 })] }),
   },
@@ -56,7 +55,7 @@ const rig: SurfaceContribution = {
   scene={scene}
   features={[pickPreset, movePreset]}
   tools={{ orbit: useOrbitTool(), box }} // `box` binds a drag to `insert`
-  ambient={[rig]}
+  ambient={[rig, editing]}
   poseDescriptor={createPoseDescriptor(world)}
   geometry={{ pickEvery: createPickEvery(world) }}
   layers={{ scene: { drawOne: () => [] }, solids: { layer: mySolidsLayer, before: 'scene' } }}

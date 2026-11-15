@@ -7,7 +7,6 @@ import { IDENTITY_POSE_COMPOSITION,
   type RenderLayer,
   SceneCanvas,
   solid,
-  type SurfaceContribution,
   type ToolsApi,
   useLatest,
   useScene, pickPreset,
@@ -16,8 +15,8 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { dot, multiply, quatFromAxisAngle, sub, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import {
-  cameraEye, cameraViewProjection, createCamera, createCameraDep, createPickEvery, createPoseDescriptor,
-  dollyAction, ndcToScreen, pose3, poseMatrix, useOrbitTool, worldPoseOf,
+  cameraEye, cameraRig, cameraViewProjection, createCamera, createCameraDep, createPickEvery, createPoseDescriptor,
+  ndcToScreen, pose3, poseMatrix, useOrbitTool, worldPoseOf,
   type Camera3d, type Pose3, type Scene3d, type Viewport3d,
 } from '@weasel-js/kernel3d';
 import styles from './Kernel3dDemo.module.css';
@@ -138,15 +137,7 @@ export function Kernel3dDemo() {
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
   const pickEvery = useMemo(() => createPickEvery(world), [world]);
 
-  const cameraRig = useMemo((): SurfaceContribution => {
-    const camera3d = createCameraDep(world, { set: setCamera });
-    return {
-      id: 'camera3d',
-      eligibility: { always: true },
-      actions: [dollyAction],
-      deps: { camera3d: () => camera3d },
-    };
-  }, [world]);
+  const rig = useMemo(() => cameraRig(createCameraDep(world, { set: setCamera })), [world]);
   const orbit = useOrbitTool();
 
   const layer = useMemo(() => solidsLayer(camera, scene), [camera, scene]);
@@ -167,7 +158,7 @@ export function Kernel3dDemo() {
           features={[pickPreset]}
           tools={{ orbit }}
           onToolsCreated={setTools}
-          ambient={[cameraRig]}
+          ambient={[rig]}
           poseDescriptor={poseDescriptor}
           geometry={{ pickEvery }}
           onResize={(next) => { size.current = next; }}
