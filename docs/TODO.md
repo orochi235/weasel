@@ -250,44 +250,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Export, worker and headless contracts
 
-- **(P2) [agent] Make region exports use a consistent coordinate space for parallax layers.**
-  `selectionRegion` bounds document-world poses, but `regionRenderArgs` feeds the region origin and
-  output scale into a scene walk that still derives parallax views (`packages/core/src/canvas/export/`,
-  `sceneViewRender.ts`, `buildSceneTree.ts`). Reproduced at command level: a node at `x: 100`, width 10,
-  on `{ parallax: { pan: 0.5 } }`, exported as region `{ x: 100, y: 0, width: 10, height: 10 }`,
-  receives net translation -50 rather than -100, placing its left edge at output x=50 outside the
-  10px image. A parallax zoom factor can also make output scale change composition rather than only
-  resolution. Define document-region exports separately from camera-view captures and apply the
-  corresponding coordinate policy consistently across PNG, PDF and SVG.
-  Closes when selection/page/region exports contain their documented bounds across pan/zoom parallax,
-  resolution scaling preserves the chosen composition, and parity tests cover nonzero origins,
-  anchors, mixed layers and flipped/anisotropic views where supported.
-
-- **(P2) [agent] Export one coherent document revision across asynchronous loading and multiple pages.**
-  `documentOf` suppresses overrides but remains a live view of the source. PNG warms assets and then
-  rebuilds commands; PDF awaits warming inside its region loop and reads each page afterward
-  (`packages/core/src/canvas/export/regionPng.ts`, `regionRenderArgs.ts`,
-  `packages/pdf/src/regionsPdf.ts`). An edit while a font/image loads can change the exported content,
-  introduce an asset that was not warmed, or mix revisions across pages. SVG captures its node list
-  before warming, so the formats do not share one capture boundary. Capture a detached document and
-  region configuration at invocation, or detect revision changes and restart/refuse with a bounded
-  policy. Keep transient previews out and define which registry/asset state the capture depends on.
-  Closes when edits made during deferred font/image loading cannot produce mixed-revision output,
-  all pages and bounds belong to the same documented revision, and tests exercise edits, deletes,
-  newly introduced assets and registry-backed node functions during an export.
-
-- **(P2) [agent] Honor common export diagnostics for raster omissions and asset failures.**
-  `ExportOptions.onWarn` promises to report omitted or unloadable content, but `PNG_EXPORT` drops it
-  (`packages/core/src/canvas/export/regionPng.ts`). `warmRender` filters unknown paint kinds and
-  deliberately resolves after failed image loads; missing content can therefore produce a successful
-  PNG with no export callback explaining the loss (`packages/core/src/canvas/warmRender.ts`). SVG
-  and PDF have warning/skip paths, with different failure behavior. Supply a per-export diagnostic
-  path for missing images, unknown paints and unsupported shader/backend sources; define whether
-  strict export rejects and best-effort export warns, without relying on process-wide console output.
-  Closes when the common callback receives actionable diagnostics for raster failures, callers can
-  distinguish complete output from degraded output, and format tests cover image/font/paint failures
-  and unsupported commands under the documented strict or best-effort policy.
-
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor

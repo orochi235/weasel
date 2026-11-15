@@ -2390,3 +2390,21 @@ Calls the lanes made without a ruling:
   of its own.
 - 2026-11-14 (merged with the renames lane): draw's prefs take the renames in a version 5 to 6 step, which also moves
   the Fillet asset's toolbar dock and floating place, rather than growing the unreleased version 4 to 5 step.
+
+## Export contracts (2026-11-14)
+
+- 2026-11-14 (my call): a region export is of the document, so every format draws a parallax layer at its document
+  pose and has no camera. A capture of what a view shows is a pixel render with `camera`, which places planes from
+  that camera and leaves `scale` as resolution alone. `renderDebugSnapshot` is one; `exportRegions` takes no camera.
+- 2026-11-14 (my call): an export reads one revision by restarting, not by snapshotting. A detached copy through
+  `toJSON` would have to rebuild the scene's registry, composition and layout configuration, and could not copy class
+  instances in `data`, which is what fails in the headless page today. `captureExport` warms, then reads in the same
+  task if `getContentVersion` held, else starts again, three attempts in all; a selection change or an override
+  restarts nothing. Process-wide registries (painters, paint kinds, fonts) are read as they stand at that read.
+- 2026-11-14 (my call): regions can be a function of the document, re-read each attempt, so a page's or a selection's
+  bounds and the content drawn in them share the revision. `exportPages` finds its pages by id each time and fails for
+  a page the document lost; fixed rects are copied when the export is called.
+- 2026-11-14 (my call): exports are best-effort by default and report every loss once to `onDiagnostic`, with nothing
+  sent to the console; `strict: true` rejects with `ExportIncompleteError` and writes no file. Only the attempt that
+  is read reports, so a picture deleted while the export restarted is not named. SVG's own warnings arrive as
+  `unsupported` with subject `svg`, and a PDF's skipped glyphs as `font` with subject `pdf`.

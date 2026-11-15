@@ -1,6 +1,6 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { addOnPages, placedPagesOf, registerExportFormat, type ExportFormat } from '@weasel-js/core';
+import { addOnPages, documentOf, exportRegionsOf, placedPagesOf, registerExportFormat, type ExportFormat } from '@weasel-js/core';
 import { downloadBlob } from '@weasel-js/editor';
 import { defaultToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
 import { exportPagesFile, exportSelectionFile } from './exportPage';
@@ -35,6 +35,12 @@ function twoPages() {
   return { scene, pages: placedPagesOf(scene) };
 }
 
+/** The regions `format`'s first export was asked for, read from the document it was handed. */
+const asked = (format: ExportFormat) => {
+  const [scene, regions] = vi.mocked(format.export).mock.calls[0]!;
+  return exportRegionsOf(regions, documentOf(scene));
+};
+
 const DOC = { filename: 'art.svg', backgroundColor: '#336699' };
 
 describe('exportPagesFile', () => {
@@ -42,8 +48,9 @@ describe('exportPagesFile', () => {
     const format = fake('one', false);
     const { scene, pages } = twoPages();
     await exportPagesFile(scene, format, [pages[0]!], DOC);
-    expect(format.export).toHaveBeenCalledWith(scene, [expect.objectContaining({ x: pages[0]!.x, name: 'Cover' })],
+    expect(format.export).toHaveBeenCalledWith(scene, expect.any(Function),
       expect.objectContaining({ background: '#336699', scale: 2, title: 'art - Cover' }));
+    expect(asked(format)).toEqual([expect.objectContaining({ x: pages[0]!.x, name: 'Cover' })]);
     expect(downloadBlob).toHaveBeenCalledWith(expect.any(Blob), 'art - Cover.one');
   });
 
@@ -51,14 +58,14 @@ describe('exportPagesFile', () => {
     const format = fake('many', true);
     const { scene, pages } = twoPages();
     await exportPagesFile(scene, format, pages, DOC);
-    expect(vi.mocked(format.export).mock.calls[0]![1].map((r) => r.name)).toEqual(['Cover', 'Page 2']);
+    expect(asked(format).map((r) => r.name)).toEqual(['Cover', 'Page 2']);
     expect(downloadBlob).toHaveBeenCalledWith(expect.any(Blob), 'art.many');
   });
 
   it('toasts what the format left out, and why an export failed', async () => {
     renderWithIcons(<ToastRegion />);
     const { scene, pages } = twoPages();
-    const warns = fake('warns', true, { export: async (_s, _r, opts) => { opts.onWarn?.('a glyph'); return new Blob([]); } });
+    const warns = fake('warns', true, { export: async (_s, _r, opts) => { opts.onDiagnostic?.({ kind: 'font', subject: 'serif', message: 'a glyph' }); return new Blob([]); } });
     await act(() => exportPagesFile(scene, warns, pages, DOC));
     expect(await screen.findByText(/Exported/)).toBeTruthy();
     const fails = fake('fails', true, { export: async () => { throw new Error('no WebGL2'); } });
@@ -73,7 +80,7 @@ describe('exportSelectionFile', () => {
     const format = fake('one', false);
     const { scene } = twoPages();
     await exportSelectionFile(scene, format, ['m'], DOC);
-    expect(format.export).toHaveBeenCalledWith(scene, [{ x: 10, y: 10, width: 20, height: 10, name: 'Selection' }], expect.anything());
+    expect(asked(format)).toEqual([{ x: 10, y: 10, width: 20, height: 10, name: 'Selection' }]);
     expect(downloadBlob).toHaveBeenCalledWith(expect.any(Blob), 'art - Selection.one');
   });
 

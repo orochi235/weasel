@@ -1,5 +1,6 @@
 import {
-  isPaintKindKnown, loadTextOutlines, warmFonts, warmPaintKinds, type FontRequest, type RenderNeeds,
+  isPaintKindKnown, loadTextOutlines, warmFonts, warmPaintKinds, type FontRequest, type RenderDiagnostic, type RenderDiagnosticSink,
+  type RenderNeeds,
 } from '@weasel-js/core';
 import type { SerializeOptions, SvgNode, SvgTextNode } from './types';
 import { PaintServerRegistry } from './gradients';
@@ -56,12 +57,30 @@ function textNodes(nodes: readonly SvgNode[], out: SvgTextNode[] = []): SvgTextN
  * than `'live'` the outlines of every face text is set in. Only those load: a lazily registered kind or font the
  * nodes do not use is never fetched, and cannot fail the export. A kind
  * nothing registered is passed over; the export warns about it instead.
+ * Given `report`, a load that fails is reported there, and the rest still
+ * load, rather than rejecting.
  */
-export function warmSvg(nodes: readonly SvgNode[], opts: Pick<SerializeOptions, 'textLayout' | 'text'> = {}): Promise<void> {
+export function warmSvg(
+  nodes: readonly SvgNode[], opts: Pick<SerializeOptions, 'textLayout' | 'text'> = {}, report?: RenderDiagnosticSink,
+): Promise<void> {
   const needs = svgNeeds(nodes, opts);
-  return Promise.all([
-    warmFonts(needs.fonts),
-    warmPaintKinds(needs.paintKinds.filter(isPaintKindKnown)),
-    ...(readsOutlines(opts) ? textNodes(nodes).map((n) => loadTextOutlines(n)) : []),
-  ]).then(() => undefined);
+  const kinds = needs.paintKinds.filter(isPaintKindKnown);
+  const outlines = readsOutlines(opts) ? textNodes(nodes) : [];
+  if (!report) {
+    return Promise.all([warmFonts(needs.fonts), warmPaintKinds(kinds), ...outlines.map((n) => loadTextOutlines(n))]).then(() => undefined);
+  }
+  const loads: { load: () => Promise<unknown>; lost: (err: unknown) => RenderDiagnostic }[] = [
+    ...needs.fonts.map((f) => ({ load: () => warmFonts([f]), lost: (err: unknown) => fontLost(f.family, err) })),
+    ...kinds.map((k) => ({
+      load: () => warmPaintKinds([k]),
+      lost: (err: unknown) => ({ kind: 'paint-kind' as const, subject: k, message: `the paint kind "${k}" did not load (${String(err)}); what it paints is left out` }),
+    })),
+    ...outlines.map((n) => ({ load: () => loadTextOutlines(n), lost: (err: unknown) => fontLost(n.style?.fontFamily ?? 'a text face', err) })),
+  ];
+  return Promise.allSettled(loads.map((l) => l.load())).then((results) => {
+    results.forEach((r, i) => { if (r.status === 'rejected') report(loads[i]!.lost(r.reason)); });
+  });
 }
+
+const fontLost = (family: string, err: unknown): RenderDiagnostic =>
+  ({ kind: 'font', subject: family, message: `the font ${family} did not load (${String(err)}); its text is written without it` });

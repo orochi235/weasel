@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { plainScene } from '../../testing/plainScene';
+import { PARALLAX_POSE, parallaxScene } from '../../testing/parallaxScene';
 import { exportRegionPng } from './regionPng';
 
 async function pixels(blob: Blob): Promise<ImageData> {
@@ -41,5 +42,17 @@ describe('exportRegionPng', () => {
     const img = await pixels(await exportRegionPng(scene, pages[0]!, { scale: 1, background: '#ffffff' }));
     // The gray note spans (150, 70) to (170, 90).
     expect(rgba(img, 160, 80)).toEqual([255, 255, 255, 255]);
+  });
+
+  it('fills a parallax plane node\'s own region with it, at every scale', async () => {
+    const scene = parallaxScene({ pan: 0.5, zoom: 0.5, anchor: { x: 37, y: -12 } });
+    scene.setHidden('b' as never, true);
+    for (const scale of [1, 3]) {
+      const img = await pixels(await exportRegionPng(scene, PARALLAX_POSE, { scale }));
+      const n = 10 * scale;
+      for (const [x, y] of [[0, 0], [n - 1, 0], [0, n - 1], [n - 1, n - 1], [n / 2, n / 2]]) {
+        expect(rgba(img, x!, y!)).toEqual([255, 0, 0, 255]);
+      }
+    }
   });
 });

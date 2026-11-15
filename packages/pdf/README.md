@@ -37,7 +37,10 @@ the pages without one are numbered.
 
 `exportRegionsPdf(scene, regions, opts)`, from the `@weasel-js/pdf/export` entry, writes each world-space region of a
 core scene as a page of one PDF, in order, at 0.75 points per unit (96 units
-to the inch), labeled with its region's `name`. It answers `{ blob, skipped }`.
+to the inch), labeled with its region's `name`. It answers the `Blob`; what it
+left out, each `skipped` entry and each picture or face that failed to load,
+goes to `onDiagnostic`, and `strict: true` writes nothing then, rejecting with
+`ExportIncompleteError`. `compress: false` leaves its streams readable.
 It draws the document through core's renderer, so the painters and fonts are
 the caller's to register, and needs WebGL2 and `OffscreenCanvas`; annotation
 layers are left out. That entry is the only one that reads core, which is an
@@ -46,8 +49,7 @@ and `title` and `lang` are passed to `writePdf`.
 
 `registerPdfExport()` registers this as core's `pdf` export format, which
 takes several regions: `exportPages(scene, placedPagesOf(scene), 'pdf', opts)`
-answers the `Blob`, and each `skipped` entry goes to `onWarn`. It returns the
-disposer.
+answers the `Blob`. It returns the disposer.
 
 ## What is drawn
 

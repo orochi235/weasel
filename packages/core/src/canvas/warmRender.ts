@@ -1,8 +1,9 @@
 /** `warmRender`: load what a synchronous headless render would otherwise draw as nothing. */
 import { warmFonts, type FontRequest } from '@weasel-js/font';
 import type { DrawCommand } from '@weasel-js/renderer';
-import { getImageBitmap, imageLoadsSettled, isPaintKindKnown, warmPaintKinds } from '@weasel-js/renderer';
+import { getImageBitmap, imageLoadsSettled, imageReadsDuring, isPaintKindKnown, warmPaintKinds } from '@weasel-js/renderer';
 import { renderNeeds } from './renderNeeds';
+import { reportCommandLosses, settleReporting, type RenderDiagnosticSink } from './renderDiagnostics';
 import { planPixelRender, type RasterRenderArgs } from './renderSceneToPixels';
 
 /** What {@link warmRender} loads. */
@@ -21,6 +22,11 @@ export interface WarmRenderOptions<TData = unknown, TLayer extends string = stri
   /** Paint kinds to load in place of the ones derived, as `warmPaintKinds`
    *  takes them. */
   paintKinds?: readonly string[];
+  /** With `render` or `commands`, hears what they will draw without: a face or paint kind that
+   *  failed to load, a kind nothing registered, a picture that did not load,
+   *  a shader program with no GLSL. Given it, a failed load is reported here
+   *  and does not reject. */
+  report?: RenderDiagnosticSink;
 }
 
 /**
@@ -47,22 +53,36 @@ export function warmRender<TData, TLayer extends string, TPose>(
 ): Promise<void> {
   let { families, paintKinds } = opts;
   let images: Promise<void> = Promise.resolve();
+  let planned: DrawCommand[] = [];
+  let asked: readonly string[] = [];
   if (opts.render || opts.commands) {
-    let planned: DrawCommand[];
     try {
       // Building an image node's commands starts its picture's load.
-      planned = opts.render ? planPixelRender(opts.render).commands : [];
+      if (opts.render) ({ value: planned, srcs: asked } = imageReadsDuring(() => planPixelRender(opts.render!).commands));
     } catch (err) {
       return Promise.reject(err);
     }
-    const needs = renderNeeds([...planned, ...(opts.commands ?? [])]);
+    planned = [...planned, ...(opts.commands ?? [])];
+    const needs = renderNeeds(planned);
     families ??= needs.fonts;
     // A kind nothing registered draws nothing whether or not this waits.
     paintKinds ??= needs.paintKinds.filter(isPaintKindKnown);
     for (const src of needs.images ?? []) getImageBitmap(src);
     images = settleImages(opts.render);
   }
-  return Promise.all([warmFonts(families), warmPaintKinds(paintKinds), images]).then(() => undefined);
+  const { report } = opts;
+  if (!report || (!opts.render && !opts.commands)) return Promise.all([warmFonts(families), warmPaintKinds(paintKinds), images]).then(() => undefined);
+  const faces = families ?? [];
+  return Promise.all([
+    settleReporting(faces, (f) => warmFonts([f]), (f, err) => {
+      const family = typeof f === 'string' ? f : f.family;
+      return { kind: 'font', subject: family, message: `the font ${family} did not load (${String(err)}); its text is left out` };
+    }, report),
+    settleReporting(paintKinds ?? [], (k) => warmPaintKinds([k]), (k, err) => (
+      { kind: 'paint-kind', subject: k, message: `the paint kind "${k}" did not load (${String(err)}); what it paints is left out` }
+    ), report),
+    images,
+  ]).then(() => reportCommandLosses(planned, asked, report));
 }
 
 /** Wait for the loads in flight, then, once a vector picture has decoded, build the render

@@ -3,7 +3,7 @@ import type { View } from 'core/viewport/view';
 import { ownClipOf, type ClipBearing } from './ownClip';
 import { mat3, type Affine, type Path } from '@weasel-js/geom';
 import { definesFrame } from 'core/scene/effectivePose';
-import { deriveParallaxView, planeMap, type ParallaxOptions } from 'core/viewport/parallax';
+import { deriveParallaxView, type ParallaxOptions, type PlaneMap } from 'core/viewport/parallax';
 import { scenePlaneOf } from './pickWalk';
 import { clipCarrier, planeTransform } from './planeClips';
 import { splitOverChildren } from './overChildren';
@@ -50,6 +50,16 @@ function wrapInChain(
   return node;
 }
 
+/** `view` as it reaches a plane `m` maps the camera's world into: the view that puts a point of
+ *  the plane's world under the pixel its camera-world point lands on. */
+function viewInPlane(view: View, m: PlaneMap): View {
+  return {
+    x: m.offset.x + m.scale.x * view.x,
+    y: m.offset.y + m.scale.y * view.y,
+    scale: { x: view.scale.x / m.scale.x, y: view.scale.y / m.scale.y },
+  };
+}
+
 /**
  * Walk the adapter's scene tree once and emit each node's own paint into the bucket for
  * **that node's own `layer`** — not its parent's. A node carrying `hidden` is skipped with
@@ -67,9 +77,10 @@ function wrapInChain(
  * are accumulated the same way — each in its container's plane, carried into the plane of the
  * node it clips. With no `composePose` on the adapter the fold is the identity.
  *
- * A layer carrying `parallax` is a plane: its painters and its cull see the view derived for
- * it, and its group carries the transform from its world to the camera's, so the caller's
- * single camera wrap still lands it right.
+ * A layer carrying `parallax` is a plane placed from `camera`: its painters and its cull see
+ * `view` as it reaches that plane, and its group carries the transform from the plane's world
+ * to the camera's, so the caller's single wrap in `view` still lands it right. With `camera`
+ * null no layer is a plane, and every node draws at its world pose.
  */
 export function buildSceneTree<
   TNode extends { id: string; layer: string; hidden?: boolean; consumesChildren?: boolean },
@@ -91,19 +102,26 @@ export function buildSceneTree<
   /** Where a node is drawn, given its world pose: the scene's output grid moves it. Its cull
    *  and its painter both read this pose. Absent, a node is drawn at its world pose. */
   drawnPose?: (node: TNode, pose: TPose) => TPose,
+  /** The camera parallax planes are placed from. Default `view`, as on screen; a render that
+   *  resamples a camera's frame at another scale passes that camera, and null draws no planes. */
+  camera: View | null = view,
 ): DrawCommand[] {
   const layers = adapter.getLayers();
   // A hidden layer gets no bucket, and a node with no bucket is not painted.
   const buckets = new Map<string, DrawCommand[]>();
   for (const l of layers) if (l.visible) buckets.set(l.id, []);
+  const planes = camera === null ? null : scenePlaneOf(layers, camera);
   let planeViews: Map<string, View> | null = null;
   for (const l of layers) {
-    if (l.parallax) (planeViews ??= new Map()).set(l.id, deriveParallaxView(view, l.parallax));
+    if (planes && l.parallax) {
+      const v = camera === view ? deriveParallaxView(view, l.parallax) : viewInPlane(view, planes(l.id)!);
+      (planeViews ??= new Map()).set(l.id, v);
+    }
   }
 
   const compose = adapter.composePose?.bind(adapter);
   const scrolled = compose ? adapter.childFrame?.bind(adapter) : undefined;
-  const carry = clipCarrier(planeViews ? scenePlaneOf(layers, view) : null);
+  const carry = clipCarrier(planes);
 
   function visit(
     id: string,
@@ -174,7 +192,8 @@ export function buildSceneTree<
     if (!layer.visible) continue;
     if (forLayer !== undefined && layer.id !== forLayer) continue;
     const children = buckets.get(layer.id) ?? [];
-    const transform = layer.parallax ? planeTransform(planeMap(view, layer.parallax), null) : undefined;
+    const map = planes?.(layer.id) ?? null;
+    const transform = map ? planeTransform(map, null) : undefined;
     out.push(transform ? { kind: 'group', transform, children } : { kind: 'group', children });
   }
   return out;

@@ -5,7 +5,7 @@
  * depends on neither.
  */
 import { createReflectable, type Reflection } from '@weasel-js/registry';
-import type { ExportFormat, ExportOptions, ExportRegion, ExportScene } from './exportTypes';
+import type { ExportFormat, ExportOptions, ExportRegion, ExportRegions, ExportScene } from './exportTypes';
 import { PNG_EXPORT } from './regionPng';
 
 const FORMATS = createReflectable<ExportFormat>();
@@ -50,11 +50,13 @@ export function exportFormats(): readonly ExportFormat[] {
 /**
  * Write `regions` of `scene` in the format registered as `formatId`. Throws
  * for an id nothing registered, and for more or fewer than one region handed
- * to a format that is not `multiRegion`; a multi-region format takes one or more.
+ * to a format that is not `multiRegion`; a multi-region format takes one or
+ * more. Regions given as a function of the document are counted each time
+ * the export reads them.
  */
 export function exportRegions(
   scene: ExportScene,
-  regions: readonly ExportRegion[],
+  regions: ExportRegions,
   formatId: string,
   opts: ExportOptions & Readonly<Record<string, unknown>> = {},
 ): Promise<Blob> {
@@ -63,13 +65,23 @@ export function exportRegions(
     const known = exportFormats().map((f) => f.id).join(', ');
     return Promise.reject(new Error(`exportRegions: no export format "${formatId}" is registered (registered: ${known})`));
   }
-  if (regions.length === 0) return Promise.reject(new Error(`exportRegions: "${formatId}" was handed no regions`));
-  if (!format.multiRegion && regions.length > 1) {
-    return Promise.reject(new Error(
-      `exportRegions: "${formatId}" writes one region to a file and was handed ${regions.length}; export them one at a time`,
-    ));
+  if (typeof regions !== 'function') {
+    try {
+      checkCount(format, regions);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+    return format.export(scene, regions, opts);
   }
-  return format.export(scene, regions, opts);
+  return format.export(scene, (doc) => checkCount(format, regions(doc)), opts);
+}
+
+function checkCount(format: ExportFormat, regions: readonly ExportRegion[]): readonly ExportRegion[] {
+  if (regions.length === 0) throw new Error(`exportRegions: "${format.id}" was handed no regions`);
+  if (!format.multiRegion && regions.length > 1) {
+    throw new Error(`exportRegions: "${format.id}" writes one region to a file and was handed ${regions.length}; export them one at a time`);
+  }
+  return regions;
 }
 
 /** Drop every registration and the built-ins, so the next use registers them again. */

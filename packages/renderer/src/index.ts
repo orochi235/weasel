@@ -133,4 +133,5 @@ export {
   type ImageRasterSize,
   type ImageStatus,
 } from './images/imageCache';
+export { imageReadsDuring } from './images/imageReads';
 export { loadImageBitmap, type ImageLoader } from './images/imageLoader';

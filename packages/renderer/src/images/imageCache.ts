@@ -18,6 +18,7 @@ import {
   _resetBitmapNamesForTests, bitmapSrc, isBitmapSrc, mintedHere, namedBitmap, retireBitmapName,
 } from './bitmapNames';
 import { forgetDecodedVector, isVectorImageSrc, loadImageBitmap, type ImageLoader } from './imageLoader';
+import { noteImageRead } from './imageReads';
 import { imagePatternTextureId } from '../patterns/imagePatternId';
 import { unregisterTexture } from '../textures/registerTexture';
 
@@ -253,6 +254,7 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
  *  {@link releaseImage}. Read it again each frame rather than keep it; work
  *  holding it across an `await` takes a {@link holdImageBitmaps} hold. */
 export function getImageBitmap(src: string, drawnAt?: ImageRasterSize): ImageBitmap | undefined {
+  noteImageRead(src);
   if (mintedHere(src)) return namedBitmap(src);
   const entry = cache.get(src);
   if (!entry) {

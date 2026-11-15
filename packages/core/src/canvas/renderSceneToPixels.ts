@@ -78,7 +78,7 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
   }
   commands.push(...buildSceneViewCommands(
     // `scale` is already output pixels per world unit: one output pixel per "CSS" pixel.
-    args.scene, view, drawOne, undefined, args.alphaFor, drawnLayers(args), args, undefined, 1,
+    args.scene, view, drawOne, undefined, args.alphaFor, drawnLayers(args), args, undefined, 1, args.camera ?? null,
   ));
   if (args.overlay) commands.push(...args.overlay);
   return { width, height, view, commands };
@@ -175,6 +175,9 @@ export interface RasterSession {
   renderIds<TData, TLayer extends string, TPose>(
     args: RasterRenderArgs<TData, TLayer, TPose>, options?: { minAlpha?: number },
   ): IdBuffer;
+  /** Draw a plan `planPixelRender` made, as `render` draws the plan it makes: for a caller that
+   *  read the scene at one moment and draws later. Throws once disposed. */
+  renderPlan(plan: PixelRenderPlan, options?: { screen?: GlMat3; flattenTolerancePx?: number }): RasterImage;
   /**
    * Draw `commands` with no scene in between, into a `width × height` raster
    * whose pixels they are already placed in: a frame the caller built itself,
@@ -291,6 +294,10 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
       const { plan, ctx, renderer: r } = prepare('render', args);
       const draw = () => r.render(plan.commands, viewToMat3(plan.view), { screen: args.screen });
       return drawAndRead('render', ctx, draw, plan.width, plan.height);
+    },
+    renderPlan(plan, { screen, flattenTolerancePx } = {}) {
+      const { ctx, renderer: r } = sized('renderPlan', plan.width, plan.height, flattenTolerancePx);
+      return drawAndRead('renderPlan', ctx, () => r.render(plan.commands, viewToMat3(plan.view), { screen }), plan.width, plan.height);
     },
     renderCommands(commands, { width, height }, options = {}) {
       const { ctx, renderer: r } = sized('renderCommands', width, height, options.flattenTolerancePx);

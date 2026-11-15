@@ -150,6 +150,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
    *  sizes resolution-dependent paint (`NodePaintCtx.pixelScale`). Defaults
    *  to `cull`'s, and otherwise to `window.devicePixelRatio`. */
   dpr: number = cull?.dpr ?? resolveDpr(undefined),
+  /** The camera parallax layers are placed from — see `buildSceneTree`. Default `view`; null
+   *  draws every layer at its world pose. */
+  camera: View | null = view,
 ): DrawCommand[] {
   const shown = shownLookup(scene);
   const derivedOnly = withDerivedPaths(scene, withInheritedPaints(shown, drawOne));
@@ -186,6 +189,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     drawnAt
       ? ((node: Node<TData, TLayer, TPose>, pose: TPose) => drawnAt(nodeAsShown(scene.overrides, node), pose)) as Parameters<typeof buildSceneTree>[6]
       : undefined,
+    camera,
   );
   const children = cull && cullRect ? cullDrawCommands(tree, viewToMat3(view), cullRect, cull.dpr) : tree;
   if (extraCommands && extraCommands.length > 0) {
