@@ -216,6 +216,8 @@ test('text-edit overlay — an unwrapped line longer than its box keeps the line
   const typing = await overlayLines(page);
   await page.keyboard.press('Enter');
   await page.waitForSelector('[contenteditable="true"]', { state: 'detached' });
+  // Clear the selection, whose outline and handles would count as ink bands in the box.
+  await page.mouse.click(c.left + 580, c.top + 290);
   await frames(page);
   await page.waitForTimeout(100);
   const drawn = (await canvasInk(page, BOTTOM)).bands;
