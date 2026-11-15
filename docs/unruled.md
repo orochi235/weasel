@@ -2408,3 +2408,29 @@ Calls the lanes made without a ruling:
   sent to the console; `strict: true` rejects with `ExportIncompleteError` and writes no file. Only the attempt that
   is read reports, so a picture deleted while the export restarted is not named. SVG's own warnings arrive as
   `unsupported` with subject `svg`, and a PDF's skipped glyphs as `font` with subject `pdf`.
+
+## Audit round twenty-five (2026-11-15): currency and the newest code
+
+- 2026-11-15 (Mike's ruling): a minimap's live fit follows a scrolled container's offset, reading
+  `worldPoses(scene, 'shown')`, and refits on a scroll alone; the `'scene'` fit stays on the stored document.
+- 2026-11-15 (Mike's ruling): ui's `isOpen`, `isInvalid`, `isLoading`, `isRequired` and `isIndeterminate` props are
+  `open`, `invalid`, `loading`, `required` and `indeterminate`, translated at each wrapper's boundary; `isSelected`
+  stays. Recorded in `docs/conventions.md`.
+- 2026-11-15 (the lane's call): painters and pick ids belong to a document, not an editing session, so a painter one
+  session's canvas installs paints in every canvas over that document, and exports draw what the canvas draws.
+- 2026-11-15 (the lane's call): a group paints a box from `data.background` and `data.border`, not `data.fill` and
+  `data.stroke`, which on a group stay the paint its children inherit and which SVG import fills from every `<g>`.
+- 2026-11-15 (the lane's call): a version 1 container no painter claims clips to its box under `clip: 'outline'`; it
+  had clipped nothing.
+- 2026-11-15 (the lane's call): a `layers`-slot layer with a `hitTest` takes presses, after every registered layer; a
+  tool's or contribution's `overlay` still only paints.
+- 2026-11-15 (the lane's call): `useEditDraft` compares a value by structure by default, so a rebuilt equal object is
+  not a moved value; `Slider` keeps its own comparison so a changed thumb label is not one either.
+- 2026-11-15 (the lane's call): a `useActionEdit` slider runs one action per key step, so each arrow press is its own
+  undo step, like a nudge.
+- 2026-11-15 (the lane's call): a trial scene's Reset applies the fresh scene's selection only when it has one;
+  otherwise a selection made outside the scene stays.
+- 2026-11-15 (the lane's call): theme-editor's saved history op is `theme-editor:swap`; histories saved under
+  `theme-editor:snapshot` are dropped, not migrated.
+- 2026-11-15 (the lane's call): a `ReadOnly` scope around one radio disables it, since React Aria has no read-only
+  state for a single radio.
