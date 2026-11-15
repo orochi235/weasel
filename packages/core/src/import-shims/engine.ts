@@ -45,7 +45,7 @@ export { adjacentPage, layoutPages, pageAt, pageHolding, pageName, pageOfBounds,
 export type { Page, PageLayoutOptions, PlacedPage } from '../core/pages/pages';
 export { addOnPages, placeOnPages } from '../core/pages/placeOnPages';
 export type { PlaceOnPagesOptions } from '../core/pages/placeOnPages';
-export type { AnyScene } from '../core/scene/anyScene';
+export type { AnyNode, AnyScene } from '../core/scene/anyScene';
 export { SceneArrivalRefused } from '../core/scene/arrivals';
 export type { SceneArrivalHandler } from '../core/scene/arrivalTypes';
 export { BOOLEAN_OF_CHILDREN, booleanOfChildren, booleanOpOf } from '../core/scene/booleanOfChildren';
@@ -164,6 +164,7 @@ export type { DropRefusal, DropVerdict } from '../interactions/actions/dropVerdi
 export type { ClipboardDep, SliceDep, TextEditDep } from '../interactions/actions/editDeps';
 export type { ResizePolicy, ViewApi } from '../interactions/actions/engineDeps';
 export { ENGINE_STANDARD_ACTIONS } from '../interactions/actions/engineStandardActions';
+export { PATH_GEOMETRY_PROJECTION } from '../interactions/actions/geometryProjection';
 export type { GeometryProjection, PoseChange } from '../interactions/actions/geometryProjection';
 export type { GestureLifecycleOptions } from '../interactions/actions/gestureLifecycle';
 export { insertAction } from '../interactions/actions/insert/action';

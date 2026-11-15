@@ -1,4 +1,5 @@
 import { createContext, useContext, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createEmitter } from '@weasel-js/registry';
 import type { ToolsApi } from './overlayBinding';
 
 /** Where a canvas publishes its tools, for a palette or a bar inside it or beside it. The canvas that published
@@ -6,14 +7,11 @@ import type { ToolsApi } from './overlayBinding';
 class ToolsSlot {
   private tools: ToolsApi | null = null;
   private owner: object | null = null;
-  private readonly listeners = new Set<() => void>();
+  private readonly changed = createEmitter();
 
   get = (): ToolsApi | null => this.tools;
 
-  subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
+  subscribe = (listener: () => void): (() => void) => this.changed.subscribe(listener);
 
   publish(owner: object, tools: ToolsApi): () => void {
     this.set(owner, tools);
@@ -26,7 +24,7 @@ class ToolsSlot {
     this.owner = owner;
     if (this.tools === tools) return;
     this.tools = tools;
-    for (const listener of this.listeners) listener();
+    this.changed.emit();
   }
 }
 

@@ -91,8 +91,8 @@ describe('Bar actions leaf', () => {
         <PrefsBar schema={schema({ enableIf: { path: 'on' } })} values={{ on: false }} />
       </Host>,
     );
-    expect(screen.getByRole('button', { name: 'Bring to front' })).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByRole('button', { name: 'Flip vertically' })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('button', { name: 'Bring to front' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Flip vertically' })).toBeDisabled();
   });
 
   it('keeps its buttons on the line of a vertical bar', () => {

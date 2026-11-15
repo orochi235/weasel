@@ -7,5 +7,5 @@ import type { ComponentProps } from 'react';
 import { Pressable } from 'react-aria-components';
 
 export { Pressable };
-// react-aria-components re-exports the component but not its props type.
+/** {@link Pressable}'s props, derived because react-aria-components re-exports the component but not its type. */
 export type PressableProps = ComponentProps<typeof Pressable>;

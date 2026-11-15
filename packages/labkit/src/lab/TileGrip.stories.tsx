@@ -14,7 +14,10 @@ type Story = StoryObj<typeof TileGrip>;
 
 const Tile = ({ args, label }: { args: Story['args']; label: string }) => (
   <div className="lk-story-tile lk-story-tile--gripped">
-    <TileGrip {...args} className="lk-story-tile__grip">
+    <TileGrip
+      {...args}
+      className={['lk-story-tile__grip', args?.className].filter(Boolean).join(' ')}
+    >
       Tile {label}
     </TileGrip>
     <div className="lk-story-tile__body">{label}</div>
