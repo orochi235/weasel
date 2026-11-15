@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { type ClockHandle, createClock, createClockRegistry } from '@weasel-js/clock';
 import { useClockLoop } from '@weasel-js/clock/react';
 import { clampMove } from '@weasel-js/core/move';
-import { SceneCanvas, asNodeId, defineAction, effectivePose, ellipsePath, useLatest, useScene, movePreset, pickPreset } from '@weasel-js/core';
+import { SceneCanvas, asNodeId, defineAction, effectivePose, solid, useLatest, useScene, movePreset, pickPreset } from '@weasel-js/core';
 import type { Action, Dims, FeaturePreset, ImmediateParams, RectPose, RenderLayer, Scene } from '@weasel-js/core';
 import {
   registerTexture,
@@ -144,7 +144,6 @@ function Panel({
           ambient={seeds ? undefined : ambient}
           layers={{
             shader: { layer, before: 'scene' },
-            scene: { drawOne: (_n, p) => seeds ? drawSeed(p) : [] },
             selectionOverlay: null,
           }}
         />
@@ -157,12 +156,7 @@ type SeedScene = Scene<unknown, 'default', RectPose>;
 const SEED_R = 6;
 const SEED_FEATURES: FeaturePreset[] = [pickPreset, movePreset];
 
-const drawSeed = (p: RectPose): DrawCommand[] => [{
-  kind: 'path',
-  path: ellipsePath(p),
-  fill: { paint: { color: '#fff' } },
-  stroke: { paint: { color: '#222' }, width: 2 },
-}];
+const SEED_DATA = { shape: 'ellipse', fill: { paint: solid('#fff') }, stroke: { paint: solid('#222'), width: 2 } };
 
 /** Each seed's center as a fraction of the panel, where it is drawn: mid-drag included. */
 function seedUniform(scene: SeedScene, size: Dims): number[] {
@@ -206,7 +200,7 @@ export function CustomShaderDemo() {
         width: 2 * SEED_R,
         height: 2 * SEED_R,
       },
-      data: null,
+      data: SEED_DATA,
     })),
     subscribe: false,
   });
