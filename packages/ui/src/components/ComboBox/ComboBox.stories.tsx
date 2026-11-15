@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { ComboBox, ComboBoxItem, type ComboBoxProps } from '@weasel-js/ui/components/ComboBox';
 import { useAsyncOptions } from '@weasel-js/ui';
+import { Button } from '@weasel-js/ui/components/Button';
+import s from './ComboBox.stories.module.css';
 
 const meta: Meta<typeof ComboBox> = {
   title: 'ui/ComboBox',
@@ -54,9 +56,9 @@ export const Controlled: Story = {
  *  default `fill` swallows the slack and squeezes them to min-content. */
 export const FitWidth: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 480 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button type="button">Add trial</button>
+    <div className={s.rows}>
+      <div className={s.row}>
+        <Button variant="ghost">Add trial</Button>
         <ComboBox {...args}
           aria-label="Fits its options"
           width="fit"
@@ -65,8 +67,8 @@ export const FitWidth: Story = {
         />
         <span>tail</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button type="button">Add trial</button>
+      <div className={s.row}>
+        <Button variant="ghost">Add trial</Button>
         <ComboBox {...args}
           aria-label="Fills the row"
           placeholder="Filter…"
@@ -101,7 +103,7 @@ export const AsyncOptions: Story = {
         ),
     });
     return (
-      <div style={{ display: 'grid', gap: 12 }}>
+      <div className={s.stack}>
         <ComboBox {...(args as ComboBoxProps<string>)}
           label="Part"
           placeholder="Type a part number…"
