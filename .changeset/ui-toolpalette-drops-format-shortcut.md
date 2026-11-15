@@ -1,5 +1,5 @@
 ---
-'@weasel-js/ui': patch
+'@weasel-js/ui': major
 ---
 
 `@weasel-js/ui` and its `components/ToolPalette` subpath no longer re-export `formatShortcut` and its siblings, which live in gestures.
@@ -13,4 +13,4 @@ import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import { formatShortcut } from '@weasel-js/gestures';
 ```
 
-<!-- entry: behavior -->
+<!-- entry: breaking api -->
