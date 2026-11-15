@@ -14,7 +14,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
-import { depOf, pathOperationTags, requiresAnchorSelection, type EditAnchorsDep } from '@weasel-js/core';
+import { ANCHORS_GROUP, depOf, pathOperationTags, requiresAnchorSelection, type EditAnchorsDep } from '@weasel-js/core';
 import { DEFAULT_FILLET_SHAPE, editedPath } from './editFillet';
 import { icon } from '../icons.gen';
 import type { SetFilletsParams } from '../actionParamSchema';
@@ -155,7 +155,7 @@ export const cycleFilletAction = defineAction({
   icon: icon('fillet'),
   label: CYCLE_LABEL,
   tags: pathOperationTags('command'),
-  group: 'anchors',
+  group: ANCHORS_GROUP,
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   params: CYCLE_FILLET_PARAMS,

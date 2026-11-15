@@ -6,6 +6,7 @@
 import { ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import { convertSegments, editAnchorSetTracked, segmentsBetweenAnchors, type SegmentType } from '@weasel-js/geom';
 import {
+  ANCHORS_GROUP,
   anchorEditWouldChange, commitAnchorEdit, depOf, editingLayer, inPlane, pathOperationTags, segmentUnder,
 } from '@weasel-js/core';
 import { icon } from '../icons.gen';
@@ -28,7 +29,7 @@ export const convertSegmentsAction = defineAction({
   icon: icon('convertSegment'),
   label: LABEL,
   tags: pathOperationTags('command'),
-  group: 'anchors',
+  group: ANCHORS_GROUP,
   variants: [
     { key: 'line', label: 'Make segments straight', icon: icon('straightenSegment'), params: { to: 'line' } },
     { key: 'curve', label: 'Make segments curved', icon: icon('curveSegment'), params: { to: 'curve' } },

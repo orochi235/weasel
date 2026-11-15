@@ -1,4 +1,4 @@
-import { type ActionTunings, asNodeId, boundsOfPath, createScene, PathBuilder, type PolygonPath, type RectPose, solid, drawPreset } from '@weasel-js/core';
+import { ANCHORS_GROUP, PATH_GROUP, type ActionTunings, asNodeId, boundsOfPath, createScene, PathBuilder, type PolygonPath, type RectPose, solid, drawPreset } from '@weasel-js/core';
 import { bridgePreset, DEFAULT_BRIDGE_TENSION } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -58,7 +58,7 @@ function BridgeTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const selectionOptions = useMemo(() => ({ mode: 'multi' as const, initial: BRIDGE_SEED.map((id) => asNodeId(id)) }), []);
 
   return (
-    <PathLabStage bar={<><ActionBar group="path" /><ActionBar group="anchors" /></>}>
+    <PathLabStage bar={<><ActionBar group={PATH_GROUP} /><ActionBar group={ANCHORS_GROUP} /></>}>
       <TrialSceneCanvas
         features={FEATURES}
         defaultTools={['pen']}

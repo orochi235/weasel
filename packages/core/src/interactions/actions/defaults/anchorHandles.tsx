@@ -3,6 +3,7 @@
  * onto their anchors, or make each anchor's pair symmetric.
  */
 
+import { ANCHORS_GROUP } from '../pathActionGroups';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { makeHandlesSymmetric, retractHandles, type AnchorSet } from '@weasel-js/geom';
@@ -31,7 +32,7 @@ export function createHandleCommand(
     id,
     label,
     icon,
-    group: 'anchors',
+    group: ANCHORS_GROUP,
     tags: pathOperationTags('command'),
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors'],

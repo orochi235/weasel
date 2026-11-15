@@ -1,4 +1,4 @@
-import { type ActionTunings, editingAnchors, never, type RectPose, useSelection, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
+import { ANCHORS_GROUP, type ActionTunings, editingAnchors, never, type RectPose, useSelection, movePreset, pathsPreset, pickPreset } from '@weasel-js/core';
 import { createCurvatureCombPreset, fairingPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -48,7 +48,7 @@ function FairingTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   return (
     <div className={s.trial}>
       <div className={s.bar}>
-        <ActionBar group="anchors" />
+        <ActionBar group={ANCHORS_GROUP} />
       </div>
       <TrialSceneCanvas
         features={features}

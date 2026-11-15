@@ -7,7 +7,7 @@
  */
 
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
-import { type HandleLock, pathOperationTags } from '@weasel-js/core';
+import { ANCHORS_GROUP, type HandleLock, pathOperationTags } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 
 function makeHandleLockToggle(
@@ -20,7 +20,7 @@ function makeHandleLockToggle(
     label,
     tags: pathOperationTags('drag'),
     icon,
-    group: 'anchors',
+    group: ANCHORS_GROUP,
     requires: ['editAnchors'],
     active: (deps?: ActionDeps) => deps?.editAnchors?.handleLocks?.[lock] === true,
     enabled: (deps?: ActionDeps) =>

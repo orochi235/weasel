@@ -1,7 +1,7 @@
 /** Snip: cut a stroke back to the crossings on either side of a click. */
 import { type ActionDeps, ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import { snipPathAt, type SnipResult } from '@weasel-js/geom';
-import { commitOps, deleteNode, reshapeOps, type PathNode, pathOperationTags } from '@weasel-js/core';
+import { PATH_GROUP, commitOps, deleteNode, reshapeOps, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePressParams } from '../shared/scenePaths';
 import { icon } from '../icons.gen';
@@ -45,7 +45,7 @@ export const snipPathAction = defineAction({
   icon: icon('snip'),
   label: SNIP_LABEL,
   tags: pathOperationTags('click'),
-  group: 'path',
+  group: PATH_GROUP,
   eligible: { capability: 'creates-shapes' },
   requires: ['scene', 'applyOps', 'selection', 'view'],
   params: SNIP_PATH_PARAMS,

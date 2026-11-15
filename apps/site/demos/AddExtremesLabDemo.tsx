@@ -1,4 +1,4 @@
-import { type RectPose, useSelection, drawPreset } from '@weasel-js/core';
+import { ANCHORS_GROUP, type RectPose, useSelection, drawPreset } from '@weasel-js/core';
 import { addExtremesPreset, anchorSelectionPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -33,7 +33,7 @@ function AddExtremesTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const selection = useSelection({ scene, initial: [EDITED_ID] });
   return (
-    <PathLabStage bar={<><ActionBar group="anchors" /><LastOperationPanel /></>}>
+    <PathLabStage bar={<><ActionBar group={ANCHORS_GROUP} /><LastOperationPanel /></>}>
       <TrialSceneCanvas
         features={features}
         scene={scene}

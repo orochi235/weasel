@@ -8,7 +8,7 @@ import {
   editAnchorSetTracked, flatIndexesAfterReverse, locateAnchor, reverseSubpaths, setSubpathStart, subpathsOfAnchors,
   type AnchorSet, type PolygonPath,
 } from '@weasel-js/geom';
-import { anchorEditWouldChange, commitAnchorEdit, commitOps, depOf, pathOperationTags, type Op } from '@weasel-js/core';
+import { ANCHORS_GROUP, PATH_GROUP, anchorEditWouldChange, commitAnchorEdit, commitOps, depOf, pathOperationTags, type Op } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 
 const START_LABEL = 'Make start point';
@@ -30,7 +30,7 @@ export const setPathStartAction: Action & { requires: string[] } = {
   icon: icon('setPathStart'),
   label: START_LABEL,
   tags: pathOperationTags('command'),
-  group: 'anchors',
+  group: ANCHORS_GROUP,
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {
@@ -96,7 +96,7 @@ export const reversePathAction: Action & { requires: string[] } = {
   icon: icon('reversePath'),
   label: REVERSE_LABEL,
   tags: pathOperationTags('command'),
-  group: 'path',
+  group: PATH_GROUP,
   requires: ['editAnchors', 'selection', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',

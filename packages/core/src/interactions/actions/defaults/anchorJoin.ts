@@ -2,6 +2,7 @@
  * Average and Join on the anchors selected in path edit.
  */
 
+import { ANCHORS_GROUP } from '../pathActionGroups';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { averageAnchorsAt, joinAnchorsAt, type AnchorSet, type AverageAxis, type JoinOptions } from '@weasel-js/geom';
@@ -28,7 +29,7 @@ export const averageAnchorsAction: Action & { requires: string[] } = {
   label: 'Average anchors',
   icon: icon('averageAnchors'),
   tags: pathOperationTags('command'),
-  group: 'anchors',
+  group: ANCHORS_GROUP,
   variants: [
     { key: 'both', label: 'Average anchors', params: { axis: 'both' } },
     { key: 'x', label: 'Line anchors up vertically', params: { axis: 'x' } },
@@ -75,7 +76,7 @@ export const joinAnchorsAction: Action & { requires: string[] } = {
   label: 'Join anchors',
   icon: icon('join'),
   tags: pathOperationTags('command'),
-  group: 'anchors',
+  group: ANCHORS_GROUP,
   defaultBinding: [{ spec: { kind: 'key', key: 'j', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'joinAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],

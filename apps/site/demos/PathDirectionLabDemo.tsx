@@ -1,4 +1,5 @@
 import {
+  ANCHORS_GROUP, PATH_GROUP,
   always,
   asNodeId,
   boundsOfPath,
@@ -84,8 +85,8 @@ function DirectionTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         chromeVisibility={chromeVisibility}
       />
       <FloatingPanel anchor="top-right">
-        <ActionBar group="anchors" only={['setPathStart']} />
-        <ActionBar group="path" only={['reversePath']} />
+        <ActionBar group={ANCHORS_GROUP} only={['setPathStart']} />
+        <ActionBar group={PATH_GROUP} only={['reversePath']} />
       </FloatingPanel>
     </>
   );

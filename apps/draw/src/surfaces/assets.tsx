@@ -1,4 +1,6 @@
+import { ANCHORS_GROUP, PATH_GROUP } from '@weasel-js/core';
 import { EDITOR_ACTIONS } from '@weasel-js/editor';
+import { PATH_EFFECTS_GROUP } from '@weasel-js/path-tools';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { FILE_ACTIONS } from '../fileCommands';
 import { LOUPE_SCHEMA, useLoupeBinding } from '../LoupeProvider';
@@ -13,7 +15,7 @@ const run = (group: string): PrefGroup => pref.group('', { actions: pref.actions
 
 const LEAD = { lead: 'label' } as const;
 
-const PATH = pref.group('Path', { path: run('path'), anchors: run('anchors'), effects: run('pathEffects') }, LEAD);
+const PATH = pref.group('Path', { path: run(PATH_GROUP), anchors: run(ANCHORS_GROUP), effects: run(PATH_EFFECTS_GROUP) }, LEAD);
 
 const CONSTRAINTS = pref.group('Constraints', { constraints: run('constraints') }, LEAD);
 

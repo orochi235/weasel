@@ -5,6 +5,7 @@
  */
 import { type Action, ActionDisabledReason, BETWEEN_GESTURES, defineAction } from '@weasel-js/routing';
 import {
+  ANCHORS_GROUP,
   anchorEditWouldChange, commitAnchorEdit, depOf, joinPathsCommand, joinSelectedAnchors, pathOperationTags,
 } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
@@ -63,7 +64,7 @@ export const bridgeAnchorsAction = defineAction({
   label: 'Bridge anchors',
   tags: pathOperationTags('command'),
   icon: icon('core:bridge'),
-  group: 'anchors',
+  group: ANCHORS_GROUP,
   params: BRIDGE_PARAMS,
   defaultBinding: [{ spec: { kind: 'key', key: 'j', code: 'KeyJ', mods: { alt: true }, phase: BETWEEN_GESTURES }, opts: { id: 'bridgeAnchors.key' } }],
   eligible: { capability: 'edits-anchors' },

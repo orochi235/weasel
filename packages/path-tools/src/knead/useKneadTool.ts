@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { shareToolOptions, type ToolKeybinding, type ToolOptionShare } from '@weasel-js/routing';
-import { defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
+import { PATH_GROUP, defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { KNEAD_PARAMS } from './knead';
 import type {} from '../actionParamSchema';
@@ -42,7 +42,7 @@ export function useKneadTool(options: UseKneadToolOptions = {}): Tool {
     capabilities: ['creates-shapes'],
     hookName: 'useKneadTool',
     cursor: 'crosshair',
-    presentation: { label: 'Knead', group: 'path', icon: icon('knead') },
+    presentation: { label: 'Knead', group: PATH_GROUP, icon: icon('knead') },
     bindings: [{ spec: { kind: 'drag' }, actionId: 'knead', opts: { id: 'knead.drag' } }],
     options: shareToolOptions(KNEAD_TOOL_OPTIONS, share),
   }), [keybinding, share]);

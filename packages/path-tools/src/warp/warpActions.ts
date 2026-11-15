@@ -11,7 +11,7 @@ import {
 import { createEmitter } from '@weasel-js/registry';
 import { transformPoint, invert, type Point } from '@weasel-js/geom';
 import { moveWarpControl, pathWarpMap, unwarpPoint, warpControls } from '@weasel-js/geom/warp';
-import { commitOps, createSetDataOp, type Op, quantizedShape, reshapeTo, pathOperationTags, type AnyScene } from '@weasel-js/core';
+import { PATH_GROUP, commitOps, createSetDataOp, type Op, quantizedShape, reshapeTo, pathOperationTags, type AnyScene } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
 import {
   freshWarpBox, storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
@@ -289,7 +289,7 @@ export const expandWarpAction: Action = {
   label: 'Expand Warp',
   icon: icon('expand'),
   tags: pathOperationTags('command'),
-  group: 'path',
+  group: PATH_GROUP,
   requires: REQUIRES,
   invoker: {
     timing: 'immediate',
@@ -318,7 +318,7 @@ export const configureWarpAction = defineAction({
   label: 'Warp Settings',
   icon: icon('core:tune'),
   tags: pathOperationTags('command'),
-  group: 'path',
+  group: PATH_GROUP,
   requires: REQUIRES,
   settings: warpSettingsForm,
   params: configureWarpParams,

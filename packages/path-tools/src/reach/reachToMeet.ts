@@ -6,7 +6,7 @@ import {
   type AnchorSet, type ReachToMeetOptions, type OpenPathEnd, type PenAnchor, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
-import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
+import { PATH_GROUP, commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
 import {
   pressOf, scenePathNodes, strokeReachPref, strokesBesides, type StrokePress, type StrokePressParams,
 } from '../shared/scenePaths';
@@ -139,7 +139,7 @@ export const reachToMeetAction = defineAction({
   icon: icon('reach'),
   label: REACH_LABEL,
   tags: pathOperationTags('click'),
-  group: 'path',
+  group: PATH_GROUP,
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps', 'editAnchors', 'view'],
   params: REACH_TO_MEET_PARAMS,

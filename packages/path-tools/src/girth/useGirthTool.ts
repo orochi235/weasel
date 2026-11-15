@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { createEmitter } from '@weasel-js/registry';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import { defineTool, type Tool } from '@weasel-js/core';
+import { PATH_GROUP, defineTool, type Tool } from '@weasel-js/core';
 import {
   createGirthActions, DEFAULT_GIRTH_REACH_PX, GIRTH_CLEAR_ID, GIRTH_DRAG_ID, GIRTH_HOVER_ID, GIRTH_UNHOVER_ID,
   type GirthEnv, type GirthFocus,
@@ -62,7 +62,7 @@ export function useGirthTool(options: UseGirthToolOptions = {}): Tool {
     capabilities: ['edits-page'],
     hookName: 'useGirthTool',
     cursor: 'crosshair',
-    presentation: { label: 'Girth', group: 'path', icon: icon('girth') },
+    presentation: { label: 'Girth', group: PATH_GROUP, icon: icon('girth') },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'W', shift: true } }),
     actions,
     overlay,

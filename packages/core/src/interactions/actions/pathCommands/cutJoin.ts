@@ -3,6 +3,7 @@
  * there are. Join spans a gap straight; `joinPathsCommand` builds a join that
  * spans it some other way.
  */
+import { PATH_GROUP } from '../pathActionGroups';
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import {
@@ -32,7 +33,7 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
   id: 'snipAtCrossings',
   label: CUT_LABEL,
   icon: icon('cutAtCrossings'),
-  group: 'path',
+  group: PATH_GROUP,
   tags: pathOperationTags('command'),
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'scene', 'applyOps'],
@@ -141,7 +142,7 @@ export function joinPathsCommand(
   const plan = (deps: ActionDeps | undefined, params?: Record<string, unknown>) => planJoin(selectedPathNodes(deps), options(params));
   return {
     ...base,
-    group: 'path',
+    group: PATH_GROUP,
     tags: pathOperationTags('command'),
     eligible: { capability: 'creates-shapes' },
     requires: ['selection', 'scene', 'applyOps', 'editAnchors'],

@@ -1,4 +1,5 @@
 import {
+  ANCHORS_GROUP,
   type ActionTunings,
   asNodeId,
   boundsOfPath,
@@ -75,7 +76,7 @@ function SegmentTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         tune={tune}
       />
       <FloatingPanel anchor="top-right">
-        <ActionBar group="anchors" only={['convertSegments']} />
+        <ActionBar group={ANCHORS_GROUP} only={['convertSegments']} />
       </FloatingPanel>
     </>
   );
