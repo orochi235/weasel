@@ -10,11 +10,12 @@ export interface RailListProps extends HTMLAttributes<HTMLDivElement> {
 
 /**
  * A rail's entries, one under another: the list a settings dialog's pages are
- * picked from. It takes no role, so its entries are buttons a reader moves
- * between; for a list a reader selects from, use {@link RailListBox}.
+ * picked from. It is a `group`, which an `aria-label` names, so its entries are
+ * buttons a reader moves between; for a list a reader selects from, use
+ * {@link RailListBox}.
  */
 export function RailList({ className, ...rest }: RailListProps) {
-  return <div {...rest} className={railClass(s.list, className)} />;
+  return <div role="group" {...rest} className={railClass(s.list, className)} />;
 }
 
 /** What {@link RailItem}'s `current` marks: the open page, unless it names another kind of `aria-current`. */

@@ -13,6 +13,7 @@ describe('RailList', () => {
         <RailItem>Export</RailItem>
       </RailList>,
     );
+    expect(screen.getByRole('group', { name: 'Pages' })).toBeDefined();
     const canvas = screen.getByRole('button', { name: 'Canvas' });
     expect(canvas.getAttribute('aria-current')).toBe('page');
     expect(canvas.getAttribute('data-rail-mark')).toBe('current');
