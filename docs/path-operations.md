@@ -30,8 +30,8 @@ Tag: `path-drag`
 | Link anchor | `linkAnchor` | Moves an anchor, and released on another shape's anchor or segment ties it there with a constraint link, which every later edit or whole-shape transform of either keeps | Alt-drag an anchor, under `constraintsPreset` | main | path-tools |
 | Fillet | `editFillet` | Sets a corner anchor's radius, or every selected corner's, from the widget inside it | Drag a fillet widget, shown under `path-edit.fillets` | main | path-tools |
 | Path snapping | — | Locks a dragged anchor to other shapes' anchors, crossings, tangent and perpendicular points, midpoints, extremes, and strokes, and to the parts of its own path the drag leaves still; the pen, the insert tools, and a move snap the same way | Any anchor drag: other shapes' anchors by default, every kind with a `pathSnapSource` in `<SceneCanvas snap>` | main | core |
-| Drape | — | Moves nearby anchors with falling weight; the wheel scrubs the radius mid-drag | Any anchor drag, under `createDrapePreset` | landing | path-tools |
-| Handle snap | — | Snaps a handle's angle to steps and to its partner | Any handle drag, under `createHandleSnapPreset` | landing | path-tools |
+| Drape | — | Moves nearby anchors with falling weight; the wheel scrubs the radius mid-drag | Any anchor drag, under `createDrapePreset` | main | path-tools |
+| Handle snap | — | Snaps a handle's angle to steps and to its partner | Any handle drag, under `createHandleSnapPreset` | main | path-tools |
 | Tug | `tugPath` | Grows an open end along its tangent or curvature, or trims it back along itself | Drag an end anchor with the Tug path-edit tool (`useTugTool`) on | main | path-tools |
 
 ## Click on a path
