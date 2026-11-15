@@ -32,7 +32,7 @@ const meta: Meta<typeof Badge> = {
     },
     padding: {
       control: 'text',
-      description: 'Optional CSS padding override (any CSS padding string). If set, overrides the TRBL sliders.',
+      description: 'Padding in place of the shape\'s own: px, or any CSS padding string.',
     },
     crawl: {
       control: { type: 'range', min: 0, max: 2, step: 0.05 },
@@ -367,8 +367,8 @@ export const ComposeShowcase: Story = {
   ),
 };
 
-export const SlotPillReplica: Story = {
-  name: 'Slot pill (migration parity)',
+/** Pills in the outline variant beside a solid one, as a status column shows them. */
+export const StatusPills: Story = {
   render: (_args) => (
     <div className={`${st.row} ${st.tightRow}`}>
       <Badge shape="pill" emphasis="high" variant="outline" >active</Badge>
