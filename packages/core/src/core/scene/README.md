@@ -13,6 +13,10 @@ Since nesting landed, `getPose(id)` on an adapter returns the **local** pose —
 relative to the object's direct parent. Anything that needs to draw, hit-test,
 snap, or otherwise reason in world coordinates must route through
 `composeWorldPose`, which walks the parent chain folding local poses together.
+Over a `Scene`, `worldPoseOf(scene, id)` and `worldPoses(scene)` (one lookup to
+ask per node) do that under the scene's own composition, reading the world as
+shown (a gesture's in-flight pose, scrolled containers' offsets) unless given
+`'document'`.
 
 Forgetting this is the classic nesting bug: everything looks correct until an
 object is moved *inside a group that itself has a non-identity pose*, and then
