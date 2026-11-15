@@ -3,7 +3,8 @@ import {
   drawPreset,
 } from '@weasel-js/core';
 import {
-  type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas, useTrialScene,
+  type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas,
+  useTrialConfigChange, useTrialScene,
 } from '@weasel-js/labkit';
 import {
   createSymmetry, symmetryGroupSpec, symmetryRegistry, WALLPAPER_GROUPS, wallpaperSpec, type SymmetryKind,
@@ -128,28 +129,28 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const ambient = useMemo(() => [sym.contribution], [sym]);
   const group = asNodeId(GROUP_ID) as NodeId;
   const { config, setConfig } = ctx;
-  const { kind, pattern, drawInto } = config;
+  const { drawInto } = config;
 
   useLayoutEffect(() => sym.setActive(drawInto ? group : null), [sym, group, drawInto]);
 
-  // The panel and the canvas both edit the group: each shows the other's
-  // changes. Picking a wallpaper group, or switching to Wallpaper, writes that
-  // group's fields onto the group, and the panel follows.
-  const applied = useRef<string | null>(null);
-  useLayoutEffect(() => {
+  // The panel and the canvas both edit the group, and each shows the other's changes. A panel write lands on
+  // the group inside its own undo step; picking a wallpaper group, or switching to Wallpaper, writes that
+  // group's fields too, which the panel then follows.
+  const showing = useRef(false);
+  useTrialConfigChange<Config>((c, prev) => {
+    if (showing.current) return;
     const g = sym.read(group);
     if (!g) return;
-    const now = kind === 'wallpaper' ? pattern : null;
-    const preset = now !== null && now !== applied.current ? wallpaperSpec(now, config.spacing) : {};
-    applied.current = now;
+    const picked = c.kind === 'wallpaper' && (prev.kind !== 'wallpaper' || prev.pattern !== c.pattern);
+    const preset = picked ? wallpaperSpec(c.pattern, c.spacing) : {};
     const have = fieldsOf(g.spec, g.center);
-    const same = (Object.keys(have) as (keyof Fields)[]).every((k) => near(config[k], have[k]));
-    if (same && Object.keys(preset).length === 0) return;
-    sym.update(group, { spec: { ...specOf(config), ...preset }, center: { x: config.centerX, y: config.centerY } });
-  }, [sym, group, kind, pattern, config]);
+    const same = (Object.keys(have) as (keyof Fields)[]).every((k) => near(c[k], have[k]));
+    if (same && !picked) return;
+    sym.update(group, { spec: { ...specOf(c), ...preset }, center: { x: c.centerX, y: c.centerY } });
+  });
 
-  // A config write records a history entry, which notifies the scene before React
-  // renders again: `show` reads what it last wrote, or it writes the same field forever.
+  // A config write notifies the scene before React renders again: `show` reads what it last wrote, or it
+  // writes the same field forever. What it writes is the group's already, so the panel's write-back skips it.
   const shown = useRef(config);
   useLayoutEffect(() => { shown.current = config; }, [config]);
   useLayoutEffect(() => {
@@ -161,12 +162,16 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         const v = ROUNDED.has(k) ? Math.round(have[k] as number) : have[k];
         if (near(v, shown.current[k])) continue;
         shown.current = { ...shown.current, [k]: v };
-        setConfig(k, v);
+        showing.current = true;
+        try {
+          setConfig(k, v);
+        } finally {
+          showing.current = false;
+        }
       }
     };
     const offScene = scene.subscribe(show);
     const offSym = sym.subscribe(show);
-    // The effect above can change the group in this same commit, while this one is unsubscribed.
     show();
     return () => { offScene(); offSym(); };
   }, [scene, sym, group, setConfig]);
