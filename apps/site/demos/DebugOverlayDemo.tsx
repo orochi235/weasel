@@ -5,6 +5,7 @@ import {
   debugSnapshotArgs,
   renderDebugSnapshot,
   SceneCanvas,
+  solid,
   useScene,
   warmRender, movePreset, pickPreset, transformPreset, viewPreset,
 } from '@weasel-js/core';
@@ -13,22 +14,22 @@ import type {
   DebugFlags,
   DebugFeature,
   Dims,
+  Fill,
   SceneCanvasApi,
 } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Button } from '@weasel-js/ui/components/Button';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { DemoStage } from './DemoStage';
 
-interface Box { id: string; x: number; y: number; width: number; height: number; color: string }
+interface Box { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
 const W = 520, H = 320, HANDLE = DEFAULT_HANDLE_SIZE;
 const SNAP = { sources: [gridSnapSource({ spacing: 20 })] };
 
 const INITIAL: Box[] = [
-  { id: 'a', x:  60, y:  60, width: 80, height: 60, color: '#d4c4a8' },
-  { id: 'b', x: 220, y: 100, width: 100, height: 80, color: '#a8c4d4' },
-  { id: 'c', x: 380, y:  60, width: 80, height: 60, color: '#c4d4a8' },
+  { id: 'a', x:  60, y:  60, width: 80, height: 60, fill: { paint: solid('#d4c4a8') } },
+  { id: 'b', x: 220, y: 100, width: 100, height: 80, fill: { paint: solid('#a8c4d4') } },
+  { id: 'c', x: 380, y:  60, width: 80, height: 60, fill: { paint: solid('#c4d4a8') } },
 ];
 
 const FEATURES: { key: DebugFeature; label: string; help: string }[] = [
@@ -47,12 +48,6 @@ const NONE: Record<DebugFeature, boolean> = {
   bounds: false, origins: false, hitboxes: false, handles: false,
   snap: false, layers: false, ids: false, fps: false, viewport: false,
 };
-
-const drawBox = (_node: unknown, p: Box): DrawCommand[] => [{
-  kind: 'path',
-  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-  fill: { paint: { color: p.color } },
-}];
 
 export function DebugOverlayDemo() {
   const scene = useScene<Box>({ items: INITIAL });
@@ -83,7 +78,6 @@ export function DebugOverlayDemo() {
     if (!api || !sink || !debug) return;
     const args = {
       scene,
-      drawOne: drawBox,
       view: api.getView(),
       size,
       pixelRatio: window.devicePixelRatio || 1,
@@ -121,10 +115,7 @@ export function DebugOverlayDemo() {
           selectTool={{ handleHitRadius: HANDLE }}
           snap={SNAP}
           debug={debug}
-          layers={{
-            scene: { drawOne: drawBox },
-            selectionOverlay: { handles: { size: HANDLE } },
-          }}
+          layers={{ selectionOverlay: { handles: { size: HANDLE } } }}
         />
       </DemoStage>
       <p className="ckd-hint ckd-prose">
