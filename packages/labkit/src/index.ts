@@ -82,6 +82,7 @@ export type {
   TokenScaleRule,
 } from '@weasel-js/ui/components/TokenPanel';
 export { inferTokenType, refitScale, TokenPanel } from '@weasel-js/ui/components/TokenPanel';
+export type { LabZoomParams } from './actionParamSchema';
 export type {
   Annotation,
   AnnotationData,

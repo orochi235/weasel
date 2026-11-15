@@ -9,7 +9,7 @@ import {
   contextMenuAction,
   createPinchZoomAction,
   createViewportZoomAction,
-  type ImmediateParams,
+  defineAction,
   InputScope,
   PointerContextProvider,
   type PointerWorldPos,
@@ -275,19 +275,19 @@ function CameraDispatch({
       zoom.defaultBinding as { spec: { kind: string } }[]
     ).filter((b) => b.spec.kind === 'wheel' || b.spec.kind === 'pinch');
     const zoomBindings = [...(wheel ? [wheelBinding] : []), ...(padPinch ? trackpadPinch : [])];
-    const tap: Action = {
+    const tap: Action = defineAction({
       id: TAP_ID,
       label: 'Tap the canvas',
       defaultBinding: [{ spec: { kind: 'click' }, opts: { id: `${TAP_ID}.click` } }],
       invoker: {
         timing: 'immediate',
         run: (_deps, params) => {
-          const world = (params as ImmediateParams | undefined)?.world;
+          const world = params?.world;
           if (!world) return;
           onTapRef.current?.(frameLocalToWorld(world, frameRef.current));
         },
       },
-    };
+    });
     const goHome: Action = {
       id: HOME_ID,
       label: 'Reset view',

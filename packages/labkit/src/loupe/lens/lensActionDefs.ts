@@ -19,7 +19,7 @@ import {
   type Op,
 } from '@weasel-js/core';
 import type { Contribution, GestureBinding } from '@weasel-js/routing';
-import { ANY_MODS } from '@weasel-js/routing';
+import { ANY_MODS, defineAction } from '@weasel-js/routing';
 import {
   aimedNodeOf,
   keepHeldOps,
@@ -263,7 +263,7 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
   // The quick lens while its key is down: it follows the pointer whatever its aim.
   let carried: string | null = null;
   // `held`: the reticle keeps following through a drag, which a plain hover stands down for.
-  const followMove: Action = {
+  const followMove: Action = defineAction({
     id: LENS_ACTION_IDS.followMove,
     label: 'Follow the pointer',
     group: 'loupe',
@@ -282,11 +282,11 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
-        const at = { x: params?.clientX as number, y: params?.clientY as number };
-        api.follow(at, carried ?? undefined);
+        if (params?.clientX === undefined || params.clientY === undefined) return;
+        api.follow({ x: params.clientX, y: params.clientY }, carried ?? undefined);
       },
     },
-  };
+  });
   // The lens the quick key opened, which a tap of it closes; one per host.
   let quickLens: string | null = null;
   const openGlass = (): string | null => {
