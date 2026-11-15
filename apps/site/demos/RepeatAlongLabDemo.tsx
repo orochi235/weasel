@@ -25,7 +25,7 @@ import { useLatest } from '@weasel-js/react';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings, useSeedPathEdit } from './pathEffectLab';
+import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
 import { icon } from '../icons.gen';
 
 const FEATURES = [drawPreset, pathEffectsPreset] as const;
@@ -45,6 +45,8 @@ const settingsOf = (c: Config) => ({
 });
 
 const TRACK = asNodeId('track');
+/** The track opens in path edit, its anchors up for dragging. */
+const OPENING = { id: TRACK };
 
 function createLabScene() {
   const tile = pathNode('tile', 'M40 40 L76 56 L40 72 L50 56 Z', {
@@ -71,9 +73,8 @@ function RepeatTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const latest = useLatest(settings);
   // A repeat made from the bar or with Alt+Shift+R takes the panel's settings.
   const tune = useMemo<ActionTunings>(() => ({ repeatAlong: { params: () => latest.current } }), [latest]);
-  usePathEffectSettings(scene, 'repeatAlong', settings);
+  usePathEffectSettings(scene, 'repeatAlong', settingsOf);
   usePathEffectProbe(scene);
-  useSeedPathEdit();
 
   return (
     <PathEffectFrame>
@@ -83,6 +84,7 @@ function RepeatTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         selection={selection}
         trial={ctx.trial}
+        defaultPathEdit={OPENING}
         tune={tune}
       />
     </PathEffectFrame>

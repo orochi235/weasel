@@ -86,7 +86,7 @@ function TweenTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const latest = useLatest(settings);
   // A tween made from the bar or with Alt+Shift+B takes the panel's settings.
   const tune = useMemo<ActionTunings>(() => ({ tween: { params: () => latest.current } }), [latest]);
-  usePathEffectSettings(scene, 'tween', settings);
+  usePathEffectSettings(scene, 'tween', settingsOf);
   usePathEffectProbe(scene);
 
   return (

@@ -6,7 +6,8 @@
 import { asNodeId, boundsOfPath, derivedDepOf, type NodeId, pathEffectOf, pathEffectParts, pathFromD, type Fill, type PathEffect, type RectPose, type Scene, type Stroke, useActionsRegistry } from '@weasel-js/core';
 import { PATH_EFFECTS_GROUP } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
-import { type ReactNode, useEffect, useRef } from 'react';
+import { useTrialConfigChange } from '@weasel-js/labkit';
+import { type ReactNode, useEffect } from 'react';
 import s from './pathEffectLab.module.css';
 
 /** A shape node as the kit's own shape tools store one: the path in `data`,
@@ -31,33 +32,22 @@ export function pathNode(
 type LabScene = Scene<unknown, 'default', RectPose>;
 
 /**
- * Keep every `kind` effect in `scene` on `settings`, through the
- * `editPathEffect` action, so each change is an undoable edit. An edit that
- * changes nothing commits nothing, so the first render leaves the history
- * empty.
+ * Writes a change of the panel's settings onto every `kind` effect in `scene`, through the
+ * `editPathEffect` action, inside the settings change's undo step: one Undo takes back the panel
+ * and the effects together.
  */
-export function usePathEffectSettings(
+export function usePathEffectSettings<TC>(
   scene: LabScene,
   kind: PathEffect['kind'],
-  settings: Record<string, unknown>,
+  settingsOf: (config: TC) => Record<string, unknown>,
 ): void {
   const registry = useActionsRegistry();
-  const key = JSON.stringify(settings);
-  useEffect(() => {
+  useTrialConfigChange<TC>((config, prev) => {
+    const next = settingsOf(config);
+    if (JSON.stringify(next) === JSON.stringify(settingsOf(prev))) return;
     const ids = [...scene.renderOrder()].filter((id) => pathEffectOf(scene.get(id))?.kind === kind);
-    if (ids.length > 0) registry?.trigger('editPathEffect', { ...JSON.parse(key), ids });
-  }, [registry, scene, kind, key]);
-}
-
-/** Open the selected path in path edit once the canvas is up, so its
- *  anchors show the moment the lab does. */
-export function useSeedPathEdit(): void {
-  const registry = useActionsRegistry();
-  const done = useRef(false);
-  useEffect(() => {
-    if (done.current || !registry) return;
-    done.current = registry.trigger('enterPathEdit');
-  }, [registry]);
+    if (ids.length > 0) registry?.trigger('editPathEffect', { ...next, ids });
+  });
 }
 
 /** The bounds of each part a path effect in `scene` paints, by node id. */

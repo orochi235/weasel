@@ -25,7 +25,7 @@ import { useLatest } from '@weasel-js/react';
 import { useMemo } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
-import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings, useSeedPathEdit } from './pathEffectLab';
+import { PathEffectFrame, pathNode, usePathEffectProbe, usePathEffectSettings } from './pathEffectLab';
 import { icon } from '../icons.gen';
 
 const FEATURES = [drawPreset, pathEffectsPreset] as const;
@@ -42,6 +42,8 @@ type State = SceneTrialState<unknown, 'default', RectPose>;
 const settingsOf = (c: Config) => ({ fit: c.fit, baseline: c.baseline, flip: c.flip, tolerance: c.tolerance });
 
 const SPINE = asNodeId('spine');
+/** The spine opens in path edit, its anchors up for dragging. */
+const OPENING = { id: SPINE };
 
 function createLabScene() {
   const ribbon = pathNode('ribbon', 'M60 40 L220 40 L250 70 L220 100 L60 100 L90 70 Z', {
@@ -68,9 +70,8 @@ function BendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const latest = useLatest(settings);
   // A bend made from the bar or with Alt+Shift+W takes the panel's settings.
   const tune = useMemo<ActionTunings>(() => ({ bendAlong: { params: () => latest.current } }), [latest]);
-  usePathEffectSettings(scene, 'bendAlong', settings);
+  usePathEffectSettings(scene, 'bendAlong', settingsOf);
   usePathEffectProbe(scene);
-  useSeedPathEdit();
 
   return (
     <PathEffectFrame>
@@ -80,6 +81,7 @@ function BendTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         selection={selection}
         trial={ctx.trial}
+        defaultPathEdit={OPENING}
         tune={tune}
       />
     </PathEffectFrame>
