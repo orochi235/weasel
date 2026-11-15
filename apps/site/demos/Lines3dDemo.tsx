@@ -72,10 +72,7 @@ export function Lines3dDemo() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     target.lines.draw(packLines(lines), cameraViewProjection(cameraRef.current, width / height), size.current, { depthTest: false });
   }, { target: glCanvas });
-  useEffect(() => {
-    loop.request();
-    return () => loop.cancel();
-  }, [loop]);
+  useEffect(() => { loop.request(); }, [loop]);
 
   const rig = useMemo(() => cameraRig({ get: () => cameraRef.current, set: setCamera, size: () => size.current }), [cameraRef]);
   const orbit = useOrbitTool();
