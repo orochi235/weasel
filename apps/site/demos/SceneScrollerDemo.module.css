@@ -1,0 +1,6 @@
+/* Each count sits in a cell sized for its widest value, so a changing digit count moves nothing after it. */
+.value {
+  display: inline-block;
+  min-width: 6ch;
+  text-align: end;
+}

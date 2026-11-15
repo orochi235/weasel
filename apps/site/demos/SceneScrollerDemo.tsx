@@ -44,6 +44,7 @@ import {
 } from './platformer/world';
 import num from '@weasel-js/theme/numeric.module.css';
 import { DemoStage } from './DemoStage';
+import css from './SceneScrollerDemo.module.css';
 
 const W = 720;
 const H = 405;
@@ -317,12 +318,12 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       <div className="ckd-toolbar">
         <Checkbox isSelected={showBoxes} onChange={setShowBoxes}>collision boxes</Checkbox>
         <Button onClick={swarm}>swarm +40</Button>
-        <span className={`ckd-readout ${num.numeric}`}>frame {stats.frame.toFixed(1)} ms</span>
-        <span className={`ckd-readout ${num.numeric}`}>nodes {stats.nodes}</span>
-        <span className={`ckd-readout ${num.numeric}`}>frames committed {stats.writes}</span>
-        <span className={`ckd-readout ${num.numeric}`}>voices {stats.voices}</span>
-        <span className={`ckd-readout ${num.numeric}`}>footsteps {stats.steps}</span>
-        <span className={`ckd-readout ${num.numeric}`}>steady-state jitter {stats.spread.toFixed(1)} ms</span>
+        <Stat label="frame" value={stats.frame.toFixed(1)} unit="ms" />
+        <Stat label="nodes" value={stats.nodes} />
+        <Stat label="frames committed" value={stats.writes} />
+        <Stat label="voices" value={stats.voices} />
+        <Stat label="footsteps" value={stats.steps} />
+        <Stat label="steady-state jitter" value={stats.spread.toFixed(1)} unit="ms" />
       </div>
       <div className="ckd-hint">
         A platformer built as a load test for the animation timeline, the audio
@@ -331,5 +332,13 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         space to jump.
       </div>
     </div>
+  );
+}
+
+function Stat({ label, value, unit }: { label: string; value: string | number; unit?: string }) {
+  return (
+    <span className={`ckd-readout ${num.numeric}`}>
+      {label} <span className={css.value}>{value}</span>{unit ? ` ${unit}` : ''}
+    </span>
   );
 }
