@@ -32,7 +32,7 @@ function Held({ from, to, selected }: { from: Pt; to: Pt; selected: readonly str
     const sc = createScene<unknown, 'main' | 'notes', unknown>({ composition: IDENTITY_POSE_COMPOSITION,
       systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
     }) as unknown as AnyScene;
-    sc.add(measureNode('m' as NodeId, 'notes', from, to) as never);
+    sc.add(measureNode('m' as NodeId, 'notes', from, to));
     const m = createMeasurements({ layer: 'notes' });
     return { scene: sc, ms: m, actions: measurementsContribution(sc, m).actions ?? [] };
   });

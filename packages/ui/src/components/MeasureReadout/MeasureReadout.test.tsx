@@ -32,7 +32,7 @@ function setup() {
   }) as unknown as AnyScene;
   const ms = createMeasurements({ layer: 'notes' });
   const add = (id: string, a: { x: number; y: number }, b: { x: number; y: number }, frames?: MeasureFrames) =>
-    act(() => { scene.add(measureNode(id as NodeId, 'notes', a, b, frames) as never); });
+    act(() => { scene.add(measureNode(id as NodeId, 'notes', a, b, frames)); });
   const actions = measurementsContribution(scene, ms).actions ?? [];
   const view = (selected: string[]) => (
     <DepRegistryProvider>
