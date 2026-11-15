@@ -3,6 +3,7 @@ import { expect, within } from '@weasel-js/forge/play';
 import { LabShell } from '@weasel-js/labkit';
 import { ActionButton } from '@weasel-js/ui/components/ActionButton';
 import { Bar } from '@weasel-js/ui/components/Bar';
+import { Button } from '@weasel-js/ui/components/Button';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
 import { Select } from '@weasel-js/ui/components/Select';
 
@@ -27,8 +28,8 @@ export const WithHeaderActions: Story = {
     title: 'My Lab',
     header: (
       <>
-        <button type="button">+ Add</button>
-        <button type="button">Reset</button>
+        <Button>+ Add</Button>
+        <Button>Reset</Button>
       </>
     ),
     children: <p>Body content with header actions.</p>,
@@ -49,7 +50,7 @@ export const HeaderControlsLineUp: Story = {
     title: 'My Lab',
     header: (
       <>
-        <button type="button">Add</button>
+        <Button>Add</Button>
         <SegmentedBar
           aria-label="Mode"
           items={[
