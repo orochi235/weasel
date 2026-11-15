@@ -26,7 +26,8 @@ the offsets are wrong by exactly the parent's transform.
 
 | File | Role |
 | --- | --- |
-| `composePose.ts` | `composeWorldPose` (local chain → world), `rebaseLocalPose` / `decomposeRectPose` (world → local under a new parent), `worldPoseLookup`. |
+| `composeFrame.ts` | `PoseComposition`, `composeWorldPose` (local chain → world), `rebaseLocalPose` (world → local under a new parent). |
+| `composePose.ts` | The rect and rigid compositions (`RECT_POSE_COMPOSITION`, `RIGID_POSE_COMPOSITION`) and their parts, `decomposeRectPose`, `worldPoseLookup`; re-exports `composeFrame.ts`. |
 | `../layers/children.ts` | `createChildrenLayer` — z-ordered child renderer. Replaces hand-rolled `for (id of getChildren())` loops with a `RenderLayer` over an `OrderedAdapter`. Index 0 draws first (bottom). No-ops silently when the adapter omits the optional `getChildren`, so z-order can be adopted incrementally. |
 | `nestedHit.ts` | `nestedHitTester` — hit-testing that descends through containers. |
 | `unionOfChildren.ts` | `unionOfChildrenVia` — a container's pose as the envelope of what it holds, read through a pose descriptor. Returns `null` for an emptied container. |
@@ -34,11 +35,14 @@ the offsets are wrong by exactly the parent's transform.
 ## Pose shape is generic, so composition is too
 
 The kit doesn't assume your pose shape, so it can't assume how to compose two
-of them. `composeWorldPose` takes a consumer-supplied `compose`.
+of them. A scene carries a `PoseComposition` (`createScene({ composition })`),
+and `composeWorldPose` takes its `compose`.
 
-- For the common axis-aligned `{x, y, width, height}`, use `composeRectPose` —
-  translation only, child dimensions preserved.
-- Custom pose shapes (paths, matrix transforms) supply their own.
+- For the common axis-aligned `{x, y, width, height}`, `RECT_POSE_COMPOSITION`
+  — translation only, child dimensions preserved; `RIGID_POSE_COMPOSITION`
+  adds rotation.
+- Custom pose shapes (paths, matrix transforms, kernel3d's `Pose3`) supply
+  their own.
 
 ## `rebaseLocalPose` — why reparenting needs an inverse
 
