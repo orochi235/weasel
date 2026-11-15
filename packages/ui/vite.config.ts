@@ -20,7 +20,7 @@ import { assertPackageBuild } from '../../scripts/lib/own-install.mjs';
 assertPackageBuild(import.meta.dirname);
 
 /**
- * One entry per component directory, plus the barrel, backing the
+ * One entry per component directory and per catalog inside one, plus the barrel, backing the
  * `./components/*` subpath in `exports`. The keys are written to mirror the
  * source tree, which is also where `tsc --emitDeclarationOnly` puts the
  * matching `index.d.ts` — so one `*` wildcard in `exports` lines up the JS
@@ -49,8 +49,18 @@ function addComponents(rel: string): void {
     if (!dirent.isDirectory()) continue;
     const name = rel ? `${rel}/${dirent.name}` : dirent.name;
     const dir = resolve(componentsDir, name);
-    if (readdirSync(dir).includes('index.ts')) entries[`components/${name}/index`] = resolve(dir, 'index.ts');
-    else if (!rel && /^[a-z]/.test(dirent.name)) addComponents(name);
+    if (readdirSync(dir).includes('index.ts')) {
+      entries[`components/${name}/index`] = resolve(dir, 'index.ts');
+      addCatalogs(name);
+    } else if (!rel && /^[a-z]/.test(dirent.name)) addComponents(name);
+  }
+}
+/** A component's subdirectories with an `index.ts` of their own (Badge's `shapes`): the `./components/*`
+ *  wildcard reaches their declarations, so each gets JS beside them. */
+function addCatalogs(component: string): void {
+  for (const dirent of readdirSync(resolve(componentsDir, component), { withFileTypes: true })) {
+    const dir = resolve(componentsDir, component, dirent.name);
+    if (dirent.isDirectory() && readdirSync(dir).includes('index.ts')) entries[`components/${component}/${dirent.name}/index`] = resolve(dir, 'index.ts');
   }
 }
 addComponents('');

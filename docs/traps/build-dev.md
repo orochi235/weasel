@@ -19,10 +19,13 @@ lib.dom declares `"select" | "start" | "end" | "preserve"`, so `mode: 'multi'` s
 eleven demos while the file that lost the declaration compiled clean. Write `import type { X } …`
 then `export type { X };`.
 
-**The consumer smoke test cannot catch an undeclared dependency.** It packs every `@weasel-js`
-package into the tree, so a bare specifier resolves whether or not the importer declared it.
-`npm run check:imports` is the check that works: it compares each package's source imports with
-its manifest. `check:manifests` reads no imports, only that advertised paths exist in the tarball.
+**The consumer bundle's tree cannot catch an undeclared dependency.** It packs every `@weasel-js`
+package into one tree and externalizes every third-party one, so a bare specifier resolves whether or
+not the importer declared it. `npm run check:imports` compares each package's source imports with its
+manifest, and the installed consumers (`scripts/smoke-consumer-install.mjs`, the last phase of
+`test:smoke:consumer`) install only what a small app declares, so a third-party import nothing in that
+install declares fails as it loads. `check:manifests` reads no imports, only that advertised paths, and
+each wildcard export's JS and declaration for every name, are in the tarball.
 
 **opentype.js runs 2.0.0 and is typed by `@types/opentype.js@1.3.10`.** 2.0.0 ships
 no typings, so TS resolves the module to the DefinitelyTyped package for the 1.x API.

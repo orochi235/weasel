@@ -4,7 +4,8 @@
 // `@weasel-js/*` package it reaches taken from a packed tarball and everything else from the
 // registry. Nothing hoisted from the workspace is reachable, so a package that imports a dependency
 // it does not declare fails here even when the full set would have supplied it. Each consumer then
-// typechecks on NodeNext and Bundler resolution with its own compiler and runs.
+// typechecks on NodeNext and Bundler resolution with its own compiler, runs, and imports each entry
+// of the weasel packages it installed. The temp directory is deleted on the way out unless `--keep`.
 //
 //   node scripts/smoke-consumer-install.mjs           # pack what the consumers need, then run them
 //   node scripts/smoke-consumer-install.mjs --keep    # leave the temp directory for a look
@@ -12,22 +13,57 @@
 // smoke-consumer-bundle.mjs calls `smokeInstalledConsumers` with the tarballs it has already packed.
 import { execFileSync } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
-import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { packTarballs } from './lib/pack-tree.mjs';
-import { closure, diagnostics } from './smoke-consumer-types.mjs';
+import { REACT_FREE_ENTRIES } from './react-free-entries.mjs';
+import { closure, diagnostics, exportSubpaths, importTarget } from './smoke-consumer-types.mjs';
 
-/** Each consumer: its directory, and the commands that build and run it once installed. */
+/**
+ * Each consumer: its directory, the commands that build and run it once installed, and which entries of
+ * the weasel packages it installed it imports afterward, one by one, so an entry that throws as it loads
+ * fails here although nothing the consumer calls reaches it: `all` of them under the browser globals
+ * `env` sets up, or only those `react-free-entries.mjs` promises run with no DOM.
+ */
 export const CONSUMERS = [
   {
     dir: 'tests/consumers/gem-extension',
     about: 'a public-only extension (node kind, action, tools, properties) driven under jsdom',
     build: ['npm', 'run', '--silent', 'build'],
     run: ['npm', 'run', '--silent', 'scenario'],
+    env: 'dom.mjs',
+    entries: 'all',
+  },
+  {
+    dir: 'tests/consumers/node-headless',
+    about: 'geometry, the snapshot codec, and an undo history in Node with no DOM',
+    build: ['npm', 'run', '--silent', 'build'],
+    run: ['npm', 'run', '--silent', 'start'],
+    env: null,
+    entries: 'no-dom',
   },
 ];
+
+/** The entries `consumer` imports from the weasel packages installed in `dir`, each with the optional peers of
+ *  its package that the install left out: an entry may need one of those, and a consumer not using it lacks it. */
+async function entriesOf(consumer, dir) {
+  const scope = join(dir, 'node_modules', '@weasel-js');
+  const noDom = new Set(REACT_FREE_ENTRIES.filter((e) => !e.dom).map((e) => e.spec));
+  const entries = [];
+  for (const name of (await readdir(scope)).sort()) {
+    const pkgDir = join(scope, name);
+    const manifest = JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8'));
+    const absent = Object.entries(manifest.peerDependenciesMeta ?? {})
+      .filter(([peer, meta]) => meta?.optional && !existsSync(join(dir, 'node_modules', peer)))
+      .map(([peer]) => peer);
+    for (const [spec] of exportSubpaths(manifest, pkgDir, importTarget)) {
+      if (consumer.entries === 'all' || noDom.has(spec)) entries.push({ spec, absent });
+    }
+  }
+  return entries;
+}
 
 const RESOLUTIONS = [
   { name: 'NodeNext', module: 'NodeNext', moduleResolution: 'NodeNext' },
@@ -60,9 +96,16 @@ function pinToTarballs(manifest, manifests, tarballDir) {
   };
 }
 
+// Run under `npm run`, the smoke inherits npm's `npm_*` settings, which a consumer's own npm would read
+// as its own: under them the consumer's dev dependencies, jsdom among them, went uninstalled.
+const consumerEnv = {
+  ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^npm_/i.test(key))),
+  npm_config_loglevel: 'error',
+};
+
 const run = (cmd, cwd, label) => {
   try {
-    return execFileSync(cmd[0], cmd.slice(1), { cwd, encoding: 'utf8', stdio: 'pipe', env: { ...process.env, npm_config_loglevel: 'error' } });
+    return execFileSync(cmd[0], cmd.slice(1), { cwd, encoding: 'utf8', stdio: 'pipe', env: consumerEnv });
   } catch (err) {
     const e = new Error(`${label} failed:\n${String(err.stdout ?? '')}${String(err.stderr ?? '')}`);
     e.command = cmd.join(' ');
@@ -111,15 +154,18 @@ export async function smokeInstalledConsumers({ repoRoot, workDir, tarballDir, f
           (theirs.length ? `; ${theirs.length} error(s) in third-party declarations, not gated.` : '.'));
       }
       run(consumer.build, dir, 'build');
-      const out = run(consumer.run, dir, 'run');
-      console.log(out.trimEnd().split('\n').map((line) => `[smoke] ${tag}: ${line}`).join('\n'));
+      const say = (out) => console.log(out.trimEnd().split('\n').map((line) => `[smoke] ${tag}: ${line}`).join('\n'));
+      say(run(consumer.run, dir, 'run'));
+      await writeFile(join(dir, 'smoke-entries.json'), JSON.stringify(await entriesOf(consumer, dir)));
+      await cp(join(repoRoot, 'scripts', 'lib', 'consumer-entries.mjs'), join(dir, 'smoke-entries.mjs'));
+      say(run(['node', 'smoke-entries.mjs', ...(consumer.env ? [consumer.env] : [])], dir, `importing every ${consumer.entries === 'all' ? '' : 'no-DOM '}entry`));
     } catch (err) {
       fail(`${tag}: ${err.command ?? ''} FAILED`, err.message);
     }
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
   const keep = process.argv.includes('--keep');
   const workDir = await mkdtemp(join(tmpdir(), 'weasel-consumers-'));

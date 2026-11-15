@@ -1,0 +1,20 @@
+{
+  "name": "weasel-node-headless",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A server-side weasel consumer: geometry, the snapshot codec, and an undo history in Node, with no DOM.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "@weasel-js/core": "*",
+    "@weasel-js/geom": "*",
+    "@weasel-js/history": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "~6.0.2"
+  }
+}

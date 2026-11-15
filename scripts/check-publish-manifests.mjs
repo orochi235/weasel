@@ -63,21 +63,61 @@ function packedFiles(dir) {
   return new Set(report.files.map((f) => f.path));
 }
 
+const wildcardPattern = (path) =>
+  new RegExp(`^${path.split('*').map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('(.+)')}$`);
+
 /** Whether the tarball holds `path`, or for a wildcard target, any file the `*` can stand for. */
 const ships = (path, packed) => {
   if (!path.includes('*')) return packed.has(path);
-  const pattern = new RegExp(`^${path.split('*').map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.+')}$`);
+  const pattern = wildcardPattern(path);
   return [...packed].some((file) => pattern.test(file));
 };
 
+/** Each condition of a wildcard export's target, by its path through nested conditions (`import.types`). */
+function conditionTargets(target, at = '') {
+  if (typeof target === 'string') return [[at || 'default', target.replace(/^\.\//, '')]];
+  if (!target || typeof target !== 'object' || Array.isArray(target)) return [];
+  return Object.entries(target).flatMap(([cond, value]) => conditionTargets(value, at ? `${at}.${cond}` : cond));
+}
+
+/**
+ * For each wildcard export, the names the `*` stands for under one condition that another lacks: a component
+ * whose JS ships with no declaration beside it, or the reverse. `ships` passes the wildcard on any one match,
+ * so one intact component hides another's missing file; this compares them name by name.
+ */
+function wildcardGaps(manifest, packed) {
+  const gaps = [];
+  for (const [key, target] of Object.entries(manifest.exports ?? {})) {
+    if (!key.includes('*')) continue;
+    const conditions = conditionTargets(target).filter(([, path]) => path.includes('*') && !path.startsWith('../'));
+    if (conditions.length < 2) continue;
+    const names = conditions.map(([cond, path]) => {
+      const pattern = wildcardPattern(path);
+      return [cond, path, new Set([...packed].map((file) => pattern.exec(file)?.[1]).filter(Boolean))];
+    });
+    // A name a key of its own claims (`"./components/Badge/shapes": null`) is not this wildcard's.
+    const claimed = (name) => key.replace('*', name) in manifest.exports;
+    const every = new Set(names.flatMap(([, , found]) => [...found]).filter((name) => !claimed(name)));
+    for (const [cond, path, found] of names) {
+      for (const name of [...every].filter((n) => !found.has(n)).sort()) {
+        gaps.push(`${key.replace('*', name)}: no \`${cond}\` file, ${path.replace('*', name)}`);
+      }
+    }
+  }
+  return gaps;
+}
+
 const failures = [];
 const fileListGaps = [];
+const wildcardFailures = [];
 const packages = publishableWorkspaces();
 
 for (const { dir, manifest } of packages) {
   const packed = packedFiles(dir);
   const promised = advertisedPaths(manifest);
   const missing = promised.filter((p) => !ships(p, packed));
+  const gaps = wildcardGaps(manifest, packed);
+  if (gaps.length > 0) wildcardFailures.push(`${manifest.name}\n${gaps.map((g) => `    ${g}`).join('\n')}`);
 
   // npm drops a `files` entry matching nothing instead of erroring. Directories
   // and globs are npm's to expand; single files are checkable.
@@ -118,6 +158,16 @@ if (fileListGaps.length > 0) {
         .join('\n\n') +
       '\n\nnpm silently ignores a `files` entry that matches nothing, so this never\n' +
       'surfaces at publish time. Either add the file or stop listing it.\n',
+  );
+  process.exit(1);
+}
+
+if (wildcardFailures.length > 0) {
+  console.error(
+    `[manifests] ${wildcardFailures.length} package(s) ship a wildcard export's file under one condition and not another:\n\n` +
+      wildcardFailures.map((f) => `  ${f}`).join('\n\n') +
+      '\n\nA consumer of that subpath resolves the JS and gets no types, or the reverse. Build the missing\n' +
+      'file, or stop shipping its partner.\n',
   );
   process.exit(1);
 }

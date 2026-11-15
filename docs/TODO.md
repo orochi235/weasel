@@ -250,18 +250,6 @@ Owner tags, after the priority (2026-10-26):
 
 ### Extension authoring and published consumers
 
-- **(P2) [agent] Add an installed, runnable consumer contract beyond the externalized bundle smoke.**
-  `scripts/smoke-consumer-bundle.mjs` packs workspaces but externalizes all third-party dependencies,
-  bundles without executing, and typechecks only bundler resolution with `skipLibCheck: true`.
-  `smoke-registry-install.mjs` installs all packages together and checks versions, not runtime behavior;
-  a full set can supply a dependency a minimal consumer lacks. Keep those checks and add small fresh
-  consumers with real declared React/runtime dependencies, including a public-only extension fixture.
-  Expand wildcard entry checks to concrete JS/declaration pairs: `check-publish-manifests.mjs` currently
-  accepts a wildcard if any file matches, so one intact component can mask another missing declaration.
-  Closes when representative minimal browser and Node installs execute public APIs, supported TypeScript
-  resolution modes check their real declarations, wildcard JS/type pairs are covered, and deliberate missing
-  dependencies, missing component declarations and runtime-only initialization failures fail the gate.
-
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor

@@ -39,19 +39,19 @@ const MODES = [
   { name: 'Bundler', module: 'ESNext', moduleResolution: 'Bundler' },
 ];
 
-/** Each subpath `manifest` exports with types, a wildcard expanded against the extracted package,
- *  as `[specifier, declaration file]`. */
-export function typedSubpaths(manifest, pkgDir) {
+/** Each subpath `manifest` exports with a target `pick` chooses from its conditions, a wildcard expanded
+ *  against the extracted package's files, as `[specifier, file]`. */
+export function exportSubpaths(manifest, pkgDir, pick) {
   const out = [];
-  for (const [key, target] of Object.entries(manifest.exports ?? { '.': { types: manifest.types } })) {
-    const types = typeof target === 'object' && target ? target.types : null;
-    if (!types) continue;
+  for (const [key, target] of Object.entries(manifest.exports ?? { '.': { types: manifest.types, import: manifest.main } })) {
+    const chosen = pick(target);
+    if (!chosen) continue;
     const subpath = (rest) => `${manifest.name}${rest.slice(1)}`;
     if (!key.includes('*')) {
-      out.push([subpath(key), join(pkgDir, types)]);
+      out.push([subpath(key), join(pkgDir, chosen)]);
       continue;
     }
-    const [head, tail] = types.split('*');
+    const [head, tail] = chosen.split('*');
     const dir = head.slice(0, head.lastIndexOf('/') + 1);
     const lead = head.slice(dir.length);
     if (!existsSync(join(pkgDir, dir))) continue;
@@ -64,6 +64,18 @@ export function typedSubpaths(manifest, pkgDir) {
     }
   }
   return out;
+}
+
+/** Each subpath `manifest` exports with types, as `[specifier, declaration file]`. */
+export const typedSubpaths = (manifest, pkgDir) =>
+  exportSubpaths(manifest, pkgDir, (target) => (typeof target === 'object' && target ? target.types : null));
+
+/** The JavaScript file an export's target loads for `import`, or null for a stylesheet, JSON, or types alone. */
+export function importTarget(target) {
+  if (typeof target === 'string') return /\.m?js$/.test(target) ? target : null;
+  if (!target || typeof target !== 'object') return null;
+  const chosen = target.import ?? target.default;
+  return typeof chosen === 'string' ? importTarget(chosen) : importTarget(chosen ?? null);
 }
 
 /** Links each third-party dependency the packed packages declare, and its `@types`, from the repo's install. */
@@ -191,7 +203,7 @@ export async function closure(repoRoot, dirs) {
   return [...seen].sort();
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
   const workDir = await mkdtemp(join(tmpdir(), 'weasel-declarations-'));
   const nodeModules = join(workDir, 'node_modules');
