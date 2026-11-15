@@ -5,7 +5,7 @@ import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
 import { DemoStage } from './DemoStage';
 
-interface NodeData { shape?: 'rect'; fill: Fill; stroke?: Stroke }
+interface NodeData { fill: Fill; stroke?: Stroke }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
@@ -19,10 +19,10 @@ export function PanZoomDemo() {
       // A `{ px }` width stays the same on screen at every zoom; a plain number is world units.
       { id: 'screen-pin' as never, kind: 'mark', layer: 'default',
         pose: { x: 130, y: 110, width: 120, height: 90 },
-        data: { shape: 'rect', fill: { paint: solid('#7fb069') }, stroke: { paint: EDGE, width: { px: 2 } } } },
+        data: { fill: { paint: solid('#7fb069') }, stroke: { paint: EDGE, width: { px: 2 } } } },
       { id: 'world-pin' as never, kind: 'mark', layer: 'default',
         pose: { x: 290, y: 110, width: 120, height: 90 },
-        data: { shape: 'rect', fill: { paint: solid('#a48bd4') }, stroke: { paint: EDGE, width: 2 } } },
+        data: { fill: { paint: solid('#a48bd4') }, stroke: { paint: EDGE, width: 2 } } },
       { id: 'far-a' as never, kind: 'mark', layer: 'default',
         pose: { x: -180, y: -120, width: 80, height: 60 }, data: { fill: { paint: solid('#d4a574') } } },
       { id: 'far-b' as never, kind: 'mark', layer: 'default',

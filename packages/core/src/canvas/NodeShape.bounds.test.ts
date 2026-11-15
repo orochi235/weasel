@@ -43,6 +43,7 @@ const CASES: Array<[string, Record<string, unknown>]> = [
   ['a curved path with an arrowhead', { path: CURVE, stroke: { ...strokeOf('#000', 4), markerEnd: 'arrow' } }],
   ['an image placeholder', { image: { src: 'data:image/png;base64,' } }],
   ['a rect-fallback node', { fill: { paint: solid('#0f0') } }],
+  ['a stroked rect-fallback node', { fill: { paint: solid('#0f0') }, stroke: SPIKY }],
 ];
 
 const tightened = (c: DrawCommand): DrawCommand =>
@@ -67,6 +68,16 @@ describe('painter bounds', () => {
       expect(cullDrawCommands(cmds, id, b!, 1)).not.toEqual([]);
     });
   }
+
+  it('strokes a rect-fallback node with its data.stroke, as kit:shape strokes a rect', () => {
+    const plain = node({ fill: { paint: solid('#0f0') }, stroke: SPIKY });
+    const tagged = node({ shape: 'rect', fill: { paint: solid('#0f0') }, stroke: SPIKY });
+    expect(findNodeShape(plain)!.id).toBe('kit:rect-fallback');
+    const [cmd] = findNodeShape(plain)!.paint(plain, POSE);
+    expect(cmd).toMatchObject({ kind: 'path', stroke: expect.anything() });
+    expect(cmd).toEqual(findNodeShape(tagged)!.paint(tagged, POSE)[0]);
+    expect(findShapeBounds(plain, POSE, { scale: 1 })).toEqual(findShapeBounds(tagged, POSE, { scale: 1 }));
+  });
 
   it('has none for text, which only layout can bound', () => {
     expect(findShapeBounds(node({ text: 'hi' }), POSE)).toBeNull();

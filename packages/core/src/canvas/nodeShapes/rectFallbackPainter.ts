@@ -1,30 +1,22 @@
-import type { Fill, Inherit } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import type { RectPose } from 'core/scene/types';
-import { commandFill } from '@weasel-js/renderer';
-import { resolveFill } from '@weasel-js/paint';
-import { paintsPose, poseBoxBounds } from './poseBox';
+import { paintsPose } from './poseBox';
+import { SHAPE_PAINTER } from './shapePainter';
 
 // ─── Built-in painters ─────────────────────────────────────────────────
+/** Last-resort painter: any rect-posed mark nothing else claimed, drawn as
+ *  `kit:shape` draws `shape: 'rect'`, with its `data.fill` and `data.stroke`.
+ *  Its whole box stays grabbable, fill or none, and its stroke reaches past it.
+ *  The registry keeps it behind every other painter, `'normal'` ones included. */
 export const RECT_FALLBACK_PAINTER: NodeShapeEntry<unknown, RectPose> = {
-  // Last-resort painter — matches any rect-posed mark, so the registry keeps
-  // it behind every other painter, `'normal'` ones included.
   id: 'kit:rect-fallback',
   matches: (node) => node.kind !== 'group' && paintsPose(node.pose),
-  paint: (node, pose, ctx) => {
-    const d = node.data as { fill?: Fill | Inherit | null } | null;
-    const p = pose;
-    const declared = resolveFill(d?.fill, ctx?.inherited?.fill);
-    const fill = declared && commandFill(declared, p);
-    return [{
-      kind: 'path',
-      path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-      ...(fill ? { fill } : {}),
-    }];
+  paint: SHAPE_PAINTER.paint,
+  silhouette: (_node, p) => ({ kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height }),
+  ink: (node, pose, ctx) => {
+    const ink = SHAPE_PAINTER.ink!(node, pose, ctx);
+    return ink && { ...ink, filled: true };
   },
-  silhouette: (_node, pose) => {
-    const p = pose;
-    return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
-  },
-  bounds: (_node, pose) => poseBoxBounds(pose, null, undefined),
+  bounds: SHAPE_PAINTER.bounds!,
+  drawnBounds: SHAPE_PAINTER.drawnBounds!,
 };

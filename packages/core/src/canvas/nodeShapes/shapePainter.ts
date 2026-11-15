@@ -40,7 +40,7 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // fresh `Uint8Array` + `Float32Array` for every ellipse, polygon and star.
   // See PAINT_SLOT.
   paint: (node, pose, ctx) => withAnimatedTrim(withAnimatedVertexColors(nodeMemo(node, PAINT_SLOT, pose, () => {
-    const d = node.data as ShapeData;
+    const d = (node.data ?? {}) as ShapeData;
     const path = pathForShape(d, pose);
     const declaredFill = resolveFill(d.fill, ctx?.inherited?.fill);
     const shapeFill = declaredFill && commandFill(declaredFill, pose);
@@ -58,7 +58,7 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     return pathForShape(d, pose);
   },
   ink: (node, _pose, ctx) => {
-    const d = node.data as ShapeData;
+    const d = (node.data ?? {}) as ShapeData;
     const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
     return {
       filled: resolveFill(d.fill, ctx?.inherited?.fill) !== null,
@@ -68,11 +68,11 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   },
   // Every shape kind is inscribed in the pose box.
   bounds: (node, pose, ctx) =>
-    poseBoxBounds(pose, resolveStroke((node.data as ShapeData).stroke, ctx?.inherited?.stroke), ctx),
+    poseBoxBounds(pose, resolveStroke(((node.data ?? {}) as ShapeData).stroke, ctx?.inherited?.stroke), ctx),
   // A rect's or an ellipse's stroke reaches its box evenly, unless something sticks out of the ribbon; a
   // polygon's or a star's corners are sharper than a right angle, so their miters are measured.
   drawnBounds: (node, pose, ctx) => {
-    const d = node.data as ShapeData;
+    const d = (node.data ?? {}) as ShapeData;
     const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
     return d.shape === 'polygon' || d.shape === 'star' || (stroke !== null && protrudes(stroke))
       ? strokedPoseBox(node, pose, stroke, ctx, (at) => pathForShape(d, at))

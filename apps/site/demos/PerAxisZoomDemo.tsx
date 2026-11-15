@@ -8,7 +8,7 @@ import { Slider } from '@weasel-js/ui/components/Slider';
 import s from './PerAxisZoomDemo.module.css';
 import { DemoStage } from './DemoStage';
 
-interface NodeData { shape: 'rect'; fill: Fill; stroke: Stroke }
+interface NodeData { fill: Fill; stroke: Stroke }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
@@ -37,7 +37,7 @@ export function PerAxisZoomDemo() {
     systemLayers: [{ id: 'default' }],
     initial: [
       { id: 'image' as never, kind: 'mark', layer: 'default', pose: IMAGE_BOUNDS,
-        data: { shape: 'rect', fill: { paint: solid('#7fb069') }, stroke: { paint: solid('#d4c4a8'), width: 2 } } },
+        data: { fill: { paint: solid('#7fb069') }, stroke: { paint: solid('#d4c4a8'), width: 2 } } },
     ],
   });
   const [view, setView] = useState<View>(START);
