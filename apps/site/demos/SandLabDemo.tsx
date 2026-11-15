@@ -1,14 +1,14 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, pathFromD, type RectPose, solid, useLatest, drawPreset } from '@weasel-js/core';
-import { sandPreset, useSandTool } from '@weasel-js/path-tools';
+import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
+import { createPathEditHost, sandPreset, useSandTool } from '@weasel-js/path-tools';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState,
   TrialSceneCanvas, useTrialScene,
 } from '@weasel-js/labkit';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
-import { usePathEditMode } from './usePathEditMode';
 
 const FEATURES = [drawPreset, sandPreset] as const;
 
@@ -83,7 +83,11 @@ const createLabScene = () =>
 
 function BrushTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { modes, pathEdit } = usePathEditMode(SEEDED_PATH_ID);
+  const [{ modes, pathEdit }] = useState(() => {
+    const modes = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    return { modes, pathEdit: createPathEditHost({ id: SEEDED_PATH_ID, modes }) };
+  });
+  const redrawOn = useMemo(() => [pathEdit], [pathEdit]);
   const sand = useSandTool();
   const tools = useMemo(() => ({ sand }), [sand]);
   const brush = useLatest(ctx.config);
@@ -102,6 +106,7 @@ function BrushTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       trial={ctx.trial}
       modes={modes}
       pathEdit={pathEdit}
+      redrawOn={redrawOn}
       tools={tools}
       tune={tune}
       selectionOptions={selectionOptions}

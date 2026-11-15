@@ -4,7 +4,6 @@ import {
   boundsOfPath,
   createScene,
   pathFromD,
-  type PathEditHost,
   type PolygonPath,
   type RectPose,
   solid,
@@ -20,8 +19,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { FILLET_CONTROLS, filletPreset, type FilletControlsSelection } from '@weasel-js/path-tools';
-import { createEmitter } from '@weasel-js/registry';
+import { createPathEditHost, FILLET_CONTROLS, filletPreset } from '@weasel-js/path-tools';
 import { useMemo, useState } from 'react';
 import { FilletPanel } from './FilletPanel';
 import s from './FilletLabDemo.module.css';
@@ -76,34 +74,14 @@ const createLabScene = () =>
     ],
   });
 
-/** Which path is open and which of its anchors are selected, held beside the
- *  trial so the lab opens on one corner and its panel can read them. */
-function useEditHost(): { host: PathEditHost; selection: FilletControlsSelection } {
-  return useState(() => {
-    let id: string | null = FIRST;
-    let anchors = FIRST_ANCHORS;
-    const listeners = createEmitter();
-    const changed = () => listeners.emit();
-    const subscribe = listeners.subscribe;
-    return {
-      host: {
-        editingId: () => id,
-        setEditingId: (next: string | null) => { id = next; changed(); },
-        selectedAnchors: () => anchors,
-        setSelectedAnchors: (next: ReadonlySet<number>) => { anchors = next; changed(); },
-      },
-      selection: { editingId: () => id, selectedAnchors: () => anchors, subscribe },
-    };
-  })[0];
-}
-
 const FEATURES = [drawPreset, filletPreset] as const;
 const TUNE: ActionTunings = { cycleFillet: { bindings: [{ kind: 'key', key: 'k' }] } };
 
 function FilletsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { host, selection } = useEditHost();
-  const redrawOn = useMemo(() => [selection], [selection]);
+  // Held beside the trial so the lab opens on one corner and its panel can read it.
+  const [host] = useState(() => createPathEditHost({ id: FIRST, anchors: FIRST_ANCHORS }));
+  const redrawOn = useMemo(() => [host], [host]);
   const selectionOptions = useMemo(() => ({ initial: [asNodeId(FIRST)] }), []);
   return (
     <div className={s.frame}>
@@ -117,7 +95,7 @@ function FilletsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         selectionOptions={selectionOptions}
         tune={TUNE}
       />
-      <FilletPanel scene={scene} selection={selection} />
+      <FilletPanel scene={scene} selection={host} />
     </div>
   );
 }

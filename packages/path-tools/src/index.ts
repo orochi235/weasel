@@ -178,3 +178,6 @@ export {
   WARP_TOOLS, RESHAPE_TOOLS, PATH_EDIT_TOOLS, PATH_TOOLS_TOOLS, usePathEditTools, usePathToolsTools,
   type PathEditToolId, type PathToolId,
 } from './toolSets';
+export {
+  createPathEditHost, type PathEditHostOptions, type PathEditModes, type PathEditStore,
+} from './host/createPathEditHost';
