@@ -1,6 +1,7 @@
 {
   ".": {
     "ALWAYS": "const",
+    "ANCHORS_GROUP": "const",
     "ANCHORS_TOOL_ID": "const",
     "ANCHOR_HIT_BASE_PX": "const",
     "ANCHOR_TOOLS": "const",
@@ -73,6 +74,7 @@
     "AnimateToBoundsOptions": "type",
     "AnimatedReflow": "type",
     "AnnotationFlag": "type",
+    "AnyNode": "type",
     "AnyScene": "type",
     "AreaSelectAdapter": "type",
     "AreaSelectDep": "type",
@@ -793,6 +795,7 @@
     "PATH_EFFECT": "const",
     "PATH_EFFECT_DERIVATIONS": "const",
     "PATH_GESTURE_TAGS": "const",
+    "PATH_GROUP": "const",
     "PATH_L": "const",
     "PATH_M": "const",
     "PATH_OVERLAY_ROLES": "const",
