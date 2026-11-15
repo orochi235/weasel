@@ -23,7 +23,8 @@ import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import { Rulers } from '@weasel-js/ui/components/Rulers';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { type ReactElement, type RefObject, useMemo } from 'react';
-import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher, NoticesPublisher, ToolOptionsPublisher } from './adapterPublishers';
+import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher, NoticesPublisher } from './adapterPublishers';
+import { drawToolOptionValues } from './toolOptions';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { canvasAlphaFor, useDrawEnteredGroup, useEnteredGroupLabel } from './modality/enteredGroup';
@@ -216,6 +217,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             sampleLayers={props.sampleLayers}
             ingestion={DRAW_INGESTION}
             tune={DRAW_TUNE}
+            toolOptionValues={drawToolOptionValues()}
             // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
             // text box, or the notch of a star, should reach whatever is behind it.
             geometry={{ picking: 'shape' }}
@@ -251,7 +253,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             <BooleansAdapterPublisher scene={scene} selection={selection} />
             <CreateOutlinesAdapterPublisher scene={scene} selection={selection} />
             <NoticesPublisher />
-            <ToolOptionsPublisher />
           </SceneCanvas>
         )}
         {rulers.rulers && <Rulers rulers={rulers.rulers} />}

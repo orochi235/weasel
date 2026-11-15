@@ -13,7 +13,7 @@ import { useEffect, useRef } from 'react';
 import { useActionsRegistry, useMenuHost, useOffhandAction, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import type { DepName } from 'interactions/actions/depSchema';
-import { useFallbackToolOptionValues, useToolOptionTunings } from 'tools/toolOptions';
+import { useToolOptionTunings } from 'tools/toolOptions';
 import type { ToolsApi } from '../../tools/overlayBinding';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import type { SurfaceContribution } from '../surfaceContribution';
@@ -123,7 +123,6 @@ export function useContributionRoles(
     }
     return () => { for (const u of unregisters) u(); };
   }, [registry, toolRegistry, ambient]);
-  useFallbackToolOptionValues();
   useToolOptionTunings(registry, toolRegistry);
 
   const menuHost = useMenuHost();

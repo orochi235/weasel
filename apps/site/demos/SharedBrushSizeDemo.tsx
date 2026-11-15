@@ -1,9 +1,8 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import {
   type Action, commitOps, createDeleteOp, createInsertOp, createToolOptionValues, defineAction, defineTool, ellipsePath,
   type InvocationCtx, type RectPose, resolveParams, SceneCanvas, shareToolOptions, solid, type Tool,
-  type ToolOptions, type ToolOptionShare, type ToolOptionValues, type ToolsApi, useScene, useSelection,
-  useToolOptionValues,
+  type ToolOptions, type ToolOptionShare, type ToolsApi, useScene, useSelection,
 } from '@weasel-js/core';
 import { pxReach } from '@weasel-js/geom';
 import { pref, PX_UNIT } from '@weasel-js/prefs';
@@ -83,12 +82,6 @@ function brushes(shared: boolean): Record<string, Tool> {
   return { dots: brushTool('dots', 'Dots', dots, share), erase: brushTool('erase', 'Erase', erase, share) };
 }
 
-/** Publishes where the tools keep their options, from inside the canvas. */
-function OptionValues({ values }: { values: ToolOptionValues }): ReactNode {
-  useToolOptionValues(values);
-  return null;
-}
-
 export function SharedBrushSizeDemo() {
   const scene = useScene({ systemLayers: [{ id: 'default' }] });
   const selection = useSelection({ scene, mode: 'multi' });
@@ -111,10 +104,9 @@ export function SharedBrushSizeDemo() {
           selection={selection}
           tools={registry}
           defaultActiveTool="dots"
+          toolOptionValues={values}
           onToolsCreated={setTools}
-        >
-          <OptionValues values={values} />
-        </SceneCanvas>
+        />
       </div>
     </div>
   );

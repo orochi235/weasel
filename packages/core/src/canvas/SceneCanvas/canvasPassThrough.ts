@@ -7,7 +7,7 @@ const OWN_PROPS = [
   'scene', 'composition', 'geometry', 'poseDescriptor', 'selectTool', 'insertNodeFactories',
   'ingestion', 'layoutDropTarget', 'reflowTransition', 'poseTransition', 'geometryProjection', 'routing',
   'selection', 'selectionOptions', 'selectable', 'tools', 'features', 'enableKeybindings',
-  'claimKeys', 'enableGestureDispatcher', 'onToolsCreated', 'defaultTools', 'toolOptions',
+  'claimKeys', 'enableGestureDispatcher', 'onToolsCreated', 'defaultTools', 'toolOptions', 'toolOptionValues',
   'defaultActiveTool', 'ambient', 'versionCheck', 'longPress', 'viewport', 'layers', 'actions',
   'tune', 'bindingOverrides', 'describeKind', 'animator', 'views', 'children', 'debug', 'alphaFor', 'layerVisibility',
   'layerOrder', 'isPointerInteractive', 'enteredGroup', 'onDoubleClick', 'onClick', 'onHover', 'chromeVisibility', 'modes',

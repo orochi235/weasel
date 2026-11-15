@@ -12,7 +12,6 @@ import {
 } from '@weasel-js/core';
 import { usePathToolsTools } from '@weasel-js/path-tools';
 import { DRAW_FEATURES } from '../../drawFeatures';
-import { ToolOptionsPublisher } from '../../adapterPublishers';
 import { drawPrefs } from '../../prefs';
 import { drawToolOptionValues } from '../../toolOptions';
 import { LastOperation } from '.';
@@ -39,9 +38,8 @@ function setup() {
     const tools = usePathToolsTools();
     return (
       <>
-        <ToolOptionsPublisher />
         <SceneCanvas features={DRAW_FEATURES} scene={scene} layers={{}} width={400} height={400}
-          tools={tools} onToolsCreated={(t) => { grabbed.tools = t; }} />
+          tools={tools} toolOptionValues={drawToolOptionValues()} onToolsCreated={(t) => { grabbed.tools = t; }} />
         <LastOperation />
       </>
     );

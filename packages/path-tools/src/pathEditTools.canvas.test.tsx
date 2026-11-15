@@ -7,7 +7,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   SceneCanvas, asNodeId, createScene, createToolOptionValues, pathFromD, pathInWorld, type PolygonPath, type ToolsApi,
-  useActionsRegistry, useToolOptionValues, type ActionsRegistry, drawPreset,
+  useActionsRegistry, type ActionsRegistry, drawPreset,
 } from '@weasel-js/core';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { pathToAnchors } from '@weasel-js/geom';
@@ -35,7 +35,6 @@ function setup(d: string, width: number, height: number) {
   const options = createToolOptionValues();
   const actions: { current?: ActionsRegistry | null } = {};
   function Values() {
-    useToolOptionValues(options);
     actions.current = useActionsRegistry();
     return null;
   }
@@ -43,7 +42,7 @@ function setup(d: string, width: number, height: number) {
     const pathEditTools = usePathEditTools();
     return (
       <SceneCanvas features={FEATURES} scene={scene} layers={{}} width={256} height={256}
-        modes={modes} tools={pathEditTools} defaultPathEdit={{ id: A }}
+        modes={modes} tools={pathEditTools} defaultPathEdit={{ id: A }} toolOptionValues={options}
         onToolsCreated={(t) => { tools.current = t; }}>
         <Values />
       </SceneCanvas>

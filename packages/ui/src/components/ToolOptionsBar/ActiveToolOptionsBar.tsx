@@ -7,7 +7,7 @@ export interface ActiveToolOptionsBarProps extends Omit<ToolOptionsBarProps, 'la
   tool?: Pick<Tool, 'id' | 'options' | 'presentation'>;
   /** The canvas's tools, as `onToolsCreated` hands them over; the bar follows the active one. */
   tools?: Pick<ToolsApi, 'active' | 'registry'> | null;
-  /** Where the host keeps its tools' option values: the store the canvas's `toolOptionValues` dep publishes. */
+  /** Where the host keeps its tools' option values: the store it passes as `<SceneCanvas toolOptionValues>`. */
   values: ToolOptionValues;
 }
 

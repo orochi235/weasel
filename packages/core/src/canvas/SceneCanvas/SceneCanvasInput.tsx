@@ -18,6 +18,7 @@ import { useTestHook } from '../../test-hook/useTestHook';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import type { ChromeRulesDep } from '../deps/chromeRules';
 import { useModeDefaultToolDepSource } from '../deps/modeDefaultTool';
+import { useCanvasToolOptionValues } from '../../tools/toolOptions';
 import { useHitObserver } from '../useHitObserver';
 import type { CanvasViewState } from '../useCanvasView';
 import { GeometryProjectionRegistrar, ResizePolicyRegistrar } from './poseRegistrars';
@@ -47,7 +48,7 @@ export type SceneCanvasInputOptions = StandardActionsProps & Pick<
   Props,
   | 'selectTool' | 'geometryProjection' | 'enableGestureDispatcher' | 'enableKeybindings'
   | 'claimKeys' | 'longPress' | 'modes' | 'versionCheck' | 'onClick' | 'onDoubleClick' | 'routing'
-  | 'sampleLayers' | 'layerVisibility' | 'dpr'
+  | 'sampleLayers' | 'layerVisibility' | 'dpr' | 'toolOptionValues'
 >;
 
 /** What the content's bounds are read from, and the camera's ref they are published to. */
@@ -130,6 +131,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   useDepSource('chromeRules', () => chrome.chromeRules);
   useDepSource('selectRange', () => picking.selectRange);
   useModeDefaultToolDepSource(props.modes, p.tools.tools);
+  useCanvasToolOptionValues(props.toolOptionValues);
   useSceneStandardActions({
     props, viewOn: p.viewOn,
     selection, enteredGroup: picking.enteredGroup, scene, adapter: picking.adapter, standardActions: p.tools.standardActions,

@@ -4,7 +4,6 @@ import {
   useLatest,
   useScene,
   useSelection,
-  useToolOptionValues,
   viewRectToScreen,
   WeaselProvider,
   type FeaturePreset,
@@ -13,7 +12,7 @@ import {
   type Scene,
   type SceneCanvasApi,
   type SceneCanvasHit,
-  type ToolOptionValues, editPreset, movePreset, pickPreset, resizePreset, viewPreset,
+  editPreset, movePreset, pickPreset, resizePreset, viewPreset,
 } from '@weasel-js/core';
 import { adoptCssOnce } from '@weasel-js/react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactElement, type Ref, type RefObject } from 'react';
@@ -189,11 +188,10 @@ function Inner({
         {...setOnly({
           selectTool: resizes ? selectTool : undefined, textEditor, tools, onToolsCreated, onHover,
           onResize: fills ? setMeasured : undefined, defaultView, view, onViewChange, viewBounds,
-          backgroundFill: background, animator, layers,
+          backgroundFill: background, animator, layers, toolOptionValues,
         })}
       >
         <DropRules scene={scene} canReparent={canReparent} />
-        {toolOptionValues && <ToolOptionValuesSource values={toolOptionValues} />}
       </SceneCanvas>
       <Overlays canvasRef={canvasRef} scene={scene} overlays={overlays} />
     </div>
@@ -232,12 +230,6 @@ function setOnly<T extends object>(props: T): { [K in keyof T]?: Exclude<T[K], u
 }
 
 /** Shapes drop only into containers and lanes, and lanes only into pools. A child of `<SceneCanvas>`, so its dep source registers after the canvas's own. */
-/** Publishes `values` as the canvas's `toolOptionValues` dep. */
-function ToolOptionValuesSource({ values }: { values: ToolOptionValues }): null {
-  useToolOptionValues(values);
-  return null;
-}
-
 function DropRules({ scene, canReparent }: { scene: Scene<DiagramSceneData, 'main', RectPose>; canReparent: CanReparent | undefined }): null {
   const latest = useLatest(canReparent);
   const asks = canReparent !== undefined;

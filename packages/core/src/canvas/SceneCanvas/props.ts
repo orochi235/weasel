@@ -4,6 +4,7 @@ import type { SceneCanvasGeometry } from './geometryProps';
 import type { SceneCanvasHit, SceneCanvasPointerProps } from './pointerProps';
 import type { Paint } from '@weasel-js/paint';
 import type { SceneCanvasActionProps } from './actionProps';
+import type { SceneCanvasToolProps } from './toolProps';
 import type { SceneCanvasIngestion } from './ingestionProps';
 import type { SceneCanvasSelectTool } from './selectToolProps';
 export type { SceneCanvasIngestion } from './ingestionProps';
@@ -27,7 +28,6 @@ import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
 import type { DebugFlags } from '../../debug/types';
 import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
 import type { FlattenTolerance, ShaderProgramHandle } from '@weasel-js/renderer';
-import type { Tool, ToolsApi } from '../../tools/overlayBinding';
 import type { SceneSlotConfig } from '../buildSceneLayer';
 import type { CanvasProps } from '../Canvas';
 import type { LayersMap } from '../layerSlots';
@@ -37,7 +37,6 @@ import type { SurfaceContribution } from '../surfaceContribution';
 import type { SceneCameraProps } from './sceneViewBounds';
 import type { SceneCanvasSceneProps } from './sceneProps';
 import type { FeaturePreset } from './features';
-import type { BuiltinToolOptions } from './useBuiltinShapeTools';
 import type { VersionCheck } from './useContributionRoles';
 import type { SceneCanvasViewport } from './viewportProp';
 
@@ -63,8 +62,7 @@ export type SceneCanvasLayers<TNode extends { id: string }, TPose> = LayersMap<
   Partial<SceneSlotConfig<TNode, TPose>>
 >;
 
-import type { BuiltinToolId } from './builtinToolSets'; import type { SceneCanvasPaintedBy } from './workerProps';
-import type { ToolEntry } from '@weasel-js/routing';
+import type { SceneCanvasPaintedBy } from './workerProps';
 export { BUILTIN_TOOL_IDS, type BuiltinToolId } from './builtinToolSets';
 
 export type { SceneCanvasHit };
@@ -215,27 +213,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     features?: readonly FeaturePreset[];
 
-    /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
-     *
-     *  **Patch form** (`Record<string, Tool | true | false>`): merged
-     *  into the built-in registry on top of whatever `defaultTools` and
-     *  `features` already selected.
-     *    - `true` pulls in the built-in for this id (`'pen'`, `'lasso'`,
-     *      `'hand'`, …), the same as listing it in `defaultTools`. Unknown
-     *      built-in ids warn in dev and are ignored.
-     *    - `Tool` adds a new id or replaces an existing one in place
-     *      (dev-only warning if `defaultTools` also names that id).
-     *    - `false` omits a bundled tool entirely.
-     *  Auto-wiring (keybindings, dispatcher, action registry) still runs.
-     *
-     *  **Takeover form** (`ToolsApi`): the internal registry is bypassed and
-     *  this `tools` value is forwarded to Canvas as-is — the consumer owns
-     *  active-slot management, and `pick`'s select tool is theirs to supply.
-     *  Every other preset still applies. Keybindings are still auto-wired
-     *  against the supplied registry; pass `enableKeybindings={false}` to opt
-     *  out. */
-    tools?: ToolsApi | Record<string, Tool | true | false>;
-
     /**
      * Auto-wire keyboard shortcuts. Default `true`. When `false`, SceneCanvas still mounts
      * its tools but routes no keyboard input to them — neither tool hotkeys nor
@@ -261,32 +238,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     enableGestureDispatcher?: boolean;
 
-    /** Called with the `ToolsApi` SceneCanvas constructs or receives, whenever its identity
-     *  changes. For introspection. */
-    onToolsCreated?: (tools: ToolsApi) => void;
-
-    /**
-     * Built-in tools SceneCanvas registers in its internal `useTools`, on top
-     * of the ones presets bring (`select` from `pick`, `hand` from `view`):
-     * ids, or sets of them such as `SHAPE_TOOLS`, or `withoutTools(...)` of one.
-     * Default: none. Each tool also registers the kit actions it binds, so
-     * `['rect']` brings `insert`. Ignored under a full `ToolsApi` takeover in
-     * `tools`; the patch form of `tools` lays over it.
-     */
-    defaultTools?: readonly ToolEntry<BuiltinToolId>[];
-
-    /** Per-tool option overrides for the built-in tools. Each entry is a
-     *  narrow subset of the underlying hook's options surface — `lasso.mode`,
-     *  `rig.state`, etc. */
-    toolOptions?: BuiltinToolOptions;
     /** What gestures snap to, and how near it pulls. */
     snap?: SceneCanvasSnap;
-
-    /** Initial active-slot tool id. Default: `'select'` when it is
-     *  registered, otherwise none — a canvas can run on ambient bindings
-     *  alone. Must be one of the registered tools. Ignored when the consumer
-     *  supplies their own `tools` prop. */
-    defaultActiveTool?: string;
 
     /** Always-on entries to register alongside the internal tools — every one
      *  a `SurfaceContribution`, whose views, deps, overlay, bindings, actions
@@ -441,4 +394,4 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * nor picked here. See `CanvasProps.layerOrder`.
      */
     layerOrder?: string[];
-  } & SceneCanvasPointerProps<TData> & SceneCanvasActionProps & SceneCanvasPaintedBy & SceneCanvasSampleProps;
+  } & SceneCanvasPointerProps<TData> & SceneCanvasActionProps & SceneCanvasToolProps & SceneCanvasPaintedBy & SceneCanvasSampleProps;

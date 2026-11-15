@@ -1,6 +1,6 @@
 import {
   BUILTIN_TOOL_GROUPS, SceneCanvas, createToolOptionValues, isToolSet, isTextData, useCanvasSize, useLatest, useScene, useSceneTextEdit, useSelection,
-  useToolOptionValues, type Tool, type ToolOptionValues, type ToolsApi,
+  type Tool, type ToolsApi,
 } from '@weasel-js/core';
 import {
   commitSequence, createSequenceDeleteAction, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText,
@@ -49,12 +49,6 @@ const isEditableText = (data: ChartData): boolean =>
 
 /** What closing a text edit writes besides the text: an emptied edge label removed, a sequence's or a chart's text folded
  *  into its data. */
-/** Publishes `values` as the canvas's `toolOptionValues` dep, which the Sequence panel's pickers write. */
-function ToolOptionValuesPublisher({ values }: { values: ToolOptionValues }): null {
-  useToolOptionValues(values);
-  return null;
-}
-
 function endTextEdit(scene: ChartScene, id: string): void {
   dropEmptyEdgeLabel(scene, id);
   const loose = scene as never;
@@ -143,8 +137,8 @@ export function ChartWorkspace(): ReactElement {
                 onToolsCreated={setTools}
                 alphaFor={alphaFor}
                 layers={layers}
+                toolOptionValues={toolOptionValues}
               >
-                <ToolOptionValuesPublisher values={toolOptionValues} />
                 <StencilInsertPublisher theme={theme} />
                 <WaypointFollowerPublisher scene={scene} />
                 <BodyFollowerPublisher scene={scene} />

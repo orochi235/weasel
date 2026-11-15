@@ -4,6 +4,7 @@
  */
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { deepEqual } from '@weasel-js/registry';
+import { useLatest } from '@weasel-js/react';
 import { createToolOptionValues, keepToolOptions, toolOptionActionIds, toolOptionParams, type ToolOptionValues } from '@weasel-js/routing';
 import { useDepSource, useOptionalDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import type { ActionsRegistry } from '@weasel-js/routing';
@@ -30,12 +31,17 @@ export function useToolOptionParams(
   return useSyncExternalStore(values.subscribe, read, read);
 }
 
-/** Hold tool option values in memory under whatever store the host publishes, so a canvas whose host keeps none
- *  still has its tools' options: the store the host publishes, else this one. */
-export function useFallbackToolOptionValues(): void {
+/** The canvas's `toolOptionValues` dep: `values` (`<SceneCanvas toolOptionValues>`), else a store published beneath
+ *  it, else one held in memory, so a canvas whose host keeps none still has its tools' options. A source a child
+ *  publishes with {@link useToolOptionValues} registers later and wins. */
+export function useCanvasToolOptionValues(values: ToolOptionValues | undefined): void {
   const registry = useOptionalDepRegistry();
   const [fallback] = useState(createToolOptionValues);
-  useEffect(() => registry?.register('toolOptionValues', (below) => below() ?? fallback), [registry, fallback]);
+  const latest = useLatest(values);
+  useEffect(
+    () => registry?.register('toolOptionValues', (below) => latest.current ?? below() ?? fallback),
+    [registry, fallback, latest],
+  );
 }
 
 /** Tune the actions each tool's options are params of with every option's
