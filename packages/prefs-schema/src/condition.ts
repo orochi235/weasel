@@ -60,6 +60,7 @@ const TEST_KEYS: ReadonlySet<string> = new Set(['path', 'from', 'is', 'isNot', '
 const isValue = (v: unknown): v is PrefConditionValue =>
   v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean';
 
+/** Which shape a condition takes: all of its parts, any of them, the negation of one, or a single test. */
 export type Form = 'all' | 'any' | 'not' | 'test';
 
 /** Which form `value` is, judged on its own keys and not on what it holds. */
