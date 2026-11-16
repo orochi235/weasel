@@ -1,10 +1,10 @@
 import {
   createContext,
   createElement,
+  useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 import type { DetectedDeviceFacts, DeviceProfile } from './types';
@@ -16,6 +16,7 @@ const COARSE_QUERY = '(pointer: coarse)';
 const HOVER_QUERY = '(hover: hover)';
 
 const readDpr = (): number => (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+const serverDpr = (): number => 1;
 
 /**
  * Detect device facts and keep them live.
@@ -27,13 +28,9 @@ function useDetectedFacts(watch: boolean): DetectedDeviceFacts {
   const coarsePointer = useMediaQuery(COARSE_QUERY, { fallback: DEFAULT_DEVICE_PROFILE.coarsePointer, follow: watch });
   const canHover = useMediaQuery(HOVER_QUERY, { fallback: DEFAULT_DEVICE_PROFILE.canHover, follow: watch });
   // Density does not need `matchMedia` to be read, only to be watched; gating the read would report 1 under jsdom.
-  const [dpr, setDpr] = useState(readDpr);
-  useEffect(() => {
-    if (!watch) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- re-syncs a density that may have changed before subscribing
-    setDpr(readDpr());
-    return watchDevicePixelRatio(setDpr);
-  }, [watch]);
+  // A store, not state an effect sets: setting the density it already held re-rendered the provider alone after its next commit.
+  const watchDpr = useCallback((onChange: () => void) => (watch ? watchDevicePixelRatio(onChange) : () => {}), [watch]);
+  const dpr = useSyncExternalStore(watchDpr, readDpr, serverDpr);
   return useMemo(() => ({ coarsePointer, canHover, dpr }), [coarsePointer, canHover, dpr]);
 }
 
