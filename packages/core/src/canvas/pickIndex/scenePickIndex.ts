@@ -215,7 +215,7 @@ export function indexedCandidates(
   scene: AnyScene,
   descriptor: PoseDescriptor<unknown>,
   broadFor: (layer: string | undefined) => PickBroad | null | undefined,
-): Order | null {
+): readonly PickCandidate<unknown>[] | null {
   const index = current(scene, descriptor);
   if (index === null) return null;
   const broads: (PickBroad | null)[] = [];

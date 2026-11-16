@@ -81,7 +81,8 @@ export type { ShownDataSource, ShownOverridesSource } from '../core/scene/nodeAs
 export type { Bivariant, ClipFromPoseFn, CopiesFromPoseFn, DerivePathFn, DerivePoseFn, DerivedDep } from '../core/scene/nodeFnTypes';
 export { contentRoots, hidesSubtree, isNodeHidden, isNodeLocked, isPageStructure, nodeGates, withoutPageStructure } from '../core/scene/nodeGates';
 export type { GateSource, GatedLayer, GatedNode, NodeGates } from '../core/scene/nodeGates';
-export { nodeMemo } from '../core/scene/nodeMemo';
+export { createNodeMemoScope, nodeMemo } from '../core/scene/nodeMemo';
+export type { NodeMemoScope } from '../core/scene/nodeMemo';
 export type { AddNodeSpec, GroupNode, MarkNode, Node as SceneNode, NodeBase as SceneNodeBase, NodeClip } from '../core/scene/nodeTypes';
 export { OUTPUT_GRID_KEY, outputGridOf, quantizeSize, quantizedShape } from '../core/scene/outputGrid';
 export { PATH_EFFECT, createPathEffectDerivations, pathEffectNode, pathEffectOf, pathEffectParts, registeredPathEffects } from '../core/scene/pathEffects/derive';

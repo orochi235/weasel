@@ -37,5 +37,8 @@ export {
 export {
   gridSource as gridSnapSourceForTests, sceneOfPaths as sceneOfPathsForTests, sessionDep as snapSessionDepForTests,
 } from 'domains/snap/testing/sessionDep';
-export { hitTestArea as hitTestAreaForTests } from 'canvas/deps/hitTestArea';
+export {
+  hitTestArea as hitTestAreaForTests, type AABBBounds, type RegionQueryOptions,
+} from 'canvas/deps/hitTestArea';
+export type { ScenePickSourceOptions, ViewPickGates } from 'canvas/pickWalk';
 export { useInsertDepSource as useInsertDepSourceForTests } from 'canvas/deps/insert';

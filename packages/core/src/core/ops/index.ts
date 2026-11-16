@@ -28,7 +28,7 @@ export type {
 export { createSetPathOp } from './setPath';
 export { writtenBy, type WrittenNode } from './writtenBy';
 export type { SetPathFields, SetPathArgs } from './setPath';
-export { locateChild, type ChildPosition } from './slot';
+export { locateChild, type ChildPosition, type ParentedReader } from './slot';
 export type { SiblingSlot } from './slot';
 export { createOpRegistry, defaultOpRegistry, registerOpFactory } from './registry';
 export type { CreateOpRegistryOptions, OpFactory, OpRegistry } from './registry';

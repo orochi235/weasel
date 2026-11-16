@@ -191,7 +191,7 @@ export { inkBoxes } from '../canvas/inkBoxes';
 // ─── For node kinds and tools another package builds ─────────────────────────
 // What a package teaching the canvas a node kind, or shipping a tool for one, builds on:
 // `@weasel-js/text-tools` is one.
-export { nodeMemo } from '../core/scene/nodeMemo';
+export { nodeMemo, createNodeMemoScope, type NodeMemoScope } from '../core/scene/nodeMemo';
 export { PAINT_SLOT } from '../canvas/nodeShapes/memo';
 export { inkReach, strokeOutsetPerAxis } from '../canvas/nodeShapes/nodePaint';
 export { paintsPose } from '../canvas/nodeShapes/poseBox';
@@ -199,6 +199,8 @@ export { sceneDerivedPathOf, scenePaintedPoseOf } from '../canvas/derivedPath';
 export { nodesAsShown, shownLookup } from '../core/scene/nodeAsShown';
 export { targetTransformOf, worldToLocal, type TargetTransform } from '../core/geometry/targetFrame';
 export { indexedCandidates } from '../canvas/pickIndex/scenePickIndex';
+export type { PickBroad, PickCandidate } from '../canvas/pickWalk';
+export type { ClipBearing } from '../canvas/ownClip';
 export { findMountedCanvas, type MountedCanvas } from '../canvas/mountedCanvases';
 export { arrivalBounds } from '../domains/ingestion/placement';
 export { insertBindingBehaviors, type InsertToolOptions } from '../tools/builtin/shared/insertToolOptions';

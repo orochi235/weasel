@@ -36,6 +36,7 @@ import {
   type SelectRegion,
 } from 'core/geometry/regionHit';
 
+/** An axis-aligned world rect: what a marquee region query covers. */
 export interface AABBBounds {
   x: number;
   y: number;

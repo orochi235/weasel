@@ -55,6 +55,7 @@ declare const scopeBrand: unique symbol;
  */
 export type NodeMemoScope = { readonly [scopeBrand]: true };
 
+/** A fresh {@link NodeMemoScope}, for {@link nodeMemo}'s `slot`; its entries go when the scope does. */
 export function createNodeMemoScope(): NodeMemoScope {
   return new WeakMap<object, ScopedSlot>() as unknown as NodeMemoScope;
 }
@@ -64,10 +65,6 @@ const MEMO = new WeakMap<object, NodeMemoRecord>();
 /** Bumped whenever ambient state a derivation reads has changed. Entries
  *  stamped with an older value are dropped rather than served stale. */
 let generation = 0;
-
-/** A node, as far as the memo is concerned: an object identity that may carry
- *  a `data` reference. */
-type MemoizableNode = { data?: unknown };
 
 /**
  * Return the value `derive` produces for `node`, recomputing only when the
@@ -87,7 +84,7 @@ type MemoizableNode = { data?: unknown };
  * while the input is unchanged.
  */
 export function nodeMemo<T>(
-  node: MemoizableNode,
+  node: { data?: unknown },
   slot: string | NodeMemoScope,
   pose: unknown,
   derive: () => T,
@@ -124,7 +121,7 @@ export function nodeMemo<T>(
 }
 
 function scopedNodeMemo<T>(
-  node: MemoizableNode,
+  node: { data?: unknown },
   scope: NodeMemoScope,
   pose: unknown,
   derive: () => T,
@@ -157,7 +154,7 @@ function scopedNodeMemo<T>(
 }
 
 /** How many named slots `node` holds. For tests of what is kept on a node. */
-export function nodeMemoSlotCount(node: MemoizableNode): number {
+export function nodeMemoSlotCount(node: { data?: unknown }): number {
   const record = MEMO.get(node);
   return record === undefined || record.generation !== generation ? 0 : record.slots.size;
 }
@@ -185,7 +182,7 @@ export function nodeMemoGeneration(): number {
  * {@link bumpNodeMemoGeneration} is the wrong tool there — it would drop every
  * static node's slots too, every frame.
  */
-export function dropPoseKeyedMemoSlots(node: MemoizableNode): void {
+export function dropPoseKeyedMemoSlots(node: { data?: unknown }): void {
   const record = MEMO.get(node);
   if (record === undefined) {
     MEMO.set(node, { generation, slots: new Map(), drops: 1 });

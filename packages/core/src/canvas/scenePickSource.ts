@@ -18,6 +18,7 @@ import type { PickBroad, PickCandidate, PickSource, ViewPickGates } from './pick
 import { sceneParentsOf, sceneShownPathOf } from './scenePickReads';
 import { nodeAsShown, nodesAsShown } from 'core/scene/nodeAsShown';
 
+/** How a pick over a scene reads it: the asking view's poses, alpha, layers and camera, and whether to index it. */
 export interface ScenePickSourceOptions<TPose> extends ViewPickGates {
   /** Pose lookup, when the caller holds an adapter that already resolves
    *  overrides. Defaults to `effectivePose` against the scene's own. */
