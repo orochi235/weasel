@@ -27,6 +27,17 @@ describe('ToastQueue', () => {
     expect(sticky.timer).toBeUndefined();
   });
 
+  it('keeps a toast whose ttlMs is Infinity or past the longest timer as sticky', () => {
+    const q = createToastQueue();
+    q.add('info', 'endless', { ttlMs: Infinity });
+    q.add('info', 'long', { ttlMs: 2 ** 31 });
+    q.add('info', 'longest', { ttlMs: 2 ** 31 - 1 });
+    const [longest, long, endless] = racQueueOf(q).visibleToasts;
+    expect(endless.timer).toBeUndefined();
+    expect(long.timer).toBeUndefined();
+    expect(longest.timeout).toBe(2 ** 31 - 1);
+  });
+
   it('replaces an earlier toast with the same id', () => {
     const q = createToastQueue();
     q.add('info', 'first', { id: 'save-status' });

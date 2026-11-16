@@ -16,7 +16,8 @@ export interface ToastOptions {
   description?: string;
   /**
    * Auto-dismiss delay in ms. Default: the `toast.ttlMs` kit setting a mounted `ToastRegion` sees, else 8000. `null` — sticky until dismissed.
-   * Must be > 0; RAC treats 0 as no timer (sticky).
+   * Must be > 0; RAC treats 0 as no timer (sticky). `Infinity`, or a delay past the
+   * longest a browser timer holds (2^31 − 1 ms, about 24.8 days), is sticky too.
    */
   ttlMs?: number | null;
   /** Stable identity: re-adding with the same id replaces the earlier toast. */
@@ -24,6 +25,8 @@ export interface ToastOptions {
 }
 
 export const DEFAULT_TTL_MS = 8000;
+
+const MAX_TIMER_MS = 2 ** 31 - 1;
 
 // Tracks overlapping toast-triggered view transitions so the `:root`
 // marker class survives until the *last* one settles.
@@ -112,7 +115,7 @@ export class ToastQueue {
     }
     let key: string;
     const racOptions: { timeout?: number; onClose?: () => void } =
-      ttlMs === null ? {} : { timeout: ttlMs };
+      ttlMs === null || !(ttlMs <= MAX_TIMER_MS) ? {} : { timeout: ttlMs };
     if (id !== undefined) {
       racOptions.onClose = () => {
         if (this.keysById.get(id) === key) this.keysById.delete(id);
