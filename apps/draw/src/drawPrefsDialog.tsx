@@ -15,6 +15,7 @@ import { ALL_CHROME, type ChromeItem } from './surfaces/chrome';
 import { surfaceOf } from './surfaces/surfaceState';
 import type { SurfaceAsset, SurfaceKind, SurfacesValue } from './surfaces/types';
 import { getOwn } from '@weasel-js/registry';
+import { soloChanges } from '@weasel-js/ui-input';
 
 /** Dev mode: the Vite dev server sets `import.meta.env.DEV`. In a
  *  production bundle this is false, so the toggle and any hidden prefs
@@ -83,6 +84,15 @@ export function SurfacesEditor({ ctx }: { ctx: LeafContext }) {
   const update = (id: string, patch: SurfacesValue[string]): void => {
     ctx.setValue({ ...surfaces, [id]: { ...getOwn(surfaces, id), ...patch } });
   };
+  /** Alt-click on `id`'s box in column `field`: that row's flag on and every other row's off, or every row's back
+   *  on when that already held. */
+  const solo = (field: 'hidden' | 'collapsed', id: string): void => {
+    const rows = CHROME_ROWS.filter((row) => field === 'hidden' || row.asset);
+    const changes = soloChanges(new Map(rows.map((row) => [row.id, !!getOwn(surfaces, row.id)?.[field]])), new Set([id]));
+    const next = { ...surfaces };
+    for (const [row, on] of Object.entries(changes)) next[row] = { ...getOwn(surfaces, row), [field]: on };
+    ctx.setValue(next);
+  };
   const flag = (field: 'hidden' | 'collapsed', header: string, verb: string): DataGridColumn<ChromeRow> => ({
     id: field,
     header,
@@ -91,7 +101,7 @@ export function SurfacesEditor({ ctx }: { ctx: LeafContext }) {
     render: ({ id, label, asset }) => field === 'collapsed' && !asset ? null : (
       <Checkbox
         isSelected={!!getOwn(surfaces, id)?.[field]}
-        onChange={(v) => update(id, { [field]: v })}
+        onChange={(v, held) => (held.alt ? solo(field, id) : update(id, { [field]: v }))}
         aria-label={`${verb} ${label}`}
       />
     ),
