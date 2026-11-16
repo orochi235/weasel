@@ -44,6 +44,15 @@ const plugins = {
     'no-arrow-strict-wrapper': noArrowStrictWrapper } },
 };
 
+/**
+ * Routing declares these schemas and core re-exports them. An augmentation of the re-export merges
+ * into a copy apart from the kit's own entries, and which copy a reference sees depends on file order.
+ */
+const RESTRICTED_EVERYWHERE = [{
+  selector: "TSModuleDeclaration[id.value='@weasel-js/core'] TSInterfaceDeclaration[id.name=/^(DepSchema|ActionParamSchema|OverlaySchema)$/]",
+  message: "Augment '@weasel-js/routing', which declares this interface: an augmentation of core's re-export merges into a separate copy.",
+}];
+
 export default [
   {
     ignores: [
@@ -315,15 +324,20 @@ export default [
     },
   },
   {
-    /**
-     * Routing declares these schemas and core re-exports them. An augmentation of the re-export merges
-     * into a copy apart from the kit's own entries, and which copy a reference sees depends on file order.
-     */
     files: ['**/*.{ts,tsx}'],
+    rules: { 'no-restricted-syntax': ['error', ...RESTRICTED_EVERYWHERE] },
+  },
+  {
+    /** Shipped and demo source, where each of these decisions has one helper every caller uses. */
+    files: ['packages/**/*.{ts,tsx}', 'apps/**/*.{ts,tsx}'],
+    ignores: ['**/*.{test,spec}.{ts,tsx}', '**/__tests__/**', '**/testing/**', '**/*.stories.{ts,tsx}'],
     rules: {
-      'no-restricted-syntax': ['error', {
-        selector: "TSModuleDeclaration[id.value='@weasel-js/core'] TSInterfaceDeclaration[id.name=/^(DepSchema|ActionParamSchema|OverlaySchema)$/]",
-        message: "Augment '@weasel-js/routing', which declares this interface: an augmentation of core's re-export merges into a separate copy.",
+      'no-restricted-syntax': ['error', ...RESTRICTED_EVERYWHERE, {
+        selector: "BinaryExpression[operator=/^[!=]==?$/][left.callee.object.name='JSON'][left.callee.property.name='stringify'][right.callee.object.name='JSON'][right.callee.property.name='stringify']",
+        message: "Compare with deepEqual (@weasel-js/registry), or sameStored (@weasel-js/storage) for stored values whose key order counts: JSON text reads key order.",
+      }, {
+        selector: "CallExpression[callee.property.name='writeText']:matches([callee.object.name='clipboard'], [callee.object.property.name='clipboard'])",
+        message: 'Copy with copyText (@weasel-js/react), which answers false where there is no clipboard or the write is refused, rather than throwing.',
       }],
     },
   },
