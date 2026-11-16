@@ -7,6 +7,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { edgeRouter, type EdgeRouteOptions } from '../edge';
 import { diagramEdgeOf, type DiagramEdge } from '../edgeTrait';
 import type { EdgeHop } from './types';
+import { sameList } from '@weasel-js/registry';
 
 export type { AnyScene };
 export type SceneNode = ReturnType<AnyScene['renderOrderNodes']>[number];
@@ -62,7 +63,7 @@ export function withHopsData(data: unknown, trait: DiagramEdge, hops: readonly E
 }
 
 const sameHop = (a: EdgeHop, b: EdgeHop): boolean =>
-  a.at.x === b.at.x && a.at.y === b.at.y && a.r === b.r && a.over.length === b.over.length && a.over.every((o, i) => o === b.over[i]);
+  a.at.x === b.at.x && a.at.y === b.at.y && a.r === b.r && sameList(a.over, b.over);
 
 /** The data writes that store `hops` on their connectors, skipping any unchanged or locked. */
 export function hopDataOps(scene: AnyScene, hops: ReadonlyMap<string, readonly EdgeHop[]>): Op[] {

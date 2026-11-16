@@ -18,7 +18,7 @@ import {
   type NodeId,
   type Op,
 } from '@weasel-js/core';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, sameList } from '@weasel-js/registry';
 import type { Contribution, GestureBinding } from '@weasel-js/routing';
 import { ANY_MODS, defineAction } from '@weasel-js/routing';
 import type {} from '../../actionParamSchema';
@@ -140,7 +140,7 @@ export const FACTOR_STOPS: readonly number[] = Array.from(
 /** The DPR set after `dprs`: 1× → 2× → 1×|2× → 1×. */
 function nextDprs(dprs: readonly number[]): readonly number[] {
   const at = DPR_CYCLE.findIndex(
-    (d) => d.length === dprs.length && d.every((v, i) => v === dprs[i]),
+    (d) => sameList(d, dprs),
   );
   return DPR_CYCLE[(at + 1) % DPR_CYCLE.length] as readonly number[];
 }

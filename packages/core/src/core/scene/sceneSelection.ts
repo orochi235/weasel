@@ -5,7 +5,7 @@
  * outermost of the ids written to it.
  */
 import type { HistorySelection } from '@weasel-js/history';
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, sameList } from '@weasel-js/registry';
 import { outermost } from '@weasel-js/select';
 import type { NodeId } from './types';
 
@@ -88,7 +88,7 @@ function once(ids: readonly NodeId[]): readonly NodeId[] {
 }
 
 function sameIds(a: readonly NodeId[], b: readonly NodeId[]): boolean {
-  return a.length === b.length && a.every((id, i) => id === b[i]);
+  return sameList(a, b);
 }
 
 /** The scene's selection in the shape `createHistory` wants, for a consumer

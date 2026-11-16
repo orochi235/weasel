@@ -2,6 +2,7 @@ import type { PresetDescription } from '@weasel-js/prefs-schema';
 import { isPrefLeaf, isPrefSection } from '../index';
 import { bundleTree } from './bundleTree';
 import type { SchemaRoot } from './schemaEdit';
+import { sameList } from '@weasel-js/registry';
 
 /** The fields every asset in the editor's workspace carries. */
 export interface AssetBase {
@@ -131,7 +132,7 @@ export function withRoots(current: Workspace, stepped: Workspace): Workspace {
     if (!was || was.root === asset.root) return asset;
     return said(was, asset) ? was : { ...asset, root: was.root };
   });
-  return assets.length === stepped.assets.length && assets.every((asset, i) => asset === stepped.assets[i]) ? stepped : { assets };
+  return sameList(assets, stepped.assets) ? stepped : { assets };
 }
 
 /** Whether two workspaces hold the same roots under the same ids, which is all a draft keeps of one. */

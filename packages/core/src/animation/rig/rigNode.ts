@@ -1,4 +1,4 @@
-import { getOwn, setOwn } from '@weasel-js/registry';
+import { getOwn, setOwn, sameList } from '@weasel-js/registry';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { transformPoint, poseFrameInverseOf, poseFrameOf, type Affine } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
@@ -127,7 +127,7 @@ function read<TPose>(
 }
 
 const sameRefs = (a: Reading, b: Reading): boolean =>
-  a === b || (a.refs.length === b.refs.length && a.refs.every((r, i) => r === b.refs[i]));
+  a === b || sameList(a.refs, b.refs);
 
 /**
  * Read a rig out of the scene: the skeleton in `id`'s `data.skeleton`, placed by that node's

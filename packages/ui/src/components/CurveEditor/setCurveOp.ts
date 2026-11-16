@@ -1,5 +1,6 @@
 import type { Op } from '@weasel-js/history';
 import type { ControlPoint } from './CurveEditor';
+import { sameList } from '@weasel-js/registry';
 
 /** The adapter contract for {@link createSetCurveOp}. Consumers wire this
  *  to whatever state container holds the curve's value. */
@@ -54,10 +55,5 @@ function controlPointsEqual(
   a: readonly ControlPoint[],
   b: readonly ControlPoint[],
 ): boolean {
-  if (a === b) return true;
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i].x !== b[i].x || a[i].y !== b[i].y || !a[i].locked !== !b[i].locked) return false;
-  }
-  return true;
+  return sameList(a, b, (p, q) => p.x === q.x && p.y === q.y && !p.locked === !q.locked);
 }

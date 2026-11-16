@@ -1,6 +1,7 @@
 import { clipToAncestors } from './clip';
 import { composeRects, rectsEqual } from './composeRects';
 import type { Box, Rect } from './rect';
+import { sameList } from '@weasel-js/registry';
 
 /** Where every tile is, and how much of each shows. Both against the
  *  container's origin, keyed alike. */
@@ -24,7 +25,7 @@ export function scopeHolds(scope: SurfaceScope, tile: Node): boolean {
 export function sameScope(a: SurfaceScope, b: SurfaceScope): boolean {
   if (a === b) return true;
   if (!Array.isArray(a) || !Array.isArray(b)) return false;
-  return a.length === b.length && a.every((el, i) => el === b[i]);
+  return sameList(a, b);
 }
 
 /** Measure every tile inside `scope` (all of them, with none) against `container`. */

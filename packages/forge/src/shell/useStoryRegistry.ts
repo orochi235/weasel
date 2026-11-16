@@ -1,7 +1,7 @@
 import { useLatest } from '@weasel-js/core';
 import type { Instrument, InstrumentList } from '@weasel-js/labkit';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, sameList } from '@weasel-js/registry';
 import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
 import { stableStringify } from '../protocol/messages';
@@ -259,7 +259,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
       built.set(entry.id, kept);
       return kept.instrument;
     });
-    const unchanged = list.length === previous.list.length && list.every((i, n) => i === previous.list[n]);
+    const unchanged = sameList(list, previous.list);
     return { built, books, list: unchanged ? previous.list : list };
   }, [index, readies, loaded, faults, generations, revisions, frameUrl, globals, setup, hosts, importers, onReady, request]);
 

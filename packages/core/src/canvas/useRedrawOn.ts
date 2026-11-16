@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { RedrawSource } from '../core/layers/render';
+import { sameList } from '@weasel-js/registry';
 
 /** Subscribe `requestRedraw` to each source while mounted. An inline array
  *  holding the same sources does not resubscribe. */
@@ -18,7 +19,7 @@ function useSameElements<T>(list: readonly T[] | undefined): readonly T[] | unde
   // Derived state rather than a ref, so a render React throws away can't
   // leave its list behind as the one the next render compares against.
   const [kept, setKept] = useState(list);
-  if (kept !== list && !(kept && list && kept.length === list.length && kept.every((x, i) => x === list[i]))) {
+  if (kept !== list && !(kept && list && sameList(kept, list))) {
     setKept(list);
     return list;
   }

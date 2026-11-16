@@ -1,5 +1,6 @@
 import type { Op } from './types';
 import { registerKitOpFactory } from './registry';
+import { sameList } from '@weasel-js/registry';
 
 interface SelectionAdapter {
   setSelection(ids: string[]): void;
@@ -26,7 +27,7 @@ export function createSetSelectionOp(args: SetSelectionArgs): Op {
       // to history so the entry can be skipped from the undo stack.
       // setSelection with the same value is idempotent.
       (adapter as SelectionAdapter).setSelection([...to]);
-      if (sequenceEqual(from, to)) return false;
+      if (sameList(from, to)) return false;
       return undefined;
     },
     invert() {
@@ -37,8 +38,3 @@ export function createSetSelectionOp(args: SetSelectionArgs): Op {
 
 registerKitOpFactory<SetSelectionArgs>('setSelection', (args) => createSetSelectionOp(args));
 
-function sequenceEqual(a: readonly string[], b: readonly string[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-  return true;
-}
