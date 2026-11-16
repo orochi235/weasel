@@ -28,7 +28,8 @@ export function DragGhost({ at, from, children, centered, bare }: DragGhostProps
   // Pixel positioning: the point is the pointer's, known only at runtime. So is the face: the host is an ancestor of
   // whatever set the list's font, and would hand the ghost its own.
   const style: CSSProperties = {
-    left: at.left - seat.left, top: at.top - seat.top, width: at.width,
+    left: (at.left - seat.left) / seat.scale.x, top: (at.top - seat.top) / seat.scale.y,
+    width: at.width === undefined ? undefined : at.width / seat.scale.x,
     fontFamily: getComputedStyle(from).fontFamily,
   };
   return createPortal(
