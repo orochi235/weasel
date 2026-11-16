@@ -9,6 +9,7 @@ import {
   LAYOUTS, diagramScene, edgeIdOf, edgeLabelIdOf, type DataContainer, type DataEdge, type DiagramEdge, type DiagramLabel, type DiagramSpec,
   type DiagramTheme, type MeasureRowText,
 } from '@weasel-js/diagram';
+import { getOwn } from '@weasel-js/registry';
 import type { GraphPage } from './document';
 import { shiftData } from './shiftData';
 
@@ -63,7 +64,7 @@ export function laidOutPage(page: GraphPage, opts: { theme: DiagramTheme; measur
   // Read as laid out, in world.
   const layoutOptions = { ...page.layout?.options, ...(page.direction ? { direction: page.direction } : {}) };
   const specs = diagramScene(pinned, {
-    layout: LAYOUTS[page.layout?.name ?? 'layered'], theme: opts.theme, composition: IDENTITY_POSE_COMPOSITION, ...(opts.measure ? { measure: opts.measure } : {}),
+    layout: getOwn(LAYOUTS, page.layout?.name ?? 'layered'), theme: opts.theme, composition: IDENTITY_POSE_COMPOSITION, ...(opts.measure ? { measure: opts.measure } : {}),
     ...(Object.keys(layoutOptions).length > 0 ? { layoutOptions } : {}),
   });
   const byId = new Map(specs.map((s) => [s.id as string, s]));
