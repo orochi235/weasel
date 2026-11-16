@@ -9,12 +9,12 @@ import {
   type RectPose,
   sceneToAdapter,
 } from '@weasel-js/core';
+import { clamp } from '@weasel-js/geom';
 import { type RefObject, useCallback, useRef } from 'react';
 import { type LensActionApi, MAX_LENSES } from './lensActionDefs';
 import { addLensOps, aimAt, lensesOf, lensIdsOf, settingsOf } from './lensScene';
 import type { LensSources } from './lensSource';
 import { BODY_SIZE, type LensScene, type LensSourceKind, type LoupePoint } from './lensTypes';
-import { clamp } from '@weasel-js/geom';
 
 /** Each new lens's body sits this far further along than the last, so lenses added in a row do not stack. */
 const STAGGER = 24;

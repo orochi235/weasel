@@ -1,7 +1,7 @@
+import { distance, pointSegmentDist } from '@weasel-js/geom';
 import { MARK_COLOR, MARK_WIDTH } from '../paint';
 import type { Annotation } from '../types';
 import type { Box, Exercise, Guide, Pt } from './exercises';
-import { distance, pointSegmentDist } from '@weasel-js/geom';
 
 /** Pass at ≤ 2 screen px per geometric error; a freehand stroke passes at a mean ≤ 2 px and a max ≤ 6 px. */
 export const PASS_PX = 2;

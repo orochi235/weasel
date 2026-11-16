@@ -1,6 +1,6 @@
+import { clamp } from '@weasel-js/geom';
 import type { ViewTransform } from '../../instrument/types';
 import { type Box, CONTENT, EXERCISES } from './exercises';
-import { clamp } from '@weasel-js/geom';
 
 export const SCALES = ['0.5', '1', '2'] as const;
 export const ZOOMS = ['1', '1.5', '3'] as const;

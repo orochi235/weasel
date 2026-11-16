@@ -4,12 +4,12 @@
  * and `loupe.seam`, the drag that moves it.
  */
 import { type Action, effectivePose, type LayerHit, type RenderLayer } from '@weasel-js/core';
+import { clamp } from '@weasel-js/geom';
 import type { LoupeRect } from '@weasel-js/loupe';
 import { createEmitter } from '@weasel-js/registry';
 import type { LensActionApi } from './lensActionDefs';
 import { lensesOf, setLensOps, settingsOf } from './lensScene';
 import type { LensScene, LensSettings } from './lensTypes';
-import { clamp } from '@weasel-js/geom';
 
 /** How far either side of the seam a press takes it, in screen px. */
 export const SEAM_GRAB = 4;

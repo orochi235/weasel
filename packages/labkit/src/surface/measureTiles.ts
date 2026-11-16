@@ -1,7 +1,7 @@
+import { sameList } from '@weasel-js/registry';
 import { clipToAncestors } from './clip';
 import { composeRects, rectsEqual } from './composeRects';
 import type { Box, Rect } from './rect';
-import { sameList } from '@weasel-js/registry';
 
 /** Where every tile is, and how much of each shows. Both against the
  *  container's origin, keyed alike. */
