@@ -47,6 +47,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
+    "@weasel-js/geom": "1.19.1",
     "@weasel-js/paint": "1.19.1",
     "@weasel-js/prefs": "1.19.1",
     "@weasel-js/react": "1.19.1",

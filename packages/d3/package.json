@@ -23,6 +23,7 @@
     "@weasel-js/core": "1.19.1"
   },
   "dependencies": {
+    "@weasel-js/geom": "1.19.1",
     "@weasel-js/registry": "1.19.1"
   },
   "author": "orochi235",
