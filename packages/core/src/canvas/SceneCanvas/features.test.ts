@@ -60,7 +60,7 @@ describe('resolveFeatures', () => {
   });
 
   it('turns on, under draw, every core preset but the tools that make things and the shorthands beside it', () => {
-    const left = ['tools:shape', 'tools:type', 'pick', 'transform', 'whiteboard'];
+    const left = ['tools:shape', 'pick', 'transform'];
     expect(ids(['draw']).sort()).toEqual(FEATURE_NAMES.filter((f) => !left.includes(f)).sort());
   });
 
