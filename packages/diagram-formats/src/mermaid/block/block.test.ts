@@ -86,6 +86,13 @@ describe('reading a Mermaid block diagram', () => {
     expect(onlyPage(read.document).data.containers!.map((c) => c.id)).toEqual(['block-2']);
     expect(() => documentSpecs(read.document)).not.toThrow();
   });
+
+  it('joins a link to a group declared after it', () => {
+    const read = readBlockDiagram('block-beta\n  x --> G\n  block:G\n    a\n  end');
+    expect(onlyPage(read.document).data.nodes.map((n) => n.id)).toEqual(['x', 'a']);
+    expect(onlyPage(read.document).data.edges).toMatchObject([{ from: 'x', to: 'G' }]);
+    expect(() => documentSpecs(read.document)).not.toThrow();
+  });
 });
 
 describe('writing a Mermaid block diagram', () => {

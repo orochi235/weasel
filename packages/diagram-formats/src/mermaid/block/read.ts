@@ -30,7 +30,7 @@ class BlockReader {
   readonly grid: Grid = { columns: {}, spans: {}, skips: {} };
   top: number | undefined;
 
-  constructor(readonly mint: IdMint) {}
+  constructor(readonly groupIds: ReadonlySet<string>, readonly mint: IdMint) {}
 
   /** Declares `item`, a new one as the next of `members`, its shape and text when it gives them. */
   block(item: BlockItem, members: string[]): void {
@@ -78,7 +78,7 @@ class BlockReader {
           skip = 0;
         }
       } else if (s.kind === 'links') {
-        for (const end of s.ends) if (!this.groups.has(end.id)) this.block(end, members);
+        for (const end of s.ends) if (!this.groupIds.has(end.id)) this.block(end, members);
         s.links.forEach((link, k) => this.link(link, s.ends[k]!.id, s.ends[k + 1]!.id));
       } else if (s.kind === 'group') {
         const id = s.id ?? this.mint.next(ANONYMOUS_GROUP);
@@ -111,11 +111,15 @@ class BlockReader {
   }
 }
 
-function namedIds(stmts: readonly BlockStmt[], out = new Set<string>()): Set<string> {
+/** The ids `stmts` name: every block's and link end's, and the groups' apart. */
+function namedIds(stmts: readonly BlockStmt[], out = { all: new Set<string>(), groups: new Set<string>() }) {
   for (const s of stmts) {
-    if (s.kind === 'items') for (const item of s.items) if (item.kind === 'block') out.add(item.id);
-    if (s.kind === 'links') for (const end of s.ends) out.add(end.id);
-    if (s.kind === 'group' && s.id !== undefined) out.add(s.id);
+    if (s.kind === 'items') for (const item of s.items) if (item.kind === 'block') out.all.add(item.id);
+    if (s.kind === 'links') for (const end of s.ends) out.all.add(end.id);
+    if (s.kind === 'group' && s.id !== undefined) {
+      out.all.add(s.id);
+      out.groups.add(s.id);
+    }
     if (s.kind === 'group') namedIds(s.stmts, out);
   }
   return out;
@@ -125,7 +129,8 @@ function namedIds(stmts: readonly BlockStmt[], out = new Set<string>()): Set<str
  *  the line, on text that is not one. */
 export function readBlockDiagram(text: string): ImportResult {
   const { source, stmts } = parseBlockDiagram(text);
-  const r = new BlockReader(new IdMint(namedIds(stmts)));
+  const named = namedIds(stmts);
+  const r = new BlockReader(named.groups, new IdMint(named.all));
   r.walk(stmts, null, []);
   const nodes: DataNode[] = [...r.nodes].map(([id, n]) => {
     const colors = r.styles.colorsOf(id);
