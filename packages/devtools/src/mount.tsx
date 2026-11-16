@@ -21,9 +21,15 @@ export const lazyDevtools: SurfaceContribution = {
   attach(api, deps) {
     let off: (() => void) | null = null;
     let gone = false;
-    void import('./hook').then(({ attachDevtools }) => {
-      if (!gone) off = attachDevtools(api, deps);
-    });
+    void import('./hook').then(
+      ({ attachDevtools }) => {
+        if (!gone) off = attachDevtools(api, deps);
+      },
+      // A load that fails after the canvas went has nothing to attach to: a test's module runner closing under it.
+      (error: unknown) => {
+        if (!gone) throw error;
+      },
+    );
     return () => {
       gone = true;
       off?.();
