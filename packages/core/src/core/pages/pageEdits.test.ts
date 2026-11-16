@@ -120,6 +120,17 @@ describe('page edits', () => {
     expect(worldX(scene, onB)).toBe(200);
   });
 
+  it('throws on a NaN index to addPage or movePage, recording nothing; ±Infinity is held to either end', () => {
+    const { scene } = setup();
+    const depth = scene.history.undoDepth();
+    expect(() => movePage(scene, 'a', NaN)).toThrow(RangeError);
+    expect(() => addPage(scene, { id: 'c', width: 50, height: 50 }, { index: NaN })).toThrow(/index is NaN/);
+    expect(scene.history.undoDepth()).toBe(depth);
+    movePage(scene, 'a', Infinity);
+    addPage(scene, { id: 'c', width: 50, height: 50 }, { index: -Infinity });
+    expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['c', 'b', 'a']);
+  });
+
   it('carries a page\'s meta through every edit, and undo restores it', () => {
     const meta = { 'owner:key': { kept: true } };
     const { scene } = setup({ pages: [{ id: 'a', width: 100, height: 100, meta }, TWO.pages[1]!], layout: { gap: 20 } });

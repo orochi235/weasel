@@ -88,7 +88,7 @@ export interface SceneLayerMembers<TLayer extends string> {
   /** Rename a user layer, as one undoable step. Throws on a system layer. */
   renameLayer(layer: TLayer, name: string): void;
   /** Move a layer to `index` in the stack, held to either end, as one
-   *  undoable step. Throws when that would paint a child below its parent. */
+   *  undoable step. Throws on a NaN index, and when that would paint a child below its parent. */
   moveLayer(layer: TLayer, index: number): void;
 }
 

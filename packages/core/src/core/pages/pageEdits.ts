@@ -7,6 +7,7 @@
 import { freshId } from '@weasel-js/registry';
 import type { PoseDescriptor } from '../geometry/poseDescriptor';
 import { sameValue } from '../scene/sameValue';
+import { heldIndex } from '../scene/stackIndex';
 import type { NodeId, RectPose, Scene } from '../scene/types';
 import type { Page, PlacedPage } from './pages';
 import { placeOnPages } from './placeOnPages';
@@ -129,7 +130,7 @@ export function addPage<TData, TLayer extends string, TPose>(
   options: PageEditOptions & { index?: number } = {},
 ): void {
   edit(scene, 'Add page', options, (pages) => {
-    pages.splice(Math.max(0, Math.min(options.index ?? pages.length, pages.length)), 0, page);
+    pages.splice(heldIndex(options.index ?? pages.length, pages.length, 'addPage'), 0, page);
     return pages;
   });
 }
@@ -151,10 +152,11 @@ export function movePage<TData, TLayer extends string, TPose>(
   options: PageEditOptions = {},
 ): void {
   edit(scene, 'Move page', options, (pages) => {
+    const to = heldIndex(index, pages.length - 1, 'movePage');
     const at = pages.findIndex((p) => p.id === id);
     if (at < 0) return pages;
     const [page] = pages.splice(at, 1);
-    pages.splice(Math.max(0, Math.min(index, pages.length)), 0, page!);
+    pages.splice(to, 0, page!);
     return pages;
   });
 }
