@@ -75,6 +75,12 @@ describe('writing a Mermaid sankey', () => {
     expect(warnings).toEqual(['Mermaid holds flows of zero or more; others were written as 0.']);
     expect(() => writeMermaidSankey({ ...pageOf({ kind: 'sankey', links: [] }), data: { kind: 'pie', slices: [] } as never })).toThrow(/as a sankey only/);
   });
+
+  it('writes a node name holding a line break on one line, with a warning, so the text reads back', () => {
+    const { text, warnings } = writeMermaidSankey(pageOf({ kind: 'sankey', links: [{ source: 'a\nb', target: 'c', value: 1 }] }));
+    expect(plotOf(text).data).toEqual({ kind: 'sankey', links: [{ source: 'a b', target: 'c', value: 1 }] });
+    expect(warnings).toEqual(['Mermaid sankey text holds one line; line breaks were written as spaces.']);
+  });
 });
 
 describe('the Mermaid format', () => {
