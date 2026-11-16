@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import type { PrefBarLead } from '@weasel-js/prefs';
 import { Bar, type BarOrientation } from '../Bar';
@@ -93,5 +93,16 @@ describe('ToolbarDock', () => {
   it('draws no handle on a bar outside any dock', () => {
     render(<>{bars[2]!.render('horizontal')}</>);
     expect(screen.getByRole('toolbar', { name: 'Shape' }).querySelector('[data-bar-lead]')).toBeNull();
+  });
+
+  it('warns once of a bar that can enter none of its docks and may not float, and draws it nowhere', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const lost: DockBar = { ...bar('lost', 'Lost'), docks: ['lefft', 'left'] };
+    const { rerender } = render(<ToolbarDock docks={docks} bars={[...bars, lost]} layout={layout} />);
+    rerender(<ToolbarDock docks={docks} bars={[...bars, lost]} layout={{ ...layout }} />);
+    expect(screen.queryByText('Lost go')).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]![0]).toContain('bar "lost" lists docks ["lefft","left"]');
+    warn.mockRestore();
   });
 });
