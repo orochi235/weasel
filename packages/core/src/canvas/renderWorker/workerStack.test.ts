@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IdBuffer } from '@weasel-js/renderer';
 import type { AnyRenderWorker } from './liveClients';
-import { readStackIds, type StackSurface } from './workerStack';
+import { paintWorkerRun, readStackIds, type StackFrame, type StackSurface } from './workerStack';
 import { combinedStatus, type RenderWorkerStatus } from './workerHealth';
 
 const RECT = { x: 0, y: 0, width: 1, height: 1 };
@@ -20,6 +20,19 @@ describe('readStackIds', () => {
   it('answers null when a canvas gave no ids, rather than read its pixels as empty', async () => {
     expect(await readStackIds([worker(null), worker(ids(0, 7))], new Map(), RECT, undefined)).toBeNull();
     expect(await readStackIds([{ by: 'worker', run: { by: 'worker', ids: ['scene'] }, client: null }], new Map(), RECT, undefined)).toBeNull();
+  });
+});
+
+describe('paintWorkerRun', () => {
+  it("hands a run's layers the visibility its frame holds for each, by own key", () => {
+    let sent: Record<string, unknown> | undefined;
+    const client = { update: (u: Record<string, unknown>) => { sent = u; }, sync: () => {} } as unknown as AnyRenderWorker;
+    const visibility = Object.fromEntries([['__proto__', false], ['a', true]]) as Record<string, boolean>;
+    const frame = { inputs: {}, view: { x: 0, y: 0, scale: 1 }, dims: { width: 1, height: 1, dpr: 1 }, visibility } as unknown as StackFrame;
+    paintWorkerRun(client, { by: 'worker', ids: ['__proto__', 'a', 'constructor'] }, frame);
+    const shown = sent!.layerVisibility as Record<string, boolean>;
+    expect(Object.getPrototypeOf(shown)).toBe(Object.prototype);
+    expect(Object.entries(shown)).toEqual([['__proto__', false], ['a', true]]);
   });
 });
 

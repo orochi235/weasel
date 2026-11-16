@@ -11,6 +11,7 @@ import type { CanvasPaintOptions, CanvasRendererLease } from '../canvasRenderer'
 import type { LayerRun } from './layerRuns';
 import type { AnyRenderWorker } from './liveClients';
 import type { SceneRenderInputs } from './startSceneRenderWorker';
+import { setOwn } from '@weasel-js/registry';
 
 /** What a canvas painted partly by a worker is told by its owner: which layers the worker paints,
  *  how to start one, and what the worker's frame reads beside the view and the size. */
@@ -89,7 +90,7 @@ export function paintPageRun(
 export function paintWorkerRun(client: AnyRenderWorker, run: LayerRun, frame: StackFrame): void {
   const whole = run.ids.length === 1 && run.ids[0] === 'scene';
   const layerVisibility: Record<string, boolean> = {};
-  for (const id of run.ids) if (id in frame.visibility) layerVisibility[id] = frame.visibility[id]!;
+  for (const id of run.ids) if (Object.hasOwn(frame.visibility, id)) setOwn(layerVisibility, id, frame.visibility[id]!);
   client.update({
     ...frame.inputs,
     view: frame.view, width: frame.dims.width, height: frame.dims.height, dpr: frame.dims.dpr,
