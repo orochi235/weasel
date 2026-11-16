@@ -43,6 +43,13 @@ describe('StencilPanel', () => {
     expect(titles()).toEqual(['Containers']);
   });
 
+  it('skips a group the chart names that is an Object.prototype member, not a stencil group', () => {
+    const scene = newScene();
+    scene.doc.set(DIAGRAM_TYPE_DOC_KEY, { type: 'flowchart', groups: ['constructor', 'containers'] });
+    panel(chartTools(), scene);
+    expect(titles()).toEqual(['Containers']);
+  });
+
   it('folds a group away from its title', () => {
     panel();
     fireEvent.click(screen.getByRole('button', { name: /Flowchart/ }));

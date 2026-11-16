@@ -5,6 +5,7 @@ import { PropertyField, PropertyList, PropertyNote, PropertyPanel, type Property
 import type { CSSProperties, ReactElement } from 'react';
 import type { ChartScene } from '../chartDocument';
 import './stylePanel.css';
+import { getOwn } from '@weasel-js/registry';
 
 interface Styled { id: string; state: DiagramStyleState; data: Record<string, unknown> }
 
@@ -37,7 +38,7 @@ function common<T>(values: readonly T[]): { value: T | undefined; mixed: boolean
 }
 
 function swatch(theme: DiagramTheme, role: string): ReactElement {
-  const style = theme.roles[role]!;
+  const style = getOwn(theme.roles, role)!;
   // Each theme's own colors: they are data, so no stylesheet can name them.
   const vars = { '--wc-swatch-fill': style.fill, '--wc-swatch-stroke': style.stroke } as CSSProperties;
   return <span className="wc-swatch" style={vars} aria-hidden />;
