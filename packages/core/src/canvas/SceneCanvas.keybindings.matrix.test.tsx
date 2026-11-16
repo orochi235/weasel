@@ -56,17 +56,15 @@ interface ToolKeyCase {
 }
 
 // Mirrors the `keybinding` each built-in tool's definition declares. If a key
-// moves there, this row fails — that's the point.
+// moves there, this row fails — that's the point. The pen's and pencil's keys
+// are pinned in path-tools, text's and the sticky note's in text-tools.
 const TOOL_KEY_MATRIX: readonly ToolKeyCase[] = [
   { toolId: 'select',  key: 'V',  label: 'V → select' },
   { toolId: 'rect',    key: 'R',  label: 'R → rect' },
   { toolId: 'ellipse', key: 'E',  label: 'E → ellipse' },
   { toolId: 'line',    key: '\\', label: '\\ → line' },
   { toolId: 'polygon', key: 'G',  label: 'G → polygon' },
-  { toolId: 'pencil',  key: 'N',  label: 'N → pencil' },
-  { toolId: 'text',    key: 'T',  label: 'T → text' },
   { toolId: 'hand',    key: 'H',  label: 'H → hand' },
-  { toolId: 'pen',     key: 'P',  label: 'P → pen' },
 ];
 
 // `useKeybindings` registers `tool.activate` after the consumer-supplied

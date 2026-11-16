@@ -94,6 +94,15 @@ describe('path-tools tools on a canvas', () => {
     }
   });
 
+  it('take P for the pen and N for the pencil', () => {
+    const { api } = mount({});
+    for (const [key, id] of [['P', 'pen'], ['N', 'pencil']] as const) {
+      act(() => api.tools!.setActive('select'));
+      press(key, false);
+      expect(api.tools!.active, key).toBe(id);
+    }
+  });
+
   it('snip a stroke between two crossings with a click, as one undo entry', () => {
     const t = mount({ a: 'M 0 100 L 300 100', b: 'M 100 0 L 100 200', c: 'M 200 0 L 200 200' });
     t.use('snip');
