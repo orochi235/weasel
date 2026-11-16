@@ -1,5 +1,5 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '../index';
-import { setOwn } from '@weasel-js/registry';
+import { setOwn, getOwn } from '@weasel-js/registry';
 import { childrenOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** The key of every leaf `root` holds, at any depth. */
@@ -41,7 +41,7 @@ export function unplacedAt(root: PrefGroup, keys: readonly string[]): PrefLeaf |
   let at: PrefLeaf | PrefGroup | undefined = root;
   for (const key of keys) {
     if (at === undefined || isPrefLeaf(at)) return undefined;
-    at = Object.hasOwn(at.children, key) ? at.children[key] : undefined;
+    at = getOwn(at.children, key);
   }
   return at;
 }

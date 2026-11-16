@@ -96,7 +96,7 @@ function variantsOf(members: readonly ArgShape[]): { tag: string; variants: Map<
   const objects = members.filter((m): m is ObjectShape => m.name === 'object');
   if (objects.length !== members.length || objects.length === 0) return null;
   const pinned = (m: ObjectShape, key: string) => {
-    const field = Object.hasOwn(m.value, key) ? m.value[key] : undefined;
+    const field = getOwn(m.value, key);
     return field?.name === 'enum' && field.value.length === 1 ? field.value[0] : undefined;
   };
   const tag = Object.keys(objects[0]!.value).find((key) => objects.every((m) => pinned(m, key) !== undefined));
@@ -116,7 +116,7 @@ function fieldsOf(shape: ObjectShape, value: unknown, omit?: string): Record<str
   const fields: Record<string, Leaf> = {};
   for (const [key, field] of Object.entries(shape.value)) {
     if (key === omit) continue;
-    const leaf = shaped(field, Object.hasOwn(held, key) ? held[key] : undefined);
+    const leaf = shaped(field, getOwn(held, key));
     if (leaf) setOwn(fields, key, leaf);
   }
   return Object.keys(fields).length > 0 ? fields : null;
@@ -147,7 +147,7 @@ function shaped(shape: ArgShape, value: unknown): Leaf | null {
       const union = variantsOf(shape.value);
       if (!union) return null;
       const { tag, variants } = union;
-      const held = isPlainObject(value) && Object.hasOwn(value, tag) ? value[tag] : undefined;
+      const held = isPlainObject(value) ? getOwn(value, tag) : undefined;
       const nodes = Object.fromEntries(
         [...variants].map(([name, member]) => [name, f.object(fieldsOf(member, held === name ? value : undefined, tag) ?? {})]),
       );
@@ -220,7 +220,7 @@ function conditionOf(condition: ArgCondition): ((config: Record<string, unknown>
   if (!('arg' in condition)) return null;
   const { arg } = condition;
   return (config) => {
-    const value = Object.hasOwn(config, arg) ? config[arg] : undefined;
+    const value = getOwn(config, arg);
     if (condition.exists !== undefined) return (value !== undefined) === condition.exists;
     if ('eq' in condition) return sameKnob(value, condition.eq);
     if ('neq' in condition) return !sameKnob(value, condition.neq);
@@ -254,7 +254,7 @@ export function argsToSchema(
     const part = has ? portSafePart(getOwn(args, key)) : null;
     if (has && !part) continue;
     const value = part?.value;
-    const argType = Object.hasOwn(argTypes, key) ? argTypes[key] : undefined;
+    const argType = getOwn(argTypes, key);
     const control = argType ? controlOf(argType) : false;
 
     let node: Leaf | null =

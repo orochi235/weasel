@@ -5,6 +5,7 @@ import { divider } from './motifs/divider';
 import { rule } from './motifs/rule';
 import { sheet } from './motifs/sheet';
 import type { FrameKind, Motif, MotifFrameProps, RootProps } from './types';
+import { getOwn } from '@weasel-js/registry';
 
 const BUILT_IN: Readonly<Record<FrameKind, Motif>> = { panel: sheet(), group: rule(), subpanel: divider() };
 
@@ -82,7 +83,7 @@ export function MotifFrame({
   const inherited = useContext(MotifContext);
   const named = useContext(NamedMotifContext);
   if (hidden) return null;
-  const asked = typeof motif === 'string' ? (Object.hasOwn(named, motif) ? named[motif] : undefined) : motif;
+  const asked = typeof motif === 'string' ? getOwn(named, motif) : motif;
   const chosen = asked ?? inherited[kind] ?? fallback ?? BUILT_IN[kind];
   const root: RootProps = {
     ...attrs,

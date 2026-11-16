@@ -135,7 +135,7 @@ export function outermost(paths: readonly string[]): string[] {
 }
 
 function ownChild(kids: ChildMap | undefined, key: string): SchemaNode | undefined {
-  return kids && Object.hasOwn(kids, key) ? kids[key] : undefined;
+  return getOwn(kids, key);
 }
 
 /** The node at a tree path (`null` is the root), or `undefined` where none is. */

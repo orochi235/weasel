@@ -123,7 +123,7 @@ export function applyScaleEdits(
   try {
     for (const [name, edit] of Object.entries(edits)) {
       const scales = root.scales;
-      const scale = scales && Object.hasOwn(scales, name) ? scales[name] : undefined;
+      const scale = getOwn(scales, name);
       if (!scales || !scale) throw new EditError(`the theme defines no scale "${name}"`);
       const where = `scales.${name}`;
       write(slotOf(root, scale, 'base', `${where}.base`, selection), edit.base);

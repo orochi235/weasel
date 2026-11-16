@@ -105,7 +105,7 @@ export function toolOptionSlot(toolId: string, options: ToolOptions, option: str
 /** `option`'s leaf in `options`, if it has one. */
 export function toolOptionLeaf(options: ToolOptions, option: string): PrefLeaf | undefined {
   const children = options.prefs.children;
-  const leaf = (Object.hasOwn(children, option) ? children[option] : undefined) as { kind?: string } | undefined;
+  const leaf = getOwn(children, option) as { kind?: string } | undefined;
   return leaf && typeof leaf.kind === 'string' ? (leaf as PrefLeaf) : undefined;
 }
 

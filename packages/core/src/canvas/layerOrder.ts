@@ -94,7 +94,7 @@ export function composeOrderedLayers(
 
   // What placed each custom above: `after` when it names one, else `before`.
   const anchorOf = (key: string): string | undefined => {
-    const value = Object.hasOwn(layersMap, key) ? layersMap[key] : undefined;
+    const value = getOwn(layersMap, key);
     return isCustomEntry(value) ? value.after || value.before || undefined : undefined;
   };
   /** Where the chain of anchors from `key` goes wrong: the key nothing defines that it ends on, or null when it loops. */

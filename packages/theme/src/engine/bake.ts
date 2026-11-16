@@ -1,4 +1,4 @@
-import { deepEqual, setOwn } from '@weasel-js/registry';
+import { deepEqual, setOwn, getOwn } from '@weasel-js/registry';
 import { enumerateSelections, fullSelection, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes.ts';
 import { tokenAt } from '../chainTokens.ts';
 import type { SerializableColorList } from '../colorListItems.ts';
@@ -81,7 +81,7 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
 
   const at = (sel: Selection, name: string) => {
     const tokens = own.get(selectionKey(axes, sel));
-    return tokens && Object.hasOwn(tokens, name) ? tokens[name] : undefined;
+    return getOwn(tokens, name);
   };
   /** What the runtime shows for `name` from the themes above. */
   const inherited = (sel: Selection, name: string) => tokenAt(above, name, fullSelection(axes, sel));

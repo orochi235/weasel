@@ -70,7 +70,7 @@ function combineParameters(...sources: (Record<string, unknown> | undefined)[]):
   for (const source of sources) {
     for (const [key, value] of Object.entries(source ?? {})) {
       if (value === undefined) continue;
-      const held = Object.hasOwn(out, key) ? out[key] : undefined;
+      const held = getOwn(out, key);
       setOwn(out, key, isPlainObject(value) && isPlainObject(held) ? combineParameters(held, value) : value);
     }
   }

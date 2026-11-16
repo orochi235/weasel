@@ -18,6 +18,7 @@ import type {
   AddNodeSpec, LayerRecord, Node, NodeId, SavedScene, SceneRegistry, SerializedLayer, SerializedNode, SerializedNodeV1,
   SerializedScene,
 } from './types';
+import { getOwn } from '@weasel-js/registry';
 
 /** Whether `value` is a snapshot `specsFromSerialized` reads, as against a live scene. */
 export function isSerializedScene<TData, TLayer extends string, TPose>(
@@ -177,7 +178,7 @@ function currentSpecs<TData, TLayer extends string, TPose>(
       const key = serialized[field.jsonKey];
       if (key === undefined) continue;
       const named = registry[field.field] as Record<string, unknown> | undefined;
-      const fn = named && Object.hasOwn(named, key) ? named[key] : undefined;
+      const fn = getOwn(named, key);
       if (!fn && opts.unknownKeys === 'skip') {
         opts.onSkip?.({ id: spec.id!, field: field.field, key });
         continue;

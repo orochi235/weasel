@@ -16,6 +16,7 @@ import { samePoseValue, snapshotPose } from '../poseSnapshot';
 import type { DerivedDep, NodeId } from '../types';
 import { effectParts, type PathEffect } from './effects';
 import type { EffectSourceReader } from './source';
+import { getOwn } from '@weasel-js/registry';
 
 /** The registry key both derivations go by, for `derivePath` and `derivePose`. */
 export const PATH_EFFECT = 'kit:pathEffect';
@@ -32,7 +33,7 @@ const renamed = new WeakMap<object, PathEffect>();
 export function pathEffectOf(node: { data?: unknown } | undefined): PathEffect | null {
   const effect = (node?.data as { pathEffect?: PathEffect } | null | undefined)?.pathEffect;
   if (!effect || typeof effect !== 'object' || typeof effect.kind !== 'string') return null;
-  const now = Object.hasOwn(RENAMED_KINDS, effect.kind) ? RENAMED_KINDS[effect.kind] : undefined;
+  const now = getOwn(RENAMED_KINDS, effect.kind);
   if (now === undefined) return effect;
   let out = renamed.get(effect);
   if (!out) {

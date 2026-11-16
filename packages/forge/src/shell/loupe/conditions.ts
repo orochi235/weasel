@@ -3,6 +3,7 @@ import { withValueAtPath } from '@weasel-js/labkit/config';
 import { systemColorScheme } from '@weasel-js/react';
 import type { Globals } from '../../protocol/messages';
 import { effectiveGlobals, FOLLOW_APP, GLOBALS_KEY, type GlobalDeclarations } from '../globals';
+import { getOwn } from '@weasel-js/registry';
 
 /** What a lens compares the story against: the opposite color mode, or globals, args and a DPR of its own. */
 export type ForgeComparison =
@@ -40,16 +41,15 @@ function shownMode(value: string, ctx: ResolveContext): string {
 const SWAP: Readonly<Record<string, string>> = { light: 'dark', dark: 'light' };
 
 /** `record[key]` where the record holds it, not a member every object answers to. */
-const ownOf = <T>(record: Readonly<Record<string, T>>, key: string): T | undefined => (Object.hasOwn(record, key) ? record[key] : undefined);
 
 /**
  * The mode opposite the one `base` shows, from its declaration's `opposite` or else a swap of light and dark; `to`
  * is undefined where it has none.
  */
 export function oppositeMode(base: Globals, ctx: ResolveContext): { from: string; to: string | undefined } {
-  const from = shownMode(String(ownOf(base, ctx.modeGlobal) ?? ''), ctx);
-  const own = ownOf(ctx.declarations, ctx.modeGlobal)?.opposite;
-  return { from, to: own ? own(from, base) : ownOf(SWAP, from) };
+  const from = shownMode(String(getOwn(base, ctx.modeGlobal) ?? ''), ctx);
+  const own = getOwn(ctx.declarations, ctx.modeGlobal)?.opposite;
+  return { from, to: own ? own(from, base) : getOwn(SWAP, from) };
 }
 
 /**
@@ -72,7 +72,7 @@ export function resolveComparison(c: ForgeComparison | null, base: Globals, ctx:
 
 /** A global's value as the toolbar names it: "Theme: Ocean". */
 function globalLabel(key: string, value: string, declarations: GlobalDeclarations): string {
-  const declaration = ownOf(declarations, key);
+  const declaration = getOwn(declarations, key);
   if (!declaration) return `${key}: ${value}`;
   const option = declaration.options.find((o) => o.value === value);
   return `${declaration.label}: ${option?.label ?? value}`;

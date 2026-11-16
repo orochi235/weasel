@@ -73,7 +73,7 @@ function pinOver(entry: unknown, axes: readonly string[], selection: Selection, 
   if (isByAxis(entry)) {
     const at = picked(selection, entry.by, where);
     const rest = axes.filter((axis) => axis !== entry.by);
-    return { ...entry, [at]: pinOver(Object.hasOwn(entry, at) ? entry[at] : undefined, rest, selection, value, defs, `${where}.${at}`) };
+    return { ...entry, [at]: pinOver(getOwn(entry, at), rest, selection, value, defs, `${where}.${at}`) };
   }
   const [axis, ...rest] = axes;
   if (axis === undefined) return literal(entry, value);

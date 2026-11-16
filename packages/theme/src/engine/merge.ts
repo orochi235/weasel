@@ -1,4 +1,4 @@
-import { setOwn } from '@weasel-js/registry';
+import { setOwn, getOwn } from '@weasel-js/registry';
 import { type AxisDefs, isByAxis, mergeAxes } from '../axes.ts';
 import type { ThemeDefinition } from '../definition.ts';
 import { alwaysDeclaredSteps } from './steps.ts';
@@ -20,11 +20,11 @@ function ownSteps(def: ThemeDefinition): Set<string> {
 /** A child's by-axis pin with the axis values it leaves out taken from the parent's pin of the same name. */
 function fillFromParent(child: unknown, parent: unknown, axes: AxisDefs): unknown {
   if (!isByAxis(child) || parent === undefined) return child;
-  const values = Object.keys((Object.hasOwn(axes, child.by) ? axes[child.by] : undefined)?.values ?? {});
+  const values = Object.keys(getOwn(axes, child.by)?.values ?? {});
   const out: Record<string, unknown> = { ...child };
   for (const v of values) {
     if (Object.hasOwn(out, v)) continue;
-    const inherited = isByAxis(parent) && parent.by === child.by ? (Object.hasOwn(parent, v) ? parent[v] : undefined) : parent;
+    const inherited = isByAxis(parent) && parent.by === child.by ? getOwn(parent, v) : parent;
     if (inherited !== undefined) setOwn(out, v, inherited);
   }
   return out;
@@ -43,7 +43,7 @@ export function mergeChain(def: ThemeDefinition, lookup?: Lookup, seen: Readonly
   const inherited = Object.entries(parent.pins ?? {}).filter(([name]) => !shadowed.has(name));
   const axes = mergeAxes(parent.axes ?? {}, def.axes ?? {});
   const parentPins: Record<string, unknown> = parent.pins ?? {};
-  const own = Object.entries(def.pins ?? {}).map(([name, v]) => [name, fillFromParent(v, Object.hasOwn(parentPins, name) ? parentPins[name] : undefined, axes)]);
+  const own = Object.entries(def.pins ?? {}).map(([name, v]) => [name, fillFromParent(v, getOwn(parentPins, name), axes)]);
   out.pins = { ...Object.fromEntries(inherited), ...Object.fromEntries(own) };
   out.axes = axes;
   out.tints = def.tints ?? parent.tints;

@@ -47,7 +47,7 @@ export function isByAxis(v: unknown): v is ByAxis<unknown> {
 export function fullSelection(axes: AxisDefs, selection: Selection = {}): Selection {
   const out: Record<string, string> = {};
   for (const [name, def] of Object.entries(axes)) {
-    const v = Object.hasOwn(selection, name) ? selection[name] : undefined;
+    const v = getOwn(selection, name);
     if (v !== undefined && Object.hasOwn(def.values ?? {}, v)) setOwn(out, name, v);
     else if (typeof def.default === 'string') setOwn(out, name, def.default);
   }
@@ -76,7 +76,7 @@ export function enumerateSelections(axes: AxisDefs): Selection[] {
  *  scheme-less value resets it. A value the axis doesn't declare takes its default's, whose tokens it falls
  *  back to, rather than a blanket reset. */
 export function axisScheme(axes: AxisDefs, axis: string, value: string): string | undefined {
-  const def = Object.hasOwn(axes, axis) ? axes[axis] : undefined;
+  const def = getOwn(axes, axis);
   if (!def) return undefined;
   if (!Object.hasOwn(def.values, value)) return axisScheme(axes, axis, def.default);
   return def.values[value].scheme ?? (Object.values(def.values).some((v) => v.scheme) ? 'normal' : undefined);

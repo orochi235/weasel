@@ -1,7 +1,7 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, valueAtPath } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { type Globals, stableStringify } from '../protocol/messages';
-import { setOwn } from '@weasel-js/registry';
+import { setOwn, getOwn } from '@weasel-js/registry';
 import { GLOBALS_KEY } from '../shell/globals';
 
 /**
@@ -213,7 +213,7 @@ export function paramsToKnobs(
 ): Record<string, unknown> {
   const knobs: Record<string, unknown> = {};
   for (const { path, leaf } of knobPaths(schema)) {
-    const raw = Object.hasOwn(params, path) ? params[path] : undefined;
+    const raw = getOwn(params, path);
     if (raw === undefined) continue;
     const decoded = decodeKnob(raw, leaf);
     if (decoded) setOwn(knobs, path, decoded.value);

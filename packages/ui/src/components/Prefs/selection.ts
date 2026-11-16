@@ -5,6 +5,7 @@ import { prefersReducedMotion } from '@weasel-js/react';
 import { dropSlot, isDropPath } from './drop';
 import { hiddenAttrs, marksHidden } from './hidden';
 import './selection.css';
+import { getOwn } from '@weasel-js/registry';
 
 /** On the element a form draws for a leaf or a group, its dotted path. */
 export const PATH_ATTR = 'data-pref-path';
@@ -58,7 +59,7 @@ export function shownPath(root: PrefGroup | null, path: string | undefined): str
   let cursor = root;
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i]!;
-    const next = Object.hasOwn(cursor.children, key) ? cursor.children[key] : undefined;
+    const next = getOwn(cursor.children, key);
     if (next === undefined) return null;
     if (isPrefLeaf(next)) return keys.slice(0, i + 1).join('.');
     cursor = next;

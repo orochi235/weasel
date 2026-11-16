@@ -6,6 +6,7 @@
 import { hostAnimator, type AnimationHandle, type Animator } from '@weasel-js/animator';
 import type { Scene } from '../../core/scene/types';
 import type { AnimationOp, FrameTime } from './protocol';
+import { getOwn } from '@weasel-js/registry';
 
 /** What a worker animation is handed: the worker's animator, the worker's copy of the scene,
  *  and the `params` the page played it with. */
@@ -64,7 +65,7 @@ export function createWorkerAnimations(
   const apply = (op: AnimationOp, scene: Scene<unknown, string, unknown>): void => {
     switch (op.op) {
       case 'play': {
-        const program = Object.hasOwn(programs, op.key) ? programs[op.key] : undefined;
+        const program = getOwn(programs, op.key);
         if (!program) throw new Error(`weasel render worker: no animation registered as "${op.key}"`);
         const stopped = new Set<number>();
         stoppedDuringPlay = stopped;
