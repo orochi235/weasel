@@ -11,6 +11,9 @@ describe('accessMatch', () => {
     expect(accessMatch(entries, 'f')).toBe(1);
     expect(accessMatch(entries, 'F')).toBe(1);
   });
+  it('folds a letter as search folds text, so final sigma finds Σ', () => {
+    expect(accessMatch([item('a', 'Σ')], 'ς')).toBe(0);
+  });
   it('returns the first of two rows sharing a letter', () => {
     expect(accessMatch([item('a', 's'), item('b', 's')], 's')).toBe(0);
   });

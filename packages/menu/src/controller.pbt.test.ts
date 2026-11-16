@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS, isOneChar, type TypeaheadBuffer } from '@weasel-js/ui-input';
 import { spinKey } from '@weasel-js/quantity';
+import { foldText } from '@weasel-js/registry';
 import { accessLetter } from './access';
 import { createMenuController, SUBMENU_OPEN_MS, type MenuController, type MenuScheduler } from './controller';
 import { isRow, type MenuEntry, type MenuNumberEntry } from './entries';
@@ -163,7 +164,7 @@ function keyModel(m: Model, key: string, dir: MenuDirection): boolean {
   }
   if (!isOneChar(key) || key === ' ') return false;
   m.pending = null;
-  const letter = rows.findIndex((r) => isRow(r) && accessLetter(r.access) === key.toLowerCase());
+  const letter = rows.findIndex((r) => isRow(r) && accessLetter(r.access) === foldText(key));
   if (letter >= 0) {
     const r = rows[letter]!;
     m.typed = EMPTY_TYPEAHEAD;
