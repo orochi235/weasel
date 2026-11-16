@@ -267,6 +267,17 @@ describe('transform by the measurement', () => {
     expect(rig.enabled(MEASURE_ACTION_IDS.moveBy)).toMatchObject({ enabled: false, reason: ActionDisabledReason.SelectionRequired });
   });
 
+  it('declines to delete or clear measurements on a locked layer, rather than throwing', () => {
+    const rig = setup();
+    rig.measure({ x: 0, y: 0 }, { x: 5, y: 0 });
+    rig.scene.setLayerLocked('notes', true);
+    for (const id of [MEASURE_ACTION_IDS.delete, MEASURE_ACTION_IDS.clear]) {
+      expect(rig.enabled(id)).toMatchObject({ enabled: false, reason: ActionDisabledReason.Locked });
+      expect(() => rig.run(id)).not.toThrow();
+    }
+    expect(rig.ids()).toHaveLength(1);
+  });
+
   it('turns nothing by a measurement along the x axis, and says so', () => {
     const rig = setup();
     rig.measure({ x: 0, y: 0 }, { x: 5, y: 0 });

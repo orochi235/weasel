@@ -3,6 +3,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { translateSelection } from 'interactions/actions/defaults/nudge';
 import { requiresSelection } from 'interactions/actions/defaults/requiresSelection';
+import { reachesLocked } from 'interactions/actions/defaults/lockedReach';
 import { commitOps } from 'interactions/actions/defaultCommitAdapter';
 import { commitTransformOps, transformApplyOps } from 'interactions/actions/transformFinish';
 import { poseDescriptorOf } from 'interactions/actions/poseDescriptorDep';
@@ -91,6 +92,10 @@ function rotateBy(ms: Measurements): Action {
   };
 }
 
+/** Whether removing `ids` would reach a locked node, which disables a removal rather than throwing from it. */
+const removesLocked = (deps: ActionDeps | undefined, ids: readonly NodeId[]): boolean =>
+  reachesLocked(deps?.scene as never, ids);
+
 function remove(ms: Measurements): Action {
   return {
     id: MEASURE_ACTION_IDS.delete,
@@ -98,12 +103,16 @@ function remove(ms: Measurements): Action {
     group: 'measure',
     requires: ['scene', 'applyOps', 'selection'],
     // Declining with nothing measured leaves Delete to the ambient `delete`.
-    enabled: (deps) => (current(deps, ms) ? true : ActionDisabledReason.NotApplicable),
+    enabled: (deps) => {
+      const c = current(deps, ms);
+      if (!c) return ActionDisabledReason.NotApplicable;
+      return removesLocked(deps, [c.id]) ? ActionDisabledReason.Locked : true;
+    },
     invoker: {
       timing: 'immediate',
       run: (deps) => {
         const c = current(deps, ms);
-        if (!c) return;
+        if (!c || removesLocked(deps, [c.id])) return;
         commitOps(deps, deleteMeasureOps(deps.scene as AnyScene, [c.id], MEASURE_LABELS.delete), MEASURE_LABELS.delete);
         if (ms.picked.get() === c.id) ms.picked.set(null);
       },
@@ -121,12 +130,16 @@ function clearAll(ms: Measurements): Action {
     label: MEASURE_LABELS.clear,
     group: 'measure',
     requires: ['scene', 'applyOps', 'selection'],
-    enabled: (deps) => (all(deps).length > 0 ? true : ActionDisabledReason.NotApplicable),
+    enabled: (deps) => {
+      const ids = all(deps);
+      if (ids.length === 0) return ActionDisabledReason.NotApplicable;
+      return removesLocked(deps, ids) ? ActionDisabledReason.Locked : true;
+    },
     invoker: {
       timing: 'immediate',
       run: (deps) => {
         const ids = all(deps);
-        if (ids.length === 0) return;
+        if (ids.length === 0 || removesLocked(deps, ids)) return;
         commitOps(deps, deleteMeasureOps(deps.scene as AnyScene, ids, MEASURE_LABELS.clear), MEASURE_LABELS.clear);
         ms.picked.set(null);
       },
