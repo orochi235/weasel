@@ -22,6 +22,9 @@ import metricsUrl from '../../../../assets/fonts/inter/inter.json?url';
 import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 import ttfUrl from '../../../../assets/fonts/inter/inter.ttf?url';
 import { type RectPose } from '@weasel-js/core';
+import { withTextPainter } from '../testing/textPainter';
+
+withTextPainter();
 
 const W = 360;
 const H = 160;
