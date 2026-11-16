@@ -242,7 +242,7 @@ function readCluster(r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<st
   };
   const label = attrs.get('label');
   const lines = label === undefined ? [] : labelLines(label, id, r.graph.id ?? '');
-  const members = r.membership.members(id).map((m) => ids.get(m) ?? m);
+  const members = r.membership.members(id, ids);
   return {
     id: ids.get(id)!, role: 'container',
     ...(lines.length > 0 ? { label: lines.join(' ') } : {}),
