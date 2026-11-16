@@ -98,11 +98,14 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
   const stacks = new Map<K, Registrant<V>[]>();
   const listeners = createEmitter();
   let version = 0;
-  let snapshot: { version: number; entries: readonly ReflectedEntry<V, K>[] } | null = null;
+  /** Advances on every change, announced or still held by a `batch`, so `entries` inside one sees it. */
+  let revision = 0;
+  let snapshot: { revision: number; entries: readonly ReflectedEntry<V, K>[] } | null = null;
   let depth = 0;
   let pending = false;
 
   function changed(): void {
+    revision++;
     if (depth > 0) {
       pending = true;
       return;
@@ -119,7 +122,7 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
     get: (key) => stacks.get(key)?.at(-1)?.value,
     has: (key) => stacks.has(key),
     entries() {
-      if (snapshot?.version === version) return snapshot.entries;
+      if (snapshot?.revision === revision) return snapshot.entries;
       const entries: ReflectedEntry<V, K>[] = [];
       for (const [key, stack] of stacks) {
         const live = stack.at(-1)!;
@@ -127,7 +130,7 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
           key, live, value: live.value, source: live.source, shadowed: Object.freeze(stack.slice(0, -1)),
         }));
       }
-      snapshot = { version, entries: Object.freeze(entries) };
+      snapshot = { revision, entries: Object.freeze(entries) };
       return snapshot.entries;
     },
     subscribe: listeners.subscribe,
@@ -191,7 +194,8 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
       } finally {
         if (--depth === 0 && pending) {
           pending = false;
-          changed();
+          version++;
+          listeners.emit();
         }
       }
     },

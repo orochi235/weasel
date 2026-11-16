@@ -245,6 +245,7 @@ describe('createReflectable', () => {
       r.batch(() => r.push('b', 2));
       expect(listener).not.toHaveBeenCalled();
       expect(r.get('b')).toBe(2);
+      expect(r.entries().map((e) => e.key)).toEqual(['a', 'b']);
       return 'done';
     });
     expect(out).toBe('done');
