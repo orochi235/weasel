@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { ActionsProvider, DepRegistryProvider, useActionsRegistry, useDepRegistry, type ActionsRegistry, type DepRegistry } from '@weasel-js/routing/react';
-import type { Action, SelectionApi } from '@weasel-js/routing';
+import { ActionsProvider, DepRegistryProvider, useActionsRegistry, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
+import type { Action, ActionsRegistry, SelectionApi } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
