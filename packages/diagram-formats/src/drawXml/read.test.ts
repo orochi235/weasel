@@ -211,6 +211,18 @@ describe('reading malformed files', () => {
     expect(edges(document).get('e')).toMatchObject({ label: 'go', labelPlacement: { at: 0.25, offset: 10 } });
   });
 
+  it('reads cells whose parents run in a circle as sitting on the page', async () => {
+    const { document } = await read(`<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+      <mxCell id="a" value="A" vertex="1" parent="b"><mxGeometry x="10" y="10" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="b" value="B" style="swimlane;" vertex="1" parent="a"><mxGeometry x="5" y="5" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="c" value="C" vertex="1" parent="c"><mxGeometry x="80" y="10" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="d" value="D" vertex="1" parent="a"><mxGeometry x="1" y="1" width="10" height="10" as="geometry"/></mxCell>
+    </root></mxGraphModel>`);
+    expect([...nodes(document).keys()].sort()).toEqual(['a', 'c', 'd']);
+  });
+});
+
+describe('reading groups and connectors in a model', () => {
   it('drops a group inside a swimlane, with a warning, its shapes kept in the swimlane', async () => {
     const { document, warnings } = await read(`<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
       <mxCell id="c" value="C" style="swimlane;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="300" height="200" as="geometry"/></mxCell>
@@ -239,13 +251,15 @@ describe('reading malformed files', () => {
     expect(warnings).toContain('Connectors with a loose end, or with an end on another connector, were left out.');
   });
 
-  it('reads cells whose parents run in a circle as sitting on the page', async () => {
+  it('moves a waypoint left of the page onto it, and grows the page to hold one past its right edge', async () => {
     const { document } = await read(`<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
-      <mxCell id="a" value="A" vertex="1" parent="b"><mxGeometry x="10" y="10" width="40" height="20" as="geometry"/></mxCell>
-      <mxCell id="b" value="B" style="swimlane;" vertex="1" parent="a"><mxGeometry x="5" y="5" width="40" height="20" as="geometry"/></mxCell>
-      <mxCell id="c" value="C" vertex="1" parent="c"><mxGeometry x="80" y="10" width="40" height="20" as="geometry"/></mxCell>
-      <mxCell id="d" value="D" vertex="1" parent="a"><mxGeometry x="1" y="1" width="10" height="10" as="geometry"/></mxCell>
+      <mxCell id="a" value="A" vertex="1" parent="1"><mxGeometry x="0" y="0" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="b" value="B" vertex="1" parent="1"><mxGeometry x="240" y="0" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="e" edge="1" parent="1" source="a" target="b"><mxGeometry relative="1" as="geometry">
+        <Array as="points"><mxPoint x="-80" y="10"/><mxPoint x="500" y="10"/></Array></mxGeometry></mxCell>
     </root></mxGraphModel>`);
-    expect([...nodes(document).keys()].sort()).toEqual(['a', 'c', 'd']);
+    const page = document.pages.map(asGraph)[0]!;
+    expect(edges(document).get('e')!.waypoints).toEqual([{ x: 40, y: 10 }, { x: 620, y: 10 }]);
+    expect(page.width).toBe(660);
   });
 });

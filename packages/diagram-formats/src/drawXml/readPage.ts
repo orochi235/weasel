@@ -140,11 +140,12 @@ function readEdge({ page, idOf, groups, warn }: Reader, cell: RawCell, byCellId:
   };
 }
 
-/** What sits left of or above the page moves onto it, and the page grows to hold what is on it. */
+/** What sits left of or above the page moves onto it, waypoints among it, and the page grows to hold what is on it. */
 function fitted(data: DiagramData, src: PageSource): { data: DiagramData; width: number; height: number } {
   const boxes: Box[] = [
     ...data.nodes.map((n) => ({ ...n.at!, width: n.width ?? 0, height: n.height ?? 0 })),
     ...(data.containers ?? []).map((c) => c.box!),
+    ...data.edges.flatMap((e) => (e.waypoints ?? []).map((p) => ({ ...p, width: 0, height: 0 }))),
   ];
   if (boxes.length === 0) return { data, width: src.width ?? 2 * PAGE_MARGIN, height: src.height ?? 2 * PAGE_MARGIN };
   const minX = boxes.reduce((m, b) => Math.min(m, b.x), Infinity);
