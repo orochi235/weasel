@@ -1,4 +1,4 @@
-import { niceStep } from '@weasel-js/geom';
+import { niceStep, lerp } from '@weasel-js/geom';
 import { replacedFormat } from './replacedFormat';
 import { FINEST_STEP, formatTick } from './tickFormat';
 import type { ContinuousScale } from './types';
@@ -152,7 +152,7 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
   const [d0, d1] = domain;
   const [r0, r1] = range;
   const { along, unmap } = proportion(d0, d1);
-  const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : r0 + along(v) * (r1 - r0));
+  const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
   const step = (count = DEFAULT_TICKS) => tickStep(d0, d1, count);
   const format = (v: number): string => formatNumber(v, step());
   return {

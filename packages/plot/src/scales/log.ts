@@ -2,6 +2,7 @@ import { decimalsOf, formatNumber } from './linear';
 import { replacedFormat } from './replacedFormat';
 import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
+import { lerp } from '@weasel-js/geom';
 
 /** Options for {@link logScale}. */
 export interface LogScaleOptions {
@@ -31,7 +32,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
   const l1 = log(d1);
   // Ends too near for their logarithms to differ are told apart by their distance, which a ratio rounds away.
   const along = l1 !== l0 ? (v: number) => (log(v) - l0) / (l1 - l0) : (v: number) => Math.log1p((v - d0) / d0) / Math.log1p((d1 - d0) / d0);
-  const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : r0 + along(v) * (r1 - r0));
+  const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
   const ticks = (count = 5): number[] => {
     const [lo, hi] = l0 <= l1 ? [l0, l1] : [l1, l0];
     if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [];
@@ -71,7 +72,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
       const t = r1 === r0 ? 0 : (at - r0) / (r1 - r0);
       if (t === 0 || t === 1) return t === 0 ? d0 : d1;
       // A logarithm a rounding past the double range's end would turn into Infinity or 0.
-      const v = base ** (l0 + t * (l1 - l0));
+      const v = base ** lerp(l0, l1, t);
       return t > 0 && t < 1 ? Math.min(Math.max(d0, d1), Math.max(Math.min(d0, d1), v)) : v;
     },
     ticks,

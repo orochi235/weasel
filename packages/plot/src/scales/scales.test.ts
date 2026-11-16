@@ -15,6 +15,12 @@ describe('linearScale', () => {
     expect(s.invert(200)).toBe(50);
   });
 
+  it("maps the domain's end onto the range's end itself, where a hand lerp misses it by an ulp", () => {
+    expect(0.7 + 1 * (0.1 - 0.7)).not.toBe(0.1);
+    expect(linearScale({ domain: [0, 1], range: [0.7, 0.1] }).map(1)).toBe(0.1);
+    expect(logScale({ domain: [1, 10], range: [0.7, 0.1] }).map(10)).toBe(0.1);
+  });
+
   it('ticks on round steps of 1, 2 or 5', () => {
     expect(s.ticks()).toEqual([0, 20, 40, 60, 80, 100]);
     expect(s.ticks(10)).toEqual([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
