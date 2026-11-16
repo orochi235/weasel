@@ -5,6 +5,7 @@ import { routedTrial } from '../shell/routedTrial';
 import { readRoute, useRoute } from '../shell/useRoute';
 import { readPlayheadParam, writePlayheadParam } from './playheadUrl';
 import { shownTime } from './shown';
+import { compositeKey } from '@weasel-js/registry';
 
 interface PlayheadSyncProps {
   trialId: string;
@@ -70,5 +71,5 @@ export function RoutePlayhead() {
   const applied = useRef<string | null>(null);
   const trial = route === null ? undefined : routedTrial(lab.trials, lab.focusedTrialId, route);
   if (!trial || route === null) return null;
-  return <PlayheadSync key={`${trial.id} ${route}`} trialId={trial.id} route={route} appliedRef={applied} />;
+  return <PlayheadSync key={compositeKey([trial.id, route])} trialId={trial.id} route={route} appliedRef={applied} />;
 }
