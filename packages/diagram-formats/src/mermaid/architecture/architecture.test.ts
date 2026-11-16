@@ -106,4 +106,13 @@ describe('writing a Mermaid architecture diagram', () => {
     const text = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'my svc', lines: ['my svc'] }], edges: [] } }] }).text;
     expect(page(text).data.nodes[0]!.lines).toEqual(['my svc']);
   });
+
+  it('drops an edge to a group holding no service of its own, with a warning, rather than meet an inner group', () => {
+    const { text, warnings } = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'b', to: 'outer' }],
+      containers: [{ id: 'outer', role: 'container', members: ['inner'] }, { id: 'inner', role: 'container', members: ['a'] }],
+    } }] });
+    expect(page(text).data.edges).toEqual([]);
+    expect(warnings).toContain('Mermaid architecture edges meet a group through a service in it; edges to groups holding no service of their own were dropped.');
+  });
 });
