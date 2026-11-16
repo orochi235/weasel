@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react';
+import { openPointerSession, type PointerSession } from '@weasel-js/routing';
 import { attract, usableStops } from '@weasel-js/ui-input';
 import { useKitSetting } from '@weasel-js/react';
 import { STOP_SNAP_PX } from '../Slider/stops';
@@ -27,6 +28,11 @@ function runPx(el: HTMLInputElement): number {
   return el.getBoundingClientRect().width - cssPx(css.paddingLeft) - cssPx(css.paddingRight) - thumb;
 }
 
+interface Held {
+  free: boolean;
+  session?: PointerSession;
+}
+
 /** What a native range track needs to catch on `stops`. */
 export interface TrackStops {
   /** The track value a move from `from` to `to` lands on: under a pointer, the
@@ -53,9 +59,8 @@ export function useTrackStops(
   const at = useMemo(() => usableStops(stops, min, max).map((s) => s.value), [stops, min, max]);
   const snapPx = useKitSetting('targets.sliderStopSnapPx') ?? STOP_SNAP_PX;
   // Held while a pointer is down on the track: whether alt frees it from the stops.
-  const gesture = useRef<{ free: boolean } | null>(null);
-  const release = useRef<(() => void) | null>(null);
-  useEffect(() => () => release.current?.(), []);
+  const gesture = useRef<Held | null>(null);
+  useEffect(() => () => gesture.current?.session?.cancel(), []);
   const marks = useMemo(() => at.map(fraction), [at, fraction]);
   if (at.length === 0) return { settle: (_el, _from, to) => to, onPointerDown: () => {}, marks };
   return {
@@ -67,23 +72,18 @@ export function useTrackStops(
       return attract(to, at, snapPx / run, fraction);
     },
     onPointerDown: (e) => {
-      release.current?.();
-      const held = { free: e.altKey };
-      gesture.current = held;
-      const move = (ev: PointerEvent) => {
-        held.free = ev.altKey;
-      };
-      const end = () => {
-        window.removeEventListener('pointermove', move, true);
-        window.removeEventListener('pointerup', end, true);
-        window.removeEventListener('pointercancel', end, true);
+      gesture.current?.session?.cancel();
+      const held: Held = { free: e.altKey };
+      const done = () => {
         if (gesture.current === held) gesture.current = null;
-        release.current = null;
       };
-      window.addEventListener('pointermove', move, true);
-      window.addEventListener('pointerup', end, true);
-      window.addEventListener('pointercancel', end, true);
-      release.current = end;
+      // Uncaptured: the native track runs the drag, and this only watches it.
+      held.session = openPointerSession(e.currentTarget, e, {
+        onMove: (ev) => { held.free = ev.altKey; },
+        onEnd: done,
+        onCancel: done,
+      }, { capture: false });
+      gesture.current = held;
     },
     marks,
   };

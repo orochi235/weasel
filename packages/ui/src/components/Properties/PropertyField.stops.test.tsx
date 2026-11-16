@@ -70,7 +70,7 @@ describe('a slider with stops', () => {
     fireEvent.pointerDown(el);
     for (const at of ['44', '48', '52']) fireEvent.input(el, { target: { value: at } });
     expect(onChange).not.toHaveBeenCalled();
-    fireEvent.pointerUp(window);
+    fireEvent.pointerUp(document);
     fireEvent.change(el);
     expect(onInput.mock.calls.map(([n]) => n)).toEqual([44, 50, 50]);
     expect(onChange.mock.calls).toEqual([[50]]);
