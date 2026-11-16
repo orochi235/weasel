@@ -167,7 +167,7 @@ export function bindRigOn<TPose>(
     restInverseOf(joint);
     const restWorld = restWorlds.get(joint)!;
     for (const node of typeof ids === 'string' ? [ids] : (ids as readonly NodeId[])) {
-      if (options.skins && node in options.skins) {
+      if (options.skins && Object.hasOwn(options.skins, node)) {
         throw new Error(`bindRig: node "${node}" is both bound to joint "${joint}" and skinned.`);
       }
       const n = scene.get(node);
