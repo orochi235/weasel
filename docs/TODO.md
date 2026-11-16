@@ -557,11 +557,12 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) `npm run check:proto-index` has 773 sites pending in 308 files** (2026-11-15): reads and writes of a
-  `string`-indexed object with a `string` key, which go through `Object.prototype` for a name like `toString`. The
-  files are listed in `scripts/check-proto-index.pending.json`, which the check skips, and it fails when a listed
-  file is clean, so the list only shrinks; `-- --scan` lists every site. Most sit in theme (125), prefs (85), forge (80), diagram (60), ui (53), core (51).
-  Closes when the pending list is empty.
+- **(P2) `npm run check:proto-index` has 44 sites pending in 35 files, all in core and editing** (2026-11-16; 773
+  in 308 files on 2026-11-15): reads and writes of a `string`-indexed object with a `string` key, which go through
+  `Object.prototype` for a name like `toString`. Every other package was cleared on 2026-11-16; core's and editing's
+  wait for the viewer/editing split, which is moving those files. The list is
+  `scripts/check-proto-index.pending.json`; the check fails when a listed file is clean, so it only shrinks, and
+  `-- --scan` lists every site. Closes when the pending list is empty.
 
 - **(P2) `packages/svg/src/textModes.test.ts` fails 2 outline-mode tests in a worktree linked by
   `scripts/link-workspaces.mjs`** and passes 11 of 11 in the main checkout and on the fleet (2026-11-15): text
