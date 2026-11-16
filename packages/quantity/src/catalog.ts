@@ -3,6 +3,7 @@
  * reads aloud. Conversion lives in a `UnitSystem`; this is everything else a
  * unit's name decides.
  */
+import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
 
 /** One way of writing a unit: `in`, or `″` where space is short. */
 export interface UnitForm {
@@ -104,9 +105,9 @@ const BUILTIN: readonly UnitDefinition[] = [
   { name: 'pebibyte', symbol: 'PiB', spoken: ['pebibyte', 'pebibytes'] },
 ];
 
-/** Every text a unit is found by: its name, then each form's text and aliases. */
+/** Every text a unit is found by, once each: its name, then each form's text and aliases. */
 function keysOf(u: CatalogUnit): string[] {
-  return [u.name, ...spellingsOf(u)];
+  return [...new Set([u.name, ...spellingsOf(u)])];
 }
 
 function spellingsOf(u: CatalogUnit): string[] {
@@ -114,16 +115,13 @@ function spellingsOf(u: CatalogUnit): string[] {
   return forms.flatMap((f) => [f.text, ...f.aliases]);
 }
 
-function indexOf(units: readonly CatalogUnit[]): Map<string, CatalogUnit> {
-  const index = new Map<string, CatalogUnit>();
-  for (const u of units) for (const key of keysOf(u)) if (!index.has(key)) index.set(key, u);
-  return index;
-}
+const KIT = 'kit';
+const units = createReflectable<CatalogUnit>();
+for (const u of BUILTIN.map(catalogUnitOf)) for (const key of keysOf(u)) units.push(key, u, { source: KIT });
 
-const builtin = BUILTIN.map(catalogUnitOf);
-const builtinIndex = indexOf(builtin);
-/** Consumer units, latest last; a later one shadows an earlier one and the built-ins at every key they share. */
-const registered: CatalogUnit[] = [];
+/** The catalog by every text a unit is found by. A unit registered later shadows an earlier one and the
+ *  built-ins (source `'kit'`) at every key they share. */
+export const unitCatalog: Reflection<CatalogUnit> = units.reflection;
 
 /**
  * Add a unit to the catalog, or replace one: every name, symbol, and alias it
@@ -132,32 +130,34 @@ const registered: CatalogUnit[] = [];
  */
 export function registerUnit(def: UnitDefinition): () => void {
   const entry = catalogUnitOf(def);
-  registered.push(entry);
+  const releases = units.batch(() => keysOf(entry).map((key) => units.push(key, entry)));
+  let released = false;
   return () => {
-    const at = registered.indexOf(entry);
-    if (at >= 0) registered.splice(at, 1);
+    if (released) return;
+    released = true;
+    units.batch(() => releases.forEach((release) => release()));
   };
 }
 
 /** The unit `text` names, by its name, a form's text, or an alias. Case counts: `m` is not `M`. */
 export function catalogUnit(text: string): CatalogUnit | undefined {
-  for (let i = registered.length - 1; i >= 0; i--) {
-    const u = registered[i]!;
-    if (keysOf(u).includes(text)) return u;
-  }
-  return builtinIndex.get(text);
+  return units.get(text);
 }
 
-/** Every unit in the catalog, a registered one in place of a built-in of the same name. */
+let listed: { from: readonly ReflectedEntry<CatalogUnit>[]; units: readonly CatalogUnit[] } | null = null;
+
+/** Every unit in the catalog, the newest registered under a name in place of a built-in or an older one of the
+ *  same name: the built-ins in their order, then the rest in the order their names were first registered. */
 export function catalogUnits(): readonly CatalogUnit[] {
-  const names = new Set<string>();
+  const from = units.entries();
+  if (listed?.from === from) return listed.units;
   const out: CatalogUnit[] = [];
-  for (const u of [...registered].reverse().concat(builtin)) {
-    if (names.has(u.name)) continue;
-    names.add(u.name);
-    out.push(u);
+  for (const { key, live, shadowed } of from) {
+    const named = [live, ...[...shadowed].reverse()].find((r) => r.value.name === key);
+    if (named) out.push(named.value);
   }
-  return out;
+  listed = { from, units: Object.freeze(out) };
+  return listed.units;
 }
 
 /** How {@link unitSymbol} picks a form. */

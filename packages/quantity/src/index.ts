@@ -94,6 +94,7 @@ export {
 export {
   catalogUnit,
   catalogUnits,
+  unitCatalog,
   registerUnit,
   unitSpellings,
   unitSymbol,
