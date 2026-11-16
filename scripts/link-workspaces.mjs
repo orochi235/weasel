@@ -6,7 +6,7 @@
 // lockfiles differ.
 //
 //   node scripts/link-workspaces.mjs [worktree]      default: the current directory
-import { existsSync, mkdirSync, readFileSync, readdirSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 const root = resolve(process.argv[2] ?? '.');
@@ -55,6 +55,13 @@ for (const pattern of JSON.parse(read(join(root, 'package.json'))).workspaces) {
     mkdirSync(dirname(at), { recursive: true });
     symlinkSync(join(root, dir), at, 'dir');
     linked++;
+  }
+}
+// These caches hold imports already resolved, and are cleared only when the host's lockfile changes, so a
+// run from before a link existed keeps its old resolution (font's opentype.js 1.3.4 in place of its 2.0.0).
+if (linked + nestedLinked > 0) {
+  for (const cache of ['.vitest-cache', '.vite', '.vite-browser']) {
+    rmSync(join(root, 'node_modules', cache), { recursive: true, force: true });
   }
 }
 console.log(

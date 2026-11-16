@@ -562,13 +562,6 @@ only story runner in the repo.
   `vitest.browser.setup.ts` stopped it: the overlay is likely drawn in the orchestrator page, outside the test
   iframe the setup runs in. Closes when that probe's three files pass beside the broken one.
 
-- **(P2) `packages/svg/src/textModes.test.ts` fails 2 outline-mode tests in a worktree linked by
-  `scripts/link-workspaces.mjs`** and passes 11 of 11 in the main checkout and on the fleet (2026-11-15): text
-  bounds come out about 8% off (`18.26 >= 20`, `324.2 <= 300`), in every linked worktree, branch changes or not.
-  Ruled out: opentype.js resolves alike in both, the alias map points font and text-shaping at `src`, and
-  `assets/fonts/inter/inter.ttf` is present. Until it is found, a linked worktree's local result for a text
-  measurement cannot be trusted. Closes when that file passes in a linked worktree.
-
 - **(P3) [waiting] `typedoc/headerComments.test.mjs` "open no file with a doc comment on an export list" failed
   under the full suite** on studio at `c38ba3732` (2026-11-15), its retry too, taking 11.9 s against 1.3 s alone.
   It passed alone here and on studio's tree at the same commit, and passed in the next full run. It reads every
