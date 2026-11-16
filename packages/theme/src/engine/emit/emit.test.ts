@@ -293,6 +293,14 @@ describe('emitThemes', () => {
     expect(text).toMatch(/export type TokenName =\n {2}\| '--wzl-gap'/);
   });
 
+  it('writes a selection key holding a quote, a backslash or a line break as the key it is', () => {
+    const value = "it's\\a\nb";
+    const def: ThemeDefinition = { name: 'q', axes: { mode: { default: value, values: { [value]: {} } } }, pins: { ink: { value: '#111111', type: 'color' } } };
+    const text = emitThemes([{ definition: def, baked: bake(def) }]);
+    const line = text.split('\n').find((l) => l.endsWith(': {') && l.startsWith('      '))!;
+    expect(new Function(`return ${line.trim().slice(0, -3)};`)()).toBe(`mode=${value}`);
+  });
+
   it('takes a selection a child’s by leaves out from the parent, as resolveTheme does', () => {
     const parent: ThemeDefinition = { name: 'p', axes: MODE, pins: { backdrop: { value: 'none', type: 'gradient' } } };
     const kid: ThemeDefinition = { name: 'k', extends: 'p', pins: { backdrop: { by: 'mode', dark: { value: 'url(a.png)', type: 'gradient' } } } };

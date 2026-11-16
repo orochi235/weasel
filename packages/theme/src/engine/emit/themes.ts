@@ -10,6 +10,10 @@ export interface ThemesInput {
   readonly baked: BakedTheme;
 }
 
+/** `text` as a single-quoted string literal. */
+const quoted = (text: string): string =>
+  `'${text.replace(/[\\']/g, '\\$&').replace(/[\n\r\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)}'`;
+
 /** `baked` and every theme above it, root first. */
 function chainOf(baked: BakedTheme, byName: ReadonlyMap<string, BakedTheme>): BakedTheme[] {
   const parent = baked.extends ? byName.get(baked.extends) : undefined;
@@ -28,7 +32,7 @@ export function emitThemes(themes: readonly ThemesInput[]): string {
       const resolved = resolveTokens(tokensAt(chain, sel));
       for (const n of Object.keys(resolved)) names.add(`--wzl-${n}`);
       const body = Object.entries(resolved).map(([n, v]) => `        '--wzl-${n}': ${JSON.stringify(v)},`).join('\n');
-      return `      '${selectionKey(baked.axes, sel)}': {\n${body}\n      },`;
+      return `      ${quoted(selectionKey(baked.axes, sel))}: {\n${body}\n      },`;
     });
     return [
       `  ${JSON.stringify(baked.name)}: {`,
