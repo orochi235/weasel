@@ -4,6 +4,7 @@
  * `applyLayout` is the only thing that touches a scene.
  */
 import {
+  ActionDisabledReason,
   translatePoseViaDescriptor,
   carriedDescendants,
   composeWorldPose,
@@ -13,12 +14,13 @@ import {
   AUTO_POSE_DESCRIPTOR,
   type NodeId,
   type Action,
+  type ActionDeps,
   type PoseDescriptor,
   type Scene,
   type AnyScene,
 } from '@weasel-js/core';
 import { force } from './force';
-import { buildGraph, type GraphSource } from './graph';
+import { buildGraph, type GraphNodeLike, type GraphSource } from './graph';
 import { chain } from './chain';
 import { grid } from './grid';
 import { layered } from './layered';
@@ -69,19 +71,42 @@ export function applyLayout<TPose>(
   result: LayoutResult,
   opts: ApplyLayoutOptions<TPose> = {},
 ): number {
+  return writeLayout(scene, result, layoutWrites(scene, result, opts), opts.label);
+}
+
+/** What a layout result would write: the poses of the nodes no lock holds, and the edge data. */
+interface LayoutWrites<TPose> {
+  poses: readonly (readonly [string, TPose])[];
+  data: ReadonlyMap<string, unknown>;
+}
+
+function layoutWrites<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  result: LayoutResult,
+  opts: ApplyLayoutOptions<TPose>,
+): LayoutWrites<TPose> {
   const poses = layoutPoses(scene, result, opts.geometry);
   const data = opts.routes === undefined ? new Map<string, unknown>() : routeWrites(scene as never, opts.routes);
-  if (poses.size === 0 && data.size === 0) return 0;
   // A node on a locked layer stays put, as it does under a live run.
-  const open = [...poses].filter(([id]) => !scene.isLocked(id as never));
-  if (open.length === 0 && data.size === 0) return 0;
-  scene.batch(opts.label ?? 'Layout', () => {
-    for (const [id, pose] of open) scene.setPose(id as never, pose);
-    for (const [id, d] of data) scene.update(id as never, { data: d });
+  return { poses: [...poses].filter(([id]) => !scene.isLocked(id as never)), data };
+}
+
+const writesNothing = (w: LayoutWrites<unknown>): boolean => w.poses.length === 0 && w.data.size === 0;
+
+function writeLayout<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  result: LayoutResult,
+  writes: LayoutWrites<TPose>,
+  label = 'Layout',
+): number {
+  if (writesNothing(writes)) return 0;
+  scene.batch(label, () => {
+    for (const [id, pose] of writes.poses) scene.setPose(id as never, pose);
+    for (const [id, d] of writes.data) scene.update(id as never, { data: d });
   });
   // Participants, not the descendants they carried along: a caller asking how
   // much a layout did means the nodes it placed.
-  const wrote = new Set(open.map(([id]) => id));
+  const wrote = new Set(writes.poses.map(([id]) => id));
   let moved = 0;
   for (const id of result.keys()) if (wrote.has(id)) moved++;
   return moved;
@@ -170,27 +195,62 @@ export function layoutDiagram<TPose>(
   algorithm: string | LayoutFn,
   opts: LayoutDiagramOptions<TPose> = {},
 ): number {
-  const fn = layoutOf(algorithm);
+  const { result, writes } = planDiagram(scene, source, algorithm, opts);
+  return writeLayout(scene, result, writes, opts.label);
+}
+
+/** A diagram layout's moves, and what writing them would change. */
+interface DiagramPlan<TPose> {
+  result: LayoutResult;
+  writes: LayoutWrites<TPose>;
+}
+
+function planDiagram<TPose>(
+  scene: Scene<unknown, string, TPose>,
+  source: GraphSource<TPose>,
+  algorithm: string | LayoutFn,
+  opts: LayoutDiagramOptions<TPose>,
+): DiagramPlan<TPose> {
   const graph = buildGraph(source, {
     ...(opts.read ? { read: opts.read } : {}),
     ...(opts.geometry ? { geometry: opts.geometry } : {}),
   });
-  const plan = planOf(fn, graph, opts.layout);
-  return applyLayout(scene, plan.moves, {
+  const plan = planOf(layoutOf(algorithm), graph, opts.layout);
+  const writes = layoutWrites(scene, plan.moves, {
     ...(opts.geometry ? { geometry: opts.geometry } : {}),
-    ...(opts.label ? { label: opts.label } : {}),
     routes: routesOf(graph, plan),
   });
+  return { result: plan.moves, writes };
 }
 
+type SourceEntry<TPose> = { node: GraphNodeLike; pose: TPose };
+
+const sameEntries = <TPose>(a: readonly SourceEntry<TPose>[], b: readonly SourceEntry<TPose>[]): boolean =>
+  a.length === b.length && a.every((e, i) => e.node === b[i]!.node && e.pose === b[i]!.pose);
+
 /**
- * `diagram.layout` — rebuild the graph, run a layout, write the result.
+ * `diagram.layout` — rebuild the graph, run a layout, write the result. Disabled
+ * where the layout would write nothing: no graph, one laid out already, or every
+ * participant it would move locked.
  */
 export function createLayoutAction<TPose>(opts: LayoutActionOptions<TPose>): Action {
   const { read, geometry, layout, label } = opts;
   const options = {
     ...(read ? { read } : {}), ...(geometry ? { geometry } : {}), ...(layout ? { layout } : {}), ...(label ? { label } : {}),
   };
+  const algorithm = opts.algorithm ?? 'layered';
+  // `enabled` is asked on every render of a bar holding it, so the plan is kept
+  // until the scene or anything the source yields changes.
+  let memo: { scene: Scene<unknown, string, TPose>; version: number; entries: SourceEntry<TPose>[]; plan: DiagramPlan<TPose> } | null = null;
+  const planFor = (scene: Scene<unknown, string, TPose>): DiagramPlan<TPose> => {
+    const entries = [...opts.source()];
+    const version = scene.getContentVersion();
+    if (memo?.scene === scene && memo.version === version && sameEntries(memo.entries, entries)) return memo.plan;
+    const plan = planDiagram(scene, () => entries, algorithm, options);
+    memo = { scene, version, entries, plan };
+    return plan;
+  };
+  const sceneOf = (deps: ActionDeps | undefined) => deps?.['scene'] as Scene<unknown, string, TPose> | undefined;
   return {
     id: opts.id ?? LAYOUT_ACTION_ID,
     label: opts.label ?? 'Lay out diagram',
@@ -199,10 +259,15 @@ export function createLayoutAction<TPose>(opts: LayoutActionOptions<TPose>): Act
     invoker: {
       timing: 'immediate',
       run: (deps) => {
-        const scene = deps['scene'] as Scene<unknown, string, TPose> | undefined;
-        if (scene !== undefined) layoutDiagram(scene, opts.source, opts.algorithm ?? 'layered', options);
+        const scene = sceneOf(deps);
+        if (scene === undefined) return;
+        const { result, writes } = planFor(scene);
+        writeLayout(scene, result, writes, label);
       },
     },
-    enabled: () => true as const,
+    enabled: (deps) => {
+      const scene = sceneOf(deps);
+      return scene !== undefined && !writesNothing(planFor(scene).writes) ? true : ActionDisabledReason.NotApplicable;
+    },
   };
 }

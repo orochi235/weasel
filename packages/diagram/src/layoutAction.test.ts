@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { createScene, type InvocationCtx, type Scene } from '@weasel-js/core';
+import { describe, it, expect, vi } from 'vitest';
+import { ActionDisabledReason, createScene, type InvocationCtx, type Scene } from '@weasel-js/core';
 import { buildGraph } from './graph';
 import { layered } from './layered';
 import { planOf } from './layout';
@@ -270,6 +270,39 @@ describe('createLayoutAction', () => {
     const action = createLayoutAction<Rect>({ source: sceneParticipants(scene as never) });
     expect(() => run(action, undefined)).not.toThrow();
     expect(scene.get('a' as never)!.pose.y).toBe(START['a']!.y);
+  });
+
+  it('is disabled where the layout would move nothing: no graph, one laid out already, or every participant locked', () => {
+    const empty = createScene<Data, 'main', Rect>({ systemLayers: [{ id: 'main' }] });
+    expect(createLayoutAction<Rect>({ source: sceneParticipants(empty as never) }).enabled!({ scene: empty } as never))
+      .toBe(ActionDisabledReason.NotApplicable);
+
+    const scene = chain();
+    const action = createLayoutAction<Rect>({ source: sceneParticipants(scene as never) });
+    expect(action.enabled!({ scene } as never)).toBe(true);
+    run(action, scene);
+    expect(action.enabled!({ scene } as never)).toBe(ActionDisabledReason.NotApplicable);
+    const entries = scene.historyIndex();
+    run(action, scene);
+    expect(scene.historyIndex()).toBe(entries);
+
+    const locked = chain();
+    for (const node of [...locked.renderOrderNodes()]) locked.setLocked(node.id, true);
+    expect(createLayoutAction<Rect>({ source: sceneParticipants(locked as never) }).enabled!({ scene: locked } as never))
+      .toBe(ActionDisabledReason.NotApplicable);
+  });
+
+  it('runs the layout once for any number of enabled reads and the run after them, and again once the scene changes', () => {
+    const scene = chain();
+    const algorithm = vi.fn(() => new Map([['a', { x: 42, y: 99 }]]));
+    const action = createLayoutAction<Rect>({ source: sceneParticipants(scene as never), algorithm });
+    for (let i = 0; i < 3; i++) expect(action.enabled!({ scene } as never)).toBe(true);
+    run(action, scene);
+    expect(algorithm).toHaveBeenCalledTimes(1);
+    expect(action.enabled!({ scene } as never)).toBe(ActionDisabledReason.NotApplicable);
+    scene.setPose('a' as never, { x: 0, y: 0, width: 100, height: 40 });
+    expect(action.enabled!({ scene } as never)).toBe(true);
+    expect(algorithm).toHaveBeenCalledTimes(3);
   });
 
   it('ships layered, tree, force, chain, radial, and grid under stable keys', () => {
