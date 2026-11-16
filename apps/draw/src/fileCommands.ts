@@ -110,6 +110,9 @@ function useExportCommands(target: FileCommandsTarget): void {
     if (format && ids.length > 0) void exportSelectionFile(scene, format, ids, doc());
   }, {
     variants: formats.map((f) => ({ key: f.id, label: `Selection as ${f.label}…`, params: { format: f.id } })),
-    enabled: () => selected().length > 0 || ActionDisabledReason.SelectionRequired,
+    enabled: (params) => {
+      if (formatOf(params) === undefined) return ActionDisabledReason.NotApplicable;
+      return selected().length > 0 || ActionDisabledReason.SelectionRequired;
+    },
   });
 }

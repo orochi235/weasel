@@ -195,6 +195,9 @@ describe('useFileCommands', () => {
     expect(exportSelectionFile).not.toHaveBeenCalled();
     rerender({ ...target, selection: { get: () => ['a'] } });
     expect(enabled()).toBe(true);
+    for (const params of [{}, { format: 'nope' }]) {
+      expect(get(FILE_ACTIONS.exportSelection).enabled?.({}, undefined, undefined, params)).toBe(ActionDisabledReason.NotApplicable);
+    }
     act(() => { registry.trigger(FILE_ACTIONS.exportSelection, { format: 'svg' }); });
     expect(exportSelectionFile).toHaveBeenCalledWith(scene, expect.objectContaining({ id: 'svg' }), ['a'], { filename: 'a', backgroundColor: '#ffffff' });
   });
