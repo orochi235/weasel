@@ -150,6 +150,10 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   } = hold.rest;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
+  // Uncontrolled, the key is held here rather than by React Aria, whose closed trigger changes it from the keyboard
+  // whatever `isOpen` says; a held select then drops the change with the rest.
+  const [ownKey, setOwnKey] = useState<T | null>(defaultSelectedKey ?? null);
+  const shownKey = selectedKey === undefined ? ownKey : selectedKey;
   const placeholder = mixed ? MIXED_HINT : placeholderProp;
   const triggerRef = useObjectRef(ref);
   const pressRef = useRef<Press | null>(null);
@@ -163,9 +167,12 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       {...racHeld}
       {...field}
       {...(held ? { isOpen: false, onOpenChange: undefined } : open !== undefined ? { isOpen: open } : {})}
-      selectedKey={mixed ? null : selectedKey}
-      defaultSelectedKey={defaultSelectedKey}
-      onSelectionChange={onSelectionChange && !held ? (k) => onSelectionChange(k as T) : undefined}
+      selectedKey={mixed ? null : shownKey}
+      onSelectionChange={(k) => {
+        if (held) return;
+        if (selectedKey === undefined) setOwnKey(k as T | null);
+        onSelectionChange?.(k as T);
+      }}
       className={selectClass({ orientation, width, variant, indicator, className: sized })}
     >
       {anchor}

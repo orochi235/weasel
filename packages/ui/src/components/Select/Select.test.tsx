@@ -26,6 +26,33 @@ describe('Select', () => {
     expect(onChange).toHaveBeenCalledWith('g');
   });
 
+  it('keeps a held uncontrolled selection through arrow keys and typeahead on the closed trigger', () => {
+    for (const hold of [{ readOnly: true }, { disabled: true, disabledReason: 'Locked' }]) {
+      const onChange = vi.fn();
+      const { unmount } = render(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" onSelectionChange={onChange} {...hold} />);
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      act(() => trigger.focus());
+      fireEvent.keyDown(trigger, { key: 'ArrowRight' });
+      fireEvent.keyUp(trigger, { key: 'ArrowRight' });
+      fireEvent.keyDown(trigger, { key: 'b' });
+      fireEvent.keyUp(trigger, { key: 'b' });
+      expect(trigger).toHaveTextContent('Red');
+      expect(onChange).not.toHaveBeenCalled();
+      unmount();
+    }
+  });
+
+  it('moves an unheld uncontrolled selection with arrow keys on the closed trigger', () => {
+    const onChange = vi.fn();
+    render(<Select aria-label="Color" options={OPTIONS} defaultSelectedKey="r" onSelectionChange={onChange} />);
+    const trigger = screen.getByRole('button', { name: /Color/ });
+    act(() => trigger.focus());
+    fireEvent.keyDown(trigger, { key: 'ArrowRight' });
+    fireEvent.keyUp(trigger, { key: 'ArrowRight' });
+    expect(trigger).toHaveTextContent('Green');
+    expect(onChange).toHaveBeenCalledWith('g');
+  });
+
   it('renders the current selection in the trigger value', () => {
     render(<Select label="Color" options={OPTIONS} defaultSelectedKey="b" />);
     expect(screen.getByRole('button', { name: /Blue/ })).toBeTruthy();
