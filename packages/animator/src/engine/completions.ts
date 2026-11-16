@@ -1,3 +1,4 @@
+import { createKeyedEmitter } from '@weasel-js/registry';
 import type { WatchCompletion } from '../supervisor';
 
 /** One-shot listeners for an animation leaving the animator's table, finished or canceled. A
@@ -10,29 +11,18 @@ export interface Completions {
 
 /** `has` answers whether an id is still on the table; a watch on one that is not fires at once. */
 export function createCompletions(has: (id: number) => boolean): Completions {
-  const listeners = new Map<number, (() => void)[]>();
+  const listeners = createKeyedEmitter<number>();
   return {
     fire(id) {
-      const ls = listeners.get(id);
-      if (!ls) return;
-      listeners.delete(id);
-      for (const cb of ls) cb();
+      listeners.emit(id);
+      listeners.clear(id);
     },
     watch(id, cb) {
       if (!has(id)) {
         cb();
         return () => {};
       }
-      const ls = listeners.get(id) ?? [];
-      ls.push(cb);
-      listeners.set(id, ls);
-      return () => {
-        const cur = listeners.get(id);
-        if (!cur) return;
-        const idx = cur.indexOf(cb);
-        if (idx >= 0) cur.splice(idx, 1);
-        if (cur.length === 0) listeners.delete(id);
-      };
+      return listeners.subscribe(id, cb);
     },
   };
 }
