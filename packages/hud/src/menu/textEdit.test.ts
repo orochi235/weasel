@@ -104,6 +104,13 @@ describe('editKey', () => {
     expect(run('abc', [['a', editMods({ ...k, ctrlKey: true }, false)]])).toMatchObject({ anchor: 0, caret: 3 });
   });
 
+  it('reads mod as the kit does: Ctrl and not Meta off Apple, Meta on Apple', () => {
+    const k = { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
+    expect(editMods({ ...k, metaKey: true }, false)).toEqual({ shift: false, mod: false, word: false });
+    expect(editMods({ ...k, ctrlKey: true }, false)).toMatchObject({ mod: true });
+    expect(editMods({ ...k, metaKey: true }, true)).toMatchObject({ mod: true });
+  });
+
   it("takes a Mac's Ctrl chords as a Mac text field does, and leaves Cmd as mod", () => {
     const k = { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
     const ctrl = editMods({ ...k, ctrlKey: true }, true);
