@@ -55,3 +55,48 @@ export function createEmitter<TArgs extends unknown[] = []>(): Emitter<TArgs> {
     },
   };
 }
+
+/** An {@link Emitter} per key, held only while it has listeners. See {@link createKeyedEmitter}. */
+export interface KeyedEmitter<K, TArgs extends unknown[] = []> {
+  /** Add `listener` under `key`. Returns the unsubscribe, which forgets the key's emitter once it holds no one. */
+  subscribe(key: K, listener: (...args: TArgs) => void): () => void;
+  /** Call every listener `key` held when the call began, as {@link Emitter.emit} does. */
+  emit(key: K, ...args: TArgs): void;
+  /** Forget every listener under `key`. An unsubscribe from before it touches no later subscription. */
+  clear(key: K): void;
+  /** How many listeners `key` holds. */
+  size(key: K): number;
+}
+
+/**
+ * {@link createEmitter}'s semantics for listeners filed by key: a pass over one key's listeners is
+ * a snapshot, a throw is logged rather than stopping the rest, and an unsubscribe — called twice,
+ * or after `clear` — removes only its own subscription, never the emitter a later one made.
+ */
+export function createKeyedEmitter<K, TArgs extends unknown[] = []>(): KeyedEmitter<K, TArgs> {
+  const byKey = new Map<K, Emitter<TArgs>>();
+  return {
+    subscribe(key, listener) {
+      let emitter = byKey.get(key);
+      if (!emitter) {
+        emitter = createEmitter<TArgs>();
+        byKey.set(key, emitter);
+      }
+      const mine = emitter;
+      const off = mine.subscribe(listener);
+      return () => {
+        off();
+        if (mine.size === 0 && byKey.get(key) === mine) byKey.delete(key);
+      };
+    },
+    emit(key, ...args) {
+      byKey.get(key)?.emit(...args);
+    },
+    clear(key) {
+      byKey.delete(key);
+    },
+    size(key) {
+      return byKey.get(key)?.size ?? 0;
+    },
+  };
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createEmitter } from './emitter';
+import { createEmitter, createKeyedEmitter } from './emitter';
 
 describe('createEmitter', () => {
   it('calls each listener with the arguments, in subscription order', () => {
@@ -66,5 +66,55 @@ describe('createEmitter', () => {
     expect(after).toHaveBeenCalledOnce();
     expect(logged).toHaveBeenCalledWith(expect.any(String), boom);
     logged.mockRestore();
+  });
+});
+
+describe('createKeyedEmitter', () => {
+  it('calls only the listeners under the key emitted', () => {
+    const e = createKeyedEmitter<string, [number]>();
+    const a = vi.fn();
+    const b = vi.fn();
+    e.subscribe('a', a);
+    e.subscribe('b', b);
+    e.emit('a', 1);
+    expect(a).toHaveBeenCalledWith(1);
+    expect(b).not.toHaveBeenCalled();
+  });
+
+  it('keeps one listener that throws from stopping the rest of its key', () => {
+    const e = createKeyedEmitter<string>();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const after = vi.fn();
+    e.subscribe('k', () => { throw new Error('boom'); });
+    e.subscribe('k', after);
+    e.emit('k');
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it('lets a stale unsubscribe touch no later subscription to the key', () => {
+    const e = createKeyedEmitter<string>();
+    const off = e.subscribe('k', () => {});
+    off();
+    const later = vi.fn();
+    e.subscribe('k', later);
+    off();
+    e.emit('k');
+    expect(later).toHaveBeenCalledTimes(1);
+  });
+
+  it('forgets a key on clear, and an unsubscribe from before it keeps a new subscriber', () => {
+    const e = createKeyedEmitter<string>();
+    const old = vi.fn();
+    const off = e.subscribe('k', old);
+    e.clear('k');
+    const later = vi.fn();
+    e.subscribe('k', later);
+    off();
+    e.emit('k');
+    expect(old).not.toHaveBeenCalled();
+    expect(later).toHaveBeenCalledTimes(1);
+    expect(e.size('k')).toBe(1);
   });
 });
