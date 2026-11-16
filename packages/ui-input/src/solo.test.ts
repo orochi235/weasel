@@ -19,4 +19,10 @@ describe('soloChanges', () => {
   it('returns nothing for an empty list', () => {
     expect(soloChanges(new Map(), new Set(['a']))).toEqual({});
   });
+
+  it('returns a switch whose id is __proto__ as its own entry', () => {
+    const out = soloChanges(new Map([['__proto__', true], ['a', true]]), new Set(['a']));
+    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+    expect(Object.entries(out)).toEqual([['__proto__', false]]);
+  });
 });

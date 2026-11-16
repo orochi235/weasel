@@ -102,7 +102,7 @@ export function EffectList<T extends EffectListItem>({
     onChange(items.map((it) => (it.id === id ? { ...it, ...next } : it)));
   const solo = (id: string): void => {
     const changes = soloChanges(new Map(items.map((it) => [it.id, it.on])), new Set([id]));
-    onChange(items.map((it) => (it.id in changes ? { ...it, on: changes[it.id]! } : it)));
+    onChange(items.map((it) => (Object.hasOwn(changes, it.id) ? { ...it, on: changes[it.id]! } : it)));
   };
   const remove = (item: T): void => {
     onChange(items.filter((it) => it.id !== item.id));
