@@ -19,6 +19,7 @@ import { weaselIcons } from './packages/icons-plugin/src/index.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
 import { browserPrebundle } from './scripts/vitest-browser-prebundle.ts';
+import { keepErrorsHome } from './scripts/vitest-browser-overlay.ts';
 import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { SCOPED, TRIGGERS } from './scripts/lib/fleet-triggers.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
@@ -80,6 +81,7 @@ const VITE_SERVER_TESTS = [
   'scripts/vite-wake.vite.test.ts',
   'scripts/vitest-css-cache-key.vite.test.ts',
   'scripts/vitest-browser-deps.vite.test.ts',
+  'scripts/vitest-browser-overlay.vite.test.ts',
 ];
 
 // A branch's fleet run seeds vitest's `related` with what the branch changes, so only the test files
@@ -292,7 +294,7 @@ export default defineConfig({
       // resolves none of. Headless Chromium, like forge-stories below.
       {
         ...shared,
-        plugins: [react(), cssCacheKey(), ...withPrebundle.plugins],
+        plugins: [react(), cssCacheKey(), keepErrorsHome(), ...withPrebundle.plugins],
         ...(withPrebundle.cacheDir && { cacheDir: withPrebundle.cacheDir }),
         // A dependency met mid-run makes vite re-optimize and reload the page under the suites, and a
         // node's warm cache skips the scan that would have found it. `optimizeDeps.force` is not the
@@ -342,6 +344,7 @@ export default defineConfig({
         plugins: [
           react(),
           cssCacheKey(),
+          keepErrorsHome(),
           traitSchemasPlugin({ repoRoot: import.meta.dirname }),
           forgeTest({ stories: forgeStories, frameConfig: forgeFrameConfig }),
         ],
