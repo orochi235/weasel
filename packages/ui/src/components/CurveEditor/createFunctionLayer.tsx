@@ -346,11 +346,14 @@ export function createFunctionLayer(cfg: FunctionLayerOptions = {}): CurveLayer<
     if (cfg.maxPoints !== undefined && state.points.length >= cfg.maxPoints) return;
 
     const clamped = clampToModelRange(model, ctx);
-    let insertIndex = state.points.length;
-    if (domain === '1d') {
-      for (let i = 0; i < state.points.length; i++) {
-        if (state.points[i].x > clamped.x) { insertIndex = i; break; }
-      }
+    const count = state.points.length;
+    const pinned = endpoints !== 'free' && count >= 2;
+    let insertIndex = pinned ? count - 1 : count;
+    if (constrain === 'function' || domain === '1d') {
+      const after = state.points.findIndex((p) => p.x > clamped.x);
+      insertIndex = after === -1 ? count : after;
+      // Pinned endpoints stay first and last: a press outside them adds nothing.
+      if (pinned && (insertIndex === 0 || insertIndex === count)) return;
     }
     const nextPoints = [...state.points.slice(0, insertIndex), clamped, ...state.points.slice(insertIndex)];
     extra.commit({ ...state, points: nextPoints, activeIndex: null });

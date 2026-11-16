@@ -349,6 +349,60 @@ describe('CurveEditor — add and delete', () => {
     expect(next).toHaveLength(3);
   });
 
+  it('inserts at x-sorted index under constrain="function" (click-empty)', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onInput={() => {}}
+        onChange={onChange}
+        constrain="function"
+        addPointMode="click-empty"
+        width={200}
+        height={100}
+      />,
+    );
+    fireEvent.pointerDown(container.querySelector('svg')!, { clientX: 50, clientY: 50, pointerId: 5 });
+    const [next] = onChange.mock.calls[0];
+    expect(next.map((p: ControlPoint) => p.x)).toEqual([0, 0.25, 1]);
+  });
+
+  it('adds nothing outside pinned endpoints in 1D mode (click-empty)', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0.2, y: 0 }, { x: 1, y: 1 }]}
+        onInput={() => {}}
+        onChange={onChange}
+        domain="1d"
+        endpoints="pinned-both"
+        addPointMode="click-empty"
+        width={200}
+        height={100}
+      />,
+    );
+    fireEvent.pointerDown(container.querySelector('svg')!, { clientX: 10, clientY: 50, pointerId: 5 });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('inserts ahead of a pinned last endpoint in 2D mode (click-empty)', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onInput={() => {}}
+        onChange={onChange}
+        endpoints="pinned-both"
+        addPointMode="click-empty"
+        width={200}
+        height={100}
+      />,
+    );
+    fireEvent.pointerDown(container.querySelector('svg')!, { clientX: 50, clientY: 50, pointerId: 5 });
+    const [next] = onChange.mock.calls[0];
+    expect(next.map((p: ControlPoint) => p.x)).toEqual([0, 0.25, 1]);
+  });
+
   it('refuses to delete when at minPoints floor', () => {
     const onChange = vi.fn();
     const { container } = render(
