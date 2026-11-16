@@ -11,6 +11,16 @@ import { alongTrack } from '../../alongTrack';
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;
 
+/** A wheel line in CSS px, as the dispatcher's wheel channel reads one. */
+const LINE_PX = 16;
+
+/** CSS px per unit of `e`'s deltas: Firefox reports a mouse wheel's notches in lines. */
+function pxPerDelta(e: WheelEvent, pagePx: number): number {
+  if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) return LINE_PX;
+  if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) return pagePx;
+  return 1;
+}
+
 /** Props for {@link TimeRuler}. */
 export interface TimeRulerProps {
   /** The span of time the ruler shows. */
@@ -67,15 +77,16 @@ export function TimeRuler(props: TimeRulerProps): ReactElement {
   };
 
   const onWheel = useLatest((e: WheelEvent): void => {
+    const width = widthOf();
+    const unit = pxPerDelta(e, width);
     if (e.ctrlKey) {
       e.preventDefault();
-      onWindowChange(spanZoom(win, msAt(e.clientX), Math.exp(e.deltaY * ZOOM_STEP), bounds, MIN_SPAN_MS));
+      onWindowChange(spanZoom(win, msAt(e.clientX), Math.exp(e.deltaY * unit * ZOOM_STEP), bounds, MIN_SPAN_MS));
       return;
     }
-    const width = widthOf();
     const perPx = width === 0 ? 0 : (win.to - win.from) / width;
     const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    const next = spanPan(win, delta * perPx, bounds);
+    const next = spanPan(win, delta * unit * perPx, bounds);
     // At either end the wheel goes back to scrolling the page.
     if (next.from === win.from && next.to === win.to) return;
     e.preventDefault();

@@ -128,6 +128,29 @@ describe('TimeRuler', () => {
     expect(next.to - next.from).toBeCloseTo(500, 6);
     expect(next.from).not.toBe(200);
   });
+
+  it('reads a line-mode wheel in lines, as far as the same travel in px', () => {
+    const lines = vi.fn();
+    const px = vi.fn();
+    const { unmount } = render(<TimeRuler {...props} window={{ from: 200, to: 700 }} onWindowChange={lines} />);
+    fireEvent.wheel(ruler(), { deltaY: 3, deltaMode: 1, clientX: 250 });
+    unmount();
+    render(<TimeRuler {...props} window={{ from: 200, to: 700 }} onWindowChange={px} />);
+    fireEvent.wheel(ruler(), { deltaY: 48, clientX: 250 });
+    expect(lines.mock.calls[0][0].from).toBeCloseTo(px.mock.calls[0][0].from, 6);
+  });
+
+  it('zooms as far for a line-mode ctrl+wheel as for the same travel in px', () => {
+    const lines = vi.fn();
+    const px = vi.fn();
+    const { unmount } = render(<TimeRuler {...props} onWindowChange={lines} />);
+    fireEvent.wheel(ruler(), { deltaY: -3, deltaMode: 1, ctrlKey: true, clientX: 250 });
+    unmount();
+    render(<TimeRuler {...props} onWindowChange={px} />);
+    fireEvent.wheel(ruler(), { deltaY: -48, ctrlKey: true, clientX: 250 });
+    const span = (w: { from: number; to: number }) => w.to - w.from;
+    expect(span(lines.mock.calls[0][0])).toBeCloseTo(span(px.mock.calls[0][0]), 6);
+  });
 });
 
 describe('TimeRuler pointer session', () => {
