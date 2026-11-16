@@ -13,7 +13,7 @@ export function useRecordApplied(): (applied: AppliedColor, picked: string) => v
 
 /** Props for {@link ColorChip}. */
 export interface ColorChipProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onInput' | 'onChange' | 'onBlur'> {
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'placeholder' | 'onInput' | 'onChange' | 'onBlur'> {
   /** The color shown while no pick is under way, `#rrggbb`. */
   value: string;
   /** `value` stands in for colors that are not one (a mixed or unset field), so every pick is a change. */
