@@ -12,6 +12,7 @@ import { type DepName, type DepSchema } from '@weasel-js/routing';
 // `import type` — a bare `import './depSchema'` makes esbuild emit a runtime import that it
 // then drops under the package's `sideEffects: false`, warning on every build.
 import type {} from './engineDeps';
+import { compositeKey } from '@weasel-js/registry';
 
 /** The deps every standard action reads. */
 export interface StandardDeps {
@@ -85,13 +86,15 @@ export function useActionSet(actions: readonly Action[], exclude?: Iterable<stri
   const reg = useActionsRegistry();
   const depReg = useOptionalDepRegistry();
   const actionsRef = useLatest(actions);
-  const excludeKey = exclude ? [...exclude].join('\u0000') : '';
-  const actionsKey = actions.map((a) => a.id).join('\u0000');
+  const excluded = exclude ? [...exclude] : [];
+  const excludedRef = useLatest(excluded);
+  const excludeKey = compositeKey(excluded);
+  const actionsKey = compositeKey(actions.map((a) => a.id));
 
   useEffect(() => {
     if (!reg || !depReg) return;
-    const excluded = new Set(excludeKey ? excludeKey.split('\u0000') : []);
-    const live = actionsRef.current.filter((a) => !excluded.has(a.id));
+    const out = new Set(excludedRef.current);
+    const live = actionsRef.current.filter((a) => !out.has(a.id));
     const liveIds = new Set(live.map((a) => a.id));
     const unregisters = live
       .filter((a) => {
@@ -100,5 +103,5 @@ export function useActionSet(actions: readonly Action[], exclude?: Iterable<stri
       })
       .map((a) => reg.register(a));
     return () => { for (const u of unregisters) u(); };
-  }, [reg, depReg, excludeKey, actionsKey, actionsRef]);
+  }, [reg, depReg, excludeKey, actionsKey, actionsRef, excludedRef]);
 }
