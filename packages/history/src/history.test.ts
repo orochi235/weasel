@@ -331,13 +331,13 @@ describe('createHistory entries / goto / version / subscribe', () => {
     expect(history.entries().redo.map((e) => e.label)).toEqual(['C']);
   });
 
-  it('goto rejects out-of-range targets', () => {
+  it('goto throws a RangeError for out-of-range targets and moves nothing', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any);
     history.applyOps([createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 } })], 'A');
-    history.goto(-1);
+    expect(() => history.goto(-1)).toThrow(RangeError);
     expect(history.entries().undo).toHaveLength(1);
-    history.goto(99);
+    expect(() => history.goto(99)).toThrow(/depth 99 is not a whole number from 0 to 1/);
     expect(history.entries().undo).toHaveLength(1);
   });
 

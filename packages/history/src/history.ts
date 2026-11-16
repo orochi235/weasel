@@ -43,6 +43,12 @@ export function _journalAccessInternal(history: History): JournalAccess {
 /** Silent default — keeps every call site unconditional. */
 const SILENT: HistoryLogger = { log: () => {}, warn: () => {} };
 
+/** `n`, once it is a depth `goto` can walk to on a history of `total` entries. */
+function gotoDepth(n: number, total: number): number {
+  if (Number.isInteger(n) && n >= 0 && n <= total) return n;
+  throw new RangeError(`goto: depth ${n} is not a whole number from 0 to ${total}`);
+}
+
 /** Build an op-batched undo/redo `History`. The adapter is passed to each op's `apply`/`invert`. */
 export function createHistory(adapter: unknown, options: CreateHistoryOptions = {}): History {
   const undoStack: Entry[] = [];
@@ -283,8 +289,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     goto(n) {
       // Total length stays constant during this walk: entries only move between the two stacks.
-      const total = undoStack.length + redoStack.length;
-      if (!Number.isInteger(n) || n < 0 || n > total || n === undoStack.length) return;
+      if (gotoDepth(n, undoStack.length + redoStack.length) === undoStack.length) return;
       const start = undoStack.length;
       let walked: Walked;
       try {
