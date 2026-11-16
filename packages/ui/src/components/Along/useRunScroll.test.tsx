@@ -33,8 +33,8 @@ function mount(total: number, opts: { modReorders?: boolean; dragPx?: number } =
   return { root, items, hook };
 }
 
-const wheel = (root: HTMLElement, deltaY: number): WheelEvent => {
-  const e = new WheelEvent('wheel', { deltaY, bubbles: true, cancelable: true });
+const wheel = (root: HTMLElement, deltaY: number, deltaMode = 0): WheelEvent => {
+  const e = new WheelEvent('wheel', { deltaY, deltaMode, bubbles: true, cancelable: true });
   act(() => {
     root.dispatchEvent(e);
   });
@@ -82,6 +82,16 @@ describe('useRunScroll', () => {
     wheel(root, 100);
     settle();
     expect(hook.result.current.offset).toBe(60);
+  });
+
+  test('a line-mode wheel moves 16 px a line, and a page-mode one a run length a page', () => {
+    const { root, hook } = mount(400);
+    wheel(root, 1, WheelEvent.DOM_DELTA_LINE);
+    settle();
+    expect(hook.result.current.offset).toBe(16);
+    wheel(root, 1, WheelEvent.DOM_DELTA_PAGE);
+    settle();
+    expect(hook.result.current.offset).toBe(116);
   });
 
   test('a wheel glides the run to where it sends it rather than jumping there', () => {

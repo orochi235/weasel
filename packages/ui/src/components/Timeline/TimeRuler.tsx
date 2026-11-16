@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent, typ
 import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { decimalsOf, linearScale, type TickSet } from '@weasel-js/plot/scales';
-import { sliderAt, spanMap, spanPan, spanZoom } from '@weasel-js/ui-input';
+import { sliderAt, spanMap, spanPan, spanZoom, wheelPixels } from '@weasel-js/ui-input';
 import { Ruler, RulerMark, type RulerSpacing } from '../Ruler';
 import { MIN_SPAN_MS, TICK_SPACING_PX, type TimeWindow } from './timeScale';
 import { isPrimaryPress } from '@weasel-js/gestures';
@@ -10,16 +10,6 @@ import { alongTrack } from '../../alongTrack';
 
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;
-
-/** A wheel line in CSS px, as the dispatcher's wheel channel reads one. */
-const LINE_PX = 16;
-
-/** CSS px per unit of `e`'s deltas: Firefox reports a mouse wheel's notches in lines. */
-function pxPerDelta(e: WheelEvent, pagePx: number): number {
-  if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) return LINE_PX;
-  if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) return pagePx;
-  return 1;
-}
 
 /** Props for {@link TimeRuler}. */
 export interface TimeRulerProps {
@@ -78,15 +68,15 @@ export function TimeRuler(props: TimeRulerProps): ReactElement {
 
   const onWheel = useLatest((e: WheelEvent): void => {
     const width = widthOf();
-    const unit = pxPerDelta(e, width);
+    const px = wheelPixels(e, { x: width, y: width });
     if (e.ctrlKey) {
       e.preventDefault();
-      onWindowChange(spanZoom(win, msAt(e.clientX), Math.exp(e.deltaY * unit * ZOOM_STEP), bounds, MIN_SPAN_MS));
+      onWindowChange(spanZoom(win, msAt(e.clientX), Math.exp(px.y * ZOOM_STEP), bounds, MIN_SPAN_MS));
       return;
     }
     const perPx = width === 0 ? 0 : (win.to - win.from) / width;
-    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    const next = spanPan(win, delta * unit * perPx, bounds);
+    const delta = Math.abs(px.x) > Math.abs(px.y) ? px.x : px.y;
+    const next = spanPan(win, delta * perPx, bounds);
     // At either end the wheel goes back to scrolling the page.
     if (next.from === win.from && next.to === win.to) return;
     e.preventDefault();

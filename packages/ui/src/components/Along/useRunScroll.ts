@@ -2,12 +2,10 @@ import { useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type P
 import { DRAG_THRESHOLD_PX, openPointerSession, type PointerSession } from '@weasel-js/core';
 import { isPrimaryPress, modHeld } from '@weasel-js/gestures';
 import { clamp, lerp, type RunSpot, type TrackRun } from '@weasel-js/geom';
+import { wheelPixels } from '@weasel-js/ui-input';
 import { useKitSetting, useLatest, usePrefersReducedMotion, useVisibleRaf } from '@weasel-js/react';
 import { boxPoint } from './boxPoint';
 import type { RunItemsOf, RunKeyOf } from './useItemLengths';
-
-/** Px one line of a line-mode wheel moves the run. */
-const LINE = 16;
 
 /** Ms over which a glide closes all but 1/e of the way to its target. */
 export const GLIDE_MS = 60;
@@ -95,7 +93,9 @@ export function useRunScroll({ root, keyOf, itemsOf, frame, run, total, spots, l
     return true;
   };
   const wheel = useLatest((e: WheelEvent): void => {
-    const delta = (e.deltaY || e.deltaX) * (e.deltaMode === WheelEvent.DOM_DELTA_LINE ? LINE : 1);
+    const page = latest.current.run.length;
+    const px = wheelPixels(e, { x: page, y: page });
+    const delta = px.y || px.x;
     if (scrollTo(now() + delta)) e.preventDefault();
   });
 

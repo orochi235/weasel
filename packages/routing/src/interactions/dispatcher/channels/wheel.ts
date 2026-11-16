@@ -1,20 +1,14 @@
 /** The wheel channel. */
 import { landedNestedIn, type DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
+import { WHEEL_LINE_PX, wheelPixels } from '@weasel-js/ui-input';
 import { underPointer } from '../underPointer';
 
-/** A line's height in CSS pixels, as browsers that report pixels scroll one. */
-const LINE_PX = 16;
-
-/** What one unit of `e`'s deltas is in CSS pixels along each axis. Firefox
- *  counts a mouse wheel's notches in lines, and every rate downstream is per pixel. */
-function pixelsPer(e: WheelEvent, canvas: HTMLElement | null): { x: number; y: number } {
-  if (e.deltaMode === 1) return { x: LINE_PX, y: LINE_PX };
-  if (e.deltaMode === 2) {
-    return { x: canvas?.clientWidth || LINE_PX * 20, y: canvas?.clientHeight || LINE_PX * 20 };
-  }
-  return { x: 1, y: 1 };
-}
+/** How far a page-mode wheel's page goes: the canvas, or twenty lines without one. Every rate downstream is per pixel. */
+const pageOf = (canvas: HTMLElement | null): { x: number; y: number } => ({
+  x: canvas?.clientWidth || WHEEL_LINE_PX * 20,
+  y: canvas?.clientHeight || WHEEL_LINE_PX * 20,
+});
 
 /**
  * The wheel listeners for the capture and bubble phases. A wheel that landed on
@@ -42,11 +36,11 @@ export function wheelInput(core: DispatchCore, pinchLive: () => boolean): {
     // by the canvas's offset from the viewport's top-left.
     const local = core.toCanvasLocal(e.clientX, e.clientY);
     const hitPoint = toWorld(e.clientX, e.clientY);
-    const toPx = pixelsPer(e, core.canvas);
+    const px = wheelPixels(e, pageOf(core.canvas));
     const ev: InputEvent = {
       kind: 'wheel',
-      deltaX: e.deltaX * toPx.x,
-      deltaY: e.deltaY * toPx.y,
+      deltaX: px.x,
+      deltaY: px.y,
       clientX: local.x,
       clientY: local.y,
       x: hitPoint.x,
