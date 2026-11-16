@@ -47,7 +47,7 @@ export interface SceneRecording {
   clearHistory(): void;
   methods: SceneHistoryMethods & Pick<
     Scene<unknown, string, unknown>,
-    | 'registerOp' | 'recordOp' | 'applyBatch' | 'history' | 'batch' | 'untracked'
+    | 'registerOp' | 'registeredOps' | 'recordOp' | 'applyBatch' | 'history' | 'batch' | 'untracked'
     | 'setActiveJournalAccessor' | 'setHistoryAdapter' | 'opRegistry' | 'addEditPass' | 'replay'
   >;
 }
@@ -166,7 +166,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
       batch: recorder.batch,
       untracked: recorder.untracked,
       setActiveJournalAccessor: outer.setActiveJournalAccessor,
-      setHistoryAdapter: outer.setHistoryAdapter, opRegistry: outer.opRegistry,
+      setHistoryAdapter: outer.setHistoryAdapter, opRegistry: outer.opRegistry, registeredOps: ops.handlers,
       addEditPass: passes.add,
       replay: (ops) => replayOps({ open: mode.open, rebuild: outer.rebuild, seal: history.seal, notify, replaying: (step) => replay(step, true) }, ops),
     },

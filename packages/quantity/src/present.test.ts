@@ -6,6 +6,7 @@ import {
   currency,
   decimal,
   displayKindOf,
+  displayKindRegistry,
   duration,
   endless,
   fraction,
@@ -338,6 +339,14 @@ describe('registerDisplayKind', () => {
     unregister = undefined;
     expect(displayKindOf(fraction())).toBe(fractionKind);
     expect(qty(1 / 12, fraction()).spoken).toBe('1 over 12');
+  });
+
+  it('reflects every kind, reporting the built-in a registration shadows', () => {
+    expect(displayKindRegistry.get('fraction')).toBe(fractionKind);
+    unregister = registerDisplayKind({ ...fractionKind, speak: () => 'mine' });
+    const entry = displayKindRegistry.entries().find((e) => e.key === 'fraction')!;
+    expect(entry.source).toBeUndefined();
+    expect(entry.shadowed).toEqual([{ value: fractionKind, source: 'kit' }]);
   });
 
   it('removing the newer of two registrations of one kind restores the older, as registerUnit does', () => {

@@ -11,6 +11,16 @@ const ellipse: NodeRoutingEntry = {
 };
 
 describe('createNodeRouting', () => {
+  it('reflects the kinds by name in registration order, and refuses a second of one name', () => {
+    const r = createNodeRouting();
+    r.register(rect);
+    r.register(ellipse);
+    expect(r.reflection.entries().map((e) => [e.key, e.value])).toEqual([['rect', rect], ['ellipse', ellipse]]);
+    expect(() => r.register({ ...rect })).toThrow(/duplicate/);
+    expect(r.reflection.get('rect')).toBe(rect);
+    expect(r.list()).toEqual([rect, ellipse]);
+  });
+
   it("returns 'unknown' when no kind claims the node", () => {
     const r = createNodeRouting();
     expect(r.classify({ kind: 'anything' })).toBe('unknown');

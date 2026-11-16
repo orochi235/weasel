@@ -151,6 +151,7 @@ export type {
 // kit's handlers come with `@weasel-js/editing`'s `ingestPreset`.
 export {
   registerContentHandler,
+  contentHandlerRegistry,
   openFilePicker,
 } from '../domains/ingestion';
 export type {
@@ -201,5 +202,5 @@ export { targetTransformOf, worldToLocal, type TargetTransform } from '../core/g
 export { indexedCandidates } from '../canvas/pickIndex/scenePickIndex';
 export type { PickBroad, PickCandidate } from '../canvas/pickWalk';
 export type { ClipBearing } from '../canvas/ownClip';
-export { findMountedCanvas, type MountedCanvas } from '../canvas/mountedCanvases';
+export { findMountedCanvas, mountedCanvasRegistry, type MountedCanvas } from '../canvas/mountedCanvases';
 export { arrivalBounds } from '../domains/ingestion/placement';

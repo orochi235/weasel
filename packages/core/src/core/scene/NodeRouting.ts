@@ -1,3 +1,5 @@
+import { createReflectable, valuesOf, type Reflection } from '@weasel-js/registry';
+
 /**
  * A routing-trait classifier entry. Other traits (shape, label, icon, …)
  * are independent registries — fields like `label` or `icon` do NOT belong
@@ -37,6 +39,8 @@ export interface NodeRouting {
   get(name: string): NodeRoutingEntry | undefined;
   /** Enumerate registered kinds in registration order. */
   list(): readonly NodeRoutingEntry[];
+  /** The registered kinds by name. A kind registers once, so nothing is ever shadowed. */
+  readonly reflection: Reflection<NodeRoutingEntry>;
 }
 
 /** The routing kind of a node: the name of the first entry whose `matches(data, node)` returns
@@ -55,26 +59,22 @@ export function routeKind(
 /** Build a registry of per-node-kind routing entries. Registering a duplicate
  *  kind name throws. */
 export function createNodeRouting(): NodeRouting {
-  const entries: NodeRoutingEntry[] = [];
-  const byName = new Map<string, NodeRoutingEntry>();
+  const kinds = createReflectable<NodeRoutingEntry>();
+  const list = valuesOf(kinds);
   return {
     register(kind) {
-      if (byName.has(kind.name)) {
+      if (kinds.has(kind.name)) {
         throw new Error(
           `createNodeRouting: duplicate kind name "${kind.name}"`,
         );
       }
-      byName.set(kind.name, kind);
-      entries.push(kind);
+      kinds.set(kind.name, kind);
     },
     classify(data, node) {
-      return routeKind(entries, data, node);
+      return routeKind(list(), data, node);
     },
-    get(name) {
-      return byName.get(name);
-    },
-    list() {
-      return entries;
-    },
+    get: kinds.get,
+    list,
+    reflection: kinds.reflection,
   };
 }

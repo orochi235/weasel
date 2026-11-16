@@ -1,4 +1,4 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { createContext, useContext, useEffect, useSyncExternalStore } from 'react';
 import type { AnnotationsApi } from './types';
 
@@ -13,38 +13,41 @@ export interface LabMarkStores {
   subscribe(fn: () => void): () => void;
   /** Counts the notifications `subscribe` has sent. */
   version(): number;
+  /** Each trial's store, by trial id. */
+  readonly reflection: Reflection<AnnotationsApi>;
 }
 
 /** A registry of trials' mark stores. */
 export function createLabMarkStores(): LabMarkStores {
-  const stores = new Map<string, { store: AnnotationsApi; off: () => void }>();
-  const changed = createEmitter();
+  const stores = createReflectable<AnnotationsApi>();
+  /** The live store's subscription, per trial. */
+  const listening = new Map<string, () => void>();
   let listed: readonly AnnotationsApi[] = [];
-  let version = 0;
-  const notify = () => {
-    version += 1;
-    changed.emit();
-  };
   const relist = () => {
-    listed = [...stores.values()].map((s) => s.store);
-    notify();
+    listed = stores.entries().map((e) => e.value);
   };
   return {
     list: () => listed,
     register(trialId, store) {
-      stores.get(trialId)?.off();
-      stores.set(trialId, { store, off: store.subscribe(notify) });
-      relist();
-      return () => {
-        const held = stores.get(trialId);
-        if (held?.store !== store) return;
-        held.off();
-        stores.delete(trialId);
+      listening.get(trialId)?.();
+      listening.set(trialId, store.subscribe(stores.bump));
+      stores.batch(() => {
+        stores.set(trialId, store);
         relist();
+      });
+      return () => {
+        if (stores.get(trialId) !== store) return;
+        listening.get(trialId)?.();
+        listening.delete(trialId);
+        stores.batch(() => {
+          stores.delete(trialId);
+          relist();
+        });
       };
     },
-    subscribe: changed.subscribe,
-    version: () => version,
+    subscribe: stores.subscribe,
+    version: stores.getVersion,
+    reflection: stores.reflection,
   };
 }
 

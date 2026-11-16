@@ -1,5 +1,5 @@
 import { useActionsRegistry } from '@weasel-js/core';
-import { createEmitter } from '@weasel-js/registry';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { createContext, useContext, useEffect } from 'react';
 import type { CameraView } from './CameraInput';
 
@@ -14,33 +14,18 @@ export interface CameraRegistry {
   get(key: string): CameraView | null;
   /** Fires after any register or release. Shaped for `useSyncExternalStore`. */
   subscribe(listener: () => void): () => void;
+  /** Each key's live camera and the ones it covers. */
+  readonly reflection: Reflection<CameraView>;
 }
 
 /** An empty in-memory `CameraRegistry`. */
 export function createCameraRegistry(): CameraRegistry {
-  const stacks = new Map<string, CameraView[]>();
-  const changed = createEmitter();
-  const notify = changed.emit;
+  const cameras = createReflectable<CameraView>();
   return {
-    register(key, camera) {
-      const stack = stacks.get(key) ?? [];
-      stack.push(camera);
-      stacks.set(key, stack);
-      notify();
-      let released = false;
-      return () => {
-        if (released) return;
-        released = true;
-        const cur = stacks.get(key);
-        const i = cur?.lastIndexOf(camera) ?? -1;
-        if (!cur || i === -1) return;
-        cur.splice(i, 1);
-        if (cur.length === 0) stacks.delete(key);
-        notify();
-      };
-    },
-    get: (key) => stacks.get(key)?.at(-1) ?? null,
-    subscribe: changed.subscribe,
+    register: (key, camera) => cameras.push(key, camera),
+    get: (key) => cameras.get(key) ?? null,
+    subscribe: cameras.subscribe,
+    reflection: cameras.reflection,
   };
 }
 

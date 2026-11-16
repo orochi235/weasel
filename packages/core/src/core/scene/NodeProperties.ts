@@ -1,4 +1,5 @@
 import type { PrefSection } from '@weasel-js/prefs-schema';
+import { createReflectable, valuesOf, type Reflection } from '@weasel-js/registry';
 
 /**
  * One kind's entry in the **properties trait's** registry: a declarative
@@ -43,29 +44,26 @@ export interface NodeProperties {
   get(name: string): NodePropertiesEntry | undefined;
   /** Enumerate registered kinds in registration order. */
   list(): readonly NodePropertiesEntry[];
+  /** The registered kinds by name. A kind registers once, so nothing is ever shadowed. */
+  readonly reflection: Reflection<NodePropertiesEntry>;
 }
 
 /** Build a registry of per-node-kind property descriptors, which schema-driven
  *  property panels read to know what a node exposes. Registering a duplicate
  *  kind name throws. */
 export function createNodeProperties(): NodeProperties {
-  const entries: NodePropertiesEntry[] = [];
-  const byName = new Map<string, NodePropertiesEntry>();
+  const kinds = createReflectable<NodePropertiesEntry>();
   return {
     register(entry) {
-      if (byName.has(entry.name)) {
+      if (kinds.has(entry.name)) {
         throw new Error(
           `createNodeProperties: duplicate kind name "${entry.name}"`,
         );
       }
-      byName.set(entry.name, entry);
-      entries.push(entry);
+      kinds.set(entry.name, entry);
     },
-    get(name) {
-      return byName.get(name);
-    },
-    list() {
-      return entries;
-    },
+    get: kinds.get,
+    list: valuesOf(kinds),
+    reflection: kinds.reflection,
   };
 }

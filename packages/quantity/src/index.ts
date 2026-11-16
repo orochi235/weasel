@@ -19,6 +19,7 @@ export {
   qty,
   QuantityView,
   registerDisplayKind,
+  displayKindRegistry,
   type Presentation,
   type PresentOptions,
 } from './present';
@@ -94,6 +95,7 @@ export {
 export {
   catalogUnit,
   catalogUnits,
+  unitCatalog,
   registerUnit,
   unitSpellings,
   unitSymbol,

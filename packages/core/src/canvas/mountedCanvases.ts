@@ -5,6 +5,7 @@
  * the consumer thread the view through by hand.
  */
 import type { View } from 'core/viewport/view';
+import { createReflectable, type Reflection } from '@weasel-js/registry';
 
 /** A mounted canvas as {@link findMountedCanvas} returns it: the element it measures, and its current view. */
 export interface MountedCanvas {
@@ -12,14 +13,14 @@ export interface MountedCanvas {
   getView(): View;
 }
 
-const mounted = new Map<HTMLElement, MountedCanvas>();
+const mounted = createReflectable<MountedCanvas, HTMLElement>();
+
+/** Every mounted kit canvas by its element. A canvas mounting on an element another holds replaces it. */
+export const mountedCanvasRegistry: Reflection<MountedCanvas, HTMLElement> = mounted.reflection;
 
 /** Register `entry` until the returned disposer runs. */
 export function registerMountedCanvas(entry: MountedCanvas): () => void {
-  mounted.set(entry.element, entry);
-  return () => {
-    if (mounted.get(entry.element) === entry) mounted.delete(entry.element);
-  };
+  return mounted.set(entry.element, entry);
 }
 
 /**
@@ -35,7 +36,7 @@ export function findMountedCanvas(root: Element, hint?: EventTarget | null): Mou
     }
   }
   let first: MountedCanvas | null = null;
-  for (const entry of mounted.values()) {
+  for (const { value: entry } of mounted.entries()) {
     if (!root.contains(entry.element)) continue;
     if (
       !first

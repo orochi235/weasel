@@ -3,6 +3,28 @@ import { createClock } from './clock';
 import { createClockRegistry } from './registry';
 
 describe('createClockRegistry', () => {
+  it('reflects each id with its clock, a second registration shadowing the first', () => {
+    const registry = createClockRegistry();
+    const first = createClock({});
+    const second = createClock({});
+    registry.register('t1', first);
+    registry.register('t2', first);
+    registry.register('t1', second);
+    expect(registry.reflection.entries().map((e) => [e.key, e.value.handle, e.shadowed.length])).toEqual([
+      ['t1', second, 1], ['t2', first, 0],
+    ]);
+  });
+
+  it('brings a shadowed clock back when the one over it is released', () => {
+    const registry = createClockRegistry();
+    const first = createClock({});
+    const second = createClock({});
+    registry.register('t1', first);
+    const releaseSecond = registry.register('t1', second);
+    releaseSecond();
+    expect(registry.get('t1')).toBe(first);
+  });
+
   it('publishes a clock under its trial id until released', () => {
     const registry = createClockRegistry();
     const handle = createClock({});

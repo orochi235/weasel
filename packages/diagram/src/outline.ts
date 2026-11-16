@@ -14,7 +14,7 @@ import type { Bounds } from './outlines/types';
 
 export type { Bounds, OutlineDef } from './outlines/types';
 export type { BuiltinOutline } from './outlines/table';
-export { outlineFromD, registerOutline } from './outlines/table';
+export { outlineFromD, outlineRegistry, registerOutline } from './outlines/table';
 
 /** A registered outline's name, or a path a consumer built themselves in a
  *  unit square — `(0, 0)` the box's top-left, `(1, 1)` its bottom-right — so

@@ -1,5 +1,6 @@
 export {
   registerContentHandler,
+  contentHandlerRegistry,
   getContentHandlers,
   runIngest,
   handlersFor,

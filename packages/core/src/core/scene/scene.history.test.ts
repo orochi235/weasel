@@ -212,6 +212,18 @@ describe('custom op seam', () => {
     expect(() => s.recordOp({ kind: 'unknown', payload: {} })).toThrow(/no registered op/);
   });
 
+  it('reflects the kinds it knows, the kit\'s among them, a kind registered again replacing the handler', () => {
+    const s = makeScene();
+    const first = { apply: () => {}, revert: () => {} };
+    const second = { apply: () => {}, revert: () => {} };
+    s.registerOp('app:tint', first);
+    s.registerOp('app:tint', second);
+    expect(s.registeredOps.has('kit:setPose')).toBe(true);
+    const entry = s.registeredOps.entries().find((e) => e.key === 'app:tint');
+    expect(entry?.value).toBe(second);
+    expect(entry?.shadowed).toEqual([]);
+  });
+
   it('rejects consumer registration of kit:* prefix', () => {
     const s = makeScene();
     expect(() =>

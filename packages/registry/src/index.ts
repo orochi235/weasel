@@ -1,4 +1,4 @@
-export { createReflectable } from './reflectable';
+export { createReflectable, valuesOf } from './reflectable';
 export { createExtensionRegistry, ExtensionConflictError } from './extensionRegistry';
 export type { ExtensionRegistry, ExtensionRegistryOptions, ExtensionRegisterOptions } from './extensionRegistry';
 export { createEmitter, createKeyedEmitter, type Emitter, type KeyedEmitter } from './emitter';
@@ -17,6 +17,7 @@ export type {
   ReflectedEntry,
   Registrant,
   RegisterOptions,
+  PushOptions,
 } from './reflectable';
 export { after } from './after';
 export { createLatest, type Latest } from './latest';
