@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, type RefObject } from 'react';
+import { heldPointers } from '@weasel-js/gestures';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import type {} from '../../kitSettings';
@@ -61,36 +62,26 @@ export function useRowHelp(cue: RefObject<HTMLElement | null>, within: string | 
     let cancelOpen = (): void => {};
     // A press in the row is what brought the focus that follows it. `:focus-visible` cannot say so: a text field
     // matches it however it was focused.
-    let pressed = false;
+    const pressed = heldPointers(row);
     const onFocus = (e: Event): void => {
-      if (pressed || cue.current?.parentElement?.contains(e.target as Node)) return;
+      if (pressed.count() > 0 || cue.current?.parentElement?.contains(e.target as Node)) return;
       cancelOpen();
       cancelOpen = after(delay.current, () => setOpen(true));
     };
     const onBlur = (e: Event): void => {
       if (row.contains((e as FocusEvent).relatedTarget as Node | null)) return;
-      pressed = false;
       cancelOpen();
       setOpen(false);
     };
-    const onDown = (): void => {
-      pressed = true;
-    };
-    const onUp = (): void => {
-      pressed = false;
-    };
     row.addEventListener('focusin', onFocus);
     row.addEventListener('focusout', onBlur);
-    row.addEventListener('pointerdown', onDown);
-    row.addEventListener('pointerup', onUp);
     return () => {
       watch.disconnect();
       release();
       cancelOpen();
       row.removeEventListener('focusin', onFocus);
       row.removeEventListener('focusout', onBlur);
-      row.removeEventListener('pointerdown', onDown);
-      row.removeEventListener('pointerup', onUp);
+      pressed.release();
     };
   }, [cue, within, id, delay]);
 
