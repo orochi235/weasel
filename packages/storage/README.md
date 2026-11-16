@@ -14,6 +14,7 @@ For one value read during a first render, such as a remembered panel width,
 `readLocal(key)` reads it from `localStorage` now and `writeLocal(key, value)`
 writes it, encoded as `localStorageAdapter` encodes it. Neither throws: where
 the browser refuses storage, a read answers `undefined` and a write `false`.
+Both take another store shaped like `localStorage` as a last argument.
 
 A cache whose first read fails opens empty with `writable` false, and reads
 again on a backoff (`retryMs`, doubling to `retryMaxMs`; `retryMs: false`

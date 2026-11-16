@@ -36,3 +36,22 @@ describe('readLocal and writeLocal', () => {
     expect(writeLocal('k', 1)).toBe(false);
   });
 });
+
+describe('readLocal and writeLocal over another area', () => {
+  it('read and write it as they do localStorage, and answer a refusal the same way', () => {
+    const held = new Map<string, string>();
+    const area = {
+      getItem: (key: string) => held.get(key) ?? null,
+      setItem: (key: string, value: string) => void held.set(key, value),
+      removeItem: (key: string) => void held.delete(key),
+    };
+    expect(writeLocal('k', { a: 1 }, area)).toBe(true);
+    expect(held.get('k')).toBe('{"a":1}');
+    expect(readLocal('k', area)).toEqual({ a: 1 });
+    expect(localStorage.getItem('k')).toBeNull();
+    writeLocal('k', undefined, area);
+    expect(held.has('k')).toBe(false);
+    const full = { ...area, setItem: () => { throw new DOMException('full', 'QuotaExceededError'); } };
+    expect(writeLocal('k', 1, full)).toBe(false);
+  });
+});

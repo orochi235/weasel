@@ -100,21 +100,34 @@ export const sessionStorageAdapter: SyncStorageAdapter = webStorage(
   false,
 ).adapter;
 
+type StorageArea = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
+const warnAreaLoss = jsonLossWarner('Web Storage');
+
 /** The value `localStorageAdapter` holds under `key`, read now, for a setting a first render needs: `undefined` when
- *  there is none, or where the browser refuses storage. Text stored as plain text, not JSON, reads back as itself. */
-export function readLocal(key: string): unknown {
+ *  there is none, or where the browser refuses storage. Text stored as plain text, not JSON, reads back as itself.
+ *  `area` reads another store shaped like `localStorage` the same way. */
+export function readLocal(key: string, area?: StorageArea): unknown {
   try {
-    return local.readNow(key);
+    if (!area) return local.readNow(key);
+    const raw = area.getItem(key);
+    return raw === null ? undefined : parse(raw);
   } catch {
     return undefined;
   }
 }
 
 /** Write `value` under `key` as `localStorageAdapter` would, now, `undefined` removing it. False where the browser
- *  refuses it: a private window, a full quota, or site data blocked. */
-export function writeLocal(key: string, value: unknown): boolean {
+ *  refuses it: a private window, a full quota, or site data blocked. `area` writes another store shaped like
+ *  `localStorage` the same way. */
+export function writeLocal(key: string, value: unknown, area?: StorageArea): boolean {
   try {
-    local.writeNow(key, value);
+    if (!area) local.writeNow(key, value);
+    else if (value === undefined) area.removeItem(key);
+    else {
+      warnAreaLoss(key, value);
+      area.setItem(key, toJson(value));
+    }
     return true;
   } catch {
     return false;
