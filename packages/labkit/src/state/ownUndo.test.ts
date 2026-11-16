@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import type { TrialHistorySource } from '../trial/trialHistory';
 import { cloneTrial } from '../trial/trialOps';
 import { serializeTrials } from './helpers';
-import { holdOwnUndo, ownUndoOf } from './ownUndo';
+import { holdOwnUndo, onOwnUndoStep, ownUndoOf } from './ownUndo';
 import { createLabStore } from './store';
 
 const counter: Instrument = {
@@ -75,5 +75,31 @@ describe("an instrument history's last saved form, kept once it unmounts", () =>
     store.getState().removeTrial('t');
     release();
     expect(ownUndoOf(store, 't')).toBeUndefined();
+  });
+});
+
+describe('onOwnUndoStep', () => {
+  it('keeps a listener that throws from stopping the rest, or reaching the history that stepped', () => {
+    const store = storeWithTrial();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let notify = () => {};
+    let undoable = false;
+    holdOwnUndo(store, 't', {
+      ...source,
+      canUndo: () => undoable,
+      subscribe: (fn) => {
+        notify = fn;
+        return () => {};
+      },
+    });
+    const after = vi.fn();
+    onOwnUndoStep(store, () => {
+      throw new Error('boom');
+    });
+    onOwnUndoStep(store, after);
+    undoable = true;
+    expect(() => notify()).not.toThrow();
+    expect(after).toHaveBeenCalledWith('t');
+    error.mockRestore();
   });
 });
