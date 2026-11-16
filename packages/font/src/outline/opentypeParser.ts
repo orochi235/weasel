@@ -103,7 +103,7 @@ interface PathData {
   toPathData(options: { decimalPlaces: number; optimize: boolean; flipY: boolean }): string;
 }
 
-const COORDINATES = ['x', 'y', 'x1', 'y1', 'x2', 'y2'];
+const COORDINATES = ['x', 'y', 'x1', 'y1', 'x2', 'y2'] as const;
 
 /** Every coordinate a path command carries is a finite number. */
 function finiteCommand(cmd: Record<string, unknown>): boolean {
