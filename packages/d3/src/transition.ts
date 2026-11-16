@@ -1,6 +1,6 @@
 import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
 import type { Animator, AnimationHandle, EasingFn } from '@weasel-js/animator';
-import { after } from '@weasel-js/registry';
+import { after, createEmitter } from '@weasel-js/registry';
 import { pendingFor, unregisterRemoval } from './pendingRemovals';
 import type { D3Transition } from './types';
 
@@ -94,9 +94,9 @@ function makeStage<TData, TPose>(
   let delayFn: ((d: TData, i: number) => number) | null = null;
   let poseFn: ((d: TData, i: number) => TPose) | null = null;
   const customTweens: Array<CustomTween<TData>> = [];
-  const onStart: Array<() => void> = [];
-  const onEnd: Array<() => void> = [];
-  const onInterrupt: Array<() => void> = [];
+  const onStart = createEmitter();
+  const onEnd = createEmitter();
+  const onInterrupt = createEmitter();
   const children: Stage[] = [];
   let removeOnEnd = false;
   let removalArmed = false;
@@ -140,7 +140,7 @@ function makeStage<TData, TPose>(
   const settleIfDone = (): void => {
     if (itemsLeft === 0 && !endResolved) {
       endResolved = true;
-      if (!canceled) (interruptedItem ? onInterrupt : onEnd).forEach((fn) => fn());
+      if (!canceled) (interruptedItem ? onInterrupt : onEnd).emit();
       resolveEnd?.();
     }
   };
@@ -249,7 +249,7 @@ function makeStage<TData, TPose>(
     if (jobs.length === 0) return finishItem(i);
     if (!startFired) {
       startFired = true;
-      onStart.forEach((fn) => fn());
+      onStart.emit();
     }
     let jobsLeft = jobs.length;
     const jobDone = (): void => {
@@ -336,7 +336,7 @@ function makeStage<TData, TPose>(
         itemWaiters.clear();
         for (const [id, cancel] of removalCancels) unregisterRemoval(scene, id, cancel);
         removalCancels.length = 0;
-        onInterrupt.forEach((fn) => fn());
+        onInterrupt.emit();
         endResolved = true;
         resolveEnd?.();
       }
@@ -389,9 +389,9 @@ function makeStage<TData, TPose>(
       return t;
     },
     on(event, fn) {
-      if (event === 'start') onStart.push(fn);
-      else if (event === 'end') onEnd.push(fn);
-      else if (event === 'interrupt') onInterrupt.push(fn);
+      if (event === 'start') onStart.subscribe(fn);
+      else if (event === 'end') onEnd.subscribe(fn);
+      else if (event === 'interrupt') onInterrupt.subscribe(fn);
       return t;
     },
     transition() {

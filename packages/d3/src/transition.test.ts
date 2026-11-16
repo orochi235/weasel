@@ -183,6 +183,40 @@ describe('d3Bind transition — chain semantics', () => {
     expect(onEnd).toHaveBeenCalledTimes(1);
   });
 
+  it('an on("end") handler that throws keeps the next handler and end() settling', async () => {
+    const { scene, animator, clock } = setupSceneAndAnimator();
+    act(() => {
+      d3Bind(scene.current, [{ id: 'a', x: 0 }] as Datum[], {
+        key: (d) => d.id,
+        animator: animator.current as Animator,
+      })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+        .join();
+    });
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onEnd = vi.fn();
+    let ended = false;
+    act(() => {
+      void d3Bind(scene.current, [{ id: 'a', x: 100 }] as Datum[], {
+        key: (d) => d.id,
+        animator: animator.current as Animator,
+      })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+        .join()
+        .transition()
+        .duration(500)
+        .on('end', () => { throw new Error('boom'); })
+        .on('end', onEnd)
+        .end()
+        .then(() => { ended = true; });
+    });
+    act(() => clock.advance(500));
+    await Promise.resolve();
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    expect(ended).toBe(true);
+    error.mockRestore();
+  });
+
   it('interrupt cancels in-flight tweens and fires on("interrupt")', async () => {
     const { scene, animator, clock } = setupSceneAndAnimator();
     act(() => {
