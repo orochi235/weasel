@@ -1,5 +1,5 @@
-import { useToolOptionParams } from '@weasel-js/routing/react';
 import { setToolOption } from '@weasel-js/routing';
+import { useToolOptionParams } from '@weasel-js/routing/react';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
 import { useDeferredValue, useRef } from 'react';
 import { useLabChromeContext } from '../chrome/LabChrome';
