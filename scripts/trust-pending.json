@@ -1,6 +1,8 @@
 [
+  "@weasel-js/editing",
   "@weasel-js/export",
   "@weasel-js/measure",
   "@weasel-js/prefs-editor",
-  "@weasel-js/prefs-schema"
+  "@weasel-js/prefs-schema",
+  "@weasel-js/text-tools"
 ]
