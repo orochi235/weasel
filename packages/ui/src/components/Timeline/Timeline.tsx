@@ -10,7 +10,7 @@ import { Lane, type LaneHold } from './Lane';
 import { TimeRuler } from './TimeRuler';
 import { PlayheadReadout, Transport, type TransportProps } from '../Transport/Transport';
 import { buildLanes, trackAtPath, type LaneRow } from './lanes';
-import { deleteKey, insertKey, moveKey, samePath, setKeyEasing, setKeys, setKeyValue, type KeySelection } from './keys';
+import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeyEasing, setKeys, setKeyValue, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
 
 export type { KeySelection } from './keys';
@@ -190,7 +190,9 @@ export function Timeline(props: TimelineProps): ReactElement {
                 onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks);
               }}
               onKeyCommit={(keyIndex, toMs) => {
-                const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
+                const sel = { trackPath, keyIndex };
+                if (keyTime(tracks, sel) === Math.max(0, toMs)) return;
+                const r = moveKey(tracks, sel, toMs);
                 onChange(r.tracks);
                 selectKey(r.selection);
               }}
