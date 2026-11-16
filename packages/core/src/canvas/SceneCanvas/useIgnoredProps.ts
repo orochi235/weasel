@@ -1,12 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { isDev } from '@weasel-js/react';
-import type { SceneCanvasProps } from './props';
+import type { ToolsApi } from '../../tools/overlayBinding';
+import type { ToolsPatch } from './toolRegistry';
 import { isToolsApi } from './useCanvasTools';
 
-type Props = Pick<
-  SceneCanvasProps<unknown, string, unknown>,
-  'tools' | 'defaultTools' | 'defaultActiveTool' | 'ambient' | 'selectTool' | 'geometry'
->;
+/** The `<SceneCanvas>` props read here, whatever its type parameters. */
+interface Props {
+  tools?: ToolsApi | ToolsPatch;
+  defaultTools?: readonly unknown[];
+  defaultActiveTool?: string;
+  ambient?: readonly unknown[];
+  selectTool?: { pickBest?: unknown };
+  geometry?: { pickEvery?: unknown; picking?: string };
+}
 
 /** The props set on `props` that another prop overrides: those a `ToolsApi` in `tools` takes over, and `picking`
  *  under `pickEvery`. */
