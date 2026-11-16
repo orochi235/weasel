@@ -6,10 +6,10 @@ import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { createEvent, act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import type { PolygonPath } from '@weasel-js/geom';
-import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
-import { createScene } from 'core/scene/scene';
-import { gridSource } from 'domains/snap/testing/sessionDep';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { SceneCanvas, BUILTIN_TOOL_IDS, createScene, drawPreset } from '@weasel-js/core';
+import { gridSnapSourceForTests as gridSource } from '@weasel-js/core/test-seams';
+import { pathTools } from '../presets';
+import { usePathToolsTools } from '../toolSets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -34,13 +34,16 @@ function clickAt(canvas: HTMLCanvasElement, x: number, y: number) {
 /** The coordinates of the path the pen commits from clicks at each of `points`. */
 function penAnchors(enabled: boolean, points: readonly { x: number; y: number }[]) {
   const scene = createScene({ systemLayers: [{ id: 'main' }] });
-  const { container } = render(
-    <SceneCanvas
-      features={[drawPreset]} scene={scene} width={200} height={200} layers={{}}
-      defaultTools={BUILTIN_TOOL_IDS} defaultActiveTool="pen"
-      snap={{ sources: [gridSource(10)], enabled }}
-    />,
-  );
+  function Harness() {
+    return (
+      <SceneCanvas
+        features={[drawPreset, pathTools]} tools={usePathToolsTools()} scene={scene} width={200} height={200} layers={{}}
+        defaultTools={BUILTIN_TOOL_IDS} defaultActiveTool="pen"
+        snap={{ sources: [gridSource(10)], enabled }}
+      />
+    );
+  }
+  const { container } = render(<Harness />);
   const canvas = container.querySelector('canvas') as HTMLCanvasElement;
   for (const p of points) clickAt(canvas, p.x, p.y);
   act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });

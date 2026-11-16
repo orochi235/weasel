@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { createEvent, act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { SceneCanvas, BUILTIN_TOOL_IDS } from './SceneCanvas';
-import { useScene } from 'core/scene/useScene';
-import type { useTools } from '../tools/overlayBinding';
-import { drawPreset } from 'canvas/SceneCanvas/presets';
+import { SceneCanvas, BUILTIN_TOOL_IDS, drawPreset, useScene, type ToolsApi } from '@weasel-js/core';
+import { pathTools } from '../presets';
+import { usePathToolsTools } from '../toolSets';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;
@@ -14,7 +13,7 @@ beforeAll(() => {
 });
 
 type P = { x: number; y: number; width: number; height: number };
-type Tools = ReturnType<typeof useTools>;
+type Tools = ToolsApi;
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 200, height: 200, dpr: 1 };
@@ -35,9 +34,11 @@ function mount() {
   const captured: { tools: Tools | null } = { tools: null };
   function Harness() {
     const scene = useScene<{ color: string }, 'main', P>({ systemLayers: [{ id: 'main' }], initial: [] });
+    const tools = usePathToolsTools();
     return (
       <SceneCanvas
-        features={[drawPreset]}
+        features={[drawPreset, pathTools]}
+        tools={tools}
         scene={scene}
         width={200} height={200}
         layers={{}}
