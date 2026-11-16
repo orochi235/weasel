@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { getOwn } from '@weasel-js/registry';
 import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefLeafValue, prefReader, prefValueAtPath, createRecordSource, createValuesSource, type PrefAlias, type PrefAliasTargets, type PrefEntry, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import type { LiveControl } from '../Prefs/commitPolicy';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
@@ -138,7 +139,7 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: ControlForm, dr
   const { values, mixed, renderers, onChange, fields } = draw;
   const path = at ?? own;
   const isMixed = mixed?.has(path) === true;
-  const shown = isMixed ? undefined : prefLeafValue(leaf, values?.[path]);
+  const shown = isMixed ? undefined : prefLeafValue(leaf, values && getOwn(values, path));
   const ctx: LeafContext = {
     path,
     pref: leaf,
