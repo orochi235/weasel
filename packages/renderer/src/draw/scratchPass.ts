@@ -1,5 +1,4 @@
 import type { Paint } from '@weasel-js/paint';
-import { getPaintDrawKind } from '../paintKinds';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GpuTexture } from '../gpu/types';
 import type { Mesh } from '@weasel-js/geom/tessellate';
@@ -8,7 +7,7 @@ import { drawTriangles } from './drawTriangles';
 import { setProjAndModel } from './uniforms';
 import { returnToRenderTarget } from './effects';
 import { BATCH_MODEL } from './flushBatch';
-import { bindPaintKind } from './paintBind';
+import { bindPaintKind, paintDrawKind } from './paintBind';
 
 const UNBLENDED = { blend: null } as const;
 
@@ -44,7 +43,7 @@ interface ScratchPaint {
  */
 export function renderPaintToScratch(ctx: DrawContext, fill: Paint, rect: ScreenRect): ScratchPaint | null {
   const scratch = ctx.paintScratch;
-  if (!scratch || !getPaintDrawKind(fill.kind)?.bind) return null;
+  if (!scratch || !paintDrawKind(fill.kind)?.bind) return null;
   const ratio = ctx.deviceWidth && ctx.widthCss > 0 ? ctx.deviceWidth / ctx.widthCss : 1;
   const deviceW = ctx.deviceWidth ?? Math.round(ctx.widthCss);
   const deviceH = ctx.deviceHeight ?? Math.round(ctx.heightCss);
