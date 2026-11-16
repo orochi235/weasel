@@ -96,6 +96,7 @@
 /* A node's properties as a sidebar would hold them, raised off the workspace as the dialog is. */
 .previewPanel {
   flex: none;
+  box-sizing: border-box;
   inline-size: min(360px, 100%);
   max-block-size: 100%;
   overflow: auto;
