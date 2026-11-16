@@ -136,3 +136,9 @@ export function dashOf(styles: readonly string[]): number[] | undefined {
 /** The style word a dash writes as: `dotted` for the dash {@link dashOf} reads it as, else `dashed`. */
 export const dashStyle = (dash: readonly number[]): string =>
   dash.length === DOTTED.length && dash.every((d, i) => d === DOTTED[i]) ? 'dotted' : 'dashed';
+
+/** `n` as a DOT numeral, which has no exponent: to four places, in plain digits however large. */
+export function dotNumber(n: number): string {
+  const r = Math.abs(n) < 2 ** 53 / 10000 ? Math.round(n * 10000) / 10000 : Math.round(n);
+  return Number.isFinite(r) && Math.abs(r) >= 1e21 ? BigInt(r).toString() : String(r);
+}

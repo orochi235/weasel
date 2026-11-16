@@ -214,4 +214,11 @@ describe('writing DOT', () => {
     const data: DiagramData = { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { trim: { end: 0.5 } } }] };
     expect(writeDot(pageOf(data)).warnings).toEqual(['DOT draws a connector whole; trims were dropped.']);
   });
+
+  it('writes a stroke width too small or too large for plain digits as a numeral the reader takes', () => {
+    const doc = pageOf({ nodes: [{ id: 'a', colors: { strokeWidth: 1e-7 } }, { id: 'b', colors: { strokeWidth: 1e21 } }], edges: [{ from: 'a', to: 'b', colors: { width: 1e21 } }] });
+    const page = back(doc);
+    expect(page.data.nodes.map((n) => n.colors?.strokeWidth)).toEqual([0, 1e21]);
+    expect(page.data.edges[0]!.colors?.width).toBe(1e21);
+  });
 });

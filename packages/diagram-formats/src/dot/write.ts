@@ -2,8 +2,7 @@
 import type { DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../document';
 import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../graphWrite';
-import { num } from '../drawXml/writeXml';
-import { arrowName, dashStyle, OUTLINE_ATTR, quoteLabel, shapeOf } from './values';
+import { arrowName, dashStyle, dotNumber, OUTLINE_ATTR, quoteLabel, shapeOf } from './values';
 
 const RANKDIR: Readonly<Record<LayoutDirection, string | null>> = { down: null, up: 'BT', right: 'LR', left: 'RL' };
 const KEYWORDS = new Set(['node', 'edge', 'graph', 'digraph', 'subgraph', 'strict']);
@@ -36,9 +35,9 @@ function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
     styles.length > 1 ? `style="${styles.join(',')}"` : null,
     marked ? `${OUTLINE_ATTR}=${dotId(node.outline as string)}` : null,
     color('fillcolor', own.fill), color('color', own.stroke), color('fontcolor', own.text),
-    own.strokeWidth !== undefined ? `penwidth=${own.strokeWidth}` : null,
-    placed ? `pos="${num(node.at!.x + node.width! / 2)},${num(page - node.at!.y - node.height! / 2)}"` : null,
-    placed ? `width=${num(node.width! / POINTS_PER_INCH)}, height=${num(node.height! / POINTS_PER_INCH)}` : null,
+    own.strokeWidth !== undefined && Number.isFinite(own.strokeWidth) ? `penwidth=${dotNumber(own.strokeWidth)}` : null,
+    placed ? `pos="${dotNumber(node.at!.x + node.width! / 2)},${dotNumber(page - node.at!.y - node.height! / 2)}"` : null,
+    placed ? `width=${dotNumber(node.width! / POINTS_PER_INCH)}, height=${dotNumber(node.height! / POINTS_PER_INCH)}` : null,
   ]);
 }
 
@@ -104,7 +103,7 @@ function edgeLine(out: GraphOut, edge: DataEdge): string | null {
     edge.endLabels?.from ? `taillabel=${quoteLabel([edge.endLabels.from])}` : null,
     edge.endLabels?.to ? `headlabel=${quoteLabel([edge.endLabels.to])}` : null,
     color('color', own.stroke), color('fontcolor', own.label),
-    own.width !== undefined ? `penwidth=${own.width}` : null,
+    own.width !== undefined && Number.isFinite(own.width) ? `penwidth=${dotNumber(own.width)}` : null,
     own.dash !== undefined ? `style=${dashStyle(own.dash)}` : null,
     ...markerAttrs(out, edge),
   ])};`;
@@ -123,7 +122,7 @@ export function writeDot(doc: DiagramDocument, opts?: WriteOptions): ExportResul
   const lines = [
     `digraph ${page.name !== undefined ? dotId(page.name) : ''}${page.name !== undefined ? ' ' : ''}{`,
     ...(rankdir !== null ? [`  rankdir=${rankdir};`] : []),
-    ...(placed ? [`  bb="0,0,${num(page.width)},${num(page.height)}";`] : []),
+    ...(placed ? [`  bb="0,0,${dotNumber(page.width)},${dotNumber(page.height)}";`] : []),
     `  node${attrList(['shape=box', 'style=filled', color('fillcolor', node.fill), color('color', node.stroke), color('fontcolor', node.text)])};`,
     `  edge${attrList([color('color', edge.stroke), color('fontcolor', edge.label)])};`,
   ];
