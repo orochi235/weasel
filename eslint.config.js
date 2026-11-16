@@ -373,7 +373,7 @@ export default [
   {
     /**
      * The one type-aware rule (see the header). Files in `no-proto-index.pending.json` held a flagged
-     * access when the rule landed; an entry comes off the list once its file is fixed, and none goes on.
+     * access when the rule landed; `check:proto-pending` fails on an entry whose file is fixed, and none goes on.
      */
     files: ['packages/*/src/**/*.{ts,tsx}', 'apps/*/src/**/*.{ts,tsx}'],
     ignores: [
