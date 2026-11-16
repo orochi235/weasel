@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@weasel-js/core": "*",
+    "@weasel-js/editing": "*",
     "@weasel-js/geom": "*",
     "@weasel-js/routing": "*",
     "@weasel-js/ui": "*",

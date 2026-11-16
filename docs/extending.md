@@ -912,18 +912,18 @@ export function tintedBy(color: string, steps: number): string {
   return GEM_PALETTE[(((at + steps) % n) + n) % n]!;
 }
 
-/** Dragging sideways over the selected gems steps their color along the palette, previewing as it goes. */
+/** Dragging sideways over the gems an edit acts on (the selection, on a canvas) steps their color along the palette, previewing as it goes. */
 export const tintAction = defineAction({
   id: 'gem.tint',
   label: 'Tint gem',
-  requires: ['scene', 'selection', 'applyOps'],
+  requires: ['scene', 'operands', 'applyOps'],
   invoker: {
     timing: 'ongoing',
     start: (ctx, opts) => {
       const step = resolveParams(opts?.params)?.step ?? 24;
       const scene = ctx.deps.scene;
       const gems = new Map<string, GemData>();
-      for (const id of ctx.deps.selection?.get() ?? []) {
+      for (const id of ctx.deps.operands?.get() ?? []) {
         const data = scene?.get(id)?.data;
         if (isGem(data)) gems.set(id, data);
       }
