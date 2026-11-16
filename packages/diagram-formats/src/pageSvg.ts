@@ -2,14 +2,13 @@
  * A page of a diagram as a file: the region exports of core, svg and pdf,
  * drawn with the diagram painters and on the diagram theme's page color.
  */
-import {
-  exportRegionPng, type ExportRegion, type ExportRegionPngOptions, type ExportScene, type RectPose,
-} from '@weasel-js/core';
+import type { RectPose } from '@weasel-js/core';
+import { exportRegionPng, type ExportRegion, type ExportRegionPngOptions, type ExportScene } from '@weasel-js/export';
 import { diagramShape, diagramThemeOf, markShape } from '@weasel-js/diagram';
 import { exportRegionsPdf, type ExportRegionsPdfOptions } from '@weasel-js/pdf/export';
 import { exportRegionSvg, regionSvgNodes, type ExportRegionSvgOptions, type SvgNode } from '@weasel-js/svg';
 
-/** A scene as the page exports read it: world-space `RectPose`s. Core's `ExportScene`. */
+/** A scene as the page exports read it: world-space `RectPose`s. `@weasel-js/export`'s `ExportScene`. */
 export type PageExportScene = ExportScene;
 
 /** A page's rect in world space. A `PlacedPage` is one. */
@@ -17,7 +16,7 @@ export type PageRect = Pick<ExportRegion, 'x' | 'y' | 'width' | 'height'>;
 
 /**
  * A page as the page exports take it: a fixed rect, or a function reading it
- * from the document the export draws, as core's `pageRegionOf(page)` does, so
+ * from the document the export draws, as `@weasel-js/export`'s `pageRegionOf(page)` does, so
  * the page's bounds come from the revision drawn in them.
  */
 export type PageSource = PageRect | ((doc: PageExportScene) => PageRect);
@@ -77,7 +76,7 @@ export function exportPageSvg(scene: PageExportScene, page: PageSource, opts: Ex
 }
 
 /**
- * Draw `page` of `scene` into a PNG, as core's `exportRegionPng`
+ * Draw `page` of `scene` into a PNG, as `@weasel-js/export`'s `exportRegionPng`
  * does, on the diagram theme's page color unless told otherwise. The caller
  * has registered the diagram painters (`registerDiagramShape`,
  * `registerMarkShape`) and the fonts the scene uses. Needs WebGL2.

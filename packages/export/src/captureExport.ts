@@ -2,8 +2,7 @@
  * The one boundary every export reads the document at: what it draws comes
  * from a single revision, with what that revision needs loaded.
  */
-import { documentOf } from 'core/scene/documentOf';
-import type { RenderDiagnostic, RenderDiagnosticSink } from '../renderDiagnostics';
+import { documentOf, type RenderDiagnostic, type RenderDiagnosticSink } from '@weasel-js/core';
 import type { ExportRegion, ExportRegionSource, ExportRegions, ExportScene } from './exportTypes';
 
 /** How many times an export reads the document before giving up on it holding still. */

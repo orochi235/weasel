@@ -1,11 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { pageNodeOf } from 'core/pages/pageNodes';
-import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
-import { plainScene } from '../../testing/plainScene';
+import { documentOf, pageNodeOf, viewportWorldRect } from '@weasel-js/core';
+import { plainScene } from './testing/plainScene';
 import { _resetExportFormatsForTests, exportFormatRegistry, exportFormats, exportRegions, registerExportFormat } from './exportFormats';
 import { exportPages } from './exportPages';
 import type { ExportFormat, ExportOptions, ExportRegion } from './exportTypes';
-import { documentOf } from 'core/scene/documentOf';
 import { exportRegionsOf } from './captureExport';
 import { selectionRegion } from './selectionRegion';
 

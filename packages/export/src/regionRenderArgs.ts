@@ -1,6 +1,4 @@
-import type { RectPose } from 'core/geometry/rectPose';
-import { documentOf } from 'core/scene/documentOf';
-import type { RenderSceneToPixelsArgs } from '../renderSceneToPixelsTypes';
+import { documentOf, type RectPose, type RenderSceneToPixelsArgs } from '@weasel-js/core';
 import type { ExportRegion, ExportScene } from './exportTypes';
 
 /** What {@link regionRenderArgs} answers: the part of `renderSceneToPixels`'s arguments a region decides. */

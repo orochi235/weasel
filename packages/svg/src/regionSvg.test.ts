@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { exportFormats, exportRegions, registerNodeShape, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
-import { BLUE, GRAY, GREEN, RED, plainScene } from '@weasel-js/core/testing/plainScene';
+import { registerNodeShape, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
+import { exportFormats, exportRegions } from '@weasel-js/export';
+import { BLUE, GRAY, GREEN, RED, plainScene } from '@weasel-js/export/testing/plainScene';
 import { exportRegionSvg, registerSvgExport } from './regionSvg';
 
 async function exported(pageIndex: number, opts?: Parameters<typeof exportRegionSvg>[2]): Promise<Document> {

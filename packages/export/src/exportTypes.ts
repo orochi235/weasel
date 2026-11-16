@@ -1,8 +1,6 @@
 /** The types the export registry and its formats share. */
 import type { Rect } from '@weasel-js/geom';
-import type { RectPose } from 'core/geometry/rectPose';
-import type { Scene } from 'core/scene/types';
-import type { RenderDiagnostic } from '../renderDiagnostics';
+import type { RectPose, RenderDiagnostic, Scene } from '@weasel-js/core';
 
 /**
  * A rectangle of the document to export: a page (`exportPages` makes one of

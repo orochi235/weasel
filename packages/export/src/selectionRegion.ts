@@ -1,11 +1,4 @@
-import { unionAABB } from 'core/geometry/unionBounds';
-import { worldPoseLookup } from 'core/scene/composePose';
-import { documentOf } from 'core/scene/documentOf';
-import { withoutPageStructure } from 'core/scene/nodeGates';
-import { scenePoseAdapter } from 'core/scene/scenePoseAdapter';
-import type { NodeId } from 'core/scene/types';
-import { drawnBoundsScene } from '../derivedPath';
-import { drawnAABBOf } from '../drawnBounds';
+import { documentOf, drawnAABBOf, drawnBoundsScene, scenePoseAdapter, unionAABB, withoutPageStructure, worldPoseLookup, type NodeId } from '@weasel-js/core';
 import type { ExportRegion, ExportScene } from './exportTypes';
 
 /**

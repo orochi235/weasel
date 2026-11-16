@@ -1,9 +1,8 @@
-/** What an SVG export reports drawing without, through core's common `onDiagnostic`, and its strict refusal. */
+/** What an SVG export reports drawing without, through `@weasel-js/export`'s common `onDiagnostic`, and its strict refusal. */
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  ExportIncompleteError, exportRegions, registerNodeShape, registerPaintKindLoader, type ExportDiagnostic, type NodeShapeEntry, type RectPose,
-} from '@weasel-js/core';
-import { plainScene } from '@weasel-js/core/testing/plainScene';
+import { registerNodeShape, registerPaintKindLoader, type NodeShapeEntry, type RectPose } from '@weasel-js/core';
+import { ExportIncompleteError, exportRegions, type ExportDiagnostic } from '@weasel-js/export';
+import { plainScene } from '@weasel-js/export/testing/plainScene';
 import { exportRegionSvg, registerSvgExport } from './regionSvg';
 
 const drops: (() => void)[] = [];

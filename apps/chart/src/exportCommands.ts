@@ -1,4 +1,5 @@
-import { pageName, pageRegionOf, pageRegionsOf, useCommand, type PlacedPage } from '@weasel-js/core';
+import { pageName, useCommand, type PlacedPage } from '@weasel-js/core';
+import { pageRegionOf, pageRegionsOf } from '@weasel-js/export';
 import { exportPagePng, exportPageSvg, exportPagesPdf } from '@weasel-js/diagram-formats';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { downloadBlob, reportFileWarnings, menuRun } from '@weasel-js/editor';

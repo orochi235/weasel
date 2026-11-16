@@ -1,5 +1,4 @@
-import { placedPagesOf } from 'core/pages/pageNodes';
-import { pageName, type PlacedPage } from 'core/pages/pages';
+import { pageName, placedPagesOf, type PlacedPage } from '@weasel-js/core';
 import { exportRegions } from './exportFormats';
 import type { ExportOptions, ExportRegion, ExportScene } from './exportTypes';
 

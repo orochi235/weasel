@@ -1,7 +1,8 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, documentOf, type ExportScene } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, documentOf } from '@weasel-js/core';
+import type { ExportScene } from '@weasel-js/export';
 import { App } from './App';
 import { chartPrefs } from './prefs';
 import { withIcons } from './testIcons';

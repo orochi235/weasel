@@ -49,6 +49,7 @@
   "peerDependencies": {
     "@weasel-js/core": "1.19.1",
     "@weasel-js/diagram": "1.19.1",
+    "@weasel-js/export": "1.19.1",
     "@weasel-js/plot": "1.19.1",
     "@weasel-js/svg": "1.19.1"
   },

@@ -1,5 +1,5 @@
 /** How every export reports what it could not draw, and when it refuses to write a file without it. */
-import type { RenderDiagnostic, RenderDiagnosticSink } from '../renderDiagnostics';
+import type { RenderDiagnostic, RenderDiagnosticSink } from '@weasel-js/core';
 import type { ExportOptions } from './exportTypes';
 
 /** One thing an export drew without, or drew in part: a `RenderDiagnostic`. */

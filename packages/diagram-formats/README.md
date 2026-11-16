@@ -388,7 +388,7 @@ is written as its own `activate` or `deactivate` line.
 ## Exporting a page
 
 `exportPageSvg`, `exportPagePng`, `exportPagesPdf` and `pageSvgNodes` are
-the region exports that work on any scene, taken a page at a time: core's
+the region exports that work on any scene, taken a page at a time: `@weasel-js/export`'s
 `exportRegionPng`, `@weasel-js/svg`'s `exportRegionSvg` and `regionSvgNodes`,
 and `@weasel-js/pdf/export`'s `exportRegionsPdf`, whose READMEs cover options and
 what each format carries. The ones here add what a diagram needs:
@@ -399,7 +399,8 @@ what each format carries. The ones here add what a diagram needs:
   whether or not they are registered.
 
 ```ts
-import { pageRegionOf, pageRegionsOf, placedPagesOf } from '@weasel-js/core';
+import { placedPagesOf } from '@weasel-js/core';
+import { pageRegionOf, pageRegionsOf } from '@weasel-js/export';
 import { exportPagePng, exportPageSvg, exportPagesPdf } from '@weasel-js/diagram-formats';
 
 const pages = placedPagesOf(scene);

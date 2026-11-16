@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import {
-  ActionDisabledReason, exportFormatRegistry, exportFormats, placedPagesOf, useCommand, type ExportFormat, type PlacedPage,
-} from '@weasel-js/core';
+import { ActionDisabledReason, placedPagesOf, useCommand, type PlacedPage } from '@weasel-js/core';
+import { exportFormatRegistry, exportFormats, type ExportFormat } from '@weasel-js/export';
 import { useNewCommand, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { backgroundOf, setBackground } from './docBackground';

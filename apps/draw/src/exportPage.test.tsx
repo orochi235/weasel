@@ -1,6 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { addOnPages, documentOf, exportRegionsOf, placedPagesOf, registerExportFormat, type ExportFormat } from '@weasel-js/core';
+import { addOnPages, documentOf, placedPagesOf } from '@weasel-js/core';
+import { exportRegionsOf, registerExportFormat, type ExportFormat } from '@weasel-js/export';
 import { downloadBlob } from '@weasel-js/editor';
 import { defaultToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
 import { exportPagesFile, exportSelectionFile } from './exportPage';

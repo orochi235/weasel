@@ -16,13 +16,12 @@ import {
   resolvePartPaint,
   isAnnotationLayer,
   scenePoseAdapter,
-  type ExportRegion,
-  type ExportScene,
   type NodeShapeEntry,
   type NodeShapes,
   type Path,
   type RectPose,
 } from '@weasel-js/core';
+import type { ExportRegion, ExportScene } from '@weasel-js/export';
 import {
   svgLeafFromKit,
   svgNodesFromKit,

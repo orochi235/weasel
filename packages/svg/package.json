@@ -51,6 +51,7 @@
     "@weasel-js/stroke": "1.19.1"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.19.1"
+    "@weasel-js/core": "1.19.1",
+    "@weasel-js/export": "1.19.1"
   }
 }

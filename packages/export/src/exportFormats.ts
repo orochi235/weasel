@@ -1,7 +1,7 @@
 /**
  * The export registry: the formats a scene's regions can be written in, each
- * registered by the package that can write it. Core registers `png`; svg and
- * pdf register theirs (`registerSvgExport`, `registerPdfExport`), so core
+ * registered by the package that can write it. This package registers `png`;
+ * svg and pdf register theirs (`registerSvgExport`, `registerPdfExport`), so it
  * depends on neither.
  */
 import { createReflectable, type Reflection } from '@weasel-js/registry';
