@@ -10,7 +10,14 @@ describe('Checkbox', () => {
     const cb = screen.getByRole('checkbox') as HTMLInputElement;
     expect(cb.checked).toBe(false);
     fireEvent.click(cb);
-    expect(onChange).toHaveBeenCalledWith(true);
+    expect(onChange).toHaveBeenCalledWith(true, { alt: false });
+  });
+
+  it('says whether Alt was held as it changed', () => {
+    const onChange = vi.fn();
+    render(<Checkbox onChange={onChange}>x</Checkbox>);
+    fireEvent.click(screen.getByRole('checkbox'), { altKey: true });
+    expect(onChange).toHaveBeenCalledWith(true, { alt: true });
   });
 
   it('supports controlled value', () => {

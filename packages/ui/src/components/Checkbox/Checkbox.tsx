@@ -12,6 +12,7 @@ import s from './Checkbox.module.css';
 import type { HoldProps } from '../Disabled';
 import { useNativeHold } from '../Disabled/nativeHold';
 import { useFieldControl } from '../Field/fieldSemantics';
+import { heldOf, type ToggleHeld } from '../toggleHeld';
 
 /** Props for {@link Checkbox}. The label is passed as children. */
 export type CheckboxProps = HoldProps & {
@@ -21,7 +22,8 @@ export type CheckboxProps = HoldProps & {
   isSelected?: boolean;
   /** Initial selection when uncontrolled. */
   defaultSelected?: boolean;
-  onChange?: (isSelected: boolean) => void;
+  /** Called with the new state and the keys held as it changed, so a list of switches can solo on Alt. */
+  onChange?: (isSelected: boolean, held: ToggleHeld) => void;
   /** Draws the mixed mark; the input's `indeterminate` is set to match. */
   indeterminate?: boolean;
   /** The box is drawn and announced as invalid. */
@@ -99,7 +101,7 @@ export const Checkbox = forwardRef(function Checkbox(
           e.target.indeterminate = indeterminate;
           if (hold.refuses) return;
           if (isSelected === undefined) setUncontrolled(e.target.checked);
-          onChange?.(e.target.checked);
+          onChange?.(e.target.checked, heldOf(e.nativeEvent as MouseEvent));
         }}
       />
       {children !== undefined && <span className={s.label}>{children}</span>}

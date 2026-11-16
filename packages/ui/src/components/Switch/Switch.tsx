@@ -1,4 +1,4 @@
-import { forwardRef, type ReactNode, type Ref } from 'react';
+import { forwardRef, useRef, type ReactNode, type Ref } from 'react';
 import {
   Switch as RACSwitch,
   type SwitchProps as RACSwitchProps,
@@ -6,14 +6,17 @@ import {
 import type { HoldProps } from '../Disabled';
 import { useRacHold } from '../Disabled/racHold';
 import { useFieldControl } from '../Field/fieldSemantics';
+import { heldOf, type ToggleHeld } from '../toggleHeld';
 import s from './Switch.module.css';
 
 /**
  * Props for {@link Switch}, on top of React Aria's `Switch` props. The label
  * is passed as children.
  */
-export type SwitchProps = Omit<RACSwitchProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly'> & HoldProps & {
+export type SwitchProps = Omit<RACSwitchProps, 'children' | 'className' | 'isDisabled' | 'isReadOnly' | 'onChange'> & HoldProps & {
   children?: ReactNode;
+  /** Called with the new state and the keys held as it changed, so a list of switches can solo on Alt. */
+  onChange?: (isSelected: boolean, held: ToggleHeld) => void;
   className?: string;
   /** Receives the `<label>` the switch is drawn in. `ref` reaches the `<input>`. */
   rootRef?: Ref<HTMLLabelElement>;
@@ -33,7 +36,9 @@ export const Switch = forwardRef(function Switch(
   props: SwitchProps,
   ref: Ref<HTMLInputElement>,
 ) {
-  const { rest: { children, className, rootRef, ...rest }, rac, wrap } = useRacHold(props);
+  const { rest: { children, className, rootRef, onChange, onClickCapture, ...rest }, rac, wrap } = useRacHold(props);
+  // React Aria reports the new state alone; the click that changes it passes the label first, carrying its keys.
+  const held = useRef<ToggleHeld>(heldOf(undefined));
   // A switch has no invalid state to show, so the field's error only describes it.
   const { 'aria-invalid': _invalid, ...field } = useFieldControl({ ...rest, 'aria-describedby': rac['aria-describedby'], labeled: children !== undefined });
   return wrap(
@@ -43,6 +48,14 @@ export const Switch = forwardRef(function Switch(
       {...field}
       ref={rootRef}
       inputRef={ref}
+      onClickCapture={(e) => {
+        held.current = heldOf(e);
+        onClickCapture?.(e);
+      }}
+      onChange={(on) => {
+        onChange?.(on, held.current);
+        held.current = heldOf(undefined);
+      }}
       className={[s.switch, className].filter(Boolean).join(' ')}
     >
       <span className={s.track}>
