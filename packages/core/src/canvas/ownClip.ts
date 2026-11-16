@@ -5,7 +5,7 @@ import { nodeMemo } from 'core/scene/nodeMemo';
 import type { ClipFromPoseFn, Node, NodeClip } from 'core/scene/types';
 import { groupBoxPath } from './nodeShapes/groupBoxPainter';
 
-/** What {@link ownClipOf} reads of a node. */
+/** What a node's own clip is read from: its `clipFromPose`, else its `clip`. */
 export interface ClipBearing<TPose> {
   clipFromPose?: ClipFromPoseFn<TPose>;
   clip?: NodeClip;
