@@ -1,7 +1,8 @@
 /**
  * A segmented bar's sweep: a drag across its segments sets each one it
  * reaches to what the press set the pressed one to, through the bar's
- * selection model. A pointer-only dispatcher of its own on the bar's row runs
+ * selection model; pressed with Alt, it solos the segments it reaches
+ * (ui-input's `soloSweepFrom`). A pointer-only dispatcher of its own on the bar's row runs
  * it, so the drag is settled by the gesture system like any other: a segment
  * running a drag of its own, or a nested surface, takes the press instead.
  */
@@ -9,7 +10,7 @@ import { ActionsProvider, ActiveToolContextProvider, DepRegistryProvider, useAct
 import { sweepAction, type ModifierState } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
 import { useMemo, useRef, type ReactElement, type RefObject } from 'react';
-import { sweepFrom, type SelectionModel, type SelectState } from '@weasel-js/ui-input';
+import { soloSweepFrom, sweepFrom, type SelectionModel, type SelectState } from '@weasel-js/ui-input';
 
 /** The attribute naming a segment's index, which is what a sweep reaches. */
 export const SWEEP_INDEX_ATTR = 'data-sweep-index';
@@ -67,7 +68,7 @@ function Dispatch<V>(props: SegmentSweeperProps<V>): null {
       const p = latest.current;
       const state = p.model.stateOf(key);
       if (typeof p.sweep === 'function' && !p.sweep({ value: p.values[key]!, state, modifiers: ctx.modifiers })) return null;
-      const run = sweepFrom(p.model, key);
+      const run = ctx.modifiers.alt ? soloSweepFrom(p.model, key, p.values.length, p.sweepable) : sweepFrom(p.model, key);
       return {
         enter: ({ key: index }) => run.reach(index),
         end: (how) => {

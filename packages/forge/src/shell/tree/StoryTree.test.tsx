@@ -500,9 +500,25 @@ describe('StoryTree', () => {
     history.replaceState(null, '', `/#/${primary.id}`);
     await mount();
     const packages = await screen.findByRole('group', { name: 'Packages' });
-    fireEvent.click(within(packages).getByRole('checkbox'));
+    fireEvent.click(within(packages).getByRole('button', { pressed: true }));
     await waitFor(() => expect(screen.queryByRole('treeitem', { name: named('Kit') })).toBeNull());
     expect(document.querySelector('.fg-route-miss')).toBeNull();
+  });
+
+  it('lists the packages as toggle badges, and keeps one turned off across a remount', async () => {
+    const backing = new Map<string, unknown>();
+    const first = await mount(createMemoryAdapter(backing));
+    const chip = () => within(screen.getByRole('group', { name: 'Packages' })).getByRole('button', { name: 'Kit' });
+    expect(chip()).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(chip());
+    expect(chip()).toHaveAttribute('aria-pressed', 'false');
+    await waitFor(() => expect(screen.queryByRole('treeitem', { name: named('Kit') })).toBeNull());
+    first.view.unmount();
+    await waitFor(() => expect([...backing.keys()].some((key) => key.includes('fg-tree-libraries'))).toBe(true));
+    renderWithIcons(<Harness storage={createMemoryAdapter(backing)} />);
+    await screen.findByRole('group', { name: 'Packages' });
+    expect(chip()).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('treeitem', { name: named('Kit') })).toBeNull();
   });
 });
 

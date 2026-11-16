@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { selection, selectionKeys, selectionOfEach, sweepFrom, type OwnSelection } from './selection';
+import { selection, selectionKeys, selectionOfEach, soloFrom, soloSweepFrom, sweepFrom, type OwnSelection } from './selection';
 
 const VALUES = ['a', 'b', 'c'] as const;
 
@@ -87,5 +87,79 @@ describe('sweepFrom', () => {
     fromOn.reach(2);
     fromOn.revert();
     expect(seen).toEqual([['c', 'b'], ['c', 'b', 'a'], ['c'], [], ['a', 'c']]);
+  });
+});
+
+describe('soloFrom', () => {
+  const FIVE = ['a', 'b', 'c', 'd', 'e'] as const;
+  const multiple = (value: string[], seen: string[][], mixedValues: string[] = []) =>
+    selection<string>({ mode: 'multiple', value, mixedValues, onChange: (v) => seen.push(v) }, FIVE);
+
+  it('turns the item on and every other one off, in one change, leaving an item `enabled` refuses alone', () => {
+    const seen: string[][] = [];
+    soloFrom(multiple(['a', 'c', 'e'], seen), 1, 5, (i) => i !== 2);
+    expect(seen).toEqual([['c', 'b']]);
+  });
+
+  it('turns every item back on when the item is already the only one on, counting a mixed one as off', () => {
+    const seen: string[][] = [];
+    soloFrom(multiple(['b'], seen, ['d']), 1, 5);
+    expect(seen).toEqual([['b', 'a', 'c', 'd', 'e']]);
+    soloFrom(multiple(['b'], seen, ['d']), 3, 5);
+    expect(seen.at(-1)).toEqual(['d']);
+  });
+
+  it('reports each owned item that changes', () => {
+    const seen: [number, boolean][] = [];
+    const items: OwnSelection[] = [true, true, false].map((selected, i) => ({ selected, onChange: (to) => seen.push([i, to]) }));
+    soloFrom(selectionOfEach(items), 2, 3);
+    expect(seen).toEqual([[0, false], [1, false], [2, true]]);
+  });
+
+  it('is a press in a single selection', () => {
+    const seen: (string | null)[] = [];
+    soloFrom(selection<string>({ value: 'a', onChange: (v) => seen.push(v) }, FIVE), 3, 5);
+    expect(seen).toEqual(['d']);
+  });
+
+  it('is what Space or Enter does with Alt held', () => {
+    const seen: string[][] = [];
+    const keys = selectionKeys(multiple(['a', 'b'], seen), 5);
+    keys.activate?.(4, { alt: true });
+    keys.activate?.(4);
+    expect(seen).toEqual([['e'], ['a', 'b', 'e']]);
+  });
+});
+
+describe('soloSweepFrom', () => {
+  const FIVE = ['a', 'b', 'c', 'd', 'e'] as const;
+  const multiple = (value: string[], seen: string[][]) =>
+    selection<string>({ mode: 'multiple', value, onChange: (v) => seen.push(v) }, FIVE);
+
+  it('turns on what it has reached and every other item off, from the states at the press', () => {
+    const seen: string[][] = [];
+    const run = soloSweepFrom(multiple(['c', 'd'], seen), 0, 5, (i) => i !== 4);
+    run.reach(0);
+    run.reach(1);
+    run.reach(0);
+    expect(seen).toEqual([['a'], ['a', 'b']]);
+  });
+
+  it('turns every item back on from the only one on, until it reaches a second', () => {
+    const seen: string[][] = [];
+    const run = soloSweepFrom(multiple(['b'], seen), 1, 5);
+    run.reach(1);
+    expect(seen.at(-1)).toEqual(['b', 'a', 'c', 'd', 'e']);
+    run.reach(2);
+    expect(seen.at(-1)).toEqual(['b', 'c']);
+  });
+
+  it('puts back the states at the press', () => {
+    const seen: string[][] = [];
+    const run = soloSweepFrom(multiple(['c', 'd'], seen), 0, 5);
+    run.reach(0);
+    run.reach(3);
+    run.revert();
+    expect(seen.at(-1)).toEqual(['c', 'd']);
   });
 });

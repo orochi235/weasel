@@ -2,6 +2,7 @@ import { type ReactElement, type ReactNode } from 'react';
 import {
   selection,
   selectionOfEach,
+  soloFrom,
   stepsOf,
   type MultipleSelection,
   type OwnSelection,
@@ -68,8 +69,9 @@ export type SegmentedBarCommonProps = SegmentedGridProps & DisableableProps & {
 /** What a {@link SegmentedBar} mode that sets several segments takes. */
 export interface SegmentedSweepProps<V> {
   /** A drag across the segments sets every one it reaches to what the press set the pressed one to, each change
-   *  reported as it happens. Escape or a lost pointer puts them back. `true` sweeps from any segment; a function
-   *  decides per press. A segment that runs a drag of its own takes the press instead. */
+   *  reported as it happens; pressed with Alt, it turns on the segments it reaches and every other one off. Escape
+   *  or a lost pointer puts them back. `true` sweeps from any segment; a function decides per press. A segment that
+   *  runs a drag of its own takes the press instead. */
   sweep?: SegmentSweep<NoInfer<V>>;
 }
 
@@ -140,6 +142,8 @@ function behaviorOf<V extends string | number>(
  * In `'single'` mode a click on the segment that is on does nothing unless `allowDeselect` is set, and the arrow keys
  * move the selection with the focus, as a radio group's do; `followsFocus: false` makes its segments toggle buttons
  * whose arrows only move focus, as in `'multiple'` and `'each'`, with Space and Enter pressing the focused one.
+ * In `'multiple'` and `'each'`, an Alt-click, Alt+Space or Alt+Enter solos a segment: it on and every other one off,
+ * or, when that already holds, every one on.
  * A `'momentary'` bar is a toolbar of plain buttons; for buttons driven by the kit's actions registry, use
  * `ActionBar`.
  */
@@ -153,8 +157,10 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
   const behavior = behaviorOf(props, items, usable);
   const sweep = props.mode === 'multiple' || props.mode === 'each' ? props.sweep : undefined;
   const guard = useSweepGuard();
-  const press = (i: number): void => {
-    if (usable(i) && !guard.sweeping()) behavior.press(i);
+  const press = (i: number, alt: boolean): void => {
+    if (!usable(i) || guard.sweeping()) return;
+    if (alt && behavior.model) soloFrom(behavior.model, i, items.length, usable);
+    else behavior.press(i);
   };
 
   const tiles = useSegmentedTiling(props);
@@ -189,7 +195,7 @@ export function SegmentedBar<V extends string | number = string>(props: Segmente
                 className={segmentClassName(state, place)}
                 {...segmentPlaceProps(place)}
                 {...(sweep ? { [SWEEP_INDEX_ATTR]: i } : {})}
-                onClick={() => press(i)}
+                onClick={(event) => press(i, event.altKey)}
               >
                 {item.label}
               </button>

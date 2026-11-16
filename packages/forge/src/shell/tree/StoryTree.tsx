@@ -1,6 +1,6 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
-import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { SegmentedBar, type SegmentedBarItem } from '@weasel-js/ui/components/Segmented';
+import { ToggleChips } from '@weasel-js/ui/components/ToggleChips';
 import { Tree, type TreeNode as UiTreeNode, type TreeProps } from '@weasel-js/ui/components/Tree';
 import { type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { getOwn } from '@weasel-js/registry';
@@ -85,8 +85,11 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
 
   const table = useContext(LibrariesContext);
   const libraries = useMemo(() => librariesIn(index, table), [index, table]);
+  const libraryChips = useMemo(() => libraries.map((library) => ({ value: library, label: <LibraryBadge library={library} /> })), [libraries]);
+  const librariesOn = libraries.filter((library) => !getOwn(hidden, library));
+  const librariesId = useId();
   // A view is grayed out by what the project has, not by the package filter,
-  // which would otherwise disable a view as a side effect of unticking a box.
+  // which would otherwise disable a view as a side effect of turning a package off.
   const views = useMemo(() => {
     const hasGallery = index.some(isGallery);
     const hasOther = index.some((entry) => !isGallery(entry));
@@ -267,20 +270,16 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
           if (next) setView(next);
         }}
       />
-      <fieldset className="fg-tree__libraries">
-        <legend className="fg-tree__libraries-legend">Packages</legend>
-        {libraries.map((library) => (
-          <Checkbox
-            key={library}
-            isSelected={!getOwn(hidden, library)}
-            onChange={(on) => setHidden((prev) => ({ ...prev, [library]: !on }))}
-          >
-            <span className="fg-tree__library">
-              <LibraryBadge library={library} />
-            </span>
-          </Checkbox>
-        ))}
-      </fieldset>
+      <div className="fg-tree__libraries">
+        <span id={librariesId} className="fg-tree__libraries-legend">Packages</span>
+        <ToggleChips
+          aria-labelledby={librariesId}
+          sweep
+          items={libraryChips}
+          value={librariesOn}
+          onChange={(next) => setHidden((prev) => ({ ...prev, ...Object.fromEntries(libraries.map((library) => [library, !next.includes(library)])) }))}
+        />
+      </div>
       <input
         type="search"
         className="fg-tree__filter"
