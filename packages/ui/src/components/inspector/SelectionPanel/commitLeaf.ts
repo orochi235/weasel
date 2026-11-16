@@ -101,10 +101,11 @@ export function leafWrites<TData, TLayer extends string, TPose>(
     scene.untracked(() => {
       for (const [id, held] of before) {
         const node = scene.get(id);
-        if (!node) continue;
+        const head = leaf.path.split('.')[0];
+        // Only a draft still in flight is put back: a node changed since the last draft left it keeps that change.
+        if (!node || !sameHeld(held.left, { pose: node.pose, data: node.data, field: nodeRoot(node as AnyNode, head) })) continue;
         if (node.pose !== held.pose) scene.setPose(id, held.pose as TPose);
         if (node.data !== held.data) scene.update(id, { data: held.data as TData });
-        const head = leaf.path.split('.')[0];
         const field = declaredField(head);
         if (field && nodeRoot(node as AnyNode, head) !== held.field) field.write(scene, id, held.field);
       }
