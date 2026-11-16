@@ -4,6 +4,7 @@ import { refTarget } from '../dtcg/resolve.ts';
 import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
 import { ruleProblem } from './ruleShape.ts';
+import { withoutUnsafeNames } from './safeNames.ts';
 import { declaredSteps } from './steps.ts';
 
 /** The axes one token's value can change with. */
@@ -101,9 +102,12 @@ function closure(nodes: ReadonlyMap<string, Node>, ownSets: ReadonlyMap<string, 
 const readableRules = (rule: unknown): SemanticRule[] =>
   leaves(rule).filter((l): l is SemanticRule => isPlainObject(l) && ruleProblem(l) === undefined);
 
-/** Every token of the definition, `extends` chain included, mapped to the axes it depends on, in axis declaration order. */
+/**
+ * Every token of the definition that `derive` gives, `extends` chain included, mapped to the axes it depends on, in
+ * axis declaration order.
+ */
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
-  const def = mergeChain(definition, lookup);
+  const def = withoutUnsafeNames(mergeChain(definition, lookup));
   const nodes = new Map<string, Node>();
 
   /** Step token → the ramps that declare it. */

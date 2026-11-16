@@ -5,6 +5,7 @@ import { isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from
 import { axisIssues } from './axisIssues.ts';
 import { isRecord, rampColors, scaleValues, settle, stepNames, type SettleContext } from './entries.ts';
 import { mergeChain, type Lookup } from './merge.ts';
+import { withoutUnsafeNames } from './safeNames.ts';
 import { checkSemantics, deriveSemantics } from './semantics.ts';
 import { declaredSteps } from './steps.ts';
 import type { DeriveResult, Issue, Layer, Provenance } from './types.ts';
@@ -98,21 +99,6 @@ function inferTypes(tokens: Record<string, RawToken>, provenance: Record<string,
 
 const isPinObject = (v: PinValue): v is PinObject =>
   isPlainObject(v) && 'value' in v;
-
-const NAMED_LAYERS = ['ramps', 'scales', 'semantics', 'components', 'pins'] as const;
-
-function withoutUnsafeNames(def: ThemeDefinition, issues: Issue[]): ThemeDefinition {
-  let out = def;
-  for (const layer of NAMED_LAYERS) {
-    const entries = def[layer];
-    if (!entries || Object.keys(entries).every(isSafeTokenName)) continue;
-    for (const n of Object.keys(entries)) {
-      if (!isSafeTokenName(n)) issues.push({ kind: 'invalid', path: `${layer}.${n}`, message: unsafeTokenName(n) });
-    }
-    out = { ...out, [layer]: Object.fromEntries(Object.entries(entries).filter(([n]) => isSafeTokenName(n))) };
-  }
-  return out;
-}
 
 /** Derive every token of `definition` for one selection. Unmet rules are reported in `issues`; cycles and dangling references throw. */
 export function derive(definition: ThemeDefinition, selection: Selection = {}, lookup?: Lookup): DeriveResult {
