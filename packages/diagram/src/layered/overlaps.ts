@@ -4,6 +4,7 @@ import { EDGE_DERIVE_PATH } from '../edge';
 import { LABEL_DERIVE_POSE } from '../label';
 import type { DiagramData, DiagramSpec } from '../dataTypes';
 import type { Rect } from '@weasel-js/geom';
+import { lerp } from '@weasel-js/geom';
 
 interface Wire {
   id: string;
@@ -104,7 +105,7 @@ function crossing(p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2): Vec2 | null {
   const t = ((p3.x - p1.x) * (p4.y - p3.y) - (p3.y - p1.y) * (p4.x - p3.x)) / d;
   const u = ((p3.x - p1.x) * (p2.y - p1.y) - (p3.y - p1.y) * (p2.x - p1.x)) / d;
   if (!(t > 1e-6 && t < 1 - 1e-6 && u > 1e-6 && u < 1 - 1e-6)) return null;
-  return { x: p1.x + t * (p2.x - p1.x), y: p1.y + t * (p2.y - p1.y) };
+  return { x: lerp(p1.x, p2.x, t), y: lerp(p1.y, p2.y, t) };
 }
 
 /** Pairs of wires that cross, leaving out where two wires meet at a port they
