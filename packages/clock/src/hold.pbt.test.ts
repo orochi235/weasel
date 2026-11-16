@@ -94,21 +94,23 @@ describe('holdElapsed', () => {
 
 describe('createClockRegistry — stateful model', () => {
   interface Entry { handle: number; target: number | null; token: number }
-  interface Model { entries: Map<string, Entry>; notified: number; next: number }
+  /** Each id's registrations oldest first; the last is live, the rest shadowed. */
+  interface Model { stacks: Map<string, Entry[]>; notified: number; next: number }
   interface Real { reg: ReturnType<typeof createClockRegistry>; handles: ClockHandle[]; targets: ClockTarget[]; releases: Map<number, () => void>; notified: number; shared: ClockHandle | null }
   const ids = fc.constantFrom('a', 'b', '__proto__', 'constructor');
   type Cmd = fc.Command<Model, Real>;
 
+  const live = (m: Model): Entry[] => [...m.stacks.values()].map((s) => s.at(-1)!);
   const check = (m: Model, r: Real): void => {
     for (const id of ['a', 'b', '__proto__', 'constructor']) {
-      const e = m.entries.get(id);
+      const e = m.stacks.get(id)?.at(-1);
       expect(r.reg.get(id)).toBe(e ? r.handles[e.handle] : null);
     }
-    const all = new Set<ClockHandle>([...(r.shared ? [r.shared] : []), ...[...m.entries.values()].map((e) => r.handles[e.handle]!)]);
+    const all = new Set<ClockHandle>([...(r.shared ? [r.shared] : []), ...live(m).map((e) => r.handles[e.handle]!)]);
     expect(new Set(r.reg.all())).toEqual(all);
     expect([...r.reg.all()].length).toBe(all.size);
     r.handles.forEach((h, i) => {
-      const mine = [...m.entries.values()].filter((e) => e.handle === i);
+      const mine = live(m).filter((e) => e.handle === i);
       const want = mine.some((e) => e.target === null) ? [] : mine.map((e) => r.targets[e.target!]);
       expect(r.reg.targets(h)).toEqual(want);
     });
@@ -120,7 +122,7 @@ describe('createClockRegistry — stateful model', () => {
       check: () => true,
       run(m, r) {
         const token = m.next++;
-        m.entries.set(id, { handle, target, token });
+        m.stacks.set(id, [...(m.stacks.get(id) ?? []), { handle, target, token }]);
         m.notified++;
         r.releases.set(token, r.reg.register(id, r.handles[handle]!, target === null ? undefined : r.targets[target]));
         check(m, r);
@@ -131,8 +133,13 @@ describe('createClockRegistry — stateful model', () => {
       check: (m) => m.next > 0,
       run(m, r) {
         const token = i % m.next;
-        const live = [...m.entries].find(([, e]) => e.token === token);
-        if (live) { m.entries.delete(live[0]); m.notified++; }
+        for (const [id, stack] of m.stacks) {
+          const at = stack.findIndex((e) => e.token === token);
+          if (at === -1) continue;
+          stack.splice(at, 1);
+          if (stack.length === 0) m.stacks.delete(id);
+          m.notified++;
+        }
         r.releases.get(token)?.();
         check(m, r);
       },
@@ -140,14 +147,14 @@ describe('createClockRegistry — stateful model', () => {
     })),
   ], { maxCommands: 25 });
 
-  it('holds each id\'s newest registration until its own release, and reports every change', () => {
+  it('shows each id\'s newest registration, brings back the one beneath on its release, and reports every change', () => {
     fc.assert(fc.property(fc.boolean(), commands, (withShared, cmds) => {
       const handles = [createClock({}), createClock({ duration: 100 }), createClock({ rate: 1 })];
       const shared = withShared ? handles[0]! : null;
       const reg = createClockRegistry(shared);
       const real: Real = { reg, handles, targets: [() => ({}), () => null, () => ({ n: 2 })], releases: new Map(), notified: 0, shared };
       reg.subscribe(() => { real.notified++; });
-      fc.modelRun(() => ({ model: { entries: new Map(), notified: 0, next: 0 }, real }), cmds);
+      fc.modelRun(() => ({ model: { stacks: new Map(), notified: 0, next: 0 }, real }), cmds);
     }), runs(RUNS));
   }, timeoutFor(RUNS, 3));
 });
