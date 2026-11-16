@@ -4,4 +4,5 @@ export { CaptureView } from '../frame/capture/CaptureView';
 export { createOverrides } from '../frame/cssVars';
 export { type IndexEnv, IndexEnvContext, IndexPage, IndexStory } from '../frame/index/IndexPage';
 export { openChannel } from '../protocol/channel';
+export { loadStories } from '../story/load';
 export { loadNativeModule } from '../story/native';

@@ -60,9 +60,14 @@
   margin: 0;
 }
 
-.fg-index-story__main > .fg-index-cell--padded,
-.fg-index-story__main > .fg-index-cell--fullscreen {
+.fg-index-story__main > .fg-index-cell--padded {
   flex: 2 1 28rem;
+}
+
+/* A fullscreen story is a page of its own: it takes a row's whole width, under its text. */
+.fg-index-story__main > .fg-index-cell--fullscreen,
+.fg-index-variants__cells > .fg-index-cell--fullscreen {
+  flex: 1 1 100%;
 }
 
 .fg-index-story__head {
@@ -125,9 +130,13 @@
   width: auto;
 }
 
+/* The trial's height, as the story gets alone (`100cqb` is the trial host's, its size container), and more when
+   `useFullscreenFit` measures that its content needs it. Positioned, so a story inset into its box fills this one. */
 .fg-index-cell--fullscreen > .fg-index-cell__stage {
+  position: relative;
   display: block;
-  height: 360px;
+  box-sizing: border-box;
+  height: max(100cqb, var(--fg-cell-fit, 0px));
   padding: 0;
 }
 

@@ -17,6 +17,7 @@ import { useNearViewport } from '@weasel-js/react';
 import { mergeConfig, variantRows, withValueAt } from './variants';
 import './index.css';
 import { Description } from './Description';
+import { useFullscreenFit } from './useFullscreenFit';
 import { type IndexEnv, IndexEnvContext, useEnv } from './envContext';
 import { IndexApi } from './IndexApi';
 import { LabBadge } from './LabBadge';
@@ -38,6 +39,7 @@ export function IndexStory({ story, config: over, label }: IndexStoryProps) {
   const [config, setConfig] = useState(() => mergeConfig(story.config.defaults(), over));
   const [state, setState] = useState<unknown>(() => story.initialState?.(config) ?? null);
   const cell = useRef<HTMLElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   // Starts unmounted, so a page of canvas stories never mounts every cell at once.
   const near = useNearViewport(cell, NEAR_MARGIN, false);
   // Held while unmounted, so scrolling past a cell does not move everything after it.
@@ -49,6 +51,7 @@ export function IndexStory({ story, config: over, label }: IndexStoryProps) {
     observer.observe(el);
     return () => observer.disconnect();
   }, [near]);
+  useFullscreenFit(stage, near && story.layout === 'fullscreen');
   const ctx: StoryContext = {
     config,
     setConfig: (path, value) => setConfig((prev: unknown) => withValueAt(prev, path, value)),
@@ -65,7 +68,7 @@ export function IndexStory({ story, config: over, label }: IndexStoryProps) {
       className={`fg-index-cell fg-index-cell--${story.layout}`}
       style={!near && height !== null ? { minHeight: height } : undefined}
     >
-      <div className="fg-index-cell__stage">
+      <div ref={stage} className="fg-index-cell__stage">
         {near ? (
           <StoryHost story={story} ctx={ctx} decorators={env.decorators} resetKey={0} onError={env.onError} />
         ) : null}
