@@ -214,14 +214,10 @@ function OrbitDispatch({
       live.current.view = clamped;
       live.current.onViewChange(clamped);
     };
-    const hostSize = () => {
-      const r = hostRef.current?.getBoundingClientRect();
-      return r && r.width > 0 && r.height > 0 ? { width: r.width, height: r.height } : null;
-    };
     return {
       get: () => live.current.view,
       set,
-      size: () => hostSize() ?? { width: 1, height: 1 },
+      size: () => clientSize(hostRef.current) ?? { width: 1, height: 1 },
       limits: () => live.current.limits ?? NO_LIMITS,
       up: () => live.current.up,
       home: () => live.current.home?.() ?? live.current.view,
@@ -234,10 +230,7 @@ function OrbitDispatch({
         set: camera3d.set,
         home: () => live.current.home?.() ?? null,
         limits: () => live.current.limits ?? NO_LIMITS,
-        hostSize: () => {
-          const r = hostRef.current?.getBoundingClientRect();
-          return r ? { width: r.width, height: r.height } : null;
-        },
+        hostSize: () => clientSize(hostRef.current),
       }),
     [camera3d, hostRef],
   );
