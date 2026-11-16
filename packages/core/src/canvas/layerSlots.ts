@@ -1,5 +1,5 @@
 import type { RenderLayer } from '../core/layers/render';
-import type { SelectionOverlayLayerOptions } from 'domains/selection/overlay';
+import type { SelectionOverlayLayerOptions } from './selectionChrome';
 import type { SceneSlotConfig } from './buildSceneLayer';
 import type { PathEditingOverlayStyle } from 'domains/paths/pathEditingOverlayLayer';
 

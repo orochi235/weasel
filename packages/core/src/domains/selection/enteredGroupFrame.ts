@@ -4,7 +4,6 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
-import { rectPathFor } from './handleCommands';
 import { transformPath, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { NodeId, Scene } from 'core/scene/types';
@@ -59,7 +58,7 @@ export function createEnteredGroupFrameLayer(opts: {
       }));
       return [...outlines, {
         kind: 'path',
-        path: rectPathFor(x, y, b.width * view.scale.x, b.height * view.scale.y),
+        path: { kind: 'rect', x, y, width: b.width * view.scale.x, height: b.height * view.scale.y },
         stroke: { paint, width: FRAME_WIDTH, dash: FRAME_DASH },
       }];
     },

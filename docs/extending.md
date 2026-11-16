@@ -284,12 +284,8 @@ would build from a config.
 Affordances are reusable chrome primitives. Each affordance is a small object: `{ id, regions, regionsAt?, decorate? }`, its regions each carrying their own paint and hit radius. Tools that want chrome (selection handles, anchor dots, snap-target highlights, etc.) compose affordances into their overlay rather than reimplementing the hit-test logic inline.
 
 ```ts
-import {
-  createCornerResizeAffordance,
-  composeAffordanceLayer,
-  defineTool,
-  hitPredicate,
-} from '@weasel-js/core';
+import { composeAffordanceLayer, defineTool, hitPredicate } from '@weasel-js/core';
+import { createCornerResizeAffordance } from '@weasel-js/editing';
 
 // 1. Build an affordance instance via a kit-shipped factory.
 const corners = createCornerResizeAffordance({

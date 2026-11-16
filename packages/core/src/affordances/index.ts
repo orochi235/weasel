@@ -15,16 +15,6 @@ export {
   type TargetTransform,
 } from './hitAffordanceRegions';
 export {
-  createCornerResizeAffordance,
-  type CornerResizeAffordanceOptions,
-  type CornerResizeScratch,
-} from './cornerResize';
-export {
-  createRotationAffordance,
-  type RotationAffordanceOptions,
-  type RotationScratch,
-} from './rotationHandle';
-export {
   createPathAnchorAffordances,
   PATH_ANCHOR_CHROME_ID,
   type AnchorState,

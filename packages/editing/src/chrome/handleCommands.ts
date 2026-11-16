@@ -4,17 +4,18 @@
  */
 
 import type { DrawCommand, GlMat3 } from '@weasel-js/renderer';
+import type { SelectionHandleStyle } from '@weasel-js/core';
 import type { CommandStroke, CommandFill } from '@weasel-js/paint';
 import { screenAngleOf } from '@weasel-js/geom';
-import { angleOf, localToWorld, targetTransformOf } from 'core/geometry/targetFrame';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { View } from 'core/viewport/view';
-import { viewToTransform } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
-import { HANDLE_BASE_PX } from 'core/device/targets';
+import { angleOf, localToWorld, targetTransformOf } from '@weasel-js/core';
+import type { Bounds } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import { viewToTransform } from '@weasel-js/core/engine';
+import { worldToScreen } from '@weasel-js/core/engine';
+import { HANDLE_BASE_PX } from '@weasel-js/core';
 import {
   handlePoint, resizeHandlesFor, type ResizeHandleLayout,
-} from 'interactions/gestures/resizeHandles';
+} from '@weasel-js/core/engine';
 
 export type { ResizeHandleLayout };
 
@@ -25,13 +26,6 @@ const DEFAULT_HANDLE_OUTLINE: CommandStroke = {
 };
 const DEFAULT_HANDLE_SIZE = HANDLE_BASE_PX;
 
-
-/** Handle visuals, as a consumer supplies them. */
-export interface SelectionHandleStyle {
-  size?: number;
-  fill?: CommandFill;
-  outline?: CommandStroke;
-}
 
 export interface ResolvedHandles {
   size: number;

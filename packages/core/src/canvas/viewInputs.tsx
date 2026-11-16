@@ -15,6 +15,7 @@ import type { PlaneMap } from 'core/viewport/parallax';
 import type { ChromeCaps } from 'domains/chrome-caps/useChromeCaps';
 import type { PickView } from './SceneCanvas/useScenePickers';
 import type { WorldPoint } from '@weasel-js/routing';
+import type { SelectionChrome } from './selectionChrome';
 
 export type { ViewRuleInputs } from 'domains/chrome-caps/useChromeCaps';
 
@@ -57,6 +58,8 @@ export interface SurfaceViewInputs
   /** The surface's resize-handle layout — which handles exist and their hit
    *  radius — so every view grabs exactly the handles the overlay paints. */
   resizeHandles?: ResizeHandleLayout;
+  /** What says where the surface's selection chrome is grabbed, which every view hit-tests by. */
+  selectionChrome?: SelectionChrome;
 }
 
 const ViewInputsContext = createContext<SurfaceViewInputs | null>(null);

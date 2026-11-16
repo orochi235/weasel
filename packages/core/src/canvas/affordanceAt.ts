@@ -11,8 +11,7 @@ import type { View } from 'core/viewport/view';
 import type { AffordanceHit, WorldPoint } from '@weasel-js/routing';
 import type { Affordance, CommonAffordanceScratch, LayerHit } from 'affordances/types';
 import { hitAffordanceRegions, type AffordanceRegionHit } from 'affordances/hitAffordanceRegions';
-import { createCornerResizeAffordance } from 'affordances/cornerResize';
-import { createRotationAffordance } from 'affordances/rotationHandle';
+import type { SelectionChrome } from './selectionChrome';
 import { createPathAnchorAffordances, type AnchorState } from 'affordances/pathAnchors';
 import { targetSizesPx } from 'core/device/targets';
 
@@ -40,6 +39,9 @@ export interface ChromeAffordanceOptions {
   edgeHandles?: boolean;
   /** Anchor-editing state. When omitted, anchors aren't hit-tested. */
   getAnchorState?: () => AnchorState | null;
+  /** What says where the selection chrome is grabbed (`FeaturePreset.selectionChrome`). Omitted, only the
+   *  anchors are hit-tested. */
+  selectionChrome?: SelectionChrome;
 }
 
 export interface BuildAffordanceAtOptions extends ChromeAffordanceOptions {
@@ -60,9 +62,8 @@ export interface BuildAffordanceAtOptions extends ChromeAffordanceOptions {
 }
 
 /**
- * The kit's selection chrome as affordances, bottom → top: rotate ring (and
- * badge), resize handles, then anchors and their controls — a corner handle
- * beats the rotate band it sits inside, and a control handle beats everything.
+ * The canvas's chrome as affordances, bottom → top: the selection chrome's (its rotate ring and badge, then its
+ * resize handles), then anchors and their controls, so a control handle beats everything.
  */
 export function chromeAffordances(opts: ChromeAffordanceOptions = {}): Affordance[] {
   const sizes = targetSizesPx(opts.targetScale);
@@ -73,16 +74,10 @@ export function chromeAffordances(opts: ChromeAffordanceOptions = {}): Affordanc
     getAnchorState,
     rotationBadge,
     edgeHandles = true,
+    selectionChrome,
   } = opts;
   return [
-    createRotationAffordance({
-      bandPx: rotateBandPx,
-      paint: null,
-      ...(rotationBadge
-        ? { handle: { distancePx: rotationBadge.distancePx, hitRadiusPx: rotationBadge.sizePx } }
-        : {}),
-    }),
-    createCornerResizeAffordance({ handleHitRadius, edges: edgeHandles }),
+    ...(selectionChrome?.affordances({ handleHitRadius, rotateBandPx, rotationBadge: rotationBadge ?? null, edgeHandles }) ?? []),
     ...(getAnchorState
       ? createPathAnchorAffordances(getAnchorState, { hitRadius: anchorHitRadius })
       : []),

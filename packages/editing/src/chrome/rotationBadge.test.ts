@@ -8,16 +8,17 @@
 import { describe, expect, it } from 'vitest';
 import type { GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { createSelectionOverlayLayer } from './overlay';
-import { createRotationAffordance } from 'affordances/rotationHandle';
-import { hitAffordanceRegions } from 'affordances/hitAffordanceRegions';
-import { createSlopsDebugLayer } from 'canvas/slopsDebugLayer';
-import { chromeAffordances } from 'canvas/affordanceAt';
-import { rotationHandle } from 'core/geometry/rotationHandle';
-import { rotatePoint } from 'core/geometry/rotatedRect';
-import { viewToTransform } from 'core/viewport/view';
-import { worldToScreen, screenToWorld } from 'core/viewport/viewTransform';
-import { asNodeId } from 'core/scene/types';
-import type { ChromeState } from 'core/selection/chromeState';
+import { createRotationAffordance } from './affordances/rotationHandle';
+import { hitAffordanceRegions } from '@weasel-js/core';
+import { createSlopsDebugLayerForTests as createSlopsDebugLayer } from '@weasel-js/core/test-seams';
+import { chromeAffordancesForTests as chromeAffordances } from '@weasel-js/core/test-seams';
+import { rotationHandle } from './rotationHandleGeometry';
+import { SELECTION_CHROME } from './selectionChrome';
+import { rotatePoint } from '@weasel-js/core';
+import { viewToTransform } from '@weasel-js/core/engine';
+import { worldToScreen, screenToWorld } from '@weasel-js/core/engine';
+import { asNodeId } from '@weasel-js/core/engine';
+import type { ChromeState } from '@weasel-js/core';
 
 const B = { x: 10, y: 20, width: 40, height: 20, rotation: Math.PI / 6 };
 const VIEW = { x: 5, y: -3, scale: { x: 4, y: 1 } };
@@ -105,7 +106,7 @@ describe('rotate badge under 4:1 zoom on a rotated selection', () => {
 
   it('shows its slop where it is grabbable', () => {
     const layer = createSlopsDebugLayer({
-      getAffordances: () => chromeAffordances({ rotationBadge: { distancePx: DIST, sizePx: SIZE } }),
+      getAffordances: () => chromeAffordances({ rotationBadge: { distancePx: DIST, sizePx: SIZE }, selectionChrome: SELECTION_CHROME }),
     });
     const tree = layer.draw(envelope, VIEW, DIMS);
     // The rotation affordance walks first, so its badge is the first halo; its

@@ -1,5 +1,5 @@
-import { localToWorld, normalToWorld, targetTransformOf } from 'core/geometry/targetFrame';
-import { ROTATION_HANDLE_BASE_PX } from 'core/device/targets';
+import { localToWorld, normalToWorld, targetTransformOf } from '@weasel-js/core';
+import { ROTATION_HANDLE_BASE_PX } from '@weasel-js/core';
 import { standoff, type PoseLinear, type Scale2 } from '@weasel-js/geom';
 
 /** Default world-space distance from the rect's top edge to the rotation

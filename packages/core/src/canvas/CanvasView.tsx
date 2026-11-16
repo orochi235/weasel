@@ -192,7 +192,7 @@ export function CanvasView(props: CanvasViewProps): null {
       getChromeState: () => helpersRef.current.getChromeState(),
       getView: camera,
       targetScale,
-      rotationBadge, handleHitRadius: inputs?.resizeHandles?.hitRadiusPx, edgeHandles: inputs?.resizeHandles?.edges,
+      rotationBadge, handleHitRadius: inputs?.resizeHandles?.hitRadiusPx, edgeHandles: inputs?.resizeHandles?.edges, selectionChrome: inputs?.selectionChrome,
       getAnchorState,
       getIsVisible: () => helpersRef.current.getIsVisible(),
     });
@@ -205,7 +205,7 @@ export function CanvasView(props: CanvasViewProps): null {
       );
       return extra ? layerAffordance(extra.layerId, extra.hit) : registry?.markerAt(id, world) ?? inner(world);
     };
-  }, [id, getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, inputs?.resizeHandles, helpersRef]);
+  }, [id, getAnchorState, rectNow, registry, targetScale, camera, drawnLayers, rotationBadge, inputs?.resizeHandles, inputs?.selectionChrome, helpersRef]);
 
   const classifyTarget = useMemo(() => buildClassifyTarget(
     () => selectionNow().get(),

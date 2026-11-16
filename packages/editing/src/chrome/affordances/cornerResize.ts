@@ -1,13 +1,13 @@
-import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
-import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import type { ResizeAnchor } from 'interactions/gestures/types';
+import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from '@weasel-js/core';
+import type { ChromeState, Bounds } from '@weasel-js/core';
+import type { ResizeAnchor } from '@weasel-js/core';
 import {
   RESIZE_HANDLE_ANCHORS, fixedCornerOf, handlePoint, isCornerHandle, type ResizeHandleAnchor,
-} from 'interactions/gestures/resizeHandles';
-import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
-import { localToWorld, transformOf, type TargetTransform } from './hitAffordanceRegions';
-import type { View } from 'core/viewport/view';
-import { HANDLE_BASE_PX } from 'core/device/targets';
+} from '@weasel-js/core/engine';
+import { MULTI_RESIZE_TARGET_ID } from '@weasel-js/core';
+import { localToWorld, transformOf, type TargetTransform } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import { HANDLE_BASE_PX } from '@weasel-js/core';
 import type { CursorSpec } from '@weasel-js/cursor';
 
 /** Options for `createCornerResizeAffordance` — the size and appearance of

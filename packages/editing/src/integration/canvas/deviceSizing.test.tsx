@@ -10,14 +10,16 @@
  * the paint size and the hit radius from their two call sites at one scale.
  */
 import { describe, it, expect } from 'vitest';
-import { HANDLE_BASE_PX, ROTATION_HANDLE_BASE_PX } from '../core/device/targets';
+import { HANDLE_BASE_PX, ROTATION_HANDLE_BASE_PX } from '@weasel-js/core';
 import { COARSE_TARGET_SCALE, resolveDeviceProfile } from '@weasel-js/routing';
-import { DEFAULT_HANDLE_SIZE, mergeLayersWithDefaults } from './SceneCanvas';
-import { DEFAULT_ROTATION_HANDLE_DISTANCE } from '../core/geometry/rotationHandle';
-import { createCornerResizeAffordance } from '../affordances/cornerResize';
-import { buildAffordanceAt, chromeAffordances } from './affordanceAt';
-import type { ChromeState } from 'core/selection/chromeState';
-import { asNodeId } from 'core/scene/types';
+import { DEFAULT_HANDLE_SIZE } from '@weasel-js/core';
+import { mergeLayersWithDefaultsForTests as mergeLayersWithDefaults } from '@weasel-js/core/test-seams';
+import { DEFAULT_ROTATION_HANDLE_DISTANCE } from '../../chrome/rotationHandleGeometry';
+import { createCornerResizeAffordance } from '../../chrome/affordances/cornerResize';
+import { buildAffordanceAtForTests as buildAffordanceAt, chromeAffordancesForTests as chromeAffordances } from '@weasel-js/core/test-seams';
+import type { ChromeState } from '@weasel-js/core';
+import { asNodeId } from '@weasel-js/core/engine';
+import { SELECTION_CHROME } from '../../chrome/selectionChrome';
 
 const coarse = resolveDeviceProfile({ coarsePointer: true, canHover: false, dpr: 2 });
 
@@ -59,7 +61,7 @@ describe('device-scaled chrome sizing', () => {
 
   it('paint size and hit radius agree under a coarse profile', () => {
     const painted = handleSizeOf(coarse.targetScale);
-    const handles = chromeAffordances({ targetScale: coarse.targetScale })
+    const handles = chromeAffordances({ selectionChrome: SELECTION_CHROME, targetScale: coarse.targetScale })
       .find((a) => a.id === 'selection.resize-handles')!
       .regions(singleSelection());
 
@@ -85,7 +87,7 @@ describe('device-scaled affordance hit zones', () => {
   const OFF = 12;
 
   const hitAt = (targetScale: number) =>
-    buildAffordanceAt({
+    buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
       getChromeState: singleSelection,
       getView: () => view,
       targetScale,

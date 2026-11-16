@@ -4,12 +4,12 @@
  * leaves, and the drawn box a scene supplies.
  */
 import type { Scale2 } from '@weasel-js/geom';
-import { drawnAABBOf, drawnBoundsOf, type DrawnBoundsScene } from 'canvas/drawnBounds';
-import { unionAABB } from 'core/geometry/unionBounds';
-import { framedBounds, visualBoundsViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import type { NodeId } from 'core/scene/types';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { drawnAABBOf, drawnBoundsOf, type DrawnBoundsScene } from '@weasel-js/core';
+import { unionAABB } from '@weasel-js/core/engine';
+import { framedBounds, visualBoundsViaDescriptor, type PoseDescriptor } from '@weasel-js/core';
+import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
+import type { NodeId } from '@weasel-js/core';
+import type { Bounds } from '@weasel-js/core';
 
 /**
  * Transitive leaf ids under `id`. A childless node is a leaf only if it is not

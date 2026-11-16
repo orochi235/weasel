@@ -60,12 +60,12 @@ describe('resolveFeatures', () => {
   });
 
   it('turns on only what it is handed: nothing implies view', () => {
-    expect(ids(['outline'])).toEqual(['selection', 'outline']);
+    expect(ids(['outline'])).toEqual(['selection', 'selectionChrome', 'outline']);
   });
 
   it('turns on select and outline under pick, and resize and rotate under transform', () => {
-    expect(ids(['pick'])).toEqual(['selection', 'toolkit:select', 'tools:select', 'select', 'outline', 'pick']);
-    expect(ids(['transform'])).toEqual(['selection', 'resize', 'rotate', 'transform']);
+    expect(ids(['pick'])).toEqual(['selection', 'toolkit:select', 'tools:select', 'select', 'selectionChrome', 'outline', 'pick']);
+    expect(ids(['transform'])).toEqual(['selection', 'selectionChrome', 'resize', 'rotate', 'transform']);
   });
 
   it('registers resize without rotate', () => {

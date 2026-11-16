@@ -1,8 +1,8 @@
-import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
-import type { ChromeState, Bounds } from 'core/selection/chromeState';
+import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from '@weasel-js/core';
+import type { ChromeState, Bounds } from '@weasel-js/core';
 import type { CommandStroke, CommandFill } from '@weasel-js/paint';
-import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
-import { localToWorld, transformOf } from './hitAffordanceRegions';
+import { MULTI_RESIZE_TARGET_ID } from '@weasel-js/core';
+import { localToWorld, transformOf } from '@weasel-js/core';
 import type { CursorSpec } from '@weasel-js/cursor';
 import { rotateCursorAt } from './rotateCursor';
 

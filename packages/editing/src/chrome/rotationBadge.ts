@@ -3,11 +3,11 @@ import { mat3, type GlMat3 } from '@weasel-js/renderer';
 import type { CommandStroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
-import { rotationHandle } from 'core/geometry/rotationHandle';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { View } from 'core/viewport/view';
-import { viewToTransform } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
+import { rotationHandle } from './rotationHandleGeometry';
+import type { Bounds } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import { viewToTransform } from '@weasel-js/core/engine';
+import { worldToScreen } from '@weasel-js/core/engine';
 import type { ResolvedHandles } from './handleCommands';
 
 /** GL helper: emit a curved double-headed arrow, the rotate badge above the

@@ -9,11 +9,11 @@ import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import type { PathDrawCommand } from '@weasel-js/renderer';
 import { createCornerResizeAffordance, type CornerResizeScratch } from './cornerResize';
 import { createRotationAffordance } from './rotationHandle';
-import { composeAffordanceLayer } from './composeAffordanceLayer';
-import { hitAffordanceRegions } from './hitAffordanceRegions';
-import { rotationHandle } from 'core/geometry/rotationHandle';
-import { asNodeId } from 'core/scene/types';
-import type { ChromeState } from 'core/selection/chromeState';
+import { composeAffordanceLayer } from '@weasel-js/core';
+import { hitAffordanceRegions } from '@weasel-js/core';
+import { rotationHandle } from '../rotationHandleGeometry';
+import { asNodeId } from '@weasel-js/core/engine';
+import type { ChromeState } from '@weasel-js/core';
 
 const B = { x: 0, y: 0, width: 100, height: 60, rotation: Math.PI / 6, transform: [1, 0, 0.8, 1] as const };
 const VIEW = { x: 5, y: -3, scale: { x: 2, y: 2 } };

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { boundsOfPath, pathContainsPoint, pathFromD, type Path } from '@weasel-js/geom';
-import { createScene } from 'core/scene/scene';
-import { asNodeId, type RectPose } from 'core/scene/types';
+import { createScene } from '@weasel-js/core/engine';
+import { asNodeId, type RectPose } from '@weasel-js/core/engine';
 import { createSelectionOverlayLayer } from './overlay';
 
 const RED = { kind: 'solid', color: '#f00' } as const;

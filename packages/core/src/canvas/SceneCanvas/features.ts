@@ -34,6 +34,7 @@ import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
 import type { ComponentType, MutableRefObject } from 'react';
 import type { Scene } from 'core/scene/types';
 import type { SelectionFactory } from 'core/selection/selectionContract';
+import type { SelectionChrome } from '../selectionChrome';
 import type { PresetBuildContext } from './presetBuild';
 
 /** What a canvas hands each of its presets' {@link FeaturePreset.components}. */
@@ -159,6 +160,9 @@ export interface FeaturePreset {
    * selection no input writes, and `<SceneCanvas selection>` replaces whichever it would build.
    */
   readonly selection?: SelectionFactory;
+  /** What draws the canvas's selection chrome, the `selectionOverlay` slot, and says where a press grabs it. One
+   *  per canvas; two presets with different ones throw. With none the slot paints nothing and no handle is grabbed. */
+  readonly selectionChrome?: SelectionChrome;
   /** Ids of presets whose actions, and those of every preset they include,
    *  this one's register ahead of, so that where both bind one gesture, this
    *  one's is tried first: anchor nudging ahead of node nudging. A preset named
@@ -189,6 +193,8 @@ export interface EnabledPresets {
   readonly builds: readonly NonNullable<FeaturePreset['build']>[];
   /** The one selection factory they give, if any. */
   readonly selection: SelectionFactory | undefined;
+  /** The one selection chrome they give, if any. */
+  readonly selectionChrome: SelectionChrome | undefined;
   /** Whether a preset with this id is on. */
   has(id: string): boolean;
 }
@@ -254,20 +260,24 @@ export function resolveFeatures(
     insertKinds: new Set(presets.flatMap((p) => p.insertKinds ?? [])),
     contentHandlers: presets.flatMap((p) => p.contentHandlers ?? []),
     builds: [...new Set(presets.flatMap((p) => (p.build ? [p.build] : [])))],
-    selection: selectionOf(presets),
+    selection: oneOf(presets, 'selection', 'build the canvas\'s selection'),
+    selectionChrome: oneOf(presets, 'selectionChrome', 'draw the selection chrome'),
     has: (id) => byId.has(id),
   };
 }
 
-/** The one selection factory `presets` give, or undefined. */
-function selectionOf(presets: readonly FeaturePreset[]): SelectionFactory | undefined {
-  let found: { id: string; factory: SelectionFactory } | undefined;
+/** The one value `presets` give for `role`, or undefined; two presets giving different ones throw. */
+function oneOf<K extends 'selection' | 'selectionChrome'>(
+  presets: readonly FeaturePreset[], role: K, what: string,
+): FeaturePreset[K] | undefined {
+  let found: { id: string; value: NonNullable<FeaturePreset[K]> } | undefined;
   for (const p of presets) {
-    if (!p.selection || found?.factory === p.selection) continue;
-    if (found) throw new Error(`[SceneCanvas] presets "${found.id}" and "${p.id}" both build the canvas's selection`);
-    found = { id: p.id, factory: p.selection };
+    const value = p[role];
+    if (!value || found?.value === value) continue;
+    if (found) throw new Error(`[SceneCanvas] presets "${found.id}" and "${p.id}" both ${what}`);
+    found = { id: p.id, value };
   }
-  return found?.factory;
+  return found?.value;
 }
 
 const ROTATION_HANDLE: ChromeId = 'selection.rotation-handle';

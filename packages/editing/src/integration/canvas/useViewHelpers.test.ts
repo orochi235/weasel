@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useViewHelpers } from './useViewHelpers';
-import { RECT_POSE_DESCRIPTOR } from 'core/geometry/poseDescriptor';
-import { asNodeId } from 'core/scene/types';
-import { createCornerResizeAffordance } from 'affordances/cornerResize';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { useViewHelpersForTests as useViewHelpers } from '@weasel-js/core/test-seams';
+import { RECT_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
+import { asNodeId } from '@weasel-js/core/engine';
+import { createCornerResizeAffordance } from '../../chrome/affordances/cornerResize';
+import type { Bounds } from '@weasel-js/core';
 
 describe('useViewHelpers chrome state', () => {
   // A committed move changes poses in the adapter without changing the

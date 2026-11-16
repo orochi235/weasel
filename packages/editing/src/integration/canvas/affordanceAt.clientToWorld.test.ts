@@ -5,8 +5,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildAffordanceAt, type AnchorState } from './affordanceAt';
+import type { AnchorState } from '@weasel-js/core';
+import { buildAffordanceAtForTests as buildAffordanceAt } from '@weasel-js/core/test-seams';
 import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
+import { SELECTION_CHROME } from '../../chrome/selectionChrome';
 
 function clientToWorld(
   clientX: number,
@@ -37,7 +39,7 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
     get unionBounds() { return null; },
   };
 
-  const affordanceAt = buildAffordanceAt({ getChromeState: () => chromeState as any, getView: () => view });
+  const affordanceAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME, getChromeState: () => chromeState as any, getView: () => view });
 
   it('client (40, 40) at scale=2 → world (20,20) → top-left handle hit', () => {
     const wp = clientToWorld(40, 40, rect, view);
@@ -70,7 +72,7 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       get unionBounds() { return null; },
     };
-    const pannedAffordanceAt = buildAffordanceAt({ getChromeState: () => pannedChrome as any, getView: () => pannedView });
+    const pannedAffordanceAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME, getChromeState: () => pannedChrome as any, getView: () => pannedView });
     const hit = pannedAffordanceAt(wp);
     // Not near any corner (corner at (20,20), distance from (40,27.5) ≈ 22 > 8).
     expect(hit).toBeNull();
@@ -92,7 +94,7 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       get unionBounds() { return null; },
     };
-    const pannedAffordanceAt = buildAffordanceAt({ getChromeState: () => pannedChrome as any, getView: () => pannedView });
+    const pannedAffordanceAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME, getChromeState: () => pannedChrome as any, getView: () => pannedView });
     const hit = pannedAffordanceAt(wp);
     expect(hit).not.toBeNull();
     expect(hit?.kind).toBe('handle:top-left');
@@ -142,7 +144,7 @@ describe('buildAffordanceAt — anchor hits on selected polygon paths', () => {
     getPose: (id) => id === 'path-1' ? triangle : undefined,
   };
 
-  const affordanceAt = buildAffordanceAt({
+  const affordanceAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
     getChromeState: () => chromeState as any,
     getView: () => UNIT_VIEW,
     getAnchorState: () => anchorState,
@@ -187,7 +189,7 @@ describe('buildAffordanceAt — anchor hits on selected polygon paths', () => {
         return { ...other, coords: new Float32Array([100, 0, 110, 0, 105, 10]) };
       },
     };
-    const afAt = buildAffordanceAt({
+    const afAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
       getChromeState: () => twoSelected as any,
       getView: () => UNIT_VIEW,
       getAnchorState: () => editingPath1,
@@ -205,7 +207,7 @@ describe('buildAffordanceAt — anchor hits on selected polygon paths', () => {
       editingId: null,
       getPose: (id) => id === 'path-1' ? bezier : undefined,
     };
-    const afAt = buildAffordanceAt({
+    const afAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
       getChromeState: () => makeChromeState() as any,
       getView: () => UNIT_VIEW,
       getAnchorState: () => noEditAnchorState,
@@ -226,7 +228,7 @@ describe('buildAffordanceAt — control-handle hits when in edit mode', () => {
     getPose: (id) => id === 'path-1' ? bezier : undefined,
   };
 
-  const affordanceAt = buildAffordanceAt({
+  const affordanceAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
     getChromeState: () => chromeState as any,
     getView: () => UNIT_VIEW,
     getAnchorState: () => anchorState,
@@ -266,7 +268,7 @@ describe('buildAffordanceAt — no anchor state wired → no anchor hits', () =>
   const chromeState = makeChromeState();
 
   // No getAnchorState passed → anchors never hittable.
-  const affordanceAt = buildAffordanceAt({
+  const affordanceAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
     getChromeState: () => chromeState as any,
     getView: () => UNIT_VIEW,
   });
@@ -285,7 +287,7 @@ describe('buildAffordanceAt — non-polygon pose is skipped', () => {
     getPose: () => ({ kind: 'rect', x: 0, y: 0, width: 100, height: 100 }),
   };
 
-  const affordanceAt = buildAffordanceAt({
+  const affordanceAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
     getChromeState: () => chromeState as any,
     getView: () => UNIT_VIEW,
     getAnchorState: () => anchorState,

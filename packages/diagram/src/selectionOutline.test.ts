@@ -1,11 +1,12 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { createScene, createSelectionOverlayLayer, type RectPose } from '@weasel-js/core';
+import { createScene, type RectPose } from '@weasel-js/core';
 import { pathContainsPoint, polygonFromPoints, type Path } from '@weasel-js/geom';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, type DataNode } from './fromData';
 import { registerOutline } from './outline';
 import { roundRectOutline } from './outlines/figures';
 import { registerDiagramShape } from './shape';
+import { createSelectionOverlayLayer } from '@weasel-js/editing';
 
 const disposers = [registerDiagramShape<RectPose>(), registerOutline('card', roundRectOutline(5))];
 afterAll(() => disposers.forEach((d) => d()));

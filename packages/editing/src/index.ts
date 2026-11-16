@@ -60,6 +60,21 @@ export {
 export { drawPreset, pickPreset, transformPreset } from './presets/composites';
 export { ingestPreset } from './presets/ingest';
 export { insertPreset } from './presets/insert';
+export { selectionChromePreset } from './presets/selectionChrome';
+export { SELECTION_CHROME } from './chrome/selectionChrome';
+export {
+  composeSelectionPose, createSelectionHandlesLayer, createSelectionOutlineLayer, createSelectionOverlayLayer,
+  type ComposeSelectionPoseOptions,
+} from './chrome/overlay';
+export {
+  createCornerResizeAffordance, type CornerResizeAffordanceOptions, type CornerResizeScratch,
+} from './chrome/affordances/cornerResize';
+export {
+  createRotationAffordance, type RotationAffordanceOptions, type RotationScratch,
+} from './chrome/affordances/rotationHandle';
+export {
+  rotationHandle, hitRotationHandle, DEFAULT_ROTATION_HANDLE_DISTANCE, type RotationHandle,
+} from './chrome/rotationHandleGeometry';
 export {
   FEATURE_ACTION_IDS, FEATURE_NAMES, FEATURE_PRESETS, KIT_STANDARD_ACTIONS, namedFeatures, type FeatureName,
 } from './namedPresets';

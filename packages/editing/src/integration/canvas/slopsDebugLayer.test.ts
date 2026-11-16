@@ -1,15 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { createSlopsDebugLayer } from './slopsDebugLayer';
-import { chromeAffordances } from './affordanceAt';
-import { targetSizesPx } from 'core/device/targets';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { ChromeState } from 'core/selection/chromeState';
-import { asNodeId } from 'core/scene/types';
+import { createSlopsDebugLayerForTests as createSlopsDebugLayer } from '@weasel-js/core/test-seams';
+import { chromeAffordancesForTests as chromeAffordances } from '@weasel-js/core/test-seams';
+import { targetSizesPxForTests as targetSizesPx } from '@weasel-js/core/test-seams';
+import type { Bounds } from '@weasel-js/core';
+import type { ChromeState } from '@weasel-js/core';
+import { asNodeId } from '@weasel-js/core/engine';
 import { COARSE_TARGET_SCALE } from '@weasel-js/routing';
+import { SELECTION_CHROME } from '../../chrome/selectionChrome';
 
 function layerFor(targetScale?: number) {
   return createSlopsDebugLayer({
-    getAffordances: () => chromeAffordances(targetScale !== undefined ? { targetScale } : {}),
+    getAffordances: () => chromeAffordances({ selectionChrome: SELECTION_CHROME, ...(targetScale !== undefined ? { targetScale } : {}) }),
   });
 }
 

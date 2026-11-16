@@ -47,14 +47,12 @@ export type { Unit, UnitEntry, UnitScale, UnitSystem, UnitValue } from '@weasel-
 export type { PerAxis, PlaneUnits, PlaneValue, UnitExpr, UnitExprContext } from '@weasel-js/quantity';
 export type { ScopeTree, UnitScope } from '@weasel-js/quantity';
 
-// ─── Affordances: cross-tool hittable chrome (resize/rotate handles) ────────
+// ─── Affordances: cross-tool hittable chrome ────────────────────────────────
 export {
   composeAffordanceLayer,
   hitAffordanceRegions,
   annulusSemiAxes,
   pointRegionFrame,
-  createCornerResizeAffordance,
-  createRotationAffordance,
   createPathAnchorAffordances,
   PATH_ANCHOR_CHROME_ID,
   type Affordance,
@@ -64,13 +62,9 @@ export {
   type AnchorScratch,
   type AnchorState,
   type CommonAffordanceScratch,
-  type CornerResizeAffordanceOptions,
-  type CornerResizeScratch,
   type CustomPaintContext,
   type LayerHit,
   type PathAnchorAffordanceOptions,
-  type RotationAffordanceOptions,
-  type RotationScratch,
   type TargetTransform,
 } from '../affordances';
 export type { ClaimableGesture } from '@weasel-js/gestures';
@@ -131,19 +125,14 @@ export type {
 } from '../domains/chrome-caps';
 export type { ChromeRulesDep, VisibilityRule } from '../canvas/deps/chromeRules';
 
-// ─── Selection overlay: outlines, handles, composer ─────────────────────────
-export {
-  composeSelectionPose,
-  createSelectionOutlineLayer,
-  createSelectionHandlesLayer,
-  createSelectionOverlayLayer,
-} from '../domains/selection';
+// ─── Selection chrome: the overlay slot's options, and what draws and hit-tests it ─
 export type {
-  ComposeSelectionPoseOptions,
+  SelectionChrome,
+  SelectionChromeSizes,
   SelectionOutlineLayerOptions,
   SelectionHandlesLayerOptions,
   SelectionOverlayLayerOptions,
   SelectionHandleStyle,
-} from '../domains/selection';
-export type { SelectionLayerCommon } from '../domains/selection/overlay';
+  SelectionLayerCommon,
+} from '../canvas/selectionChrome';
 export type { PointRegionShape } from '../affordances/hitAffordanceRegions';

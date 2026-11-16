@@ -65,3 +65,15 @@ export { heldPose as heldPoseForTests, moveEnd as moveEndForTests } from '../int
 
 export { createGestureSource as createGestureSourceForTests } from '../canvas/SceneCanvas/dispatcherGestureBounds';
 export { usePreviewGhostLayer as usePreviewGhostLayerForTests } from '../canvas/SceneCanvas/usePreviewGhostLayer';
+
+export { pointRegionScreenQuad as pointRegionScreenQuadForTests } from '../affordances/hitAffordanceRegions';
+
+export { mergeLayersWithDefaults as mergeLayersWithDefaultsForTests } from '../canvas/SceneCanvas';
+export { useSelectionOverlayLayer as useSelectionOverlayLayerForTests } from '../canvas/SceneCanvas/useSelectionOverlayLayer';
+export { buildAffordanceAt as buildAffordanceAtForTests, chromeAffordances as chromeAffordancesForTests } from '../canvas/affordanceAt';
+export { createSlopsDebugLayer as createSlopsDebugLayerForTests } from '../canvas/slopsDebugLayer';
+export { useViewHelpers as useViewHelpersForTests } from '../canvas/useViewHelpers';
+export { ViewInputsProvider as ViewInputsProviderForTests } from '../canvas/viewInputs';
+export { ViewRegistryProvider as ViewRegistryProviderForTests, useOptionalViewRegistry as useOptionalViewRegistryForTests } from '../canvas/viewRegistry';
+export type { ViewRegistry as ViewRegistryForTests } from '../canvas/viewRegistry';
+export { targetSizesPx as targetSizesPxForTests } from '../core/device/targets';

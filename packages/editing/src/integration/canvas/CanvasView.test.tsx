@@ -6,22 +6,23 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useEffect } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import { SceneCanvas } from './SceneCanvas';
-import { CanvasView } from './CanvasView';
-import { createScene } from 'core/scene/scene';
-import type { View } from 'core/viewport/view';
-import type { ViewApi } from 'interactions/actions/depSchema';
-import type { RenderLayer } from 'core/layers/render';
-import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import { SceneCanvas } from '@weasel-js/core';
+import { CanvasView } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core/engine';
+import type { View } from '@weasel-js/core';
+import type { ViewApi } from '@weasel-js/core/engine';
+import type { RenderLayer } from '@weasel-js/core';
+import { ViewRegistryProviderForTests as ViewRegistryProvider, useOptionalViewRegistryForTests as useOptionalViewRegistry, type ViewRegistryForTests as ViewRegistry } from '@weasel-js/core/test-seams';
 import type { SelectionApi } from '@weasel-js/routing';
-import type { NodeId } from 'core/scene/types';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { createSelectionOverlayLayer } from 'domains/selection/overlay';
-import { ViewInputsProvider } from './viewInputs';
-import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { DeviceProfileProvider } from 'core/device/useDeviceProfile';
-import type { DeviceProfile } from 'core/device/types';
+import type { NodeId } from '@weasel-js/core';
+import type { Bounds } from '@weasel-js/core';
+import { createSelectionOverlayLayer } from '../../chrome/overlay';
+import { ViewInputsProviderForTests as ViewInputsProvider } from '@weasel-js/core/test-seams';
+import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core/engine';
+import { DeviceProfileProvider } from '@weasel-js/core';
+import type { DeviceProfile } from '@weasel-js/core';
 import { drawPreset } from '@weasel-js/editing';
+import { SELECTION_CHROME } from '../../chrome/selectionChrome';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -92,7 +93,8 @@ const inputsSelecting = (ids: readonly NodeId[], extra: object = {}) => ({
   adapter: undefined,
   geometry: AUTO_POSE_DESCRIPTOR as never,
   boundsOf: undefined,
-  selectionApi: fixedSelection(ids),
+  selectionChrome: SELECTION_CHROME,
+    selectionApi: fixedSelection(ids),
   ...extra,
 });
 
@@ -428,6 +430,7 @@ describe('<CanvasView> hit-testing', () => {
       }
       return null;
     },
+    selectionChrome: SELECTION_CHROME,
     selectionApi: fixedSelection(selected as readonly NodeId[]),
   });
 
@@ -527,6 +530,7 @@ describe('<CanvasView> state a render abandons', () => {
     adapter: undefined,
     geometry: AUTO_POSE_DESCRIPTOR,
     boundsOf: () => null,
+    selectionChrome: SELECTION_CHROME,
     selectionApi: SELECTIONS.get(p)!,
     chromeCaps: { ruleCtx: () => p.ruleCtx as never, isVisible: () => () => true },
   });

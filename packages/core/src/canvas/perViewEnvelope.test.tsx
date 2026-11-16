@@ -18,8 +18,6 @@ import type { GesturePreviewSource } from './gestureBounds';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createPathEditingOverlayLayer } from 'domains/paths/pathEditingOverlayLayer';
-import { chromeAffordances } from './affordanceAt';
-import { createSlopsDebugLayer } from './slopsDebugLayer';
 import { polygonFromPoints, type PolygonPath } from '@weasel-js/geom';
 import { asNodeId } from 'core/scene/types';
 
@@ -169,25 +167,5 @@ describe('path-editing overlay stays off a layer the drawn view does not paint',
     const hiding = { ...base, layerIsPainted: (l: string) => l !== 'fx' };
     expect(layer.draw(envelope({ chromeState: base }), VIEW, DIMS)).not.toEqual([]);
     expect(layer.draw(envelope({ chromeState: hiding }), VIEW, DIMS)).toEqual([]);
-  });
-});
-
-describe('slops-debug overlay answers for the view it is drawn for', () => {
-  it('halos each view\'s own selection at that view\'s bounds', () => {
-    const layer = createSlopsDebugLayer({ getAffordances: () => chromeAffordances() });
-
-    const chrome = (x: number, ids: string[]): ChromeState => ({
-      selection: ids.map(asNodeId),
-      multiActive: false,
-      boundsOf: () => ({ x, y: 0, width: 10, height: 10 }),
-      unionBounds: null,
-      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-    });
-
-    const a = layer.draw(envelope({ chromeState: chrome(0, ['n1']) }), VIEW, DIMS);
-    const b = layer.draw(envelope({ chromeState: chrome(500, ['n1']) }), VIEW, DIMS);
-    expect(a.length).toBeGreaterThan(0);
-    expect(minX(a)).not.toEqual(minX(b));
-    expect(layer.draw(envelope({ chromeState: chrome(0, []) }), VIEW, DIMS)).toEqual([]);
   });
 });

@@ -106,7 +106,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     enteredGroup: picking.enteredGroup, frameColor, alphaFor: props.alphaFor, paintOverrides: props.animator, boundsOf, planeOfNode,
     poseTransition: props.poseTransition, previewIds: previewIdsExtra, dispatcher, snapReadout: props.snap?.readout !== false, snapReadoutStyle: props.snap?.readoutStyle, pathEditState,
     slops: debug !== undefined && debug !== false && debug.slops === true,
-    boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true, selectTool: selectToolOpts,
+    boundsIncludeStroke: props.geometry?.boundsIncludeStroke ?? true, selectTool: selectToolOpts, selectionChrome: enabled.selectionChrome,
   });
   const workerSurface = useSceneWorkerSurface(props, scene as Scene<unknown, string, unknown>, previewIdsExtra);
   const redrawOn = useSceneRedrawSources({ props, scene, heldModifiers, departures: layered.departures });
@@ -130,7 +130,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ref, elementRef: internalCanvasRef, apiRef: canvasApiRef, onElement: chrome.trackHoverOn,
     ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim,
   });
-  const viewInputs = useSurfaceViewInputs({ picking, selection, resizeHandles: layered.resizeHandles,
+  const viewInputs = useSurfaceViewInputs({ picking, selection, resizeHandles: layered.resizeHandles, selectionChrome: enabled.selectionChrome,
     descriptor: descriptor as PoseDescriptor<unknown>, chromeCaps: chrome.chromeCaps, rotationBadge: layered.rotationBadge,
   });
 

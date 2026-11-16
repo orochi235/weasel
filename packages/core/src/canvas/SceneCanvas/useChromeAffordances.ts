@@ -6,9 +6,9 @@ import { chromeAffordances, type ChromeAffordanceOptions } from '../affordanceAt
 
 /** {@link chromeAffordances} sized by the device scale on the `targets` kit settings; an explicit `handleHitRadius` wins. */
 export function useChromeAffordances(
-  opts: Pick<ChromeAffordanceOptions, 'targetScale' | 'handleHitRadius' | 'rotationBadge' | 'getAnchorState' | 'edgeHandles'>,
+  opts: Pick<ChromeAffordanceOptions, 'targetScale' | 'handleHitRadius' | 'rotationBadge' | 'getAnchorState' | 'edgeHandles' | 'selectionChrome'>,
 ): Affordance[] {
-  const { targetScale, handleHitRadius, rotationBadge, getAnchorState, edgeHandles } = opts;
+  const { targetScale, handleHitRadius, rotationBadge, getAnchorState, edgeHandles, selectionChrome } = opts;
   const sizes = targetSizesPx(targetScale, useTargetBasePx());
   return useMemo(() => chromeAffordances({
     handleHitRadius: handleHitRadius ?? sizes.handle,
@@ -17,5 +17,6 @@ export function useChromeAffordances(
     rotationBadge,
     edgeHandles,
     ...(getAnchorState ? { getAnchorState } : {}),
-  }), [sizes.handle, sizes.anchor, sizes.rotationDistance, handleHitRadius, rotationBadge, getAnchorState, edgeHandles]);
+    ...(selectionChrome ? { selectionChrome } : {}),
+  }), [sizes.handle, sizes.anchor, sizes.rotationDistance, handleHitRadius, rotationBadge, getAnchorState, edgeHandles, selectionChrome]);
 }

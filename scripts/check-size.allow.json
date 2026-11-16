@@ -30,9 +30,6 @@
   "packages/core/src/core/scene/renderOrder.ts": {
     "longestFunction": 164
   },
-  "packages/core/src/domains/selection/overlay.ts": {
-    "lines": 420
-  },
   "packages/d3/src/bind.ts": {
     "longestFunction": 139
   },

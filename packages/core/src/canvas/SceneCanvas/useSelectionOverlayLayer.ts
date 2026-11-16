@@ -5,7 +5,7 @@
 import { useMemo } from 'react';
 import type { ResizeHandleLayout } from 'interactions/gestures/resizeHandles';
 import type { RenderLayer } from 'core/layers/render';
-import { createSelectionOverlayLayer, rotationBadgeOf } from 'domains/selection/overlay';
+import type { SelectionChrome } from '../selectionChrome';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { DrawnBoundsScene } from '../drawnBounds';
 import { isCustomEntry, type CustomLayerEntry, type SelectionOverlaySlotConfig } from '../layerSlots';
@@ -24,11 +24,13 @@ export function useSelectionOverlayLayer<TPose>(
   scenes: { measured?: DrawnBoundsScene | undefined; shapes?: DrawnBoundsScene | undefined } = {},
   /** The canvas's resize-handle layout, which its hit-test reads too. */
   resizeHandles?: ResizeHandleLayout,
+  /** What draws the slot; absent, a slot that is not a layer of the consumer's paints nothing. */
+  chrome?: SelectionChrome,
 ): {
   layer: RenderLayer<unknown> | null;
-  rotationBadge: ReturnType<typeof rotationBadgeOf>;
+  rotationBadge: ReturnType<SelectionChrome['rotationBadgeOf']>;
 } {
-  const badge = slot && !isCustomEntry(slot) ? rotationBadgeOf(slot) : null;
+  const badge = chrome && slot && !isCustomEntry(slot) ? chrome.rotationBadgeOf(slot) : null;
   // Kept by value so the layers and hit-testers keyed on it don't rebuild
   // every render.
   const rotationBadge = useMemo(
@@ -39,6 +41,7 @@ export function useSelectionOverlayLayer<TPose>(
   const layer = useMemo(() => {
     if (slot === null) return null;
     if (isCustomEntry(slot)) return slot.layer;
+    if (!chrome) return null;
     const cfg = slot ?? {};
     const callerSuppress = cfg.getSuppressedIds;
     const getSuppressedIds = (): ReadonlySet<string> => {
@@ -51,7 +54,7 @@ export function useSelectionOverlayLayer<TPose>(
       return merged;
     };
     const shapeScene = cfg.outline?.follow === 'shape' ? cfg.scene ?? scenes.shapes : undefined;
-    return createSelectionOverlayLayer<TPose>({
+    return chrome.overlay<TPose>({
       ...cfg,
       ...(shapeScene ? { scene: shapeScene } : {}),
       ...(resizeHandles ? { resizeHandles } : {}),
@@ -66,6 +69,6 @@ export function useSelectionOverlayLayer<TPose>(
           }
         : {}),
     });
-  }, [slot, getOwnSuppressedIds, poseDescriptor, scenes.measured, scenes.shapes, resizeHandles]);
+  }, [slot, getOwnSuppressedIds, poseDescriptor, scenes.measured, scenes.shapes, resizeHandles, chrome]);
   return { layer, rotationBadge };
 }

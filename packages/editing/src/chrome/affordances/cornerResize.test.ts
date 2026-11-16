@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createCornerResizeAffordance, type CornerResizeScratch } from './cornerResize';
-import { composeAffordanceLayer } from './composeAffordanceLayer';
-import { hitAffordanceRegions, pointRegionScreenQuad, transformOf } from './hitAffordanceRegions';
-import type { ChromeState } from 'core/selection/chromeState';
-import type { View } from 'core/viewport/view';
+import { composeAffordanceLayer } from '@weasel-js/core';
+import { hitAffordanceRegions, transformOf } from '@weasel-js/core';
+import { pointRegionScreenQuadForTests as pointRegionScreenQuad } from '@weasel-js/core/test-seams';
+import type { ChromeState } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
 import type { CursorGlyphSpec } from '@weasel-js/cursor';
-import { asNodeId } from 'core/scene/types';
-import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
+import { asNodeId } from '@weasel-js/core/engine';
+import { MULTI_RESIZE_TARGET_ID } from '@weasel-js/core';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };

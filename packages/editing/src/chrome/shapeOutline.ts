@@ -13,13 +13,13 @@ import {
 } from '@weasel-js/geom';
 import { offsetPath, strokeToPath } from '@weasel-js/stroke';
 import type { CommandStroke, Stroke } from '@weasel-js/paint';
-import type { NodeId } from 'core/scene/types';
-import type { View } from 'core/viewport/view';
-import { inheritedPaintIn } from 'core/scene/inheritedPaint';
-import { findShapeInk } from 'canvas/NodeShape';
-import { nodeOutline } from 'domains/paths/strokeOutline';
-import { strokeRegion } from 'domains/paths/strokeRegion';
-import type { DrawnBoundsScene } from 'canvas/drawnBounds';
+import type { NodeId } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import { inheritedPaintIn } from '@weasel-js/core/engine';
+import { findShapeInk } from '@weasel-js/core';
+import { nodeOutline } from '@weasel-js/core';
+import { strokeRegion } from '@weasel-js/core';
+import type { DrawnBoundsScene } from '@weasel-js/core';
 
 /** How a shape outline reads one node each frame. */
 export interface ShapeOutlineReads {

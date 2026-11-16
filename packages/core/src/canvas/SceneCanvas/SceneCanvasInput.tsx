@@ -6,6 +6,7 @@ import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { RuleCtx } from 'domains/chrome-caps';
 import type { Affordance } from 'affordances/types';
+import type { SelectionChrome } from '../selectionChrome';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { useContext, useEffect, useInsertionEffect, type MutableRefObject, type RefObject } from 'react';
 import { SnapSourceRegistryContext } from 'domains/snap/registry';
@@ -90,6 +91,8 @@ export interface SceneCanvasInputProps {
     /** The resize-handle layout the overlay paints, so the hit-test grabs exactly those. */
     resizeHandles: ResizeHandleLayout;
     chromeAffordancesRef: MutableRefObject<readonly Affordance[]>;
+    /** What says where the selection chrome is grabbed. */
+    selectionChrome?: SelectionChrome;
     /** The built scene slot, whose layers the `colorAt` dep samples by default. */
     layers: { scene?: SceneSlotLayers | null };
   };
@@ -181,6 +184,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     targetScale, handleHitRadius: overlay.resizeHandles.hitRadiusPx,
     edgeHandles: overlay.resizeHandles.edges,
     rotationBadge: overlay.rotationBadge, chromeAffordancesRef: overlay.chromeAffordancesRef,
+    ...(overlay.selectionChrome ? { selectionChrome: overlay.selectionChrome } : {}),
     onDoubleClick, onClick, longPress: props.longPress,
   });
   useToolKeybindings({

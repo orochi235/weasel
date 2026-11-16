@@ -50,7 +50,6 @@ export { createEnterGroupAction, createLeaveGroupAction } from '../interactions/
 export { gestureLifecycleParams } from '../interactions/actions/gestureLifecycle';
 export { centersBetween } from '../tools/builtin/select/centersBetween';
 export { rangeAmong } from '../tools/builtin/select/selectRange';
-export { rotateCursorAt } from '../affordances/rotateCursor';
 export { copiesWithin } from '../canvas/copiesAbove';
 export { hitTestLassoPolygon, regionPickOptions } from '../canvas/deps/hitTestArea';
 export { insertParent } from '../canvas/deps/insertParent';
@@ -86,3 +85,7 @@ export { transformFinisher, transformPreview } from '../interactions/actions/tra
 export type { TransformFinisher } from '../interactions/actions/transformFinish';
 export { gestureReaders } from '../interactions/gestures/shared/screenTolerance';
 export type { GestureReaders } from '../interactions/gestures/shared/screenTolerance';
+export { transformOf } from '../affordances/hitAffordanceRegions';
+export { effectivePoseFrom, previewPoseIn, previewSourcesFrom } from '../canvas/drawEnvelope';
+export { framedBounds } from '../core/geometry/poseDescriptor';
+export { angleOf, normalToWorld, targetCorners } from '../core/geometry/targetFrame';

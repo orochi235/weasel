@@ -1,11 +1,11 @@
 import { defineAction, type Action } from '@weasel-js/routing';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { transformPreview, finiteFrame, closeGesture, runBehaviorCancel, inPlane, selectionLayer, rotateCursorAt, recordTransform } from '@weasel-js/core';
+import { transformPreview, finiteFrame, closeGesture, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
 import { commitRotate } from './commit';
 import { nextFrame } from './frame';
 import { beginRotate, type RotateFrame } from './session';
 import { SNAP_ROLES } from '@weasel-js/core/engine';
-import type {} from '@weasel-js/core';
+import { rotateCursorAt } from '../../chrome/affordances/rotateCursor';
 
 /**
  * Pointer-driven rotation of the selection, committed as one undo entry.

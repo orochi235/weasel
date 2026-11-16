@@ -8,7 +8,7 @@ import type { PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { PathEditState } from 'domains/paths/pathEditState';
 import { usePathEditOverlayLayer } from 'domains/paths/usePathEdit';
-import type { rotationBadgeOf } from 'domains/selection/overlay';
+import type { SelectionChrome } from '../selectionChrome';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { HierarchicalAdapter } from '../buildSceneTree';
 import { builtLayersOf, isCustomEntry, type CanvasLayers } from '../layerSlots';
@@ -66,6 +66,8 @@ interface SceneCanvasLayersArgs<TData, TLayer extends string, TPose> {
   /** `selectTool`'s `handleHitRadius` and `resize.edgeHandles`, resolved here into
    *  the one {@link ResizeHandleLayout} the overlay paints and the hit-test reads. */
   selectTool?: { handleHitRadius?: number; resize?: { edgeHandles?: boolean } };
+  /** The enabled presets' selection chrome, which paints the `selectionOverlay` slot. */
+  selectionChrome: SelectionChrome | undefined;
 }
 
 /**
@@ -81,7 +83,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
 ): {
   layers: CanvasLayers;
   /** Where the selection overlay paints its rotate badge, or null. */
-  rotationBadge: ReturnType<typeof rotationBadgeOf>;
+  rotationBadge: ReturnType<SelectionChrome['rotationBadgeOf']>;
   /** Which resize handles exist and their hit radius, for every hit-test of this canvas. */
   resizeHandles: ResizeHandleLayout;
   /** The affordances the gesture mounter hit-tests, which it publishes here
@@ -91,6 +93,8 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
   snapStore: SnapOutcomeStore;
   /** The removed nodes the seat is seeing off. */
   departures: Departures<TPose, Node<TData, TLayer, TPose>>;
+  /** The selection chrome painting the overlay, which the hit-test reads too. */
+  selectionChrome: SelectionChrome | undefined;
 } {
   const { scene, adapter, poseDescriptor, alphaFor, dispatcher, pathEditState, slops, targetScale } = args;
 
@@ -150,6 +154,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
     poseDescriptor,
     { measured: args.boundsIncludeStroke ? drawnScene : undefined, shapes: drawnScene },
     resizeHandles,
+    args.selectionChrome,
   );
 
   const enteredFrameLayer = useEnteredGroupFrameLayer(args.enteredGroup, args.boundsOf, args.frameColor, scene as never);
@@ -170,5 +175,5 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
   }), [merged, sceneLayers, selectionOverlayLayer, enteredFrameLayer, departureLayer, previewLayer, effectSourcesLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, overlayAnchor, snapReadoutLayer, args.snapReadout, slops, slopsLayer,
   ]);
 
-  return { layers, rotationBadge, resizeHandles, chromeAffordancesRef, snapStore, departures };
+  return { layers, rotationBadge, resizeHandles, chromeAffordancesRef, snapStore, departures, selectionChrome: args.selectionChrome };
 }

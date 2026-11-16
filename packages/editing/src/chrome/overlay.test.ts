@@ -6,9 +6,9 @@ import {
   createSelectionOutlineLayer,
   createSelectionHandlesLayer,
 } from './overlay';
-import { asNodeId } from 'core/scene/types';
-import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
-import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
+import { asNodeId } from '@weasel-js/core/engine';
+import { MULTI_RESIZE_TARGET_ID } from '@weasel-js/core';
+import { circleForTests as circle, CIRCLE_POSE_DESCRIPTORForTests as CIRCLE_POSE_DESCRIPTOR, type CirclePoseForTests as CirclePose } from '@weasel-js/core/test-seams';
 
 /**
  * Build `getChildren`/`isContainer` accessors from a flat `id -> direct

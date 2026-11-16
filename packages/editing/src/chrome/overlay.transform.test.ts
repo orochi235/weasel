@@ -7,9 +7,9 @@ import { describe, expect, it } from 'vitest';
 import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { createSelectionOverlayLayer } from './overlay';
-import { rotationHandle } from 'core/geometry/rotationHandle';
-import { asNodeId } from 'core/scene/types';
-import type { RectPose } from 'core/scene/types';
+import { rotationHandle } from './rotationHandleGeometry';
+import { asNodeId } from '@weasel-js/core/engine';
+import type { RectPose } from '@weasel-js/core/engine';
 
 const SKEWED: RectPose = { x: 0, y: 0, width: 100, height: 40, transform: [1, 0, 0.5, 1] };
 const TURNED: RectPose = { ...SKEWED, rotation: Math.PI / 6 };

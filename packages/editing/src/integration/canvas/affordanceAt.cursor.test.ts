@@ -10,11 +10,12 @@
  * `AffordanceHit.cursor`.
  */
 import { describe, expect, it } from 'vitest';
-import { buildAffordanceAt } from './affordanceAt';
-import { createRotationAffordance } from 'affordances/rotationHandle';
-import { hitAffordanceRegions } from 'affordances/hitAffordanceRegions';
-import type { ChromeState } from 'core/selection/chromeState';
-import type { NodeId } from 'core/scene/types';
+import { buildAffordanceAtForTests as buildAffordanceAt } from '@weasel-js/core/test-seams';
+import { createRotationAffordance } from '../../chrome/affordances/rotationHandle';
+import { hitAffordanceRegions } from '@weasel-js/core';
+import type { ChromeState } from '@weasel-js/core';
+import type { NodeId } from '@weasel-js/core';
+import { SELECTION_CHROME } from '../../chrome/selectionChrome';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
@@ -30,7 +31,7 @@ function makeState(bounds = { x: 0, y: 0, width: 100, height: 100 }): ChromeStat
 }
 
 describe('AffordanceHit.cursor comes from the region', () => {
-  const affordanceAt = buildAffordanceAt({
+  const affordanceAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
     getChromeState: () => makeState(),
     getView: () => VIEW,
   });
@@ -61,7 +62,7 @@ describe('AffordanceHit.cursor comes from the region', () => {
 });
 
 describe('AffordanceHit payload', () => {
-  const affordanceAt = buildAffordanceAt({
+  const affordanceAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
     getChromeState: () => makeState(),
     getView: () => VIEW,
   });
@@ -87,7 +88,7 @@ describe('AffordanceHit payload', () => {
 });
 
 describe('AffordanceHit carries its owner and claim strength', () => {
-  const affordanceAt = buildAffordanceAt({
+  const affordanceAt = buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
     getChromeState: () => makeState(),
     getView: () => VIEW,
   });
@@ -107,7 +108,7 @@ describe('a painted rotate badge is grabbable', () => {
   const state = () => makeState({ x: 0, y: 0, width: 10, height: 10 });
 
   it('rotates from the badge where it pokes past the ring', () => {
-    const at = buildAffordanceAt({
+    const at = buildAffordanceAt({ selectionChrome: SELECTION_CHROME,
       getChromeState: state,
       getView: () => VIEW,
       rotationBadge: { distancePx: 24, sizePx: 8 },
@@ -116,7 +117,7 @@ describe('a painted rotate badge is grabbable', () => {
   });
 
   it('leaves that spot alone when no badge is painted', () => {
-    const at = buildAffordanceAt({ getChromeState: state, getView: () => VIEW });
+    const at = buildAffordanceAt({ selectionChrome: SELECTION_CHROME, getChromeState: state, getView: () => VIEW });
     expect(at({ x: 5, y: -30 })).toBeNull();
   });
 });

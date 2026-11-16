@@ -4,11 +4,9 @@
  * world-space center, `hitRotationHandle(...)` is the square hit-test.
  */
 import { describe, it, expect } from 'vitest';
-import {
-  rotationHandle,
-  hitRotationHandle,
-  DEFAULT_ROTATION_HANDLE_DISTANCE,
-} from '@weasel-js/core';
+import { rotationHandle } from '../../chrome/rotationHandleGeometry';
+import { hitRotationHandle } from '../../chrome/rotationHandleGeometry';
+import { DEFAULT_ROTATION_HANDLE_DISTANCE } from '../../chrome/rotationHandleGeometry';
 
 const close = (a: number, b: number, eps = 1e-9) => Math.abs(a - b) < eps;
 

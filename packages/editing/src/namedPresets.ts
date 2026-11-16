@@ -18,6 +18,7 @@ import { selectPreset } from './presets/select';
 import { selectionPreset } from './presets/selection';
 import { viewToolsPreset, BASELINE_ACTIONS, viewPreset } from '@weasel-js/core';
 import { insertPreset } from './presets/insert';
+import { selectionChromePreset } from './presets/selectionChrome';
 import { selectToolKitPreset, selectToolsPreset, shapeToolKitPreset, shapeToolsPreset } from './presets/tools';
 import { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets/transform';
 
@@ -25,6 +26,7 @@ import { movePreset, outlinePreset, resizePreset, rotatePreset } from './presets
 export const FEATURE_PRESETS = {
   selection: selectionPreset,
   insert: insertPreset,
+  selectionChrome: selectionChromePreset,
   'toolkit:select': selectToolKitPreset,
   'toolkit:shape': shapeToolKitPreset,
   'tools:select': selectToolsPreset,

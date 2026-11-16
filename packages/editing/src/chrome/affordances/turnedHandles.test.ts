@@ -7,15 +7,15 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
-import { createSelectionOverlayLayer } from 'domains/selection/overlay';
+import { createSelectionOverlayLayer } from '../overlay';
 import { createCornerResizeAffordance } from './cornerResize';
-import { hitAffordanceRegions } from './hitAffordanceRegions';
-import { createSlopsDebugLayer } from 'canvas/slopsDebugLayer';
-import { viewToTransform } from 'core/viewport/view';
-import { screenToWorld } from 'core/viewport/viewTransform';
-import { asNodeId } from 'core/scene/types';
-import type { ChromeState } from 'core/selection/chromeState';
-import type { Affordance } from './types';
+import { hitAffordanceRegions } from '@weasel-js/core';
+import { createSlopsDebugLayerForTests as createSlopsDebugLayer } from '@weasel-js/core/test-seams';
+import { viewToTransform } from '@weasel-js/core/engine';
+import { screenToWorld } from '@weasel-js/core/engine';
+import { asNodeId } from '@weasel-js/core/engine';
+import type { ChromeState } from '@weasel-js/core';
+import type { Affordance } from '@weasel-js/core';
 
 // Tall enough on screen that no corner gives up its inward half (see cornerOf).
 const B = { x: 10, y: 20, width: 40, height: 40, rotation: Math.PI / 5 };

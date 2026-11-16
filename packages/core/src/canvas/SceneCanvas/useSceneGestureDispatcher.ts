@@ -4,6 +4,7 @@ import {
   useActionsRegistry, useDepRegistry, useGestureDispatcher, type DepRegistry, type HeldPointerFeed,
 } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
+import type { SelectionChrome } from '../selectionChrome';
 import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import type { RuleCtx } from 'domains/chrome-caps';
@@ -86,6 +87,8 @@ export interface SceneGestureDispatcherInputs {
   edgeHandles?: boolean;
   /** The rotate badge the selection overlay paints, grabbable where drawn. */
   rotationBadge?: { distancePx: number; sizePx: number } | null;
+  /** What says where the selection chrome is grabbed; absent, a press grabs only anchors and layers. */
+  selectionChrome?: SelectionChrome;
   /** Receives the affordances this mounter hit-tests, for the slops overlay. */
   chromeAffordancesRef?: React.MutableRefObject<readonly Affordance[]>;
   /** Fires on every synthesized double click, in world coords. Backs the
@@ -101,7 +104,7 @@ export interface SceneGestureDispatcherInputs {
 type AffordanceInputs = Pick<
   SceneGestureDispatcherInputs,
   | 'canvasApiRef' | 'selectionRef' | 'boundsOf' | 'planeOfNode' | 'viewRef' | 'getIsVisibleForCanvas'
-  | 'targetScale' | 'handleHitRadius' | 'edgeHandles' | 'rotationBadge' | 'chromeAffordancesRef'
+  | 'targetScale' | 'handleHitRadius' | 'edgeHandles' | 'rotationBadge' | 'selectionChrome' | 'chromeAffordancesRef'
 >;
 
 /** What a press on the canvas grabs: a registered layer's widget, else a piece of the
@@ -109,7 +112,7 @@ type AffordanceInputs = Pick<
 function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, viewRegistry: ViewRegistry | null) {
   const {
     canvasApiRef, selectionRef, boundsOf, planeOfNode, viewRef, getIsVisibleForCanvas,
-    targetScale, handleHitRadius, edgeHandles, rotationBadge, chromeAffordancesRef,
+    targetScale, handleHitRadius, edgeHandles, rotationBadge, selectionChrome, chromeAffordancesRef,
   } = inputs;
   // `getAnchorState` thunk for `buildAffordanceAt` — reads the live
   // `editAnchors` dep from the registry at call time.
@@ -122,7 +125,7 @@ function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, vie
 
   // Build the `affordanceAt` thunk. Takes world coords and delegates to
   // `buildAffordanceAt` for handle hit-testing.
-  const affordances = useChromeAffordances({ targetScale, handleHitRadius, edgeHandles, rotationBadge, getAnchorState });
+  const affordances = useChromeAffordances({ targetScale, handleHitRadius, edgeHandles, rotationBadge, getAnchorState, selectionChrome });
   useInsertionEffect(() => {
     if (chromeAffordancesRef) chromeAffordancesRef.current = affordances;
   });
