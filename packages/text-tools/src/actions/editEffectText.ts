@@ -22,6 +22,7 @@ function textUnder(deps: ActionDeps | undefined, world: { x: number; y: number }
   return { id: String(text), length: isTextData(data) ? data.text.length : 0 };
 }
 
+/** A click on a text-on-path effect's body opens its source text for editing, unless an anchor is under the pointer. */
 export const editEffectTextAction = defineAction({
   id: 'editEffectText',
   label: 'Edit text along the path',

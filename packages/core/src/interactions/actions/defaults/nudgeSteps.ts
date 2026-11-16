@@ -10,6 +10,7 @@ export const NUDGE_KEY: Record<NudgeDirection, string> = {
   up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight',
 };
 
+/** Each nudge direction's word in a menu or key-sheet label. */
 export const NUDGE_LABEL: Record<NudgeDirection, string> = {
   up: 'Up', down: 'Down', left: 'Left', right: 'Right',
 };

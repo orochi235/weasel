@@ -194,6 +194,8 @@ function kitData(
   }
 }
 
+/** Provides the `insert` dep, and the `insertLive` gesture state beside it, minting nodes into `scene` through
+ *  `adapter` with `factories` in place of the kit's own. */
 export function useInsertDepSource(
   scene: Scene<unknown, string, unknown>,
   adapter: OpsApplier,

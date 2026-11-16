@@ -6,6 +6,7 @@
  */
 import type { View } from 'core/viewport/view';
 
+/** A mounted canvas as {@link findMountedCanvas} returns it: the element it measures, and its current view. */
 export interface MountedCanvas {
   readonly element: HTMLElement;
   getView(): View;

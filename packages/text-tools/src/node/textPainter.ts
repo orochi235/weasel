@@ -87,6 +87,7 @@ export function textPoseOf(d: TextNodeData, p: RectPose, inherited?: InheritedPa
   };
 }
 
+/** The node shape that paints a text node: one whose data carries a `text` string, drawn at its box pose. */
 export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   id: 'kit:text',
   snapsToBox: true,
