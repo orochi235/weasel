@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import type { IconEntry, IconVariantState } from '@weasel-js/icons';
+import type { IconEntry, IconVariantState } from '../index';
 import { useIconRegistry } from './IconRegistryProvider';
 
 const NONE: readonly IconEntry[] = [];

@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
-import { IconRegistryScope, type IconRegistryProviderProps } from './iconRegistry';
+import { IconRegistryScope, type IconRegistryProviderProps } from '@weasel-js/icons/react';
 import { DepRegistryProviderIfRoot } from './canvas/SceneCanvas/DepRegistryProviderIfRoot';
 import { ActionsProviderIfRoot } from './canvas/SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot } from './canvas/SceneCanvas/PointerProviderIfRoot';

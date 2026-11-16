@@ -1,8 +1,8 @@
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { StrictMode, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import type { IconTable } from '@weasel-js/icons';
-import { IconRegistryProvider, useIconGlyph, useIconVariant } from './index';
+import type { IconTable } from '../index';
+import { IconRegistryProvider, useIconGlyph, useIconVariant } from '../react';
 
 const core: IconTable = {
   namespace: 'core', owner: '@weasel-js/core',

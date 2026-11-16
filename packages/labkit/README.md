@@ -35,7 +35,7 @@ root — the whole kit's tables, or the trimmed set `virtual:weasel-icons` build
 (`docs/icons.md` in the weasel repo):
 
 ```tsx
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import { kitIcons } from '@weasel-js/ui/kit-icons';
 
 <IconRegistryProvider icons={kitIcons}>

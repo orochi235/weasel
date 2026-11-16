@@ -1,4 +1,4 @@
-import { IconRegistryProvider } from '@weasel-js/core/engine';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import { icons as kernel3dIcons } from '@weasel-js/kernel3d/icons';
 import { kitIcons } from '@weasel-js/ui/kit-icons';
 import { StrictMode } from 'react';

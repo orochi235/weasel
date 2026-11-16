@@ -1,18 +1,10 @@
 /**
- * Part of the `@weasel-js/core` barrel. The icon registry: its React context
- * and the hooks that read glyphs from it.
+ * Part of the `@weasel-js/core` barrel. Icon names and the registry's types; the
+ * registry's React provider and hooks are `@weasel-js/icons/react`.
  *
  * @packageDocumentation
  */
 
-export {
-  IconRegistryProvider,
-  IconRegistryProviderIfRoot,
-  useIconRegistry,
-  useIconGlyph,
-  useIconVariant,
-} from '../iconRegistry';
-export type { IconRegistryProviderProps } from '../iconRegistry';
 export { toIconRef } from '@weasel-js/icons';
 export type {
   IconEntry, IconGlyph, IconRef, IconRegistry, IconTable, IconVariantLoader, IconVariantState,

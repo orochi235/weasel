@@ -223,7 +223,7 @@ batch.
 
 `<Icon name={ref} />` from `@weasel-js/ui` draws the glyph the nearest registry holds, with
 `filled` and `mark` for the shaded and badged forms. `resolveIcon(source)` draws a ref or a string
-read from data, and `actionIcon(ref)` an action's icon. Outside ui, `useIconGlyph(ref)` from core
+read from data, and `actionIcon(ref)` an action's icon. Outside ui, `useIconGlyph(ref)` from `@weasel-js/icons/react`
 returns the glyph itself.
 
 A name the registry lacks draws `core:unknown`'s question mark and warns once in development, and
@@ -245,7 +245,7 @@ that a glyph drew, so a check of the drawing is a `*.browser.test.tsx`.
 not a Reflectable: it keeps its own layer per table and per override for each name, so it does not
 appear on the `Reflection` surface other kit registries share.
 
-Core supplies the React side:
+`@weasel-js/icons/react` supplies the React side:
 
 | Mount | Registry |
 |---|---|

@@ -41,7 +41,7 @@ Components that draw glyphs (`Transport`'s play and pause buttons, `COLOR_MODE_O
 holds core's, the shapes' and ui's tables (`@weasel-js/ui/icons` has ui's alone):
 
 ```tsx
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import { kitIcons } from '@weasel-js/ui/kit-icons';
 
 <IconRegistryProvider icons={kitIcons}><App /></IconRegistryProvider>

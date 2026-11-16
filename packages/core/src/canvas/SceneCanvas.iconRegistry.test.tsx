@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import type { IconTable } from '@weasel-js/icons';
 import { createScene } from 'core/scene/scene';
-import { IconRegistryProvider, useIconGlyph, useIconRegistry } from '../iconRegistry';
+import { IconRegistryProvider, useIconGlyph, useIconRegistry } from '@weasel-js/icons/react';
 import { WeaselProvider } from '../WeaselProvider';
 import { SceneCanvas } from './SceneCanvas';
 

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { ActionsProvider, SceneCanvas, rectPath, solid, useIconRegistry, useMenuHost, useMenus, useScene } from '@weasel-js/core';
+import { useIconRegistry } from '@weasel-js/icons/react';
+import { ActionsProvider, SceneCanvas, rectPath, solid, useMenuHost, useMenus, useScene } from '@weasel-js/core';
 import type { Fill, MenuDef, NodeId, Path } from '@weasel-js/core';
 import { attachMenuHost } from '@weasel-js/hud';
 import { pref } from '@weasel-js/prefs';

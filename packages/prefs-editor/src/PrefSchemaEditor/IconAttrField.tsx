@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useIconGlyph, useIconVariant } from '@weasel-js/core';
+import { useIconGlyph, useIconVariant } from '@weasel-js/icons/react';
 import { iconParts, toIconRef, toIconSpec, type IconSpec } from '@weasel-js/icons';
 import { Button, Dialog, Icon, MARK_GROUP, MIXED_HINT } from '@weasel-js/ui';
 import { IconPicker } from './IconPicker';

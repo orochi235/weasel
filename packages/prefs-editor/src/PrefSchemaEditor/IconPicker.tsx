@@ -1,5 +1,5 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
-import { useIconVariant } from '@weasel-js/core';
+import { useIconVariant } from '@weasel-js/icons/react';
 import { Icon, Input } from '@weasel-js/ui';
 import { inlineDirection } from '@weasel-js/ui/roving-tab-index';
 import { groupIcons, pageIndex, stepIndex } from './iconPickerModel';

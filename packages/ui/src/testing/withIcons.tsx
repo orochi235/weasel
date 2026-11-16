@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import { render, type RenderOptions } from '@testing-library/react';
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import type { IconTable } from '@weasel-js/icons';
 import { kitIcons } from '@weasel-js/ui/kit-icons';
 

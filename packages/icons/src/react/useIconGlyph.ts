@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import type { IconGlyph } from '@weasel-js/icons';
+import type { IconGlyph } from '../index';
 import { useIconRegistry } from './IconRegistryProvider';
 
 const NOOP = () => () => {};

@@ -4,7 +4,7 @@ import type { IconTable } from '@weasel-js/icons';
 import { render } from '@testing-library/react';
 import { WeaselProvider } from './WeaselProvider';
 import { useActionsRegistry, useSelectionContext } from '@weasel-js/routing/react';
-import { IconRegistryProvider, useIconGlyph, useIconRegistry } from './iconRegistry';
+import { IconRegistryProvider, useIconGlyph, useIconRegistry } from '@weasel-js/icons/react';
 
 /** Reports the registry identities visible at this point in the tree. */
 function Probe({ into }: { into: { actions: unknown[]; selection: unknown[] } }) {

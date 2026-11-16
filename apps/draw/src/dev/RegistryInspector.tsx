@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useIconVariant } from '@weasel-js/core';
+import { useIconVariant } from '@weasel-js/icons/react';
 import { RegistryBrowser, type RegistryBrowserPick, type RegistryCategory } from '@weasel-js/devtools';
 import { matchQuery } from '@weasel-js/registry';
 import { Badge } from '@weasel-js/ui/components/Badge';

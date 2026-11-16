@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { page } from 'vitest/browser';
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import type { IconTable } from '@weasel-js/icons';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { kitIcons } from '@weasel-js/ui/kit-icons';

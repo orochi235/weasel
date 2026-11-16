@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { createIconRegistry, type IconRegistry, type IconTable, type IconVariantLoader } from '@weasel-js/icons';
+import { createIconRegistry, type IconRegistry, type IconTable, type IconVariantLoader } from '../index';
 
 const IconRegistryContext = createContext<IconRegistry | null>(null);
 

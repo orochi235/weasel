@@ -17,7 +17,7 @@ the plain shapes every package may name (`shape:diamond`, `shape:hexagonFlat`), 
 ## In an app
 
 ```tsx
-import { IconRegistryProvider } from '@weasel-js/core';
+import { IconRegistryProvider } from '@weasel-js/icons/react';
 import { icons as coreIcons } from '@weasel-js/core/icons';
 import { icons as shapeIcons } from '@weasel-js/icons/shapes';
 import { icons as uiIcons } from '@weasel-js/ui/icons';

@@ -1,5 +1,5 @@
 import { useId, useMemo, type SVGProps } from 'react';
-import { useIconGlyph } from '@weasel-js/core';
+import { useIconGlyph } from '@weasel-js/icons/react';
 import { iconParts, type IconGlyph, type IconRef, type IconSpec } from '@weasel-js/icons';
 import { inset } from './layers';
 import { isDev } from '@weasel-js/react';
