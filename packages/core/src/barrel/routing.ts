@@ -210,7 +210,7 @@ export type {
   BehaviorEnd,
   MoveEnd,
 } from '../interactions/gestures/types';
-export type { ClipboardSnapshot, PasteCtx, PasteOmission } from '../interactions/actions/clipboard/types';
+export type { ClipboardSnapshot, PasteCtx, PasteOmission } from '../core/adapters/types';
 
 // ─── Gesture specs ───
 export { ANY_MODS, hitPredicate, bodyPredicate } from '@weasel-js/gestures';

@@ -30,7 +30,6 @@
       "@weasel-js/core/icons": ["./src/import-shims/icons.ts"],
       "@weasel-js/core/math": ["./src/import-shims/math.ts"],
       "@weasel-js/core/mesh": ["./src/import-shims/mesh.ts"],
-      "@weasel-js/core/clipboard": ["./src/import-shims/clipboard.ts"],
       "@weasel-js/core/json": ["./src/import-shims/json.ts"],
       "@weasel-js/core/patterns-builtin": ["./src/import-shims/patterns-builtin.ts"],
       "@weasel-js/core/renderer": ["./src/import-shims/renderer.ts"],

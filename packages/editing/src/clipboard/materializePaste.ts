@@ -9,12 +9,10 @@
  * (`dispatchApplyBatch` vs `IngestCtx.applyOps`) and any post-paste
  * bookkeeping (the hook's cascade re-snapshot, the handler's selection set).
  */
-import { createInsertOp } from 'core/ops/create';
-import { createSetSelectionOp } from 'core/ops/select';
-import type { Op } from 'core/ops/types';
-import type { NodeId } from 'core/scene/types';
+import { createInsertOp, createSetSelectionOp } from '@weasel-js/core/engine';
+import type { Op, NodeId } from '@weasel-js/core';
 import type { WorldPoint } from '@weasel-js/routing';
-import type { ClipboardSnapshot, InsertAdapter, PasteCtx, PasteOmission } from 'core/adapters/types';
+import type { ClipboardSnapshot, InsertAdapter, PasteCtx, PasteOmission } from '@weasel-js/core/engine';
 
 /** Shared paste materialization: offset policy → commitPaste → the op batch
  *  both the in-memory paste and the OS-paste handler dispatch. Returns null

@@ -1,9 +1,9 @@
 /** Pasting again in a paged scene: each paste steps on from the last in the world, whatever page it landed on. */
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { sceneToAdapter } from 'canvas/sceneAdapter';
-import { PAGE_B, pagedScene } from 'core/pages/pagedFixture';
-import type { RectPose } from 'core/scene/types';
+import { sceneToAdapter } from '@weasel-js/core';
+import { PAGE_BForTests as PAGE_B, pagedSceneForTests as pagedScene } from '@weasel-js/core/test-seams';
+import type { RectPose } from '@weasel-js/core/engine';
 import { useClipboardOps } from './clipboardOps';
 
 describe('useClipboardOps pasting again', () => {

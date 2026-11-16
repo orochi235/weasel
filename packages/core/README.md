@@ -220,7 +220,6 @@ Core's main entry carries the everyday surface. A few narrower ones have their o
 | Import | Holds |
 |---|---|
 | `@weasel-js/core/renderer` | the renderer, `registerProgram`, `registerTexture`, draw commands |
-| `@weasel-js/core/clipboard` | the clipboard ops paste and copy build on |
 | `@weasel-js/core/patterns-builtin` | the built-in fill patterns |
 | `@weasel-js/core/routing` | route grammar and introspection: parsing, the route registry, conflict checks |
 

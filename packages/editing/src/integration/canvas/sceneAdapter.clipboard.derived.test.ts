@@ -3,13 +3,10 @@
  * derivation over an id list, and a container's layout.
  */
 import { describe, expect, it } from 'vitest';
-import { sceneToAdapter } from './sceneAdapter';
-import { createScene } from 'core/scene/scene';
-import type { PasteOmission } from 'core/adapters/types';
-import type { DerivedDep, Node, RectPose, Scene } from 'core/scene/types';
-import type { LayoutStrategy } from '../layout/types';
-import { materializePaste } from 'interactions/actions/clipboard/materializePaste';
-import { applyOpsTo } from 'core/applyOps';
+import { sceneToAdapter, applyOpsTo } from '@weasel-js/core';
+import { createScene } from '@weasel-js/core/engine';
+import type { PasteOmission, DerivedDep, SceneNode as Node, RectPose, Scene, LayoutStrategy } from '@weasel-js/core/engine';
+import { materializePaste } from '../../clipboard/materializePaste';
 import { linePath } from '@weasel-js/geom';
 
 type D = { label: string };

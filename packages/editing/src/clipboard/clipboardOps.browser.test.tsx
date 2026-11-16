@@ -9,10 +9,10 @@ import { commands, page, userEvent } from 'vitest/browser';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import type { InsertAdapter } from 'core/adapters/types';
+import type { InsertAdapter } from '@weasel-js/core/engine';
 import { asNodeId } from '@weasel-js/core';
-import { useClipboardOps, type ClipboardFlavors, WEASEL_CLIPBOARD_MIME } from '@weasel-js/core/clipboard';
 import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
+import { useClipboardOps, type ClipboardFlavors, WEASEL_CLIPBOARD_MIME } from '.';
 
 interface Obj { id: string }
 

@@ -90,7 +90,6 @@ export { transformOf } from '../affordances/hitAffordanceRegions';
 export { effectivePoseFrom, previewPoseIn, previewSourcesFrom } from '../canvas/drawEnvelope';
 export { framedBounds } from '../core/geometry/poseDescriptor';
 export { angleOf, normalToWorld, targetCorners } from '../core/geometry/targetFrame';
-export { materializePaste } from '../interactions/actions/clipboard/materializePaste';
 export { drawnPose, leafPath, storePiece } from '../canvas/deps/pathLeaf';
 export { sceneInheritedPaintOf } from '../canvas/inheritedPaints';
 export { booleanOfPaths } from '../core/geometry/booleanOfPaths';

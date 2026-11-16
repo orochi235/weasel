@@ -3,14 +3,12 @@ import { createHistory } from '@weasel-js/history';
 import type { SerializedHistory } from '@weasel-js/history';
 import type { Op, SerializedScene } from '@weasel-js/core';
 import { measureNode, measurementOf } from '@weasel-js/measure';
-import {
-  asNodeId, buildWeaselClipboardText, createScene, decodeSnapshot, effectivePose, isAnnotationNode, parseSnapshot,
-  parseWeaselClipboardText, snapshotReplacer, stringifySnapshot,
-} from '@weasel-js/core';
+import { asNodeId, createScene, decodeSnapshot, effectivePose, isAnnotationNode, parseSnapshot, snapshotReplacer, stringifySnapshot } from '@weasel-js/core';
 import {
   ANNOTATION_LAYER, DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose,
 } from './drawDocument';
 import { clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
+import { buildWeaselClipboardText, parseWeaselClipboardText } from '@weasel-js/editing';
 
 // A history snapshot's serialized op payloads carry path poses (Float32Array
 // coords / Uint8Array commands), which JSON mangles unless core's codec tags them.

@@ -14,21 +14,14 @@
  * `runIngest` consumes items at *match* time, so "leave it for other
  * handlers" is the sniff's job: non-weasel `text/plain` never matches.
  */
-import type { NodeId } from '@weasel-js/core';
+import type { NodeId, ContentHandlerEntry, IngestCtx } from '@weasel-js/core';
 import type { ClipboardSnapshot } from '@weasel-js/core/engine';
-import { materializePaste } from '@weasel-js/core';
-import {
-  WEASEL_CLIPBOARD_MIME,
-  WEASEL_CLIPBOARD_MIME_WEB,
-  sniffWeaselClipboardText,
-  parseWeaselClipboardText,
-  extractWeaselClipboardFromSvg,
-} from '@weasel-js/core';
 import { dwarn } from '@weasel-js/core';
-import type { ContentHandlerEntry, IngestCtx } from '@weasel-js/core';
 // Direct module import (not the ./index barrel) to avoid a cycle — the
 // barrel re-exports this handler.
 import { sniffSvgText } from './svgHandler';
+import { WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, sniffWeaselClipboardText, parseWeaselClipboardText, extractWeaselClipboardFromSvg } from '../clipboard';
+import { materializePaste } from '../clipboard/materializePaste';
 
 /** text/plain SVG whose `<metadata>` carries a verified weasel payload —
  *  the draw→draw DOM-paste flavor (Chromium exposes only text/plain there).

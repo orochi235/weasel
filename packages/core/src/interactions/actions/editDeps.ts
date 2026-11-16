@@ -4,7 +4,7 @@
 import type { Point2, WorldPoint } from '@weasel-js/routing';
 
 /**
- * Clipboard dep — the imperative surface `useClipboardOps` returns.
+ * Clipboard dep — the imperative surface `@weasel-js/editing`'s `useClipboardOps` returns.
  *
  * Consumers publish their live clipboard through `useDepSource('clipboard',
  * …)` from inside the `<DepRegistryProvider>` (i.e. under `<SceneCanvas>`).

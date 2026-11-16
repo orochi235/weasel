@@ -156,3 +156,9 @@ export {
   type UseBooleansOptions, type UseBooleansReturn,
 } from './booleans';
 export { useBooleansAdapterSource } from './deps/booleans';
+export {
+  useClipboard, useClipboardOps, WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, buildWeaselClipboardText,
+  sniffWeaselClipboardText, parseWeaselClipboardText, embedWeaselMetadataInSvg, extractWeaselClipboardFromSvg,
+  type ClipboardFlavors, type PastedItems, type UseClipboardOptions, type UseClipboardOpsOptions,
+  type UseClipboardOpsReturn,
+} from './clipboard';

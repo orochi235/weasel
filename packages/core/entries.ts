@@ -3,7 +3,6 @@ const shims = [
   'icons',
   'math',
   'mesh',
-  'clipboard',
   'json',
   'patterns-builtin',
   'renderer',

@@ -1,5 +1,4 @@
-import { decodeSnapshot, snapshotReplacer } from 'core/persistence/codec';
-import { dwarn } from 'debug/flag';
+import { decodeSnapshot, snapshotReplacer, dwarn } from '@weasel-js/core';
 
 /** MIME type the kit writes its full-fidelity clipboard payload under, so a
  *  copy/paste between two weasel canvases round-trips scene nodes rather than

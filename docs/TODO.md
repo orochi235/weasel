@@ -248,27 +248,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-### Core layering
-
-- **(P2) Finish splitting core into a viewer and an editing layer** (queued 2026-11-15; core is a viewer since
-  2026-11-16). Every tool, the selection implementation, the selection chrome, the transform, insert, marquee,
-  lasso, delete and group-entry actions, and the kit's paste and drop handlers live in `@weasel-js/editing`, which
-  hands them to `<SceneCanvas>` through preset roles (`build`, `selection`, `selectionChrome`, `toolActions`,
-  `insertKinds`, `contentHandlers`); a canvas with none of its presets draws, pans and zooms over
-  `viewerSelection`, and no test under `packages/core/src` imports editing. Two editing behaviors are still in core:
-  - the clipboard ops (`interactions/actions/clipboard`: `useClipboard`, `useClipboardOps`, `materializePaste`,
-    the wire format), which editing's copy, cut and paste actions and the `kit:weasel-json` handler build on and
-    `apps/draw` calls directly; moving them retires core's `./clipboard` entry;
-  - the boolean ops (`interactions/actions/booleans`: `useBooleans`, `useBooleansAdapter`, the commit helpers),
-    exported through core's paths barrel and read by editing's pathfinder actions; the canvas registers their
-    adapter dep itself (`canvas/deps/pathLeafDeps.ts`), so a preset component has to publish it first, as
-    `InsertDeps` does for `insert`.
-  These stay in core by design, so they are not part of this entry: `viewerSelection` (a viewer's read-only
-  selection), `contextMenuAction` (labkit's scene-free surfaces mount it; it selects the pressed node only where a
-  `selection` dep can), the selection contract types, and snapping and paths, which the canvas builds itself (the
-  snap readout and `snap` dep, the path edit state and anchor overlay). Closes when
-  `packages/core/src/interactions/actions/` holds neither `clipboard/` nor `booleans/`.
-
 ### Extension authoring and published consumers
 
 ---

@@ -1,18 +1,4 @@
-import {
-  asNodeId,
-  buildWeaselClipboardText,
-  type ClipboardDep,
-  type ClipboardSnapshot,
-  type NodeId,
-  type PlacedPage,
-  useClipboardOps,
-  useDepSource,
-  useOptionalDepRegistry,
-  useSceneAdapter,
-  type SelectionApi,
-  snapshotReplacer,
-  WEASEL_CLIPBOARD_MIME
-} from '@weasel-js/core';
+import { asNodeId, type ClipboardDep, type ClipboardSnapshot, type NodeId, type PlacedPage, useDepSource, useOptionalDepRegistry, useSceneAdapter, type SelectionApi, snapshotReplacer } from '@weasel-js/core';
 import {
   type ReactElement,
   type ReactNode,
@@ -27,6 +13,7 @@ import { useFileCommands } from './fileCommands';
 import type { PaperSizeKey } from './paperSizes';
 import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgExport';
+import { buildWeaselClipboardText, useClipboardOps, WEASEL_CLIPBOARD_MIME } from '@weasel-js/editing';
 
 export interface ToolbarProps {
   scene: DrawScene;

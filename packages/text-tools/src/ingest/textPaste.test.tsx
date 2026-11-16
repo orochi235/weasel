@@ -9,9 +9,8 @@ import {
   __setImageMeasureForTests, __setFileToDataUriForTests, _resetImageHandlerSeamsForTests,
 } from '@weasel-js/editing/test-seams';
 import { __setSvgMeasureForTests, _resetSvgHandlerSeamsForTests } from '@weasel-js/editing/test-seams';
-import { buildWeaselClipboardText } from '@weasel-js/core';
 import { textPreset } from '../presets';
-import { ingestPreset } from '@weasel-js/editing';
+import { ingestPreset, buildWeaselClipboardText } from '@weasel-js/editing';
 
 type D = { text?: string; image?: { src: string } };
 type L = 'main';

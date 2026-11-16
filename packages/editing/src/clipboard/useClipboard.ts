@@ -2,8 +2,8 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { WorldPoint } from '@weasel-js/routing';
 import { usePointerContext } from '@weasel-js/routing/react';
-import { dwarn } from 'debug/flag';
-import type { ClipboardDep } from '../editDeps';
+import { dwarn } from '@weasel-js/core';
+import type { ClipboardDep } from '@weasel-js/core/engine';
 import { defaultFlavors, writeOsClipboard, type ClipboardFlavors } from './osClipboard';
 
 /** What a paste wrote: the new nodes' ids, and the copies the next paste of this clipboard starts from. */

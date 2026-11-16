@@ -1,7 +1,5 @@
-import {
-  ActionDisabledReason, useClipboard, useCommand,
-  type ActionParamsOf, type BoundGesture, type ClipboardDep, type CommandOptions, type UseClipboardOptions,
-} from '@weasel-js/core';
+import { ActionDisabledReason, useCommand, type ActionParamsOf, type BoundGesture, type ClipboardDep, type CommandOptions } from '@weasel-js/core';
+import { useClipboard, type UseClipboardOptions } from '@weasel-js/editing';
 
 /** The ids of the commands `useDocClipboard` registers: the kit's own, so a menu naming them finds these. */
 export const DOC_CLIPBOARD_ACTIONS = { copy: 'clipboard.copy', paste: 'clipboard.paste' } as const;

@@ -167,7 +167,7 @@ export interface LassoSelectAdapter extends AreaSelectAdapter {
 }
 
 /**
- * Narrow adapter for insert and `useClipboardOps`. The kit knows nothing
+ * Narrow adapter for insert and editing's `useClipboardOps`. The kit knows nothing
  * about what shape to construct; it asks the adapter to produce node(s) given
  * gesture or paste inputs, and wraps each in an `InsertOp`.
  */
