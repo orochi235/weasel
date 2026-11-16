@@ -78,7 +78,11 @@ function mindMap(
  *  graph order. On an arranged map, those clear of the root keep their side
  *  first. Each side keeps the order its branches already stand in. */
 function sides(root: GraphNode, children: Children, order: (id: string) => number): [GraphNode[], GraphNode[]] {
-  const weight = (node: GraphNode): number => 1 + (children.get(node.id) ?? []).reduce((sum, k) => sum + weight(k), 0);
+  const weight = (node: GraphNode): number => {
+    let count = 0;
+    for (const stack = [node]; stack.length > 0; count++) stack.push(...(children.get(stack.pop()!.id) ?? []));
+    return count;
+  };
   const kids = children.get(root.id) ?? [];
   const half = root.bounds.width / 2;
   const mid = root.bounds.x + half;
@@ -108,11 +112,13 @@ function sideColumns(
   branches: readonly GraphNode[], children: Children, from: number, rankGap: number, sign: 1 | -1,
 ): Map<string, number> {
   const rows: GraphNode[][] = [];
-  const visit = (node: GraphNode, depth: number): void => {
+  const stack = [...branches].reverse().map((node) => ({ node, depth: 0 }));
+  while (stack.length > 0) {
+    const { node, depth } = stack.pop()!;
     (rows[depth] ??= []).push(node);
-    for (const kid of children.get(node.id) ?? []) visit(kid, depth + 1);
-  };
-  for (const branch of branches) visit(branch, 0);
+    const kids = children.get(node.id) ?? [];
+    for (let i = kids.length - 1; i >= 0; i--) stack.push({ node: kids[i]!, depth: depth + 1 });
+  }
   const xs = new Map<string, number>();
   let start = from;
   for (const row of rows) {

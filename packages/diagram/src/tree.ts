@@ -48,21 +48,26 @@ export function forestOf(graph: Graph, crossAxis: 'x' | 'y'): Forest {
   const depth = new Map<string, number>();
   const roots: GraphNode[] = [];
 
-  const claim = (node: GraphNode, at: number): void => {
-    depth.set(node.id, at);
-    const kids: GraphNode[] = [];
-    for (const edge of graph.outgoing(node.id)) {
-      if (edge.to === node.id || depth.has(edge.to)) continue;
-      const child = graph.node(edge.to);
-      if (child === undefined) continue;
-      // Claimed on sight rather than inside the recursion, so two siblings
-      // sharing a descendant cannot both take it.
-      depth.set(child.id, at + 1);
-      kids.push(child);
+  const claim = (root: GraphNode, at: number): void => {
+    depth.set(root.id, at);
+    const stack = [root];
+    while (stack.length > 0) {
+      const node = stack.pop()!;
+      const below = depth.get(node.id)! + 1;
+      const kids: GraphNode[] = [];
+      for (const edge of graph.outgoing(node.id)) {
+        if (edge.to === node.id || depth.has(edge.to)) continue;
+        const child = graph.node(edge.to);
+        if (child === undefined) continue;
+        // Claimed on sight rather than when walked, so two siblings
+        // sharing a descendant cannot both take it.
+        depth.set(child.id, below);
+        kids.push(child);
+      }
+      const ordered = seededOrder(kids, crossAxis, order);
+      children.set(node.id, ordered);
+      for (let i = ordered.length - 1; i >= 0; i--) stack.push(ordered[i]!);
     }
-    const ordered = seededOrder(kids, crossAxis, order);
-    children.set(node.id, ordered);
-    for (const child of ordered) claim(child, at + 1);
   };
 
   const rootish = graph.nodes.filter((node) =>
@@ -95,22 +100,34 @@ export function subtreeBlocks(
   const measured = new Map<string, number>();
   const kidsSpan = (kids: readonly GraphNode[]): number =>
     kids.reduce((sum, k) => sum + span(k), 0) + Math.max(0, kids.length - 1) * gap;
-  const span = (node: GraphNode): number => {
-    const known = measured.get(node.id);
-    if (known !== undefined) return known;
-    const block = Math.max(extent(node.bounds, axis), kidsSpan(children.get(node.id) ?? []));
-    measured.set(node.id, block);
-    return block;
-  };
-  const lay = (node: GraphNode, from: number, into: Map<string, number>): void => {
-    const kids = children.get(node.id) ?? [];
-    const block = span(node);
-    let cursor = from + (block - kidsSpan(kids)) / 2;
-    for (const child of kids) {
-      lay(child, cursor, into);
-      cursor += span(child) + gap;
+  const span = (root: GraphNode): number => {
+    const stack: { node: GraphNode; open: boolean }[] = [{ node: root, open: false }];
+    while (stack.length > 0) {
+      const top = stack.pop()!;
+      if (measured.has(top.node.id)) continue;
+      const kids = children.get(top.node.id) ?? [];
+      if (top.open) {
+        measured.set(top.node.id, Math.max(extent(top.node.bounds, axis), kidsSpan(kids)));
+        continue;
+      }
+      stack.push({ node: top.node, open: true });
+      for (const k of kids) stack.push({ node: k, open: false });
     }
-    into.set(node.id, from + (block - extent(node.bounds, axis)) / 2);
+    return measured.get(root.id)!;
+  };
+  const lay = (root: GraphNode, start: number, into: Map<string, number>): void => {
+    const stack = [{ node: root, from: start }];
+    while (stack.length > 0) {
+      const { node, from } = stack.pop()!;
+      const kids = children.get(node.id) ?? [];
+      const block = span(node);
+      let cursor = from + (block - kidsSpan(kids)) / 2;
+      for (const child of kids) {
+        stack.push({ node: child, from: cursor });
+        cursor += span(child) + gap;
+      }
+      into.set(node.id, from + (block - extent(node.bounds, axis)) / 2);
+    }
   };
   return { span, lay };
 }
@@ -128,12 +145,16 @@ const treeOnce: LayoutFn = (graph, opts = {}) => {
   const { roots, children, depth } = forestOf(graph, axes.cross);
 
   const bands = new Map<number, number>();
+  const rows = new Map<number, GraphNode[]>();
   for (const node of graph.nodes) {
     const at = depth.get(node.id) ?? 0;
     bands.set(at, Math.max(bands.get(at) ?? 0, extent(node.bounds, axes.rank)));
+    const row = rows.get(at);
+    if (row) row.push(node);
+    else rows.set(at, [node]);
   }
   const depths = [...bands.keys()].sort((a, b) => a - b);
-  const rowsAt = depths.map((at) => graph.nodes.filter((n) => (depth.get(n.id) ?? 0) === at));
+  const rowsAt = depths.map((at) => rows.get(at)!);
   const grouped = (graph.groups?.length ?? 0) > 0;
   const gaps = grouped ? rankGaps(graph, rowsAt, axes, rankGap) : depths.slice(1).map(() => rankGap);
   const bandStart = new Map<number, number>();
