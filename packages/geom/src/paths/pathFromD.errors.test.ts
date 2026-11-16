@@ -49,4 +49,16 @@ describe('pathFromD and path data in error', () => {
     expect(out.warnings).toEqual([]);
     expect(out.commands[0]).toBe(PATH_M);
   });
+
+  it('stops at an arc with a number past the double range', () => {
+    const out = read('M0 0 A1e400 5 0 0 1 10 0 l5 0');
+    expect(out.commands).toEqual([PATH_M]);
+    expect(out.warnings).toEqual([expect.stringMatching(/A.*argument/)]);
+  });
+
+  it('draws an arc whose radius dwarfs its chord as the near-straight curve it is', () => {
+    const out = read('M0 0 A1e200 5 0 0 1 10 0 l0 5');
+    expect(out.warnings).toEqual([]);
+    expect(out.coords.slice(-4)).toEqual([10, 0, 10, 5]);
+  });
 });

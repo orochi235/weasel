@@ -39,7 +39,8 @@ export interface PathDataCommand {
 /**
  * The commands of an SVG path-data string, each with its numbers, read as SVG reads them: `1e2` is a number and not
  * an `e` command, `.5` and `1.5.5` are `0.5` and `1.5`, `0.5`, and an arc's flags need no separator. Letters are
- * kept as written, relative ones included; a number past the double range is dropped. What `pathFromD` lowers.
+ * kept as written, relative ones included; a number past the double range is dropped, and in an arc's arguments ends
+ * them there, since the flags after it could no longer be told apart. What `pathFromD` lowers.
  */
 export function tokenizePathData(d: string): PathDataCommand[] {
   const out: PathDataCommand[] = [];
@@ -98,7 +99,9 @@ function readArcArgs(s: string): number[] {
     NUM_RE_AT.lastIndex = i;
     const m = NUM_RE_AT.exec(s);
     if (!m) return out;
-    out.push(Number(m[0]));
+    const n = Number(m[0]);
+    if (!Number.isFinite(n)) return out;
+    out.push(n);
     i = NUM_RE_AT.lastIndex;
   }
   return out;
@@ -335,15 +338,15 @@ function arcToCubics(
 
   // Step 2: center (cx', cy') in the rotated frame.
   const sign = largeArc === sweep ? -1 : 1;
-  const u2 = ux * ux + uy * uy;
-  const factor = sign * Math.sqrt(Math.max(0, (1 - u2) / u2));
+  const u = Math.hypot(ux, uy);
+  const factor = sign * Math.sqrt(Math.max(0, (1 - u) * (1 + u))) / u;
   const cux = factor * uy;
   const cuy = -factor * ux;
 
   // Step 3: start and sweep angles.
   const angle = (ux: number, uy: number, vx: number, vy: number): number => {
     const dot = ux * vx + uy * vy;
-    const len = Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy));
+    const len = Math.hypot(ux, uy) * Math.hypot(vx, vy);
     let a = Math.acos(Math.max(-1, Math.min(1, dot / len)));
     if (ux * vy - uy * vx < 0) a = -a;
     return a;
