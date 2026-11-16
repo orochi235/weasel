@@ -33,10 +33,11 @@ const POINTS_PER_INCH = 72;
 const round = (n: number) => Math.round(n * 100) / 100;
 const str = (attrs: Attrs, key: string) => attrs.get(key)?.value;
 
-/** A color attribute as CSS reads it, or `undefined`, with a warning, when it names a color a diagram cannot draw. */
+/** A color attribute as CSS reads it; `undefined` for one unset or set to `""`, Graphviz's default, and, with a warning,
+ *  for one naming a color a diagram cannot draw. */
 function colorAttr(r: DotReader, attrs: Attrs, key: string): string | undefined {
   const raw = str(attrs, key);
-  return raw === undefined ? undefined : checkedColor(dotColor(raw) ?? raw, 'DOT', (lead, item) => r.warnings.list(lead, item));
+  return raw === undefined || raw === '' ? undefined : checkedColor(dotColor(raw) ?? raw, 'DOT', (lead, item) => r.warnings.list(lead, item));
 }
 
 /** An attribute as a number, or `undefined`, with a warning, when it is not one. */

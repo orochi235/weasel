@@ -221,4 +221,13 @@ describe('writing DOT', () => {
     expect(page.data.nodes.map((n) => n.colors?.strokeWidth)).toEqual([0, 1e21]);
     expect(page.data.edges[0]!.colors?.width).toBe(1e21);
   });
+
+  it('resets an outer cluster\'s stroke and font color in a group\'s cluster inside it', () => {
+    const doc = pageOf({ nodes: [{ id: 'a' }], edges: [], groups: [{ id: 'g', members: ['a'] }], containers: [
+      { id: 'c', role: 'container', label: 'C', colors: { stroke: '#ff0000', text: '#00ff00' }, members: ['g'] },
+    ] });
+    const g = back(doc).data.containers!.find((k) => k.id === 'g')!;
+    expect(g.colors?.stroke).toBeUndefined();
+    expect(g.colors?.text).toBeUndefined();
+  });
 });
