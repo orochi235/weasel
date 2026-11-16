@@ -332,6 +332,16 @@ describe('createReflectable clash warning', () => {
     expect(warn).toHaveBeenCalledTimes(2);
   });
 
+  it('leads the warning with the registry\'s name, which its reflection reports', () => {
+    const warn = spyWarn();
+    const r = createReflectable<string>({ name: 'paint kinds' });
+    expect(r.reflection.name).toBe('paint kinds');
+    expect(createReflectable<string>().reflection.name).toBeUndefined();
+    r.push('k', 'a', { source: 'one' });
+    r.push('k', 'b', { source: 'two' });
+    expect(warn.mock.calls[0]![0]).toMatch(/^weasel paint kinds: "two" registered "k" over "one"/);
+  });
+
   it('reports which registrants are fallbacks', () => {
     const r = createReflectable<string>();
     r.push('k', 'kit', { source: 'kit', fallback: true });

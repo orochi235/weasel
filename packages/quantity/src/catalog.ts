@@ -116,7 +116,7 @@ function spellingsOf(u: CatalogUnit): string[] {
 }
 
 const KIT = 'kit';
-const units = createReflectable<CatalogUnit>();
+const units = createReflectable<CatalogUnit>({ name: 'units' });
 for (const u of BUILTIN.map(catalogUnitOf)) for (const key of keysOf(u)) units.push(key, u, { source: KIT, fallback: true });
 
 /** The catalog by every text a unit is found by. A unit registered later shadows an earlier one and the

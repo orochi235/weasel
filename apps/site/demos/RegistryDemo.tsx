@@ -19,7 +19,7 @@ const CURSORS: Record<Source, Record<Tool, string>> = {
 };
 
 /** Each tool's CSS cursor, keyed by tool id. */
-const cursors = createReflectable<string>();
+const cursors = createReflectable<string>({ name: 'cursors' });
 const { reflection } = cursors;
 
 const sourceOf = (r: Registrant<string>) => (r.fallback ? `${r.source} (fallback)` : r.source);

@@ -99,7 +99,7 @@ function twoStopRamp(color: string): GradStop[] {
   return [{ offset: 0, color }, { offset: 1, color: isWhite ? '#000000ff' : '#ffffffff' }];
 }
 
-const KINDS = createReflectable<PaintKindEntry>();
+const KINDS = createReflectable<PaintKindEntry>({ name: 'paint kinds' });
 
 /** Resolves with the entry for a kind that is loaded on first use. */
 export type PaintKindLoader = () => Promise<PaintKindEntry>;

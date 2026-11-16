@@ -39,7 +39,7 @@ export interface ExtensionRegistry<V> extends Reflection<V> {
 
 /** Options for {@link createExtensionRegistry}. */
 export interface ExtensionRegistryOptions<V> {
-  /** What the registry holds, for error messages: `'op factory'`, `'shader program'`. */
+  /** What the registry holds, for error messages and its reflection's `name`: `'op factory'`, `'shader program'`. */
   kind: string;
   /** Resolved second, for every id this registry does not hold itself. */
   parent?: ExtensionRegistry<V> | null;
@@ -67,7 +67,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   const { kind } = options;
   const parent = options.parent ?? null;
   const same = options.same ?? Object.is;
-  const store = createReflectable<V>();
+  const store = createReflectable<V>({ name: kind });
   const held = new Map<string, Holding>();
   let cached: { version: number; entries: readonly ReflectedEntry<V>[] } | null = null;
 
@@ -87,6 +87,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   }
 
   return {
+    name: kind,
     parent,
     own: store.reflection,
     get,

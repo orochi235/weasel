@@ -14,7 +14,7 @@ export interface PanelHostRegistry {
 }
 
 export function createPanelHostRegistry(): PanelHostRegistry {
-  const hosts = createReflectable<HTMLElement>();
+  const hosts = createReflectable<HTMLElement>({ name: 'panel hosts' });
   return {
     set: (key, el) => {
       if ((hosts.get(key) ?? null) === el) return;

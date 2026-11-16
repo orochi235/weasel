@@ -28,7 +28,7 @@ export interface ModeRegistry {
 /** Build a mode registry. Throws if two of `modes` share an id, or if
  *  `initial` does not name one of them. */
 export function createModeRegistry(opts: CreateModeRegistryOptions): ModeRegistry {
-  const modes = createReflectable<ModeDefinition>();
+  const modes = createReflectable<ModeDefinition>({ name: 'modes' });
   const list: readonly ModeDefinition[] = Object.freeze([...opts.modes]);
   for (const m of list) {
     if (modes.get(m.id)) throw new Error(`createModeRegistry: duplicate mode id "${m.id}"`);

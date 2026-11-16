@@ -52,7 +52,7 @@ export interface NodeProperties {
  *  property panels read to know what a node exposes. Registering a duplicate
  *  kind name throws. */
 export function createNodeProperties(): NodeProperties {
-  const kinds = createReflectable<NodePropertiesEntry>();
+  const kinds = createReflectable<NodePropertiesEntry>({ name: 'node properties' });
   return {
     register(entry) {
       if (kinds.has(entry.name)) {

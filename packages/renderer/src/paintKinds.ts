@@ -143,7 +143,7 @@ export interface PaintDrawKind {
   programs?: Readonly<Record<string, ProgramSource>>;
 }
 
-const KINDS = createReflectable<PaintDrawKind>();
+const KINDS = createReflectable<PaintDrawKind>({ name: 'draw kinds' });
 
 /** Every registered draw kind, with the overrides each displaced. */
 export const paintDrawKindRegistry: Reflection<PaintDrawKind> = KINDS.reflection;

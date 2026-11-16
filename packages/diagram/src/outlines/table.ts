@@ -23,7 +23,7 @@ const BUILTINS = {
 /** A name the kit itself registers. */
 export type BuiltinOutline = keyof typeof BUILTINS;
 
-const table = createReflectable<OutlineDef>();
+const table = createReflectable<OutlineDef>({ name: 'outlines' });
 for (const [name, def] of Object.entries(BUILTINS)) table.push(name, def as OutlineDef, { source: 'kit', fallback: true });
 const warned = new Set<string>();
 

@@ -34,7 +34,7 @@ export interface ClockEntry {
 
 /** An in-memory `ClockRegistry`, holding the shared clock when given one. */
 export function createClockRegistry(shared: ClockHandle | null = null): ClockRegistry {
-  const entries = createReflectable<ClockEntry>();
+  const entries = createReflectable<ClockEntry>({ name: 'clocks' });
   return {
     register: (id, handle, target) => entries.push(id, { handle, target }),
     get: (id) => entries.get(id)?.handle ?? null,

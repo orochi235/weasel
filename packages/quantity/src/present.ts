@@ -12,7 +12,7 @@ import { unitScale, type Unit, type UnitSystem } from './units';
 
 // Seeded from a static table rather than by each kind registering itself at import, so the package stays
 // free of side effects and a bundler can drop what nobody imports.
-const KINDS = createReflectable<DisplayKind<never>>();
+const KINDS = createReflectable<DisplayKind<never>>({ name: 'display kinds' });
 for (const k of [
   decimalKind, integerKind, compactKind, scientificKind,
   percentKind, fractionKind, ratioKind, multiplierKind, zoomKind,

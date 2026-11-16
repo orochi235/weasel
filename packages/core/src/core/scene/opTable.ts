@@ -47,7 +47,7 @@ const REVERT = 'revert:';
 export const revertName = (kind: string): string => `${REVERT}${kind}`;
 
 export function createOpTable(env: OpTableEnv): OpTable {
-  const handlers = createReflectable<RegisteredOp<unknown>>();
+  const handlers = createReflectable<RegisteredOp<unknown>>({ name: 'op handlers' });
 
   function handlerFor(kind: string): RegisteredOp<unknown> {
     const handler = handlers.get(kind);

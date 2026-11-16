@@ -91,7 +91,7 @@ export interface ContentHandlerEntry {
   handle(items: IngestItem[], ctx: IngestCtx): void | Promise<void>;
 }
 
-const HANDLERS = createReflectable<ContentHandlerEntry>();
+const HANDLERS = createReflectable<ContentHandlerEntry>({ name: 'content handlers' });
 /** Every registration's removal, for the test reset. */
 const REGISTERED = new Set<() => void>();
 

@@ -18,6 +18,7 @@ export type {
   Registrant,
   RegisterOptions,
   PushOptions,
+  ReflectableOptions,
 } from './reflectable';
 export { after } from './after';
 export { createLatest, type Latest } from './latest';

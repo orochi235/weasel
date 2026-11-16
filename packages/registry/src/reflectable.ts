@@ -33,6 +33,8 @@ export interface ReflectedEntry<V, K = string> extends Registrant<V> {
  * `entries`, which returns the same frozen array until the next change.
  */
 export interface Reflection<V, K = string> {
+  /** What the registry holds, in a few plain words (`'paint kinds'`), when it was given one. */
+  readonly name?: string;
   get(key: K): V | undefined;
   has(key: K): boolean;
   /** Every key's live registrant, in the order each key was first registered. */
@@ -41,6 +43,13 @@ export interface Reflection<V, K = string> {
   subscribe(listener: () => void): () => void;
   /** Advances on every change. */
   getVersion(): number;
+}
+
+/** Options for {@link createReflectable}. */
+export interface ReflectableOptions {
+  /** What the registry holds, in a few plain words: `'paint kinds'`, `'cameras'`. Its reflection reports it,
+   *  and its development warnings lead with it. */
+  name?: string;
 }
 
 /** Options for {@link Reflectable.push} and {@link Reflectable.set}. */
@@ -104,7 +113,8 @@ function registrantOf<V>(value: V, options: PushOptions | undefined): Registrant
 
 /** The development warning for a push over a same-rank registrant that is not a fallback: once per key and
  *  pair of sources while the key stays held. */
-function createClashWarnings<K, V>() {
+function createClashWarnings<K, V>(name: string | undefined) {
+  const prefix = name === undefined ? 'weasel' : `weasel ${name}`;
   const warned = new Map<K, Set<string>>();
   const named = (r: Registrant<V>) => (r.source === undefined ? 'an unnamed registrant' : `"${r.source}"`);
   return {
@@ -114,7 +124,7 @@ function createClashWarnings<K, V>() {
       if (seen.has(pair)) return;
       warned.set(key, seen.add(pair));
       console.warn(
-        `weasel: ${named(over)} registered "${String(key)}" over ${named(under)}, which is not an engine default. ` +
+        `${prefix}: ${named(over)} registered "${String(key)}" over ${named(under)}, which is not an engine default. ` +
         'The newer one is live; release one, or push the override at a higher rank.',
       );
     },
@@ -129,7 +139,8 @@ function createClashWarnings<K, V>() {
  * Deliberately only the cross-cutting part of a registry: validation, lookup
  * fallbacks and lifecycle stay with the registry that embeds it.
  */
-export function createReflectable<V, K = string>(): Reflectable<V, K> {
+export function createReflectable<V, K = string>(options?: ReflectableOptions): Reflectable<V, K> {
+  const name = options?.name;
   const stacks = new Map<K, Registrant<V>[]>();
   const listeners = createEmitter();
   let version = 0;
@@ -149,9 +160,10 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
     listeners.emit();
   }
 
-  const clashes = createClashWarnings<K, V>();
+  const clashes = createClashWarnings<K, V>(name);
 
   const reflection: Reflection<V, K> = {
+    ...(name === undefined ? {} : { name }),
     get: (key) => stacks.get(key)?.at(-1)?.value,
     has: (key) => stacks.has(key),
     entries() {

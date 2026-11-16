@@ -59,7 +59,7 @@ export function routeKind(
 /** Build a registry of per-node-kind routing entries. Registering a duplicate
  *  kind name throws. */
 export function createNodeRouting(): NodeRouting {
-  const kinds = createReflectable<NodeRoutingEntry>();
+  const kinds = createReflectable<NodeRoutingEntry>({ name: 'node routing' });
   const list = valuesOf(kinds);
   return {
     register(kind) {
