@@ -39,6 +39,44 @@ export function roleMods(roles: ModifierRoles): ModSpec {
   return out;
 }
 
+type PlainKey = 'alt' | 'ctrl' | 'meta' | 'shift';
+
+const admits = (v: boolean | 'optional' | undefined): boolean => v === true || v === 'optional';
+
+/** Whether `mods` let `key` be held from the press. */
+function admitted(mods: ModSpec, key: ModifierKey): boolean {
+  if (key !== 'mod') return admits(mods[key]);
+  return admits(mods.mod) || (admits(mods.meta) && admits(mods.ctrl));
+}
+
+/**
+ * `spec` letting a moved role's new keys be held from the press, where it let the role's declared keys be: a
+ * binding written with {@link roleMods} of an action's roles keeps reaching the action once a tuning or the
+ * binding's own `opts.roles` moves one to another key. A key the spec names, required or forbidden, keeps its
+ * requirement.
+ */
+export function withRoleMods<S extends object>(spec: S, roles: ModifierRoles, rebinds?: RoleRebinds): S {
+  const declared = declaredRoles(roles);
+  const keys = roleKeysOf(roles, rebinds)!;
+  const mods: ModSpec = { ...(spec as { mods?: ModSpec }).mods };
+  let widened = false;
+  const allow = (k: PlainKey): void => {
+    if (mods[k] !== undefined) return;
+    mods[k] = 'optional';
+    widened = true;
+  };
+  for (const id of Object.keys(declared)) {
+    const was = declared[id].keys;
+    const now = ownOf(keys, id) ?? was;
+    if (now.length === was.length && now.every((k) => was.includes(k))) continue;
+    if (!was.every((k) => admitted(mods, k))) continue;
+    for (const key of now) {
+      if (key === 'mod') { allow('meta'); allow('ctrl'); } else allow(key);
+    }
+  }
+  return widened ? { ...spec, mods } : spec;
+}
+
 /** `record`'s own entry for `id`: a role named like an `Object.prototype` member must not read the prototype's. */
 const ownOf = <V>(record: Readonly<Record<string, V>> | undefined, id: string): V | undefined =>
   record && Object.hasOwn(record, id) ? record[id] : undefined;
@@ -85,6 +123,13 @@ export function resolveRoles(
   return out;
 }
 
+const DECLARED = new WeakMap<ModifierRoles, ModifierRoles>();
+
+/** `roles` as the action declared them, before a tuning moved any of their keys. */
+export function declaredRoles(roles: ModifierRoles): ModifierRoles {
+  return DECLARED.get(roles) ?? roles;
+}
+
 /** `roles` with `rebinds` written into their keys. */
 export function rebindRoles(roles: ModifierRoles, rebinds: RoleRebinds): ModifierRoles {
   const out: Record<string, ModifierRole> = {};
@@ -92,6 +137,7 @@ export function rebindRoles(roles: ModifierRoles, rebinds: RoleRebinds): Modifie
     const keys = ownOf(rebinds, id);
     setOwn(out, id, keys ? { ...roles[id], keys } : roles[id]);
   }
+  DECLARED.set(out, declaredRoles(roles));
   return out;
 }
 
