@@ -120,8 +120,6 @@ export function ColorField(props: ColorFieldProps) {
             onInput?.(compose(visibleRgb, a01));
           }}
           onChange={(a01) => {
-            // Only a slider that moved commits: a release with no drag would add a no-op undo entry.
-            if (alphaDraft === null) return;
             setAlphaDraft(null);
             setPicked(null);
             const next = compose(visibleRgb, a01);

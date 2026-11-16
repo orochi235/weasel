@@ -85,6 +85,23 @@ describe('ColorField', () => {
     expect(onChange).toHaveBeenCalledWith('#112233ff');
   });
 
+  it('commits an opacity change whose input and change arrive with no render between', () => {
+    const onChange = vi.fn();
+    render(<ColorField value="#11223380" alpha onChange={onChange} aria-label="Fill" />);
+    fireEvent.change(screen.getByLabelText('Fill opacity'), { target: { value: '100' } });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('#112233ff');
+  });
+
+  it('commits nothing for an opacity press released where it began', () => {
+    const onChange = vi.fn();
+    render(<ColorField value="#11223380" alpha onChange={onChange} aria-label="Fill" />);
+    const slider = screen.getByLabelText('Fill opacity');
+    fireEvent.pointerDown(slider);
+    fireEvent.pointerUp(slider);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('does not double-commit when blur follows pointer-up', () => {
     const onChange = vi.fn();
     render(<ColorField value="#11223380" alpha onChange={onChange} aria-label="Fill" />);
