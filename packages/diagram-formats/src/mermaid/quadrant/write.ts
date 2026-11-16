@@ -1,4 +1,5 @@
 /** A plot page holding a quadrant chart as Mermaid `quadrantChart` text. */
+import { rgbaToHex, tryParseColor } from '@weasel-js/paint';
 import { quadrantClassEntries, type QuadrantAxis, type QuadrantPointStyle } from '@weasel-js/plot';
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
@@ -19,13 +20,36 @@ function axisLine(name: 'x' | 'y', axis: QuadrantAxis | undefined, warnings: War
   return `${name}-axis ${text(axis.low)}${axis.high !== undefined ? ` --> ${text(axis.high)}` : ''}`;
 }
 
-function styleText(style: QuadrantPointStyle | undefined): string {
+/** A color as one style value: as given where it holds no comma or space, which divide a style, else in hex. `null`,
+ *  with a warning, for one with no hex spelling. */
+function colorValue(color: string | undefined, warnings: Warnings): string | null {
+  if (color === undefined) return null;
+  if (/^[^\s,]+$/.test(color)) return color;
+  const rgba = tryParseColor(color.trim());
+  if (rgba !== null) return rgbaToHex(rgba);
+  warnings.add('Mermaid point colors are one word; colors it cannot read as one were dropped.');
+  return null;
+}
+
+/** A style's size as written, `null`, with a warning, when it is not a finite number. */
+function sizeValue(n: number | undefined, warnings: Warnings): number | null {
+  if (n === undefined) return null;
+  if (Number.isFinite(n)) return n;
+  warnings.add('Mermaid point radii and stroke widths are numbers; others were dropped.');
+  return null;
+}
+
+function styleText(style: QuadrantPointStyle | undefined, warnings: Warnings): string {
   if (style === undefined) return '';
+  const radius = sizeValue(style.radius, warnings);
+  const color = colorValue(style.color, warnings);
+  const stroke = colorValue(style.strokeColor, warnings);
+  const width = sizeValue(style.strokeWidth, warnings);
   return [
-    style.radius !== undefined ? `radius: ${style.radius}` : null,
-    style.color !== undefined ? `color: ${style.color}` : null,
-    style.strokeColor !== undefined ? `stroke-color: ${style.strokeColor}` : null,
-    style.strokeWidth !== undefined ? `stroke-width: ${style.strokeWidth}px` : null,
+    radius !== null ? `radius: ${radius}` : null,
+    color !== null ? `color: ${color}` : null,
+    stroke !== null ? `stroke-color: ${stroke}` : null,
+    width !== null ? `stroke-width: ${width}px` : null,
   ].filter((p) => p !== null).join(', ');
 }
 
@@ -48,9 +72,9 @@ export function writeMermaidQuadrant(page: PlotPage): ExportResult {
     const outside = !(p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1);
     if (outside) warnings.add('Mermaid holds points from 0 to 1 only; others were moved to the nearest edge.');
     const unit = (v: number) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
-    const style = styleText(p.style);
+    const style = styleText(p.style, warnings);
     lines.push(`  ${text(p.name)}${p.className !== undefined ? `:::${p.className}` : ''}: [${unit(p.x)}, ${unit(p.y)}]${style ? ` ${style}` : ''}`);
   }
-  for (const [name, style] of quadrantClassEntries(data)) lines.push(`  classDef ${name} ${styleText(style)}`);
+  for (const [name, style] of quadrantClassEntries(data)) lines.push(`  classDef ${name} ${styleText(style, warnings)}`);
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };
 }
