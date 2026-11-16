@@ -185,7 +185,8 @@ export function getPaintDrawKind(kind: string | undefined): PaintDrawKind | unde
 /** Resolves with the draw half of a kind that is loaded on first use. */
 export type PaintDrawKindLoader = () => Promise<PaintDrawKind>;
 
-const LOADERS = new Map<string, PaintDrawKindLoader>();
+/** Each id's loaders, newest live, as the kinds themselves stack. */
+const LOADERS = createReflectable<PaintDrawKindLoader>();
 
 /** One load per kind, kept after it settles: a failed load is not retried on
  *  every frame that meets the kind. */
@@ -200,14 +201,12 @@ const LOADS = new Map<string, Promise<void>>();
  * its paints. Call {@link warmPaintKinds} to load ahead of the first frame
  * instead.
  *
- * A kind that is already registered never calls its loader. Returns a
- * disposer that removes the loader.
+ * A kind that is already registered never calls its loader. Declaring a
+ * second loader for an id overrides the first; the returned disposer removes
+ * this one, uncovering whatever it displaced.
  */
 export function registerPaintDrawKindLoader(id: string, load: PaintDrawKindLoader): () => void {
-  LOADERS.set(id, load);
-  return () => {
-    if (LOADERS.get(id) === load) LOADERS.delete(id);
-  };
+  return LOADERS.push(id, load);
 }
 
 function startLoad(id: string): Promise<void> {
@@ -244,7 +243,7 @@ export function isPaintKindKnown(id: string): boolean {
  * registered nor loadable.
  */
 export function warmPaintKinds(kinds?: readonly string[]): Promise<void> {
-  const ids = kinds ?? [...LOADERS.keys()];
+  const ids = kinds ?? LOADERS.entries().map((e) => e.key);
   const loads: Promise<void>[] = [];
   for (const id of ids) {
     if (KINDS.has(id)) continue;
