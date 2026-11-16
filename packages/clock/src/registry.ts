@@ -22,8 +22,7 @@ export interface ClockRegistry {
   all(): Iterable<ClockHandle>;
   /** Fires after any register or release. Shaped for `useSyncExternalStore`. */
   subscribe(listener: () => void): () => void;
-  /** Each id's clock and the target it named. A second registration under an id replaces the first
-   *  rather than shadowing it. */
+  /** Each id's clock and the target it named, with the registrations a second one under its id shadows. */
   readonly reflection: Reflection<ClockEntry>;
 }
 
