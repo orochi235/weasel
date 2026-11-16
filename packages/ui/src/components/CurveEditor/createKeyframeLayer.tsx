@@ -115,25 +115,23 @@ export interface KeyframeDragResult {
 }
 
 /**
- * The keys a state's drag would leave behind: a dragged key re-sorted into
- * place, or a dragged handle's control points written onto the key its
- * segment runs into. `selectedKey` follows a moved key to its new index, and
- * `selectedSegment` follows the key it runs into; a key or handle dropped
- * where it started returns the same `keys` array.
+ * The keys a state's drag would leave behind: a dragged key re-sorted into place, or a dragged handle's control
+ * points written onto the key its segment runs into. `selectedKey` follows a moved key to its new index, and
+ * `selectedSegment` follows the key it runs into; a key or handle dropped where it started returns the same `keys`.
  */
 export function applyKeyframeDrag(state: KeyframeLayerState): KeyframeDragResult {
   const { drag, keys, selectedSegment } = state;
-  if (!drag) return { keys, selectedKey: state.selectedKey, selectedSegment };
+  const unchanged = { keys, selectedKey: state.selectedKey, selectedSegment };
+  if (!drag) return unchanged;
   if (drag.kind === 'key') {
     const k = keys[drag.index];
-    if (k && k.t === drag.t && k.value === drag.value) return { keys, selectedKey: drag.index, selectedSegment };
+    if (k && k.t === drag.t && k.value === drag.value) return { ...unchanged, selectedKey: drag.index };
     return moveKeyTo(state, drag.index, drag.t, drag.value);
   }
-  const held = bezierOf(keys[drag.segment]);
-  if (held && held.every((v, i) => v === drag.bezier[i])) return { keys, selectedKey: state.selectedKey, selectedSegment };
+  if (bezierOf(keys[drag.segment])?.every((v, i) => v === drag.bezier[i])) return unchanged;
   const next = keys.slice();
   next[drag.segment] = { ...keys[drag.segment], easing: { bezier: drag.bezier } };
-  return { keys: next, selectedKey: state.selectedKey, selectedSegment };
+  return { ...unchanged, keys: next };
 }
 
 /**
@@ -425,8 +423,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
       const next = [...bezier] as [number, number, number, number];
       next[h * 2] = Math.min(1, Math.max(0, next[h * 2] + dx * HANDLE_STEP));
       next[h * 2 + 1] += dy * HANDLE_STEP;
-      const drag: KeyframeDrag = { kind: 'handle', segment: state.selectedSegment, bezier: next };
-      const moved = applyKeyframeDrag({ ...state, drag });
+      const moved = applyKeyframeDrag({ ...state, drag: { kind: 'handle', segment: state.selectedSegment, bezier: next } });
       if (moved.keys !== state.keys) extra.commit({ ...state, ...moved, drag: null });
     }
   }

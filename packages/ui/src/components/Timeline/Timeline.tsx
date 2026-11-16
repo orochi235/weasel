@@ -186,9 +186,7 @@ export function Timeline(props: TimelineProps): ReactElement {
               hold={laneHold}
               onToggleExpand={() => toggle(row.key)}
               onSelect={(keyIndex) => selectKey({ trackPath, keyIndex })}
-              onKeyInput={(keyIndex, toMs) => {
-                onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks);
-              }}
+              onKeyInput={(keyIndex, toMs) => onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks)}
               onKeyCommit={(keyIndex, toMs) => {
                 const sel = { trackPath, keyIndex };
                 if (keyTime(tracks, sel) === Math.max(0, toMs)) return;
