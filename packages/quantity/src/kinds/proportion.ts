@@ -286,6 +286,8 @@ export type MultiplierDisplay = {
   kind: 'multiplier';
   /** Most decimals. Default 2. */
   places?: number;
+  /** Most significant figures, in place of `places`: for a factor that runs from far below 1 to far above it. */
+  figures?: number;
   /** Default `×`. */
   symbol?: string;
 };
@@ -295,15 +297,17 @@ export function multiplier(options: Omit<MultiplierDisplay, 'kind'> = {}): Multi
   return { kind: 'multiplier', ...options };
 }
 
+const multiplierDigits = (d: MultiplierDisplay): Intl.NumberFormatOptions =>
+  d.figures === undefined ? { maximumFractionDigits: d.places ?? 2 } : { maximumSignificantDigits: d.figures };
+
 /** The built-in `multiplier` kind, to spread into a `registerDisplayKind` replacement. */
 export const multiplierKind: DisplayKind<MultiplierDisplay> = {
   kind: 'multiplier',
   format: (value, d, ctx) => [
-    numberPart(value, ctx.locale, { maximumFractionDigits: d.places ?? 2 }),
+    numberPart(value, ctx.locale, multiplierDigits(d)),
     { type: 'symbol', value: d.symbol ?? '×' },
   ],
-  speak: (value, d, ctx) =>
-    spokenSign(`${numberPart(value, ctx.locale, { maximumFractionDigits: d.places ?? 2 }).value} times`),
+  speak: (value, d, ctx) => spokenSign(`${numberPart(value, ctx.locale, multiplierDigits(d)).value} times`),
   parse: (text, d, ctx) => {
     const own = d.symbol !== undefined && text.trimEnd().endsWith(d.symbol)
       ? text.trimEnd().slice(0, -d.symbol.length)
