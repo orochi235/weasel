@@ -123,6 +123,7 @@ export function resolveLayout(
       if (kept.length) dockRows(out, d.id)!.push(kept);
     }
   }
+  const storedDocked = new Set(placed);
 
   for (const [id, at] of Object.entries(layout?.floating ?? {})) {
     const bar = byId.get(id);
@@ -147,7 +148,7 @@ export function resolveLayout(
       setOwn(out.floating, bar.id, { x: 0, y: 0, anchor: null, orientation: 'horizontal' });
     }
   }
-  return settleEnds(out, new Set(layout?.atEnd ?? []));
+  return settleEnds(out, new Set((layout?.atEnd ?? []).filter((id) => storedDocked.has(id))));
 }
 
 /** The dock a bar goes to when nothing else places it: the first of its own `docks` that exists and it may enter. */

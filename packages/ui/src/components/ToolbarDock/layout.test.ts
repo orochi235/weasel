@@ -21,6 +21,17 @@ describe('resolveLayout', () => {
     expect(out).toEqual({ docks: { top: [['a', 'c']], left: [['b']] }, floating: {} });
   });
 
+  it('puts a stored end bar among the start bars of its home row when the stored layout did not dock it', () => {
+    const floated: ToolbarLayout = { docks: { top: [['a', 'b']] }, floating: { x: place }, atEnd: ['b', 'x'] };
+    const out = resolveLayout(docks, [bar('a'), bar('b'), bar('x')], floated);
+    expect(out.docks.top).toEqual([['a', 'x', 'b']]);
+    expect(out.atEnd).toEqual(['b']);
+    const barred: ToolbarLayout = { docks: { top: [['a']], left: [['x']] }, floating: {}, atEnd: ['x'] };
+    const moved = resolveLayout(docks, [bar('a'), bar('x', { vertical: false })], barred);
+    expect(moved.docks.top).toEqual([['a', 'x']]);
+    expect(moved.atEnd).toBeUndefined();
+  });
+
   it('keeps a valid stored layout', () => {
     const stored: ToolbarLayout = { docks: { top: [['b'], ['a']], left: [] }, floating: {} };
     const out = resolveLayout(docks, [bar('a'), bar('b')], stored);
