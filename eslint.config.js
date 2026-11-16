@@ -4,6 +4,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globLiteralArgs from './scripts/eslint/glob-literal-args.mjs';
 import noArrowStrictWrapper from './scripts/eslint/no-arrow-strict-wrapper.mjs';
+import noHandLerp from './scripts/eslint/no-hand-lerp.mjs';
 import noPackageStarExport from './scripts/eslint/no-package-star-export.mjs';
 import noRenderRefWrite from './scripts/eslint/no-render-ref-write.mjs';
 
@@ -41,7 +42,7 @@ const plugins = {
   '@typescript-eslint': tsPlugin,
   'react-hooks': reactHooks,
   weasel: { rules: { 'no-render-ref-write': noRenderRefWrite, 'glob-literal-args': globLiteralArgs, 'no-package-star-export': noPackageStarExport,
-    'no-arrow-strict-wrapper': noArrowStrictWrapper } },
+    'no-arrow-strict-wrapper': noArrowStrictWrapper, 'no-hand-lerp': noHandLerp } },
 };
 
 export default [
@@ -313,6 +314,18 @@ export default [
       'react-hooks/globals': 'off',
       'react-hooks/immutability': 'off',
     },
+  },
+  {
+    /**
+     * A test's expected value may be written as the hand lerp it checks against, and the three
+     * definitions are the lerp: geom's, and the copies in paint and audio, which import nothing.
+     */
+    files: ['**/*.{ts,tsx}'],
+    ignores: [
+      '**/*.{test,spec}.{ts,tsx}', '**/*.fixture.{ts,tsx}', '**/*.fixtures.{ts,tsx}', '**/testing/**', 'tests/**', '**/tests-e2e/**',
+      'packages/geom/src/scalar.ts', 'packages/paint/src/lerp.ts', 'packages/audio/src/lerp.ts',
+    ],
+    rules: { 'weasel/no-hand-lerp': 'error' },
   },
   {
     /**
