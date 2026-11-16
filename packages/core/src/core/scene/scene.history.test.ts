@@ -228,6 +228,20 @@ describe('custom op seam', () => {
     ).toThrow(/reserved/);
   });
 
+  it('throws when a different handler takes a registered kind, unless it replaces', () => {
+    let v = 0;
+    const a = { apply: () => { v += 1; }, revert: () => { v -= 1; } };
+    const b = { apply: () => { v += 10; }, revert: () => { v -= 10; } };
+    const s = createScene<Data, Layer>({ systemLayers: [{ id: 'structures' }], ops: { 'app:bump': a } });
+    expect(() => s.registerOp('app:bump', a)).not.toThrow();
+    expect(() => s.registerOp('app:bump', b)).toThrow(/"app:bump" is already registered with a different value/);
+    s.recordOp({ kind: 'app:bump', payload: null });
+    expect(v).toBe(1);
+    s.registerOp('app:bump', b, { replace: true });
+    s.undo();
+    expect(v).toBe(-9);
+  });
+
   it('options.ops pre-registers ops at construction', () => {
     let v = 0;
     const s = createScene<Data, Layer>({
