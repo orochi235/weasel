@@ -23,7 +23,7 @@ import { LayerHostContext, publishLayer, settleLayer, stateOf, useLayerRegistry,
 import { layerCtxOver, NO_MODIFIERS, readModifiers } from './layerCtx';
 import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
-import { sameFields } from './sameFields';
+import { deepEqual } from '@weasel-js/registry';
 import { useLayerHistory, type LayerSnapshot } from './useLayerHistory';
 import type {
   LayerCtx, LayerGesture, LayerModifiers, ModelPoint, PlotPoint,
@@ -157,7 +157,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     const ctx = makeCtx(readModifiers(e));
     const finalState = a.gesture.onCommit ? a.gesture.onCommit(current, ctx) : current;
     if (finalState !== current) publishLayer(a.entry, finalState);
-    const changed = !sameFields(finalState, a.startSelfState);
+    const changed = !deepEqual(finalState, a.startSelfState);
     if (historyEnabled && changed) record(a.startStates);
     settleLayer(a.entry, changed ? { commit: finalState, prev: a.startSelfState } : 'unchanged');
     cleanupGesture();

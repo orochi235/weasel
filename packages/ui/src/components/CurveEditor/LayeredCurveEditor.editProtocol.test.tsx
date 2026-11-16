@@ -4,6 +4,8 @@ import { fireEvent, render } from '@testing-library/react';
 import { keyframeLayerState, type KeyframeLayerState } from './createKeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
 import { KeyframeLayer } from './KeyframeLayer';
+import { FunctionLayer } from './FunctionLayer';
+import { functionLayerState } from './createFunctionLayer';
 import { CurveEditor } from './CurveEditor';
 
 // The edit protocol, docs/conventions.md "Edit callbacks", as the curve editors keep it.
@@ -44,6 +46,17 @@ describe('curve layers and the edit protocol', () => {
     render(editor(<KeyframeLayer label="x" state={{ ...STATE, selectedKey: 1 }} onChange={onChange} />));
     down(100, 0);
     up(100, 0);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('a drag that moves no point commits nothing', () => {
+    const onChange = vi.fn();
+    // A pinned endpoint holds still however far it is dragged; the anchor at t 0, value 0 sits at plot (0, 100).
+    const state = functionLayerState([{ x: 0, y: 0 }, { x: 1000, y: 10 }]);
+    render(editor(<FunctionLayer endpoints="pinned-both" state={state} onChange={onChange} />));
+    down(0, 100);
+    move(60, 40);
+    up(60, 40);
     expect(onChange).not.toHaveBeenCalled();
   });
 
