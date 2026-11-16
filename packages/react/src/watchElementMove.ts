@@ -1,3 +1,5 @@
+import { watchResize } from './watchResize';
+
 /** Far enough past the viewport that nothing on the page is clipped by the root it widens. */
 const FAR = 1e5;
 
@@ -69,7 +71,7 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
   const clipRoot = clipRootOf(element);
   let observer: IntersectionObserver | null = null;
   let shown: IntersectionObserver | null = null;
-  let sized: ResizeObserver | null = null;
+  let unwatchSize: (() => void) | undefined;
   let retry: ReturnType<typeof setTimeout> | undefined;
   // An observer still delivers entries queued before it disconnected, and `onMove` may stop the watch itself.
   let stopped = false;
@@ -85,19 +87,17 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
     observer = null;
     shown?.disconnect();
     shown = null;
-    sized?.disconnect();
-    sized = null;
+    unwatchSize?.();
+    unwatchSize = undefined;
   };
 
   /** A box with no area cannot be framed, so wait for it to have one. */
   const awaitSize = (): void => {
-    if (typeof ResizeObserver === 'undefined') return;
-    sized = new ResizeObserver(() => {
+    unwatchSize = watchResize(element, () => {
       const box = element.getBoundingClientRect();
       if (box.width === 0 || box.height === 0) return;
       if (report()) frame(1);
     });
-    sized.observe(element);
   };
 
   /**
