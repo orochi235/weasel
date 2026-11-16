@@ -60,3 +60,13 @@ it('writes text still waiting at once when flushed, and not again when the wait 
   act(() => vi.advanceTimersByTime(150));
   expect(write).toHaveBeenCalledTimes(1);
 });
+
+it('waits out a debounce longer than one timer holds', () => {
+  const write = vi.fn();
+  const { result } = renderHook(() => useDebouncedText('', write, 2 ** 31));
+  act(() => result.current.type('word'));
+  act(() => vi.advanceTimersByTime(1));
+  expect(write).not.toHaveBeenCalled();
+  act(() => vi.advanceTimersByTime(2 ** 31));
+  expect(write.mock.calls).toEqual([['word']]);
+});
