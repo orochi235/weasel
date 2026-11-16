@@ -46,10 +46,11 @@ export function badgeText(tab: TabWeasel | null): string {
   return tab.roots > 0 ? String(tab.roots) : '•';
 }
 
-/** Probe a tab and show the answer on its badge. */
-export async function refreshBadge(api: ExtensionApi, tabId: number): Promise<TabWeasel | null> {
+/** Probe a tab and show the answer on its badge, unless `current` says a later probe or a navigation has
+ *  overtaken it while the probe ran. */
+export async function refreshBadge(api: ExtensionApi, tabId: number, current: () => boolean = () => true): Promise<TabWeasel | null> {
   const tab = await probeTab(api, tabId);
-  await api.action?.setBadgeText({ tabId, text: badgeText(tab) });
+  if (current()) await api.action?.setBadgeText({ tabId, text: badgeText(tab) });
   return tab;
 }
 

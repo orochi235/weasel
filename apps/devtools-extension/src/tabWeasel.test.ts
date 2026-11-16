@@ -72,4 +72,10 @@ describe('refreshBadge', () => {
     await refreshBadge(api, 4);
     expect(setBadgeText).toHaveBeenCalledWith({ tabId: 4, text: '2' });
   });
+
+  it('leaves the badge alone when a later probe has overtaken it', async () => {
+    const { api, setBadgeText } = fakeApi(async () => [{ result: { kitVersion: '1.0.0', roots: 2 } }]);
+    expect(await refreshBadge(api, 4, () => false)).toMatchObject({ roots: 2 });
+    expect(setBadgeText).not.toHaveBeenCalled();
+  });
 });

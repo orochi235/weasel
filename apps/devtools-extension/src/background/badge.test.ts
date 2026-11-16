@@ -41,7 +41,7 @@ describe('watchBadges', () => {
     update(3, 'complete');
     vi.advanceTimersByTime(BADGE_DELAYS.at(-1)!);
     expect(refresh).toHaveBeenCalledTimes(BADGE_DELAYS.length);
-    expect(refresh).toHaveBeenCalledWith(3);
+    expect(refresh).toHaveBeenCalledWith(3, expect.any(Function));
   });
 
   it('probes every open tab when installed, since those tabs loaded before it listened', async () => {
@@ -49,6 +49,19 @@ describe('watchBadges', () => {
     const refresh = vi.fn();
     watchBadges(api, refresh);
     install();
-    await vi.waitFor(() => expect(refresh.mock.calls).toEqual([[1], [2]]));
+    await vi.waitFor(() => expect(refresh.mock.calls.map(([id]) => id)).toEqual([1, 2]));
+  });
+
+  it('leaves the badge to the newest probe of a tab, and to none from before it navigated', () => {
+    const { api, update } = fakeApi();
+    const refresh = vi.fn();
+    watchBadges(api, refresh);
+    update(3, 'complete');
+    vi.advanceTimersByTime(BADGE_DELAYS[1]!);
+    const [first, second] = refresh.mock.calls.map(([, current]) => current as () => boolean);
+    expect(first!()).toBe(false);
+    expect(second!()).toBe(true);
+    update(3, 'loading');
+    expect(second!()).toBe(false);
   });
 });
