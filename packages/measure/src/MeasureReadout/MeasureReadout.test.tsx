@@ -9,9 +9,9 @@ import { IDENTITY_POSE_COMPOSITION,
   type NodeId,
   type Scene,
 } from '@weasel-js/core';
-import {
-  createMeasurements, measureIds, measureNode, measurementsContribution, type MeasureFrames,
-} from '@weasel-js/measure';
+import { measureNode, type MeasureFrames } from '../measurement';
+import { createMeasurements, measureIds } from '../measurements';
+import { measurementsContribution } from '../measureContribution';
 import { MeasureReadout } from './MeasureReadout';
 import s from './MeasureReadout.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
@@ -95,7 +95,7 @@ describe('MeasureReadout', () => {
     expect(values()[0]).toBe('4.00');
   });
 
-  it('greys out Move by and Rotate by with nothing selected, and says why', () => {
+  it('grays out Move by and Rotate by with nothing selected, and says why', () => {
     const rig = setup();
     render(rig.view([]));
     rig.add('a', { x: 0, y: 0 }, { x: 5, y: 0 });

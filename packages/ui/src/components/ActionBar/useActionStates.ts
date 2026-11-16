@@ -19,11 +19,16 @@ export interface ActionState {
 const noSubscribe = (): (() => void) => () => {};
 
 /**
- * Each item's {@link ActionState}, kept current, each asked with its own
- * params, so every variant of a parametric action has a state of its own. An action's deps are thunks
- * nothing can watch, so this re-reads when the dep registry says a source
- * changed, and once more after a commit whose render read a dep that the same
- * commit then published.
+ * The live {@link ActionState} of each item, in order: what a button, menu row
+ * or toolbar built on its own needs to gray out an action and say why. Items
+ * come from `actionItems` (`@weasel-js/core`), and each is asked with its own
+ * params, so every variant of a parametric action has a state of its own.
+ *
+ * Deps resolve through the nearest dep registry, when there is one. An
+ * action's deps are thunks nothing can watch, so this re-reads when the dep
+ * registry says a source changed, and once more after a commit whose render
+ * read a dep that the same commit then published. A change that touches no
+ * item's state costs no render.
  */
 export function useActionStates(items: readonly ActionItem[]): ActionState[] {
   const depReg = useOptionalDepRegistry();

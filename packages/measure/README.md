@@ -27,6 +27,30 @@ const ambient = useMemo(() => [measurementsContribution(scene, measurements)], [
 `notes` is a layer the scene declares with `annotation: true`. The contribution
 registers the painter that draws measurements in the scene's own node shapes
 (`nodeShapesOf(scene)`), the layer that shows the picked one, and the
-commands, which `MEASURE_ACTION_IDS` names and `<MeasureReadout>` in
-`@weasel-js/ui` binds buttons to. `MEASURE_TOOLS` names the tool for a palette.
-A render with no canvas registers `MEASURE_PAINTER` itself.
+commands, which `MEASURE_ACTION_IDS` names. `MEASURE_TOOLS` names the tool for
+a palette. A render with no canvas registers `MEASURE_PAINTER` itself.
+
+## The readout
+
+`<MeasureReadout>` is a chip pinned to the bottom of its nearest positioned
+ancestor. It shows the measurement a drag is drawing, else the picked one,
+else the newest: its distance, offsets and angle, in the units of the frame
+its ends landed in. Its Move by, Rotate by, Delete and Clear all buttons run
+the contribution's commands from the actions registry, and one that cannot run
+says why in its tooltip. It reads the canvas's registries, so it and the
+canvas share one `<DepRegistryProvider>` and `<ActionsProvider>`. It draws with
+`@weasel-js/ui`'s components, so load both stylesheets.
+
+```tsx
+import '@weasel-js/ui/style.css';
+import '@weasel-js/measure/style.css';
+
+<DepRegistryProvider>
+  <ActionsProvider>
+    <div className="stage">
+      <SceneCanvas scene={scene} tools={[tools.measure]} ambient={ambient} />
+      <MeasureReadout scene={scene} measurements={measurements} />
+    </div>
+  </ActionsProvider>
+</DepRegistryProvider>
+```

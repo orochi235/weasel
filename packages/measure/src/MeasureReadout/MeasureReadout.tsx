@@ -6,15 +6,14 @@ import {
   type ActionItem,
   type Scene,
 } from '@weasel-js/core';
-import {
-  currentMeasureId, MEASURE_ACTION_IDS, measureMagnification, measurementOf, type Measurements,
-} from '@weasel-js/measure';
-import { decimal, qty } from '@weasel-js/quantity';
-import { useActionStates } from '../ActionBar/useActionStates';
-import { reasonLabel } from '../ActionBar/reasonLabels';
-import { ActionButton } from '../ActionButton/ActionButton';
-import s from './MeasureReadout.module.css';
 import { RAD_TO_DEG } from '@weasel-js/geom';
+import { decimal, qty } from '@weasel-js/quantity';
+import { reasonLabel, useActionStates } from '@weasel-js/ui/components/ActionBar';
+import { ActionButton } from '@weasel-js/ui/components/ActionButton';
+import { MEASURE_ACTION_IDS } from '../actionIds';
+import { measureMagnification, measurementOf } from '../measurement';
+import { currentMeasureId, type Measurements } from '../measurements';
+import s from './MeasureReadout.module.css';
 
 const COMMANDS: readonly [string, string][] = [
   [MEASURE_ACTION_IDS.moveBy, 'Move by'],

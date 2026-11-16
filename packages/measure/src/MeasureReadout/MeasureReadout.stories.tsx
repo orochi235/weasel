@@ -8,9 +8,11 @@ import { IDENTITY_POSE_COMPOSITION,
   type NodeId,
   type Scene,
 } from '@weasel-js/core';
-import { createMeasurements, measureNode, measurementsContribution } from '@weasel-js/measure';
+import { measureNode } from '../measurement';
+import { createMeasurements } from '../measurements';
+import { measurementsContribution } from '../measureContribution';
 import { useState } from 'react';
-import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
+import { MeasureReadout } from './MeasureReadout';
 import s from './MeasureReadout.stories.module.css';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
@@ -48,7 +50,7 @@ function Held({ from, to, selected }: { from: Pt; to: Pt; selected: readonly str
 }
 
 const meta: Meta<typeof Held> = {
-  title: 'ui/MeasureReadout',
+  title: 'measure/MeasureReadout',
   component: Held,
   args: { from: { x: 10, y: 10 }, to: { x: 130, y: 60 }, selected: ['shape'] },
 };
