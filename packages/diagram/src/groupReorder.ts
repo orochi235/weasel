@@ -63,9 +63,19 @@ const STEPS: readonly { key: string; role: string; axis: 'x' | 'y'; step: -1 | 1
   { key: 'ArrowRight', role: 'right', axis: 'x', step: 1 },
 ];
 
+/** The order a step along `params` leaves the selected node's group in, or `null` where it moves nothing: off any
+ *  reorderable group, along the other axis, or past either end. */
+function stepPlan(deps: ActionDeps | undefined, params: Readonly<Record<string, unknown>> | undefined): ReorderChange | null {
+  const target = targetAt(deps, deps?.selection?.get()[0]);
+  if (target === null || params?.axis !== target.axis) return null;
+  const { members, member } = target;
+  const at = members.indexOf(member);
+  const to = nudgeGap([at], params.step === -1 ? -1 : 1, members.length);
+  return to === null ? null : { parent: target.parent, order: moveItems(members, [at], to) };
+}
+
 /** Steps the selected node's member one place toward the start (`-1`) or the end (`1`). */
 export function createStepReorderAction(report: (change: ReorderChange) => void): Action {
-  const selectedTarget = (deps: ActionDeps | undefined) => targetAt(deps, deps?.selection?.get()[0]);
   return {
     id: STEP_REORDER_ACTION_ID,
     label: 'Move along',
@@ -78,16 +88,11 @@ export function createStepReorderAction(report: (change: ReorderChange) => void)
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const target = selectedTarget(deps);
-        if (target === null || params?.axis !== target.axis) return;
-        const { members, member } = target;
-        const at = members.indexOf(member);
-        const to = nudgeGap([at], params.step === -1 ? -1 : 1, members.length);
-        if (to === null) return;
-        report({ parent: target.parent, order: moveItems(members, [at], to) });
+        const change = stepPlan(deps, params);
+        if (change !== null) report(change);
       },
     },
-    enabled: (deps) => (selectedTarget(deps) !== null ? true : ActionDisabledReason.NotApplicable),
+    enabled: (deps, _at, _carried, params) => (stepPlan(deps, params) !== null ? true : ActionDisabledReason.NotApplicable),
   };
 }
 
