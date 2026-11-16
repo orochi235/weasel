@@ -22,6 +22,8 @@ describe('resolveEasing', () => {
   it('throws on a name that is not a built-in', () => {
     // @ts-expect-error deliberately outside EasingName
     expect(() => resolveEasing('easeOutNonsense')).toThrow(/unknown easing/i);
+    expect(() => resolveEasing('constructor' as never)).toThrow(/unknown easing/i);
+    expect(() => resolveEasing('toString' as never)).toThrow(/unknown easing/i);
   });
 
   it('resolves a bezier spec to a curve pinned at both ends', () => {
