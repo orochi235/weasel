@@ -9,6 +9,7 @@ import { specificity } from '@weasel-js/gestures';
 import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
 import { argKeysOf, chordArgsOf, modifierTieKeys, objectId, phasesTie, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
+import { compositeKey } from '@weasel-js/registry';
 
 /** Two or more bindings declare the same exact (phase, gesture, arg, target,
  *  modifiers) tuple, so slot order alone picks one. */
@@ -252,7 +253,7 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const seen = new Set<string>();
   const add = (keyed: readonly { key: string; conflict: Conflict }[]): void => {
     for (const { key, conflict } of keyed) {
-      const dedupeKey = `${key}|${conflict.ownerIds.join(',')}`;
+      const dedupeKey = compositeKey([key, ...conflict.ownerIds]);
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
       out.push(conflict);

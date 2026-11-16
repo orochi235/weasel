@@ -19,6 +19,7 @@ import type { Contribution, OverlayPosition } from './types';
 import { isDev } from '@weasel-js/react';
 import { sameList, useStableByContent } from '@weasel-js/react';
 import type { KernelOverlay } from '../index';
+import { compositeKey } from '@weasel-js/registry';
 
 const NO_SUBSCRIBE = (): (() => void) => () => {};
 
@@ -171,7 +172,7 @@ function useRouteConflictReport(entries: readonly Contribution<unknown>[], modes
   // effect, after the registrations that ran in child effects have landed, and
   // the registry is watched so an override set later is checked too.
   const lastConflictSigRef = useRef<{ sig: string; modes: ModeRegistry | undefined } | null>(null);
-  const entrySig = entries.map((e) => e.id).join(',');
+  const entrySig = compositeKey(entries.map((e) => e.id));
   useEffect(() => {
     if (!isDev()) return;
     const check = (): void => {
