@@ -2,6 +2,6 @@
 '@weasel-js/core': patch
 ---
 
-Editing a text node whose `fontSize` or `letterSpacing` is `{ px }` opens the overlay at the size the canvas draws it, rather than scaled by the zoom.
+Editing a text node with a `{ px }` `fontSize` or `letterSpacing` opens the overlay at the size the canvas draws it, not scaled by the zoom.
 
 <!-- entry: fix visual -->
