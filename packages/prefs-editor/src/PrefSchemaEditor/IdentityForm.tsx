@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { clientScaleOf } from '@weasel-js/core';
 import { PrefsForm, type PrefsFormProps } from '@weasel-js/ui';
 import s from './PrefSchemaEditor.module.css';
 
@@ -19,11 +20,12 @@ export function IdentityForm({ icon, ...form }: PrefsFormProps & { icon: ReactNo
     const measure = (): void => {
       if (rows.length === 0) return setBox(null);
       const at = el.getBoundingClientRect();
+      const scale = clientScaleOf(el, at);
       const bottom = Math.max(...rows.map((r) => (r.firstElementChild ?? r).getBoundingClientRect().bottom));
       // Where a slot's content ends, inside the inset the form gives it: the edge every other row's control ends at.
       const slot = rows[0]!;
-      const right = slot.getBoundingClientRect().right - parseFloat(getComputedStyle(slot).paddingInlineEnd);
-      setBox({ tall: bottom - at.top, end: at.right - right });
+      const right = slot.getBoundingClientRect().right - parseFloat(getComputedStyle(slot).paddingInlineEnd) * scale.x;
+      setBox({ tall: (bottom - at.top) / scale.y, end: (at.right - right) / scale.x });
     };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
