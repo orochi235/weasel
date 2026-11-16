@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type ReactElement } from 'react';
+import { copyText } from '@weasel-js/react';
 import { Button } from '@weasel-js/ui/components/Button';
 import { CodeBlock } from '@weasel-js/ui/components/CodeBlock';
 import { SegmentedBar } from '@weasel-js/ui/components/Segmented';
@@ -36,7 +37,7 @@ export function ButtonLabView({ config }: { config: ButtonLabConfig }): ReactEle
   const exportNow = () => {
     const text = exportDeltas(config);
     setDeltas(text);
-    navigator.clipboard?.writeText(text).catch(() => {});
+    void copyText(text);
   };
   return (
     <div className={s.lab}>

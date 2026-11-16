@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { copyText } from '@weasel-js/react';
 import { isPrefCondition, type PrefCondition } from '@weasel-js/prefs';
 import { Button } from '@weasel-js/ui';
 import s from './PrefConditionEditor.module.css';
@@ -12,7 +13,7 @@ const NOTHING = 'The clipboard holds no condition.';
 export function ConditionClipboard({ clipboard, value, onPaste }: { clipboard: Clipboard; value: PrefCondition | undefined; onPaste(next: PrefCondition): void }) {
   const [said, setSaid] = useState<string | null>(null);
   const copy = (): void => {
-    void clipboard.writeText(JSON.stringify(value, null, 2)).then(() => setSaid('Copied.'), () => setSaid('The clipboard took nothing.'));
+    void copyText(JSON.stringify(value, null, 2)).then((took) => setSaid(took ? 'Copied.' : 'The clipboard took nothing.'));
   };
   const paste = async (): Promise<void> => {
     try {
