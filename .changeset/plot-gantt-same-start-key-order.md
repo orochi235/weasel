@@ -2,6 +2,6 @@
 '@weasel-js/plot': patch
 ---
 
-`setGanttTaskStart` and `setGanttTaskEnd` hand back the chart unchanged for the start or end a task already has, whatever order its keys are written in.
+Setting a gantt task's start or end to the one it has hands back the chart unchanged, whatever order the keys are in.
 
 <!-- entry: fix -->

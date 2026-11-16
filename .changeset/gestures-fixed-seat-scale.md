@@ -1,7 +1,9 @@
 ---
-'@weasel-js/gestures': patch
+'@weasel-js/gestures': minor
 ---
 
-`fixedSeat` also answers the `scale` its containing block draws fixed boxes at, and `clientScaleOf` moves here from routing, which still exports it.
+`fixedSeat` also answers the `scale` its containing block draws fixed boxes at.
+
+`clientScaleOf` moves here from `@weasel-js/routing`, which still exports it.
 
 <!-- entry: api -->
