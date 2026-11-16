@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, type CSSProperties, type RefObject } from 'react';
+import { scrolledPlaceOf } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
 
 /**
@@ -13,9 +14,7 @@ export function useHeldPlace(stage: RefObject<HTMLElement | null>, holding: bool
     const box = stage.current;
     const shown = box?.firstElementChild;
     if (!box || !shown) return;
-    const s = box.getBoundingClientRect();
-    const r = shown.getBoundingClientRect();
-    place.current = { x: r.left - s.left + box.scrollLeft, y: r.top - s.top + box.scrollTop };
+    place.current = scrolledPlaceOf(shown, box);
   };
   useLayoutEffect(() => { if (!holding) read(); });
   useEffect(() => {
