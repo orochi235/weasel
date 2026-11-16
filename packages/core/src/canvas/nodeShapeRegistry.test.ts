@@ -41,6 +41,21 @@ describe('scene-scoped node shapes', () => {
     expect(findNodeShape(node, shapes)).not.toBe(gem);
   });
 
+  it('throws when a different painter takes an id the registry holds, unless it replaces', () => {
+    const shapes = createNodeShapes();
+    const first = shapes.register(gem);
+    const stale: NodeShapeEntry = { ...gem, silhouette: () => null };
+    expect(() => shapes.register(stale)).toThrow(/node shape "test:gem" is already registered with a different value/);
+    createNodeShapes().register(stale)();
+    const fresh: NodeShapeEntry = { ...gem };
+    const second = shapes.register(fresh, { replace: true });
+    expect(findNodeShape(node, shapes)).toBe(fresh);
+    first();
+    expect(findNodeShape(node, shapes)).toBe(fresh);
+    second();
+    expect(findNodeShape(node, shapes)).not.toBe(fresh);
+  });
+
   it("puts a scene's normal painters after the built-ins and its high ones ahead of the default's", () => {
     const shapes = createNodeShapes();
     const high: NodeShapeEntry = { ...gem, id: 'test:high' };

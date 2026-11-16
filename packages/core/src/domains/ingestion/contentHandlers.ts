@@ -12,6 +12,7 @@
  * matched can never disagree with the registry about what a glob means.
  */
 import { mimeMatchesGlob, UNKNOWN_MIME } from '@weasel-js/gestures';
+import { ExtensionConflictError } from '@weasel-js/registry';
 import { dwarn } from '../../debug';
 import type { Scene } from 'core/scene/types';
 import type { OperandsDep } from 'interactions/actions/operands';
@@ -71,8 +72,9 @@ export interface IngestCtx {
  *  matched by MIME glob or predicate and run highest-priority first; the kit's
  *  own register at a low priority so a consumer's handler wins by default. */
 export interface ContentHandlerEntry {
-  /** Stable identifier — used for unregistration and debugging
-   *  (`'kit:image'`, `'app:csv'`). */
+  /** Names the handler in errors and debugging (`'kit:image'`, `'app:csv'`), and is unique among
+   *  registered handlers: a different entry under an id already registered throws unless registered
+   *  with `replace`. Unregistering goes by the disposer `registerContentHandler` returns. */
   id: string;
   /** MIME glob(s) (`'image/*'`, `'text/csv'`) or an item predicate. A drop
    *  or paste keeps string flavors of any exact MIME named here or in
@@ -124,8 +126,17 @@ export function admitHandlerMimes(entries: readonly ContentHandlerEntry[]): () =
 }
 
 /** Register a content handler for every canvas on the page. Returns a disposer that removes
- *  it. A handler for one canvas goes in that canvas's `ingestion.handlers` instead. */
-export function registerContentHandler(entry: ContentHandlerEntry): () => void {
+ *  it. A handler for one canvas goes in that canvas's `ingestion.handlers` instead.
+ *
+ *  The same entry again is a second registration, held until both disposers run. A different entry
+ *  under an `id` already registered throws, unless `options.replace` takes its place, as on hot
+ *  reload; the displaced entry's disposers then do nothing. */
+export function registerContentHandler(entry: ContentHandlerEntry, options: { replace?: boolean } = {}): () => void {
+  const held = [...new Set(HANDLERS.filter((h) => h.id === entry.id && h !== entry))];
+  if (held.length > 0) {
+    if (!options.replace) throw new ExtensionConflictError('content handler', entry.id);
+    for (const h of held) while (HANDLERS.includes(h)) unregister(h);
+  }
   HANDLERS.push(entry);
   const admits = namedMimes(entry).map(admitIngestMime);
   const releases = RELEASES.get(entry) ?? [];

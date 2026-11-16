@@ -1,4 +1,4 @@
-import { FALLBACK_ACCENT, registerNodeShape } from '@weasel-js/core';
+import { FALLBACK_ACCENT, nodeShapesOf } from '@weasel-js/core';
 import { useCallback, useEffect, useState } from 'react';
 import { type ThemeColorSpec, useThemeColors } from '../../canvas/useThemeColors';
 import { type LensColors, lensShapes } from './lensShapes';
@@ -20,7 +20,7 @@ export function useLensShapes<C>(
   const colors = useThemeColors(el, LENS_COLORS);
   useEffect(() => {
     if (!colors) return;
-    const off = lensShapes(colors, scene).map((s) => registerNodeShape(s, { priority: 'high' }));
+    const off = lensShapes(colors, scene).map((s) => nodeShapesOf(scene).register(s, { priority: 'high' }));
     redraw();
     return () => {
       for (const u of off) u();
