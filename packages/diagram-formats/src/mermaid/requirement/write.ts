@@ -14,6 +14,10 @@ const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT'
 /** A name as Mermaid reads it: bare when it is one word, else quoted. */
 const nameOf = (name: string): string => (/^[\w-]+$/.test(name) ? name : `"${name.replace(/"/g, "'")}"`);
 
+/** A field's value as the reader takes it back: quoted where it opens and closes with a quote, or with a space,
+ *  which the reader would strip. */
+const fieldValue = (v: string): string => (/^".*"$/s.test(v) || v !== v.trim() ? `"${v}"` : v);
+
 /** A box's block kind, from a `<<kind>>` row, and its fields; a text row past the divider reads as `key: value`. */
 function blockOf(node: DataNode, warnings: Warnings): { type: string; fields: [string, string][] } {
   const rows: readonly Row[] = node.rows ?? (node.lines ?? []).map((text) => ({ kind: 'label', text }));
@@ -68,7 +72,7 @@ export function writeRequirementDiagram(doc: DiagramDocument, opts?: WriteOption
   const name = (id: string) => nameOf(names.get(id) ?? id);
   for (const n of page.data.nodes) {
     const { type, fields } = blockOf(n, warnings);
-    lines.push(`  ${type} ${name(n.id)} {`, ...fields.map(([k, v]) => `    ${k}: ${v}`), '  }');
+    lines.push(`  ${type} ${name(n.id)} {`, ...fields.map(([k, v]) => `    ${k}: ${fieldValue(v)}`), '  }');
   }
   for (const e of out.edges) {
     if (!out.byId.has(e.from) || !out.byId.has(e.to)) continue;

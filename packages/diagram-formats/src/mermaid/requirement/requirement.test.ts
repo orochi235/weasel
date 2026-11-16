@@ -70,4 +70,13 @@ describe('writing a Mermaid requirement diagram', () => {
     expect(page(text).data.nodes[0]!.rows).toContainEqual({ kind: 'field', label: 'risk_level', value: 'high' });
     expect(warnings).toContain('Mermaid requirement field names are one word; other characters in them were written as underscores.');
   });
+
+  it('keeps a field value\'s quotes and its spaces at either end', () => {
+    for (const value of ['"x"', ' x ']) {
+      const text = writeRequirementDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+        nodes: [{ id: 'r', rows: [{ kind: 'label', text: 'R' }, { kind: 'divider' }, { kind: 'field', label: 'text', value }] }], edges: [],
+      } }] }).text;
+      expect(page(text).data.nodes[0]!.rows).toContainEqual({ kind: 'field', label: 'text', value });
+    }
+  });
 });
