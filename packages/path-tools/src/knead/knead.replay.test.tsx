@@ -11,6 +11,7 @@ import { asNodeId } from '@weasel-js/core';
 import { loadTestFont, outlineScene, TEXT } from '../shared/testing/outlineScene';
 import { lastOperationHarness } from '../shared/testing/lastOperation';
 import { kneadAction } from './knead';
+import { withTextPainter } from '@weasel-js/text-tools/testing/textPainter';
 
 const at = (deps: never, x: number, y: number) => ({ deps, world: { x, y } }) as unknown as InvocationCtx;
 /** A 300 by 10 bar whose top edge is at `y`, posed where its path is. */
@@ -34,6 +35,7 @@ function setup() {
 const pathOf = (scene: ReturnType<typeof setup>['scene'], id: string) => JSON.stringify(scene.get(asNodeId(id))?.data.path);
 
 beforeEach(loadTestFont);
+withTextPainter();
 
 describe('Knead in the last-operation panel', () => {
   it('shows Size and Strength after a stroke, and replays it with new ones as one undo entry', () => {

@@ -19,6 +19,7 @@ import { freshWarpBox } from './warpTargets';
 import { selectedWarpLeaves } from './warpSelection';
 import { usePlaneWarpTool } from './useWarpTool';
 import { renderHook } from '@testing-library/react';
+import { withTextPainter } from '@weasel-js/text-tools/testing/textPainter';
 
 const square = (x: number) =>
   new PathBuilder().moveTo(x, 0).lineTo(x + 100, 0).lineTo(x + 100, 100).lineTo(x, 100).close().build();
@@ -37,6 +38,7 @@ function dragFresh(deps: never, from: { x: number; y: number }, to: { x: number;
 }
 
 beforeEach(loadTestFont);
+withTextPainter();
 
 describe('a warp over a selected group', () => {
   function groupScene() {

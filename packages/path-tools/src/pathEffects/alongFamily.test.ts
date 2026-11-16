@@ -9,6 +9,9 @@ import {
 import { bendAlongAction, editPathEffectAction, expandPathEffectAction, repeatAlongAction, textAlongAction } from './actions';
 import { releasePathEffectAction, setEffectPathAction } from './retarget';
 import { pathEffectSettingsParams, readPathEffectSettings } from './settingsForm';
+import { withTextPainter } from '@weasel-js/text-tools/testing/textPainter';
+
+withTextPainter();
 
 type TestScene = Scene<unknown, 'default', RectPose>;
 

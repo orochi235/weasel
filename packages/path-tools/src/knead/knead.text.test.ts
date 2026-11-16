@@ -9,6 +9,7 @@ import { asNodeId } from '@weasel-js/core';
 import { applyCreateOutlines } from '../outlines/createOutlines';
 import { loadTestFont, outlineScene as setup, TEXT, type Data } from '../shared/testing/outlineScene';
 import { kneadAction } from './knead';
+import { withTextPainter } from '@weasel-js/text-tools/testing/textPainter';
 
 const at = (deps: never, x: number, y: number) => ({ deps, world: { x, y } }) as unknown as InvocationCtx;
 const invoker = kneadAction.invoker as OngoingInvoker;
@@ -23,6 +24,7 @@ function stroke(deps: never, x: number, y0: number, y1: number, reason: 'commit'
 }
 
 beforeEach(loadTestFont);
+withTextPainter();
 
 describe('kneadAction over text', () => {
   it('converts text the brush reaches to outlines and kneads them, as one undo entry', () => {

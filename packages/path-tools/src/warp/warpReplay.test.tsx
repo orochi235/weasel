@@ -13,6 +13,7 @@ import { lastOperationHarness } from '../shared/testing/lastOperation';
 import { heldPathWarpOf } from './pathWarp';
 import { configureWarpAction, createWarpDragAction, type WarpHandleScratch } from './warpActions';
 import type { WarpKind } from './warpTargets';
+import { withTextPainter } from '@weasel-js/text-tools/testing/textPainter';
 
 type Pt = { x: number; y: number };
 const square = (x: number) =>
@@ -44,6 +45,7 @@ function setup() {
 }
 
 beforeEach(loadTestFont);
+withTextPainter();
 
 describe('a warp drag in the last-operation panel', () => {
   it('replays a fresh plane warp as Perspective, the corner where it was dragged, as one undo entry', () => {
