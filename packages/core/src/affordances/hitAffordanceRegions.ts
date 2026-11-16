@@ -12,7 +12,7 @@ import {
 } from 'core/geometry/targetFrame';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { CursorSpec } from '@weasel-js/cursor';
-import { edgeHandlesFit } from 'core/geometry/resizeHandles';
+import { edgeHandlesFit } from 'interactions/gestures/resizeHandles';
 
 /** What the walk found: the region, plus the ids needed to describe it. */
 export interface AffordanceRegionHit {

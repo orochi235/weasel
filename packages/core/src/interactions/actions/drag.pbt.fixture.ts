@@ -3,7 +3,7 @@
  * package imports it.
  */
 import type { Action, ActionDeps, BindingOptions, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import { RESIZE_HANDLE_ANCHORS } from '../../core/geometry/resizeHandles';
+import { RESIZE_HANDLE_ANCHORS } from '../gestures/resizeHandles';
 import type { TestScene } from './pbt.fixture';
 
 export interface Pt { x: number; y: number }

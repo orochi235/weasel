@@ -147,10 +147,10 @@ export { refusalOf, type DropRefusal, type DropVerdict } from '../interactions/a
 export { usePoseDescriptorDepSource } from '../canvas/deps/poseDescriptor';
 export {
   CORNER_ANCHORS, RESIZE_HANDLE_ANCHORS, EDGE_HANDLE_MIN_RADII, handlePoint, isCornerHandle, resizeHandlesFor,
-} from '../core/geometry/resizeHandles';
+} from '../interactions/gestures/resizeHandles';
 export type {
   CornerAnchor, CornerEdge, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout,
-} from '../core/geometry/resizeHandles';
+} from '../interactions/gestures/resizeHandles';
 export { useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
 export { useLiveOperands } from '../canvas/deps/operands';
 export { useBooleansAdapterSource } from '../canvas/deps/booleans';

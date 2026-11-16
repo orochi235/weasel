@@ -14,7 +14,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import { HANDLE_BASE_PX } from 'core/device/targets';
 import {
   handlePoint, resizeHandlesFor, type ResizeHandleLayout,
-} from 'core/geometry/resizeHandles';
+} from 'interactions/gestures/resizeHandles';
 
 export type { ResizeHandleLayout };
 

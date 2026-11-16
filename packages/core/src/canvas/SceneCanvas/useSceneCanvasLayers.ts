@@ -15,7 +15,7 @@ import { builtLayersOf, isCustomEntry, type CanvasLayers } from '../layerSlots';
 import { createSlopsDebugLayer } from '../slopsDebugLayer';
 import { useTargetBasePx } from 'core/device/useTargetBasePx';
 import { targetSizesPx } from 'core/device/targets';
-import type { ResizeHandleLayout } from 'core/geometry/resizeHandles';
+import type { ResizeHandleLayout } from 'interactions/gestures/resizeHandles';
 import { layersOverPresets, mergeLayersWithDefaults } from './mergeLayers';
 import type { SceneCanvasLayers } from './props';
 import type { EnabledPresets } from './features';

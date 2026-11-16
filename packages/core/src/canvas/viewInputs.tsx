@@ -5,7 +5,7 @@
  * These are read during a view's render, so they travel as context rather than
  * on the `SurfaceHandle`, which is not attached until an effect runs.
  */
-import type { ResizeHandleLayout } from 'core/geometry/resizeHandles';
+import type { ResizeHandleLayout } from 'interactions/gestures/resizeHandles';
 import { createContext, useContext, type ReactNode } from 'react';
 import type { UseViewHelpersOptions } from './useViewHelpers';
 import type { SelectionApi } from '@weasel-js/routing';

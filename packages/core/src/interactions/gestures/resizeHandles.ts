@@ -1,4 +1,4 @@
-import type { ResizeAnchor } from '../../interactions/gestures/types';
+import type { ResizeAnchor } from './types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { pxExtentIn, type TargetTransform } from 'core/geometry/targetFrame';
 

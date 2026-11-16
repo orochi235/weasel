@@ -1,4 +1,4 @@
-import type { ResizeHandleLayout } from 'core/geometry/resizeHandles';
+import type { ResizeHandleLayout } from 'interactions/gestures/resizeHandles';
 import { useLatest } from '@weasel-js/react';
 import type { Dispatcher } from '@weasel-js/routing';
 import { useDepSource } from '@weasel-js/routing/react';

@@ -21,8 +21,6 @@ export { pathPoseDescriptor } from '../core/geometry/pathPoseDescriptor';
 export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, leadUnder, poseDescriptorForNode, remapRotatedLeaf, translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../core/geometry/poseDescriptor';
 export type { PoseDescriptor, RotatedPose, TranslateLead } from '../core/geometry/poseDescriptor';
 export type { RectPose } from '../core/geometry/rectPose';
-export { CORNER_ANCHORS, EDGE_HANDLE_MIN_RADII, RESIZE_HANDLE_ANCHORS, cornerResizeHandles, fixedCornerOf, handlePoint, hitCornerHandle, isCornerHandle, movedEdges, resizeHandlesFor } from '../core/geometry/resizeHandles';
-export type { CornerAnchor, CornerEdge, CornerHandle, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout } from '../core/geometry/resizeHandles';
 export { localToWorld, targetTransformOf, worldDeltaToLocal, worldToLocal } from '../core/geometry/targetFrame';
 export type { TargetTransform } from '../core/geometry/targetFrame';
 export { axisAlignedBounds, positiveBox, unionAABB, unionBounds } from '../core/geometry/unionBounds';
@@ -195,6 +193,8 @@ export type { TransformFinisher, TransformFollower, TransformPreviewNode } from 
 export { useActionSet, useStandardDeps } from '../interactions/actions/useActionSet';
 export type { StandardDeps } from '../interactions/actions/useActionSet';
 export type { GestureFrames } from '../interactions/gestures/frames';
+export { CORNER_ANCHORS, EDGE_HANDLE_MIN_RADII, RESIZE_HANDLE_ANCHORS, cornerResizeHandles, fixedCornerOf, handlePoint, hitCornerHandle, isCornerHandle, movedEdges, resizeHandlesFor } from '../interactions/gestures/resizeHandles';
+export type { CornerAnchor, CornerEdge, CornerHandle, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout } from '../interactions/gestures/resizeHandles';
 export { AUTO_ORIGIN_PROJECTION, RECT_ORIGIN_PROJECTION } from '../interactions/gestures/shared/originProjection';
 export type { OriginProjection } from '../interactions/gestures/shared/originProjection';
 export type { ActionBehavior, AreaSelectOverlay, BehaviorEnd, BehaviorResult, BoundsConstraint, CloneBehavior, CloneBehaviorResult, CloneEnd, GestureContext, GroupTransform, InsertBehavior, InsertMoveResult, InsertOverlay, InsertPoint, InsertProposed, LassoSelectBehavior, LassoSelectMoveResult, LassoSelectOverlay, LassoSelectPose, LassoSelectProposed, MoveBehavior, MoveEnd, PointerState, ResizeMoveResult, ResizeOverlay, ResizeProposed, RotateBehavior, RotateMoveResult, RotateOverlay, RotateProposed } from '../interactions/gestures/types';

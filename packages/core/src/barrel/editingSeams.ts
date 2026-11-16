@@ -57,7 +57,7 @@ export { insertParent } from '../canvas/deps/insertParent';
 export { resolveDerivedPath, sceneDepLookup } from '../canvas/derivedPath';
 export { NO_INK_EXTENTS, inkExtentsBetween, insetBox, outsetBox } from '../core/geometry/inkExtents';
 export { leadUnder, remapRotatedLeaf } from '../core/geometry/poseDescriptor';
-export { movedEdges } from '../core/geometry/resizeHandles';
+export { movedEdges } from '../interactions/gestures/resizeHandles';
 export { localToWorld, worldDeltaToLocal } from '../core/geometry/targetFrame';
 export { isFollower, keepOnPage, placedPage, rehomedFollowers } from '../core/pages/pagePlacement';
 export { frameAtOrAbove } from '../core/scene/composePose';
