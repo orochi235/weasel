@@ -79,14 +79,6 @@ export type CoreIconName =
   | 'dashDashed'
   | 'dashDotted'
   | 'dashCustom'
-  | 'paintSolid'
-  | 'paintLinear'
-  | 'paintRadial'
-  | 'paintConic'
-  | 'paintMesh'
-  | 'paintPattern'
-  | 'paintInherit'
-  | 'paintNone'
   | 'markerNone'
   | 'markerArrow'
   | 'markerArrowOpen'
@@ -218,7 +210,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
     ]
   },
   {
-    "label": "Stroke and paint",
+    "label": "Stroke",
     "names": [
       "strokeWidth",
       "strokeCap",
@@ -236,15 +228,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly CoreIconName
       "dashSolid",
       "dashDashed",
       "dashDotted",
-      "dashCustom",
-      "paintSolid",
-      "paintLinear",
-      "paintRadial",
-      "paintConic",
-      "paintMesh",
-      "paintPattern",
-      "paintInherit",
-      "paintNone"
+      "dashCustom"
     ]
   },
   {
@@ -347,14 +331,6 @@ declare module '@weasel-js/icons' {
     'core:dashDashed': true;
     'core:dashDotted': true;
     'core:dashCustom': true;
-    'core:paintSolid': true;
-    'core:paintLinear': true;
-    'core:paintRadial': true;
-    'core:paintConic': true;
-    'core:paintMesh': true;
-    'core:paintPattern': true;
-    'core:paintInherit': true;
-    'core:paintNone': true;
     'core:markerNone': true;
     'core:markerArrow': true;
     'core:markerArrowOpen': true;

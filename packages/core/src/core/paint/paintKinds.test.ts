@@ -11,9 +11,9 @@ import type { SvgNode } from '@weasel-js/svg';
 import {
   registerPaintKind, listPaintKinds, getPaintKind, paintKindRegistry,
   registerPaintKindLoader, patternFamily,
-} from './paintKinds';
-import { asPaint, type PaintKindEntry } from './paintKindEntry';
-import { _resetPaintKindsForTests } from '@weasel-js/core/test-seams';
+} from '@weasel-js/paint-kinds';
+import { asPaint, type PaintKindEntry } from '@weasel-js/paint-kinds';
+import { _resetPaintKindsForTests } from '@weasel-js/paint-kinds/test-seams';
 import { warmPaintKinds } from '@weasel-js/renderer';
 import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
 import { findNodeShape } from 'canvas/NodeShape';

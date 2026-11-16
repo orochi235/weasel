@@ -6,8 +6,9 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Paint } from '@weasel-js/paint';
-import { createScene, getPaintKind, paintKindRegistry, renderSceneToPixels, type RasterImage } from '@weasel-js/core';
-import { _resetPaintKindsForTests } from '@weasel-js/core/test-seams';
+import { getPaintKind, paintKindRegistry } from '@weasel-js/paint-kinds';
+import { _resetPaintKindsForTests } from '@weasel-js/paint-kinds/test-seams';
+import { createScene, renderSceneToPixels, type RasterImage } from '@weasel-js/core';
 import { warmPaintKinds } from '@weasel-js/renderer';
 import type { RectPose } from 'core/scene/composePose';
 import type { DrawCommand } from '@weasel-js/renderer';

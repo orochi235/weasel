@@ -16,25 +16,25 @@ import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel
 import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
 import type { PaintKind, PaintKindEntry, PaintKindFamily } from './paintKindEntry';
 import type { IconRef } from '@weasel-js/icons';
-import { icon } from '../../icons.gen';
+import { icon } from './icons.gen';
 
 /** The family the built-in tiles, `image` and `texture` are offered under. A consumer's
  *  own pattern kind joins it by naming this as its `family`. */
-export const patternFamily: PaintKindFamily = { id: 'pattern', label: 'Pattern', icon: icon('paintPattern') };
+export const patternFamily: PaintKindFamily = { id: 'pattern', label: 'Pattern', icon: icon('pattern') };
 
 const BUILTINS: readonly PaintKindEntry[] = [
   {
     id: 'solid',
     label: 'Solid',
-    icon: icon('paintSolid'),
+    icon: icon('solid'),
     seed: (color) => ({ color }),
     colorOf: (paint) => ((paint.kind ?? 'solid') === 'solid'
       ? (paint as { color: string }).color
       : undefined),
   },
-  gradientKind('linear-gradient', 'Linear', icon('paintLinear')),
-  gradientKind('radial-gradient', 'Radial', icon('paintRadial')),
-  gradientKind('conic-gradient', 'Conic', icon('paintConic')),
+  gradientKind('linear-gradient', 'Linear', icon('linear')),
+  gradientKind('radial-gradient', 'Radial', icon('radial')),
+  gradientKind('conic-gradient', 'Conic', icon('conic')),
   tileKind('hatch', 'Hatch'),
   tileKind('crosshatch', 'Crosshatch'),
   tileKind('dots', 'Dots'),
@@ -237,7 +237,7 @@ export function paintKindOf(fill: Paint): PaintKindEntry | undefined {
 }
 
 /** @internal Back to the built-ins alone, once the renderer's half is reset too; tests reach it
- *  through `_resetPaintKindsForTests` in `@weasel-js/core/test-seams`. */
+ *  through `_resetPaintKindsForTests` in `@weasel-js/paint-kinds/test-seams`. */
 export function _reseedPaintKinds(): void {
   KINDS.clear();
   seed();

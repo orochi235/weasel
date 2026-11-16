@@ -11,6 +11,7 @@ import {
   type RectPose,
 } from '@weasel-js/core';
 import { SceneGradientHandles } from './SceneGradientHandles';
+import '@weasel-js/paint-kinds/mesh';
 
 const STOPS = [
   { offset: 0, color: '#000000' },

@@ -453,10 +453,6 @@ Where it lives now: `docs/concepts.md` ("Animation target", "Clip", "Rig and ski
 - A test file that needs the scene stays in core even when what it tests moved to the animator;
   one that needs only the animator runs under the `weasel-ui` project. `vi.mock` of a renderer or
   animator module from core has to name the package and spread `importOriginal`.
-- The lazy mesh kind (`core/paint/meshKindLazy`) is rebuilt from the renderer's `dist`, so
-  `REGISTRY_STATE` in `packages/core/vite.config.ts` allows only `dist/mesh.js` from it. A module
-  shared between the renderer's index and its `mesh` entry becomes a shared chunk and fails core's
-  build.
 - astv reads these packages' built `dist`. Its `npm run weasel:watch` rebuilds core, ui, and
   labkit's stylesheet only; a change in `packages/prefs` or labkit's source needs `npm run build`
   in that package, and labkit's build empties `dist` first, blanking astv's page until it ends.

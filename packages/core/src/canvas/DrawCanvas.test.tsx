@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { registerPaintKind, getPaintKind } from 'core/paint/paintKinds';
+import { registerPaintKind, getPaintKind } from '@weasel-js/paint-kinds';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { makeMatchMedia } from '../testing/matchMedia';
 import { DrawCanvas } from './DrawCanvas';

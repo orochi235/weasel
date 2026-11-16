@@ -16,7 +16,8 @@ import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInter
 import { leafOfObj } from './svgImport';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
 import { solid, strokeOf } from '@weasel-js/paint';
-import { asPaint, createScene, registerPaintKindLoader, resolveFill } from '@weasel-js/core';
+import { asPaint, registerPaintKindLoader } from '@weasel-js/paint-kinds';
+import { createScene, resolveFill } from '@weasel-js/core';
 import { ANNOTATION_LAYER, DRAW_LAYERS, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import type { Stroke, Fill } from '@weasel-js/core';
 import type { StyledRun } from '@weasel-js/text';

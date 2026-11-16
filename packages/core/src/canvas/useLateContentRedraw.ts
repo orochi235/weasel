@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { subscribeGlyphReady } from '@weasel-js/font';
 import { subscribeImageReady } from '@weasel-js/renderer';
-import { paintKindRegistry } from 'core/paint/paintKinds';
+import { paintKindRegistry } from '@weasel-js/paint-kinds';
 import { subscribeNodeShapes } from './NodeShape';
 
 /**

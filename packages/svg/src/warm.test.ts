@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { asPaint, getPaintKind, registerFont, registerPaintKindLoader, type Paint } from '@weasel-js/core';
+import { asPaint, getPaintKind, registerPaintKindLoader } from '@weasel-js/paint-kinds';
+import { registerFont, type Paint } from '@weasel-js/core';
 import type { SvgNode } from './types';
 import { svgNeeds, warmSvg } from './warm';
 

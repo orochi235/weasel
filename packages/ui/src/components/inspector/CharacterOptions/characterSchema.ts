@@ -126,7 +126,7 @@ export const CHARACTER_OPTIONS = {
       kind: 'boolean',
       name: 'No fill',
       description: 'Draw the range with no fill.',
-      icon: icon('core:paintNone'),
+      icon: icon('paint-kinds:none'),
       control: 'toggle',
       default: false,
     },

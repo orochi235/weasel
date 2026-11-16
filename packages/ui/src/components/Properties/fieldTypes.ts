@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Inherit, Paint } from '@weasel-js/paint';
-import type { PaintKind } from '@weasel-js/core';
+import type { PaintKind } from '@weasel-js/paint-kinds';
 import type { PaintInherit } from '../PaintInput';
 import type { Display, Endless, UnitTable } from '@weasel-js/quantity';
 import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';

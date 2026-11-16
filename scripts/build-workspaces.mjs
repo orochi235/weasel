@@ -34,6 +34,7 @@ export const BUILD_ORDER = [
   '@weasel-js/text',
   '@weasel-js/text-dom',
   '@weasel-js/renderer',
+  '@weasel-js/paint-kinds',
   '@weasel-js/dither',
   '@weasel-js/audio',
   '@weasel-js/cursor',

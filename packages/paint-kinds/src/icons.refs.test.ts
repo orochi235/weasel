@@ -12,9 +12,9 @@ function sources(dir: string): string[] {
   });
 }
 
-// Core writes an annotated literal where it cannot call its own icon(), and nothing typechecks one.
-describe('annotated icon literals in core', () => {
-  it('each names a glyph in core\'s own table', () => {
+// The package writes an annotated literal where it cannot call its own icon(), and nothing typechecks one.
+describe('annotated icon literals in paint-kinds', () => {
+  it('each names a glyph in its own table', () => {
     const wrong: string[] = [];
     let seen = 0;
     for (const file of sources(__dirname)) {

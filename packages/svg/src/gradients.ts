@@ -7,10 +7,9 @@
  */
 
 import { pathToD } from '@weasel-js/geom';
-import { getPaintKind, getMarker, isPatternPaint, isTileKind } from '@weasel-js/core';
-import type {
-  Paint, GradStop, PaintUnits, MarkerRef, Path,
-} from '@weasel-js/core';
+import { getPaintKind } from '@weasel-js/paint-kinds';
+import { getMarker, isPatternPaint, isTileKind } from '@weasel-js/core';
+import type { Paint, GradStop, PaintUnits, MarkerRef, Path } from '@weasel-js/core';
 import { parseRatio, readStops, stopsXml } from './gradientStops';
 import { trimNumber } from './transform';
 import { resolveLength, type LengthAxis } from './lengths';

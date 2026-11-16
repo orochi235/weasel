@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
-import { _resetPaintKindsForTests } from '@weasel-js/core/test-seams';
-import { registerPaintKind, registerPaintKindLoader } from 'core/paint/paintKinds';
-import { asPaint, type PaintKindEntry } from 'core/paint/paintKindEntry';
+import { _resetPaintKindsForTests } from './test-seams';
+import { registerPaintKind, registerPaintKindLoader } from './paintKinds';
+import { asPaint, type PaintKindEntry } from './paintKindEntry';
 import { useGradientKinds, usePaintKind, usePaintKinds } from './usePaintKinds';
 
 const noise = (): PaintKindEntry => ({

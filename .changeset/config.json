@@ -9,6 +9,7 @@
       "@weasel-js/headless",
       "@weasel-js/font",
       "@weasel-js/paint",
+      "@weasel-js/paint-kinds",
       "@weasel-js/text",
       "@weasel-js/text-dom",
       "@weasel-js/bidi",

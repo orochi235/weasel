@@ -23,6 +23,6 @@ export const groups = [
   ['Outline', OUTLINE],
   ['Character styling', TEXT],
   ['Paragraph alignment', PARAGRAPH],
-  ['Stroke and paint', PAINT],
+  ['Stroke', PAINT],
   ['Stroke markers', MARKER],
 ];

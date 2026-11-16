@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseSvg } from './parse';
 import { serializeSvg } from './serialize';
-import { asPaint, registerPaintKind } from '@weasel-js/core';
+import { asPaint, registerPaintKind } from '@weasel-js/paint-kinds';
 import type { SvgNode } from './types';
 
 function gradientOf(svg: string, index = 0): Record<string, unknown> {

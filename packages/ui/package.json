@@ -76,6 +76,7 @@
     "@weasel-js/menu": "1.19.1",
     "@weasel-js/modes": "1.19.1",
     "@weasel-js/paint": "1.19.1",
+    "@weasel-js/paint-kinds": "1.19.1",
     "@weasel-js/plot": "1.19.1",
     "@weasel-js/prefs": "1.19.1",
     "@weasel-js/quantity": "1.19.1",

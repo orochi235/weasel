@@ -5,6 +5,7 @@ import { seedMeshPatch, type MeshGradientPaint } from '@weasel-js/renderer/mesh'
 import { MeshEditor } from './MeshEditor';
 import { PaintInput } from '../PaintInput';
 import { renderWithIcons } from '../../testing/withIcons';
+import '@weasel-js/paint-kinds/mesh';
 
 const MESH = seedMeshPatch('#ff0000ff') as MeshGradientPaint;
 

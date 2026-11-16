@@ -11,9 +11,14 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';
 import type { Fill, Paint } from '@weasel-js/paint';
+import { registerPaintKind, asPaint, type PaintKindEntry } from '@weasel-js/paint-kinds';
 import {
-  createScene, registerPaintKind, registerNodeShape, asPaint, type PaintKindEntry, renderSceneToPixels, type RasterImage,
-  defaultDrawOne, type RectPose,
+  createScene,
+  registerNodeShape,
+  renderSceneToPixels,
+  type RasterImage,
+  defaultDrawOne,
+  type RectPose,
 } from '@weasel-js/core';
 import { resolveFillPattern } from '@weasel-js/renderer';
 import { meshFromStops } from '@weasel-js/renderer/mesh';

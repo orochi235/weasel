@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { Paint, GradientPaint } from '@weasel-js/paint';
 import { seedMeshPatch } from '@weasel-js/renderer/mesh';
 import { GradientEditor } from '@weasel-js/ui/components/GradientEditor';
+import '@weasel-js/paint-kinds/mesh';
 
 const meta: Meta<typeof GradientEditor> = {
   title: 'ui/GradientEditor',

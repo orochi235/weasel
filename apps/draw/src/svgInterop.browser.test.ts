@@ -6,7 +6,8 @@
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { commands, page, userEvent } from 'vitest/browser';
-import { asPaint, IDENTITY_POSE_COMPOSITION, registerPaintKindLoader, layoutPages } from '@weasel-js/core';
+import { asPaint, registerPaintKindLoader } from '@weasel-js/paint-kinds';
+import { IDENTITY_POSE_COMPOSITION, layoutPages } from '@weasel-js/core';
 import { downloadSvg } from './svgInterop';
 import { sceneToSvgString } from './svgExport';
 

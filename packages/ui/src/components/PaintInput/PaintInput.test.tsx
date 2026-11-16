@@ -3,12 +3,10 @@ import { useState } from 'react';
 import { act, cleanup, screen, fireEvent, within } from '@testing-library/react';
 import type { Paint, GradientPaint } from '@weasel-js/paint';
 import { seedMeshPatch } from '@weasel-js/renderer/mesh';
-import {
-  asPaint,
-  registerPaintKind,
-} from '@weasel-js/core';
+import { asPaint, registerPaintKind } from '@weasel-js/paint-kinds';
 import { renderWithIcons } from '../../testing/withIcons';
 import { PaintInput } from './PaintInput';
+import '@weasel-js/paint-kinds/mesh';
 
 const LINEAR: GradientPaint = {
   kind: 'linear-gradient',

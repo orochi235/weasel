@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { meshFromStops, seedMeshPatch, type MeshGradientPaint } from '@weasel-js/renderer/mesh';
 import { handleHalf } from '../../handles';
 import { MeshHandles } from './MeshHandles';
+import '@weasel-js/paint-kinds/mesh';
 
 /** A 2× zoom panned by (10, 20), so mesh space and overlay pixels differ. */
 const toScreen = (p: { x: number; y: number }) => ({ x: p.x * 2 + 10, y: p.y * 2 + 20 });

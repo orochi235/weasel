@@ -109,28 +109,8 @@ export type { FillPoseBox } from '@weasel-js/renderer';
 // A node's paint resolved into what a draw command takes.
 export { commandFill, commandPaint, commandStroke } from '@weasel-js/renderer';
 
-// ─── Utility: hex8 color helpers ────────────────────────────────────────────
-
-// ─── Default paint constants (fill/stroke/palette/ghost) ────────────────────
-
-// ─── Paint kinds: the registry that makes Paint open ────────────────────
-export {
-  registerPaintKind,
-  registerPaintKindLoader,
-  getPaintKind,
-  listGradientKinds,
-  listPaintKinds,
-  paintKindOf,
-  patternFamily,
-  seedTile,
-  switchGradientKind,
-  paintKindRegistry,
-} from 'core/paint/paintKinds';
-export { asPaint } from 'core/paint/paintKindEntry';
+// ─── Paint kinds: the renderer's draw half (the registry is @weasel-js/paint-kinds) ──
 export { warmPaintKinds, isPaintKindKnown } from '@weasel-js/renderer';
-export { usePaintKinds, useGradientKinds, usePaintKind } from '../core/usePaintKinds';
-export type { PaintKindLoader } from 'core/paint/paintKinds';
-export type { PaintKind, PaintKindEntry, PaintKindEditorProps, PaintKindFamily } from 'core/paint/paintKindEntry';
 export type {
   PaintDrawKind,
   PaintBindContext,

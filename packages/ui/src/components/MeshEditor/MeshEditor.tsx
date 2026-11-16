@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react';
 import type { MeshGradientPaint } from '@weasel-js/renderer/mesh';
-import { asPaint } from '@weasel-js/core';
+import { asPaint } from '@weasel-js/paint-kinds';
 import { ColorField } from '../ColorField';
 import { holdScope, useControlAccess, type HoldProps } from '../Disabled';
 import { heldState } from '../Disabled/controlHold';

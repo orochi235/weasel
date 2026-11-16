@@ -15,15 +15,6 @@
  * @packageDocumentation
  */
 
-import { _resetPaintDrawKindsForTests } from '@weasel-js/renderer/test-seams';
-import { _reseedPaintKinds } from 'core/paint/paintKinds';
-
-/** The paint-kind registry, and the renderer's draw half of it, back to the built-ins alone. */
-export function _resetPaintKindsForTests(): void {
-  _resetPaintDrawKindsForTests();
-  _reseedPaintKinds();
-}
-
 export { _resetMarkersForTests } from '@weasel-js/stroke/test-seams';
 export { makeEditAnchorsDep as createEditAnchorsDepForTests, stubDeps as stubDepsForTests } from 'interactions/actions/testUtils';
 export {

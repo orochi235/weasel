@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { paintKindOf } from '@weasel-js/core';
+import { paintKindOf } from '@weasel-js/paint-kinds';
 import { qty, unitSymbol } from '@weasel-js/quantity';
 import { solidColorOf, INHERIT } from '@weasel-js/paint';
 import { useFieldLocale } from '../../useFieldLocale';

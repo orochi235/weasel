@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { getPaintKind } from '@weasel-js/core';
+import { getPaintKind } from '@weasel-js/paint-kinds';
 import { SvgDemo } from '../SvgDemo';
 
 const MESH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wzl="urn:weasel-js:svg" viewBox="0 0 420 320">
