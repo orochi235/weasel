@@ -29,6 +29,15 @@ export function AmbientContributionsProvider({ contributions, children }: Ambien
   return <AmbientContributionsContext.Provider value={value}>{children}</AmbientContributionsContext.Provider>;
 }
 
+/**
+ * The entries the enclosing {@link AmbientContributionsProvider}s supply, inner ones' replacing outer ones' of the same
+ * id: what a canvas mounted here would install before its own `ambient`. A host deciding whether to add an entry of
+ * its own reads this to defer to one an app already provided.
+ */
+export function useProvidedAmbient(): readonly SurfaceContribution[] {
+  return useContext(AmbientContributionsContext);
+}
+
 /** What the enclosing providers supply that `ambient` has no entry of the same id for, then `ambient`. */
 export function useWithProvidedAmbient(
   ambient: readonly SurfaceContribution[] | undefined,

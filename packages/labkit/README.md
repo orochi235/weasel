@@ -450,6 +450,13 @@ The trial mounts the kit's providers isolated from its neighbors, so each
 trial's canvas keeps its own selection and tool, and needs no
 `<WeaselProvider>`.
 
+In a development build every canvas in the lab registers with the devtools
+hook, so the devtools panel and the browser extension list it under its
+trial's title (`ShellDevtools`, from `@weasel-js/devtools/mount`; production
+bundles never load the hook). `<Lab devtools={false}>` turns that off, and
+`true` keeps it in production; an app that provides `devtoolsOff` above its labs
+turns it off for all of them.
+
 ## Chrome
 
 A trial's chrome has six named regions — `titlebar`, `toolbar`, `palette`,

@@ -12,7 +12,9 @@ export { CANVAS_CONTEXT_ATTRIBUTES } from '../canvas/contextAttributes';
 export { readCanvasPixels } from '../canvas/readCanvasPixels';
 export { createCanvasReader, readGl, regionAround, regionOnCanvas, type CanvasReader } from '../canvas/readback';
 export { OVERLAY_ROLE_STROKES } from '../canvas/overlayRoleStrokes';
-export { AmbientContributionsProvider, type AmbientContributionsProviderProps } from '../canvas/ambientContributions';
+export {
+  AmbientContributionsProvider, type AmbientContributionsProviderProps, useProvidedAmbient,
+} from '../canvas/ambientContributions';
 export { defaultDrawOne, defaultPaintBounds } from '../canvas/defaultDrawOne';
 export { overChildren, isOverChildren, splitOverChildren } from '../canvas/overChildren';
 export type { PaintBoundsFn } from '../canvas/paintCull';

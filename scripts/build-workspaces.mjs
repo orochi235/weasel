@@ -62,9 +62,9 @@ export const BUILD_ORDER = [
   '@weasel-js/rig',
   '@weasel-js/ui',
   '@weasel-js/prefs-editor',
-  '@weasel-js/editor',
   '@weasel-js/hud',
   '@weasel-js/devtools',
+  '@weasel-js/editor',
   '@weasel-js/labkit',
   '@weasel-js/forge',
 ];

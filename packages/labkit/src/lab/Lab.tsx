@@ -1,3 +1,4 @@
+import { ShellDevtools } from '@weasel-js/devtools/mount';
 import { isDev } from '@weasel-js/react';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import { useEffect, useLayoutEffect, useState } from 'react';
@@ -110,7 +111,11 @@ export function Lab(given: LabProps) {
       />
     );
   }
-  return <LabRuntime {...props} opened={opened} start={start} />;
+  return (
+    <ShellDevtools devtools={props.devtools}>
+      <LabRuntime {...props} opened={opened} start={start} />
+    </ShellDevtools>
+  );
 }
 
 let seedWarned = false;

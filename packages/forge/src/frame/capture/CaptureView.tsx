@@ -15,6 +15,7 @@ import { ClockContext } from '../../timeline/context';
 import { useOwnClock } from '../../timeline/StoryClock';
 import type { CapturePayload } from '../../vite/capture/payload';
 import type { FrameSetup } from '../FrameController';
+import { frameDecorators } from '../frameDecorators';
 import { indexEnvOf } from '../index/indexEnv';
 import { IndexPage } from '../index/IndexPage';
 import { StoryHost } from '../StoryHost';
@@ -74,7 +75,7 @@ function CapturedStory({ story, payload, setup }: { story: LoadedStory; payload:
   };
   return (
     <ClockContext.Provider value={clock}>
-      <StoryHost story={story} ctx={ctx} decorators={setup.decorators ?? []} resetKey={0} onError={NO_WRITE} />
+      <StoryHost story={story} ctx={ctx} decorators={frameDecorators(setup)} resetKey={0} onError={NO_WRITE} />
     </ClockContext.Provider>
   );
 }
@@ -121,7 +122,7 @@ export function CaptureView({ subject, graph = null, payload, setup, labTheme, o
     <CapturedStory story={subject.story} payload={payload} setup={setup} />
   ) : (
     <IndexPage
-      env={indexEnvOf(subject.bundle, { graph, globals: payload.globals, decorators: setup.decorators ?? [], open: NO_WRITE })}
+      env={indexEnvOf(subject.bundle, { graph, globals: payload.globals, decorators: frameDecorators(setup), open: NO_WRITE })}
       render={subject.bundle.render}
     />
   );

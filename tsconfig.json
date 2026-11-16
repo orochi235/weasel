@@ -60,6 +60,7 @@
       "@weasel-js/d3": ["./packages/d3/src/index.ts"],
       "@weasel-js/devtools": ["./packages/devtools/src/index.ts"],
       "@weasel-js/devtools/hook": ["./packages/devtools/src/hook.ts"],
+      "@weasel-js/devtools/mount": ["./packages/devtools/src/mount.tsx"],
       "@weasel-js/devtools/protocol": ["./packages/devtools/src/protocol.ts"],
       "@weasel-js/devtools/testing/*": ["./packages/devtools/src/testing/*"],
       "@weasel-js/diagram": ["./packages/diagram/src/index.ts"],

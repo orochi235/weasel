@@ -61,6 +61,13 @@ one, contribute a `MenuDef` with the same id on a canvas `ambient` entry; its
 sections follow the editor's, after a separator. To replace them, pass
 `contextMenus={false}` and contribute your own.
 
+In a development build every canvas in the shell also registers with the
+devtools hook, for the devtools panel and the browser extension
+(`ShellDevtools`, from `@weasel-js/devtools/mount`; production bundles never
+load the hook). `devtools={false}` turns that off, and `true` keeps it in
+production; an app that provides `devtoolsOff` above the shell turns it off
+there and in every other shell under it.
+
 ```ts
 const enter = pref.group('', { path: pref.action('enterPathEdit') });
 const ambient = [{

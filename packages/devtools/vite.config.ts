@@ -20,6 +20,7 @@ export default defineConfig({
       entry: {
         index: resolve(import.meta.dirname, 'src/index.ts'),
         hook: resolve(import.meta.dirname, 'src/hook.ts'),
+        mount: resolve(import.meta.dirname, 'src/mount.tsx'),
         protocol: resolve(import.meta.dirname, 'src/protocol.ts'),
       },
       formats: ['es'],

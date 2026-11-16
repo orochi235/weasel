@@ -8,7 +8,7 @@ import type { MenuHost } from '@weasel-js/routing';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SurfaceContribution } from './surfaceContribution';
-import { AmbientContributionsProvider } from './ambientContributions';
+import { AmbientContributionsProvider, useProvidedAmbient } from './ambientContributions';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -94,5 +94,21 @@ describe('AmbientContributionsProvider', () => {
     expect(labels('a.menu')).toEqual(['cut']);
     expect(labels('b.menu')).toEqual(['paste']);
     r.unmount();
+  });
+
+  it('reads what the enclosing providers supply, the inner entry replacing the outer one of its id', () => {
+    const outer = [entry('a', 'm', 'one'), entry('b', 'm', 'two')];
+    const inner = [entry('a', 'm', 'three')];
+    let seen: readonly SurfaceContribution[] = [];
+    function Read() {
+      seen = useProvidedAmbient();
+      return null;
+    }
+    render(
+      <AmbientContributionsProvider contributions={outer}>
+        <AmbientContributionsProvider contributions={inner}><Read /></AmbientContributionsProvider>
+      </AmbientContributionsProvider>,
+    );
+    expect(seen).toEqual([outer[1], inner[0]]);
   });
 });

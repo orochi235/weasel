@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { AmbientContributionsProvider, WeaselProvider } from '@weasel-js/core';
+import { ShellDevtools } from '@weasel-js/devtools/mount';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { MenuBar } from '@weasel-js/ui/components/MenuBar';
@@ -42,19 +43,28 @@ export interface EditorShellProps<S extends PrefGroup = PrefGroup> {
    * canvas's `ambient`, whose sections follow the editor's. `false` installs none, for an app supplying its own.
    */
   contextMenus?: boolean;
+  /**
+   * Register the shell's canvases with the devtools hook (`@weasel-js/devtools/mount`'s `ShellDevtools`), for the
+   * devtools panel and the browser extension. Default: in a development build only, unless a `devtools` entry provided
+   * above the shell (`devtoolsOff` among them) says otherwise. `false` withholds it; `true` mounts it in a production
+   * build too.
+   */
+  devtools?: boolean;
   children?: ReactNode;
 }
 
 /**
  * The frame of an editor app: the kit's providers where none is in scope already (deps, actions, the active tool,
  * the selection, and the pointer), a dispatcher that runs the app's command keys with no canvas holding them, the
- * menu bar and topbar, the preferences store and dialog, the keyboard shortcut sheet, the context menu host, and the default context menus
- * (`contextMenus`). `children` render below the topbar. Draws no element of its own: what it renders is laid out by the app's container.
+ * menu bar and topbar, the preferences store and dialog, the keyboard shortcut sheet, the context menu host, the default context menus
+ * (`contextMenus`), and devtools in development (`devtools`). `children` render below the topbar. Draws no element of its own: what it renders is laid out by the app's container.
  */
 export function EditorShell<S extends PrefGroup = PrefGroup>(props: EditorShellProps<S>) {
   return (
     <WeaselProvider>
-      <ShellBody {...(props as EditorShellProps)} />
+      <ShellDevtools devtools={props.devtools}>
+        <ShellBody {...(props as EditorShellProps)} />
+      </ShellDevtools>
     </WeaselProvider>
   );
 }

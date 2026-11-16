@@ -4,13 +4,10 @@
  * never load the panel.
  */
 import { lazy, Suspense } from 'react';
-import { AmbientContributionsProvider } from '@weasel-js/core';
-import { devtools } from '@weasel-js/devtools/hook';
 import type { Decorator, GlobalDeclarations } from '@weasel-js/forge';
 import s from './devtools.module.css';
 
 const DevtoolsDock = import.meta.env.DEV ? lazy(() => import('./DevtoolsDock')) : null;
-const AMBIENT = [devtools];
 
 export const DEVTOOLS_GLOBALS: GlobalDeclarations = import.meta.env.DEV
   ? {
@@ -22,14 +19,14 @@ export const DEVTOOLS_GLOBALS: GlobalDeclarations = import.meta.env.DEV
   }
   : {};
 
-/** The story, its canvases registered with the devtools hook, and the panel beside it while the `devtools` global
- *  is on. Off, the wrapper takes no box of its own. */
+/** The story, and the devtools panel beside it while the `devtools` global is on. The frame registers the story's
+ *  canvases with the hook itself (`FrameSetup.devtools`). Off, the wrapper takes no box of its own. */
 export const devtoolsDock: Decorator = (story, ctx) => {
   if (!DevtoolsDock) return story();
   const on = ctx.globals.devtools === 'on';
   return (
     <div className={on ? s.docked : s.bare}>
-      <AmbientContributionsProvider contributions={AMBIENT}>{story()}</AmbientContributionsProvider>
+      {story()}
       {on && <Suspense fallback={null}><DevtoolsDock /></Suspense>}
     </div>
   );

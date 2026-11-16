@@ -2747,6 +2747,7 @@
     "usePoseDescriptorDepSource": "function",
     "usePoseRun": "function",
     "usePoseTransition": "function",
+    "useProvidedAmbient": "function",
     "usePublishPointer": "function",
     "usePublishSelection": "function",
     "useRectTool": "function",
