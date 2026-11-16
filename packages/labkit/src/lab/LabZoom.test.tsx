@@ -63,7 +63,7 @@ const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 async function key(k: string): Promise<boolean> {
   let prevented = false;
   await act(async () => {
-    prevented = !fireEvent.keyDown(window, { key: k, ...MOD });
+    prevented = !fireEvent.keyDown(document.body, { key: k, ...MOD });
   });
   return prevented;
 }

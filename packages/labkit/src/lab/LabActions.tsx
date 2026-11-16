@@ -11,7 +11,9 @@ import {
 } from '@weasel-js/core';
 import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import { createContext, type ReactNode, useContext } from 'react';
+import { useLabCommandsOptional } from './LabContext';
 import { LabAmbientContext, LabEntriesContext, useLabAmbientHost } from './labAmbient';
+import { LabChordsProvider, useLabChordActions } from './labChords';
 import { LabContextMenusContext } from './labContextMenus';
 
 const CHANNELS = { contextMenu: false, ingest: false } as const;
@@ -53,23 +55,26 @@ export function LabActions({
   );
 }
 
-/** The lab's key dispatcher, over what `useLabAmbient` installs below it. */
+/** The lab's key dispatcher, over what `useLabAmbient` installs below it and the chords its trials claim. */
 function LabKeys({ children }: { children: ReactNode }) {
   const actions = useActionsRegistry() as ActionsRegistry;
   const { entriesById, host } = useLabAmbientHost();
+  const chords = useLabChordActions(actions, useLabCommandsOptional()?.focusedTrialId ?? null);
   useGestureDispatcher({
     canvasRef: NO_ELEMENT,
     actions,
     entriesById,
     channels: CHANNELS,
-    // First, so a story's own zoom keys don't also fire over a trial with a camera;
-    // over one without, the action is disabled and the keys pass on.
-    keyboard: 'first',
+    // On the page, so a story's own zoom keys don't also fire over a trial with a camera, and a focused
+    // widget's own Mod+Z still beats the trial's; over a trial without, the action is disabled and the keys pass on.
+    keyboard: 'page',
     hears: 'own',
   });
   return (
     <LabAmbientContext.Provider value={host}>
-      <LabEntriesContext.Provider value={entriesById}>{children}</LabEntriesContext.Provider>
+      <LabEntriesContext.Provider value={entriesById}>
+        <LabChordsProvider value={chords}>{children}</LabChordsProvider>
+      </LabEntriesContext.Provider>
     </LabAmbientContext.Provider>
   );
 }

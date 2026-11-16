@@ -16,7 +16,6 @@ import { PersistenceContext } from '../state/Persistence';
 import type { LabMode } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { interstellarTheme } from '../theme/interstellar';
-import { TrialHistoryContext } from '../trial/trialHistory';
 import { useLabFitWarning } from './fitCheck';
 import { LabCommands } from './LabCommands';
 import { trialIdsOf } from './LabContext';
@@ -40,6 +39,7 @@ import {
   useLabPresentation,
 } from './presentation';
 import { useStoreCommands } from './storeCommands';
+import { TriallessPage } from './TriallessPage';
 import { TrialWorkspace } from './TrialWorkspace';
 import { useTriallessHistory, withInstruments } from './trialless';
 import { UnreadableRecords } from './UnreadableRecords';
@@ -227,9 +227,7 @@ function LabRuntime({
   const backdropStyle = nebulaStyle(nebula, theme, resolvedMode, density ?? 'comfortable');
 
   const body = trialless ? (
-    <TrialHistoryContext.Provider value={lone.mount}>
-      <div className="lk-lab__page">{children}</div>
-    </TrialHistoryContext.Provider>
+    <TriallessPage lone={lone}>{children}</TriallessPage>
   ) : (
     <TrialWorkspace
       store={store}

@@ -1,4 +1,5 @@
 import { fireEvent, screen, within } from '@testing-library/react';
+import { historyKey } from '@weasel-js/gestures';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { type ReactNode, useState } from 'react';
@@ -8,6 +9,7 @@ import { f } from '../config/builder';
 import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
+import { LabActions } from '../lab/LabActions';
 import { LabContext, type LabContextValue } from '../lab/LabContext';
 import { LabStoreContext } from '../state/context';
 import { createLabStore } from '../state/store';
@@ -79,9 +81,11 @@ function ChromeHarness({
   return (
     <LabStoreContext.Provider value={{ store }}>
       <LabContext.Provider value={labCtx}>
-        <ChromeFromStore store={store} instrument={instrument} {...props}>
-          {children ?? <div data-testid="content">content</div>}
-        </ChromeFromStore>
+        <LabActions>
+          <ChromeFromStore store={store} instrument={instrument} {...props}>
+            {children ?? <div data-testid="content">content</div>}
+          </ChromeFromStore>
+        </LabActions>
       </LabContext.Provider>
     </LabStoreContext.Provider>
   );
@@ -327,6 +331,31 @@ describe('<TrialChrome>', () => {
       false,
     );
     expect(undo).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves Mod+Z to a focused widget in the trial that takes it', async () => {
+    const undo = vi.fn();
+    const own = vi.fn();
+    const bindings = { canUndo: true, canRedo: false, undo, redo: vi.fn() };
+    await renderSettled(
+      <ChromeHarness instrument={{ ...stubInstrument, undo: {} }} undoBindings={bindings}>
+        <button
+          type="button"
+          data-testid="widget"
+          onKeyDown={(e) => {
+            if (!historyKey(e)) return;
+            own();
+            e.preventDefault();
+          }}
+        />
+      </ChromeHarness>,
+      { wrapper: withIcons },
+    );
+    expect(fireEvent.keyDown(screen.getByTestId('widget'), { key: 'z', ctrlKey: true })).toBe(
+      false,
+    );
+    expect(own).toHaveBeenCalledTimes(1);
+    expect(undo).not.toHaveBeenCalled();
   });
 
   it('answers Mod+Z with focus outside the trial, and leaves a text field there its own', async () => {

@@ -1,10 +1,9 @@
-import { DevtoolsLabel, matchesKeyBinding, undoKeyStep } from '@weasel-js/core';
+import { DevtoolsLabel } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
-import { SNAPSHOT_SHORTCUT } from '../chrome/builtins';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';
 import { SidebarRegion } from '../chrome/regions/SidebarRegion';
 import { StatusRegion } from '../chrome/regions/StatusRegion';
@@ -25,6 +24,7 @@ import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
 import { type LabCommands, useLabCommands } from '../lab/LabContext';
+import { type LabChord, useLabChords } from '../lab/labChords';
 import { usePresentedTrial } from '../lab/presentation';
 import { useLightboxControl } from '../lightbox/LightboxContext';
 import { JobProgress } from '../primitives/JobProgress';
@@ -38,7 +38,6 @@ import { TrialTitleBar } from './TrialTitleBar';
 import { TrialTitleContext } from './trialTitle';
 import { UndockedSections } from './UndockedSections';
 import { useTrialContributions } from './useTrialContributions';
-import { useTrialKeys } from './useTrialKeys';
 import { useTrialPanels } from './useTrialPanels';
 import { type TrialWritesOptions, useTrialWrites } from './useTrialWrites';
 
@@ -164,7 +163,8 @@ function useChromeWrites(opts: Omit<TrialWritesOptions, 'marks' | 'mounted'>) {
 
 /** The frame around a running instrument. Builds one chrome context, assembles
  *  the contributions the instrument, the runtime and the lab declare, and hands
- *  each region its slice. */
+ *  each region its slice. Its Undo, Redo and snapshot chords are the lab's
+ *  `lab.undo`, `lab.redo` and `lab.snapshot` actions, so it answers them under a `<Lab>`. */
 export function TrialChrome({
   trialId,
   record,
@@ -299,24 +299,21 @@ export function TrialChrome({
   const docked = <SidebarRegion key="docked" contributions={sections} ctx={ctx} />;
   const undocked = <Undocked key="undocked" sections={sections} ctx={ctx} />;
 
-  const handleKeyDown = (e: KeyboardEvent): void => {
-    // A presented trial has no chrome, so nothing the chrome's keys act on.
-    if (presented || e.defaultPrevented) return;
-    // A chord is its button's: suppress the button and the chord goes with it; hide it and the chord stays.
-    const offers = (id: string) => offered.some((c) => c.id === id);
-    const step = undoKeyStep(e);
-    if (step) {
-      if (!offers(step) || !(step === 'undo' ? ctx.canUndo : ctx.canRedo)) return;
-      e.preventDefault();
-      if (step === 'redo') ctx.redo();
+  // A chord is its button's: suppress the button and the chord goes with it; hide it and the chord stays.
+  const offers = (id: string) => offered.some((c) => c.id === id);
+  // A presented trial has no chrome, so nothing the chrome's keys act on.
+  const answers = (chord: LabChord): boolean =>
+    !presented &&
+    offers(chord) &&
+    (chord === 'snapshot' || (chord === 'undo' ? ctx.canUndo : ctx.canRedo));
+  useLabChords(trialId, {
+    can: answers,
+    run: (chord) => {
+      if (chord === 'snapshot') ctx.saveSnapshot();
+      else if (chord === 'redo') ctx.redo();
       else ctx.undo();
-    } else if (matchesKeyBinding(e, SNAPSHOT_SHORTCUT) && offers('snapshot')) {
-      e.preventDefault();
-      if (!e.repeat) ctx.saveSnapshot();
-    }
-  };
-  // With focus on the page body the chords go to the lab's focused trial, the first where none was picked.
-  useTrialKeys(trialId, lab.focusedTrialId === trialId, handleKeyDown);
+    },
+  });
 
   return (
     <section

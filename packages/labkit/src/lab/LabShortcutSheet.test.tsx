@@ -36,7 +36,7 @@ describe("a lab's shortcut sheet", () => {
       { wrapper: withIcons },
     );
     act(() => {
-      window.dispatchEvent(
+      document.body.dispatchEvent(
         new KeyboardEvent('keydown', { key: '?', code: 'Slash', shiftKey: true, bubbles: true }),
       );
     });
