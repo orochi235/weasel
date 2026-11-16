@@ -5,6 +5,7 @@
  */
 import { NODE_FN_FIELDS } from './nodeFnFields';
 import { SnapshotShapeError } from './snapshotShapeError';
+import { isPlainObject } from '@weasel-js/registry';
 
 export { SnapshotShapeError };
 
@@ -25,28 +26,25 @@ export class SnapshotKeyError extends Error {
 
 const SUPPORTED_VERSIONS: readonly unknown[] = [1, 2, 3];
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-
 /** Throws a {@link SnapshotShapeError} unless `json` has the shape every reader of a snapshot relies on, in a
  *  version this reader supports. */
 export function assertSnapshotShape(json: unknown): void {
   const refuse = (what: string): never => {
     throw new SnapshotShapeError(`Scene: malformed snapshot: ${what}`);
   };
-  if (!isRecord(json)) refuse('not an object');
+  if (!isPlainObject(json)) refuse('not an object');
   const { systemLayers, nodes, doc, version } = json as Record<string, unknown>;
   if (!SUPPORTED_VERSIONS.includes(version)) refuse(`unsupported version ${String(version)}; versions 1, 2 and 3 are supported`);
   if (!Array.isArray(systemLayers)) refuse('`systemLayers` is not an array');
   (systemLayers as unknown[]).forEach((layer, i) => {
-    if (!isRecord(layer) || typeof layer.id !== 'string') refuse(`layer ${i} has no string \`id\``);
+    if (!isPlainObject(layer) || typeof layer.id !== 'string') refuse(`layer ${i} has no string \`id\``);
   });
   if (!Array.isArray(nodes)) refuse('`nodes` is not an array');
-  if (doc !== undefined && !isRecord(doc)) refuse('`doc` is not an object');
+  if (doc !== undefined && !isPlainObject(doc)) refuse('`doc` is not an object');
   // Version 1 reads any kind but `leaf` as a group, or as its classifier says, so only later versions name theirs.
   const kinds = version === 1 ? null : ['mark', 'group'];
   (nodes as unknown[]).forEach((n, i) => {
-    if (!isRecord(n)) return refuse(`node ${i} is not an object`);
+    if (!isPlainObject(n)) return refuse(`node ${i} is not an object`);
     if (typeof n.id !== 'string') refuse(`node ${i} has no string \`id\``);
     const at = `node "${n.id as string}"`;
     if (kinds && !kinds.includes(n.kind as string)) refuse(`${at} has kind ${JSON.stringify(n.kind)}; expected ${kinds.join(' or ')}`);

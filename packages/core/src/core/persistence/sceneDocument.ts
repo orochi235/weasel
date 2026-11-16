@@ -9,6 +9,7 @@ import { SCENE_HISTORY_FORM, type SerializedSceneHistory } from '../scene/histor
 import type { SavedScene, SerializedScene } from '../scene/serializedTypes';
 import { SnapshotShapeError, assertSnapshotShape } from '../scene/snapshotShape';
 import { decodeSnapshot, stringifySnapshot, type Encoded } from './codec';
+import { isPlainObject } from '@weasel-js/registry';
 
 /** What a {@link SceneDocumentEnvelope} names its format. */
 export const SCENE_DOCUMENT_FORMAT = 'weasel/scene-document';
@@ -96,10 +97,7 @@ export function encodeSceneDocument<TData, TLayer extends string, TPose>(
   return envelope;
 }
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-
-const isPaired = (v: unknown): v is PairedHistory => isRecord(v) && typeof v.scene === 'string' && isRecord(v.history);
+const isPaired = (v: unknown): v is PairedHistory => isPlainObject(v) && typeof v.scene === 'string' && isPlainObject(v.history);
 
 /** The document `value` encodes, as `JSON.parse` reads an envelope's text. Throws a `SnapshotShapeError` on a value
  *  that is not an envelope of this version, or whose scene is malformed; a `history` that is not a paired one is
@@ -108,7 +106,7 @@ export function decodeSceneDocument<TData, TLayer extends string, TPose>(
   value: unknown,
 ): SceneDocument<TData, TLayer, TPose> {
   const refuse = (what: string): never => { throw new SnapshotShapeError(`Scene document: ${what}`); };
-  if (!isRecord(value) || value.format !== SCENE_DOCUMENT_FORMAT) refuse(`not a ${SCENE_DOCUMENT_FORMAT} envelope`);
+  if (!isPlainObject(value) || value.format !== SCENE_DOCUMENT_FORMAT) refuse(`not a ${SCENE_DOCUMENT_FORMAT} envelope`);
   const { version, scene, history } = value as Record<string, unknown>;
   if (version !== SCENE_DOCUMENT_VERSION) refuse(`unsupported version ${String(version)}; version ${SCENE_DOCUMENT_VERSION} is supported`);
   const decoded = decodeSnapshot(scene);

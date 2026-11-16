@@ -4,7 +4,7 @@ import {
   type PrefField, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap, type PrefObject, type PrefPaint,
   type PrefUnion,
 } from '@weasel-js/prefs-schema';
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, isPlainObject } from '@weasel-js/registry';
 import { sep } from './separators';
 
 /** How values are read and written where a set of rows is drawn. */
@@ -25,7 +25,6 @@ export interface MenuDraw {
 }
 
 const noop = () => {};
-const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** A map key as one segment of a dotted path: a `.` or `\` in it is escaped with a `\`. */
 export function pathSegment(key: string): string {
@@ -54,7 +53,7 @@ function setIn(container: unknown, segs: readonly string[], value: unknown): unk
     out[Number(head)] = setIn(container[Number(head)], rest, value);
     return out;
   }
-  const base = isRecord(container) ? container : {};
+  const base = isPlainObject(container) ? container : {};
   const next = setIn(getOwn(base, head), rest, value);
   if (next !== undefined) return { ...base, [head]: next };
   const { [head]: _dropped, ...kept } = base;
@@ -139,7 +138,7 @@ export function listRows(draw: MenuDraw, leaf: PrefList, key: string, path: stri
 export function mapRows(draw: MenuDraw, leaf: PrefMap, key: string, path: string, off: boolean): MenuEntry[] {
   const held = (): Record<string, unknown> => {
     const v = draw.access.values(path);
-    return isRecord(v) ? v : isRecord(leaf.default) ? leaf.default : {};
+    return isPlainObject(v) ? v : isPlainObject(leaf.default) ? leaf.default : {};
   };
   const frozen = off || leaf.readout === true;
   const access = below(draw.access, path, held, true);
@@ -210,9 +209,9 @@ export function fieldRows(draw: MenuDraw, leaf: PrefField, key: string, path: st
 export function paintRows(draw: MenuDraw, leaf: PrefPaint, key: string, path: string, off: boolean): MenuEntry[] {
   const held = draw.access.values(path);
   const access = leaf.access ? { access: leaf.access } : {};
-  const solid = isRecord(held) && (held.kind === undefined || held.kind === 'solid') && typeof held.color === 'string';
+  const solid = isPlainObject(held) && (held.kind === undefined || held.kind === 'solid') && typeof held.color === 'string';
   if (held != null && !solid) {
-    const kind = isRecord(held) && typeof held.kind === 'string' ? held.kind : '—';
+    const kind = isPlainObject(held) && typeof held.kind === 'string' ? held.kind : '—';
     return [{ kind: 'item', key, label: `${leaf.name}: ${kind}`, ...access, disabled: true, run: noop }];
   }
   const { onChange } = draw.access;
@@ -222,7 +221,7 @@ export function paintRows(draw: MenuDraw, leaf: PrefPaint, key: string, path: st
     value: solid ? (held as { color: string }).color : undefined,
     ...(leaf.alpha ? { alpha: true } : {}),
     ...(leaf.readout || !onChange ? {} : {
-      set: (color: string) => onChange(path, { ...(isRecord(held) ? held : {}), color }),
+      set: (color: string) => onChange(path, { ...(isPlainObject(held) ? held : {}), color }),
     }),
   }];
 }

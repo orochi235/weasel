@@ -1,4 +1,5 @@
 import type { PrefsMigration } from '@weasel-js/prefs';
+import { isPlainObject } from '@weasel-js/registry';
 
 /** Version 0 to 1: the right sidebar's `ui.panels` map became `ui.surfaces`, whose entries also say which surface
  *  each asset is drawn on. An old entry's hidden and collapsed flags carry over as they are. */
@@ -77,12 +78,12 @@ export const renamePathTools: PrefsMigration = (records) => {
   const last = records.get('tools.lastTool');
   if (typeof last === 'string' && Object.hasOwn(RENAMED_TOOLS, last)) records.set('tools.lastTool', RENAMED_TOOLS[last]);
   const surfaces = records.get('ui.surfaces');
-  if (isRecord(surfaces)) {
+  if (isPlainObject(surfaces)) {
     const moved = renameEntry(surfaces, 'corners', 'fillets');
     if (moved !== surfaces) records.set('ui.surfaces', moved);
   }
   const toolbars = records.get('ui.toolbars');
-  if (isRecord(toolbars) && isRecord(toolbars.docks) && isRecord(toolbars.floating)) {
+  if (isPlainObject(toolbars) && isPlainObject(toolbars.docks) && isPlainObject(toolbars.floating)) {
     const docks = Object.fromEntries(Object.entries(toolbars.docks).map(([id, rows]) => [id, Array.isArray(rows)
       ? rows.map((row: unknown) => (Array.isArray(row) && row.includes('corners') && !row.includes('fillets')
         ? row.map((bar: unknown) => (bar === 'corners' ? 'fillets' : bar))
@@ -91,8 +92,6 @@ export const renamePathTools: PrefsMigration = (records) => {
     records.set('ui.toolbars', { ...toolbars, docks, floating: renameEntry(toolbars.floating, 'corners', 'fillets') });
   }
 };
-
-const isRecord = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 
 /** `map` with its own `from` entry under `to`, or `map` itself where it holds none to move. */
 function renameEntry(map: Record<string, unknown>, from: string, to: string): Record<string, unknown> {
