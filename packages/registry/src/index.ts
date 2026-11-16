@@ -16,6 +16,7 @@ export type {
   RegisterOptions,
 } from './reflectable';
 export { after } from './after';
+export { createLatest, type Latest } from './latest';
 export { MIXED } from './mixed';
 export type { Mixed } from './mixed';
 export { matchQuery, hasTag, foldText } from './match';
