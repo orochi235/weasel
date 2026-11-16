@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { IDENTITY_POSE_COMPOSITION, asNodeId, createScene } from '@weasel-js/core';
-import type { PrefLeaf } from '@weasel-js/prefs';
-import { leafWrites } from './commitLeaf';
+import { pref, type PrefLeaf } from '@weasel-js/prefs';
+import { leafWrites, warnUnwritable } from './commitLeaf';
 
 const opacity: PrefLeaf = { kind: 'number', name: 'Opacity', description: '', default: 1 };
 const leaf = { path: 'pose.opacity', leaf: opacity };
@@ -49,5 +49,32 @@ describe('leafWrites', () => {
     expect(pose()).toEqual({ x: 0, opacity: 0.8 });
     scene.undo();
     expect(pose()).toEqual({ x: 0, opacity: 0.5 });
+  });
+});
+
+describe('warnUnwritable', () => {
+  it('warns once per kind and path of a value leaf keyed outside pose, data and the declared fields', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const color = { path: 'style.color', leaf: pref.color('Color', '#000') };
+    warnUnwritable(['rect', 'rect'], [color]);
+    warnUnwritable(['rect'], [color]);
+    warnUnwritable(['ellipse'], [color]);
+    expect(warn.mock.calls.map(([m]) => m as string)).toEqual([
+      expect.stringContaining('kind "rect" keys a field at "style.color"'),
+      expect.stringContaining('kind "ellipse" keys a field at "style.color"'),
+    ]);
+    warn.mockRestore();
+  });
+
+  it('stays silent for writable paths and leaves that hold no value', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    warnUnwritable(['rect'], [
+      leaf,
+      { path: 'data.fill', leaf: pref.color('Fill', '#000') },
+      { path: 'clip', leaf: opacity },
+      { path: 'go', leaf: pref.action('front', { name: 'To front' }) },
+    ]);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });
