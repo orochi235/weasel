@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { scrolledPlaceOf } from '@weasel-js/core';
 import { prefersReducedMotion } from '@weasel-js/react';
 import type { PrefDrop } from './drop';
 import { PATH_ATTR, RAIL_ATTR } from './selection';
@@ -55,16 +56,6 @@ export function useDropMotion(form: RefObject<Element | null>, on: boolean, drop
     if (!on || !el || typeof el.animate !== 'function') return;
     const running = slidesOf(el);
     const slide = slidesIn(el);
-    const origins = new Map<Element, Offset>();
-    const originOf = (box: Element): Offset => {
-      let o = origins.get(box);
-      if (!o) {
-        const r = box.getBoundingClientRect();
-        o = { x: r.left - box.scrollLeft, y: r.top - box.scrollTop };
-        origins.set(box, o);
-      }
-      return o;
-    };
     const was = seen.current;
     const fresh = !was || was.root !== root || was.page !== page || was.width !== el.clientWidth || was.height !== el.clientHeight
       || prefersReducedMotion();
@@ -79,10 +70,9 @@ export function useDropMotion(form: RefObject<Element | null>, on: boolean, drop
       const carried = (above && moved.get(above)) || ZERO;
       const key = keyOf(e, drop, counts);
       const scroller = e.parentElement!.closest('[data-pref-scroll]');
-      const origin = originOf(scroller && el.contains(scroller) ? scroller : el);
-      const r = e.getBoundingClientRect();
+      const at = scrolledPlaceOf(e, scroller && el.contains(scroller) ? scroller : el);
       const under = slide(e);
-      const spot = { x: r.left - origin.x - under.x, y: r.top - origin.y - under.y };
+      const spot = { x: at.x - under.x, y: at.y - under.y };
       if (key !== null) spots.set(key, spot);
       const prev = key === null || fresh ? undefined : was.spots.get(key);
       const shift = prev ? { x: prev.x - spot.x, y: prev.y - spot.y } : carried;
