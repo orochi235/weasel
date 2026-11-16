@@ -4,7 +4,7 @@
  * bold off at the end of a bold word, and the character typed next lands as a write of the same patch over it would.
  */
 import { useCallback, useRef, useState } from 'react';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
 import { applyStyleToRange, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
 
 const FLAGS: ReadonlySet<string> = new Set(['bold', 'italic', 'underline', 'strikethrough', 'overline']);
@@ -14,7 +14,7 @@ export function withArmed(style: RunStylePatch, armed: RunStylePatch): RunStyleP
   const out: Record<string, unknown> = { ...style };
   for (const [key, value] of Object.entries(armed)) {
     if (value === undefined || value === false) delete out[key];
-    else out[key] = value;
+    else setOwn(out, key, value);
   }
   return out as RunStylePatch;
 }
@@ -31,9 +31,11 @@ export function armPatch(caret: RunStylePatch, armed: RunStylePatch, patch: RunS
   const out: Record<string, unknown> = {};
   for (const key of new Set([...Object.keys(from), ...Object.keys(target)])) {
     const flag = FLAGS.has(key);
+    const was = getOwn(from, key);
+    const now = getOwn(target, key);
     // `null` is a value here (no fill), not the absence of one.
-    if (flag ? (from[key] ?? false) === (target[key] ?? false) : deepEqual(from[key], target[key], { undefinedAsAbsent: true })) continue;
-    out[key] = Object.hasOwn(target, key) ? target[key] : (flag ? false : undefined);
+    if (flag ? (was ?? false) === (now ?? false) : deepEqual(was, now, { undefinedAsAbsent: true })) continue;
+    setOwn(out, key, Object.hasOwn(target, key) ? now : (flag ? false : undefined));
   }
   return out as RunStylePatch;
 }
@@ -44,7 +46,7 @@ export function armedOver(range: RangeStyle, armed: RunStylePatch): RangeStyle {
   const out: Record<string, unknown> = { ...range };
   for (const [key, value] of Object.entries(armed)) {
     if (value === undefined) delete out[key];
-    else out[key] = value;
+    else setOwn(out, key, value);
   }
   return out as RangeStyle;
 }
