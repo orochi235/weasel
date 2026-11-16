@@ -68,7 +68,9 @@ export function createToolOptionValues(): ToolOptionValues {
   return {
     get: (owner) => values.get(owner) ?? NONE,
     set(owner, key, value) {
-      values.set(owner, { ...values.get(owner), [key]: value });
+      const held = values.get(owner);
+      if (held && Object.hasOwn(held, key) && deepEqual(held[key], value)) return;
+      values.set(owner, { ...held, [key]: value });
       changed.emit();
     },
     subscribe: changed.subscribe,

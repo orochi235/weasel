@@ -54,6 +54,23 @@ describe('steppedOption', () => {
   });
 });
 
+describe('createToolOptionValues', () => {
+  it('notifies nobody, and keeps the owner\'s record, for a write of the value an option holds', () => {
+    const values = createToolOptionValues();
+    let calls = 0;
+    values.subscribe(() => { calls++; });
+    values.set('b', 'radiusPx', Number.NaN);
+    values.set('b', 'dash', [4, 2]);
+    const held = values.get('b');
+    values.set('b', 'radiusPx', Number.NaN);
+    values.set('b', 'dash', [4, 2]);
+    expect(calls).toBe(2);
+    expect(values.get('b')).toBe(held);
+    values.set('b', 'radiusPx', 3);
+    expect(calls).toBe(3);
+  });
+});
+
 describe('toolOptionParams', () => {
   it('reads held values over the defaults', () => {
     const values = createToolOptionValues();
