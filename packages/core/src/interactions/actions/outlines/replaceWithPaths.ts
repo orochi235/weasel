@@ -1,5 +1,5 @@
-import { boundsOfPath, type Path } from '@weasel-js/geom';
-import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
+import { boundsOfPath } from '@weasel-js/geom';
+import type { PaintedPath } from 'canvas/nodeOutline';
 import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
 import { createSetSelectionOp } from 'core/ops/select';
@@ -10,10 +10,7 @@ import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { CreateOutlinesAdapter, OutlinePathSpec } from './createOutlines';
 
-/** A world-space path and the paint it is to wear. */
-export interface PaintedPath extends PathPaint {
-  path: Path;
-}
+export type { PaintedPath } from 'canvas/nodeOutline';
 
 /**
  * Replace each node in `converted` with its `paths`, back to front, as one

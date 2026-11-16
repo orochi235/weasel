@@ -16,7 +16,7 @@ function makeAdapter(paints: Record<string, PathPaint>, ids = Object.keys(paints
   const adapter: CreateOutlinesAdapter = {
     ...rootsTree(),
     getSelection: () => ids.map(asNodeId),
-    getTextSource: () => undefined,
+    getOutline: () => undefined,
     getWorldPath: (id) => (paints[id] ? pathFromD('M0 0 L50 0') : undefined),
     getPaint: (id) => paints[id],
     createPathNode: (path) => {

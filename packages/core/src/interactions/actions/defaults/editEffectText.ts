@@ -16,7 +16,7 @@ function textUnder(deps: ActionDeps | undefined, world: { x: number; y: number }
   if (!world || !scene || !deps?.textEdit || !depOf(deps)) return null;
   const under = deps.nodeAtPoint?.(world);
   if (!under) return null;
-  const text = effectSourceFor(scene, under as NodeId, 'text');
+  const text = effectSourceFor(scene, under as NodeId, 'items');
   if (text === null || scene.isLocked(text) || anchorUnder(deps, world) !== -1) return null;
   const data = scene.get(text)?.data;
   return { id: String(text), length: isTextData(data) ? data.text.length : 0 };

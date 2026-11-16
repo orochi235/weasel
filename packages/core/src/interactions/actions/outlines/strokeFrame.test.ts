@@ -25,7 +25,7 @@ function outlines(path: Path, paint: PathPaint, frame?: Affine) {
   const adapter: CreateOutlinesAdapter = {
     ...rootsTree(),
     getSelection: () => [asNodeId('line')],
-    getTextSource: () => undefined,
+    getOutline: () => undefined,
     getWorldPath: () => path,
     getPaint: () => paint,
     ...(frame ? { getStrokeFrame: () => frame } : {}),

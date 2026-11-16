@@ -5,7 +5,10 @@ import { resolve } from 'node:path';
 import { boundsOfPath, type Path } from '@weasel-js/geom';
 import { registerFontOutlines, loadFontOutlines } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
-import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
+import type { TextNodeSource } from '@weasel-js/text';
+import { NodeOutlineError } from 'canvas/nodeOutline';
+import { textOutlineOf } from 'canvas/nodeShapes/textOutline';
+import type { TextNodeData } from 'canvas/nodeShapes/textPainter';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import { asNodeId } from 'core/scene/types';
@@ -27,7 +30,7 @@ function harness(text: TextNodeSource) {
   const adapter: CreateOutlinesAdapter = {
     ...rootsTree(),
     getSelection: () => [asNodeId('label')],
-    getTextSource: () => text,
+    getOutline: () => textOutlineOf(text.data as TextNodeData, text.pose),
     createPathNode: (path, _sourceId, { fill, stroke }) => {
       made.push({ path, paint: stroke === undefined ? { fill } : { fill, stroke } });
       return { id: `p${made.length}` };
@@ -81,7 +84,7 @@ describe('applyOutlineStroke on text', () => {
     });
     const result = applyOutlineStroke(h.adapter);
     expect(result.kind).toBe('failed');
-    expect(result.kind === 'failed' && result.error).toBeInstanceOf(TextOutlinesError);
+    expect(result.kind === 'failed' && result.error).toBeInstanceOf(NodeOutlineError);
     expect(h.applyOps).not.toHaveBeenCalled();
   });
 

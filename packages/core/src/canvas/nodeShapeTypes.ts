@@ -8,6 +8,8 @@ import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import type { NodeShapes } from './nodeShapeRegistry';
+import type { NodeOutline, NodeOutlineCtx } from './nodeOutline';
+import type { EffectItem } from 'core/scene/pathEffects/source';
 
 /** Optional per-call paint context, threaded through `defaultDrawOne`'s third argument. Lets
  *  a rendering entry point override ambient environment reads; custom painters may ignore it
@@ -126,6 +128,23 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  than its silhouette. For content whose silhouette is no drawn outline,
    *  as text's line boxes and an image's pixels are not. */
   snapsToBox?: boolean;
+  /** Optional: the geometry the node is made of, where `silhouette` does not carry it — a text
+   *  node's glyphs, where its silhouette is line boxes. Booleans, Create Outlines and Outline
+   *  Stroke read it, through an adapter's `getOutline` (`sceneNodeOutline`). Absent, or `null`
+   *  for a node with none: such a node is not converted to paths. */
+  outline?(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodeOutlineCtx): NodeOutline | null;
+  /** Optional: a counter that moves whenever this kind's outlines change with no edit to the
+   *  node, as a text node's do when a face lands or a layout engine registers. Only ever grows.
+   *  The silhouette memo, the snap index and every derivation reading this kind's geometry are
+   *  checked against it. Absent for a kind whose geometry follows from the node alone. */
+  geometryGeneration?(): number;
+  /** Optional: a value `silhouette` depends on beyond the node, its pose and
+   *  `geometryGeneration` — the view scale, for a kind sized in screen pixels. The memoized
+   *  silhouette is built again when it changes. */
+  silhouetteKey?(node: Node<TData, string, TPose>, ctx?: NodeSilhouetteCtx): number;
+  /** Optional: the node as the rigid pieces a path effect lays one by one along a path — a text
+   *  node's grapheme clusters — each in its own frame. `[]` while what they need is loading. */
+  effectItems?(node: Node<TData, string, TPose>, pose: TPose): readonly EffectItem[];
 }
 
 /** How a painter inks its silhouette. See {@link NodeShapeEntry.ink}.

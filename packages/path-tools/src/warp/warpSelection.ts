@@ -31,13 +31,13 @@ export interface WarpLeaves {
 export function warpLeavesOf(
   scene: WarpScene,
   ids: readonly string[],
-  outlines: Pick<CreateOutlinesAdapter, 'getTextSource'> | undefined,
+  outlines: Pick<CreateOutlinesAdapter, 'getOutline'> | undefined,
   shapeOf?: (id: string) => { pose: unknown; data: unknown } | undefined,
 ): WarpLeaves {
   const leaves = leavesOf(scene, ids);
   return {
     paths: pathNodesOf(scene, leaves, shapeOf),
-    texts: outlines ? leaves.filter((id) => outlines.getTextSource(id) !== undefined) : [],
+    texts: outlines ? leaves.filter((id) => outlines.getOutline(id) !== undefined) : [],
   };
 }
 

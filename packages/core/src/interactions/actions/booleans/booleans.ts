@@ -7,7 +7,7 @@ import type { Affine, Path } from '@weasel-js/geom';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { resolveFill } from '@weasel-js/paint';
-import { TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
+import { NodeOutlineError, type NodeOutline } from 'canvas/nodeOutline';
 import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
 import { resolveOperand, type BooleanOpOptions, type BooleanOperand } from './operands';
 import { booleanPieces, type ResultPiece } from './pieces';
@@ -32,11 +32,12 @@ export interface BooleansAdapter {
   getSelection(): readonly NodeId[] | readonly string[];
   getWorldPath(id: NodeId): Path | undefined;
   /**
-   * Optional: the text node behind `id`, for an id `getWorldPath` has no path
-   * for. Its glyph outlines (`textToPath`) become the operand, so text can be
-   * cut, united or intersected like any shape.
+   * Optional: the outline of the node behind `id`, for an id `getWorldPath`
+   * has no path for — `sceneNodeOutline`, which asks the node's painter. It
+   * becomes the operand, so text, whose outline is its glyphs, can be cut,
+   * united or intersected like any shape.
    */
-  getTextSource?(id: NodeId): TextNodeSource | undefined;
+  getOutline?(id: NodeId): NodeOutline | undefined;
   /**
    * Optional: the paint the path node behind `id` wears. An operation told to
    * count strokes (`BooleanOpOptions.strokes`) reads it to learn whether the
@@ -90,9 +91,9 @@ export interface BooleansAdapter {
 export type BooleanOpResult =
   | { kind: 'applied'; resultIds: string[] }
   | { kind: 'noop'; reason: 'no-paths' | 'too-few-for-subtract' | 'empty-result' }
-  /** A text operand had no outline geometry. Nothing was changed: an op that
+  /** An operand's outline could not be built. Nothing was changed: an op that
    *  quietly dropped the operand would commit a different shape than asked. */
-  | { kind: 'failed'; reason: 'text-outlines'; error: TextOutlinesError };
+  | { kind: 'failed'; reason: 'outlines'; error: NodeOutlineError };
 
 const LABEL: Record<BooleanOp, string> = {
   union: 'Union',
@@ -137,7 +138,7 @@ export function resolveEntries(
   try {
     resolved = sel.map((id) => ({ id, operand: resolveOperand(adapter, id, opts) }));
   } catch (err) {
-    if (err instanceof TextOutlinesError) return { kind: 'failed', reason: 'text-outlines', error: err };
+    if (err instanceof NodeOutlineError) return { kind: 'failed', reason: 'outlines', error: err };
     throw err;
   }
   const entries = resolved
@@ -153,14 +154,14 @@ export function resolveEntries(
 }
 
 /** @internal How many of `sel` give an operand, read without outlining a stroke: what the Pathfinder actions'
- *  `enabled` counts. A text whose face has not loaded counts, so a run can say why it stopped. */
+ *  `enabled` counts. An outline that cannot be built yet counts, so a run can say why it stopped. */
 export function countOperands(adapter: BooleansAdapter, sel: readonly NodeId[]): number {
   let n = 0;
   for (const id of sel) {
     try {
       if (resolveOperand(adapter, id, { strokes: 'ignore' })) n++;
     } catch (err) {
-      if (!(err instanceof TextOutlinesError)) throw err;
+      if (!(err instanceof NodeOutlineError)) throw err;
       n++;
     }
   }

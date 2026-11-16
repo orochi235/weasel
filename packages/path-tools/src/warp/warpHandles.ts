@@ -42,7 +42,7 @@ export interface WarpHandleLayerSource {
   settings(): WarpSettings;
   scene(): Pick<AnyScene, 'get' | 'childrenOf'> | undefined;
   /** What tells text from other nodes; absent, text gets no controls. */
-  outlines?(): Pick<CreateOutlinesAdapter, 'getTextSource'> | undefined;
+  outlines?(): Pick<CreateOutlinesAdapter, 'getOutline'> | undefined;
   live: WarpLive;
 }
 

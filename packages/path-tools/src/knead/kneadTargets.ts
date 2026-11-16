@@ -25,7 +25,7 @@ function shown(scene: AnyScene | undefined, id: string): boolean {
  */
 export function kneadTargets(deps: ActionDeps | undefined): KneadTargets {
   const scene = deps?.scene as AnyScene | undefined;
-  const isText = (id: string) => deps?.createOutlinesAdapter?.getTextSource(id as NodeId) !== undefined;
+  const isText = (id: string) => deps?.createOutlinesAdapter?.getOutline(id as NodeId) !== undefined;
   const selected = scene ? leavesOf(scene, deps?.selection?.get() ?? []) : [];
   const picked = { paths: scene ? pathNodesOf(scene, selected) : [], texts: selected.filter(isText) };
   if (picked.paths.length > 0 || picked.texts.length > 0) return picked;

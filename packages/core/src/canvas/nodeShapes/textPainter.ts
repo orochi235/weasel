@@ -8,7 +8,11 @@ import {
 } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { StyledRun, TextFit, TextPose, TextStyle, TextVerticalAlign } from '@weasel-js/text';
-import { textLineBoxes } from '@weasel-js/text';
+import { textEngineGeneration, textLineBoxes, type TextOutlineSource } from '@weasel-js/text';
+import { faceGeneration } from '@weasel-js/font';
+import type { PathInWorldPose } from '@weasel-js/geom';
+import { textEffectItems } from 'domains/pathEffects/textItems';
+import { textOutlineOf } from './textOutline';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
@@ -150,6 +154,14 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const shadow = textShadowBox(d, pose);
     return shadow ? unionRects([lines ?? pose, shadow]) : lines;
   },
+  outline: (node, pose, ctx) => {
+    const d = node.data as TextNodeData;
+    return textOutlineOf(d, { ...pose, ...textBoxOf(d, pose) }, ctx?.inherited);
+  },
+  // Line boxes and glyphs follow the faces and the registered layout engines.
+  geometryGeneration: () => faceGeneration() + textEngineGeneration(),
+  silhouetteKey: (node, ctx) => textLayoutScale(node.data as TextNodeData, ctx?.scale),
+  effectItems: (node, pose) => textEffectItems(node.data as TextOutlineSource, pose as PathInWorldPose),
 };
 
 /** The view scale `d` lays out at: `scale` when its style or a run sizes

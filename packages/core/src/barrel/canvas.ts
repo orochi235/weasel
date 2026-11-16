@@ -65,6 +65,9 @@ export type {
   InheritedPaint,
   ShapeCoversPointOptions,
 } from '../canvas/NodeShape';
+// A node kind's outline as paths, and the generation its geometry moves on.
+export { NodeOutlineError, findNodeOutline, sceneNodeOutline, geometryGenerationOf } from '../canvas/nodeOutline';
+export type { NodeOutline, NodeOutlineCtx, PaintedPath } from '../canvas/nodeOutline';
 export { drawnBoundsOf, drawnAABBOf, inkExtentsOf, findShapeDrawnBounds } from '../canvas/drawnBounds';
 export { inheritedPaintIn, paintAbove, withInheritedPaintBounds, withInheritedPaints } from '../canvas/inheritedPaints';
 export { inheritedPaintOf, inheritsPaint, withInheritedPaint } from '../core/scene/inheritedPaint';

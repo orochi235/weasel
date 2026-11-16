@@ -31,7 +31,7 @@ function setup({ containers = true }: { containers?: boolean } = {}) {
     ...defaultCommitAdapter(scene),
     getSelection: () => [...scene.getSelection()],
     setSelection: (ids) => { scene.setSelection(ids.map(asNodeId)); },
-    getTextSource: () => undefined,
+    getOutline: () => undefined,
     getWorldPath: (id) => {
       const n = scene.get(asNodeId(id));
       return n?.kind === 'mark' ? n.data.path : undefined;

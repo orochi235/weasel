@@ -12,7 +12,10 @@ import { boundsOfPath, pointInPath, type Path, type Rect } from '@weasel-js/geom
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
-import { TextOutlinesError, type TextOutlineSource } from '@weasel-js/text';
+import type { TextOutlineSource } from '@weasel-js/text';
+import { NodeOutlineError } from 'canvas/nodeOutline';
+import { textOutlineOf } from 'canvas/nodeShapes/textOutline';
+import type { TextNodeData } from 'canvas/nodeShapes/textPainter';
 import { applyCreateOutlines, type CreateOutlinesAdapter } from './createOutlines';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../../../assets/fonts/inter/inter.ttf');
@@ -31,10 +34,10 @@ function setup({ containers = true }: { containers?: boolean } = {}) {
     ...defaultCommitAdapter(scene),
     getSelection: () => [...scene.getSelection()],
     setSelection: (ids) => { scene.setSelection(ids.map(asNodeId)); },
-    getTextSource: (id) => {
+    getOutline: (id) => {
       const n = scene.get(asNodeId(id));
       if (!n || n.kind !== 'mark' || n.data.text == null) return undefined;
-      return { data: n.data as TextOutlineSource, pose: n.pose };
+      return textOutlineOf(n.data as TextNodeData, n.pose);
     },
     createPathNode: (path, _sourceId, { fill, stroke, parent }) => {
       const b = boundsOfPath(path);
@@ -135,7 +138,7 @@ describe('applyCreateOutlines', () => {
     const result = applyCreateOutlines(adapter);
     expect(result.kind).toBe('failed');
     if (result.kind !== 'failed') return;
-    expect(result.error).toBeInstanceOf(TextOutlinesError);
+    expect(result.error).toBeInstanceOf(NodeOutlineError);
     expect(scene.roots).toEqual([asNodeId('ok'), asNodeId('bad')]);
   });
 
@@ -144,7 +147,7 @@ describe('applyCreateOutlines', () => {
     add('shape', { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } });
     add('blank', { ...TEXT, text: '   ' });
     select('shape', 'blank');
-    expect(applyCreateOutlines(adapter)).toEqual({ kind: 'noop', reason: 'no-text' });
+    expect(applyCreateOutlines(adapter)).toEqual({ kind: 'noop', reason: 'no-outlines' });
   });
 
   it('gives each paint its own path, under one container in the text\'s slot', () => {

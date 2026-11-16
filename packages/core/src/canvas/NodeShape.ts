@@ -13,8 +13,6 @@
  * Every lookup asks a registry (`nodeShapeRegistry.ts`): the scene's own, `nodeShapesOf(scene)`,
  * where the caller draws or picks for a scene, and `defaultNodeShapes` where it passes none.
  */
-import { glyphGeneration } from '@weasel-js/font';
-import { textEngineGeneration } from '@weasel-js/text';
 import { pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
 import { strokeTrimKey, type StrokeTrim } from '@weasel-js/paint';
 import { nodeMemo } from 'core/scene/nodeMemo';
@@ -34,7 +32,7 @@ import { paintsPose } from './nodeShapes/poseBox';
 import { PATH_POSE_PAINTER } from './nodeShapes/pathPosePainter';
 import { RECT_FALLBACK_PAINTER } from './nodeShapes/rectFallbackPainter';
 import { SHAPE_PAINTER } from './nodeShapes/shapePainter';
-import { TEXT_PAINTER, textLayoutScale, type TextNodeData } from './nodeShapes/textPainter';
+import { TEXT_PAINTER } from './nodeShapes/textPainter';
 import type { NodeShapeEntry, NodeInk, NodeSilhouetteCtx, NodeInkCtx } from './nodeShapeTypes';
 import {
   addBuiltInShape, defaultNodeShapes, effectiveShapes, ensureBuiltInShapes, evaluationOrder, nodeShapesChanged, nodeShapesOf,
@@ -83,9 +81,10 @@ const PAINTER_SLOT_NONRECT = 'shape:painter:nonrect';
 const PAINTER_SLOT_DERIVED = 'shape:painter:derived';
 const PAINTER_SLOT_DERIVED_NONRECT = 'shape:painter:derived:nonrect';
 const SILHOUETTE_SLOT = 'shape:silhouette';
-const TEXT_SILHOUETTE_SLOT = 'shape:silhouette:text';
+const VARYING_SILHOUETTE_SLOT = 'shape:silhouette:varying';
 
-interface TextSilhouette { epoch: number; engines: number; scale: number; path: Path | null }
+/** A silhouette and the painter's `geometryGeneration` and `silhouetteKey` it was built under. */
+interface VaryingSilhouette { generation: number; key: number; path: Path | null }
 const TRIM_PICK_SLOT = 'shape:trim-pick';
 
 /** Memo slot names for `shapes`'s lookups; the default registry keeps the bare names. */
@@ -144,18 +143,17 @@ export function findShapeSilhouette<TData, TPose>(
   // source answers `null` for every ordinary node, and treating that as a
   // reason to bypass would retire the memo for the whole scene.
   if (ctx?.derivedPath != null) return build();
-  // Line boxes follow font metrics, the registered layout engines, and for
-  // `{ px }` text the view scale, none of which shows in the node, so the text
-  // entry is checked against each as it was laid out.
+  // A painter whose outline moves with something the node does not show — faces landing, the
+  // view scale — has its silhouette checked against each as it was built.
   const shapes = ctx?.shapes ?? defaultNodeShapes;
-  if (findNodeShape(node, shapes) === (TEXT_PAINTER as NodeShapeEntry<unknown, unknown>)) {
-    const epoch = glyphGeneration();
-    const engines = textEngineGeneration();
-    const scale = textLayoutScale(node.data as TextNodeData, ctx?.scale);
-    const held = nodeMemo(node as { data?: unknown }, slotFor(TEXT_SILHOUETTE_SLOT, shapes), pose,
-      (): TextSilhouette => ({ epoch, engines, scale, path: build() }));
-    if (held.epoch !== epoch || held.engines !== engines || held.scale !== scale) {
-      held.epoch = epoch; held.engines = engines; held.scale = scale;
+  const entry = findNodeShape(node, shapes);
+  if (entry?.geometryGeneration || entry?.silhouetteKey) {
+    const generation = entry.geometryGeneration?.() ?? 0;
+    const key = entry.silhouetteKey?.(node, ctx) ?? 0;
+    const held = nodeMemo(node as { data?: unknown }, slotFor(VARYING_SILHOUETTE_SLOT, shapes), pose,
+      (): VaryingSilhouette => ({ generation, key, path: build() }));
+    if (held.generation !== generation || held.key !== key) {
+      held.generation = generation; held.key = key;
       held.path = build();
     }
     return held.path;

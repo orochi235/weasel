@@ -142,7 +142,7 @@ export {
   strokeRegion,
   useCreateOutlinesAdapter,
 } from '../interactions/actions/outlines';
-export { warnUser, warnTextOutlines } from '../interactions/actions/notices';
+export { warnUser, warnOutlines } from '../interactions/actions/notices';
 export { useNotices } from '../interactions/actions/useNotices';
 export type { NoticesDep, NoticeOptions } from '../interactions/actions/notices';
 export type {

@@ -34,7 +34,7 @@ function sceneWith(effect: PathEffect, sources: string[], extra: readonly object
 describe('effectSourceFor', () => {
   it("answers a text-along node's text and path", () => {
     const scene = sceneWith({ kind: 'textAlong', hideSources: true }, ['t', 'p']);
-    expect(effectSourceFor(scene, FX, 'text')).toBe(T);
+    expect(effectSourceFor(scene, FX, 'items')).toBe(T);
     expect(effectSourceFor(scene, FX, 'path')).toBe(P);
   });
 
@@ -42,7 +42,7 @@ describe('effectSourceFor', () => {
     for (const kind of ['bendAlong', 'repeatAlong'] as const) {
       const scene = sceneWith({ kind, hideSources: true } as PathEffect, ['q', 'p']);
       expect(effectSourceFor(scene, FX, 'path')).toBe(P);
-      expect(effectSourceFor(scene, FX, 'text')).toBeNull();
+      expect(effectSourceFor(scene, FX, 'items')).toBeNull();
     }
   });
 
@@ -59,9 +59,9 @@ describe('effectSourceFor', () => {
 
   it('answers nothing for an effect showing its sources, or a node that is no effect', () => {
     const shown = sceneWith({ kind: 'textAlong' }, ['t', 'p']);
-    expect(effectSourceFor(shown, FX, 'text')).toBeNull();
+    expect(effectSourceFor(shown, FX, 'items')).toBeNull();
     expect(effectSourceFor(shown, FX, 'path')).toBeNull();
-    expect(effectSourceFor(shown, T, 'text')).toBeNull();
+    expect(effectSourceFor(shown, T, 'items')).toBeNull();
     expect(effectSourceFor(shown, asNodeId('missing'), 'path')).toBeNull();
   });
 });
@@ -70,7 +70,7 @@ describe('effectsShowing', () => {
   it('answers the effects hiding a source in the role it is edited as', () => {
     const scene = sceneWith({ kind: 'textAlong', hideSources: true }, ['t', 'p']);
     expect(effectsShowing(scene, P, 'path')).toEqual([FX]);
-    expect(effectsShowing(scene, T, 'text')).toEqual([FX]);
+    expect(effectsShowing(scene, T, 'items')).toEqual([FX]);
     expect(effectsShowing(scene, T, 'path')).toEqual([]);
     expect(effectsShowing(scene, Q, 'path')).toEqual([]);
   });

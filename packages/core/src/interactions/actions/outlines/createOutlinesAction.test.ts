@@ -8,6 +8,8 @@ import { registerFontOutlines } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { asNodeId } from 'core/scene/types';
 import type { TextNodeSource } from '@weasel-js/text';
+import { textOutlineOf } from 'canvas/nodeShapes/textOutline';
+import type { TextNodeData } from 'canvas/nodeShapes/textPainter';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { createOutlinesAction, runCreateOutlines } from './createOutlinesAction';
 import { rootsTree } from 'core/adapters/testing/rootsTree';
@@ -19,7 +21,7 @@ function makeAdapter(texts: Record<string, TextNodeSource>, ids = Object.keys(te
   const adapter: CreateOutlinesAdapter = {
     ...rootsTree(),
     getSelection: () => ids.map(asNodeId),
-    getTextSource: (id) => texts[id],
+    getOutline: (id) => (texts[id] ? textOutlineOf(texts[id].data as TextNodeData, texts[id].pose) : undefined),
     createPathNode: () => ({ id: 'outlined' }),
     applyOps,
   };
@@ -104,7 +106,7 @@ describe('runCreateOutlines', () => {
       t: { data: { text: 'H', style: { fontFamily: 'nowhere', fontSize: 40 } }, pose: { x: 0, y: 0, width: 100, height: 60 } },
     });
     await runCreateOutlines(adapter, notices);
-    expect(notices.warn).toHaveBeenCalledWith(expect.stringContaining('nowhere'), expect.objectContaining({ id: 'text-outlines' }));
+    expect(notices.warn).toHaveBeenCalledWith(expect.stringContaining('nowhere'), expect.objectContaining({ id: 'outlines' }));
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });

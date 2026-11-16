@@ -9,11 +9,10 @@ import type { ActionDeps } from '@weasel-js/routing';
 import {
   applyCreateOutlines,
   type Journal,
-  loadTextOutlines,
   type NodeId,
   type PathNode,
   pathNodesOf,
-  warnTextOutlines,
+  warnOutlines,
   type AnyScene,
 } from '@weasel-js/core';
 import { leavesOf } from './scenePaths';
@@ -61,17 +60,17 @@ export function outlineSession(deps: ActionDeps, texts: readonly NodeId[], label
       waiting.delete(id);
       return pathNodesOf(scene!, leavesOf(scene!, result.resultIds));
     }
-    if (result.kind === 'failed' && result.error.reason === 'outlines-loading') {
+    if (result.kind === 'failed' && result.error.pending) {
       // A face is parsed on first use: try again once it has been.
-      const source = adapter!.getTextSource(id);
+      const outline = adapter!.getOutline(id);
       loading.add(id);
-      void (source ? loadTextOutlines(source.data) : Promise.resolve()).finally(() => loading.delete(id));
+      void (outline ? outline.load() : Promise.resolve()).finally(() => loading.delete(id));
       return [];
     }
     waiting.delete(id);
     if (result.kind === 'failed' && !warned) {
       warned = true;
-      warnTextOutlines(deps.notices, label, result.error);
+      warnOutlines(deps.notices, label, result.error);
     }
     return [];
   }

@@ -6,7 +6,7 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { icon } from '../../../icons.gen';
-import { warnTextOutlines } from '../notices';
+import { warnOutlines } from '../notices';
 import type { NodeId } from 'core/scene/types';
 
 const ID_FOR: Record<BooleanOp, string> = {
@@ -71,7 +71,7 @@ function makePathfinderAction(op: BooleanOp): Action {
         const adapter = deps.booleansAdapter;
         if (!adapter) return;
         const result = applyBooleanOp(adapter, op, opOptions(deps));
-        if (result.kind === 'failed') warnTextOutlines(deps.notices, 'pathfinder', result.error);
+        if (result.kind === 'failed') warnOutlines(deps.notices, 'pathfinder', result.error);
       },
     } satisfies ImmediateInvoker,
     preview: (deps) => {

@@ -1,14 +1,15 @@
 /**
- * Outline Stroke: replace each selected stroked path, or stroked text, with
+ * Outline Stroke: replace each selected stroked path, or stroked outline (a
+ * text node's glyphs), with
  * the region its stroke covers, as a path filled in the stroke's paint. A node
  * that is also filled keeps its fill as a path of its own underneath. One
  * undoable batch; the replacement takes the node's slot.
  */
-import { textToPathsByPaint, TextOutlinesError, type TextNodeSource } from '@weasel-js/text';
 import { resolveFill, resolveStroke, type Stroke } from '@weasel-js/paint';
 import type { NodeId } from 'core/scene/types';
 import type { CreateOutlinesAdapter } from './createOutlines';
-import { replaceWithPaths, type PaintedPath } from './replaceWithPaths';
+import { replaceWithPaths } from './replaceWithPaths';
+import { NodeOutlineError, type PaintedPath } from 'canvas/nodeOutline';
 import { strokeRegion, type StrokeRegionOptions } from 'domains/paths/strokeRegion';
 
 /** Outcome of {@link applyOutlineStroke}. */
@@ -17,10 +18,10 @@ export type OutlineStrokeResult =
    *  path, a container, or a run of flat paths each — and are now selected in
    *  their place. */
   | { kind: 'applied'; resultIds: string[] }
-  /** Nothing selected is a path or text with a stroke that has width. */
+  /** Nothing selected is a path or outline with a stroke that has width. */
   | { kind: 'noop'; reason: 'no-stroke' }
-  /** Some selected stroked text has no outline geometry; nothing was changed. */
-  | { kind: 'failed'; reason: 'text-outlines'; error: TextOutlinesError };
+  /** Some selected stroked outline could not be built; nothing was changed. */
+  | { kind: 'failed'; reason: 'outlines'; error: NodeOutlineError };
 
 /** Whether `stroke` covers anything to outline: it has a paint and a width above zero. */
 export function strokeCovers(stroke: Stroke | null | undefined): boolean {
@@ -29,32 +30,27 @@ export function strokeCovers(stroke: Stroke | null | undefined): boolean {
   return width !== undefined && width > 0;
 }
 
-/** Whether a text node wears a stroke that covers anything, anywhere: its own, or a run's. */
-export function textIsStroked(text: TextNodeSource | undefined): boolean {
-  return text != null && (strokeCovers(text.data.stroke) || !!text.data.runs?.some((r) => strokeCovers(r.stroke)));
-}
-
 /** What the adapter knows of `id` as painted world paths: a path node's one,
- *  or a text node's glyphs by paint. Throws as `textToPathsByPaint` does. */
+ *  or a stroked outline's parts. Throws as `NodeOutline.parts` does. */
 function paintedPaths(adapter: CreateOutlinesAdapter, id: NodeId): PaintedPath[] {
   const path = adapter.getWorldPath?.(id);
   if (path) {
     const paint = adapter.getPaint?.(id);
     return paint ? [{ path, ...paint }] : [];
   }
-  const text = adapter.getTextSource(id);
-  // Text with no stroke stays text: its outlines are not read, so a face
-  // without them fails only the text this would convert.
-  if (!text || !textIsStroked(text)) return [];
-  return textToPathsByPaint(text.data, text.pose);
+  const outline = adapter.getOutline(id);
+  // An unstroked node stays as it is: its outline is not built, so a text
+  // face without outlines fails only the text this would convert.
+  if (!outline?.stroked) return [];
+  return [...outline.parts()];
 }
 
 /**
- * Outline the stroke of every stroked path and stroked text in the selection,
+ * Outline the stroke of every stroked path and stroked outline in the selection,
  * as one batch labeled "Outline Stroke". Other selected nodes are left alone
  * and stay selected. Each stroke is outlined in the frame it is drawn in: see
- * {@link strokeRegion}. All or nothing: if a stroked text's face cannot
- * supply outlines the scene is untouched and the error comes back.
+ * {@link strokeRegion}. All or nothing: if a stroked outline cannot be
+ * built the scene is untouched and the error comes back.
  */
 export function applyOutlineStroke(
   adapter: CreateOutlinesAdapter,
@@ -81,7 +77,7 @@ export function applyOutlineStroke(
       if (outlined) converted.push({ id, paths });
     }
   } catch (err) {
-    if (err instanceof TextOutlinesError) return { kind: 'failed', reason: 'text-outlines', error: err };
+    if (err instanceof NodeOutlineError) return { kind: 'failed', reason: 'outlines', error: err };
     throw err;
   }
   if (converted.length === 0) return { kind: 'noop', reason: 'no-stroke' };

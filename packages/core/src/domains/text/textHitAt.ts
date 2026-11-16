@@ -55,7 +55,7 @@ export function textHitAt<TData, TPose extends RectPose>(
     const node = order[i];
     if (scene.isLocked(node.id) || scene.isHidden(node.id)) continue;
     if (!read.isText(node.data)) {
-      const source = effectSourceFor(scene, node.id, 'text');
+      const source = effectSourceFor(scene, node.id, 'items');
       const text = source === null || scene.isLocked(source) ? undefined : shown.get(source);
       if (text === undefined || !read.isText(text.data)) continue;
       const path = derivedPathOf(node);
