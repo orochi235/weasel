@@ -46,7 +46,7 @@ list.
 A tool lives in the package that owns the action it binds. A tool is a
 declarative shell over an action, so it leaves core only with its whole action
 family, and only into a package that qualifies above. A package that ships
-tools also ships `ToolSet`s naming them (core's `SHAPE_TOOLS`, path-tools'
+tools also ships `ToolSet`s naming them (editing's `SHAPE_TOOLS`, path-tools'
 `RESHAPE_TOOLS`) and a hook that builds them all (`usePathToolsTools`).
 
 Every package's manifest declares `weasel.tier`: `base` (core depends on it), `core`, `plugin`

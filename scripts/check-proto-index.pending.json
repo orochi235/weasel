@@ -32,6 +32,5 @@
   "packages/core/src/core/scene/snapshotShape.ts",
   "packages/core/src/core/shapeKinds.ts",
   "packages/editing/src/actions/edit/paintActionTestUtils.ts",
-  "packages/core/src/interactions/actions/useActionSet.ts",
-  "packages/core/src/tools/builtin/shared/countOption.ts"
+  "packages/core/src/interactions/actions/useActionSet.ts"
 ]
