@@ -4,7 +4,7 @@
  * from, handed to `onPoseWrite` once the change reaches the scene's
  * subscribers.
  */
-import { createEmitter, deepEqual } from '@weasel-js/registry';
+import { createEmitter, deepEqual, getOwn } from '@weasel-js/registry';
 import { createRemovalLog } from './poseRemovals';
 import type { RegisteredOp } from './types';
 import type { LayoutMove } from './layoutTypes';
@@ -225,6 +225,6 @@ export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPo
     replaying: (fn) => around(fn, () => { replays++; }, () => { replays--; }),
     layout: (fn) => around(fn, () => { layouts++; }, () => { layouts--; }),
     quiet: (fn) => around(fn, () => { quiets++; }, () => { quiets--; }),
-    reporting: (register) => (kind, handler) => register(kind, wrap[kind]?.(handler) ?? handler),
+    reporting: (register) => (kind, handler) => register(kind, getOwn(wrap, kind)?.(handler) ?? handler),
   };
 }

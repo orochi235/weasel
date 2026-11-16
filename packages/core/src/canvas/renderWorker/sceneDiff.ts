@@ -27,7 +27,7 @@ const sameNode = (a: WireNode, b: WireNode): boolean => {
   const ka = Object.keys(a);
   if (ka.length !== Object.keys(b).length) return false;
   for (const k of ka) {
-    if ((a as unknown as Record<string, unknown>)[k] !== (b as unknown as Record<string, unknown>)[k]) return false;
+    if (!Object.hasOwn(b, k) || (a as unknown as Record<string, unknown>)[k] !== (b as unknown as Record<string, unknown>)[k]) return false;
   }
   return true;
 };

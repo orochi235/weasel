@@ -3,6 +3,7 @@
  * selection, pose previews and scroll offsets over the same document and the
  * same history. See `docs/editing-sessions.md`.
  */
+import { setOwn } from '@weasel-js/registry';
 import type { History } from '@weasel-js/history';
 import { isDocument } from './documentOf';
 import { sessionHostOf, type SessionHost, type SessionState } from './sessionHost';
@@ -60,7 +61,7 @@ function wrapped<T extends object>(target: T, run: <R>(fn: () => R) => R, own: P
     const held = Object.getOwnPropertyDescriptor(target, key);
     const fn = held?.value as unknown;
     if (typeof fn !== 'function') continue;
-    methods[key] = { value: (...args: unknown[]) => run(() => (fn as (...a: unknown[]) => unknown)(...args)) };
+    setOwn(methods, key, { value: (...args: unknown[]) => run(() => (fn as (...a: unknown[]) => unknown)(...args)) });
   }
   return Object.create(target, { ...methods, ...own }) as T;
 }

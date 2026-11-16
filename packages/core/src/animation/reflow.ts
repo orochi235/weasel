@@ -69,7 +69,7 @@ function samePoseDeep(a: unknown, b: unknown): boolean {
   const ka = Object.keys(a);
   if (ka.length !== Object.keys(b).length) return false;
   for (const k of ka) {
-    if (!samePoseDeep((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])) return false;
+    if (!Object.hasOwn(b, k) || !samePoseDeep((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])) return false;
   }
   return true;
 }

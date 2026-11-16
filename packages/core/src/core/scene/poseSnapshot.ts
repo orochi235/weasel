@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { isPlainObject, isPlainPrototype } from '../isPlainObject';
 /**
  * Comparing a pose against what it was, by value.
@@ -58,7 +59,7 @@ export function samePoseValue(snapshot: unknown, value: unknown, depth = DEPTH):
     for (const key in a) {
       count++;
       const left = a[key];
-      const right = b[key];
+      const right = getOwn(b, key);
       if (left === right) {
         if (right === undefined && !Object.hasOwn(b, key)) return false;
         continue;

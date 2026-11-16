@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { transformPoint, poseFrameInverseOf, poseFrameOf, type Affine } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
@@ -113,7 +114,11 @@ function read<TPose>(
       const skin = painted.get(child) ?? data?.skin;
       out.refs.push(child, n.pose, n.data, skin);
       if (skin) out.skins[child] = skin;
-      else if (data?.joint !== undefined) (out.bindings[data.joint] ??= []).push(child);
+      else if (data?.joint !== undefined) {
+        const bound = getOwn(out.bindings, data.joint);
+        if (bound) bound.push(child);
+        else setOwn(out.bindings, data.joint, [child]);
+      }
       walk(child);
     }
   };

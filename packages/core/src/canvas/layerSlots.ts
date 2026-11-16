@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import type { RenderLayer } from '../core/layers/render';
 import type { SelectionOverlayLayerOptions } from './selectionChrome';
 import type { SceneSlotConfig } from './buildSceneLayer';
@@ -119,7 +120,7 @@ export type CanvasLayers = {
 export function builtLayersOf(map: Record<string, unknown>): Record<string, CustomLayerEntry | null> {
   const out: Record<string, CustomLayerEntry | null> = {};
   for (const [key, value] of Object.entries(map)) {
-    if (value === null || isCustomEntry(value)) out[key] = value;
+    if (value === null || isCustomEntry(value)) setOwn(out, key, value);
   }
   return out;
 }

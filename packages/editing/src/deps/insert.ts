@@ -6,6 +6,7 @@
  * `insertPreviewExtent` resolves the two into the node's real extent — the same resolution the
  * live preview and the reported gesture bounds use.
  */
+import { getOwn } from '@weasel-js/registry';
 import { useRef } from 'react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
@@ -180,7 +181,8 @@ export function useInsertDepSource(
 
         // Consumer factory wins over the kit default for this kind. It owns the node's
         // data + optional pose; the dep still supplies id/layer/op.
-        const factory = factoriesRef.current?.[kind];
+        const factories = factoriesRef.current;
+        const factory = factories ? getOwn(factories, kind) : undefined;
         if (factory) {
           const built = factory(bounds, extras);
           if (built === null) return null;

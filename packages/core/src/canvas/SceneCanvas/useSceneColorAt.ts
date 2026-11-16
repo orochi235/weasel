@@ -1,4 +1,5 @@
 /** The `colorAt` dep `<SceneCanvas>` sources: its `sampleLayers`, or its scene's own layers. */
+import { getOwn } from '@weasel-js/registry';
 import type { RefObject } from 'react';
 import type { RenderLayer } from 'core/layers/render';
 import { annotationLayerIds } from 'core/scene/annotation';
@@ -19,7 +20,7 @@ export function documentLayersOf(
 ): RenderLayer<unknown>[] {
   const annotations = new Set([...annotationLayerIds(scene.layers)].map(sceneLayerKey));
   return (slot?.layers ?? [])
-    .filter(({ key }) => layerVisibility?.[key] !== false && !annotations.has(key))
+    .filter(({ key }) => (layerVisibility ? getOwn(layerVisibility, key) : undefined) !== false && !annotations.has(key))
     .map(({ layer }) => layer);
 }
 

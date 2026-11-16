@@ -6,7 +6,7 @@
  */
 import { useEffect } from 'react';
 import { useStableByContent } from '@weasel-js/react';
-import { createExtensionRegistry, ExtensionConflictError, sameList } from '@weasel-js/registry';
+import { createExtensionRegistry, ExtensionConflictError, sameList, getOwn, setOwn } from '@weasel-js/registry';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { InsertNodeFactories, InsertNodeFactory } from '../deps/insertFactories';
 import { nodeShapesOf, type NodeShapeEntry } from '../NodeShape';
@@ -82,7 +82,7 @@ export function presetInsertFactories(
     Object.entries(p.insertNodeFactories ?? {}).filter((e): e is [string, InsertNodeFactory] => e[1] !== undefined));
   if (own.length === 0) return consumer;
   const out: Record<string, InsertNodeFactory> = Object.fromEntries(own);
-  for (const [kind, factory] of Object.entries(consumer ?? {})) if (factory) out[kind] = factory;
+  for (const [kind, factory] of Object.entries(consumer ?? {})) if (factory) setOwn(out, kind, factory);
   return out;
 }
 
@@ -119,5 +119,5 @@ export function usePresetShapes(enabled: EnabledPresets, scene: object): void {
 
 /** Whether an `insert` of `kind` builds a node on a canvas with these factories and presets. */
 export function insertBuilds(kind: string, factories: InsertNodeFactories | undefined, kinds: ReadonlySet<string>): boolean {
-  return factories?.[kind] !== undefined || kinds.has(kind);
+  return (factories !== undefined && getOwn(factories, kind) !== undefined) || kinds.has(kind);
 }

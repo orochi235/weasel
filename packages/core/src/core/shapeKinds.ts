@@ -6,6 +6,7 @@
  * lists at module-evaluation time must not route through it.
  */
 
+import { getOwn } from '@weasel-js/registry';
 import type { CoreIconName } from '../icons.gen';
 
 /** What the kit knows about one built-in shape kind. */
@@ -72,7 +73,7 @@ export function shapeKindsWhere<T extends Record<string, ShapeKindDescriptor>>(
 /** The descriptor for `kind`, or `undefined` for a kind the kit doesn't ship.
  *  The one accessor: ask it rather than testing membership of a derived list. */
 export function shapeKindInfo(kind: string): ShapeKindDescriptor | undefined {
-  return (SHAPE_KINDS as Record<string, ShapeKindDescriptor>)[kind];
+  return getOwn(SHAPE_KINDS as Record<string, ShapeKindDescriptor>, kind);
 }
 
 /** Runtime, iterable list of the shape-tool ids in `BuiltinShapeToolId`. */

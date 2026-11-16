@@ -6,7 +6,7 @@ import { boundsOfPath, type Path } from '@weasel-js/geom';
 import type { CommandPaint } from '@weasel-js/paint';
 import { commandFill, commandStroke, type DrawCommand } from '@weasel-js/renderer';
 import type { OverlayRole } from '@weasel-js/routing';
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, getOwn } from '@weasel-js/registry';
 import type { RenderLayer } from 'core/layers/render';
 import type { PathPaint } from './nodeShapes/nodePaint';
 
@@ -78,7 +78,7 @@ export function createPathOverlay({ id, label = 'Transient paths', roles }: Path
       subscribe: changed.subscribe,
       draw: () =>
         current.flatMap(({ path, role = 'chrome', paint }): DrawCommand[] => {
-          const style = styles[role] ?? styles['chrome']!;
+          const style = getOwn(styles, role) ?? styles['chrome']!;
           const outline = style.stroke ? { stroke: { paint: style.stroke, width: { px: 1 } } } : {};
           if (!paint) return [{ kind: 'path', path, ...(style.fill ? { fill: { paint: style.fill } } : {}), ...outline }];
           const box = boundsOfPath(path);

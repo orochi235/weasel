@@ -6,6 +6,7 @@
  * Picking, marquee and select-all ask about scene layers, so this is where one
  * namespace is read in terms of the other.
  */
+import { getOwn } from '@weasel-js/registry';
 import { paintedLayers, type RenderLayer } from 'core/layers/render';
 
 /** The render-layer id a scene layer paints under. */
@@ -74,5 +75,5 @@ export function paintedSceneLayers<T extends { id: string }>(
       .map((key) => layers.find((l) => sceneLayerKey(l.id) === key))
       .filter((l): l is T => l !== undefined)
     : layers;
-  return sequence.filter((l) => layerVisibility?.[sceneLayerKey(l.id)] !== false);
+  return sequence.filter((l) => (layerVisibility ? getOwn(layerVisibility, sceneLayerKey(l.id)) : undefined) !== false);
 }

@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { ClipBinder, Pose, Target } from '@weasel-js/animator';
 import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
 import { scenePoseTarget, type PoseTargetScene } from './poseTarget';
@@ -22,7 +23,7 @@ export function sceneClipTargets<TPose>(
 ): NonNullable<ClipBinder['target']> {
   return (name) => {
     if (name.startsWith('pose:')) return scenePoseTarget(scene, name.slice(5), options.descriptor);
-    if (name.startsWith('rig:')) return options.rigs?.[name.slice(4)]?.target;
+    if (name.startsWith('rig:')) return options.rigs ? getOwn(options.rigs, name.slice(4))?.target : undefined;
     return undefined;
   };
 }

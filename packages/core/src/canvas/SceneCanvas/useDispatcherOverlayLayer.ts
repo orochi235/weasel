@@ -10,6 +10,7 @@
  * silhouettes. This layer is for gestures whose visual feedback isn't a moved
  * scene node — a marquee rect, a lasso polyline, an insert preview, a brush.
  */
+import { getOwn } from '@weasel-js/registry';
 import { useEffect, useMemo, useReducer } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
@@ -137,7 +138,7 @@ export function useDispatcherOverlayLayer(args: {
 
           if (ov.kind === 'polyline') {
             const stroke =
-              roles[ov.role] ??
+              getOwn(roles, ov.role) ??
               { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash };
             out.push({ kind: 'path', path: polylineFromPoints(onScreen(ov.points, t)), stroke });
             continue;

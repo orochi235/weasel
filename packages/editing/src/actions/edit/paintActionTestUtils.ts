@@ -39,18 +39,18 @@ export interface FakeSelection {
  * through `update` here and populates `updates`.
  */
 export function makeScene<TData extends object>(nodes: Record<string, TData>): FakeScene<TData> {
-  const current: Record<string, FakeNode<TData>> = {};
+  const current = new Map<string, FakeNode<TData>>();
   for (const [id, d] of Object.entries(nodes)) {
-    current[id] = { id: asNodeId(id), kind: 'mark', pose: {}, data: { ...d } };
+    current.set(id, { id: asNodeId(id), kind: 'mark', pose: {}, data: { ...d } });
   }
   const updates: Array<{ id: string; data: unknown }> = [];
   const batches: string[] = [];
   return {
-    get: (id: NodeId) => current[id as unknown as string] ?? null,
+    get: (id: NodeId) => current.get(id as unknown as string) ?? null,
     childrenOf: () => [],
     update: vi.fn((id: NodeId, patch: { data: unknown }) => {
       updates.push({ id: id as unknown as string, data: patch.data });
-      current[id as unknown as string].data = patch.data as never;
+      current.get(id as unknown as string)!.data = patch.data as never;
     }),
     setPose: vi.fn(),
     batch: vi.fn((label: string, fn: () => void) => { batches.push(label); fn(); }),
@@ -58,7 +58,7 @@ export function makeScene<TData extends object>(nodes: Record<string, TData>): F
       batches.push(label);
       for (const op of opList as Array<{ apply(a: unknown): void }>) op.apply(adapter);
     }),
-    renderOrder: () => Object.keys(current).map((id) => asNodeId(id)),
+    renderOrder: () => [...current.keys()].map((id) => asNodeId(id)),
     updates,
     batches,
   };

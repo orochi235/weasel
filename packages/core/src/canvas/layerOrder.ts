@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { RenderLayer } from '../core/layers/render';
 import { STANDARD_SLOTS, isCustomEntry, type CustomLayerEntry } from './layerSlots';
 import type { OverlayPosition } from '@weasel-js/routing';
@@ -117,7 +118,7 @@ export function composeOrderedLayers(
       ? `composeOrderedLayers: cycle detected involving custom layer "${key}" — falling back to tail`
       : `composeOrderedLayers: dangling reference "${end}" from custom layer "${key}" — falling back to tail`);
     emitted.add(key);
-    out.push((layersMap[key] as CustomLayerEntry).layer);
+    out.push((getOwn(layersMap, key) as CustomLayerEntry).layer);
   }
 
   return out;

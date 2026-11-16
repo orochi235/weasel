@@ -15,6 +15,7 @@
  * directories that `docs/taxonomy.md` calls a feature; the two share a word
  * and nothing else.
  */
+import { setOwn } from '@weasel-js/registry';
 import { toolIdsOf, type Action, type ToolEntry } from '@weasel-js/routing';
 import { never } from 'domains/chrome-caps/conditions';
 import type { ChromeId, VisibilityRules } from 'domains/chrome-caps/types';
@@ -325,7 +326,7 @@ export function presetBuiltinTools(enabled: EnabledPresets): Set<string> {
 /** The tools of their own the given presets mount, by id. */
 export function presetOwnTools(enabled: EnabledPresets): Record<string, Tool> {
   const out: Record<string, Tool> = {};
-  for (const p of enabled.presets) for (const t of p.tools ?? []) if (!namesBuiltins(t)) out[t.id] = t;
+  for (const p of enabled.presets) for (const t of p.tools ?? []) if (!namesBuiltins(t)) setOwn(out, t.id, t);
   return out;
 }
 

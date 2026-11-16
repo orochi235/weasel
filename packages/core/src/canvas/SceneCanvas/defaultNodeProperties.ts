@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { prefUnit, type PrefBoundAt, type PrefBooleanEncoding, type PrefEnum, type PrefEnumEncoding, type PrefLeaf, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs-schema';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
@@ -241,7 +242,7 @@ function shapeSchema(opts: ShapePropertiesExtras & { generators?: readonly strin
     members: {
       layout: LAYOUT,
       ...(opts.boolean ? { boolean: BOOLEAN_SECTION } : {}),
-      ...Object.fromEntries((opts.generators ?? []).map((g) => [g, SHAPE_GENERATOR_SECTIONS[g]])),
+      ...Object.fromEntries((opts.generators ?? []).map((g) => [g, getOwn(SHAPE_GENERATOR_SECTIONS, g)])),
       ...opts.lead,
       appearance: {
         // Headless: `Fill` and `Stroke` head their own blocks, and an
@@ -270,7 +271,7 @@ const GENERATED_KINDS: Record<string, readonly string[] | undefined> = {
 };
 
 function shapeEntry(name: string): NodePropertiesEntry {
-  const generators = GENERATED_KINDS[name];
+  const generators = getOwn(GENERATED_KINDS, name);
   return {
     name,
     schema: shapeSchema({ boolean: name === 'boolean', ...(generators ? { generators } : {}) }),

@@ -7,7 +7,7 @@
  * effect over a path whose anchors are being dragged, text laid along it, a
  * second view of the same scene.
  */
-import { isPlainObject } from '@weasel-js/registry';
+import { isPlainObject, getOwn, setOwn } from '@weasel-js/registry';
 import type { Dispatcher, OngoingHandle } from '@weasel-js/routing';
 import type { NodeId, Scene, ShownOverride } from 'core/scene/types';
 
@@ -83,13 +83,13 @@ function changesOver(origin: unknown, value: unknown): (stored: unknown) => unkn
   if (!isPlainObject(origin) || !isPlainObject(value)) return () => value;
   const changed = new Set<string>();
   for (const key of new Set([...Object.keys(origin), ...Object.keys(value)])) {
-    if (Object.hasOwn(origin, key) !== Object.hasOwn(value, key) || origin[key] !== value[key]) changed.add(key);
+    if (Object.hasOwn(origin, key) !== Object.hasOwn(value, key) || getOwn(origin, key) !== getOwn(value, key)) changed.add(key);
   }
   return (stored) => {
     if (stored === origin || !isPlainObject(stored)) return value;
     const out: Fields = { ...stored };
     for (const key of changed) {
-      if (Object.hasOwn(value, key)) out[key] = value[key];
+      if (Object.hasOwn(value, key)) setOwn(out, key, getOwn(value, key));
       else delete out[key];
     }
     return out;

@@ -6,6 +6,7 @@
  * needs the same things: a function→key reverse map, a name in the op
  * payload, a name in the snapshot, and a registry lookup on restore.
  */
+import { getOwn } from '@weasel-js/registry';
 import type { NodeId, SceneRegistry } from './types';
 
 /** A node's function field, opaque here: the table moves these around by
@@ -19,6 +20,10 @@ export type FnBearingNode = { id: NodeId; kind: 'mark' | 'group' } & {
 };
 
 export type NodeFnFieldName = 'clipFromPose' | 'copiesFromPose' | 'derivePath' | 'derivePose' | 'layout';
+/** A function field's key in the `kit:add` and `kit:remove` op payloads. */
+export type NodeFnOpKey = 'clipKey' | 'copiesKey' | 'derivePathKey' | 'derivePoseKey' | 'layoutKey';
+/** A function field's key in a `SerializedNode`. */
+export type NodeFnJsonKey = 'clipFromPoseKey' | 'copiesFromPoseKey' | 'derivePathKey' | 'derivePoseKey' | 'layoutKey';
 
 export interface NodeFnFieldSpec {
   /** The field's name on `Node` — and, deliberately, its name in
@@ -26,9 +31,9 @@ export interface NodeFnFieldSpec {
   readonly field: NodeFnFieldName;
   /** Its key in the `kit:add` and `kit:remove` op payloads. `clipFromPose`'s
    *  is the short one because a persisted history already carries that name. */
-  readonly opKey: string;
+  readonly opKey: NodeFnOpKey;
   /** Its key in a `SerializedNode`. */
-  readonly jsonKey: string;
+  readonly jsonKey: NodeFnJsonKey;
   /** What a node loses when its key is not in the registry, for the warning. */
   readonly lost: string;
 }
@@ -91,7 +96,7 @@ export function createNodeFnFields<TPose>(
     return {
       spec,
       keyOf: (fn) => reverse.get(fn),
-      fnOf: (key) => table?.[key],
+      fnOf: (key) => (table ? getOwn(table, key) : undefined),
       read: (node) => node[spec.field],
       write: (node, fn) => {
         node[spec.field] = fn;

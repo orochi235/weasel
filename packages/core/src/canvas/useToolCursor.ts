@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { useLayoutEffect } from 'react';
 import { resolveCursorTier, type CursorSink, type ResolvedCursor } from '@weasel-js/cursor';
 import type { ToolsApi } from '../tools/overlayBinding';
@@ -5,7 +6,7 @@ import type { ToolsApi } from '../tools/overlayBinding';
 function resolveToolsCursor(tools: ToolsApi): ResolvedCursor | undefined {
   // The tool input routes to, so a tool the mode bars shows no cursor of its own.
   const id = tools.routed;
-  const tool = id === null ? undefined : tools.registry[id];
+  const tool = id === null ? undefined : getOwn(tools.registry, id);
   if (!tool?.cursor) return undefined;
   if (typeof tool.cursor !== 'function') return resolveCursorTier(tool.cursor);
   try {

@@ -1,3 +1,4 @@
+import { getOwn, setOwn } from '@weasel-js/registry';
 import type { GlMat3 } from '@weasel-js/geom';
 import { createTarget, skeletonAxes, type Pose, type Skeleton, type Target } from '@weasel-js/animator';
 
@@ -49,8 +50,8 @@ function travel(carried: Carried): number[] {
 function jointsOf(pose: Pose, skeleton: Skeleton): Pose {
   const out: Pose = {};
   for (const { name } of skeleton.joints) {
-    const joint = pose[name];
-    if (joint) out[name] = joint;
+    const joint = getOwn(pose, name);
+    if (joint) setOwn(out, name, joint);
   }
   return out;
 }

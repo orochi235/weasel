@@ -3,7 +3,7 @@ import { presetBuiltinTools, presetOwnTools, type EnabledPresets } from './featu
 import { isDev } from '@weasel-js/react';
 import { toolIdsOf, type GestureBinding, type ToolEntry } from '@weasel-js/routing';
 import { BUILTIN_TOOL_IDS, type BuiltinToolId } from './props';
-import { setOwn } from '@weasel-js/registry';
+import { setOwn, getOwn } from '@weasel-js/registry';
 
 const warnedUnbuildable = new WeakSet<Tool>();
 
@@ -49,13 +49,13 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
   const preset = presetBuiltinTools(enabled);
   const ids = [...new Set<string>([...BUILTIN_TOOL_IDS, ...Object.keys(offered)])];
   for (const id of ids) {
-    const patched = patch?.[id];
+    const patched = patch ? getOwn(patch, id) : undefined;
     if (patched === false || !Object.hasOwn(offered, id)) continue;
     const asked = patched === true || defaultTools.includes(id) || preset.has(id);
     if (asked) setOwn(registry, id, offered[id]);
   }
   for (const [id, tool] of Object.entries(presetOwnTools(enabled))) {
-    if (patch?.[id] === false) continue;
+    if (patch && getOwn(patch, id) === false) continue;
     if (args.insertBuilds && insertsNothing(tool, args.insertBuilds)) {
       if (dev && !warnedUnbuildable.has(tool)) {
         warnedUnbuildable.add(tool);

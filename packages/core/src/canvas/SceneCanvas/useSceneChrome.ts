@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { useCallback, useMemo, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { Dispatcher, RuleCtx } from '@weasel-js/routing';
@@ -84,7 +85,7 @@ const hiddenSets = new WeakMap<readonly string[], ReadonlySet<string>>();
 
 /** The chrome the active tool hides (`ToolDef.hides`), or undefined. */
 export function hiddenChromeOf(tools: { active: string | null; registry: Readonly<Record<string, { hides?: readonly string[] }>> }): ReadonlySet<string> | undefined {
-  const hides = tools.active ? tools.registry[tools.active]?.hides : undefined;
+  const hides = tools.active ? getOwn(tools.registry, tools.active)?.hides : undefined;
   if (!hides) return undefined;
   let set = hiddenSets.get(hides);
   if (!set) hiddenSets.set(hides, (set = new Set(hides)));

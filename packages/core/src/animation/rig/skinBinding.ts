@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import {
   boundsOfPath, pathInWorld, remapPointValues,
   type GlMat3, type Path, type PathInWorldPose, type PointOrigin,
@@ -33,7 +34,7 @@ export function remapSkin(skin: Skin, origins: readonly (PointOrigin | null)[]):
   const next: Record<string, number[]> = {};
   for (const joint in skin) {
     const weights = remapPointValues(skin[joint], origins);
-    if (weights.some((w) => w > 0)) next[joint] = weights;
+    if (weights.some((w) => w > 0)) setOwn(next, joint, weights);
   }
   return next;
 }

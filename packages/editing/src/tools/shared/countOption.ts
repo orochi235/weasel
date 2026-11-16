@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { CountStepParams } from '@weasel-js/core';
 import { setToolOption, steppedOption, toolOptionNumberLeaf, toolOptionParams, type ToolOptions, type ToolOptionValues } from '@weasel-js/routing';
 
@@ -14,7 +15,7 @@ export function stepCountOption(
   const leaf = toolOptionNumberLeaf(options, option);
   const step = params?.delta ?? (params?.deltaY ? Math.sign(params.deltaY) : 0);
   if (!values || !leaf || step === 0) return false;
-  const current = toolOptionParams(toolId, options, values)[option];
+  const current = getOwn(toolOptionParams(toolId, options, values), option);
   const from = typeof current === 'number' ? current : leaf.default ?? 0;
   const next = steppedOption(leaf, from, { option, plus: 1 }, step > 0 ? 1 : -1);
   if (next === from) return false;

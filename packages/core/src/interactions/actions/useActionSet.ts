@@ -12,7 +12,7 @@ import { type DepName, type DepSchema } from '@weasel-js/routing';
 // `import type` — a bare `import './depSchema'` makes esbuild emit a runtime import that it
 // then drops under the package's `sideEffects: false`, warning on every build.
 import type {} from './engineDeps';
-import { compositeKey } from '@weasel-js/registry';
+import { compositeKey, getOwn } from '@weasel-js/registry';
 
 /** The deps every standard action reads. */
 export interface StandardDeps {
@@ -105,7 +105,7 @@ export function useActionSet(actions: readonly Action[], exclude?: Iterable<stri
     const liveIds = new Set(live.map((a) => a.id));
     const unregisters = live
       .filter((a) => {
-        const over = YIELDS_TO[a.id];
+        const over = getOwn(YIELDS_TO, a.id);
         return over === undefined || !liveIds.has(over);
       })
       .map((a) => reg.register(a));
