@@ -34,7 +34,7 @@ describe('runPipeline', () => {
       stages: [stage('src', 'two'), stage('dbl', 'double', ['constructor']), stage('skip', 'double', ['toString'], ['out'], { bypassed: true })],
       wires: [wire('src', 'dbl', 'out', 'constructor'), wire('src', 'skip', 'out', 'toString')],
     };
-    const evaluators = { ...EVAL, double: ({ inputs }: { inputs: Readonly<Record<string, unknown>> }) => ({ outputs: { out: (inputs.constructor as number) * 2 } }) };
+    const evaluators = { ...EVAL, double: ({ inputs }: { inputs: Readonly<Record<string, unknown>> }) => ({ outputs: { out: (inputs['constructor'] as number) * 2 } }) };
     const run = await runPipeline(p, { evaluators });
     expect(run.stages.dbl!.values).toEqual({ out: '4' });
     expect(run.stages.skip!.values).toEqual({ out: '2' });
