@@ -1,4 +1,5 @@
 import { mixRgbaWeighted, parseColor, rgbaToHex } from '@weasel-js/paint';
+import { trimNumber } from '@weasel-js/geom';
 import { getOwn, setOwn } from '@weasel-js/registry';
 import { fullSelection, type Selection } from './axes.ts';
 import { readCssNumber } from './cssNumber.ts';
@@ -28,7 +29,7 @@ function blendNumbers(members: readonly Weighted[]): string | undefined {
   // Shares, not raw weights: a weighted sum of two lengths near the double range's end overflows.
   const mean = reads.reduce((sum, r) => sum + r.value * (r.weight / total), 0);
   const values = reads.map((r) => r.value);
-  return `${Number(Math.min(Math.max(...values), Math.max(Math.min(...values), mean)).toFixed(4))}${unit}`;
+  return `${trimNumber(Math.min(Math.max(...values), Math.max(Math.min(...values), mean)), 4)}${unit}`;
 }
 
 function blendColors(members: readonly Weighted[]): string | undefined {
