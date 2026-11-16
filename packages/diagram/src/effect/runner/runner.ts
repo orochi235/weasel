@@ -94,15 +94,38 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
     else publish(run);
   };
 
+  // A pass dropped while its step was under way: frees what that step made, which nothing will publish.
+  const discard = (pass: EffectPass, before: ReadonlySet<ImageBitmap>) => {
+    pass.dispose();
+    closeBitmaps(previewsOf(pass.run).filter((b) => !before.has(b)));
+  };
   const stepOnce = (time: number) => async () => {
-    let pass = stepping ??= createPass(pipeline, passOptions(time));
-    let at = await pass.step();
-    if (at === undefined) {
-      dropStepping();
-      pass = stepping = createPass(pipeline, passOptions(time));
-      at = await pass.step();
+    let wrapped = false;
+    for (;;) {
+      const pass = stepping ??= createPass(pipeline, passOptions(time));
+      const before = new Set(previewsOf(pass.run));
+      let at: string | undefined;
+      try {
+        at = await pass.step();
+      } finally {
+        if (stepping !== pass) discard(pass, before);
+      }
+      if (stepping !== pass) continue;
+      if (at === undefined && !wrapped) {
+        wrapped = true;
+        dropStepping();
+        continue;
+      }
+      publish(at === undefined ? pass.run : { ...pass.run, at });
+      return;
     }
-    publish(at === undefined ? pass.run : { ...pass.run, at });
+  };
+  const reset = () => {
+    controller.abort();
+    controller = new AbortController();
+    dropStepping();
+    behind = false;
+    set({ run: undefined, playing: false, time: 0 });
   };
 
   return {
@@ -113,13 +136,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
     },
     play: () => { if (!state.playing) set({ playing: true }); },
     pause: () => { if (state.playing) set({ playing: false }); },
-    reset() {
-      controller.abort();
-      controller = new AbortController();
-      dropStepping();
-      behind = false;
-      set({ run: undefined, playing: false, time: 0 });
-    },
+    reset,
     advance(seconds) {
       if (!state.playing) return;
       state = { ...state, time: state.time + seconds };
@@ -158,7 +175,7 @@ export function createEffectRunner(opts: EffectRunnerOptions): EffectRunner {
     },
     subscribe: listeners.subscribe,
     dispose() {
-      this.reset();
+      reset();
       closeBitmaps(published.flatMap(previewsOf));
       published = [];
     },
