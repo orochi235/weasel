@@ -2,7 +2,7 @@ import { transformPoint, meanScale, pathContainsPoint } from '@weasel-js/geom';
 import type { PickBroad, PickQuery } from 'canvas/pickWalk';
 import { findShapeInk, shapeCoversPoint } from 'canvas/NodeShape';
 import { toPlane } from 'core/viewport/parallax';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { poseContains, poseContainsRotated } from './poseGeometry';
 
 /** The point query `<SceneCanvas>`'s default pick asks: a world point with

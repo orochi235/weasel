@@ -3,10 +3,10 @@
  * Both are `null` when the slot is switched off, and a pre-built layer has no badge.
  */
 import { useMemo } from 'react';
-import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
+import type { ResizeHandleLayout } from 'core/geometry/resizeHandles';
 import type { RenderLayer } from 'core/layers/render';
 import { createSelectionOverlayLayer, rotationBadgeOf } from 'domains/selection/overlay';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { DrawnBoundsScene } from '../drawnBounds';
 import { isCustomEntry, type CustomLayerEntry, type SelectionOverlaySlotConfig } from '../layerSlots';
 

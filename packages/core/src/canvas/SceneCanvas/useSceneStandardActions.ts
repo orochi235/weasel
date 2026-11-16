@@ -9,7 +9,7 @@ import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
 import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
 import { inkBoxes } from 'canvas/inkBoxes';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';

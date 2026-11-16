@@ -1,6 +1,6 @@
 /** Option surface for the `move` action. */
 
-import type { MoveBehavior } from '../../gestures/types';
+import type { MoveBehavior } from './types';
 
 /** Options for the `move` action: the behaviors (snapping, momentum) layered
  *  over the raw drag, the ids a drag carries, and its history and lifecycle.

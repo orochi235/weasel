@@ -1,14 +1,14 @@
-export type { UseRotateOptions } from './options';
+export type { UseRotateOptions } from '../../gestures/rotateOptions';
 export {
   aabbCenter,
   rotatePoint,
   rectCorners,
   rotatedRectCorners,
   pointInRotatedRect,
-} from './geometry';
+} from '../../../core/geometry/rotatedRect';
 export {
   rotationHandle,
   hitRotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
   type RotationHandle,
-} from './handle';
+} from '../../../core/geometry/rotationHandle';

@@ -6,7 +6,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { pickWalk, scenePickSource } from 'canvas/pickWalk';
 import { scenePointQuery } from 'canvas/SceneCanvas/scenePointQuery';
-import { insertParent } from 'interactions/actions/insert/parent';
+import { insertParent } from 'canvas/deps/insertParent';
 import { withDiagramRegistry } from '../edge';
 import { registerDiagramShape } from '../shape';
 import { diagramCanDropInto } from './canDropInto';

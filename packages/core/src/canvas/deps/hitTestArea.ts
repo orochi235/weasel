@@ -13,7 +13,7 @@ import {
   poseDescriptorForNode,
   visualBoundsViaDescriptor,
   type PoseDescriptor,
-} from 'interactions/actions/resize/geometry';
+} from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import {
   pickWalk,

@@ -11,7 +11,7 @@ import {
   rectCorners,
   rotatedRectCorners,
   pointInRotatedRect,
-} from './geometry';
+} from '../../../core/geometry/rotatedRect';
 
 const close = (a: number, b: number, eps = 1e-9) => Math.abs(a - b) < eps;
 

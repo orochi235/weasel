@@ -9,7 +9,7 @@ import type { SelectRegion } from 'core/geometry/regionHit';
 import { IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { regionPickQuery } from 'canvas/deps/hitTestArea';
 import { scenePointQuery } from 'canvas/SceneCanvas/scenePointQuery';
 import type { PickQuery } from 'canvas/pickWalk';

@@ -1,5 +1,5 @@
 import { createTransformOp } from 'core/ops/transform';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'interactions/actions/resize/geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Op } from 'core/ops/types';
 import type {
   AnimationHandle, Animator, EasingSpec, SpringPresetName, StaggerDelay, StaggerOptions,

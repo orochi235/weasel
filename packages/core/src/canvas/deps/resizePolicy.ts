@@ -8,7 +8,7 @@ import type { ResizePolicy } from 'interactions/actions/depSchema';
 import type { BoundsConstraint } from 'interactions/gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureLifecycleOptions } from 'interactions/actions/gestureLifecycle';
-import type { UseResizeOptions } from 'interactions/actions/resize/options';
+import type { UseResizeOptions } from 'interactions/gestures/resizeOptions';
 
 /** Options for `useResizePolicy`. Each omitted field falls back to the kit
  *  default. */

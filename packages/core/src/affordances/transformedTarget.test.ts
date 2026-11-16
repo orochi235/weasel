@@ -11,7 +11,7 @@ import { createCornerResizeAffordance, type CornerResizeScratch } from './corner
 import { createRotationAffordance } from './rotationHandle';
 import { composeAffordanceLayer } from './composeAffordanceLayer';
 import { hitAffordanceRegions } from './hitAffordanceRegions';
-import { rotationHandle } from 'interactions/actions/rotate/handle';
+import { rotationHandle } from 'core/geometry/rotationHandle';
 import { asNodeId } from 'core/scene/types';
 import type { ChromeState } from 'core/selection/chromeState';
 

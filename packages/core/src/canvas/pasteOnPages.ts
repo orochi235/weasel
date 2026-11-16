@@ -2,7 +2,7 @@ import type { Bounds } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import { pageNodeOf, pageRunOf } from 'core/pages/pageNodes';
 import { followerLandings, homeOfPage, keepOnPage, pasteboardOn, placedPage } from 'core/pages/pagePlacement';
-import { takingPage } from 'interactions/actions/insert/parent';
+import { takingPage } from 'canvas/deps/insertParent';
 import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
 import { siteIn, type InsertSite } from './deps/insertSite';
 

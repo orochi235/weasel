@@ -6,7 +6,7 @@ import type { FlattenTolerance, ImageMinification, ShaderProgramHandle } from '@
 import type { LayerGroup, RedrawSource, RenderLayer } from 'core/layers/render';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { CanvasDebugSink, DebugFlags } from '../debug/types';
 import type { ToolsApi } from '../tools/overlayBinding';
 import type { DrawnBoundsScene } from './drawnBounds';

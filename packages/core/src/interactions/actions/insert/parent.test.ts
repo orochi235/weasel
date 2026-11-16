@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
-import { insertParent } from './parent';
+import { insertParent } from '../../../canvas/deps/insertParent';
 
 const POSE: RectPose = { x: 0, y: 0, width: 10, height: 10 };
 const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });

@@ -19,7 +19,7 @@ import type { CloneEnd } from '../../gestures/types';
 import { copySelection } from '../defaults/copySubtree';
 import { selectedRoots, translateTargets } from '../selectionSubtree';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
-import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
+import { translatePoseViaDescriptor, type PoseDescriptor } from '../../../core/geometry/poseDescriptor';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 import { recordTransform } from '../transform-again/memory';

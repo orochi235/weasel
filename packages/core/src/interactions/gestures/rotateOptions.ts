@@ -1,6 +1,6 @@
 /** Option surface for the `rotate` action. */
 
-import type { RotateBehavior, RotatedPose } from '../../gestures/types';
+import type { RotateBehavior, RotatedPose } from './types';
 
 /** Options for the `rotate` action. `selectionRotateBindings` threads
  *  them into the rotation handle's binding. */

@@ -14,7 +14,7 @@ import { useCanvasCamera } from './SceneCanvas/useCanvasCamera';
 import { useHeldModifiers } from './SceneCanvas/useHeldModifiers';
 import { useCanvasIngestion } from 'domains/ingestion/useCanvasIngestion';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type React from 'react';
 import { forwardRef, useMemo, useRef } from 'react';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';

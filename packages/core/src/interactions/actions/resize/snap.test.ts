@@ -8,7 +8,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createSnapOutcomeStore } from 'domains/snap/outcomeStore';
 import { sceneSession2d } from 'domains/snap/sceneSession2d';
 import type { SnapSource } from 'domains/snap/types';
-import { rotatePoint } from '../rotate/geometry';
+import { rotatePoint } from '../../../core/geometry/rotatedRect';
 import { heldPose } from '../testUtils';
 import { drawnBoxes } from '../drawnBoxes';
 import type { SnapDep } from '../snapDep';

@@ -1,6 +1,6 @@
 import type { NodeId } from 'core/scene/types';
 import type { CanDropIntoDep } from 'interactions/actions/layoutDeps';
-import { insertParent } from 'interactions/actions/insert/parent';
+import { insertParent } from 'canvas/deps/insertParent';
 import { composeChildFrame, composesFrames, type PoseAdapter } from 'core/scene/composeFrame';
 import { viewPoseAdapter } from 'core/scene/scrollOffsets';
 import { definesFrame } from 'core/scene/effectivePose';

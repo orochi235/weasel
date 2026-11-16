@@ -6,7 +6,7 @@ import { snapMods } from 'domains/snap/roles';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
 import { carryPose, planeOf } from '../planeInput';
-import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
+import { translatePoseViaDescriptor, type PoseDescriptor } from '../../../core/geometry/poseDescriptor';
 import type { RotateFrame, RotateSession, Turn, TurnOrigin } from './session';
 import { quantizedPreview } from 'core/scene/outputGrid';
 

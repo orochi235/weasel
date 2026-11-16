@@ -17,7 +17,7 @@ import { targetCorners, targetTransformOf, type TargetTransform } from 'core/geo
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { CommandStroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
-import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
+import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'core/geometry/rotationHandle';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ChromeState } from 'core/selection/chromeState';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';

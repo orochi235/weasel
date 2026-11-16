@@ -16,7 +16,7 @@ import type {
   RotatedPose,
 } from '../../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { PoseDescriptor } from './geometry';
+import type { PoseDescriptor } from '../../../core/geometry/poseDescriptor';
 import { clampMinSize } from './behaviors/clampMinSize';
 import { circle, CIRCLE_POSE_DESCRIPTOR } from 'core/geometry/circlePose.fixture';
 

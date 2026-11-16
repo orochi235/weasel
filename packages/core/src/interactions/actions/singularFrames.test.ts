@@ -9,7 +9,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import { childVerdict } from './admitsChild';
-import { insertParent } from './insert/parent';
+import { insertParent } from '../../canvas/deps/insertParent';
 import { followerMove } from './followerMoves';
 import { moveNodes } from './moveNodes';
 import { scenePoseFrame } from './poseFrame';

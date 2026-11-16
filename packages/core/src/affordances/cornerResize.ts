@@ -3,7 +3,7 @@ import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { ResizeAnchor } from 'interactions/gestures/types';
 import {
   RESIZE_HANDLE_ANCHORS, fixedCornerOf, handlePoint, isCornerHandle, type ResizeHandleAnchor,
-} from 'interactions/actions/resize/cornerHandles';
+} from 'core/geometry/resizeHandles';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 import { localToWorld, transformOf, type TargetTransform } from './hitAffordanceRegions';
 import type { View } from 'core/viewport/view';

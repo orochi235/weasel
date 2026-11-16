@@ -2,7 +2,7 @@ import { defineAction, type Action, type ModifierState } from '@weasel-js/routin
 import { SNAP_ROLES, snapMods } from 'domains/snap/roles';
 import { inPlane, insertLayer } from '../planeInput';
 import { restoreSelection } from './commit';
-import { insertParent } from './parent';
+import { insertParent } from '../../../canvas/deps/insertParent';
 import { insertKind } from './shape';
 import { clearedSelection } from './session';
 import { minSizeOf } from 'core/scene/minSize';

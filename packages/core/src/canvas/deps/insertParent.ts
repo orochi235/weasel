@@ -2,8 +2,8 @@ import type { NodeId } from 'core/scene/types';
 import { isPaged, pageNodeOf, placedPagesOf } from 'core/pages/pageNodes';
 import { pageForPoint } from 'core/pages/pagePlacement';
 import { pageHolding } from 'core/pages/pages';
-import { admitsChild } from '../admitsChild';
-import type { CanDropIntoDep } from '../layoutDeps';
+import { admitsChild } from '../../interactions/actions/admitsChild';
+import type { CanDropIntoDep } from '../../interactions/actions/layoutDeps';
 import type { AnyScene } from 'core/scene/anyScene';
 
 /** The page (its `Page.id`) new content at `at` goes on: the page for `at` (`pageForPoint`) when it admits

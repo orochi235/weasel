@@ -1,6 +1,6 @@
 import { tweenPose, type PoseAnimationAdapter } from '../poseHelpers';
 import { setPoseInstant } from './instantPose';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Animator, EasingSpec } from '@weasel-js/animator';
 
 /** How nodes enter and leave. `enterFrom` derives the pose a new node starts

@@ -1,4 +1,4 @@
-import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
+import type { ResizeHandleLayout } from 'core/geometry/resizeHandles';
 import { useLatest } from '@weasel-js/react';
 import type { Dispatcher } from '@weasel-js/routing';
 import { useDepSource } from '@weasel-js/routing/react';
@@ -6,8 +6,8 @@ import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { RuleCtx } from 'domains/chrome-caps';
 import type { Affordance } from 'affordances/types';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { UseResizeOptions } from 'interactions/actions/resize/options';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+import type { UseResizeOptions } from 'interactions/gestures/resizeOptions';
 import { useContext, useEffect, useInsertionEffect, type MutableRefObject, type RefObject } from 'react';
 import { SnapSourceRegistryContext } from 'domains/snap/registry';
 import type { SnapOutcomeStore } from 'domains/snap/outcomeStore';

@@ -1,6 +1,6 @@
 import type { ResizeAnchor } from '@weasel-js/routing';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { fixedCornerOf, movedEdges, movingPoint } from 'interactions/actions/resize/cornerHandles';
+import { fixedCornerOf, movedEdges, movingPoint } from 'core/geometry/resizeHandles';
 import type { SnapResizeBox } from 'interactions/actions/snapDep';
 import type { SnapProbeAt, SnapSide } from './types';
 import type { Point } from '@weasel-js/geom';

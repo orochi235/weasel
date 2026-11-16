@@ -18,7 +18,7 @@ import { mixedScene } from 'canvas/pickIndex/pickIndexFixture';
 import { pickIndexBuildCount } from 'canvas/pickIndex/scenePickIndex';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { scenePointQuery } from './scenePointQuery';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { useScenePickers } from './useScenePickers';
 import type { AnyScene } from 'core/scene/anyScene';
 

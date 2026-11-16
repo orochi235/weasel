@@ -10,7 +10,7 @@ import type { SnapDep } from 'interactions/actions/snapDep';
 import type { View } from 'core/viewport/view';
 import type { Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { SnapOutcomeStore } from 'domains/snap/outcomeStore';
 import type { SnapSourceRegistry } from 'domains/snap/registry';

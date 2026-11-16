@@ -5,7 +5,7 @@
  */
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { transformPoint, pointInPath, strokeHitTest, type Affine } from '@weasel-js/geom';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { positiveBox } from 'core/geometry/unionBounds';
 import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'core/geometry/autoPoseDescriptor';

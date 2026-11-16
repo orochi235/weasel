@@ -1,5 +1,5 @@
 import type { NodeId, Scene } from 'core/scene/types';
-import { poseDescriptorForNode, type PoseDescriptor } from './resize/geometry';
+import { poseDescriptorForNode, type PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 
 /** The `poseDescriptor` dep's value, or the auto descriptor when unsourced. */

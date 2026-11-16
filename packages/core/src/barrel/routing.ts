@@ -163,10 +163,10 @@ export {
 export { usePoseDescriptorDepSource } from '../canvas/deps/poseDescriptor';
 export {
   CORNER_ANCHORS, RESIZE_HANDLE_ANCHORS, EDGE_HANDLE_MIN_RADII, handlePoint, isCornerHandle, resizeHandlesFor,
-} from '../interactions/actions/resize/cornerHandles';
+} from '../core/geometry/resizeHandles';
 export type {
   CornerAnchor, CornerEdge, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout,
-} from '../interactions/actions/resize/cornerHandles';
+} from '../core/geometry/resizeHandles';
 export { useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
 export { useLiveOperands } from '../canvas/deps/operands';
 export { useBooleansAdapterSource } from '../canvas/deps/booleans';

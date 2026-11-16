@@ -16,7 +16,7 @@ import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import { NO_SELECTION } from 'core/selection/viewerSelection';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { useViewHelpers } from './useViewHelpers';
 import { useViewAim } from './useViewAim';
 import { hitAtOf } from './deps/dispatchSources';

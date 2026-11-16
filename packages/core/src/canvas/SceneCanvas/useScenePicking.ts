@@ -8,7 +8,7 @@ import { createEnteredGroupScope } from 'domains/selection/enteredGroupScope';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { CanvasExtensionApi } from '../canvasExtension';
 import type { View } from 'core/viewport/view';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { composeAlphaFor } from '../sceneSlotWiring';
 import { useSceneAdapter } from '../useSceneAdapter';
 import type { SceneCanvasProps } from './props';

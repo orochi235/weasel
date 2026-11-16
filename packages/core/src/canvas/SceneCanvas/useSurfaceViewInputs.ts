@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { SelectionApi } from '@weasel-js/routing';
 import type { ChromeCaps } from 'domains/chrome-caps/useChromeCaps';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { SurfaceViewInputs } from '../viewInputs';
 
 type Picking = Pick<SurfaceViewInputs, 'boundsOf' | 'planeOfNode' | 'pickEvery' | 'pickBest' | 'kindOfNode' | 'doubleClickNames'>

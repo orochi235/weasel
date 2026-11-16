@@ -10,7 +10,7 @@ import { composesFrames } from 'core/scene/composeFrame';
 import { isDocument } from 'core/scene/documentOf';
 import { planeMap, type ParallaxOptions, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { derivedFramePose, resolveDerivedPath, scenePaintedPoseOf } from './derivedPath';
 import { effectivePose } from 'core/scene/effectivePose';
 import { indexedCandidates } from './pickIndex/scenePickIndex';

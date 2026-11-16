@@ -18,8 +18,8 @@ import { rangeAmong, type SelectRangeDep } from 'tools/builtin/select/selectRang
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import type { UseMoveOptions } from 'interactions/actions/move/options';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { UseMoveOptions } from 'interactions/gestures/moveOptions';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { drawnBoundsOf } from 'canvas/drawnBounds';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { scenePointQuery } from './scenePointQuery';

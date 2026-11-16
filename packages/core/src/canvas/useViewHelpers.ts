@@ -5,7 +5,7 @@ import type { GestureSource, GesturePreviewSource } from './gestureBounds';
 import { gestureBoundsOf, useInFlightBounds } from './useInFlightBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { NodeId } from 'core/scene/types';
 import type { DebugSink } from '../debug/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';

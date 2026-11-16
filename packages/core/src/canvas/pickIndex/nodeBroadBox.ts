@@ -14,7 +14,7 @@ import { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from 'core/geometry/auto
 import { framedBounds } from 'core/geometry/poseDescriptor';
 import { regionBoundsOf } from 'core/geometry/regionHit';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
-import { poseDescriptorForNode, type PoseDescriptor } from 'interactions/actions/resize/geometry';
+import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 
 /** `[minX, minY, maxX, maxY]`, the layout `createBvh(2)` takes. */
 export type Box2 = [number, number, number, number];

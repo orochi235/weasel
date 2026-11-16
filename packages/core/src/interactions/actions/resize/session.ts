@@ -13,7 +13,7 @@ import { readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { buildGestureContext, captureBox, captureStarts, captureTargets, resolvePolicy } from './capture';
-import type { PoseDescriptor } from './geometry';
+import type { PoseDescriptor } from '../../../core/geometry/poseDescriptor';
 import type { InkExtents } from 'core/geometry/inkExtents';
 import { drawnBoxes } from '../drawnBoxes';
 import type { MinSize } from 'core/scene/minSize';

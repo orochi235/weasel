@@ -1,3 +1,3 @@
-export type { UseMoveOptions } from './options';
+export type { UseMoveOptions } from '../../gestures/moveOptions';
 export { snapToContainer, snapBackOrDelete, clampMove } from './behaviors';
 export type { ClampMoveOptions } from './behaviors';

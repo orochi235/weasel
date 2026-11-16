@@ -120,7 +120,7 @@ export type {
   UseClipboardOpsOptions,
   UseClipboardOpsReturn,
 } from '../interactions/actions/clipboard';
-export { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../interactions/actions/resize/geometry';
+export { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../core/geometry/poseDescriptor';
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
 export { ANCHORS_GROUP, PATH_GROUP } from '../interactions/actions/pathActionGroups';
 export { sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';

@@ -1,6 +1,6 @@
 /** Option surface for the `resize` action. */
 
-import type { BoundsConstraint } from '../../gestures/types';
+import type { BoundsConstraint } from './types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** Options for the `resize` action: the constraints applied to the dragged

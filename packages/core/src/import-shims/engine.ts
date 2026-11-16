@@ -184,8 +184,8 @@ export { nodeDescriptors, poseDescriptorOf } from '../interactions/actions/poseD
 export { poseFrame, sceneBoxFrames, scenePoseFrame, worldPoseOf, worldPoses } from '../interactions/actions/poseFrame';
 export type { PoseFrame, PoseReading } from '../interactions/actions/poseFrame';
 export type { AreaSelectDep, ColorAtDep, HitTestView, LassoSelectDep, NodeAtPointDep } from '../interactions/actions/regionSelectDeps';
-export { CORNER_ANCHORS, EDGE_HANDLE_MIN_RADII, RESIZE_HANDLE_ANCHORS, cornerResizeHandles, fixedCornerOf, handlePoint, hitCornerHandle, isCornerHandle, resizeHandlesFor } from '../interactions/actions/resize/cornerHandles';
-export type { CornerAnchor, CornerEdge, CornerHandle, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout } from '../interactions/actions/resize/cornerHandles';
+export { CORNER_ANCHORS, EDGE_HANDLE_MIN_RADII, RESIZE_HANDLE_ANCHORS, cornerResizeHandles, fixedCornerOf, handlePoint, hitCornerHandle, isCornerHandle, resizeHandlesFor } from '../core/geometry/resizeHandles';
+export type { CornerAnchor, CornerEdge, CornerHandle, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout } from '../core/geometry/resizeHandles';
 export { resolveOverlays } from '../interactions/actions/resolveOverlays';
 export type { OverlayVisibilityId, ResolvedOverlay } from '../interactions/actions/resolveOverlays';
 export type { SnapBegin, SnapConstrain, SnapDep, SnapGeometry, SnapMods, SnapOutcome, SnapResizeBox, SnapSession } from '../interactions/actions/snapDep';

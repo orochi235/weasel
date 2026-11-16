@@ -1,7 +1,7 @@
 import { ActionDisabledReason, type Action, type ActionDeps, type MenuHit } from '@weasel-js/routing';
 import { scenePoseFrame } from '../poseFrame';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
-import { visualBoundsViaDescriptor } from '../resize/geometry';
+import { visualBoundsViaDescriptor } from '../../../core/geometry/poseDescriptor';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { screenToWorld } from 'core/viewport/viewTransform';
 import { viewToTransform } from 'core/viewport/view';

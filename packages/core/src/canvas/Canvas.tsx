@@ -28,7 +28,7 @@ import { SurfaceCanvas } from './SurfaceCanvas';
 import { useSurfaceSize } from './useSurfaceSize';
 import type { SelectionApi } from '@weasel-js/routing';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { useDebugSink } from '../debug/useDebugSink';
 import { useToolCursor } from './useToolCursor';
 import { useCanvasElements } from './useCanvasElements';

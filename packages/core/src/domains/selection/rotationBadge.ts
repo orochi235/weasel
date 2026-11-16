@@ -3,7 +3,7 @@ import { mat3, type GlMat3 } from '@weasel-js/renderer';
 import type { CommandStroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
-import { rotationHandle } from 'interactions/actions/rotate/handle';
+import { rotationHandle } from 'core/geometry/rotationHandle';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';

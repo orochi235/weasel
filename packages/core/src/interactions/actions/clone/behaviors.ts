@@ -7,7 +7,7 @@ import { defaultCommitAdapter, operandMethods } from '../defaultCommitAdapter';
 import { sceneGestureFrames } from '../gestureFrames';
 import { reduceBehaviorEnd } from '../gestureLifecycle';
 import { pointerStateOf } from '../pointerState';
-import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
+import { translatePoseViaDescriptor, type PoseDescriptor } from '../../../core/geometry/poseDescriptor';
 import { boundsOffset, poseDescriptorOf } from '../poseDescriptorDep';
 
 type Delta = { dx: number; dy: number };

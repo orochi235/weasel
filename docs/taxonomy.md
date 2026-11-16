@@ -1233,7 +1233,7 @@ sizes but world-space for object positions. See
 `packages/core/src/domains/selection/overlay.ts`. The overlay paints the
 handles; pressing them is the kit's affordances' job
 (`createCornerResizeAffordance`, `createRotationAffordance`), which place the
-handles with the same geometry (`interactions/actions/resize/cornerHandles.ts`),
+handles with the same geometry (`core/geometry/resizeHandles.ts`),
 so paint and hit agree.
 
 ---

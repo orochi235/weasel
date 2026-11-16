@@ -1,5 +1,5 @@
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
-import type { UseResizeOptions } from 'interactions/actions/resize/options';
+import type { UseResizeOptions } from 'interactions/gestures/resizeOptions';
 import {
   resizePolicyOptions,
   useGeometryProjection,

@@ -7,7 +7,7 @@ import {
   isCornerHandle,
   RESIZE_HANDLE_ANCHORS,
   hitCornerHandle,
-} from './cornerHandles';
+} from '../../../core/geometry/resizeHandles';
 
 describe('cornerResizeHandles', () => {
   it('returns 4 handles at the bounds corners with opposite-corner anchors', () => {

@@ -8,7 +8,7 @@ import type { LassoHitMode } from 'core/adapters/types';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { polygonRegion, rectRegion } from 'core/geometry/regionHit';
 import type { View } from 'core/viewport/view';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { pickWalk, scenePickSource, type PickQuery, type PickSource } from 'canvas/pickWalk';
 import { mixedScene, pointPick, regionPick, rng } from './pickIndexFixture';
 import type { AnyScene } from 'core/scene/anyScene';

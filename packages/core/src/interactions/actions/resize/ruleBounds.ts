@@ -1,6 +1,6 @@
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { PoseDescriptor } from './geometry';
+import type { PoseDescriptor } from '../../../core/geometry/poseDescriptor';
 
 /** `pose` as the bounds a constraint or a point snap reads. A pose that is
  *  already a box goes through whole, so a `rotation` on it rides along. */

@@ -46,6 +46,6 @@ export type {
   SimulationOptions,
 } from '@weasel-js/simulation';
 export { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-export { rotatePoint } from 'interactions/actions/rotate/geometry';
+export { rotatePoint } from 'core/geometry/rotatedRect';
 export { CLIP_NOTHING, clipNothing } from 'core/scene/clipNothing';
 export { checkPixelRenderRect } from 'canvas/pixelRenderRect';

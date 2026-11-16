@@ -19,7 +19,7 @@ import type { SelectionApi } from '@weasel-js/routing';
 import type { SelectionOptions } from 'core/selection/selectionContract';
 import type { SceneCanvasSnap } from 'domains/snap/types';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { ReactNode } from 'react';
 import type { Animator } from '@weasel-js/animator';
 import type { PoseTransitionSeat } from '../../animation/poseTransition';

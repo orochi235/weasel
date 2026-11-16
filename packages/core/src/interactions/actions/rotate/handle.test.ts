@@ -8,7 +8,7 @@ import {
   rotationHandle,
   hitRotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
-} from './handle';
+} from '../../../core/geometry/rotationHandle';
 
 const close = (a: number, b: number, eps = 1e-9) => Math.abs(a - b) < eps;
 

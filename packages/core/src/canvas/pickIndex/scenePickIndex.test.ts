@@ -11,7 +11,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import { rectPath } from '@weasel-js/geom';
 import { applyOpsTo, createTransformOp } from 'core/ops';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { registerNodeShape } from 'canvas/NodeShape';
 import { pickWalk, scenePickSource, type PickQuery } from 'canvas/pickWalk';
 import { pointPick, regionPick } from './pickIndexFixture';

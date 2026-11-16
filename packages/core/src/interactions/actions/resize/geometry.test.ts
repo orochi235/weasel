@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
+import { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseDescriptor } from '../../../core/geometry/poseDescriptor';
 import type { RotatedPose } from '../../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 

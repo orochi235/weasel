@@ -17,7 +17,7 @@ import { moveGestureAdapter } from '../move/gestureAdapter';
 import { carryPose, invertPlane, planeOf } from '../planeInput';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import type { PoseDescriptor } from '../resize/geometry';
+import type { PoseDescriptor } from '../../../core/geometry/poseDescriptor';
 import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import { shapeSources } from '../selectionSubtree';
 import type { SnapBegin, SnapSession } from '../snapDep';

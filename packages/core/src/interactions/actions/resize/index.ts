@@ -1,11 +1,11 @@
-export type { UseResizeOptions } from './options';
+export type { UseResizeOptions } from '../../gestures/resizeOptions';
 export {
   RECT_POSE_DESCRIPTOR,
   ROTATED_POSE_DESCRIPTOR,
   poseDescriptorForNode,
   type PoseDescriptor,
   type TranslateLead,
-} from './geometry';
+} from '../../../core/geometry/poseDescriptor';
 export {
   cornerResizeHandles,
   hitCornerHandle,
@@ -21,7 +21,7 @@ export {
   type HandleEdge,
   type ResizeHandleAnchor,
   type ResizeHandleLayout,
-} from './cornerHandles';
+} from '../../../core/geometry/resizeHandles';
 export * from './behaviors';
 
 export { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from 'core/geometry/autoPoseDescriptor';

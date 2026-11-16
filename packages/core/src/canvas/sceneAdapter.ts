@@ -29,7 +29,7 @@ import {
   translatePoseViaDescriptor,
   visualBoundsViaDescriptor,
   type PoseDescriptor,
-} from 'interactions/actions/resize/geometry';
+} from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { composeChildFrame, composesFrames, composeWorldPose, frameAtOrAbove, type PoseAdapter } from 'core/scene/composePose';
 import { memoizeCompose } from 'core/scene/composeFrame';

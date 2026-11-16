@@ -5,7 +5,7 @@ import type { NodeId } from 'core/scene/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { commitGestureOps, reduceBehaviorEnd } from '../gestureLifecycle';
-import type { PoseDescriptor } from './geometry';
+import type { PoseDescriptor } from '../../../core/geometry/poseDescriptor';
 import type { ResizeFrame, ResizeSession } from './session';
 
 /** The op mapping a leaf's data-held geometry by the box→box affine its pose

@@ -14,7 +14,7 @@ import { inheritedPaintOf, inheritsPaint } from 'core/scene/inheritedPaint';
 import { nodesAsShown } from 'core/scene/nodeAsShown';
 import { nodeMemoGeneration } from 'core/scene/nodeMemo';
 import { outsideGeneration } from 'core/scene/outsideReads';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { scenePaintedPoseOf } from '../derivedPath';
 import type { PickBroad, PickCandidate } from '../pickWalk';
 import { sceneParentsOf, sceneShownPathOf } from '../scenePickReads';

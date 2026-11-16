@@ -4,7 +4,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
 import { nodeDescriptors, poseDescriptorOf } from 'interactions/actions/poseDescriptorDep';
 import { sceneBoxFrames, scenePoseFrame } from 'interactions/actions/poseFrame';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_ORIGIN_PROJECTION, type OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { ProbeReads } from './probes2d';
 import type { SnapAnchors, SnapFrame } from './types';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { remapRotatedLeaf, RECT_POSE_DESCRIPTOR } from './geometry';
+import { remapRotatedLeaf, RECT_POSE_DESCRIPTOR } from '../../../core/geometry/poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 

@@ -12,7 +12,7 @@ import { gestureReaders, type GestureReaders } from '../../gestures/shared/scree
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
 import type { InsertDep, CommitSelection } from '../depSchema';
 import { moveGestureAdapter } from '../move/gestureAdapter';
-import { insertParent } from './parent';
+import { insertParent } from '../../../canvas/deps/insertParent';
 import { insertKind } from './shape';
 
 /** The key an insert's single gesture point rides under in the behaviors'

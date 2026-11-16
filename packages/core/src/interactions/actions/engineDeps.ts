@@ -19,7 +19,7 @@ import type { History } from '@weasel-js/history';
 import type { ActionsRegistry } from '@weasel-js/routing';
 import type { BoundsConstraint } from '../gestures/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { PoseDescriptor } from './resize/geometry';
+import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { GeometryProjection } from './geometryProjection';
 import type { DebugSink, LongPressState } from '@weasel-js/routing';
 import type { SnapDep } from './snapDep';

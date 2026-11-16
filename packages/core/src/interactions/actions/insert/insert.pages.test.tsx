@@ -6,7 +6,7 @@ import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-j
 import { useInsertDepSource } from 'canvas/deps/insert';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { ON_PAGE, PAGE_A, PAGE_B, pagedScene } from 'core/pages/pagedFixture';
-import { insertParent } from './parent';
+import { insertParent } from '../../../canvas/deps/insertParent';
 import type { NodeId, RectPose } from 'core/scene/types';
 import { insertAction } from './action';
 

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { createSelectionOverlayLayer } from './overlay';
-import { rotationHandle } from 'interactions/actions/rotate/handle';
+import { rotationHandle } from 'core/geometry/rotationHandle';
 import { asNodeId } from 'core/scene/types';
 import type { RectPose } from 'core/scene/types';
 

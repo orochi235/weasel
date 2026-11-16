@@ -3,7 +3,7 @@ import { useLatest } from '@weasel-js/react';
 import type { SelectionApi, WorldPoint } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Tool } from 'tools/overlayBinding';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import type { SurfaceContribution } from '../surfaceContribution';

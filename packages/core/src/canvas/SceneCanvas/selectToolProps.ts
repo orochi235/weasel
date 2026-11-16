@@ -1,7 +1,7 @@
 import type { WorldPoint } from '@weasel-js/routing';
-import type { UseMoveOptions } from 'interactions/actions/move/options';
-import type { UseResizeOptions } from 'interactions/actions/resize/options';
-import type { UseRotateOptions } from 'interactions/actions/rotate/options';
+import type { UseMoveOptions } from 'interactions/gestures/moveOptions';
+import type { UseResizeOptions } from 'interactions/gestures/resizeOptions';
+import type { UseRotateOptions } from 'interactions/gestures/rotateOptions';
 
 /** `<SceneCanvas selectTool>`. `pickBest` configures the internal select tool, and is
  *  ignored under a `tools` takeover; `handleHitRadius` sizes the handles' hit area, and

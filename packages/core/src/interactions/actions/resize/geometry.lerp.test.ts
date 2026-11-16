@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RECT_POSE_DESCRIPTOR } from './geometry';
+import { RECT_POSE_DESCRIPTOR } from '../../../core/geometry/poseDescriptor';
 
 describe('RECT_POSE_DESCRIPTOR.lerp', () => {
   it('interpolates x/y/width/height linearly', () => {

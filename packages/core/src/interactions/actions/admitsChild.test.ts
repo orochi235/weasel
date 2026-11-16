@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ON_PAGE, PAGE_A, PAGE_B, pagedScene } from 'core/pages/pagedFixture';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { childVerdict } from './admitsChild';
-import { insertParent } from './insert/parent';
+import { insertParent } from '../../canvas/deps/insertParent';
 
 const R2 = asNodeId('r2');
 

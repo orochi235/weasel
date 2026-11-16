@@ -5,7 +5,7 @@ import { Canvas } from '@weasel-js/core/testing/BareCanvas';
 import type { RenderLayer } from 'core/layers/render';
 import type { CanvasDebugSink } from '../debug/types';
 import type { CanvasExtensionApi } from './canvasExtension';
-import { ROTATED_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
+import { ROTATED_POSE_DESCRIPTOR } from 'core/geometry/poseDescriptor';
 import { stubCanvasContext, waitForFrame } from './testing/stubCanvasContext';
 
 beforeAll(stubCanvasContext);

@@ -1,6 +1,6 @@
 import { poseKey, tweenPose, springPose, type PoseAnimationAdapter } from '../poseHelpers';
 import { instantPoseWrite } from './instantPose';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Animator, EasingSpec, SpringPresetName } from '@weasel-js/animator';
 
 /** Options for `animateOnSetPose`. */

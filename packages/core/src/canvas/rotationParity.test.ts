@@ -14,7 +14,7 @@ import { rotateAroundAABBCenter } from './poseRotation';
 import { pathInWorld } from '@weasel-js/geom';
 import { poseRotationOf } from '@weasel-js/geom';
 import { poseContainsRotated } from './SceneCanvas/poseGeometry';
-import { rotatedRectCorners, rotatePoint } from 'interactions/actions/rotate/geometry';
+import { rotatedRectCorners, rotatePoint } from 'core/geometry/rotatedRect';
 import type { PolygonPath } from '@weasel-js/geom';
 
 const pose = { x: 10, y: 20, width: 40, height: 20, rotation: Math.PI / 6 };

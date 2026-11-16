@@ -8,7 +8,7 @@ import { useLatest } from '@weasel-js/react';
 import type { LassoSelectDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from '@weasel-js/routing';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { hitTestArea as hitTestAreaShared, hitTestLassoPolygon, regionPickOptions } from './hitTestArea';
 
 export function useLassoSelectDepSource(
