@@ -150,7 +150,6 @@ export type {
 } from '../interactions/gestures/resizeHandles';
 export { useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
 export { useLiveOperands } from '../canvas/deps/operands';
-export { useBooleansAdapterSource } from '../canvas/deps/booleans';
 export {
   computeSliceOps,
   type ComputeSliceOpsArgs,
@@ -211,7 +210,7 @@ export type {
   BehaviorEnd,
   MoveEnd,
 } from '../interactions/gestures/types';
-export type { ClipboardSnapshot, PasteCtx, PasteOmission } from '../interactions/actions/clipboard/types';
+export type { ClipboardSnapshot, PasteCtx, PasteOmission } from '../core/adapters/types';
 
 // ─── Gesture specs ───
 export { ANY_MODS, hitPredicate, bodyPredicate } from '@weasel-js/gestures';

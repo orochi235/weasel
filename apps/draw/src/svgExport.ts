@@ -5,9 +5,7 @@
  * rides on the node so the serializer emits a `rotate` transform.
  */
 import { textFrameFields } from './svgNote';
-import {
-  type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, embedWeaselMetadataInSvg, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, unionAABB, type ShapeGenerator, worldPoses,
-} from '@weasel-js/core';
+import { type Fill, type Path, type PlacedPage, type Scene, type Stroke, boundsOfPath, composesFrames, definesFrame, derivedDepOf, documentOf, inheritedPaintIn, withInheritedPaint, fillInPoseFrame, isAnnotationNode, pageOfNode, pathEffectOf, pathEffectParts, resolveFill, resolvePartPaint, resolveStroke, pathInPoseFrame, shapeGeneratorOf, unionAABB, type ShapeGenerator, worldPoses } from '@weasel-js/core';
 import { layoutTextPose } from '@weasel-js/text';
 import {
   serializeSvg,
@@ -26,6 +24,7 @@ import {
 import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
 import type { EffectObj } from './svgEffects';
 import type { ImageObj, Obj, PathObj, PathParams, TextObj } from './svgObj';
+import { embedWeaselMetadataInSvg } from '@weasel-js/editing';
 
 /** A node's data with its `'inherit'` paint resolved, as export writes it. */
 type ShownDrawData = ReturnType<typeof withInheritedPaint<WeaselDrawData>>;

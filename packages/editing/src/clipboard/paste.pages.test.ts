@@ -1,9 +1,8 @@
 /** A paste in a paged scene: the pasted roots go on the page under the paste's anchor. */
 import { describe, expect, it } from 'vitest';
-import { sceneToAdapter } from 'canvas/sceneAdapter';
-import { ON_PAGE, PAGE_B, pagedScene } from 'core/pages/pagedFixture';
-import { pageRunOf } from 'core/pages/pageNodes';
-import { asNodeId, type RectPose } from 'core/scene/types';
+import { sceneToAdapter } from '@weasel-js/core';
+import { ON_PAGEForTests as ON_PAGE, PAGE_BForTests as PAGE_B, pagedSceneForTests as pagedScene } from '@weasel-js/core/test-seams';
+import { pageRunOf, asNodeId, type RectPose } from '@weasel-js/core/engine';
 import { materializePaste } from './materializePaste';
 
 function paste(ids: string[], dropPoint: { x: number; y: number }, pasteboard = false, locked: string[] = []) {

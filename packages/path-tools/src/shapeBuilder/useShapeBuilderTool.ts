@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { ToolKeybinding } from '@weasel-js/routing';
-import { createPathOverlay, defineTool, type BooleanStrokes, type Tool } from '@weasel-js/core';
+import { createPathOverlay, defineTool, type Tool } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import type { ShapeBuilderMode } from './shapeBuilder';
 import { createShapeBuilderActions } from './shapeBuilderActions';
 import type {} from '../actionParamSchema';
-import { PATHFINDER_STROKES } from '@weasel-js/editing';
+import { PATHFINDER_STROKES, type BooleanStrokes } from '@weasel-js/editing';
 
 /** Options for `useShapeBuilderTool`. */
 export interface UseShapeBuilderToolOptions {

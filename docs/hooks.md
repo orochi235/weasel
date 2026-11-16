@@ -234,7 +234,7 @@ styling.
 
 ### `useClipboardOps(adapter, options)`
 
-Logic-only clipboard: `copy` / `paste` over the adapter clipboard seam
+From `@weasel-js/editing`. Logic-only clipboard: `copy` / `paste` over the adapter clipboard seam
 (`snapshotSelection` / `commitPaste` / `getPasteOffset`), with a
 `produceFlavors` / `jsonReplacer` outbound seam for OS-clipboard writes.
 A paste leaves out a node that derives from nodes that were not copied with

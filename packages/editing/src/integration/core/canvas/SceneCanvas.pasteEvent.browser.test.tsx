@@ -10,11 +10,10 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { SceneCanvas, createScene } from '@weasel-js/core';
-import { buildWeaselClipboardText } from '@weasel-js/core/clipboard';
 import type { FeaturePreset } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core/engine';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
-import { editPreset } from '@weasel-js/editing';
+import { editPreset, buildWeaselClipboardText } from '@weasel-js/editing';
 
 type P = { x: number; y: number; width: number; height: number };
 type S = Scene<object, 'main', P>;

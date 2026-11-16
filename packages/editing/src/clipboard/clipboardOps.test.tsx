@@ -2,12 +2,13 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClipboardOps } from './clipboardOps';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
-import type { InsertAdapter, Op } from '../../..';
-import { asNodeId } from 'core/scene/types';
+import type { InsertAdapter } from '@weasel-js/core/engine';
+import type { Op } from '@weasel-js/core';
+import { asNodeId } from '@weasel-js/core/engine';
 import { PointerContextProvider, usePointerContext } from '@weasel-js/routing/react';
 import type { ReactNode } from 'react';
 import { WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, buildWeaselClipboardText } from './wireFormat';
-import { rootsTree } from 'core/adapters/testing/rootsTree';
+import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 
 interface Obj { id: string; x: number; y: number }
 

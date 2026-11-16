@@ -9,12 +9,12 @@ import {
   pathfinderTrimAction,
   pathfinderMergeAction,
 } from './action';
-import type { BooleansAdapter } from '@weasel-js/core';
 import { asNodeId } from '@weasel-js/core/engine';
 import { pathFromD, pointInPath, type Path } from '@weasel-js/geom';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
+import { type BooleansAdapter } from '../../booleans';
 
 function runDescriptor(action: typeof pathfinderUnionAction, adapter: BooleansAdapter) {
   (action.invoker as ImmediateInvoker).run({ booleansAdapter: adapter });

@@ -6,11 +6,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { boundsOfPath, pathFromD, type Affine, type Path } from '@weasel-js/geom';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { PathPaint } from '@weasel-js/core';
-import { applyBooleanOp, asNodeId, type BooleansAdapter, type NodeId } from '@weasel-js/core';
+import { asNodeId, type NodeId } from '@weasel-js/core';
 import { outlineStrokeAction } from './outlineStrokeAction';
 import { rootsTreeForTests as rootsTree, stubDepsForTests as stubDeps } from '@weasel-js/core/test-seams';
 import type { CreateOutlinesAdapter } from './createOutlines';
 import { applyOutlineStroke } from './outlineStroke';
+import { applyBooleanOp, type BooleansAdapter } from '@weasel-js/editing';
 
 const RED = { color: '#f00' };
 const ACROSS = pathFromD('M0 50 L100 50');

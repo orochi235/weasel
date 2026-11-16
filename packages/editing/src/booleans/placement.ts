@@ -1,5 +1,5 @@
-import { createMoveToIndexOp } from 'core/ops/reorder';
-import type { Op } from 'core/ops/types';
+import { createMoveToIndexOp } from '@weasel-js/core';
+import type { Op } from '@weasel-js/core';
 import { maxOf } from '@weasel-js/geom';
 import type { BooleanZOrder } from './booleans';
 

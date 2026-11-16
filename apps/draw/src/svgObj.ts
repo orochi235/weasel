@@ -1,6 +1,7 @@
 import type { TextFrameData } from './drawDocument';
-import type { BooleanOp, ImageNodeData, Path, Stroke, Fill, Inherit } from '@weasel-js/core';
+import type { ImageNodeData, Path, Stroke, Fill, Inherit } from '@weasel-js/core';
 import type { StyledRun, TextStyle, TextVerticalAlign } from '@weasel-js/text';
+import { type BooleanOp } from '@weasel-js/editing';
 
 export type ToolKind =
   | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'

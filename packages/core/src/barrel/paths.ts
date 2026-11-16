@@ -315,26 +315,3 @@ export type {
   Discriminator,
 } from '@weasel-js/geom/curves';
 
-// ─── Path boolean ops (Pathfinder) ──────────────────────────────────────────
-export {
-  useBooleans,
-  useBooleansAdapter,
-  applyBooleanOp,
-  previewBooleanOp,
-  resolveBooleanOperands,
-  commitBooleanPieces,
-} from '../interactions/actions/booleans';
-export type {
-  BooleanOp,
-  BooleansAdapter,
-  BooleanOpPreview,
-  BooleanOpResult,
-  BooleanPreviewPiece,
-  BooleanOpOptions,
-  BooleanStrokes,
-  BooleanSource,
-  BooleanOperands,
-  BooleanCommitPiece,
-  UseBooleansOptions,
-  UseBooleansReturn,
-} from '../interactions/actions/booleans';

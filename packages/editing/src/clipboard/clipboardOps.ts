@@ -1,9 +1,8 @@
 import { useCallback } from 'react';
 import { useLatest } from '@weasel-js/react';
-import type { NodeId } from 'core/scene/types';
-import { dispatchApplyBatch } from 'core/applyOps';
-import type { InsertAdapter, PasteOmission } from 'core/adapters/types';
-import type { ClipboardSnapshot } from './types';
+import type { NodeId } from '@weasel-js/core';
+import { dispatchApplyBatch } from '@weasel-js/core';
+import type { ClipboardSnapshot, InsertAdapter, PasteOmission } from '@weasel-js/core/engine';
 import type { WorldPoint } from '@weasel-js/routing';
 import { materializePaste } from './materializePaste';
 import type { ClipboardFlavors } from './osClipboard';

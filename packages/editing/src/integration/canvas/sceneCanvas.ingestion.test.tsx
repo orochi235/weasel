@@ -8,15 +8,13 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createRef } from 'react';
-import { SceneCanvas } from '@weasel-js/core';
-import type { SceneCanvasApi } from '@weasel-js/core';
-import type { FeaturePreset } from '@weasel-js/core';
+import { SceneCanvas, registerContentHandler, type ContentHandlerEntry } from '@weasel-js/core';
+import type { SceneCanvasApi, FeaturePreset } from '@weasel-js/core';
 import { ActionsProvider } from '@weasel-js/routing/react';
 // The real unpacker, to keep this an end-to-end check of the injected seam.
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { createScene } from '@weasel-js/core/engine';
 import type { Scene } from '@weasel-js/core/engine';
-import { registerContentHandler, type ContentHandlerEntry } from '@weasel-js/core';
 import { getContentHandlersForTests as getContentHandlers, _resetContentHandlersForTests } from '@weasel-js/core/test-seams';
 import {
   __setImageMeasureForTests,
@@ -27,8 +25,7 @@ import {
   __setSvgMeasureForTests,
   _resetSvgHandlerSeamsForTests,
 } from '../../ingest/svgHandler';
-import { buildWeaselClipboardText } from '@weasel-js/core';
-import { drawPreset, editPreset, ingestPreset } from '@weasel-js/editing';
+import { drawPreset, editPreset, ingestPreset, buildWeaselClipboardText } from '@weasel-js/editing';
 
 type D = { image?: { src: string } };
 type L = 'main';

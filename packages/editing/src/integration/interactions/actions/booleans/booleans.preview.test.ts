@@ -2,9 +2,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { boundsOfPath, pathFromD, type Path } from '@weasel-js/geom';
 import type { PathPaint, NodeId, TransientPath } from '@weasel-js/core';
-import { applyBooleanOp, previewBooleanOp, type BooleansAdapter } from '@weasel-js/core';
 import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
-import { pathfinderCropAction, pathfinderDivideAction, pathfinderUnionAction } from '@weasel-js/editing';
+import { pathfinderCropAction, pathfinderDivideAction, pathfinderUnionAction, applyBooleanOp, previewBooleanOp, type BooleansAdapter } from '@weasel-js/editing';
 
 const RED = { color: '#f00' };
 const rect = (x: number, y: number, width: number, height: number): Path => ({ kind: 'rect', x, y, width, height });

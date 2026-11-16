@@ -78,25 +78,6 @@ export {
   locksOf, type EditAnchorsParams, type HandleLock, type HandleLocks,
 } from '../interactions/actions/edit-anchors/params';
 
-// ─── Action hooks: selection-driven keyboard / button actions ───────────────
-export {
-  useClipboard,
-  useClipboardOps,
-  WEASEL_CLIPBOARD_MIME,
-  WEASEL_CLIPBOARD_MIME_WEB,
-  buildWeaselClipboardText,
-  sniffWeaselClipboardText,
-  parseWeaselClipboardText,
-  embedWeaselMetadataInSvg,
-  extractWeaselClipboardFromSvg,
-} from '../interactions/actions/clipboard';
-export type {
-  ClipboardFlavors,
-  PastedItems,
-  UseClipboardOptions,
-  UseClipboardOpsOptions,
-  UseClipboardOpsReturn,
-} from '../interactions/actions/clipboard';
 export { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../core/geometry/poseDescriptor';
 export { resolveSpatialReference } from '../interactions/actions/spatialReference';
 export { ANCHORS_GROUP, PATH_GROUP } from '../interactions/actions/pathActionGroups';

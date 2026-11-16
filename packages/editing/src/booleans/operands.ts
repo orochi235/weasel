@@ -5,10 +5,8 @@
 import type { Affine, Path, Scale2 } from '@weasel-js/geom';
 import { pathUnion } from '@weasel-js/geom/booleans';
 import { resolveFill, resolveStroke } from '@weasel-js/paint';
-import type { PathPaint } from 'canvas/nodeShapes/nodePaint';
-import type { NodeId } from 'core/scene/types';
-import type { PaintedPath } from 'canvas/nodeOutline';
-import { strokeRegion } from 'domains/paths/strokeRegion';
+import type { PathPaint, NodeId, PaintedPath } from '@weasel-js/core';
+import { strokeRegion } from '@weasel-js/core';
 import type { BooleansAdapter } from './booleans';
 
 /**

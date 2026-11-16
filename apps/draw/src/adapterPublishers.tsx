@@ -1,10 +1,11 @@
-import { type NoticesDep, type SelectionApi, useBooleansAdapter, useNotices } from '@weasel-js/core';
+import { type NoticesDep, type SelectionApi, useNotices } from '@weasel-js/core';
 import { useCreateOutlinesAdapter } from '@weasel-js/path-tools';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { useMemo } from 'react';
 import { drawBooleansAdapter } from './booleansAdapter';
 import type { DrawScene } from './drawDocument';
 import { drawOutlinesAdapter } from './outlinesAdapter';
+import { useBooleansAdapter } from '@weasel-js/editing';
 
 /** Publishes a `BooleansAdapter` as a dep so the kit's Pathfinder
  *  descriptors can read selection and execute boolean ops on WeaselDraw nodes.

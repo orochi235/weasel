@@ -4,10 +4,9 @@
  * `console.warn`.
  */
 import { useCallback } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useLatest, isDev } from '@weasel-js/react';
 import { applyBooleanOp, type BooleansAdapter, type BooleanOp } from './booleans';
 import type { BooleanOpOptions } from './operands';
-import { isDev } from '@weasel-js/react';
 
 /** The Boolean path operations, each acting on the current selection and
  *  committing as one undo step. */

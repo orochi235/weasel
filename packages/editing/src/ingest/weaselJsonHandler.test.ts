@@ -1,19 +1,11 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { kitWeaselJsonHandler } from './weaselJsonHandler';
-import { kitSvgHandler } from './svgHandler';
-import { kitImageHandler } from './imageHandler';
+import { kitSvgHandler, __setSvgMeasureForTests, _resetSvgHandlerSeamsForTests } from './svgHandler';
+import { kitImageHandler, __setFileToDataUriForTests, _resetImageHandlerSeamsForTests } from './imageHandler';
 import { registerContentHandler, runIngest, type IngestCtx } from '@weasel-js/core';
-import { _resetContentHandlersForTests } from '@weasel-js/core/test-seams';
+import { _resetContentHandlersForTests, rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 import type { IngestItem } from '@weasel-js/routing';
-import {
-  WEASEL_CLIPBOARD_MIME,
-  WEASEL_CLIPBOARD_MIME_WEB,
-  buildWeaselClipboardText,
-  embedWeaselMetadataInSvg,
-} from '@weasel-js/core';
-import { __setSvgMeasureForTests, _resetSvgHandlerSeamsForTests } from './svgHandler';
-import { __setFileToDataUriForTests, _resetImageHandlerSeamsForTests } from './imageHandler';
-import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
+import { WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, buildWeaselClipboardText, embedWeaselMetadataInSvg } from '../clipboard';
 
 const NODES = [
   { id: 'a', parent: null, pose: { x: 1, y: 2 }, data: { fill: '#f00' } },

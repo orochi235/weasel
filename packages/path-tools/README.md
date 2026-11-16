@@ -109,4 +109,4 @@ own actions and need no preset:
 | Tool | What it does |
 |---|---|
 | `useGirthTool` (Shift+W) | Shapes a stroke's `vertexWidths` by dragging its edges |
-| `useShapeBuilderTool` (Shift+M) | With two or more paths selected, a drag unites the faces their outlines cut each other into, and an Alt-drag deletes them; it reads core's `booleansAdapter` dep, which `<SceneCanvas>` publishes over its path leaves. `planShapeBuilder` is the engine under it |
+| `useShapeBuilderTool` (Shift+M) | With two or more paths selected, a drag unites the faces their outlines cut each other into, and an Alt-drag deletes them; it reads the `booleansAdapter` dep, which `@weasel-js/editing`'s `booleansPreset` publishes over the canvas's path leaves (`pathTools` and `pathfinderPreset` include it). `planShapeBuilder` is the engine under it |

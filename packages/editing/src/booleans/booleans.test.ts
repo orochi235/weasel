@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
 import { boundsOfPath, pointInPath, type Path } from '@weasel-js/geom';
-import { NodeOutlineError, type NodeOutline } from 'canvas/nodeOutline';
-import type { Op } from 'core/ops/types';
-import { asNodeId, type NodeId } from 'core/scene/types';
-import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
-import { createScene } from 'core/scene/scene';
-import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
-import { rootsTree } from 'core/adapters/testing/rootsTree';
+import { NodeOutlineError, type NodeOutline, asNodeId, type NodeId } from '@weasel-js/core';
+import type { Op } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, createScene, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { rootsTreeForTests as rootsTree } from '@weasel-js/core/test-seams';
 
 function rect(id: string, x: number, y: number, w: number, h: number) {
   return {

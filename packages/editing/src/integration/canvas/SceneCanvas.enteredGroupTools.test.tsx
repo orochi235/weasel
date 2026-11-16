@@ -9,10 +9,10 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useCallback } from 'react';
 import { useActionsRegistry, useDepSource, useOptionalDepRegistry } from '@weasel-js/routing/react';
 import type { ActionsRegistry, SelectionApi } from '@weasel-js/routing';
-import { useClipboardOps, useSceneAdapter, asNodeId, type NodeId, SceneCanvas } from '@weasel-js/core';
+import { useSceneAdapter, asNodeId, type NodeId, SceneCanvas } from '@weasel-js/core';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
 import { createScene, createEnteredGroup } from '@weasel-js/core/engine';
-import { drawPreset, useSelection } from '@weasel-js/editing';
+import { drawPreset, useSelection, useClipboardOps } from '@weasel-js/editing';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as Record<string, unknown>;

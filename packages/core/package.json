@@ -57,10 +57,6 @@
       "types": "./dist/mesh.d.ts",
       "import": "./dist/mesh.js"
     },
-    "./clipboard": {
-      "types": "./dist/clipboard.d.ts",
-      "import": "./dist/clipboard.js"
-    },
     "./json": {
       "types": "./dist/json.d.ts",
       "import": "./dist/json.js"

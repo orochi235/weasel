@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@weasel-js/devtools": "1.19.1",
+    "@weasel-js/editing": "1.19.1",
     "@weasel-js/registry": "1.19.1",
     "@weasel-js/storage": "1.19.1"
   },
@@ -57,8 +58,5 @@
   "publishConfig": {
     "access": "public",
     "provenance": true
-  },
-  "devDependencies": {
-    "@weasel-js/editing": "1.19.1"
   }
 }

@@ -5,11 +5,8 @@
  * commit path, not in `applyBooleanOp`.
  */
 import { describe, it, expect } from 'vitest';
-import { createScene } from 'core/scene/scene';
-import { asNodeId } from 'core/scene/types';
-import { boundsOfPath, type Path } from '@weasel-js/geom';
-import { pathInWorld } from '@weasel-js/geom';
-import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
+import { createScene, asNodeId, defaultCommitAdapter } from '@weasel-js/core/engine';
+import { boundsOfPath, type Path, pathInWorld } from '@weasel-js/geom';
 import { applyBooleanOp, type BooleansAdapter } from './booleans';
 
 interface Data { path?: Path; fill?: string }

@@ -1,4 +1,4 @@
-import { dwarn } from 'debug/flag';
+import { dwarn } from '@weasel-js/core';
 import { WEASEL_CLIPBOARD_MIME, buildWeaselClipboardText } from './wireFormat';
 
 /** MIME type to payload, as `produceFlavors` returns it. */
