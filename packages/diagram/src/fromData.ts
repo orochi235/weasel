@@ -17,6 +17,7 @@ import { buildBody } from './buildBody';
 import { faceCapCenter } from './faceCapCenter';
 import { estimatedWidth } from './rowMeasure';
 import { edgeIdOf } from './edgeId';
+import { warnUnknownRefs } from './unknownRefs';
 import { asideFillOf, headerFillOf, ownNodeStyle, rowTextColor, withColors } from './dataColors';
 import { dataNodeStyle } from './dataStyles';
 import { scenePageSplits } from './dataPages';
@@ -136,7 +137,9 @@ function nodeSpecs(
  *  other id two specs would share: an edge's `id` given to a different edge, or an
  *  item's id that another item's part is named (`a/1` beside a node `a`). An edge
  *  whose end is not a node is dropped, and so is a repeat of an earlier edge with
- *  the same ends, ports and label: it would draw exactly on top of the first. */
+ *  the same ends, ports and label: it would draw exactly on top of the first. An
+ *  edge end or a member naming an id the data never declares warns in
+ *  development, once per id. */
 export function diagramScene<TLayer extends string>(data: DiagramData, opts: DiagramSceneOptions<TLayer> & { layer: TLayer }): DiagramSpec<TLayer>[];
 export function diagramScene(data: DiagramData, opts?: DiagramSceneOptions): DiagramSpec[];
 export function diagramScene<TLayer extends string>(data: DiagramData, opts: DiagramSceneOptions<TLayer> = {}): DiagramSpec<TLayer>[] {
@@ -185,6 +188,7 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
     padding: pad,
     title: (text) => measure(text, titleStyle),
   });
+  warnUnknownRefs(data, ids);
   const seen = new Map<string, string>();
   const edges = data.edges.filter((e) => {
     const id = edgeIdOf(e);
