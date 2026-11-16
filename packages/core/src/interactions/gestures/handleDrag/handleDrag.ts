@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { layoutBoxOf, openPointerSession, type PointerSession, type PointerSessionCancelReason } from '@weasel-js/routing';
+import { clientToCanvasRect, layoutBoxOf, openPointerSession, type PointerSession, type PointerSessionCancelReason } from '@weasel-js/routing';
 import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** A 2D point in the rect element's local coordinate space. */
@@ -84,10 +84,10 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
       const rectEl = getRect ? getRect(target) : defaultRectEl(target);
       // Measured once: by default the box is the handle's own, which the drag moves.
       const box = layoutBoxOf(rectEl);
-      const localOf = (clientX: number, clientY: number): HandleDragPoint => ({
-        x: (clientX - box.left) / box.scale.x,
-        y: (clientY - box.top) / box.scale.y,
-      });
+      const localOf = (clientX: number, clientY: number): HandleDragPoint => {
+        const [x, y] = clientToCanvasRect(box, clientX, clientY);
+        return { x, y };
+      };
 
       let moved = false;
       const { clientX: pressX, clientY: pressY } = e;

@@ -34,8 +34,7 @@ export function clientToCanvas(
   clientX: number,
   clientY: number,
 ): [number, number] {
-  const { left, top, scale } = layoutBoxOf(canvas);
-  return [(clientX - left) / scale.x, (clientY - top) / scale.y];
+  return clientToCanvasRect(layoutBoxOf(canvas), clientX, clientY);
 }
 
 /** The inverse of {@link clientToCanvas}: a point in `canvas`'s CSS pixels as client coords. */
@@ -68,15 +67,14 @@ export function scrolledPlaceOf(el: Pick<ShownElement, 'getBoundingClientRect'>,
 }
 
 /**
- * Rect-taking variant of `clientToCanvas` for call sites that already hold a
- * `DOMRect` (or any `{ left, top }` object) and don't have a canvas element
- * in scope. It knows nothing of an ancestor transform; pass the element to
- * `clientToCanvas` where there may be one.
+ * Box-taking variant of `clientToCanvas`, for a box measured once and read on
+ * every move: a {@link LayoutBox}, or any `{ left, top }`. Its `scale`, when it
+ * has one, is divided out; a bare `DOMRect` has none and maps unscaled.
  */
 export function clientToCanvasRect(
-  rect: { left: number; top: number },
+  rect: { left: number; top: number; scale?: { x: number; y: number } },
   clientX: number,
   clientY: number,
 ): [number, number] {
-  return [clientX - rect.left, clientY - rect.top];
+  return [(clientX - rect.left) / (rect.scale?.x ?? 1), (clientY - rect.top) / (rect.scale?.y ?? 1)];
 }
