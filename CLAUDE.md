@@ -263,6 +263,11 @@ version, another platform) runs on GitHub CI if it runs at all, never on the fle
 a merge; its failure is a TODO entry, not a blocker. Node is `.nvmrc`'s 24 only: CI's matrix and
 the fleet's Node 22 run are gone, and `engines` promises `>=24`.
 
+**A dev server on this machine starts through emilia (2026-11-16):** `emilia up dev:forge` (or
+`dev:draw`, `dev:kit`) from the checkout holding the change, never `npx vite` or `npm run dev:*` in a
+background shell. emilia reuses a running server, keeps it past the session, and lists it in `emilia ls`;
+`emilia down` stops it. `npm run dev:fleet` serves from the fleet instead, when this checkout can't.
+
 What a branch run selects, the gate, `test:fleet:postbuild`, the draw view checkout and
 `dev:fleet`: `docs/fleet.md`.
 
