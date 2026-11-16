@@ -1,6 +1,8 @@
 /** What a WGSL program declares at module scope that the kit binds by name: its
  *  structs, laid out under WGSL's uniform address-space rules, and its group bindings. */
 
+import { getOwn } from '@weasel-js/registry';
+
 export type WgslScalar = 'f32' | 'i32' | 'u32';
 
 export type WgslType =
@@ -108,7 +110,8 @@ function parseType(
   src: string, structs: Map<string, WgslStruct>, consts: Map<string, number>, unlaid: Unlaid,
 ): WgslType {
   const s = src.replace(/\s+/g, '');
-  if (SCALARS[s]) return { kind: 'scalar', scalar: SCALARS[s] };
+  const scalar = getOwn(SCALARS, s);
+  if (scalar) return { kind: 'scalar', scalar };
   let m = /^vec([234])([fiu])$/.exec(s);
   if (m) return { kind: 'vector', scalar: SUFFIX[m[2]], n: Number(m[1]) as 2 | 3 | 4 };
   m = /^vec([234])<(f32|i32|u32)>$/.exec(s);

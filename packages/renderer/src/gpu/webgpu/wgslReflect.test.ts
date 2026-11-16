@@ -134,4 +134,16 @@ describe('createUniformBlock', () => {
     expect(b.set('u_missing', 1)).toBe(false);
     expect(b.has('u_color')).toBe(true);
   });
+
+  it('lays out a struct named like an Object.prototype member as that struct, not a scalar', () => {
+    const src = `
+struct toString { a: vec4f, b: f32 }
+struct Uniforms { inner: toString, after: f32 }
+@group(0) @binding(0) var<uniform> u: Uniforms;
+`;
+    const s = reflectWgsl(src, STANDARD).structs.get('Uniforms')!;
+    expect(s.members.map((m) => [m.name, m.type, m.offset])).toEqual([
+      ['inner', { kind: 'struct', name: 'toString' }, 0], ['after', { kind: 'scalar', scalar: 'f32' }, 32],
+    ]);
+  });
 });

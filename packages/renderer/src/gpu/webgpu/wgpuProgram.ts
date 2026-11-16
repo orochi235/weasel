@@ -14,6 +14,7 @@ import { CUSTOM_KIT_WGSL_NAMES } from './wgsl/customPrelude';
 import { EFFECT_KIT_WGSL_NAMES } from './wgsl/effectPrelude';
 import { PAINT_KIT_WGSL_NAMES } from './wgsl/paintPrelude';
 import type { WgpuTexture } from './wgpuResources';
+import { getOwn } from '@weasel-js/registry';
 
 /** The kit names a draw sets, and what the custom, effect and paint preludes call them. */
 const ALIASES: Readonly<Record<string, string>> = {
@@ -164,7 +165,8 @@ export class WgpuProgram implements GpuProgram {
 
   /** The block member `name` writes: a member, an alias of one, or one slot of an array member (`u_ripples[2]`). */
   private resolve(name: string): { slot: BlockSlot; member: string } | undefined {
-    const hit = this.members.get(name) ?? (ALIASES[name] ? this.members.get(ALIASES[name]) : undefined);
+    const alias = getOwn(ALIASES, name);
+    const hit = this.members.get(name) ?? (alias ? this.members.get(alias) : undefined);
     if (hit || !name.endsWith(']')) return hit;
     const m = /^(\w+)\[(\d+)\]$/.exec(name);
     const base = m ? this.resolve(m[1]) : undefined;
@@ -174,7 +176,8 @@ export class WgpuProgram implements GpuProgram {
   }
 
   private textureName(name: string, index: number): string | undefined {
-    const base = this.textures.has(name) ? name : ALIASES[name] && this.textures.has(ALIASES[name]) ? ALIASES[name] : undefined;
+    const alias = getOwn(ALIASES, name);
+    const base = this.textures.has(name) ? name : alias && this.textures.has(alias) ? alias : undefined;
     if (base !== undefined && index === 0) return base;
     const slot = `${name}_${index}`;
     return this.textures.has(slot) ? slot : undefined;
@@ -189,7 +192,8 @@ export class WgpuProgram implements GpuProgram {
   }
 
   array(name: string): GpuUniformArray | undefined {
-    return this.arrays.get(name) ?? (ALIASES[name] ? this.arrays.get(ALIASES[name]) : undefined);
+    const alias = getOwn(ALIASES, name);
+    return this.arrays.get(name) ?? (alias ? this.arrays.get(alias) : undefined);
   }
 
   attribute(name: string): number | undefined {
