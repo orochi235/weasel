@@ -10,7 +10,8 @@ import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Tool } from 'tools/overlayBinding';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import type { SurfaceContribution } from '../surfaceContribution';
-import type { FeaturePreset } from './features';
+import type { EnabledPresets } from './features';
+import { mergeByKey } from './presetMerge';
 import type { SceneCanvasSelectTool } from './selectToolProps';
 import type { SceneCanvasToolOptions } from './toolProps';
 
@@ -75,10 +76,10 @@ export interface PresetBuildSource {
   canvasApiRef: RefObject<{ requestRedraw(): void } | null>;
 }
 
-/** What every enabled preset's `build` makes on this canvas: the tools offered by id, later presets' winning, and
- *  the contributions in preset order. The context is stable while the tool options are. */
+/** What every enabled preset's `build` makes on this canvas: the tools offered by id, a refining preset's winning
+ *  an id two offer, and the contributions in preset order. The context is stable while the tool options are. */
 export function usePresetBuilds(
-  builds: readonly NonNullable<FeaturePreset['build']>[],
+  enabled: Pick<EnabledPresets, 'builds' | 'buildOwners' | 'refines'>,
   source: PresetBuildSource,
 ): { tools: Readonly<Record<string, Tool>>; contributions: readonly SurfaceContribution[]; ctx: PresetBuildContext } {
   const live = useLatest(source);
@@ -107,16 +108,17 @@ export function usePresetBuilds(
       },
     },
   }), [toolOptions, live]);
+  const { builds, buildOwners, refines } = enabled;
   return useMemo(() => {
-    const tools: Record<string, Tool> = {};
+    const offered: { preset: string; values: Readonly<Record<string, Tool>> | undefined }[] = [];
     const contributions: SurfaceContribution[] = [];
-    for (const build of builds) {
+    builds.forEach((build, i) => {
       const out = build(ctx);
-      Object.assign(tools, out.tools);
+      offered.push({ preset: buildOwners[i]!, values: out.tools });
       contributions.push(...(out.contributions ?? []));
-    }
-    return { tools, contributions, ctx };
-  }, [builds, ctx]);
+    });
+    return { tools: mergeByKey(offered, refines, 'tool'), contributions, ctx };
+  }, [builds, buildOwners, refines, ctx]);
 }
 
 const serials = new WeakMap<object, number>();

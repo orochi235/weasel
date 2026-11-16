@@ -15,7 +15,6 @@
  * directories that `docs/taxonomy.md` calls a feature; the two share a word
  * and nothing else.
  */
-import { setOwn } from '@weasel-js/registry';
 import { toolIdsOf, type Action, type ToolEntry } from '@weasel-js/routing';
 import { never } from 'domains/chrome-caps/conditions';
 import type { ChromeId, VisibilityRules } from 'domains/chrome-caps/types';
@@ -27,6 +26,7 @@ import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import type { SnapSource } from 'domains/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CustomLayerEntry } from '../layerSlots';
+import { mergeByKey, refinesRelation, type RefinesRelation } from './presetMerge';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import type { InsertNodeFactories } from '../deps/insertFactories';
@@ -61,7 +61,8 @@ export interface PresetBuild {
   /**
    * Tools it offers, by id. One is mounted when a preset's `tools` names its id (alone or in a set), when
    * `<SceneCanvas defaultTools>` does, or when a `tools` patch sets it `true`; a tool offered and named by nobody
-   * is not. Between presets offering one id, the later preset's wins.
+   * is not. Of two presets offering one id different tools, the one refining the other wins; two where neither
+   * refines the other throw.
    */
   readonly tools?: Readonly<Record<string, Tool>>;
   /** Entries installed as {@link FeaturePreset.contributions} are, after them. */
@@ -180,7 +181,8 @@ export interface EnabledPresets {
   readonly pathEdit: readonly PathEditExtension[];
   /** Their snap sources, in order. */
   readonly snapSources: readonly SnapSource[];
-  /** Their layers by slot; a later preset's wins a slot both name. */
+  /** Their layers by slot. Of two presets giving one slot different layers, the one refining the other wins; two
+   *  where neither refines the other throw. */
   readonly layers: Readonly<Record<string, CustomLayerEntry>>;
   /** Their components, each once, in order. */
   readonly components: readonly ComponentType<PresetComponentProps>[];
@@ -192,6 +194,10 @@ export interface EnabledPresets {
   readonly contentHandlers: readonly ContentHandlerEntry[];
   /** Their `build`s, in order, each once. */
   readonly builds: readonly NonNullable<FeaturePreset['build']>[];
+  /** The id of the preset each of `builds` came from, by index. */
+  readonly buildOwners: readonly string[];
+  /** Whether preset `a` refines preset `b`, directly or through presets between them. */
+  readonly refines: RefinesRelation;
   /** The one selection factory they give, if any. */
   readonly selection: SelectionFactory | undefined;
   /** The one selection chrome they give, if any. */
@@ -242,25 +248,35 @@ export function resolveFeatures(
   };
   const ordered: FeaturePreset[] = [];
   const placed = new Set<string>();
+  const direct = new Map<string, Set<string>>();
   const place = (p: FeaturePreset): void => {
     if (placed.has(p.id)) return;
     placed.add(p.id);
     const names = namesFor(p.id);
-    for (const r of listed) if (r.refines?.some((id) => names.has(id))) place(r);
+    for (const r of listed) {
+      if (!r.refines?.some((id) => names.has(id))) continue;
+      direct.set(r.id, (direct.get(r.id) ?? new Set()).add(p.id));
+      place(r);
+    }
     ordered.push(p);
   };
   for (const p of listed) place(p);
+  const refines = refinesRelation(direct);
   const presets = opts.selectRotates === false ? ordered.map(withoutSelectRotate) : ordered;
+  const builds = new Map<NonNullable<FeaturePreset['build']>, string>();
+  for (const p of presets) if (p.build && !builds.has(p.build)) builds.set(p.build, p.id);
   return {
     presets,
     pathEdit: presets.flatMap((p) => p.pathEdit ?? []),
     snapSources: presets.flatMap((p) => p.snapSources ?? []),
-    layers: Object.assign({}, ...presets.map((p) => p.layers ?? {})) as Record<string, CustomLayerEntry>,
+    layers: mergeByKey(presets.map((p) => ({ preset: p.id, values: p.layers })), refines, 'layer slot'),
     components: [...new Set(presets.flatMap((p) => p.components ?? []))],
     toolActions: [...new Set(presets.flatMap((p) => p.toolActions ?? []))],
     insertKinds: new Set(presets.flatMap((p) => p.insertKinds ?? [])),
     contentHandlers: presets.flatMap((p) => p.contentHandlers ?? []),
-    builds: [...new Set(presets.flatMap((p) => (p.build ? [p.build] : [])))],
+    builds: [...builds.keys()],
+    buildOwners: [...builds.values()],
+    refines,
     selection: oneOf(presets, 'selection', 'build the canvas\'s selection'),
     selectionChrome: oneOf(presets, 'selectionChrome', 'draw the selection chrome'),
     has: (id) => byId.has(id),
@@ -325,9 +341,11 @@ export function presetBuiltinTools(enabled: EnabledPresets): Set<string> {
 
 /** The tools of their own the given presets mount, by id. */
 export function presetOwnTools(enabled: EnabledPresets): Record<string, Tool> {
-  const out: Record<string, Tool> = {};
-  for (const p of enabled.presets) for (const t of p.tools ?? []) if (!namesBuiltins(t)) setOwn(out, t.id, t);
-  return out;
+  const given = enabled.presets.map((p) => ({
+    preset: p.id,
+    values: Object.fromEntries((p.tools ?? []).filter((t): t is Tool => !namesBuiltins(t)).map((t) => [t.id, t])),
+  }));
+  return mergeByKey(given, enabled.refines, 'tool');
 }
 
 /** The given presets' ambient entries and contributions, in the order they are

@@ -74,7 +74,7 @@ export type { TargetSizesPx as TargetSizesPxForTests } from '../core/device/targ
 export { getContentHandlers as getContentHandlersForTests } from '../domains/ingestion/contentHandlers';
 
 export { dispatcherInsertBounds as dispatcherInsertBoundsForTests } from '../canvas/SceneCanvas/dispatcherGestureBounds';
-export { presetActions as presetActionsForTests, presetAmbient as presetAmbientForTests, presetBuiltinTools as presetBuiltinToolsForTests, presetChromeRules as presetChromeRulesForTests, presetToolIds as presetToolIdsForTests, resolveFeatures as resolveFeaturesForTests } from '../canvas/SceneCanvas/features';
+export { presetActions as presetActionsForTests, presetAmbient as presetAmbientForTests, presetBuiltinTools as presetBuiltinToolsForTests, presetChromeRules as presetChromeRulesForTests, presetOwnTools as presetOwnToolsForTests, presetToolIds as presetToolIdsForTests, resolveFeatures as resolveFeaturesForTests } from '../canvas/SceneCanvas/features';
 export { layersOverPresets as layersOverPresetsForTests } from '../canvas/SceneCanvas/mergeLayers';
 export { useDispatcherOverlayLayer as useDispatcherOverlayLayerForTests } from '../canvas/SceneCanvas/useDispatcherOverlayLayer';
 export { buildSceneLayer as buildSceneLayerForTests } from '../canvas/buildSceneLayer';
