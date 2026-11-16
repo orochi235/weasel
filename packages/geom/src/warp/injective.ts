@@ -94,6 +94,7 @@ function smallestPositiveRoot(c0: number, c1: number, c2: number): number {
 }
 
 /** The softened area: `d` itself well above `eps`, small and positive below zero. */
+// eslint-disable-next-line no-restricted-syntax -- the energy squares `d` itself, so no root outlasts it
 const chi = (d: number, eps: number) => (d + Math.sqrt(eps * eps + d * d)) / 2;
 
 /**
@@ -178,6 +179,7 @@ function gradient(piece: Piece, pos: Float64Array, eps: number): Float64Array {
     const j0 = ux * m[i] + vx * m[i + 2], j1 = ux * m[i + 1] + vx * m[i + 3];
     const j2 = uy * m[i] + vy * m[i + 2], j3 = uy * m[i + 1] + vy * m[i + 3];
     const d = j0 * j3 - j1 * j2;
+    // eslint-disable-next-line no-restricted-syntax -- the energy squares `d` itself, so no root outlasts it
     const root = Math.sqrt(eps * eps + d * d);
     const c = (d + root) / 2;
     const A = area[t];

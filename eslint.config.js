@@ -318,12 +318,17 @@ export default [
     /**
      * Routing declares these schemas and core re-exports them. An augmentation of the re-export merges
      * into a copy apart from the kit's own entries, and which copy a reference sees depends on file order.
+     * A root of a sum of squares overflows past 1e154 and underflows below 1e-154, where the length it
+     * measures is still a number.
      */
     files: ['**/*.{ts,tsx}'],
     rules: {
       'no-restricted-syntax': ['error', {
         selector: "TSModuleDeclaration[id.value='@weasel-js/core'] TSInterfaceDeclaration[id.name=/^(DepSchema|ActionParamSchema|OverlaySchema)$/]",
         message: "Augment '@weasel-js/routing', which declares this interface: an augmentation of core's re-export merges into a separate copy.",
+      }, {
+        selector: "CallExpression[callee.object.name='Math'][callee.property.name='sqrt'] > BinaryExpression[operator='+']:has(> BinaryExpression[operator='*'])",
+        message: 'Measure a length with Math.hypot (or geom\'s distance): the squares overflow past 1e154 and underflow below 1e-154, where the length is still a number.',
       }],
     },
   },

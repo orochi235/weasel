@@ -25,6 +25,7 @@ export function lengthOf(dx: number, dy: number): number {
   const most = Math.max(Math.abs(dx), Math.abs(dy));
   if (!(most > 0) || most === Infinity) return Math.sqrt(s);
   const qx = dx / most, qy = dy / most;
+  // eslint-disable-next-line no-restricted-syntax -- each term is scaled into [-1, 1]
   return most * Math.sqrt(qx * qx + qy * qy);
 }
 
