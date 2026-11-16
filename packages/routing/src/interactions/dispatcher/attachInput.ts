@@ -34,7 +34,7 @@ export interface InputSources
 
 /** Which channels bind listeners. Fixed for the life of a listener set. */
 export interface InputChannels {
-  keyboard: boolean | 'first';
+  keyboard: boolean | 'first' | 'page';
   pointer: boolean;
   /** Hovers alone. Read only with `pointer` off, which carries them itself. */
   hover: boolean;
@@ -95,9 +95,11 @@ export function attachInput(
 
   const listeners = listenerSet();
   const keyCapture = channels.keyboard === 'first';
+  // The document's bubble phase: after the focused element's own handlers, before every listener on window.
+  const keyTarget: EventTarget = channels.keyboard === 'page' ? (canvas?.ownerDocument ?? document) : window;
   if (channels.keyboard) {
-    listeners.on(window, 'keydown', keys.onKeyDown, keyCapture);
-    listeners.on(window, 'keyup', keys.onKeyUp, keyCapture);
+    listeners.on(keyTarget, 'keydown', keys.onKeyDown, keyCapture);
+    listeners.on(keyTarget, 'keyup', keys.onKeyUp, keyCapture);
   }
   const leaveKeyPeers = channels.keyboard && canvas ? joinSurface(canvas, keys.take) : null;
   listeners.on(window, 'blur', onWindowBlur);

@@ -181,8 +181,11 @@ export interface UseGestureDispatcherOptions {
    * the rest. `'first'` listens in the capture phase, so this dispatcher gets
    * the keystroke ahead of every dispatcher listening normally, whatever the
    * mount order: the shape for chrome that owns a key only when it can act.
+   * `'page'` listens on the document instead, so it too comes ahead of every
+   * dispatcher on `window`, but only after the focused element's own handlers
+   * have had the key: chrome whose keys a focused widget may take first.
    */
-  keyboard?: boolean | 'first';
+  keyboard?: boolean | 'first' | 'page';
   /**
    * Optional affordance classifier. Called with the **world** coordinates of
    * the pointer — this hook applies the routed view's `clientToWorld` before
