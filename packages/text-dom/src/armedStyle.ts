@@ -4,6 +4,7 @@
  * bold off at the end of a bold word, and the character typed next lands as a write of the same patch over it would.
  */
 import { useCallback, useRef, useState } from 'react';
+import { deepEqual } from '@weasel-js/registry';
 import { applyStyleToRange, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
 
 const FLAGS: ReadonlySet<string> = new Set(['bold', 'italic', 'underline', 'strikethrough', 'overline']);
@@ -31,7 +32,7 @@ export function armPatch(caret: RunStylePatch, armed: RunStylePatch, patch: RunS
   for (const key of new Set([...Object.keys(from), ...Object.keys(target)])) {
     const flag = FLAGS.has(key);
     // `null` is a value here (no fill), not the absence of one.
-    if (flag ? (from[key] ?? false) === (target[key] ?? false) : JSON.stringify(from[key]) === JSON.stringify(target[key])) continue;
+    if (flag ? (from[key] ?? false) === (target[key] ?? false) : deepEqual(from[key], target[key], { undefinedAsAbsent: true })) continue;
     out[key] = key in target ? target[key] : (flag ? false : undefined);
   }
   return out as RunStylePatch;
