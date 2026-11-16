@@ -94,6 +94,22 @@ export class Membership {
   }
 }
 
+/** Ids a reader gives what its file names none for: each the first free `base-n`, counting from `from` (1 unset), free
+ *  of every id in `taken` and of each it gave before. */
+export class IdMint {
+  private readonly taken: Set<string>;
+
+  constructor(taken: Iterable<string>) {
+    this.taken = new Set(taken);
+  }
+
+  next(base: string, from = 1): string {
+    const id = freshId(base, this.taken, { from });
+    this.taken.add(id);
+    return id;
+  }
+}
+
 /** `edges` each given an id unique among themselves and `taken`: its own where that is free, else `from-to`, then
  *  `from-to-2` and on. */
 export function withEdgeIds(edges: readonly DataEdge[], taken: Iterable<string>): DataEdge[] {

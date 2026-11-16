@@ -6,7 +6,7 @@
  */
 import type { DataContainer, DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
-import { Membership, Warnings, decodeEntities, graphPage } from '../../graphRead';
+import { IdMint, Membership, Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { DIRECTIONS } from '../class/read';
 import { pageNameOf } from '../common/lines';
 import { StyleSheet } from '../common/styles';
@@ -32,7 +32,16 @@ class StateReader {
   readonly noteEdges: DataEdge[] = [];
   direction: string | undefined;
 
-  constructor(readonly compositeIds: ReadonlySet<string>) {}
+  constructor(readonly compositeIds: ReadonlySet<string>, readonly mint: IdMint) {}
+
+  compositeOf(id: string): { label?: string; lanes: string[] } {
+    let comp = this.composites.get(id);
+    if (comp === undefined) {
+      comp = { lanes: [] };
+      this.composites.set(id, comp);
+    }
+    return comp;
+  }
 
   draft(id: string, scope: string | null): StateDraft {
     if (this.compositeIds.has(id)) return { lines: [], named: false, described: false };
@@ -92,15 +101,14 @@ class StateReader {
 
   composite(s: Extract<StateStmt, { kind: 'composite' }>, scope: string | null): void {
     this.membership.openCluster(s.id, scope);
-    const comp = this.composites.get(s.id) ?? { lanes: [] };
+    const comp = this.compositeOf(s.id);
     if (s.label !== undefined) comp.label = decodeEntities(s.label, true);
-    this.composites.set(s.id, comp);
     if (s.regions.length === 1) {
       this.walk(s.regions[0]!, s.id);
       return;
     }
-    s.regions.forEach((region, i) => {
-      const lane = `${s.id}-region-${i + 1}`;
+    s.regions.forEach((region) => {
+      const lane = this.mint.next(`${s.id}-region`);
       comp.lanes.push(lane);
       this.membership.openCluster(lane, s.id);
       this.walk(region, lane);
@@ -108,7 +116,7 @@ class StateReader {
   }
 
   note(s: Extract<StateStmt, { kind: 'note' }>, scope: string | null): void {
-    const id = `note-${this.notes.length + 1}`;
+    const id = this.mint.next('note');
     if (s.side === 'left') this.warnings.add('Mermaid note sides were dropped.');
     this.notes.push({ id, outline: 'note', lines: s.text.split('\n').map((l) => decodeEntities(l, true)) });
     this.draft(s.id, scope);
@@ -130,10 +138,19 @@ function compositeIdsOf(stmts: readonly StateStmt[], out = new Set<string>()): S
   return out;
 }
 
+function namedIds(stmts: readonly StateStmt[], out = new Set<string>()): Set<string> {
+  for (const s of stmts) {
+    if (s.kind === 'transition') out.add(s.from).add(s.to);
+    else if (s.kind === 'state' || s.kind === 'describe' || s.kind === 'note') out.add(s.id);
+    else if (s.kind === 'composite') for (const region of s.regions) namedIds(region, out.add(s.id));
+  }
+  return out;
+}
+
 /** Reads a Mermaid state diagram into a one-page document of `notation` `'state'`. Throws, naming the line, on text that is not one. */
 export function readStateDiagram(text: string): ImportResult {
   const { source, stmts } = parseStateDiagram(text);
-  const r = new StateReader(compositeIdsOf(stmts));
+  const r = new StateReader(compositeIdsOf(stmts), new IdMint(namedIds(stmts)));
   r.walk(stmts, null);
   const direction = r.direction !== undefined ? DIRECTIONS[r.direction] : undefined;
   const nodes = [...r.states].map(([id, d]) => r.node(id, d, direction));

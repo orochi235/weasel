@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { DataNode } from '@weasel-js/diagram';
 import { onlyPage, sortedPage } from '../../testing/samePage';
+import { documentSpecs } from '../../toScene';
 import { parseStateDiagram } from './parse';
 import { readStateDiagram } from './read';
 import { writeStateDiagram } from './write';
@@ -64,6 +65,15 @@ describe('reading a Mermaid state diagram', () => {
     expect(() => parseStateDiagram('stateDiagram-v2\nA -> B')).toThrow(/^Mermaid, line 2: cannot read/);
     expect(() => parseStateDiagram('stateDiagram-v2\nnote right of A\nx')).toThrow('Mermaid, line 2: a note opened here has no "end note"');
     expect(() => parseStateDiagram('stateDiagram-v2\n--')).toThrow('Mermaid, line 2: "--" divides only a composite state');
+  });
+
+  it('gives a note and a concurrent region ids no state holds', () => {
+    const notes = readStateDiagram('stateDiagram-v2\nnote-1 --> B\nnote right of B : hi');
+    expect(page('stateDiagram-v2\nnote-1 --> B\nnote right of B : hi').data.nodes.map((n) => n.id)).toEqual(['note-1', 'B', 'note-2']);
+    expect(() => documentSpecs(notes.document)).not.toThrow();
+    const regions = readStateDiagram('stateDiagram-v2\nstate X {\n a\n --\n b\n}\nX-region-1 --> c');
+    expect(() => documentSpecs(regions.document)).not.toThrow();
+    expect(onlyPage(regions.document).data.containers?.[0]?.lanes?.map((l) => l.id)).toEqual(['X-region-2', 'X-region-3']);
   });
 });
 

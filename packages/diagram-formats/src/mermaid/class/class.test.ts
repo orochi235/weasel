@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { DataNode } from '@weasel-js/diagram';
 import { onlyPage, sortedPage } from '../../testing/samePage';
+import { documentSpecs } from '../../toScene';
 import { parseClassDiagram } from './parse';
 import { readClassDiagram } from './read';
 import { writeClassDiagram } from './write';
@@ -66,6 +67,12 @@ describe('reading a Mermaid class diagram', () => {
     expect(() => parseClassDiagram('classDiagram\nclass A {\n+x')).toThrow('Mermaid, line 2: class A is never closed');
     expect(() => parseClassDiagram('classDiagram\nA ==> B')).toThrow(/^Mermaid, line 2: cannot read "A ==> B"/);
     expect(() => parseClassDiagram('classDiagram\nnamespace N {\nclass A')).toThrow('Mermaid, line 2: a block opened here is never closed');
+  });
+
+  it('gives a note an id no class holds', () => {
+    const read = readClassDiagram('classDiagram\nclass note-1\nnote "hi"');
+    expect(onlyPage(read.document).data.nodes.map((n) => n.id)).toEqual(['note-1', 'note-2']);
+    expect(() => documentSpecs(read.document)).not.toThrow();
   });
 });
 

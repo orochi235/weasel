@@ -6,7 +6,7 @@
 import type { DataContainer, DataNode, Row } from '@weasel-js/diagram';
 import { freshId } from '@weasel-js/registry';
 import type { ImportResult } from '../../document';
-import { Warnings, decodeEntities, graphPage } from '../../graphRead';
+import { IdMint, Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { PAGE_MARGIN } from '../../pageLayout';
 import { lineError } from '../../lineError';
 import { pageNameOf } from '../common/lines';
@@ -20,9 +20,10 @@ export const COLUMN_WIDTH = 220;
 const CARD_WRAP = 26;
 /** The pool's id, unless a card or column already has it. */
 export const BOARD_ID = 'board';
-/** The id a column or card giving none reads as, by its place among them. */
-export const columnId = (n: number): string => `column-${n}`;
-export const cardId = (n: number): string => `card-${n}`;
+/** The ids a column and a card giving none read as: a column numbered by its place among them, a card by its place
+ *  among those giving none, each moved on past an id the board names. */
+const COLUMN = 'column';
+const CARD = 'card';
 
 /** Room above a column's first card (the pool's header and the lane's), below each card, and a card's row height,
  *  for sizing the board to hold its longest column before the cards are measured. */
@@ -47,12 +48,12 @@ export function readKanban(text: string): ImportResult {
     ids.add(id);
     return id;
   };
-  let cards = 0;
+  const mint = new IdMint(columns.flatMap((c) => [c.id, ...c.cards.map((card) => card.id)]).filter((id) => id !== undefined));
   const nodes: DataNode[] = [];
   const lanes = columns.map((c, i) => {
-    const lane = claim(c.id ?? columnId(i + 1), c.line);
+    const lane = claim(c.id ?? mint.next(COLUMN, i + 1), c.line);
     const members = c.cards.map((card) => {
-      const id = claim(card.id ?? cardId(++cards), card.line);
+      const id = claim(card.id ?? mint.next(CARD), card.line);
       nodes.push({ id, rows: cardRows(decodeEntities(card.text, true), card.meta), width: CARD_WIDTH });
       return id;
     });

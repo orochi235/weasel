@@ -6,7 +6,7 @@
 import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, GridOptions, Outline } from '@weasel-js/diagram';
 import type { ImportResult, PageLayout } from '../../document';
-import { Warnings, graphPage } from '../../graphRead';
+import { IdMint, Warnings, graphPage } from '../../graphRead';
 import { pageNameOf } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { textLines } from '../common/text';
@@ -16,8 +16,8 @@ import { parseBlockDiagram, type BlockItem, type BlockLink, type BlockStmt } fro
 /** Between a block diagram's columns, and its rows. */
 export const BLOCK_GAPS = { nodeGap: 24, rankGap: 40 } as const;
 
-/** The id an anonymous `block … end` reads as: `block-` and its place among them. */
-export const anonymousGroupId = (n: number): string => `block-${n}`;
+/** The id an anonymous `block … end` reads as, numbered from 1 past the ids the diagram names. */
+const ANONYMOUS_GROUP = 'block';
 
 interface Grid { columns: Record<string, number>; spans: Record<string, number>; skips: Record<string, number> }
 
@@ -29,7 +29,8 @@ class BlockReader {
   readonly edges: DataEdge[] = [];
   readonly grid: Grid = { columns: {}, spans: {}, skips: {} };
   top: number | undefined;
-  anonymous = 0;
+
+  constructor(readonly mint: IdMint) {}
 
   /** Declares `item`, a new one as the next of `members`, its shape and text when it gives them. */
   block(item: BlockItem, members: string[]): void {
@@ -80,7 +81,7 @@ class BlockReader {
         for (const end of s.ends) if (!this.groups.has(end.id)) this.block(end, members);
         s.links.forEach((link, k) => this.link(link, s.ends[k]!.id, s.ends[k + 1]!.id));
       } else if (s.kind === 'group') {
-        const id = s.id ?? anonymousGroupId(++this.anonymous);
+        const id = s.id ?? this.mint.next(ANONYMOUS_GROUP);
         const inner: string[] = [];
         this.groups.set(id, inner);
         members.push(id);
@@ -110,11 +111,21 @@ class BlockReader {
   }
 }
 
+function namedIds(stmts: readonly BlockStmt[], out = new Set<string>()): Set<string> {
+  for (const s of stmts) {
+    if (s.kind === 'items') for (const item of s.items) if (item.kind === 'block') out.add(item.id);
+    if (s.kind === 'links') for (const end of s.ends) out.add(end.id);
+    if (s.kind === 'group' && s.id !== undefined) out.add(s.id);
+    if (s.kind === 'group') namedIds(s.stmts, out);
+  }
+  return out;
+}
+
 /** Reads a Mermaid block diagram into a one-page document of `notation` `'block'`, laid out by `grid`. Throws, naming
  *  the line, on text that is not one. */
 export function readBlockDiagram(text: string): ImportResult {
   const { source, stmts } = parseBlockDiagram(text);
-  const r = new BlockReader();
+  const r = new BlockReader(new IdMint(namedIds(stmts)));
   r.walk(stmts, null, []);
   const nodes: DataNode[] = [...r.nodes].map(([id, n]) => {
     const colors = r.styles.colorsOf(id);

@@ -51,6 +51,12 @@ describe('reading a Mermaid kanban board', () => {
     expect(() => parseKanban('kanban\n  a\n    b[x]@{ priority }')).toThrow('Mermaid, line 3: cannot read "priority" as card metadata');
     expect(() => readKanban('kanban\n  a\n    a[x]')).toThrow('Mermaid, line 3: "a" names two items');
   });
+
+  it('gives an anonymous card or column an id no item holds', () => {
+    const p = page('kanban\n  [Todo]\n    card-2[Explicit]\n    [one]\n    [two]\n  column-1[Done]\n  [Later]');
+    expect(p.data.nodes.map((n) => n.id)).toEqual(['card-2', 'card-1', 'card-3']);
+    expect(p.data.containers![0]!.lanes!.map((l) => l.id)).toEqual(['column-2', 'column-1', 'column-3']);
+  });
 });
 
 describe('writing a Mermaid kanban board', () => {

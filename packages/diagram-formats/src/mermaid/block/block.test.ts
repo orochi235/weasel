@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { diagramThemeFrom } from '@weasel-js/diagram';
 import { laidOutPage } from '../../pageLayout';
 import { onlyPage, sortedPage } from '../../testing/samePage';
+import { documentSpecs } from '../../toScene';
 import { parseBlockDiagram } from './parse';
 import { readBlockDiagram } from './read';
 import { writeBlockDiagram } from './write';
@@ -78,6 +79,12 @@ describe('reading a Mermaid block diagram', () => {
     expect(() => parseBlockDiagram('block-beta\n  a["x"\n')).toThrow('Mermaid, line 2: a shape opened with "[" is never closed');
     expect(() => parseBlockDiagram('block-beta\n  a --> space')).toThrow(/^Mermaid, line 2: cannot read "a --> space"/);
     expect(() => parseBlockDiagram('block-beta\n  end')).toThrow('Mermaid, line 2: "end" closes no block');
+  });
+
+  it('gives an anonymous group an id no block holds', () => {
+    const read = readBlockDiagram('block-beta\n  block-1\n  block\n    a\n  end');
+    expect(onlyPage(read.document).data.containers!.map((c) => c.id)).toEqual(['block-2']);
+    expect(() => documentSpecs(read.document)).not.toThrow();
   });
 });
 

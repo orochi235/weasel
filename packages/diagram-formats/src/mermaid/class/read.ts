@@ -6,7 +6,7 @@
 import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Row } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
-import { Membership, Warnings, decodeEntities, graphPage } from '../../graphRead';
+import { IdMint, Membership, Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { pageNameOf } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { parseClassDiagram, type ClassHead, type ClassMember, type ClassStmt } from './parse';
@@ -34,6 +34,8 @@ class ClassReader {
   readonly noteEdges: DataEdge[] = [];
   readonly namespaces: string[] = [];
   direction: string | undefined;
+
+  constructor(readonly mint: IdMint) {}
 
   draft(id: string, ns: string | null = null): ClassDraft {
     let d = this.classes.get(id);
@@ -90,7 +92,7 @@ class ClassReader {
   }
 
   note(text: string, target: string | undefined): void {
-    const id = `note-${this.notes.length + 1}`;
+    const id = this.mint.next('note');
     this.notes.push({ id, outline: 'note', lines: decodeEntities(text, true).split('\\n') });
     if (target === undefined) return;
     this.draft(target);
@@ -109,10 +111,20 @@ export function classRows(id: string, d: ClassDraft): Row[] {
   ];
 }
 
+function namedIds(stmts: readonly ClassStmt[], out = new Set<string>()): Set<string> {
+  for (const s of stmts) {
+    if (s.kind === 'class' || s.kind === 'member' || s.kind === 'annotation') out.add(s.id);
+    else if (s.kind === 'relation') out.add(s.from).add(s.to);
+    else if (s.kind === 'note' && s.for !== undefined) out.add(s.for);
+    else if (s.kind === 'namespace') namedIds(s.stmts, out.add(s.id));
+  }
+  return out;
+}
+
 /** Reads a Mermaid class diagram into a one-page document of `notation` `'class'`. Throws, naming the line, on text that is not one. */
 export function readClassDiagram(text: string): ImportResult {
   const { source, stmts } = parseClassDiagram(text);
-  const r = new ClassReader();
+  const r = new ClassReader(new IdMint(namedIds(stmts)));
   r.walk(stmts, null);
   const nodes: DataNode[] = [...r.classes].map(([id, d]) => {
     const colors = r.styles.colorsOf(id);
