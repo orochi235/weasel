@@ -100,7 +100,26 @@ describe('lens actions', () => {
   it('offers Pixels only while the source is available, giving its reason', () => {
     trigger(LENS_ACTION_IDS.add);
     expect(actionOf(LENS_ACTION_IDS.pixels).enabled!(deps)).toBe(PIXELS_MISSING);
-    expect(actionOf(LENS_ACTION_IDS.live).enabled!(deps)).toBe(true);
+    // Live is the source already shown, which the action would not change.
+    expect(actionOf(LENS_ACTION_IDS.live).enabled!(deps)).toBe(ActionDisabledReason.NotApplicable);
+  });
+
+  it('declines a setting write that would change nothing, and records no step for it', () => {
+    trigger(LENS_ACTION_IDS.add);
+    for (let i = 0; i < 8; i++) trigger(LENS_ACTION_IDS.zoomIn);
+    const steps = api.scene.history.undoDepth();
+    expect(actionOf(LENS_ACTION_IDS.zoomIn).enabled!(deps)).toBe(
+      ActionDisabledReason.NotApplicable,
+    );
+    expect(actionOf(LENS_ACTION_IDS.clearCompare).enabled!(deps)).toBe(
+      ActionDisabledReason.NotApplicable,
+    );
+    for (const id of [LENS_ACTION_IDS.zoomIn, LENS_ACTION_IDS.clearCompare, LENS_ACTION_IDS.live]) {
+      const invoker = actionOf(id).invoker as { run: (d: ActionDeps) => void };
+      invoker.run(deps);
+    }
+    expect(api.scene.history.undoDepth()).toBe(steps);
+    expect(actionOf(LENS_ACTION_IDS.zoomOut).enabled!(deps)).toBe(true);
   });
 
   it('closes the current lens whole, and undo brings it back', () => {
