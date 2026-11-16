@@ -26,7 +26,7 @@ export interface DocumentOptions<V> {
 }
 
 export interface EditorDocument<V> {
-  /** Replace the value as one step back. Steps sharing a `coalesceKey` close together are one. */
+  /** Replace the value as one step back; a value `same` reads as the current one is no step. Steps sharing a `coalesceKey` close together are one. */
   commit(next: V, coalesceKey?: string): void;
   step(to: 'undo' | 'redo'): void;
   canUndo: boolean;
@@ -105,6 +105,7 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
     commit(next, coalesceKey) {
       // What the last commit or step handed on, which a render may not have shown yet.
       const before = emitted.current;
+      if (same(before, next)) return;
       latest.current.onCommit?.(before, next);
       history.applyOps([swapOp(before, next, hand, coalesceKey)], 'edit schema');
       keep();
