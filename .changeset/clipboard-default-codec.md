@@ -2,6 +2,8 @@
 '@weasel-js/core': patch
 ---
 
-The kit's clipboard writes and reads its payload through the snapshot codec by default, so a copy between two canvases keeps a path's typed arrays and non-finite numbers.
+The kit's clipboard keeps typed arrays and non-finite numbers by default
+
+Its payload is written and read through the snapshot codec unless a consumer passes its own `jsonReplacer` or `reviver`, so a copy between two default canvases keeps a path's typed arrays and an `Infinity`.
 
 <!-- entry: fix -->
