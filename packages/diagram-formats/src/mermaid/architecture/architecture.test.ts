@@ -115,4 +115,9 @@ describe('writing a Mermaid architecture diagram', () => {
     expect(page(text).data.edges).toEqual([]);
     expect(warnings).toContain('Mermaid architecture edges meet a group through a service in it; edges to groups holding no service of their own were dropped.');
   });
+
+  it('warns that an end it has no head for was written as an arrow', () => {
+    const { warnings } = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd: 'diamond' } }] } }] });
+    expect(warnings).toContain('Mermaid architecture links end in arrows; other ends were written as arrows.');
+  });
 });

@@ -3,6 +3,7 @@
  * share: CSS-like `key:value` lists read into a node's own colors, and its
  * colors written back as one.
  */
+import type { MarkerRef } from '@weasel-js/core';
 import type { NodeStyle } from '@weasel-js/diagram';
 import type { Warnings } from '../../graphRead';
 import { checkedColor } from '../../colorCheck';
@@ -79,6 +80,14 @@ export function nodeColors(props: ReadonlyMap<string, string>, warnings: Warning
     ...(dash !== undefined ? { dash } : {}),
   };
   return Object.keys(colors).length > 0 ? colors : undefined;
+}
+
+/** Whether `marker` draws a head, for a kind that draws every head as an arrow. `warn` hears, naming `kind`, of a head
+ *  that is not one. */
+export function arrowHead(marker: MarkerRef | null | undefined, kind: string, warn: (message: string) => void): boolean {
+  if (marker === null || marker === undefined) return false;
+  if ((typeof marker === 'string' ? marker : marker.key) !== 'arrow') warn(`Mermaid ${kind} links end in arrows; other ends were written as arrows.`);
+  return true;
 }
 
 /** A node's colors as a style's properties, `fill:#ff0000,color:#000000`. */

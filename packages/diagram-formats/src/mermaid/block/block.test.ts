@@ -125,4 +125,9 @@ describe('writing a Mermaid block diagram', () => {
       expect(onlyPage(readBlockDiagram(text).document).data.nodes.map((n) => n.lines)).toEqual([['x'], ['y']]);
     }
   });
+
+  it('warns that an end it has no head for was written as an arrow', () => {
+    const { warnings } = writeBlockDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors: { markerEnd: 'diamond' } }] } }] });
+    expect(warnings).toContain('Mermaid block diagram links end in arrows; other ends were written as arrows.');
+  });
 });

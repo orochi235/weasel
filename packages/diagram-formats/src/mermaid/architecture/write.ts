@@ -2,6 +2,7 @@
 import type { DataEdge, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
+import { arrowHead } from '../common/styles';
 import { titleLines } from '../common/lines';
 import { mermaidEscaped, mermaidIds, oneLine } from '../common/text';
 import type { ArchSide } from './parse';
@@ -83,8 +84,9 @@ class ArchWriter {
     }
     if (e.label !== undefined && e.label !== '') this.out.warnings.add('Mermaid architecture edges have no labels; they were dropped.');
     const [name, side] = to.split(/:(?=[LRTB]$)/) as [string, string];
-    const start = style.markerStart !== null && style.markerStart !== undefined ? '<' : '';
-    const end = style.markerEnd !== null && style.markerEnd !== undefined ? '>' : '';
+    const warn = (m: string) => this.out.warnings.add(m);
+    const start = arrowHead(style.markerStart, 'architecture', warn) ? '<' : '';
+    const end = arrowHead(style.markerEnd, 'architecture', warn) ? '>' : '';
     this.lines.push(`  ${from} ${start}--${end} ${side}:${name}`);
   }
 }

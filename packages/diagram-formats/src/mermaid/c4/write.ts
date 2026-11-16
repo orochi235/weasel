@@ -2,6 +2,7 @@
 import type { DataEdge, DataNode, EdgeStyle, NodeStyle } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
+import { arrowHead } from '../common/styles';
 import { mermaidIds, mermaidQuoted } from '../common/text';
 import { elementParts, hasTechnology, macroOf } from './kinds';
 import { C4_HEADERS } from './parse';
@@ -66,8 +67,9 @@ class C4Writer {
 
   rel(e: DataEdge): void {
     const style = edgeStyleIn(this.out, e);
-    const start = style.markerStart !== null && style.markerStart !== undefined;
-    const end = style.markerEnd !== null && style.markerEnd !== undefined;
+    const warn = (m: string) => this.out.warnings.add(m);
+    const start = arrowHead(style.markerStart, 'C4', warn);
+    const end = arrowHead(style.markerEnd, 'C4', warn);
     const way = REL_WAYS[`${e.fromPort ?? ''} ${e.toPort ?? ''}`];
     const macro = start && !end ? 'Rel_Back' : start ? 'BiRel' : way !== undefined ? `Rel_${way}` : 'Rel';
     if (!start && !end) this.out.warnings.add('Mermaid C4 relationships always have a head; unmarked edges were written with one.');
