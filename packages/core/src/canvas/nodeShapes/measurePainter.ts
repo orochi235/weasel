@@ -39,7 +39,6 @@ export const MEASURE_PAINTER: NodeShapeEntry = {
   paint: (node, _pose, ctx) => {
     const ends = measureEndsOf(node);
     if (!ends) return [];
-    const dpr = globalThis.devicePixelRatio || 1;
-    return measureCommands(ends.start, ends.end, dpr / (ctx?.pixelScale ?? dpr));
+    return measureCommands(ends.start, ends.end, 1 / (ctx?.scale ?? 1));
   },
 };
