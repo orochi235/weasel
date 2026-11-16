@@ -1,3 +1,4 @@
+import { integer, present } from '@weasel-js/quantity';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { SceneCanvas, bodyPredicate, defineTool, dragPanContribution, useScene, ellipsePath, linePath, viewPreset } from '@weasel-js/core';
 import type {
@@ -188,7 +189,7 @@ export function ForceGraphDemo() {
           label="Nodes"
           orientation="row"
           width="fit"
-          options={GRAPH_SIZES.map((g) => ({ value: String(g.count), label: g.count.toLocaleString('en-US') }))}
+          options={GRAPH_SIZES.map((g) => ({ value: String(g.count), label: present(g.count, integer()).text }))}
           selectedKey={String(size.count)}
           onSelectionChange={(count) => regenerate(GRAPH_SIZES.find((g) => String(g.count) === count)!)}
         />
@@ -196,7 +197,7 @@ export function ForceGraphDemo() {
         <Button onClick={() => regenerate(size)}>Regenerate</Button>
         <Button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset view</Button>
         <span className={s.readout}>
-          {size.links.toLocaleString('en-US')} edges · zoom {view.scale.x.toFixed(2)}×{settled ? ' · settled' : ''}
+          {present(size.links, integer()).text} edges · zoom {view.scale.x.toFixed(2)}×{settled ? ' · settled' : ''}
         </span>
       </div>
       <div className={s.canvas}>
