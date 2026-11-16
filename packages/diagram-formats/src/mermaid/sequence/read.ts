@@ -5,12 +5,11 @@
 import { sequenceLayout, type NodeStyle, type SeqBox, type SeqFragment, type SeqParticipant, type SeqStep, type SequenceData } from '@weasel-js/diagram';
 import type { ImportResult, SequencePage } from '../../document';
 import { Warnings } from '../../graphRead';
-import { drawableColor } from '../../colorCheck';
 import { lineError } from '../../lineError';
 import { mermaidColor } from '../common/styles';
 import { PAGE_MARGIN } from '../../pageLayout';
 import { FRAGMENTS, parseSequence, type SeqStmt } from './parse';
-import { TYPE_OUTLINES, plainText } from './syntax';
+import { TYPE_OUTLINES, leadingColor, plainText } from './syntax';
 import { getOwn } from '@weasel-js/registry';
 
 type Draft = Omit<SeqFragment, 'sections'> & { sections: { label?: string; steps: SeqStep[] }[] };
@@ -19,10 +18,9 @@ type Open = { kind: 'fragment'; frag: Draft; line: number } | { kind: 'box'; box
 /** A box's or a rect's color, and the box's label after it. A bare word is a color only where it names one; a color
  *  written as a function or in hex that a diagram cannot draw is dropped, with a warning. */
 function colorAndLabel(rest: string, warnings: Warnings): { color?: string; label?: string } {
-  const color = /^(rgba?\([^)]*\)|hsla?\([^)]*\)|#[0-9a-f]{3,8}\b|[a-z]+(?=\s|$))/i.exec(rest)?.[0];
-  const isColor = color !== undefined && (!/^[a-z]+$/i.test(color) || drawableColor(color));
-  const label = (isColor ? rest.slice(color!.length) : rest).trim();
-  const drawn = isColor && color!.toLowerCase() !== 'transparent' ? mermaidColor(color, warnings) : undefined;
+  const color = leadingColor(rest);
+  const label = (color !== undefined ? rest.slice(color.length) : rest).trim();
+  const drawn = color !== undefined && color.toLowerCase() !== 'transparent' ? mermaidColor(color, warnings) : undefined;
   return { ...(drawn !== undefined ? { color: drawn } : {}), ...(label !== '' ? { label: plainText(label) } : {}) };
 }
 

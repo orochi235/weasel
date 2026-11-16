@@ -62,4 +62,9 @@ describe('writeMermaidSequence', () => {
       expect(pageOf(writeMermaidSequence(page(data)).text).data.steps).toHaveLength(1);
     }
   });
+
+  it('writes a box with no fill whose label opens with a color word as transparent, so the word reads back as label', () => {
+    const data: SequenceData = { participants: [{ id: 'a' }], steps: [], boxes: [{ id: 'b1', label: 'red team', members: ['a'] }] };
+    expect(pageOf(writeMermaidSequence(page(data)).text).data.boxes).toEqual([{ id: 'b1', label: 'red team', members: ['a'] }]);
+  });
 });
