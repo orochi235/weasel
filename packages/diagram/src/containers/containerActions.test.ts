@@ -121,6 +121,18 @@ describe('the add-lane action', () => {
     expect(lanesOf(h.scene as never, h.poolId)).toHaveLength(3);
     expect(pose(h.scene, h.poolId)).toMatchObject({ height: 360 });
   });
+
+  it('offers no button, and passes the press on, where the lane would grow a locked title', () => {
+    const h = pool();
+    h.scene.setLocked(`${h.poolId}/title` as NodeId, true);
+    expect(createLaneAffordance(h.scene as never).regions({} as never).map((r) => r.id)).not.toContain(`${h.poolId}:add-lane`);
+    const action = createAddLaneAction({ scene: h.scene as never });
+    const affordance = { payload: { targetId: h.poolId, poolId: h.poolId } satisfies LaneScratch };
+    const run = () => (action.invoker as ImmediateInvoker).run({ scene: h.scene } as never, { world: { x: 0, y: 0 }, affordance } as never);
+    expect(run).not.toThrow();
+    expect(run()).toBe('pass');
+    expect(lanesOf(h.scene as never, h.poolId)).toHaveLength(2);
+  });
 });
 
 describe('a press on a lane affordance, through the dispatcher', () => {

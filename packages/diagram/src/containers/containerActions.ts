@@ -20,7 +20,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import { grabPortAction, grabPortBindings } from '../connect';
 import { addLane, canReleaseMembers, releaseMembers } from './containerStencils';
 import {
-  LANE_AFFORDANCE_KIND, LANE_LAYER_ID, laneLayer, laneResizeLocked, laneScratchOf, poolsOf, type LaneLayerOptions,
+  addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, laneLayer, laneResizeLocked, laneScratchOf, poolsOf, type LaneLayerOptions,
   type PoolLanes,
 } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
@@ -149,7 +149,8 @@ export function createLaneResizeAction(opts: LaneActionOptions): Action {
 const NO_MODIFIERS = { alt: false, shift: false, meta: false, ctrl: false };
 
 /** The `diagram.addLane` action: the add-lane button's click. A click on a lane
- *  boundary is not its own, and it passes it on. */
+ *  boundary is not its own, nor one where the add would write a locked node,
+ *  and it passes those on. */
 export function createAddLaneAction(opts: LaneActionOptions): Action {
   const commit = opts.commitAddLane ?? ((poolId: string, ctx: InvocationCtx) => {
     const scene = ctx.deps.scene as AnyScene | undefined;
@@ -165,7 +166,7 @@ export function createAddLaneAction(opts: LaneActionOptions): Action {
       run(deps, params) {
         const pressed = laneScratchOf(params?.affordance);
         const world = params?.world;
-        if (pressed === null || pressed.laneId !== undefined || !world) return 'pass';
+        if (pressed === null || pressed.laneId !== undefined || !world || addLaneLocked(opts.scene, { id: pressed.poolId })) return 'pass';
         commit(pressed.poolId, { world, modifiers: NO_MODIFIERS, deps } as InvocationCtx);
       },
     },
