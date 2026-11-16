@@ -23,7 +23,7 @@ export function createLatest(): Latest {
   let newest = 0;
   return {
     take() {
-      const mine = ++newest;
+      const mine = (newest += 1);
       return () => mine === newest;
     },
     drop() {

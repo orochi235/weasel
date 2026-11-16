@@ -324,6 +324,9 @@ export default [
       'no-restricted-syntax': ['error', {
         selector: "TSModuleDeclaration[id.value='@weasel-js/core'] TSInterfaceDeclaration[id.name=/^(DepSchema|ActionParamSchema|OverlaySchema)$/]",
         message: "Augment '@weasel-js/routing', which declares this interface: an augmentation of core's re-export merges into a separate copy.",
+      }, {
+        selector: "VariableDeclarator[id.name=/^(mine|ticket)$/] > UpdateExpression[operator='++'][prefix=true]",
+        message: "Take a ticket from createLatest (@weasel-js/registry) or useLatestOnly (@weasel-js/react) instead of counting requests by hand: one way to decide which async answer is the newest.",
       }],
     },
   },
