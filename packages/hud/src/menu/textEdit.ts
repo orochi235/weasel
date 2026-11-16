@@ -1,5 +1,5 @@
 import type { MenuController, MenuEntry, MenuTextEntry } from '@weasel-js/menu';
-import { isApplePlatform, textOwnsChord } from '@weasel-js/gestures';
+import { isApplePlatform, modHeld, textOwnsChord } from '@weasel-js/gestures';
 import { editEnd } from '@weasel-js/ui-input';
 
 /** A text row being typed into in a HUD menu: which row, what has been typed so far, and the caret and the other
@@ -28,9 +28,10 @@ export function editMods(
   evt: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }, apple = isApplePlatform(),
 ): EditMods {
   const shift = evt.shiftKey;
-  if (apple) return { shift, mod: evt.metaKey, line: evt.metaKey, word: evt.altKey, ctrl: textOwnsChord(evt, true) };
+  const mod = modHeld(evt, apple);
+  if (apple) return { shift, mod, line: mod, word: evt.altKey, ctrl: textOwnsChord(evt, true) };
   if (evt.ctrlKey && evt.altKey) return { shift };
-  return { shift, mod: evt.ctrlKey || evt.metaKey, word: evt.ctrlKey };
+  return { shift, mod, word: evt.ctrlKey };
 }
 
 const WORD = /[\p{L}\p{N}\p{M}_]/u;
