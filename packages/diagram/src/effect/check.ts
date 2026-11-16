@@ -1,15 +1,17 @@
-import type { EffectPipeline, EffectStage } from './types';
+import type { EffectGroup, EffectPipeline, EffectStage } from './types';
 
 /** One thing wrong with a pipeline, and where. */
 export interface EffectProblem {
   kind: 'missing-stage' | 'missing-port' | 'wrong-direction' | 'type-mismatch'
-    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-group' | 'missing-member' | 'bad-split';
+    | 'duplicate-stage' | 'duplicate-port' | 'duplicate-group' | 'missing-member' | 'group-loop' | 'bad-split';
   message: string;
   stage?: string;
   port?: string;
   /** Index into `pipeline.wires`. */
   wire?: number;
   group?: string;
+  /** Every group in a `group-loop`, in pipeline order; `group` is the first. */
+  groups?: string[];
 }
 
 /** What `split` gets wrong on `stage`, or null. */
@@ -87,6 +89,36 @@ export function checkPipeline(pipeline: EffectPipeline): EffectProblem[] {
       if (stages.has(member) || groupIds.has(member)) continue;
       out.push({ kind: 'missing-member', group: group.id, message: `Group "${group.id}" names "${member}", which is neither a stage nor a group.` });
     }
+  }
+  out.push(...groupLoops(groups));
+  return out;
+}
+
+/** One `group-loop` per set of groups that hold each other, directly or through other groups. */
+function groupLoops(groups: readonly EffectGroup[]): EffectProblem[] {
+  const inner = new Map(groups.map((g) => [g.id, g.members]));
+  const reach = new Map(groups.map((g) => {
+    const seen = new Set<string>();
+    const todo = [...g.members];
+    for (let id = todo.pop(); id !== undefined; id = todo.pop()) {
+      const members = inner.get(id);
+      if (members === undefined || seen.has(id)) continue;
+      seen.add(id);
+      todo.push(...members);
+    }
+    return [g.id, seen];
+  }));
+  const reported = new Set<string>();
+  const out: EffectProblem[] = [];
+  for (const g of groups) {
+    if (reported.has(g.id) || !reach.get(g.id)!.has(g.id)) continue;
+    const loop = groups.filter((h) => reach.get(g.id)!.has(h.id) && reach.get(h.id)!.has(g.id)).map((h) => h.id);
+    for (const id of loop) reported.add(id);
+    const named = loop.map((id) => `"${id}"`);
+    const message = loop.length === 1
+      ? `Group ${named[0]} holds itself.`
+      : `Groups ${named.length === 2 ? named.join(' and ') : `${named.slice(0, -1).join(', ')}, and ${named.at(-1)}`} hold each other in a loop.`;
+    out.push({ kind: 'group-loop', group: loop[0]!, groups: loop, message });
   }
   return out;
 }

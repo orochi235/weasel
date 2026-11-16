@@ -1194,7 +1194,7 @@ textures is the caller's: `releaseImageSource(old)` from
 `@weasel-js/core/renderer`.
 
 `checkPipeline(pipeline)` returns the problems without drawing anything, each
-`{ kind, message, stage?, port?, wire?, group? }`, where `wire` is an index into
+`{ kind, message, stage?, port?, wire?, group?, groups? }`, where `wire` is an index into
 `pipeline.wires`. The shipped looks draw a pipeline with problems as far as
 they can:
 
@@ -1207,6 +1207,7 @@ they can:
 | `duplicate-port` | Two ports on one stage share an id. | Both are listed; wires attach to the first. |
 | `duplicate-group` | A group's id repeats an earlier group's, or is a stage's. | Only the first group with the id is drawn, and a group with a stage's id is not. |
 | `missing-member` | A group names something that is neither a stage nor a group. | The name is ignored. |
+| `group-loop` | Groups hold each other in a loop, directly or through other groups, or a group holds itself. One problem per loop: `groups` lists them all and `group` is the first. | The chart still draws. |
 | `bad-split` | A `split` names an input the stage lacks, has no cuts, has cuts out of order or one that is not a finite number, or does not have one more output than cuts. | A decision that would draw as a bar draws as a diamond. |
 
 #### Looks

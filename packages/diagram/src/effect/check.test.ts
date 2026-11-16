@@ -102,6 +102,19 @@ describe('checkPipeline', () => {
     expect(where({ stages: [gate], wires: [] })).toEqual([{ kind: 'bad-split', stage: 'gate' }]);
   });
 
+  it('names groups that hold each other in a loop, once per loop', () => {
+    const two = checkPipeline({ ...OK, groups: [{ id: 'A', members: ['B'] }, { id: 'B', members: ['A', 'blur'] }] });
+    expect(two).toEqual([{ kind: 'group-loop', group: 'A', groups: ['A', 'B'], message: 'Groups "A" and "B" hold each other in a loop.' }]);
+    const three = [{ id: 'A', members: ['B'] }, { id: 'B', members: ['C'] }, { id: 'C', members: ['A'] }, { id: 'D', members: ['A'] }];
+    expect(checkPipeline({ ...OK, groups: three }).map((x) => [x.kind, x.groups, x.message]))
+      .toEqual([['group-loop', ['A', 'B', 'C'], 'Groups "A", "B", and "C" hold each other in a loop.']]);
+    expect(checkPipeline({ ...OK, groups: [{ id: 'A', members: ['A'] }] }).map((x) => x.message)).toEqual(['Group "A" holds itself.']);
+  });
+
+  it('finds no loop in nested groups', () => {
+    expect(checkPipeline({ ...OK, groups: [{ id: 'A', members: ['B', 'src'] }, { id: 'B', members: ['blur'] }] })).toEqual([]);
+  });
+
   it('does not throw on an empty pipeline', () => {
     expect(checkPipeline({ stages: [], wires: [] })).toEqual([]);
   });
