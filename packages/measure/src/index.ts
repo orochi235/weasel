@@ -2,7 +2,9 @@
  * Measuring for a weasel canvas. Measurements are scene nodes on an
  * annotation layer, so they save and undo with the scene and stay out of
  * export; `measurementsContribution` paints them and lets any tool pick and
- * edit them, and `useMeasureTool` draws new ones.
+ * edit them, `useMeasureTool` draws new ones, and `<MeasureReadout>` shows
+ * the current one with its commands. The readout is styled by
+ * `@weasel-js/measure/style.css`.
  *
  * @packageDocumentation
  */
@@ -23,3 +25,4 @@ export { MEASURE_AFFORDANCE_KIND, MEASURE_LAYER_ID } from './measureLayer';
 export { MEASURE_PAINTER } from './measurePainter';
 export { useMeasureTool, type UseMeasureToolOptions } from './useMeasureTool';
 export { MEASURE_TOOLS, useMeasureTools, type MeasureToolId } from './toolSets';
+export { MeasureReadout, type MeasureReadoutProps } from './MeasureReadout';

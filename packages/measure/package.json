@@ -1,13 +1,15 @@
 {
   "name": "@weasel-js/measure",
   "version": "1.19.1",
-  "description": "Measuring for a weasel canvas: a measure tool, measurements kept as scene nodes on an annotation layer, and the commands that move and rotate by them.",
+  "description": "Measuring for a weasel canvas: a measure tool, measurements kept as scene nodes on an annotation layer, the commands that move and rotate by them, and a readout that shows them.",
   "weasel": {
     "tier": "plugin"
   },
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "*.css"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,6 +18,7 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
   },
   "author": "orochi235",
@@ -37,21 +40,25 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "vite build && tsc -p tsconfig.build.json && node ../../scripts/dts-extensions.mjs dist",
     "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
     "@weasel-js/gestures": "1.19.1",
     "@weasel-js/icons": "1.19.1",
+    "@weasel-js/quantity": "1.19.1",
     "@weasel-js/react": "1.19.1",
     "@weasel-js/registry": "1.19.1",
     "@weasel-js/renderer": "1.19.1",
-    "@weasel-js/routing": "1.19.1"
+    "@weasel-js/routing": "1.19.1",
+    "@weasel-js/theme": "1.19.1",
+    "@weasel-js/ui": "1.19.1"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.19.1",
     "@weasel-js/geom": "1.19.1",
-    "react": ">=18"
+    "react": ">=18",
+    "react-dom": ">=18"
   },
   "publishConfig": {
     "access": "public",

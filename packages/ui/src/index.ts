@@ -54,7 +54,6 @@ export * from './components/LayerList';
 export * from './components/Legend';
 export * from './components/ListEditor';
 export type { ListOption } from './components/listOption';
-export * from './components/MeasureReadout';
 export * from './components/Menu';
 export * from './components/MenuBar';
 export * from './components/MenuButton';

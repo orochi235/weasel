@@ -12,11 +12,12 @@ import {
   type View,
   createWorkspaceTintLayer
 } from '@weasel-js/core';
-import { type Measurements, measurementsContribution, measureEndSource, useMeasureTool } from '@weasel-js/measure';
+import {
+  type Measurements, measurementsContribution, measureEndSource, MeasureReadout, useMeasureTool,
+} from '@weasel-js/measure';
 import { usePathToolsTools } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
 import { SceneGradientHandles } from '@weasel-js/ui/components/GradientEditor';
-import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import { Rulers } from '@weasel-js/ui/components/Rulers';
 import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { type ReactElement, type RefObject, useMemo } from 'react';

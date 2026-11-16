@@ -6,7 +6,7 @@ import {
   drawPreset,
 } from '@weasel-js/core';
 import {
-  createMeasurements, measureNode, measureEndSource, measurementsContribution, useMeasureTool,
+  createMeasurements, measureNode, measureEndSource, measurementsContribution, MeasureReadout, useMeasureTool,
 } from '@weasel-js/measure';
 import { createGridLayer, gridSnapSource } from '@weasel-js/guides';
 import {
@@ -19,7 +19,6 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { MeasureReadout } from '@weasel-js/ui/components/MeasureReadout';
 import { useMemo, useState } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
