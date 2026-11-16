@@ -41,7 +41,7 @@ export function readMarker(body: string): MarkerResult {
     const rankMatch = /^rank=(-?\d+)$/.exec(word);
     if (rankMatch) rank = Number(rankMatch[1]);
     else if (word === 'pick') pick = true;
-    else if (word in TAGS) {
+    else if (Object.hasOwn(TAGS, word)) {
       if (!tags.includes(word as Tag)) tags.push(word as Tag);
     } else return { ok: false, error: `unknown word "${word}" in the entry marker`, body: stripped };
   }
