@@ -82,7 +82,7 @@ export function resolveEasing(spec?: EasingSpec): EasingFn {
   if (spec === undefined) return EASINGS.linear;
   if (typeof spec === 'function') return spec;
   if (typeof spec === 'string') {
-    const fn = EASINGS[spec];
+    const fn = Object.hasOwn(EASINGS, spec) ? EASINGS[spec] : undefined;
     if (!fn) throw new Error(`resolveEasing: unknown easing name "${spec}"`);
     return fn;
   }

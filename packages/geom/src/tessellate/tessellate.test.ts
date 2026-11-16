@@ -411,6 +411,22 @@ describe('tessellate (PolygonPath, nonzero, crossing or nested outlines)', () =>
     expect(coverage(mesh, 1.2, 1.7)).toBe(1);
   });
 
+  it('covers same-wound rings that share edges or coincide once', () => {
+    const half = tessellate(poly([...square(0, 0, 10, true).cmds, PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z], [
+      ...square(0, 0, 10, true).xy, 0, 0, 5, 0, 5, 10, 0, 10,
+    ]));
+    expect(area(half)).toBeCloseTo(100);
+    expect(coverage(half, 2.3, 3.1)).toBe(1);
+    expect(coverage(half, 7.2, 3.1)).toBe(1);
+    const doubled = tessellate(squares([0, 0, 10, true], [0, 0, 10, true]));
+    expect(area(doubled)).toBeCloseTo(100);
+    expect(coverage(doubled, 2.3, 3.1)).toBe(1);
+  });
+
+  it('leaves a ring traced back over itself the other way empty', () => {
+    expect(area(tessellate(squares([0, 0, 10, true], [0, 0, 10, false])))).toBeCloseTo(0);
+  });
+
   it('keeps an opposite-wound nested square a hole', () => {
     const mesh = tessellate(squares([0, 0, 10, true], [3, 3, 4, false]));
     expect(area(mesh)).toBeCloseTo(84);

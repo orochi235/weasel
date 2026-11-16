@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PathBuilder } from './builder';
+import { PathBuilder, ellipsePath, linePath, polygonFromPoints, polylineFromPoints, regularPolygonPath, starPath } from './builder';
 import { anchorsToPath, pathToAnchors } from './anchors';
 import { anchorPointIndices } from './anchorOrigins';
 import { boundsOfPath } from './bounds';
@@ -7,6 +7,19 @@ import { cornerFrames, resolveCorners } from './corners';
 import { withCorner } from './cornerSpec';
 import { pathToCubicContours } from './cubicContours';
 import { pathDistanceToPoint } from './pathDistance';
+import { measurePath } from './pathMeasure';
+import { pointAlongPath } from './pathAt';
+import { pathLengthTable } from '../along/pathTable';
+import { bendAlongPath } from './bendAlongPath';
+import { growRegion } from './growRegion';
+import { mergeRegion } from './mergeRegion';
+import { puckerBloatPath } from './puckerBloatPath';
+import { roughenPath } from './roughenPath';
+import { tweenPaths } from './tweenPaths';
+import { zigzagPath } from './zigzagPath';
+import { schneiderFit } from './schneiderFit';
+import type { Path } from '../path';
+import { pointAtLength } from '../along/positions';
 import { pathFromD } from './pathFromD';
 import { ORIGIN_THRESHOLD, joinPaths, originFor, worldCoords } from './pathOrigin';
 import { pathToD } from './pathToD';
@@ -148,5 +161,58 @@ describe('producers that pick an origin', () => {
     expect(p.origin).toBeDefined();
     expect(worldCoords(p)[0]).toBeCloseTo(X, 6);
     expect(pathFromD('M1 1L2 2').origin).toBeUndefined();
+  });
+
+  it('measure the path by length where its origin puts it', () => {
+    const p = square();
+    const m = measurePath(p)!;
+    expect(m.at(0).point.x).toBeCloseTo(X, 6);
+    expect(m.at(0.5).point).toEqual({ x: expect.closeTo(X + 0.5, 6), y: 1 });
+    const near = m.nearest({ x: X + 0.25, y: 0.5 });
+    expect(near.s).toBeCloseTo(0.25, 6);
+    expect(near.dist).toBeCloseTo(0.5, 6);
+    expect(pointAlongPath(pathFromD('M20000 0 L20010 0'), 0)!.point).toEqual({ x: 20000, y: 0 });
+    const table = pathLengthTable(p);
+    expect(table.origin).toEqual(p.origin);
+    expect(pointAtLength(table, 0).point[0] + table.origin!.x).toBeCloseTo(X, 6);
+  });
+
+  it('write an effect\'s far-out result from an origin, and keep the source\'s open-fill rule', () => {
+    const left = (p: Path | null) => boundsOfPath(p!).x;
+    const p = square();
+    expect(left(puckerBloatPath(p, { amount: 1e-12 }))).toBeCloseTo(X, 6);
+    expect(left(roughenPath(p, { size: 1e-9 }))).toBeCloseTo(X, 6);
+    expect(left(zigzagPath(p, { size: 1e-9 }))).toBeCloseTo(X, 6);
+    expect(left(tweenPaths(p, p, 0))).toBeCloseTo(X, 6);
+    expect(left(mergeRegion(p))).toBeCloseTo(X, 6);
+    expect(left(growRegion(p, 0.01))).toBeCloseTo(X - 0.01, 6);
+    expect(left(bendAlongPath({ kind: 'rect', x: 0, y: 0, width: 10, height: 2 }, pathFromD('M262144.3 0 L262154.3 0')))).toBeCloseTo(X, 6);
+
+    const open: PolygonPath = { ...pathFromD('M0 0 L10 0 L10 10'), openFill: 'none' };
+    const fill = (q: Path | null) => (q as PolygonPath).openFill;
+    expect(fill(puckerBloatPath(open, { amount: 0.1 }))).toBe('none');
+    expect(fill(roughenPath(open, { size: 1 }))).toBe('none');
+    expect(fill(zigzagPath(open, { size: 1 }))).toBe('none');
+    expect(fill(tweenPaths(open, open, 0.5))).toBe('none');
+    expect(fill(bendAlongPath(open, pathFromD('M0 0 L100 0')))).toBe('none');
+  });
+
+  it('fit far-out samples from an origin', () => {
+    const fit = schneiderFit([{ x: X, y: 1 }, { x: X + 1, y: 1.5 }, { x: X + 2, y: 1 }], 0.01);
+    expect(fit.origin).toBeDefined();
+    expect(worldCoords(fit)[0]).toBeCloseTo(X, 6);
+  });
+
+  it('build far-out shapes from an origin', () => {
+    const pts = [{ x: X, y: 1 }, { x: X + 1, y: 1 }, { x: X + 1, y: 2 }];
+    for (const p of [
+      polygonFromPoints(pts), polylineFromPoints(pts) as PolygonPath, linePath(pts[0]!, pts[1]!),
+      ellipsePath({ x: X, y: 1, width: 1, height: 1 }), regularPolygonPath({ x: X + 1, y: 1 }, 1, 6),
+    ]) {
+      expect(p.origin).toBeDefined();
+      expect(boundsOfPath(p).x).toBeCloseTo(X, 6);
+    }
+    expect(boundsOfPath(starPath({ x: X + 1, y: 1 }, 1)).x).toBeCloseTo(X + 1 + Math.cos(0.8 * Math.PI), 6);
+    expect(polygonFromPoints([{ x: 0.3, y: 1 }, { x: 1, y: 1 }, { x: 1, y: 2 }]).origin).toBeUndefined();
   });
 });

@@ -50,8 +50,9 @@ export function ringSignedArea(
  * True if segments (ax,ay)-(bx,by) and (cx,cy)-(dx,dy) intersect at a single
  * point. An endpoint landing on the other segment counts (a T-junction and a
  * shared endpoint both answer true) — hit-testing wants a grazing edge to
- * register. Collinear overlap answers false: there is no single crossing
- * point, so the sign test both segments rely on is zero on all four sides.
+ * register, and so do two collinear segments meeting end to end. Collinear
+ * overlap answers false: there is no single crossing point. So does a segment
+ * of no length.
  */
 export function segmentsCross(
   ax: number, ay: number, bx: number, by: number,
@@ -61,5 +62,18 @@ export function segmentsCross(
   const d2 = sign((dx - cx) * (by - cy) - (dy - cy) * (bx - cx));
   const d3 = sign((bx - ax) * (cy - ay) - (by - ay) * (cx - ax));
   const d4 = sign((bx - ax) * (dy - ay) - (by - ay) * (dx - ax));
+  if (d1 === 0 && d2 === 0 && d3 === 0 && d4 === 0) return endToEnd(ax, ay, bx, by, cx, cy, dx, dy);
   return d1 !== d2 && d3 !== d4;
+}
+
+/** Whether two collinear segments of some length share exactly one point, an end of each. */
+function endToEnd(
+  ax: number, ay: number, bx: number, by: number,
+  cx: number, cy: number, dx: number, dy: number,
+): boolean {
+  if ((ax === bx && ay === by) || (cx === dx && cy === dy)) return false;
+  const ux = bx - ax, uy = by - ay;
+  const at = (x: number, y: number) => (x - ax) * ux + (y - ay) * uy;
+  const c = at(cx, cy), d = at(dx, dy), b = ux * ux + uy * uy;
+  return Math.min(Math.max(c, d), b) === Math.max(Math.min(c, d), 0);
 }

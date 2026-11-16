@@ -1,18 +1,18 @@
 /**
  * Fluent builder for `PolygonPath`. Hides the `Uint8Array` / `Float32Array`
- * encoding behind move/line/curve/close calls and a final `build()`. Use
- * this to construct paths in tests and demos; production callers that need
- * to mutate large paths in place should reach for the raw arrays directly.
+ * encoding behind move/line/curve/close calls and a final `build()`.
  *
  * Numeric capacity grows by doubling — typical for amortized O(1) push.
  *
  * Also exposes `rectPath` / `polygonFromPoints` shortcuts for the common
- * cases. `rectPath` returns the lighter `RectPath` subtype, not a polygon.
+ * cases. `rectPath` returns the lighter `RectPath` subtype, not a polygon;
+ * the others measure a shape far from 0 from an origin, as `autoOrigin` does.
  */
 
 import { rectToContour } from '../box';
 import { forEachSegment, PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
-import type { Path, PathFillRule, PolygonPath, RectPath } from '../path';
+import type { Path, PathFillRule, PathOpenFill, PolygonPath, RectPath } from '../path';
+import type { CornerSpec } from './cornerSpec';
 import { originFor } from './pathOrigin';
 
 /** Fluent builder for `PolygonPath`; hides the `Uint8Array`/`Float32Array` encoding behind move/line/curve/close calls. */
@@ -20,6 +20,8 @@ export class PathBuilder {
   private cmds: number[] = [];
   private xs: number[] = [];
   private fillRule: PathFillRule = 'nonzero';
+  private openFill: PathOpenFill | undefined;
+  private corners: readonly (CornerSpec | null)[] | undefined;
   private origin: { x: number; y: number } | undefined;
   private auto = false;
   /** The open subpath's start, in the path's own space. */
@@ -28,7 +30,7 @@ export class PathBuilder {
   /** The last command was `Z`, so the next drawing one opens a subpath. */
   private closed = false;
 
-  /** Seed a builder with an existing `PolygonPath`. Useful for extending
+  /** Seed a builder with an existing `PolygonPath`, its fill settings, corners and origin. Useful for extending
    *  an in-flight path with another segment (e.g. appending a cubic to
    *  the end of a curve in response to a user action) without hand-
    *  reaching into the `commands` / `coords` typed arrays.
@@ -42,6 +44,8 @@ export class PathBuilder {
     b.cmds = Array.from(path.commands);
     b.xs = Array.from(path.coords);
     b.fillRule = path.fillRule;
+    b.openFill = path.openFill;
+    b.corners = path.corners;
     if (path.origin) b.origin = { x: path.origin.x, y: path.origin.y };
     const ox = b.origin?.x ?? 0, oy = b.origin?.y ?? 0;
     forEachSegment(path.commands, path.coords, (cmd, ci, penX, penY, _i, opens) => {
@@ -49,6 +53,14 @@ export class PathBuilder {
       if (cmd === PATH_M) { b.startX = path.coords[ci] + ox; b.startY = path.coords[ci + 1] + oy; }
       b.closed = cmd === PATH_Z;
     });
+    return b;
+  }
+
+  /** A builder for a new path made from `like`'s geometry, as an effect writes one: `like`'s fill rule and
+   *  open-fill rule (a rect's are the defaults), measured from an origin of its own ({@link autoOrigin}). */
+  static like(like: Path): PathBuilder {
+    const b = new PathBuilder().autoOrigin();
+    if (like.kind === 'polygon') b.setFillRule(like.fillRule).setOpenFill(like.openFill);
     return b;
   }
 
@@ -89,6 +101,12 @@ export class PathBuilder {
 
   setFillRule(rule: PathFillRule): this {
     this.fillRule = rule;
+    return this;
+  }
+
+  /** Whether the built path's open subpaths fill. Unset, the engine default. */
+  setOpenFill(rule: PathOpenFill | undefined): this {
+    this.openFill = rule;
     return this;
   }
 
@@ -147,6 +165,8 @@ export class PathBuilder {
       commands: new Uint8Array(this.cmds),
       coords: new Float32Array(this.xs),
       fillRule: this.fillRule,
+      ...(this.openFill !== undefined ? { openFill: this.openFill } : {}),
+      ...(this.corners ? { corners: this.corners } : {}),
       ...(this.origin ? { origin: { ...this.origin } } : {}),
     };
   }
@@ -175,7 +195,7 @@ export function asPolygonPath(path: Path): PolygonPath {
 export function polylineFromPoints(
   points: readonly { x: number; y: number }[],
 ): PolygonPath | RectPath {
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   const first = points[0];
   if (!first) return rectPath(0, 0, 0, 0);
   b.moveTo(first.x, first.y);
@@ -199,7 +219,7 @@ export function polygonFromPoints(
       fillRule: opts.fillRule ?? 'nonzero',
     };
   }
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   if (opts.fillRule) b.setFillRule(opts.fillRule);
   b.moveTo(points[0].x, points[0].y);
   for (let i = 1; i < points.length; i++) b.lineTo(points[i].x, points[i].y);
@@ -221,7 +241,7 @@ export function ellipsePath(
   const ry = bounds.height / 2;
   const ox = rx * ELLIPSE_KAPPA;
   const oy = ry * ELLIPSE_KAPPA;
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   b.moveTo(cx + rx, cy);
   b.curveTo(cx + rx, cy + oy, cx + ox, cy + ry, cx, cy + ry);
   b.curveTo(cx - ox, cy + ry, cx - rx, cy + oy, cx - rx, cy);
@@ -239,7 +259,7 @@ export function regularPolygonPath(
   sides: number,
   rotation = 0,
 ): PolygonPath {
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   for (let i = 0; i < sides; i++) {
     const a = rotation + (i / sides) * Math.PI * 2;
     const x = center.x + radius * Math.cos(a);
@@ -259,7 +279,7 @@ export function starPath(
   innerRadius: number = outerRadius / 2,
   rotation = 0,
 ): PolygonPath {
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   const n = points * 2;
   for (let i = 0; i < n; i++) {
     const a = rotation + (i / n) * Math.PI * 2;
@@ -277,7 +297,7 @@ export function linePath(
   a: { x: number; y: number },
   b: { x: number; y: number },
 ): PolygonPath {
-  const pb = new PathBuilder();
+  const pb = new PathBuilder().autoOrigin();
   pb.moveTo(a.x, a.y);
   pb.lineTo(b.x, b.y);
   return pb.build();

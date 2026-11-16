@@ -110,13 +110,16 @@ export function reversePath(path: PolygonPath): PolygonPath {
     const last = segs[segs.length - 1];
     const ex = last ? last.args[last.args.length - 2] : sx;
     const ey = last ? last.args[last.args.length - 1] : sy;
+    // An implicit closing edge turns explicit, and a straight first segment becomes the implicit one in its place.
+    const implicit = closed && (ex !== sx || ey !== sy);
     if (closed) {
       cmds.push(PATH_M); out.push(sx, sy); sources.push(start);
-      if (ex !== sx || ey !== sy) { cmds.push(PATH_L); out.push(ex, ey); sources.push(last ? anchor : start); }
+      if (implicit) { cmds.push(PATH_L); out.push(ex, ey); sources.push(last ? anchor : start); }
     } else {
       cmds.push(PATH_M); out.push(ex, ey); sources.push(last ? anchor : start);
     }
-    for (let i = segs.length - 1; i >= 0; i--) {
+    const end = implicit && segs[0]?.cmd === PATH_L ? 1 : 0;
+    for (let i = segs.length - 1; i >= end; i--) {
       const s = segs[i];
       cmds.push(s.cmd);
       if (s.cmd === PATH_C) out.push(s.args[2], s.args[3], s.args[0], s.args[1]);

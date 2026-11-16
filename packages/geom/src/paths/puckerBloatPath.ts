@@ -37,5 +37,5 @@ export function puckerBloatPath(path: Path, opts: PuckerBloatPathOptions): Path 
       line: false,
     })),
   }));
-  return cubicContoursToPath(contours, path.kind === 'polygon' ? path.fillRule : 'nonzero');
+  return cubicContoursToPath(contours, path);
 }

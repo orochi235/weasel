@@ -11,7 +11,9 @@ const tables = new WeakMap<Path, LengthTable>();
  * each curve measured by its arc length rather than by any flattening of it,
  * anchors in authored numbering. Its runs are `extractPolylines`' subpaths,
  * one point per anchor, with each curve's control points, so a curve position
- * on it names the same place on every flattening of the path. Kept per path.
+ * on it names the same place on every flattening of the path. Its points are
+ * the path's coords, measured from the path's origin, which the table carries
+ * as its own `origin`. Kept per path.
  */
 export function pathLengthTable(path: Path): LengthTable {
   const hit = tables.get(path);
@@ -23,6 +25,7 @@ export function pathLengthTable(path: Path): LengthTable {
     const { path: resolved, anchorSources } = resolveCornersWithSources(path);
     const controls = controlsByAnchor(resolved);
     table = lengthTable(extractPolylines(resolved).map((pl) => anchorRun(pl, controls)), 2, anchorSources);
+    if (path.origin) table = { ...table, origin: path.origin };
   }
   tables.set(path, table);
   return table;

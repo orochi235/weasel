@@ -3,7 +3,7 @@
  * point of the outline pushed alternately to one side of it and the other.
  */
 import type { Path } from '../path';
-import { countParam, polylineContour, sampleContour } from './contourSamples';
+import { countParam, polylineContour, sampleContour, type ContourSample } from './contourSamples';
 import { cubicContoursToPath, pathToCubicContours, type CubicContour } from './cubicContours';
 import type { Point } from './cubicMath';
 
@@ -21,7 +21,9 @@ export interface ZigzagPathOptions {
 /**
  * `path` with `ridges` points added to each segment and every point, anchors
  * included, pushed `size` along the outline's normal, the side alternating
- * from one point to the next. A `size` of zero answers `path` itself.
+ * from one point to the next. A closed contour that would end on the side it
+ * starts on gains one more point on its last segment. A `size` of zero answers
+ * `path` itself.
  */
 export function zigzagPath(path: Path, opts: ZigzagPathOptions): Path {
   const { size, smooth = false } = opts;
@@ -29,7 +31,7 @@ export function zigzagPath(path: Path, opts: ZigzagPathOptions): Path {
   const pieces = countParam(opts.ridges, 4) + 1;
   const contours = pathToCubicContours(path).map((contour) => {
     let normal: Point = { x: 0, y: 0 };
-    const points = sampleContour(contour, pieces).map(({ at, dir }, i) => {
+    const points = zigzagSamples(contour, pieces).map(({ at, dir }, i) => {
       // A point where the outline has no direction keeps the one before's normal.
       if (dir) normal = { x: -dir.y, y: dir.x };
       const side = i % 2 === 0 ? size : -size;
@@ -37,12 +39,22 @@ export function zigzagPath(path: Path, opts: ZigzagPathOptions): Path {
     });
     return smooth ? smoothThrough(points, contour.closed) : polylineContour(points, contour.closed);
   });
-  return cubicContoursToPath(contours, path.kind === 'polygon' ? path.fillRule : 'nonzero');
+  return cubicContoursToPath(contours, path);
 }
 
 /** A Catmull-Rom curve through `points`: each one's handles parallel to the
  *  line between its neighbors. An open run's ends stand in for their own
  *  missing neighbor. */
+/** `sampleContour`'s samples, with one more on a closed contour's last segment when it would have an odd count, so the
+ *  points alternate sides across the seam too. */
+function zigzagSamples(contour: CubicContour, pieces: number): ContourSample[] {
+  const samples = sampleContour(contour, pieces);
+  const last = contour.segs.at(-1);
+  if (!contour.closed || samples.length % 2 === 0 || last === undefined) return samples;
+  samples.splice(samples.length - pieces, pieces, ...sampleContour({ segs: [last], closed: true }, pieces + 1));
+  return samples;
+}
+
 function smoothThrough(points: readonly Point[], closed: boolean): CubicContour {
   const n = points.length;
   const at = (i: number): Point => (closed ? points[(i + n) % n]! : points[Math.max(0, Math.min(n - 1, i))]!);

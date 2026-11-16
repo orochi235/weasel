@@ -7,7 +7,7 @@
  * Where one contour has fewer segments, its longest ones are split in half
  * until the counts agree, which adds anchors without moving the outline.
  */
-import type { Path, PathFillRule, PolygonPath } from '../path';
+import type { Path, PolygonPath } from '../path';
 import {
   cubicContoursToPath, pathToCubicContours, reverseContour, splitSegment,
   type CubicContour, type CubicSegment,
@@ -60,19 +60,13 @@ export function prepareTween(a: Path, b: Path, opts: TweenPathsOptions = {}): Pa
     const y = cb[i] ?? collapsed(ca[i]!);
     pairs.push(matchContours(x, y, opts));
   }
-  const ruleA = fillRuleOf(a);
-  const ruleB = fillRuleOf(b);
   return {
     segmentCounts: pairs.map(([x]) => x.segs.length),
     at(t) {
       const out = pairs.map(([x, y]) => lerpContour(x, y, t));
-      return cubicContoursToPath(out, t < 0.5 ? ruleA : ruleB);
+      return cubicContoursToPath(out, t < 0.5 ? a : b);
     },
   };
-}
-
-function fillRuleOf(path: Path): PathFillRule {
-  return path.kind === 'polygon' ? path.fillRule : 'nonzero';
 }
 
 /** A contour with nothing to tween against grows from, or shrinks to, a
@@ -98,29 +92,28 @@ function centroid(contour: CubicContour): [number, number] {
 }
 
 /** `a` and `b` with equal segment counts and `b` started where it best
- *  corresponds to `a`. Both closed stay closed; otherwise both open. */
+ *  corresponds to `a`, each keeping its own `closed`; `b` turns round only
+ *  when both are closed. */
 function matchContours(a: CubicContour, b: CubicContour, opts: TweenPathsOptions): [CubicContour, CubicContour] {
   const closed = a.closed && b.closed;
-  const x: CubicContour = { closed, segs: a.segs };
-  const y: CubicContour = { closed, segs: b.segs };
   const auto = opts.autoAlign ?? true;
   const offset = Math.round(opts.startOffset ?? 0);
   const directions = opts.reverse !== undefined ? [opts.reverse] : auto ? [false, true] : [false];
 
   let best: { score: number; a: CubicContour; b: CubicContour; reversed: boolean; turn: number } | null = null;
   for (const reversed of directions) {
-    const run = reversed ? reverseContour(y) : y;
+    const run = reversed ? reverseContour(b) : b;
     const turns = closed && auto ? run.segs.length : 1;
     for (let k = 0; k < turns; k++) {
-      const [ma, mb] = equalize(x, rotate(run, k));
+      const [ma, mb] = equalize(a, rotate(run, k));
       const score = auto ? correspondence(ma, mb) : 0;
       if (best === null || score < best.score - 1e-9) best = { score, a: ma, b: mb, reversed, turn: k };
     }
   }
   const chosen = best!;
   if (!closed || offset === 0) return [chosen.a, chosen.b];
-  const run = chosen.reversed ? reverseContour(y) : y;
-  return equalize(x, rotate(run, chosen.turn + offset));
+  const run = chosen.reversed ? reverseContour(b) : b;
+  return equalize(a, rotate(run, chosen.turn + offset));
 }
 
 /** `contour` started `k` segments later; a no-op on an open one. */
@@ -180,7 +173,7 @@ function correspondence(a: CubicContour, b: CubicContour): number {
     const q = b.segs[i]!.c;
     add(p[0], p[1], q[0], q[1]);
   }
-  if (!a.closed && a.segs.length > 0) {
+  if (!(a.closed && b.closed) && a.segs.length > 0) {
     const p = a.segs.at(-1)!.c;
     const q = b.segs.at(-1)!.c;
     add(p[6], p[7], q[6], q[7]);
@@ -190,7 +183,7 @@ function correspondence(a: CubicContour, b: CubicContour): number {
 
 function lerpContour(a: CubicContour, b: CubicContour, t: number): CubicContour {
   return {
-    closed: a.closed,
+    closed: t < 0.5 ? a.closed : b.closed,
     segs: a.segs.map((sa, i) => {
       const sb = b.segs[i]!;
       const c = sa.c.map((v, j) => lerp(v, sb.c[j]!, t)) as CubicSegment['c'];

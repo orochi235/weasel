@@ -42,5 +42,5 @@ export function roughenPath(path: Path, opts: RoughenPathOptions): Path {
     })),
     contour.closed,
   ));
-  return cubicContoursToPath(contours, path.kind === 'polygon' ? path.fillRule : 'nonzero');
+  return cubicContoursToPath(contours, path);
 }

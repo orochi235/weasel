@@ -44,7 +44,7 @@ const SAMPLES = [0.2, 0.35, 0.5, 0.65, 0.8];
  * whose edges do not cross two.
  */
 export function growRegion(path: Path, distance: number, opts: GrowRegionOptions = {}): PolygonPath {
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   if (!(distance > 0)) return b.build();
   const sigma = pathSignedArea(path) < 0 ? -1 : 1;
   const ctx: Ctx = {

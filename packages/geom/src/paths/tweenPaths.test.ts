@@ -4,6 +4,8 @@ import { polygonFromPoints, rectPath } from './builder';
 import { boundsOfPath } from './bounds';
 import { pathToCubicContours } from './cubicContours';
 import { tweenPaths, prepareTween } from './tweenPaths';
+import { pathFromD } from './pathFromD';
+import { pathToD } from './pathToD';
 
 const anchors = (p: PolygonPath) => pathToCubicContours(p).map((c) => c.segs.map((s) => [s.c[0], s.c[1]]));
 
@@ -55,5 +57,13 @@ describe('tweenPaths', () => {
     const moves = (p: PolygonPath) => Array.from(p.commands).filter((c) => c === 0).length;
     expect(moves(tweenPaths(ring, two, 0))).toBe(2);
     expect(boundsOfPath(tweenPaths(ring, two, 1))).toMatchObject({ width: 30, height: 30 });
+  });
+
+  it('keeps each shape\'s own closing at its end of a tween between a closed contour and an open one', () => {
+    const closed = pathFromD('M0 0 L10 0 L10 10 L0 10 Z');
+    const open = pathFromD('M0 0 L10 0 L10 10 L0 10');
+    const tween = prepareTween(closed, open);
+    expect(pathToD(tween.at(0))).toMatch(/Z$/);
+    expect(pathToD(tween.at(1))).not.toMatch(/Z$/);
   });
 });

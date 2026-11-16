@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { pathSignedArea, reversePath } from './winding';
 import { pathFromD } from './pathFromD';
+import { pathToD } from './pathToD';
+import { countPathAnchors } from './anchors';
 import { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z } from '../commands';
 import type { PolygonPath } from '../path';
 
@@ -44,6 +46,14 @@ describe('pathSignedArea', () => {
 });
 
 describe('reversePath', () => {
+  it('keeps the anchor count of a contour whose closing edge is implicit, and reverses back to it', () => {
+    const p = square('M0 0 L10 0 L10 10 Z');
+    const r = reversePath(p);
+    expect(pathToD(r)).toBe('M0 0L10 10L10 0Z');
+    expect(countPathAnchors(r)).toBe(3);
+    expect(pathToD(reversePath(r))).toBe(pathToD(p));
+  });
+
   it('flips the sign of the area and keeps its magnitude', () => {
     const p = pathFromD('M0 0 L10 0 C12 4 12 6 10 10 Q5 12 0 10 Z M2 2 L2 8 L8 8 L8 2 Z');
     const r = reversePath(p);

@@ -10,7 +10,9 @@ import { distance } from '../points2';
  *
  * Output shape: an initial `M` to the first sample, followed by N
  * `C` cubic segments. For colinear / two-point inputs, returns a single
- * degenerate cubic. For empty input, returns an empty polygon path.
+ * degenerate cubic. For empty input, returns an empty polygon path. Far
+ * from 0 the result is measured from an origin, as `PathBuilder.autoOrigin`
+ * picks one.
  */
 export function schneiderFit(
   samples: ReadonlyArray<Point>,
@@ -25,7 +27,7 @@ export function schneiderFit(
     };
   }
 
-  const b = new PathBuilder();
+  const b = new PathBuilder().autoOrigin();
   b.moveTo(samples[0].x, samples[0].y);
 
   if (samples.length === 1) {
