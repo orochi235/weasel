@@ -291,12 +291,25 @@ function loadedState(
 }
 
 function hooksOf(instruments: InstrumentList): InstrumentHooks {
+  assertUniqueNames(instruments);
   return {
     serializers: serializersOf(instruments),
     configDefaults: configDefaultsOf(instruments),
     configSchemas: configSchemasOf(instruments),
     configMigrations: configMigrationsOf(instruments),
   };
+}
+
+function assertUniqueNames(instruments: InstrumentList): void {
+  const seen = new Set<string>();
+  for (const { name } of instruments) {
+    if (seen.has(name)) {
+      throw new Error(
+        `labkit: two instruments are named ${JSON.stringify(name)}. An instrument's name is the key its trials and saves are stored under, so each one in the list needs its own.`,
+      );
+    }
+    seen.add(name);
+  }
 }
 
 /** Hooks for `instruments`, keeping those of any instrument no longer listed:

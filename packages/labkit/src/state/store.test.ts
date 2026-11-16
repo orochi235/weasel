@@ -396,6 +396,16 @@ describe('setInstruments', () => {
     expect(store.getState().savedSnapshots[0]?.state).toEqual({ seen: ['a'] });
   });
 
+  it('throws on two instruments with one name, at creation and on replacement', () => {
+    const twin: Instrument = { ...other, name: 'Grid' };
+    expect(() => createLabStore({ instruments: [small, twin] })).toThrow(
+      /two instruments are named "Grid"/,
+    );
+    const store = createLabStore({ instruments: [small] });
+    expect(() => store.getState().setInstruments([small, twin])).toThrow(/"Grid"/);
+    expect(store.getState().instruments).toEqual([small]);
+  });
+
   it('is a no-op for the list it already holds', () => {
     const list = [small];
     const store = createLabStore({ instruments: list });
