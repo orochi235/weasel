@@ -2445,12 +2445,37 @@ Calls the lanes made without a ruling:
 - Open: whether moving a node into a container should honor `MoveAdapter.findSnapTarget`
   (`packages/core/src/core/adapters/types.ts`), which `docs/adapters.md` describes and nothing calls, or whether the
   field and its paragraph go.
-- Open: whether `ResizeAdapter` and `RotateAdapter` are deleted or read by the resize and rotate behaviors. Nothing
-  reads either; they appear only in `SceneCanvasAdapter`'s intersection (`canvas/sceneAdapter.ts`).
-- Open: whether `claimed` eligibility filters input to the entry's own affordances, as `docs/taxonomy.md` and
-  `contributions/types.ts` say, or means `always`, as `liveScope` (`contributions/eligibility.ts`) treats it. The HUD's
-  `loupe.aim` hover bindings rely on the second.
 - Open: whether a reader may split or join a scoped pref. `packages/prefs/README.md` says never; the `scopes` JSDoc in
   `packages/prefs/src/schema.ts` says an open entry may.
 - Open: whether a new scene starts at version 1, so that `getPaintedVersion()`'s `0` means "nothing painted yet" again
   (`core/scene/notifier.ts`, `canvas/useCanvasPaint.ts`). `docs/concepts.md` now says a fresh scene is also at 0.
+
+## Audit round twenty-seven (2026-11-15): by failure class
+
+- 2026-11-15 (Mike's ruling): `ResizeAdapter` and `RotateAdapter` are deleted; nothing had read them since 2026-10-13.
+- 2026-11-15 (Mike's ruling): `claimed` eligibility filters input: a claimed entry's bindings are live only for input
+  whose affordance the entry owns (its own id, or an id in `claimed: [ids]`), decided in one place, `ownsAffordance`
+  (`packages/routing/src/contributions/eligibility.ts`).
+- 2026-11-15 (the lane's call): a keystroke hits no affordance, so a `claimed` entry never hears one; an entry that wants
+  keys declares `always` beside it.
+- 2026-11-15 (the lane's call): a render worker's `timeout` of `NaN` or `-Infinity` times out at once, as `setTimeout`
+  would; only `Infinity` waits forever (`canvas/renderWorker/requests.ts`). It had waited forever for any non-finite value.
+- 2026-11-15 (the lane's call): `decodeSnapshot` refuses a snapshot nested past 1000 levels, and `bindClip` a clip whose
+  timelines nest past 1000, rather than overflowing the stack.
+- 2026-11-15 (the lane's call): a d3 transition handler passed to `on('end')` twice runs once, as every `createEmitter`
+  listener does.
+- Open: whether d3 transition cancel keys move to `compositeKey`. Today `d3-transition:${name}:${nodeId}`
+  (`packages/d3/src/transition.ts`) lets a name `a:b` on node `c` cancel a name `a` on node `b:c`; the format is in the
+  JSDoc, so a consumer may build it by hand.
+- Open: whether eslint adopts type-aware linting for reads and writes keyed by a `string` into a `string`-indexed object,
+  the one guard that closes the prototype-key class. The config's opening comment rules type-aware rules out.
+- Open: whether the snapshot codec keeps non-finite plain numbers; `stringifySnapshot` writes `Infinity` and `NaN` as
+  `null` (`core/persistence/codec.ts`), and the 2026-11-10 ruling covered typed arrays only.
+- Open: whether a "set to X" router action is disabled when every selected connector already uses X
+  (`packages/diagram/src/routerCommands.ts`); the 2026-11-10 ruling says disable, which greys the pressed toolbar segment.
+- Open: whether `diagram.layout` is disabled when the layout would move nothing (`layoutAction.ts`), which means running
+  the layout inside `enabled`.
+- Open: whether `diagram.addLane` declines a click on a lane boundary; its `enabled` does not see the press's affordance.
+- Open: whether a bar floated again at its own spot rises to the top of the stack (`ToolbarDock/dockDrop.ts`), as now.
+- Open: whether HUD text fields read Meta as mod off Apple (`packages/hud/src/menu/textEdit.ts`), where `modHeld` reads
+  Ctrl only.
