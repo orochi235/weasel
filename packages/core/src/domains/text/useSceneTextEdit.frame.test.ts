@@ -137,9 +137,7 @@ describe('useSceneTextEdit — a { px } size', () => {
     document.body.innerHTML = '';
   });
 
-  // `kit:text` lays a `{ px }` size out as that many world units, whatever the
-  // view scale, so the overlay has to as well.
-  it('sizes the overlay as the node is drawn, at the view scale', () => {
+  it('sizes the overlay as the node is drawn: a { px } size at that many screen pixels', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const data = { text: 'ab', style: { fontSize: { px: 16 } }, runs: [{ text: 'a' }, { text: 'b', fontSize: { px: 12 } }] };
@@ -153,7 +151,7 @@ describe('useSceneTextEdit — a { px } size', () => {
     act(() => hook.result.current.startEdit('a'));
     const el = overlayOf(container);
     expect(el.style.transform).toBe('scale(2)');
-    expect(el.style.fontSize).toBe('16px');
-    expect(el.style.getPropertyValue('--weasel-zoom')).toBe('1');
+    expect(el.style.fontSize).toBe('8px');
+    expect(el.style.getPropertyValue('--weasel-zoom')).toBe('2');
   });
 });

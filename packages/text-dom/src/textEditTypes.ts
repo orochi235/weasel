@@ -59,7 +59,7 @@ export interface TextEditScreenPose {
   /**
    * The view scale a run's `{ px }` `fontSize` or `letterSpacing` resolves
    * against, as the canvas draws the text: `1` where it lays a `{ px }` size
-   * out as that many world units, as `kit:text` does. Default `zoom`.
+   * out as that many world units. Default `zoom`.
    */
   pxScale?: number;
   /**
