@@ -1,4 +1,4 @@
-import { isPlainObject } from '@weasel-js/registry';
+import { getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/history';
 import type { DocumentCodec, DraftStorage, OpenedDocument } from './document';
 import { dropDraft, openDraft, saveDraft, STEPS_KEPT } from './draft';
@@ -89,7 +89,7 @@ export function workspaceCodec(types: PrefTypes): DocumentCodec<Workspace> {
       if (!draft) return null;
       // An asset the draft does not hold, or holds nothing of that the source does not say now, is the baseline's.
       const opened = base.assets.map((asset) => {
-        const entry = draft.assets[asset.id];
+        const entry = getOwn(draft.assets, asset.id);
         return entry === undefined ? null : { draft: openDraft(asset.id, asset.root, shim(JSON.stringify(entry)), types) };
       });
       const at = workspaces(base);
@@ -122,7 +122,7 @@ export function workspaceCodec(types: PrefTypes): DocumentCodec<Workspace> {
           const kept = shim();
           saveDraft(asset.id, asset.root, source, mapSwaps(near, (w: Workspace) => rootIn(w)!), savedAt, kept, types);
           const { steps, ...rest } = JSON.parse(kept.text()!) as Record<string, unknown>;
-          assets[asset.id] = keep > 0 ? { ...rest, steps } : rest;
+          setOwn(assets, asset.id, keep > 0 ? { ...rest, steps } : rest);
         }
         try {
           (storage ?? localStorage).setItem(key, JSON.stringify({ savedAt, assets } satisfies StoredWorkspace));

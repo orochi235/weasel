@@ -108,8 +108,8 @@ export function copyNodes<R extends SchemaRoot>(root: R, paths: readonly string[
     };
     const entries: Array<[string, SchemaNode]> = copying.map((c) => {
       const entry = copyOf(c.path, c.node, true);
-      taken[entry[0]] = entry[1];
-      leafKeys[entry[0]] = entry[1];
+      setOwn(taken, entry[0], entry[1]);
+      setOwn(leafKeys, entry[0], entry[1]);
       out.push(joinPath(dest, entry[0]));
       return entry;
     });

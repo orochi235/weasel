@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { type PrefActions, type PrefGroup, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs-schema';
 import { setOwnPrefValue } from '@weasel-js/prefs-schema/internal';
 
@@ -46,7 +47,7 @@ export function orderPrefGroup(group: PrefGroup, order: PrefOrder | undefined, p
   let changed = sorted.some((key, i) => key !== keys[i]);
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   for (const key of sorted) {
-    const child = group.children[key]!;
+    const child = getOwn(group.children, key)!;
     const next = orderChild(child, order, join(path, key));
     if (next !== child) changed = true;
     setOwnPrefValue(children, key, next);

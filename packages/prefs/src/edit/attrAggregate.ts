@@ -1,5 +1,5 @@
 import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '../index';
-import { deepEqual, setOwn } from '@weasel-js/registry';
+import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
 import { autoRowsOf, withAutoRow, type AutoRow } from './autoRows';
 import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs } from './kindSchemas';
 import type { RegisteredAction } from './registeredActionAttrs';
@@ -21,7 +21,7 @@ function splitObject(
   const agreed: Record<string, unknown> = {};
   const mixed: string[] = [];
   for (const [key, field] of prefSectionLeaves(def.children)) {
-    const held = each.map((value) => fieldsOf(value)[key]);
+    const held = each.map((value) => getOwn(fieldsOf(value), key));
     if (held.every((value) => deepEqual(value, held[0]))) {
       if (held[0] !== undefined) setOwn(agreed, key, held[0]);
     } else if (field.kind === 'object') {
@@ -42,23 +42,23 @@ function splitObject(
 function withObjectField(held: unknown, keys: readonly string[], value: unknown): Record<string, unknown> {
   const [key, ...rest] = keys;
   const next = { ...fieldsOf(held) };
-  const inner = rest.length === 0 ? value : withObjectField(next[key!], rest, value);
+  const inner = rest.length === 0 ? value : withObjectField(getOwn(next, key!), rest, value);
   if (inner === undefined) delete next[key!];
-  else next[key!] = inner;
+  else setOwn(next, key!, inner);
   return next;
 }
 
 /** Whether `attr` names a field inside an object attribute of `schema`, as `frame.edge` does, and not an attribute. */
 export function isObjectField(schema: AttributeSchema, attr: string): boolean {
   const top = attr.split('.')[0]!;
-  return top !== attr && (schema.shared[top] ?? schema.own[top] ?? schema.auto[top])?.kind === 'object';
+  return top !== attr && (getOwn(schema.shared, top) ?? getOwn(schema.own, top) ?? getOwn(schema.auto, top))?.kind === 'object';
 }
 
 /** The field `attr` names set on the node at each of `paths`, inside that node's own object, as one edit. */
 export function setObjectField<R extends SchemaRoot>(root: R, paths: ReadonlyArray<string | null>, attr: string, value: unknown): R {
   const [top, ...field] = attr.split('.');
   return paths.reduce<R>((next, path) => {
-    const holds = (nodeAt(next, path) as unknown as Record<string, unknown>)[top!];
+    const holds = getOwn(nodeAt(next, path) as unknown as Record<string, unknown>, top!);
     return setAttribute(next, path, top!, withObjectField(holds, field, value));
   }, root);
 }
@@ -104,15 +104,16 @@ export function aggregateAttributes(
     const held = part === 'auto' ? rows : fields;
     const { values, mixed } = part === 'auto' ? auto : shown;
     for (const [key, def] of Object.entries(first![part])) {
-      if (!rest.every((s) => deepEqual(s[part][key], def))) continue;
-      if (held.every((h) => deepEqual(h[key], held[0]![key]))) {
+      if (!rest.every((s) => deepEqual(getOwn(s[part], key), def))) continue;
+      const first = getOwn(held[0]!, key);
+      if (held.every((h) => deepEqual(getOwn(h, key), first))) {
         setOwn(out, key, def);
-        if (held[0]![key] !== undefined) setOwn(values, key, held[0]![key]);
+        if (first !== undefined) setOwn(values, key, first);
       } else if (drawsMixed(def.kind)) {
         setOwn(out, key, def);
         mixed.add(key);
       } else {
-        const split = def.kind === 'object' ? splitObject(def as PrefLeaf as PrefObject, held.map((h) => h[key]), key, drawsMixed) : null;
+        const split = def.kind === 'object' ? splitObject(def as PrefLeaf as PrefObject, held.map((h) => getOwn(h, key)), key, drawsMixed) : null;
         if (split === null) {
           apart.push(key);
           continue;

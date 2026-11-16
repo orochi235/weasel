@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { PrefsCssSource } from './css';
 import { type PrefGroup, prefHoldsValue, prefLeaves, isPrefScope, type PrefSelection, prefScopedDefault } from '@weasel-js/prefs-schema';
 import { assignPrefValueAtPath, selectionWeights } from '@weasel-js/prefs-schema/internal';
@@ -22,7 +23,7 @@ export function prefsDefaultsSource(schema: PrefGroup): PrefsCssSource {
   const read = (path: string, selection: PrefSelection): unknown => {
     const leaf = leaves.get(path);
     if (!leaf) return undefined;
-    return selectors.has(path) ? selection[path] : resolveHeld({}, leaf, held.get(path), selectionWeights(selection));
+    return selectors.has(path) ? getOwn(selection, path) : resolveHeld({}, leaf, held.get(path), selectionWeights(selection));
   };
 
   return {

@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import { isPrefCondition, isPrefLeaf, isPrefSection, mapPrefConditionPaths, PREF_CONDITION_FIELDS, PREF_ENTRY, type PrefConditionField, type PrefLeaf } from '../index';
 import { childrenOf, innerOf, joinPath, keysOf, nodeAt, ownChildrenOf, pathOf, slotOf, withChildren, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
 
@@ -65,7 +66,7 @@ function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode, entry: s
   /** `at(key, kid)` is the value path of each kid. */
   const each = <M extends ChildMap>(kids: M, at: (key: string, kid: SchemaNode) => string, entry: string | undefined): M => {
     const mapped = Object.fromEntries(Object.entries(kids).map(([key, kid]) => [key, go(kid, at(key, kid), entry)]));
-    return Object.keys(kids).every((key) => mapped[key] === kids[key]) ? kids : (mapped as M);
+    return Object.keys(kids).every((key) => getOwn(mapped, key) === kids[key]) ? kids : (mapped as M);
   };
   const go = (node: SchemaNode, at: string, entry: string | undefined): SchemaNode => {
     let self = fn(node, entry);

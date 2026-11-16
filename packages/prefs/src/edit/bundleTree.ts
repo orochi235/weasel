@@ -74,7 +74,7 @@ type GroupKids = Record<string, PrefGroup | PrefLeaf>;
 /** The leaves a bundle's description makes, keyed as the tree keys them. */
 function leavesOf(d: PresetDescription, byId: ReadonlyMap<string, PresetDescription>, pathOf: (id: string) => string): GroupKids {
   const kids: GroupKids = {};
-  const put = (id: string, node: PrefLeaf) => { kids[uniqueKey(kids, actionLeafKey(id))] = node; };
+  const put = (id: string, node: PrefLeaf) => { setOwn(kids, uniqueKey(kids, actionLeafKey(id)), node); };
   for (const inner of d.includes) {
     const held = byId.get(inner);
     if (held?.atom) put(inner, atomNode(held));
@@ -109,9 +109,9 @@ export function bundleTree(presets: readonly PresetDescription[]): PrefGroup {
     const own = presets.filter((d) => d.package === pkg);
     const kids: GroupKids = {};
     for (const d of own.filter((p) => !p.atom)) {
-      kids[bundleKey(d.id)] = { name: d.label, description: '', bundle: d.id, children: leavesOf(d, byId, pathOf) } as PrefGroup;
+      setOwn(kids, bundleKey(d.id), { name: d.label, description: '', bundle: d.id, children: leavesOf(d, byId, pathOf) } as PrefGroup);
     }
-    for (const d of own.filter((p) => p.atom && !included.has(p.id))) kids[uniqueKey(kids, actionLeafKey(d.id))] = atomNode(d);
+    for (const d of own.filter((p) => p.atom && !included.has(p.id))) setOwn(kids, uniqueKey(kids, actionLeafKey(d.id)), atomNode(d));
     const section: PrefGroup = { name: pkg, description: '', as: 'section', children: kids };
     return [packageKeys.get(pkg)!, section];
   }));
@@ -166,7 +166,7 @@ export const memberKey = (m: BundleMember): string => `${m.kind}:${m.id}`;
 export function bundleParts(presets: readonly PresetDescription[]): PrefGroup {
   const group = (name: string, leaves: Array<[string, PrefLeaf]>): PrefGroup => {
     const kids: GroupKids = {};
-    for (const [id, leaf] of leaves) kids[uniqueKey(kids, actionLeafKey(id))] = leaf;
+    for (const [id, leaf] of leaves) setOwn(kids, uniqueKey(kids, actionLeafKey(id)), leaf);
     return { name, description: '', children: kids };
   };
   const once = (ids: string[]): string[] => [...new Set(ids)];

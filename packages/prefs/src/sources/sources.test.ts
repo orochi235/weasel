@@ -61,6 +61,11 @@ describe('createRecordSource', () => {
     expect(source.valueAt('tools.size')).toEqual({ value: 7, mixed: false, each: [7] });
     expect(source.valueAt('tools.other').mixed).toBe(true);
   });
+
+  it('reads a path named like an Object.prototype member as holding nothing', () => {
+    const source = createRecordSource({}, { 'tools.size': 7 }, () => {});
+    expect(source.valueAt('toString')).toEqual({ value: undefined, mixed: false, each: [undefined] });
+  });
 });
 
 describe('createSelectionSource', () => {
