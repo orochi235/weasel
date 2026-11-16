@@ -140,6 +140,7 @@ describe('PropertyControl disabled', () => {
     const track = screen.getByRole('slider', { name: 'Blur' });
     fireEvent.change(track, { target: { value: '7' } });
     fireEvent.keyDown(track, { key: 'ArrowRight' });
+    fireEvent.keyDown(track, { key: 'End' });
     expect(onInput.mock.calls.length > 0).toBe(!held);
     expect(onChange.mock.calls.length > 0).toBe(!held);
   });

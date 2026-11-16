@@ -2,7 +2,7 @@ import { clamp, clamp01 } from '@weasel-js/geom';
 import { snapToStep, spinKey } from '@weasel-js/quantity';
 import { arrowSteps, usableStops } from '@weasel-js/ui-input';
 import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
-import { catchStop } from './sliderStops';
+import { keyLanding } from './sliderStops';
 
 /**
  * Where a native range input runs. A linear track runs in value units and
@@ -18,8 +18,9 @@ export interface TrackPlace {
   fromInput: (raw: number) => number;
   /** A value's place along the track, 0..1. */
   fraction: (value: number) => number;
-  /** Where an arrow, Page, Home or End key moves `value`; `null` for another key, or a linear track, whose input
-   *  steps itself. Left and Right step as Down and Up, mirrored under `'rtl'`, as the native input's do. */
+  /** Where an arrow, Page, Home or End key moves `value`; `null` for another key. A linear track answers only Home
+   *  and End, and leaves the rest to its input, which steps itself. Left and Right step as Down and Up, mirrored
+   *  under `'rtl'`, as the native input's do. */
   keyStep: (key: string, value: number, dir?: 'ltr' | 'rtl') => number | null;
 }
 
@@ -37,7 +38,7 @@ export function trackPlace(
       toInput: (v) => v,
       fromInput: (raw) => raw,
       fraction: (v) => (v - min) / (max - min || 1),
-      keyStep: () => null,
+      keyStep: (key) => (key === 'Home' ? min : key === 'End' ? max : null),
     };
   }
   const unit = scale({ domain: [min, max], range: [0, 1] });
@@ -61,7 +62,7 @@ export function trackPlace(
     keyStep: (key, value, dir = 'ltr') => {
       const steps = key === 'ArrowLeft' || key === 'ArrowRight' ? arrowSteps(key, false, dir) : null;
       const spun = spinKey(steps === null ? key : steps > 0 ? 'ArrowUp' : 'ArrowDown', value, { step, min, max });
-      return spun === null ? null : catchStop(value, spun, at);
+      return spun === null ? null : keyLanding(key, value, spun, at);
     },
   };
 }

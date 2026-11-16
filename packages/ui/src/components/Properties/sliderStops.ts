@@ -14,6 +14,12 @@ export function catchStop(from: number, to: number, stops: readonly number[]): n
   return caught;
 }
 
+/** Where key `key` moving `from` to `to` lands: Home and End go to the end they name, any other key stops at the first
+ *  stop it crosses. */
+export function keyLanding(key: string, from: number, to: number, stops: readonly number[]): number {
+  return key === 'Home' || key === 'End' ? to : catchStop(from, to, stops);
+}
+
 /** How far the thumb's center travels across `el`, in px. */
 function runPx(el: HTMLInputElement): number {
   const css = getComputedStyle(el);
