@@ -7,6 +7,7 @@
 import { useCallback, useLayoutEffect, useRef, type MutableRefObject } from 'react';
 import { HOME_VIEW } from 'core/viewport/homeView';
 import { useLatest } from '@weasel-js/react';
+import { createEmitter, type Emitter } from '@weasel-js/registry';
 import type { Dims } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { clampView } from 'core/viewport/clampView';
@@ -92,7 +93,7 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   // The uncontrolled view lives in a ref, not `useState`, so a camera moving
   // at 60 Hz costs no React render; DOM that mirrors it subscribes instead.
   const viewRef = useRef<View>(controlledView ?? normalizeView(defaultView ?? HOME_VIEW));
-  const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
+  const viewSubsRef = useRef<Emitter<[View]>>(createEmitter());
   const live = useLatest({
     controlled: viewProp !== undefined, derived, onViewChange, viewBounds, dims, requestRedraw,
     by: opts.controlledBy ?? 'view',
@@ -127,7 +128,7 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
       return;
     }
     viewRef.current = clamped;
-    for (const fn of viewSubsRef.current) fn(clamped);
+    viewSubsRef.current.emit(clamped);
     forward?.(clamped);
     redraw();
   }, [live, getView]);
@@ -138,8 +139,7 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   const setViewFromInput = useCallback((next: View) => { write(next, false); }, [write]);
 
   const subscribeView = useCallback((fn: (v: View) => void) => {
-    viewSubsRef.current.add(fn);
-    return () => { viewSubsRef.current.delete(fn); };
+    return viewSubsRef.current.subscribe(fn);
   }, []);
 
   const controlledMovedRef = useRef(false);
@@ -153,9 +153,9 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   const announceControlled = useCallback(() => {
     if (!controlledMovedRef.current) return;
     controlledMovedRef.current = false;
-    for (const fn of viewSubsRef.current) fn(viewRef.current);
+    viewSubsRef.current.emit(viewRef.current);
   }, []);
-  const clearSubscribers = useCallback(() => { viewSubsRef.current.clear(); }, []);
+  const clearSubscribers = useCallback(() => { viewSubsRef.current = createEmitter(); }, []);
 
   const reclamp = useCallback(() => {
     const { viewBounds: bounds, dims: size, derived } = live.current;

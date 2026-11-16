@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
+import effectCleanup from './scripts/eslint/effect-cleanup.mjs';
 import globLiteralArgs from './scripts/eslint/glob-literal-args.mjs';
 import noArrowStrictWrapper from './scripts/eslint/no-arrow-strict-wrapper.mjs';
 import noDynamicIn from './scripts/eslint/no-dynamic-in.mjs';
@@ -43,7 +44,8 @@ const plugins = {
   '@typescript-eslint': tsPlugin,
   'react-hooks': reactHooks,
   weasel: { rules: { 'no-render-ref-write': noRenderRefWrite, 'glob-literal-args': globLiteralArgs, 'no-package-star-export': noPackageStarExport,
-    'no-arrow-strict-wrapper': noArrowStrictWrapper, 'no-dynamic-in': noDynamicIn, 'no-hand-lerp': noHandLerp } },
+    'no-arrow-strict-wrapper': noArrowStrictWrapper, 'no-dynamic-in': noDynamicIn, 'no-hand-lerp': noHandLerp,
+    'effect-cleanup': effectCleanup } },
 };
 
 export default [
@@ -260,6 +262,7 @@ export default [
       'weasel/glob-literal-args': 'error',
       'weasel/no-arrow-strict-wrapper': 'error',
       'weasel/no-dynamic-in': 'error',
+      'weasel/effect-cleanup': 'error',
       'weasel/no-package-star-export': ['error', { internal: CORE_ALIASES.map((k) => k.slice(0, -1)) }],
       'react-hooks/static-components': 'error',
       'react-hooks/use-memo': 'error',
@@ -353,6 +356,9 @@ export default [
       }, {
         selector: "CallExpression[callee.object.name='Math'][callee.property.name='sqrt'] > BinaryExpression[operator='+']:has(> BinaryExpression[operator='*'])",
         message: 'Measure a length with Math.hypot (or geom\'s distance): the squares overflow past 1e154 and underflow below 1e-154, where the length is still a number.',
+      }, {
+        selector: "VariableDeclarator[id.name=/^(mine|ticket)$/] > UpdateExpression[operator='++'][prefix=true]",
+        message: "Take a ticket from createLatest (@weasel-js/registry) or useLatestOnly (@weasel-js/react) instead of counting requests by hand: one way to decide which async answer is the newest.",
       }],
     },
   },

@@ -6,7 +6,7 @@ import { Input } from '@weasel-js/ui/components/Input';
 import { icon } from './icons.gen';
 import styles from './PaletteLab.module.css';
 import { BUILTIN_PRESETS, persist, toSource, type LabState, type Preset } from './presets';
-import { copyText } from '@weasel-js/react';
+import { copyText, useLatestOnly } from '@weasel-js/react';
 import { useFlash } from './useFlash';
 
 export interface PresetBarProps {
@@ -21,6 +21,11 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
   const [name, setName] = useState('');
   const [copied, flashCopied] = useFlash<string | null>(null, 1200);
   const [unkept, setUnkept] = useState(false);
+  const writes = useLatestOnly();
+  const keep = (next: readonly Preset[]) => {
+    const mine = writes.take();
+    void persist(next).then((ok) => { if (mine()) setUnkept(!ok); });
+  };
 
   const all = [...BUILTIN_PRESETS, ...saved];
 
@@ -30,14 +35,14 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
     if (BUILTIN_PRESETS.some((p) => p.name === trimmed)) return;
     const next = [...saved.filter((p) => p.name !== trimmed), { name: trimmed, state }];
     onSavedChange(next);
-    void persist(next).then((ok) => setUnkept(!ok));
+    keep(next);
     setName('');
   };
 
   const remove = (target: string) => {
     const next = saved.filter((p) => p.name !== target);
     onSavedChange(next);
-    void persist(next).then((ok) => setUnkept(!ok));
+    keep(next);
   };
 
   return (

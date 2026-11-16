@@ -1,4 +1,5 @@
 import type { History, SerializedHistory } from '@weasel-js/history';
+import { createKeyedEmitter } from '@weasel-js/registry';
 import { onLeave } from '@weasel-js/storage';
 import { useEffect } from 'react';
 
@@ -17,7 +18,7 @@ export interface LabHistoryStore<T> {
 }
 
 /** What drops each key's pending saves, for `clearSavedHistory`. */
-const pending = new Map<string, Set<() => void>>();
+const pending = createKeyedEmitter<string>();
 
 /** The most a saved history may take, in JSON characters: a theme definition runs to tens of
  *  kilobytes and every step holds two, so the steps farthest from now are cut to fit. */
@@ -57,21 +58,13 @@ export function localHistoryStore<T>(key: string): LabHistoryStore<T> {
         // Private windows and full quotas both land here.
       }
     },
-    onClear: (cancel) => {
-      const held = pending.get(key) ?? new Set();
-      pending.set(key, held);
-      held.add(cancel);
-      return () => {
-        held.delete(cancel);
-        if (held.size === 0) pending.delete(key);
-      };
-    },
+    onClear: (cancel) => pending.subscribe(key, cancel),
   };
 }
 
 /** Forget the history saved under `key`, and the saves of it still to come. */
 export function clearSavedHistory(key: string): void {
-  for (const cancel of [...(pending.get(key) ?? [])]) cancel();
+  pending.emit(key);
   try {
     localStorage.removeItem(key);
   } catch {}

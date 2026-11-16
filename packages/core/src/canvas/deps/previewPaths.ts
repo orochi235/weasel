@@ -3,6 +3,7 @@
  * action's `preview` draws what it would make, over this canvas.
  */
 import { useMemo } from 'react';
+import { createLatest } from '@weasel-js/registry';
 import { useDepSource } from '@weasel-js/routing/react';
 import { createPathOverlay, type TransientPath } from 'canvas/pathOverlay';
 import type { CanvasExtensionApi } from '../canvasExtension';
@@ -22,17 +23,17 @@ export const PREVIEW_PATHS_LAYER_ID = 'weasel-action-preview';
 export function createPreviewPaths(api: () => CanvasExtensionApi | null): PreviewPathsDep {
   const overlay = createPathOverlay({ id: PREVIEW_PATHS_LAYER_ID, label: 'Action preview' });
   let detach: (() => void) | null = null;
-  let current = 0;
+  const shows = createLatest();
   return {
     show(paths) {
       const canvas = api();
       if (!canvas) return () => {};
-      const mine = ++current;
+      const mine = shows.take();
       overlay.set(paths);
       if (!detach) detach = canvas.registerLayer(overlay.layer);
       canvas.requestRedraw();
       return () => {
-        if (mine !== current) return;
+        if (!mine()) return;
         overlay.clear();
         detach?.();
         detach = null;

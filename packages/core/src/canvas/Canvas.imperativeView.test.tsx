@@ -118,6 +118,27 @@ describe('imperative view', () => {
     expect(apiRef.current!.getView().x).toBe(30);
   });
 
+  it('keeps a view subscriber that throws, or subscribes another mid-pass, from changing who hears the write', async () => {
+    const onViewChange = vi.fn();
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    render(<Canvas ref={apiRef} width={100} height={80} layers={{}} defaultView={IDENTITY} onViewChange={onViewChange} />);
+    await frame();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const api = apiRef.current!;
+    const late = vi.fn();
+    const after = vi.fn();
+    api.subscribeView(() => { api.subscribeView(late); throw new Error('boom'); });
+    api.subscribeView(after);
+
+    api.setView({ x: 5, y: 0, scale: { x: 1, y: 1 } });
+
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(late).not.toHaveBeenCalled();
+    expect(onViewChange).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+
   it('seeds the view from defaultView and clamps it, and imperative writes, to viewBounds', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
     render(

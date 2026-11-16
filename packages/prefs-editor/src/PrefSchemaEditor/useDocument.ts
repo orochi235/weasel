@@ -119,6 +119,7 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
     current: () => emitted.current,
     async send(run) {
       const packed = codec.packSent(emitted.current, base);
+      // eslint-disable-next-line no-restricted-syntax -- the newest send to land wins, not the newest to leave
       const mine = ++sends.current.left;
       await run();
       if (mine < sends.current.landed) return;

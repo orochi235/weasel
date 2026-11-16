@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { SceneCanvas, asNodeId, useScene, solid } from '@weasel-js/core';
 import {
-  registerCanvasFont, registerFontOutlines, unregisterFontOutlines, outlineStatus,
+  registerCanvasFont, registerFontOutlines, outlineStatus,
 } from '@weasel-js/font';
 import { OUTLINE_MIN_SCREEN_PX } from '@weasel-js/core/renderer';
 import type { RectPose, SceneCanvasApi, Stroke, TextNodeData, TextStyle } from '@weasel-js/core';
@@ -91,9 +91,9 @@ export function TextOutlinesDemo() {
   }, [scene, stroked, filled]);
 
   useEffect(() => {
-    if (outlines) registerFontOutlines(FAMILY, VARIANT, INTER_TTF);
-    else unregisterFontOutlines(FAMILY, VARIANT);
+    const off = outlines ? registerFontOutlines(FAMILY, VARIANT, INTER_TTF) : undefined;
     canvasRef.current?.requestRedraw();
+    return off;
   }, [outlines]);
   // This poll drives only the readout, which has no other reason to re-render.
   useVisiblePoll(() => setStatus(outlines ? outlineStatus(FAMILY, 400, 'normal') ?? 'none' : 'off (canvas SDF)'), 200);

@@ -1,7 +1,7 @@
 export { createReflectable } from './reflectable';
 export { createExtensionRegistry, ExtensionConflictError } from './extensionRegistry';
 export type { ExtensionRegistry, ExtensionRegistryOptions, ExtensionRegisterOptions } from './extensionRegistry';
-export { createEmitter, type Emitter } from './emitter';
+export { createEmitter, createKeyedEmitter, type Emitter, type KeyedEmitter } from './emitter';
 export { isDev } from './isDev';
 export { isPlainObject, isPlainPrototype } from './isPlainObject';
 export { deepEqual, type DeepEqualOptions } from './deepEqual';
@@ -18,6 +18,7 @@ export type {
   RegisterOptions,
 } from './reflectable';
 export { after } from './after';
+export { createLatest, type Latest } from './latest';
 export { MIXED } from './mixed';
 export type { Mixed } from './mixed';
 export { codePointFloor } from './codePointFloor';

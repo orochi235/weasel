@@ -31,6 +31,7 @@ export interface ExtensionApi {
     sendMessage(tabId: number, message: unknown): Promise<unknown> | void;
     query(info: { active?: boolean; currentWindow?: boolean }): Promise<{ id?: number }[]>;
     readonly onUpdated: ExtEvent<[tabId: number, info: { status?: string }]>;
+    readonly onRemoved?: ExtEvent<[tabId: number]>;
   };
   scripting?: {
     executeScript(injection: {

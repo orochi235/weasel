@@ -5,6 +5,8 @@ export { isDev } from '@weasel-js/registry';
 export { useCanvasFocus } from './useCanvasFocus';
 export type { UseCanvasFocusOptions, CanvasFocusReturn } from './useCanvasFocus';
 export { useLatest } from './useLatest';
+export { useLatestOnly } from './useLatestOnly';
+export { createLatest, type Latest } from '@weasel-js/registry';
 export { copyText } from './copyText';
 export { pageLocalStorage } from './pageStorage';
 export { type Notifier, useNotified } from './useNotified';

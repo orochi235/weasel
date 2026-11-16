@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
+import { createLatest } from '@weasel-js/registry';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { HotkeyTrigger } from '@weasel-js/routing';
@@ -67,7 +68,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
   // stay a plain callback instead of a dep.
   const pickAction = useMemo<Action>(() => {
     // Presses so far: an answer `colorAt` gives late reports only if no press has come since.
-    let presses = 0;
+    const presses = createLatest();
     return defineAction({
       id: 'eyedropper.pick',
       label: 'Eyedropper — sample color',
@@ -80,7 +81,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
         run: (deps, params) => {
           const press = params?.press;
           if (!press) return;
-          const mine = ++presses;
+          const mine = presses.take();
           const colorOf = colorOfRef.current;
           if (colorOf) {
             const id = deps.nodeAtPoint?.(press) ?? null;
@@ -88,7 +89,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
             return;
           }
           const got = deps.colorAt?.(screenOf(deps, press)) ?? null;
-          const report = (hex: string | null) => { if (hex !== null && mine === presses) onPickRef.current(hex); };
+          const report = (hex: string | null) => { if (hex !== null && mine()) onPickRef.current(hex); };
           if (got instanceof Promise) void got.then(report, () => undefined);
           else report(got);
         },

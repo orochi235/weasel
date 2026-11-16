@@ -1,9 +1,10 @@
 import { isDev } from '@weasel-js/react';
+import { createKeyedEmitter } from '@weasel-js/registry';
 
 type Hook = EventTarget;
 type Global = { __THREE_DEVTOOLS__?: Hook; [ctor: string]: unknown };
 
-const byTrial = new Map<string, Set<(how: string) => void>>();
+const byTrial = createKeyedEmitter<string, [how: string]>();
 
 /** How long a renderer's canvas has to join the DOM, for one created by three
  *  and appended after the constructor returns. */
@@ -17,7 +18,7 @@ function findTrial(canvas: Element, how: string, attempt = 0): void {
   }
   const id = canvas.closest('[data-trial-id]')?.getAttribute('data-trial-id');
   if (!id) return;
-  for (const found of byTrial.get(id) ?? []) found(how);
+  byTrial.emit(id, how);
 }
 
 /** Duck-typed: the canvas may come from another realm than this module, or be an `OffscreenCanvas`. */
@@ -166,14 +167,5 @@ export function install3dWatch(): void {
 /** Calls `found` with how, whenever a three.js renderer or a depth-tested WebGL or WebGPU canvas draws
  *  into trial `trialId`'s DOM. */
 export function watch3d(trialId: string, found: (how: string) => void): () => void {
-  const set = byTrial.get(trialId) ?? new Set();
-  byTrial.set(trialId, set);
-  set.add(found);
-  let stopped = false;
-  return () => {
-    if (stopped) return;
-    stopped = true;
-    set.delete(found);
-    if (set.size === 0 && byTrial.get(trialId) === set) byTrial.delete(trialId);
-  };
+  return byTrial.subscribe(trialId, found);
 }

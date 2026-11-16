@@ -10,10 +10,12 @@ export function joinSurface(surface: Element, take: TakeKey): () => void {
   const peers = PEERS.get(surface) ?? [];
   peers.push(take);
   PEERS.set(surface, peers);
+  let joined = true;
   return () => {
-    const i = peers.indexOf(take);
-    if (i !== -1) peers.splice(i, 1);
-    if (peers.length === 0) PEERS.delete(surface);
+    if (!joined) return;
+    joined = false;
+    peers.splice(peers.indexOf(take), 1);
+    if (peers.length === 0 && PEERS.get(surface) === peers) PEERS.delete(surface);
   };
 }
 

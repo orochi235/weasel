@@ -7,6 +7,7 @@
  * answer was on its way makes the plan describe somewhere the diagram no
  * longer is, so the answer is dropped and the run never starts.
  */
+import { createLatest } from '@weasel-js/registry';
 import { useEffect, useMemo, useRef } from 'react';
 import type { Graph } from './graph';
 import type { LayoutPlan } from './layout';
@@ -41,32 +42,33 @@ export interface PendingPlan {
 }
 
 export function usePendingPlan(): PendingPlan {
-  const generation = useRef(0);
   const waiting = useRef(false);
-  const pending = useMemo<PendingPlan>(() => ({
-    request(answer, ready, failed) {
-      const mine = ++generation.current;
-      waiting.current = true;
-      const current = () => generation.current === mine;
-      void answer.then(
-        (plan) => {
-          if (!current()) return;
-          waiting.current = false;
-          ready(plan);
-        },
-        (error: unknown) => {
-          if (!current()) return;
-          waiting.current = false;
-          failed(error);
-        },
-      );
-    },
-    drop() {
-      generation.current++;
-      waiting.current = false;
-    },
-    isWaiting: () => waiting.current,
-  }), []);
+  const pending = useMemo<PendingPlan>(() => {
+    const requests = createLatest();
+    return {
+      request(answer, ready, failed) {
+        const current = requests.take();
+        waiting.current = true;
+        void answer.then(
+          (plan) => {
+            if (!current()) return;
+            waiting.current = false;
+            ready(plan);
+          },
+          (error: unknown) => {
+            if (!current()) return;
+            waiting.current = false;
+            failed(error);
+          },
+        );
+      },
+      drop() {
+        requests.drop();
+        waiting.current = false;
+      },
+      isWaiting: () => waiting.current,
+    };
+  }, []);
   useEffect(() => () => pending.drop(), [pending]);
   return pending;
 }

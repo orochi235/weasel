@@ -184,6 +184,21 @@ describe('createLongPressFeedbackContribution', () => {
     expect(a.draw().length).toBeGreaterThan(0);
   });
 
+  it('keeps a later attach to the same store animating once an earlier one detaches', () => {
+    const entry = createLongPressFeedbackContribution({ reducedMotion: false, delay: 0 });
+    const store = createLongPressStore();
+    const requestRedraw = vi.fn();
+    const api = { element: null, requestRedraw, registerLayer: () => () => {} } as unknown as CanvasExtensionApi;
+    const deps = { get: ((name: string) => (name === 'longPress' ? store : undefined)) as never };
+    const detachFirst = entry.attach!(api, deps);
+    entry.attach!(api, deps);
+    detachFirst();
+    store.set(pending());
+    requestRedraw.mockClear();
+    entry.afterPaint!({ time: performance.now(), view: VIEW, requestFrame: requestRedraw, deps });
+    expect(requestRedraw).toHaveBeenCalledTimes(1);
+  });
+
   it('stops listening on detach', () => {
     const { store, detach, requestRedraw } = setup({ delay: 0 });
     detach();

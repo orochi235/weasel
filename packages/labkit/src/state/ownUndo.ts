@@ -1,3 +1,4 @@
+import { createEmitter, type Emitter } from '@weasel-js/registry';
 import type { TrialHistorySource } from '../trial/trialHistory';
 import type { LabStore } from './store';
 import { onTrialRestart } from './trialRestarts';
@@ -8,7 +9,7 @@ interface Held {
   /** What each trial's last unmounted history saved, until another mounts or the trial restarts
    *  its undo, with the stop of the restart listener that drops it. */
   parked: Map<string, { data: unknown; off: () => void }>;
-  listeners: Set<(trialId: string) => void>;
+  steps: Emitter<[trialId: string]>;
 }
 
 const byStore = new WeakMap<object, Held>();
@@ -17,7 +18,7 @@ let restoring = 0;
 function held(store: object): Held {
   const known = byStore.get(store);
   if (known) return known;
-  const fresh: Held = { sources: new Map(), parked: new Map(), listeners: new Set() };
+  const fresh: Held = { sources: new Map(), parked: new Map(), steps: createEmitter() };
   byStore.set(store, fresh);
   return fresh;
 }
@@ -53,7 +54,7 @@ export function holdOwnUndo(
     if (next === key) return;
     key = next;
     if (restoring > 0) return;
-    for (const listener of [...h.listeners]) listener(trialId);
+    h.steps.emit(trialId);
   });
   return () => {
     off();
@@ -78,9 +79,7 @@ export function ownUndoOf(store: object, trialId: string): { data: unknown } | u
 
 /** Hear each time a history held for one of `store`'s trials steps. Returns the stop. */
 export function onOwnUndoStep(store: object, listener: (trialId: string) => void): () => void {
-  const h = held(store);
-  h.listeners.add(listener);
-  return () => h.listeners.delete(listener);
+  return held(store).steps.subscribe(listener);
 }
 
 /** Run `restore` without telling the listeners: what it restores is already saved. */
